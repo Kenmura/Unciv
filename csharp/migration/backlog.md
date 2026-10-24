@@ -155,7 +155,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Later tickets extend it: run N turns from a seed and compare hashes across runs (and against Kotlin-generated hashes where feasible).
 
 ### T012 Command layer design
-- State: Available
+- State: In-Progress [Antigravity]
+- Claimed: 2026-10-24T01:07:54Z
 - Depends: none
 - Source: design ticket; study how UI actions mutate `GameInfo` (e.g. `core/src/com/unciv/logic/automation` and `UnitActions`, `CityConstructions`)
 - Fixtures: none
