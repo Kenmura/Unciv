@@ -86,6 +86,7 @@ flowchart TD
     T103["T103<br/>Remaining Kotlin tests sweep: uniques, filters, tutorials"]
     T104["T104<br/>Marker, seam and stale-comment sweep (final)"]
     T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
+    T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -279,6 +280,7 @@ flowchart TD
   T098 --> T099
   T071 --> T100
   T098 --> T100
+  T107 --> T100
   T099 --> T101
   T094 --> T101
   T071 --> T101
@@ -287,6 +289,7 @@ flowchart TD
   T100 --> T102
   T072 --> T102
   T011 --> T102
+  T107 --> T102
   T072 --> T103
   T052 --> T103
   T098 --> T103
@@ -304,6 +307,10 @@ flowchart TD
   T052 --> T106
   T057 --> T106
   T062 --> T106
+  T098 --> T107
+  T039 --> T107
+  T053 --> T107
+  T054 --> T107
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -424,12 +431,14 @@ flowchart TD
   class T103 waiting
   class T104 waiting
   class T106 waiting
+  class T107 ready
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T107 | **Ready to start** | T098, T039, T053, T054 | 9 | TileMap and Tile JSON wiring, MapSaver round trips |
 | T055 | Needs-Review [Claude] | T034, T045, T039, T053 | 58 | Civilization core: Civilization, ExploredRegion, PopupAlert |
 | T057 | Available (waiting on T055) | T055 | 54 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
 | T056 | Available (waiting on T055) | T055 | 53 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
@@ -464,7 +473,7 @@ flowchart TD
 | T041 | In-Progress [Claude] | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 10 | MapGenerator pipeline (audit existing partial work first) |
 | T099 | Available (waiting on T041, T046, T061, T066, T078) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
 | T080 | Available (waiting on T079, T061, T068) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
-| T100 | Available (waiting on T071) | T071, T098 | 8 | Save/load B: UncivFiles |
+| T100 | Available (waiting on T071, T107) | T071, T098, T107 | 8 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080, T063) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080, T035) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
@@ -478,7 +487,7 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T067, T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
-| T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011 | 1 | End-to-end determinism over N turns |
+| T102 | Available (waiting on T101, T100, T072, T107) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052, T057, T062) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
