@@ -959,13 +959,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Kotlin TODO comments were reworded to "Kotlin note:" (SourcePolicyTests).
 
 ### T089 TradeEvaluation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T086, T088, T085
 - Source: core/src/com/unciv/logic/trade/TradeEvaluation.kt
 - Fixtures: none - generate golden values (offer valuation per TradeOfferType)
 - Deliverables: csharp/Unciv.Core/Logic/Trade/TradeEvaluation.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~TradeEvaluationTests`
-- Claimed:
+- Claimed: 2026-10-24T18:13Z
 - Notes: Created by the backlog audit (was 'Planned, after T068'). ~580 LOC; uses DiplomacyAutomation, MotivationToAttackAutomation, DeclareWarPlanEvaluator (T088) through GameView. Wires the TODO(T089) seams in T088. Float/Int valuation arithmetic must match Kotlin.
   - DiplomacyManager.GetGoldInflation (private) is a copy of TradeEvaluation.getGoldInflation; replace it with the TradeEvaluation call.
 

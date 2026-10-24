@@ -199,7 +199,7 @@ flowchart TD
   class T085 done
   class T087 done
   class T088 done
-  class T089 ready
+  class T089 prog
   class T090 ondeck
   class T091 waiting
   class T092 waiting
@@ -230,18 +230,36 @@ flowchart TD
   class T147 ready
   class T148 waiting
   class T149 ondeck
-  class T150 waiting
+  class T150 ondeck
   class T151 review
   class T152 ready
   class T153 review
   class T154 waiting
 ```
 
+## Remaining tickets over time
+
+Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). Completed tickets (Done, Won't port) are not counted.
+
+| Line | Meaning |
+|---|---|
+| green | New: Available or Blocked, not started yet |
+| yellow | Active: In-Progress, Needs-Review or In-Review |
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
+xychart-beta
+    title "Remaining tickets"
+    x-axis ["24 01:32", "24 02:39", "24 03:45", "24 04:52", "24 05:59", "24 07:06", "24 08:12", "24 09:19", "24 10:26", "24 11:33", "24 12:39", "24 13:46", "24 14:53", "24 15:59", "24 17:06", "24 18:13"]
+    y-axis "Tickets" 0 --> 67
+    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 55, 58, 60, 56, 48, 36, 35]
+    line [3, 5, 2, 2, 0, 0, 0, 0, 4, 2, 4, 0, 1, 4, 4, 5]
+```
+
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T089 | **Ready to start** | T086, T088, T085 | 2 | TradeEvaluation |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
@@ -256,6 +274,7 @@ flowchart TD
 | T144 | **On deck** (after T080) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
 | T146 | **On deck** (after T083) | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T149 | **On deck** (after T083) | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
+| T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T083 | Needs-Review [Claude] | T081, T082, T052, T064, T068, T079, T035 | 17 | Battle C: Battle, Nuke |
 | T080 | In-Progress [Antigravity] | T079, T061, T068 | 12 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
@@ -264,6 +283,7 @@ flowchart TD
 | T094 | Available (waiting on T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
+| T089 | In-Progress [Claude] | T086, T088, T085 | 2 | TradeEvaluation |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
@@ -277,7 +297,6 @@ flowchart TD
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T150 | Available (waiting on T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T151 | Needs-Review [Claude] | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
 | T153 | Needs-Review [Claude] | T111 | 0 | T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
