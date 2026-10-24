@@ -1161,13 +1161,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Why: System.Lazy<T> in its default mode caches exceptions; Kotlin lazy does not (it retries). Adversarial reviews found this bug repeatedly (T033 BaseUnit Type/IsLandUnit/IsWaterUnit, T033 re-review isGreatPerson/isMilitary, T055 cityStateType, T058). Design: KotlinLazy<T> (thread-safe like Kotlin SYNCHRONIZED: lock + retry on exception, no caching of failures) plus an unsafe/publication-only variant if needed; ban T:System.Lazy`1 in BannedSymbols.txt with a message naming KotlinLazy. Migrate all call sites in Unciv.Core (not tests unless they use it) and add tests: success cached, exception not cached and retried, thread safety.
 
 ### T117 Policy: reflection test forbidding mutable static state in Unciv.Core
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Policy/MutableStaticStateTests.cs (reflection over the Unciv.Core assembly), allowlist file with JUSTIFY reasons, fixes for violations
 - Gate: dotnet test --filter FullyQualifiedName~MutableStaticStateTests
-- Claimed:
+- Claimed: 2026-10-24T12:03Z
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: shared mutable statics made LogTests flaky under parallel xUnit (fixed in T109) and break determinism. Currently about 60 static fields; known ones: Log.Backend {get;set;}, Log.EnableLogsFrom/DisableLogsFrom (mutable HashSets), EventBus.NextSeq, MapSize/other static caches. Rule: reflect over every type in Unciv.Core; fail on static fields that are not readonly/const and on public static properties with setters, and on static readonly fields of mutable collection types, unless listed in an allowlist with a JUSTIFY reason. For legitimate global state (Log backend, event bus sequence) prefer making it an explicit instance/parameter or document why it is safe, and make the tests that touch it non-parallel via an xUnit collection.
