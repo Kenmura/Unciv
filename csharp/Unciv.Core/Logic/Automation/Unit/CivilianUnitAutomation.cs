@@ -10,8 +10,6 @@ namespace Unciv.Logic.Automation.Unit;
 
 // Ported from core/src/com/unciv/logic/automation/unit/CivilianUnitAutomation.kt (T091). Purity annotations and timeThis dropped (T027 policy).
 // - Kotlin Sequences stay lazy (IEnumerable); minByOrNull returns the first minimum (MinBy).
-// - The civ's WorkerAutomation (roadToAutomation.automateConnectRoad, automateWorkerAction, automateWorkBoats; TODO(T092)) and
-//   are IUnitAutomationSeams: with none set the calls are skipped (automateWorkBoats counts as false).
 public static class CivilianUnitAutomation
 {
     public static bool ShouldClearTileForAddInCapitalUnits(MapUnitView unit, TileView tile) =>
@@ -23,7 +21,6 @@ public static class CivilianUnitAutomation
     {
         // Temporary - logic-layer automation below still works on MapUnit
         var mapUnit = unit.Unwrap();
-        var seams = mapUnit.Civ.GameInfo.ClientState.UnitAutomationSeams;
 
         // To allow "found city" actions that can only trigger a limited number of times
 
@@ -55,19 +52,19 @@ public static class CivilianUnitAutomation
 
         if (unit.IsAutomatingRoadConnection())
         {
-            seams?.AutomateConnectRoad(mapUnit, dangerousTiles); // TODO(T092)
+            mapUnit.Civ.GetWorkerAutomation().RoadToAutomation.AutomateConnectRoad(mapUnit, dangerousTiles);
             return;
         }
 
         if (unit.HasUniqueToBuildImprovements())
         {
-            seams?.AutomateWorkerAction(unit, dangerousTiles); // TODO(T092)
+            mapUnit.Civ.GetWorkerAutomation().AutomateWorkerAction(unit, dangerousTiles);
             return;
         }
 
         if (unit.HasUniqueToCreateWaterImprovements())
         {
-            if (seams?.AutomateWorkBoats(unit) != true) // TODO(T092)
+            if (!mapUnit.Civ.GetWorkerAutomation().AutomateWorkBoats(unit))
                 UnitAutomation.TryExplore(unit, cache);
             return;
         }

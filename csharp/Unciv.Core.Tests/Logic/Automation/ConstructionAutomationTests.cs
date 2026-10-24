@@ -224,24 +224,24 @@ public class ConstructionAutomationTests
     {
         var (civ, _) = CivWithCity();
         var water = testGame.SetTileTerrain(HexCoord.Of(1, 0), "Coast");
-        Assert.False(WorkerAutomationSeams.HasWorkableSeaResource(water, civ)); // no resource
+        Assert.False(WorkerAutomation.HasWorkableSeaResource(water, civ)); // no resource
         water.SetTileResource("Fish");
-        Assert.False(WorkerAutomationSeams.HasWorkableSeaResource(water, civ)); // the boats need Sailing
+        Assert.False(WorkerAutomation.HasWorkableSeaResource(water, civ)); // the boats need Sailing
         civ.Tech.AddTechnology("Sailing");
-        Assert.True(WorkerAutomationSeams.HasWorkableSeaResource(water, civ));
-        Assert.True(WorkerAutomationSeams.IsNotBonusResourceOrWorkable(water, civ)); // Fish within a city's range
+        Assert.True(WorkerAutomation.HasWorkableSeaResource(water, civ));
+        Assert.True(WorkerAutomation.IsNotBonusResourceOrWorkable(water, civ)); // Fish within a city's range
         var farWater = testGame.SetTileTerrain(HexCoord.Of(5, 0), "Coast");
         farWater.SetTileResource("Fish");
-        Assert.False(WorkerAutomationSeams.IsNotBonusResourceOrWorkable(farWater, civ)); // a bonus outside every city's range
+        Assert.False(WorkerAutomation.IsNotBonusResourceOrWorkable(farWater, civ)); // a bonus outside every city's range
         water.SetImprovement("Fishing Boats");
-        Assert.False(WorkerAutomationSeams.HasWorkableSeaResource(water, civ)); // already improved
+        Assert.False(WorkerAutomation.HasWorkableSeaResource(water, civ)); // already improved
         water.RemoveImprovement();
         var oilTile = testGame.SetTileTerrain(HexCoord.Of(2, 0), "Coast");
         oilTile.SetTileResource("Oil");
-        Assert.True(WorkerAutomationSeams.IsNotBonusResourceOrWorkable(oilTile, civ)); // strategic: improve even out of range
+        Assert.True(WorkerAutomation.IsNotBonusResourceOrWorkable(oilTile, civ)); // strategic: improve even out of range
         var land = testGame.GetTile(0, 1);
         land.SetTileResource("Iron");
-        Assert.False(WorkerAutomationSeams.HasWorkableSeaResource(land, civ)); // land
+        Assert.False(WorkerAutomation.HasWorkableSeaResource(land, civ)); // land
     }
 
     [Fact]

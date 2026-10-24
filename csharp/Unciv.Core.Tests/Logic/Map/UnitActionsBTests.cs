@@ -133,7 +133,7 @@ public class UnitActionsBTests
     }
 
     [Fact]
-    public void AutomateAndExploreActions_InvokeUnitAutomationSeams()
+    public void AutomateAndExploreActions_SetTheUnitAutomated()
     {
         var game = new TestGame();
         game.MakeHexagonalMap(5);

@@ -18,7 +18,6 @@ public class CivilianAutomationTests
     private readonly TestGame testGame = new();
     private readonly CivilizationObject civ;
     private readonly CivilizationObject enemy;
-    private readonly FakeSeams seams = new();
     private readonly AutomationCache cache = new();
 
     public CivilianAutomationTests()
@@ -28,17 +27,6 @@ public class CivilianAutomationTests
         civ = testGame.AddCiv();
         enemy = testGame.AddCiv();
         civ.DiplomacyFunctions.MakeCivilizationsMeet(enemy);
-        testGame.GameInfo.ClientState.UnitAutomationSeams = seams;
-    }
-
-    private sealed class FakeSeams : IUnitAutomationSeams
-    {
-        public readonly List<string> Calls = [];
-        public bool WorkBoatsResult { get; set; }
-        public void AutomateConnectRoad(MapUnitClass unit, IReadOnlySet<TileView> tilesWhereWeWillBeCaptured) => Calls.Add("AutomateConnectRoad");
-        public void AutomateWorkerAction(MapUnitView unitView, HashSet<TileView> dangerousTiles) => Calls.Add("AutomateWorkerAction");
-        public bool AutomateWorkBoats(MapUnitView unitView) { Calls.Add("AutomateWorkBoats"); return WorkBoatsResult; }
-        public float GetBasePriority(TileClass tile, MapUnitView unitView) { Calls.Add("GetBasePriority"); return 0f; }
     }
 
     private MapUnitView ViewOf(MapUnitClass unit) => new GameView(testGame.GameInfo, unit.Civ).GetMapUnitView(unit);
@@ -140,9 +128,12 @@ public class CivilianAutomationTests
     [Fact]
     public void WorkersAreHandedToTheWorkerAutomation()
     {
-        var worker = testGame.AddUnit("Worker", civ, testGame.GetTile(0, 0));
+        civ.Tech.AddTechnology("Pottery", false); // Farm
+        testGame.AddCity(civ, testGame.GetTile(0, 0));
+        var tile = testGame.GetTile(1, 1);
+        var worker = testGame.AddUnit("Worker", civ, tile);
         Automate(worker);
-        Assert.Equal(["AutomateWorkerAction"], seams.Calls);
+        Assert.NotNull(tile.ImprovementInProgress);
     }
 
     [Fact]
@@ -152,22 +143,19 @@ public class CivilianAutomationTests
         testGame.SetTileTerrain(testGame.GetTile(0, 0).Position, Constants.Ocean);
         var boat = testGame.AddUnit(boatType.Name, civ, testGame.GetTile(0, 0));
         Assert.True(ViewOf(boat).HasUniqueToCreateWaterImprovements());
-        Automate(boat);
-        Assert.Equal(["AutomateWorkBoats"], seams.Calls); // then it explores
-
-        seams.Calls.Clear();
-        seams.WorkBoatsResult = true;
-        Automate(boat);
-        Assert.Equal(["AutomateWorkBoats"], seams.Calls);
+        Automate(boat); // no city, so no work boat target: it explores instead
+        Assert.False(boat.IsDestroyed);
     }
 
     [Fact]
     public void RoadConnectionActionGoesToTheRoadAutomation()
     {
+        civ.Tech.AddTechnology("The Wheel", false);
         var worker = testGame.AddUnit("Worker", civ, testGame.GetTile(0, 0));
         worker.Action = Constants.ConnectRoadAction;
-        Automate(worker);
-        Assert.Equal(["AutomateConnectRoad"], seams.Calls);
+        Automate(worker); // no destination: the road automation resets the unit
+        Assert.Null(worker.Action);
+        Assert.False(worker.Automated);
     }
 
     [Fact]
@@ -205,7 +193,6 @@ public class CivilianAutomationTests
         Automate(unit);
 
         Assert.Equal(start, unit.CurrentTile);
-        Assert.Empty(seams.Calls);
     }
 
 
@@ -230,7 +217,6 @@ public class CivilianAutomationTests
 
         Automate(worker);
 
-        Assert.Contains("AutomateWorkerAction", seams.Calls);
         Assert.NotEqual(testGame.GetTile(0, 0), worker.CurrentTile);
     }
 
@@ -298,7 +284,6 @@ public class CivilianAutomationTests
 
         Assert.False(scientist.IsDestroyed);
         Assert.Equal(start, scientist.CurrentTile);
-        Assert.Empty(seams.Calls);
     }
 
     [Fact]
@@ -476,7 +461,6 @@ public class CivilianAutomationTests
         SpecificUnitAutomation.AutomateSettlerActions(settler, [], cache);
 
         Assert.Single(civ.Cities);
-        Assert.Empty(seams.Calls);
     }
 
     // endregion
@@ -700,7 +684,46 @@ public class CivilianAutomationTests
         Assert.True(SpecificUnitAutomation.AutomateCitadelPlacer(general));
 
         Assert.NotEqual(start, general.CurrentTile);
-        Assert.Contains("GetBasePriority", seams.Calls);
+    }
+
+    [Fact]
+    public void CitadelPlacerIsReachedThroughTheCivilianAutomation()
+    {
+        var ours = testGame.AddCity(civ, testGame.GetTile(-3, 0));
+        var theirs = testGame.AddCity(enemy, testGame.GetTile(3, 0));
+        for (var x = -2; x <= 1; x++) { var t = testGame.GetTile(x, 0); testGame.AddTileToCity(ours, t); t.SetOwningCity(ours); }
+        for (var x = 2; x <= 5; x++) { var t = testGame.GetTile(x, 0); testGame.AddTileToCity(theirs, t); t.SetOwningCity(theirs); }
+        civ.GetDiplomacyManager(enemy)!.AddModifier(Unciv.Logic.Civilization.Diplomacy.DiplomaticModifiers.StealingTerritory, 10f);
+        civ.ViewableTiles = new HashSet<TileClass>(testGame.TileMap.Values);
+        const string unique = "[+15]% Strength bonus for [All] units within [2] tiles";
+        const string citadel = "Can instantly construct a [Citadel] improvement";
+        testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.GetTile(-3, 3), unique);
+        testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.GetTile(-3, 4), unique);
+        var general = testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.GetTile(-3, 2), citadel);
+        var start = general.CurrentTile;
+
+        Automate(general);
+
+        Assert.NotEqual(start, general.CurrentTile);
+    }
+
+    [Fact]
+    public void CitadelPlacerStartsTheCitadelOnceItReachedTheStolenTile()
+    {
+        var ours = testGame.AddCity(civ, testGame.GetTile(-3, 0));
+        var theirs = testGame.AddCity(enemy, testGame.GetTile(3, 0));
+        for (var x = -2; x <= 1; x++) { var t = testGame.GetTile(x, 0); testGame.AddTileToCity(ours, t); t.SetOwningCity(ours); }
+        for (var x = 2; x <= 5; x++) { var t = testGame.GetTile(x, 0); testGame.AddTileToCity(theirs, t); t.SetOwningCity(theirs); }
+        civ.GetDiplomacyManager(enemy)!.AddModifier(Unciv.Logic.Civilization.Diplomacy.DiplomaticModifiers.StealingTerritory, 10f);
+        civ.ViewableTiles = new HashSet<TileClass>(testGame.TileMap.Values);
+        const string unique = "[+15]% Strength bonus for [All] units within [2] tiles";
+        testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.GetTile(-3, 3), unique);
+        testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.GetTile(-3, 4), unique);
+        var general = testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.GetTile(1, 0), unique);
+
+        Assert.True(SpecificUnitAutomation.AutomateCitadelPlacer(general));
+
+        Assert.True(general.CurrentTile.AerialDistanceTo(testGame.GetTile(2, 0)) <= 1);
     }
 
     // endregion

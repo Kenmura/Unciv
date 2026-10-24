@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Support;
+using Unciv.Logic.Automation.Unit;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map;
@@ -11,7 +12,7 @@ namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 // T145: port of tests/src/com/unciv/logic/map/PathfindingTests.kt over the real TestGame, ClassicPathfinding parameter set only.
 // Not ported here: the AStarPathfinding parameter set and the three A*-only cases (shortestPathEvenWhenItsWayMoreTiles,
 // canPauseBeforeMountainsToCrossWithoutDamage, getMovementToTilesAtPosition_withNegativeMovement_ReturnsOrigin) wait on T093;
-// connectRoadAction needs RoadToAutomation (T092). 54 of the 58 Kotlin cases are ported.
+// connectRoadAction was ported with RoadToAutomation (T092). 55 of the 58 Kotlin cases are ported.
 [Collection("RulesetCache")]
 public sealed class PathfindingFixtureTests
 {
@@ -698,5 +699,19 @@ public sealed class PathfindingFixtureTests
         var path = worker.Movement.GetRoadPath(destination) ?? [];
 
         Assert.True(path.Contains(originTile) && path.Contains(destination), "getRoadPath must contain both endpoints");
+    }
+
+    [Fact]
+    public void ConnectRoadAction()
+    {
+        civInfo.Tech.AddTechnology("The Wheel", false);
+        var worker = testGame.AddUnit("Worker", civInfo, originTile);
+        var destination = testGame.GetTile(5, 3);
+        worker.AutomatedRoadConnectionDestination = destination.Position;
+
+        new RoadToAutomation(civInfo).AutomateConnectRoad(worker, new HashSet<Unciv.View.TileView>());
+
+        Assert.True(originTile.ImprovementInProgress == nameof(RoadStatus.Road), "Worker must have queued a Road");
+        Assert.True(worker.AutomatedRoadConnectionPath?.Count > 0, "Worker must have a path");
     }
 }

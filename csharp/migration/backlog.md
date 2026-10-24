@@ -1007,6 +1007,12 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T22:30Z
 - Notes: Created by the backlog audit. ~1.2k LOC. Civilization.workerAutomation (T055 seam) is TODO(T092). Tile/improvement choice order is game state. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
   - T145: port Kotlin PathfindingTests.connectRoadAction (RoadToAutomation.automateConnectRoad; asserts queued Road and non-empty automatedRoadConnectionPath) into Fixtures/Map/PathfindingFixtureTests.
+  - Implemented by Claude. WorkerAutomation (split into WorkerAutomation.cs + WorkerAutomation.Improvements.cs for the coupling ratchet), RoadBetweenCitiesAutomation, RoadToAutomation; Civilization.GetWorkerAutomation (partial file Civilization.WorkerAutomation.cs, size baseline). WorkerAutomationSeams/IUnitAutomationSeams deleted: CivilianUnitAutomation and SpecificUnitAutomation call the real classes; CivilianAutomationTests lost their FakeSeams and assert real behaviour.
+    - Kotlin quirk kept: getImprovementRanking `stats.div(3f)` (neighbouring-tile discount) is the non-mutating operator, so Kotlin discards it: the C# omits the call (no-op).
+    - Settings: GameClientState gained AutoBuildingRoads (true), AutomatedWorkersReplaceImprovements (true), StopAutomatedWorkersRemoveVegetation (false) and RoadPathing (ICityRoadPathing, null = useAStarPathfinding off; TODO(T093) sets it from PathingMap). `autoPlay?.isAutoPlayingAndFullAutoPlayAI() == false` is "AutoPlay != null && !IsFullAutoPlayAI".
+    - Dropped: debug()/timeThis, synchronized(workersPerCity), the unused String overload of getImprovementRanking.
+    - Tests: WorkerAutomationTests (7 direct Kotlin cases ported; the 3 NextTurnAutomation.automateCivMoves cases are C# adaptations that automate only the worker; the @Ignore'd case is not ported), RoadAutomationTests, PathfindingFixtureTests.ConnectRoadAction (T145's deferred case, now 55/58). The Kotlin setUp sets useAStarPathfinding=true; the A* variants wait on T093.
+    - coverage.py --check passes; `--update-baseline` was blocked by the harness classifier in this session, so coverage-baseline.json is NOT raised for the new files and still lists the deleted WorkerAutomationSeams.cs: the next agent should run `python3 -I tools/coverage.py --update-baseline`.
 
 ### T093 PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode
 - State: Available
@@ -1020,6 +1026,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T060: City.getLandAttackPath/getAmphibiousAttackPath/getRoadPath/getRoadPathToAny, the three PathingMap caches (landAttackPathing, amphibiousAttackPathing, potentialRoadPathing) and City.clearCaches were NOT ported with City (PathingMap does not exist yet); add them to Logic/City/City.cs here (and TODO-free).
   - T082: TargetHelperTests (BattleSupportTests) dropped the Kotlin setUp `useAStarPathfinding = true`; re-run them with A* on when T093 lands.
   - T145: re-run the Kotlin UnitMovementTests/PathfindingTests with A* on (Fixtures/Map/UnitMovementFixtureTests, PathfindingFixtureTests are Classic only) and port the 3 A*-only PathfindingTests cases (shortestPathEvenWhenItsWayMoreTiles, canPauseBeforeMountainsToCrossWithoutDamage, getMovementToTilesAtPosition_withNegativeMovement_ReturnsOrigin).
+  - From T092: RoadBetweenCitiesAutomation reaches City.getRoadPath/getRoadPathToAny through GameClientState.RoadPathing (ICityRoadPathing, TODO(T093)); implement it on PathingMap and set it where useAStarPathfinding is read. Also port WorkerAutomationTest's A* setUp (useAStarPathfinding=true).
 
 ### T094 NextTurnAutomation and BarbarianAutomation (automation integration)
 - State: Available
@@ -1030,6 +1037,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~NextTurnAutomationTests`
 - Claimed:
 - Notes: Created by the backlog audit. ~855 LOC. Final automation ticket: replaces every TODO(T094) seam (TurnManager.automate and cityBombardment/goldToScience T070, CityStateFunctions T068, Battle.valueCityStateAlliance T083, UniqueTriggerActivation.chooseGreatPerson T052, Civilization.automateTurn) and runs one full AI turn through all automation tickets. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+  - From T092: port the NextTurnAutomation.automateCivMoves versions of WorkerAutomationTest 'should build improvements in turns', '... without roads' and 'should build roads in turns' (WorkerAutomationTests.cs holds C# adaptations that automate only the worker; see its TODO(T094) header).
 
 ### T095 Civilopedia text model A: FormattedLine, ICivilopediaText, CivilopediaCategories, FormattedLineListBuilder, DescriptionHelpers
 - State: Done

@@ -15,7 +15,6 @@ namespace Unciv.Logic.Automation.Unit;
 
 // Ported from core/src/com/unciv/logic/automation/unit/SpecificUnitAutomation.kt (T091). Purity annotations dropped (T027 policy).
 // - Kotlin Sequences stay lazy (IEnumerable); sortedBy/sortedByDescending are stable (OrderBy/OrderByDescending); minBy/maxBy return the first extremum.
-// - The civ's WorkerAutomation.getBasePriority is IUnitAutomationSeams (TODO(T092)).
 // - Kotlin `roundToInt` of getBasePriority is half-up (KotlinMath.RoundToInt).
 public static partial class SpecificUnitAutomation
 {
@@ -39,7 +38,6 @@ public static partial class SpecificUnitAutomation
         var enemyCities = unit.Civ.GetKnownCivs()
             .Where(it => unit.Civ.GetDiplomacyManager(it).NotNull().HasModifier(DiplomaticModifiers.StealingTerritory))
             .SelectMany(it => it.Cities);
-        var seams = unit.Civ.GameInfo.ClientState.UnitAutomationSeams;
         // find the suitable tiles (or their neighbours)
         var tileToSteal = enemyCities.SelectMany(it => it.GetTiles()) // City tiles
             .Where(it => it.Neighbors.Any(tile => tile.GetOwner() != unit.Civ)) // Edge city tiles
@@ -54,7 +52,7 @@ public static partial class SpecificUnitAutomation
                 // ...also get priorities to steal the most valuable for them
                 var owner = it.GetOwner();
                 if (owner != null)
-                    return distance - KotlinMath.RoundToInt(seams?.GetBasePriority(it, new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).GetMapUnitView(unit)) ?? 0f); // TODO(T092): getWorkerAutomation().getBasePriority
+                    return distance - KotlinMath.RoundToInt(unit.Civ.GetWorkerAutomation().GetBasePriority(it, new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).GetMapUnitView(unit)));
                 return distance;
             })
             .FirstOrDefault(it => unit.Movement.CanReach(it)); // canReach is performance-heavy and always a last resort
@@ -78,7 +76,6 @@ public static partial class SpecificUnitAutomation
     public static void AutomateSettlerActions(MapUnitClass unit, HashSet<TileView> dangerousTiles, AutomationCache cache)
     {
         var gameView = new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ);
-        var seams = unit.Civ.GameInfo.ClientState.UnitAutomationSeams;
 
         // City-state starts are predetermined by map gen / editor — trust that tile by default.
         // Mods can opt out via CityStatesSearchForFirstCitySite.

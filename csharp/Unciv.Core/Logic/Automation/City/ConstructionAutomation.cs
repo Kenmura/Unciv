@@ -22,7 +22,7 @@ namespace Unciv.Logic.Automation.City;
 // - Kotlin `UncivGame.Current.screen is CityScreen` (suppresses the "has started working on" notification while the city screen is open)
 //   is a client-UI query the headless engine cannot make; it is treated as false.
 // - The unused Kotlin field `buildingsForVictory` (computed, never read) is dropped.
-// - WorkerAutomation.hasWorkableSeaResource / isNotBonusResourceOrWorkable are WorkerAutomationSeams (owner T092).
+// - WorkerAutomation.hasWorkableSeaResource / isNotBonusResourceOrWorkable are WorkerAutomation statics (T092).
 // - NextTurnAutomation.getForeignCityNearCapital is NextTurnAutomationSeams (owner T094).
 // - Kotlin Sequence pipelines stay lazy LINQ pipelines (the buildable caches are filled during iteration, as in Kotlin).
 // - `maxBy` on Float keys uses Kotlin's Float.compareTo total order (NaN greatest), not LINQ's.
@@ -294,8 +294,8 @@ public class ConstructionAutomation
                 // Define what makes a tile worth sending a Workboat to
                 // todo Prepare for mods that allow improving water tiles without a resource?
                 if (ReferenceEquals(tile.GetOwner(), civInfo)
-                    && WorkerAutomationSeams.HasWorkableSeaResource(tile, civInfo)
-                    && WorkerAutomationSeams.IsNotBonusResourceOrWorkable(tile, civInfo)) return true;
+                    && WorkerAutomation.HasWorkableSeaResource(tile, civInfo)
+                    && WorkerAutomation.IsNotBonusResourceOrWorkable(tile, civInfo)) return true;
             } while (bfs.Size() < searchMaxTiles);
             return false;
         }

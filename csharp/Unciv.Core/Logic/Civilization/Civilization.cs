@@ -40,7 +40,6 @@ namespace Unciv.Logic.Civilization;
 //
 // Stripped / deferred:
 // - timeThis profiling wrappers and the purity annotations.
-// - getWorkerAutomation / workerAutomationCache (WorkerAutomation belongs to the unit-automation port).
 // - addCity (CityFounder): its two client-settings inputs of resetSpecialistsControl are explicit parameters (T061).
 // - isAIOrAutoPlaying: the UncivGame.Current.worldScreen auto-play check is UI state; a headless engine has none, so it is `false`.
 // - Kotlin HashMap/HashSet fields keep java.util iteration order (JavaHashMap/JavaHashSet), except neutralRoads, whose seam
@@ -58,7 +57,7 @@ public enum Proximity
     Distant,
 }
 
-public class Civilization : IsPartOfGameInfoSerialization, IConstructionCivilization, IGameProgressCivilization, ILocalUniqueCacheCivilization, IMapRegionsCivilization
+public partial class Civilization : IsPartOfGameInfoSerialization, IConstructionCivilization, IGameProgressCivilization, ILocalUniqueCacheCivilization, IMapRegionsCivilization
 {
     private static T Lateinit<T>(T? value, string name) where T : class =>
         value ?? throw new InvalidOperationException($"lateinit property {name} has not been initialized");

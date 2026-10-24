@@ -40,8 +40,17 @@ public sealed class GameClientState
     /// <summary>The A* attack pathing of <c>City.getLandAttackPath</c> / <c>getAmphibiousAttackPath</c> (TODO(T093): set by PathingMap). Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
     public Automation.Civilization.ICityAttackPathing? AttackPathing { get; set; }
 
-    /// <summary>The unported WorkerAutomation that CivilianUnitAutomation calls (TODO(T092): set by its port). Null means "not ported": the calls are skipped.</summary>
-    public Automation.Unit.IUnitAutomationSeams? UnitAutomationSeams { get; set; }
+    /// <summary>The A* road pathing of <c>City.getRoadPath</c> / <c>getRoadPathToAny</c> (TODO(T093): set by PathingMap). Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
+    public Automation.Unit.ICityRoadPathing? RoadPathing { get; set; }
+
+    /// <summary><c>settings.autoBuildingRoads</c></summary>
+    public bool AutoBuildingRoads { get; set; } = true;
+
+    /// <summary><c>settings.automatedWorkersReplaceImprovements</c></summary>
+    public bool AutomatedWorkersReplaceImprovements { get; set; } = true;
+
+    /// <summary><c>settings.stopAutomatedWorkersRemoveVegetation</c></summary>
+    public bool StopAutomatedWorkersRemoveVegetation { get; set; }
 
     /// <summary><c>worldScreen?.autoPlay</c>: null when there is no client (headless simulation).</summary>
     public IAutoPlay? AutoPlay { get; set; }
