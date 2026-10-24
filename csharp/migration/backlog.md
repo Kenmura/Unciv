@@ -570,7 +570,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created because T035 (TestGame) can only exist once the whole chain is ported, and each earlier ticket deferred its TestGame-based fixtures. Port them over the real TestGame, one test class per Kotlin class; any real behavioural bug found goes back to the owning ticket as a review note. Split by Kotlin test directory at claim time if too large. Also ports the Countables/Conditionals tests T028 deferred that need real game state, if T035 did not.
 
 ### T073 MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T039, T010, T016, T017
 - Source: core/src/com/unciv/logic/map/mapgenerator/MapGenerationRandomness.kt, MapResourceSetting.kt, MapElevationGenerator.kt, MapLandmassGenerator.kt
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
