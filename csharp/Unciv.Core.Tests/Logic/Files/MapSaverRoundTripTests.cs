@@ -162,14 +162,13 @@ public class MapSaverRoundTripTests
         Assert.ThrowsAny<JsonException>(() => UncivJson.Deserialize<TileMap>("{\"startingLocations\":[{\"usage\":\"Boss\"}]}"));
 
     [Fact]
-    public void UnitsAreNotWiredYet()
+    public void UnitFieldsParseAndEmptyOnesAreOmitted()
     {
-        Assert.Throws<NotSupportedException>(() => UncivJson.Deserialize<Tile>("{\"militaryUnit\":{\"name\":\"Warrior\"}}"));
-        Assert.Throws<NotSupportedException>(() => UncivJson.Deserialize<Tile>("{\"airUnits\":[{}]}"));
+        Assert.Equal("Warrior", UncivJson.Deserialize<Tile>("{\"militaryUnit\":{\"name\":\"Warrior\"}}")!.MilitaryUnit?.Name);
+        Assert.Single(UncivJson.Deserialize<Tile>("{\"airUnits\":[{}]}")!.AirUnits);
         // Absent, null and empty unit fields are what a unit-less map has
         Assert.Equal("{}", UncivJson.Serialize(UncivJson.Deserialize<Tile>("{\"militaryUnit\":null,\"civilianUnit\":null,\"airUnits\":[]}")));
-        var tile = new Tile { MilitaryUnit = new Unciv.Logic.Map.MapUnits.MapUnit() };
-        Assert.Throws<NotSupportedException>(() => UncivJson.Serialize(tile));
+        // Units are covered by TileUnitJsonTests
     }
 
     [Fact]

@@ -32,7 +32,8 @@ namespace Unciv.Logic.Map.MapUnits;
 /// The immutable properties and mutable game state of an individual unit present on the map.
 /// Kotlin <c>MapUnit</c> has no <c>equals</c>/<c>hashCode</c>: this class keeps reference identity.
 /// </summary>
-public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
+[JsonConverter(typeof(MapUnit.MapUnitJsonConverter))]
+public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
 {
     private static T Lateinit<T>(T? value, string name) where T : class =>
         value ?? throw new InvalidOperationException($"lateinit property {name} has not been initialized");

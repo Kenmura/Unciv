@@ -269,7 +269,7 @@ flowchart TD
   class T104 waiting
   class T106 ondeck
   class T107 done
-  class T110 prog
+  class T110 review
   class T111 ondeck
   class T115 ready
   class T123 ready
@@ -324,5 +324,5 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T110 | In-Progress [Antigravity] | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
+| T110 | Needs-Review [Antigravity] | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T139 | Available (waiting on T085, T082, T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |

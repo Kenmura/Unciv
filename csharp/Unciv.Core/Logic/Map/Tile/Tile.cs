@@ -22,7 +22,7 @@ namespace Unciv.Logic.Map.Tiles;
 // setPillaged (+ clearAllPathfindingCaches).
 // T066 added doWorkerTurn. Still deferred (they need TileImprovement.getTurnsToBuild and Civilization.gainStockpiledResource, T046/T048):
 // startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit).
-// T107 added the Gdx-compatible JSON (TileJsonConverter at the end of the class). Unit fields are not wired yet: TODO(T110).
+// T107 added the Gdx-compatible JSON (TileJsonConverter at the end of the class); T110 wired the unit fields (MapUnit.MapUnitJsonConverter).
 
 /// <summary>
 /// A single hex of the map. Kotlin <c>Tile</c> has no <c>equals</c>/<c>hashCode</c>: this class keeps reference identity.
@@ -1308,7 +1308,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     /// Reads and writes the serialized fields the way the libGDX Json does for Kotlin <c>Tile</c> (T107): field names are the Kotlin ones,
     /// fields equal to the default of a fresh <c>Tile()</c> are omitted, unknown fields are ignored, and a list may be a plain array or the
     /// <c>{"class":..., "items":[...]}</c> form. <c>exploredBy</c> (a Java HashSet there) is written in ordinal order, which is deterministic.
-    /// The unit fields need MapUnit (TODO(T110)): writing a tile that holds units, or reading them, throws.
+    /// The unit fields (militaryUnit, civilianUnit, airUnits) are written first, as in Kotlin's declaration order, with <c>MapUnit.MapUnitJsonConverter</c>.
     /// </summary>
     internal sealed class TileJsonConverter : JsonConverter<Tile>
     {
@@ -1325,9 +1325,15 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
                 var isNull = reader.TokenType == JsonTokenType.Null;
                 switch (name)
                 {
-                    case "militaryUnit" or "civilianUnit" or "airUnits":
-                        if (isNull || (reader.TokenType == JsonTokenType.StartArray && IsEmptyArray(ref reader))) break;
-                        throw new NotSupportedException($"Tile.{name}: unit JSON is not wired yet (TODO(T110))");
+                    case "militaryUnit":
+                        tile.MilitaryUnit = isNull ? null : new MapUnitClass.MapUnitJsonConverter().Read(ref reader, typeof(MapUnitClass), options);
+                        break;
+                    case "civilianUnit":
+                        tile.CivilianUnit = isNull ? null : new MapUnitClass.MapUnitJsonConverter().Read(ref reader, typeof(MapUnitClass), options);
+                        break;
+                    case "airUnits":
+                        tile.AirUnits = isNull ? [] : ReadUnitList(ref reader, options);
+                        break;
                     case "position":
                         tile.Position = isNull ? default : new HexCoordConverter().Read(ref reader, typeof(HexCoord), options);
                         break;
@@ -1391,10 +1397,25 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
             throw new JsonException("Unexpected end of JSON while reading Tile");
         }
 
-        private static bool IsEmptyArray(ref Utf8JsonReader reader)
+        private static List<MapUnitClass> ReadUnitList(ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
-            var probe = reader;
-            return probe.Read() && probe.TokenType == JsonTokenType.EndArray && reader.TrySkip();
+            var result = new List<MapUnitClass>();
+            if (reader.TokenType == JsonTokenType.StartObject)
+            {
+                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                {
+                    var key = reader.GetString();
+                    reader.Read();
+                    if (key == "items") result = ReadUnitList(ref reader, options);
+                    else reader.Skip();
+                }
+                return result;
+            }
+            if (reader.TokenType != JsonTokenType.StartArray)
+                throw new JsonException($"Expected StartArray for airUnits, got {reader.TokenType}");
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                result.Add(new MapUnitClass.MapUnitJsonConverter().Read(ref reader, typeof(MapUnitClass), options));
+            return result;
         }
 
         private static List<string> ReadStringList(ref Utf8JsonReader reader)
@@ -1459,9 +1480,24 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
 
         public override void Write(Utf8JsonWriter writer, Tile value, JsonSerializerOptions options)
         {
-            if (value.MilitaryUnit != null || value.CivilianUnit != null || value.AirUnits.Count > 0)
-                throw new NotSupportedException("Tile unit JSON is not wired yet (TODO(T110))");
             writer.WriteStartObject();
+            var unitConverter = new MapUnitClass.MapUnitJsonConverter();
+            if (value.MilitaryUnit != null)
+            {
+                writer.WritePropertyName("militaryUnit");
+                unitConverter.Write(writer, value.MilitaryUnit, options);
+            }
+            if (value.CivilianUnit != null)
+            {
+                writer.WritePropertyName("civilianUnit");
+                unitConverter.Write(writer, value.CivilianUnit, options);
+            }
+            if (value.AirUnits.Count > 0)
+            {
+                writer.WriteStartArray("airUnits");
+                foreach (var airUnit in value.AirUnits) unitConverter.Write(writer, airUnit, options);
+                writer.WriteEndArray();
+            }
             if (value.Position != default)
             {
                 writer.WritePropertyName("position");
