@@ -327,7 +327,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Rework notes (Claude), addressing the review above (option A): the earlier note that dispatch "matches Kotlin's Set semantics" was wrong and is superseded: **deviations from Kotlin, now documented in the `EventBus` remarks and pinned by tests**: global registration order across types (Kotlin groups by class, ancestors first: `[Event, Marker, Base, Event, Other, Derived, Derived2]` on the real EventBus; here `[Derived, Other, Base, Marker, Event, Derived2]`), each listener at most once per event (Kotlin double-notifies through a diamond), listeners deactivated during dispatch are skipped and ones registered during dispatch wait for the next event (Kotlin works on a snapshot), no weak references. `Send<T>` is now `where T : IEvent` (no cast, compile-time safe). New tests: cross-type registration order with the subtype listener first, diamond (once), changes during dispatch, filter-before-handler. Ran Gate (`~EventBusTests`, 11 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` green.
 
 ### T020 MultiFilter and IdChecker
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: none
 - Source: core/src/com/unciv/logic/MultiFilter.kt, logic/IdChecker.kt
 - Fixtures: tests/src/com/unciv/logic/MultiFilterTests.kt, tests/src/com/unciv/logic/IdHelperTests.kt
@@ -335,6 +335,11 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~MultiFilterTests|FullyQualifiedName~IdCheckerTests`
 - Claimed: 2026-10-24T01:34:12Z
 - Notes: Pure string logic; keep Kotlin Regex/string semantics exact (culture-invariant).
+  - Implementer notes (Antigravity):
+    - Ported `MultiFilter` (`Filter` corresponding to `multiFilter`, `GetAllSingleFilters`, `IsAnd`, `GetAndFilters`, `IsNot`, `GetNotFilter` with exact `removeSurrounding` semantics) under `Unciv.Logic`.
+    - Ported `IdChecker` (`IsGameDeepLink`, `IsFriendDeepLink`, `CheckAndReturnPlayerUuid`, `CheckAndReturnUuiId`, `GetCheckDigit`, `Friend` record, and Unicode-category-exact `TrimSpaceOrWrapper` + URL path/query decoding) under `Unciv.Logic`, using `StringExtensions.IsUUID()` from T018.
+    - Ported `IdCheckerTests` (all 15 cases from `IdHelperTests.kt` + deep link and invalid character tests) and `MultiFilterTests` (pure filter tests from `MultiFilterTests.kt` + `forUniqueValidityTests` and nested `GetAllSingleFilters`; tests requiring `UniqueParameterType`/`Unique`/`Conditionals`/`TestGame`/`UniqueValidator` are noted for T025/T028/T035/T036).
+    - Ran Gate (24/24 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 376/376 passed).
 
 ### T021 Metadata models: LocaleCode, GameParameters, GameSetupInfo, Player, BaseRuleset, ModCategories
 - State: In-Progress [Claude]
