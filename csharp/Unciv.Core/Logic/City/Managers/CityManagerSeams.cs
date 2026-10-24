@@ -13,6 +13,7 @@ namespace Unciv.Logic.City.Managers;
 // T061: the seam of the city managers. CityPopulationManager calls Automation, a static Kotlin object, through a replaceable instance
 // property of CityPopulationManager (no mutable static state). T087 ported Automation: the default now calls it, and the property stays so
 // that CityManagerTests can drive the population logic with controlled ranks over a fake game state.
+// T083 owns the remaining seam members (ICityConquestExternals: Battle.destroyIfDefeated and the client-state settings) and replaces them by direct calls.
 
 /// <summary>The members of Kotlin <c>Automation</c> that CityPopulationManager calls.</summary>
 internal interface ICityWorkAutomation
