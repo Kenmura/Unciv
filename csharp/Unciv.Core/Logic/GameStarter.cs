@@ -23,6 +23,8 @@ namespace Unciv.Logic;
 //   shuffled()/shuffle() from Random.Default (chooseCivilizations, getCivsOrderedByAvailableLocations): here the gameId comes from
 //   GameInfoPreview.RandomGameId(new GameRandom(seed)) and every shuffle draws from the GameStarter rng, so one seed gives one game.
 //   currentTurnStartTime is the given clock reading; a map seed of 0 also needs the clock (MapGenerator).
+// - Quirk kept: on the saved-map path chooseCivilizations reads gameInfo.tileMap before it is assigned (the empty default map), so preset starting locations are never seen there.
+// - Start scores are ordered with OrderBy: NaN and -0.0 sort differently from Kotlin Float.compareTo (scores are never NaN).
 // - Collections whose JVM order was identity-hash order (HashMap<Tile, Float>, HashMap<Civilization, Tile>) are insertion ordered.
 // - `it.playerType === PlayerType.Human || it.chosenCiv === Constants.spectator` compared the string by reference on the JVM, which is only
 //   true for the interned literal; here strings compare by value (the intended meaning).

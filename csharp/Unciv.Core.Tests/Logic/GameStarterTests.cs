@@ -237,7 +237,7 @@ public sealed class GameStarterTests : IDisposable
     }
 
     [Fact]
-    public void TooManyCivsForTheMapFailsLoudly()
+    public void NegativeCityStateCountFailsLoudly()
     {
         var setup = Setup(it => it.NumberOfCityStates = -1);
         Assert.Throws<ArgumentException>(() => Start(setup));
