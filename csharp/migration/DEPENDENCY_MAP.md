@@ -424,7 +424,7 @@ flowchart TD
   class T095 prog
   class T096 waiting
   class T097 waiting
-  class T098 prog
+  class T098 review
   class T099 waiting
   class T100 waiting
   class T101 waiting
@@ -468,7 +468,7 @@ flowchart TD
 | T088 | Available (waiting on T087, T086, T081, T068) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T071 | Available (waiting on T046, T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
 | T083 | Available (waiting on T081, T082, T052, T064, T068, T079, T035) | T081, T082, T052, T064, T068, T079, T035 | 12 | Battle C: Battle, Nuke |
-| T098 | In-Progress [Claude] | T034, T039, T042, T049 | 12 | Save/load A: FileConversions, MapSaver, IMediaFinder |
+| T098 | Needs-Review [Claude] | T034, T039, T042, T049 | 12 | Save/load A: FileConversions, MapSaver, IMediaFinder |
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T041 | In-Progress [Claude] | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 10 | MapGenerator pipeline (audit existing partial work first) |
 | T099 | Available (waiting on T041, T046, T061, T066, T078, T098) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
