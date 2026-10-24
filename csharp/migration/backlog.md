@@ -1354,7 +1354,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: POLICY TICKET follow-up from T119 review. Scanner gaps: (1) $"{x!}" interpolation holes are blanked (false negative); (2) '!' at line start after newline missed; (3) '(bool)!x' and 'a >!b' flagged (false positive); (4) JUSTIFY comment is not tied to the specific '!' nor checked for ticket id. Fix with tests in the scanner self-test.
 
 ### T126 PromotionTree port (IPromotionTree seam, CityConstructions saved promotions)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T063, T066
 - Source: core/src/com/unciv/ui/screens/pickerscreens/PromotionTree.kt
 - Fixtures: none

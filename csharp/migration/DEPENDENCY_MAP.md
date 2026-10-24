@@ -74,7 +74,6 @@ flowchart TD
     T123["T123<br/>Policy follow-up: eliminate allowlisted mutable statics (Eve..."]
     T124["T124<br/>Hardening: CityStats test coverage gaps from T062 review"]
     T125["T125<br/>Policy: harden NullForgivingTests scanner (interpolation hol..."]
-    T126["T126<br/>PromotionTree port (IPromotionTree seam, CityConstructions s..."]
     T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
@@ -314,7 +313,6 @@ flowchart TD
   class T123 ready
   class T124 ready
   class T125 ready
-  class T126 review
   class T127 ready
   class T128 ready
   class T129 ready
@@ -373,5 +371,4 @@ flowchart TD
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
-| T126 | Needs-Review [Claude] | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T130 | In-Progress [Antigravity] | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
