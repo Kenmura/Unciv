@@ -701,13 +701,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Platform file IO behind an interface.
 
 ### T043 Record Won't-port scope
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: logic/multiplayer, logic/github, logic/UncivKtor.kt, logic/files/{FileChooser,PlatformSaverLoader}.kt, utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt, models/translations/TranslationFileWriter.kt, models/skins, models/tilesets, ui tests
 - Fixtures: none
 - Deliverables: csharp/migration/backlog.md (Won't-port list), PROTOCOL.md pointer
 - Gate: `n/a (docs only)`
-- Claimed: 2026-10-24T02:01:45Z
+- Claimed: 2026-10-24T02:11:18Z
 - Notes: Docs-only ticket. Review each entry before listing: logic/files/UncivFiles and MapSaver, FileConversions, IMediaFinder may still be needed for save/load and are NOT on this list; handle them in the Phase E tickets. Also list (from T023): `DiacriticSupport` and the libGDX font glyph remapping, `TranslationFileWriter`, `Gdx.files` based translation lookup (replaced by `ITranslationFileHandle`).
   - Implementer notes (Antigravity):
     - Documented the exhaustive, categorized Won't-port inventory in `backlog.md` under `## Non-goals (Won't port)`.
