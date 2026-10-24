@@ -154,7 +154,7 @@ flowchart TD
   class T154 waiting
   class T156 done
   class T157 waiting
-  class T159 prog
+  class T159 review
 ```
 
 ## Remaining tickets over time
@@ -199,4 +199,4 @@ xychart-beta
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | Available (waiting on T094) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
-| T159 | In-Progress [Claude] | T156 | 0 | UnitAutomation.cs coverage: raise line coverage back after T156 grew the file (baseline was T090's 100% of a stub) |
+| T159 | Needs-Review [Claude] | T156 | 0 | UnitAutomation.cs coverage: raise line coverage back after T156 grew the file (baseline was T090's 100% of a stub) |
