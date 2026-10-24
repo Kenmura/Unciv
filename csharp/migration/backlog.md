@@ -876,13 +876,14 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
     - **Pragmatist:** Single-source-of-truth embedding directly from `../migration/ai-spec/data/*.tsv` avoids asset duplication; clean, minimal surface area. Gate (17/17) and Standard checks (701/701) passed.
 
 ### A002 Leader flavor system & Grand Strategy evaluation
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: A001, T010, T021
 - Source: `csharp/migration/ai-spec/SPEC.md` §2, §3 (`evaluateGrandStrategy`)
 - Deliverables: `csharp/Unciv.Core/AI/GrandStrategy/` (`LeaderPersonalityFlavors`, `GrandStrategy`, `GrandStrategyEvaluator`), tests
 - Gate: `dotnet test --filter FullyQualifiedName~GrandStrategyTests`
 - Claimed: 2026-10-24T03:23:22Z
 - Notes: Evaluates 4 grand strategies (Conquest, Culture, UN, Spaceship). Preserves dot product flavor scoring, 10-turn lock (`AI_GRAND_STRATEGY_NUM_TURNS_STRATEGY_MUST_BE_ACTIVE`), hysteresis (`AI_GRAND_STRATEGY_CURRENT_STRATEGY_WEIGHT = 50`), rival-chasing penalty, and RNG noise using `GameRandom`.
+  - Implementer notes (Antigravity): Implemented `GrandStrategy` enum & extensions with canonical ordering and string mapping (`AIGRANDSTRATEGY_*`), `LeaderPersonalityFlavors` with clamping (0..20), deterministic randomization via `GameRandom` (±2), and flavor mod calculation via `AIGrandStrategy_FlavorMods`. Implemented `GrandStrategyEvaluator` executing the per-turn algorithm from SPEC §3.2 (dot-product scoring, -100 disabled victory penalty, seeded RNG noise, +50 hysteresis stick bonus, integer rival penalty `-(n * score * mult / met / 100)`, 10-turn commit lock, strict `>` tie-breaking to first canonical index). Delivered 12 unit tests in `GrandStrategyTests.cs`. Gate (12/12) and Standard checks (713/713) passed with 0 warnings, format clean.
 
 ### A003 Victory scorers (BNW)
 - State: Blocked
