@@ -86,6 +86,7 @@ flowchart TD
     T123["T123<br/>Policy follow-up: eliminate allowlisted mutable statics (Eve..."]
     T124["T124<br/>Hardening: CityStats test coverage gaps from T062 review"]
     T125["T125<br/>Policy: harden NullForgivingTests scanner (interpolation hol..."]
+    T126["T126<br/>PromotionTree port (IPromotionTree seam, CityConstructions s..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -276,6 +277,8 @@ flowchart TD
   T065 --> T111
   T060 --> T115
   T035 --> T115
+  T063 --> T126
+  T066 --> T126
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -390,6 +393,7 @@ flowchart TD
   class T123 ready
   class T124 ready
   class T125 ready
+  class T126 waiting
 ```
 
 ## Incomplete tickets
@@ -402,15 +406,15 @@ flowchart TD
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
-| T066 | **On deck** (after T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
+| T066 | **On deck** (after T065) | T065, T060 | 46 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T064 | **On deck** (after T061, T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
-| T065 | In-Progress [Claude] | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
+| T065 | In-Progress [Claude] | T055, T056, T060 | 49 | MapUnit core: MapUnit, MapUnitCache |
 | T061 | In-Progress [Claude] | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
-| T063 | In-Progress [Claude] | T060, T062 | 36 | CityConstructions |
+| T063 | In-Progress [Claude] | T060, T062 | 37 | CityConstructions |
 | T068 | Available (waiting on T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | Available (waiting on T065, T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
@@ -457,3 +461,4 @@ flowchart TD
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T120 | Needs-Review [Claude] | none | 0 | Policy: size ratchet - maximum file length and method length with a shrink-only baseline |
 | T121 | In-Progress [Claude] | none | 0 | Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline |
+| T126 | Available (waiting on T063, T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
