@@ -40,7 +40,6 @@ flowchart TD
     T104["T104<br/>Marker, seam and stale-comment sweep (final)"]
     T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
     T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
-    T115["T115<br/>Retype Tile city seams to City and move the Tile/Pathfinding..."]
     T123["T123<br/>Policy follow-up: eliminate allowlisted mutable statics (Eve..."]
     T125["T125<br/>Policy: harden NullForgivingTests scanner (interpolation hol..."]
     T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
@@ -161,7 +160,6 @@ flowchart TD
   class T104 waiting
   class T106 done
   class T107 done
-  class T115 review
   class T123 ready
   class T125 ready
   class T127 review
@@ -190,7 +188,7 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 22]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
@@ -219,7 +217,6 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T115 | Needs-Review [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T127 | Needs-Review [Claude] | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | Available (waiting on T094) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
