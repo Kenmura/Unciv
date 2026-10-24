@@ -94,7 +94,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - State: Done (full ticket: backlog-archive.md)
 
 ### T015 HexMath Tile/Map dependent functions
-- State: Blocked
+- State: Available
 - Depends: T039, T022
 - Source: core/src/com/unciv/logic/map/HexMath.kt (`tilesAndNeighborUniqueIndex`, `getDistanceFromEdge`)
 - Fixtures: tests/src/com/unciv/logic/map/HexmathTests.kt (`testTileNeighborMappingIsNonConflicting`)
@@ -131,14 +131,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T046 GameInfo core and the hooks waiting for it
 - State: Available
-- Depends: T034, T039, T045
-- Source: core/src/com/unciv/logic/GameInfo.kt (and what it needs to stand alone: GameInfoPreview is not part of it)
-- Fixtures: none yet - design pass first; break into smaller tickets before implementing
-- Deliverables: to be defined when T039 is Done
-- Gate: `n/a (planning ticket)`
+- Depends: T034, T039, T045, T055, T060, T065
+- Source: core/src/com/unciv/logic/GameInfo.kt (fields, setTransients, queries; turn handling is T071)
+- Fixtures: tests/src/com/unciv/logic/SerializationTests.kt GameInfo parts, LoadGameTest.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/GameInfo.cs, tests (+ GameInfo implements `IGameContextGameInfo`/`IGameInfoState`; retype the seam-typed GameInfo fields in TileMap/Civilization/City/MapUnit)
+- Gate: `dotnet test --filter FullyQualifiedName~GameInfoTests`
 - Claimed:
-- Notes: Placeholder created by T023 so that `TODO(T046)` markers have a target. Waiting on it: `TranslationCache.ActiveMods` should use the running game's `gameParameters.mods + baseRuleset` instead of `Translations.TranslationActiveMods` when a game exists (see `ActiveModsCache` in TranslationCache.kt), and the `GameSetupInfo(gameInfo)` constructor of T045. An agent reaching this ticket should split it (GameInfo core / turn handling / serialization) and expand the backlog accordingly. **From T029:** also port `logic/BackwardCompatibility.kt` (all extensions of GameInfo/GameInfoPreview/ModOptions/TechManager; nothing of it was portable before GameInfo exists), with its call from `setTransients`.
-
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. Top of the graph: GameInfo is ported LAST among the logic classes and uses everything concretely. Waiting on it: `TranslationCache.ActiveMods` should use the running game's `gameParameters.mods + baseRuleset` instead of `Translations.TranslationActiveMods` when a game exists (see `ActiveModsCache` in TranslationCache.kt), and the `GameSetupInfo(gameInfo)` constructor of T045. Scope: fields, serialization shape, setTransients, queries (getCities, getCivilization...), difficulty/speed accessors. Turn handling (`nextTurn`) and BackwardCompatibility moved to T071. 918 LOC: delegate the brief. Replace the `TODO(T046)` markers.
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
 - State: Done (full ticket: backlog-archive.md)
@@ -249,14 +248,14 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: File access behind an interface (no libGDX FileHandle). Load order of files/mods must be deterministic and equal to Kotlin's. Implements the interfaces left by T025 (`IRulesetParameterView` via `RulesetMapView<T>`) and T027. **Implemented (Claude):** Ruleset, RulesetFile (the enum; `RulesetFile.Values` = `entries`), RulesetCache (static; JavaHashMap so Values order = Kotlin HashMap), RulesetFiles.cs (`IRulesetFolder`/`IRulesetFileSource` + Directory implementations, replacing FileHandle/Gdx.files; console mode = no global jsons folder), Utils/LinkedHashMap (ordered map for the ruleset maps), Json/LenientJson (quotes libGDX-style unquoted keys, needed by the shipped global Tutorials.json). Ruleset implements IRulesetParameterView (explicit, via covariant adapter over the ordered maps), IRulesetConstructionView, IRulesetFeatureView, IRulesetTechView, IGameContextRuleset. Also ported what the ticket needed: TileResource.GetImprovements/IsImprovedBy/SetTransients, Era.MatchesFilter, Technology.MatchesFilter, RoadStatus.Improvement, RulesetName helpers (ToRulesetName/RulesetName). **Deviations:** loading is sequential, mods in ordinal folder-name order (Kotlin: parallel, listFiles order); the load-time println dropped (no wall clock). Era.matchesSingleFilter has no UncivGame.Current.gameInfo fallback (false without a state). Fallback CityStateTypes filtering by UniqueValidator.checkUnique is the hook `Ruleset.IsUniqueValid` (default accepts all) - TODO(T036): install the validator. Not ported: getErrorList, checkCombinedModLinks (T036), allICivilopediaText/Civilopedia text types. ModOptions.updateDeprecations is empty upstream. Kotlin quirks kept: Policies.json loads before VictoryTypes.json (branch priorities only know earlier victories); removing a policy branch leaves the branch's own entry in `policies`; a policy at the same row/column as the branch (0,0 default) evicts it. No Kotlin unit test exists for the loader (ResourceTests needs TestGame, T035): tests derived by hand + a smoke load/combine of the shipped Vanilla and G&K rulesets from android/assets/jsons (RulesetLoadTests, 46 tests; they use [Collection("RulesetCache")] since the cache is static). Gate + Standard checks pass (1072 tests).
 
 ### T035 Test-support port: TestGame helper and deferred fixtures
-- State: Blocked
-- Depends: T034, T046, T038, T039
+- State: Available
+- Depends: T034, T038, T039, T046, T053, T054, T057, T061, T065
 - Source: tests/src/com/unciv/testing/TestGame.kt
 - Fixtures: tests/src/com/unciv/testing/TestGame.kt; deferred cases from T028, T030, T033
 - Deliverables: csharp/Unciv.Core.Tests/Support/TestGame.cs, ported deferred tests
 - Gate: `dotnet test --filter FullyQualifiedName~TestGameTests`
-- Claimed: 2026-10-24T05:30Z
-- Notes: May need partial Tile/Civ stubs; if so mark Blocked and split: extend it again after T039 and the Civilization tickets. **From T027:** port `TimedUniquesTests.testConditionalTimedUniqueStrength` and `...Expires` (only `...IsTriggerable` is ported, in `TimedUniqueTests`). **BLOCKED (Claude, 2026-10-24):** TestGame.kt constructs GameInfo, TileMap, Tile, Civilization, City, MapUnit, CityFounder, Religion; none exist in C# yet (GameInfo core is T046, Tile T038, TileMap T039, Civilization/City/MapUnit not yet ticketed). A stub would invent API the Kotlin does not have. Re-open once T046, T039 and the Civilization/City/MapUnit tickets are Done; then port TestGame plus the deferred T028/T030/T033 cases.
+- Claimed:
+- Notes: Previously Blocked on the missing Civilization/City/MapUnit tickets (Claude, 2026-10-24: TestGame.kt constructs GameInfo, TileMap, Tile, Civilization, City, MapUnit, CityFounder, Religion; a stub would invent API). Those now exist as T053-T071; this ticket ports TestGame over the real classes and nothing else. The per-area TestGame-based fixtures are T072. **From T027:** port `TimedUniquesTests.testConditionalTimedUniqueStrength` and `...Expires` (only `...IsTriggerable` is ported, in `TimedUniqueTests`). Also the deferred T028/T030/T033 cases that only need TestGame.
 
 ### T036 RulesetValidator
 - State: Done
@@ -290,25 +289,25 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Tile.kt is 1.3k LOC; split off Tile stats/improvements if needed. Civ/City/Unit references go behind interfaces from T027. Kotlin lazy/cached fields must not change observable behaviour. Use namespace `Unciv.Logic.Map.Tiles` (matching `RoadStatus.cs` in T022) so the namespace does not collide with the `Tile` class name.
   **Claude 2026-10-24 (scope reduced):** Tile.kt, TileNormalizer, TileStatFunctions and TileImprovementFunctions use TileMap, GameInfo, Civilization, City, MapUnit, UnitMovement and MapGenerator, none of which exist in C# (same blocker as T035); stubbing them would invent API. Moved to T053 (Blocked). Delivered here: `TileHistory.cs` (TileHistory, TileHistoryState, CityCenterType, JSON converter `{"12":["China","R"]}`, null owner written as null) plus `ITileHistorySource` seam (Turns, OwnerCivID, IsCityCenter, IsCityCapital) that Tile must implement. Quirks kept: TileHistoryState has no equals (reference equality), so TileHistory.Equals needs identical state instances; Clone shares state instances; GetState is floorEntry on a SortedList. Tests in `Unciv.Core.Tests/Logic/Map/TileTests.cs`. Standard checks pass.
 
-### T053 Tile core (part 2): Tile, TileNormalizer, TileStatFunctions, TileImprovementFunctions
-- State: Blocked
-- Depends: T038, T039, T046, Civilization, City and MapUnit tickets (not yet ticketed; see Planned)
-- Source: core/src/com/unciv/logic/map/tile/Tile.kt, TileNormalizer.kt, TileStatFunctions.kt, TileImprovementFunctions.kt
-- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt
-- Deliverables: csharp/Unciv.Core/Logic/Map/Tile/*.cs, tests
+### T053 Tile core (part 2a): Tile
+- State: Available
+- Depends: T038
+- Source: core/src/com/unciv/logic/map/tile/Tile.kt
+- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt (both need TestGame: deferred to T072; port only what runs without it)
+- Deliverables: csharp/Unciv.Core/Logic/Map/Tile/Tile.cs, TileSeams.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~TileTests`
 - Claimed:
-- Notes: Split from T038 (blocked on TileMap/GameInfo/Civilization/City/MapUnit/UnitMovement, which do not exist in C#). Note T039 (TileMap) needs Tile and Tile needs TileMap: port them together or seam one via small interfaces. Tile must implement `ITileHistorySource` (T038). Use namespace `Unciv.Logic.Map.Tiles`. Tile.kt is 1.3k LOC; delegate the read-and-brief step. Kotlin lazy/cached fields must not change observable behaviour.
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. Split from T038. Tile is the BOTTOM of the cycle: it is ported first, against seams only. Defines `ITileMapState` (what Tile reads from TileMap: get/getIfTileExistsOrNull, neighbours/tilesAtDistance, ruleset, mapParameters, isWaterMap/bounds, starting locations, gameInfo as `IGameContextGameInfo`), and extends `IGameContextCivilization` (owner, `isCityState`, `isCurrentPlayer`, known tiles, hasUnique...), `IGameContextCity` (tile's owning city, city centre) and `IGameContextUnit` (`militaryUnit/civilianUnit/airUnits`, `isCivilian`, movement-type checks) with exactly what Tile.kt calls. T039 (TileMap) implements `ITileMapState` and retypes `Tile.tileMap`; T055/T060/T065 retype owner/city/unit members. Tile implements `IGameContextTile` and `ITileHistorySource` (T038); namespace `Unciv.Logic.Map.Tiles`. Tile.kt is 1.3k LOC: delegate the read-and-brief step. Kotlin lazy/cached fields must not change observable behaviour. Deferred, with owner: members that call TileStatFunctions/TileImprovementFunctions/TileNormalizer delegate to T054 (leave the delegating members for T054 to add if they would need not-yet-ported classes, and say so here); `UniqueTriggerActivation` calls to T052; UnitMovement calls (`canPassThrough` etc.) to T067.
 
 ### T039 TileMap
 - State: Available
 - Depends: T038, T053
 - Source: core/src/com/unciv/logic/map/TileMap.kt
-- Fixtures: tests/src/com/unciv/logic/map/VisibilityTests.kt, tests/src/com/unciv/logic/map/UpgradeTests.kt (map-only parts)
-- Deliverables: csharp/Unciv.Core/Logic/Map/TileMap.cs, tests
+- Fixtures: tests/src/com/unciv/logic/map/VisibilityTests.kt, UpgradeTests.kt (TestGame-based: map-only parts now, the rest in T072)
+- Deliverables: csharp/Unciv.Core/Logic/Map/TileMap.cs, tests (+ retype `Tile.tileMap` to TileMap in T053 files)
 - Gate: `dotnet test --filter FullyQualifiedName~TileMapTests`
 - Claimed:
-- Notes: Tile iteration order is game state: keep Kotlin's ordering. Completing it unblocks T015 (update that ticket's Depends).
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. Uses concrete Tile (T053), implements `ITileMapState`. TileMap talks to GameInfo/Civilization/MapUnit only through seams (`IGameContextGameInfo`, `IGameContextCivilization`, `IGameContextUnit`; unit placement/removal and `setTransients` civ hooks go through the seam members it calls). Tile iteration order is game state: keep Kotlin's ordering. Completing it unblocks T015, T040, T041, T042 and T055.
 
 ### T040 Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization
 - State: Available
@@ -318,7 +317,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Logic/Map/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~PathfindingTests`
 - Claimed:
-- Notes: Priority-queue tie-breaking must match Kotlin exactly (uses T001). CarrierSlotMatcher may need Unit types: use interfaces or defer part with a real ticket.
+- Notes: Priority-queue tie-breaking must match Kotlin exactly (uses T001). CarrierSlotMatcher and MapPathing need MapUnit/UnitMovement: compile them against `IGameContextUnit`/`IMapUnitState` seam members (see the SEAM RULE in T053); T067 replaces them with concrete UnitMovement calls. PathfindingTests that need TestGame are in T072.
 
 ### T041 MapGenerator pipeline (audit existing partial work first)
 - State: Available
@@ -364,18 +363,207 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Notification actions are ported as pure serializable data (`LocationAction`, `TechAction`, `PolicyAction`, `CityAction`, `DiplomacyAction`, `MayaLongCountAction`, `CivilopediaAction`, `PromoteUnitAction`, `MapUnitAction`, `OverviewAction`, `EspionageAction`, `ReligionAction`); `execute(WorldScreen)` is UI and omitted per T043 (#7). `CivRankingHistory.recordRankingStats(Civilization)` is deferred (`TODO` on Civilization). IMPL NOTES: NotificationIcon lives in Kotlin NotificationIcons.kt (constants only; getImage is UI, omitted). JSON via [JsonConverter] attributes on the types (UncivJson untouched), libGDX prototype format (default-valued action fields omitted; HexCoord compact). LastSeenImprovement and CivRankingHistory wrap JavaHashMap so field order matches java.util.HashMap; inner ranking maps are insertion-ordered IReadOnlyDictionary. Kotlin NotificationActionsDeserializer semantics kept (known class names in fixed order, unknown names/fields ignored). Omitted until Civilization/City/MapUnit exist: MapUnitAction(unit)/(units), PromoteUnitAction(unit), DiplomacyAction(civ), CityAction.withLocation, CivRankingHistory.recordRankingStats; also Notification.execute/addNotificationIconsTo/round-robin index and the NotificationCategory typealias. System.Text.Json escapes apostrophes as \u0027 (valid, round-trips; libGDX writes raw). No Kotlin-generated goldens needed (fixtures are roundtrip tests).
 
 ### T052 UniqueTriggerActivation and UniqueTriggerExecutors
-- State: Blocked
-- Depends: Civilization, City and MapUnit tickets (not yet ticketed; see Planned), T028
+- State: Available
+- Depends: T028, T055, T056, T057, T060, T065, T066
 - Source: core/src/com/unciv/models/ruleset/unique/UniqueTriggerActivation.kt, UniqueTriggerExecutors.kt
-- Fixtures: tests/src/com/unciv/uniques/ (trigger-related tests; list them when unblocking)
+- Fixtures: tests/src/com/unciv/uniques/ (trigger-related tests; list them when claiming; TestGame-based ones in T072)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/UniqueTriggerActivation.cs, UniqueTriggerExecutors.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueTriggerTests`
 - Claimed:
-- Notes: Created from T027's review so the work is not lost: T027 deferred `UniqueTriggerExecutors.triggerGlobalAlerts` (needs `Civilization.addNotification`) and the 1.5k-LOC `UniqueTriggerActivation`. Split by trigger family if it exceeds scope.
+- Notes: Created from T027's review: T027 deferred `UniqueTriggerExecutors.triggerGlobalAlerts` (needs `Civilization.addNotification`, ported by T055) and the 1.5k-LOC `UniqueTriggerActivation`. Split by trigger family if it exceeds scope. Wires the `TODO(T052)` call sites left by T054, T063, T065 and `EventChoice.triggerChoice` (T030). Uses concrete Civilization, City, MapUnit and their managers; no new seams needed.
+
+### T054 Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions
+- State: Available
+- Depends: T053
+- Source: core/src/com/unciv/logic/map/tile/TileStatFunctions.kt, TileImprovementFunctions.kt, TileNormalizer.kt, civilization/managers/ImprovementFunctions.kt
+- Fixtures: tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt (needs TestGame: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Map/Tile/TileStatFunctions.cs, TileImprovementFunctions.cs, TileNormalizer.cs, csharp/Unciv.Core/Logic/Civilization/Managers/ImprovementFunctions.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~TileStatTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~850 LOC. Uses concrete Tile (T053) and the Civilization/City/MapUnit seams (add the members it calls to the T053 seams files). `TileImprovementFunctions` calls `UniqueTriggerActivation.triggerUnique` (lines ~287/293): leave those two call sites as a clearly marked hook (`TODO(T052)`) and let T052 wire them. Adds the delegating Tile members deferred by T053. Stat results are Float arithmetic: keep exact order of operations.
+
+### T055 Civilization core: Civilization, ExploredRegion, PopupAlert
+- State: Available
+- Depends: T034, T045, T039, T053
+- Source: core/src/com/unciv/logic/civilization/Civilization.kt, ExploredRegion.kt, PopupAlert.kt
+- Fixtures: none directly (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/Civilization.cs, ExploredRegion.cs, PopupAlert.cs, CivilizationSeams.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~CivilizationCoreTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.6k LOC; delegate the read-and-brief step; split by member group at claim time if it exceeds scope. Civilization is ported BEFORE its managers, City, MapUnit and GameInfo, so every field of those types is a seam: `IGameInfoState : IGameContextGameInfo` (ruleset, turns, tileMap, civilizations, speed, difficulty, getCities...), `ITechManager`, `IPolicyManager`, `IReligionManager`, `IDiplomacyManager`, `IGoldenAgeManager`, `IGreatPersonManager`, `IVictoryManager`, `IRuinsManager`, `IEspionageManager`, `IQuestManager`, `ICivConstructions`, `ICivInfoTransientCache`, `ICivInfoStats`, `IUnitManager`, `ICityState` (extends IGameContextCity) and `IMapUnitState` (extends IGameContextUnit), each holding only the members Civilization.kt calls. It implements `IGameContextCivilization` (T027) and the Tile seam added by T053; it retypes Tile's owner-civ seam to `Civilization`. Notification/CivRankingHistory/NotificationAction types already exist (T051). `addNotification` is ported here. Deferred: members that call UniqueTriggerActivation (T052); turn handling (T070); anything on `civInfo.cities` beyond the `ICityState` seam goes to T060. `TODO(T0xx)` markers must name the owner ticket from this list (T056 tech/policy, T057 religion/ruins/victory/espionage, T058 stats/cache/constructions, T059 diplomacy, T060-T064 city, T065-T067 unit, T069 quests, T070 turn, T046 GameInfo).
+
+### T056 Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager
+- State: Available
+- Depends: T055
+- Source: core/src/com/unciv/logic/civilization/managers/TechManager.kt, PolicyManager.kt, GoldenAgeManager.kt, GreatPersonManager.kt
+- Fixtures: tests/src/com/unciv/logic/civilization/GreatPersonSelectionTest.kt and the tech/policy parts of managers/* (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/Managers/*.cs, tests (+ retype Civilization fields from ITechManager/IPolicyManager/IGoldenAgeManager/IGreatPersonManager to the concrete classes)
+- Gate: `dotnet test --filter FullyQualifiedName~CivManagerTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC. Concrete Civilization (T055); City/MapUnit through their seams. Implements the manager seams defined by T055. `TechManager` json field names must match Kotlin (saves). Deferred: calls into UniqueTriggerActivation (T052).
+
+### T057 Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy)
+- State: Available
+- Depends: T055
+- Source: core/src/com/unciv/logic/civilization/managers/ReligionManager.kt, RuinsManager.kt, VictoryManager.kt, EspionageManager.kt, core/src/com/unciv/models/Religion.kt, Spy.kt
+- Fixtures: tests/src/com/unciv/logic/civilization/EspionageTests.kt (TestGame-based: T072); VictoryAvailabilityTests/VictoryMilestoneTests deferred by T030
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/Managers/*.cs, csharp/Unciv.Core/Models/Religion.cs, Spy.cs, tests (+ retype Civilization seams to concrete)
+- Gate: `dotnet test --filter FullyQualifiedName~CivReligionVictoryTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.1k LOC. `Logic/Civilization/Managers/ReligionState.cs` already exists (T028): make Religion implement `IGameContextReligion`/`ReligionState` as appropriate and the ReligionManager implement the seam T055 defined. Also finishes `Milestone.hasBeenCompletedBy/getFocus/...` deferred by T030 and `Victory` members that only needed a Civilization. Spy touches City/Tile: use concrete Tile, City seam.
+
+### T058 Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions
+- State: Available
+- Depends: T055, T054
+- Source: core/src/com/unciv/logic/civilization/transients/CivInfoTransientCache.kt, CivInfoStatsForNextTurn.kt, CapitalConnectionsFinder.kt, civilization/CivConstructions.kt
+- Fixtures: tests/src/com/unciv/logic/civilization/CapitalConnectionsFinderTests.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/Transients/*.cs, CivConstructions.cs, tests (+ retype Civilization seams)
+- Gate: `dotnet test --filter FullyQualifiedName~CivTransientsTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC. Concrete Civilization and Tile; cities via the `ICityState` seam (extend it with `cityStats`, `isCapital`, `getCenterTile`, buildings...). Resource/uniques caches must keep Kotlin's iteration order (LinkedHashMap) as they feed stats. `CivConstructions` calls `City`/`CityConstructions`: seam members, retyped by T060/T063.
+
+### T059 Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList
+- State: Available
+- Depends: T055
+- Source: core/src/com/unciv/logic/civilization/diplomacy/DiplomacyManager.kt, DiplomacyFunctions.kt, Demand.kt (and DiplomacyFlags/DiplomaticStatus/RelationshipLevel if in the same package), logic/trade/Trade.kt, TradeOffer.kt, TradeOffersList.kt
+- Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/*, DefensivePactTests.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/Diplomacy/*.cs, csharp/Unciv.Core/Logic/Trade/*.cs, tests (+ retype Civilization.IDiplomacyManager)
+- Gate: `dotnet test --filter FullyQualifiedName~DiplomacyCoreTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.5k LOC. Pure data/state parts of diplomacy and the trade data classes. Deferred: `DiplomacyTurnManager`, `DeclareWar`, `CityStateFunctions` (T068; they need City and MapUnit); `TradeLogic`/`TradeEvaluation` (Planned, after T068); anything calling `NextTurnAutomation`/Battle (Planned: Battle, Automation) goes behind a seam or a `TODO(T0xx)` that names a real ticket (add one to Planned if none exists).
+
+### T060 City core: City, CityFocus, CityResources, CityEspionageManager
+- State: Available
+- Depends: T055, T056, T057, T058
+- Source: core/src/com/unciv/logic/city/City.kt, CityFocus.kt, CityResources.kt, managers/CityEspionageManager.kt
+- Fixtures: tests/src/com/unciv/logic/city/CityTest.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/City/City.cs, CityFocus.cs, CityResources.cs, CityEspionageManager.cs, CitySeams.cs, tests (+ retype Civilization.cities / Tile city seams to City)
+- Gate: `dotnet test --filter FullyQualifiedName~CityCoreTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC. Concrete Civilization and its managers (T055-T058), concrete Tile. City's own sub-objects are seams: `ICityConstructions`, `ICityStats`, `ICityPopulationManager`, `ICityExpansionManager`, `ICityReligionManager`, plus `IMapUnitState` for units. Implements `IGameContextCity` (T027) and retypes the city seam members in Civilization (T055), Tile (T053) and the managers. `City` json field names must match Kotlin.
+
+### T061 City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder
+- State: Available
+- Depends: T060
+- Source: core/src/com/unciv/logic/city/managers/CityPopulationManager.kt, CityExpansionManager.kt, CityReligionManager.kt, CityFounder.kt
+- Fixtures: tests/src/com/unciv/logic/city/managers/* (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/City/Managers/*.cs, tests (+ retype City seams)
+- Gate: `dotnet test --filter FullyQualifiedName~CityManagerTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC. Implements the ICityPopulationManager/ICityExpansionManager/ICityReligionManager seams from T060. `CityFounder` is required by TestGame (T035). Tile-ownership and border expansion iteration order is game state.
+
+### T062 CityStats and GreatPersonPointsBreakdown
+- State: Available
+- Depends: T060, T058
+- Source: core/src/com/unciv/logic/city/CityStats.kt, GreatPersonPointsBreakdown.kt
+- Fixtures: stat-related cases in tests/src/com/unciv/logic/city/CityTest.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/City/CityStats.cs, GreatPersonPointsBreakdown.cs, tests (+ retype City.ICityStats)
+- Gate: `dotnet test --filter FullyQualifiedName~CityStatsTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~830 LOC, Float/Int mixing everywhere: preserve exact evaluation order and rounding (half-up helper, T010-era KotlinMath). Also provides what `Countables` tests (stat-per-turn countables) deferred by T028 need.
+
+### T063 CityConstructions
+- State: Available
+- Depends: T060, T062
+- Source: core/src/com/unciv/logic/city/CityConstructions.kt
+- Fixtures: production-related cases in tests/src/com/unciv/logic/civilization/FreeBuildingTests.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/City/CityConstructions.cs, tests (+ retype City.ICityConstructions and CivConstructions seam members)
+- Gate: `dotnet test --filter FullyQualifiedName~CityConstructionsTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.1k LOC; delegate the brief. Construction queue order and `constructionQueue` json format are game state. Unit production (`constructUnit`) goes through the `IMapUnitState`/`IUnitManager` seams (placement is T066); `UniqueTriggerActivation` calls are `TODO(T052)`. Also fills in `BaseUnit`/`Building` members deferred by T033 that only needed City/Civilization (list the ones taken in Notes).
+
+### T064 City turn and conquest: CityTurnManager, CityConquestFunctions
+- State: Available
+- Depends: T060, T061, T063
+- Source: core/src/com/unciv/logic/city/managers/CityTurnManager.kt, CityConquestFunctions.kt
+- Fixtures: tests/src/com/unciv/logic/city/CityConquestFunctionsTest.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/City/Managers/CityTurnManager.cs, CityConquestFunctions.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~CityTurnTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~600 LOC. Conquest touches units, diplomacy and religion: concrete T055-T063 classes, MapUnit via `IMapUnitState` (retyped by T065).
+
+### T065 MapUnit core: MapUnit, MapUnitCache
+- State: Available
+- Depends: T055, T056, T060
+- Source: core/src/com/unciv/logic/map/mapunit/MapUnit.kt, MapUnitCache.kt
+- Fixtures: tests/src/com/unciv/logic/map/UnitFormationTests.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapUnit/MapUnit.cs, MapUnitCache.cs, MapUnitSeams.cs, tests (+ retype Tile/Civilization/City unit seams to MapUnit)
+- Gate: `dotnet test --filter FullyQualifiedName~MapUnitCoreTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.4k LOC; delegate the brief. Concrete Civilization, City, Tile. Sub-objects are seams: `IUnitMovement` (T067), `IUnitPromotions`/`IUnitTurnManager`/`IUnitUpgradeManager` (T066). Implements `IGameContextUnit` (T027) and `IMapUnitState`. Deferred: UniqueTriggerActivation calls (T052), Battle/Automation calls (Planned; `TODO` must name a real ticket).
+
+### T066 MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager
+- State: Available
+- Depends: T065, T060
+- Source: core/src/com/unciv/logic/map/mapunit/UnitPromotions.kt, UnitTurnManager.kt, UnitUpgradeManager.kt, civilization/managers/UnitManager.kt
+- Fixtures: tests/src/com/unciv/logic/map/UpgradeTests.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapUnit/*.cs, csharp/Unciv.Core/Logic/Civilization/Managers/UnitManager.cs, tests (+ retype MapUnit/Civilization seams)
+- Gate: `dotnet test --filter FullyQualifiedName~UnitManagerTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~870 LOC. UnitManager owns `civ.units`; its placement logic (`placeUnitNearTile`, `addUnit`) is what CityConstructions/CityFounder seams call. Unit iteration order is game state.
+
+### T067 Unit movement: MovementCost, UnitMovement
+- State: Available
+- Depends: T065, T054
+- Source: core/src/com/unciv/logic/map/mapunit/movement/MovementCost.kt, UnitMovement.kt (and PathsToTilesWithinTurn if present)
+- Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, FixedPointMovementTest.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapUnit/Movement/*.cs, tests (+ retype MapUnit.IUnitMovement)
+- Gate: `dotnet test --filter FullyQualifiedName~UnitMovementTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC; delegate the brief. Priority-queue/path tie-breaking must match Kotlin exactly (T001). Float movement costs: do not widen to double. Also lets T040 (MapPathing, CarrierSlotMatcher) replace its seam members with concrete UnitMovement calls: record that follow-up here.
+
+### T068 Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions
+- State: Available
+- Depends: T059, T064, T066
+- Source: core/src/com/unciv/logic/civilization/diplomacy/DiplomacyTurnManager.kt, DeclareWar.kt, CityStateFunctions.kt
+- Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/* remaining cases (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/Diplomacy/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~DiplomacyTurnTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.6k LOC (CityStateFunctions is 850); split at claim time if needed. Concrete Civilization, City, MapUnit. Battle/NextTurnAutomation/CityCombatant references: seam or `TODO(T0xx)` naming a real Planned ticket.
+
+### T069 QuestManager and quest helpers
+- State: Available
+- Depends: T055, T060, T065
+- Source: core/src/com/unciv/logic/civilization/managers/quests/QuestManager.kt, QuestTargetHelpers.kt
+- Fixtures: tests/src/com/unciv/logic/civilization/QuestTests.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/Managers/Quests/*.cs, tests (+ retype Civilization.IQuestManager)
+- Gate: `dotnet test --filter FullyQualifiedName~QuestManagerTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~840 LOC. Also implements `QuestName -> IQuestImplementation` delegation deferred by T030.
+
+### T070 Civilization TurnManager
+- State: Available
+- Depends: T068, T064, T066, T069
+- Source: core/src/com/unciv/logic/civilization/managers/TurnManager.kt
+- Fixtures: tests/src/com/unciv/logic/NextTurnLatencyTest.kt is a benchmark: do not port
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/Managers/TurnManager.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~CivTurnTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~385 LOC. Wires startTurn/endTurn across the now-concrete managers, cities and units. NextTurnAutomation calls: `TODO(T0xx)` naming the Automation ticket in Planned.
+
+### T071 GameInfo turn handling and BackwardCompatibility
+- State: Available
+- Depends: T046, T070
+- Source: core/src/com/unciv/logic/GameInfo.kt (nextTurn and turn-related members), BackwardCompatibility.kt (GameInfo/GameInfoPreview extensions)
+- Fixtures: tests/src/com/unciv/logic/GameSerializationTests.kt (TestGame-based: T072)
+- Deliverables: csharp/Unciv.Core/Logic/GameInfoTurn.cs, BackwardCompatibility.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~GameInfoTurnTests`
+- Claimed:
+- Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. Remaining GameInfo members not taken by T046, plus the BackwardCompatibility work moved here from T046 (all extensions of GameInfo/GameInfoPreview/ModOptions/TechManager; call from `setTransients`). Fulfils the T029 note.
+
+### T072 Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest)
+- State: Available
+- Depends: T035, T062, T063, T064, T067, T068, T069, T071
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt, VisibilityTests.kt, UpgradeTests.kt, UnitMovementTests.kt, FixedPointMovementTest.kt, UnitFormationTests.kt, tests/src/com/unciv/logic/city/*, tests/src/com/unciv/logic/civilization/** (incl. diplomacy), GameSerializationTests.kt, PathfindingTests.kt and the deferred cases listed by T055-T071
+- Deliverables: csharp/Unciv.Core.Tests/** ported tests
+- Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
+- Claimed:
+- Notes: Created because T035 (TestGame) can only exist once the whole chain is ported, and each earlier ticket deferred its TestGame-based fixtures. Port them over the real TestGame, one test class per Kotlin class; any real behavioural bug found goes back to the owning ticket as a review note. Split by Kotlin test directory at claim time if too large. Also ports the Countables/Conditionals tests T028 deferred that need real game state, if T035 did not.
 
 ### Planned (not yet ticketed)
-Deferred until the ruleset and map tickets land (decided with the user): Civilization (split ~5: core, diplomacy, policy/tech managers, notifications/quests, vision/stats), Trade, City + CityStats + production, UnitManager/MapUnit (movement, actions), UniqueTriggerActivation, Battle, GameInfo, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
-
+Deferred until the ruleset and map tickets land (decided with the user). Civilization, City, MapUnit, diplomacy core, quests and GameInfo are now ticketed (T046, T053-T072, acyclic via seam interfaces, see the SEAM RULE in T053). Still unticketed: TradeLogic/TradeEvaluation, Battle, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
