@@ -300,14 +300,14 @@ flowchart TD
   class T012 done
   class T028 done
   class T034 done
-  class T035 waiting
+  class T035 ondeck
   class T036 done
   class T037 waiting
   class T038 done
   class T039 done
   class T040 done
   class T041 done
-  class T046 ready
+  class T046 prog
   class T052 waiting
   class T053 done
   class T054 done
@@ -334,7 +334,7 @@ flowchart TD
   class T081 waiting
   class T082 waiting
   class T083 waiting
-  class T084 waiting
+  class T084 ondeck
   class T085 waiting
   class T086 waiting
   class T087 waiting
@@ -347,7 +347,7 @@ flowchart TD
   class T094 waiting
   class T097 done
   class T098 done
-  class T099 waiting
+  class T099 ondeck
   class T100 waiting
   class T101 waiting
   class T102 waiting
@@ -374,7 +374,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T046 | **Ready to start** | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T068 | **Ready to start** | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | **Ready to start** | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
@@ -387,11 +386,13 @@ flowchart TD
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T130 | **Ready to start** | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
 | T131 | **Ready to start** | T063 | 0 | Hardening: T063 review follow-ups (CityConstructions test gaps, Java-order freeBuildingsProvidedFromThisCity, IConstructionCity cast) |
+| T035 | **On deck** (after T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
+| T084 | **On deck** (after T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
+| T099 | **On deck** (after T046) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
+| T046 | In-Progress [Claude] | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T070 | Available (waiting on T068, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
-| T035 | Available (waiting on T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T052 | Available (waiting on T046, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
-| T084 | Available (waiting on T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
 | T085 | Available (waiting on T084, T081) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T079 | Available (waiting on T052) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T086 | Available (waiting on T068) | T059, T068, T057 | 14 | TradeLogic |
@@ -401,7 +402,6 @@ flowchart TD
 | T071 | Available (waiting on T046, T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
 | T083 | Available (waiting on T081, T082, T052, T068, T079, T035) | T081, T082, T052, T064, T068, T079, T035 | 12 | Battle C: Battle, Nuke |
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
-| T099 | Available (waiting on T046) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
 | T080 | Available (waiting on T079, T068) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T100 | Available (waiting on T071) | T071, T098, T107 | 8 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
