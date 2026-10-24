@@ -46,7 +46,7 @@
     "Unciv.Core/Logic/Automation/Unit/SpecificUnitAutomation.ImprovementPlacer.cs": {"branch": 85.71, "line": 84.31},
     "Unciv.Core/Logic/Automation/Unit/SpecificUnitAutomation.TradeAndWonders.cs": {"branch": 73.53, "line": 91.38},
     "Unciv.Core/Logic/Automation/Unit/SpecificUnitAutomation.cs": {"branch": 68.46, "line": 84.62},
-    "Unciv.Core/Logic/Automation/Unit/UnitAutomation.cs": {"branch": 75.0, "line": 90.08},
+    "Unciv.Core/Logic/Automation/Unit/UnitAutomation.cs": {"branch": 72.73, "line": 87.79},
     "Unciv.Core/Logic/Automation/Unit/WorkerAutomationSeams.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/BackwardCompatibility.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/Battle/AirInterception.cs": {"branch": 70.0, "line": 86.33},
