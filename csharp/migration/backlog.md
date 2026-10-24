@@ -704,13 +704,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review notes (adversarial review): FAIL on one finding, fixed in the review-fix commit: Kotlin maxByOrNull returns a single element without calling the selector, so a one-city civ makes no random draw for the spawn city (the earlier note "one draw per element" was wrong for size 1). TurnManager.DoRevoltSpawn now skips the draw; test replays the RNG to check the rebel unit. All other parity points confirmed. Standard checks pass on rebased tree (2650 tests).
 
 ### T071 GameInfo turn handling and BackwardCompatibility
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T046, T070
 - Source: core/src/com/unciv/logic/GameInfo.kt (nextTurn and turn-related members), BackwardCompatibility.kt (GameInfo/GameInfoPreview extensions)
 - Fixtures: tests/src/com/unciv/logic/GameSerializationTests.kt (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/GameInfoTurn.cs, BackwardCompatibility.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~GameInfoTurnTests`
-- Claimed:
+- Claimed: 2026-10-24T16:36Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. Remaining GameInfo members not taken by T046, plus the BackwardCompatibility work moved here from T046 (all extensions of GameInfo/GameInfoPreview/ModOptions/TechManager; call from `setTransients`). Fulfils the T029 note.
   - Backlog audit: GameInfo.recordRankingStats needs CivRankingHistory.recordRankingStats(Civilization) (deferred by T051); take it here unless T046 did. Save/load of the result is T100, GameStarter T099.
 
