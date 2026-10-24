@@ -50,4 +50,17 @@ public static class StatExtensions
         ValuesAsMap.TryGetValue(name, out var stat)
             ? stat
             : throw new ArgumentException($"No enum constant Stat.{name}");
+
+    /// <summary>Unicode font character representing this stat icon.</summary>
+    public static char Character(this Stat stat) => stat switch
+    {
+        Stat.Production => '⚙',
+        Stat.Food => '⁂',
+        Stat.Gold => '¤',
+        Stat.Science => '⍾',
+        Stat.Culture => '♪',
+        Stat.Happiness => '⌣',
+        Stat.Faith => '☮',
+        _ => ' ',
+    };
 }
