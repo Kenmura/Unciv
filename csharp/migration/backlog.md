@@ -1094,7 +1094,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From T058 review (split off T109).
 
 ### T113 Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: none
 - Source: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager (T056)
 - Fixtures: none

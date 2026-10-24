@@ -82,7 +82,6 @@ flowchart TD
     T110["T110<br/>Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)"]
     T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
     T112["T112<br/>Hardening: drop CivInfoTransientCache.IsCityConnectedToCapit..."]
-    T113["T113<br/>Hardening: JSON converters for JavaHashSet/JavaHashMap seria..."]
     T114["T114<br/>Hardening sweep 2: non-blocking findings from T056, T059, T1..."]
   end
   subgraph CTRACK["Client track (Godot)"]
@@ -397,7 +396,6 @@ flowchart TD
   class T110 waiting
   class T111 waiting
   class T112 ondeck
-  class T113 review
   class T114 prog
 ```
 
@@ -462,5 +460,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T111 | Available (waiting on T052, T060, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
-| T113 | Needs-Review [Claude] | none | 0 | Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields |
 | T114 | In-Progress [Claude] | none | 0 | Hardening sweep 2: non-blocking findings from T056, T059, T108 reviews |
