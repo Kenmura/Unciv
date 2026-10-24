@@ -1715,13 +1715,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T142.
 
 ### T153 T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T111
 - Source: csharp/Unciv.Core/Logic/Civilization/Managers/{RuinsManager,ReligionManager,EspionageManager}.cs, Models/Spy.cs
 - Fixtures: none
 - Deliverables: tests in csharp/Unciv.Core.Tests/Logic/CivReligionVictoryTests.cs
 - Gate: dotnet test --filter FullyQualifiedName~CivReligionVictoryTests
-- Claimed:
+- Claimed: 2026-10-24T18:06Z
 - Notes:
 
 ### T154 Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143)
