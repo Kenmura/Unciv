@@ -1565,7 +1565,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by T085. Members T085 had to defer: ForeignCityView.getBombardableTiles (TargetHelper, T082); CityView.tryBombard (Battle.attackOrNuke, T083); MapUnitView.containsAttackableEnemy/getAttackableEnemies (TargetHelper, T082), tryAirSweep (AirInterception, T082), tryMovePreparingAttack/attackOrNuke/mayUseNuke/tryNuke (Battle/Nuke, T083), canPillage (UnitActionsPillage, T079), canInvokeUnitAction/tryInvokeUnitAction (UnitActions, T080); getTurnsToBuild, tryStartWorkingOnImprovement (need TileImprovement.getTurnsToBuild, Tile.startWorkingOnImprovement/queueImprovement(improvement, civ, unit) and Civilization.gainStockpiledResource) and getMovementString (UncivGame settings number format). Port them here and move the TODO(T139) markers. CityView.tryBombard/MapUnitView.attackOrNuke return Battle.DamageDealt, so keep them in the ViewTests KnownNonBooleanTryMembers list (Kotlin ViewPurityTest is @Ignore'd for the same reason).
 
 ### T140 Civilization and manager JSON wiring (full GameInfo save/load round trip)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T100
 - Source: core/src/com/unciv/logic/civilization/Civilization.kt and manager classes (serialization attributes only)
 - Fixtures: tests/src/com/unciv/logic/GameSerializationTests.kt
@@ -1579,6 +1579,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Tests (UncivFilesTests): GameStarter games with civs/city-states round trip through files (plain and zipped), a hand-built busy game (cities, diplomacy, trades, spies, religion, temp uniques...) and 6 played turns re-serialize byte-identically and keep a StateHasher hash; the old civ-less NewGame/LoadsUpToSetTransients workaround is gone; LoadLatestAutosave loads a real game.
       - Not changed: MapUnit.UnitMovementMemory/UnitStatus, Tile.ImprovementQueueEntry and TileHistory.TileHistoryState still serialize PascalCase names (earlier tickets; they round-trip, reads are case-insensitive). A pending TradeRequest cannot be processed by NextTurn until TradeEvaluation (T089) lands, so the multi-turn test clears them.
       - Loading re-runs UnitManager.SetTransients, so civ unit list order after load is tile order, not creation order (same as Kotlin); the hash test sorts units.
+  -   - Adversarial review (isolated): first pass found readonly collection fields never read back (Religion beliefs, CivConstructions free-building maps); fixed (fields no longer readonly) with ReligionBeliefsAndCivFreeBuildingsSurviveAJsonRoundTrip. Non-blocking: BusyGame leaves some fields empty (beliefs, ruins list, city contents); PascalCase names of Tile/MapUnit nested types remain from earlier tickets.
 
 ### T141 Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation minus Battle cases)
 - State: Done
