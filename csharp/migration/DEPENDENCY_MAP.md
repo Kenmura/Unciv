@@ -345,7 +345,7 @@ flowchart TD
   class T038 done
   class T039 done
   class T040 done
-  class T041 review
+  class T041 done
   class T045 done
   class T046 waiting
   class T052 waiting
@@ -439,8 +439,7 @@ flowchart TD
 | T071 | Available (waiting on T046, T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
 | T083 | Available (waiting on T081, T082, T052, T064, T068, T079, T035) | T081, T082, T052, T064, T068, T079, T035 | 12 | Battle C: Battle, Nuke |
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
-| T041 | Needs-Review [Claude] | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 10 | MapGenerator pipeline (audit existing partial work first) |
-| T099 | Available (waiting on T041, T046, T061, T066, T078) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
+| T099 | Available (waiting on T046, T061, T066, T078) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
 | T080 | Available (waiting on T079, T061, T068) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T100 | Available (waiting on T071) | T071, T098, T107 | 8 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080, T063) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
