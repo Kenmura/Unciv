@@ -173,7 +173,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review 2 (Claude): Pass. The `NextInt(from, until)` branches now match Kotlin (`n > 0 || n == Int.MinValue` normal path, else rejection sampling); the 10 golden values added are the ones I generated from kotlin-stdlib 2.3.0 and the diff is exactly the requested change. Gate 11/11 and Standard checks (build -warnaserror, format, full test 228/228) re-run by reviewer; no suppressions. Follow-ups: T016 (ranges/collections), T017 (JVM hashes). `[assembly: InternalsVisibleTo]` sits in GameRandom.cs; move it to a shared assembly-info file when a second internal needs it.
 
 ### T016 Kotlin random extensions (IntRange.random, Collection.random, shuffled)
-- State: Available
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T01:20:16Z
 - Depends: T010
 - Source: kotlin.random extension functions as used in core/src: `IntRange.random(Random)`, `Random.nextInt(IntRange)`, `Collection.random(Random)`, `randomOrNull(Random)`, `shuffled(Random)`, `MutableList.shuffle(Random)` (grep `random(rng)`, `shuffled(`, `nextInt(` in core/src/com/unciv/logic)
 - Fixtures: none - generate golden values by running the Kotlin stdlib (kotlin-stdlib jar, java harness in `dotnet-dev`) for several seeds and sizes; include the exact edge cases of `nextInt(IntRange)` (`last == Int.MAX_VALUE`, `first == Int.MIN_VALUE`, full range, empty range throws)
