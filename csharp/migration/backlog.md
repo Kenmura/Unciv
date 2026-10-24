@@ -338,6 +338,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Reset (split into sub-tickets; re-dispatch after subs Done); was 'In-Progress [Claude]'.
   - From T074 review: delete csharp/Unciv.Core/Logic/Map/MapGenerator/NaturalWonderSeams.cs by adding the real Tile.SetConnectedByRiver(other, newValue, convertTerrains) overload (MapGenerator.Helpers.convertTerrains) and test that RiverGenerator.ContinueRiverOn converts terrain.
   - Backlog audit: files to delete/absorb when this lands: MapGeneratorSeams.cs (TerrainOccursRange, GetTileRadius), NaturalWonderSeams.cs (SetConnectedByRiver convertTerrains, TODO(T041)), the private GetInitializationTerrain copy in TileMap.cs (use MapLandmassGenerator's). MapRegionsSeams.cs belongs to T076/T077 (they own the five NotSupportedException stubs); the generateMap gameInfo parameter is retyped by T046. GameStarter (T099) depends on this ticket.
+  - Backlog audit: T076 and T077 are Done but Mapregions/MapRegionResourcesSeams.cs still throws NotSupportedException ('ported by T077') in TryAddingResourceToTiles / PlaceResourcesInTiles, which StartNormalizer calls: the full pipeline (MapGenerator -> MapRegions -> StartNormalizer) would crash. This ticket must replace both bodies with calls to the real MapRegionResources class (delete the seam file) and its same-seed golden-map test must run a ruleset with city-state/major starts so StartNormalizer's resource placement executes.
 
 ### T042 OdMap import/export
 - State: Done
