@@ -1,13 +1,22 @@
-using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Unciv.Core.Tests.Policy;
 
 // T119: Kotlin `x!!` throws at once; the C# null-forgiving `x!` only silences the compiler, so the failure
 // shows up later or never. Production code must use `.NotNull()` (NullExtensions) or a real null check.
 // A `!` that is genuinely safe (e.g. definite assignment after a guard) needs `// JUSTIFY: T###` within 3 lines above.
-public class NullForgivingTests
+public partial class NullForgivingTests
 {
     private static readonly string[] ScannedProjects = ["Unciv.Core", "Unciv.Harness", "Unciv.Godot.Harness"];
+
+    [GeneratedRegex(@"JUSTIFY:\s*T\d{3}\b")]
+    private static partial Regex JustifyRegex();
+
+    [GeneratedRegex(@"#pragma\s+warning\s+disable|SuppressMessage\s*\(|throw\s+new\b")]
+    private static partial Regex OtherSuppressionRegex();
 
     [Fact]
     public void ProductionCodeHasNoUnjustifiedNullForgivingOperator()
@@ -22,10 +31,8 @@ public class NullForgivingTests
             {
                 var sep = Path.DirectorySeparatorChar;
                 if (file.Contains(sep + "obj" + sep, StringComparison.Ordinal) || file.Contains(sep + "bin" + sep, StringComparison.Ordinal)) continue;
-                var raw = File.ReadAllLines(file);
-                foreach (var line in FindNullForgivingLines(File.ReadAllText(file)))
-                    if (!HasJustification(raw, line - 1))
-                        offenders.Add($"{Path.GetRelativePath(root, file)}:{line}");
+                foreach (var line in FindUnjustifiedLines(File.ReadAllText(file)))
+                    offenders.Add($"{Path.GetRelativePath(root, file)}:{line}");
             }
         }
 
@@ -60,104 +67,177 @@ public class NullForgivingTests
             var t = x ? !y : !z;
             var f = (Func<bool>)(() => !q);
             var g = !(a);
+            var h = (bool)!x;
+            var j = a >!b;
+            var k = a > !b;
+            var m = (bool)(!x);
+            var p = (bool)!x.Foo();
             """";
         Assert.Empty(FindNullForgivingLines(benign));
     }
 
-    // Postfix '!' sits directly after an identifier, ')', ']' or '>' (generic call); prefix negation and `!=` never do.
-    // Strings, raw strings, char literals and comments are blanked first so their contents are ignored.
+    [Fact]
+    public void ScannerFindsNullForgivingInsideInterpolationHoles()
+    {
+        const string source = """"
+            var s = $"hello {name!}";
+            var raw = $$"""multi {{"inner" + value!}}""";
+            var nested = $"outer {x ?? $"inner {y!}"}";
+            var formatted = $"{z!,10:format}";
+            """";
+        Assert.Equal([1, 2, 3, 4], FindNullForgivingLines(source));
+    }
+
+    [Fact]
+    public void ScannerFindsNullForgivingAtLineStartAfterNewline()
+    {
+        const string source = """
+            var a = b
+                !;
+            """;
+        Assert.Equal([2], FindNullForgivingLines(source));
+    }
+
+    [Fact]
+    public void JustificationRequiresValidTicketId()
+    {
+        const string invalidTicket = """
+            // JUSTIFY: missing ticket id
+            var a = b!;
+            // JUSTIFY: Temporary
+            var c = d!;
+            """;
+        Assert.Equal([2, 4], FindUnjustifiedLines(invalidTicket));
+
+        const string validTicket = """
+            // JUSTIFY: T125 valid ticket id
+            var a = b!;
+            """;
+        Assert.Empty(FindUnjustifiedLines(validTicket));
+    }
+
+    [Fact]
+    public void JustificationIsTiedToOneSpecificSite()
+    {
+        const string sharedJustification = """
+            // JUSTIFY: T125 should only cover the first operator
+            var a = b!;
+            var c = d!;
+            """;
+        Assert.Equal([3], FindUnjustifiedLines(sharedJustification));
+
+        const string distinctJustifications = """
+            // JUSTIFY: T125 first operator
+            var a = b!;
+            // JUSTIFY: T125 second operator
+            var c = d!;
+            """;
+        Assert.Empty(FindUnjustifiedLines(distinctJustifications));
+
+        const string multipleOnSameLineOneJustify = """
+            var x = a! + b!; // JUSTIFY: T125 only one justification
+            """;
+        Assert.Equal([1], FindUnjustifiedLines(multipleOnSameLineOneJustify));
+
+        const string multipleOnSameLineTwoJustify = """
+            // JUSTIFY: T125 first
+            // JUSTIFY: T125 second
+            var x = a! + b!;
+            """;
+        Assert.Empty(FindUnjustifiedLines(multipleOnSameLineTwoJustify));
+    }
+
+    [Fact]
+    public void OtherSuppressionsDoNotJustifyNullForgiving()
+    {
+        const string source = """
+            #pragma warning disable CA1031 // JUSTIFY: T039 pragma suppression
+            var a = b!;
+            throw new NotSupportedException(); // JUSTIFY: T118 throw suppression
+            var c = d!;
+            """;
+        Assert.Equal([2, 4], FindUnjustifiedLines(source));
+    }
+
+    [Fact]
+    public void JustificationMustBeWithinThreeLinesAbove()
+    {
+        const string tooFar = """
+            // JUSTIFY: T125 too far above
+            var w = 1;
+            var x = 2;
+            var y = 3;
+            var a = b!;
+            """;
+        Assert.Equal([5], FindUnjustifiedLines(tooFar));
+
+        const string withinThree = """
+            // JUSTIFY: T125 within three lines above
+            var w = 1;
+            var x = 2;
+            var a = b!;
+            """;
+        Assert.Empty(FindUnjustifiedLines(withinThree));
+    }
+
     internal static IEnumerable<int> FindNullForgivingLines(string source)
     {
-        var code = Blank(source);
-        var line = 1;
-        for (var i = 0; i < code.Length; i++)
+        var tree = CSharpSyntaxTree.ParseText(source);
+        foreach (var node in tree.GetRoot().DescendantNodes())
         {
-            var c = code[i];
-            if (c == '\n') { line++; continue; }
-            if (c != '!') continue;
-            if (i == 0) continue;
-            var prev = code[i - 1];
-            var next = i + 1 < code.Length ? code[i + 1] : ' ';
-            if (next == '=' && (i + 2 >= code.Length || code[i + 2] != '=')) continue; // `!=`
-            var postfixAfter = char.IsLetterOrDigit(prev) || prev is '_' or ')' or ']' or '!'
-                || (prev == '>' && i >= 2 && code[i - 2] is not ('=' or '-'));
-            if (postfixAfter) yield return line;
+            if (node is PostfixUnaryExpressionSyntax postfix && postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression))
+            {
+                yield return postfix.OperatorToken.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+            }
+            else if (node is CastExpressionSyntax cast
+                     && cast.Expression is PrefixUnaryExpressionSyntax prefix
+                     && prefix.IsKind(SyntaxKind.LogicalNotExpression)
+                     && prefix.Operand.IsMissing)
+            {
+                yield return prefix.OperatorToken.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+            }
         }
     }
 
-    private static string Blank(string s)
+    internal static IEnumerable<int> FindUnjustifiedLines(string source)
     {
-        var sb = new StringBuilder(s.Length);
-        var i = 0;
-        void Keep(char ch) => sb.Append(ch == '\n' ? '\n' : ' ');
-        while (i < s.Length)
+        var rawLines = source.Split('\n');
+        var opLines = FindNullForgivingLines(source).ToList();
+        if (opLines.Count == 0) yield break;
+
+        var commentLines = new List<int>();
+        for (var i = 0; i < rawLines.Length; i++)
         {
-            var c = s[i];
-            if (c == '/' && i + 1 < s.Length && s[i + 1] == '/')
+            var lineText = rawLines[i];
+            if (JustifyRegex().IsMatch(lineText) && !OtherSuppressionRegex().IsMatch(lineText))
             {
-                while (i < s.Length && s[i] != '\n') { sb.Append(' '); i++; }
+                commentLines.Add(i + 1);
             }
-            else if (c == '/' && i + 1 < s.Length && s[i + 1] == '*')
+        }
+
+        var usedComments = new HashSet<int>();
+
+        foreach (var opLine in opLines)
+        {
+            int? match = null;
+            for (var c = opLine; c >= int.Max(1, opLine - 3); c--)
             {
-                var end = s.IndexOf("*/", i + 2, StringComparison.Ordinal);
-                end = end < 0 ? s.Length : end + 2;
-                for (; i < end; i++) Keep(s[i]);
-            }
-            else if (c == '"' || ((c == '$' || c == '@') && IsStringStart(s, i)))
-            {
-                var start = i;
-                while (s[i] != '"') i++;
-                var verbatim = s.AsSpan(start, i - start).Contains('@');
-                var quotes = 0;
-                while (i + quotes < s.Length && s[i + quotes] == '"') quotes++;
-                if (quotes >= 3)
+                if (commentLines.Contains(c) && !usedComments.Contains(c))
                 {
-                    var close = s.IndexOf(new string('"', quotes), i + quotes, StringComparison.Ordinal);
-                    var end = close < 0 ? s.Length : close + quotes;
-                    for (var k = start; k < end; k++) Keep(s[k]);
-                    i = end;
-                }
-                else
-                {
-                    var j = i + 1;
-                    while (j < s.Length)
-                    {
-                        if (verbatim && s[j] == '"' && j + 1 < s.Length && s[j + 1] == '"') { j += 2; continue; }
-                        if (!verbatim && s[j] == '\\') { j += 2; continue; }
-                        if (s[j] == '"') break;
-                        j++;
-                    }
-                    var end = int.Min(j + 1, s.Length);
-                    for (var k = start; k < end; k++) Keep(s[k]);
-                    i = end;
+                    match = c;
+                    break;
                 }
             }
-            else if (c == '\'' && i + 2 < s.Length && (s[i + 1] != '\\' ? s[i + 2] == '\'' : true))
+
+            if (match.HasValue)
             {
-                var j = s[i + 1] == '\\' ? s.IndexOf('\'', i + 3) : i + 2;
-                if (j < 0) j = s.Length - 1;
-                for (; i <= j; i++) Keep(s[i]);
+                usedComments.Add(match.Value);
             }
             else
             {
-                sb.Append(c);
-                i++;
+                yield return opLine;
             }
         }
-        return sb.ToString();
-    }
-
-    private static bool IsStringStart(string s, int i)
-    {
-        while (i < s.Length && s[i] is '$' or '@') i++;
-        return i < s.Length && s[i] == '"';
-    }
-
-    private static bool HasJustification(string[] lines, int index)
-    {
-        for (var i = int.Max(0, index - 3); i <= index && i < lines.Length; i++)
-            if (lines[i].Contains("JUSTIFY: T", StringComparison.Ordinal)) return true;
-        return false;
     }
 
     private static string FindRoot()
