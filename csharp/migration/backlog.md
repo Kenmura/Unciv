@@ -609,7 +609,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - REVIEW FIXES [Claude]: Both Antigravity findings (T119 null-forgiving in MapUnit.cs/MapUnitCache.cs; T121 coupling 13>12 in MapUnit.cs/City.cs) were already fixed by commit 1751e8209 'fix null-forgiving and coupling ratchet' on the branch, which post-dates the review snapshot. Verified on rebased tip: grep finds no bare '!' in either file, Policy tests (62) pass incl. CouplingRatchetTests, dotnet build -warnaserror clean, format clean, 2031 tests pass. No further code changes needed. Auditor/Adversary/Pragmatist parity findings: none.
 
 ### T066 MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T065, T060
 - Source: core/src/com/unciv/logic/map/mapunit/UnitPromotions.kt, UnitTurnManager.kt, UnitUpgradeManager.kt, civilization/managers/UnitManager.kt
 - Fixtures: tests/src/com/unciv/logic/map/UpgradeTests.kt (TestGame-based: T072)
