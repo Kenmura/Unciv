@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
@@ -63,27 +62,8 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
 
     public string ReplacementTextForUniques { get; set; } = "";
     /// <summary>Kotlin <c>HashSet&lt;String&gt;</c>: JVM hash order (see HASH_ORDER_AUDIT.md), it reaches <see cref="EvaluateForce"/>.</summary>
-    [JsonConverter(typeof(PromotionSetConverter))]
     public JavaHashSet<string> Promotions { get; set; } = new();
 
-    private sealed class PromotionSetConverter : JsonConverter<JavaHashSet<string>>
-    {
-        public override JavaHashSet<string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
-            var set = new JavaHashSet<string>();
-            if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException("Expected an array of promotion names");
-            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-                set.Add(reader.GetString() ?? throw new JsonException("Null promotion name"));
-            return set;
-        }
-
-        public override void Write(Utf8JsonWriter writer, JavaHashSet<string> value, JsonSerializerOptions options)
-        {
-            writer.WriteStartArray();
-            foreach (var item in value) writer.WriteStringValue(item);
-            writer.WriteEndArray();
-        }
-    }
     public string? ObsoleteTech { get; set; }
 
     public IEnumerable<string> TechsThatObsoleteThis() => ObsoleteTech == null ? [] : [ObsoleteTech];

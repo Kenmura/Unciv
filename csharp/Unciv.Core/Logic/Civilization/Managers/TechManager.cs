@@ -68,22 +68,32 @@ public class TechManager : IsPartOfGameInfoSerialization
     public bool RoadsConnectAcrossRivers { get; set; }
     private bool allTechsAreResearched;
 
+    [JsonPropertyName("freeTechs")]
     public int FreeTechs { get; set; }
     // For calculating score
+    [JsonPropertyName("repeatingTechsResearched")]
     public int RepeatingTechsResearched { get; set; }
 
     /// <summary>For calculating Great Scientist yields - see https://civilization.fandom.com/wiki/Great_Scientist_(Civ5)</summary>
+    [JsonPropertyName("scienceOfLast8Turns")]
     public int[] ScienceOfLast8Turns { get; set; } = new int[8];
+    [JsonPropertyName("scienceFromResearchAgreements")]
     public int ScienceFromResearchAgreements { get; set; }
     /// <summary>This is the list of strings, which is serialized</summary>
+    [JsonPropertyName("techsResearched")]
     public JavaHashSet<string> TechsResearched { get; set; } = new();
 
     /// <summary>When moving towards a certain tech, the user doesn't have to manually pick every one.</summary>
+    [JsonPropertyName("techsToResearch")]
     public List<string> TechsToResearch { get; set; } = [];
+    [JsonPropertyName("overflowScience")]
+    [JsonInclude]
     private int overflowScience;
+    [JsonPropertyName("techsInProgress")]
     public JavaHashMap<string, int> TechsInProgress { get; set; } = new();
 
     /// <summary>In civ IV, you can auto-convert a certain percentage of gold in cities to science</summary>
+    [JsonPropertyName("goldPercentConvertedToScience")]
     public float GoldPercentConvertedToScience { get; set; } = 0.6f;
 
     #region state-changing functions

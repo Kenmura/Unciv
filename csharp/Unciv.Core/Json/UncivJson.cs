@@ -22,6 +22,8 @@ public static class UncivJson
 
         options.Converters.Add(new HexCoordConverter());
         options.Converters.Add(new CounterConverterFactory());
+        options.Converters.Add(new JavaHashSetConverterFactory());
+        options.Converters.Add(new JavaHashMapConverterFactory());
         options.Converters.Add(new StatsConverter());
         options.Converters.Add(new StatsSubclassConverterFactory());
         options.Converters.Add(new StatMapConverter());

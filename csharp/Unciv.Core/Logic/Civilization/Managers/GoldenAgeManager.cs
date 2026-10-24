@@ -21,8 +21,12 @@ public class GoldenAgeManager : IsPartOfGameInfoSerialization
         set => civInfo = value;
     }
 
+    [JsonPropertyName("storedHappiness")]
     public int StoredHappiness { get; set; }
+    [JsonPropertyName("numberOfGoldenAges")]
+    [JsonInclude]
     private int numberOfGoldenAges;
+    [JsonPropertyName("turnsLeftForCurrentGoldenAge")]
     public int TurnsLeftForCurrentGoldenAge { get; set; }
 
     public GoldenAgeManager Clone()

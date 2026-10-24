@@ -37,14 +37,23 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     [JsonIgnore]
     internal UniqueMap PolicyUniques { get; } = new();
 
+    [JsonPropertyName("freePolicies")]
     public int FreePolicies { get; set; }
+    [JsonPropertyName("storedCulture")]
     public int StoredCulture { get; set; }
-    internal JavaHashSet<string> AdoptedPolicies { get; } = new();
+    [JsonPropertyName("adoptedPolicies")]
+    [JsonInclude]
+    internal JavaHashSet<string> AdoptedPolicies { get; private set; } = new();
+    [JsonPropertyName("numberOfAdoptedPolicies")]
+    [JsonInclude]
     private int numberOfAdoptedPolicies;
 
+    [JsonPropertyName("cultureOfLast8Turns")]
+    [JsonInclude]
     private int[] cultureOfLast8Turns = new int[8];
 
     /// <summary>Indicates whether we should *check* if policy is adoptible, and if so open</summary>
+    [JsonPropertyName("shouldOpenPolicyPicker")]
     public bool ShouldOpenPolicyPicker { get; set; }
 
     /// <summary>Used by NextTurnAction.PickPolicy.isChoice</summary>

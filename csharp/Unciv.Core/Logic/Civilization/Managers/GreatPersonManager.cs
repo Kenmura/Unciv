@@ -30,17 +30,26 @@ public class GreatPersonManager : IsPartOfGameInfoSerialization
     }
 
     /// <summary>Base points, without speed modifier</summary>
+    [JsonPropertyName("pointsForNextGreatPersonCounter")]
     public Counter<string> PointsForNextGreatPersonCounter { get; set; } = new();  // Initial values assigned in getPointsRequiredForGreatPerson as needed
+    [JsonPropertyName("pointsForNextGreatGeneral")]
     public int PointsForNextGreatGeneral { get; set; } = 200;
+    [JsonPropertyName("pointsForNextGreatGeneralCounter")]
     public Counter<string> PointsForNextGreatGeneralCounter { get; set; } = new(); // Initial values assigned when needed
 
+    [JsonPropertyName("greatPersonPointsCounter")]
     public Counter<string> GreatPersonPointsCounter { get; set; } = new();
+    [JsonPropertyName("greatGeneralPointsCounter")]
     public Counter<string> GreatGeneralPointsCounter { get; set; } = new();
+    [JsonPropertyName("greatGeneralPoints")]
     public int GreatGeneralPoints { get; set; }
+    [JsonPropertyName("freeGreatPeople")]
     public int FreeGreatPeople { get; set; }
     /// <summary>Marks subset of <see cref="FreeGreatPeople"/> as subject to maya ability restrictions (each only once until all used)</summary>
+    [JsonPropertyName("mayaLimitedFreeGP")]
     public int MayaLimitedFreeGP { get; set; }
     /// <summary>Remaining candidates for maya ability - whenever empty refilled from all GP, starts out empty</summary>
+    [JsonPropertyName("longCountGPPool")]
     public JavaHashSet<string> LongCountGPPool { get; set; } = new();
 
     public GreatPersonManager Clone()

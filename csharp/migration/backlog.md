@@ -1094,7 +1094,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From T058 review (split off T109).
 
 ### T113 Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager (T056)
 - Fixtures: none
@@ -1102,6 +1102,8 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test
 - Claimed: 2026-10-24T11:35Z
 - Notes: From T056 (split off T109): serialized fields are JavaHashSet<string>/JavaHashMap<string,int>/Counter<string>/int[] (Kotlin HashSet/HashMap keep java.util order); BaseUnit.Promotions has a private converter. camelCase names to check: techsResearched, techsInProgress, techsToResearch, freeTechs, repeatingTechsResearched, scienceOfLast8Turns, scienceFromResearchAgreements, overflowScience (private), goldPercentConvertedToScience; policies: freePolicies, storedCulture, adoptedPolicies (internal), numberOfAdoptedPolicies (private), cultureOfLast8Turns (private), shouldOpenPolicyPicker; goldenAges: storedHappiness, numberOfGoldenAges (private), turnsLeftForCurrentGoldenAge; greatPeople: all public vars. Private/internal members are serialized in Kotlin (Gdx Json uses fields).
+  - Implemented: Json/JavaHashConverters.cs (JavaHashSetConverterFactory: array; JavaHashMapConverterFactory: object, string keys only, int values via JsonValueReader.ReadInt incl. verbose/string forms), registered in UncivJson; BaseUnit's private PromotionSetConverter removed in favour of the shared one. TechManager/PolicyManager/GoldenAgeManager/GreatPersonManager serialized members carry [JsonPropertyName(kotlinCamelName)] (+[JsonInclude] for private/internal: overflowScience, adoptedPolicies, numberOfAdoptedPolicies, cultureOfLast8Turns, numberOfGoldenAges); PolicyManager.AdoptedPolicies got a private setter so it deserializes. allTechsAreResearched stays unserialized (Kotlin @Transient). Golden values: ran real libGDX 1.14.2 Json (OutputType.json) via java over a class with the same field names; techsResearched/techsInProgress order and read-order independence are asserted in Unciv.Core.Tests/Json/JavaHashConvertersTests.cs.
+    Known differences: Gdx omits fields equal to the class-default prototype (empty sets, zero ints, default 0.6f); C# always writes every field (readable by Gdx; reader tolerates both). System.Text.Json writes properties before fields so private-field members come last (order irrelevant to readers).
 
 ### T114 Hardening sweep 2: non-blocking findings from T056, T059, T108 reviews
 - State: In-Progress [Claude]
