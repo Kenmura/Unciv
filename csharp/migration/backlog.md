@@ -840,7 +840,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~1.2k LOC (Battle.kt 883): delegate the brief. Uses UnitActionsPillage (T079), CityConquestFunctions (T064), DeclareWar (T068), UniqueTriggerActivation (T052); NextTurnAutomation.valueCityStateAlliance is a TODO(T094) seam; UncivGame/worldScreen/tutorial-task lines are UI and dropped. Attack order and RNG draw order are game state. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T084 Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T046, T057, T059
 - Source: core/src/com/unciv/view/View.kt, GameBasedView.kt, OwnedView.kt, GameView.kt, CivView.kt, ForeignCivView.kt, TileView.kt, TileMapView.kt, DiplomacyManagerView.kt, TradeView.kt, SpyView.kt
 - Fixtures: tests/src/com/unciv/view/ViewPurityTest.kt (Kotlin purity annotations: port only the structural checks that make sense), GameViewMovementHistoryTest.kt (TestGame: T103)
@@ -856,6 +856,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - DEFERRED to the new follow-up ticket (needs T086 TradeLogic): TradeView, CivView.getTradeView. Carries the T114 note about TradeOffer.getOfferText (it also belongs with the Trade UI text; unchanged here).
     - GameViewMovementHistoryTest: needs TestGame (T035/T103) and ForeignMapUnitView (T085); its attack cases are ported against a real small game (GetVisibleAttacks); the movement-history cases move to T085. ViewPurityTest relies on the stripped annotations: replaced by structural reflection tests (no Try* on non-owned/Foreign views, Try* return bool on owned views, no public setters).
     - Also fixed the tip's three red policy tests (T046 Done): UnitManager.cs TODO(T046)->TODO(T104), MapPathingSeams.cs and ConditionalsSeams.cs now name T104 as open owner; UnitManager.cs excused in coverage-baseline.json.
+  - Review (isolated adversarial, Auditor/Adversary/Pragmatist): PASS. Correction: ViewTests has 27 tests. Non-blocking: TileMap.StartingLocationsByNation is a Dictionary (Kotlin insertion-ordered); T085 must keep the TODO markers.
 
 ### T085 Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView
 - State: Available
