@@ -1638,13 +1638,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Needs UnitActions.invokeUnitAction (T080).
 
 ### T145 Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T072
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, PathfindingTests.kt
 - Deliverables: csharp/Unciv.Core.Tests/Fixtures/Map/*.cs
 - Gate: dotnet test --filter FullyQualifiedName~Fixtures
-- Claimed:
+- Claimed: 2026-10-24T18:15Z
 - Notes: Split from T141 at claim time (scope). Same pattern as T072: namespace Unciv.Core.Tests.Fixtures.*, [Collection("RulesetCache")], real TestGame.
 
 ### T146 UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack)
