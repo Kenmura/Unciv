@@ -10,9 +10,8 @@ using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 namespace Unciv.Core.Tests.Logic.Battle;
 
 // Port of tests/src/com/unciv/logic/battle/BattleTest.kt (T083), plus the C#-only cases for the Battle and Nuke branches the Kotlin tests miss.
-// The Kotlin test is parameterized over the pathfinding algorithm; the A* branches of UnitMovement are TODO(T093), so only the default runs.
-[Collection("RulesetCache")]
-public class BattleTests
+// The Kotlin test is parameterized over the pathfinding algorithm: BattleTests runs the Classic set, BattleAStarTests the AStarPathfinding set (T093).
+public abstract class BattleTestsBase
 {
     private readonly TestGame testGame = new();
     private readonly CivilizationObject attackerCiv;
@@ -20,8 +19,9 @@ public class BattleTests
     private readonly MapUnitClass defaultAttackerUnit;
     private readonly MapUnitClass defaultDefenderUnit;
 
-    public BattleTests()
+    protected BattleTestsBase(bool useAStar)
     {
+        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(4);
         attackerCiv = testGame.AddCiv();
         defenderCiv = testGame.AddCiv();
@@ -502,3 +502,9 @@ public class BattleTests
         Assert.Equal(33, attackerUnit.Promotions.XP); // Attacker should get no XP from ranged attack, full xp from melee attack
     }
 }
+
+[Collection("RulesetCache")]
+public sealed class BattleTests() : BattleTestsBase(false);
+
+[Collection("RulesetCache")]
+public sealed class BattleAStarTests() : BattleTestsBase(true);

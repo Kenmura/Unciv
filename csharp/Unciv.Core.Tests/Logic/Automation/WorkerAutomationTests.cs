@@ -10,18 +10,18 @@ using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.Core.Tests.Logic.Automation;
 
 // T092: port of tests/src/com/unciv/logic/automation/unit/WorkerAutomationTest.kt over the real TestGame.
-// The Kotlin setUp sets `useAStarPathfinding = true`; the A* PathingMap is T093, so these run on the default (non-A*) road pathing.
+// Like the Kotlin setUp, the cases run with `useAStarPathfinding = true` (T093: WorkerAutomationTests); WorkerAutomationClassicTests runs them on the default (non-A*) pathing too.
 // The Kotlin cases that drive whole turns through NextTurnAutomation.automateCivMoves (should build improvements in turns / without roads /
 // should build roads in turns; the fourth, @Ignore'd, is not ported) run the original loop (T094; T092 had adapted them to automate only the worker).
-[Collection("RulesetCache")]
-public class WorkerAutomationTests
+public abstract class WorkerAutomationTestsBase
 {
     private readonly TestGame testGame = new();
     private readonly CivilizationObject civInfo;
     private readonly WorkerAutomation workerAutomation;
 
-    public WorkerAutomationTests()
+    protected WorkerAutomationTestsBase(bool useAStar)
     {
+        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(7);
         civInfo = testGame.AddCiv();
         workerAutomation = new WorkerAutomation(civInfo, 3);
@@ -428,3 +428,9 @@ public class WorkerAutomationTests
         Assert.False(worker.IsDestroyed);
     }
 }
+
+[Collection("RulesetCache")]
+public sealed class WorkerAutomationTests() : WorkerAutomationTestsBase(true);
+
+[Collection("RulesetCache")]
+public sealed class WorkerAutomationClassicTests() : WorkerAutomationTestsBase(false);

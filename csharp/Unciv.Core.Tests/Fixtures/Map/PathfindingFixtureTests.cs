@@ -9,12 +9,10 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
-// T145: port of tests/src/com/unciv/logic/map/PathfindingTests.kt over the real TestGame, ClassicPathfinding parameter set only.
-// Not ported here: the AStarPathfinding parameter set and the three A*-only cases (shortestPathEvenWhenItsWayMoreTiles,
-// canPauseBeforeMountainsToCrossWithoutDamage, getMovementToTilesAtPosition_withNegativeMovement_ReturnsOrigin) wait on T093;
-// connectRoadAction was ported with RoadToAutomation (T092). 55 of the 58 Kotlin cases are ported.
-[Collection("RulesetCache")]
-public sealed class PathfindingFixtureTests
+// T145 / T093: port of tests/src/com/unciv/logic/map/PathfindingTests.kt over the real TestGame, all 58 Kotlin cases, for both parameter sets:
+// PathfindingFixtureTests (ClassicPathfinding) and PathfindingAStarFixtureTests (AStarPathfinding, GameClientState.UseAStarPathfinding).
+// Kotlin `assumeTrue(...)` / `assumeThat(...)` skips a case for the other parameter set; xUnit 2 has no dynamic skip, so the case returns at once.
+public abstract class PathfindingFixtureTestsBase
 {
     private readonly TestGame testGame = new();
     private readonly Civilization civInfo;
@@ -22,8 +20,12 @@ public sealed class PathfindingFixtureTests
     private readonly Civilization barbarianCiv;
     private readonly Civilization neutralCiv;
 
-    public PathfindingFixtureTests()
+    private readonly bool useAStar;
+
+    protected PathfindingFixtureTestsBase(bool useAStar)
     {
+        this.useAStar = useAStar;
+        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(8);
         originTile = testGame.TileMap[0, 0];
         civInfo = testGame.AddCiv();
@@ -122,6 +124,7 @@ public sealed class PathfindingFixtureTests
     [Fact]
     public void GetMovementToTilesAtPosition_mountains_movesTo()
     {
+        if (useAStar) return; // AStar deliberately does not include mountains
         VerticalWall(1, tile => Set(tile, "Mountain"));
         var unit = testGame.AddUnit("Warrior", civInfo, originTile);
         var paths = unit.Movement.GetMovementToTilesAtPosition(originTile.Position, 2f);
@@ -132,6 +135,7 @@ public sealed class PathfindingFixtureTests
     [Fact]
     public void GetMovementToTilesAtPosition_ocean_movesTo()
     {
+        if (useAStar) return; // AStar deliberately does not include ocean (that we can't move into)
         VerticalWall(1, tile => Set(tile, "Ocean"));
         var unit = testGame.AddUnit("Warrior", civInfo, originTile);
         var paths = unit.Movement.GetMovementToTilesAtPosition(originTile.Position, 2f);
@@ -526,6 +530,7 @@ public sealed class PathfindingFixtureTests
     [Fact]
     public void GetMovementToTilesAtPosition_withVirtuallyNoMovement_ReturnsNeighbors()
     {
+        if (useAStar) return; // AStar only returns Origin
         testGame.SetTileTerrain(new HexCoord(0, 1), "Hill");
         var baseUnit = testGame.CreateBaseUnit();
         baseUnit.Movement = 2;
@@ -702,6 +707,72 @@ public sealed class PathfindingFixtureTests
     }
 
     [Fact]
+    public void ShortestPathEvenWhenItsWayMoreTiles()
+    {
+        if (!useAStar) return; // Classic pathfinding can't handle this case correctly
+
+        // A straight road from 0,0 up the x axis, then straight down the y axis for 4 tiles, then straight down the x axis for 4 tiles
+        foreach (var (x, y) in new[] { (0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (4, 4), (3, 4), (2, 4), (1, 4), (0, 4) })
+            testGame.GetTile(new HexCoord(x, y)).SetRoadStatus(RoadStatus.Railroad, civInfo);
+        // The total roads are be 14 tiles, but only 1.4 movement. the direct route is 3 tiles, but
+        // 3 movement.  So the road route should be chosen, despite gong way out of the way.
+        var baseUnit = testGame.CreateBaseUnit();
+        baseUnit.Movement = 1;
+        var unit = testGame.AddUnit(baseUnit.Name, civInfo, originTile);
+        var target = testGame.GetTile(new HexCoord(0, 4));
+
+        var path = unit.Movement.GetShortestPath(target);
+
+        // expect movement along the railroad, even though it's 13 tiles
+        Assert.Equal([new HexCoord(3, 4), new HexCoord(0, 4)], path.Select(it => it.Position));
+    }
+
+    [Fact]
+    public void CanPauseBeforeMountainsToCrossWithoutDamage()
+    {
+        if (!useAStar) return; // Classic pathfinding can't handle this case correctly
+
+        // Everything is mountains
+        foreach (var tile in testGame.TileMap.TileList)
+            testGame.SetTileTerrain(tile.Position, "Mountain");
+        testGame.SetTileTerrain(new HexCoord(0, 0), "Plains");
+        testGame.SetTileTerrain(new HexCoord(0, 1), "Plains");
+        // unit has two cross two mountains here, so MUST stop on 0,1 to safely cross
+        testGame.SetTileTerrain(new HexCoord(0, 4), "Plains");
+        testGame.SetTileTerrain(new HexCoord(0, 5), "Plains");
+        // unit has two cross two mountains here, so MUST stop on 0,5 to safely cross
+        testGame.SetTileTerrain(new HexCoord(0, 8), "Plains");
+
+        // Enable Carthage LandUnitsCrossTerrainAfterUnitGained
+        civInfo.PassThroughImpassableUnlocked = true;
+        civInfo.PassableImpassables.Add("Mountain");
+
+        var baseUnit = testGame.CreateBaseUnit();
+        baseUnit.Movement = 3;
+        var unit = testGame.AddUnit(baseUnit.Name, civInfo, originTile);
+        var target = testGame.GetTile(new HexCoord(0, 8));
+
+        var path = unit.Movement.GetShortestPath(target, avoidDamagingTerrain: true);
+
+        Assert.Equal([new HexCoord(0, 1), new HexCoord(0, 4), new HexCoord(0, 5), new HexCoord(0, 8)], path.Select(it => it.Position));
+    }
+
+    [Fact]
+    public void GetMovementToTilesAtPosition_withNegativeMovement_ReturnsOrigin()
+    {
+        testGame.SetTileTerrain(new HexCoord(0, 1), "Hill");
+        if (!useAStar) return; // Classic pathfinding returns all neighbor tiles
+        var baseUnit = testGame.CreateBaseUnit();
+        baseUnit.Movement = 2;
+        var unit = testGame.AddUnit(baseUnit.Name, civInfo, originTile);
+        unit.CurrentMovement = -1f;
+
+        var path = unit.Movement.GetMovementToTilesAtPosition(originTile.Position, -1f);
+
+        Assert.Single(path);
+    }
+
+    [Fact]
     public void ConnectRoadAction()
     {
         civInfo.Tech.AddTechnology("The Wheel", false);
@@ -715,3 +786,9 @@ public sealed class PathfindingFixtureTests
         Assert.True(worker.AutomatedRoadConnectionPath?.Count > 0, "Worker must have a path");
     }
 }
+
+[Collection("RulesetCache")]
+public sealed class PathfindingFixtureTests() : PathfindingFixtureTestsBase(false);
+
+[Collection("RulesetCache")]
+public sealed class PathfindingAStarFixtureTests() : PathfindingFixtureTestsBase(true);

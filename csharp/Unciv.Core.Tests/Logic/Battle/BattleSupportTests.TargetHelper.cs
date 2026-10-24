@@ -8,11 +8,10 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Core.Tests.Logic.Battle;
 
 // Port of tests/src/com/unciv/logic/battle/TargetHelperTest.kt (T082), plus C#-only cases for the branches the Kotlin test does not reach.
-// The Kotlin setUp's `useAStarPathfinding = true` is not ported: the A* branches of UnitMovement are TODO(T093) (the default, off, is used).
+// Like the Kotlin setUp, the cases run with `useAStarPathfinding = true` (T093: TargetHelperTests); TargetHelperClassicTests runs them on the default (non-A*) pathing too.
 public static partial class BattleSupportTests
 {
-    [Collection("RulesetCache")]
-    public class TargetHelperTests
+    public abstract class TargetHelperTestsBase
     {
         private readonly CivilizationObject attackerCiv;
         private readonly CivilizationObject defenderCiv;
@@ -20,8 +19,9 @@ public static partial class BattleSupportTests
         private const float MovementLeftAfterMovingToAttackTile = 2f;
         private readonly TestGame testGame = new();
 
-        public TargetHelperTests()
+        protected TargetHelperTestsBase(bool useAStar)
         {
+            testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
             testGame.MakeHexagonalMap(6);
             attackerCiv = testGame.AddCiv();
             defenderCiv = testGame.AddCiv();
@@ -278,4 +278,9 @@ public static partial class BattleSupportTests
             Assert.IsType<CityCombatant>(BattleObject.GetMapCombatantOfTile(testGame.GetTile(2, 0)));
         }
     }
+    [Collection("RulesetCache")]
+    public sealed class TargetHelperTests() : TargetHelperTestsBase(true);
+
+    [Collection("RulesetCache")]
+    public sealed class TargetHelperClassicTests() : TargetHelperTestsBase(false);
 }

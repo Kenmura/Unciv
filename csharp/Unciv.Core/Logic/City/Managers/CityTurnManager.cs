@@ -12,8 +12,7 @@ namespace Unciv.Logic.City.Managers;
 
 // Ported from core/src/com/unciv/logic/city/managers/CityTurnManager.kt (T064).
 //
-// Stripped: the timeThis profiling wrappers; city.clearCaches() (the path caches it clears are ported by T093, which adds the call back
-// at the three Kotlin places: startTurn, endTurn).
+// Stripped: the timeThis profiling wrappers.
 
 public class CityTurnManager(CityObject city)
 {
@@ -21,7 +20,7 @@ public class CityTurnManager(CityObject city)
 
     public void StartTurn()
     {
-        // TODO(T093): city.clearCaches()
+        city.ClearCaches();
 
         foreach (var resource in city.GetResourcesGeneratedByCity())
         {
@@ -218,6 +217,6 @@ public class CityTurnManager(CityObject city)
             city.Population.UnassignExtraPopulation();
         }
 
-        // TODO(T093): city.clearCaches()
+        city.ClearCaches();
     }
 }

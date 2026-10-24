@@ -11,9 +11,9 @@ namespace Unciv.Logic.Automation.Unit;
 // Ported from core/src/com/unciv/logic/automation/unit/RoadBetweenCitiesAutomation.kt (T092). Purity annotations and the debug logging dropped (T027 policy).
 // - Kotlin HashMaps keyed by Tile/City (identity) are only ever looked up, never iterated: Dictionary.
 // - Kotlin MutableList.sortBy is stable: re-sorted with OrderBy; minByOrNull/minOf are first-extremum / plain minimum.
-// - `settings.useAStarPathfinding` is "GameClientState.RoadPathing is set" (A* is PathingMap, TODO(T093)); `settings.autoBuildingRoads` is GameClientState.AutoBuildingRoads.
+// - `settings.useAStarPathfinding` is "GameClientState.RoadPathing is set" (A* is PathingMap, see AStarPathing); `settings.autoBuildingRoads` is GameClientState.AutoBuildingRoads.
 
-/// <summary>What <c>RoadBetweenCitiesAutomation</c> calls on <c>City</c> when <c>settings.useAStarPathfinding</c> is on. TODO(T093)</summary>
+/// <summary>What <c>RoadBetweenCitiesAutomation</c> calls on <c>City</c> when <c>settings.useAStarPathfinding</c> is on.</summary>
 public interface ICityRoadPathing
 {
     /// <summary><c>from.getRoadPath(destination)</c></summary>

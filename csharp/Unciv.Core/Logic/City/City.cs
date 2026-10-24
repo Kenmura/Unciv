@@ -26,8 +26,8 @@ namespace Unciv.Logic.City;
 //
 // Stripped / deferred:
 // - timeThis profiling wrappers and the purity annotations.
-// - getLandAttackPath / getAmphibiousAttackPath / getRoadPath / getRoadPathToAny, their PathingMap caches and clearCaches: PathingMap
-//   is ported in T093, which adds them (they are the only users of the caches).
+// - T093: getLandAttackPath / getAmphibiousAttackPath / getRoadPath / getRoadPathToAny, their PathingMap caches and clearCaches live in
+//   CityPathing.cs (a partial of this class).
 // - annexCity / puppetCity / liberateCity / moveToCiv: CityConquestFunctions (T064).
 // - resetSpecialistsControl reads UncivGame.Current.settings (client state): its two inputs are explicit parameters.
 // - T128: getGarrison, unitToPromotions and isConnectedToCapital(predicate) live in CityUnitAndConnectionAccess.cs (a partial of this class) so

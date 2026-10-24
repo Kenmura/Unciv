@@ -44,10 +44,28 @@ public sealed class GameClientState
     /// <summary>Replaces the valuation <c>TradeEvaluation()</c> used by TurnManager and the diplomacy automation (tests install stand-ins). Null means <see cref="Trade.TradeEvaluation.Default"/>.</summary>
     public ITradeValidity? TradeEvaluation { get; set; }
 
-    /// <summary>The A* attack pathing of <c>City.getLandAttackPath</c> / <c>getAmphibiousAttackPath</c> (TODO(T093): set by PathingMap). Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
+    /// <summary>
+    /// <c>settings.useAStarPathfinding</c> (default false): installs the A* <see cref="Map.PathingMap.AStarPathing"/> into <see cref="UnitPathing"/>,
+    /// <see cref="AttackPathing"/> and <see cref="RoadPathing"/>, or removes it. Those three can also be set separately (tests install stand-ins).
+    /// </summary>
+    public bool UseAStarPathfinding
+    {
+        get => UnitPathing != null || AttackPathing != null || RoadPathing != null;
+        set
+        {
+            UnitPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
+            AttackPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
+            RoadPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
+        }
+    }
+
+    /// <summary>The A* unit pathing of <c>UnitMovement</c>. Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
+    public Map.MapUnits.IUnitPathingMapFactory? UnitPathing { get; set; }
+
+    /// <summary>The A* attack pathing of <c>City.getLandAttackPath</c> / <c>getAmphibiousAttackPath</c>. Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
     public Automation.Civilization.ICityAttackPathing? AttackPathing { get; set; }
 
-    /// <summary>The A* road pathing of <c>City.getRoadPath</c> / <c>getRoadPathToAny</c> (TODO(T093): set by PathingMap). Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
+    /// <summary>The A* road pathing of <c>City.getRoadPath</c> / <c>getRoadPathToAny</c> Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
     public Automation.Unit.ICityRoadPathing? RoadPathing { get; set; }
 
     /// <summary><c>settings.autoBuildingRoads</c></summary>

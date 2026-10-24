@@ -12,17 +12,17 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
-// T145: port of tests/src/com/unciv/logic/map/UnitMovementTests.kt over the real TestGame, ClassicPathfinding parameter set only
-// (the AStarPathfinding parameter set is T093). All 25 Kotlin cases are ported.
-[Collection("RulesetCache")]
-public sealed class UnitMovementFixtureTests
+// T145 / T093: port of tests/src/com/unciv/logic/map/UnitMovementTests.kt over the real TestGame, all 25 Kotlin cases, for both parameter sets:
+// UnitMovementFixtureTests (ClassicPathfinding) and UnitMovementAStarFixtureTests (AStarPathfinding, GameClientState.UseAStarPathfinding).
+public abstract class UnitMovementFixtureTestsBase
 {
     private readonly TestGame testGame = new();
     private readonly TileClass tile;
     private readonly Civilization civInfo;
 
-    public UnitMovementFixtureTests()
+    protected UnitMovementFixtureTestsBase(bool useAStar)
     {
+        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(2);
         tile = testGame.TileMap[0, 0];
         civInfo = testGame.AddCiv();
@@ -560,3 +560,9 @@ public sealed class UnitMovementFixtureTests
         AssertSwapped(settler1, settler2, warrior1, warrior2);
     }
 }
+
+[Collection("RulesetCache")]
+public sealed class UnitMovementFixtureTests() : UnitMovementFixtureTestsBase(false);
+
+[Collection("RulesetCache")]
+public sealed class UnitMovementAStarFixtureTests() : UnitMovementFixtureTestsBase(true);
