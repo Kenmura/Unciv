@@ -157,10 +157,6 @@ flowchart TD
   T068 --> T072
   T069 --> T072
   T071 --> T072
-  T039 --> T074
-  T010 --> T074
-  T016 --> T074
-  T017 --> T074
   T039 --> T075
   T010 --> T075
   T016 --> T075
@@ -243,7 +239,7 @@ flowchart TD
   class T071 waiting
   class T072 waiting
   class T073 done
-  class T074 review
+  class T074 done
   class T075 prog
   class T076 waiting
   class T077 waiting
@@ -277,7 +273,6 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T067 | Available (waiting on T065) | T065, T054 | 1 | Unit movement: MovementCost, UnitMovement |
 | T071 | Available (waiting on T046, T070) | T046, T070 | 1 | GameInfo turn handling and BackwardCompatibility |
-| T074 | Needs-Review [Claude] | T039, T010, T016, T017 | 1 | MapGenerator B: RiverGenerator, NaturalWonderGenerator |
 | T076 | Available (waiting on T075) | T075 | 1 | MapGenerator D: mapregions StartNormalizer, MinorCivPlacer |
 | T077 | Available (waiting on T075) | T075 | 1 | MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources) |
 | A003 | Blocked | A002, T030 | 0 | Victory scorers (BNW) |
@@ -288,6 +283,6 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
-| T041 | Available (waiting on T074, T075, T076, T077) | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 0 | MapGenerator pipeline (audit existing partial work first) |
+| T041 | Available (waiting on T075, T076, T077) | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 0 | MapGenerator pipeline (audit existing partial work first) |
 | T052 | Available (waiting on T055, T056, T057, T060, T065, T066) | T028, T055, T056, T057, T060, T065, T066 | 0 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T072 | Available (waiting on T035, T062, T063, T064, T067, T068, T069, T071) | T035, T062, T063, T064, T067, T068, T069, T071 | 0 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
