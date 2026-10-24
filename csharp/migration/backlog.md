@@ -448,13 +448,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implementer notes (Claude): `Unciv.Utils.Log` (`Debug`/`Error` with message+params, with tag, with exception; `ShouldLog`, `GetSystemInfo`, `SoftRequire`), `Tag`, `ILogBackend` + `NullLogBackend` (default: drops everything, `IsRelease`) + `ConsoleLogBackend` (tests/temporary mains, no timestamp), `DisableLogsFrom`/`EnableLogsFrom` (the `-DnoLog`/`-DonlyLog` lists, same default exclusions), and `JavaFormat` (the `String.format` subset the 191 call sites use: `%s` 170x, `%d`, `%f`, plus `%x %c %b %n %% $`-indexes, flags `- 0 + , space`, width, precision; `%s` of booleans/doubles/floats/lists/maps prints like Java). Expected strings for 55 format cases are from the real `String.format` on the JVM. Deviations (class remark): no timestamp or thread object (`Thread` is banned; thread shown as `thread-N`), no system properties, a message whose specifiers do not match its arguments is logged raw instead of throwing, `SoftRequire` returns the condition (`softRequire(c, m, p) ?: return null` becomes `if (!Log.SoftRequire(c, m, p)) return null;`), the tag is the calling class found by a stack walk done only when something will be logged (nested types as `Outer$Inner`, closures collapse to their class). Applied to the places earlier tickets dropped a log call: `IdChecker` (3 `softRequire` messages and 4 `Log.error`s restored with the upstream texts), `Translations.TryReadTranslationForLanguage` (read errors). Tests that touch process-wide statics share `[Collection("TranslationState")]` (`LogTests`, `IdCheckerTests`, `TranslationTests`, `StatsTests`, `JavaDecimalFormatTests`). Gate 8/8, Standard checks: build -warnaserror clean, format clean, 592/592 tests (3 runs).
 
 ### T048 Engine options replacing the DebugUtils flags the rules read
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: core/src/com/unciv/utils/DebugUtils.kt, and its engine users: logic/GameInfo.kt (`SIMULATE_UNTIL_TURN`), logic/city/CityStats.kt (`SUPERCHARGED`), logic/civilization/transients/CivInfoTransientCache.kt (`VISIBLE_MAP`), logic/automation/unit/CityLocationTileRanker.kt (`SETTLER_SCORES`, `SHOW_SETTLER_SCORES`), anything using `CIV_IDS_IN_EXPERIMENT_GROUP`
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Utils/EngineOptions.cs (name open), a design note in DETERMINISM.md, tests
 - Gate: `dotnet test --filter FullyQualifiedName~EngineOptionsTests`
-- Claimed:
+- Claimed: 2026-10-24T02:15:57Z
 - Notes: These flags change game results (extra yields, whole-map vision, turn simulation), so a hidden mutable static breaks the "log + initial state reproduces the game" rule. Decide: an options object that is part of the game state/setup (hashed by StateHasher) and changed only through a command, or a per-process object that must be identical on all peers and is stamped into the game's start record. The UI-only flags are not ported.
 
 ### T046 GameInfo core and the hooks waiting for it
