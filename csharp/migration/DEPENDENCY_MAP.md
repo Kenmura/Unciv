@@ -205,7 +205,7 @@ flowchart TD
   class T142 done
   class T143 done
   class T144 ready
-  class T146 ready
+  class T146 prog
   class T148 ondeck
   class T149 ready
   class T150 ondeck
@@ -230,8 +230,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 33]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 32]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
@@ -245,7 +245,6 @@ xychart-beta
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T144 | **Ready to start** | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
-| T146 | **Ready to start** | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T149 | **Ready to start** | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T091 | **On deck** (after T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
@@ -273,4 +272,5 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T146 | In-Progress [Claude] | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
