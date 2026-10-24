@@ -1148,6 +1148,90 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Deferred from T060: Tile's tests use fake civilizations (TileCiv/StatCiv/PathCiv, IGameContextCivilization) whose cities cannot be real City objects (City.Civ is the concrete Civilization), so retyping Tile's city seams needs TestGame (T035) to build real civilizations. T060 implements the IGameContextCity members on City (explicitly), so the retype is a mechanical edit plus the test rewrite. Code that waits for it is marked TODO(TNEW).
   - The marker above is TODO(T115).
 
+### T116 Policy: ban System.Lazy, add KotlinLazy (Kotlin lazy never caches exceptions)
+- State: Available
+- Depends: none
+- Source: none (policy ticket: new build-time rule, no Kotlin source)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Utils/KotlinLazy.cs, BannedSymbols.txt entry for System.Lazy<T>, migrate every existing 'new Lazy<' (43 in Unciv.Core, 2 pass a thread-safety mode), tests
+- Gate: dotnet test --filter FullyQualifiedName~KotlinLazy
+- Claimed:
+- Notes:
+  - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
+    Why: System.Lazy<T> in its default mode caches exceptions; Kotlin lazy does not (it retries). Adversarial reviews found this bug repeatedly (T033 BaseUnit Type/IsLandUnit/IsWaterUnit, T033 re-review isGreatPerson/isMilitary, T055 cityStateType, T058). Design: KotlinLazy<T> (thread-safe like Kotlin SYNCHRONIZED: lock + retry on exception, no caching of failures) plus an unsafe/publication-only variant if needed; ban T:System.Lazy`1 in BannedSymbols.txt with a message naming KotlinLazy. Migrate all call sites in Unciv.Core (not tests unless they use it) and add tests: success cached, exception not cached and retried, thread safety.
+
+### T117 Policy: reflection test forbidding mutable static state in Unciv.Core
+- State: Available
+- Depends: none
+- Source: none (policy ticket: new build-time rule, no Kotlin source)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Policy/MutableStaticStateTests.cs (reflection over the Unciv.Core assembly), allowlist file with JUSTIFY reasons, fixes for violations
+- Gate: dotnet test --filter FullyQualifiedName~MutableStaticStateTests
+- Claimed:
+- Notes:
+  - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
+    Why: shared mutable statics made LogTests flaky under parallel xUnit (fixed in T109) and break determinism. Currently about 60 static fields; known ones: Log.Backend {get;set;}, Log.EnableLogsFrom/DisableLogsFrom (mutable HashSets), EventBus.NextSeq, MapSize/other static caches. Rule: reflect over every type in Unciv.Core; fail on static fields that are not readonly/const and on public static properties with setters, and on static readonly fields of mutable collection types, unless listed in an allowlist with a JUSTIFY reason. For legitimate global state (Log backend, event bus sequence) prefer making it an explicit instance/parameter or document why it is safe, and make the tests that touch it non-parallel via an xUnit collection.
+
+### T118 Policy: marker check - every TODO(T###) names an open ticket, every NotSupported/NotImplemented seam has an owner
+- State: Available
+- Depends: none
+- Source: none (policy ticket: new build-time rule, no Kotlin source)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Policy/ MarkerOwnershipTests (reads backlog.md/backlog-archive.md ticket headers and states), fixes for existing violations
+- Gate: dotnet test --filter FullyQualifiedName~MarkerOwnershipTests
+- Claimed:
+- Notes:
+  - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
+    Why: the backlog audit found stale/unowned markers (TODO(T050) after T050 was Done, TODO(T034) in Player.cs/Translations.cs, TODO(T033) in IHasUniques.cs, ReligionState.cs naming the wrong ticket) and a throwing seam (MapRegionResourcesSeams.cs) that stayed after its owner was Done and would have crashed the pipeline. Rules (tests, parsing the ticket ids and States from csharp/migration/backlog.md and backlog-archive.md; do NOT shell out to ticket.py): (1) every TODO(T###) in Unciv.Core and Unciv.Core.Tests must name a ticket that exists and is NOT Done (a Done ticket's markers are stale); (2) every throw new NotSupportedException/NotImplementedException in Unciv.Core must have a TODO(T###) on the same or previous 3 lines naming an open ticket, or a JUSTIFY comment; (3) a *Seams*.cs file whose owner tickets are all Done (named in its header comment) fails. Fix all current violations (about 58 TODO markers and 20 throws exist now).
+
+### T119 Policy: forbid unchecked null-forgiving '!' (Kotlin !! throws, C# ! hides the null)
+- State: Available
+- Depends: none
+- Source: none (policy ticket: new build-time rule, no Kotlin source)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Utils/NullExtensions.cs (NotNull helper that throws NullReferenceException like Kotlin !!), source-scanning policy test, migrate existing uses
+- Gate: dotnet test --filter FullyQualifiedName~NullForgivingTests
+- Claimed:
+- Notes:
+  - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
+    Why: about 90 uses of the null-forgiving operator in Unciv.Core. Kotlin's !! throws NullPointerException immediately; C# '!' only silences the compiler and the failure appears later or not at all, a parity difference. Rule: a source scan test (SourcePolicyTests style, ignore strings/comments) that fails on postfix '!' unless the line carries // JUSTIFY: T### (e.g. definite assignment after a guard), plus a NotNull()/Required() helper that throws NullReferenceException with the expression text for ported !! sites. Migrate the existing uses; check each against the Kotlin source to decide NotNull() vs a real null-safe rewrite.
+
+### T120 Policy: size ratchet - maximum file length and method length with a shrink-only baseline
+- State: Available
+- Depends: none
+- Source: none (policy ticket: new build-time rule, no Kotlin source)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Policy/SizeRatchetTests.cs, baseline file (allowlist of current offenders with their current line counts), tests
+- Gate: dotnet test --filter FullyQualifiedName~SizeRatchetTests
+- Claimed:
+- Notes:
+  - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
+    Why: files over 1000 lines: UniqueTypeData.cs 2592 (a data table), Tile.cs 1496, Civilization.cs 1443, UniqueParameterType.cs 1286, TileMap.cs 1156, plus City.cs 945 and others near it. Methods over 100 lines: Conditionals.ConditionalApplies 305, Ruleset.Load 185, MapRegions.AssignRegions 168, JavaDecimalFormat.Parse 119, TileImprovementFunctions.CanImprovementBeBuiltHere 102. Many mirror giant Kotlin functions, so a hard limit would fight faithful ports: use a RATCHET. Test fails if (a) a file exceeds 1500 lines or a method exceeds 120 lines and is not in the baseline, or (b) a baselined file/method GROWS beyond its recorded size (the baseline may only shrink; the test rewrites nothing, humans lower the numbers). Method length via a Roslyn syntax scan (Microsoft.CodeAnalysis.CSharp as a test-only package; Directory.Packages.props is editable in this policy ticket) or a documented brace-matching scan. Do not refactor existing offenders here; note candidates for splitting.
+
+### T121 Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline
+- State: Available
+- Depends: none
+- Source: none (policy ticket: new build-time rule, no Kotlin source)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Policy/CouplingRatchetTests.cs, baseline file, tests
+- Gate: dotnet test --filter FullyQualifiedName~CouplingRatchetTests
+- Claimed:
+- Notes:
+  - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
+    Why: Civilization.cs imports 18 distinct Unciv namespaces, TechManager 12, Ruleset/City 11, TileMap/MapGenerator 10: god-class risk. Same ratchet idea as the size ratchet: count distinct 'using Unciv...' namespaces plus fully qualified Unciv references per file (and optionally per-namespace cross-references), fail when a file not in the baseline exceeds 12 or a baselined file grows. Also add a layering test: Unciv.Core/Models and Logic must not reference Unciv.UI.* types other than the engine-owned leaf packages listed in backlog Non-goals #7 (Fonts stat chars, RankingType, etc.), and nothing in Unciv.Core may reference Godot/harness assemblies. Do not refactor existing offenders.
+
+### T122 Policy: coverage reporting and ratchet for changed files (coverlet)
+- State: Available
+- Depends: none
+- Source: none (policy ticket: new build-time rule, no Kotlin source)
+- Fixtures: none
+- Deliverables: coverlet.collector in Unciv.Core.Tests via Directory.Packages.props, tools script csharp/migration/tools/coverage.py (line coverage per file, baseline file), PROTOCOL.md Standard-checks section update
+- Gate: python3 -I csharp/migration/tools/coverage.py --check
+- Claimed:
+- Notes:
+  - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
+    Why: adversarial reviews keep reporting untested ported branches (T053: CanCivPassThrough/ProvidesYield/GetWorkingCity/IsLocked/ProvidesResources/UnitHeight; T054: ProductionBonusWhenRemoved/RestrictedBuildableImprovements; T073 thin RNG-stream coverage; T107, T114). Add coverlet (collector), a script that runs dotnet test with coverage in dotnet-dev and writes per-file line and branch coverage, a baseline of current coverage, and a --check mode that fails when a file's coverage drops below its baseline (ratchet; new files must reach 80% line coverage unless excused with a reason). Report the files a ticket touched in the Review step. Keep the run time reasonable (collect once per ticket, not per test run); document in PROTOCOL.md under Standard checks.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.

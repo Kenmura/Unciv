@@ -82,6 +82,13 @@ flowchart TD
     T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
     T112["T112<br/>Hardening: drop CivInfoTransientCache.IsCityConnectedToCapit..."]
     T115["T115<br/>Retype Tile city seams to City and move the Tile/Pathfinding..."]
+    T116["T116<br/>Policy: ban System.Lazy, add KotlinLazy (Kotlin lazy never c..."]
+    T117["T117<br/>Policy: reflection test forbidding mutable static state in U..."]
+    T118["T118<br/>Policy: marker check - every TODO(T###) names an open ticket..."]
+    T119["T119<br/>Policy: forbid unchecked null-forgiving '!' (Kotlin !! throw..."]
+    T120["T120<br/>Policy: size ratchet - maximum file length and method length..."]
+    T121["T121<br/>Policy: coupling ratchet - cap distinct Unciv namespaces imp..."]
+    T122["T122<br/>Policy: coverage reporting and ratchet for changed files (co..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -390,12 +397,26 @@ flowchart TD
   class T111 waiting
   class T112 review
   class T115 waiting
+  class T116 ready
+  class T117 ready
+  class T118 ready
+  class T119 ready
+  class T120 ready
+  class T121 ready
+  class T122 ready
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T116 | **Ready to start** | none | 0 | Policy: ban System.Lazy, add KotlinLazy (Kotlin lazy never caches exceptions) |
+| T117 | **Ready to start** | none | 0 | Policy: reflection test forbidding mutable static state in Unciv.Core |
+| T118 | **Ready to start** | none | 0 | Policy: marker check - every TODO(T###) names an open ticket, every NotSupported/NotImplemented seam has an owner |
+| T119 | **Ready to start** | none | 0 | Policy: forbid unchecked null-forgiving '!' (Kotlin !! throws, C# ! hides the null) |
+| T120 | **Ready to start** | none | 0 | Policy: size ratchet - maximum file length and method length with a shrink-only baseline |
+| T121 | **Ready to start** | none | 0 | Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline |
+| T122 | **Ready to start** | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | T066 | **On deck** (after T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T063 | **On deck** (after T062) | T060, T062 | 36 | CityConstructions |
 | T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
