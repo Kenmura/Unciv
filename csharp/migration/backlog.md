@@ -1189,7 +1189,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Added MarkerOwnershipTests (4 tests: parses backlog.md/backlog-archive.md text; TODO(T###) must name an existing non-Done ticket, scanning Unciv.Core + Unciv.Core.Tests except Policy/; NotSupported/NotImplemented throws need an open TODO or JUSTIFY: T### within 3 lines; *Seams*.cs header comment must name an open owner). Fixes: stale markers retargeted (T033->T087, T050->T070, T034/T055->T104 which owns them per its notes), two already-retyped T059 and the T054 upstream note de-marked; 11 permanent throws got JUSTIFY: T118; BaseUnit throw -> TODO(T106); seam headers gained open owners (T046/T061/T063/T065/T066/T115/T104). Rebase often: new markers by other tickets are checked by this test.
 
 ### T119 Policy: forbid unchecked null-forgiving '!' (Kotlin !! throws, C# ! hides the null)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
@@ -1199,6 +1199,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: about 90 uses of the null-forgiving operator in Unciv.Core. Kotlin's !! throws NullPointerException immediately; C# '!' only silences the compiler and the failure appears later or not at all, a parity difference. Rule: a source scan test (SourcePolicyTests style, ignore strings/comments) that fails on postfix '!' unless the line carries // JUSTIFY: T### (e.g. definite assignment after a guard), plus a NotNull()/Required() helper that throws NullReferenceException with the expression text for ported !! sites. Migrate the existing uses; check each against the Kotlin source to decide NotNull() vs a real null-safe rewrite.
+  - - Added Unciv.Utils.NullExtensions.NotNull() (class and Nullable<struct> overloads, [NotNull] flow annotation, CallerArgumentExpression message, throws NullReferenceException = Kotlin !! NPE).
+    - NullForgivingTests: lexer-based scan (strings/raw strings/chars/comments blanked) of Unciv.Core, Unciv.Harness, Unciv.Godot.Harness; postfix '!' fails unless '// JUSTIFY: T###' within 3 lines above. Scanner self-test included. Tests projects are not scanned (test code may use '!').
+    - ~215 sites migrated mechanically: 'X!' -> 'X.NotNull()', 'X!.Value' (nullable struct) -> 'X.NotNull()' (exception type is now NRE not InvalidOperationException). Sites that were framework annotations (GetString, Activator, Deserialize) also became NotNull (fail early). Kept '!' with JUSTIFY: lateinit fields (null!), default! on unconstrained generics, out-value of TryGetValue, KotlinLazy initializer.
 
 ### T120 Policy: size ratchet - maximum file length and method length with a shrink-only baseline
 - State: Available
