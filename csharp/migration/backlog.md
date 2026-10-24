@@ -229,13 +229,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Colors: engine-owned color type, no libGDX Color. **From T027:** `IHasUniques` still lacks `requiredTechnologies`, `era`, `techColumn`, `availableInEra` (need Technology/Era/TechColumn) and the Personality half of `getWeightForAiDecision`; add them to `IHasUniques.cs` (see its class remarks). | Implemented: all Nation/Tech types as data+pure logic. Deferred to T034 (need Ruleset/Civilopedia types/GameInfo): makeLink, getSortGroup/getSubCategory, civilopedia text, Nation.getStartBias, Era.getStartingUnits/getEraGatedObjects/matchesFilter, Technology.matchesFilter/getDescription, Difficulty.getSortGroup. Fixture CityStateTypeStartBiasTests needs RulesetCache: only its unique-map assertion ported. IHasUniques: added IRulesetTechView (stand-in for Ruleset) + RequiredTechnologies/Era/TechColumn/AvailableInEra (maxByOrNull = first max kept); getWeightForAiDecision still TODO(T033). Deviations: Technology.Prerequisites is LinkedHashSet (deterministic order, Kotlin HashSet); Era.IconRGB public (private in Kotlin, STJ needs public); Nation.CHARCOAL=0x111111, PURPLE=a020f0 built locally (EngineColor untouched); PersonalityValue.get(stat) -> PersonalityValueExtensions.FromStat; Personality.ToString = NationDescriptions.getShortDescription. Player.cs TODO retargeted to T034.
 
 ### T033 Ruleset unit and construction objects: BaseUnit, BaseUnitCost, Promotion, UnitType, UnitNameGroup, Building, IConstruction, PerpetualConstruction
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T031, T032
 - Source: core/src/com/unciv/models/ruleset/unit/*.kt, models/ruleset/Building.kt, IConstruction.kt, PerpetualConstruction.kt
 - Fixtures: tests/src/com/unciv/uniques/UnitUniquesTests.kt (state-dependent parts after T035)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unit/*.cs, Building.cs, IConstruction.cs, PerpetualConstruction.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetUnitTests`
-- Claimed:
+- Claimed: 2026-10-24T04:59Z
 - Notes: Cost/production math: Int vs Float and roundToInt (half-up helper) are the main traps. Methods needing City/Civilization go behind state interfaces from T027. **From T027:** `IHasUniques.getWeightForAiDecision` (the `is BaseUnit`/`is Building` part with `matchesFilter(unique.params[1], gameContext)`) is not ported; add it with BaseUnit/Building. `IRulesetUnitParameterView.HasGreatPersonUnique` must be overridden to `HasUnique(UniqueType.GreatPerson)` (Kotlin goes through the unique map, conditionals against `EmptyState`), as must `IRulesetTerrainParameterView.HasRegionUnique` (T025 note).
 
 ### T034 Ruleset and RulesetCache loader
