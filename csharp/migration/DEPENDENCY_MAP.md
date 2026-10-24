@@ -89,6 +89,7 @@ flowchart TD
     T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
+    T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -288,6 +289,7 @@ flowchart TD
   T065 --> T128
   T096 --> T129
   T097 --> T129
+  T122 --> T130
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -405,6 +407,7 @@ flowchart TD
   class T127 ondeck
   class T128 ondeck
   class T129 waiting
+  class T130 ondeck
 ```
 
 ## Incomplete tickets
@@ -421,6 +424,7 @@ flowchart TD
 | T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T127 | **On deck** (after T063, T065) | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T128 | **On deck** (after T065) | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
+| T130 | **On deck** (after T122) | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
 | T065 | Needs-Review [Claude] | T055, T056, T060 | 51 | MapUnit core: MapUnit, MapUnitCache |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
@@ -459,6 +463,7 @@ flowchart TD
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
+| T122 | Needs-Review [Claude] | none | 1 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -470,6 +475,5 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
-| T122 | Needs-Review [Claude] | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | T126 | Available (waiting on T063, T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T129 | Available (waiting on T096, T097) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |

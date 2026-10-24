@@ -10,14 +10,17 @@ cost nothing. Runs through distrobox `dotnet-dev` automatically when `dotnet` is
                      baseline entry has < 80% line coverage and is not excused. Prints the per-file table.
   --report           Same table for the checked files plus uncovered line ranges; never fails (for the Review step).
   --update-baseline  Raise/add baseline entries for the checked files (never lowers one; a lowered file must be
-                     fixed with tests, or excused). Writes migration/coverage-baseline.json.
+                     fixed with tests, or excused). With --all: regenerate EVERY entry from the current tree, lowering
+                     included (only for fixing a stale baseline, with a ticket for the lost coverage).
+                     Writes migration/coverage-baseline.json.
   --run              Force a fresh coverage run even if the cached report is current.
   --all              Check every file instead of only the files this branch changed (vs csharp-migration, plus
                      uncommitted/untracked). Use with --update-baseline once to (re)generate the whole baseline.
+  --since REV        Changed set relative to REV instead of csharp-migration (reviewers use the implementation's parent).
   FILE...            Explicit files (relative to csharp/) to check instead of the changed set.
 
---update-baseline --all grandfathers every existing file at its current coverage (ratchet start); afterwards only
-files born later face the 80% rule.
+--update-baseline --all grandfathers every existing file at its current coverage; afterwards only files born later
+face the 80% rule.
 
 Excusing a new file below 80% (declarations only, platform glue, ...): add it to "excused" in the baseline file with a
 reason naming a ticket; files with no executable lines are skipped automatically.
@@ -140,8 +143,8 @@ def git(*args):
     return subprocess.run(["git", "-C", CSHARP] + list(args), capture_output=True, text=True).stdout.split("\n")
 
 
-def changed_files():
-    base = git("merge-base", "HEAD", "csharp-migration")[0].strip() or "csharp-migration"
+def changed_files(since=None):
+    base = since or git("merge-base", "HEAD", "csharp-migration")[0].strip() or "csharp-migration"
     names = set(git("diff", "--name-only", "--relative", base, "--", "."))
     names |= set(git("ls-files", "--others", "--exclude-standard", "--", "."))
     return sorted(n for n in names if n.endswith(".cs"))
@@ -172,14 +175,24 @@ def main():
     ap.add_argument("--update-baseline", action="store_true")
     ap.add_argument("--run", action="store_true")
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--since", metavar="REV", help="changed set = files differing from REV (reviewers: the commit before the "
+                    "implementation, e.g. 'abc123^', since the rebased branch already contains it)")
     ap.add_argument("files", nargs="*")
     a = ap.parse_args()
     if not (a.check or a.report or a.update_baseline or a.run):
         ap.error("choose --check, --report, --update-baseline or --run")
 
+    for f in a.files:
+        if not os.path.exists(os.path.join(CSHARP, f)):
+            sys.exit("coverage: no such file (path relative to csharp/): " + f)
+    wanted = None if a.all else (a.files or changed_files(a.since))
+    if wanted is not None and not wanted and not a.run:
+        print("(no changed .cs files: skipping the coverage run; use --all or --since REV)")
+        return 0
     report = load_report(a.run)
     baseline = load_baseline()
-    wanted = sorted(report) if a.all else (a.files or changed_files())
+    if wanted is None:
+        wanted = sorted(report)
     problems, rows = [], []
     for fn in wanted:
         cur = report.get(fn)
@@ -219,12 +232,13 @@ def main():
 
     if a.update_baseline:
         # --all regenerates the whole baseline from reality: pre-existing files below 80% are grandfathered at their level
-        problems = [p for p in problems if not (a.all and "new file at" in p)]
+        if a.all:
+            problems = []
         if problems:
             print("\n".join(problems))
             sys.exit("coverage: refusing to update the baseline while checks fail")
         for fn, cur, base, _ in rows:
-            if cur is not None and (base is None or cur["line"] > base["line"]):
+            if cur is not None and (a.all or base is None or cur["line"] > base["line"]):
                 baseline["files"][fn] = {"line": cur["line"], "branch": cur["branch"]}
         for fn in [f for f in baseline["files"] if not os.path.exists(os.path.join(CSHARP, f))]:
             del baseline["files"][fn]
