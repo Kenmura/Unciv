@@ -408,12 +408,12 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Decided: ported headlessly now. File access behind an interface (no libGDX FileHandle). Exclude TranslationFileWriter (dev tooling; Won't port, T043). Translation templates/placeholders/conditionals `[]`/`<>` must match Kotlin exactly; culture-invariant ordering. Lookups must not depend on iteration order of hash collections.
 
 ### T024 Holiday dates
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: core/src/com/unciv/logic/HolidayDates.kt
 - Fixtures: tests/src/com/unciv/logic/HolidayDatesTest.kt
 - Deliverables: csharp/Unciv.Core/Logic/HolidayDates.cs, tests
-- Gate: `dotnet test --filter FullyQualifiedName~HolidayDatesTests`
+- Claimed: 2026-10-24T01:50:53Z
 - Claimed:
 - Notes: Time is an explicit input (DateOnly/ints), never DateTime.Now. Use vetted rounding/calendar helpers.
 
