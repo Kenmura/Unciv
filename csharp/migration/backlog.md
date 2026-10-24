@@ -1695,13 +1695,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T142: TradeLogic.AcceptTrade calls TradeEvaluation.GetTradeAcceptability, which throws until T089 lands.
 
 ### T151 Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T142, T140
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/QuestTests.kt, tests/src/com/unciv/logic/GameSerializationTests.kt
 - Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/QuestFixtureTests.cs, csharp/Unciv.Core.Tests/Fixtures/GameSerializationFixtureTests.cs
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
-- Claimed:
+- Claimed: 2026-10-24T18:04Z
 - Notes: Split from T142: QuestTests round-trip QuestManager through json(); GameSerializationTests need the full GameInfo save/load (T140). QuestTests also uses Barbarians.createNewCamp, headTowards, buyTile (check they are ported).
 
 ### T152 Deferred civilization fixture: GreatPersonSelectionTest
