@@ -94,7 +94,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified fidelity against Kotlin original: non-zero integer map behavior, insertion-order preservation via OrderedDictionary, zero-removal on mutating methods, super.put zero-retention on copy constructor/Clone/PutAll, Counter.ZERO Put restriction, and AbstractMap value-based equality and hashing semantics. Re-ran Gate (17/17 passed) and full test suite (106/106 passed).
 
 ### T006 HexMath
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Claimed: 2026-10-24T00:51:46Z
 - Depends: T003
 - Source: core/src/com/unciv/logic/map/HexMath.kt
@@ -102,15 +102,21 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: csharp/Unciv.Core/Logic/Map/HexMath.cs, csharp/Unciv.Core.Tests/Logic/Map/HexMathTests.cs
 - Gate: `dotnet test --filter FullyQualifiedName~HexMathTests`
 - Notes: HexMath references `Tile` and Json. Port only the pure functions now; add follow-up tickets (with Depends on the Tile ticket) for the Tile/Json-dependent members. Fixtures use Ruleset/Terrain – port only cases that don't need them and list the rest in a follow-up ticket.
+  - Implementer notes (Antigravity): Ported pure functions to `Unciv.Logic.Map.HexMath`, `HexCoord`, `InlineHexCoord`, and `Vector2HexExtensions`.
+  - Math semantics: trig conversions, angle vectors, single/double conversions, and Kotlin `.mod` parity for longitudinal unwrapping (`((val % m) + m) % m`) preserved.
+  - Rounding semantics: banker's rounding on cubic coordinates (`MathF.Round`) and `floor(x + 0.5f)` for map dimension `roundToInt()`.
+  - `HexCoord` implemented as a `readonly record struct` with value equality, arithmetic operators `+ - *`, `ToPrettyString`, `FromString`, and lowercase compatibility aliases.
+  - Deferred members: `tilesAndNeighborUniqueIndex` (needs Tile/TileMap) and `getDistanceFromEdge` (needs MapParameters/MapShape) deferred to T013. `HexCoord.Serializer` deferred to T007.
+  - Ran Gate (16 passed) and full `dotnet test` (122 passed).
 
 ### T007 JSON layer for ported data classes (Counter, Stats, ...)
 - State: Available
 - Depends: T004, T005
-- Source: core/src/com/unciv/models/Counter.kt (`write`/`read`), libGDX Json behaviour as used by Unciv; core/src/com/unciv/json/*
-- Fixtures: tests/src/com/unciv/logic/SerializationTests.kt (Counter round-trip); generate golden JSON by running the Kotlin code
+- Source: core/src/com/unciv/models/Counter.kt (`write`/`read`), libGDX Json behaviour as used by Unciv; core/src/com/unciv/json/*; core/src/com/unciv/logic/map/HexMath.kt (`HexCoord.Serializer`)
+- Fixtures: tests/src/com/unciv/logic/SerializationTests.kt (Counter round-trip); tests/src/com/unciv/logic/map/HexmathTests.kt (HexCoord JSON ser/deser); generate golden JSON by running the Kotlin code
 - Deliverables: to be designed (System.Text.Json converters under csharp/Unciv.Core/Json/), tests
 - Gate: `dotnet test --filter FullyQualifiedName~Json`
-- Notes: Needs a design pass first (brainstorm): libGDX Json is lenient (unquoted keys, float-valued ints, class-name tags). Counter's compact `{name: value}` format, reading `value` objects, and Stats/StatMap/Stat enum serialization all need converters. Also `IsPartOfGameInfoSerialization` marker interface.
+- Notes: Needs a design pass first (brainstorm): libGDX Json is lenient (unquoted keys, float-valued ints, class-name tags). Counter's compact `{name: value}` format, reading `value` objects, and Stats/StatMap/Stat enum serialization all need converters. Also `IsPartOfGameInfoSerialization` marker interface and `HexCoord` converter.
 
 ### T010 Seeded deterministic RNG
 - State: Available
@@ -138,6 +144,15 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: `csharp/migration/COMMANDS.md` proposing a serializable command/event model (player action → validate → apply → event), plus a minimal `ICommand` skeleton in Unciv.Core with tests
 - Gate: `dotnet test --filter FullyQualifiedName~CommandTests`
 - Notes: Target is an authoritative-server model: clients send commands, server validates/applies, broadcasts commands or diffs. Must not depend on Unciv's multiplayer code. Reviewer must check it keeps lockstep as a possible future option (pure, deterministic apply).
+
+### T013 HexMath Tile/Map dependent functions
+- State: Blocked
+- Depends: Tile/TileMap ticket, MapParameters ticket
+- Source: core/src/com/unciv/logic/map/HexMath.kt (`tilesAndNeighborUniqueIndex`, `getDistanceFromEdge`)
+- Fixtures: tests/src/com/unciv/logic/map/HexmathTests.kt (`testTileNeighborMappingIsNonConflicting`)
+- Deliverables: additions to csharp/Unciv.Core/Logic/Map/HexMath.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~HexMathTests`
+- Notes: Deferred from T006.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
