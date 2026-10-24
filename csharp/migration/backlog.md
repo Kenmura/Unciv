@@ -1204,7 +1204,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - ~215 sites migrated mechanically: 'X!' -> 'X.NotNull()', 'X!.Value' (nullable struct) -> 'X.NotNull()' (exception type is now NRE not InvalidOperationException). Sites that were framework annotations (GetString, Activator, Deserialize) also became NotNull (fail early). Kept '!' with JUSTIFY: lateinit fields (null!), default! on unconstrained generics, out-value of TryGetValue, KotlinLazy initializer.
 
 ### T120 Policy: size ratchet - maximum file length and method length with a shrink-only baseline
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
@@ -1214,6 +1214,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: files over 1000 lines: UniqueTypeData.cs 2592 (a data table), Tile.cs 1496, Civilization.cs 1443, UniqueParameterType.cs 1286, TileMap.cs 1156, plus City.cs 945 and others near it. Methods over 100 lines: Conditionals.ConditionalApplies 305, Ruleset.Load 185, MapRegions.AssignRegions 168, JavaDecimalFormat.Parse 119, TileImprovementFunctions.CanImprovementBeBuiltHere 102. Many mirror giant Kotlin functions, so a hard limit would fight faithful ports: use a RATCHET. Test fails if (a) a file exceeds 1500 lines or a method exceeds 120 lines and is not in the baseline, or (b) a baselined file/method GROWS beyond its recorded size (the baseline may only shrink; the test rewrites nothing, humans lower the numbers). Method length via a Roslyn syntax scan (Microsoft.CodeAnalysis.CSharp as a test-only package; Directory.Packages.props is editable in this policy ticket) or a documented brace-matching scan. Do not refactor existing offenders here; note candidates for splitting.
+  - Roslyn (Microsoft.CodeAnalysis.CSharp 4.14.0, test-only) scan. Limits: file 1500 lines, method 120 lines (declaration span, ctors/operators included, local funcs counted in parent; overloads: largest). Baseline: Unciv.Core.Tests/Policy/SizeRatchetBaseline.txt; test fails on new offender, on growth, and on stale entry. SIZE_RATCHET_DUMP=<path> writes a fresh candidate list. Baseline exact for UniqueTypeData.cs, ConditionalApplies, Ruleset.Load, AssignRegions, GetKnownValuesForAutocomplete (122). Tile.cs (1496) and Civilization.cs (1443) deliberately generous (1650/1600) because T061/T063/T065 are growing them: lower after they land. Split candidates listed in the baseline header.
 
 ### T121 Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline
 - State: In-Progress [Claude]

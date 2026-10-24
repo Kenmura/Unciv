@@ -1,0 +1,11 @@
+# T120 size ratchet baseline (shrink-only). See SizeRatchetTests.cs. Humans LOWER numbers or delete lines; never raise.
+# Split candidates: Conditionals.ConditionalApplies (305, one branch per conditional type), Ruleset.Load (185),
+# MapRegions.AssignRegions (168), UniqueParameterType.GetKnownValuesForAutocomplete (122), UniqueTypeData.cs (data table).
+Unciv.Core/Logic/Map/MapGenerator/Mapregions/MapRegions.cs::MapRegions.AssignRegions|168
+Unciv.Core/Models/Ruleset/Ruleset.cs::Ruleset.Load|185
+Unciv.Core/Models/Ruleset/Unique/Conditionals.cs::Conditionals.ConditionalApplies|305
+Unciv.Core/Models/Ruleset/Unique/UniqueParameterType.cs::UniqueParameterTypeExtensions.GetKnownValuesForAutocomplete|122
+Unciv.Core/Models/Ruleset/Unique/UniqueTypeData.cs|2592
+# Deliberately generous (actively growing as T061/T063/T065 port more members; was 1496 / 1443 when recorded). Lower once those land.
+Unciv.Core/Logic/Map/Tile/Tile.cs|1650
+Unciv.Core/Logic/Civilization/Civilization.cs|1600
