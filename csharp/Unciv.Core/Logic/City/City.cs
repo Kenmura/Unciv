@@ -29,7 +29,6 @@ namespace Unciv.Logic.City;
 // - timeThis profiling wrappers and the purity annotations.
 // - getLandAttackPath / getAmphibiousAttackPath / getRoadPath / getRoadPathToAny, their PathingMap caches and clearCaches: PathingMap
 //   is ported in T093, which adds them (they are the only users of the caches).
-// - getGreatPersonPercentageBonus: GreatPersonPointsBreakdown is ported in T062; getGreatPersonPoints goes through ICityStats until then.
 // - annexCity / puppetCity / liberateCity / moveToCiv: CityConquestFunctions is ported in T064 (until then they throw).
 // - resetSpecialistsControl reads UncivGame.Current.settings (client state): its two inputs are explicit parameters.
 // - getGarrison / destroyCity / sellBuilding reach MapUnit (T065) through the IMapUnitState / IGameContextUnit seams.
@@ -146,12 +145,12 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
             foreach (var construction in Civ.DisabledCityConstructions) DisabledConstructions.Add(construction);
     }
 
-    private ICityStats? cityStats;
-    /// <summary>Transient: CityStats has no serializable fields. TODO(T062): becomes <c>var cityStats = CityStats(this)</c>.</summary>
+    private CityStats? cityStats;
+    /// <summary>Transient: CityStats has no serializable fields (Kotlin <c>var cityStats = CityStats(this)</c>).</summary>
     [JsonIgnore]
-    public ICityStats CityStats
+    public CityStats CityStats
     {
-        get => Lateinit(cityStats, "cityStats");
+        get => cityStats ??= new CityStats(this);
         set => cityStats = value;
     }
 
@@ -353,8 +352,8 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     public bool ContainsBuildingUnique(UniqueType uniqueType, GameContext? state = null) =>
         CityConstructions.BuiltBuildingUniqueMap.GetMatchingUniques(uniqueType, state ?? State).Any();
 
-    /// <summary>TODO(T062): <c>GreatPersonPointsBreakdown.getGreatPersonPercentageBonus(this)</c>; ported with GreatPersonPointsBreakdown.</summary>
-    public Counter<string> GetGreatPersonPoints() => CityStats.GetGreatPersonPoints();
+    public int GetGreatPersonPercentageBonus() => GreatPersonPointsBreakdown.GetGreatPersonPercentageBonus(this);
+    public Counter<string> GetGreatPersonPoints() => new GreatPersonPointsBreakdown(this).Sum();
 
     public void GainStockpiledResource(TileResource resource, int amount)
     {

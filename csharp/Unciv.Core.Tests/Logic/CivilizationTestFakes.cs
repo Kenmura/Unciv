@@ -112,13 +112,14 @@ internal sealed class FakeCityState
     public CityObject City { get; } = new();
     public FakeCityPopulation PopulationFake { get; } = new();
     public FakeCityConstructions ConstructionsFake { get; } = new();
-    public FakeCityStats StatsFake { get; } = new();
+    public FakeCityStats StatsFake { get; }
     public FakeCityExpansion ExpansionFake { get; } = new();
     public FakeCityReligion ReligionData { get; } = new();
 
     public FakeCityState(string id, FakeCiv civ)
     {
         _ = civ;
+        StatsFake = new FakeCityStats(City);
         City.Id = id;
         City.Name = id;
         City.Population = PopulationFake;
@@ -136,6 +137,24 @@ internal sealed class FakeCityState
     public int PopulationData { get => PopulationFake.PopulationValue; set => PopulationFake.PopulationValue = value; }
     public UniqueMap BuiltUniques => ConstructionsFake.BuiltUniques;
     public List<Building> BuiltBuildingObjects => ConstructionsFake.BuiltBuildingObjects;
+
+    private Building? greatPersonPointsBuilding;
+    /// <summary>
+    /// The base points <c>GreatPersonPointsBreakdown(city).sum()</c> returns (before the "is a unit of the ruleset" filter): the
+    /// <c>greatPersonPoints</c> of a synthetic built building.
+    /// </summary>
+    public Counter<string> GreatPersonPoints
+    {
+        get
+        {
+            if (greatPersonPointsBuilding == null)
+            {
+                greatPersonPointsBuilding = new Building { Name = "Great person points test building" };
+                BuiltBuildingObjects.Add(greatPersonPointsBuilding);
+            }
+            return greatPersonPointsBuilding.GreatPersonPoints;
+        }
+    }
     public List<Building> Completed => ConstructionsFake.Completed;
     public List<string> ConstructionQueue => ConstructionsFake.ConstructionQueue;
     public int InProgressValidations => ConstructionsFake.InProgressValidations;
@@ -143,7 +162,6 @@ internal sealed class FakeCityState
     public HashSet<string> Buildings => ConstructionsFake.BuiltNames;
     public int StatsUpdateCalls => StatsFake.UpdateCalls;
     public Action<Building>? OnCompleteConstruction { get => ConstructionsFake.OnCompleteConstruction; set => ConstructionsFake.OnCompleteConstruction = value; }
-    public Counter<string> GreatPersonPoints => StatsFake.GreatPersonPoints;
 
     /// <summary>Whether the built buildings include one that "Indicates the capital city".</summary>
     public bool Capital
@@ -197,6 +215,10 @@ internal sealed class FakeCityPopulation : ICityPopulationManager
     public void UnassignExtraPopulation() => UnassignCalls++;
     public Dictionary<string, int> ByFilter { get; } = [];
     public int GetPopulationFilterAmount(string filter) => ByFilter.GetValueOrDefault(filter);
+    public Counter<string> GetNewSpecialists() => SpecialistAllocations;
+    public int FreePopulation { get; set; }
+    public int GetFreePopulation() => FreePopulation;
+    public int GetNumberOfSpecialists() => SpecialistAllocations.SumValues();
 }
 
 internal sealed class FakeCityExpansion : ICityExpansionManager
@@ -209,22 +231,17 @@ internal sealed class FakeCityExpansion : ICityExpansionManager
     public void RelinquishOwnership(Tile tile) => Relinquished.Add(tile);
 }
 
-internal sealed class FakeCityStats : ICityStats
+internal sealed class FakeCityStats(CityObject city) : CityStats(city)
 {
     public int UpdateCalls { get; private set; }
     public List<bool> UpdateCivStatsArguments { get; } = [];
-    public void Update(IConstruction? currentConstruction = null, bool updateTileStats = true, bool updateCivStats = true, bool calculateGrowthModifiers = true)
+    public override void Update(IConstruction? currentConstruction = null, bool updateTileStats = true, bool updateCivStats = true, bool calculateGrowthModifiers = true)
     {
         UpdateCalls++;
         UpdateCivStatsArguments.Add(updateCivStats);
     }
-    public StatsObject CurrentCityStats { get; set; } = new();
     public bool ExtraAnnexUnhappiness { get; set; }
-    public bool HasExtraAnnexUnhappiness() => ExtraAnnexUnhappiness;
-    public IEnumerable<KeyValuePair<string, StatsObject>> FinalStatList => [];
-    public IEnumerable<KeyValuePair<string, float>> HappinessList => [];
-    public Counter<string> GreatPersonPoints { get; } = new();
-    public Counter<string> GetGreatPersonPoints() => GreatPersonPoints;
+    public override bool HasExtraAnnexUnhappiness() => ExtraAnnexUnhappiness;
 }
 
 internal sealed class FakeCityConstructions : ICityConstructions
@@ -243,7 +260,8 @@ internal sealed class FakeCityConstructions : ICityConstructions
     public int ProductionAdded { get; private set; }
     public void AddProductionPoints(int productionToAdd) => ProductionAdded += productionToAdd;
     public int GetWorkDone(string constructionName) => 0;
-    public IConstruction GetCurrentConstruction() => throw new NotSupportedException();
+    public IConstruction? CurrentConstruction { get; set; }
+    public IConstruction GetCurrentConstruction() => CurrentConstruction ?? throw new NotSupportedException();
     public void AddBuilding(Building building) => BuiltBuildingObjects.Add(building);
     public void RemoveBuilding(Building building) => BuiltBuildingObjects.Remove(building);
     public void ChooseNextConstruction() => throw new NotSupportedException();
@@ -270,6 +288,12 @@ internal sealed class FakeCityConstructions : ICityConstructions
     public bool IsBeingConstructedOrEnqueued(string constructionName) => false;
     public bool IsBuildable(Building building) => false;
     public void RemoveCreateOneImprovementConstruction(string improvement) { }
+    public string CurrentConstructionNameData { get; set; } = "";
+    public string CurrentConstructionName() => CurrentConstructionNameData;
+    public StatTreeNode StatsData { get; set; } = new();
+    public StatTreeNode GetStats() => StatsData;
+    public float MaintenanceCosts { get; set; }
+    public float GetMaintenanceCosts() => MaintenanceCosts;
 }
 
 internal sealed class FakeCityReligion : ICityReligionManager
@@ -285,6 +309,8 @@ internal sealed class FakeCityReligion : ICityReligionManager
     public string? GetMajorityReligionName() => Majority?.Name;
     public Dictionary<string, int> Followers { get; } = [];
     public int GetFollowersOf(string religion) => Followers.GetValueOrDefault(religion);
+    public int FollowersOfMajority { get; set; }
+    public int GetFollowersOfMajorityReligion() => FollowersOfMajority;
     public bool IsProtectedByInquisitor(string? fromReligion = null) => false;
     public FakeCityReligion? CloneResult { get; set; }
     public ICityReligionManager Clone() => CloneResult ?? throw new NotSupportedException();

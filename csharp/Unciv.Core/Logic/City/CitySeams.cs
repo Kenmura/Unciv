@@ -45,26 +45,13 @@ public interface ICityConstructions
     /// <summary><c>building.isBuildable(cityConstructions)</c></summary>
     bool IsBuildable(Building building);
     void RemoveCreateOneImprovementConstruction(string improvement);
-}
-
-/// <summary>What City reads from <c>CityStats</c> (<c>city.cityStats</c>). TODO(T062)</summary>
-public interface ICityStats
-{
-    /// <summary><c>cityStats.update(currentConstruction, updateTileStats, updateCivStats, calculateGrowthModifiers)</c>; <c>null</c> is the city's current construction.</summary>
-    void Update(IConstruction? currentConstruction = null, bool updateTileStats = true, bool updateCivStats = true, bool calculateGrowthModifiers = true);
-    /// <summary><c>cityStats.currentCityStats</c></summary>
-    Stats CurrentCityStats { get; }
-    /// <summary><c>cityStats.hasExtraAnnexUnhappiness()</c></summary>
-    bool HasExtraAnnexUnhappiness();
-    /// <summary><c>cityStats.finalStatList</c> (a <c>LinkedHashMap</c>), in map order.</summary>
-    IEnumerable<KeyValuePair<string, Stats>> FinalStatList { get; }
-    /// <summary><c>cityStats.happinessList</c> (a <c>LinkedHashMap</c>), in map order.</summary>
-    IEnumerable<KeyValuePair<string, float>> HappinessList { get; }
-    /// <summary>
-    /// <c>GreatPersonPointsBreakdown(city).sum()</c>. A seam member only because GreatPersonPointsBreakdown is ported with CityStats (T062),
-    /// which then calls it from <c>City.GetGreatPersonPoints</c> directly and drops this member.
-    /// </summary>
-    Counter<string> GetGreatPersonPoints();
+    // T062 (CityStats)
+    /// <summary><c>cityConstructions.currentConstructionName()</c></summary>
+    string CurrentConstructionName();
+    /// <summary><c>cityConstructions.getStats()</c></summary>
+    StatTreeNode GetStats();
+    /// <summary><c>cityConstructions.getMaintenanceCosts()</c></summary>
+    float GetMaintenanceCosts();
 }
 
 /// <summary>What City reads from <c>CityPopulationManager</c> (<c>city.population</c>). TODO(T061)</summary>
@@ -82,6 +69,13 @@ public interface ICityPopulationManager
     void AutoAssignPopulation();
     void UnassignExtraPopulation();
     int GetPopulationFilterAmount(string filter);
+    // T062 (CityStats)
+    /// <summary><c>population.getNewSpecialists()</c> (the specialist allocations).</summary>
+    Counter<string> GetNewSpecialists();
+    /// <summary><c>population.getFreePopulation()</c></summary>
+    int GetFreePopulation();
+    /// <summary><c>population.getNumberOfSpecialists()</c></summary>
+    int GetNumberOfSpecialists();
 }
 
 /// <summary>What City reads from <c>CityExpansionManager</c> (<c>city.expansion</c>). TODO(T061)</summary>

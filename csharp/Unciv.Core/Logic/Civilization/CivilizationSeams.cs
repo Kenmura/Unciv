@@ -126,6 +126,8 @@ public interface ICityReligionManager
     /// <summary><c>city.religion.getMajorityReligionName()</c> (T059: DiplomacyManager)</summary>
     string? GetMajorityReligionName();
     int GetFollowersOf(string religion);
+    /// <summary>T062: <c>religion.getFollowersOfMajorityReligion()</c></summary>
+    int GetFollowersOfMajorityReligion();
     bool IsProtectedByInquisitor(string? fromReligion = null);
     // T060 (City)
     ICityReligionManager Clone();

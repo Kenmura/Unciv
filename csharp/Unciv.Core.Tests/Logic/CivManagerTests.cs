@@ -196,7 +196,9 @@ public class CivManagerTests
     [Fact]
     public void GreatPerson_PointsForNextTurnSumTheCities()
     {
-        var (civ, _) = NewCiv();
+        var (civ, info) = NewCiv();
+        info.RulesetData.Units["Great Artist"] = new BaseUnit { Name = "Great Artist" };
+        info.RulesetData.Units["Great Writer"] = new BaseUnit { Name = "Great Writer" };
         var a = AddCity(civ, "a");
         var b = AddCity(civ, "b");
         a.GreatPersonPoints["Great Artist"] = 3;
