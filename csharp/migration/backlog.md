@@ -428,13 +428,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Backlog audit: TileMap.cs has two TODO(T055) markers: TileMap.switchPlayersNation (Kotlin marks it 'currently unreachable', constructs a Civilization). Port it here after Civilization exists (or, if left out, say so here and in T104). Also T104 lists the Player.ChosenNation/SetNationTransient leftovers.
 
 ### T056 Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T055
 - Source: core/src/com/unciv/logic/civilization/managers/TechManager.kt, PolicyManager.kt, GoldenAgeManager.kt, GreatPersonManager.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/GreatPersonSelectionTest.kt and the tech/policy parts of managers/* (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/Civilization/Managers/*.cs, tests (+ retype Civilization fields from ITechManager/IPolicyManager/IGoldenAgeManager/IGreatPersonManager to the concrete classes)
 - Gate: `dotnet test --filter FullyQualifiedName~CivManagerTests`
-- Claimed:
+- Claimed: 2026-10-24T11:04Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC. Concrete Civilization (T055); City/MapUnit through their seams. Implements the manager seams defined by T055. `TechManager` json field names must match Kotlin (saves). Deferred: calls into UniqueTriggerActivation (T052).
 
 ### T057 Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy)
