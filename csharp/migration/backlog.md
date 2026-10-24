@@ -1482,7 +1482,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Coverage: `CityConquestFunctions.cs` line coverage 100.0%, branch coverage 96.5%; `CityTurnManager.cs` line coverage 100.0%, branch coverage 93.0%. Zero uncovered lines. Standard suite (2312 tests) and formatting green.
 
 ### T137 TranslationCache.ActiveMods from the running GameInfo
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T046
 - Source: core/src/com/unciv/models/translations/TranslationCache.kt (ActiveModsCache)
 - Fixtures: none

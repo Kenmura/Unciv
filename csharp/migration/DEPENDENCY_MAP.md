@@ -79,7 +79,6 @@ flowchart TD
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
-    T137["T137<br/>TranslationCache.ActiveMods from the running GameInfo"]
     T138["T138<br/>Views A leftovers: TradeView and CivView.getTradeView"]
   end
   subgraph CTRACK["Client track (Godot)"]
@@ -320,7 +319,6 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T130 ready
-  class T137 review
   class T138 ondeck
 ```
 
@@ -377,4 +375,3 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T126 | In-Progress [Claude] | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
-| T137 | Needs-Review [Antigravity] | T046 | 0 | TranslationCache.ActiveMods from the running GameInfo |
