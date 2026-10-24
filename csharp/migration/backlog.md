@@ -280,12 +280,12 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Asset JSON is read from the Kotlin repo's android/assets/jsons (read-only). Compare object counts/ids/uniques against Kotlin-generated dump (record how generated).
 
 ### T038 Tile core: Tile, TileHistory, TileNormalizer, TileStatFunctions, TileImprovementFunctions
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T022, T034
 - Source: core/src/com/unciv/logic/map/tile/*.kt
 - Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt
 - Deliverables: csharp/Unciv.Core/Logic/Map/Tile/*.cs, tests
-- Gate: `dotnet test --filter FullyQualifiedName~TileTests`
+- Claimed: 2026-10-24T05:45Z
 - Claimed:
 - Notes: Tile.kt is 1.3k LOC; split off Tile stats/improvements if needed. Civ/City/Unit references go behind interfaces from T027. Kotlin lazy/cached fields must not change observable behaviour. Use namespace `Unciv.Logic.Map.Tiles` (matching `RoadStatus.cs` in T022) so the namespace does not collide with the `Tile` class name.
 
