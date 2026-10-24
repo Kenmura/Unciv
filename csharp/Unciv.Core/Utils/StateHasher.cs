@@ -198,6 +198,16 @@ public sealed class StateHasher
         return this;
     }
 
+    /// <summary>
+    /// Hashes an enum by name, which stays stable when members are reordered or renumbered.
+    /// </summary>
+    public StateHasher Add<TEnum>(TEnum value) where TEnum : struct, Enum => Add(value.ToString());
+
+    /// <summary>
+    /// Order-independent map hash: entries are sorted by <paramref name="keyToString"/> (ordinal) first.
+    /// The key strings must be unique, otherwise the sort could not be independent of the source order.
+    /// </summary>
+    /// <exception cref="ArgumentException">Two keys produced the same string.</exception>
     public StateHasher AddUnorderedMap<TKey, TValue>(
         IEnumerable<KeyValuePair<TKey, TValue>> map,
         Func<TKey, string> keyToString,
@@ -206,6 +216,7 @@ public sealed class StateHasher
         var entries = map.Select(kv => (KeyStr: keyToString(kv.Key), Value: kv.Value))
                          .OrderBy(e => e.KeyStr, StringComparer.Ordinal)
                          .ToList();
+        ThrowOnDuplicateKeys(entries.Select(e => e.KeyStr).ToList());
         Add(entries.Count);
         foreach (var (keyStr, value) in entries)
         {
@@ -213,6 +224,29 @@ public sealed class StateHasher
             hashValue(this, value);
         }
         return this;
+    }
+
+    /// <summary>
+    /// Order-independent set hash: the elements are identified by <paramref name="toKey"/> (unique per element),
+    /// sorted ordinally, and only their keys are hashed.
+    /// </summary>
+    /// <exception cref="ArgumentException">Two elements produced the same key.</exception>
+    public StateHasher AddUnorderedSet<T>(IEnumerable<T> items, Func<T, string> toKey)
+    {
+        var keys = items.Select(toKey).OrderBy(key => key, StringComparer.Ordinal).ToList();
+        ThrowOnDuplicateKeys(keys);
+        Add(keys.Count);
+        foreach (string key in keys) Add(key);
+        return this;
+    }
+
+    private static void ThrowOnDuplicateKeys(List<string> sortedKeys)
+    {
+        for (int i = 1; i < sortedKeys.Count; i++)
+        {
+            if (string.Equals(sortedKeys[i], sortedKeys[i - 1], StringComparison.Ordinal))
+                throw new ArgumentException($"Duplicate key \"{sortedKeys[i]}\": an unordered hash needs unique keys", nameof(sortedKeys));
+        }
     }
 
     public ulong ToHash64() => hash;

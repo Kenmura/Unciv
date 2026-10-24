@@ -36,9 +36,10 @@ Determinism enables:
 - Iteration order of hash-based collections (`Dictionary<K, V>`, `HashSet<T>`) is undefined and must **never** feed game mutation, serialization output, or random seeds.
 - Collections where insertion order matters use `OrderedDictionary<K, V>` or `Counter<K>`.
 - Any sorting over game state must use stable ordering (`OrderBy` / `ThenBy`), as `List<T>.Sort()` and `Array.Sort()` are unstable quicksort implementations and are banned.
+- Kotlin's own `HashSet`/`HashMap` iterate in JVM hash order, which no C# collection reproduces. Where a Kotlin call site iterates one, the order is a porting decision tracked by T044; do not rely on it silently.
 
 ### 2.5 Culture and Hashing
-- `string.GetHashCode()` is randomized per process in .NET Core/.NET 5+ and is strictly banned.
+- `string.GetHashCode()` is randomized per process in .NET Core/.NET 5+ and is strictly banned. Where Kotlin hashes into state (`GameContext.stateBasedRandom`), use `JavaHash` and `Randomness.HashOf` (T017), which reproduce the JVM values bit-for-bit.
 - All strings and numbers parse and format with `CultureInfo.InvariantCulture`.
 - String comparisons and ordering use `StringComparer.Ordinal` / `string.CompareOrdinal`.
 
@@ -57,9 +58,37 @@ The engine provides `Unciv.Utils.StateHasher` as the canonical hashing utility f
 - **Strings**: Hashed by length prefix followed by UTF-16 code units; `null` is distinguished with a dedicated sentinel.
 - **Engine Data Types**: Dedicated `.Add(...)` overloads for `HexCoord`, `Vector2`, `Vector3`, `Stats`, `StatMap`, `Counter<K>`, and `GameRandom`.
 - **Domain Objects**: Any game object can implement `IStateHashable` to serialize its state directly into the hasher.
-- **Unordered Collections**: `.AddUnorderedMap(...)` explicitly sorts keys with `StringComparer.Ordinal` before hashing entries to ensure insertion-order independence.
+- **Unordered Collections**: `.AddUnorderedMap(...)` and `.AddUnorderedSet(...)` sort by an ordinal key string before hashing, so insertion order does not matter. The key strings must be unique; duplicates throw `ArgumentException` (the sort could not otherwise be independent of the source order).
+- **Enums**: `.Add(enumValue)` hashes the member *name*, stable when members are reordered or renumbered.
+- **Order-sensitive on purpose**: `Add(Counter<K>)`, `Add(StatMap)` and `AddSequence` hash in iteration order, because Kotlin `LinkedHashMap`/list order is game relevant. Two Counters that are *equal* (equality ignores order) can therefore hash differently; that is a real state difference.
 
-### 3.3 Usage Example
+### 3.3 Byte layout (for reproducing hashes outside C#)
+
+The hash is FNV-1a 64 over this byte stream, starting from the offset basis, all integers two's complement **little endian**:
+
+| Value | Bytes |
+|---|---|
+| `bool` | 1 byte, `0` or `1` |
+| `int` | 4 bytes |
+| `long` | 8 bytes |
+| `float` | the 4 bytes of `floatToIntBits` (any NaN is `0x7fc00000`; `-0f` differs from `0f`) |
+| `double` | the 8 bytes of `doubleToLongBits` (any NaN is `0x7ff8000000000000`) |
+| `string` | `int` length in UTF-16 code units, then each unit as 2 bytes; `null` is the single `int` `-1` |
+| `HexCoord` | `int x`, `int y` |
+| `Vector2` / `Vector3` | the `float` components |
+| `Stats` | `float` production, food, gold, science, culture, happiness, faith |
+| `StatMap`, `Counter<K>` | `int` count, then per entry in **iteration order**: key (`string`, `Counter` uses `key.ToString()`), then the value |
+| `IStateHashable` | `int` `0` for null, else `int` `1` then the object's own fields |
+| `GameRandom` | an `IStateHashable`: `x y z w v addend` as `int`s |
+| sequence | `int` count, then the items |
+| unordered map / set | `int` count, then entries sorted by ordinal (UTF-16 code unit) comparison of the key string: key, then value (set: key only) |
+| enum | the member name as a `string` |
+
+Reference values (verified with an independent Python implementation, see `StateHasherTests.GoldenHashes_PinAlgorithmAndByteLayout`):
+`Add(42)` is `8D9AADC8352FDF7F`, `Add("Unciv")` is `D969796611AEC9B7`, `Add(HexCoord.Of(2, 3))` is `06CD822B3B579854`,
+`Add(new GameRandom(42))` is `D0EA959456A64405`. FNV-1a 64 detects desync; it is not an integrity check (collisions are possible, about 2^-64 per comparison).
+
+### 3.4 Usage Example
 
 ```csharp
 ulong hash = StateHasher.ComputeHash(hasher =>

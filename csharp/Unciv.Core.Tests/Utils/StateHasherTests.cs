@@ -213,4 +213,31 @@ public class StateHasherTests
         Assert.Equal(972016666, rng.NextInt());
         Assert.Equal("2D219475C54F82E4", StateHasher.ComputeHexString(h => h.Add(rng)));
     }
+
+    [Fact]
+    public void UnorderedMapAndSet_RejectDuplicateKeys()
+    {
+        // Without unique keys the sort keeps the source order, so the hash would depend on it
+        var entries = new List<KeyValuePair<int, int>> { new(1, 10), new(2, 20) };
+        Assert.Throws<ArgumentException>(() => StateHasher.ComputeHash(h => h.AddUnorderedMap(entries, _ => "same", (hasher, v) => hasher.Add(v))));
+        Assert.Throws<ArgumentException>(() => StateHasher.ComputeHash(h => h.AddUnorderedSet(new[] { 1, 2 }, _ => "same")));
+    }
+
+    [Fact]
+    public void UnorderedSet_IsOrderIndependent()
+    {
+        ulong forward = StateHasher.ComputeHash(h => h.AddUnorderedSet(new[] { "a", "b" }, k => k));
+        ulong backward = StateHasher.ComputeHash(h => h.AddUnorderedSet(new[] { "b", "a" }, k => k));
+        Assert.Equal(forward, backward);
+        Assert.Equal("D671FB1B30AC7CCC", forward.ToString("X16", System.Globalization.CultureInfo.InvariantCulture));
+        Assert.NotEqual(forward, StateHasher.ComputeHash(h => h.AddUnorderedSet(new[] { "a" }, k => k)));
+    }
+
+    [Fact]
+    public void Enum_IsHashedByName()
+    {
+        Assert.Equal("386D968BEA3072E9", StateHasher.ComputeHexString(h => h.Add(Stat.Gold))); // same as the string "Gold"
+        Assert.Equal(StateHasher.ComputeHash(h => h.Add("Gold")), StateHasher.ComputeHash(h => h.Add(Stat.Gold)));
+        Assert.NotEqual(StateHasher.ComputeHash(h => h.Add(Stat.Gold)), StateHasher.ComputeHash(h => h.Add(Stat.Food)));
+    }
 }
