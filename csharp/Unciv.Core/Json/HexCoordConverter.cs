@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Logic.Map;
@@ -26,7 +25,7 @@ public class HexCoordConverter : JsonConverter<HexCoord>
             string? propName = reader.GetString();
             reader.Read();
 
-            int val = ReadValueAsInt(ref reader);
+            int val = JsonValueReader.ReadFloatAsInt(ref reader, "HexCoord coordinate");
 
             if (string.Equals(propName, "x", StringComparison.OrdinalIgnoreCase))
                 x = val;
@@ -35,36 +34,6 @@ public class HexCoordConverter : JsonConverter<HexCoord>
         }
 
         throw new JsonException("Unexpected end of JSON while reading HexCoord");
-    }
-
-    private static int ReadValueAsInt(ref Utf8JsonReader reader)
-    {
-        switch (reader.TokenType)
-        {
-            case JsonTokenType.Number:
-                return reader.TryGetInt32(out int i) ? i : (int)Math.Round(reader.GetDouble(), MidpointRounding.ToEven);
-            case JsonTokenType.String:
-                return int.Parse(reader.GetString()!, CultureInfo.InvariantCulture);
-            case JsonTokenType.StartObject:
-                int result = 0;
-                while (reader.Read())
-                {
-                    if (reader.TokenType == JsonTokenType.EndObject)
-                        break;
-                    if (reader.TokenType == JsonTokenType.PropertyName)
-                    {
-                        string? innerProp = reader.GetString();
-                        reader.Read();
-                        if (string.Equals(innerProp, "value", StringComparison.OrdinalIgnoreCase))
-                            result = ReadValueAsInt(ref reader);
-                        else
-                            reader.Skip();
-                    }
-                }
-                return result;
-            default:
-                throw new JsonException($"Unsupported token type {reader.TokenType} for HexCoord coordinate");
-        }
     }
 
     public override void Write(Utf8JsonWriter writer, HexCoord value, JsonSerializerOptions options)

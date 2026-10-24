@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Models;
@@ -16,6 +15,9 @@ public class CounterConverterFactory : JsonConverterFactory
     public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         Type keyType = typeToConvert.GetGenericArguments()[0];
+        // Kotlin keeps the raw String name whatever K is (unchecked cast), so only Counter<String> can round-trip
+        if (keyType != typeof(string))
+            throw new NotSupportedException($"Json (de)serialization of {typeToConvert.Name}<{keyType.Name}> is not supported; only string keys");
         Type converterType = typeof(CounterConverter<>).MakeGenericType(keyType);
         return (JsonConverter)Activator.CreateInstance(converterType)!;
     }
@@ -41,50 +43,12 @@ public class CounterConverter<K> : JsonConverter<Counter<K>> where K : notnull
             string? propName = reader.GetString();
             reader.Read();
 
-            int val = ReadValueAsInt(ref reader);
+            int val = JsonValueReader.ReadInt(ref reader, "Counter value");
 
-            K key = ConvertKey(propName!);
-            counter[key] = val;
+            counter[(K)(object)propName!] = val;
         }
 
         throw new JsonException("Unexpected end of JSON while reading Counter");
-    }
-
-    private static K ConvertKey(string keyString)
-    {
-        if (typeof(K) == typeof(string))
-            return (K)(object)keyString;
-        return (K)Convert.ChangeType(keyString, typeof(K));
-    }
-
-    private static int ReadValueAsInt(ref Utf8JsonReader reader)
-    {
-        switch (reader.TokenType)
-        {
-            case JsonTokenType.Number:
-                return reader.TryGetInt32(out int i) ? i : (int)Math.Round(reader.GetDouble(), MidpointRounding.ToEven);
-            case JsonTokenType.String:
-                return int.Parse(reader.GetString()!, CultureInfo.InvariantCulture);
-            case JsonTokenType.StartObject:
-                int result = 0;
-                while (reader.Read())
-                {
-                    if (reader.TokenType == JsonTokenType.EndObject)
-                        break;
-                    if (reader.TokenType == JsonTokenType.PropertyName)
-                    {
-                        string? innerProp = reader.GetString();
-                        reader.Read();
-                        if (string.Equals(innerProp, "value", StringComparison.OrdinalIgnoreCase))
-                            result = ReadValueAsInt(ref reader);
-                        else
-                            reader.Skip();
-                    }
-                }
-                return result;
-            default:
-                throw new JsonException($"Unsupported token type {reader.TokenType} for Counter value");
-        }
     }
 
     public override void Write(Utf8JsonWriter writer, Counter<K> value, JsonSerializerOptions options)

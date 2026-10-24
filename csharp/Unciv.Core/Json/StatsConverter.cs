@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Models.StatTypes;
@@ -25,7 +24,7 @@ public class StatsConverter : JsonConverter<Stats>
             string? propName = reader.GetString();
             reader.Read();
 
-            float val = ReadValueAsFloat(ref reader);
+            float val = JsonValueReader.ReadFloat(ref reader, "Stats value");
 
             if (propName != null)
             {
@@ -50,19 +49,6 @@ public class StatsConverter : JsonConverter<Stats>
         }
 
         throw new JsonException("Unexpected end of JSON while reading Stats");
-    }
-
-    private static float ReadValueAsFloat(ref Utf8JsonReader reader)
-    {
-        switch (reader.TokenType)
-        {
-            case JsonTokenType.Number:
-                return reader.GetSingle();
-            case JsonTokenType.String:
-                return float.Parse(reader.GetString()!, CultureInfo.InvariantCulture);
-            default:
-                throw new JsonException($"Unsupported token type {reader.TokenType} for Stats value");
-        }
     }
 
     public override void Write(Utf8JsonWriter writer, Stats value, JsonSerializerOptions options)

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Mathematics;
@@ -26,7 +25,7 @@ public class Vector2Converter : JsonConverter<Vector2>
             string? propName = reader.GetString();
             reader.Read();
 
-            float val = ReadValueAsFloat(ref reader);
+            float val = JsonValueReader.ReadFloat(ref reader, "Vector2 coordinate");
 
             if (string.Equals(propName, "x", StringComparison.OrdinalIgnoreCase))
                 x = val;
@@ -35,36 +34,6 @@ public class Vector2Converter : JsonConverter<Vector2>
         }
 
         throw new JsonException("Unexpected end of JSON while reading Vector2");
-    }
-
-    private static float ReadValueAsFloat(ref Utf8JsonReader reader)
-    {
-        switch (reader.TokenType)
-        {
-            case JsonTokenType.Number:
-                return reader.GetSingle();
-            case JsonTokenType.String:
-                return float.Parse(reader.GetString()!, CultureInfo.InvariantCulture);
-            case JsonTokenType.StartObject:
-                float result = 0f;
-                while (reader.Read())
-                {
-                    if (reader.TokenType == JsonTokenType.EndObject)
-                        break;
-                    if (reader.TokenType == JsonTokenType.PropertyName)
-                    {
-                        string? innerProp = reader.GetString();
-                        reader.Read();
-                        if (string.Equals(innerProp, "value", StringComparison.OrdinalIgnoreCase))
-                            result = ReadValueAsFloat(ref reader);
-                        else
-                            reader.Skip();
-                    }
-                }
-                return result;
-            default:
-                throw new JsonException($"Unsupported token type {reader.TokenType} for Vector2 coordinate");
-        }
     }
 
     public override void Write(Utf8JsonWriter writer, Vector2 value, JsonSerializerOptions options)

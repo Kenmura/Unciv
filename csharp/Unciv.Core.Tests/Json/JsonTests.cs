@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Unciv.Json;
 using Unciv.Logic.Map;
 using Unciv.Mathematics;
@@ -37,7 +38,7 @@ public class JsonTests
         var deserialized = UncivJson.Deserialize<Counter<string>>(json);
 
         Assert.NotNull(deserialized);
-        Assert.Equal(2, deserialized["Foo"]); // rounded from float
+        Assert.Equal(1, deserialized["Foo"]); // libGDX JsonValue.asInt truncates floats
         Assert.Equal(5, deserialized["Bar"]);
         Assert.Equal(7, deserialized["Nested"]);
     }
@@ -138,5 +139,69 @@ public class JsonTests
         Assert.Equal("\"Culture\"", json);
         var deserialized = UncivJson.Deserialize<Stat>("\"Culture\"");
         Assert.Equal(Stat.Culture, deserialized);
+    }
+
+    // Expected values come from libGDX 1.14.2 JsonValue.getInt / readValue(Float) + Float.toInt run on the JVM
+    [Theory]
+    [InlineData("1.9", 1)]
+    [InlineData("-1.9", -1)]
+    [InlineData("2.5", 2)]
+    [InlineData("1.5", 1)]
+    [InlineData("1e2", 100)]
+    [InlineData("\"7\"", 7)]
+    [InlineData("{\"class\": \"java.lang.Float\", \"value\": 2.9}", 2)]
+    public void CounterReadsIntsLikeLibGdx(string value, int expected)
+    {
+        var deserialized = UncivJson.Deserialize<Counter<string>>("{\"Foo\": " + value + "}");
+        Assert.NotNull(deserialized);
+        Assert.Equal(expected, deserialized["Foo"]);
+    }
+
+    [Fact]
+    public void CounterRejectsWrappedValueWithoutValueMember()
+    {
+        Assert.Throws<JsonException>(() => UncivJson.Deserialize<Counter<string>>("""{"Foo": {"class": "java.lang.Integer"}}"""));
+        Assert.Throws<JsonException>(() => UncivJson.Deserialize<Counter<string>>("""{"Foo": null}"""));
+        Assert.Throws<JsonException>(() => UncivJson.Deserialize<Counter<string>>("""{"Foo": []}"""));
+    }
+
+    [Fact]
+    public void CounterReadsBooleansAsLibGdxAsInt()
+    {
+        var deserialized = UncivJson.Deserialize<Counter<string>>("""{"A": true, "B": false}""");
+        Assert.NotNull(deserialized);
+        Assert.Equal(1, deserialized["A"]);
+        Assert.Equal(0, deserialized["B"]);
+        Assert.False(deserialized.ContainsKey("B")); // put(0) removes
+    }
+
+    [Fact]
+    public void CounterWritesAllEntriesIncludingZeroesFromCopyConstructor()
+    {
+        var withZero = new Counter<string>(new Dictionary<string, int> { ["A"] = 0, ["B"] = 2 });
+        Assert.Equal("""{"A":0,"B":2}""", UncivJson.Serialize(withZero));
+    }
+
+    [Fact]
+    public void CounterWithNonStringKeysIsNotSupported()
+    {
+        Assert.Throws<NotSupportedException>(() => UncivJson.Serialize(new Counter<int>()));
+    }
+
+    [Theory]
+    [InlineData("""{"x": 1.9, "y": -1.9}""", 1, -1)]
+    [InlineData("""{"x": 1.5, "y": 2.5}""", 1, 2)]
+    [InlineData("""{"x": "3.7"}""", 3, 0)]
+    [InlineData("""{"x": {"class": "java.lang.Float", "value": -0.5}, "y": 7}""", 0, 7)]
+    [InlineData("{}", 0, 0)]
+    public void HexCoordReadsFloatsAndTruncates(string json, int x, int y)
+    {
+        Assert.Equal(HexCoord.Of(x, y), UncivJson.Deserialize<HexCoord>(json));
+    }
+
+    [Fact]
+    public void HexCoordRejectsWrappedValueWithoutValueMember()
+    {
+        Assert.Throws<JsonException>(() => UncivJson.Deserialize<HexCoord>("""{"x": {"class": "java.lang.Float"}}"""));
     }
 }
