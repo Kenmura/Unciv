@@ -753,6 +753,7 @@ public class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSerialization
     /// <summary>The multiplayer extension <c>GameInfo.isUsersTurn()</c>.</summary>
     public bool IsUsersTurn() => CurrentPlayer.Length != 0 && GetCivilization(CurrentPlayer).PlayerId == ClientState.UserId;
     bool IGameInfoState.AutoAssignCityProduction => ClientState.AutoAssignCityProduction;
+    IComparer<string> IGameInfoState.Collator => ClientState.Collator;
     bool IGameInfoState.IsFullAutoPlayAI => ClientState.IsFullAutoPlayAI;
     bool IGameInfoState.AlternateUnitCycleOrder => ClientState.AlternateUnitCycleOrder;
     void IGameInfoState.AddCompletedTutorialTask(string task) => ClientState.AddCompletedTutorialTask(task);

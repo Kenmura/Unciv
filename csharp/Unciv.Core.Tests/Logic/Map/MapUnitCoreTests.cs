@@ -214,7 +214,7 @@ public class MapUnitCoreTests
         unit.AutomatedRoadConnectionDestination = HexCoord.Of(1, 1);
         unit.MostRecentMoveType = UnitMovementMemoryType.UnitWithdrew;
         unit.AbilityToTimesUsed["Build"] = 2;
-        unit.Promo().Promotions.Add("Shock");
+        unit.Promotions.Promotions.Add("Shock");
         unit.MovementMemories.Add(new MapUnitClass.UnitMovementMemory(HexCoord.Of(2, 2), UnitMovementMemoryType.UnitMoved));
         unit.AttacksSinceTurnStart.Add(HexCoord.Of(3, 3));
         unit.StatusMap["Frozen"] = new MapUnitClass.UnitStatus("Frozen", 2);
@@ -495,7 +495,7 @@ public class MapUnitCoreTests
         Assert.False(unit.MatchesFilter(Constants.Barbarians));
         Assert.False(unit.MatchesFilter("City-State"));
         Assert.False(unit.MatchesFilter(Constants.Embarked));
-        unit.Promo().Promotions.Add("Shock");
+        unit.Promotions.Promotions.Add("Shock");
         Assert.True(unit.MatchesFilter("Shock"));
         unit.StatusMap["Frozen"] = new MapUnitClass.UnitStatus("Frozen", 1);
         Assert.True(unit.MatchesFilter("Frozen"));
@@ -1173,7 +1173,7 @@ public class MapUnitCoreTests
         source.Automated = true;
         source.Action = "Explore";
         var target = w.Unit("Swordsman", "Land", 2, 2);
-        target.Promo().Promotions.Add("Shock");
+        target.Promotions.Promotions.Add("Shock");
         source.CopyStatisticsTo(target);
         Assert.Equal((40, "Old", 1f, 1, true, true, "Explore"), (target.Health, target.InstanceName, target.CurrentMovement, target.AttacksThisTurn, target.IsTransported, target.Automated, target.Action));
         Assert.Equal(["Shock"], source.Promotions.Promotions); // the source gains the promotion the new unit has, for free

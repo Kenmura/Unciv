@@ -69,6 +69,8 @@ public interface IGameInfoState : IConstructionGameInfo
     bool AutoAssignCityProduction { get; }
     /// <summary><c>UncivGame.Current.worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c> (client state).</summary>
     bool IsFullAutoPlayAI { get; }
+    /// <summary><c>UncivGame.Current.settings.getCollatorFromLocale()</c> (client setting; T126 PromotionTree).</summary>
+    IComparer<string> Collator { get; }
     /// <summary><c>gameInfo.getNextUnitId()</c> (T066: BaseUnit.newMapUnit)</summary>
     int GetNextUnitId();
     /// <summary><c>GUI.getSettings().alternateUnitCycleOrder</c> (client setting).</summary>

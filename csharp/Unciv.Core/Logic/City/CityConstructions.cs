@@ -27,8 +27,7 @@ namespace Unciv.Logic.City;
 //   queue as it is (empty after an automatic removal, which getConstruction("") reads as Idle) and no tile is auto-chosen.
 //   The client settings Kotlin reads from UncivGame.Current (settings.autoAssignCityProduction, worldScreen.autoPlay, multiplayer user id)
 //   are the IGameInfoState members IsUsersTurn / AutoAssignCityProduction / IsFullAutoPlayAI, which T046 implements.
-// - completeConstruction's saved-promotion block builds Kotlin's PromotionTree(unit) through IMapUnitState.CreatePromotionTree (the class is
-//   UI-package code in Kotlin; its port is its own ticket).
+// - completeConstruction's saved-promotion block builds PromotionTree(unit) (a UI-package class in Kotlin, ported in T126).
 // - builtBuildings is a java.util.HashSet (JavaHashSet) because setTransients builds the built building list in its iteration order, which
 //   reaches the unique map, stats and float sums. freeBuildingsProvidedFromThisCity stays a System Dictionary/HashSet like the maps of
 //   CivConstructions (nothing iterates it in a state-relevant order).
@@ -556,8 +555,8 @@ public class CityConstructions : IsPartOfGameInfoSerialization
             // to avoid edge case where upgrading a scout to spearman
             // whould give the rest of the spearman the "ignore terrain cost" promotion
             // when built with auto promotion.
-            foreach (var promotion in unit.Promotions.CreatePromotionTree().PossiblePromotionNames) possiblePromotions.Add(promotion);
-            foreach (var roots in unit.Promotions.CreatePromotionTree().AllNodePromotionNames()) promotionTreeOrder.Add(roots);
+            foreach (var promotion in new PromotionTree(unit).PossiblePromotions) possiblePromotions.Add(promotion.Name);
+            foreach (var roots in new PromotionTree(unit).AllNodes()) promotionTreeOrder.Add(roots.Promotion.Name);
 
             City.UnitToPromotions.TryGetValue(unit.Name, out var savedPromotion);
 

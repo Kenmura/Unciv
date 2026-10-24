@@ -15,21 +15,6 @@ namespace Unciv.Core.Tests.Logic.Map;
 // T065: stand-ins for the sub-objects of MapUnit (UnitMovement T067: an override of the real class) and a factory for real
 // MapUnits over real Civilizations. The fakes hold data for what the tests read.
 
-/// <summary>The real UnitPromotions, whose PromotionTree (a UI class, T126) is a data-holding fake.</summary>
-internal sealed class TestUnitPromotions : UnitPromotions
-{
-    public FakePromotionTree Tree { get; } = new();
-    public override IPromotionTree CreatePromotionTree() => Tree;
-}
-
-internal sealed class FakePromotionTree : IPromotionTree
-{
-    public List<string> Possible { get; } = [];
-    public List<string> Nodes { get; } = [];
-    public IEnumerable<string> PossiblePromotionNames => Possible;
-    public IEnumerable<string> AllNodePromotionNames() => Nodes;
-}
-
 internal sealed class FakeUnitMovement(MapUnitClass unit) : UnitMovement(unit)
 {
     public bool CanMoveToResult { get; set; } = true;
@@ -111,7 +96,7 @@ internal static class MapUnitFactory
             Owner = civ.CivId,
             Civ = civ,
             BaseUnit = baseUnit,
-            Promotions = new TestUnitPromotions(),
+            Promotions = new UnitPromotions(),
         };
         unit.Promotions.SetTransients(unit);
         unit.Movement = new FakeUnitMovement(unit);
@@ -139,7 +124,6 @@ internal static class MapUnitFactory
     }
 
     public static FakeUnitMovement Move(this MapUnitClass unit) => (FakeUnitMovement)unit.Movement;
-    public static TestUnitPromotions Promo(this MapUnitClass unit) => (TestUnitPromotions)unit.Promotions;
 
     /// <summary>Registers <paramref name="promotion"/> in the ruleset and gives it to the unit (without the effects of AddPromotion).</summary>
     public static void GivePromotion(this MapUnitClass unit, Promotion promotion)

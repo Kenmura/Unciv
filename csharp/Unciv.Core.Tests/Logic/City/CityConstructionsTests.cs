@@ -538,17 +538,16 @@ public class CityConstructionsTests
             ["New [Land] units start with [15] XP [in all cities]", "All newly-trained [Land] units [in all cities] receive the [Drill I] promotion"]);
         w.Constructions.AddBuilding(barracks, tryAddFreeBuildings: false);
         // the city saved the promotions of a former Warrior: only the ones in the promotion tree are applied, in tree order, while XP lasts
-        foreach (var name in new[] { "Shock I", "Drill I" })
-            w.Ruleset.UnitPromotions.Put(name, new Promotion { Name = name });
+        // Shock I is positioned first in the tree (row 0 / column 0); Drill I has no position, so it sorts last; Other is not offered to a Land unit
+        w.Ruleset.UnitPromotions.Put("Shock I", new Promotion { Name = "Shock I", Row = 0, UnitTypes = ["Land"] });
+        w.Ruleset.UnitPromotions.Put("Drill I", new Promotion { Name = "Drill I", UnitTypes = ["Land"] });
+        w.Ruleset.UnitPromotions.Put("Other", new Promotion { Name = "Other", UnitTypes = ["Water"] });
         var saved = new UnitPromotions { XP = 5 };
         saved.Promotions.Add("Shock I");
         saved.Promotions.Add("Drill I");
         saved.Promotions.Add("Unknown");
         w.City.UnitToPromotions.Put("Warrior", saved);
         w.City.UnitShouldUseSavedPromotion.Put("Warrior", true);
-        var tree = unit.Promo().Tree;
-        tree.Possible.AddRange(["Drill I", "Shock I"]);
-        tree.Nodes.AddRange(["Shock I", "Drill I", "Other"]);
         Queue(w, "Warrior");
         w.Constructions.InProgressConstructions["Warrior"] = 20;
 

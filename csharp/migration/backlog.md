@@ -1354,7 +1354,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: POLICY TICKET follow-up from T119 review. Scanner gaps: (1) $"{x!}" interpolation holes are blanked (false negative); (2) '!' at line start after newline missed; (3) '(bool)!x' and 'a >!b' flagged (false positive); (4) JUSTIFY comment is not tied to the specific '!' nor checked for ticket id. Fix with tests in the scanner self-test.
 
 ### T126 PromotionTree port (IPromotionTree seam, CityConstructions saved promotions)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T063, T066
 - Source: core/src/com/unciv/ui/screens/pickerscreens/PromotionTree.kt
 - Fixtures: none
@@ -1362,6 +1362,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~PromotionTreeTests
 - Claimed: 2026-10-24T15:54Z
 - Notes: Added by T063: CityConstructions.CompleteConstruction builds PromotionTree(unit) for saved promotions; its collator/translation sort needs a headless equivalent.
+  - Implemented. PromotionTree lives in Unciv.Logic.Map.MapUnits (PromotionTree.cs). Deviations: (1) the MapUnitView constructor is not ported (UI view); (2) the collator comes from the new IGameInfoState.Collator seam member (GameInfo: ClientState.Collator, invariant culture by default) instead of GUI.getSettings(); (3) IPromotionTree and UnitPromotions.CreatePromotionTree (virtual seam) removed, CityConstructions.CompleteConstruction calls new PromotionTree(unit) like Kotlin; the test fake (TestUnitPromotions/FakePromotionTree) is gone and the saved-promotion test uses real promotions with Row/UnitTypes. Quirks kept: detectLoop runs before the node's own parents are linked so it never fires (dead guard, covered by test); canBuyUpTo counts only non-FreePromotion nodes; sort stable by (row<0 ? max : row==0 ? MIN+col : col), row, collated translated name. No golden values (no Kotlin tests).
 
 ### T127 Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land
 - State: Available

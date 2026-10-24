@@ -6,15 +6,6 @@ namespace Unciv.Logic.Map.MapUnits;
 // the concrete class and replaces the lateinit-style property by Kotlin's initializer. (UnitMovement, T067, is done.)
 // Member names mirror the Kotlin members.
 
-/// <summary>What CityConstructions reads from <c>PromotionTree</c>. TODO(T126)</summary>
-public interface IPromotionTree
-{
-    /// <summary><c>promotionTree.possiblePromotions</c> (the promotion names, in tree order).</summary>
-    IEnumerable<string> PossiblePromotionNames { get; }
-    /// <summary><c>promotionTree.allNodes()</c> (the node promotion names, in order).</summary>
-    IEnumerable<string> AllNodePromotionNames();
-}
-
 /// <summary>The <c>UnitActionType.value</c> strings MapUnit compares its <c>action</c> against. TODO(T079): replaced by UnitActionType.</summary>
 internal static class UnitActionNames
 {

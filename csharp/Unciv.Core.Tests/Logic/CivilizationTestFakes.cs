@@ -61,6 +61,7 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     bool IGameInfoState.IsUsersTurn() => UsersTurn;
     public bool AutoAssignCityProduction { get; set; }
     bool IGameInfoState.AutoAssignCityProduction => AutoAssignCityProduction;
+    IComparer<string> IGameInfoState.Collator => StringComparer.InvariantCulture;
     bool IGameInfoState.IsFullAutoPlayAI => false;
     public int LastUnitId { get; set; }
     int IGameInfoState.GetNextUnitId() => ++LastUnitId;

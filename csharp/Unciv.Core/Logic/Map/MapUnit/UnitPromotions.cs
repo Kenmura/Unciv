@@ -249,9 +249,6 @@ public class UnitPromotions : IsPartOfGameInfoSerialization
         return toReturn;
     }
 
-    /// <summary><c>PromotionTree(unit)</c>, a UI-package class in Kotlin (its constructor reads <c>unit.promotions</c>). TODO(T126): replaced by the real PromotionTree.</summary>
-    public virtual IPromotionTree CreatePromotionTree() => throw new NotSupportedException("PromotionTree is not ported yet (TODO(T126))");
-
     // For json serialization, to not serialize an empty object
     public override bool Equals(object? obj) =>
         obj is UnitPromotions other && XP == other.XP && Promotions.Count == other.Promotions.Count && Promotions.All(other.Promotions.Contains) && NumberOfPromotions == other.NumberOfPromotions;

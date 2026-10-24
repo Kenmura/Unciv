@@ -40,7 +40,7 @@ public class UnitMovementTests
 
     private static MapUnitClass RealUnit(Civilization civ, BaseUnit baseUnit, TileClass? tile)
     {
-        var unit = new MapUnitClass { Name = baseUnit.Name, Owner = civ.CivId, Civ = civ, BaseUnit = baseUnit, Promotions = new TestUnitPromotions() };
+        var unit = new MapUnitClass { Name = baseUnit.Name, Owner = civ.CivId, Civ = civ, BaseUnit = baseUnit, Promotions = new UnitPromotions() };
         unit.Promotions.SetTransients(unit);
         if (tile != null) unit.CurrentTile = tile;
         unit.UpdateUniques();
