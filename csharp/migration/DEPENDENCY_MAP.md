@@ -388,7 +388,7 @@ flowchart TD
   class T107 done
   class T110 ondeck
   class T111 waiting
-  class T112 ready
+  class T112 prog
   class T115 waiting
 ```
 
@@ -396,7 +396,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T112 | **Ready to start** | T060 | 0 | Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype |
 | T066 | **On deck** (after T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T063 | **On deck** (after T062) | T060, T062 | 36 | CityConstructions |
 | T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
@@ -452,4 +451,5 @@ flowchart TD
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
+| T112 | In-Progress [Claude] | T060 | 0 | Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |

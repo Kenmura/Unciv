@@ -1103,13 +1103,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From T057 review (non-blocking): (1) IGameInfoState.DiplomaticVictoryVotesCast is IDictionary but Kotlin is java.util.HashMap: use JavaHashMap (vote-tie text order). (2) Enumerable.Sum throws on int overflow where Kotlin sumOf wraps (GetStartingSpyRank, Spy.GetEfficiencyModifier): unchecked loop. (3) Enum.Parse<BeliefType> accepts numeric strings, Kotlin valueOf does not. (4) Add tests for RuinsManager.SelectNextRuinsReward, GenerateProphet, FoundReligion/UseProphetForEnhancingReligion, ChooseBeliefs founding/enhancing, Spy.InitiateCoup/CanMoveTo, GetTilesVisibleViaSpies, with Kotlin-derived golden seeds (after T052/T060/T065 make them testable). (5) Share the duplicated ParseInt helper.
 
 ### T112 Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T060
 - Source: csharp/Unciv.Core/Logic/Civilization/Transients/CivInfoTransientCache.cs (not in Kotlin)
 - Fixtures: none
 - Deliverables: remove the non-Kotlin convenience, call CitiesConnectedToCapitalToMediums directly (Civilization.IsCapitalConnectedToCity)
 - Gate: dotnet test
-- Claimed:
+- Claimed: 2026-10-24T12:00Z
 - Notes: From T058 review (split off T109).
 
 ### T113 Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields
