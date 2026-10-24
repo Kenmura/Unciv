@@ -241,6 +241,10 @@ def set_line(block, name, value):
         if l.startswith(f"- {name}:"):
             block[n] = f"- {name}: {value}" if value else f"- {name}:"
             return block
+    if name == "Claimed":  # older tickets lack the line: insert it before Notes
+        at = next((n for n, l in enumerate(block) if l.startswith("- Notes:")), len(block))
+        block.insert(at, f"- Claimed: {value}" if value else "- Claimed:")
+        return block
     die(f"ticket has no '- {name}:' line")
 
 
