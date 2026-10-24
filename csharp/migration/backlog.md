@@ -629,7 +629,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Deviations: (1) Kotlin unseeded shuffled()/random() (Random.Default) draw from a state-based GameRandom per call site (StartNormalizer.<fn>.unseeded; MinorCivPlacer uses civs[0].StateBasedRandom), so those exact draws cannot match Kotlin by construction. (2) Civilization is IMapRegionsCivilization. (3) TileResource.generatesNaturallyOn is not ported on TileResource: private GeneratesNaturallyOn copy in StartNormalizer.cs; T077 (or whoever ports it onto TileResource) should switch StartNormalizer to it and delete the copy. (4) NEW SEAM for T077: Mapregions/MapRegionResourcesSeams.cs (TryAddingResourceToTiles, PlaceResourcesInTiles) throws NotSupportedException until T077 replaces the bodies with MapRegionResources calls; until then StartNormalizer with strategic balance / major civ low production is unusable. Tile.SetTileResource gets rng explicitly (no Random.Default).
 
 ### T077 MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T075
 - Source: core/src/com/unciv/logic/map/mapgenerator/resourceplacement/*.kt
 - Fixtures: tests/src/com/unciv/logic/map/ResourceDiversityTest.kt
@@ -637,6 +637,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
 - Claimed: 2026-10-24T10:42Z
 - Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
+  - Ported MapRegionResources, LuxuryResourcePlacementLogic, StrategicBonusResourcePlacementLogic into Logic/Map/MapGenerator/ResourcePlacement (namespace ...ResourcePlacement). MapRegionsSeams.AssignLuxuries/PlaceLuxuries/PlaceStrategicAndBonuses now delegate to them. No split (source 931 LOC).
+    Also added TileResource.GeneratesNaturallyOn (was deferred in TileResource.cs; required by placement).
+    Deviations: Kotlin argument-less shuffled() uses unseeded Random.Default (nondeterministic on the JVM too); the engine bans that, so each call site shuffles with GameContext(gameInfo).StateBasedRandom("<site>.shuffled"). All seeded draws (stateBasedRandom, randomWeighted) keep Kotlin's sequence and call order. Sequence.shuffled() stays lazy and reshuffles per enumeration (ShuffledSequence).
+    Quirks kept: totalPlaced += map is putAll (replaces); regionTargetNumber = min(civCount-3, ...); fallbackStrategic precedence (A&&B)||C; region priority sort puts null first, stable; float sums are sequential Float adds.
+    ResourceDiversityTest.kt needs the full MapGenerator (T041); own xUnit tests exercise the logic directly on a small all-land fallback ruleset.
 
 ### Planned (not yet ticketed)
 Deferred until the ruleset and map tickets land (decided with the user). Civilization, City, MapUnit, diplomacy core, quests and GameInfo are now ticketed (T046, T053-T072, acyclic via seam interfaces, see the SEAM RULE in T053). Still unticketed: TradeLogic/TradeEvaluation, Battle, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.

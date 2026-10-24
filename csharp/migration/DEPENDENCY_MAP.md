@@ -237,7 +237,7 @@ flowchart TD
   class T074 done
   class T075 done
   class T076 done
-  class T077 prog
+  class T077 review
 ```
 
 ## Incomplete tickets
@@ -267,7 +267,7 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T067 | Available (waiting on T065) | T065, T054 | 1 | Unit movement: MovementCost, UnitMovement |
 | T071 | Available (waiting on T046, T070) | T046, T070 | 1 | GameInfo turn handling and BackwardCompatibility |
-| T077 | In-Progress [Claude] | T075 | 1 | MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources) |
+| T077 | Needs-Review [Claude] | T075 | 1 | MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources) |
 | A003 | Blocked | A002, T030 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |

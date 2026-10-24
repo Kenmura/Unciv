@@ -8,7 +8,7 @@ namespace Unciv.Models.Ruleset.Tile;
 
 // core/src/com/unciv/models/ruleset/tile/TileResource.kt
 // Not ported yet: getImprovingImprovement (Civilization/Tile, T046/T047),
-// generatesNaturallyOn (Tile/TileMap), makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034's successors).
+// makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034's successors).
 public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceParameterView
 {
     private readonly Lazy<bool> isCityWide;
@@ -113,6 +113,46 @@ public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceP
         if (filter == ResourceType.ToString()) return true;
         return ImprovementStats?.Any(it => filter == it.Key.ToString()) == true;
     }
+
+    public bool GeneratesNaturallyOn(Unciv.Logic.Map.Tiles.Tile tile)
+    {
+        if (!TerrainsCanBeFoundOn.Contains(tile.LastTerrain.Name)) return false;
+        var gameContext = new GameContext(tile: tile);
+        var self = (IHasUniques)this;
+        if (self.HasUnique(UniqueType.NoNaturalGeneration, gameContext)) return false;
+        if (tile.AllTerrains.Any(it => ((IHasUniques)it).HasUnique(UniqueType.BlocksResources, gameContext))) return false;
+
+        var smallerLandmassUniques = self.GetMatchingUniques(UniqueType.NaturalWonderSmallerLandmass, gameContext).ToList();
+        var largerLandmassUniques = self.GetMatchingUniques(UniqueType.NaturalWonderLargerLandmass, gameContext).ToList();
+
+        if (smallerLandmassUniques.Count > 0 || largerLandmassUniques.Count > 0)
+        {
+            var sortedContinents = tile.TileMap.ContinentsSortedBySize;
+
+            foreach (var unique in smallerLandmassUniques)
+            {
+                if (sortedContinents.Take(ParseInt(unique.Params[0])).Contains(tile.GetContinent())) return false;
+            }
+            foreach (var unique in largerLandmassUniques)
+            {
+                if (!sortedContinents.Take(ParseInt(unique.Params[0])).Contains(tile.GetContinent())) return false;
+            }
+        }
+        if (tile.Temperature != null && tile.Humidity != null) // Only works when in map generation
+        {
+            foreach (var unique in self.GetMatchingUniques(UniqueType.TileGenerationConditions, gameContext))
+            {
+                var temperature = tile.Temperature.Value;
+                var humidity = tile.Humidity.Value;
+                if (!(temperature >= ParseDouble(unique.Params[0]) && temperature <= ParseDouble(unique.Params[1]))) return false;
+                if (!(humidity >= ParseDouble(unique.Params[2]) && humidity <= ParseDouble(unique.Params[3]))) return false;
+            }
+        }
+        return true;
+    }
+
+    private static int ParseInt(string text) => int.Parse(text, System.Globalization.CultureInfo.InvariantCulture);
+    private static double ParseDouble(string text) => double.Parse(text, System.Globalization.CultureInfo.InvariantCulture);
 
     public class DepositAmount
     {

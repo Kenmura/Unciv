@@ -1,3 +1,4 @@
+using Unciv.Logic.Map.MapGenerator.ResourcePlacement;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
@@ -33,7 +34,7 @@ internal static class MapRegionsSeams
     /// <summary><c>LuxuryResourcePlacementLogic.assignLuxuries(regions, tileData, ruleset)</c> (T077)</summary>
     internal static (List<string> CityStateLuxuries, List<string> RandomLuxuries) AssignLuxuries(
         List<Region> regions, TileDataMap tileData, Ruleset ruleset) =>
-        throw new NotSupportedException("LuxuryResourcePlacementLogic.assignLuxuries is ported by T077");
+        LuxuryResourcePlacementLogic.AssignLuxuries(regions, tileData, ruleset);
 
     /// <summary><c>MinorCivPlacer.placeMinorCivs(regions, tileMap, minorCivs, tileData, ruleset)</c> (T076)</summary>
     internal static void PlaceMinorCivs(
@@ -43,11 +44,11 @@ internal static class MapRegionsSeams
     /// <summary><c>LuxuryResourcePlacementLogic.placeLuxuries(regions, tileMap, tileData, ruleset, cityStateLuxuries, randomLuxuries)</c> (T077)</summary>
     internal static void PlaceLuxuries(
         List<Region> regions, TileMap tileMap, TileDataMap tileData, Ruleset ruleset, List<string> cityStateLuxuries, List<string> randomLuxuries) =>
-        throw new NotSupportedException("LuxuryResourcePlacementLogic.placeLuxuries is ported by T077");
+        LuxuryResourcePlacementLogic.PlaceLuxuries(regions, tileMap, tileData, ruleset, cityStateLuxuries, randomLuxuries);
 
     /// <summary><c>StrategicBonusResourcePlacementLogic.placeStrategicAndBonuses(tileMap, regions, tileData)</c> (T077)</summary>
     internal static void PlaceStrategicAndBonuses(TileMap tileMap, List<Region> regions, TileDataMap tileData) =>
-        throw new NotSupportedException("StrategicBonusResourcePlacementLogic.placeStrategicAndBonuses is ported by T077");
+        StrategicBonusResourcePlacementLogic.PlaceStrategicAndBonuses(tileMap, regions, tileData);
 }
 
 /// <summary>Kotlin <c>maxByOrNull</c> / <c>minByOrNull</c>: the FIRST element with the extreme key wins (strict comparison), null when empty.</summary>
