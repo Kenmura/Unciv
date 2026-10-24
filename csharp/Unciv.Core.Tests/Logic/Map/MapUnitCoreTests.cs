@@ -188,7 +188,6 @@ public class MapUnitCoreTests
         Assert.Throws<InvalidOperationException>(() => unit.BaseUnit);
         Assert.Throws<InvalidOperationException>(() => unit.CurrentTile);
         Assert.Throws<InvalidOperationException>(() => unit.Movement);
-        Assert.Throws<InvalidOperationException>(() => unit.Promotions);
         Assert.False(unit.HasTile());
         Assert.Null(unit.GetOtherEscortUnit());
         Assert.Equal(100, unit.Health);
@@ -368,7 +367,7 @@ public class MapUnitCoreTests
         Assert.Equal(3, unit.GetMaxMovement());
         Assert.Empty(unit.GetMatchingUniques(UniqueType.Movement));
         Assert.Single(unit.GetMatchingUniques(UniqueType.Movement, checkCivInfoUniques: true));
-        unit.Promo().PromotionObjects.Add(w.Ruleset.UnitPromotions["Shock"]);
+        unit.Promotions.Promotions.Add("Shock");
         unit.UpdateUniques();
         Assert.Equal(4, unit.GetMaxMovement());
     }
@@ -386,7 +385,7 @@ public class MapUnitCoreTests
         var fastKnight = w.Unit("Hakkapeliitta", "Land", 2, 2);
         Assert.Same(knight.BaseUnit, fastKnight.BaseUnit);
         // Raise the knight's own speed: the worker takes the larger value, but not the other way round
-        knight.Promo().PromotionObjects.Add(new Promotion { Name = "Fast", Uniques = ["[+2] Movement"] });
+        knight.GivePromotion(new Promotion { Name = "Fast", Uniques = ["[+2] Movement"] });
         knight.UpdateUniques();
         Assert.Equal(4, knight.GetMaxMovement());
         Assert.Equal(4, worker.GetMaxMovement());
@@ -554,7 +553,7 @@ public class MapUnitCoreTests
         var w = NewWorld();
         var unit = w.Unit();
         Assert.False(unit.MatchesFilter("Brave"));
-        unit.Promo().PromotionObjects.Add(new Promotion { Name = "Valor", Uniques = ["Brave"] });
+        unit.GivePromotion(new Promotion { Name = "Valor", Uniques = ["Brave"] });
         unit.UpdateUniques();
         Assert.True(unit.MatchesFilter("Brave"));
         // the base unit's own uniques are not in the non-unit map
@@ -852,16 +851,21 @@ public class MapUnitCoreTests
     [Fact]
     public void MoveThroughTile_GrantsPromotionsFromAdjacentTerrainsToMatchingUnits()
     {
-        var w = NewWorld(ruleset => ruleset.Terrains["Forest"].Uniques = ["Grants [Woodsman] ([from the forest]) to adjacent [Land] units for the rest of the game"]);
+        var w = NewWorld(ruleset =>
+        {
+            ruleset.Terrains["Forest"].Uniques = ["Grants [Woodsman] ([from the forest]) to adjacent [Land] units for the rest of the game"];
+            ruleset.UnitPromotions.Put("Woodsman", new Promotion { Name = "Woodsman" });
+        });
         var unit = MapUnitFactory.NewUnit(w.Civ, "Warrior");
         var sailor = MapUnitFactory.NewUnit(w.Civ, "Boat", "Water");
         w.TileAt(1, 1).Neighbors[0].AddTerrainFeature("Forest");
         Assert.Contains("Forest", w.TileAt(1, 1).Neighbors[0].AllTerrains.Select(it => it.Name));
         Assert.Single(((IHasUniques)w.TileAt(1, 1).Neighbors[0].AllTerrains[^1]).GetMatchingUniques(UniqueType.TerrainGrantsPromotion));
         unit.MoveThroughTile(w.TileAt(1, 1));
-        Assert.Equal([("Woodsman", true)], unit.Promo().Added);
+        Assert.Equal(["Woodsman"], unit.Promotions.Promotions);
+        Assert.Equal(0, unit.Promotions.NumberOfPromotions); // free
         sailor.MoveThroughTile(w.TileAt(1, 1));
-        Assert.Empty(sailor.Promo().Added);
+        Assert.Empty(sailor.Promotions.Promotions);
     }
 
     [Fact]
@@ -1152,9 +1156,7 @@ public class MapUnitCoreTests
         unit.Health = 50;
         Assert.Equal(baseForce * 50 / 100, unit.GetForceEvaluation());
         unit.Health = 100;
-        unit.Promo().Promotions.Add("A");
-        unit.Promo().Promotions.Add("B");
-        unit.Promo().Promotions.Add("C");
+        unit.Promotions.NumberOfPromotions = 3;
         var expected = (int)(baseForce * (float)System.Math.Pow(4f, 0.3f)) * 100 / 100;
         Assert.Equal(expected, unit.GetForceEvaluation());
     }
@@ -1175,7 +1177,8 @@ public class MapUnitCoreTests
         target.Promo().Promotions.Add("Shock");
         source.CopyStatisticsTo(target);
         Assert.Equal((40, "Old", 1f, 1, true, true, "Explore"), (target.Health, target.InstanceName, target.CurrentMovement, target.AttacksThisTurn, target.IsTransported, target.Automated, target.Action));
-        Assert.Equal([("Shock", true)], source.Promo().Added); // the source gains the promotion the new unit has
+        Assert.Equal(["Shock"], source.Promotions.Promotions); // the source gains the promotion the new unit has, for free
+        Assert.Equal(0, source.Promotions.NumberOfPromotions);
         Assert.True(target.Promotions.Promotions.Contains("Shock"));
     }
 
@@ -1192,14 +1195,14 @@ public class MapUnitCoreTests
             Civ = w.Civ,
             Owner = "Rome",
             Action = "Automate",
-            Promotions = new FakeUnitPromotions(),
             Movement = new FakeUnitMovement(),
         };
         unit.StatusMap["Shock"] = new MapUnitClass.UnitStatus("Shock", 1);
         unit.CurrentTile = w.TileAt(2, 2);
         unit.SetTransients(w.Ruleset);
         Assert.Same(w.Ruleset.Units["Worker"], unit.BaseUnit);
-        Assert.Same(unit, unit.Promo().TransientsSetFor);
+        unit.Promotions.Promotions.Add("Shock");
+        Assert.Equal(["Shock"], unit.Promotions.GetPromotions().Select(it => it.Name)); // reading the ruleset needs the unit set by SetTransients
         Assert.True(unit.Automated);
         Assert.Null(unit.Action);
         Assert.Single(unit.StatusMap["Shock"].Uniques);
@@ -1210,7 +1213,7 @@ public class MapUnitCoreTests
     public void SetTransients_ThrowsForAnUnknownUnit()
     {
         var w = NewWorld();
-        var unit = new MapUnitClass { Name = "Ghost", Civ = w.Civ, Promotions = new FakeUnitPromotions() };
+        var unit = new MapUnitClass { Name = "Ghost", Civ = w.Civ };
         var ex = Assert.Throws<InvalidOperationException>(() => unit.SetTransients(w.Ruleset));
         Assert.Equal("Unit Ghost is not found!", ex.Message);
     }
@@ -1285,17 +1288,17 @@ public class MapUnitCoreTests
         seam.SetCacheState(GameContext.EmptyState);
         Assert.Same(GameContext.EmptyState, seam.CacheState);
         seam.AddPromotion("Shock", true);
-        Assert.Equal([("Shock", true)], unit.Promo().Added);
+        Assert.Equal(["Shock"], unit.Promotions.Promotions);
         seam.ClearPathfindingCache();
         Assert.Equal(1, unit.Move().PathfindingCacheCleared);
         state.TeleportToClosestMoveableTile();
         Assert.Equal(1, unit.Move().Teleports);
-        Assert.Equal(unit.Promo().Promotions.Count, unit.Promotions.NumberOfPromotions);
+        Assert.Equal(0, unit.Promotions.NumberOfPromotions); // a free promotion
         Assert.True(unit.ViewableTiles.SetEquals(state.ViewableTiles));
         Assert.False(state.HasUnique(UniqueType.NoSight));
         Assert.Empty(state.GetMatchingUniques(UniqueType.Sight));
         Assert.Equal(unit.GetForceEvaluation(), state.GetForceEvaluation());
-        Assert.Equal(2, seam.GetMaxMovement());
+        Assert.Equal(3, seam.GetMaxMovement()); // 2 + the +1 Movement of the Shock promotion added above
         Assert.Same(unit.GetTile(), state.CurrentTile);
         Assert.Empty(seam.GetTriggeredUniques(UniqueType.TriggerUponEnteringTile, GameContext.EmptyState));
         Assert.NotSame(unit, seam.Clone());

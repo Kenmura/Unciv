@@ -98,7 +98,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     public GameContext State { get; set; } = GameContext.EmptyState;
 
     private IUnitManager? units;
-    /// <summary>Transient. TODO(T066): becomes <c>val units = UnitManager(this)</c>.</summary>
+    /// <summary>Transient. TODO(T133): becomes <c>val units = UnitManager(this)</c>.</summary>
     public IUnitManager Units
     {
         get => Lateinit(units, "units");
@@ -1381,7 +1381,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     ISet<HexCoord> IGameContextCivilization.NeutralRoads => NeutralRoads;
     void IGameContextCivilization.CheckExploredRegionTilePosition(HexCoord tilePosition, HexCoord? explorerPosition) =>
         ExploredRegion.CheckTilePosition(tilePosition, explorerPosition);
-    IGameContextUnit IGameContextCivilization.NewMapUnit(BaseUnit baseUnit, int? unitId) => Units.NewMapUnit(baseUnit, unitId);
+    IGameContextUnit IGameContextCivilization.NewMapUnit(BaseUnit baseUnit, int? unitId) => baseUnit.NewMapUnit(this, unitId);
     void IGameContextCivilization.RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => Units.RemoveUnit(unit, updateCivInfo);
     void IGameContextCivilization.UpdateCivResources() => Cache.UpdateCivResources();
     IGameContextCity? IGameContextCivilization.GetCapital() => GetCapital();

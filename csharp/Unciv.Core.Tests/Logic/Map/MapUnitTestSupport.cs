@@ -4,7 +4,6 @@ using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
-using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
@@ -13,34 +12,14 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Logic.Map;
 
-// T065: stand-ins for the sub-objects of MapUnit (UnitMovement T067, UnitPromotions/UnitUpgradeManager T066) and a factory for real
+// T065: stand-ins for the sub-objects of MapUnit (UnitMovement T067) and a factory for real
 // MapUnits over real Civilizations. The fakes hold data for what the tests read.
 
-internal sealed class FakeUnitPromotions : IUnitPromotions
+/// <summary>The real UnitPromotions, whose PromotionTree (a UI class, T126) is a data-holding fake.</summary>
+internal sealed class TestUnitPromotions : UnitPromotions
 {
-    public JavaHashSet<string> Promotions { get; } = new();
-    public List<Promotion> PromotionObjects { get; } = [];
-    public List<(string Name, bool IsFree)> Added { get; } = [];
-    public int NumberOfPromotions => Promotions.Count;
-    public int XP { get; set; }
-    public int XpForNextPromotion() => 10;
     public FakePromotionTree Tree { get; } = new();
-    public IPromotionTree CreatePromotionTree() => Tree;
-    public MapUnitClass? TransientsSetFor { get; private set; }
-    public void AddPromotion(string promotionName, bool isFree = false)
-    {
-        Added.Add((promotionName, isFree));
-        Promotions.Add(promotionName);
-    }
-    public IEnumerable<Promotion> GetPromotions(bool sorted = false) => PromotionObjects;
-    public IUnitPromotions Clone(MapUnitClass unit)
-    {
-        var clone = new FakeUnitPromotions();
-        foreach (var promotion in Promotions) clone.Promotions.Add(promotion);
-        clone.PromotionObjects.AddRange(PromotionObjects);
-        return clone;
-    }
-    public void SetTransients(MapUnitClass unit) => TransientsSetFor = unit;
+    public override IPromotionTree CreatePromotionTree() => Tree;
 }
 
 internal sealed class FakePromotionTree : IPromotionTree
@@ -79,8 +58,6 @@ internal sealed class FakeUnitMovement : IUnitMovement
     }
 }
 
-internal sealed class FakeUnitUpgradeManager : IUnitUpgradeManager;
-
 internal static class MapUnitFactory
 {
     /// <summary>A real civilization over a <see cref="FakeGameInfoState"/> (shared through <paramref name="info"/> when given).</summary>
@@ -97,7 +74,7 @@ internal static class MapUnitFactory
         return civ;
     }
 
-    private static RulesetObject RulesetOf(Civilization civ) => ((IGameInfoState)civ.GameInfo).Ruleset;
+    internal static RulesetObject RulesetOf(Civilization civ) => ((IGameInfoState)civ.GameInfo).Ruleset;
 
     /// <summary>Registers the three movement domains as unit types "Land", "Water" and "Air".</summary>
     public static void AddUnitTypes(RulesetObject ruleset)
@@ -125,10 +102,10 @@ internal static class MapUnitFactory
             Owner = civ.CivId,
             Civ = civ,
             BaseUnit = baseUnit,
-            Promotions = new FakeUnitPromotions(),
+            Promotions = new TestUnitPromotions(),
             Movement = new FakeUnitMovement(),
-            Upgrade = new FakeUnitUpgradeManager(),
         };
+        unit.Promotions.SetTransients(unit);
         if (tile != null) unit.CurrentTile = tile;
         unit.UpdateUniques();
         return unit;
@@ -153,5 +130,12 @@ internal static class MapUnitFactory
     }
 
     public static FakeUnitMovement Move(this MapUnitClass unit) => (FakeUnitMovement)unit.Movement;
-    public static FakeUnitPromotions Promo(this MapUnitClass unit) => (FakeUnitPromotions)unit.Promotions;
+    public static TestUnitPromotions Promo(this MapUnitClass unit) => (TestUnitPromotions)unit.Promotions;
+
+    /// <summary>Registers <paramref name="promotion"/> in the ruleset and gives it to the unit (without the effects of AddPromotion).</summary>
+    public static void GivePromotion(this MapUnitClass unit, Promotion promotion)
+    {
+        RulesetOf(unit.Civ).UnitPromotions[promotion.Name] = promotion;
+        unit.Promotions.Promotions.Add(promotion.Name);
+    }
 }

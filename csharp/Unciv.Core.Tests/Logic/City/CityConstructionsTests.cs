@@ -4,6 +4,7 @@ using Unciv.Json;
 using Unciv.Logic.City;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
@@ -526,7 +527,9 @@ public class CityConstructionsTests
             ["New [Land] units start with [15] XP [in all cities]", "All newly-trained [Land] units [in all cities] receive the [Drill I] promotion"]);
         w.Constructions.AddBuilding(barracks, tryAddFreeBuildings: false);
         // the city saved the promotions of a former Warrior: only the ones in the promotion tree are applied, in tree order, while XP lasts
-        var saved = new FakeUnitPromotions { XP = 5 };
+        foreach (var name in new[] { "Shock I", "Drill I" })
+            w.Ruleset.UnitPromotions.Put(name, new Promotion { Name = name });
+        var saved = new UnitPromotions { XP = 5 };
         saved.Promotions.Add("Shock I");
         saved.Promotions.Add("Drill I");
         saved.Promotions.Add("Unknown");
@@ -541,8 +544,10 @@ public class CityConstructionsTests
         Assert.True(w.Constructions.CompleteConstruction(warriorBase));
 
         Assert.Equal([(warriorBase, w.City)], units.AddedUnits);
-        Assert.Equal(15, unit.Promotions.XP);
-        Assert.Equal([("Drill I", true), ("Shock I", false), ("Drill I", false)], unit.Promo().Added);
+        // Drill I was granted free; of the saved ones Shock I (first in tree order) is bought for 10 of the 15 XP, then 5 < 20 XP stops the loop
+        Assert.Equal(5, unit.Promotions.XP);
+        Assert.Equal(["Drill I", "Shock I"], unit.Promotions.Promotions.OrderBy(it => it, StringComparer.Ordinal));
+        Assert.Equal(1, unit.Promotions.NumberOfPromotions);
         Assert.DoesNotContain("Warrior", w.Constructions.InProgressConstructions.Keys);
         Assert.Contains(w.Civ.Notifications, it => it.Text == "[Warrior] has been built in [c1]");
     }

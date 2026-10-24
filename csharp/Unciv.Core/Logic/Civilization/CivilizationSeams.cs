@@ -67,6 +67,12 @@ public interface IGameInfoState : IConstructionGameInfo
     bool AutoAssignCityProduction { get; }
     /// <summary><c>UncivGame.Current.worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c> (client state). TODO(T046)</summary>
     bool IsFullAutoPlayAI { get; }
+    /// <summary><c>gameInfo.getNextUnitId()</c> (T066: BaseUnit.newMapUnit)</summary>
+    int GetNextUnitId();
+    /// <summary><c>GUI.getSettings().alternateUnitCycleOrder</c> (client setting). TODO(T046)</summary>
+    bool AlternateUnitCycleOrder { get; }
+    /// <summary><c>UncivGame.Current.settings.addCompletedTutorialTask(task)</c> (client setting; T066: Tile.doWorkerTurn). TODO(T046)</summary>
+    void AddCompletedTutorialTask(string task);
 }
 
 /// <summary>What Civilization reads from <c>QuestManager</c>.</summary>
@@ -78,6 +84,8 @@ public interface IQuestManager
     void JustMet(Civilization otherCiv);
     /// <summary><c>questManager.barbarianCampCleared(civ, position)</c> (T065: MapUnit.clearEncampment)</summary>
     void BarbarianCampCleared(Civilization civ, HexCoord position);
+    /// <summary><c>questManager.handleIndividualQuests()</c> (T066: UnitManager.addUnit)</summary>
+    void HandleIndividualQuests();
 }
 
 /// <summary>What Civilization reads from <c>CityStateFunctions</c>.</summary>
@@ -102,8 +110,8 @@ public interface IUnitManager
     IEnumerable<IMapUnitState> GetCivUnits();
     /// <summary><c>civ.units.removeUnit(unit, updateCivInfo)</c></summary>
     void RemoveUnit(IGameContextUnit unit, bool updateCivInfo);
-    /// <summary><c>baseUnit.newMapUnit(civInfo, unitId)</c></summary>
-    IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId);
+    /// <summary><c>civ.units.placeUnitNearTile(location, baseUnit, unitId, copiedFrom)</c> (T066: UnitUpgradeManager.performUpgrade)</summary>
+    MapUnit? PlaceUnitNearTile(HexCoord location, BaseUnit baseUnit, int? unitId = null, MapUnit? copiedFrom = null);
     /// <summary><c>civ.units.addUnit(baseUnit, city)</c>; <c>null</c> when the unit cannot be placed.</summary>
     IMapUnitState? AddUnit(BaseUnit baseUnit, CityObject? city = null);
     /// <summary><c>civ.units.addUnit(mapUnit, updateCivInfo)</c> (T065: MapUnit.assignOwner)</summary>

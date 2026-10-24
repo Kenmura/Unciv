@@ -18,7 +18,7 @@ namespace Unciv.Models.Ruleset.Unit;
 // core/src/com/unciv/models/ruleset/unit/BaseUnit.kt
 // This is BaseUnit because Unit is already a base Kotlin class and to avoid mixing the two up
 //
-// Not ported yet, because they need the UnitManager seam or CityConstructions: newMapUnit is IUnitManager.NewMapUnit (the unit is created by the UnitManager seam, T066).
+// newMapUnit is NewMapUnit (T066).
 
 /// <summary>
 /// This is the basic info of the units, as specified in Units.json,
@@ -535,11 +535,26 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
         }
     }
 
-    /// <summary>Kotlin creates a fake unit via newMapUnit; here it is created through the UnitManager seam.</summary>
+    public MapUnit NewMapUnit(CivilizationObject civInfo, int? unitId = null)
+    {
+        var unit = new MapUnit
+        {
+            Name = Name,
+            Civ = civInfo,
+            Owner = civInfo.CivId,
+            Id = unitId ?? civInfo.GameInfo.GetNextUnitId(),
+        };
+
+        // must be after setting name & civInfo because it sets the baseUnit according to the name
+        // and the civInfo is required for using `hasUnique` when determining its movement options
+        unit.SetTransients(civInfo.GameInfo.Ruleset);
+
+        return unit;
+    }
+
     public bool CanUnitEnterTile(CityObject city)
     {
-        // MapUnit is the only IGameContextUnit the UnitManager creates (T066 retypes the seam)
-        var fakeUnit = (MapUnit)city.Civ.Units.NewMapUnit(this, Constants.NoId);
+        var fakeUnit = NewMapUnit(city.Civ, Constants.NoId);
         return fakeUnit.Movement.CanMoveTo(city.GetCenterTile());
     }
 

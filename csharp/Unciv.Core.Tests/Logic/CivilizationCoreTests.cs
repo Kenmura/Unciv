@@ -837,6 +837,7 @@ public class CivilizationCoreTests
         public void BarbarianCampCleared(Civilization civ, HexCoord position) => throw new NotSupportedException();
         public void JustMet(Civilization otherCiv) { }
         public void SetTransients(Civilization civInfo) { }
+        public void HandleIndividualQuests() { }
     }
 
 }

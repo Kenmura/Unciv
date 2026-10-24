@@ -61,6 +61,12 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     bool IGameInfoState.IsUsersTurn() => UsersTurn;
     bool IGameInfoState.AutoAssignCityProduction => false;
     bool IGameInfoState.IsFullAutoPlayAI => false;
+    public int LastUnitId { get; set; }
+    int IGameInfoState.GetNextUnitId() => ++LastUnitId;
+    public bool AlternateCycleOrder { get; set; }
+    bool IGameInfoState.AlternateUnitCycleOrder => AlternateCycleOrder;
+    public List<string> TutorialTasks { get; } = [];
+    void IGameInfoState.AddCompletedTutorialTask(string task) => TutorialTasks.Add(task);
     bool IGameInfoState.IsUnavailableBySettingsCached(IHasUniques construction) => construction.IsUnavailableBySettings(this);
     public FakeBarbarianManager BarbarianFake { get; } = new();
     IBarbarianManager IGameInfoState.Barbarians => BarbarianFake;
@@ -94,7 +100,7 @@ internal sealed class FakeUnitManager : IUnitManager
     public IEnumerable<IMapUnitState> GetCivUnits() => CivUnits;
     public List<(IGameContextUnit Unit, bool UpdateCivInfo)> RemovedUnits { get; } = [];
     public void RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => RemovedUnits.Add((unit, updateCivInfo));
-    public IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId) => throw new NotSupportedException();
+    public MapUnit? PlaceUnitNearTile(HexCoord location, BaseUnit baseUnit, int? unitId = null, MapUnit? copiedFrom = null) => throw new NotSupportedException();
     public List<(BaseUnit Unit, CityObject? City)> AddedUnits { get; } = [];
     public IMapUnitState? AddedUnitResult { get; set; }
     public IMapUnitState? AddUnit(BaseUnit baseUnit, CityObject? city = null)
@@ -114,6 +120,8 @@ internal sealed class FakeQuestManager : IQuestManager
     public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
     public List<(string Civ, HexCoord Position)> ClearedCamps { get; } = [];
     public void BarbarianCampCleared(Civilization civ, HexCoord position) => ClearedCamps.Add((civ.CivId, position));
+    public int IndividualQuestsHandled { get; private set; }
+    public void HandleIndividualQuests() => IndividualQuestsHandled++;
 }
 
 internal sealed class FakeCityStateFunctions : ICityStateFunctions

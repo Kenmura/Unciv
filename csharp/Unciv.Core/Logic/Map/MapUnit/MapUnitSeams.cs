@@ -1,6 +1,4 @@
 using Unciv.Logic.Map.Tiles;
-using Unciv.Models.Ruleset.Unit;
-using Unciv.Utils;
 
 namespace Unciv.Logic.Map.MapUnits;
 
@@ -30,35 +28,6 @@ public interface IUnitMovement
     Tile HeadTowards(Tile destination);
     /// <summary><c>unit.movement.moveToTile(destination)</c></summary>
     void MoveToTile(Tile destination);
-}
-
-/// <summary>What MapUnit reads from <c>UnitUpgradeManager</c> (<c>unit.upgrade</c>); MapUnit only holds it. T066 implements it.</summary>
-public interface IUnitUpgradeManager;
-
-/// <summary>
-/// What MapUnit reads from <c>UnitPromotions</c> (<c>unit.promotions</c>), on top of the marker City stores (<c>city.unitToPromotions</c>).
-/// T066 implements it (UnitPromotions) and retypes <see cref="MapUnit.Promotions"/>.
-/// </summary>
-public interface IUnitPromotions
-{
-    /// <summary><c>promotions.promotions</c> (<c>HashSet&lt;String&gt;</c>), the names of the promotions the unit has.</summary>
-    JavaHashSet<string> Promotions { get; }
-    /// <summary><c>promotions.numberOfPromotions</c></summary>
-    int NumberOfPromotions { get; }
-    /// <summary><c>promotions.addPromotion(name, isFree)</c></summary>
-    void AddPromotion(string promotionName, bool isFree = false);
-    /// <summary><c>promotions.getPromotions(sorted)</c></summary>
-    IEnumerable<Promotion> GetPromotions(bool sorted = false);
-    /// <summary><c>promotions.XP</c></summary>
-    int XP { get; set; }
-    /// <summary><c>promotions.xpForNextPromotion()</c></summary>
-    int XpForNextPromotion();
-    /// <summary><c>PromotionTree(unit)</c> (a UI-package class in Kotlin; its constructor reads <c>unit.promotions</c>). TODO(T126)</summary>
-    IPromotionTree CreatePromotionTree();
-    /// <summary><c>promotions.clone(unit)</c></summary>
-    IUnitPromotions Clone(MapUnit unit);
-    /// <summary><c>promotions.setTransients(unit)</c></summary>
-    void SetTransients(MapUnit unit);
 }
 
 /// <summary>What CityConstructions reads from <c>PromotionTree</c>. TODO(T126)</summary>

@@ -347,7 +347,7 @@ flowchart TD
   class T063 done
   class T064 prog
   class T065 done
-  class T066 prog
+  class T066 review
   class T067 prog
   class T068 ondeck
   class T069 waiting
@@ -416,7 +416,7 @@ flowchart TD
 | T126 | **On deck** (after T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T129 | **On deck** (after T096) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T133 | **On deck** (after T066) | T066 | 0 | Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager |
-| T066 | In-Progress [Claude] | T065, T060 | 47 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
+| T066 | Needs-Review [Claude] | T065, T060 | 47 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T046 | Available (waiting on T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T064 | In-Progress [Claude] | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T069 | Available (waiting on T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |

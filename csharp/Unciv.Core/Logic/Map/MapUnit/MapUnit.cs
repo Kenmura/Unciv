@@ -16,8 +16,8 @@ using UnitTypeObject = Unciv.Models.Ruleset.Unit.UnitType;
 
 namespace Unciv.Logic.Map.MapUnits;
 
-// Ported from core/src/com/unciv/logic/map/mapunit/MapUnit.kt (T065), against the seams in MapUnitSeams.cs: UnitMovement (T067),
-// UnitPromotions/UnitUpgradeManager (T066) and the barbarian manager (T078) are typed by their seam. Tile, Civilization and City are
+// Ported from core/src/com/unciv/logic/map/mapunit/MapUnit.kt (T065), against the seams in MapUnitSeams.cs: UnitMovement (T067)
+// and the barbarian manager (T078) are typed by their seam (UnitPromotions/UnitUpgradeManager are concrete since T066). Tile, Civilization and City are
 // concrete. Namespace Unciv.Logic.Map.MapUnits (not ...MapUnit: the namespace of the unit actions would clash with the class name).
 //
 // Stripped / deferred:
@@ -86,13 +86,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
 
     public int AttacksThisTurn { get; set; }
 
-    private IUnitPromotions? promotions;
-    /// <summary>TODO(T066): becomes <c>var promotions = UnitPromotions()</c>.</summary>
-    public IUnitPromotions Promotions
-    {
-        get => Lateinit(promotions, "promotions");
-        set => promotions = value;
-    }
+    public UnitPromotions Promotions { get; set; } = new();
 
     /// <summary>Indicates if unit should be located with 'next unit' action</summary>
     public bool Due { get; set; } = true;
@@ -196,14 +190,8 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         set => movement = value;
     }
 
-    private IUnitUpgradeManager? upgrade;
-    /// <summary>Transient. TODO(T066): becomes <c>val upgrade = UnitUpgradeManager(this)</c>.</summary>
     [JsonIgnore]
-    public IUnitUpgradeManager Upgrade
-    {
-        get => Lateinit(upgrade, "upgrade");
-        set => upgrade = value;
-    }
+    public UnitUpgradeManager Upgrade { get; set; }
 
     [JsonIgnore]
     public bool IsDestroyed { get; set; }
@@ -244,6 +232,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     public MapUnit()
     {
         Cache = new MapUnitCache(this);
+        Upgrade = new UnitUpgradeManager(this);
     }
 
     /// <summary>

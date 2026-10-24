@@ -168,8 +168,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
 
     public JavaHashMap<string, bool> UnitShouldUseSavedPromotion { get; set; } = new();
 
-    /// <summary>TODO(T066): retype to <c>HashMap&lt;String, UnitPromotions&gt;</c>.</summary>
-    public JavaHashMap<string, Unciv.Logic.Map.MapUnits.IUnitPromotions> UnitToPromotions { get; set; } = new();
+    public JavaHashMap<string, Unciv.Logic.Map.MapUnits.UnitPromotions> UnitToPromotions { get; set; } = new();
 
     [JsonPropertyName("cityAIFocus")]
     [JsonInclude]

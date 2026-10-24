@@ -20,8 +20,8 @@ namespace Unciv.Logic.Map.Tiles;
 // private constructor of ImprovementQueueEntry. Fonts.turn is inlined.
 // T054 added the `improvementFunctions` and `stats` fields, removeImprovement, both setImprovement overloads, setBaseTerrain and
 // setPillaged (+ clearAllPathfindingCaches).
-// Still deferred (they need TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource and the settings tutorial tasks, T046/T048):
-// doWorkerTurn, startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit).
+// T066 added doWorkerTurn. Still deferred (they need TileImprovement.getTurnsToBuild and Civilization.gainStockpiledResource, T046/T048):
+// startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit).
 // T107 added the Gdx-compatible JSON (TileJsonConverter at the end of the class). Unit fields are not wired yet: TODO(T110).
 
 /// <summary>
@@ -1059,6 +1059,24 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
 
     public void SetImprovement(TileImprovement? improvement, IGameContextCivilization? civToHandleCompletion = null, IGameContextUnit? unit = null) =>
         ImprovementFunctions.SetImprovement(improvement, civToHandleCompletion, unit);
+
+    /// <summary>Called from <c>UnitTurnManager.endTurn</c> when a Worker "spends time" here</summary>
+    /// <returns><c>true</c> if any work got finished and upstream might want to update things</returns>
+    public bool DoWorkerTurn(MapUnitClass worker)
+    {
+        if (IsMarkedForCreatesOneImprovement()) return false;
+        if (ImprovementQueue.Count == 0) return false;
+
+        if (ImprovementQueue[0].CountDown()) return false;
+        var queueEntry = ImprovementQueue[0];
+        ImprovementQueue.RemoveAt(0);
+
+        if (worker.Civ.IsCurrentPlayer())
+            worker.Civ.GameInfo.AddCompletedTutorialTask("Construct an improvement");
+
+        SetImprovement(queueEntry.Improvement, worker.Civ, worker);
+        return true;
+    }
 
     public void SetImprovementBasic(string improvementName)
     {
