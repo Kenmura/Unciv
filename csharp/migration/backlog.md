@@ -1100,13 +1100,14 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 ### T103 Remaining Kotlin tests sweep: uniques, filters, tutorials
 - State: In-Progress [Claude]
 - Depends: T072, T052, T098, T097
-- Source: tests/src/com/unciv/uniques/CarrierTests.kt, EventCircularTriggersTest.kt, GlobalUniquesTests.kt, TileUniquesTests.kt, logic/filter/CityCivFilterTests.kt, PolicyFilterTests.kt, TechFilterTests.kt, TileFilterTests.kt, UnitFilterTests.kt, logic/TutorialTranslationTests.kt, view/GameViewMovementHistoryTest.kt
+- Source: tests/src/com/unciv/uniques/CarrierTests.kt, EventCircularTriggersTest.kt, logic/filter/CityCivFilterTests.kt, PolicyFilterTests.kt, TechFilterTests.kt, TileFilterTests.kt, UnitFilterTests.kt, logic/TutorialTranslationTests.kt, view/GameViewMovementHistoryTest.kt
 - Fixtures: (the test files above)
 - Deliverables: csharp/Unciv.Core.Tests/**, ported tests
 - Gate: `dotnet test`
 - Claimed: 2026-10-24T17:20Z
 - Notes: Created by the backlog audit: these Kotlin tests were named by no ticket (they all need TestGame, Civilization/City/MapUnit, filters or the Civilopedia/tutorial data). One test class per Kotlin class; also ports any remaining T027/T028/T030/T033/T034/T036/T057 cases still deferred (check their Notes) and the TimedUniquesTests cases listed in T035 if T035 did not. Real bugs go back to the owning ticket as review notes.
   - Backlog audit: besides the ported-over-TestGame cases, also covers T028's deferred CountableTests/ExpressionTests cases that need real game state, T036's UniqueErrorTests.testEducatedEliteGreatPersonGifting and the T036/T057 deferred validator cases, and anything the Kotlin ResourceTests (tests/src/com/unciv/uniques/ResourceTests.kt) needs from T106.
+  - Narrowed at claim: GlobalUniquesTests + deferred remnants split to T143, TileUniquesTests (needs UnitActions) to T144. T103 now covers Carrier, EventCircularTriggers, 5 filter tests, TutorialTranslation, GameViewMovementHistory.
 
 ### T104 Marker, seam and stale-comment sweep (final)
 - State: Available
@@ -1579,6 +1580,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
 - Claimed:
 - Notes: Split from T072 at claim time. ThreatManagerTests needs ThreatManager (T087) so depend on it when claiming if still not Done. Same pattern as T072 city fixtures.
+
+### T143 Port GlobalUniquesTests + deferred TestGame fixtures (split from T103)
+- State: Available
+- Depends: T103
+- Source: tests/src/com/unciv/uniques/GlobalUniquesTests.kt (50 tests), ResourceTests.kt
+- Fixtures: (the test files above)
+- Deliverables: csharp/Unciv.Core.Tests/**, ported tests
+- Gate: `dotnet test`
+- Claimed:
+- Notes: Split from T103 at claim time (scope >100 cases). Also ports deferred T028 CountableTests/ExpressionTests state cases, T036 UniqueErrorTests.testEducatedEliteGreatPersonGifting and deferred T036/T057 validator cases, TimedUniquesTests from T035, and ResourceTests once T106 is Done (add that dependency if needed).
+
+### T144 Port TileUniquesTests.pillageYieldTest (split from T103)
+- State: Available
+- Depends: T080, T103
+- Source: tests/src/com/unciv/uniques/TileUniquesTests.kt
+- Fixtures: (same)
+- Deliverables: csharp/Unciv.Core.Tests/Logic/Map/TileUniquesTests.cs
+- Gate: `dotnet test --filter FullyQualifiedName~TileUniquesTests`
+- Claimed:
+- Notes: Needs UnitActions.invokeUnitAction (T080).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
