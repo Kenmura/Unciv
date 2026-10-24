@@ -964,13 +964,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit: the Notes of T030/T031/T032/T033 list members deferred to 'T034/T046/T052' that no ticket took (confirmed absent in csharp/Unciv.Core). To port: TileResource.getImprovements/isImprovedBy/setTransients(ruleset)/getImprovingImprovement/generatesNaturallyOn; TileImprovement.getTurnsToBuild/getConstructorUnits/getCreatingUnits; ResourceSupplyList.subtractResourceRequirements; Nation.getStartBias; Era.getStartingUnits/getEraGatedObjects/matchesFilter; Technology.matchesFilter; Milestone.hasBeenCompletedBy/getFocus/getVictoryScreen*/getMoreCountable*/getCountableDo...; Belief.getBeliefsMatching; Specialist.colorObject (EngineColor); BaseUnit/Building/PerpetualConstruction getRejectionReasons-family members (isBuildable, shouldBeDisplayed, construct, newMapUnit, addConstructionBonuses, isPurchasable, tooltips) that T063 did NOT take (check T063's Notes first; no overlap), the Building/BaseUnit.matchesFilter 'is Building' part and the conditional-filter pieces named in T033's Notes. Civilopedia text members (getCivilopediaTextLines, makeLink, getSortGroup, getShortDescription, getDescription) are T095-T097, not here. Seam rule as T053.
 
 ### T107 TileMap and Tile JSON wiring, MapSaver round trips
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T098, T039, T053, T054
 - Source: core/src/com/unciv/logic/map/TileMap.kt, core/src/com/unciv/logic/map/tile/Tile.kt (serialization parts), core/src/com/unciv/logic/files/MapSaver.kt
 - Fixtures: none - generate golden map JSON by running the Kotlin MapSaver/Json on a small generated map
 - Deliverables: csharp/Unciv.Core/Logic/Map/TileMap.cs, Tile.cs (JSON wiring), MapSaver round-trip tests under csharp/Unciv.Core.Tests/
 - Gate: dotnet test --filter FullyQualifiedName~MapSaverRoundTrip
-- Claimed:
+- Claimed: 2026-10-24T10:56Z
 - Notes: Found by T098: TileMap and TileMap.Preview have no JSON wiring (TileMap.cs says so), so MapSaver TileMap/Preview round trips are untested. Wire Kotlin-compatible JSON (tileList, mapParameters, ruleset names, startingLocations, etc.) and add round-trip and golden tests; remove the TODO in TileMap.cs.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core

@@ -431,14 +431,13 @@ flowchart TD
   class T103 waiting
   class T104 waiting
   class T106 waiting
-  class T107 ready
+  class T107 prog
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T107 | **Ready to start** | T098, T039, T053, T054 | 9 | TileMap and Tile JSON wiring, MapSaver round trips |
 | T055 | Needs-Review [Claude] | T034, T045, T039, T053 | 58 | Civilization core: Civilization, ExploredRegion, PopupAlert |
 | T057 | Available (waiting on T055) | T055 | 54 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
 | T056 | Available (waiting on T055) | T055 | 53 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
@@ -472,6 +471,7 @@ flowchart TD
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T041 | In-Progress [Claude] | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 10 | MapGenerator pipeline (audit existing partial work first) |
 | T099 | Available (waiting on T041, T046, T061, T066, T078) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
+| T107 | In-Progress [Claude] | T098, T039, T053, T054 | 9 | TileMap and Tile JSON wiring, MapSaver round trips |
 | T080 | Available (waiting on T079, T061, T068) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T100 | Available (waiting on T071, T107) | T071, T098, T107 | 8 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080, T063) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
