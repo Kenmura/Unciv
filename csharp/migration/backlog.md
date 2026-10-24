@@ -551,7 +551,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - T062 implemented: CityStats.cs (+StatTreeNode), GreatPersonPointsBreakdown.cs, CityStatsTests. City.CityStats is now the concrete CityStats (lazily `new CityStats(this)`, settable); ICityStats removed; City.GetGreatPersonPoints/GetGreatPersonPercentageBonus added. Seam members added for T061/T063 to implement: ICityConstructions.{CurrentConstructionName,GetStats (StatTreeNode),GetMaintenanceCosts}; ICityPopulationManager.{GetNewSpecialists,GetFreePopulation,GetNumberOfSpecialists}; ICityReligionManager.GetFollowersOfMajorityReligion. CityStats.Update and HasExtraAnnexUnhappiness are virtual only so test fakes can count calls (FakeCityStats : CityStats). Float order kept (Float sums accumulate from 0f, sumOf{toDouble} in Double); timeThis/purity annotations stripped; DebugUtils.SUPERCHARGED = GameInfo.EngineOptions.Supercharged. Kotlin traps kept: baseStatTree.children["Buildings"]/Add share child nodes without copying; Update NPE on missing "Population" node (pop 0) is a KeyNotFoundException here. TestGame-based CityTest stat fixtures remain T072. CivManagerTests GreatPersonPoints fake now feeds a synthetic building through the real breakdown.
 
 ### T063 CityConstructions
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T060, T062
 - Source: core/src/com/unciv/logic/city/CityConstructions.kt
 - Fixtures: production-related cases in tests/src/com/unciv/logic/civilization/FreeBuildingTests.kt (TestGame-based: T072)
