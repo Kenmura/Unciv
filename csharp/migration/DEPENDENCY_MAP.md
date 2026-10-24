@@ -88,6 +88,7 @@ flowchart TD
     T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
     T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
     T108["T108<br/>Civilopedia text model D: remaining ruleset objects' civilop..."]
+    T108["T108<br/>Civilopedia text model D: remaining ruleset objects' civilop..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -309,6 +310,7 @@ flowchart TD
   T053 --> T107
   T054 --> T107
   T095 --> T108
+  T095 --> T108
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -429,7 +431,8 @@ flowchart TD
   class T103 waiting
   class T104 waiting
   class T106 waiting
-  class T107 prog
+  class T107 review
+  class T108 waiting
   class T108 waiting
 ```
 
@@ -469,7 +472,7 @@ flowchart TD
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T041 | In-Progress [Claude] | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 10 | MapGenerator pipeline (audit existing partial work first) |
 | T099 | Available (waiting on T041, T046, T061, T066, T078) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
-| T107 | In-Progress [Claude] | T098, T039, T053, T054 | 9 | TileMap and Tile JSON wiring, MapSaver round trips |
+| T107 | Needs-Review [Claude] | T098, T039, T053, T054 | 9 | TileMap and Tile JSON wiring, MapSaver round trips |
 | T080 | Available (waiting on T079, T061, T068) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T100 | Available (waiting on T071, T107) | T071, T098, T107 | 8 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080, T063) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
@@ -498,4 +501,5 @@ flowchart TD
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T096 | Available (waiting on T095, T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T108 | Available (waiting on T095) | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
 | T108 | Available (waiting on T095) | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |

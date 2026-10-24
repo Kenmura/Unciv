@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Mathematics;
@@ -13,7 +15,8 @@ namespace Unciv.Logic.Map;
 
 // Ported from core/src/com/unciv/logic/map/TileMap.kt (T039), against the seams in TileMapSeams.cs / TileSeams.cs.
 //
-// Stripped: the @Readonly purity annotations, the Gdx Json wiring (no [JsonPropertyName] yet, like Tile).
+// Stripped: the @Readonly purity annotations.
+// T107 wired the Gdx-compatible JSON: TileMapJsonConverter, StartingLocationJsonConverter and PreviewJsonConverter at the end of the class.
 // Deviations:
 // - MapLandmassGenerator.getInitializationTerrain (T041, called by the two generating constructors) is inlined as a private helper.
 // - assignContinents flood-fills with a private helper instead of BFS (T040, which depends on this ticket). BFS only fed a set and a
@@ -26,6 +29,7 @@ namespace Unciv.Logic.Map;
 /// <summary>
 /// An Unciv map with all properties as produced by the map editor or MapGenerator; or as part of a running game.
 /// </summary>
+[JsonConverter(typeof(TileMap.TileMapJsonConverter))]
 public class TileMap : IsPartOfGameInfoSerialization
 {
     #region Fields, Serialized
@@ -38,6 +42,7 @@ public class TileMap : IsPartOfGameInfoSerialization
     /// <param name="Position">Location</param>
     /// <param name="Nation">Name of the nation</param>
     /// <param name="Usage">How the starting location may be used; the default is for maps saved prior to this feature</param>
+    [JsonConverter(typeof(StartingLocationJsonConverter))]
     public sealed record StartingLocation(HexCoord Position = default, string Nation = "", StartingLocation.UsageType Usage = StartingLocation.UsageType.Player)
         : IsPartOfGameInfoSerialization
     {
@@ -994,10 +999,11 @@ public class TileMap : IsPartOfGameInfoSerialization
     #endregion
 
     /// <summary>Class to parse only the parameters and starting locations out of a map file</summary>
+    [JsonConverter(typeof(PreviewJsonConverter))]
     public class Preview
     {
-        public MapParameters MapParameters { get; } = new();
-        private readonly List<StartingLocation> startingLocations = [];
+        public MapParameters MapParameters { get; internal set; } = new();
+        internal readonly List<StartingLocation> startingLocations = [];
 
         public IEnumerable<string> GetDeclaredNations() => startingLocations
             .Where(it => it.Usage != StartingLocation.UsageType.Normal)
@@ -1009,4 +1015,147 @@ public class TileMap : IsPartOfGameInfoSerialization
             .Select(it => it.Nation)
             .Distinct();
     }
+
+    #region Json
+
+    /// <summary>Kotlin <c>StartingLocation</c> as the libGDX Json writes it: fields equal to their defaults are omitted.</summary>
+    internal sealed class StartingLocationJsonConverter : JsonConverter<StartingLocation>
+    {
+        public override StartingLocation Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType != JsonTokenType.StartObject)
+                throw new JsonException($"Expected StartObject for StartingLocation, got {reader.TokenType}");
+            var position = default(HexCoord);
+            var nation = "";
+            var usage = StartingLocation.DefaultUsage;
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+            {
+                var name = reader.GetString();
+                reader.Read();
+                switch (name)
+                {
+                    case "position":
+                        position = new HexCoordConverter().Read(ref reader, typeof(HexCoord), options);
+                        break;
+                    case "nation":
+                        nation = reader.GetString() ?? "";
+                        break;
+                    case "usage":
+                        var text = reader.GetString();
+                        if (text == null || !Enum.TryParse(text, true, out usage) || !Enum.IsDefined(usage))
+                            throw new JsonException($"Unknown StartingLocation usage '{text}'");
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+            return new StartingLocation(position, nation, usage);
+        }
+
+        public override void Write(Utf8JsonWriter writer, StartingLocation value, JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+            if (value.Position != default)
+            {
+                writer.WritePropertyName("position");
+                new HexCoordConverter().Write(writer, value.Position, options);
+            }
+            if (value.Nation != "") writer.WriteString("nation", value.Nation);
+            if (value.Usage != StartingLocation.DefaultUsage) writer.WriteString("usage", value.Usage.ToString());
+            writer.WriteEndObject();
+        }
+    }
+
+    /// <summary>The serialized fields of Kotlin <c>TileMap</c>: mapParameters, tileList, startingLocations, description (omitted when empty).</summary>
+    internal sealed class TileMapJsonConverter : JsonConverter<TileMap>
+    {
+        public override TileMap Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType != JsonTokenType.StartObject)
+                throw new JsonException($"Expected StartObject for TileMap, got {reader.TokenType}");
+            var map = new TileMap();
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+            {
+                var name = reader.GetString();
+                reader.Read();
+                var isNull = reader.TokenType == JsonTokenType.Null;
+                switch (name)
+                {
+                    case "mapParameters":
+                        if (!isNull) map.MapParameters = JsonSerializer.Deserialize<MapParameters>(ref reader, options)!;
+                        break;
+                    case "tileList":
+                        map.TileList = isNull ? [] : JsonSerializer.Deserialize<List<Tile>>(ref reader, options)!;
+                        break;
+                    case "startingLocations":
+                        map.StartingLocations.Clear();
+                        if (!isNull) map.StartingLocations.AddRange(JsonSerializer.Deserialize<List<StartingLocation>>(ref reader, options)!);
+                        break;
+                    case "description":
+                        map.Description = reader.GetString() ?? "";
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+            return map;
+        }
+
+        public override void Write(Utf8JsonWriter writer, TileMap value, JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("mapParameters");
+            JsonSerializer.Serialize(writer, value.MapParameters, options);
+            if (value.TileList.Count > 0)
+            {
+                writer.WritePropertyName("tileList");
+                JsonSerializer.Serialize(writer, value.TileList, options);
+            }
+            if (value.StartingLocations.Count > 0)
+            {
+                writer.WritePropertyName("startingLocations");
+                JsonSerializer.Serialize(writer, value.StartingLocations, options);
+            }
+            if (value.Description != "") writer.WriteString("description", value.Description);
+            writer.WriteEndObject();
+        }
+    }
+
+    /// <summary>Reads only mapParameters and startingLocations and skips everything else (tileList in particular).</summary>
+    internal sealed class PreviewJsonConverter : JsonConverter<Preview>
+    {
+        public override Preview Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType != JsonTokenType.StartObject)
+                throw new JsonException($"Expected StartObject for TileMap.Preview, got {reader.TokenType}");
+            var preview = new Preview();
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+            {
+                var name = reader.GetString();
+                reader.Read();
+                var isNull = reader.TokenType == JsonTokenType.Null;
+                switch (name)
+                {
+                    case "mapParameters":
+                        if (!isNull) preview.MapParameters = JsonSerializer.Deserialize<MapParameters>(ref reader, options)!;
+                        break;
+                    case "startingLocations":
+                        preview.startingLocations.Clear();
+                        if (!isNull) preview.startingLocations.AddRange(JsonSerializer.Deserialize<List<StartingLocation>>(ref reader, options)!);
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+            return preview;
+        }
+
+        public override void Write(Utf8JsonWriter writer, Preview value, JsonSerializerOptions options) =>
+            throw new NotSupportedException("TileMap.Preview is only ever read");
+    }
+
+    #endregion
 }

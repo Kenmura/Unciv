@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Civilization;
 using Unciv.Models.Ruleset;
@@ -19,10 +21,12 @@ namespace Unciv.Logic.Map.Tiles;
 // Still deferred (they need TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource and the settings tutorial tasks, T046/T048):
 // doWorkerTurn, startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit); and the convertTerrains parameter of
 // setConnectedByRiver (MapGenerator.Helpers.convertTerrains).
+// T107 added the Gdx-compatible JSON (TileJsonConverter at the end of the class). Unit fields are not wired yet: TODO(T108).
 
 /// <summary>
 /// A single hex of the map. Kotlin <c>Tile</c> has no <c>equals</c>/<c>hashCode</c>: this class keeps reference identity.
 /// </summary>
+[JsonConverter(typeof(Tile.TileJsonConverter))]
 public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistorySource
 {
     #region Serialized fields
@@ -1270,6 +1274,219 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         if (MilitaryUnit != null) lineList.Add(MilitaryUnit.Name + " - " + MilitaryUnit.Civ.CivId);
         if (baseTerrainObject != null && IsImpassible()) lineList.Add(Constants.Impassable);
         return string.Join(", ", lineList);
+    }
+
+    #endregion
+
+    #region Json
+
+    /// <summary>
+    /// Reads and writes the serialized fields the way the libGDX Json does for Kotlin <c>Tile</c> (T107): field names are the Kotlin ones,
+    /// fields equal to the default of a fresh <c>Tile()</c> are omitted, unknown fields are ignored, and a list may be a plain array or the
+    /// <c>{"class":..., "items":[...]}</c> form. <c>exploredBy</c> (a Java HashSet there) is written in ordinal order, which is deterministic.
+    /// The unit fields need MapUnit (TODO(T108)): writing a tile that holds units, or reading them, throws.
+    /// </summary>
+    internal sealed class TileJsonConverter : JsonConverter<Tile>
+    {
+        public override Tile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType != JsonTokenType.StartObject)
+                throw new JsonException($"Expected StartObject for Tile, got {reader.TokenType}");
+            var tile = new Tile();
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.EndObject) return tile;
+                var name = reader.GetString();
+                reader.Read();
+                var isNull = reader.TokenType == JsonTokenType.Null;
+                switch (name)
+                {
+                    case "militaryUnit" or "civilianUnit" or "airUnits":
+                        if (isNull || (reader.TokenType == JsonTokenType.StartArray && IsEmptyArray(ref reader))) break;
+                        throw new NotSupportedException($"Tile.{name}: unit JSON is not wired yet (TODO(T108))");
+                    case "position":
+                        tile.Position = isNull ? default : new HexCoordConverter().Read(ref reader, typeof(HexCoord), options);
+                        break;
+                    case "baseTerrain":
+                        if (!isNull) tile.baseTerrain = reader.GetString();
+                        break;
+                    case "terrainFeatures":
+                        tile.TerrainFeatures = isNull ? [] : ReadStringList(ref reader);
+                        break;
+                    case "exploredBy":
+                        tile.exploredBy = isNull ? [] : [.. ReadStringList(ref reader)];
+                        break;
+                    case "naturalWonder":
+                        tile.NaturalWonder = isNull ? null : reader.GetString();
+                        break;
+                    case "resource":
+                        tile.Resource = isNull ? null : reader.GetString();
+                        break;
+                    case "resourceAmount":
+                        tile.ResourceAmount = JsonValueReader.ReadInt(ref reader, "Tile.resourceAmount");
+                        break;
+                    case "improvement":
+                        tile.Improvement = isNull ? null : reader.GetString();
+                        break;
+                    case "improvementIsPillaged":
+                        tile.ImprovementIsPillaged = reader.GetBoolean();
+                        break;
+                    case "improvementQueue":
+                        tile.ImprovementQueue.Clear();
+                        if (!isNull) ReadImprovementQueue(ref reader, tile.ImprovementQueue);
+                        break;
+                    case "roadStatus":
+                        tile.RoadStatus = ReadRoadStatus(ref reader);
+                        break;
+                    case "roadIsPillaged":
+                        tile.RoadIsPillaged = reader.GetBoolean();
+                        break;
+                    case "roadOwner":
+                        tile.roadOwner = reader.GetString() ?? "";
+                        break;
+                    case "hasBottomRightRiver":
+                        tile.HasBottomRightRiver = reader.GetBoolean();
+                        break;
+                    case "hasBottomRiver":
+                        tile.HasBottomRiver = reader.GetBoolean();
+                        break;
+                    case "hasBottomLeftRiver":
+                        tile.HasBottomLeftRiver = reader.GetBoolean();
+                        break;
+                    case "history":
+                        tile.History = new TileHistoryConverter().Read(ref reader, typeof(TileHistory), options);
+                        break;
+                    case "continent":
+                        tile.continent = JsonValueReader.ReadInt(ref reader, "Tile.continent");
+                        break;
+                    default:
+                        reader.Skip(); // ignoreUnknownFields
+                        break;
+                }
+            }
+            throw new JsonException("Unexpected end of JSON while reading Tile");
+        }
+
+        private static bool IsEmptyArray(ref Utf8JsonReader reader)
+        {
+            var probe = reader;
+            return probe.Read() && probe.TokenType == JsonTokenType.EndArray && reader.TrySkip();
+        }
+
+        private static List<string> ReadStringList(ref Utf8JsonReader reader)
+        {
+            var result = new List<string>();
+            if (reader.TokenType == JsonTokenType.StartObject)
+            {
+                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                {
+                    var key = reader.GetString();
+                    reader.Read();
+                    if (key == "items") result = ReadStringList(ref reader);
+                    else reader.Skip();
+                }
+                return result;
+            }
+            if (reader.TokenType != JsonTokenType.StartArray)
+                throw new JsonException($"Expected StartArray for a string list, got {reader.TokenType}");
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                result.Add(reader.GetString()!);
+            return result;
+        }
+
+        private static void ReadImprovementQueue(ref Utf8JsonReader reader, List<ImprovementQueueEntry> queue)
+        {
+            if (reader.TokenType == JsonTokenType.StartObject)
+            {
+                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                {
+                    var key = reader.GetString();
+                    reader.Read();
+                    if (key == "items") ReadImprovementQueue(ref reader, queue);
+                    else reader.Skip();
+                }
+                return;
+            }
+            if (reader.TokenType != JsonTokenType.StartArray)
+                throw new JsonException($"Expected StartArray for improvementQueue, got {reader.TokenType}");
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+            {
+                var improvement = "";
+                var turns = 0;
+                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                {
+                    var key = reader.GetString();
+                    reader.Read();
+                    if (key == "improvement") improvement = reader.GetString() ?? "";
+                    else if (key == "turnsToImprovement") turns = JsonValueReader.ReadInt(ref reader, "ImprovementQueueEntry.turnsToImprovement");
+                    else reader.Skip();
+                }
+                queue.Add(new ImprovementQueueEntry(improvement, turns));
+            }
+        }
+
+        private static RoadStatus ReadRoadStatus(ref Utf8JsonReader reader)
+        {
+            var text = reader.GetString();
+            if (text == null || !Enum.TryParse<RoadStatus>(text, true, out var status) || !Enum.IsDefined(status))
+                throw new JsonException($"Unknown RoadStatus '{text}'");
+            return status;
+        }
+
+        public override void Write(Utf8JsonWriter writer, Tile value, JsonSerializerOptions options)
+        {
+            if (value.MilitaryUnit != null || value.CivilianUnit != null || value.AirUnits.Count > 0)
+                throw new NotSupportedException("Tile unit JSON is not wired yet (TODO(T108))");
+            writer.WriteStartObject();
+            if (value.Position != default)
+            {
+                writer.WritePropertyName("position");
+                new HexCoordConverter().Write(writer, value.Position, options);
+            }
+            if (value.baseTerrain != null) writer.WriteString("baseTerrain", value.baseTerrain);
+            if (value.TerrainFeatures.Count > 0)
+            {
+                writer.WriteStartArray("terrainFeatures");
+                foreach (var feature in value.TerrainFeatures) writer.WriteStringValue(feature);
+                writer.WriteEndArray();
+            }
+            if (value.exploredBy.Count > 0)
+            {
+                writer.WriteStartArray("exploredBy");
+                foreach (var civ in value.exploredBy.Order(StringComparer.Ordinal)) writer.WriteStringValue(civ);
+                writer.WriteEndArray();
+            }
+            if (value.NaturalWonder != null) writer.WriteString("naturalWonder", value.NaturalWonder);
+            if (value.Resource != null) writer.WriteString("resource", value.Resource);
+            if (value.ResourceAmount != 0) writer.WriteNumber("resourceAmount", value.ResourceAmount);
+            if (value.Improvement != null) writer.WriteString("improvement", value.Improvement);
+            if (value.ImprovementIsPillaged) writer.WriteBoolean("improvementIsPillaged", true);
+            if (value.ImprovementQueue.Count > 0)
+            {
+                writer.WriteStartArray("improvementQueue");
+                foreach (var entry in value.ImprovementQueue)
+                {
+                    writer.WriteStartObject();
+                    if (entry.Improvement != "") writer.WriteString("improvement", entry.Improvement);
+                    if (entry.TurnsToImprovement != 0) writer.WriteNumber("turnsToImprovement", entry.TurnsToImprovement);
+                    writer.WriteEndObject();
+                }
+                writer.WriteEndArray();
+            }
+            if (value.RoadStatus != RoadStatus.None) writer.WriteString("roadStatus", value.RoadStatus.ToString());
+            if (value.RoadIsPillaged) writer.WriteBoolean("roadIsPillaged", true);
+            if (value.roadOwner != "") writer.WriteString("roadOwner", value.roadOwner);
+            if (value.HasBottomRightRiver) writer.WriteBoolean("hasBottomRightRiver", true);
+            if (value.HasBottomRiver) writer.WriteBoolean("hasBottomRiver", true);
+            if (value.HasBottomLeftRiver) writer.WriteBoolean("hasBottomLeftRiver", true);
+            if (!value.History.Equals(new TileHistory()))
+            {
+                writer.WritePropertyName("history");
+                new TileHistoryConverter().Write(writer, value.History, options);
+            }
+            if (value.continent != -1) writer.WriteNumber("continent", value.continent);
+            writer.WriteEndObject();
+        }
     }
 
     #endregion

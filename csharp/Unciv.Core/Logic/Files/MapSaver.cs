@@ -8,8 +8,8 @@ namespace Unciv.Logic.Files;
 // Deviations:
 // - UncivGame.Current.files.getLocalFile becomes the explicit `localFile` resolver argument (a function from a path relative to the
 //   local data folder to its handle) of SaveMap and GetMaps.
-// - TileMap and TileMap.Preview currently have no JSON wiring (see TileMap.cs), so a TileMap round trip through UncivJson is only as
-//   good as that wiring; the file/zip/trim/fallback logic here is complete.
+// - TileMap and TileMap.Preview JSON is wired by their own converters (T107).
+//   The file/zip/trim/fallback logic here is complete.
 
 public static class MapSaver
 {

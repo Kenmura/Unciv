@@ -967,7 +967,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit: the Notes of T030/T031/T032/T033 list members deferred to 'T034/T046/T052' that no ticket took (confirmed absent in csharp/Unciv.Core). To port: TileResource.getImprovements/isImprovedBy/setTransients(ruleset)/getImprovingImprovement/generatesNaturallyOn; TileImprovement.getTurnsToBuild/getConstructorUnits/getCreatingUnits; ResourceSupplyList.subtractResourceRequirements; Nation.getStartBias; Era.getStartingUnits/getEraGatedObjects/matchesFilter; Technology.matchesFilter; Milestone.hasBeenCompletedBy/getFocus/getVictoryScreen*/getMoreCountable*/getCountableDo...; Belief.getBeliefsMatching; Specialist.colorObject (EngineColor); BaseUnit/Building/PerpetualConstruction getRejectionReasons-family members (isBuildable, shouldBeDisplayed, construct, newMapUnit, addConstructionBonuses, isPurchasable, tooltips) that T063 did NOT take (check T063's Notes first; no overlap), the Building/BaseUnit.matchesFilter 'is Building' part and the conditional-filter pieces named in T033's Notes. Civilopedia text members (getCivilopediaTextLines, makeLink, getSortGroup, getShortDescription, getDescription) are T095-T097, not here. Seam rule as T053.
 
 ### T107 TileMap and Tile JSON wiring, MapSaver round trips
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T098, T039, T053, T054
 - Source: core/src/com/unciv/logic/map/TileMap.kt, core/src/com/unciv/logic/map/tile/Tile.kt (serialization parts), core/src/com/unciv/logic/files/MapSaver.kt
 - Fixtures: none - generate golden map JSON by running the Kotlin MapSaver/Json on a small generated map
@@ -975,6 +975,20 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~MapSaverRoundTrip
 - Claimed: 2026-10-24T10:56Z
 - Notes: Found by T098: TileMap and TileMap.Preview have no JSON wiring (TileMap.cs says so), so MapSaver TileMap/Preview round trips are untested. Wire Kotlin-compatible JSON (tileList, mapParameters, ruleset names, startingLocations, etc.) and add round-trip and golden tests; remove the TODO in TileMap.cs.
+  - Golden: Logic/Map/Golden/MapSaver.golden.json came from the real Kotlin MapSaver.mapToSavedString (saveZipped=false) via a throwaway GdxTestRunner test (not committed) that built TileMap(3, 2, Civ_V_GnK) and set rivers, roads, queue, history, exploredBy, starting locations; run with ./gradlew --offline :tests:test --tests ...
+    Wiring is by JsonConverters (TileJsonConverter nested in Tile, TileMapJsonConverter/StartingLocationJsonConverter/PreviewJsonConverter nested in TileMap): Kotlin field names, Gdx default omission (0/false/null/empty/-1/Usage.Player), unknown fields ignored, lists accept plain array or {"class","items"}; tile and tileList re-serialize byte-identical to Kotlin (test).
+    Deviations: exploredBy (Java HashSet order in Kotlin) is written ordinal-sorted; Tile units (militaryUnit/civilianUnit/airUnits) throw NotSupportedException on read (non-empty) and write: follow-up T108 (needs T065). RoadStatus/Usage names parse case-insensitively. TileMap.Preview has a read-only converter; its MapParameters setter is now internal.
+    Not compared: mapParameters output (MapParameters' own wiring writes defaults that Kotlin omits; only read/values are asserted).
+
+### T108 Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)
+- State: Available
+- Depends: T107, T065
+- Source: core/src/com/unciv/logic/map/tile/Tile.kt (serialized unit fields)
+- Fixtures: none - generate golden JSON by running the Kotlin Json on a map with units
+- Deliverables: csharp/Unciv.Core/Logic/Map/Tile/Tile.cs (TileJsonConverter), tests
+- Gate: dotnet test --filter FullyQualifiedName~TileUnitJson
+- Claimed:
+- Notes: Found by T107: Tile's JSON converter throws NotSupportedException when a tile holds units (MapUnit not ported, units typed by the IGameContextUnit seam) and when the JSON has militaryUnit/civilianUnit/airUnits. After T065, retype and wire them (MapUnit JSON too), replace the throws, and add round-trip tests with units.
 
 ### T108 Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText
 - State: Available

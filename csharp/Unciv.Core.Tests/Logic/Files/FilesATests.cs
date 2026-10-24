@@ -234,7 +234,7 @@ public class FilesATests
     [Fact]
     public void MapFromSavedStringFallsBackToPlainAndTrimsZipped()
     {
-        // TileMap has no JSON wiring yet, so every input fails at the JSON stage; what matters is that neither the plain text
+        // Broken JSON fails at the JSON stage; what matters is that neither the plain text
         // nor the padded zipped text fails with the zip stage's FormatException/InvalidDataException.
         Assert.ThrowsAny<Exception>(() => MapSaver.MapFromSavedString("{broken"));
         Assert.IsNotType<FormatException>(Record.Exception(() => MapSaver.MapFromSavedString("  " + FileConversions.Zip("{broken") + "\n")));
