@@ -83,5 +83,5 @@ public readonly struct FixedPointMovement : IComparable<FixedPointMovement>, IEq
         return new FixedPointMovement(Bits < min.Bits ? min.Bits : Bits > max.Bits ? max.Bits : Bits);
     }
 
-    public override string ToString() => FormattableString.Invariant($"FPM{{{Bits}/30={ToFloat()}}}");
+    public override string ToString() => FormattableString.Invariant($"FPM{{{Bits}/30=") + UI.ObjectDescriptions.KotlinNumberText.FloatToString(ToFloat()) + "}";
 }

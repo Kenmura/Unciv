@@ -208,13 +208,23 @@ public class UnitMovementTests
     }
 
     [Fact]
+    public void MovementCost_RailroadBetweenTwoRailroadTiles()
+    {
+        var w = NewWorld();
+        var unit = w.Unit("Warrior", "Land", 1, 1);
+        w.TileAt(1, 1).RoadStatus = Unciv.Logic.Map.Tiles.RoadStatus.Railroad;
+        w.TileAt(2, 1).RoadStatus = Unciv.Logic.Map.Tiles.RoadStatus.Railroad;
+        Assert.Equal(0.1f, MovementCost.GetMovementCostBetweenAdjacentTiles(unit, w.TileAt(1, 1), w.TileAt(2, 1)));
+    }
+
+    [Fact]
     public void MovementCostEscort_TakesTheLargerCostOfBothUnits()
     {
         var w = NewWorld();
         w.SetTerrain(2, 1, "Plains");
         var warrior = w.Unit("Warrior", "Land", 1, 1);
         var skierCivilian = RealUnit(w.Civ, MapUnitFactory.NewBaseUnit(w.Ruleset, "Settler", "Land", strength: 0, uniques: "Double movement in [Plains]"), w.TileAt(1, 1));
-        Assert.Equal(2f, MovementCost.GetMovementCostBetweenAdjacentTilesEscort(skierCivilian, w.TileAt(1, 1), w.TileAt(2, 1), includeEscortUnit: false) * 2f);
+        Assert.Equal(1f, MovementCost.GetMovementCostBetweenAdjacentTilesEscort(skierCivilian, w.TileAt(1, 1), w.TileAt(2, 1), includeEscortUnit: false));
         warrior.StartEscorting();
         Assert.Equal(2f, MovementCost.GetMovementCostBetweenAdjacentTilesEscort(skierCivilian, w.TileAt(1, 1), w.TileAt(2, 1)));
         Assert.Equal(1f, MovementCost.GetMovementCostBetweenAdjacentTilesEscort(skierCivilian, w.TileAt(1, 1), w.TileAt(2, 1), includeEscortUnit: false));

@@ -131,8 +131,12 @@ public class FixedPointMovementTests
         Assert.Equal(bits, FixedPointMovement.FpmFromMovement(FixedPointMovement.FpmFromFixedPointBits(bits).ToFloat()).Bits);
 
     [Fact]
-    public void ToStringFormatsBitsAndFloat() =>
+    public void ToStringFormatsBitsAndFloat()
+    {
         Assert.Equal("FPM{45/30=1.5}", FixedPointMovement.FpmFromMovement(1.5f).ToString());
+        Assert.Equal("FPM{30/30=1.0}", FixedPointMovement.FpmOne.ToString());
+        Assert.Equal("FPM{0/30=0.0}", FixedPointMovement.FpmZero.ToString());
+    }
 
     [Fact]
     public void ArithmeticWrapsLikeKotlinInt()
