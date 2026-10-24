@@ -1222,7 +1222,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Split off: T112 (drop IsCityConnectedToCapital after T060), T113 (T056 (a) JSON converters for Java collections), T114 (findings appended to T109 during this work: T056 review, T059 follow-ups/review, T108 review).
 
 ### T111 T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T057, T052, T060, T065
 - Source: csharp/Unciv.Core/Logic/Civilization/Managers/{ReligionManager,EspionageManager,VictoryManager}.cs, Models/Spy.cs
 - Fixtures: none
@@ -1230,6 +1230,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~CivReligionVictoryTests
 - Claimed: 2026-10-24T17:53Z
 - Notes: From T057 review (non-blocking): (1) IGameInfoState.DiplomaticVictoryVotesCast is IDictionary but Kotlin is java.util.HashMap: use JavaHashMap (vote-tie text order). (2) Enumerable.Sum throws on int overflow where Kotlin sumOf wraps (GetStartingSpyRank, Spy.GetEfficiencyModifier): unchecked loop. (3) Enum.Parse<BeliefType> accepts numeric strings, Kotlin valueOf does not. (4) Add tests for RuinsManager.SelectNextRuinsReward, GenerateProphet, FoundReligion/UseProphetForEnhancingReligion, ChooseBeliefs founding/enhancing, Spy.InitiateCoup/CanMoveTo, GetTilesVisibleViaSpies, with Kotlin-derived golden seeds (after T052/T060/T065 make them testable). (5) Share the duplicated ParseInt helper.
+  - Implemented: GameInfo/IGameInfoState.DiplomaticVictoryVotesCast now JavaHashMap (vote-tie text order); KotlinMath.SumOf (wrapping sumOf) and KotlinMath.ParseInt shared by ReligionManager/EspionageManager/Spy (duplicated ParseInt removed); BeliefType parsing is exact-name (ParseBeliefType, ArgumentException like valueOf). Tests added for vote order, wraps, parse, GetBeliefsToChoose uniques, GenerateProphet, ChooseBeliefs founding/enhancing transitions, InitiateCoup success/failure, CanMoveTo agreement. Seeded rolls are computed with the engine GameRandom (not Kotlin-run goldens). NOT done (needs real TileMap/MapUnit): SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, CanMoveTo exploration branch, GetTilesVisibleViaSpies with set-up spies; moved to a follow-up ticket.
 
 ### T112 Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype
 - State: Done
@@ -1704,6 +1705,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures.Civilization`
 - Claimed:
 - Notes: Split from T142.
+
+### T153 T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies
+- State: Available
+- Depends: T111
+- Source: csharp/Unciv.Core/Logic/Civilization/Managers/{RuinsManager,ReligionManager,EspionageManager}.cs, Models/Spy.cs
+- Fixtures: none
+- Deliverables: tests in csharp/Unciv.Core.Tests/Logic/CivReligionVictoryTests.cs
+- Gate: dotnet test --filter FullyQualifiedName~CivReligionVictoryTests
+- Claimed:
+- Notes:
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

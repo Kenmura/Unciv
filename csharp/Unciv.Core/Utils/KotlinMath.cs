@@ -61,4 +61,16 @@ public static class KotlinMath
         int r = value % modulus;
         return r != 0 && (r ^ modulus) < 0 ? r + modulus : r;
     }
+
+    /// <summary>Kotlin <c>String.toInt()</c> for ruleset unique parameters: optional sign and digits only, invariant culture.</summary>
+    public static int ParseInt(string text) =>
+        int.Parse(text, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Kotlin <c>sumOf { Int }</c>: the sum wraps on overflow, unlike LINQ Sum, which throws.</summary>
+    public static int SumOf<T>(IEnumerable<T> source, Func<T, int> selector)
+    {
+        int sum = 0;
+        foreach (var item in source) sum = unchecked(sum + selector(item));
+        return sum;
+    }
 }

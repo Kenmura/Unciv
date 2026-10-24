@@ -138,7 +138,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
 
     /// <summary>Maps a civ to the civ they voted for - <c>null</c> on the value side means they abstained</summary>
     [JsonPropertyName("diplomaticVictoryVotesCast")]
-    public Dictionary<string, string?> DiplomaticVictoryVotesCast { get; set; } = [];
+    public JavaHashMap<string, string?> DiplomaticVictoryVotesCast { get; set; } = new();
 
     /// <summary>Set to false whenever the results still need te be processed</summary>
     [JsonPropertyName("diplomaticVictoryVotesProcessed")]
@@ -748,7 +748,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
     // IGameInfoState
     Civilization.Civilization? IGameInfoState.CurrentPlayerCiv => currentPlayerCiv;
     IReadOnlyList<Civilization.Civilization> IGameInfoState.Civilizations => Civilizations;
-    IDictionary<string, string?> IGameInfoState.DiplomaticVictoryVotesCast => DiplomaticVictoryVotesCast;
+    JavaHashMap<string, string?> IGameInfoState.DiplomaticVictoryVotesCast => DiplomaticVictoryVotesCast;
     IReadOnlySet<string> IGameInfoState.SpaceResources => SpaceResources;
     void IGameInfoState.NotifyExploredResources(Civilization.Civilization civInfo, TileResourceObject resource, int maxDistance) =>
         NotifyExploredResources(civInfo, resource, maxDistance);

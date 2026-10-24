@@ -115,7 +115,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
     {
         var toReturn = new Counter<BeliefType>();
         foreach (var entry in FreeBeliefs)
-            toReturn.Add(Enum.Parse<BeliefType>(entry.Key), entry.Value);
+            toReturn.Add(ParseBeliefType(entry.Key), entry.Value);
         return toReturn;
     }
 
@@ -445,14 +445,14 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         {
             if (unique.Params[2] == action)
             {
-                var type = Enum.Parse<BeliefType>(unique.Params[1]);
-                ChooseBeliefToAdd(type, ParseInt(unique.Params[0]));
+                var type = ParseBeliefType(unique.Params[1]);
+                ChooseBeliefToAdd(type, KotlinMath.ParseInt(unique.Params[0]));
             }
         });
         CivInfo.ForEachMatchingUnique(UniqueType.FreeExtraAnyBeliefs, unique =>
         {
             if (unique.Params[1] == action)
-                ChooseBeliefToAdd(BeliefType.Any, ParseInt(unique.Params[0]));
+                ChooseBeliefToAdd(BeliefType.Any, KotlinMath.ParseInt(unique.Params[0]));
         });
 
         foreach (var type in FreeBeliefsAsEnums())
@@ -461,7 +461,11 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         return beliefsToChoose;
     }
 
-    private static int ParseInt(string text) => int.Parse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+    /// <summary>Kotlin <c>BeliefType.valueOf</c>: exact enum names only (Enum.Parse would also accept numbers and comma lists).</summary>
+    private static BeliefType ParseBeliefType(string name) =>
+        Enum.TryParse<BeliefType>(name, out var type) && Enum.GetName(type) == name
+            ? type
+            : throw new ArgumentException($"No enum constant BeliefType.{name}");
 
     public Counter<BeliefType> GetBeliefsToChooseAtFounding() => GetBeliefsToChooseAtProphetUse(false);
     public Counter<BeliefType> GetBeliefsToChooseAtEnhancing() => GetBeliefsToChooseAtProphetUse(true);
@@ -592,9 +596,9 @@ public class ReligionManager : IsPartOfGameInfoSerialization
     public int NumberOfFollowersFollowingThisReligion(string cityFilter)
     {
         if (Religion == null) return 0;
-        return CivInfo.GameInfo.GetCities()
-            .Where(it => it.MatchesFilter(cityFilter, CivInfo))
-            .Sum(it => it.Religion.GetFollowersOf(Religion.Name));
+        return KotlinMath.SumOf(
+            CivInfo.GameInfo.GetCities().Where(it => it.MatchesFilter(cityFilter, CivInfo)),
+            it => it.Religion.GetFollowersOf(Religion.Name));
     }
 
     public CityObject? GetHolyCity()

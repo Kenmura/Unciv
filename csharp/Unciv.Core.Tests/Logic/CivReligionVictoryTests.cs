@@ -3,6 +3,7 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
@@ -988,5 +989,223 @@ public class CivReligionVictoryTests
         civ.EspionageManager.RemoveAllSpies();
         Assert.Null(spy.GetCityOrNull());
         Assert.Empty(civ.EspionageManager.GetSpiesInCity(city));
+    }
+
+    // ---- T111: review follow-ups of T057
+
+    [Fact]
+    public void VictoryManager_VoteBreakdown_TiedLeadersAreListedInVoteInsertionOrderOfTheHashMap()
+    {
+        var (civ, info) = NewCiv();
+        var civs = AddMajorCivs(info, civ, 3);
+        // voter -> candidate; each candidate gets exactly one vote, so all three are tied in first position
+        info.Votes[civs[0].CivId] = civs[1].CivId;
+        info.Votes[civs[1].CivId] = civs[2].CivId;
+        info.Votes[civs[2].CivId] = civs[0].CivId;
+        var order = info.Votes.Select(it => it.Value!).ToList(); // java.util.HashMap order of the voters
+        var breakdown = civ.VictoryManager.GetDiplomaticVictoryVoteBreakdown();
+        Assert.Contains($"Tied in first position: [{string.Join(", ", order)}]", breakdown.WinnerText);
+    }
+
+    [Fact]
+    public void KotlinMath_SumOf_WrapsOnIntOverflowLikeKotlinSumOf()
+    {
+        Assert.Equal(int.MinValue, KotlinMath.SumOf(new[] { int.MaxValue, 1 }, it => it));
+        Assert.Equal(0, KotlinMath.SumOf(Array.Empty<int>(), it => it));
+        Assert.Equal(-12, KotlinMath.ParseInt("-12"));
+        Assert.Equal(7, KotlinMath.ParseInt("+7"));
+        Assert.Throws<FormatException>(() => KotlinMath.ParseInt(" 7"));
+        Assert.Throws<FormatException>(() => KotlinMath.ParseInt("1,000"));
+    }
+
+    [Fact]
+    public void EspionageManager_StartingSpyRank_WrapsOnOverflow()
+    {
+        var (civ, _, _) = NewSpyCiv();
+        SetNationUniques(civ, "New spies start with [2147483647] level(s)", "New spies start with [1] level(s)");
+        Assert.Equal(int.MinValue + 1, civ.EspionageManager.GetStartingSpyRank()); // 1 + wrapped(MaxValue + 1)
+    }
+
+    [Fact]
+    public void Spy_EfficiencyModifier_SumsOfUniquesWrapLikeKotlin()
+    {
+        var (civ, _, _) = NewSpyCiv();
+        var spy = civ.EspionageManager.AddSpy();
+        // 100.0 + wrapped(MaxValue + 1) = 100 - 2^31 -> negative -> clamped to 0 (a throwing Sum would crash instead)
+        SetNationUniques(civ, "[2147483647]% spy effectiveness [in all cities]", "[1]% spy effectiveness [in all cities]");
+        Assert.Equal(0.0, spy.GetEfficiencyModifier());
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("Pantheon, Follower")]
+    [InlineData("pantheon")]
+    [InlineData("")]
+    public void ReligionManager_FreeBeliefs_OnlyExactBeliefTypeNamesParse(string key)
+    {
+        var (civ, _) = NewCiv();
+        civ.ReligionManager.FreeBeliefs[key] = 1;
+        Assert.Throws<ArgumentException>(() => civ.ReligionManager.FreeBeliefsAsEnums());
+    }
+
+    [Fact]
+    public void ReligionManager_FreeBeliefs_ExactNamesParse()
+    {
+        var (civ, _) = NewCiv();
+        civ.ReligionManager.FreeBeliefs["Follower"] = 2;
+        var result = civ.ReligionManager.FreeBeliefsAsEnums();
+        Assert.Equal(2, result[BeliefType.Follower]);
+    }
+
+    [Fact]
+    public void ReligionManager_BeliefsToChoose_UsesTheFreeExtraBeliefUniquesAndRejectsBadTypeNames()
+    {
+        var (civ, info) = NewCiv();
+        AddBelief(info, "fo1", BeliefType.Follower);
+        AddBelief(info, "fo2", BeliefType.Follower);
+        AddBelief(info, "f1", BeliefType.Founder);
+        SetNationUniques(civ, "May choose [2] additional [Follower] beliefs when [founding] a religion");
+        var choose = civ.ReligionManager.GetBeliefsToChooseAtFounding();
+        Assert.Equal(2, choose[BeliefType.Follower]); // 1 + 2 wanted, only 2 exist
+        Assert.Equal(1, choose[BeliefType.Founder]);
+        SetNationUniques(civ, "May choose [2] additional [Bogus] beliefs when [founding] a religion");
+        Assert.Throws<ArgumentException>(() => civ.ReligionManager.GetBeliefsToChooseAtFounding());
+    }
+
+    [Fact]
+    public void ReligionManager_GenerateProphet_SpawnsTheProphetAndPaysTheFaithWhenTheSeededRollSucceeds()
+    {
+        var (civ, info) = NewCiv();
+        var units = (TestUnitManager)civ.Units;
+        var prophetUnit = new BaseUnit { Name = "Great Prophet", Uniques = ["May found a religion"] };
+        info.RulesetData.Units["Great Prophet"] = prophetUnit;
+        info.RulesetData.Religions.Add("Faith");
+        AddBelief(info, "p1", BeliefType.Pantheon);
+        AddBelief(info, "f1", BeliefType.Founder);
+        AddBelief(info, "fo1", BeliefType.Follower);
+        var manager = civ.ReligionManager;
+        manager.ChooseBeliefs([info.RulesetData.Beliefs["p1"]], useFreeBeliefs: true);
+        units.AddedUnitResult = new MapUnit();
+
+        // chance (5 + 195 - 200) / 100 = 0.05 and 6.0: use a turn whose seeded roll fails resp. succeeds
+        info.Turns = Enumerable.Range(0, 200).First(it => new GameRandom(it).NextFloat() >= 0.05f);
+        manager.StoredFaith = 195 + 200 - 195; // 200: chance 0.05, the roll of this turn is at least that
+        manager.StartTurn();
+        Assert.Empty(units.AddedUnits);
+        Assert.Equal(200, manager.StoredFaith);
+
+        manager.StoredFaith = 395; // chance 2.0: always
+        manager.StartTurn();
+        var added = Assert.Single(units.AddedUnits);
+        Assert.Same(prophetUnit, added.Unit);
+        Assert.Null(added.City); // no capital
+        Assert.Equal("p1", units.AddedUnitResult.Religion);
+        Assert.Equal(195, manager.StoredFaith);
+        Assert.Equal(1, civ.ReligionManager.GreatProphetsEarned());
+    }
+
+    /// <summary>FoundReligion/UseProphetForEnhancingReligion need a map; the state they set is what ChooseBeliefs reacts to.</summary>
+    private static void SetReligionState(ReligionManager manager, ReligionState state) =>
+        typeof(ReligionManager).GetProperty(nameof(ReligionManager.ReligionState))!.SetValue(manager, state);
+
+    [Fact]
+    public void ReligionManager_ChooseBeliefs_FoundingAndEnhancingMoveThroughTheReligionStates()
+    {
+        var (civ, info) = NewCiv();
+        var f1 = AddBelief(info, "f1", BeliefType.Founder);
+        var fo1 = AddBelief(info, "fo1", BeliefType.Follower);
+        var e1 = AddBelief(info, "e1", BeliefType.Enhancer);
+        var fo2 = AddBelief(info, "fo2", BeliefType.Follower);
+        var p1 = AddBelief(info, "p1", BeliefType.Pantheon);
+        var manager = civ.ReligionManager;
+        manager.ChooseBeliefs([p1], useFreeBeliefs: true);
+
+        SetReligionState(manager, ReligionState.FoundingReligion);
+        manager.ChooseBeliefs([f1, fo1]);
+        Assert.Equal(ReligionState.Religion, manager.ReligionState);
+        Assert.True(manager.Religion!.HasBelief("f1"));
+        Assert.True(manager.Religion.HasBelief("fo1"));
+
+        SetReligionState(manager, ReligionState.EnhancingReligion);
+        manager.ChooseBeliefs([e1, fo2]);
+        Assert.Equal(ReligionState.EnhancedReligion, manager.ReligionState);
+        Assert.True(manager.Religion.HasBelief("e1"));
+        Assert.True(manager.Religion.HasBelief("fo2"));
+
+        // in a settled state nothing changes
+        manager.ChooseBeliefs([]);
+        Assert.Equal(ReligionState.EnhancedReligion, manager.ReligionState);
+    }
+
+    [Fact]
+    public void Spy_InitiateCoup_SucceedsOrFailsOnTheSeededRollAndAdjustsInfluence()
+    {
+        // success: previous influence 80 without an ally; the roll of the spy's seed must be <= the chance
+        for (bool success = true; ; success = !success)
+        {
+            var (civ, info, _) = NewSpyCiv();
+            var cityState = new Civilization(new NationObject { Name = "Geneva", CityStateType = "Cultured" }) { GameInfo = info, CityStateFunctions = new FakeCityStateFunctions() };
+            info.Civs.Add(cityState);
+            var influence = new DiplomacyManager(cityState, civ) { DiplomaticStatus = DiplomaticStatus.Peace };
+            cityState.Diplomacy["Rome"] = influence;
+            var city = new FakeCityState("g", new FakeCiv("Geneva")) { CivData = cityState, LocationData = HexCoord.Of(2, 3) };
+            var spy = civ.EspionageManager.AddSpy();
+            spy.MoveTo(city);
+            spy.SetAction(SpyAction.Surveillance);
+            // chance: 50 - (60 - infl) / 2 + rank 1 * 30 / 2 -> influence 60 gives 0.65, 0 gives 0.35
+            influence.SetInfluenceWithoutSideEffects(success ? 60f : 0f);
+            float chance = spy.GetCoupChanceOfSuccess(true);
+            // the seed: floor(x * y + 123 * turns) + javaHash(name)
+            info.Turns = Enumerable.Range(0, 500).First(turn =>
+            {
+                float roll = new GameRandom(KotlinMath.FloatToInt(2 * 3 + 123f * turn) + JavaHash.HashCode(spy.Name)).NextFloat();
+                return success ? roll <= chance : roll > chance;
+            });
+            spy.SetAction(SpyAction.Coup);
+            spy.EndTurn();
+
+            if (success)
+            {
+                Assert.Equal(80f, influence.GetInfluence()); // no previous ally: 80
+                Assert.Equal(SpyAction.RiggingElections, spy.Action);
+                Assert.Contains(civ.Notifications, it => it.Text == "Your spy [" + spy.Name + "] successfully staged a coup in [Geneva]!");
+            }
+            else
+            {
+                Assert.Equal(-20f, influence.Influence); // AddInfluence(-20)
+                Assert.Contains(civ.Notifications, it => it.Text == "Our spy [" + spy.Name + "] failed to stage a coup in [Geneva] and was killed!");
+            }
+            if (!success) break;
+        }
+    }
+
+    [Fact]
+    public void Spy_CanMoveTo_AllowsTheCurrentCityAndHonoursTheNoSpiesAgreement()
+    {
+        var (civ, info, _) = NewSpyCiv();
+        var (other, _) = NewCiv("Egypt");
+        info.Civs.Add(other);
+        var abroad = new FakeCityState("abroad", new FakeCiv("Egypt")) { CivData = other, LocationData = HexCoord.Of(5, 6) };
+        var spy = civ.EspionageManager.AddSpy();
+        spy.MoveTo(abroad);
+        Assert.True(spy.CanMoveTo(abroad)); // already there (the center tile is never consulted)
+
+        var agreement = new DiplomacyManager(other, civ) { DiplomaticStatus = DiplomaticStatus.Peace };
+        other.Diplomacy["Rome"] = agreement;
+        agreement.SetFlag(DiplomacyFlags.AgreedToNotSendSpies, 10);
+        info.RulesetData.Technologies.Put("t", new Unciv.Models.Ruleset.Tech.Technology { Name = "t" });
+        // equal tech levels (0%): the agreement forbids sending spies there, even to the city the spy is in
+        Assert.False(spy.CanMoveTo(abroad));
+    }
+
+    [Fact]
+    public void EspionageManager_TilesVisibleViaSpies_IgnoresSpiesThatAreNotSetUp()
+    {
+        var (civ, _, _) = NewSpyCiv();
+        var spy = civ.EspionageManager.AddSpy();
+        Assert.Empty(civ.EspionageManager.GetTilesVisibleViaSpies()); // hideout
+        Assert.Equal(spy, civ.EspionageManager.SpyList[0]);
+        spy.SetAction(SpyAction.Moving, 1);
+        Assert.Empty(civ.EspionageManager.GetTilesVisibleViaSpies());
     }
 }

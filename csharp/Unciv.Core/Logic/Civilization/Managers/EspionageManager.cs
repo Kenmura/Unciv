@@ -96,7 +96,7 @@ public class EspionageManager : IsPartOfGameInfoSerialization
     public List<Spy> GetSpiesInCity(CityObject city) => SpyList.Where(it => it.GetCityOrNull() == city).ToList();
 
     public int GetStartingSpyRank() =>
-        1 + CivInfo.GetMatchingUniques(UniqueType.SpyStartingLevel).Sum(it => int.Parse(it.Params[0], System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture));
+        1 + KotlinMath.SumOf(CivInfo.GetMatchingUniques(UniqueType.SpyStartingLevel), it => KotlinMath.ParseInt(it.Params[0]));
 
     /// <summary>
     /// Returns a list of all cities with our spies in them.

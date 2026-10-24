@@ -526,15 +526,13 @@ public class Spy : IsPartOfGameInfoSerialization
         {
             if (currentCity.MatchesFilter(unique.Params[0], CivInfo) &&
                 string.Equals(unique.Params[2], Action.GetDisplayString(), StringComparison.OrdinalIgnoreCase))
-                effective += ParseInt(unique.Params[1]);
+                effective += KotlinMath.ParseInt(unique.Params[1]);
         });
         return KotlinCoerceIn(effective, 1, maxRank);
     }
 
     // Kotlin coerceIn throws when the range is empty (max < min); Math.Clamp does too
     private static int KotlinCoerceIn(int value, int min, int max) => Math.Clamp(value, min, max);
-
-    private static int ParseInt(string text) => int.Parse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
 
     /// <summary>Modifier of the skill bonus of the spy by percent</summary>
     public int GetSkillModifierPercent() =>
@@ -566,12 +564,12 @@ public class Spy : IsPartOfGameInfoSerialization
             enemyUniques = currentCity.GetMatchingUniques(UniqueType.EnemySpyEffectiveness, currentCity.State, true);
         }
         double totalEfficiency = 1.0;
-        totalEfficiency *= (100.0 + friendlyUniques
-            .Where(it => currentCity == null || currentCity.MatchesFilter(it.Params[1], CivInfo))
-            .Sum(it => ParseInt(it.Params[0]))) / 100;
-        totalEfficiency *= (100.0 + enemyUniques
-            .Where(it => currentCity != null && currentCity.MatchesFilter(it.Params[1], null))
-            .Sum(it => ParseInt(it.Params[0]))) / 100;
+        totalEfficiency *= (100.0 + KotlinMath.SumOf(friendlyUniques
+            .Where(it => currentCity == null || currentCity.MatchesFilter(it.Params[1], CivInfo)),
+            it => KotlinMath.ParseInt(it.Params[0]))) / 100;
+        totalEfficiency *= (100.0 + KotlinMath.SumOf(enemyUniques
+            .Where(it => currentCity != null && currentCity.MatchesFilter(it.Params[1], null)),
+            it => KotlinMath.ParseInt(it.Params[0]))) / 100;
         return Math.Max(totalEfficiency, 0.0);
     }
 

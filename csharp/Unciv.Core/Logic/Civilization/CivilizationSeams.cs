@@ -35,7 +35,7 @@ public interface IGameInfoState : IConstructionGameInfo
     /// <summary><c>gameInfo.getGlobalUniques()</c></summary>
     GlobalUniques GetGlobalUniques();
     /// <summary><c>gameInfo.diplomaticVictoryVotesCast</c> (<c>HashMap&lt;String, String?&gt;</c>).</summary>
-    IDictionary<string, string?> DiplomaticVictoryVotesCast { get; }
+    JavaHashMap<string, string?> DiplomaticVictoryVotesCast { get; }
     /// <summary><c>gameInfo.religions</c> (<c>HashMap&lt;String, Religion&gt;</c>), in java.util.HashMap order.</summary>
     JavaHashMap<string, Religion> Religions { get; }
     /// <summary><c>gameInfo.getCivilization(civID)</c>; throws when there is no such civilization (Kotlin <c>first</c>).</summary>

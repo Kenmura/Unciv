@@ -35,7 +35,7 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     public Civilization? CurrentPlayer { get; set; }
     public bool Simulation { get; set; }
     public GlobalUniques Globals { get; } = new();
-    public Dictionary<string, string?> Votes { get; } = [];
+    public JavaHashMap<string, string?> Votes { get; } = new();
     public DifficultyObject Difficulty { get; set; } = new() { Name = "Prince" };
     public TileMap? Map { get; set; }
 
@@ -45,7 +45,7 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     Civilization? IGameInfoState.CurrentPlayerCiv => CurrentPlayer;
     bool IGameInfoState.IsSimulation() => Simulation;
     GlobalUniques IGameInfoState.GetGlobalUniques() => Globals;
-    IDictionary<string, string?> IGameInfoState.DiplomaticVictoryVotesCast => Votes;
+    JavaHashMap<string, string?> IGameInfoState.DiplomaticVictoryVotesCast => Votes;
     DifficultyObject IConstructionGameInfo.GetDifficulty() => Difficulty;
     public JavaHashMap<string, Religion> ReligionMap { get; } = new();
     JavaHashMap<string, Religion> IGameInfoState.Religions => ReligionMap;
