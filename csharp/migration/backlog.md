@@ -1430,7 +1430,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From T066 review. Also: T126 must delete the virtual UnitPromotions.CreatePromotionTree and the TestUnitPromotions test subclass.
 
 ### T136 T064 review follow-up: cover uncovered CityConquestFunctions/CityTurnManager branches
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T064
 - Source: core/src/com/unciv/logic/city/managers/CityTurnManager.kt, CityConquestFunctions.kt
 - Fixtures: none
@@ -1438,6 +1438,21 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~CityTurnTests
 - Claimed: 2026-10-24T13:51:00Z
 - Notes: Uncovered ported branches: CityConquestFunctions free-building removal in removeBuildingsOnMoveToCiv, TriggerUponLosingCity body, liberation notifications for unknown civs, unit teleport loops, resurrected-civ peace/flag clearing, tile reassignment loop and unique-building transfer in moveToCiv; CityTurnManager stockpiled resource gain, TriggerUponTurnStart/End uniques, new-capital +10 cooldown. Needs TriggerUnique (T052) for the trigger bodies.
+  - Implementer notes (Antigravity):
+    - Added 10 unit tests to `CityTurnTests.cs` (test count increased from 30 to 40, all passing):
+      * CityTurnManager:
+        - `StartTurn_SeedsResourceDemandCountdownWithBonusTurnsForNewCapital`: covers `isNewCity && city.IsCapital()` +10 bonus cooldown in `SetWltkResourceDemandCooldown`.
+        - `StartTurn_GainsStockpiledCityWideResources`: covers `GainStockpiledResource` loop for stockpiled city-wide resources and ignores non-city-wide resources.
+        - `StartTurnAndEndTurn_TriggersCityUniques`: covers `TriggerUponTurnStart` and `TriggerUponTurnEnd` city trigger loops calling `UniqueTriggerActivation.TriggerUnique`.
+      * CityConquestFunctions:
+        - `MoveToCiv_RemovesFreeBuildingsProvidedToTheCity`: covers free-building removal sequence and `FreeBuildingsProvidedFromThisCity.Clear()` in `RemoveBuildingsOnMoveToCiv`, plus capital indicator and `MoveCapitalToNextLargest`.
+        - `MoveToCiv_StopsWorkingTilesOutsideCityTerritoryAndReassignsPopulation`: covers tile reassignment loop in `MoveToCiv` when worked tiles lie outside city territory, plus pseudo-random id generation for `NoId`.
+        - `MoveToCiv_TransfersUniqueBuildingsToReceivingCivEquivalent`: covers unique building replacement with receiving civ equivalent in `MoveToCiv`.
+        - `ConquerCity_FiresTriggerUponLosingCityForConqueredCiv`: covers `TriggerUponLosingCity` loop on conquered civ.
+        - `LiberateCity_ResurrectedCiv_SendsNotificationsRespectingCivVisibility`: covers liberation notifications for third-party civs knowing both, conqueror-only, and founder-only, plus capital indicator restoration on resurrected civ.
+        - `LiberateCity_ResurrectedCiv_MakesPeaceAndClearsDiplomaticFlagsAndModifiers`: covers peace treaty and clearing frozen flags/modifiers on both sides for resurrected civ.
+        - `LiberateCity_TeleportsUnitsOutOfCityAndUnpassableTiles`: covers unit teleport loops on center tile and unpassable territory tiles.
+    - Coverage: `CityConquestFunctions.cs` line coverage 100.0%, branch coverage 96.5%; `CityTurnManager.cs` line coverage 100.0%, branch coverage 93.0%. Zero uncovered lines. Standard suite (2312 tests) and formatting green.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

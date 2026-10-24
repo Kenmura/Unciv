@@ -1,3 +1,4 @@
+using Unciv.Core.Tests.Logic.Map;
 using Unciv.Logic.City;
 using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization;
@@ -223,6 +224,67 @@ public sealed class CityTurnTests
 
         Assert.Equal(1, w.Population.Population); // 4 - (1 + (3 - 1))
         Assert.Equal([w.City], w.Civ.Cities);
+    }
+
+    [Fact]
+    public void StartTurn_SeedsResourceDemandCountdownWithBonusTurnsForNewCapital()
+    {
+        var w = NewWorld();
+        w.Constructions.BuiltUniques.AddUnique(BuildingUnique("Indicates the capital city"));
+        Assert.True(w.City.IsCapital());
+        Assert.False(w.City.HasFlag(CityFlags.ResourceDemand));
+
+        new CityTurnManager(w.City).StartTurn();
+
+        Assert.True(w.City.HasFlag(CityFlags.ResourceDemand));
+        // Base is 15 + nextInt(10); with capital bonus +10, range is [25, 34]
+        Assert.InRange(w.City.GetFlag(CityFlags.ResourceDemand), 25, 34);
+    }
+
+    [Fact]
+    public void StartTurn_GainsStockpiledCityWideResources()
+    {
+        var w = NewWorld();
+        var mana = new TileResource
+        {
+            Name = "Mana",
+            ResourceType = ResourceType.Strategic,
+            Uniques = [UniqueType.Stockpiled.Text(), UniqueType.CityResource.Text()],
+        };
+        mana.SetTransients(w.Info.RulesetData);
+        w.Info.RulesetData.TileResources.Put("Mana", mana);
+        var iron = new TileResource
+        {
+            Name = "Iron",
+            ResourceType = ResourceType.Strategic,
+            Uniques = [UniqueType.Stockpiled.Text()],
+        };
+        iron.SetTransients(w.Info.RulesetData);
+        w.Info.RulesetData.TileResources.Put("Iron", iron);
+        w.Constructions.BuiltUniques.AddUnique(BuildingUnique("Provides [5] [Mana]"));
+        w.Constructions.BuiltUniques.AddUnique(BuildingUnique("Provides [3] [Iron]"));
+
+        new CityTurnManager(w.City).StartTurn();
+
+        Assert.Equal(5, w.City.ResourceStockpiles["Mana"]);
+        Assert.False(w.City.ResourceStockpiles.ContainsKey("Iron"));
+    }
+
+    [Fact]
+    public void StartTurnAndEndTurn_TriggersCityUniques()
+    {
+        var w = NewWorld();
+        var startUnique = BuildingUnique("[+1 Culture] <upon turn start>");
+        var endUnique = BuildingUnique("[+1 Culture] <upon turn end>");
+        w.Constructions.BuiltUniques.AddUnique(startUnique);
+        w.Constructions.BuiltUniques.AddUnique(endUnique);
+
+        var turn = new CityTurnManager(w.City);
+        turn.StartTurn();
+        turn.EndTurn();
+
+        Assert.Contains(w.City.GetTriggeredUniques(UniqueType.TriggerUponTurnStart, includeCivUniques: false), it => it.Text == startUnique.Text);
+        Assert.Contains(w.City.GetTriggeredUniques(UniqueType.TriggerUponTurnEnd, includeCivUniques: false), it => it.Text == endUnique.Text);
     }
 
     // ---- CityConquestFunctions
@@ -482,6 +544,166 @@ public sealed class CityTurnTests
         Assert.Equal(145f, state.GetDiplomacyManager(greece)!.GetInfluence());
         Assert.Contains(externals.AcceptedTrades, it => it.Our == "Geneva" && it.Their == "Rome"
             && it.Trade.OurOffers.Single().Name == "Peace Treaty" && it.Trade.TheirOffers.Single().Name == "Peace Treaty");
+    }
+
+    [Fact]
+    public void MoveToCiv_RemovesFreeBuildingsProvidedToTheCity()
+    {
+        var w = NewWorld();
+        var greece = AddCiv(w, "Greece");
+        var monument = new Building { Name = "Monument" };
+        w.Info.RulesetData.Buildings.Put("Monument", monument);
+        w.Civ.CivConstructions.AddFreeBuildings(monument, 1);
+        w.Constructions.AddBuilding(monument);
+        w.Constructions.BuiltUniques.AddUnique(BuildingUnique("Indicates the capital city"));
+        w.City.CityConstructions.FreeBuildingsProvidedFromThisCity["c1"] = ["Monument"];
+        Assert.Contains(w.City.CityConstructions.GetBuiltBuildings(), b => b.Name == "Monument");
+        Assert.Contains("Monument", w.Civ.CivConstructions.GetFreeBuildingNames(w.City));
+
+        w.City.MoveToCiv(greece);
+
+        Assert.DoesNotContain(w.City.CityConstructions.GetBuiltBuildings(), b => b.Name == "Monument");
+        Assert.Empty(w.City.CityConstructions.FreeBuildingsProvidedFromThisCity);
+    }
+
+    [Fact]
+    public void MoveToCiv_StopsWorkingTilesOutsideCityTerritoryAndReassignsPopulation()
+    {
+        var w = NewWorld();
+        var greece = AddCiv(w, "Greece");
+        var outsideTile = w.TileAt(0, 0);
+        Assert.DoesNotContain(outsideTile.Position, w.City.Tiles);
+        w.City.WorkedTiles.Add(outsideTile.Position);
+        w.City.Id = CityObject.NoId;
+        Assert.Contains(outsideTile, w.City.GetWorkedTiles());
+
+        w.City.MoveToCiv(greece);
+
+        Assert.DoesNotContain(outsideTile, w.City.GetWorkedTiles());
+        Assert.NotEqual(CityObject.NoId, w.City.Id);
+    }
+
+    [Fact]
+    public void MoveToCiv_TransfersUniqueBuildingsToReceivingCivEquivalent()
+    {
+        var w = NewWorld();
+        var greece = AddCiv(w, "Greece");
+        var monument = new Building { Name = "Monument" };
+        var odeon = new Building { Name = "Odeon", Replaces = "Monument", UniqueTo = "Greece" };
+        w.Info.RulesetData.Buildings.Put("Monument", monument);
+        w.Info.RulesetData.Buildings.Put("Odeon", odeon);
+        greece.Cache.UniqueBuildings.Add(odeon);
+        Assert.Same(odeon, greece.GetEquivalentBuilding(monument));
+        w.Constructions.AddBuilding(monument);
+
+        w.City.MoveToCiv(greece);
+
+        Assert.DoesNotContain(w.City.CityConstructions.GetBuiltBuildings(), b => b.Name == "Monument");
+        Assert.Contains(w.City.CityConstructions.GetBuiltBuildings(), b => b.Name == "Odeon");
+    }
+
+    [Fact]
+    public void ConquerCity_FiresTriggerUponLosingCityForConqueredCiv()
+    {
+        var w = NewWorld(nationUniques: ["[+1 Culture] <upon losing a city>"]);
+        var greece = AddCiv(w, "Greece");
+        w.City.ConquestExternals = new StandInConquestExternals();
+
+        w.City.PuppetCity(greece);
+
+        Assert.Same(greece, w.City.Civ);
+        Assert.Contains(w.Civ.GetTriggeredUniques(UniqueType.TriggerUponLosingCity, w.Civ.State), it => it.Text.Contains("upon losing a city"));
+    }
+
+    [Fact]
+    public void LiberateCity_ResurrectedCiv_SendsNotificationsRespectingCivVisibility()
+    {
+        var w = NewWorld();
+        var palace = new Building { Name = "Palace", Uniques = ["Indicates the capital city"] };
+        w.Info.RulesetData.Buildings.Put("Palace", palace);
+        w.Info.ReligionEnabled = true;
+        var greece = AddCiv(w, "Greece");
+        var egypt = AddCiv(w, "Egypt");
+        var persia = AddCiv(w, "Persia");
+        var babylon = AddCiv(w, "Babylon");
+        var externals = new StandInConquestExternals();
+        w.City.ConquestExternals = externals;
+        w.City.FoundingCivObject = w.Civ;
+        w.City.MoveToCiv(greece);
+        w.Civ.Cities = []; // Rome has 0 cities; liberation will resurrect Rome (cities.count becomes 1)
+
+        egypt.DiplomacyFunctions.MakeCivilizationsMeet(greece);
+        egypt.DiplomacyFunctions.MakeCivilizationsMeet(w.Civ); // Egypt knows both Greece and Rome
+        persia.DiplomacyFunctions.MakeCivilizationsMeet(greece); // Persia knows only Greece
+        babylon.DiplomacyFunctions.MakeCivilizationsMeet(w.Civ); // Babylon knows only Rome
+
+        w.City.LiberateCity(greece);
+
+        Assert.Contains(egypt.Notifications, it => it.Text == "[Greece] has liberated [Rome]");
+        Assert.Contains(persia.Notifications, it => it.Text == "[Greece] has liberated [an unknown civilization]");
+        Assert.Contains(babylon.Notifications, it => it.Text == "[An unknown civilization] has liberated [Rome]");
+    }
+
+    [Fact]
+    public void LiberateCity_ResurrectedCiv_MakesPeaceAndClearsDiplomaticFlagsAndModifiers()
+    {
+        var w = NewWorld();
+        var greece = AddCiv(w, "Greece");
+        var egypt = AddCiv(w, "Egypt");
+        w.City.ConquestExternals = new StandInConquestExternals();
+        w.City.FoundingCivObject = w.Civ;
+        w.City.MoveToCiv(greece);
+        w.Civ.Cities = [];
+        w.Civ.HasEverOwnedOriginalCapital = true; // IsDefeated returns true when Cities.Count == 0
+
+        w.Civ.DiplomacyFunctions.MakeCivilizationsMeet(egypt);
+        var diploWithEgypt = w.Civ.GetDiplomacyManager(egypt)!;
+        var egyptDiploWithRome = egypt.GetDiplomacyManager(w.Civ)!;
+        diploWithEgypt.DiplomaticStatus = DiplomaticStatus.War;
+        egyptDiploWithRome.DiplomaticStatus = DiplomaticStatus.War;
+        diploWithEgypt.FlagsCountdown["FrozenFlag"] = 5;
+        egyptDiploWithRome.FlagsCountdown["OtherFrozenFlag"] = 3;
+        diploWithEgypt.AddModifier(DiplomaticModifiers.DeclaredWarOnUs, -20f);
+        egyptDiploWithRome.AddModifier(DiplomaticModifiers.WarMongerer, -15f);
+
+        w.City.LiberateCity(greece);
+
+        Assert.Equal(DiplomaticStatus.Peace, diploWithEgypt.DiplomaticStatus);
+        Assert.Empty(diploWithEgypt.FlagsCountdown);
+        Assert.Empty(egyptDiploWithRome.FlagsCountdown);
+        Assert.Empty(diploWithEgypt.DiplomaticModifiers);
+        Assert.Empty(egyptDiploWithRome.DiplomaticModifiers);
+    }
+
+    [Fact]
+    public void LiberateCity_TeleportsUnitsOutOfCityAndUnpassableTiles()
+    {
+        var w = NewWorld();
+        var greece = AddCiv(w, "Greece");
+        w.City.ConquestExternals = new StandInConquestExternals();
+        w.City.FoundingCivObject = w.Civ;
+        w.City.MoveToCiv(greece);
+
+        var centerTile = w.City.GetCenterTile();
+        var centerUnit = MapUnitFactory.NewUnit(greece, "Warrior", tile: centerTile);
+        centerTile.MilitaryUnit = centerUnit;
+
+        var otherTiles = w.City.GetTiles().Where(it => it != centerTile).ToList();
+        var blockedTile = otherTiles[0];
+        var blockedUnit = MapUnitFactory.NewUnit(greece, "Archer", tile: blockedTile);
+        blockedTile.MilitaryUnit = blockedUnit;
+        ((FakeUnitMovement)blockedUnit.Movement).CanPassThroughResult = false;
+
+        var passableTile = otherTiles[1];
+        var passableUnit = MapUnitFactory.NewUnit(w.Civ, "Scout", tile: passableTile);
+        passableTile.MilitaryUnit = passableUnit;
+        ((FakeUnitMovement)passableUnit.Movement).CanPassThroughResult = true;
+
+        w.City.LiberateCity(greece);
+
+        Assert.Equal(1, ((FakeUnitMovement)centerUnit.Movement).Teleports);
+        Assert.Equal(1, ((FakeUnitMovement)blockedUnit.Movement).Teleports);
+        Assert.Equal(0, ((FakeUnitMovement)passableUnit.Movement).Teleports);
     }
 
     [Fact]
