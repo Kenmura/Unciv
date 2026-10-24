@@ -1637,7 +1637,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented (Claude, tests only): Uniques/GlobalUniquesTests.cs (50 cases, all of GlobalUniquesTests.kt), Uniques/ResourceTests.cs (23 cases, all of ResourceTests.kt), Uniques/TimedUniquesTests.cs (3 cases; adds testConditionalTimedUniqueStrength/Expires). All passed first run, no engine bugs found. Narrowed at claim: the remaining deferred TestGame cases (CountableTests/ExpressionTests state cases, UniqueErrorTests.testEducatedEliteGreatPersonGifting which needs T094, Victory fixtures) split to T154.
 
 ### T144 Port TileUniquesTests.pillageYieldTest (split from T103)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T080, T103
 - Source: tests/src/com/unciv/uniques/TileUniquesTests.kt
 - Fixtures: (same)
@@ -1645,6 +1645,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~TileUniquesTests`
 - Claimed: 2026-10-24T18:39Z
 - Notes: Needs UnitActions.invokeUnitAction (T080).
+  - Implemented: TileUniquesTests.PillageYieldTest ported over real TestGame/UnitActions.InvokeUnitAction; passes first run, no engine parity bug found. Standard checks + coverage check pass (3742 tests, 0 failed).
 
 ### T145 Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs)
 - State: Done
