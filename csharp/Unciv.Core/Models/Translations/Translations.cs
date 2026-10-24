@@ -106,14 +106,15 @@ public sealed class Translations : IEnumerable<KeyValuePair<string, TranslationE
             return;
         }
 
-        // Upstream logs a failure of the read and gives up quietly; the engine has no log, so the same quiet give-up
+        // On some devices we get a weird UnsupportedEncodingException upstream, which is logged and the read abandoned
         OrderedDictionary<string, string> languageTranslations;
         try
         {
             languageTranslations = TranslationFileReader.Read(languageFile);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Log.Error($"Exception reading translations for {language}", ex);
             return;
         }
 
@@ -134,9 +135,9 @@ public sealed class Translations : IEnumerable<KeyValuePair<string, TranslationE
             {
                 translationsForMod.CreateTranslations(language, TranslationFileReader.Read(modFile));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // see above
+                Log.Error($"Exception reading translations for {modName} {language}", ex);
             }
         }
 

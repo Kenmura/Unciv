@@ -5,6 +5,7 @@ namespace Unciv.Core.Tests.Logic;
 /// <summary>
 /// Ported from <c>tests/src/com/unciv/logic/IdHelperTests.kt</c>.
 /// </summary>
+[Collection("TranslationState")] // logs through the process-wide Log.Backend that LogTests replaces
 public class IdCheckerTests
 {
     [Fact]
