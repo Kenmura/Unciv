@@ -1777,7 +1777,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented AirUnitAutomation (automateFighter/Bomber/Nukes/Missile + private helpers) on the view layer; 18 C#-only tests (no Kotlin fixture), hand-derived expectations. Deviations: Kotlin HashMap<TileView,..> (tilesReached/pathsToCities) -> LinkedHashMap (insertion order; JVM identity-hash order is not reproducible and only affects minBy/maxBy ties). maxByOrNull/minByOrNull = first extreme, as LINQ MaxBy/MinBy. Nuke value sums wrap (unchecked). The 'outnumbered, no bonus -> return' branch in automateFighter is unreachable in Kotlin too (needs used+unused < enemyFighters <= unused). No seams: all callees (BattleHelper, HeadTowardsEnemyCityAutomation, ThreatManager, Nuke, TargetHelper, view layer) already ported. Coverage 90.6% line.
 
 ### T156 Unit automation: UnitAutomation (all but tryUpgradeUnit)
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T090, T155
 - Source: core/src/com/unciv/logic/automation/unit/UnitAutomation.kt
 - Fixtures: none - generate golden values
