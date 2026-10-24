@@ -1576,7 +1576,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Found by T100: Civilization (and everything reachable from it, e.g. Civilization.GameInfo -> Ruleset -> Building) has no JSON wiring, so UncivJson.Serialize(game with civs) throws NotSupportedException; GameInfo.SetTransients also refuses a game without a human civ. Wire the serialized fields (and JsonIgnore the transients), then extend UncivFilesTests with GameSerializationTests' full round trips (canSaveAndLoadUncompressedGame/CompressedGame: gameId, turns, version, cities) and assert the T011 StateHasher hash survives GameInfo -> file -> GameInfo, plus Autosaves.LoadLatestAutosave on real games.
 
 ### T141 Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation minus Battle cases)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T072
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt, VisibilityTests.kt, UpgradeTests.kt, UnitFormationTests.kt, UnitMovementTests.kt and PathfindingTests.kt (cases not yet in Logic/Map/*Tests.cs)
@@ -1585,6 +1585,8 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T17:32Z
 - Notes: Split from T072 at claim time (T072 ported the city slice). Same pattern: namespace Unciv.Core.Tests.Fixtures.*, [Collection("RulesetCache")], real TestGame; behavioural bugs go back to the owning ticket as review notes.
   - Narrowed at claim: UnitMovement and Pathfinding remainder split to T145, Battle-dependent escort cases to the next ticket.
+  - Implemented Fixtures/Map: FreshWaterFixtureTests (uses an equivalent strict-JSON map string; the Kotlin string is libGDX minimal JSON that MapSaver cannot read: T147), UpgradeFixtureTests, VisibilityFixtureTests (same 18 cases as TileMapTests over real TestGame), UnitFormationFixtureTests (13 of 16), TileImprovementConstructionFixtureTests (24 of 26). Kotlin runTestParcours replaced by collecting failures and one Assert. Deferred: UnitMovement/Pathfinding remainder (T145), Battle.attack escort cases (T146), startWorkingOnImprovement-dependent cases (T148). No engine bugs found by these fixtures.
+  - Implemented Fixtures/Map: FreshWaterFixtureTests (uses an equivalent strict-JSON map string; the Kotlin string is libGDX minimal JSON that MapSaver cannot read: T147), UpgradeFixtureTests, VisibilityFixtureTests (same 18 cases as TileMapTests over real TestGame), UnitFormationFixtureTests (13 of 16), TileImprovementConstructionFixtureTests (24 of 26). Kotlin runTestParcours replaced by collecting failures and one Assert. Deferred: UnitMovement/Pathfinding remainder (T145), Battle.attack escort cases (T146), startWorkingOnImprovement-dependent cases (T148). No engine bugs found by these fixtures.
 
 ### T142 Deferred TestGame fixtures: civilization directory and GameSerializationTests
 - State: Available
@@ -1635,6 +1637,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~UnitFormationFixture
 - Claimed:
 - Notes: Split from T141: Battle (T083) not ported yet.
+
+### T147 MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps
+- State: Available
+- Depends: T107
+- Source: core/src/com/unciv/logic/files/MapSaver.kt
+- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt (testingMap)
+- Deliverables: csharp/Unciv.Core/Json/LenientJson.cs, MapSaver tests
+- Gate: dotnet test --filter FullyQualifiedName~MapSaver
+- Claimed:
+- Notes: Found in T141: the Kotlin FreshWaterTests map string is zipped libGDX minimal JSON ({mapParameters:{type:Empty,...}} unquoted keys AND values). LenientJson.QuoteBareKeys only quotes keys, so MapSaver.MapFromSavedString throws. Old Unciv saves in that format cannot be loaded. T141 embeds an equivalent strict-JSON string instead; once this lands, switch FreshWaterFixtureTests to the original Kotlin string.
+
+### T148 Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail)
+- State: Available
+- Depends: T139, T141
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt (stockpiledImprovementCostIsChargedOnlyWhenAffordable, nonStockpileImprovementCostsDoNotChargeTheStockpile), UnitFormationTests.kt (tail of formation idle units: Farm startWorkingOnImprovement)
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Map/TileImprovementConstructionFixtureTests.cs, UnitFormationFixtureTests.cs
+- Gate: dotnet test --filter FullyQualifiedName~MapFixtures
+- Claimed:
+- Notes: Split from T141: Tile.startWorkingOnImprovement/queueImprovement, TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource are ported in T139.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
