@@ -35,7 +35,7 @@ public class DiplomacyFunctions(Civilization civInfo)
         {
             if (warOnContact || otherCiv.IsMinorCivAggressor()) return; // No gift if they are bad people, or we are just about to be at war
 
-            HexCoord? cityStateLocation = CivInfo.Cities.Count == 0 ? null : CivInfo.GetCapital()!.Location;
+            HexCoord? cityStateLocation = CivInfo.Cities.Count == 0 ? null : CivInfo.GetCapital().NotNull().Location;
 
             var giftAmount = new Stats(gold: 15f);
             var faithAmount = new Stats(faith: 4f);
@@ -93,7 +93,7 @@ public class DiplomacyFunctions(Civilization civInfo)
         if (!CanTradeEmbassies() || !otherCiv.IsMajorCiv() || CivInfo.GetCapital() == null)
             return false;
 
-        var theirDiploManager = otherCiv.GetDiplomacyManager(CivInfo)!;
+        var theirDiploManager = otherCiv.GetDiplomacyManager(CivInfo).NotNull();
         return !CivInfo.IsAtWarWith(otherCiv) && !IsDenouncedThisTurn(theirDiploManager)
             && !theirDiploManager.HasModifier(DiplomaticModifiers.EstablishedEmbassy)
             && !theirDiploManager.HasModifier(DiplomaticModifiers.SharedEmbassies);
@@ -105,7 +105,7 @@ public class DiplomacyFunctions(Civilization civInfo)
         if (!CanTradeEmbassies() || !otherCiv.IsMajorCiv() || otherCiv.GetCapital() == null)
             return false;
 
-        var ourDiploManager = CivInfo.GetDiplomacyManager(otherCiv)!;
+        var ourDiploManager = CivInfo.GetDiplomacyManager(otherCiv).NotNull();
         return !CivInfo.IsAtWarWith(otherCiv) && !IsDenouncedThisTurn(ourDiploManager)
             && !ourDiploManager.HasModifier(DiplomaticModifiers.EstablishedEmbassy)
             && !ourDiploManager.HasModifier(DiplomaticModifiers.SharedEmbassies);
@@ -113,12 +113,12 @@ public class DiplomacyFunctions(Civilization civInfo)
 
     public bool MeetsEmbassyRequirementFor(Civilization otherCiv) =>
         !CivInfo.HasUnique(UniqueType.RequiresEmbassiesForDiplomacy) ||
-            CivInfo.GetDiplomacyManager(otherCiv)!.HasModifier(DiplomaticModifiers.SharedEmbassies);
+            CivInfo.GetDiplomacyManager(otherCiv).NotNull().HasModifier(DiplomaticModifiers.SharedEmbassies);
 
     /// <summary>Remove mutual embassies from both civs</summary>
     public void RemoveEmbassies(Civilization otherCiv)
     {
-        var ourDiploManager = CivInfo.GetDiplomacyManager(otherCiv)!;
+        var ourDiploManager = CivInfo.GetDiplomacyManager(otherCiv).NotNull();
         ourDiploManager.RemoveModifier(DiplomaticModifiers.EstablishedEmbassy);
         ourDiploManager.RemoveModifier(DiplomaticModifiers.ReceivedEmbassy);
         ourDiploManager.RemoveModifier(DiplomaticModifiers.SharedEmbassies);
@@ -131,8 +131,8 @@ public class DiplomacyFunctions(Civilization civInfo)
 
     public bool CanSignDeclarationOfFriendshipWith(Civilization otherCiv) =>
         otherCiv.IsMajorCiv() && !otherCiv.IsAtWarWith(CivInfo)
-            && !CivInfo.GetDiplomacyManager(otherCiv)!.HasFlag(DiplomacyFlags.Denunciation)
-            && !CivInfo.GetDiplomacyManager(otherCiv)!.HasFlag(DiplomacyFlags.DeclarationOfFriendship);
+            && !CivInfo.GetDiplomacyManager(otherCiv).NotNull().HasFlag(DiplomacyFlags.Denunciation)
+            && !CivInfo.GetDiplomacyManager(otherCiv).NotNull().HasFlag(DiplomacyFlags.DeclarationOfFriendship);
 
     public bool CanSignResearchAgreement()
     {
@@ -144,7 +144,7 @@ public class DiplomacyFunctions(Civilization civInfo)
 
     public bool CanSignResearchAgreementNoCostWith(Civilization otherCiv)
     {
-        var ourDiploManager = CivInfo.GetDiplomacyManager(otherCiv)!;
+        var ourDiploManager = CivInfo.GetDiplomacyManager(otherCiv).NotNull();
         return CanSignResearchAgreement()
             && otherCiv.DiplomacyFunctions.CanSignResearchAgreement()
             && MeetsEmbassyRequirementFor(otherCiv)
@@ -174,7 +174,7 @@ public class DiplomacyFunctions(Civilization civInfo)
 
     public bool CanSignDefensivePactWith(Civilization otherCiv)
     {
-        var ourDiplomacyManager = CivInfo.GetDiplomacyManager(otherCiv)!;
+        var ourDiplomacyManager = CivInfo.GetDiplomacyManager(otherCiv).NotNull();
         return CanSignDefensivePact()
             && otherCiv.DiplomacyFunctions.CanSignDefensivePact()
             && MeetsEmbassyRequirementFor(otherCiv)

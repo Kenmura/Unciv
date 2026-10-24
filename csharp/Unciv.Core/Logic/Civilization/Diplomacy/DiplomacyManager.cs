@@ -174,7 +174,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     private static float ParseFloat(string text) => float.Parse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
 
     #region pure functions
-    public DiplomacyManager OtherCivDiplomacy() => OtherCiv.GetDiplomacyManager(CivInfo)!;
+    public DiplomacyManager OtherCivDiplomacy() => OtherCiv.GetDiplomacyManager(CivInfo).NotNull();
 
     public int TurnsToPeaceTreaty()
     {
@@ -358,7 +358,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
         if (CivInfo.Cities.Count != 0 && CivInfo.GetCapital() != null)
             OtherCiv.ForEachMatchingUnique(UniqueType.RestingPointOfCityStatesFollowingReligionChange, unique =>
             {
-                if (OtherCiv.ReligionManager.Religion?.Name == CivInfo.GetCapital()!.Religion.GetMajorityReligionName())
+                if (OtherCiv.ReligionManager.Religion?.Name == CivInfo.GetCapital().NotNull().Religion.GetMajorityReligionName())
                     restingPoint += ParseInt(unique.Params[0]);
             });
 
@@ -386,7 +386,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
         });
 
         string? religion = CivInfo.Cities.Count == 0 || CivInfo.GetCapital() == null ? null
-            : CivInfo.GetCapital()!.Religion.GetMajorityReligionName();
+            : CivInfo.GetCapital().NotNull().Religion.GetMajorityReligionName();
         if (religion != null && religion == OtherCiv.ReligionManager.Religion?.Name)
             modifierPercent -= 25f; // 25% slower degrade when sharing a religion
 
@@ -505,7 +505,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
             // Our ally city states make peace with us
             if (thirdCiv.AllyCiv == CivInfo && thirdCiv.IsAtWarWith(otherCiv))
             {
-                var thirdCivDiplo = thirdCiv.GetDiplomacyManager(otherCiv)!;
+                var thirdCivDiplo = thirdCiv.GetDiplomacyManager(otherCiv).NotNull();
                 thirdCivDiplo.MakePeace();
 
                 // Make the peace treaty so that the civ can't declare war immedietly
@@ -517,7 +517,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
             }
             // Other City-States that are not our ally don't like the fact that we made peace with their enemy
             if (thirdCiv.AllyCiv != CivInfo && thirdCiv.IsAtWarWith(otherCiv))
-                thirdCiv.GetDiplomacyManager(CivInfo)!.AddInfluence(-10f);
+                thirdCiv.GetDiplomacyManager(CivInfo).NotNull().AddInfluence(-10f);
         }
     }
 
@@ -609,8 +609,8 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
             thirdCiv.AddNotification($"[{CivInfo.CivName}] and [{OtherCiv.CivName}] have signed a Declaration of Friendship!",
                 NotificationCategory.Diplomacy, CivInfo.CivName, NotificationIcon.Diplomacy, OtherCiv.CivName);
             if (thirdCiv.IsSpectator()) continue;
-            thirdCiv.GetDiplomacyManager(CivInfo)!.SetFriendshipBasedModifier();
-            thirdCiv.GetDiplomacyManager(OtherCiv)!.SetFriendshipBasedModifier();
+            thirdCiv.GetDiplomacyManager(CivInfo).NotNull().SetFriendshipBasedModifier();
+            thirdCiv.GetDiplomacyManager(OtherCiv).NotNull().SetFriendshipBasedModifier();
         }
 
         // Ignore contitionals as triggerUnique will check again, and that would break
@@ -630,12 +630,12 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
         RemoveModifier(Modifier.DeclaredFriendshipWithOurAllies);
         RemoveModifier(Modifier.DeclaredFriendshipWithOurEnemies);
         var civsOtherCivHasDeclaredFriendshipWith = GetCommonKnownCivs()
-            .Where(it => it.GetDiplomacyManager(OtherCiv)!.HasFlag(DiplomacyFlags.DeclarationOfFriendship)).ToList();
+            .Where(it => it.GetDiplomacyManager(OtherCiv).NotNull().HasFlag(DiplomacyFlags.DeclarationOfFriendship)).ToList();
 
         foreach (var thirdCiv in civsOtherCivHasDeclaredFriendshipWith)
         {
             // What do we (A) think about the otherCiv() (B) being friends with the third Civ (C)?
-            var ourRelationshipWithThirdCiv = CivInfo.GetDiplomacyManager(thirdCiv)!.RelationshipIgnoreAfraid();
+            var ourRelationshipWithThirdCiv = CivInfo.GetDiplomacyManager(thirdCiv).NotNull().RelationshipIgnoreAfraid();
 
             var modifierType = ourRelationshipWithThirdCiv switch
             {
@@ -669,7 +669,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
             thirdCiv.AddNotification($"[{CivInfo.CivName}] and [{OtherCiv.CivName}] have signed a Defensive Pact!",
                 NotificationCategory.Diplomacy, CivInfo.CivName, NotificationIcon.Diplomacy, OtherCiv.CivName);
             if (thirdCiv.IsSpectator()) return; // sic: Kotlin returns here, skipping the triggered uniques below
-            thirdCiv.GetDiplomacyManager(CivInfo)!.SetDefensivePactBasedModifier();
+            thirdCiv.GetDiplomacyManager(CivInfo).NotNull().SetDefensivePactBasedModifier();
         }
 
         // Ignore contitionals as triggerUnique will check again, and that would break
@@ -690,12 +690,12 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
         RemoveModifier(Modifier.SignedDefensivePactWithOurEnemies);
 
         var civsTheyHavePactWith = GetCommonKnownCivs()
-            .Where(it => OtherCiv.GetDiplomacyManager(it)!.HasFlag(DiplomacyFlags.DefensivePact)).ToList();
+            .Where(it => OtherCiv.GetDiplomacyManager(it).NotNull().HasFlag(DiplomacyFlags.DefensivePact)).ToList();
 
         foreach (var thirdCiv in civsTheyHavePactWith)
         {
             // what do we (A) think about the other civ (B) having a defensive pact with the third civ (C)?
-            var ourRelationshipWithThirdCiv = CivInfo.GetDiplomacyManager(thirdCiv)!.RelationshipIgnoreAfraid();
+            var ourRelationshipWithThirdCiv = CivInfo.GetDiplomacyManager(thirdCiv).NotNull().RelationshipIgnoreAfraid();
             var modifierType = ourRelationshipWithThirdCiv switch
             {
                 Level.Unforgivable or Level.Enemy => Modifier.SignedDefensivePactWithOurEnemies,
@@ -745,7 +745,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
         // if they have already been denounced by many others, our denouncement will not surprise / anger them quite as much
         // -35, -25, -18, -12, ...
         int activeDenunciationsAgainstOtherCiv = OtherCiv.GetKnownCivs().Count(
-            it => it.GetDiplomacyManager(OtherCiv)!.HasFlag(DiplomacyFlags.Denunciation));
+            it => it.GetDiplomacyManager(OtherCiv).NotNull().HasFlag(DiplomacyFlags.Denunciation));
         float otherCivOpinionChangeFromBeingDenounced = InitialOpinionChangeWhenDenounced * KotlinMath.Pow(2f, -0.5f * activeDenunciationsAgainstOtherCiv);
         Log.Debug("%s is upset that %s denounced them: %.1f opinion", OtherCivName, CivInfo.CivName, otherCivOpinionChangeFromBeingDenounced);
         OtherCivDiplomacy().SetModifier(Modifier.Denunciation, otherCivOpinionChangeFromBeingDenounced);
@@ -779,9 +779,9 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
                 continue;
 
             // their diplomacy with us
-            var thirdCivDiplomacyWithUs = thirdCiv.GetDiplomacyManager(CivInfo)!;
+            var thirdCivDiplomacyWithUs = thirdCiv.GetDiplomacyManager(CivInfo).NotNull();
             // their relationship with the civ we are denouncing
-            var thirdCivRelationshipWithTarget = thirdCiv.GetDiplomacyManager(OtherCiv)!.RelationshipIgnoreAfraid();
+            var thirdCivRelationshipWithTarget = thirdCiv.GetDiplomacyManager(OtherCiv).NotNull().RelationshipIgnoreAfraid();
             switch (thirdCivRelationshipWithTarget)
             {
                 case Level.Unforgivable: thirdCivDiplomacyWithUs.AddModifier(Modifier.DenouncedOurEnemies, 15f); break;

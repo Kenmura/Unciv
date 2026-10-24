@@ -2,6 +2,7 @@ using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Json;
+using Unciv.Utils;
 
 namespace Unciv.Logic.Map.Tiles;
 
@@ -144,7 +145,7 @@ internal sealed class TileHistoryConverter : JsonConverter<TileHistory>
         while (reader.Read())
         {
             if (reader.TokenType == JsonTokenType.EndObject) return result;
-            int turn = int.Parse(reader.GetString()!, System.Globalization.CultureInfo.InvariantCulture);
+            int turn = int.Parse(reader.GetString().NotNull(), System.Globalization.CultureInfo.InvariantCulture);
             reader.Read();
             if (reader.TokenType != JsonTokenType.StartArray)
                 throw new JsonException($"Expected StartArray for TileHistory entry, got {reader.TokenType}");
@@ -153,7 +154,7 @@ internal sealed class TileHistoryConverter : JsonConverter<TileHistory>
             string? owner = elements.Count > 0 && elements[0].ValueKind == JsonValueKind.String ? elements[0].GetString() : "";
             if (string.IsNullOrEmpty(owner)) owner = null;
             if (elements.Count < 2) throw new JsonException("Missing city center type in TileHistory entry");
-            string typeText = elements[1].ValueKind == JsonValueKind.String ? elements[1].GetString()! : elements[1].GetRawText();
+            string typeText = elements[1].ValueKind == JsonValueKind.String ? elements[1].GetString().NotNull() : elements[1].GetRawText();
             result.AddTestEntry(turn, new TileHistory.TileHistoryState(owner, TileHistory.Deserialize(typeText)));
         }
         throw new JsonException("Unexpected end of JSON while reading TileHistory");

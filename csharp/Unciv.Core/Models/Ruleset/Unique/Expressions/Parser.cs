@@ -1,3 +1,5 @@
+using Unciv.Utils;
+
 namespace Unciv.Models.Ruleset.Unique.Expressions;
 
 // Ported from core/src/com/unciv/models/ruleset/unique/expressions/Parser.kt.
@@ -26,7 +28,7 @@ public static class Parser
         return engine.BuildAST();
     }
 
-    public static string GetASTDebugDescription(string text) => Parse(text).ToString()!;
+    public static string GetASTDebugDescription(string text) => Parse(text).ToString().NotNull();
 
     //region Exceptions
     /// <summary>

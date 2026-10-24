@@ -114,7 +114,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
                 if (tile.IsCityCenter()) continue;
                 if (tile.GetUnpillagedRoad() == RoadStatus.None) continue; // Cheap checks before pricey checks
                 if (ignoredTileTypes.Any(it => tile.MatchesFilter(it, CivInfo))) continue;
-                var road = tile.GetUnpillagedRoadImprovement()!; // covered by RoadStatus.None test
+                var road = tile.GetUnpillagedRoadImprovement().NotNull(); // covered by RoadStatus.None test
                 var gameContext = new GameContext(CivInfo, tile: tile);
                 AddMaintenanceUniques(road, UniqueType.ImprovementMaintenance, gameContext);
                 AddMaintenanceUniques(road, UniqueType.ImprovementAllMaintenance, gameContext);
@@ -126,7 +126,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
         {
             var tile = CivInfo.GameInfo.TileMap[position];
             if (tile.GetUnpillagedRoad() == RoadStatus.None) continue; // Cheap checks before pricey checks
-            var road = tile.GetUnpillagedRoadImprovement()!; // covered by RoadStatus.None test
+            var road = tile.GetUnpillagedRoadImprovement().NotNull(); // covered by RoadStatus.None test
             var gameContext = new GameContext(CivInfo, tile: tile);
             AddMaintenanceUniques(road, UniqueType.ImprovementAllMaintenance, gameContext);
         }
@@ -195,7 +195,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
         foreach (var otherCiv in CivInfo.GetKnownCivs())
         {
             if (!otherCiv.IsCityState) continue;
-            if (otherCiv.GetDiplomacyManager(CivInfo)!.RelationshipIgnoreAfraid() != RelationshipLevel.Ally)
+            if (otherCiv.GetDiplomacyManager(CivInfo).NotNull().RelationshipIgnoreAfraid() != RelationshipLevel.Ally)
                 continue;
             CivInfo.ForEachMatchingUnique(UniqueType.CityStateStatPercent, unique =>
             {

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Models.StatTypes;
+using Unciv.Utils;
 
 namespace Unciv.Json;
 
@@ -26,7 +27,7 @@ public class StatMapConverter : JsonConverter<StatMap>
             reader.Read();
 
             var stats = statsConverter.Read(ref reader, typeof(Stats), options) ?? new Stats();
-            statMap[key!] = stats;
+            statMap[key.NotNull()] = stats;
         }
 
         throw new JsonException("Unexpected end of JSON while reading StatMap");

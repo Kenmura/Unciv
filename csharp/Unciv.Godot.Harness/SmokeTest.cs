@@ -13,7 +13,7 @@ public partial class SmokeTest : Node3D
     private const int WarmupFrames = 3;
     private static readonly Vector3 PrismCenter = new(0, 0.25f, 0);
 
-    private Camera3D camera = null!;
+    private Camera3D camera = null!; // JUSTIFY: T119 assigned in _Ready
     private int frame;
     private int clicksReceived;
     private Vector3? lastPick;

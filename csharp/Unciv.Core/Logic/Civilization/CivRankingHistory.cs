@@ -32,7 +32,7 @@ public class CivRankingHistory : IEnumerable<KeyValuePair<int, IReadOnlyDictiona
 
     public bool ContainsKey(int turn) => map.ContainsKey(turn);
 
-    public bool TryGetValue(int turn, out IReadOnlyDictionary<RankingType, int> value) => map.TryGetValue(turn, out value!);
+    public bool TryGetValue(int turn, out IReadOnlyDictionary<RankingType, int> value) => map.TryGetValue(turn, out value!); // JUSTIFY: T119 out value is unspecified when TryGetValue returns false
 
     public bool Remove(int turn) => map.Remove(turn);
 
@@ -103,14 +103,14 @@ internal sealed class CivRankingHistoryConverter : JsonConverter<CivRankingHisto
         while (reader.Read())
         {
             if (reader.TokenType == JsonTokenType.EndObject) return result;
-            int turn = int.Parse(reader.GetString()!, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+            int turn = int.Parse(reader.GetString().NotNull(), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
             reader.Read();
             var rankings = new Dictionary<RankingType, int>();
 
             switch (reader.TokenType)
             {
                 case JsonTokenType.String:
-                    ReadNewFormat(reader.GetString()!, rankings);
+                    ReadNewFormat(reader.GetString().NotNull(), rankings);
                     break;
                 case JsonTokenType.StartObject:
                     ReadOldFormat(ref reader, rankings);
@@ -144,7 +144,7 @@ internal sealed class CivRankingHistoryConverter : JsonConverter<CivRankingHisto
     {
         while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
         {
-            string name = reader.GetString()!;
+            string name = reader.GetString().NotNull();
             reader.Read();
             // Unknown ranking types are silently dropped, without looking at their value
             var rankingType = name.Length == 1 ? RankingTypes.FromIdForSerialization(name[0]) : null;

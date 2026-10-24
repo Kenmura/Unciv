@@ -156,7 +156,7 @@ public class TileMap : IsPartOfGameInfoSerialization
         maxLatitude = new KotlinLazy<int>(() => Values.Count == 0 ? 0 : Values.Max(it => Math.Abs(it.Latitude)));
         maxLongitude = new KotlinLazy<int>(() => Values.Count == 0 ? 0 : Values.Max(it => Math.Abs(it.Longitude)));
         naturalWonders = new KotlinLazy<LinkedHashSet<string>>(() =>
-            new LinkedHashSet<string>(TileList.Where(it => it.IsNaturalWonder()).Select(it => it.NaturalWonder!)));
+            new LinkedHashSet<string>(TileList.Where(it => it.IsNaturalWonder()).Select(it => it.NaturalWonder.NotNull())));
         resources = new KotlinLazy<LinkedHashSet<string>>(() =>
             new LinkedHashSet<string>(TileList.Select(it => it.Resource).OfType<string>()));
         resourceObjects = new KotlinLazy<LinkedHashSet<TileResource>>(() =>
@@ -1078,14 +1078,14 @@ public class TileMap : IsPartOfGameInfoSerialization
                 switch (name)
                 {
                     case "mapParameters":
-                        if (!isNull) map.MapParameters = JsonSerializer.Deserialize<MapParameters>(ref reader, options)!;
+                        if (!isNull) map.MapParameters = JsonSerializer.Deserialize<MapParameters>(ref reader, options).NotNull();
                         break;
                     case "tileList":
-                        map.TileList = isNull ? [] : JsonSerializer.Deserialize<List<Tile>>(ref reader, options)!;
+                        map.TileList = isNull ? [] : JsonSerializer.Deserialize<List<Tile>>(ref reader, options).NotNull();
                         break;
                     case "startingLocations":
                         map.StartingLocations.Clear();
-                        if (!isNull) map.StartingLocations.AddRange(JsonSerializer.Deserialize<List<StartingLocation>>(ref reader, options)!);
+                        if (!isNull) map.StartingLocations.AddRange(JsonSerializer.Deserialize<List<StartingLocation>>(ref reader, options).NotNull());
                         break;
                     case "description":
                         map.Description = reader.GetString() ?? "";
@@ -1134,11 +1134,11 @@ public class TileMap : IsPartOfGameInfoSerialization
                 switch (name)
                 {
                     case "mapParameters":
-                        if (!isNull) preview.MapParameters = JsonSerializer.Deserialize<MapParameters>(ref reader, options)!;
+                        if (!isNull) preview.MapParameters = JsonSerializer.Deserialize<MapParameters>(ref reader, options).NotNull();
                         break;
                     case "startingLocations":
                         preview.startingLocations.Clear();
-                        if (!isNull) preview.startingLocations.AddRange(JsonSerializer.Deserialize<List<StartingLocation>>(ref reader, options)!);
+                        if (!isNull) preview.startingLocations.AddRange(JsonSerializer.Deserialize<List<StartingLocation>>(ref reader, options).NotNull());
                         break;
                     default:
                         reader.Skip();

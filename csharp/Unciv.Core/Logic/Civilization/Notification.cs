@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Json;
+using Unciv.Utils;
 
 namespace Unciv.Logic.Civilization;
 
@@ -65,11 +66,11 @@ public class Notification : IsPartOfGameInfoSerialization
             throw new JsonException($"Expected an object for Notification, got {jsonData.ValueKind}");
         if (Field(jsonData, "category") is { } category)
         {
-            string name = NotificationActionsSerializer.ReadString(category)!;
+            string name = NotificationActionsSerializer.ReadString(category).NotNull();
             Category = SafeValueOf(name) ?? throw new JsonException($"Unable to find enum constant '{name}' of NotificationCategory");
         }
         if (Field(jsonData, "text") is { } text)
-            Text = NotificationActionsSerializer.ReadString(text)!;
+            Text = NotificationActionsSerializer.ReadString(text).NotNull();
         if (Field(jsonData, "actions") is { } actions)
         {
             // children of the array (or object) value
@@ -83,7 +84,7 @@ public class Notification : IsPartOfGameInfoSerialization
         {
             if (icons.ValueKind != JsonValueKind.Array)
                 throw new JsonException($"Expected an array for Notification icons, got {icons.ValueKind}");
-            Icons = icons.EnumerateArray().Select(it => NotificationActionsSerializer.ReadString(it)!).ToList();
+            Icons = icons.EnumerateArray().Select(it => NotificationActionsSerializer.ReadString(it).NotNull()).ToList();
         }
     }
 

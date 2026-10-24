@@ -330,7 +330,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         Cache = new CivInfoTransientCache(this);
         DiplomacyFunctions = new DiplomacyFunctions(this);
         // PublicationOnly: Kotlin `by lazy` does not cache a failed initializer (e.g. gameInfo not yet set), unlike ExecutionAndPublication
-        cityStateType = new KotlinLazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType!]);
+        cityStateType = new KotlinLazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType.NotNull()]);
     }
 
     public Civilization(string civName) : this()
@@ -433,7 +433,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     public DiplomacyManager GetDiplomacyManagerOrMeet(Civilization civInfo)
     {
         if (!Knows(civInfo)) DiplomacyFunctions.MakeCivilizationsMeet(civInfo);
-        return GetDiplomacyManager(civInfo.CivId)!;
+        return GetDiplomacyManager(civInfo.CivId).NotNull();
     }
     public DiplomacyManager? GetDiplomacyManager(Civilization civInfo) => GetDiplomacyManager(civInfo.CivId);
     public DiplomacyManager? GetDiplomacyManager(string civId) => Diplomacy.TryGetValue(civId, out var manager) ? manager : null;
@@ -1241,7 +1241,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         if (newCapitalIndicator != null)
         {
             // move new capital
-            city!.CityConstructions.AddBuilding(newCapitalIndicator);
+            city.NotNull().CityConstructions.AddBuilding(newCapitalIndicator);
             city.IsBeingRazed = false; // stop razing the new capital if it was being razed
 
             // move the buildings with MovedToNewCapital unique
@@ -1260,7 +1260,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         }
 
         var oldCapitalIndicator = oldCapital == null ? null : CapitalCityIndicator(oldCapital);
-        if (oldCapitalIndicator != null) oldCapital!.CityConstructions.RemoveBuilding(oldCapitalIndicator);
+        if (oldCapitalIndicator != null) oldCapital.NotNull().CityConstructions.RemoveBuilding(oldCapitalIndicator);
     }
 
     /// <param name="oldCapital"><c>null</c> when destroying, otherwise old capital</param>
@@ -1287,7 +1287,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         if (newCapital == null)
         {
             // No non-puppets, take largest puppet and annex
-            newCapital = LargestOrNull(availableCities)!;
+            newCapital = LargestOrNull(availableCities).NotNull();
             newCapital.AnnexCity();
         }
 
@@ -1364,7 +1364,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     bool IGameContextCivilization.Knows(IGameContextCivilization otherCiv) => Knows((Civilization)otherCiv);
     bool IGameContextCivilization.IsAtWarWith(IGameContextCivilization otherCiv) => IsAtWarWith((Civilization)otherCiv);
     bool IGameContextCivilization.IsConsideredFriendlyTerritoryOf(IGameContextCivilization otherCiv) =>
-        GetDiplomacyManager((Civilization)otherCiv)!.IsConsideredFriendlyTerritory();
+        GetDiplomacyManager((Civilization)otherCiv).NotNull().IsConsideredFriendlyTerritory();
     bool IGameContextCivilization.CanPassThroughTiles(IGameContextCivilization otherCiv) => DiplomacyFunctions.CanPassThroughTiles((Civilization)otherCiv);
     bool IGameContextCivilization.ForestsAndJunglesAreRoads => Nation.ForestsAndJunglesAreRoads;
     ISet<HexCoord> IGameContextCivilization.NeutralRoads => NeutralRoads;

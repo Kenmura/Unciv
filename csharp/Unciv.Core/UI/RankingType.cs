@@ -1,4 +1,5 @@
 using Unciv.Models.Metadata;
+using Unciv.Utils;
 
 namespace Unciv.UI.Screens.VictoryScreen;
 
@@ -63,7 +64,7 @@ public static class RankingTypeExtensions
 public static class RankingTypes
 {
     public static RankingType? FromIdForSerialization(char c) =>
-        Enum.GetValues<RankingType>().Cast<RankingType?>().FirstOrDefault(it => it!.Value.IdForSerialization() == c);
+        Enum.GetValues<RankingType>().Cast<RankingType?>().FirstOrDefault(it => it.NotNull().IdForSerialization() == c);
 
     public static IEnumerable<RankingType> FilteredEntries(GameParameters gameParameters) =>
         Enum.GetValues<RankingType>().Where(it => it.IsVanilla() || gameParameters.ShowAdditionalRankingTypes);

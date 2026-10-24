@@ -258,7 +258,7 @@ public sealed class ModConstants
                 continue;
             }
 
-            sb.Append(field.GetCustomAttribute<JsonPropertyNameAttribute>()!.Name);
+            sb.Append(field.GetCustomAttribute<JsonPropertyNameAttribute>().NotNull().Name);
             sb.Append(':');
             sb.Append(JavaFormat.ToJavaString(value));
             sb.Append(',');

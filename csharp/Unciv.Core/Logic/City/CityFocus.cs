@@ -41,7 +41,7 @@ public static class CityFocusExtensions
         CityFocus.Manual => "Manual",
         CityFocus.GoldGrowthFocus => $"{Stat.Gold.Character()} {Stat.Food.Character()}",
         CityFocus.ProductionGrowthFocus => $"{Stat.Production.Character()} {Stat.Food.Character()}",
-        _ => focus.FocusStat()!.Value.Character().ToString(),
+        _ => focus.FocusStat().NotNull().Character().ToString(),
     };
 
     /// <summary>Whether to show or hide in CityScreen's CitizenManagementTable</summary>

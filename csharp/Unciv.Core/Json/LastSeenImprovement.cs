@@ -30,7 +30,7 @@ public class LastSeenImprovement : IEnumerable<KeyValuePair<HexCoord, string>>, 
 
     public bool ContainsKey(HexCoord key) => map.ContainsKey(key);
 
-    public bool TryGetValue(HexCoord key, out string value) => map.TryGetValue(key, out value!);
+    public bool TryGetValue(HexCoord key, out string value) => map.TryGetValue(key, out value!); // JUSTIFY: T119 out value is unspecified when TryGetValue returns false
 
     public bool Remove(HexCoord key) => map.Remove(key);
 
@@ -64,14 +64,14 @@ internal sealed class LastSeenImprovementConverter : JsonConverter<LastSeenImpro
         while (reader.Read())
         {
             if (reader.TokenType == JsonTokenType.EndObject) return result;
-            string name = reader.GetString()!;
+            string name = reader.GetString().NotNull();
             reader.Read();
             var key = ToHexCoord(name);
             string value;
             switch (reader.TokenType)
             {
                 case JsonTokenType.String:
-                    value = reader.GetString()!;
+                    value = reader.GetString().NotNull();
                     break;
                 case JsonTokenType.Number:
                 case JsonTokenType.True:
@@ -97,7 +97,7 @@ internal sealed class LastSeenImprovementConverter : JsonConverter<LastSeenImpro
         foreach (var property in doc.RootElement.EnumerateObject())
         {
             if (!property.NameEquals("value")) continue;
-            return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString()! : property.Value.GetRawText();
+            return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString().NotNull() : property.Value.GetRawText();
         }
         throw new JsonException("Missing \"value\" member in LastSeenImprovement entry");
     }

@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Models.StatTypes;
+using Unciv.Utils;
 
 namespace Unciv.Json;
 
@@ -19,7 +20,7 @@ public sealed class StatsSubclassConverterFactory : JsonConverterFactory
         && typeToConvert.GetConstructor(Type.EmptyTypes) != null;
 
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options) =>
-        (JsonConverter)Activator.CreateInstance(typeof(StatsSubclassConverter<>).MakeGenericType(typeToConvert))!;
+        (JsonConverter)Activator.CreateInstance(typeof(StatsSubclassConverter<>).MakeGenericType(typeToConvert)).NotNull();
 }
 
 internal sealed class StatsSubclassConverter<T> : JsonConverter<T> where T : Stats

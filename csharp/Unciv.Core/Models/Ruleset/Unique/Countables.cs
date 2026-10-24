@@ -129,7 +129,7 @@ public sealed class Countables
             if (NoPlaceholders) return Text;
             var placeholderParams = Text.GetPlaceholderParameters()
                 .Select(it => UniqueParameterTypeExtensions.SafeValueOf(it)?.DocExample())
-                .Where(it => it != null).Select(it => it!).ToArray();
+                .Where(it => it != null).Select(it => it.NotNull()).ToArray();
             return Text.FillPlaceholders(placeholderParams);
         }
     }
@@ -233,7 +233,7 @@ public sealed class Countables
             }
 
             // Kotlin: gameContext.gameInfo!!.ruleset.tileResources[param] ?: return null
-            var resource = gameContext.GameInfo!.Ruleset.TileResources[param];
+            var resource = gameContext.GameInfo.NotNull().Ruleset.TileResources[param];
             if (resource == null) return null;
             if (city != null)
                 return city.GetResourcesGeneratedByCityAmount(resource.Name);
@@ -518,7 +518,7 @@ public sealed class Countables
             var gameInfo = gameContext.GameInfo;
             var civilizations = gameInfo?.Civilizations;
             if (civilizations == null) return null;
-            var ruleset = gameInfo!.Ruleset;
+            var ruleset = gameInfo.NotNull().Ruleset;
             var relevantCivs = civilizations.Where(it => it.IsAlive() && it.MatchesFilter(civFilter, gameContext)).ToList();
             return SumOf(ruleset.GetTileResourceNamesMatchingFilter(resourceFilter, gameContext),
                 resourceName => SumOf(relevantCivs, civ => civ.GetResourceAmount(resourceName)));

@@ -88,7 +88,7 @@ public class TradeRequest : IsPartOfGameInfoSerialization
     public void Decline(CivilizationObject decliningCiv)
     {
         var requestingCivInfo = (CivilizationObject)decliningCiv.GameInfo.GetCivilization(RequestingCiv);
-        var requestingCivDiploManager = requestingCivInfo.GetDiplomacyManager(decliningCiv)!;
+        var requestingCivDiploManager = requestingCivInfo.GetDiplomacyManager(decliningCiv).NotNull();
         // the numbers of the flags (20,5) are the amount of turns to wait until offering again
         if (Trade.OurOffers.All(it => it.Type == TradeOfferType.Luxury_Resource)
             && Trade.TheirOffers.All(it => it.Type == TradeOfferType.Luxury_Resource))

@@ -95,7 +95,7 @@ public static class OdMapImport
     private static int AsInt(JsonElement value) => value.ValueKind switch
     {
         JsonValueKind.Number => value.TryGetInt64(out var l) ? unchecked((int)l) : KotlinMath.DoubleToInt(value.GetDouble()),
-        JsonValueKind.String => int.Parse(value.GetString()!, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture),
+        JsonValueKind.String => int.Parse(value.GetString().NotNull(), System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture),
         JsonValueKind.True => 1,
         JsonValueKind.False => 0,
         _ => throw new JsonException("Value cannot be converted to int"),

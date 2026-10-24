@@ -1,8 +1,8 @@
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
-
 using Unciv.UI.Components.Extensions;
+using Unciv.Utils;
 using TileImprovementObject = Unciv.Models.Ruleset.Tile.TileImprovement;
 
 namespace Unciv.Logic.Map.Tiles;
@@ -119,7 +119,7 @@ public class TileStatFunctions(Tile tile)
         {
             // resource base
             var resource = Tile.TileResource;
-            if (observingCiv.CanSeeResource(resource)) listOfStats.Add((resource!.Name, resource));
+            if (observingCiv.CanSeeResource(resource)) listOfStats.Add((resource.NotNull().Name, resource));
 
             if (improvement != null)
                 improvementStats.Add(GetExtraImprovementStats(improvement, observingCiv, city));
@@ -320,7 +320,7 @@ public class TileStatFunctions(Tile tile)
         var stats = new Stats();
 
         var resource = Tile.TileResource;
-        if (observingCiv.CanSeeResource(resource) && resource!.IsImprovedBy(improvement.Name)
+        if (observingCiv.CanSeeResource(resource) && resource.NotNull().IsImprovedBy(improvement.Name)
                 && resource.ImprovementStats != null)
             stats.Add(resource.ImprovementStats); // resource-specific improvement
 

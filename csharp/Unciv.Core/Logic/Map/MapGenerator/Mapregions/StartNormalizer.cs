@@ -109,7 +109,7 @@ public static class StartNormalizer
     /// <summary>Check for very food-heavy starts that might still need some stone to help with production</summary>
     private static void AddProductionBonuses(Tile startTile)
     {
-        var ruleset = startTile.TileMap.Ruleset!;
+        var ruleset = startTile.TileMap.Ruleset.NotNull();
         var rng = new GameContext(gameInfo: startTile.TileMap.GameInfo).StateBasedRandom("StartNormalizer.addProductionBonuses");
         var grassTypePlots = startTile.GetTilesInDistanceRange(new IntRange(1, 2)).Where(it =>
             it.IsLand
@@ -238,13 +238,13 @@ public static class StartNormalizer
 
             var validBonuses = ruleset.TileResources.Values.Where(it =>
                 it.ResourceType == ResourceType.Bonus && it.Food >= 1 && it.GeneratesNaturallyOn(plot)).ToList();
-            var goodPlotForOasis = canPlaceOasis && oasisEquivalent!.OccursOn.Contains(plot.LastTerrain.Name);
+            var goodPlotForOasis = canPlaceOasis && oasisEquivalent.NotNull().OccursOn.Contains(plot.LastTerrain.Name);
 
             if (validBonuses.Count != 0 || goodPlotForOasis)
             {
                 if (goodPlotForOasis)
                 {
-                    plot.AddTerrainFeature(oasisEquivalent!.Name);
+                    plot.AddTerrainFeature(oasisEquivalent.NotNull().Name);
                     canPlaceOasis = false;
                 }
                 else
@@ -272,7 +272,7 @@ public static class StartNormalizer
         var baseYield = tile.Stats.GetTileStats((Unciv.Models.Ruleset.Unique.IGameContextCivilization?)null)[stat];
         if (unimproved) return baseYield;
 
-        var improvements = tile.TileMap.Ruleset!.TileImprovements.Values
+        var improvements = tile.TileMap.Ruleset.NotNull().TileImprovements.Values
             .Where(it => !((IHasUniques)it).HasUnique(UniqueType.GreatImprovement)
                 && it.UniqueTo == null
                 && it.TerrainsCanBeBuiltOn.Contains(tile.LastTerrain.Name))

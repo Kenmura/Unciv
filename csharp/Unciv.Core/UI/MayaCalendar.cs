@@ -1,4 +1,5 @@
 using System.Globalization;
+using Unciv.Utils;
 
 namespace Unciv.UI.Components;
 
@@ -45,7 +46,7 @@ public static class MayaCalendar
         var sb = new System.Text.StringBuilder();
         while (digits.Count > 0)
         {
-            int last = digits.Last!.Value;
+            int last = digits.Last.NotNull().Value;
             digits.RemoveLast();
             sb.Append(unchecked((char)(Zero + last)));
         }

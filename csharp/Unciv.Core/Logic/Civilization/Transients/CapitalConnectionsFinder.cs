@@ -49,7 +49,7 @@ public class CapitalConnectionsFinder
     private readonly Civilization civInfo;
     private List<CityObject> citiesToCheck;
     private readonly OrderedDictionary<CityObject, HashSet<CapitalConnectionMedium>> citiesReachedToMediums = [];
-    private List<CityObject> newCitiesToCheck = null!; // Kotlin lateinit
+    private List<CityObject> newCitiesToCheck = null!; // JUSTIFY: T119 Kotlin lateinit
 
     /// <summary>All cities we want to know about, including our own</summary>
     private readonly List<CityObject> openBordersCivCities;

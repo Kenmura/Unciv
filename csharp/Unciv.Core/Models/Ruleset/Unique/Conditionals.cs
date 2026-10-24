@@ -88,7 +88,7 @@ public static class Conditionals
             if (state.GameInfo == null) return false;
             int? era = state.GameInfo.Ruleset.GetEraNumber(eraParam);
             if (era == null) return false;
-            return compare(state.RelevantCiv!.GetEraNumber(), era.Value);
+            return compare(state.RelevantCiv.NotNull().GetEraNumber(), era.Value);
         }
 
         // Helper for ConditionalWhenAboveAmountStatResource and its below counterpart
@@ -191,14 +191,14 @@ public static class Conditionals
                 return CheckOnCiv(c =>
                 {
                     string filter = P(0);
-                    if (c.GameInfo!.Ruleset.Technologies.ContainsKey(filter)) return c.IsTechResearched(P(0)); // fast common case
+                    if (c.GameInfo.NotNull().Ruleset.Technologies.ContainsKey(filter)) return c.IsTechResearched(P(0)); // fast common case
                     return c.AnyResearchedTechnologyMatchesFilter(filter);
                 });
             case UniqueType.ConditionalNoTech:
                 return CheckOnCiv(c =>
                 {
                     string filter = P(0);
-                    if (c.GameInfo!.Ruleset.Technologies.ContainsKey(filter)) return !c.IsTechResearched(P(0)); // fast common case
+                    if (c.GameInfo.NotNull().Ruleset.Technologies.ContainsKey(filter)) return !c.IsTechResearched(P(0)); // fast common case
                     return !c.AnyResearchedTechnologyMatchesFilter(filter);
                 });
             case UniqueType.ConditionalWhileResearching: return CheckOnCiv(c => c.CurrentTechnologyMatchesFilter(P(0)));
@@ -306,11 +306,11 @@ public static class Conditionals
                 return CheckOnCiv(c =>
                     state.RelevantTile != null && (
                         c.Cities.Count == 0 || c.GetCapital() == null
-                        || c.GetCapital()!.GetCenterTileOrNull()!.GetContinent() != state.RelevantTile.GetContinent()));
+                        || c.GetCapital().NotNull().GetCenterTileOrNull().NotNull().GetContinent() != state.RelevantTile.GetContinent()));
             case UniqueType.ConditionalAdjacentUnit:
                 return state.RelevantCiv != null
                     && state.RelevantUnit != null
-                    && state.RelevantTile!.Neighbors.Any(tile => tile.GetUnits().Any(it =>
+                    && state.RelevantTile.NotNull().Neighbors.Any(tile => tile.GetUnits().Any(it =>
                         !Equals(it, state.RelevantUnit) && Equals(it.Civ, state.RelevantCiv) && it.MatchesFilter(P(0))));
 
             case UniqueType.ConditionalNeighborTiles:
@@ -329,13 +329,13 @@ public static class Conditionals
                     && unique.SourceObjectType == UniqueTarget.Tech
                     && CheckOnGameInfo(g => !g.Civilizations.Any(it =>
                         !Equals(it, state.RelevantCiv) && it.IsMajorCiv()
-                        && it.IsTechResearched(unique.SourceObjectName!))); // guarded by the sourceObjectType check
+                        && it.IsTechResearched(unique.SourceObjectName.NotNull()))); // guarded by the sourceObjectType check
             case UniqueType.ConditionalFirstCivToAdopt:
                 return unique != null
                     && unique.SourceObjectType == UniqueTarget.Policy
                     && CheckOnGameInfo(g => !g.Civilizations.Any(it =>
                         !Equals(it, state.RelevantCiv) && it.IsMajorCiv()
-                        && it.IsPolicyAdopted(unique.SourceObjectName!))); // guarded by the sourceObjectType check
+                        && it.IsPolicyAdopted(unique.SourceObjectName.NotNull()))); // guarded by the sourceObjectType check
 
             case UniqueType.ConditionalCountableEqualTo: return CompareCountables2(P(0), P(1), (a, b) => a == b);
             case UniqueType.ConditionalCountableDifferentThan: return CompareCountables2(P(0), P(1), (a, b) => a != b);

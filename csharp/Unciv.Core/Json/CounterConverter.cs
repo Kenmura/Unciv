@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Models;
+using Unciv.Utils;
 
 namespace Unciv.Json;
 
@@ -20,7 +21,7 @@ public class CounterConverterFactory : JsonConverterFactory
             // JUSTIFY: T118 Kotlin keeps raw String names, only string keys round-trip (permanent)
             throw new NotSupportedException($"Json (de)serialization of {typeToConvert.Name}<{keyType.Name}> is not supported; only string keys");
         Type converterType = typeof(CounterConverter<>).MakeGenericType(keyType);
-        return (JsonConverter)Activator.CreateInstance(converterType)!;
+        return (JsonConverter)Activator.CreateInstance(converterType).NotNull();
     }
 }
 
@@ -46,7 +47,7 @@ public class CounterConverter<K> : JsonConverter<Counter<K>> where K : notnull
 
             int val = JsonValueReader.ReadInt(ref reader, "Counter value");
 
-            counter[(K)(object)propName!] = val;
+            counter[(K)(object)propName.NotNull()] = val;
         }
 
         throw new JsonException("Unexpected end of JSON while reading Counter");
@@ -57,7 +58,7 @@ public class CounterConverter<K> : JsonConverter<Counter<K>> where K : notnull
         writer.WriteStartObject();
         foreach (var (k, v) in value)
         {
-            writer.WriteNumber(k.ToString()!, v);
+            writer.WriteNumber(k.ToString().NotNull(), v);
         }
         writer.WriteEndObject();
     }

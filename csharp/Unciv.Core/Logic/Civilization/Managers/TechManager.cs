@@ -235,7 +235,7 @@ public class TechManager : IsPartOfGameInfoSerialization
             prerequisites.Add(techToCheck);
         }
 
-        return prerequisites.OrderBy(it => it.Column!.ColumnNumber).ToList();
+        return prerequisites.OrderBy(it => it.Column.NotNull().ColumnNumber).ToList();
     }
 
     public int GetScienceFromGreatScientist()
@@ -257,7 +257,7 @@ public class TechManager : IsPartOfGameInfoSerialization
         // Apparently yes, we care about the absolute tech cost, not the actual calculated-for-this-player tech cost,
         //  so don't change to costOfTech()
         return Math.Min(overflowScience, Math.Max(KotlinMath.FloatToInt(CivInfo.Stats.StatsForNextTurn.Science) * 5,
-                GetRuleset().Technologies[CurrentTechnologyName()!].Cost));
+                GetRuleset().Technologies[CurrentTechnologyName().NotNull()].Cost));
     }
 
     private int GetScienceFromResearchAgreements()
@@ -564,17 +564,17 @@ public class TechManager : IsPartOfGameInfoSerialization
         TechColumn? maxColumn = null;
         foreach (var tech in ResearchedTechnologies)
         {
-            var column = tech.Column!;
+            var column = tech.Column.NotNull();
             if (maxColumn == null || maxColumn.ColumnNumber < column.ColumnNumber) maxColumn = column;
         }
-        var maxEraOfResearchedTechs = maxColumn!.Era;
+        var maxEraOfResearchedTechs = maxColumn.NotNull().Era;
         var maxEra = ruleset.Eras[maxEraOfResearchedTechs];
 
         TechColumn? minColumn = null;
         foreach (var tech in ruleset.Technologies.Values)
         {
             if (ResearchedTechnologies.Contains(tech)) continue;
-            var column = tech.Column!;
+            var column = tech.Column.NotNull();
             if (minColumn == null || minColumn.ColumnNumber > column.ColumnNumber) minColumn = column;
         }
         if (minColumn == null)

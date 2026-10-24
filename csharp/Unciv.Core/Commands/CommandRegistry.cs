@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Unciv.Utils;
 
 namespace Unciv.Commands;
 
@@ -61,6 +62,6 @@ public sealed class CommandRegistry<TState>(JsonSerializerOptions options)
     // Trusted input (a log we wrote ourselves): throws if it cannot be read.
     public ICommand<TState> FromEnvelope(CommandEnvelope envelope) =>
         TryFromEnvelope(envelope, out var command, out var failure)
-            ? command!
+            ? command.NotNull()
             : throw new CommandDesyncException($"Cannot read command {envelope.Seq}: {failure.Message}");
 }

@@ -326,7 +326,7 @@ public class Spy : IsPartOfGameInfoSerialization
 
     private void DemandToNotBeSpiedOn(Civilization otherCiv)
     {
-        var otherCivDiplomacyManager = otherCiv.GetDiplomacyManager(CivInfo)!;
+        var otherCivDiplomacyManager = otherCiv.GetDiplomacyManager(CivInfo).NotNull();
         otherCivDiplomacyManager.AddModifier(DiplomaticModifiers.SpiedOnUs, -15f);
         otherCivDiplomacyManager.SetFlag(DiplomacyFlags.DiscoveredSpiesInOurCities, 30, true);
     }
@@ -356,8 +356,8 @@ public class Spy : IsPartOfGameInfoSerialization
         if (randomValue <= successChance)
         {
             // Success
-            float previousInfluence = allyCiv != null ? cityState.GetDiplomacyManager(allyCiv)!.GetInfluence() : 80f;
-            cityState.GetDiplomacyManager(CivInfo)!.SetInfluence(previousInfluence);
+            float previousInfluence = allyCiv != null ? cityState.GetDiplomacyManager(allyCiv).NotNull().GetInfluence() : 80f;
+            cityState.GetDiplomacyManager(CivInfo).NotNull().SetInfluence(previousInfluence);
 
             CivInfo.AddNotification($"Your spy [{Name}] successfully staged a coup in [{cityState.CivName}]!", GetCity().Location,
                 Notification.NotificationCategory.Espionage, NotificationIcon.Spy, cityState.CivName);
@@ -374,7 +374,7 @@ public class Spy : IsPartOfGameInfoSerialization
                 civ.AddNotification($"A spy from [{CivInfo.CivName}] successfully staged a coup in [{cityState.CivName}]!", GetCity().Location,
                     Notification.NotificationCategory.Espionage, CivInfo.CivName, NotificationIcon.Spy, cityState.CivName);
                 if (civ.IsSpectator()) continue;
-                cityState.GetDiplomacyManager(civ)!.ReduceInfluence(10f); // Guess
+                cityState.GetDiplomacyManager(civ).NotNull().ReduceInfluence(10f); // Guess
             }
             SetAction(SpyAction.RiggingElections, 10);
             cityState.CityStateFunctions.UpdateAllyCivForCityState();
@@ -383,7 +383,7 @@ public class Spy : IsPartOfGameInfoSerialization
         {
             // Failure
             var spy = allyCiv?.EspionageManager.GetSpyAssignedToCity(GetCity());
-            cityState.GetDiplomacyManager(CivInfo)!.AddInfluence(-20f);
+            cityState.GetDiplomacyManager(CivInfo).NotNull().AddInfluence(-20f);
             allyCiv?.AddNotification($"A spy from [{CivInfo.CivName}] failed to stage a coup in our ally [{cityState.CivName}] and was killed!", GetCity().Location,
                 Notification.NotificationCategory.Espionage, CivInfo.CivName, NotificationIcon.Spy, cityState.CivName);
             allyCiv?.GetDiplomacyManagerOrMeet(CivInfo).AddModifier(DiplomaticModifiers.SpiedOnUs, -10f);
@@ -404,9 +404,9 @@ public class Spy : IsPartOfGameInfoSerialization
 
         // Influence difference should always be a positive value
         float influenceDifference = cityState.AllyCiv != null
-            ? cityState.GetDiplomacyManager(cityState.AllyCiv)!.GetInfluence()
+            ? cityState.GetDiplomacyManager(cityState.AllyCiv).NotNull().GetInfluence()
             : 60f;
-        influenceDifference -= cityState.GetDiplomacyManager(CivInfo)!.GetInfluence();
+        influenceDifference -= cityState.GetDiplomacyManager(CivInfo).NotNull().GetInfluence();
         successPercentage -= influenceDifference / 2f;
 
         // If we are viewing the success chance we don't want to reveal that there is a defending spy

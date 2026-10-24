@@ -204,15 +204,15 @@ public class MapGenerator
         var isMapEditor = civilizations == null || civilizations.Count == 0;
         if (!isMapEditor)
         {
-            map.GameInfo = gameInfo!;
+            map.GameInfo = gameInfo.NotNull();
             var regions = new MapRegions(Ruleset);
-            var majorCivs = civilizations!.Where(it => Ruleset.Nations[it.CivName].IsMajorCiv).ToList();
+            var majorCivs = civilizations.NotNull().Where(it => Ruleset.Nations[it.CivName].IsMajorCiv).ToList();
             RunAndMeasure(() => regions.GenerateRegions(map, majorCivs.Count));
             RunAndMeasure(() => regions.AssignRegions(map, majorCivs.Cast<IMapRegionsCivilization>().ToList(), gameParameters));
             // Natural wonders need to go before most resources since there is a minimum distance
             RunAndMeasure(() => new NaturalWonderGenerator(Ruleset, randomness).SpawnNaturalWonders(map));
             RunAndMeasure(() => regions.PlaceResourcesAndMinorCivs(map,
-                civilizations!.Where(it => Ruleset.Nations[it.CivName].IsCityState).Cast<IMapRegionsCivilization>().ToList()));
+                civilizations.NotNull().Where(it => Ruleset.Nations[it.CivName].IsCityState).Cast<IMapRegionsCivilization>().ToList()));
         }
         else
         {

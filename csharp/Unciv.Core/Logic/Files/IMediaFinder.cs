@@ -129,7 +129,7 @@ public class Sounds(IMediaEnvironment environment) : IMediaFinder
         .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
         .Where(it => it.PropertyType == typeof(UncivSound))
         .OrderBy(it => it.Name, StringComparer.Ordinal)
-        .Select(it => ((UncivSound)it.GetValue(null)!).FileName);
+        .Select(it => ((UncivSound)it.GetValue(null).NotNull()).FileName);
 
     // Extract Unit attack sounds from the larger vanilla ruleset
     // Remember this replaces enumeration over *bundled* assets - not necessary for mods
@@ -141,7 +141,7 @@ public class Sounds(IMediaEnvironment environment) : IMediaFinder
         return ruleset.Units.Values
             .Where(it => it.AttackSound != null)
             .DistinctBy(it => it.AttackSound)
-            .Select(it => (it, it.AttackSound!));
+            .Select(it => (it, it.AttackSound.NotNull()));
     }
 }
 

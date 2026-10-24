@@ -77,7 +77,7 @@ public static class MapRegionResources
             var possibleResourcesForTile = resourceOptions.Where(it => it.GeneratesNaturallyOn(tile)).ToList();
             if (possibleResourcesForTile.Count == 0) continue;
 
-            if (tileData[tile]!.Impacts.ContainsKey(impactType))
+            if (tileData[tile].NotNull().Impacts.ContainsKey(impactType))
             {
                 fallbackTiles.Add(tile); // Taken but might be a viable fallback tile
             }
@@ -98,7 +98,7 @@ public static class MapRegionResources
         while (amountPlaced < amountToPlace && fallbackTiles.Count > 0)
         {
             // Sorry, we do need to re-sort the list for every pass since new impacts are made with every placement
-            var bestTile = fallbackTiles.MinByOrNull(it => tileData[it]!.Impacts[impactType])!;
+            var bestTile = fallbackTiles.MinByOrNull(it => tileData[it].NotNull().Impacts[impactType]).NotNull();
             var rng = new GameContext(tile: bestTile).StateBasedRandom("MapRegionResources.placeResourcesInTiles");
             fallbackTiles.Remove(bestTile);
             var possibleResourcesForTile = resourceOptions.Where(it => it.GeneratesNaturallyOn(bestTile)).ToList();
@@ -128,7 +128,7 @@ public static class MapRegionResources
             if (tile.Resource == null && resource.GeneratesNaturallyOn(tile))
             {
                 if (ratioProgress >= 1f &&
-                    !(respectImpacts && tileData[tile]!.Impacts.ContainsKey(impactType)))
+                    !(respectImpacts && tileData[tile].NotNull().Impacts.ContainsKey(impactType)))
                 {
                     tile.SetTileResource(resource, majorDeposit);
                     ratioProgress -= 1f;

@@ -123,7 +123,7 @@ public static class CityResources
         {
             var gameContext = new GameContext(city.Civ, city, tile: tileInfo);
             var tileImprovement = tileInfo.GetUnpillagedTileImprovement();
-            ((IHasUniques)tileImprovement!).ForEachMatchingUnique(UniqueType.ProvidesResources, gameContext, unique =>
+            ((IHasUniques)tileImprovement.NotNull()).ForEachMatchingUnique(UniqueType.ProvidesResources, gameContext, unique =>
             {
                 if (city.GetRuleset().TileResources.TryGetValue(unique.Params[1], out var resource))
                     resourceSupplyList.Add(
@@ -140,7 +140,7 @@ public static class CityResources
         {
             var gameContext = new GameContext(city.Civ, city, tile: tileInfo);
             var tileImprovement = tileInfo.GetUnpillagedTileImprovement();
-            ((IHasUniques)tileImprovement!).ForEachMatchingUnique(UniqueType.ConsumesResources, gameContext, unique =>
+            ((IHasUniques)tileImprovement.NotNull()).ForEachMatchingUnique(UniqueType.ConsumesResources, gameContext, unique =>
             {
                 if (city.GetRuleset().TileResources.TryGetValue(unique.Params[1], out var resource))
                     resourceSupplyList.Add(

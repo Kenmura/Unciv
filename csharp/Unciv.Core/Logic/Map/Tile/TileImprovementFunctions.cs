@@ -81,7 +81,7 @@ public class TileImprovementFunctions(Tile tile)
             if (removals == null || removals.Count == 0) return false;
             var featureRemovals = Tile.TerrainFeatures
                 .Select(feature => Tile.Ruleset.TileRemovals.FirstOrDefault(it => it.Name == Constants.Remove + feature))
-                .Where(it => it != null).Select(it => it!).ToList();
+                .Where(it => it != null).Select(it => it.NotNull()).ToList();
             if (featureRemovals.Count == 0) return false;
             if (featureRemovals.Any(it => !removals.Contains(it))) return false;
             var clonedTile = Tile.Clone(addUnits: false);
@@ -141,7 +141,7 @@ public class TileImprovementFunctions(Tile tile)
 
         // Can't build it if it is only allowed to improve resources and it doesn't improve this resource
         if (((IHasUniques)improvement).HasUnique(UniqueType.CanOnlyImproveResource, context)
-                && (!visible || !Tile.TileResource!.IsImprovedBy(improvement.Name)))
+                && (!visible || !Tile.TileResource.NotNull().IsImprovedBy(improvement.Name)))
             return false;
 
         // At this point we know this is a normal improvement and that there is no reason not to allow it to be built.
@@ -156,7 +156,7 @@ public class TileImprovementFunctions(Tile tile)
             return true;
 
         // I don't particularly like this check, but it is required to build mines on non-hill resources
-        if (visible && Tile.TileResource!.IsImprovedBy(improvement.Name)
+        if (visible && Tile.TileResource.NotNull().IsImprovedBy(improvement.Name)
                 && ExtendedDomainCheck(improvement))
             return true;
         // No reason this improvement should be built here, so can't build it
@@ -366,7 +366,7 @@ public class TileImprovementFunctions(Tile tile)
         {
             var statsToAdd = unique.Stats;
             if (unique.IsModifiedByGameSpeed())
-                statsToAdd *= civ.GameInfo!.Speed.Modifier;
+                statsToAdd *= civ.GameInfo.NotNull().Speed.Modifier;
             if (unique.IsModifiedByGameProgress())
                 statsToAdd *= civ.GetGameProgressModifier(unique);
             stats.Add(statsToAdd);

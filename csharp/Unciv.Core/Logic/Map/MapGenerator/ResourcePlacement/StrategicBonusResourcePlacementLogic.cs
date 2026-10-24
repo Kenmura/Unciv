@@ -31,7 +31,7 @@ public static class StrategicBonusResourcePlacementLogic
     /// We also save a list of all land tiles for minor deposit generation.</summary>
     internal static void PlaceStrategicAndBonuses(TileMap tileMap, List<Region> regions, TileDataMap tileData)
     {
-        var ruleset = tileMap.Ruleset!;
+        var ruleset = tileMap.Ruleset.NotNull();
         var strategicResources = ruleset.TileResources.Values.Where(it => it.ResourceType == ResourceType.Strategic).ToList();
         // As usual, if there are any relevant json definitions, assume they are complete
         var fallbackStrategic = !ruleset.TileResources.Values.Any(it =>
@@ -97,7 +97,7 @@ public static class StrategicBonusResourcePlacementLogic
                         bestCount = value;
                     }
                 }
-                terrain = best!;
+                terrain = best.NotNull();
             }
             else terrain = region.Type;
             var resourceUnique = ((IHasUniques)ruleset.Terrains[terrain]).GetMatchingUniques(UniqueType.RegionExtraResource).FirstOrDefault();
@@ -111,7 +111,7 @@ public static class StrategicBonusResourcePlacementLogic
                 if (possibleResources.Count == 0) continue;
                 resource = possibleResources.Random(rng);
             }
-            var candidateTiles = tileMap[region.StartPosition!.Value].GetTilesAtDistance(3).ShuffledSequence(shuffleRng);
+            var candidateTiles = tileMap[region.StartPosition.NotNull()].GetTilesAtDistance(3).ShuffledSequence(shuffleRng);
             var amount = resourceUnique != null ? 2 : 1; // Place an extra if the region type requests it
             if (MapRegionResources.TryAddingResourceToTiles(tileData, resource, amount, candidateTiles) == 0)
             {
@@ -249,7 +249,7 @@ public static class StrategicBonusResourcePlacementLogic
         var minorDepositsAdded = 0;
         foreach (var tile in landList)
         {
-            if (tile.Resource != null || tileData[tile]!.Impacts.ContainsKey(ImpactType.Strategic))
+            if (tile.Resource != null || tileData[tile].NotNull().Impacts.ContainsKey(ImpactType.Strategic))
                 continue;
             var conditionalTerrain = new GameContext(tile: tile);
             if (((IHasUniques)tile.GetBaseTerrain()).HasUnique(UniqueType.BlocksResources, conditionalTerrain))

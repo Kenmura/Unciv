@@ -1,4 +1,5 @@
 using Unciv.Models.StatTypes;
+using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Unique;
 
@@ -155,7 +156,7 @@ public interface IHasUniques : INamed, IRulesetObjectParameterView
     {
         var eraAvailable = Era(ruleset);
         if (eraAvailable == null) return true; // No technologies are required, so available in the starting era.
-        return eraAvailable.EraNumber <= ruleset.GetEra(requestedEra)!.EraNumber;
+        return eraAvailable.EraNumber <= ruleset.GetEra(requestedEra).NotNull().EraNumber;
     }
 
     /// <summary>Do this object's <see cref="UniqueType.OnlyAvailable"/> and <see cref="UniqueType.Unavailable"/> uniques all pass for <paramref name="gameContext"/>?</summary>

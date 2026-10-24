@@ -1,5 +1,6 @@
 using Unciv.Models.StatTypes;
 using Unciv.Models.Translations;
+using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Unique;
 
@@ -246,7 +247,7 @@ public class Unique : IUniqueTargetView
         var deprecationAnnotation = GetDeprecationAnnotation();
         if (deprecationAnnotation == null) return "";
         string replacementUniqueText = deprecationAnnotation.ReplaceWith;
-        string deprecatedSourceText = Type != null ? Type.Value.Text() : DeprecatedType!.Text;
+        string deprecatedSourceText = Type != null ? Type.Value.Text() : DeprecatedType.NotNull().Text;
         var deprecatedUniquePlaceholders = deprecatedSourceText.GetPlaceholderParameters();
         var possibleUniques = replacementUniqueText.Split(Constants.UniqueOrDelimiter);
 

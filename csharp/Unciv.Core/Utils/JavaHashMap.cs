@@ -80,7 +80,7 @@ public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
     public bool TryGetValue(TKey key, out TValue value)
     {
         var node = FindNode(key);
-        value = node != null ? node.Value : default!;
+        value = node != null ? node.Value : default!; // JUSTIFY: T119 default of an unconstrained V on a miss, as Java null
         return node != null;
     }
 
@@ -215,7 +215,7 @@ public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
             if (oldCap >= MaximumCapacity)
             {
                 threshold = int.MaxValue;
-                return oldTable!;
+                return oldTable.NotNull();
             }
             newCap = oldCap << 1;
             if (newCap < MaximumCapacity && oldCap >= DefaultInitialCapacity) newThr = oldThr << 1;

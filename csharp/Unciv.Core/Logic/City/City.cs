@@ -698,10 +698,10 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
             case "Garrisoned": return IsGarrisoned();
             case "in all cities in which the majority religion is a major religion":
                 return Religion.GetMajorityReligionName() != null
-                    && Religion.GetMajorityReligion()!.IsMajorReligion();
+                    && Religion.GetMajorityReligion().NotNull().IsMajorReligion();
             case "in all cities in which the majority religion is an enhanced religion":
                 return Religion.GetMajorityReligionName() != null
-                    && Religion.GetMajorityReligion()!.IsEnhancedReligion();
+                    && Religion.GetMajorityReligion().NotNull().IsEnhancedReligion();
             case "in non-enemy foreign cities":
                 return viewingCiv != null && !ReferenceEquals(viewingCiv, Civ)
                     && !Civ.IsAtWarWith(viewingCiv);

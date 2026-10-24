@@ -20,7 +20,7 @@ public static class UniqueAutoUpdater
     {
         replaceableUniques ??= GetDeprecatedReplaceableUniques(mod, mod);
         var filesToReplace = RulesetFile.Values.Select(it => it.Filename);
-        var jsonFolder = mod.FolderLocation!.Child("jsons");
+        var jsonFolder = mod.FolderLocation.NotNull().Child("jsons");
         var result = new List<(string, string)>();
         foreach (string fileName in filesToReplace)
         {

@@ -250,9 +250,9 @@ public class CivInfoTransientCache(Civilization civInfo)
         foreach (var tile in newlyViewedNaturalWonders)
         {
             // GBR could be discovered twice otherwise!
-            if (CivInfo.NaturalWonders.Contains(tile.NaturalWonder!))
+            if (CivInfo.NaturalWonders.Contains(tile.NaturalWonder.NotNull()))
                 continue;
-            CivInfo.NaturalWonders.Add(tile.NaturalWonder!);
+            CivInfo.NaturalWonders.Add(tile.NaturalWonder.NotNull());
             if (CivInfo.IsSpectator()) continue; // don't trigger anything
 
             CivInfo.AddNotification($"We have discovered [{tile.NaturalWonder}]!",
@@ -265,7 +265,7 @@ public class CivInfoTransientCache(Civilization civInfo)
                 .SelectMany(it => it.NaturalWonders)
                 .ToList();
             if (tile.TerrainHasUnique(UniqueType.GrantsStatsToFirstToDiscover)
-                && !discoveredNaturalWonders.Contains(tile.NaturalWonder!))
+                && !discoveredNaturalWonders.Contains(tile.NaturalWonder.NotNull()))
             {
                 foreach (var unique in tile.GetTerrainMatchingUniques(UniqueType.GrantsStatsToFirstToDiscover))
                     statsGained.Add(unique.Stats);
@@ -276,7 +276,7 @@ public class CivInfoTransientCache(Civilization civInfo)
                 var normalBonus = Models.StatTypes.Stats.Parse(unique.Params[0]);
                 var firstDiscoveredBonus = Models.StatTypes.Stats.Parse(unique.Params[1]);
 
-                if (discoveredNaturalWonders.Contains(tile.NaturalWonder!))
+                if (discoveredNaturalWonders.Contains(tile.NaturalWonder.NotNull()))
                     statsGained.Add(normalBonus);
                 else
                     statsGained.Add(firstDiscoveredBonus);
@@ -285,7 +285,7 @@ public class CivInfoTransientCache(Civilization civInfo)
             string? naturalWonder = null;
 
             if (!statsGained.IsEmpty())
-                naturalWonder = tile.NaturalWonder!;
+                naturalWonder = tile.NaturalWonder.NotNull();
 
             if (!statsGained.IsEmpty() && naturalWonder != null)
             {
@@ -358,7 +358,7 @@ public class CivInfoTransientCache(Civilization civInfo)
             UniqueMap uniqueMap;
             if (ReferenceEquals(cityState.AllyCiv, CivInfo))
                 uniqueMap = cityState.CityStateType.AllyBonusUniqueMap;
-            else if (cityState.GetDiplomacyManager(CivInfo)!.GetInfluence() >= 30)
+            else if (cityState.GetDiplomacyManager(CivInfo).NotNull().GetInfluence() >= 30)
                 uniqueMap = cityState.CityStateType.FriendBonusUniqueMap;
             else
                 continue;
@@ -490,7 +490,7 @@ public class CivInfoTransientCache(Civilization civInfo)
 
         // Check if different continents (unless already max distance, or water map)
         if (connections > 0 && proximity != Proximity.Distant && !CivInfo.GameInfo.TileMap.IsWaterMap()
-            && CivInfo.GetCapital()!.GetCenterTile().GetContinent() != otherCiv.GetCapital()!.GetCenterTile().GetContinent())
+            && CivInfo.GetCapital().NotNull().GetCenterTile().GetContinent() != otherCiv.GetCapital().NotNull().GetCenterTile().GetContinent())
         {
             // Different continents - increase separation by one step
             proximity = proximity switch

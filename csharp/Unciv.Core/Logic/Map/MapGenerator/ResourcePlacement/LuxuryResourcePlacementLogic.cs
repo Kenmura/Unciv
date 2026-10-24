@@ -109,7 +109,7 @@ public static class LuxuryResourcePlacementLogic
                 ((IHasUniques)it).HasUnique(UniqueType.ResourceWeighting, regionConditional)) &&
             // Check that there is enough coast and that there is coast close enough to starting location if it is a water based resource
             ((region.GetTerrainAmount("Coastal") >= 12 &&
-                region.TileMap[region.StartPosition!.Value].IsAdjacentToCoast()) ||
+                region.TileMap[region.StartPosition.NotNull()].IsAdjacentToCoast()) ||
                 !MapRegionFunctions.IsWaterOnlyResource(it, ruleset))).ToList();
 
         // If we couldn't find any options, pick from all luxuries. First try to not pick water luxuries on land regions
@@ -225,7 +225,7 @@ public static class LuxuryResourcePlacementLogic
         var shuffleRng = ResourcePlacementRandom.ForShuffling(tileMap, "LuxuryResourcePlacementLogic.addExtraLuxuryToStarts");
         foreach (var region in regions)
         {
-            var tilesToCheck = tileMap[region.StartPosition!.Value].GetTilesInDistanceRange(new IntRange(1, 2));
+            var tilesToCheck = tileMap[region.StartPosition.NotNull()].GetTilesInDistanceRange(new IntRange(1, 2));
             var candidateLuxuries = randomLuxuries.Shuffled(shuffleRng);
             if (!tileMap.MapParameters.GetStrategicBalance())
                 candidateLuxuries.AddRange(specialLuxuries.Shuffled(shuffleRng)
@@ -317,7 +317,7 @@ public static class LuxuryResourcePlacementLogic
                     .Where(it => IsShoreOfContinent(it, region.ContinentID))
                 : region.Tiles;
             var sortedCandidates = candidates
-                .Select(it => (Tile: it, Key: HexMath.GetDistance(it.Position, region.StartPosition!.Value) + (rng.NextFloat() * 20f)))
+                .Select(it => (Tile: it, Key: HexMath.GetDistance(it.Position, region.StartPosition.NotNull()) + (rng.NextFloat() * 20f)))
                 .ToList()
                 .OrderBy(it => it.Key)
                 .Select(it => it.Tile)
@@ -398,7 +398,7 @@ public static class LuxuryResourcePlacementLogic
             if (region.Luxury == null || !ruleset.TileResources.TryGetValue(region.Luxury, out var luxuryToPlace)) continue;
             // First check 2 inner rings
             // Kotlin Sequences: every enumeration shuffles and sorts anew
-            var startTile = tileMap[region.StartPosition!.Value];
+            var startTile = tileMap[region.StartPosition.NotNull()];
             var firstPass = ResourcePlacementRandom.Deferred(() => startTile.GetTilesInDistanceRange(new IntRange(1, 2))
                 .Shuffled(shuffleRng).OrderBy(it => it.GetTileFertility(false))); // Check bad tiles first
             targetLuxuries -= MapRegionResources.TryAddingResourceToTiles(

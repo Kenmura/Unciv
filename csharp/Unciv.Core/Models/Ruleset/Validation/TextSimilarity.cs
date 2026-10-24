@@ -1,3 +1,5 @@
+using Unciv.Utils;
+
 namespace Unciv.Models.Ruleset.Validation;
 
 // Ported from core/src/com/unciv/models/ruleset/validation/TextSimilarity.kt (top-level functions getTextDistance and getRelativeTextDistance).
@@ -51,15 +53,15 @@ public static class TextSimilarity
                 // Preferential behaviour when the offsets are equal does make the operation slightly non-commutative.
                 if (firstMatchOffset2 == null || (firstMatchOffset1 != null && firstMatchOffset1 < firstMatchOffset2))
                 {
-                    dist += firstMatchOffset1!.Value;
-                    i1 = firstMatchIndex1!.Value + 1;
+                    dist += firstMatchOffset1.NotNull();
+                    i1 = firstMatchIndex1.NotNull() + 1;
                     i2++;
                 }
                 else if (firstMatchOffset1 == null || firstMatchOffset1 >= firstMatchOffset2)
                 {
                     dist += firstMatchOffset2.Value;
                     i1++;
-                    i2 = firstMatchIndex2!.Value + 1;
+                    i2 = firstMatchIndex2.NotNull() + 1;
                 }
                 else
                 {

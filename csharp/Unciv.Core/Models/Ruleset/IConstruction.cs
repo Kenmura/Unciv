@@ -172,7 +172,7 @@ public interface INonPerpetualConstruction : IConstruction, IHasUniques
         foreach (var unique in GetMatchingUniquesNotConflicting(UniqueType.CostsResources, state))
         {
             var amount = ParseInt(unique.Params[0]);
-            if (unique.IsModifiedByGameSpeed()) amount = KotlinMath.FloatToInt(amount * state.GameInfo!.Speed.Modifier);
+            if (unique.IsModifiedByGameSpeed()) amount = KotlinMath.FloatToInt(amount * state.GameInfo.NotNull().Speed.Modifier);
             counter.Add(unique.Params[1], amount);
         }
         return counter;

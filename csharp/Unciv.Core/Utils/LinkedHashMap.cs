@@ -36,7 +36,7 @@ public sealed class LinkedHashMap<TKey, TValue> : IReadOnlyDictionary<TKey, TVal
             value = node.Value.Value;
             return true;
         }
-        value = default!;
+        value = default!; // JUSTIFY: T119 out value is unspecified when TryGetValue returns false
         return false;
     }
 

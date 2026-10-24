@@ -207,7 +207,7 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     }
 
     public BaseUnit GetReplacedUnit(IRulesetConstructionView ruleset) =>
-        Replaces == null ? this : ruleset.GetUnit(Replaces)!;
+        Replaces == null ? this : ruleset.GetUnit(Replaces).NotNull();
 
     /// <summary>Implements UniqueParameterType.BaseUnitFilter</summary>
     public bool MatchesFilter(string filter, GameContext? state = null, bool multiFilter = true)

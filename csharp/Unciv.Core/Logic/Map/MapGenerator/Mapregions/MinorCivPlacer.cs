@@ -198,7 +198,7 @@ public static class MinorCivPlacer
             var rng = new GameContext(gameInfo: tileMap.GameInfo).StateBasedRandom("MinorCivPlcer.tryPlaceMinorCivsInTiles");
             var chosenTile = pool.Random(rng);
             tileList.Remove(chosenTile);
-            var data = tileData[chosenTile]!;
+            var data = tileData[chosenTile].NotNull();
             // If the randomly chosen tile is too close to a player or a city state, discard it
             if (data.Impacts.ContainsKey(MapRegions.ImpactType.MinorCiv))
                 continue;
@@ -231,7 +231,7 @@ public static class MinorCivPlacer
 
     private static bool CanPlaceMinorCiv(Tile tile, TileDataMap tileData) =>
         !tile.IsWater && !tile.IsImpassible()
-        && !tileData[tile]!.IsJunk
+        && !tileData[tile].NotNull().IsJunk
         && !((IHasUniques)tile.GetBaseTerrain()).GetMatchingUniques(UniqueType.HasQuality).Any(it => it.Params[0] == "Undesirable") // So we don't get snow hills
         && tile.Neighbors.Count == 6; // Avoid map edges
 

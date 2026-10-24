@@ -225,7 +225,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
             if (prophet == null) return;
             if (birthCity != null) // e.g. mosque of djenne bonuses
                 AddConstructionBonuses(prophetUnit, prophet, birthCity);
-            prophet.Religion = Religion!.Name;
+            prophet.Religion = Religion.NotNull().Name;
             StoredFaith -= prophetCost;
             CivInfo.CivConstructions.BoughtItemsWithIncreasingPrice.Add(prophetUnit.Name, 1);
         }
@@ -332,7 +332,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
     }
 
     // TODO(T115): Tile.GetCity() is typed by its IGameContextCity seam; City is not ported yet
-    private static CityObject CityOf(Tile tile) => (CityObject)tile.GetCity()!;
+    private static CityObject CityOf(Tile tile) => (CityObject)tile.GetCity().NotNull();
 
     public bool MayFoundReligionHere(Tile tile)
     {
@@ -381,7 +381,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         ReligionState = ReligionState.EnhancingReligion;
 
         var humanPlayers = CivInfo.GameInfo.Civilizations.Where(it => it.IsHuman() && !ReferenceEquals(it, CivInfo)).ToList();
-        var religion = CivInfo.ReligionManager.Religion!;
+        var religion = CivInfo.ReligionManager.Religion.NotNull();
 
         foreach (var civ in humanPlayers)
         {
@@ -471,7 +471,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         if (ReligionState == ReligionState.None)
             FoundPantheon(beliefs[0].Name, useFreeBeliefs); // makes religion non-null
         // add beliefs (religion exists at this point)
-        Religion!.AddBeliefs(beliefs);
+        Religion.NotNull().AddBeliefs(beliefs);
 
         switch (ReligionState)
         {

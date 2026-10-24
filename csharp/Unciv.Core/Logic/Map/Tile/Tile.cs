@@ -350,9 +350,9 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     public TileImprovement? GetImprovementToPillage()
     {
         if (CanPillageTileImprovement())
-            return TileImprovement!;
+            return TileImprovement.NotNull();
         if (CanPillageRoad())
-            return GetRoadTileImprovement()!;
+            return GetRoadTileImprovement().NotNull();
         return null;
     }
 
@@ -369,9 +369,9 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     public TileImprovement? GetImprovementToRepair()
     {
         if (Improvement != null && ImprovementIsPillaged)
-            return TileImprovement!;
+            return TileImprovement.NotNull();
         if (RoadStatus != RoadStatus.None && RoadIsPillaged)
-            return GetRoadTileImprovement()!;
+            return GetRoadTileImprovement().NotNull();
         return null;
     }
 
@@ -391,8 +391,8 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     {
         return RoadStatus != RoadStatus.None &&
             !RoadIsPillaged &&
-            !((IHasUniques)GetRoadTileImprovement()!).HasUnique(UniqueType.Unpillagable) &&
-            !((IHasUniques)GetRoadTileImprovement()!).HasUnique(UniqueType.Irremovable);
+            !((IHasUniques)GetRoadTileImprovement().NotNull()).HasUnique(UniqueType.Unpillagable) &&
+            !((IHasUniques)GetRoadTileImprovement().NotNull()).HasUnique(UniqueType.Irremovable);
     }
 
     /// <summary>
@@ -520,7 +520,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         // canSeeResource is false for a null resource, so resource is not null from here on
         if (IsCityCenter())
         {
-            var possibleImprovements = resource!.GetImprovements();
+            var possibleImprovements = resource.NotNull().GetImprovements();
             if (possibleImprovements.Count == 0) return true;
             // Per Civ V, resources under city tiles require the *possibility of extraction* -
             //  that is, there needs to be a tile improvement you have the tech for.
@@ -531,11 +531,11 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
                     (it.TechRequired == null || civInfo.IsTechResearched(it.TechRequired)));
         }
         var unpillagedImprovement = GetUnpillagedTileImprovement();
-        if (unpillagedImprovement != null && resource!.GetImprovements().Contains(unpillagedImprovement.Name)
+        if (unpillagedImprovement != null && resource.NotNull().GetImprovements().Contains(unpillagedImprovement.Name)
                 && (unpillagedImprovement.TechRequired == null || civInfo.IsTechResearched(unpillagedImprovement.TechRequired))
             ) return true;
         // Generic-ify to unique (upstream note)
-        return resource!.ResourceType == ResourceType.Strategic &&
+        return resource.NotNull().ResourceType == ResourceType.Strategic &&
             unpillagedImprovement != null &&
             unpillagedImprovement.IsGreatImprovement();
     }
@@ -638,7 +638,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
 
     public float GetDefensiveBonus(bool includeImprovementBonus = true, IGameContextUnit? unit = null)
     {
-        var bonus = baseTerrainObject!.DefenceBonus;
+        var bonus = baseTerrainObject.NotNull().DefenceBonus;
         if (TerrainFeatureObjects.Count > 0)
         {
             var otherTerrainBonus = TerrainFeatureObjects.Max(it => it.DefenceBonus);
@@ -742,7 +742,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         // comparing the CivInfo objects is cheaper than comparing strings
         if (tileOwner == null || tileOwner == civInfo) return true;
         if (IsCityCenter() && civInfo.IsAtWarWith(tileOwner)
-                && !GetCity()!.HasJustBeenConquered) return false;
+                && !GetCity().NotNull().HasJustBeenConquered) return false;
         return civInfo.CanPassThroughTiles(tileOwner);
     }
 
@@ -874,7 +874,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         {
             if (roadOwnerObject == null && TileMap.HasGameInfo())
                 roadOwnerObject = TileMap.GameInfo.GetCivilization(roadOwner);
-            GetRoadOwner()!.NeutralRoads.Add(Position);
+            GetRoadOwner().NotNull().NeutralRoads.Add(Position);
         }
     }
 
@@ -887,7 +887,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
             if (RoadStatus != RoadStatus.None && roadOwner != "")
             {
                 // remove previous neutral tile owner
-                GetRoadOwner()!.NeutralRoads.Remove(Position);
+                GetRoadOwner().NotNull().NeutralRoads.Remove(Position);
             }
             roadOwner = city.Civ.CivId; // only when taking control, otherwise last owner
             roadOwnerObject = city.Civ;
@@ -959,7 +959,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     {
         TerrainFeatures = terrainFeatureList;
         TerrainFeatureObjects = terrainFeatureList.Select(it => Ruleset.Terrains.GetValueOrDefault(it)).OfType<Terrain>().ToList();
-        var all = new List<Terrain> { baseTerrainObject! }; // There is an assumption here that base terrains do not change
+        var all = new List<Terrain> { baseTerrainObject.NotNull() }; // There is an assumption here that base terrains do not change
         if (NaturalWonder != null) all.Add(GetNaturalWonder());
         all.AddRange(TerrainFeatureObjects);
         AllTerrains = all; // Save in memory
@@ -1261,14 +1261,14 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     {
         var lineList = new List<string> { $"Tile @{Position}" };
         if (baseTerrain == null) return lineList[0] + ", uninitialized";
-        if (IsCityCenter()) lineList.Add(GetCity()!.Name);
+        if (IsCityCenter()) lineList.Add(GetCity().NotNull().Name);
         lineList.Add(BaseTerrain);
         foreach (var terrainFeature in TerrainFeatures) lineList.Add(terrainFeature);
         if (TileResource != null)
         {
             lineList.Add(TileResource.ResourceType == ResourceType.Strategic
                 ? $"{{{ResourceAmount}}} {{{Resource}}}"
-                : Resource!);
+                : Resource.NotNull());
         }
         if (NaturalWonder != null) lineList.Add(NaturalWonder);
         if (RoadStatus != RoadStatus.None && !IsCityCenter()) lineList.Add(RoadStatus.ToString());
@@ -1393,7 +1393,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
             if (reader.TokenType != JsonTokenType.StartArray)
                 throw new JsonException($"Expected StartArray for a string list, got {reader.TokenType}");
             while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-                result.Add(reader.GetString()!);
+                result.Add(reader.GetString().NotNull());
             return result;
         }
 

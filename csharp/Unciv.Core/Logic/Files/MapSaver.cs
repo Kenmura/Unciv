@@ -1,5 +1,6 @@
 using Unciv.Json;
 using Unciv.Logic.Map;
+using Unciv.Utils;
 
 namespace Unciv.Logic.Files;
 
@@ -44,13 +45,13 @@ public static class MapSaver
         FileConversions.WriteJson(localFile($"{MapsFolder}/{mapName}"), tileMap, SaveZipped);
     }
 
-    public static TileMap LoadMap(IUncivFileHandle mapFile) => FileConversions.ReadJson<TileMap>(mapFile)!;
+    public static TileMap LoadMap(IUncivFileHandle mapFile) => FileConversions.ReadJson<TileMap>(mapFile).NotNull();
 
     public static IReadOnlyList<IUncivFileHandle> GetMaps(Func<string, IUncivFileHandle> localFile) => localFile(MapsFolder).List();
 
-    private static TileMap MapFromJson(string json) => UncivJson.Deserialize<TileMap>(json)!;
+    private static TileMap MapFromJson(string json) => UncivJson.Deserialize<TileMap>(json).NotNull();
 
     public static MapParameters LoadMapParameters(IUncivFileHandle mapFile) => LoadMapPreview(mapFile).MapParameters;
 
-    public static TileMap.Preview LoadMapPreview(IUncivFileHandle mapFile) => FileConversions.ReadJson<TileMap.Preview>(mapFile)!;
+    public static TileMap.Preview LoadMapPreview(IUncivFileHandle mapFile) => FileConversions.ReadJson<TileMap.Preview>(mapFile).NotNull();
 }

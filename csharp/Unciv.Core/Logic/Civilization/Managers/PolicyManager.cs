@@ -290,7 +290,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     {
         if (IsAdopted(policy.Name)) return false;
         if (policy.PolicyBranchType == Policy.PolicyBranchTypes.BranchComplete) return false;
-        if (!policy.Requires!.All(it => GetAdoptedPolicies().Contains(it))) return false;
+        if (!policy.Requires.NotNull().All(it => GetAdoptedPolicies().Contains(it))) return false;
         if (checkEra && CivInfo.GameInfo.Ruleset.Eras[policy.Branch.Era].EraNumber > CivInfo.GetEraNumber()) return false;
         if (((IHasUniques)policy).GetMatchingUniques(UniqueType.OnlyAvailable, GameContext.IgnoreConditionalsState)
                 .Any(it => !it.ConditionalsApply(CivInfo.State))) return false;

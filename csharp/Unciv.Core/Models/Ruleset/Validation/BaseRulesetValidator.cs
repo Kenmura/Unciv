@@ -241,7 +241,7 @@ internal sealed class BaseRulesetValidator : RulesetValidator
             {
                 if (unique.Type != UniqueType.AiChoiceWeight) continue;
                 if (unique.Modifiers.Count != 0) continue; // skip conditional weights
-                weight *= 1 + UniqueParameterTypeExtensions.ToFloatOrNull(unique.Params[0])!.Value / 100;
+                weight *= 1 + UniqueParameterTypeExtensions.ToFloatOrNull(unique.Params[0]).NotNull() / 100;
             }
             if (weight <= 0f) return true;
 

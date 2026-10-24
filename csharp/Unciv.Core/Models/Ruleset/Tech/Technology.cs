@@ -26,7 +26,7 @@ public class Technology : RulesetObject
 
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Tech;
 
-    public string Era() => Column!.Era;
+    public string Era() => Column.NotNull().Era;
 
     public bool IsContinuallyResearchable() => ((IHasUniques)this).HasUnique(UniqueType.ResearchableMultipleTimes);
 

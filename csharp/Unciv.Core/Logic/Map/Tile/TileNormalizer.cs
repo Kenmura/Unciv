@@ -1,6 +1,7 @@
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
 
 namespace Unciv.Logic.Map.Tiles;
 
@@ -61,7 +62,7 @@ public static class TileNormalizer
 
     private static void NormalizeTileImprovement(Tile tile, Ruleset ruleset)
     {
-        var improvementObject = ruleset.TileImprovements.GetValueOrDefault(tile.Improvement!);
+        var improvementObject = ruleset.TileImprovements.GetValueOrDefault(tile.Improvement.NotNull());
         if (improvementObject == null)
         {
             ClearImprovement(tile);

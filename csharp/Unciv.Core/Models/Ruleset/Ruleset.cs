@@ -607,7 +607,7 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
     public override string ToString()
     {
         if (Name.Length != 0) return Name;
-        if (Mods.Count == 1 && RulesetCache.Get(Mods.First())!.ModOptions.IsBaseRuleset) return Mods.First();
+        if (Mods.Count == 1 && RulesetCache.Get(Mods.First()).NotNull().ModOptions.IsBaseRuleset) return Mods.First();
         return $"Combined RuleSet ({JavaFormat.ToJavaString(Mods)})";
     }
 

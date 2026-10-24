@@ -163,7 +163,7 @@ public class Milestone
     {
         // Capitals that still exist, even if the civ is dead
         var civsWithCapitals = gameInfo.GetCities().Where(it => it.IsOriginalCapital)
-            .Select(it => it.FoundingCivObject!)
+            .Select(it => it.FoundingCivObject.NotNull())
             .Where(it => it.IsMajorCiv()).ToHashSet();
         // If the civ is alive, they can still create a capital, so we need them as well
         var livingCivs = gameInfo.Civilizations.Where(it => it.IsMajorCiv() && !it.IsDefeated());
@@ -399,7 +399,7 @@ public class Milestone
         }
     }
 
-    public FormattedLine GetFormattedLine() => Type!.Value switch
+    public FormattedLine GetFormattedLine() => Type.NotNull() switch
     {
         // Kotlin note: links should be `Building/params[0]`, but then the Wonder links don't resolve correctly
         MilestoneType.BuiltBuilding => new FormattedLine(UniqueDescription, link: $"Wonder/{Params[0]}"),

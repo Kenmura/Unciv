@@ -81,7 +81,7 @@ public class TileImprovement : RulesetStatsObject
         {
             var amount = int.Parse(unique.Params[0], System.Globalization.CultureInfo.InvariantCulture);
             if (unique.IsModifiedByGameSpeed())
-                amount = KotlinMath.FloatToInt(amount * gameContext.GameInfo!.Speed.Modifier);
+                amount = KotlinMath.FloatToInt(amount * gameContext.GameInfo.NotNull().Speed.Modifier);
             counter.Add(unique.Params[1], amount);
         });
         return counter;

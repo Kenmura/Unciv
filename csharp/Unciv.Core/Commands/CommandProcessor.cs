@@ -1,3 +1,5 @@
+using Unciv.Utils;
+
 namespace Unciv.Commands;
 
 // The single writer of a game's state. Server role: Submit validates, applies, numbers and logs a command. Follower /
@@ -24,11 +26,11 @@ public sealed class CommandProcessor<TState>(TState state, CommandRegistry<TStat
         if (!registry.TryFromEnvelope(envelope, out var command, out var failure))
             return Rejected(failure);
 
-        var validation = command!.Validate(State, envelope.ActorId);
+        var validation = command.NotNull().Validate(State, envelope.ActorId);
         if (!validation.IsValid)
             return Rejected(validation);
 
-        var events = ApplyAndLog(command, envelope with { Seq = LastSeq + 1 });
+        var events = ApplyAndLog(command.NotNull(), envelope with { Seq = LastSeq + 1 });
         return new CommandResult(true, LastSeq, CommandValidation.Ok, events);
     }
 

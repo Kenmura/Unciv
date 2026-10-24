@@ -10,7 +10,7 @@ public sealed class KotlinLazy<T>
     private readonly object syncRoot = new();
     private Func<T>? initializer;
     private volatile bool initialized;
-    private T result = default!;
+    private T result = default!; // JUSTIFY: T119 unconstrained T, read only when initialized
 
     public KotlinLazy(Func<T> initializer)
     {
@@ -28,7 +28,7 @@ public sealed class KotlinLazy<T>
             lock (syncRoot)
             {
                 if (initialized) return result;
-                result = initializer!(); // an exception propagates and nothing is cached
+                result = initializer!(); // an exception propagates and nothing is cached; JUSTIFY: T119 initializer is non-null until initialized
                 initialized = true;      // publish (volatile write) after `result` is set
                 initializer = null;
                 return result;

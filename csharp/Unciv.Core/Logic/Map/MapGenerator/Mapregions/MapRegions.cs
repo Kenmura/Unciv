@@ -28,7 +28,7 @@ public class TileDataMap(int size)
     public void PlaceImpact(MapRegions.ImpactType type, Tile tile, int radius)
     {
         // Epicenter
-        this[tile]!.Impacts[type] = 99;
+        this[tile].NotNull().Impacts[type] = 99;
         if (radius <= 0) return;
 
         for (var ring = 1; ring <= radius; ring++)
@@ -36,7 +36,7 @@ public class TileDataMap(int size)
             var ringValue = radius - ring + 1;
             tile.ForEachTileAtDistance(ring, outerTile =>
             {
-                var tileData = this[outerTile]!;
+                var tileData = this[outerTile].NotNull();
                 if (tileData.Impacts.TryGetValue(type, out var existing))
                     tileData.Impacts[type] = Math.Min(50, Math.Max(ringValue, existing) + 2);
                 else
@@ -92,7 +92,7 @@ public class MapRegions(Ruleset ruleset)
     public Ruleset Ruleset { get; } = ruleset;
 
     private readonly List<Region> regions = [];
-    private TileDataMap tileData = null!;
+    private TileDataMap tileData = null!; // JUSTIFY: T119 Kotlin lateinit
 
     // Test/downstream access (Kotlin private/internal members shared inside the module)
     internal IReadOnlyList<Region> Regions => regions;
@@ -297,7 +297,7 @@ public class MapRegions(Ruleset ruleset)
         foreach (var region in sortedRegions) RegionStartFinder.FindStart(region, tileData);
         foreach (var region in regions)
         {
-            MapRegionsSeams.NormalizeStart(tileMap[region.StartPosition!.Value], tileMap, tileData, Ruleset, isMinorCiv: false);
+            MapRegionsSeams.NormalizeStart(tileMap[region.StartPosition.NotNull()], tileMap, tileData, Ruleset, isMinorCiv: false);
         }
 
         var civBiases = new Dictionary<IMapRegionsCivilization, List<string>>();
@@ -334,7 +334,7 @@ public class MapRegions(Ruleset ruleset)
         foreach (var civ in coastBiasCivs)
         {
             // Try to find a coastal start, preferably a really coastal one
-            var startRegion = unpickedRegions.Where(it => tileMap[it.StartPosition!.Value].IsAdjacentToCoast())
+            var startRegion = unpickedRegions.Where(it => tileMap[it.StartPosition.NotNull()].IsAdjacentToCoast())
                 .MaxByOrNull(it => it.GetTerrainAmount("Coastal"));
             if (startRegion != null)
             {
@@ -344,7 +344,7 @@ public class MapRegions(Ruleset ruleset)
                 continue;
             }
             // Else adjacent to a lake
-            startRegion = unpickedRegions.Where(it => tileMap[it.StartPosition!.Value].Neighbors
+            startRegion = unpickedRegions.Where(it => tileMap[it.StartPosition.NotNull()].Neighbors
                     .Any(neighbor => ((IHasUniques)neighbor.GetBaseTerrain()).HasUnique(UniqueType.FreshWater)))
                 .MaxByOrNull(it => it.GetTerrainAmount("Coastal"));
             if (startRegion != null)
@@ -355,7 +355,7 @@ public class MapRegions(Ruleset ruleset)
                 continue;
             }
             // Else adjacent to a river
-            startRegion = unpickedRegions.Where(it => tileMap[it.StartPosition!.Value].IsAdjacentToRiver())
+            startRegion = unpickedRegions.Where(it => tileMap[it.StartPosition.NotNull()].IsAdjacentToRiver())
                 .MaxByOrNull(it => it.GetTerrainAmount("Coastal"));
             if (startRegion != null)
             {
@@ -365,7 +365,7 @@ public class MapRegions(Ruleset ruleset)
                 continue;
             }
             // Else at least close to a river ????
-            startRegion = unpickedRegions.Where(it => tileMap[it.StartPosition!.Value].Neighbors.Any(neighbor => neighbor.IsAdjacentToRiver()))
+            startRegion = unpickedRegions.Where(it => tileMap[it.StartPosition.NotNull()].Neighbors.Any(neighbor => neighbor.IsAdjacentToRiver()))
                 .MaxByOrNull(it => it.GetTerrainAmount("Coastal"));
             if (startRegion != null)
             {
@@ -466,7 +466,7 @@ public class MapRegions(Ruleset ruleset)
     private void AssignRegionTypes()
     {
         var regionTypes = Ruleset.Terrains.Values.Where(it => MapRegionFunctions.GetRegionPriority(it) != null)
-            .OrderBy(it => MapRegionFunctions.GetRegionPriority(it)!.Value).ToList();
+            .OrderBy(it => MapRegionFunctions.GetRegionPriority(it).NotNull()).ToList();
 
         foreach (var region in regions)
         {
@@ -509,7 +509,7 @@ public class MapRegions(Ruleset ruleset)
 
     private void AssignCivToRegion(IMapRegionsCivilization civ, Region region)
     {
-        var tile = region.TileMap[region.StartPosition!.Value];
+        var tile = region.TileMap[region.StartPosition.NotNull()];
         region.TileMap.AddStartingLocation(civ.CivId, tile);
 
         // Place impacts to keep city states etc at appropriate distance

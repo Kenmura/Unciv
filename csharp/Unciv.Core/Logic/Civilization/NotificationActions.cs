@@ -3,6 +3,7 @@ using System.Text.Json;
 using Unciv.Json;
 using Unciv.Logic.Map;
 using Unciv.UI.Screens.OverviewScreen;
+using Unciv.Utils;
 
 namespace Unciv.Logic.Civilization;
 
@@ -28,7 +29,7 @@ public sealed class LocationAction(HexCoord location = default) : NotificationAc
         locations.Select(it => new LocationAction(it));
 
     public static IEnumerable<LocationAction> Of(params HexCoord?[] locations) =>
-        locations.Where(it => it != null).Select(it => new LocationAction(it!.Value));
+        locations.Where(it => it != null).Select(it => new LocationAction(it.NotNull()));
 }
 
 /// <summary>show tech screen</summary>
@@ -276,7 +277,7 @@ internal static class NotificationActionsSerializer
     private static EmpireOverviewCategories PageField(JsonElement fields)
     {
         if (Field(fields, "page") is not { } value) return EmpireOverviewCategories.Resources;
-        string name = ReadString(value)!;
+        string name = ReadString(value).NotNull();
         return Enum.GetValues<EmpireOverviewCategories>().Cast<EmpireOverviewCategories?>().FirstOrDefault(it => it.ToString() == name)
             ?? throw new JsonException($"Unable to find enum constant '{name}' of EmpireOverviewCategories");
     }

@@ -17,7 +17,7 @@ internal static class JsonValueReader
             case JsonTokenType.Number:
                 return reader.TryGetInt64(out long l) ? unchecked((int)l) : KotlinMath.DoubleToInt(reader.GetDouble());
             case JsonTokenType.String:
-                return int.Parse(reader.GetString()!, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+                return int.Parse(reader.GetString().NotNull(), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
             case JsonTokenType.True:
                 return 1;
             case JsonTokenType.False:
@@ -38,7 +38,7 @@ internal static class JsonValueReader
             case JsonTokenType.Number:
                 return reader.GetSingle();
             case JsonTokenType.String:
-                return float.Parse(reader.GetString()!, NumberStyles.Float, CultureInfo.InvariantCulture);
+                return float.Parse(reader.GetString().NotNull(), NumberStyles.Float, CultureInfo.InvariantCulture);
             case JsonTokenType.StartObject:
                 var wrapped = ReadWrappedValue(ref reader, what);
                 return ReadFloat(ref wrapped, what);

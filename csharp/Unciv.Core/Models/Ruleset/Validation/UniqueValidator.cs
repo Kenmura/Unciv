@@ -146,8 +146,8 @@ public class UniqueValidator(Ruleset ruleset, bool tryFixUnknownUniques = false)
         var conditionals = unique.Modifiers.Where(it => it.Type?.CanAcceptUniqueTarget(UniqueTarget.Conditional) == true).ToList();
         if (conditionals.Count > 1)
         {
-            var lastCheapConditional = conditionals.LastOrDefault(it => !PerformanceHeavyConditionals.Contains(it.Type!.Value));
-            var firstExpensiveConditional = conditionals.FirstOrDefault(it => PerformanceHeavyConditionals.Contains(it.Type!.Value));
+            var lastCheapConditional = conditionals.LastOrDefault(it => !PerformanceHeavyConditionals.Contains(it.Type.NotNull()));
+            var firstExpensiveConditional = conditionals.FirstOrDefault(it => PerformanceHeavyConditionals.Contains(it.Type.NotNull()));
             if (lastCheapConditional != null && firstExpensiveConditional != null)
             {
                 if (conditionals.IndexOf(lastCheapConditional) > conditionals.IndexOf(firstExpensiveConditional))
@@ -394,9 +394,9 @@ public class UniqueValidator(Ruleset ruleset, bool tryFixUnknownUniques = false)
             if (errorTypesForAcceptableParameters.Contains(UniqueParameterErrorSeverity.PossibleFilteringUnique)
                 && allNonTypedUniques.Contains(param))
                 continue; // This is a filtering param, and the unique it's filtering for actually exists, no problem here!
-            var leastSevereWarning = errorTypesForAcceptableParameters[0]!.Value;
+            var leastSevereWarning = errorTypesForAcceptableParameters[0].NotNull();
             foreach (var severity in errorTypesForAcceptableParameters)
-                if ((int)severity!.Value < (int)leastSevereWarning) leastSevereWarning = severity.Value; // minByOrNull: first of the minima
+                if ((int)severity.NotNull() < (int)leastSevereWarning) leastSevereWarning = severity.NotNull(); // minByOrNull: first of the minima
             errorList.Add(new UniqueComplianceError(param, acceptableParamTypes, leastSevereWarning));
         }
         return errorList;

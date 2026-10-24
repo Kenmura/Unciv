@@ -38,7 +38,7 @@ public static class RegionStartFinder
         var dryTiles = new LinkedHashSet<Tile>();
         foreach (var tile in centerTiles)
         {
-            if (tileData[tile]!.IsTwoFromCoast)
+            if (tileData[tile].NotNull().IsTwoFromCoast)
                 continue; // Don't even consider tiles two from coast
             if (region.ContinentID != -1 && region.ContinentID != tile.GetContinent())
                 continue; // Wrong continent
@@ -56,14 +56,14 @@ public static class RegionStartFinder
         // Did we find a good start position?
         foreach (var list in new[] { riverTiles, wetTiles, dryTiles })
         {
-            if (list.Any(it => tileData[it]!.IsGoodStart))
+            if (list.Any(it => tileData[it].NotNull().IsGoodStart))
             {
                 SetRegionStart(region, list
-                    .Where(it => tileData[it]!.IsGoodStart).MaxByOrNull(it => tileData[it]!.StartScore)!.Position, tileData);
+                    .Where(it => tileData[it].NotNull().IsGoodStart).MaxByOrNull(it => tileData[it].NotNull().StartScore).NotNull().Position, tileData);
                 return true;
             }
             if (list.Count != 0) // Save the best not-good-enough spots for later fallback
-                fallbackTiles.Add(list.MaxByOrNull(it => tileData[it]!.StartScore)!);
+                fallbackTiles.Add(list.MaxByOrNull(it => tileData[it].NotNull().StartScore).NotNull());
         }
         return false;
     }
@@ -82,29 +82,29 @@ public static class RegionStartFinder
             }
         }
         // Were any of them good?
-        if (dryTiles.Any(it => tileData[it]!.IsGoodStart))
+        if (dryTiles.Any(it => tileData[it].NotNull().IsGoodStart))
         {
             // Find the one closest to the center
             var centerX = region.Rect.X + (region.Rect.Width / 2);
             var centerY = region.Rect.Y + (region.Rect.Height / 2);
-            var closestToCenter = dryTiles.Where(it => tileData[it]!.IsGoodStart)
+            var closestToCenter = dryTiles.Where(it => tileData[it].NotNull().IsGoodStart)
                 .MinByOrNull(it =>
                     (region.TileMap.GetIfTileExistsOrNull(KotlinMath.RoundToInt(centerX), KotlinMath.RoundToInt(centerY))
                         ?? region.TileMap.Values.First())
-                    .AerialDistanceTo(it))!;
+                    .AerialDistanceTo(it)).NotNull();
 
             SetRegionStart(region, closestToCenter.Position, tileData);
             return true;
         }
         if (dryTiles.Count != 0)
-            fallbackTiles.Add(dryTiles.MaxByOrNull(it => tileData[it]!.StartScore)!);
+            fallbackTiles.Add(dryTiles.MaxByOrNull(it => tileData[it].NotNull().StartScore).NotNull());
         return false;
     }
 
     private static void FindFallbackPosition(LinkedHashSet<Tile> fallbackTiles, TileDataMap tileData, Region region)
     {
         // Fallback time. Just pick the one with best score
-        var fallbackPosition = fallbackTiles.MaxByOrNull(it => tileData[it]!.StartScore);
+        var fallbackPosition = fallbackTiles.MaxByOrNull(it => tileData[it].NotNull().StartScore);
         if (fallbackPosition != null)
         {
             SetRegionStart(region, fallbackPosition.Position, tileData);
@@ -113,7 +113,7 @@ public static class RegionStartFinder
 
         // Something went extremely wrong and there is somehow no place to start. Spawn some land and start there
         var panicPosition = HexCoord.Of(KotlinMath.FloatToInt(region.Rect.X), KotlinMath.FloatToInt(region.Rect.Y));
-        var panicTerrain = region.TileMap.Ruleset!.Terrains.Values.First(it => it.Type == TerrainType.Land).Name;
+        var panicTerrain = region.TileMap.Ruleset.NotNull().Terrains.Values.First(it => it.Type == TerrainType.Land).Name;
         region.TileMap[panicPosition].BaseTerrain = panicTerrain;
         region.TileMap[panicPosition].SetTerrainFeatures([]);
         SetRegionStart(region, panicPosition, tileData);
@@ -141,7 +141,7 @@ public static class RegionStartFinder
     /// </summary>
     private static void EvaluateTileForStart(Tile tile, TileDataMap tileData)
     {
-        var localData = tileData[tile]!;
+        var localData = tileData[tile].NotNull();
 
         var totalFood = 0;
         var totalProd = 0;
@@ -158,7 +158,7 @@ public static class RegionStartFinder
             // Sum up the values for this ring
             tile.ForEachTileAtDistance(ring, outerTile =>
             {
-                var outerTileData = tileData[outerTile]!;
+                var outerTileData = tileData[outerTile].NotNull();
                 if (outerTileData.IsJunk)
                     totalJunk++;
                 else
@@ -229,7 +229,7 @@ public static class RegionStartFinder
         {
             region.TileMap[position].ForEachTileAtDistance(ring, outerTile =>
             {
-                tileData[outerTile]!.AddCloseStartPenalty(penalty);
+                tileData[outerTile].NotNull().AddCloseStartPenalty(penalty);
             });
         }
     }

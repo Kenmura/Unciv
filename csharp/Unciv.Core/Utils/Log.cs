@@ -451,7 +451,7 @@ public static class JavaFormat
         float f => DoubleToJavaString(f, true),
         double d => DoubleToJavaString(d, false),
         char c => c.ToString(),
-        System.Collections.IDictionary dict => "{" + string.Join(", ", dict.Keys.Cast<object?>().Select(k => ToJavaString(k) + "=" + ToJavaString(dict[k!]))) + "}",
+        System.Collections.IDictionary dict => "{" + string.Join(", ", dict.Keys.Cast<object?>().Select(k => ToJavaString(k) + "=" + ToJavaString(dict[k.NotNull()]))) + "}",
         System.Collections.IEnumerable items => "[" + string.Join(", ", items.Cast<object?>().Select(ToJavaString)) + "]",
         IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
         _ => value.ToString() ?? "null",

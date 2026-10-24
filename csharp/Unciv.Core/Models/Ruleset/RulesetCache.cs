@@ -124,7 +124,7 @@ public static class RulesetCache
     }
 
     /// <summary>Safeguard, so no-one edits the base ruleset by mistake: a clone.</summary>
-    public static Ruleset GetVanillaRuleset() => Get(BaseRuleset.Civ_V_Vanilla.FullName())!.Clone();
+    public static Ruleset GetVanillaRuleset() => Get(BaseRuleset.Civ_V_Vanilla.FullName()).NotNull().Clone();
 
     public static List<string> GetSortedBaseRulesets()
     {
@@ -160,13 +160,13 @@ public static class RulesetCache
     public static Ruleset GetComplexRuleset(LinkedHashSet<string> mods, string? optionalBaseRuleset = null)
     {
         var baseRuleset =
-            ContainsKey(optionalBaseRuleset) && Get(optionalBaseRuleset!)!.ModOptions.IsBaseRuleset
-                ? Get(optionalBaseRuleset!)!
+            ContainsKey(optionalBaseRuleset) && Get(optionalBaseRuleset.NotNull()).NotNull().ModOptions.IsBaseRuleset
+                ? Get(optionalBaseRuleset.NotNull()).NotNull()
                 : GetVanillaRuleset();
 
         var loadedMods = mods
             .Where(it => ContainsKey(it))
-            .Select(it => Get(it)!)
+            .Select(it => Get(it).NotNull())
             .Where(it => !it.ModOptions.IsBaseRuleset);
 
         return GetComplexRuleset(baseRuleset, loadedMods);
