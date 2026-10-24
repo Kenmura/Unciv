@@ -1415,13 +1415,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review pass. Optional findings left: NullifiesStat test does not discriminate the distinct() dedupe; UpdateTileStats test name mentions blockade but has no blockade case; negative-happiness We Love The King branch untested.
 
 ### T125 Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding)
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T119
 - Source: none
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Policy/NullForgivingTests.cs
 - Gate: dotnet test --filter FullyQualifiedName~NullForgivingTests
-- Claimed:
+- Claimed: 2026-10-24T19:59Z
 - Notes: POLICY TICKET follow-up from T119 review. Scanner gaps: (1) $"{x!}" interpolation holes are blanked (false negative); (2) '!' at line start after newline missed; (3) '(bool)!x' and 'a >!b' flagged (false positive); (4) JUSTIFY comment is not tied to the specific '!' nor checked for ticket id. Fix with tests in the scanner self-test.
 
 ### T126 PromotionTree port (IPromotionTree seam, CityConstructions saved promotions)
