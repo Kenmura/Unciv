@@ -868,13 +868,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~1.0k LOC. Takes the Nation/Era/Technology/BaseUnit members deferred by T032/T033/T034 (makeLink, getSortGroup/getSubCategory, civilopedia text, Nation.getStartBias, Era.getStartingUnits/getEraGatedObjects/matchesFilter, Technology.matchesFilter/getDescription, Difficulty/...) - recheck T032's Notes for the exact list. Seam rule as T053.
 
 ### T098 Save/load A: FileConversions, MapSaver, IMediaFinder
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T034, T039, T042, T049
 - Source: core/src/com/unciv/logic/files/FileConversions.kt, MapSaver.kt, IMediaFinder.kt
 - Fixtures: tests/src/com/unciv/logic/MediaFinderTests.kt, MapSaver parts of tests/src/com/unciv/logic/SerializationTests.kt
 - Deliverables: csharp/Unciv.Core/Logic/Files/FileConversions.cs, MapSaver.cs, IMediaFinder.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~FilesATests`
-- Claimed:
+- Claimed: 2026-10-24T10:52Z
 - Notes: Created by the backlog audit: Non-goals #3 keeps these engine save/load abstractions 'deferred to the engine save/load ticket' that did not exist. ~370 LOC. Use the engine's IRulesetFolder/ITranslationFileHandle style file abstraction (no FileHandle/Gdx.files), gzip+base64 via System.IO.Compression with byte-identical output where Kotlin is deterministic. UncivGame.Current references become explicit parameters.
 
 ### T099 GameStarter
