@@ -2,12 +2,13 @@ using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Tile;
 
 // core/src/com/unciv/models/ruleset/tile/TileResource.kt
-// Not ported yet: getImprovements/isImprovedBy/setTransients (cache over Ruleset.tileImprovements, T034), getImprovingImprovement (Civilization/Tile, T046/T047),
-// generatesNaturallyOn (Tile/TileMap), makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034).
+// Not ported yet: getImprovingImprovement (Civilization/Tile, T046/T047),
+// generatesNaturallyOn (Tile/TileMap), makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034's successors).
 public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceParameterView
 {
     private readonly Lazy<bool> isCityWide;
@@ -48,6 +49,52 @@ public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceP
     public bool IsStockpiled => isStockpiled.Value;
 
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Resource;
+
+    private LinkedHashSet<string>? allImprovements;
+    private Ruleset? ruleset;
+
+    /// <summary>
+    /// Collects which improvements "unlock" this resource, caches and returns the Set.
+    /// The cache is cleared after ruleset load and combine, via <see cref="SetTransients"/>.
+    /// </summary>
+    public IReadOnlySet<string> GetImprovements()
+    {
+        if (allImprovements != null) return allImprovements;
+
+        var rulesetForCache = ruleset
+            ?? throw new InvalidOperationException("No ruleset on TileResource when initializing improvements");
+
+        var allImprovementsLocal = new LinkedHashSet<string>();
+
+        if (Improvement != null) allImprovementsLocal.Add(Improvement);
+        allImprovementsLocal.AddAll(ImprovedBy);
+        foreach (var improvement in rulesetForCache.TileImprovements.Values)
+        {
+            // Explicitly stated by the improvement, or this is a replacement improvement
+            if (((IHasUniques)improvement).GetMatchingUniques(UniqueType.ImprovesResources).Any(it => MatchesFilter(it.Params[0]))
+                || (improvement.Replaces != null && allImprovementsLocal.Contains(improvement.Replaces)))
+            {
+                allImprovementsLocal.Add(improvement.Name);
+            }
+        }
+
+        allImprovements = allImprovementsLocal;
+        return allImprovementsLocal;
+    }
+
+    /// <summary>
+    /// Clears the cache for <see cref="GetImprovements"/> and saves the Ruleset the cache update will need.
+    /// Doesn't evaluate the cache immediately, that would trip the uniqueObjects lazy before tests (and mods loading) are done manipulating uniques.
+    /// </summary>
+    public void SetTransients(Ruleset ruleset)
+    {
+        allImprovements = null;
+        this.ruleset = ruleset;
+    }
+
+    public bool IsImprovedBy(string improvementName) => GetImprovements().Contains(improvementName);
+
+    public bool IsImprovedBy(TileImprovement improvement) => GetImprovements().Contains(improvement.Name);
 
     public bool MatchesFilter(string filter, GameContext? state = null)
     {

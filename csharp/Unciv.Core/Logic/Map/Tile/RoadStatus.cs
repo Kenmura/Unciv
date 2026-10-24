@@ -1,10 +1,12 @@
+using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Tile;
+
 namespace Unciv.Logic.Map.Tiles;
 
 /// <summary>
 /// Ported from <c>core/src/com/unciv/logic/map/tile/RoadStatus.kt</c>.
 /// Note: Order is important; <c>ordinal</c> (0, 1, 2) is compared as "roadLevel".
 /// </summary>
-// TODO(T034): Add Improvement(Ruleset ruleset) => ruleset.TileImprovements.GetValueOrDefault(status.ToString());
 public enum RoadStatus
 {
     None = 0,
@@ -45,4 +47,8 @@ public static class RoadStatusExtensions
         RoadStatus.Railroad => "Remove Railroad",
         _ => throw new ArgumentOutOfRangeException(nameof(status), status, null),
     };
+
+    /// <summary>returns null for <see cref="RoadStatus.None"/></summary>
+    public static TileImprovement? Improvement(this RoadStatus status, Ruleset ruleset) =>
+        ruleset.TileImprovements.GetValueOrDefault(status.ToString());
 }

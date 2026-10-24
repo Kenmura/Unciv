@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
 
@@ -6,7 +7,7 @@ namespace Unciv.Models.Ruleset.Tech;
 
 // core/src/com/unciv/models/ruleset/tech/Technology.kt
 // Not ported yet, they need Ruleset, Civilization and the Civilopedia/description types (T034, T046): getSortGroup, getSubCategory, getDescription,
-// makeLink, getCivilopediaTextLines, matchesFilter/matchesSingleFilter (read gameInfo.ruleset.eras via the state).
+// makeLink, getCivilopediaTextLines.
 public class Technology : RulesetObject
 {
     public int Cost { get; set; }
@@ -37,6 +38,23 @@ public class Technology : RulesetObject
         unique.Type == UniqueType.OnlyAvailable
         && unique.Modifiers.Count == 1
         && unique.Modifiers[0] is { } modifier && modifier.Type == UniqueType.ConditionalTech && modifier.Params[0] == Name;
+
+    public bool MatchesFilter(string filter, GameContext? state = null, bool multiFilter = true)
+    {
+        var self = (IHasUniques)this;
+        bool Single(string it) =>
+            MatchesSingleFilter(it, state) ||
+            (state != null && self.HasTagUnique(it, state)) ||
+            (state == null && self.HasTagUnique(it));
+        return multiFilter ? MultiFilter.Filter(filter, Single) : Single(filter);
+    }
+
+    public bool MatchesSingleFilter(string filter, GameContext? state = null)
+    {
+        if (Constants.All.Contains(filter) || filter == Name || filter == Era()) return true;
+        return ((IHasUniques)this).HasTagUnique(filter, state)
+            || state?.GameInfo?.Ruleset.GetEra(Era())?.MatchesFilter(filter, state, false) == true;
+    }
 
     public bool UniqueIsNotRequirementForThisTech(Unique.Unique unique) => !UniqueIsRequirementForThisTech(unique);
 }
