@@ -252,6 +252,10 @@ public class TradeLogicGameTests
 
         Assert.Equal(DiplomaticStatus.War, a.GetDiplomacyManager(c)!.DiplomaticStatus);
         Assert.Equal(DiplomaticStatus.War, b.GetDiplomacyManager(c)!.DiplomaticStatus);
+        // TeamWar-specific (DeclareWar): the human A is told it declared together with B; a DirectWar would not say so
+        Assert.Contains(a.Notifications, it => it.Text == $"You and [{b.CivName}] have declared war against [{c.CivName}]!");
+        Assert.Contains(c.PopupAlerts, it => it.Type == AlertType.WarDeclaration && it.Value == a.CivId);
+        Assert.Contains(c.PopupAlerts, it => it.Type == AlertType.WarDeclaration && it.Value == b.CivId);
     }
 
     [Fact]
@@ -265,6 +269,8 @@ public class TradeLogicGameTests
         logic.AcceptTrade(false);
 
         Assert.Equal(DiplomaticStatus.War, b.GetDiplomacyManager(c)!.DiplomaticStatus);
+        // JoinWar-specific (DeclareWar): the ally A (the trade receiver, human) is told B joined it
+        Assert.Contains(a.Notifications, it => it.Text == $"[{b.CivName}] has joined us in the war against [{c.CivName}]!");
     }
 
     [Fact]
