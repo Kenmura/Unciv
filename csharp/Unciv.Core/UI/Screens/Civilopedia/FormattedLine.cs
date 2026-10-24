@@ -97,6 +97,12 @@ public sealed class FormattedLine
     {
     }
 
+    /// <summary>Kotlin FormattedLine(unique: Unique, indent: Int = 0) without ruleset context</summary>
+    public FormattedLine(UniqueObject unique, int indent = 0)
+        : this(unique.GetDisplayText(), indent: indent)
+    {
+    }
+
     /// <summary>Text to display.</summary>
     public string Text { get; }
 

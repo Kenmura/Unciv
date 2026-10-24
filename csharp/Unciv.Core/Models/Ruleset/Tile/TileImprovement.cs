@@ -1,16 +1,117 @@
 using Unciv.Logic;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Models.Ruleset.Unit;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Tile;
 
 // core/src/com/unciv/models/ruleset/tile/TileImprovement.kt
-// Not ported yet: getTurnsToBuild (Civilization/MapUnit, T046/T048), getDescription/getShortDecription and the Civilopedia members (Civilopedia text types, T034),
-// getConstructorUnits/getCreatingUnits (Ruleset.units, T034).
-public class TileImprovement : RulesetStatsObject
+// Not ported yet: getTurnsToBuild (Civilization/MapUnit, T046/T048).
+public class TileImprovement : RulesetStatsObject, ICivilopediaText
 {
     public override string MakeLink() => $"Improvement/{Name}";
+
+    public string GetDescription(Ruleset ruleset) => ImprovementDescriptions.GetDescription(this, ruleset);
+    public IEnumerable<FormattedLine> GetShortDescription(CivilopediaContext? context = null) =>
+        ImprovementDescriptions.GetShortDescription(this, context);
+    public IEnumerable<FormattedLine> GetShortDecription(CivilopediaContext? context = null) =>
+        GetShortDescription(context);
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) =>
+        ImprovementDescriptions.GetCivilopediaTextLines(this, context);
+
+    public int GetSortGroup(Ruleset ruleset) =>
+        IsGreatImprovement() ? 1 :
+        Name.StartsWith("Cancel ", StringComparison.Ordinal) || Name.StartsWith("Remove ", StringComparison.Ordinal) || Name == "Repair" ? 2 :
+        0;
+
+    public string? GetSubCategory(Ruleset ruleset) =>
+        IsGreatImprovement() ? "Great Improvement" :
+        Name.StartsWith("Cancel ", StringComparison.Ordinal) || Name.StartsWith("Remove ", StringComparison.Ordinal) || Name == "Repair" ? "Action" :
+        "Tile Improvements";
+
+    public List<BaseUnit> GetConstructorUnits(Ruleset ruleset)
+    {
+        if (((IHasUniques)this).HasUnique(UniqueType.Unbuildable)) return [];
+
+        var canOnlyFilters = ((IHasUniques)this).GetMatchingUniques(UniqueType.CanOnlyBeBuiltOnTile)
+            .Select(it => it.Params[0] == "Coastal" ? "Land" : it.Params[0]).ToHashSet();
+
+        var cannotFilters = ((IHasUniques)this).GetMatchingUniques(UniqueType.CannotBuildOnTile)
+            .Select(it => it.Params[0]).ToHashSet();
+
+        var resourcesImprovedByThis = ruleset.TileResources.Values.Where(it => it.IsImprovedBy(Name)).ToList();
+
+        var expandedTerrainsCanBeBuiltOn = new HashSet<string>();
+        foreach (var t in TerrainsCanBeBuiltOn)
+            expandedTerrainsCanBeBuiltOn.Add(t);
+        foreach (var t in TerrainsCanBeBuiltOn)
+        {
+            if (ruleset.Terrains.TryGetValue(t, out var terrain))
+                foreach (var occ in terrain.OccursOn)
+                    expandedTerrainsCanBeBuiltOn.Add(occ);
+        }
+        if (((IHasUniques)this).HasUnique(UniqueType.CanOnlyImproveResource))
+        {
+            foreach (var res in resourcesImprovedByThis)
+                foreach (var found in res.TerrainsCanBeFoundOn)
+                    expandedTerrainsCanBeBuiltOn.Add(found);
+        }
+        if (Name.StartsWith(Constants.Remove, StringComparison.Ordinal))
+        {
+            var stripped = Name[Constants.Remove.Length..];
+            expandedTerrainsCanBeBuiltOn.Add(stripped);
+            if (ruleset.Terrains.TryGetValue(stripped, out var tr))
+                foreach (var occ in tr.OccursOn)
+                    expandedTerrainsCanBeBuiltOn.Add(occ);
+            if (ruleset.TileImprovements.TryGetValue(stripped, out var ti))
+                foreach (var tb in ti.TerrainsCanBeBuiltOn)
+                    expandedTerrainsCanBeBuiltOn.Add(tb);
+        }
+        expandedTerrainsCanBeBuiltOn.ExceptWith(cannotFilters);
+
+        var terrainsCanBeBuiltOnTypes = new HashSet<TerrainType>();
+        foreach (var name in expandedTerrainsCanBeBuiltOn)
+        {
+            if (ruleset.Terrains.TryGetValue(name, out var t))
+                terrainsCanBeBuiltOnTypes.Add(t.Type);
+        }
+        foreach (var entry in Enum.GetValues<TerrainType>())
+        {
+            if (expandedTerrainsCanBeBuiltOn.Contains(entry.ToString()))
+                terrainsCanBeBuiltOnTypes.Add(entry);
+        }
+        terrainsCanBeBuiltOnTypes.RemoveWhere(it => cannotFilters.Contains(it.ToString()));
+
+        if (canOnlyFilters.Count != 0 && !canOnlyFilters.Overlaps(expandedTerrainsCanBeBuiltOn))
+        {
+            expandedTerrainsCanBeBuiltOn.Clear();
+            if (!terrainsCanBeBuiltOnTypes.Any(it => canOnlyFilters.Contains(it.ToString())))
+                terrainsCanBeBuiltOnTypes.Clear();
+        }
+
+        bool MatchesBuildImprovementsFilter(string filter) =>
+            MatchesFilter(filter) ||
+            expandedTerrainsCanBeBuiltOn.Contains(filter) ||
+            terrainsCanBeBuiltOnTypes.Any(it => it.ToString() == filter);
+
+        return ruleset.Units.Values
+            .Where(unit =>
+                (TurnsToBuild != -1 && ((IHasUniques)unit).GetMatchingUniques(UniqueType.BuildImprovements, GameContext.IgnoreConditionalsState)
+                    .Any(it => MatchesBuildImprovementsFilter(it.Params[0])))
+                || (((IHasUniques)unit).HasUnique(UniqueType.CreateWaterImprovements)
+                    && terrainsCanBeBuiltOnTypes.Contains(TerrainType.Water))
+            ).ToList();
+    }
+
+    public List<BaseUnit> GetCreatingUnits(Ruleset ruleset) =>
+        ruleset.Units.Values
+            .Where(unit => ((IHasUniques)unit).GetMatchingUniques(UniqueType.ConstructImprovementInstantly, GameContext.IgnoreConditionalsState)
+                .Any(it => it.Params[0] == Name))
+            .ToList();
 
     public string? Replaces { get; set; }
     public List<string> TerrainsCanBeBuiltOn { get; set; } = [];

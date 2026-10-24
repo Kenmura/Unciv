@@ -2,15 +2,131 @@ using System.Globalization;
 using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Tile;
 
 // core/src/com/unciv/models/ruleset/tile/Terrain.kt
-// Not ported yet: displayAs (needs Ruleset, T034), getColor (engine colour type, T050), makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034).
-public class Terrain : RulesetStatsObject, IRulesetTerrainParameterView
+// Not ported yet: getColor (engine colour type, T050).
+public class Terrain : RulesetStatsObject, IRulesetTerrainParameterView, ICivilopediaText
 {
     public override string MakeLink() => $"Terrain/{Name}";
+
+    public bool DisplayAs(TerrainType asType, Ruleset ruleset) =>
+        Type == asType
+        || OccursOn.Any(occursName => ruleset.Terrains.TryGetValue(occursName, out var occursTerrain) && occursTerrain.Type == asType)
+        || (TurnsInto != null && ruleset.Terrains.TryGetValue(TurnsInto, out var turnsIntoTerrain) && turnsIntoTerrain.Type == asType);
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context)
+    {
+        var ruleset = context.Ruleset;
+        var textList = new List<FormattedLine>();
+
+        if (Type == TerrainType.NaturalWonder)
+        {
+            textList.Add(new FormattedLine("Natural Wonder", header: 3, color: "#3A0"));
+        }
+
+        var stats = CloneStats();
+        if (!stats.IsEmpty() || OverrideStats)
+        {
+            textList.Add(new FormattedLine());
+            textList.Add(new FormattedLine(stats.IsEmpty() ? "No yields" : stats.ToString()));
+            if (OverrideStats)
+                textList.Add(new FormattedLine("Overrides yields from underlying terrain"));
+        }
+
+        if (OccursOn.Count != 0 && !((IHasUniques)this).HasUnique(UniqueType.NoNaturalGeneration))
+        {
+            textList.Add(new FormattedLine());
+            if (OccursOn.Count == 1)
+            {
+                var occurs = OccursOn[0];
+                textList.Add(new FormattedLine($"Occurs on [{occurs}]", link: $"Terrain/{occurs}"));
+            }
+            else
+            {
+                textList.Add(new FormattedLine("Occurs on:"));
+                foreach (var occurs in OccursOn)
+                    textList.Add(new FormattedLine(occurs, link: $"Terrain/{occurs}", indent: 1));
+            }
+        }
+
+        var improvementsThatCanBePlacedHere = ruleset.TileImprovements.Values
+            .Where(it => it.TerrainsCanBeBuiltOn.Contains(Name))
+            .ToList();
+        if (improvementsThatCanBePlacedHere.Count != 0)
+        {
+            textList.Add(new FormattedLine("{Tile Improvements}:"));
+            foreach (var improvement in improvementsThatCanBePlacedHere)
+                textList.Add(new FormattedLine(improvement.Name, improvement.MakeLink(), indent: 1));
+        }
+
+        if (TurnsInto != null)
+        {
+            textList.Add(new FormattedLine($"Placed on [{TurnsInto}]", link: $"Terrain/{TurnsInto}"));
+        }
+
+        var resourcesFound = ruleset.TileResources.Values
+            .Where(it => it.TerrainsCanBeFoundOn.Contains(Name))
+            .ToList();
+        if (resourcesFound.Count != 0)
+        {
+            textList.Add(new FormattedLine());
+            if (resourcesFound.Count == 1)
+            {
+                var res = resourcesFound[0];
+                textList.Add(new FormattedLine($"May contain [{res.Name}]", link: $"Resource/{res.Name}"));
+            }
+            else
+            {
+                textList.Add(new FormattedLine("May contain:"));
+                foreach (var res in resourcesFound)
+                    textList.Add(new FormattedLine(res.Name, link: $"Resource/{res.Name}", indent: 1));
+            }
+        }
+
+        textList.Add(new FormattedLine());
+        // For now, natural wonders show no "open terrain" - may change later
+        if (TurnsInto == null && DisplayAs(TerrainType.Land, ruleset) && !IsRough)
+            textList.Add(new FormattedLine("Open terrain")); // Rough is in uniques
+        this.UniquesToCivilopediaTextLines(textList, context, noLeadingSeparator: true);
+
+        textList.Add(new FormattedLine());
+        if (Impassable) textList.Add(new FormattedLine(Constants.Impassable, color: "#A00"));
+        else if (MovementCost > 0) textList.Add(new FormattedLine($"{{Movement cost}}: {MovementCost}"));
+
+        if (DefenceBonus != 0f)
+            textList.Add(new FormattedLine($"{{Defence bonus}}: {KotlinMath.FloatToInt(DefenceBonus * 100)}%"));
+
+        var constructions = ruleset.Buildings.Values.Cast<IRulesetObject>()
+            .Concat(ruleset.Units.Values)
+            .Where(construction => ((IHasUniques)construction).HasUniquesMentioning(Name))
+            .Select(it => new FormattedLine(it.Name, it.MakeLink(), indent: 1));
+
+        var seeAlso = constructions.Concat(Belief.GetCivilopediaTextMatching(Name, ruleset, false, context.GameInfo)).ToList();
+        if (seeAlso.Count != 0)
+        {
+            textList.Add(new FormattedLine());
+            textList.Add(new FormattedLine("{See also}:"));
+            textList.AddRange(seeAlso);
+        }
+
+        return textList;
+    }
+
+    public int GetSortGroup(Ruleset ruleset) => (int)Type;
+
+    public string? GetSubCategory(Ruleset ruleset) => Type switch
+    {
+        TerrainType.Land => "Land",
+        TerrainType.Water => "Water",
+        TerrainType.TerrainFeature => "Features",
+        TerrainType.NaturalWonder => "Natural Wonders",
+        _ => null,
+    };
 
     private readonly KotlinLazy<bool> isRough;
     private readonly KotlinLazy<bool> isMountain;

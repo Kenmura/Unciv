@@ -2,16 +2,30 @@ using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Tile;
 
 // core/src/com/unciv/models/ruleset/tile/TileResource.kt
-// Not ported yet: getImprovingImprovement (Civilization/Tile, T046/T047),
-// makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034's successors).
-public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceParameterView
+// Not ported yet: getImprovingImprovement (Civilization/Tile, T046/T047).
+public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceParameterView, ICivilopediaText
 {
     public override string MakeLink() => $"Resource/{Name}";
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) =>
+        ResourceDescriptions.GetCivilopediaTextLines(this, context);
+
+    public int GetSortGroup(Ruleset ruleset) => (int)ResourceType;
+
+    public string? GetSubCategory(Ruleset ruleset) => ResourceType switch
+    {
+        ResourceType.Luxury => "Luxury resource",
+        ResourceType.Strategic => "Strategic resource",
+        ResourceType.Bonus => "Bonus resource",
+        _ => null,
+    };
 
     private readonly KotlinLazy<bool> isCityWide;
     private readonly KotlinLazy<bool> isStockpiled;

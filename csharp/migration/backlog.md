@@ -958,7 +958,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review PASS (non-blocking, unfixed): (1) FormattedLine name->category static cache is two unsynchronised statics (same window as Kotlin, single-threaded there) and ignores GameInfo changes; (2) EngineColors.ValueOf throws FormatException for non-ASCII Unicode digits in a colour ("#٣٣٣", IsHex uses char.IsDigit like Kotlin, Java parseInt accepts them); fix when a hostile-mod hardening pass happens (catch in ParseColor or hand-parse). Also no JSON writer support for NaN ImageSize.
 
 ### T096 Civilopedia text model B: Building, Improvement, Resource, Tile descriptions
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T095, T062, T054
 - Source: core/src/com/unciv/ui/objectdescriptions/BuildingDescriptions.kt, ImprovementDescriptions.kt, ResourceDescriptions.kt, TileDescription.kt
 - Fixtures: none - generate golden values
@@ -966,6 +966,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~ObjectDescriptionsBTests`
 - Claimed: 2026-10-24T12:35:25Z
 - Notes: Created by the backlog audit. ~740 LOC. Takes the Building/TileImprovement/TileResource/Terrain getCivilopediaTextLines, getShortDescription, makeLink, getSortGroup, displayAs members deferred by T030/T031/T033. Seam rule as T053.
+  - Implemented BuildingDescriptions, ImprovementDescriptions, ResourceDescriptions, TileDescription, and TileDescriptionSeams (ITileView, ICivView, ICityView, IMapUnitView with open owners T084, T085).
+  - Implemented deferred ICivilopediaText members on Building, TileImprovement, TileResource, Terrain.
+  - Added FormattedLine(UniqueObject unique, int indent = 0) constructor.
+  - Comprehensive unit test suite in ObjectDescriptionsBTests (25 tests).
+  - Adversarial Review: Auditor (behavioral parity, determinism, culture-invariant formatting, policy compliance), Adversary (edge cases, null handling, non-recursive cost formulas), Pragmatist (minimal seams, clean integration). Passed all tests, formatting, and build checks.
 
 ### T097 Civilopedia text model C: BaseUnit, Nation, Technology descriptions
 - State: Done

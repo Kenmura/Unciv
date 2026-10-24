@@ -6,17 +6,39 @@ using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Components.Extensions;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/Building.kt
-// Not ported yet, because they need the description/Civilopedia types: getShortDescription, getDescription, getCivilopediaTextLines, getSortGroup,
-// getSubCategory (T096).
-public class Building : RulesetStatsObject, INonPerpetualConstruction
+public class Building : RulesetStatsObject, INonPerpetualConstruction, ICivilopediaText
 {
     public override string MakeLink() => IsAnyWonder() ? $"Wonder/{Name}" : $"Building/{Name}";
+
+    public string GetShortDescription(bool multiline = false, Func<UniqueObject, bool>? uniqueInclusionFilter = null) =>
+        BuildingDescriptions.GetShortDescription(this, multiline, uniqueInclusionFilter);
+
+    public string GetDescription(City city, bool showAdditionalInfo) =>
+        BuildingDescriptions.GetDescription(this, city, showAdditionalInfo);
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) =>
+        BuildingDescriptions.GetBuildingCivilopediaTextLines(this, context);
+
+    public int GetSortGroup(Ruleset ruleset) =>
+        RequiredTech != null && ruleset.Technologies.TryGetValue(RequiredTech, out var tech)
+            ? tech.Column != null && ruleset.Eras.TryGetValue(tech.Column.Era, out var era) ? era.EraNumber : 100
+            : 100;
+
+    public string? GetSubCategory(Ruleset ruleset) =>
+        RequiredTech != null && ruleset.Technologies.TryGetValue(RequiredTech, out var tech)
+            ? tech.Column != null && ruleset.Eras.TryGetValue(tech.Column.Era, out var era) ? era.Name : "Other"
+            : "Other";
+
+    public int GetCivilopediaGoldCost() =>
+        KotlinMath.DoubleToInt(Math.Pow(30.0 * (double)(float)Cost, 0.75) * (double)HurryCostModifier.ToPercent() / 10) * 10;
 
     private IRulesetConstructionView? ruleset;
     private readonly Dictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal);
