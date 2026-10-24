@@ -168,7 +168,7 @@ flowchart TD
   class T125 ready
   class T127 ready
   class T128 prog
-  class T129 prog
+  class T129 review
   class T143 done
   class T152 done
   class T154 waiting
@@ -227,6 +227,6 @@ xychart-beta
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T128 | In-Progress [Claude] | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
-| T129 | In-Progress [Claude] | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
+| T129 | Needs-Review [Claude] | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | Available (waiting on T094) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
