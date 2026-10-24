@@ -7,7 +7,7 @@ namespace Unciv.Core.Tests.Models.Ruleset.Validation;
 
 /// <summary>
 /// Ported from <c>tests/src/com/unciv/uniques/UniqueErrorTests.kt</c>. <c>TestGame</c> (T035) is replaced by <see cref="ValidatorTestRuleset"/>.
-/// Not ported: <c>testEducatedEliteGreatPersonGifting</c>, which plays turns of a game (GameInfo, Civilization, T046 and later).
+/// <c>testEducatedEliteGreatPersonGifting</c> lives in Uniques/EducatedEliteGiftingTests.cs (T154).
 /// </summary>
 [Collection("RulesetCache")]
 public sealed class UniqueErrorTests : IDisposable

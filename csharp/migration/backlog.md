@@ -1780,7 +1780,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Added CivReligionVictoryMapTests (TestGame-backed) in CivReligionVictoryTests.cs: SelectNextRuinsReward (dud skipped, last-two never repeated, Unavailable/difficulty-excluded), FoundReligion, UseProphetForEnhancingReligion (notifies other humans by knowledge), Spy.CanMoveTo (explored, taken, own city), GetTilesVisibleViaSpies (only set-up spies, ring of 7). No parity bug found. Private ReligionState setter/fields reached via reflection.
 
 ### T154 Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T143, T094
 - Source: tests/src/com/unciv/uniques/CountableTests.kt, ExpressionTests.kt, UniqueErrorTests.kt (testEducatedEliteGreatPersonGifting), models/ruleset/VictoryAvailabilityTests.kt, VictoryMilestoneTests.kt
 - Fixtures: (the test files above)
@@ -1788,6 +1788,10 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test
 - Claimed: 2026-10-24T23:46Z
 - Notes: Split from T143 at claim time. Remaining deferred cases: CountableTests TestGame cases (testRulesetValidation, testForEveryWithInvalidCountable, testPerCountableForGlobalAndLocalResources, testStatOrResourcePerTurn, testStatsCountables, testKnownCivsCountable, testOwnedTilesCountable, testFilteredCitiesCountable, testFilteredBuildingsCountable, testPoliciesCountables, testEraNumberCountable, testSpeedModifierCountable, countableCanUseContext) and ExpressionTests state cases; UniqueErrorTests.testEducatedEliteGreatPersonGifting (a ported draft fails with NotImplementedException from CityStateSeams.GetForeignCityNearCapital: needs T094 NextTurnAutomation; the UncivGame settings tutorial workaround is not needed); VictoryAvailabilityTests/VictoryMilestoneTests (check DeferredRulesetMembersTests/RulesetObjectTests for what is already covered). Many CountableTests cases may already be covered over fakes in Models/Ruleset/Unique/CountableTests.cs: port the real-game variant only where the Kotlin case differs.
+  - Implemented (Claude). New: Uniques/CountableGameTests.cs (all 13 deferred CountableTests TestGame cases + testTimeCountables), Uniques/EducatedEliteGiftingTests.cs, ExpressionTests.TestExpressionsWithCountablesOverTestGame. Victory fixtures: already ported by T106 (DeferredRulesetMembersTests), nothing to do.
+    Parity bug fixed in the engine: Countables.FilteredCities and FilteredCitiesByCivs passed viewingCiv=null to city.MatchesFilter where Kotlin uses the default viewingCiv=city.civ, so "[Your] Cities" counted 0.
+    Tip fix (not my ticket, blocked Standard checks): MarkerOwnershipTests.EverySeamFileHasAnOpenOwner failed on csharp-migration after T094 went Done; renamed CityStateSeams.cs -> CityStateCalls.cs and TurnManagerSeams.cs -> TurnManagerHooks.cs (file names only, same as the T093 follow-up) and the coverage-baseline key.
+    Gate/Standard: build -warnaserror, format, test 4211 pass 0 fail; coverage check passed, baseline updated (Countables.cs raised).
 
 ### T155 Air unit automation: AirUnitAutomation
 - State: Done

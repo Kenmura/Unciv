@@ -98,7 +98,7 @@ flowchart TD
   class T089 done
   class T091 done
   class T092 done
-  class T093 prog
+  class T093 review
   class T094 done
   class T097 done
   class T100 done
@@ -108,7 +108,7 @@ flowchart TD
   class T104 waiting
   class T106 done
   class T107 done
-  class T154 prog
+  class T154 review
   class T157 prog
 ```
 
@@ -141,7 +141,7 @@ xychart-beta
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T101 | In-Progress [Claude] | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T093 | In-Progress [Claude] | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
+| T093 | Needs-Review [Claude] | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -150,5 +150,5 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T154 | In-Progress [Claude] | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
+| T154 | Needs-Review [Claude] | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | In-Progress [Claude] | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
