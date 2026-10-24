@@ -170,7 +170,7 @@ flowchart TD
   class T128 prog
   class T129 prog
   class T143 done
-  class T152 review
+  class T152 done
   class T154 waiting
   class T155 ready
   class T156 waiting
@@ -194,7 +194,7 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 25]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
@@ -217,7 +217,6 @@ xychart-beta
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T092, T156) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
-| T152 | Needs-Review [Claude] | T142 | 1 | Deferred civilization fixture: GreatPersonSelectionTest |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -230,4 +229,4 @@ xychart-beta
 | T128 | In-Progress [Claude] | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | In-Progress [Claude] | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
-| T157 | Available (waiting on T094, T152) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
+| T157 | Available (waiting on T094) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |

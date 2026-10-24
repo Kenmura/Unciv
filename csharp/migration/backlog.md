@@ -1729,7 +1729,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Parity bug found+fixed in engine: the Clear Barbarian Camp fixture JSON has "data1":0 for a String field; libGDX reads any primitive into a String (JsonValue.asString) but System.Text.Json threw. Added Json/LenientStringConverter (numbers/bools read as raw text, write unchanged) registered in UncivJson defaults, with tests in JsonTests. Kotlin Random(seed) in testAlternativeBarbarianCampsAreUsed maps to GameRandom(seed); the sampled-variety assertion is seed-sensitive across RNGs but passes.
 
 ### T152 Deferred civilization fixture: GreatPersonSelectionTest
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T142
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/GreatPersonSelectionTest.kt (8 cases; uses WorldScreen/NextTurnButton/AutoPlay UI and Mockito: port only the engine-level GreatPersonManager cases, mark the UI-bound cases Won't port in Notes)
