@@ -942,7 +942,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Checks: Gate (dotnet test --filter FullyQualifiedName~AutomationCoreTests) and Standard checks pass; coverage ratchet passes (new files 90.6 to 100 percent lines), baseline updated.
 
 ### T088 Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T087, T086, T081, T068
 - Source: core/src/com/unciv/logic/automation/civilization/MotivationToAttackAutomation.kt, DeclareWarPlanEvaluator.kt, DeclareWarTargetAutomation.kt, DiplomacyAutomation.kt, TradeAutomation.kt
 - Fixtures: none - generate golden values
