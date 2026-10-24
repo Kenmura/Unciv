@@ -227,7 +227,7 @@ xychart-beta
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T091 | **On deck** (after T090) | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T155 | **On deck** (after T090) | T090 | 8 | Air unit automation: AirUnitAutomation |
-| T090 | Needs-Review [Claude] | T087, T088, T082, T083 | 15 | Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit |
+| T090 | In-Review [Claude] | T087, T088, T082, T083 | 15 | Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | T156 | Available (waiting on T090, T155) | T090, T155 | 7 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
