@@ -19,6 +19,15 @@ public class FilesATests
         public bool IsInternal => isInternal;
         public bool IsDirectory => Exists && isDirectory;
         public IUncivFileHandle Parent => parent!;
+        public long Length => Exists ? Content.Length : 0;
+        public long LastModified => 0;
+        public void MakeDirs() => Exists = true;
+        public bool Delete()
+        {
+            var was = Exists;
+            Exists = false;
+            return was;
+        }
 
         public IUncivFileHandle Child(string childName)
         {

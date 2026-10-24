@@ -21,6 +21,12 @@ public interface IUncivFileHandle
     /// <summary><c>isDirectory</c></summary>
     bool IsDirectory { get; }
 
+    /// <summary><c>length()</c>: 0 when the file does not exist.</summary>
+    long Length { get; }
+
+    /// <summary><c>lastModified()</c>: epoch milliseconds, an input read from the host file system.</summary>
+    long LastModified { get; }
+
     /// <summary><c>parent()</c></summary>
     IUncivFileHandle Parent { get; }
 
@@ -29,6 +35,12 @@ public interface IUncivFileHandle
 
     /// <summary><c>list()</c>. Implementations must return a deterministic order (ordinal by name).</summary>
     IReadOnlyList<IUncivFileHandle> List();
+
+    /// <summary><c>mkdirs()</c></summary>
+    void MakeDirs();
+
+    /// <summary><c>delete()</c>: <c>true</c> if something was deleted.</summary>
+    bool Delete();
 
     /// <summary><c>read()</c></summary>
     Stream Read();

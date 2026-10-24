@@ -1542,6 +1542,17 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Created by T085. Members T085 had to defer: ForeignCityView.getBombardableTiles (TargetHelper, T082); CityView.tryBombard (Battle.attackOrNuke, T083); MapUnitView.containsAttackableEnemy/getAttackableEnemies (TargetHelper, T082), tryAirSweep (AirInterception, T082), tryMovePreparingAttack/attackOrNuke/mayUseNuke/tryNuke (Battle/Nuke, T083), canPillage (UnitActionsPillage, T079), canInvokeUnitAction/tryInvokeUnitAction (UnitActions, T080); getTurnsToBuild, tryStartWorkingOnImprovement (need TileImprovement.getTurnsToBuild, Tile.startWorkingOnImprovement/queueImprovement(improvement, civ, unit) and Civilization.gainStockpiledResource) and getMovementString (UncivGame settings number format). Port them here and move the TODO(T139) markers. CityView.tryBombard/MapUnitView.attackOrNuke return Battle.DamageDealt, so keep them in the ViewTests KnownNonBooleanTryMembers list (Kotlin ViewPurityTest is @Ignore'd for the same reason).
 
+### T140 Civilization and manager JSON wiring (full GameInfo save/load round trip)
+- State: Available
+- Depends: T100
+- Source: core/src/com/unciv/logic/civilization/Civilization.kt and manager classes (serialization attributes only)
+- Fixtures: tests/src/com/unciv/logic/GameSerializationTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/** JSON attributes, UncivFilesTests round trip with civs
+- Gate: `dotnet test --filter FullyQualifiedName~UncivFilesTests`
+- Claimed:
+- Notes:
+  - Found by T100: Civilization (and everything reachable from it, e.g. Civilization.GameInfo -> Ruleset -> Building) has no JSON wiring, so UncivJson.Serialize(game with civs) throws NotSupportedException; GameInfo.SetTransients also refuses a game without a human civ. Wire the serialized fields (and JsonIgnore the transients), then extend UncivFilesTests with GameSerializationTests' full round trips (canSaveAndLoadUncompressedGame/CompressedGame: gameId, turns, version, cities) and assert the T011 StateHasher hash survives GameInfo -> file -> GameInfo, plus Autosaves.LoadLatestAutosave on real games.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.

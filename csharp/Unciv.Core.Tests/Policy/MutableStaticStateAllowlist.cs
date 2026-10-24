@@ -17,6 +17,7 @@ internal static class MutableStaticStateAllowlist
         ["Unciv.Logic.Files.LabeledSounds.Exclusions"] = "JUSTIFY: constant table initialised in the static initializer and only read afterwards (no mutator calls in Unciv.Core; T123 may convert it to a frozen/read-only type).",
         ["Unciv.Logic.Files.LabeledSounds.PrettifyUncivSoundNames"] = "JUSTIFY: constant table initialised in the static initializer and only read afterwards (no mutator calls in Unciv.Core; T123 may convert it to a frozen/read-only type).",
         ["Unciv.Logic.Files.MapSaver.SaveZipped"] = "JUSTIFY: user preference toggled by the host before saving; a settings object should own it (T123).",
+        ["Unciv.Logic.Files.UncivFiles.SaveZipped"] = "JUSTIFY: user preference toggled by the host before saving (Kotlin UncivFiles.saveZipped); a settings object should own it (T123).",
         ["Unciv.Logic.HolidayDates+Tables.Diwali"] = "JUSTIFY: constant table initialised in the static initializer and only read afterwards (no mutator calls in Unciv.Core; T123 may convert it to a frozen/read-only type).",
         ["Unciv.Logic.HolidayDates+Tables.Equinoxes"] = "JUSTIFY: constant table initialised in the static initializer and only read afterwards (no mutator calls in Unciv.Core; T123 may convert it to a frozen/read-only type).",
         ["Unciv.Logic.HolidayDates+Tables.LunarNewYear"] = "JUSTIFY: constant table initialised in the static initializer and only read afterwards (no mutator calls in Unciv.Core; T123 may convert it to a frozen/read-only type).",
