@@ -281,7 +281,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 
 ### T037 Golden test: load and validate Vanilla and bundled mod rulesets
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T036, T035
 - Source: none (integration test)
 - Fixtures: tests/src/com/unciv/logic/LoadGameTest.kt (ruleset portion); ModConstantsTests moved to T049

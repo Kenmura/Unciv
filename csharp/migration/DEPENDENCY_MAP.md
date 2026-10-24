@@ -20,7 +20,6 @@ flowchart TD
     T012["T012<br/>Command layer design"]
     T028["T028<br/>Unique system: Conditionals and Countables"]
     T035["T035<br/>Test-support port: TestGame helper and deferred fixtures"]
-    T037["T037<br/>Golden test: load and validate Vanilla and bundled mod rules..."]
     T039["T039<br/>TileMap"]
     T040["T040<br/>Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, Map..."]
     T046["T046<br/>GameInfo core and the hooks waiting for it"]
@@ -259,7 +258,6 @@ flowchart TD
   class T012 done
   class T028 done
   class T035 done
-  class T037 review
   class T039 done
   class T040 done
   class T046 done
@@ -368,7 +366,6 @@ flowchart TD
 | C004 | Blocked | C002 | 0 | 3D military units |
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
-| T037 | Needs-Review [Claude] | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T130 | In-Progress [Antigravity] | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
