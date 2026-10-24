@@ -19,7 +19,7 @@ internal static class UniqueTypeData
     private const string AdditiveBonusExplanation = "Multiple bonuses stack additively: +50% + +50% = +100%";
     private const string MultiplicativeBonusExplanation = "Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%";
 
-    // Suppression.uniqueDocDescription in Suppression.kt (RulesetValidator suppression, T036)
+    // Suppression.uniqueDocDescription in Suppression.kt (RulesetValidator suppression)
     private const string SuppressionUniqueDocDescription =
         "Allows suppressing specific validation warnings." +
         " Errors, deprecation warnings, or warnings about untyped and non-filtering uniques should be heeded, not suppressed, and are therefore not accepted." +

@@ -1,11 +1,12 @@
+using Unciv.Logic;
 using Unciv.Logic.Map;
 using Unciv.Models.Metadata;
+using Unciv.Models.Ruleset.Validation;
 using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/RulesetCache.kt
-// Not ported yet: checkCombinedModLinks (RulesetErrorList and RulesetValidator, T036).
 // Deviations:
 // - the Kotlin object is a HashMap<String, Ruleset>; here the same map is the static state behind Get/Put/ContainsKey/Values/..., a JavaHashMap so that
 //   Values iterates in the same order as the Kotlin HashMap.
@@ -196,5 +197,25 @@ public static class RulesetCache
         newRuleset.UpdateResourceTransients();
 
         return newRuleset;
+    }
+
+    /// <summary>Runs <c>Ruleset.GetErrorList</c> on a temporary <see cref="GetComplexRuleset(LinkedHashSet{string}, string?)">combined Ruleset</see> for a list of <paramref name="mods"/></summary>
+    public static (Ruleset? Ruleset, RulesetErrorList Errors) CheckCombinedModLinks(
+        LinkedHashSet<string> mods,
+        string? baseRuleset = null,
+        bool tryFixUnknownUniques = false)
+    {
+        try
+        {
+            var newRuleset = GetComplexRuleset(mods, baseRuleset);
+            newRuleset.ModOptions.IsBaseRuleset = true; // This is so the checkModLinks finds all connections
+            return (newRuleset, newRuleset.GetErrorList(tryFixUnknownUniques));
+        }
+        catch (UncivShowableException ex)
+        {
+            // This happens if a building is dependent on a tech not in the base ruleset
+            //  because newRuleset.updateBuildingCosts() in getComplexRuleset() throws an error
+            return (null, RulesetErrorList.Of(ex.Message, RulesetErrorSeverity.Error));
+        }
     }
 }

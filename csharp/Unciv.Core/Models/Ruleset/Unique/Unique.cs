@@ -19,7 +19,7 @@ public interface IGameProgressCivilization
 /// <summary>
 /// Ported from core/src/com/unciv/models/ruleset/unique/Unique.kt.
 /// Deviations: <c>timeThis</c> profiling is dropped; <c>getReplacementText</c> takes the "does this unique validate without errors" check
-/// as a delegate instead of a <c>Ruleset</c> (TODO(T036): <c>UniqueValidator(ruleset).checkUnique(unique, null).isEmpty()</c>);
+/// as a delegate instead of a <c>Ruleset</c> (<c>UniqueValidatorExtensions.GetReplacementText(unique, ruleset)</c> passes <c>UniqueValidator(ruleset).checkUnique(unique, null).isEmpty()</c>);
 /// <c>toFloat()</c> follows <c>java.lang.Float.parseFloat</c> (ASCII whitespace trimmed, an <c>f</c>/<c>F</c>/<c>d</c>/<c>D</c> suffix accepted),
 /// <c>toInt()</c> follows <c>Integer.parseInt</c> (strict).
 /// </summary>
@@ -240,7 +240,7 @@ public class Unique : IUniqueTargetView
         return -1; // Not found
     }
 
-    /// <param name="hasNoErrors">Whether a candidate replacement validates without errors (TODO(T036): UniqueValidator).</param>
+    /// <param name="hasNoErrors">Whether a candidate replacement validates without errors (the Ruleset overload in <c>UniqueValidatorExtensions</c> uses <c>UniqueValidator</c>).</param>
     public string GetReplacementText(Func<Unique, bool> hasNoErrors)
     {
         var deprecationAnnotation = GetDeprecationAnnotation();

@@ -14,11 +14,11 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/Ruleset.kt
-// Not ported yet: getErrorList (RulesetValidator, T036), allICivilopediaText and the Civilopedia text types, the `GameInfo.getGlobalUniques` doc link.
+// getErrorList is the extension method RulesetValidatorExtensions.GetErrorList (T036). Not ported yet: allICivilopediaText and the Civilopedia text types, the `GameInfo.getGlobalUniques` doc link.
 // Deviations:
 // - libGDX FileHandle/Gdx.files become IRulesetFolder (see RulesetFiles.cs); Load takes the global jsons folder as a parameter, null being "console mode".
-// - the fallback for the CityStateTypes of a base ruleset filters the uniques with UniqueValidator.checkUnique(...).isEmpty(), which does not exist
-//   until T036: Ruleset.IsUniqueValid is the hook for it, the default accepts every unique (TODO(T036): install the validator).
+// - the fallback for the CityStateTypes of a base ruleset filters the uniques with UniqueValidator.checkUnique(...).isEmpty() through the
+//   Ruleset.IsUniqueValid hook (default: the real validator).
 // - the json is read with System.Text.Json plus Json/LenientJson (libGDX's unquoted keys); other libGDX leniencies (unquoted values, missing commas) are not
 //   supported, the shipped rulesets do not use them.
 // - BackwardCompatibility.updateDeprecations for ModOptions has an empty body upstream, so Load does not call anything.
@@ -32,9 +32,10 @@ namespace Unciv.Models.Ruleset;
 public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRulesetFeatureView, IRulesetTechView, IGameContextRuleset
 {
     /// <summary>
-    /// Replaces <c>UniqueValidator(ruleset).checkUnique(Unique(text), null).isEmpty()</c> (T036) in the fallback CityStateTypes of base rulesets.
+    /// Kotlin <c>UniqueValidator(ruleset).checkUnique(Unique(text), null).isEmpty()</c> in the fallback CityStateTypes of base rulesets; a seam so that tests can replace it.
     /// </summary>
-    public static Func<Ruleset, string, bool> IsUniqueValid { get; set; } = (_, _) => true;
+    public static Func<Ruleset, string, bool> IsUniqueValid { get; set; } =
+        (ruleset, text) => new Validation.UniqueValidator(ruleset).CheckUnique(new UniqueObject(text), null).Count == 0;
 
     /// <summary>If (and only if) this Ruleset is a mod, this will be the source folder. In other words, this is <c>null</c> for built-in and combined rulesets.</summary>
     public IRulesetFolder? FolderLocation { get; set; }

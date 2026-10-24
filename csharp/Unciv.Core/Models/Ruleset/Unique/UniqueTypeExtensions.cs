@@ -9,7 +9,7 @@ namespace Unciv.Models.Ruleset.Unique;
 /// <para>
 /// Not ported: <c>getDeprecationAnnotation</c> (JVM reflection; no entry carries <c>@Deprecated</c>, deprecated
 /// uniques live in <c>DeprecatedUniqueType</c>, T029) and <c>UniqueParameterErrorSeverity.getRulesetErrorSeverity</c>
-/// (needs <c>RulesetErrorSeverity</c>, T036; the enum itself is <see cref="UniqueParameterErrorSeverity"/>).
+/// (an extension in <c>RulesetErrorSeverityExtensions</c>, T036; the enum itself is <see cref="UniqueParameterErrorSeverity"/>).
 /// </para>
 /// </summary>
 public static class UniqueTypeExtensions

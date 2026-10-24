@@ -5,8 +5,8 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 namespace Unciv.Core.Tests.Models.Ruleset.Unique;
 
 /// <summary>
-/// Ported from <c>tests/src/com/unciv/uniques/DeprecatedUniquesTest.kt</c>: tests 1 and 2 (the table itself). Tests 3, 5, 6, 7 need
-/// <c>UniqueValidator</c>/<c>UniqueAutoUpdater</c>/<c>TestGame</c> (TODO(T036), TODO(T035)); test 2's half-deprecated hop does not apply
+/// Ported from <c>tests/src/com/unciv/uniques/DeprecatedUniquesTest.kt</c>: tests 1 and 2 (the table itself). Tests 3, 5, 6, 7 need the validator
+/// and are in <c>Validation/DeprecatedUniquesValidatorTests</c> (T036); test 2's half-deprecated hop does not apply
 /// because no <see cref="UniqueType"/> entry is deprecated.
 /// <para>
 /// <c>Golden/DeprecatedUniques.golden.tsv</c> (columns: entry name, sign variant, unique text, replacement text) was produced by the real
@@ -118,7 +118,7 @@ public class DeprecatedUniquesTests
     [Fact]
     public void SeveralAlternativesAreFilteredByTheValidatorPredicate()
     {
-        // Hand-derived from Unique.getReplacementText (the validator is T036): alternatives are separated by " OR ".
+        // Hand-derived from Unique.getReplacementText with a stand-in predicate (the real validator is covered by DeprecatedUniquesValidatorTests): alternatives are separated by " OR ".
         var unique = new UniqueObject("+[5]% Strength vs [Melee]");
         Assert.Contains(OrDelimiter, unique.DeprecatedType!.ReplaceWith);
         Assert.Equal("[+5]% Strength <vs cities>", unique.GetReplacementText(it => it.Text.Contains("cities")));
