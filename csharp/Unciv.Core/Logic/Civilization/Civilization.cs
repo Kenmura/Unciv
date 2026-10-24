@@ -594,7 +594,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         return newResourceSupplyList;
     }
 
-    public bool IsCapitalConnectedToCity(CityObject city) => Cache.IsCityConnectedToCapital(city);
+    public bool IsCapitalConnectedToCity(CityObject city) => Cache.CitiesConnectedToCapitalToMediums.ContainsKey(city);
 
     /// <summary>
     /// Returns a dictionary of ALL resource names, and the amount that the civ has of each

@@ -513,7 +513,4 @@ public class CivInfoTransientCache(Civilization civInfo)
 
         return proximity;
     }
-
-    /// <summary><c>cache.citiesConnectedToCapitalToMediums.keys.contains(city)</c></summary>
-    public bool IsCityConnectedToCapital(CityObject city) => CitiesConnectedToCapitalToMediums.ContainsKey(city);
 }
