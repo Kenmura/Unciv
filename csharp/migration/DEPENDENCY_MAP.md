@@ -385,7 +385,7 @@ flowchart TD
   class T111 waiting
   class T115 waiting
   class T120 prog
-  class T121 ready
+  class T121 prog
   class T122 ready
   class T123 ready
   class T124 ready
@@ -398,7 +398,6 @@ flowchart TD
 |---|---|---|---|---|
 | T097 | **Ready to start** | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
 | T096 | **Ready to start** | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
-| T121 | **Ready to start** | none | 0 | Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline |
 | T122 | **Ready to start** | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
@@ -457,3 +456,4 @@ flowchart TD
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T120 | In-Progress [Claude] | none | 0 | Policy: size ratchet - maximum file length and method length with a shrink-only baseline |
+| T121 | In-Progress [Claude] | none | 0 | Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline |

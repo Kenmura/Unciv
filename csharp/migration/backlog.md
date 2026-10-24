@@ -1216,13 +1216,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Why: files over 1000 lines: UniqueTypeData.cs 2592 (a data table), Tile.cs 1496, Civilization.cs 1443, UniqueParameterType.cs 1286, TileMap.cs 1156, plus City.cs 945 and others near it. Methods over 100 lines: Conditionals.ConditionalApplies 305, Ruleset.Load 185, MapRegions.AssignRegions 168, JavaDecimalFormat.Parse 119, TileImprovementFunctions.CanImprovementBeBuiltHere 102. Many mirror giant Kotlin functions, so a hard limit would fight faithful ports: use a RATCHET. Test fails if (a) a file exceeds 1500 lines or a method exceeds 120 lines and is not in the baseline, or (b) a baselined file/method GROWS beyond its recorded size (the baseline may only shrink; the test rewrites nothing, humans lower the numbers). Method length via a Roslyn syntax scan (Microsoft.CodeAnalysis.CSharp as a test-only package; Directory.Packages.props is editable in this policy ticket) or a documented brace-matching scan. Do not refactor existing offenders here; note candidates for splitting.
 
 ### T121 Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Policy/CouplingRatchetTests.cs, baseline file, tests
 - Gate: dotnet test --filter FullyQualifiedName~CouplingRatchetTests
-- Claimed:
+- Claimed: 2026-10-24T12:14Z
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: Civilization.cs imports 18 distinct Unciv namespaces, TechManager 12, Ruleset/City 11, TileMap/MapGenerator 10: god-class risk. Same ratchet idea as the size ratchet: count distinct 'using Unciv...' namespaces plus fully qualified Unciv references per file (and optionally per-namespace cross-references), fail when a file not in the baseline exceeds 12 or a baselined file grows. Also add a layering test: Unciv.Core/Models and Logic must not reference Unciv.UI.* types other than the engine-owned leaf packages listed in backlog Non-goals #7 (Fonts stat chars, RankingType, etc.), and nothing in Unciv.Core may reference Godot/harness assemblies. Do not refactor existing offenders.
