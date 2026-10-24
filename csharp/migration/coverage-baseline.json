@@ -56,6 +56,7 @@
     "Unciv.Core/Logic/Civilization/Managers/RuinsManager.cs": {"branch": 25.0, "line": 19.7},
     "Unciv.Core/Logic/Civilization/Managers/TechManager.cs": {"branch": 85.71, "line": 92.87},
     "Unciv.Core/Logic/Civilization/Managers/TriggerUniqueSeam.cs": {"branch": 100.0, "line": 0.0},
+    "Unciv.Core/Logic/Civilization/Managers/UnitManager.cs": {"branch": 66.67, "line": 71.97},
     "Unciv.Core/Logic/Civilization/Managers/VictoryManager.cs": {"branch": 83.87, "line": 93.46},
     "Unciv.Core/Logic/Civilization/Notification.cs": {"branch": 91.3, "line": 95.83},
     "Unciv.Core/Logic/Civilization/NotificationActions.cs": {"branch": 85.06, "line": 94.56},
@@ -71,6 +72,7 @@
     "Unciv.Core/Logic/Files/MapSaver.cs": {"branch": 50.0, "line": 76.0},
     "Unciv.Core/Logic/GameClientState.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/GameInfo.cs": {"branch": 86.54, "line": 92.67},
+    "Unciv.Core/Logic/GameStarter.cs": {"branch": 72.4, "line": 84.0},
     "Unciv.Core/Logic/HolidayDates.cs": {"branch": 95.16, "line": 98.81},
     "Unciv.Core/Logic/IdChecker.cs": {"branch": 87.76, "line": 92.13},
     "Unciv.Core/Logic/Map/AStar.cs": {"branch": 98.08, "line": 99.12},
@@ -261,5 +263,7 @@
     "Unciv.Harness/PerceptualHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0}
   },
-  "excused": {}
+  "excused": {
+    "Unciv.Core/Logic/Civilization/Managers/UnitManager.cs": "T099 only retargets a TODO marker comment; the file keeps T066 coverage (T104 final sweep owns it)"
+  }
 }

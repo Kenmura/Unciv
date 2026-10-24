@@ -151,7 +151,7 @@ internal sealed class FakeQuestManager : IQuestManager
     public void HandleIndividualQuests() => IndividualQuestsHandled++;
 }
 
-internal sealed class FakeCityStateFunctions : ICityStateFunctions
+internal class FakeCityStateFunctions : ICityStateFunctions
 {
     public int TributeWillingness { get; set; }
     public int GetTributeWillingness(Civilization demandingCiv, bool demandingWorker = false) => TributeWillingness;

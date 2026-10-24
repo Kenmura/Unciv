@@ -7,6 +7,7 @@ using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
+using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Logic.Civilization;
@@ -103,6 +104,12 @@ public interface ICityStateFunctions
     void ForEachUniqueProvidedByCityStates(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
     /// <summary><c>cityStateFunctions.getCityStateResourcesForAlly()</c> (T058).</summary>
     ResourceSupplyList GetCityStateResourcesForAlly();
+    /// <summary>
+    /// <c>cityStateFunctions.initCityState(ruleset, startingEra, usedMajorCivs, rng)</c> (T099: GameStarter.addCivilizations). Returns true if successful.
+    /// TODO(T068): CityStateFunctions implements it; the throwing default lets the existing fakes compile.
+    /// </summary>
+    bool InitCityState(Ruleset ruleset, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng) =>
+        throw new NotSupportedException("CityStateFunctions is not ported yet (TODO(T068))");
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>
