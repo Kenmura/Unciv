@@ -1420,13 +1420,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by T067: UnitMovement and MapUnit are concrete now. T040 left CarrierSlotMatcher/MapVisualization/MapPathing typed by seams (MapPathingSeams.cs: IGameContextUnit.MovementMemoryPositions/IsVisibleTo, IGameContextCivilization.HasExplored/CanBuildImprovementOn); retype them mechanically, keep the seam members only where another ticket still needs them. MapPathing.getPath(unit, ...) was not ported (no Kotlin caller); add it only if a caller exists.
 
 ### T135 T066 review follow-ups: UnitPromotions JSON round-trip, tie-break and promotion-trigger tests
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T066
 - Source:
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Logic/Map/UnitManagerTests.cs: JSON round-trip of UnitPromotions (XP/promotions/numberOfPromotions), equal-damage citadel and equal-distance alternate-cycle tie-break cases (first extreme wins), TriggerUponPromotion/Gain/Loss tests
 - Gate: dotnet test --filter FullyQualifiedName~UnitManagerTests
-- Claimed:
+- Claimed: 2026-10-24T14:07:00Z
 - Notes: From T066 review. Also: T126 must delete the virtual UnitPromotions.CreatePromotionTree and the TestUnitPromotions test subclass.
 
 ### T136 T064 review follow-up: cover uncovered CityConquestFunctions/CityTurnManager branches
