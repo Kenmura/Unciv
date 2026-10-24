@@ -52,17 +52,6 @@ public interface IGameInfoState : IConstructionGameInfo
     /// Barbarians and spectators are always excluded; the sort (the player's civ first, then majors, then by translated name) belongs to GameInfo.
     /// </summary>
     IEnumerable<Civilization> GetCivsSorted(bool includeCityStates = true, bool includeDefeated = false, Civilization? civToSortFirst = null, Func<Civilization, bool>? additionalFilter = null);
-    // T063 (CityConstructions, Building, BaseUnit)
-    /// <summary><c>gameInfo.isUnavailableBySettingsCached(obj)</c></summary>
-    bool IsUnavailableBySettingsCached(IHasUniques construction);
-    /// <summary><c>gameInfo.spaceResources</c></summary>
-    IReadOnlySet<string> SpaceResources { get; }
-    /// <summary><c>gameInfo.isUsersTurn()</c> (multiplayer extension reading the local user id from the client settings). TODO(T046)</summary>
-    bool IsUsersTurn();
-    /// <summary><c>UncivGame.Current.settings.autoAssignCityProduction</c> (client setting). TODO(T046)</summary>
-    bool AutoAssignCityProduction { get; }
-    /// <summary><c>UncivGame.Current.worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c> (client state). TODO(T046)</summary>
-    bool IsFullAutoPlayAI { get; }
 }
 
 /// <summary>What Civilization reads from <c>QuestManager</c>.</summary>
@@ -97,7 +86,7 @@ public interface IUnitManager
     /// <summary><c>civ.units.removeUnit(unit, updateCivInfo)</c></summary>
     void RemoveUnit(IGameContextUnit unit, bool updateCivInfo);
     /// <summary><c>baseUnit.newMapUnit(civInfo, unitId)</c></summary>
-    IMapUnitState NewMapUnit(BaseUnit baseUnit, int? unitId);
+    IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId);
     /// <summary><c>civ.units.addUnit(baseUnit, city)</c>; <c>null</c> when the unit cannot be placed.</summary>
     IMapUnitState? AddUnit(BaseUnit baseUnit, CityObject? city = null);
 }
@@ -127,26 +116,6 @@ public interface IMapUnitState : IGameContextUnit
     bool CanGarrison();
     /// <summary><c>unit.getResourceRequirementsPerTurn()</c></summary>
     Counter<string> GetResourceRequirementsPerTurn();
-    // T063
-    /// <summary><c>unit.id</c></summary>
-    int Id { get; }
-    /// <summary><c>unit.currentMovement</c></summary>
-    new float CurrentMovement { get; set; }
-    /// <summary><c>unit.promotions</c></summary>
-    IUnitPromotions Promotions { get; }
-    /// <summary><c>unit.movement.canMoveTo(tile)</c></summary>
-    bool CanMoveTo(Tile tile);
-    /// <summary><c>PromotionTree(unit)</c>, a UI-package class in Kotlin. TODO(T125)</summary>
-    IPromotionTree CreatePromotionTree();
-}
-
-/// <summary>What CityConstructions reads from <c>PromotionTree</c>. TODO(T125)</summary>
-public interface IPromotionTree
-{
-    /// <summary><c>promotionTree.possiblePromotions</c> (the promotion names, in tree order).</summary>
-    IEnumerable<string> PossiblePromotionNames { get; }
-    /// <summary><c>promotionTree.allNodes()</c> (the node promotion names, in order).</summary>
-    IEnumerable<string> AllNodePromotionNames();
 }
 
 /// <summary>What the religion managers and City read from <c>CityReligionManager</c> (<c>city.religion</c>). TODO(T061)</summary>

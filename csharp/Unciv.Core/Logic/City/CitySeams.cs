@@ -13,6 +13,47 @@ namespace Unciv.Logic.City;
 // lateinit-style property by Kotlin's initializer (`= new CityPopulationManager()`), then drops the members only the seam needed.
 // Member names mirror the Kotlin members.
 
+/// <summary>What City reads from <c>CityConstructions</c> (<c>city.cityConstructions</c>). TODO(T063)</summary>
+public interface ICityConstructions
+{
+    /// <summary><c>cityConstructions.city</c> (assigned by <c>City.setTransients</c>).</summary>
+    City City { get; set; }
+    void SetTransients();
+    ICityConstructions Clone();
+    /// <summary><c>cityConstructions.builtBuildingUniqueMap</c></summary>
+    UniqueMap BuiltBuildingUniqueMap { get; }
+    /// <summary><c>cityConstructions.getBuiltBuildings()</c>, in the order of the built building set.</summary>
+    IEnumerable<Building> GetBuiltBuildings();
+    /// <summary><c>cityConstructions.builtBuildings</c> (a set of names).</summary>
+    IReadOnlySet<string> BuiltBuildings { get; }
+    bool ContainsBuildingOrEquivalent(string buildingName);
+    void AddProductionPoints(int productionToAdd);
+    int GetWorkDone(string constructionName);
+    /// <summary><c>cityConstructions.getCurrentConstruction()</c></summary>
+    IConstruction GetCurrentConstruction();
+    void AddBuilding(Building building);
+    void RemoveBuilding(Building building);
+    void ChooseNextConstruction();
+    /// <summary><c>cityConstructions.editQueue(edit)</c>: edits a copy of the queue and then replaces the queue by it.</summary>
+    void EditQueue(Action<List<string>> edit);
+    void ValidateInProgressConstructions();
+    /// <summary><c>cityConstructions.freeBuildingsProvidedFromThisCity</c> (a <c>HashMap&lt;String, HashSet&lt;String&gt;&gt;</c>).</summary>
+    Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; }
+    Building? CheapestStatBuilding(Stat stat);
+    void CompleteConstruction(Building building);
+    bool IsBeingConstructedOrEnqueued(string constructionName);
+    /// <summary><c>building.isBuildable(cityConstructions)</c></summary>
+    bool IsBuildable(Building building);
+    void RemoveCreateOneImprovementConstruction(string improvement);
+    // T062 (CityStats)
+    /// <summary><c>cityConstructions.currentConstructionName()</c></summary>
+    string CurrentConstructionName();
+    /// <summary><c>cityConstructions.getStats()</c></summary>
+    StatTreeNode GetStats();
+    /// <summary><c>cityConstructions.getMaintenanceCosts()</c></summary>
+    float GetMaintenanceCosts();
+}
+
 /// <summary>What City reads from <c>CityPopulationManager</c> (<c>city.population</c>). TODO(T061)</summary>
 public interface ICityPopulationManager
 {
@@ -51,14 +92,4 @@ public interface ICityExpansionManager
 /// <summary>
 /// What City stores of <c>UnitPromotions</c> (<c>city.unitToPromotions</c> values; only copied by <c>City.clone</c>). TODO(T066): replaced by UnitPromotions.
 /// </summary>
-public interface IUnitPromotions
-{
-    /// <summary><c>promotions.XP</c></summary>
-    int XP { get; set; }
-    /// <summary><c>promotions.promotions</c> (the promotion names).</summary>
-    IEnumerable<string> Promotions { get; }
-    /// <summary><c>promotions.xpForNextPromotion()</c></summary>
-    int XpForNextPromotion();
-    /// <summary><c>promotions.addPromotion(name, isFree)</c></summary>
-    void AddPromotion(string promotionName, bool isFree = false);
-}
+public interface IUnitPromotions;
