@@ -573,7 +573,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T060: City.AnnexCity/PuppetCity/LiberateCity/MoveToCiv throw InvalidOperationException (TODO(T064)); replace the bodies by CityConquestFunctions(this).annexCity() etc. City.DestroyCity is ported, but only exercised against fake sub-objects.
 
 ### T065 MapUnit core: MapUnit, MapUnitCache
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T055, T056, T060
 - Source: core/src/com/unciv/logic/map/mapunit/MapUnit.kt, MapUnitCache.kt
 - Fixtures: tests/src/com/unciv/logic/map/UnitFormationTests.kt (TestGame-based: T072)
@@ -597,6 +597,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
          - In `City.cs`: Retyping unit seams to concrete `MapUnit` added `Unciv.Logic.Map.MapUnits`, pushing `City.cs` to 13 namespaces. Decouple an unused namespace or address via coupling ratchet baseline.
     - Adversary: Tested edge cases (unplaced units, negative health, unassigned lateinit fields, carrier slots) are well covered by MapUnitCoreTests.
     - Pragmatist: Clean implementation and seam boundaries.
+  - REVIEW FIXES [Claude]: Both Antigravity findings (T119 null-forgiving in MapUnit.cs/MapUnitCache.cs; T121 coupling 13>12 in MapUnit.cs/City.cs) were already fixed by commit 1751e8209 'fix null-forgiving and coupling ratchet' on the branch, which post-dates the review snapshot. Verified on rebased tip: grep finds no bare '!' in either file, Policy tests (62) pass incl. CouplingRatchetTests, dotnet build -warnaserror clean, format clean, 2031 tests pass. No further code changes needed. Auditor/Adversary/Pragmatist parity findings: none.
 
 ### T066 MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager
 - State: Available
