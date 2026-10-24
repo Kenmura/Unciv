@@ -880,7 +880,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (isolated adversarial, Auditor/Adversary/Pragmatist): PASS. Correction: ViewTests has 27 tests. Non-blocking: TileMap.StartingLocationsByNation is a Dictionary (Kotlin insertion-ordered); T085 must keep the TODO markers.
 
 ### T085 Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T084, T081, T062, T063, T066, T067
 - Source: core/src/com/unciv/view/CityView.kt, ForeignCityView.kt, CityConstructionsView.kt, MapUnitView.kt, ForeignMapUnitView.kt, CombatantView.kt, AttackableTileView.kt
 - Fixtures: tests/src/com/unciv/view/ViewPurityTest.kt (shared with T084)

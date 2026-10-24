@@ -111,8 +111,6 @@ flowchart TD
   T068 --> T083
   T079 --> T083
   T035 --> T083
-  T085 --> T087
-  T057 --> T087
   T087 --> T088
   T086 --> T088
   T081 --> T088
@@ -245,9 +243,9 @@ flowchart TD
   class T081 done
   class T082 review
   class T083 waiting
-  class T085 review
+  class T085 done
   class T086 done
-  class T087 ondeck
+  class T087 ready
   class T088 waiting
   class T089 waiting
   class T090 waiting
@@ -279,6 +277,7 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T087 | **Ready to start** | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
@@ -286,12 +285,10 @@ flowchart TD
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T079 | **On deck** (after T052) | T052, T057, T063, T066, T067 | 15 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
-| T087 | **On deck** (after T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T072 | **On deck** (after T052) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | T106 | **On deck** (after T052) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
 | T111 | **On deck** (after T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T052 | In-Progress [Claude] | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 20 | UniqueTriggerActivation and UniqueTriggerExecutors |
-| T085 | Needs-Review [Claude] | T084, T081, T062, T063, T066, T067 | 16 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T082 | Needs-Review [Claude] | T081, T046, T067, T035 | 14 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T083 | Available (waiting on T082, T052, T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
 | T088 | Available (waiting on T087) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
@@ -306,7 +303,7 @@ flowchart TD
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T089 | Available (waiting on T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
+| T089 | Available (waiting on T088) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
@@ -318,4 +315,4 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T139 | Available (waiting on T085, T082, T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
+| T139 | Available (waiting on T082, T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
