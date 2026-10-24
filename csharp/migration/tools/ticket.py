@@ -167,6 +167,7 @@ def write_backlog(lines):
 TRACKS = {"T": "Engine track", "C": "Client track (Godot)", "A": "Game AI track"}
 STYLES = {  # kind -> (class name, mermaid style)
     "Available": ("waiting", "fill:#f3faf3,stroke:#9bc49b,color:#555,stroke-dasharray:2 2"),
+    "OnDeck": ("ondeck", "fill:#ffe8cc,stroke:#e8590c,stroke-width:3px,color:#000"),
     "Ready": ("ready", "fill:#7ee787,stroke:#1a7f37,stroke-width:3px,color:#000"),
     "In-Progress": ("prog", "fill:#fff3b0,stroke:#b58900,color:#000"),
     "Needs-Review": ("review", "fill:#cfe4ff,stroke:#1f6feb,color:#000"),
@@ -184,6 +185,7 @@ def render_map():
     for i, _, b in blocks(ARCHIVE):
         info.setdefault(i, (next(t for j, t, _ in blocks(ARCHIVE) if j == i), "Done", ""))
     open_ids = [i for i, _, s, _, _ in ts if not s.startswith(("Done", "Won't"))]
+
     def is_done(i):
         return info[i][1].startswith(("Done", "Won't"))
 
@@ -199,9 +201,17 @@ def render_map():
     shown.sort()
     ready_ids = {i for k, i, _, _, _ in ready_list(ts) if k == "IMPLEMENT"}
     counts = downstream_counts(ts)
+    inflight = {i for i in open_ids if kind(info[i][1]) in ("In-Progress", "Needs-Review", "In-Review")}
+    # On deck: Available, not ready yet, and every unfinished dependency is already being worked on.
+    ondeck = {}
+    for i in open_ids:
+        if info[i][1] == "Available" and i not in ready_ids:
+            pending = [d for d in deps_of(info[i][2]) if d in info and not is_done(d)]
+            if pending and all(d in inflight for d in pending):
+                ondeck[i] = pending
 
     def state_kind(i):
-        return "Ready" if i in ready_ids else kind(info[i][1])
+        return "Ready" if i in ready_ids else "OnDeck" if i in ondeck else kind(info[i][1])
 
     def label(i):
         t = info[i][0].replace('"', "'").replace("<", "(").replace(">", ")")
@@ -214,7 +224,8 @@ def render_map():
            "An arrow `A --> B` means B depends on A.", "",
            "| Colour | Meaning |", "|---|---|",
            "| bright green, thick border | Ready to start: Available and every dependency is Done |",
-           "| pale green, dotted border | Available but waiting on unfinished dependencies |", "| yellow | In-Progress |",
+           "| orange, thick border | On deck: Available, and every unfinished dependency is already in progress or in review, so it becomes ready when those finish |",
+           "| pale green, dotted border | Available but waiting on dependencies that are not started yet |", "| yellow | In-Progress |",
            "| blue | Needs-Review / In-Review |", "| red | Blocked |", "| grey dashed | Done (shown as a direct dependency only) |", "",
            "```mermaid", "flowchart TD"]
     for prefix, name in TRACKS.items():
@@ -231,11 +242,13 @@ def render_map():
     for i in shown:
         out.append(f"  class {i} {STYLES.get(state_kind(i), STYLES['Blocked'])[0]}")
     out += ["```", "", "## Incomplete tickets", "", "| Ticket | State | Depends on | Unblocks | Title |", "|---|---|---|---|---|"]
-    order = sorted(open_ids, key=lambda i: (i not in ready_ids, -counts.get(i, 0), i))
+    order = sorted(open_ids, key=lambda i: (i not in ready_ids, i not in ondeck, -counts.get(i, 0), i))
     for i in order:
         t, st, d = info[i]
         if i in ready_ids:
             st = "**Ready to start**"
+        elif i in ondeck:
+            st = "**On deck** (after " + ", ".join(ondeck[i]) + ")"
         elif st == "Available":
             waiting = [x for x in deps_of(d) if not info.get(x, ("", "Done"))[1].startswith("Done")]
             st = "Available (waiting on " + ", ".join(waiting) + ")"
