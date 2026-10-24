@@ -1045,7 +1045,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Quirks kept: Speed defaults use constructor-time modifier; Policy IsEnabledByPolicy's Unavailable half does not ignore conditionals (never matches "before adopting" without a civ); Tutorial.GetSortGroup throws for an empty category as Kotlin does; Difficulty prints "null" for a null aiDifficultyLevel; Unit-set-art regex is unquoted like Kotlin. Promotion.getDescription still not ported.
 
 ### T109 Hardening sweep: non-blocking review findings from T033-T095
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: none
 - Source: C# files named in the notes (no Kotlin source: parity fixes and missing tests)
 - Fixtures: none
