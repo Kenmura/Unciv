@@ -164,7 +164,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Target is an authoritative-server model: clients send commands, server validates/applies, broadcasts commands or diffs. Must not depend on Unciv's multiplayer code. Reviewer must check it keeps lockstep as a possible future option (pure, deterministic apply).
 
 ### T013 Style & analyzer baseline
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T01:10:12Z
 - Depends: none
 - Source: design ticket (no Kotlin). Config only: `csharp/Directory.Build.props`, `Directory.Packages.props`, `BannedSymbols.txt`, `[*.cs]` in `.editorconfig`
@@ -179,6 +179,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Reviewer: please check the banned-API list for anything the Kotlin code legitimately needs (e.g. a rounding helper will be required once a ticket ports `roundToInt`).
   - Merge note (Claude, merged to master): master had advanced (T006 HexMath, T007 Json, T010 claim by Antigravity) and did not pass the new checks, so the merge also touched their files minimally, without behaviour change: explicit `MidpointRounding.ToEven` in `HexMath.RoundHexCoords` (Kotlin `kotlin.math.round` is half-even; `roundToInt` is half-up, so the bare-`Round` ban message was sharpened) and in the two Json converters' `Math.Round(double)` fallback; `int.Parse` now passes `CultureInfo.InvariantCulture`; unused usings removed and one private static renamed in `UncivJson`; scoped IDE1006 exceptions for `HexMath.cs` (Kotlin-lowercase HexCoord members) and `IsPartOfGameInfoSerialization.cs`. T006/T007 reviewers should re-run the Standard checks, not assume their earlier pass covers this.
   - Ticket id collision: master also defined a `T013` (deferred HexMath Tile/Map functions); that one is renumbered **T015**.
+  - Review (Antigravity): Pass. Verified `Directory.Build.props`, `Directory.Packages.props`, `BannedSymbols.txt`, `BannedSymbols.Tests.txt`, `.editorconfig`, `ArchitectureTests`, `SourcePolicyTests`, `AGENTS.md`, and `PROTOCOL.md`. All determinism-breaking APIs (System.Random, wall-clock time, threading, default banker's rounding, unstable sorts, randomized string hashing, culture-sensitive string/number operations) are banned with clear replacement instructions. Suppression and NoWarn justification policies and architecture boundaries are enforced by tests. Re-ran Gate (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test`): 0 warnings, 0 format diffs, 137/137 tests passed.
 
 ### T015 HexMath Tile/Map dependent functions
 - State: Blocked
