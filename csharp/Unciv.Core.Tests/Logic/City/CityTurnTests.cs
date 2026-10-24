@@ -711,13 +711,11 @@ public sealed class CityTurnTests
     {
         var externals = new CityConquestFunctionsSeamProbe();
         Assert.Throws<NotSupportedException>(() => externals.DestroyIfDefeated());
-        Assert.Throws<NotSupportedException>(() => externals.AcceptTrade());
     }
 
     private sealed class CityConquestFunctionsSeamProbe
     {
         private readonly ICityConquestExternals unported = CityManagerSeams.UnportedConquest;
         public void DestroyIfDefeated() => unported.DestroyIfDefeated(null!, null!, null);
-        public void AcceptTrade() => unported.AcceptTrade(null!, null!, new TradeObject());
     }
 }

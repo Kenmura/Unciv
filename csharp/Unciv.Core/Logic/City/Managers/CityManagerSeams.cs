@@ -1,5 +1,6 @@
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.Trade;
 using Unciv.Models.StatTypes;
 using CityObject = Unciv.Logic.City.City;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
@@ -59,12 +60,16 @@ internal static class CityManagerSeams
         // TODO(T083): Battle.destroyIfDefeated
         public void DestroyIfDefeated(CivilizationObject attackedCiv, CivilizationObject attacker, HexCoord? notificationLocation) =>
             throw new NotSupportedException("Battle is not ported yet (TODO(T083))");
-        // TODO(T086): TradeLogic.acceptTrade
-        public void AcceptTrade(CivilizationObject ourCiv, CivilizationObject theirCiv, TradeObject trade) =>
-            throw new NotSupportedException("TradeLogic is not ported yet (TODO(T086))");
+        // T086: TradeLogic is ported; its TradeEvaluation seam (T089) still throws when it is reached.
+        public void AcceptTrade(CivilizationObject ourCiv, CivilizationObject theirCiv, TradeObject trade)
+        {
+            var tradeLogic = new TradeLogic(ourCiv, theirCiv);
+            tradeLogic.CurrentTrade.Set(trade);
+            tradeLogic.AcceptTrade(false);
+        }
     }
 
-    /// <summary>The default of <see cref="CityObject.ConquestExternals"/>: throws. T083/T086 replace the property by direct calls.</summary>
+    /// <summary>The default of <see cref="CityObject.ConquestExternals"/>: Battle throws, TradeLogic is wired (T086). T083 replaces the property by direct calls.</summary>
     internal static readonly ICityConquestExternals UnportedConquest = new ConquestNotPorted();
 
     /// <summary>The default of <see cref="CityPopulationManager.Automation"/>: throws. T087 replaces the property by direct calls of <c>Automation</c>.</summary>

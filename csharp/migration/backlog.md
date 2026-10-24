@@ -885,6 +885,10 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T15:52Z
 - Notes: Created by the backlog audit (TradeLogic was 'Planned, after T068'). ~290 LOC. TradeOfferType.kt is ported by T059 together with TradeOffer. TradeEvaluation (T089) is separate because it needs the diplomacy automation (T088).
   - DiplomacyManager.MakePeaceOneSide builds a plain Trade instead of TradeLogic(...).currentTrade; switch it to TradeLogic when this lands (optional, behaviour is identical).
+  -   - Implemented TradeLogic.cs. TradeEvaluation (T089) is reached through the internal replaceable seam TradeLogic.Evaluation (ITradeEvaluation: GetTradeAcceptability, IsPeaceProposalEnabled), default throws; T089 replaces it by direct calls (TODO(T089)).
+      - City.ConquestExternals default AcceptTrade now runs TradeLogic(..).CurrentTrade.Set(trade); AcceptTrade(false) (no gifts evaluated); its unported-throws test assertion was dropped. The TradeLogic constructor still hits the T089 seam only when a third civ at war is known (peace-proposal offers).
+      - Kotlin `+=` on the offers lists is plusAssign (AddRange, no merge); embassy offer instance is shared between both lists as in Kotlin. DiplomacyManager.MakePeaceOneSide left on a plain Trade (identical behaviour; avoids the T089 seam throwing there).
+      - Not covered by tests (need map/city/units): Embassy exploration, City transfer, Stockpiled_Resource, Technology.
 
 ### T087 Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation
 - State: Available
