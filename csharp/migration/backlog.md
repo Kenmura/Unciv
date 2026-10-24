@@ -1430,13 +1430,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From T066 review. Also: T126 must delete the virtual UnitPromotions.CreatePromotionTree and the TestUnitPromotions test subclass.
 
 ### T136 T064 review follow-up: cover uncovered CityConquestFunctions/CityTurnManager branches
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T064
 - Source: core/src/com/unciv/logic/city/managers/CityTurnManager.kt, CityConquestFunctions.kt
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Logic/City/CityTurnTests.cs
 - Gate: dotnet test --filter FullyQualifiedName~CityTurnTests
-- Claimed:
+- Claimed: 2026-10-24T13:51:00Z
 - Notes: Uncovered ported branches: CityConquestFunctions free-building removal in removeBuildingsOnMoveToCiv, TriggerUponLosingCity body, liberation notifications for unknown civs, unit teleport loops, resurrected-civ peace/flag clearing, tile reassignment loop and unique-building transfer in moveToCiv; CityTurnManager stockpiled resource gain, TriggerUponTurnStart/End uniques, new-capital +10 cooldown. Needs TriggerUnique (T052) for the trigger bodies.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
