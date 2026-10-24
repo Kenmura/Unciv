@@ -377,7 +377,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Container of `GameParameters` and `MapParameters` with the two cloning constructors (from another setup; from a `GameInfo` when that exists: leave that constructor as `TODO(T0xx)` pointing at the GameInfo ticket). `mapFile` (FileHandle, transient) and `fromSettings` (reads `UncivGame.Current.settings.lastGameSetup`, applies QuickStart defaults: `shape = rectangular`, `worldWrap = true`, `espionageEnabled = true`) are client concerns; port the default-setup branch as a plain factory taking an optional difficulty if it is useful to headless tests.
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T006, T007, T010
 - Source: core/src/com/unciv/logic/map/MapSize.kt, MapParameters.kt, NeighborDirection.kt, logic/map/tile/RoadStatus.kt
 - Fixtures: none - generate golden values (incl. MapSize radius/size math, MapParameters JSON)
@@ -396,6 +396,12 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     2. **`NiceToString` rounds exact ties differently from Java.** Kotlin `"%.2f".format(float)` is HALF_UP over the shortest decimal digits of the float widened to double; .NET `F2` rounds an exact binary tie to even-magnitude. I diffed against the real JVM over 49,398 floats (|x|<1e6, multiples of 1/1000, 1/200, 1/8000 and random): 129 differ, all exact ties, e.g. `0.125f` Java `0.13` vs C# `0.12`, `-14.625f` Java `-14.63` vs C# `-14.62`, `0.3125f` at 3 digits `0.313` vs `0.312`. Fix (verified to remove every tie difference): `decimal.Parse(((double)v).ToString("R", Invariant))` then `Math.Round(d, p, MidpointRounding.AwayFromZero)` then `F{p}` and the trims. Caveat if you use `decimal`: it drops the sign of negative zero, Java gives `-0` for e.g. `-0.001f` at 2 digits, so keep the sign for values that round to zero (`float.IsNegative`). NaN/Infinity and |x|>=1e6 are out of range for these settings, ignore. Add tie cases (`0.125f`, `-2.625f`, `0.3125f` at 3, and `-0.001f`) to the `ToString` test.
     3. **Namespace `Unciv.Logic.Map.Tile` will collide with the `Tile` class (T038) in `Unciv.Logic.Map`**; any code in `Unciv.Logic.Map` then resolves `Tile` to the namespace (CS0118). Use a different namespace (e.g. `Unciv.Logic.Map.Tiles`) for `RoadStatus` and tell T038 in its Notes; keep the folder as is.
     4. Minor: `BaseRuleset` default is the string literal `"Civ V - Gods & Kings"` although T021 provides `Metadata.BaseRuleset.Civ_V_GnK.FullName()`; use that and remove the "(in T021)" remark. `MapResourceSetting` lives in `MapParameters.cs` while upstream is in `mapgenerator`; fine for now, but give it its own file under `MapGenerator/` when T041 touches it.
+  - Rework notes (Antigravity):
+    1. Changed `MapParameters.Mods` to `LinkedHashSet<string>` (`Unciv.Utils`) for the property, initializer, and `Clone()`; added a remove-then-add test asserting insertion order preservation.
+    2. Updated `NiceToString` to round over the shortest decimal representation of `(double)value` via `MidpointRounding.AwayFromZero` and preserve `-0` when `float.IsNegative(value)` rounds to zero; added tie cases (`0.125f`, `-2.625f`, `0.3125f` at 3 digits, `-14.625f`, `0.0005f`, `-0.001f`) to `MapParametersTests`.
+    3. Changed `RoadStatus.cs` namespace to `Unciv.Logic.Map.Tiles` and noted the namespace convention on T038.
+    4. Changed `MapParameters.BaseRuleset` default to `Models.Metadata.BaseRuleset.Civ_V_GnK.FullName()`.
+    5. Ran Gate (`~MapParametersTests`, 6/6 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
 
 ### T023 Translation core (headless)
 - State: In-Progress [Antigravity]
@@ -555,7 +561,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: csharp/Unciv.Core/Logic/Map/Tile/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~TileTests`
 - Claimed:
-- Notes: Tile.kt is 1.3k LOC; split off Tile stats/improvements if needed. Civ/City/Unit references go behind interfaces from T027. Kotlin lazy/cached fields must not change observable behaviour.
+- Notes: Tile.kt is 1.3k LOC; split off Tile stats/improvements if needed. Civ/City/Unit references go behind interfaces from T027. Kotlin lazy/cached fields must not change observable behaviour. Use namespace `Unciv.Logic.Map.Tiles` (matching `RoadStatus.cs` in T022) so the namespace does not collide with the `Tile` class name.
 
 ### T039 TileMap
 - State: Available

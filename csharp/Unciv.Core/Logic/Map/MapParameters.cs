@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json.Serialization;
 using Unciv.Json;
+using Unciv.Models.Metadata;
 using Unciv.Utils;
 
 namespace Unciv.Logic.Map;
@@ -177,11 +178,10 @@ public class MapParameters : IIsPartOfGameInfoSerialization
 
     /// <summary>Used mainly for the map editor, so you can continue editing a map under the same ruleset you started with.</summary>
     [JsonPropertyName("mods")]
-    public HashSet<string> Mods { get; set; } = [];
+    public LinkedHashSet<string> Mods { get; set; } = [];
 
-    /// <summary>Defaults to <c>"Civ V - Gods &amp; Kings"</c> (<c>BaseRuleset.Civ_V_GnK.fullName</c> in T021).</summary>
     [JsonPropertyName("baseRuleset")]
-    public string BaseRuleset { get; set; } = "Civ V - Gods & Kings";
+    public string BaseRuleset { get; set; } = Models.Metadata.BaseRuleset.Civ_V_GnK.FullName();
 
     /// <summary>Unciv Version of creation for support cases.</summary>
     [JsonPropertyName("createdWithVersion")]
@@ -235,7 +235,7 @@ public class MapParameters : IIsPartOfGameInfoSerialization
         WorldWrap = WorldWrap,
         StrategicBalance = StrategicBalance,
         LegendaryStart = LegendaryStart,
-        Mods = new HashSet<string>(Mods),
+        Mods = new LinkedHashSet<string>(Mods),
         BaseRuleset = BaseRuleset,
         Seed = Seed,
         TilesPerBiomeArea = TilesPerBiomeArea,
@@ -312,10 +312,20 @@ public class MapParameters : IIsPartOfGameInfoSerialization
         return WorldWrap ? dims + "w" : dims;
     }
 
-    private static string NiceToString(float value, int maxPrecision) =>
-        value.ToString($"F{maxPrecision}", CultureInfo.InvariantCulture)
+    private static string NiceToString(float value, int maxPrecision)
+    {
+        decimal dec = decimal.Parse(((double)value).ToString("R", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+        decimal rounded = Math.Round(dec, maxPrecision, MidpointRounding.AwayFromZero);
+        string result = rounded.ToString($"F{maxPrecision}", CultureInfo.InvariantCulture)
             .TrimEnd('0')
             .TrimEnd('.');
+        if (rounded == 0m && float.IsNegative(value))
+        {
+            return "-" + result;
+        }
+
+        return result;
+    }
 
     public override string ToString()
     {

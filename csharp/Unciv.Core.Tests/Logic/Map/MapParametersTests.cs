@@ -1,6 +1,6 @@
 using Unciv.Json;
 using Unciv.Logic.Map;
-using Unciv.Logic.Map.Tile;
+using Unciv.Logic.Map.Tiles;
 using Unciv.Utils;
 
 namespace Unciv.Core.Tests.Logic.Map;
@@ -177,6 +177,25 @@ public class MapParametersTests
         Assert.NotNull(roundTripped);
         Assert.Equal(0.75f, roundTripped.TemperatureIntensity);
         Assert.Equal(fromKotlinNamed.ToString(), roundTripped.ToString());
+
+        // Exact decimal tie rounding and negative-zero preservation in NiceToString (matching JVM String.format)
+        var tieParams = new MapParameters
+        {
+            Name = "TieMap",
+            Seed = 42L,
+            ElevationExponent = 0.125f, // 2 digits -> 0.13
+            TemperatureIntensity = -2.625f, // 2 digits -> -2.63
+            ResourceRichness = 0.3125f, // 3 digits -> 0.313
+            VegetationRichness = -14.625f, // 2 digits -> -14.63
+            RareFeaturesRichness = 0.0005f, // 3 digits -> 0.001
+            WaterThreshold = -0.001f, // 2 digits -> -0
+        };
+        const string expectedTieToString =
+            "\"TieMap\" ({Medium} {Hexagonal} R20)\n" +
+            "{Map Generation Type}: {Pangaea}, {RNG Seed} 42, {Map Elevation}=0.13, {Temperature intensity}=-2.63, " +
+            "{Resource richness}=0.313, {Vegetation richness}=-14.63, {Rare features richness}=0.001, " +
+            "{Max Coast extension}=3, {Biome size}=6, {Water level}=-0";
+        Assert.Equal(expectedTieToString, tieParams.ToString());
     }
 
     [Fact]
@@ -206,7 +225,17 @@ public class MapParametersTests
         clone.MapSize.Width = 999;
         clone.Mods.Add("ExtraMod");
         Assert.Equal(44, mp.MapSize.Width);
-        Assert.Empty(mp.Mods);
+        Assert.True(mp.Mods.IsEmpty);
+
+        // LinkedHashSet preserves insertion order when removing and re-adding
+        mp.Mods.Add("First");
+        mp.Mods.Add("Second");
+        mp.Mods.Add("Third");
+        mp.Mods.Remove("First");
+        mp.Mods.Add("Fourth");
+        mp.Mods.Add("First");
+        Assert.Equal(["Second", "Third", "Fourth", "First"], mp.Mods.ToArray());
+        Assert.Equal(["Second", "Third", "Fourth", "First"], mp.Clone().Mods.ToArray());
     }
 
     [Fact]

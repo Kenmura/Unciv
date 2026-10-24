@@ -1,4 +1,4 @@
-namespace Unciv.Logic.Map.Tile;
+namespace Unciv.Logic.Map.Tiles;
 
 /// <summary>
 /// Ported from <c>core/src/com/unciv/logic/map/tile/RoadStatus.kt</c>.
