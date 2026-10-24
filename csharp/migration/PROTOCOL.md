@@ -67,7 +67,7 @@ Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs t
   ```bash
   git -C /var/home/nickmarc/repos/Unciv worktree add .worktrees/<you> -b agent/<you> csharp-migration
   ```
-  If it already exists (or an existing `../Unciv-wt-<you>` is present), reuse it. Work only there, on branch `agent/<you>`.
+  If `.worktrees/<you>` already exists, reuse it. Never use sibling `../Unciv-wt-*` directories: if one exists for your branch, `git worktree remove` it (when clean) and re-add it under `.worktrees/`. Work only there, on branch `agent/<you>`.
 - **Publish** (do this after *every* state change: claim, implement, review, reset, backlog expansion):
   ```
   git rebase csharp-migration && git push . HEAD:csharp-migration
