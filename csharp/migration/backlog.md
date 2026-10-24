@@ -303,13 +303,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - The ticket's Gate names `~JavaHashTests`; the new tests are in `JavaHashMapTests`, which that filter also matches.
 
 ### T019 Event bus
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: core/src/com/unciv/logic/event/EventBus.kt, Event.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Event/EventBus.cs, Event.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~EventBusTests`
-- Claimed: 2026-10-24T01:35:34Z
+- Claimed: 2026-10-24T01:37:42Z
 - Notes: Listener invocation order must be deterministic (registration order). Replace Kotlin weak/threading specifics with deterministic single-threaded equivalents; note deviations.
   - Implementer notes (Antigravity): Ported `EventBus` and `EventReceiver` under `Unciv.Logic.Event`:
     - Synchronous, deterministic dispatch invoking matching listeners in strictly monotonic registration order (using `NextSeq` and stable `OrderBy`).
