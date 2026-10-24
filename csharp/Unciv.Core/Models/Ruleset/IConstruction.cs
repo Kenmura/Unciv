@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Globalization;
 using Unciv.Logic.City;
 using Unciv.Models.Ruleset.Nation;
@@ -228,25 +230,27 @@ public class RejectionReason(RejectionReasonType type, string? errorMessage = nu
     public int GetRejectionPrecedence() => OrderedImportantRejectionTypes.IndexOf(Type);
 
     // Used for constant variables in the functions above
-    private static readonly HashSet<RejectionReasonType> TechPolicyEraWonderRequirementsSet =
-    [
+    private static readonly FrozenSet<RejectionReasonType> TechPolicyEraWonderRequirementsSet =
+    new HashSet<RejectionReasonType>
+    {
         RejectionReasonType.Obsoleted,
         RejectionReasonType.RequiresTech,
         RejectionReasonType.RequiresPolicy,
         RejectionReasonType.MorePolicyBranches,
         RejectionReasonType.RequiresBuildingInSomeCity,
-    ];
+    }.ToFrozenSet();
 
-    private static readonly HashSet<RejectionReasonType> ReasonsToDefinitivelyRemoveFromQueue =
-    [
+    private static readonly FrozenSet<RejectionReasonType> ReasonsToDefinitivelyRemoveFromQueue =
+    new HashSet<RejectionReasonType>
+    {
         RejectionReasonType.Obsoleted,
         RejectionReasonType.WonderAlreadyBuilt,
         RejectionReasonType.NationalWonderAlreadyBuilt,
         RejectionReasonType.CannotBeBuiltWith,
         RejectionReasonType.MaxNumberBuildable,
-    ];
+    }.ToFrozenSet();
 
-    private static readonly List<RejectionReasonType> OrderedImportantRejectionTypes =
+    private static readonly ImmutableArray<RejectionReasonType> OrderedImportantRejectionTypes =
     [
         RejectionReasonType.ShouldNotBeDisplayed,
         RejectionReasonType.WonderBeingBuiltElsewhere,
@@ -263,15 +267,17 @@ public class RejectionReason(RejectionReasonType type, string? errorMessage = nu
     ];
 
     // Exceptions. Used for units spawned/upgrade path, not built
-    private static readonly List<RejectionReasonType> ConstructionRejectionReasonType =
-    [
+    private static readonly FrozenSet<RejectionReasonType> ConstructionRejectionReasonType =
+    new HashSet<RejectionReasonType>
+    {
         RejectionReasonType.Unbuildable,
         RejectionReasonType.CannotBeBuilt,
         RejectionReasonType.CanOnlyBeBuiltInSpecificCities,
-    ];
+    }.ToFrozenSet();
 
-    private static readonly List<RejectionReasonType> NeverVisible =
-    [
+    private static readonly FrozenSet<RejectionReasonType> NeverVisible =
+    new HashSet<RejectionReasonType>
+    {
         RejectionReasonType.AlreadyBuilt,
         RejectionReasonType.WonderAlreadyBuilt,
         RejectionReasonType.NationalWonderAlreadyBuilt,
@@ -283,7 +289,7 @@ public class RejectionReason(RejectionReasonType type, string? errorMessage = nu
         RejectionReasonType.RequiresTech,
         RejectionReasonType.NoSettlerForOneCityPlayers,
         RejectionReasonType.WaterUnitsInCoastalCities,
-    ];
+    }.ToFrozenSet();
 }
 
 public enum RejectionReasonType
@@ -342,7 +348,7 @@ public enum RejectionReasonType
 
 public static class RejectionReasonTypeExtensions
 {
-    private static readonly Dictionary<RejectionReasonType, (bool ShouldShow, string ErrorMessage)> Data = new()
+    private static readonly FrozenDictionary<RejectionReasonType, (bool ShouldShow, string ErrorMessage)> Data = new Dictionary<RejectionReasonType, (bool ShouldShow, string ErrorMessage)>
     {
         [RejectionReasonType.AlreadyBuilt] = (false, "Building already built in this city"),
         [RejectionReasonType.Unbuildable] = (false, "Unbuildable"),
@@ -394,11 +400,11 @@ public static class RejectionReasonTypeExtensions
 
         [RejectionReasonType.NoSettlerForOneCityPlayers] = (false, "No settlers for city-states or one-city challengers"),
         [RejectionReasonType.NoPlaceToPutUnit] = (true, "No space to place this unit"),
-    };
+    }.ToFrozenDictionary();
 
     /// <summary>Kotlin <c>defaultInstance</c></summary>
-    private static readonly Dictionary<RejectionReasonType, RejectionReason> DefaultInstances =
-        Data.ToDictionary(it => it.Key, it => new RejectionReason(it.Key, it.Value.ErrorMessage, it.Value.ShouldShow));
+    private static readonly FrozenDictionary<RejectionReasonType, RejectionReason> DefaultInstances =
+        Data.ToFrozenDictionary(it => it.Key, it => new RejectionReason(it.Key, it.Value.ErrorMessage, it.Value.ShouldShow));
 
     public static bool ShouldShow(this RejectionReasonType type) => Data[type].ShouldShow;
 

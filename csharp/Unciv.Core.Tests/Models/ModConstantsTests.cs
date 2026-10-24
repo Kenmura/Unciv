@@ -24,6 +24,7 @@ public class ModConstantsTests
     public void Equality()
     {
         var instance1 = new ModConstants { MaxXPfromBarbarians = 99 };
+        Assert.True(instance1.Equals(instance1));
         var instance2 = new ModConstants { CityStrengthBase = 6.0 };
         Assert.NotEqual(instance1, instance2);
         instance1.CityStrengthBase = instance2.CityStrengthBase;

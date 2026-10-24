@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Unciv.Models.Translations;
 using Unciv.Utils;
 
@@ -25,7 +26,7 @@ public static class UniqueTypeExtensions
     /// <summary>All entries in declaration (= ordinal) order, like Kotlin's <c>UniqueType.entries</c>.</summary>
     public static readonly IReadOnlyList<UniqueType> Entries = Enum.GetValues<UniqueType>();
 
-    private static readonly Info[] Infos = BuildInfos();
+    private static readonly ImmutableArray<Info> Infos = BuildInfos();
 
     /// <summary>
     /// Kotlin <c>UniqueType.uniqueTypeMap</c>: <c>entries.associateBy { it.placeholderText }</c>
@@ -71,25 +72,25 @@ public static class UniqueTypeExtensions
         return false;
     }
 
-    private static Info[] BuildInfos()
+    private static ImmutableArray<Info> BuildInfos()
     {
         var rows = UniqueTypeData.Rows;
         if (rows.Length != Entries.Count)
             throw new InvalidOperationException($"UniqueTypeData has {rows.Length} rows for {Entries.Count} UniqueType entries");
 
-        var infos = new Info[rows.Length];
+        var builder = ImmutableArray.CreateBuilder<Info>(rows.Length);
         for (int i = 0; i < rows.Length; i++)
         {
             var row = rows[i];
-            infos[i] = new Info(
+            builder.Add(new Info(
                 row.Text,
                 row.Text.GetPlaceholderText(),
                 new LinkedHashSet<UniqueTarget>(row.Targets),
                 new LinkedHashSet<UniqueFlag>(row.Flags),
                 row.DocDescription,
-                BuildParameterTypeMap(row.Text));
+                BuildParameterTypeMap(row.Text)));
         }
-        return infos;
+        return builder.MoveToImmutable();
     }
 
     private static Dictionary<string, UniqueType> BuildUniqueTypeMap()

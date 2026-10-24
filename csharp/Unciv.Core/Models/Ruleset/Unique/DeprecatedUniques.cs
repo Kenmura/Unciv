@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using Unciv.Models.Translations;
 
 namespace Unciv.Models.Ruleset.Unique;
@@ -239,7 +241,7 @@ public sealed record DeprecatedUniqueTypeEntry(DeprecatedUniqueType Type, string
 /// <summary>Kotlin <c>DeprecatedUniqueType</c> accessors and its companion <c>UniqueTypeMap</c>.</summary>
 public static class DeprecatedUniqueTypes
 {
-    private static readonly DeprecatedUniqueTypeEntry[] Table =
+    private static readonly ImmutableArray<DeprecatedUniqueTypeEntry> Table =
     [
         new(DeprecatedUniqueType.FoodConsumptionBySpecialists, "[relativeAmount]% Food consumption by specialists [cityFilter]", null, "[relativeAmount]% Food consumption by [Specialists] [cityFilter]", "As of 4.19.10"),
         new(DeprecatedUniqueType.TripleGoldFromEncampmentsAndCities, "Receive triple Gold from Barbarian encampments and pillaging Cities", null, "Receive [+200]% Gold from Barbarian encampments and pillaging Cities", "As of 4.18.15"),
@@ -453,7 +455,7 @@ public static class DeprecatedUniqueTypes
         new(DeprecatedUniqueType.StrengthForGarrisonedCitiesAttackingDeprecated, "+50% attacking strength for cities with garrisoned units", null, "[+50]% Strength for cities <with a garrison> <when attacking>", "Extremely old - used for auto-updates only"),
     ];
 
-    private static readonly Dictionary<string, DeprecatedUniqueTypeEntry> UniqueTypeMap = BuildUniqueTypeMap();
+    private static readonly FrozenDictionary<string, DeprecatedUniqueTypeEntry> UniqueTypeMap = BuildUniqueTypeMap();
 
     /// <summary>All entries in declaration (= ordinal) order, like Kotlin's <c>DeprecatedUniqueType.entries</c>.</summary>
     public static IReadOnlyList<DeprecatedUniqueTypeEntry> Entries => Table;
@@ -463,11 +465,11 @@ public static class DeprecatedUniqueTypes
     /// <summary>Kotlin <c>UniqueTypeMap[placeholderText]</c>; a later entry replaces an earlier one with the same placeholder text.</summary>
     public static DeprecatedUniqueTypeEntry? Lookup(string placeholderText) => UniqueTypeMap.GetValueOrDefault(placeholderText);
 
-    private static Dictionary<string, DeprecatedUniqueTypeEntry> BuildUniqueTypeMap()
+    private static FrozenDictionary<string, DeprecatedUniqueTypeEntry> BuildUniqueTypeMap()
     {
         var map = new Dictionary<string, DeprecatedUniqueTypeEntry>(Table.Length, StringComparer.Ordinal);
         foreach (var entry in Table)
             map[entry.PlaceholderText] = entry;
-        return map;
+        return map.ToFrozenDictionary(StringComparer.Ordinal);
     }
 }

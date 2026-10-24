@@ -13,7 +13,7 @@ internal static class TsvTable
     }
 
     /// <summary>Data rows (header and blank lines skipped), each checked to have exactly the header's column count.</summary>
-    internal static List<string[]> Rows(string text, string tableName, string[] expectedHeader)
+    internal static List<string[]> Rows(string text, string tableName, ReadOnlySpan<string> expectedHeader)
     {
         var rows = new List<string[]>();
         bool headerSeen = false;

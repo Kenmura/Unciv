@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Unciv.Models;
 
 namespace Unciv.Logic.Civilization.Diplomacy;
@@ -20,7 +21,7 @@ public enum RelationshipLevel
 
 public static class RelationshipLevelExtensions
 {
-    private static readonly EngineColor[] Colors =
+    private static readonly ImmutableArray<EngineColor> Colors =
     [
         Rgba(0x8b4513ff), // Unforgivable: Color.BROWN
         Rgba(0xffa500ff), // Enemy: Color.ORANGE

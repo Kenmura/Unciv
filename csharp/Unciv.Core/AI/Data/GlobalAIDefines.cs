@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 
 namespace Unciv.AI.Data;
@@ -7,7 +8,7 @@ namespace Unciv.AI.Data;
 // Values keep their file order. A value written without a decimal point is an integer define; GetInt rejects the rest.
 public sealed class GlobalAIDefines
 {
-    private static readonly string[] Header = ["name", "base", "gk", "bnw"];
+    private static readonly ImmutableArray<string> Header = ["name", "base", "gk", "bnw"];
 
     private readonly OrderedDictionary<string, string?[]> entries = new();
 
@@ -16,7 +17,7 @@ public sealed class GlobalAIDefines
     public static GlobalAIDefines Parse(string tsv)
     {
         var result = new GlobalAIDefines();
-        foreach (string[] cells in TsvTable.Rows(tsv, "ai_defines", Header))
+        foreach (string[] cells in TsvTable.Rows(tsv, "ai_defines", Header.AsSpan()))
         {
             var values = new string?[3];
             for (int i = 0; i < 3; i++)

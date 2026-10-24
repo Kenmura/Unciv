@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Unciv.Models.Metadata;
 
 // core/src/com/unciv/models/metadata/LocaleCode.kt
@@ -69,7 +71,7 @@ public enum LocaleCode
 public static class LocaleCodeExtensions
 {
     // languageTag, fastlaneFolder override, languageName override, unused; in declaration order of LocaleCode
-    private static readonly (string LanguageTag, string? FastlaneFolder, string? LanguageName, bool Unused)[] Info =
+    private static readonly ImmutableArray<(string LanguageTag, string? FastlaneFolder, string? LanguageName, bool Unused)> Info =
     [
         ("af-ZA", null, null, false),  // Afrikaans
         ("ar-IQ", null, null, true),  // Arabic

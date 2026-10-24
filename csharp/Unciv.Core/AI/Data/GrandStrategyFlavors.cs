@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 
 namespace Unciv.AI.Data;
@@ -13,7 +14,7 @@ public sealed class GrandStrategyFlavors
     public const string FlavorModsTable = "AIGrandStrategy_FlavorMods";
     public const string YieldsTable = "AIGrandStrategy_Yields";
 
-    private static readonly string[] Header = ["table", "strategy", "key", "value"];
+    private static readonly ImmutableArray<string> Header = ["table", "strategy", "key", "value"];
 
     private readonly OrderedDictionary<string, OrderedDictionary<string, OrderedDictionary<string, int>>> tables = new();
 
@@ -22,7 +23,7 @@ public sealed class GrandStrategyFlavors
     public static GrandStrategyFlavors Parse(string tsv)
     {
         var result = new GrandStrategyFlavors();
-        foreach (string[] cells in TsvTable.Rows(tsv, "grand_strategy_flavors", Header))
+        foreach (string[] cells in TsvTable.Rows(tsv, "grand_strategy_flavors", Header.AsSpan()))
         {
             if (cells[0] != FlavorsTable && cells[0] != FlavorModsTable && cells[0] != YieldsTable)
                 throw new FormatException($"grand_strategy_flavors: unknown table '{cells[0]}'");

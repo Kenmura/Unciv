@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Unciv.Logic;
 using Unciv.Models.Metadata;
@@ -246,7 +247,7 @@ public static class UniqueParameterTypeExtensions
     public static readonly IReadOnlyList<UniqueParameterType> Entries = Enum.GetValues<UniqueParameterType>();
 
     // ResourceType.entries in declaration order (ported as enum in T031).
-    private static readonly string[] ResourceTypeNames = ["Luxury", "Strategic", "Bonus"];
+    private static readonly ImmutableArray<string> ResourceTypeNames = ["Luxury", "Strategic", "Bonus"];
 
     private static readonly IReadOnlySet<string> EmptySet = new LinkedHashSet<string>();
 

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -22,10 +23,9 @@ namespace Unciv.Models;
 /// </remarks>
 public sealed class ModConstants
 {
-    private static readonly PropertyInfo[] Fields = typeof(ModConstants)
+    private static readonly ImmutableArray<PropertyInfo> Fields = [.. typeof(ModConstants)
         .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-        .OrderBy(property => property.MetadataToken)
-        .ToArray();
+        .OrderBy(property => property.MetadataToken)];
 
     /// <summary>As merge will need a default instance repeatedly, store it as static.</summary>
     public static ModConstants Defaults { get; } = new();

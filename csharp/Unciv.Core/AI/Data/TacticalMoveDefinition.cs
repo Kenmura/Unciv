@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 
 namespace Unciv.AI.Data;
@@ -17,7 +18,7 @@ public sealed record TacticalMoveDefinition(
     bool InGk,
     bool InBnw)
 {
-    private static readonly string[] Header =
+    private static readonly ImmutableArray<string> Header =
         ["Type", "Priority", "OffenseFlavorWeight", "DefenseFlavorWeight", "OperationsCanRecruit", "DominanceZoneMove", "in_base", "in_gk", "in_bnw"];
 
     public bool IsInEdition(AIEdition edition) => edition switch
@@ -32,7 +33,7 @@ public sealed record TacticalMoveDefinition(
     {
         var result = new List<TacticalMoveDefinition>();
         var seen = new HashSet<string>();   // membership only, never iterated
-        foreach (string[] c in TsvTable.Rows(tsv, "tactical_moves", Header))
+        foreach (string[] c in TsvTable.Rows(tsv, "tactical_moves", Header.AsSpan()))
         {
             if (!seen.Add(c[0])) throw new FormatException($"tactical_moves: duplicate move '{c[0]}'");
             result.Add(new TacticalMoveDefinition(

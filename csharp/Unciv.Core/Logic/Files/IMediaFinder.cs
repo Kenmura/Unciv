@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
@@ -176,7 +177,7 @@ public class Images(IMediaEnvironment environment) : IMediaFinder
 public class LabeledSounds(IMediaEnvironment environment) : Sounds(environment), IMediaFinder
 {
     // Also determines display order
-    private static readonly (string Key, string Label)[] PrettifyUncivSoundNames =
+    private static readonly ImmutableArray<(string Key, string Label)> PrettifyUncivSoundNames =
     [
         ("", "None"),
         ("notification1", "Notification [1]"),
@@ -190,7 +191,7 @@ public class LabeledSounds(IMediaEnvironment environment) : Sounds(environment),
     ];
 
     // Previous code in createNotificationSoundOptions also excluded UncivSound.Whoosh - now included
-    private static readonly string[] Exclusions = ["nuke", "fire", "slider"];
+    private static readonly ImmutableArray<string> Exclusions = ["nuke", "fire", "slider"];
 
     private readonly LinkedHashMap<string, string> cache = new();
 

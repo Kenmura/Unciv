@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Globalization;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Mathematics;
@@ -246,7 +247,7 @@ public static class HexMath
             : (Math.Abs(relativeX) + Math.Abs(relativeY));
     }
 
-    private static readonly Dictionary<int, HexCoord> ClockPositionToHexcoordMap = new()
+    private static readonly FrozenDictionary<int, HexCoord> ClockPositionToHexcoordMap = new Dictionary<int, HexCoord>
     {
         [0] = HexCoord.Of(1, 1),
         [12] = HexCoord.Of(1, 1),
@@ -255,12 +256,12 @@ public static class HexMath
         [6] = HexCoord.Of(-1, -1),
         [8] = HexCoord.Of(0, -1),
         [10] = HexCoord.Of(1, 0)
-    };
+    }.ToFrozenDictionary();
 
     public static HexCoord GetClockPositionToHexcoord(int clockPosition) =>
         ClockPositionToHexcoordMap.TryGetValue(clockPosition, out var coord) ? coord : HexCoord.Zero;
 
-    private static readonly Dictionary<int, Vector2> ClockPositionToWorldVectorMap = new()
+    private static readonly FrozenDictionary<int, Vector2> ClockPositionToWorldVectorMap = new Dictionary<int, Vector2>
     {
         [2] = Hex2WorldCoords(HexCoord.Of(0, -1)),
         [4] = Hex2WorldCoords(HexCoord.Of(1, 0)),
@@ -268,7 +269,7 @@ public static class HexMath
         [8] = Hex2WorldCoords(HexCoord.Of(0, 1)),
         [10] = Hex2WorldCoords(HexCoord.Of(-1, 0)),
         [12] = Hex2WorldCoords(HexCoord.Of(-1, -1))
-    };
+    }.ToFrozenDictionary();
 
     public static Vector2 GetClockPositionToWorldVector(int clockPosition) =>
         ClockPositionToWorldVectorMap.TryGetValue(clockPosition, out var vec) ? vec : Vector2.Zero;

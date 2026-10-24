@@ -2,6 +2,7 @@ using Unciv.Logic.Event;
 
 namespace Unciv.Core.Tests.Logic.Event;
 
+[Collection("EventBusState")]
 public class EventBusTests : IDisposable
 {
     public EventBusTests()

@@ -1,10 +1,12 @@
+using System.Collections.Immutable;
+
 namespace Unciv.Logic.Map.MapGenerator;
 
 // version 1.1.3
 // From https://rosettacode.org/wiki/Perlin_noise#Kotlin
 public static class Perlin
 {
-    private static readonly int[] Permutation =
+    private static readonly ImmutableArray<int> Permutation =
     [
         151, 160, 137,  91,  90,  15, 131,  13, 201,  95,  96,  53, 194, 233,   7, 225,
         140,  36, 103,  30,  69, 142,   8,  99,  37, 240,  21,  10,  23, 190,   6, 148,
@@ -24,24 +26,24 @@ public static class Perlin
         222, 114,  67,  29,  24,  72, 243, 141, 128, 195,  78,  66, 215,  61, 156, 180
     ];
 
-    private static readonly int[,] Grad3Table =
-    {
-        { 1, 1, 0 }, { -1, 1, 0 }, { 1, -1, 0 }, { -1, -1, 0 },
-        { 1, 0, 1 }, { -1, 0, 1 }, { 1, 0, -1 }, { -1, 0, -1 },
-        { 0, 1, 1 }, { 0, -1, 1 }, { 0, 1, -1 }, { 0, -1, -1 },
-        { 1, 0, -1 }, { -1, 0, -1 }, { 0, -1, 1 }, { 0, 1, 1 }
-    };
+    private static readonly ImmutableArray<int> Grad3Table =
+    [
+        1, 1, 0,  -1, 1, 0,  1, -1, 0,  -1, -1, 0,
+        1, 0, 1,  -1, 0, 1,  1, 0, -1,  -1, 0, -1,
+        0, 1, 1,  0, -1, 1,  0, 1, -1,  0, -1, -1,
+        1, 0, -1, -1, 0, -1, 0, -1, 1,  0, 1, 1
+    ];
 
-    private static readonly int[] P = InitializeP();
+    private static readonly ImmutableArray<int> P = InitializeP();
 
-    private static int[] InitializeP()
+    private static ImmutableArray<int> InitializeP()
     {
-        var p = new int[512];
+        var builder = ImmutableArray.CreateBuilder<int>(512);
         for (int i = 0; i < 512; i++)
         {
-            p[i] = i < 256 ? Permutation[i] : Permutation[i - 256];
+            builder.Add(i < 256 ? Permutation[i] : Permutation[i - 256]);
         }
-        return p;
+        return builder.MoveToImmutable();
     }
 
     public static double Noise3d(
@@ -144,7 +146,7 @@ public static class Perlin
 
     private static double Grad3(int hash, double x, double y, double z)
     {
-        int h = hash & 15;
-        return x * Grad3Table[h, 0] + y * Grad3Table[h, 1] + z * Grad3Table[h, 2];
+        int h = (hash & 15) * 3;
+        return x * Grad3Table[h] + y * Grad3Table[h + 1] + z * Grad3Table[h + 2];
     }
 }

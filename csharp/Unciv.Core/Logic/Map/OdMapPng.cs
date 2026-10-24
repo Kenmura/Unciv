@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.IO.Compression;
 
 namespace Unciv.Logic.Map;
@@ -9,7 +10,7 @@ namespace Unciv.Logic.Map;
 /// </summary>
 internal static class OdMapPng
 {
-    private static readonly byte[] Signature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    private static ReadOnlySpan<byte> Signature => [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
     // rgba: one packed 0xRRGGBBAA value per pixel, row-major.
     public static byte[] Encode(int width, int height, int[] rgba)
@@ -40,7 +41,7 @@ internal static class OdMapPng
             z.Write(raw, 0, raw.Length);
 
         using var output = new MemoryStream();
-        output.Write(Signature, 0, Signature.Length);
+        output.Write(Signature);
         WriteChunk(output, "IHDR", header);
         WriteChunk(output, "IDAT", compressed.ToArray());
         WriteChunk(output, "IEND", []);
@@ -206,23 +207,23 @@ internal static class OdMapPng
         output.Write(crcBytes, 0, 4);
     }
 
-    private static readonly uint[] CrcTable = BuildCrcTable();
+    private static readonly ImmutableArray<uint> CrcTable = BuildCrcTable();
 
-    private static uint[] BuildCrcTable()
+    private static ImmutableArray<uint> BuildCrcTable()
     {
-        var table = new uint[256];
+        var builder = ImmutableArray.CreateBuilder<uint>(256);
         for (uint n = 0; n < 256; n++)
         {
             var c = n;
             for (var k = 0; k < 8; k++) c = (c & 1) != 0 ? 0xEDB88320u ^ (c >> 1) : c >> 1;
-            table[n] = c;
+            builder.Add(c);
         }
-        return table;
+        return builder.MoveToImmutable();
     }
 
     private static uint Crc32(uint crc, byte[] data)
     {
-        foreach (var b in data) crc = CrcTable[(crc ^ b) & 0xFF] ^ (crc >> 8);
+        foreach (var b in data) crc = CrcTable[(int)((crc ^ b) & 0xFF)] ^ (crc >> 8);
         return crc;
     }
 }

@@ -34,7 +34,7 @@ internal static class UniqueTypeData
         "The second parameter is a list of zero or more suffixes, comma-separated, used to specify a \"mood\", like Peace, War, Ambient etc. First track that matches wins.\n" +
         "The third parameter is a list of zero or more flags: PrefixMustMatch, SuffixMustMatch, SlowFade, PlaySingle, PlayDefaultFile.";
 
-    internal static readonly UniqueTypeRow[] Rows =
+    internal static readonly System.Collections.Immutable.ImmutableArray<UniqueTypeRow> Rows =
     [
         new("[stats]",
             [UniqueTarget.Global, UniqueTarget.Improvement, UniqueTarget.Terrain],

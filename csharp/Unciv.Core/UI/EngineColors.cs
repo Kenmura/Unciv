@@ -1,11 +1,13 @@
 
+using System.Collections.Frozen;
+
 namespace Unciv.Models;
 
 // Engine-owned stand-in for com.badlogic.gdx.graphics.Colors (the default name table, no Unciv additions exist) and Color.valueOf(String).
 public static class EngineColors
 {
     // Order and values as libGDX Colors.reset()
-    private static readonly Dictionary<string, uint> Named = new()
+    private static readonly FrozenDictionary<string, uint> Named = new Dictionary<string, uint>()
     {
         ["CLEAR"] = 0x00000000,
         ["BLACK"] = 0x000000ff,
@@ -41,7 +43,7 @@ public static class EngineColors
         ["PURPLE"] = 0xa020f0ff,
         ["VIOLET"] = 0xee82eeff,
         ["MAROON"] = 0xb03060ff,
-    };
+    }.ToFrozenDictionary(StringComparer.Ordinal);
 
     /// <summary><c>Colors.get(name)</c>: exact (case-sensitive) name lookup, null if unknown.</summary>
     public static EngineColor? Get(string name) =>

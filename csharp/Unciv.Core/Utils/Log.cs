@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -68,7 +69,7 @@ public class ConsoleLogBackend : ILogBackend
 
 public static class Log
 {
-    private static readonly string[] DefaultDisabledLogs =
+    private static readonly ImmutableArray<string> DefaultDisabledLogs =
         ["Battle", "Music", "Sounds", "Translations", "WorkerAutomation", "assignRegions", "RoadBetweenCitiesAutomation", "StageMouseOverDebug", "DiplomacyAutomation"];
 
     /// <summary>

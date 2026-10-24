@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Unciv.Logic.Map.Tiles;
@@ -774,7 +775,7 @@ public class RulesetValidator
     }
 
     // Portrait.Type.entries.map { it.directory } (Portrait.kt; the UI class is not ported)
-    private static readonly string[] PortraitTypeDirectories =
+    private static readonly ImmutableArray<string> PortraitTypeDirectories =
         ["Unit", "Building", "Tech", "Resource", "Improvement", "UnitPromotion", "Unique", "Nation", "Religion", "UnitAction"];
 
     private static void CheckImagesFolders(IRulesetFolder folder, RulesetErrorList lines)

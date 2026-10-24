@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Unciv.Utils;
 
 namespace Unciv.Logic;
@@ -139,7 +140,7 @@ public static class HolidayDates
         // http://www.astropixels.com/ephemeris/soleq2001.html
         // Upstream stores the UTC instants and converts them with ZoneId.systemDefault(); the port keeps the UTC calendar date
         // (the minute-precision time of day is not needed for it). Deliberate: a wall-clock-zone dependency has no place in the engine.
-        public static readonly Dictionary<int, DateOnly> Equinoxes = new()
+        public static readonly FrozenDictionary<int, DateOnly> Equinoxes = new Dictionary<int, DateOnly>
         {
             [2024] = new DateOnly(2024, 3, 20), // 03:07Z
             [2025] = new DateOnly(2025, 3, 20), // 09:02Z
@@ -218,10 +219,10 @@ public static class HolidayDates
             [2098] = new DateOnly(2098, 3, 20), // 01:38Z
             [2099] = new DateOnly(2099, 3, 20), // 07:17Z
             [2100] = new DateOnly(2100, 3, 20), // 13:04Z
-        };
+        }.ToFrozenDictionary();
 
         // https://jaysage.org/Passover_Dates.pdf, some confirmed via https://duckduckgo.com/?q=passover+date+NNNN
-        public static readonly Dictionary<int, DateOnly> Passover = new()
+        public static readonly FrozenDictionary<int, DateOnly> Passover = new Dictionary<int, DateOnly>
         {
             [2023] = new DateOnly(2023, 4, 1).AddDays(5),
             [2024] = new DateOnly(2024, 4, 1).AddDays(22),
@@ -251,10 +252,10 @@ public static class HolidayDates
             [2048] = new DateOnly(2048, 4, 1).AddDays(-4),
             [2049] = new DateOnly(2049, 4, 1).AddDays(16),
             [2050] = new DateOnly(2050, 4, 1).AddDays(6),
-        };
+        }.ToFrozenDictionary();
 
         // from e.g. https://www.theholidayspot.com/diwali/calendar.htm
-        public static readonly Dictionary<int, DateOnly> Diwali = new()
+        public static readonly FrozenDictionary<int, DateOnly> Diwali = new Dictionary<int, DateOnly>
         {
             [2024] = new DateOnly(2024, 11, 1),
             [2025] = new DateOnly(2025, 10, 21),
@@ -273,10 +274,10 @@ public static class HolidayDates
             [2038] = new DateOnly(2038, 10, 27),
             [2039] = new DateOnly(2039, 10, 17),
             [2040] = new DateOnly(2040, 11, 4),
-        };
+        }.ToFrozenDictionary();
 
         // from https://github.com/00-Evan/shattered-pixel-dungeon/blob/master/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/utils/Holiday.java
-        public static readonly Dictionary<int, DateOnly> LunarNewYear = new()
+        public static readonly FrozenDictionary<int, DateOnly> LunarNewYear = new Dictionary<int, DateOnly>
         {
             [2024] = new DateOnly(2024, 1, 1).AddDays(31 + 10 - 1),
             [2025] = new DateOnly(2025, 1, 1).AddDays(29 - 1),
@@ -355,7 +356,7 @@ public static class HolidayDates
             [2098] = new DateOnly(2098, 1, 1).AddDays(31 + 1 - 1),
             [2099] = new DateOnly(2099, 1, 1).AddDays(21 - 1),
             [2100] = new DateOnly(2100, 1, 1).AddDays(31 + 9 - 1),
-        };
+        }.ToFrozenDictionary();
     }
 }
 

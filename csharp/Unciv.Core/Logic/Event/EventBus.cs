@@ -18,34 +18,25 @@ namespace Unciv.Logic.Event;
 /// <item>No weak references: a receiver that is never stopped or disposed keeps its listeners alive.</item>
 /// </list>
 /// </remarks>
-public static class EventBus
+public sealed class EventBusInstance
 {
-    private static long NextSeq;
-    private static readonly Dictionary<Type, List<ListenerRegistration>> ListenersByType = [];
-    private static readonly object SyncLock = new();
+    private long nextSeq;
+    private readonly Dictionary<Type, List<EventBus.ListenerRegistration>> listenersByType = [];
+    private readonly object syncLock = new();
 
-    internal sealed class ListenerRegistration(long seq, Type targetType, Func<IEvent, bool>? filter, Action<IEvent> handler)
-    {
-        public long Seq { get; } = seq;
-        public Type TargetType { get; } = targetType;
-        public Func<IEvent, bool>? Filter { get; } = filter;
-        public Action<IEvent> Handler { get; } = handler;
-        public bool IsActive { get; set; } = true;
-    }
-
-    public static void Send<T>(T @event) where T : IEvent
+    public void Send<T>(T @event) where T : IEvent
     {
         ArgumentNullException.ThrowIfNull(@event);
 
         Type eventType = @event.GetType();
-        List<ListenerRegistration> toInvoke;
+        List<EventBus.ListenerRegistration> toInvoke;
 
-        lock (SyncLock)
+        lock (syncLock)
         {
-            var matchingListeners = new List<ListenerRegistration>();
-            var seen = new HashSet<ListenerRegistration>();
+            var matchingListeners = new List<EventBus.ListenerRegistration>();
+            var seen = new HashSet<EventBus.ListenerRegistration>();
 
-            foreach (var (targetType, list) in ListenersByType)
+            foreach (var (targetType, list) in listenersByType)
             {
                 if (targetType.IsAssignableFrom(eventType))
                 {
@@ -74,42 +65,66 @@ public static class EventBus
         }
     }
 
-    internal static ListenerRegistration Register(Type targetType, Func<IEvent, bool>? filter, Action<IEvent> handler)
+    internal EventBus.ListenerRegistration Register(Type targetType, Func<IEvent, bool>? filter, Action<IEvent> handler)
     {
-        lock (SyncLock)
+        lock (syncLock)
         {
-            long seq = unchecked(++NextSeq);
-            var reg = new ListenerRegistration(seq, targetType, filter, handler);
-            if (!ListenersByType.TryGetValue(targetType, out var list))
+            long seq = unchecked(++nextSeq);
+            var reg = new EventBus.ListenerRegistration(seq, targetType, filter, handler);
+            if (!listenersByType.TryGetValue(targetType, out var list))
             {
                 list = [];
-                ListenersByType[targetType] = list;
+                listenersByType[targetType] = list;
             }
             list.Add(reg);
             return reg;
         }
     }
 
-    internal static void Unregister(ListenerRegistration reg)
+    internal void Unregister(EventBus.ListenerRegistration reg)
     {
-        lock (SyncLock)
+        lock (syncLock)
         {
             reg.IsActive = false;
-            if (ListenersByType.TryGetValue(reg.TargetType, out var list))
+            if (listenersByType.TryGetValue(reg.TargetType, out var list))
             {
                 list.Remove(reg);
             }
         }
     }
 
-    public static void Reset()
+    public void Reset()
     {
-        lock (SyncLock)
+        lock (syncLock)
         {
-            ListenersByType.Clear();
-            NextSeq = 0;
+            listenersByType.Clear();
+            nextSeq = 0;
         }
     }
+}
+
+public static class EventBus
+{
+    private static readonly EventBusInstance DefaultBus = new();
+
+    internal sealed class ListenerRegistration(long seq, Type targetType, Func<IEvent, bool>? filter, Action<IEvent> handler)
+    {
+        public long Seq { get; } = seq;
+        public Type TargetType { get; } = targetType;
+        public Func<IEvent, bool>? Filter { get; } = filter;
+        public Action<IEvent> Handler { get; } = handler;
+        public bool IsActive { get; set; } = true;
+    }
+
+    public static void Send<T>(T @event) where T : IEvent => DefaultBus.Send(@event);
+
+    internal static ListenerRegistration Register(Type targetType, Func<IEvent, bool>? filter, Action<IEvent> handler) =>
+        DefaultBus.Register(targetType, filter, handler);
+
+    internal static void Unregister(ListenerRegistration reg) =>
+        DefaultBus.Unregister(reg);
+
+    public static void Reset() => DefaultBus.Reset();
 
     public class EventReceiver : Unciv.Logic.Event.EventReceiver
     {

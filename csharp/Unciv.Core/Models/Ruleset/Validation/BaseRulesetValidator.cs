@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
@@ -23,7 +24,7 @@ internal sealed class BaseRulesetValidator : RulesetValidator
     private readonly KotlinLazy<bool> anyAncientRuins;
 
     // CityStatePersonality.entries names
-    private static readonly string[] CityStatePersonalities = ["Friendly", "Neutral", "Hostile", "Irrational"];
+    private static readonly ImmutableArray<string> CityStatePersonalities = ["Friendly", "Neutral", "Hostile", "Irrational"];
 
     public BaseRulesetValidator(Ruleset ruleset, bool tryFixUnknownUniques) : base(ruleset, tryFixUnknownUniques)
     {

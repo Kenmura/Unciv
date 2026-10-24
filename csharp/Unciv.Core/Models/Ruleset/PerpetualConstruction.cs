@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Unciv.Logic.City;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
@@ -24,7 +25,7 @@ public abstract class PerpetualConstruction(string name, string description) : I
 
     public IReadOnlySet<string> RequiredResources(GameContext? state = null) => EmptySet;
 
-    private static readonly HashSet<string> EmptySet = [];
+    private static readonly FrozenSet<string> EmptySet = FrozenSet<string>.Empty;
 
     public abstract class StatConversion(Stat stat)
         : PerpetualConstruction(stat.ToString(), $"Convert production to [{stat}] at a rate of [rate] to 1")

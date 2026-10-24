@@ -24,13 +24,13 @@ public static class StatExtensions
     public static readonly IReadOnlySet<Stat> StatsWithCivWideField =
         new HashSet<Stat> { Stat.Gold, Stat.Science, Stat.Culture, Stat.Faith, Stat.Happiness };
 
-    private static readonly Dictionary<string, Stat> ValuesAsMap = BuildValuesAsMap();
+    private static readonly System.Collections.Frozen.FrozenDictionary<string, Stat> ValuesAsMap = BuildValuesAsMap();
 
-    private static Dictionary<string, Stat> BuildValuesAsMap()
+    private static System.Collections.Frozen.FrozenDictionary<string, Stat> BuildValuesAsMap()
     {
         var map = new Dictionary<string, Stat>();
         foreach (var stat in Enum.GetValues<Stat>()) map[stat.ToString()] = stat;
-        return map;
+        return System.Collections.Frozen.FrozenDictionary.ToFrozenDictionary(map);
     }
 
     public static bool IsCityWide(this Stat stat) => !StatsWithCivWideField.Contains(stat);
