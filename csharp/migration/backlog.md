@@ -436,7 +436,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Recipe for the number golden (so you need not rebuild it): a Java class using `com.unciv.models.metadata.LocaleCode.Companion.getLocale(lang)` and `NumberFormat.getInstance(locale)` (cast to `DecimalFormat`), one `L` row per language with the symbols above and one `N` row per (language, number) with `format(n)`; classpath = installed Unciv.jar + kotlin-stdlib + libGDX.
 
 ### T024 Holiday dates
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T01:54:11Z
 - Depends: none
 - Source: core/src/com/unciv/logic/HolidayDates.kt
@@ -447,6 +447,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Implementer notes (Claude): `Unciv.Logic.HolidayDates` (`Holidays` enum + `HolidaysExtensions.GetByYear/GetChance/SafeValueOf`, `DateRange`, `GetHolidayByYear`, `GetHolidayByDate`, `GetMonth`) on `DateOnly`; tables generated from the Kotlin source by script (77 equinoxes, 28 Passover, 17 Diwali, 77 Lunar New Year entries, counts asserted). `Random(date.hashCode())` and `Random(year)` use `GameRandom(int)` with a ported `LocalDate.hashCode`; `getHolidayByDate` draws `nextFloat` only for holidays whose range contains the date, in enum order, like upstream. `DateRange.hashCode` = `HashOf` of the two LocalDate hashes.
     - Deviations (class remarks): no `LocalDate.now()` defaults (callers pass today), the `easterEgg`/`month` system properties are explicit parameters, `DateRange.Never` is a fixed empty range, Qingming uses the UTC date of the equinox instant (upstream uses the JVM default time zone, which changes results by a day: I measured Qingming 2024 differing in a CDT container), years outside 1..9999 throw (`DateOnly`).
     - Verification: golden sweep from the real Kotlin classes (installed Unciv.jar, `-Duser.timezone=UTC`): all 15 holidays x 2019..2101 (range text, length, hashCode), and `getHolidayByDate` for every day 2023-01-01..2030-12-31 (2,922 days, 162 holiday days) in `Logic/Golden/HolidayDates.golden.tsv` (copied to the test output via the test csproj), plus the two upstream tests. Gate and Standard checks pass (481/481).
+  - Review notes (Antigravity): **Pass.** Gate (5/5) and Standard checks (build -warnaserror, format, 540/540 tests) pass cleanly. Line-by-line verification against `HolidayDates.kt` confirms enum values/ordering, chance weights, and lazy PRNG evaluation matching upstream. Verified determinism with explicit `DateOnly` inputs and UTC-anchored equinox date table. Verified `LocalDate.hashCode` and `DateRange.GetHashCode` reproduction. 15 holidays x 83 years (2019..2101) and daily sweep (2023..2030) verified against JVM golden dataset. No warning suppressions.
 
 ### T025 Unique system: UniqueTarget, UniqueFlag, UniqueParameterType
 - State: In-Progress [Antigravity]
