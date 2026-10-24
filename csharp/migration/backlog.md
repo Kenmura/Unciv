@@ -407,7 +407,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (Antigravity): Pass. Verified `LocaleCode`, `BaseRuleset`, `Player`, `PlayerType`, `GameParameters`, `ModCategory`, `Constants`, `LinkedHashSet`, and `MetadataTests` against Kotlin sources: all 54 `LocaleCode` entries and OpenJDK 17+ `in` -> `id` fastlane folder mapping, `GameParameters` JSON field order and `ShowCivilizationStatsRaw` vs `ShowCivilizationStats` setter/fallback semantics, `Clone()` godMode reset, `ToString()` 6-mod limit, `ModCategory` topic-only equality/JVM hash, and `LinkedHashSet` insertion order + set equality. Re-ran Gate (`~MetadataTests`, 15/15 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
 
 ### T045 GameSetupInfo
-- State: Needs-Review [Antigravity]
+- State: In-Review [Claude]
 - Depends: T021, T022
 - Source: core/src/com/unciv/models/metadata/GameSetupInfo.kt
 - Fixtures: none - generate golden values by running the Kotlin class
