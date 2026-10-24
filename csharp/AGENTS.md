@@ -4,7 +4,7 @@ Read `migration/PROTOCOL.md` first. This file lists what the compiler cannot che
 Everything the analyzers *can* check (banned APIs, naming, culture, unused code) fails the build, so run it.
 
 ## Before you finish a ticket
-Run all three, inside `dotnet-dev`, from your own worktree's `csharp/`:
+Run all three, inside `dotnet-dev`, from your own worktree's `csharp/` (under `.worktrees/<you>/csharp/`):
 
     dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test
 

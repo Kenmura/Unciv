@@ -51,8 +51,11 @@ Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs t
 
 - **Integration branch:** `csharp-migration`. It is the shared board and is never checked out anywhere. If it doesn't exist, create it from `master` (`git branch csharp-migration master`).
 - **Your worktree (first run only):**
-  `git -C /var/home/nickmarc/repos/Unciv worktree add ../Unciv-wt-<you> -b agent/<you> csharp-migration`
-  If it already exists, reuse it. Work only there, on branch `agent/<you>`.
+  Create your worktree inside the repository under `.worktrees/` (which is git-ignored and stays within workspace boundaries to prevent terminal sandbox permission prompts):
+  ```bash
+  git -C /var/home/nickmarc/repos/Unciv worktree add .worktrees/<you> -b agent/<you> csharp-migration
+  ```
+  If it already exists (or an existing `../Unciv-wt-<you>` is present), reuse it. Work only there, on branch `agent/<you>`.
 - **Publish** (do this after *every* state change: claim, implement, review, reset, backlog expansion):
   ```
   git rebase csharp-migration && git push . HEAD:csharp-migration
