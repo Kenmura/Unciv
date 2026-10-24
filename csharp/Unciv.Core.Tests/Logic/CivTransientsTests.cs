@@ -23,7 +23,7 @@ public class CivTransientsTests
         civ.Tech.CivInfo = civ;
         civ.Tech.Era = new Unciv.Models.Ruleset.Tech.Era { Name = "Ancient era", EraNumber = 0 };
         civ.CityStateFunctions = new FakeCityStateFunctions();
-        civ.Units = new FakeUnitManager();
+        civ.Units = new TestUnitManager(civ);
         civ.CivConstructions.SetTransients(civ);
         return (civ, info);
     }
@@ -69,7 +69,7 @@ public class CivTransientsTests
             new FakeCityState("a", new FakeCiv("Rome")) { PopulationData = 3 },
             new FakeCityState("b", new FakeCiv("Rome")) { PopulationData = 6 },
         ];
-        civ.Units = new FakeUnitManager { Count = 20 };
+        civ.Units = new TestUnitManager(civ) { Count = 20 };
 
         Assert.Equal(5, civ.Stats.GetBaseUnitSupply());
         Assert.Equal(4, civ.Stats.GetUnitSupplyFromCities());
@@ -78,9 +78,9 @@ public class CivTransientsTests
         Assert.Equal(7, civ.Stats.GetUnitSupplyDeficit());
         Assert.Equal(-70f, civ.Stats.GetUnitSupplyProductionPenalty()); // capped at -70%
 
-        civ.Units = new FakeUnitManager { Count = 15 };
+        civ.Units = new TestUnitManager(civ) { Count = 15 };
         Assert.Equal(-20f, civ.Stats.GetUnitSupplyProductionPenalty());
-        civ.Units = new FakeUnitManager { Count = 2 };
+        civ.Units = new TestUnitManager(civ) { Count = 2 };
         Assert.Equal(0, civ.Stats.GetUnitSupplyDeficit());
         Assert.Equal(0f, civ.Stats.GetUnitSupplyProductionPenalty() + 0f); // -min(0, 70) is -0f
     }

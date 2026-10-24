@@ -2,6 +2,7 @@ using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.City;
 using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
@@ -94,24 +95,48 @@ internal sealed class FakeBarbarianManager : BarbarianManager
     }
 }
 
-internal sealed class FakeUnitManager : IUnitManager
+internal class TestUnitManager(Civilization civInfo) : UnitManager(civInfo)
 {
-    public int Count { get; set; }
-    public int GetCivUnitsSize() => Count;
-    public List<IMapUnitState> CivUnits { get; } = [];
-    public IEnumerable<IMapUnitState> GetCivUnits() => CivUnits;
-    public List<(IGameContextUnit Unit, bool UpdateCivInfo)> RemovedUnits { get; } = [];
-    public void RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => RemovedUnits.Add((unit, updateCivInfo));
-    public MapUnit? PlaceUnitNearTile(HexCoord location, BaseUnit baseUnit, int? unitId = null, MapUnit? copiedFrom = null) => throw new NotSupportedException();
+    public int? OverrideCount { get; set; }
+    public int Count { get => GetCivUnitsSize(); set => OverrideCount = value; }
+    public override int GetCivUnitsSize() => OverrideCount ?? base.GetCivUnitsSize();
+
+    public List<(MapUnit Unit, bool UpdateCivInfo)> AssignedUnits { get; } = [];
+    public List<(MapUnit Unit, bool UpdateCivInfo)> RemovedUnits { get; } = [];
     public List<(BaseUnit Unit, CityObject? City)> AddedUnits { get; } = [];
-    public IMapUnitState? AddedUnitResult { get; set; }
-    public IMapUnitState? AddUnit(BaseUnit baseUnit, CityObject? city = null)
+    public MapUnit? AddedUnitResult { get; set; }
+
+    public override void AddUnit(MapUnit mapUnit, bool updateCivInfo = true)
+    {
+        AssignedUnits.Add((mapUnit, updateCivInfo));
+        try
+        {
+            base.AddUnit(mapUnit, updateCivInfo);
+        }
+        catch (InvalidOperationException)
+        {
+            // Allowed in unit tests when baseUnit or other properties are uninitialized
+        }
+    }
+
+    public override void RemoveUnit(MapUnit mapUnit, bool updateCivInfo = true)
+    {
+        RemovedUnits.Add((mapUnit, updateCivInfo));
+        try
+        {
+            base.RemoveUnit(mapUnit, updateCivInfo);
+        }
+        catch (InvalidOperationException)
+        {
+            // Allowed in unit tests when baseUnit or other properties are uninitialized
+        }
+    }
+
+    public override MapUnit? AddUnit(BaseUnit baseUnit, CityObject? city = null)
     {
         AddedUnits.Add((baseUnit, city));
         return AddedUnitResult;
     }
-    public List<(MapUnit Unit, bool UpdateCivInfo)> AssignedUnits { get; } = [];
-    public void AddUnit(MapUnit mapUnit, bool updateCivInfo = true) => AssignedUnits.Add((mapUnit, updateCivInfo));
 }
 
 internal sealed class FakeQuestManager : IQuestManager

@@ -10,9 +10,8 @@ namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/UnitManager.kt (T066). Stripped: the purity annotations.
 // GUI.getSettings().alternateUnitCycleOrder is IGameInfoState.AlternateUnitCycleOrder (client setting seam, TODO(T046)).
-// Civilization.Units stays typed by the IUnitManager seam (the test fakes of the civilization tests count units without MapUnits): TODO(T133).
 
-public class UnitManager(Civilization civInfo) : IUnitManager
+public class UnitManager(Civilization civInfo)
 {
     public Civilization CivInfo { get; } = civInfo;
 
@@ -36,7 +35,7 @@ public class UnitManager(Civilization civInfo) : IUnitManager
     /// <param name="unitName">The <see cref="BaseUnit"/> name to create a MapUnit instance of - auto-mapped to a nation equivalent if one exists</param>
     /// <param name="city">The City to place the new unit in or near</param>
     /// <returns>The new unit or <c>null</c> if unsuccessful (invalid unitName, no tile found where it could be placed, or civ has no cities)</returns>
-    public MapUnit? AddUnit(string unitName, CityObject? city = null)
+    public virtual MapUnit? AddUnit(string unitName, CityObject? city = null)
     {
         if (!CivInfo.GameInfo.Ruleset.Units.TryGetValue(unitName, out var unit)) return null;
         return AddUnit(unit, city);
@@ -46,7 +45,7 @@ public class UnitManager(Civilization civInfo) : IUnitManager
     /// <param name="baseUnit">The <see cref="BaseUnit"/> to create a MapUnit instance of - auto-mapped to a nation equivalent if one exists</param>
     /// <param name="city">The City to place the new unit in or near</param>
     /// <returns>The new unit or <c>null</c> if unsuccessful (no tile found where it could be placed, or civ has no cities)</returns>
-    public MapUnit? AddUnit(BaseUnit baseUnit, CityObject? city = null)
+    public virtual MapUnit? AddUnit(BaseUnit baseUnit, CityObject? city = null)
     {
         if (CivInfo.Cities.Count == 0) return null;
         var rng = (city?.State ?? CivInfo.State).StateBasedRandom("UnitManager.addUnit");
@@ -91,7 +90,7 @@ public class UnitManager(Civilization civInfo) : IUnitManager
     /// <param name="location">where to try to place the unit</param>
     /// <param name="unitName">name of the <see cref="BaseUnit"/> to create and place</param>
     /// <returns>created <see cref="MapUnit"/> or null if no suitable location was found</returns>
-    public MapUnit? PlaceUnitNearTile(HexCoord location, string unitName)
+    public virtual MapUnit? PlaceUnitNearTile(HexCoord location, string unitName)
     {
         var unit = CivInfo.GameInfo.Ruleset.Units[unitName];
         return PlaceUnitNearTile(location, unit);
@@ -103,7 +102,7 @@ public class UnitManager(Civilization civInfo) : IUnitManager
     /// <param name="unitId">the id the new unit gets, a fresh one when <c>null</c></param>
     /// <param name="copiedFrom">unit to copy the statistics from</param>
     /// <returns>created <see cref="MapUnit"/> or null if no suitable location was found</returns>
-    public MapUnit? PlaceUnitNearTile(HexCoord location, BaseUnit baseUnit, int? unitId = null, MapUnit? copiedFrom = null)
+    public virtual MapUnit? PlaceUnitNearTile(HexCoord location, BaseUnit baseUnit, int? unitId = null, MapUnit? copiedFrom = null)
     {
         var unit = (MapUnit?)CivInfo.GameInfo.TileMap.PlaceUnitNearTile(location, baseUnit, CivInfo, unitId);
 
@@ -151,9 +150,9 @@ public class UnitManager(Civilization civInfo) : IUnitManager
         return unit;
     }
 
-    public int GetCivUnitsSize() => unitList.Count;
-    public IEnumerable<MapUnit> GetCivUnits() => unitList;
-    public IEnumerable<MapUnit> GetCivGreatPeople() => GetCivUnits().Where(mapUnit => mapUnit.IsGreatPerson());
+    public virtual int GetCivUnitsSize() => unitList.Count;
+    public virtual IEnumerable<MapUnit> GetCivUnits() => unitList;
+    public virtual IEnumerable<MapUnit> GetCivGreatPeople() => GetCivUnits().Where(mapUnit => mapUnit.IsGreatPerson());
 
     // Similar to getCivUnits(), but the returned list is rotated so that the
     // 'nextPotentiallyDueAt' unit is first here.
@@ -167,7 +166,7 @@ public class UnitManager(Civilization civInfo) : IUnitManager
     /// </summary>
     /// <param name="mapUnit">the unit</param>
     /// <param name="updateCivInfo">When <c>true</c>, calls <c>updateStatsForNextTurn</c> and possibly <c>updateCivResources</c></param>
-    public void AddUnit(MapUnit mapUnit, bool updateCivInfo = true)
+    public virtual void AddUnit(MapUnit mapUnit, bool updateCivInfo = true)
     {
         // Since we create a new list anyway (otherwise some concurrent modification
         // exception will happen), also rearrange existing units so that
@@ -188,7 +187,7 @@ public class UnitManager(Civilization civInfo) : IUnitManager
         }
     }
 
-    public void RemoveUnit(MapUnit mapUnit, bool updateCivInfo = true)
+    public virtual void RemoveUnit(MapUnit mapUnit, bool updateCivInfo = true)
     {
         // See comment in addUnit().
         var newList = GetCivUnitsStartingAtNextDue().ToList();
@@ -272,9 +271,4 @@ public class UnitManager(Civilization civInfo) : IUnitManager
         nextPotentiallyDueAt = (best.Value.Index + 1) % unitList.Count;
         return best.Value.Unit;
     }
-
-    // IUnitManager (the seam Civilization is typed by)
-    IEnumerable<IMapUnitState> IUnitManager.GetCivUnits() => GetCivUnits();
-    void IUnitManager.RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => RemoveUnit((MapUnit)unit, updateCivInfo);
-    IMapUnitState? IUnitManager.AddUnit(BaseUnit baseUnit, CityObject? city) => AddUnit(baseUnit, city);
 }

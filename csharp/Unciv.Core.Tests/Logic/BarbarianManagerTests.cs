@@ -370,9 +370,9 @@ public class BarbarianManagerTests
         });
         w.Rome.Tech.TechsResearched.Add("A");
         w.Rome.Tech.TechsResearched.Add("B");
-        ((FakeUnitManager)w.Rome.Units).Count = 1; // alive
+        w.Rome.Units = new TestUnitManager(w.Rome) { Count = 1 }; // alive
         var other = MapUnitFactory.NewCiv("Egypt", w.Info);
-        ((FakeUnitManager)other.Units).Count = 1;
+        other.Units = new TestUnitManager(other) { Count = 1 };
         other.Tech.TechsResearched.Add("B");
         other.Tech.TechsResearched.Add("C");
         w.Manager.SpawnBarbarian(w.Map[HexCoord.Of(2, 2)]);

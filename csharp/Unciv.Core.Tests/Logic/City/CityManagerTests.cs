@@ -48,9 +48,9 @@ public sealed class CityManagerTests
             CivId = name,
             GameInfo = info,
             PlayerType = human ? PlayerType.Human : PlayerType.AI,
-            Units = new FakeUnitManager { Count = 1 },
             CityStateFunctions = new FakeCityStateFunctions(),
         };
+        civ.Units = new TestUnitManager(civ) { Count = 1 };
         civ.State = new GameContext(civ);
         civ.Tech.CivInfo = civ;
         civ.Policies.CivInfo = civ;

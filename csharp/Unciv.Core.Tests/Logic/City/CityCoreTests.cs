@@ -55,7 +55,6 @@ public class CityCoreTests
             CivId = "Rome",
             GameInfo = info,
             PlayerType = human ? PlayerType.Human : PlayerType.AI,
-            Units = new FakeUnitManager { Count = 1 },
             CityStateFunctions = new FakeCityStateFunctions(),
         };
         civ.State = new GameContext(civ);

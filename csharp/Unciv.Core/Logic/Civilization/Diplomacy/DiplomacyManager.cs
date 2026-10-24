@@ -486,7 +486,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
             foreach (var unit in CivInfo.Units.GetCivUnits()
                 .Where(it => ReferenceEquals(it.CurrentTile.GetOwner(), OtherCiv)).ToList())
             {
-                unit.TeleportToClosestMoveableTile();
+                unit.Movement.TeleportToClosestMoveableTile();
             }
         }
     }
@@ -498,7 +498,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
         var otherCiv = OtherCiv;
         // Get out of others' territory
         foreach (var unit in CivInfo.Units.GetCivUnits().Where(it => ReferenceEquals(it.CurrentTile.GetOwner(), otherCiv)).ToList())
-            unit.TeleportToClosestMoveableTile();
+            unit.Movement.TeleportToClosestMoveableTile();
 
         foreach (var thirdCiv in CivInfo.GetKnownCivs())
         {

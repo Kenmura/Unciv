@@ -44,9 +44,9 @@ public class CityConstructionsTests
             CivId = "Rome",
             GameInfo = info,
             PlayerType = human ? PlayerType.Human : PlayerType.AI,
-            Units = new FakeUnitManager { Count = 1 },
             CityStateFunctions = new FakeCityStateFunctions(),
         };
+        civ.Units = new TestUnitManager(civ);
         civ.State = new GameContext(civ);
         civ.Tech.CivInfo = civ;
         civ.Policies.CivInfo = civ;
@@ -521,7 +521,7 @@ public class CityConstructionsTests
         warriorBase.Cost = 20;
         warriorBase.SetRuleset(w.Ruleset);
         var unit = MapUnitFactory.NewUnit(w.Civ, warriorBase, w.City.GetCenterTile());
-        var units = (FakeUnitManager)w.Civ.Units;
+        var units = (TestUnitManager)w.Civ.Units;
         units.AddedUnitResult = unit;
         var barracks = AddBuilding(w, "Barracks", it => it.Uniques =
             ["New [Land] units start with [15] XP [in all cities]", "All newly-trained [Land] units [in all cities] receive the [Drill I] promotion"]);
@@ -560,7 +560,7 @@ public class CityConstructionsTests
         var warriorBase = MapUnitFactory.NewBaseUnit(w.Ruleset, "Warrior");
         warriorBase.SetRuleset(w.Ruleset);
         Queue(w, "Warrior");
-        Assert.False(w.Constructions.CompleteConstruction(warriorBase)); // FakeUnitManager.AddUnit returns null
+        Assert.False(w.Constructions.CompleteConstruction(warriorBase)); // TestUnitManager.AddUnit returns null
         Assert.Equal(["Warrior"], w.Constructions.ConstructionQueue);
         Assert.Empty(w.Civ.Notifications);
     }

@@ -72,7 +72,8 @@ internal static class MapUnitFactory
     public static Civilization NewCiv(string name, FakeGameInfoState? info = null, params string[] nationUniques)
     {
         info ??= new FakeGameInfoState();
-        var civ = new Civilization(new NationObject { Name = name, Uniques = nationUniques.ToList() }) { CivId = name, GameInfo = info, Units = new FakeUnitManager(), CityStateFunctions = new FakeCityStateFunctions() };
+        var civ = new Civilization(new NationObject { Name = name, Uniques = nationUniques.ToList() }) { CivId = name, GameInfo = info, CityStateFunctions = new FakeCityStateFunctions() };
+        civ.Units = new TestUnitManager(civ);
         civ.State = new GameContext(civ);
         civ.Tech.CivInfo = civ;
         civ.Policies.CivInfo = civ;

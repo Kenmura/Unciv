@@ -610,7 +610,7 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
     public MapUnit? Construct(CityConstructions cityConstructions, Stat? boughtWith)
     {
         var civInfo = cityConstructions.City.Civ;
-        var unit = (MapUnit?)civInfo.Units.AddUnit(this, cityConstructions.City);
+        var unit = civInfo.Units.AddUnit(this, cityConstructions.City);
         if (unit == null) return null; // couldn't place the unit, so there's actually no unit =(
 
         //movement penalty

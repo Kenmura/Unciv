@@ -1,4 +1,5 @@
 using Unciv.Logic.Civilization.Diplomacy;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
@@ -37,7 +38,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
             freeUnits = unchecked(freeUnits + unique.Params[0].ToInt());
         });
 
-        IEnumerable<IMapUnitState> unitsToPayFor = CivInfo.Units.GetCivUnits();
+        IEnumerable<MapUnit> unitsToPayFor = CivInfo.Units.GetCivUnits();
         if (CivInfo.HasUnique(UniqueType.UnitsInCitiesNoMaintenance))
             unitsToPayFor = unitsToPayFor.Where(it => !(it.GetTile().IsCityCenter() && it.CanGarrison()));
 
@@ -53,7 +54,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
 
         foreach (var unit in unitsToPayFor)
         {
-            var stateForConditionals = unit.CacheState;
+            var stateForConditionals = unit.Cache.State;
             var unitMaintenance = 1f;
             var uniquesThatApply = unit.GetMatchingUniques(
                 UniqueType.UnitMaintenanceDiscount,

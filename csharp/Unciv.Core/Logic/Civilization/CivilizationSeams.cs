@@ -1,11 +1,9 @@
 using Unciv.Logic.Map;
-using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
-using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
@@ -103,21 +101,6 @@ public interface ICityStateFunctions
     void ForEachUniqueProvidedByCityStates(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
     /// <summary><c>cityStateFunctions.getCityStateResourcesForAlly()</c> (T058).</summary>
     ResourceSupplyList GetCityStateResourcesForAlly();
-}
-
-/// <summary>What Civilization reads from <c>UnitManager</c>.</summary>
-public interface IUnitManager
-{
-    int GetCivUnitsSize();
-    IEnumerable<IMapUnitState> GetCivUnits();
-    /// <summary><c>civ.units.removeUnit(unit, updateCivInfo)</c></summary>
-    void RemoveUnit(IGameContextUnit unit, bool updateCivInfo);
-    /// <summary><c>civ.units.placeUnitNearTile(location, baseUnit, unitId, copiedFrom)</c> (T066: UnitUpgradeManager.performUpgrade)</summary>
-    MapUnit? PlaceUnitNearTile(HexCoord location, BaseUnit baseUnit, int? unitId = null, MapUnit? copiedFrom = null);
-    /// <summary><c>civ.units.addUnit(baseUnit, city)</c>; <c>null</c> when the unit cannot be placed.</summary>
-    IMapUnitState? AddUnit(BaseUnit baseUnit, CityObject? city = null);
-    /// <summary><c>civ.units.addUnit(mapUnit, updateCivInfo)</c> (T065: MapUnit.assignOwner)</summary>
-    void AddUnit(MapUnit mapUnit, bool updateCivInfo = true);
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>

@@ -2,6 +2,7 @@ using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Trade;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -22,10 +23,10 @@ public class DiplomacyCoreTests
         {
             GameInfo = info,
             PlayerType = playerType,
-            Units = new FakeUnitManager { Count = 1 }, // so they are not considered defeated
             CityStateFunctions = new FakeCityStateFunctions(),
             QuestManager = new FakeQuestManager(),
         };
+        civ.Units = new TestUnitManager(civ) { Count = 1 }; // so they are not considered defeated
         info.Civs.Add(civ);
         return civ;
     }
@@ -870,20 +871,10 @@ public class DiplomacyCoreTests
 
     // ---- T114: previously untested DiplomacyManager / DiplomacyFunctions members
 
-    /// <summary>A unit standing on a tile: only <c>CurrentTile</c> and the teleport call are answered.</summary>
-    public class TeleportingUnitProxy : System.Reflection.DispatchProxy
+    private sealed class TeleportingMovement(MapUnit unit) : UnitMovement(unit)
     {
-        public Unciv.Logic.Map.Tiles.Tile? Tile { get; set; }
         public int Teleports { get; set; }
-        protected override object? Invoke(System.Reflection.MethodInfo? targetMethod, object?[]? args)
-        {
-            switch (targetMethod?.Name)
-            {
-                case "get_CurrentTile": return Tile;
-                case "TeleportToClosestMoveableTile": Teleports++; return null;
-                default: throw new NotSupportedException(targetMethod?.Name);
-            }
-        }
+        public override void TeleportToClosestMoveableTile() => Teleports++;
     }
 
     private sealed class OwnerCity(Civilization owner) : FakeCity("owner", new FakeCiv("dummy"))
@@ -893,7 +884,7 @@ public class DiplomacyCoreTests
         public override HexCoord Location => HexCoord.Of(99, 99);
     }
 
-    private static (IMapUnitState Unit, TeleportingUnitProxy Proxy) UnitOn(Civilization? tileOwner)
+    private static (MapUnit Unit, TeleportingMovement Movement) UnitOn(Civilization? tileOwner)
     {
         var tile = new Unciv.Logic.Map.Tiles.Tile { Position = HexCoord.Of(0, 0), BaseTerrain = "Grassland" };
         var map = new Unciv.Logic.Map.TileMap(1) { GameInfo = new FakeGameInfo() };
@@ -902,10 +893,10 @@ public class DiplomacyCoreTests
         ruleset.Terrains.Put("Grassland", new Unciv.Models.Ruleset.Tile.Terrain { Name = "Grassland", Type = Unciv.Models.Ruleset.Tile.TerrainType.Land });
         map.SetTransients(ruleset);
         if (tileOwner != null) tile.SetOwningCity(new OwnerCity(tileOwner));
-        var unit = System.Reflection.DispatchProxy.Create<IMapUnitState, TeleportingUnitProxy>();
-        var proxy = (TeleportingUnitProxy)(object)unit;
-        proxy.Tile = tile;
-        return (unit, proxy);
+        var unit = new MapUnit { CurrentTile = tile };
+        var movement = new TeleportingMovement(unit);
+        unit.Movement = movement;
+        return (unit, movement);
     }
 
     private static void SetUniques(Civilization civ, params string[] uniques)
@@ -931,8 +922,9 @@ public class DiplomacyCoreTests
         var (unitOfAInBLand, proxyA) = UnitOn(b);
         var (unitOfAInOwnLand, proxyOwn) = UnitOn(a);
         var (unitOfBInALand, proxyB) = UnitOn(a);
-        ((FakeUnitManager)a.Units).CivUnits.AddRange([unitOfAInBLand, unitOfAInOwnLand]);
-        ((FakeUnitManager)b.Units).CivUnits.Add(unitOfBInALand);
+        a.Units.AddUnit(unitOfAInBLand, false);
+        a.Units.AddUnit(unitOfAInOwnLand, false);
+        b.Units.AddUnit(unitOfBInALand, false);
 
         a.GetDiplomacyManager(b)!.MakePeace();
 
@@ -982,7 +974,8 @@ public class DiplomacyCoreTests
         var manager = a.GetDiplomacyManager(b)!;
         var (inside, insideProxy) = UnitOn(b);
         var (elsewhere, elsewhereProxy) = UnitOn(null);
-        ((FakeUnitManager)a.Units).CivUnits.AddRange([inside, elsewhere]);
+        a.Units.AddUnit(inside, false);
+        a.Units.AddUnit(elsewhere, false);
 
         manager.UpdateHasOpenBorders(); // were closed, still closed: nothing happens
         Assert.False(manager.HasOpenBorders);

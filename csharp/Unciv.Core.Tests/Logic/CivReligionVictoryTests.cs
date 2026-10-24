@@ -25,7 +25,7 @@ public class CivReligionVictoryTests
         var info = new FakeGameInfoState { ReligionEnabled = true };
         var civ = new Civilization(new NationObject { Name = name }) { GameInfo = info, PlayerType = playerType };
         Wire(civ);
-        civ.Units = new FakeUnitManager { Count = 1 };
+        civ.Units = new TestUnitManager(civ) { Count = 1 };
         civ.CityStateFunctions = new FakeCityStateFunctions();
         info.Civs.Add(civ);
         return (civ, info);
@@ -500,11 +500,11 @@ public class CivReligionVictoryTests
             var civ = new Civilization(new NationObject { Name = $"Civ{i}" }) { GameInfo = info };
             Wire(civ);
             civ.CityStateFunctions = new FakeCityStateFunctions();
-            civ.Units = new FakeUnitManager { Count = 1 };
+            civ.Units = new TestUnitManager(civ) { Count = 1 };
             info.Civs.Add(civ);
             civs.Add(civ);
         }
-        first.Units = new FakeUnitManager { Count = 1 };
+        first.Units = new TestUnitManager(first) { Count = 1 };
         return civs;
     }
 
@@ -588,7 +588,7 @@ public class CivReligionVictoryTests
         Assert.True(milestones[1].HasBeenCompletedBy(civ)); // anyone
 
         Assert.False(milestones[2].HasBeenCompletedBy(civ)); // the other civ still lives
-        other.Units = new FakeUnitManager { Count = 0 };
+        other.Units = new TestUnitManager(other) { Count = 0 };
         other.Cities = [];
         Assert.True(milestones[2].HasBeenCompletedBy(civ));
 
@@ -610,7 +610,7 @@ public class CivReligionVictoryTests
         var milestone = victory.MilestoneObjects[0];
         Assert.False(milestone.HasBeenCompletedBy(civ));
         civ.ReligionManager.Religion = religion;
-        civ.Units = new FakeUnitManager { Count = 1 };
+        civ.Units = new TestUnitManager(civ) { Count = 1 };
         civ.Cities = [new FakeCityState("c", new FakeCiv("Rome")) { CivData = civ, ReligionData = { Majority = religion } }];
         Assert.True(milestone.HasBeenCompletedBy(civ));
         info.ReligionEnabled = false;

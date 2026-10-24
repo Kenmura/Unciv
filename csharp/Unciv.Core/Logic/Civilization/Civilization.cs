@@ -97,13 +97,8 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
 
     public GameContext State { get; set; } = GameContext.EmptyState;
 
-    private IUnitManager? units;
-    /// <summary>Transient. TODO(T133): becomes <c>val units = UnitManager(this)</c>.</summary>
-    public IUnitManager Units
-    {
-        get => Lateinit(units, "units");
-        set => units = value;
-    }
+    /// <summary>Transient. Kotlin <c>val units = UnitManager(this)</c> (assigned in the constructor).</summary>
+    public UnitManager Units { get; set; }
 
     /// <summary>Transient. Kotlin <c>var diplomacyFunctions = DiplomacyFunctions(this)</c> (assigned in the constructor).</summary>
     public DiplomacyFunctions DiplomacyFunctions { get; set; }
@@ -331,6 +326,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         Stats = new CivInfoStatsForNextTurn(this);
         Cache = new CivInfoTransientCache(this);
         DiplomacyFunctions = new DiplomacyFunctions(this);
+        Units = new UnitManager(this);
         // PublicationOnly: Kotlin `by lazy` does not cache a failed initializer (e.g. gameInfo not yet set), unlike ExecutionAndPublication
         cityStateType = new KotlinLazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType.NotNull()]);
     }
@@ -1382,7 +1378,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     void IGameContextCivilization.CheckExploredRegionTilePosition(HexCoord tilePosition, HexCoord? explorerPosition) =>
         ExploredRegion.CheckTilePosition(tilePosition, explorerPosition);
     IGameContextUnit IGameContextCivilization.NewMapUnit(BaseUnit baseUnit, int? unitId) => baseUnit.NewMapUnit(this, unitId);
-    void IGameContextCivilization.RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => Units.RemoveUnit(unit, updateCivInfo);
+    void IGameContextCivilization.RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => Units.RemoveUnit((MapUnit)unit, updateCivInfo);
     void IGameContextCivilization.UpdateCivResources() => Cache.UpdateCivResources();
     IGameContextCity? IGameContextCivilization.GetCapital() => GetCapital();
     IEnumerable<IGameContextCivilization> IGameContextCivilization.GetKnownCivs() => GetKnownCivs();

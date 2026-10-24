@@ -193,7 +193,8 @@ public class CivilizationCoreTests
         Assert.Throws<InvalidOperationException>(() => civ.GameInfo);
         Assert.Throws<InvalidOperationException>(() => civ.Nation);
         Assert.Throws<InvalidOperationException>(() => civ.Tech.CivInfo);
-        Assert.Throws<InvalidOperationException>(() => civ.Units);
+        Assert.NotNull(civ.Units);
+        Assert.Same(civ, civ.Units.CivInfo);
         Assert.Same(GameContext.IgnoreConditionalsState, civ.GetGameContextForStartBias());
         civ.GameInfo = new FakeGameInfoState();
         Assert.Same(civ.GameInfo, civ.GetGameContextForStartBias().GameInfo);
@@ -275,10 +276,13 @@ public class CivilizationCoreTests
     public void DiplomacyLookups_KnowsAndGetKnownCivs()
     {
         var (rome, info) = NewCiv("Rome");
-        var egypt = new Civilization(new NationObject { Name = "Egypt" }) { GameInfo = info, Units = new FakeUnitManager { Count = 1 } };
-        var spectator = new Civilization(new NationObject { Name = "Spectator" }) { GameInfo = info, Units = new FakeUnitManager { Count = 1 } };
-        var dead = new Civilization(new NationObject { Name = "Greece" }) { GameInfo = info, Units = new FakeUnitManager { Count = 0 } };
-        rome.Units = new FakeUnitManager { Count = 1 };
+        var egypt = new Civilization(new NationObject { Name = "Egypt" }) { GameInfo = info };
+        egypt.Units = new TestUnitManager(egypt) { Count = 1 };
+        var spectator = new Civilization(new NationObject { Name = "Spectator" }) { GameInfo = info };
+        spectator.Units = new TestUnitManager(spectator) { Count = 1 };
+        var dead = new Civilization(new NationObject { Name = "Greece" }) { GameInfo = info };
+        dead.Units = new TestUnitManager(dead) { Count = 0 };
+        rome.Units = new TestUnitManager(rome) { Count = 1 };
         foreach (var other in new[] { egypt, spectator, dead })
             rome.Diplomacy[other.CivId] = new DiplomacyManager(rome, other);
 
@@ -469,19 +473,19 @@ public class CivilizationCoreTests
     public void IsDefeated_FollowsTheCapitalAndUnitRules()
     {
         var (civ, _) = NewCiv();
-        civ.Units = new FakeUnitManager { Count = 0 };
+        civ.Units = new TestUnitManager(civ) { Count = 0 };
         Assert.True(civ.IsDefeated()); // never owned an original capital: alive while it has units
         Assert.False(civ.IsAlive());
-        civ.Units = new FakeUnitManager { Count = 2 };
+        civ.Units = new TestUnitManager(civ) { Count = 2 };
         Assert.False(civ.IsDefeated());
         civ.HasEverOwnedOriginalCapital = true;
         Assert.True(civ.IsDefeated()); // ... otherwise while it has cities
         civ.Cities = [new FakeCityState("c1", new FakeCiv("Rome"))];
         Assert.False(civ.IsDefeated());
 
-        var barbarians = new Civilization(new NationObject { Name = Constants.Barbarians }) { Units = new FakeUnitManager() };
+        var barbarians = new Civilization(new NationObject { Name = Constants.Barbarians });
         Assert.False(barbarians.IsDefeated());
-        var spectator = new Civilization(new NationObject { Name = Constants.Spectator }) { Units = new FakeUnitManager() };
+        var spectator = new Civilization(new NationObject { Name = Constants.Spectator });
         Assert.False(spectator.IsDefeated());
     }
 
@@ -570,7 +574,7 @@ public class CivilizationCoreTests
     public void GetStatForRanking_ReadsTheManagersAndZeroForDefeated()
     {
         var (civ, info) = NewCiv();
-        civ.Units = new FakeUnitManager { Count = 1 };
+        civ.Units = new TestUnitManager(civ) { Count = 1 };
         civ.Stats.Happiness = 12;
         civ.Stats.StatsForNextTurn = new StatsObject(food: 2.5f, production: 3.4f);
         civ.AddGold(77);
@@ -592,7 +596,7 @@ public class CivilizationCoreTests
         Assert.Equal(2, civ.GetStatForRanking(RankingType.Technologies));
         Assert.Equal(2, civ.GetStatForRanking(RankingType.Culture)); // the completed branch does not count
 
-        civ.Units = new FakeUnitManager { Count = 0 };
+        civ.Units = new TestUnitManager(civ) { Count = 0 };
         Assert.Equal(0, civ.GetStatForRanking(RankingType.Gold)); // defeated
     }
 
@@ -600,7 +604,7 @@ public class CivilizationCoreTests
     public void MilitaryMight_IsCached_AndScalesWithGold()
     {
         var (civ, _) = NewCiv();
-        civ.Units = new FakeUnitManager { Count = 1 };
+        civ.Units = new TestUnitManager(civ) { Count = 1 };
         Assert.Equal(1, civ.GetStatForRanking(RankingType.Force)); // 1 * (sqrt(0) + 1) = 1
         civ.AddGold(10000);
         Assert.Equal(1, civ.GetStatForRanking(RankingType.Force)); // cached
@@ -635,7 +639,7 @@ public class CivilizationCoreTests
         double expectedTotal = 0.0;
         foreach (var value in breakdown.Values) expectedTotal += value;
         Assert.Equal(expectedTotal, civ.CalculateTotalScore());
-        civ.Units = new FakeUnitManager { Count = 1 };
+        civ.Units = new TestUnitManager(civ) { Count = 1 };
         Assert.Equal((int)expectedTotal, civ.GetStatForRanking(RankingType.Score));
     }
 
@@ -694,9 +698,10 @@ public class CivilizationCoreTests
     public void Destroy_NotifiesLiveHumansAndClearsTrades()
     {
         var (rome, info) = NewCiv("Rome", PlayerType.Human);
-        var egypt = new Civilization(new NationObject { Name = "Egypt" }) { GameInfo = info, PlayerType = PlayerType.Human, Units = new FakeUnitManager { Count = 1 } };
+        var egypt = new Civilization(new NationObject { Name = "Egypt" }) { GameInfo = info, PlayerType = PlayerType.Human };
+        egypt.Units = new TestUnitManager(egypt) { Count = 1 };
         info.Civs.Add(egypt);
-        rome.Units = new FakeUnitManager { Count = 0 };
+        rome.Units = new TestUnitManager(rome) { Count = 0 };
         info.GameParameters.IsOnlineMultiplayer = true; // no map reveal
         var romeSeesEgypt = new DiplomacyManager(rome, egypt);
         var egyptSeesRome = new DiplomacyManager(egypt, rome);
@@ -728,7 +733,7 @@ public class CivilizationCoreTests
         civ.PlayerId = "player";
         civ.TotalTurnTimeSeconds = 5;
         civ.TurnsPlayedAsHuman = 2;
-        civ.Units = new FakeUnitManager { Count = 1 };
+        civ.Units = new TestUnitManager(civ) { Count = 1 };
         var preview = civ.AsPreview();
         Assert.Equal("Rome", preview.CivName);
         Assert.Equal("player", preview.PlayerId);

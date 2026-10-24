@@ -1,6 +1,7 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tech;
@@ -27,9 +28,9 @@ public class CivManagerTests
         {
             GameInfo = info,
             PlayerType = playerType,
-            Units = new FakeUnitManager { Count = 1 },
             CityStateFunctions = new FakeCityStateFunctions(),
         };
+        civ.Units = new TestUnitManager(civ) { Count = 1 };
         civ.State = new GameContext(civ);
         civ.Tech.CivInfo = civ;
         civ.Policies.CivInfo = civ;
@@ -149,13 +150,7 @@ public class CivManagerTests
 
     // ---- GreatPersonManager
 
-    /// <summary>A placed unit: only its identity is checked, every member throws.</summary>
-    public class ThrowingUnitProxy : System.Reflection.DispatchProxy
-    {
-        protected override object? Invoke(System.Reflection.MethodInfo? targetMethod, object?[]? args) => throw new NotSupportedException(targetMethod?.Name);
-    }
-
-    private static IMapUnitState NewPlacedUnit() => System.Reflection.DispatchProxy.Create<IMapUnitState, ThrowingUnitProxy>();
+    private static MapUnit NewPlacedUnit() => new();
 
     private static BaseUnit GreatPerson(string name, string? pool = null, string? replaces = null)
     {
@@ -219,7 +214,7 @@ public class CivManagerTests
         var khan = GreatPerson("Khan", replaces: "Great General");
         var general = GreatPerson("Great General");
         foreach (var unit in new[] { scientist, engineer, general, khan }) info.RulesetData.Units.Put(unit.Name, unit);
-        var units = (FakeUnitManager)civ.Units;
+        var units = (TestUnitManager)civ.Units;
         var manager = civ.GreatPeople;
         manager.FreeGreatPeople = 1;
         Assert.Empty(manager.GetFreeGreatPersonOptions()); // no cities
@@ -250,7 +245,7 @@ public class CivManagerTests
         var (civ, info) = NewCiv(playerType: PlayerType.Human);
         foreach (var name in new[] { "Great Scientist", "Great Engineer" }) info.RulesetData.Units.Put(name, GreatPerson(name));
         AddCity(civ, "a");
-        var units = (FakeUnitManager)civ.Units;
+        var units = (TestUnitManager)civ.Units;
         units.AddedUnitResult = NewPlacedUnit();
         var manager = civ.GreatPeople;
         manager.FreeGreatPeople = 2;
@@ -907,9 +902,9 @@ public class CivManagerTests
         {
             GameInfo = world.Info,
             PlayerType = PlayerType.Human,
-            Units = new FakeUnitManager { Count = 1 },
             CityStateFunctions = new FakeCityStateFunctions(),
         };
+        other.Units = new TestUnitManager(other) { Count = 1 };
         world.Info.Civs.Add(other);
         world.Civ.DiplomacyFunctions.MakeCivilizationsMeet(other);
 
@@ -925,9 +920,9 @@ public class CivManagerTests
         {
             GameInfo = again.Info,
             PlayerType = PlayerType.Human,
-            Units = new FakeUnitManager { Count = 1 },
             CityStateFunctions = new FakeCityStateFunctions(),
         };
+        neighbour.Units = new TestUnitManager(neighbour) { Count = 1 };
         again.Info.Civs.Add(neighbour);
         again.Civ.DiplomacyFunctions.MakeCivilizationsMeet(neighbour);
         again.Civ.Tech.AddTechnology("Agriculture");

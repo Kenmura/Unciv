@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Unciv.Json;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
@@ -166,7 +167,7 @@ public class GreatPersonManager : IsPartOfGameInfoSerialization
     /// currently available or placement fails. A failed placement consumes no entitlement or Maya
     /// pool entry, though the existing placement internals may already have allocated a unit ID.
     /// </summary>
-    public IMapUnitState? ChooseFreeGreatPerson(string unitName)
+    public MapUnit? ChooseFreeGreatPerson(string unitName)
     {
         var matching = GetFreeGreatPersonOptions().Where(it => it.Name == unitName).Take(2).ToList();
         if (matching.Count != 1) return null; // singleOrNull

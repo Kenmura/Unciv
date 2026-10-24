@@ -899,7 +899,7 @@ public class MapUnitCoreTests
         Assert.True(unit.IsDestroyed);
         Assert.Equal(0f, unit.CurrentMovement);
         Assert.Null(tile.MilitaryUnit);
-        var removed = Assert.Single(((FakeUnitManager)w.Civ.Units).RemovedUnits);
+        var removed = Assert.Single(((TestUnitManager)w.Civ.Units).RemovedUnits);
         Assert.Same(unit, removed.Unit);
         Assert.True(removed.UpdateCivInfo);
         var memory = Assert.Single(w.Civ.AttacksSinceTurnStart);
@@ -965,14 +965,14 @@ public class MapUnitCoreTests
         unit.AssignOwner(egypt, updateCivInfo: false);
         Assert.Equal("Egypt", unit.Owner);
         Assert.Same(egypt, unit.Civ);
-        var assigned = Assert.Single(((FakeUnitManager)egypt.Units).AssignedUnits);
+        var assigned = Assert.Single(((TestUnitManager)egypt.Units).AssignedUnits);
         Assert.Same(unit, assigned.Unit);
         Assert.False(assigned.UpdateCivInfo);
         // the base unit is not set yet: no cache update, so no failure
         var seam = (IGameContextUnit)new MapUnitClass { Name = "Warrior" };
         seam.AssignOwner(egypt, true);
         Assert.Equal("Egypt", seam.Owner);
-        Assert.Equal(2, ((FakeUnitManager)egypt.Units).AssignedUnits.Count);
+        Assert.Equal(2, ((TestUnitManager)egypt.Units).AssignedUnits.Count);
     }
 
     [Fact]
@@ -998,8 +998,8 @@ public class MapUnitCoreTests
         unit.Gift(egypt);
         Assert.Equal("Egypt", unit.Owner);
         Assert.Same(egypt, unit.Civ);
-        Assert.Contains(((FakeUnitManager)w.Civ.Units).RemovedUnits, it => ReferenceEquals(it.Unit, unit));
-        Assert.Contains(((FakeUnitManager)egypt.Units).AssignedUnits, it => ReferenceEquals(it.Unit, unit));
+        Assert.Contains(((TestUnitManager)w.Civ.Units).RemovedUnits, it => ReferenceEquals(it.Unit, unit));
+        Assert.Contains(((TestUnitManager)egypt.Units).AssignedUnits, it => ReferenceEquals(it.Unit, unit));
     }
 
     [Fact]
@@ -1031,9 +1031,9 @@ public class MapUnitCoreTests
         unit.Disband();
         Assert.True(unit.IsDestroyed);
         Assert.Null(tile.MilitaryUnit);
-        var removals = ((FakeUnitManager)w.Civ.Units).RemovedUnits.Count;
+        var removals = ((TestUnitManager)w.Civ.Units).RemovedUnits.Count;
         unit.Disband();
-        Assert.Equal(removals, ((FakeUnitManager)w.Civ.Units).RemovedUnits.Count);
+        Assert.Equal(removals, ((TestUnitManager)w.Civ.Units).RemovedUnits.Count);
     }
 
     [Fact]
@@ -1335,7 +1335,7 @@ public class MapUnitCoreTests
         w.Info.SpeedData.GoldCostModifier = 1.5f;
         var geneva = MapUnitFactory.NewCiv("Geneva", w.Info);
         geneva.Nation.CityStateType = "Cultured";
-        ((FakeUnitManager)geneva.Units).Count = 1; // alive
+        ((TestUnitManager)geneva.Units).Count = 1; // alive
         var quests = new FakeQuestManager();
         geneva.QuestManager = quests;
         var camp = w.TileAt(1, 1);
