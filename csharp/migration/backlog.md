@@ -699,9 +699,21 @@ Deferred until the ruleset and map tickets land (decided with the user): Civiliz
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
 
+### C000 Headless Godot test & snapshot harness
+- State: Blocked
+- Depends: none (infrastructure/tooling)
+- Deliverables:
+  - Godot 4.x .NET CLI runtime setup in `dotnet-dev` container.
+  - Headless test execution harness (CLI runner supporting `godot --headless --rendering-driver opengl3` with software rasterization or GdUnit4).
+  - Offscreen viewport snapshot capture utility (`CaptureViewportPng`) saving rendered frames to PNG for visual validation.
+  - Golden image diffing / perceptual hash comparator for automated visual regression detection.
+  - Synthetic input simulator (`SimulateMouseClick`, `SimulateKey`) for headless interaction and hex-picking verification.
+- Gate: A minimal headless test scene that boots Godot headlessly, renders a test 3D mesh, captures a viewport snapshot to PNG, verifies non-empty/expected pixel output, and exits 0.
+- Notes: Prerequisite tooling for the client track so agents can autonomously validate rendering, materials, shaders, and UI interactions without an active display server or editor.
+
 ### C001 Godot project skeleton
 - State: Blocked
-- Depends: T006 and a loadable game state (ticket to be added)
+- Depends: C000, T006, and a loadable game state (ticket to be added)
 - Deliverables: csharp/Unciv.Godot/ project consuming Unciv.Core, empty scene, CI-friendly headless build
 - Gate: `dotnet build Unciv.Godot` (headless; no editor required)
 
@@ -709,7 +721,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - State: Blocked
 - Depends: C001
 - Scope: 3D hex tile meshes with per-terrain materials and elevation (grass, plains, desert, tundra, snow, hills, mountains, forest/jungle, water with depth), smooth blending between adjacent terrains, fog of war and visibility tinting, tile yields and improvements as in-world props.
-- Notes: Grass rendered as real textured/shaded terrain with instanced vegetation; no flat sprite tiles.
+- Notes: Grass rendered as real textured/shaded terrain with instanced vegetation; no flat sprite tiles. Validation includes automated snapshot capture and golden image verification via C000 harness.
 
 ### C003 Resource and improvement props
 - State: Blocked
