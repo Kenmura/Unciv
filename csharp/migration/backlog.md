@@ -1296,6 +1296,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~SizeRatchetTests
 - Claimed:
 - Notes: Follow-up of T120: Tile.cs (1650) and Civilization.cs (1600) caps were deliberately generous; set them to actual size (or delete the entries if <=1500).
+  - T121 (coupling ratchet): Civilization.cs coupling baseline is 24 against a measured 22, deliberate headroom for T061/T063/T065; lower it to the measured value once they land.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
