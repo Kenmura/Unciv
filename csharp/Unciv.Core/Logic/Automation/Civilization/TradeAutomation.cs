@@ -68,7 +68,7 @@ public static class TradeAutomation
         // If this happens, that means our trade automation doesn't settle into an equilibrium that's favourable to both parties, so that should be updated when observed
         var evaluation = TradeEvaluationSeam.Of(civInfo);
         var deltaInOurFavor = evaluation.GetTradeAcceptability(tradeRequest.Trade, civInfo, otherCiv, true);
-        if (deltaInOurFavor > 0) deltaInOurFavor = (int)(deltaInOurFavor / 1.1f); // They seem very interested in this deal, let's push it a bit.
+        if (deltaInOurFavor > 0) deltaInOurFavor = KotlinMath.FloatToInt(deltaInOurFavor / 1.1f); // They seem very interested in this deal, let's push it a bit.
         var tradeLogic = TradeEvaluationSeam.NewLogic(civInfo, otherCiv);
 
         tradeLogic.CurrentTrade.Set(tradeRequest.Trade);
@@ -78,26 +78,7 @@ public static class TradeAutomation
         var counterofferAsks = new LinkedHashMap<TradeOffer, int>();
         var counterofferGifts = new List<TradeOffer>();
 
-        foreach (var offer in tradeLogic.TheirAvailableOffers)
-        {
-            if ((offer.Type == TradeOfferType.Gold || offer.Type == TradeOfferType.Gold_Per_Turn)
-                && tradeRequest.Trade.OurOffers.Any(it => it.Type == offer.Type))
-                continue; // Don't want to counteroffer straight gold for gold, that's silly
-            if (!offer.IsTradable())
-                continue; // For example resources gained by trade or CS
-            if (offer.Type == TradeOfferType.City)
-                continue; // Players generally don't want to give up their cities, and they might misclick
-            if (offer.Type == TradeOfferType.Luxury_Resource)
-                continue; // Don't ask for luxuries as counteroffer, players likely don't want to sell them if they didn't offer them already
-            if (tradeLogic.CurrentTrade.TheirOffers.Any(it => it.Type == offer.Type && it.Name == offer.Name))
-                continue; // So you don't get double offers of open borders declarations of war etc.
-            if (offer.Type == TradeOfferType.Treaty)
-                continue; // Don't try to counter with a defensive pact or research pact
-
-            var value = evaluation.EvaluateBuyCostWithInflation(offer, civInfo, otherCiv, tradeRequest.Trade);
-            if (value > 0)
-                potentialAsks.Put(offer, value);
-        }
+        FillPotentialAsks(potentialAsks, tradeLogic, tradeRequest, civInfo, otherCiv, evaluation);
 
         while (potentialAsks.Count != 0 && deltaInOurFavor < 0)
         {
@@ -134,7 +115,48 @@ public static class TradeAutomation
             }
         }
 
-        // Adjust any gold asked for
+        deltaInOurFavor = AdjustGoldAsks(counterofferAsks, deltaInOurFavor, evaluation, civInfo, otherCiv, tradeRequest);
+
+        // If the delta is still very in our favor consider sweetening the pot with some gold
+        deltaInOurFavor = SweetenWithGold(counterofferAsks, counterofferGifts, deltaInOurFavor, tradeLogic, evaluation, civInfo, otherCiv, tradeRequest);
+
+        tradeLogic.CurrentTrade.TheirOffers.AddRange(counterofferAsks.Keys);
+        tradeLogic.CurrentTrade.OurOffers.AddRange(counterofferGifts);
+
+        // Trades reversed, because when *they* get it then the 'ouroffers' become 'theiroffers'
+        return new TradeRequest(civInfo.CivId, tradeLogic.CurrentTrade.Reverse());
+    }
+
+    /// <summary>What do they have that we would want? Fills <paramref name="potentialAsks"/> with the offers worth something to us.</summary>
+    private static void FillPotentialAsks(LinkedHashMap<TradeOffer, int> potentialAsks, TradeLogic tradeLogic, TradeRequest tradeRequest,
+        CivilizationClass civInfo, CivilizationClass otherCiv, ITradeAutomationEvaluation evaluation)
+    {
+        foreach (var offer in tradeLogic.TheirAvailableOffers)
+        {
+            if ((offer.Type == TradeOfferType.Gold || offer.Type == TradeOfferType.Gold_Per_Turn)
+                && tradeRequest.Trade.OurOffers.Any(it => it.Type == offer.Type))
+                continue; // Don't want to counteroffer straight gold for gold, that's silly
+            if (!offer.IsTradable())
+                continue; // For example resources gained by trade or CS
+            if (offer.Type == TradeOfferType.City)
+                continue; // Players generally don't want to give up their cities, and they might misclick
+            if (offer.Type == TradeOfferType.Luxury_Resource)
+                continue; // Don't ask for luxuries as counteroffer, players likely don't want to sell them if they didn't offer them already
+            if (tradeLogic.CurrentTrade.TheirOffers.Any(it => it.Type == offer.Type && it.Name == offer.Name))
+                continue; // So you don't get double offers of open borders declarations of war etc.
+            if (offer.Type == TradeOfferType.Treaty)
+                continue; // Don't try to counter with a defensive pact or research pact
+
+            var value = evaluation.EvaluateBuyCostWithInflation(offer, civInfo, otherCiv, tradeRequest.Trade);
+            if (value > 0)
+                potentialAsks.Put(offer, value);
+        }
+    }
+
+    /// <summary>Adjust any gold asked for. Returns the remaining <c>deltaInOurFavor</c>.</summary>
+    private static int AdjustGoldAsks(LinkedHashMap<TradeOffer, int> counterofferAsks, int deltaInOurFavor, ITradeAutomationEvaluation evaluation,
+        CivilizationClass civInfo, CivilizationClass otherCiv, TradeRequest tradeRequest)
+    {
         var toRemove = new List<TradeOffer>();
         foreach (var goldAsk in counterofferAsks.Keys
             .Where(it => it.Type == TradeOfferType.Gold_Per_Turn || it.Type == TradeOfferType.Gold)
@@ -153,8 +175,13 @@ public static class TradeAutomation
                 goldAsk.Amount -= amountCanBeRemoved;
             }
         }
+        return deltaInOurFavor;
+    }
 
-        // If the delta is still very in our favor consider sweetening the pot with some gold
+    /// <summary>If the delta is still very in our favor consider sweetening the pot with some gold. Returns the remaining <c>deltaInOurFavor</c>.</summary>
+    private static int SweetenWithGold(LinkedHashMap<TradeOffer, int> counterofferAsks, List<TradeOffer> counterofferGifts, int deltaInOurFavor,
+        TradeLogic tradeLogic, ITradeAutomationEvaluation evaluation, CivilizationClass civInfo, CivilizationClass otherCiv, TradeRequest tradeRequest)
+    {
         if (deltaInOurFavor >= 100)
         {
             deltaInOurFavor = (deltaInOurFavor * 2) / 3; // Only compensate some of it though, they're the ones asking us
@@ -181,12 +208,7 @@ public static class TradeAutomation
                 }
             }
         }
-
-        tradeLogic.CurrentTrade.TheirOffers.AddRange(counterofferAsks.Keys);
-        tradeLogic.CurrentTrade.OurOffers.AddRange(counterofferGifts);
-
-        // Trades reversed, because when *they* get it then the 'ouroffers' become 'theiroffers'
-        return new TradeRequest(civInfo.CivId, tradeLogic.CurrentTrade.Reverse());
+        return deltaInOurFavor;
     }
 
     /// <summary>Kotlin <c>minByOrNull { it.value }!!</c>: the first minimum in iteration order.</summary>

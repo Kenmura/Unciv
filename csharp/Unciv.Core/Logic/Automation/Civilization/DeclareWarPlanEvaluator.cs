@@ -187,7 +187,7 @@ public static class DeclareWarPlanEvaluator
         var motivation = givenMotivation
             ?? MotivationToAttackAutomation.HasAtLeastMotivationToAttack(civInfo, ViewOf(civInfo).GetForeignCivView(target), 0f);
 
-        // TODO: We use negative values in WaryOf for now so that we aren't adding any extra fields to the save file
+        // Kotlin note: we use negative values in WaryOf for now so that we aren't adding any extra fields to the save file
         // This will very likely change in the future and we will want to build upon it
         var diploManager = civInfo.GetDiplomacyManager(target).NotNull();
         if (diploManager.HasFlag(DiplomacyFlags.WaryOf)) return 0f;

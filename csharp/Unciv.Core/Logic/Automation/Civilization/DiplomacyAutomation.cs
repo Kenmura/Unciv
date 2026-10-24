@@ -502,7 +502,7 @@ public static class DiplomacyAutomation
             if (civToAsk == null) continue;
 
             var tradeLogic = TradeEvaluationSeam.NewLogic(civInfo, civToAsk);
-            // TODO: add gold offer here
+            // Kotlin note: add gold offer here
             tradeLogic.CurrentTrade.TheirOffers.Add(new TradeOffer(enemyCiv.CivId, TradeOfferType.WarDeclaration, civInfo.GameInfo.Speed));
             civToAsk.TradeRequests.Add(new TradeRequest(civView.CivId, tradeLogic.CurrentTrade.Reverse()));
         }
@@ -658,7 +658,7 @@ public static class DiplomacyAutomation
 
         foreach (var relationship in denounceableRelationships)
         {
-            // TODO: consider consequences of denouncing others
+            // Kotlin note: consider consequences of denouncing others
             // compare our current opinion with the smoothed opinion
             var opinionChange = relationship.SmoothedOpinionDelta();
             // denounce if opinion dropped too quickly

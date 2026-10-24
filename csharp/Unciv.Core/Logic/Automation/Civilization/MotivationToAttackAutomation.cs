@@ -1,6 +1,5 @@
 using Unciv.Logic.Battle;
 using Unciv.Logic.Civilization.Diplomacy;
-using Unciv.Logic.Map;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Nation;
 using Unciv.Models.Ruleset.Unique;
@@ -10,28 +9,15 @@ using Unciv.Utils;
 using Unciv.View;
 using CityObject = Unciv.Logic.City.City;
 using CivilizationClass = Unciv.Logic.Civilization.Civilization;
-using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Logic.Automation.Civilization;
 
 // Ported from core/src/com/unciv/logic/automation/civilization/MotivationToAttackAutomation.kt (T088). Purity annotations dropped (T027 policy).
 // - Kotlin sums Float lists in Float; LINQ Sum(float) accumulates in double, so the modifier sum is a plain float loop.
-// - Kotlin `groupBy { it.first }` keeps first-occurrence order of the (reference-identity) City keys: LinkedHashMap.
 // - Kotlin Float.pow is a Double pow narrowed to Float: KotlinMath.Pow.
-// - useAStarPathfinding (default false, client setting): the A* branches call City.getLandAttackPath / getAmphibiousAttackPath, which
-//   are PathingMap users (TODO(T093)). They are reached through GameClientState.AttackPathing; null is the setting off (MapPathing).
+// - getAttackPathsModifier is in MotivationToAttackAutomation.AttackPaths.cs (a partial class: one file per at most 12 namespaces).
 
-/// <summary>What <c>MotivationToAttackAutomation</c> calls on <c>City</c> when <c>settings.useAStarPathfinding</c> is on. TODO(T093)</summary>
-public interface ICityAttackPathing
-{
-    /// <summary><c>from.getLandAttackPath(destination, maxTurns)</c></summary>
-    List<TileClass>? GetLandAttackPath(CityObject from, CityObject destination, int maxTurns);
-
-    /// <summary><c>from.getAmphibiousAttackPath(destination, maxTurns)</c></summary>
-    List<TileClass>? GetAmphibiousAttackPath(CityObject from, CityObject destination, int maxTurns);
-}
-
-public static class MotivationToAttackAutomation
+public static partial class MotivationToAttackAutomation
 {
     /// <summary>
     /// Will return the motivation to attack, but might short circuit if the value is guaranteed to
@@ -67,7 +53,7 @@ public static class MotivationToAttackAutomation
         modifiers.Add(("Base motivation", -(15f * personality.InverseScaledFocus(PersonalityValue.DeclareWar))));
 
         modifiers.Add(("Relative combat strength", GetCombatStrengthModifier(civInfo, targetCiv, ourCombatStrength, theirCombatStrength + 0.8f * ThreatManager.GetCombinedForceOfWarringCivs(civView))));
-        // TODO: For now this will be a very high value because the AI can't handle multiple fronts, this should be changed later though
+        // Kotlin note: for now this will be a very high value because the AI can't handle multiple fronts, this should be changed later though
         modifiers.Add(("Concurrent wars", -civInfo.GetCivsAtWarWith().Count(it => it.IsMajorCiv() && it != targetCiv) * 20f));
         modifiers.Add(("Their concurrent wars", targetCiv.GetCivsAtWarWith().Count(it => it.IsMajorCiv()) * 3f));
 
@@ -103,6 +89,42 @@ public static class MotivationToAttackAutomation
         if (minTargetCityDistance < 6)
             modifiers.Add(("Close cities", 5f * personality.InverseScaledFocus(PersonalityValue.Aggressive)));
 
+        AddDiplomacyModifiers(modifiers, civInfo, diplomacyManager, personality);
+
+        if (diplomacyManager.ResourcesFromTrade().Any(it => it.Amount > 0))
+            modifiers.Add(("Receiving trade resources", -8f * personality.ScaledFocus(PersonalityValue.Commerce)));
+
+        // If their cities don't have any nearby cities that are also targets to us and it doesn't include their capital
+        // Then there cities are likely isolated and a good target.
+        if ((targetCiv.GetCapital(true) is not { } theirCapital || !targetCities.Contains(theirCapital))
+                && targetCities.All(theirCity => !theirCity.GetNeighboringCities().Any(it => !targetCities.Contains(it))))
+        {
+            modifiers.Add(("Isolated city", 10f * personality.ScaledFocus(PersonalityValue.Aggressive)));
+        }
+
+        if (targetCiv.IsCityState)
+            AddCityStateModifiers(modifiers, civInfo, targetCiv, personality);
+
+        modifiers.AddRange(GetWonderBasedMotivations(targetCiv));
+
+        modifiers.Add(("War with allies", GetAlliedWarMotivation(civInfo, targetCiv)));
+
+        // Purely for debugging, remove modifiers that don't have an effect
+        modifiers.RemoveAll(it => it.Item2 == 0f);
+        var motivationSoFar = 0f;
+        foreach (var modifier in modifiers) motivationSoFar += modifier.Item2;
+
+        // Short-circuit to avoid A-star
+        if (motivationSoFar < atLeast) return motivationSoFar;
+
+        motivationSoFar += GetAttackPathsModifier(civInfo, targetCiv, targetCitiesWithOurCity);
+
+        return motivationSoFar;
+    }
+
+    /// <summary>The agreement, relationship, denunciation and war-planning modifiers (contiguous in the Kotlin function, same order).</summary>
+    private static void AddDiplomacyModifiers(List<(string, float)> modifiers, CivilizationClass civInfo, DiplomacyManager diplomacyManager, Personality personality)
+    {
         if (diplomacyManager.HasFlag(DiplomacyFlags.ResearchAgreement))
             modifiers.Add(("Research Agreement", -5f * personality.ScaledFocus(PersonalityValue.Science) * personality.ScaledFocus(PersonalityValue.Commerce)));
 
@@ -129,43 +151,16 @@ public static class MotivationToAttackAutomation
             var attacksPlanned = civInfo.Diplomacy.Values.Count(it => it.HasFlag(DiplomacyFlags.WaryOf) && it.GetFlag(DiplomacyFlags.WaryOf) < 0);
             modifiers.Add(("PlanningAttackAgainstOtherCivs", -attacksPlanned * 5f * personality.InverseScaledFocus(PersonalityValue.Aggressive)));
         }
+    }
 
-        if (diplomacyManager.ResourcesFromTrade().Any(it => it.Amount > 0))
-            modifiers.Add(("Receiving trade resources", -8f * personality.ScaledFocus(PersonalityValue.Commerce)));
-
-        // If their cities don't have any nearby cities that are also targets to us and it doesn't include their capital
-        // Then there cities are likely isolated and a good target.
-        if ((targetCiv.GetCapital(true) is not { } theirCapital || !targetCities.Contains(theirCapital))
-                && targetCities.All(theirCity => !theirCity.GetNeighboringCities().Any(it => !targetCities.Contains(it))))
-        {
-            modifiers.Add(("Isolated city", 10f * personality.ScaledFocus(PersonalityValue.Aggressive)));
-        }
-
-        if (targetCiv.IsCityState)
-        {
-            modifiers.Add(("Protectors", -targetCiv.CityStateFunctions.GetProtectorCivs().Count * 3f * personality.ScaledFocus(PersonalityValue.Diplomacy)));
-            //The more potential friends of this CS, the more times the friend bonus is shared and the utilitarian option is to leave it alive
-            modifiers.Add(("Influence", -targetCiv.GetDiplomacyManager(civInfo).NotNull().GetInfluence() / 10f * personality.ScaledFocus(PersonalityValue.Diplomacy)));
-            // The more we invested into the city state already, the less likely we're going to attack it, and vice versa
-            if (targetCiv.AllyCiv == civInfo)
-                modifiers.Add(("Allied City-state", -20 * personality.ScaledFocus(PersonalityValue.Diplomacy))); // There had better be a DAMN good reason
-        }
-
-        modifiers.AddRange(GetWonderBasedMotivations(targetCiv));
-
-        modifiers.Add(("War with allies", GetAlliedWarMotivation(civInfo, targetCiv)));
-
-        // Purely for debugging, remove modifiers that don't have an effect
-        modifiers.RemoveAll(it => it.Item2 == 0f);
-        var motivationSoFar = 0f;
-        foreach (var modifier in modifiers) motivationSoFar += modifier.Item2;
-
-        // Short-circuit to avoid A-star
-        if (motivationSoFar < atLeast) return motivationSoFar;
-
-        motivationSoFar += GetAttackPathsModifier(civInfo, targetCiv, targetCitiesWithOurCity);
-
-        return motivationSoFar;
+    private static void AddCityStateModifiers(List<(string, float)> modifiers, CivilizationClass civInfo, CivilizationClass targetCiv, Personality personality)
+    {
+        modifiers.Add(("Protectors", -targetCiv.CityStateFunctions.GetProtectorCivs().Count * 3f * personality.ScaledFocus(PersonalityValue.Diplomacy)));
+        //The more potential friends of this CS, the more times the friend bonus is shared and the utilitarian option is to leave it alive
+        modifiers.Add(("Influence", -targetCiv.GetDiplomacyManager(civInfo).NotNull().GetInfluence() / 10f * personality.ScaledFocus(PersonalityValue.Diplomacy)));
+        // The more we invested into the city state already, the less likely we're going to attack it, and vice versa
+        if (targetCiv.AllyCiv == civInfo)
+            modifiers.Add(("Allied City-state", -20 * personality.ScaledFocus(PersonalityValue.Diplomacy))); // There had better be a DAMN good reason
     }
 
     private static float CalculateCombatStrengthWithProtectors(CivilizationClass otherCiv, float baseForce, CivilizationClass civInfo)
@@ -331,83 +326,4 @@ public static class MotivationToAttackAutomation
             var damageReceivedWhenAttacking = BattleDamage.CalculateDamageToAttacker(new MapUnitCombatant(it), new CityCombatant(theirCity));
             return damageReceivedWhenAttacking < 100;
         });
-
-    /// <summary>
-    /// Checks the routes of attack against <paramref name="otherCiv"/> using <paramref name="targetCitiesWithOurCity"/>.
-    ///
-    /// The more routes of attack and shorter the path the higher a motivation will be returned.
-    /// Sea attack routes are less valuable
-    /// </summary>
-    /// <returns>The motivation ranging from -30 to around +10</returns>
-    private static float GetAttackPathsModifier(CivilizationClass civInfo, CivilizationClass otherCiv, List<(CityObject, CityObject)> targetCitiesWithOurCity)
-    {
-        bool IsTileCanMoveThrough(CivilizationClass civ, TileClass tile)
-        {
-            var owner = tile.GetOwner();
-            return !tile.IsImpassible()
-                && (owner == otherCiv || owner == null || civ.DiplomacyFunctions.CanPassThroughTiles((CivilizationClass)owner));
-        }
-
-        bool IsLandTileCanMoveThrough(CivilizationClass civ, TileClass tile) => tile.IsLand && IsTileCanMoveThrough(civ, tile);
-
-        var attackPaths = new List<List<TileClass>>();
-        var attackPathModifiers = -3f;
-        var attackPathing = civInfo.GameInfo.ClientState.AttackPathing;
-
-        // groupBy { it.first }: keys in first-occurrence order
-        var attacksGroupedByCity = new LinkedHashMap<CityObject, List<CityObject>>();
-        foreach (var (from, to) in targetCitiesWithOurCity)
-        {
-            if (!attacksGroupedByCity.TryGetValue(from, out var group))
-                attacksGroupedByCity[from] = group = [];
-            group.Add(to);
-        }
-
-        // For each city, we want to calculate if there is an attack path to the enemy
-        foreach (var (cityToAttackFrom, citiesToAttack) in attacksGroupedByCity)
-        {
-            var cityAttackValue = 0f;
-
-            // We only want to calculate the best attack path and use it's value
-            // Land routes are clearly better than sea routes
-            foreach (var cityToAttack in citiesToAttack)
-            {
-                var landAttackPath = attackPathing != null
-                    ? attackPathing.GetLandAttackPath(cityToAttackFrom, cityToAttack, 17)
-                    : MapPathing.GetConnection(civInfo, cityToAttackFrom.GetCenterTile(), cityToAttack.GetCenterTile(), IsLandTileCanMoveThrough);
-                if (landAttackPath != null && landAttackPath.Count < 16)
-                {
-                    attackPaths.Add(landAttackPath);
-                    cityAttackValue = 3f;
-                    break;
-                }
-
-                if (cityAttackValue > 0) continue;
-
-                var landAndSeaAttackPath = attackPathing != null
-                    ? attackPathing.GetAmphibiousAttackPath(cityToAttackFrom, cityToAttack, 17)
-                    : MapPathing.GetConnection(civInfo, cityToAttackFrom.GetCenterTile(), cityToAttack.GetCenterTile(), IsTileCanMoveThrough);
-                if (landAndSeaAttackPath != null && landAndSeaAttackPath.Count < 16)
-                {
-                    attackPaths.Add(landAndSeaAttackPath);
-                    cityAttackValue += 1;
-                }
-            }
-            attackPathModifiers += cityAttackValue;
-        }
-
-        if (attackPaths.Count == 0)
-        {
-            // Do an expensive BFS to find any possible attack path
-            var reachableEnemyCitiesBfs = new BFS(civInfo.GetCapital(true).NotNull().GetCenterTile(), it => IsTileCanMoveThrough(civInfo, it));
-            reachableEnemyCitiesBfs.StepToEnd();
-            var reachableEnemyCities = otherCiv.Cities.Where(it => reachableEnemyCitiesBfs.HasReachedTile(it.GetCenterTile())).ToList();
-            if (reachableEnemyCities.Count == 0) return -50f; // Can't even reach the enemy city, no point in war.
-            var minAttackDistance = reachableEnemyCities.Min(it => reachableEnemyCitiesBfs.GetPathTo(it.GetCenterTile()).Count());
-
-            // Longer attack paths are worse, but if the attack path is too far away we shouldn't completely discard the possibility
-            attackPathModifiers -= Math.Clamp(minAttackDistance - 10, 0, 30);
-        }
-        return attackPathModifiers;
-    }
 }

@@ -95,7 +95,7 @@ public static class DeclareWarTargetAutomation
             // Send them an offer
             var tradeLogic = TradeEvaluationSeam.NewLogic(civInfo, thirdCiv);
             tradeLogic.CurrentTrade.OurOffers.Add(new TradeOffer(target.CivId, TradeOfferType.WarDeclaration, civInfo.GameInfo.Speed));
-            // TODO: Maybe add in payment requests in some situations
+            // Kotlin note: maybe add in payment requests in some situations
             thirdCiv.TradeRequests.Add(new TradeRequest(civInfo.CivId, tradeLogic.CurrentTrade.Reverse()));
 
             return true;
@@ -119,7 +119,7 @@ public static class DeclareWarTargetAutomation
     /// <summary>Slightly safter is to silently plan an invasion and declare war later.</summary>
     private static bool PrepareWar(CivView civView, CivilizationClass target, float motivation)
     {
-        // TODO: We use negative values in WaryOf for now so that we aren't adding any extra fields to the save file
+        // Kotlin note: we use negative values in WaryOf for now so that we aren't adding any extra fields to the save file
         // This will very likely change in the future and we will want to build upon it
         var diploManager = civView.GetCiv().GetDiplomacyManager(target).NotNull();
         if (DeclareWarPlanEvaluator.EvaluateStartPreparingWarPlan(civView.GetCiv(), target, motivation) > 0)

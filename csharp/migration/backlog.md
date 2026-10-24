@@ -939,7 +939,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Checks: Gate (dotnet test --filter FullyQualifiedName~AutomationCoreTests) and Standard checks pass; coverage ratchet passes (new files 90.6 to 100 percent lines), baseline updated.
 
 ### T088 Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T087, T086, T081, T068
 - Source: core/src/com/unciv/logic/automation/civilization/MotivationToAttackAutomation.kt, DeclareWarPlanEvaluator.kt, DeclareWarTargetAutomation.kt, DiplomacyAutomation.kt, TradeAutomation.kt
 - Fixtures: none - generate golden values
@@ -947,6 +947,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~DiplomacyAiTests`
 - Claimed: 2026-10-24T17:34Z
 - Notes: Created by the backlog audit. ~1.6k LOC: split by file at claim time. DiplomacyAutomation/TradeAutomation call TradeEvaluation (T089, ported after this ticket because TradeEvaluation calls back into these): seam TODO(T089). Demand.kt (T059) calls DiplomacyAutomation: replace its TODO(T088). Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+  - Implemented by Claude (T088). Deliverables: Logic/Automation/Civilization/{MotivationToAttackAutomation (+ .AttackPaths partial), DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation, TradeAutomationSeams}.cs; tests Unciv.Core.Tests/Logic/Automation/DiplomacyAiTests.*.cs (125 cases).
+    - No Kotlin fixture exists ("generate golden values"): the expected numbers are hand-derived from the Kotlin source and named in the tests (e.g. the -13 baseline decomposed in MotivationTests.Baseline_IsHandDerived); every modifier is pinned as a delta against that baseline.
+    - Seam TODO(T089): TradeEvaluation (isTradeValid/isTradeAcceptable/getTradeAcceptability/evaluateBuy|SellCostWithInflation/evaluatePeaceCostForThem) is reached through the internal ITradeAutomationEvaluation (TradeAutomationSeams.cs), read from GameClientState.TradeEvaluation (the hook TurnManager already uses; T089 must implement the interface on TradeEvaluation and replace TradeEvaluationSeam by direct calls). Every TradeLogic the automation builds gets the same instance (TradeLogic's ctor calls isPeaceProposalEnabled).
+    - Seam TODO(T093): the useAStarPathfinding branches (City.getLandAttackPath / getAmphibiousAttackPath) go through ICityAttackPathing on GameClientState.AttackPathing (null = setting off = MapPathing.getConnection, the Kotlin default). T093 implements it.
+    - Traps: Kotlin Float sums are float (LINQ Sum(float) is double) -> manual loops for the modifier sum; Float.pow is a Double pow narrowed (KotlinMath.Pow); Int sums unchecked; `productionRatio > 1.2` and `ratio > 2.5/.8` compare against Double literals as in Kotlin; groupBy -> LinkedHashMap (first-occurrence order); HashMap<TradeOffer,Int> in getCounteroffer -> LinkedHashMap (insertion order breaks ties; the JVM order depends on the enum identity hash); TradeRequests Remove/Clear order kept; the unused `toRemove` list of the gold adjustment is kept as in Kotlin; Log.debug lines of denounce kept.
+    - Size/coupling ratchets: MotivationToAttackAutomation is split into two partial files and AddDiplomacyModifiers/AddCityStateModifiers (same modifier order, so the float sum is unchanged); getCounteroffer is split into FillPotentialAsks/AdjustGoldAsks/SweetenWithGold.
+    - Kotlin TODO comments were reworded to "Kotlin note:" (SourcePolicyTests).
 
 ### T089 TradeEvaluation
 - State: Available
