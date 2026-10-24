@@ -94,7 +94,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - State: Done (full ticket: backlog-archive.md)
 
 ### T015 HexMath Tile/Map dependent functions
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T039, T022
 - Source: core/src/com/unciv/logic/map/HexMath.kt (`tilesAndNeighborUniqueIndex`, `getDistanceFromEdge`)
 - Fixtures: tests/src/com/unciv/logic/map/HexmathTests.kt (`testTileNeighborMappingIsNonConflicting`)
@@ -102,6 +102,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~HexMathTests`
 - Claimed: 2026-10-24T10:33Z
 - Notes: Deferred from T006.
+  - Implemented GetDistanceFromEdge and TilesAndNeighborUniqueIndex in HexMath.cs; ported testTileNeighborMappingIsNonConflicting. No Kotlin test for GetDistanceFromEdge: hand-derived cases (hexagonal/rectangular, wrap/no-wrap). Kotlin Int.sign -> Math.Sign; Int division truncates identically. Also ticket.py now inserts a missing '- Claimed:' line (older tickets lacked it, claim failed).
 
 ### T018 Utils: collection/string extensions, exceptions, Versioning
 - State: Done (full ticket: backlog-archive.md)

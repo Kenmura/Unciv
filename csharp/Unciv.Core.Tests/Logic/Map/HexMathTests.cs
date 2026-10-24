@@ -1,11 +1,65 @@
 using Unciv.Logic.Map;
 using Unciv.Mathematics;
+using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Tile;
 
 namespace Unciv.Core.Tests.Logic.Map;
 
 public class HexMathTests
 {
     // Ported from tests/src/com/unciv/logic/map/HexmathTests.kt
+    [Fact]
+    public void TileNeighborMappingIsNonConflicting()
+    {
+        var ruleset = new Ruleset();
+        ruleset.Terrains.Put("Plains", new Terrain { Name = "Plains", Type = TerrainType.Land });
+        var tileMap = new TileMap(100, ruleset, false);
+        var seenCoordsMapping = new HashSet<int>();
+
+        foreach (var tile in tileMap.Values)
+        {
+            foreach (var neighbor in tile.Neighbors)
+            {
+                int index = HexMath.TilesAndNeighborUniqueIndex(tile, neighbor);
+                Assert.DoesNotContain(index, seenCoordsMapping);
+                seenCoordsMapping.Add(index);
+            }
+        }
+    }
+
+    // Hand-derived from HexMath.kt getDistanceFromEdge (no Kotlin test exists).
+    private static MapParameters Params(string shape, bool wrap, int radius = 0, int width = 0, int height = 0) =>
+        new() { Shape = shape, WorldWrap = wrap, MapSize = new MapSize { Radius = radius, Width = width, Height = height } };
+
+    [Theory]
+    [InlineData(0, 0, 4)]
+    [InlineData(4, 0, 0)]
+    [InlineData(-2, 2, 0)]
+    [InlineData(5, 0, -1)]
+    public void DistanceFromEdgeHexagonalNoWrap(int x, int y, int expected) =>
+        Assert.Equal(expected, HexMath.GetDistanceFromEdge(HexCoord.Of(x, y), Params(MapShape.Hexagonal, false, radius: 4)));
+
+    [Theory]
+    [InlineData(1, 1, 3)]   // same sign: radius - distance to origin
+    [InlineData(0, 0, 4)]
+    [InlineData(2, -1, 2)]  // left wedge: min(distance to (4,0)=2, to (0,-4)=3)
+    [InlineData(-2, 1, 2)]  // right wedge: min(distance to (1,4)=3, to (-4,-1)=2)
+    public void DistanceFromEdgeHexagonalWrap(int x, int y, int expected) =>
+        Assert.Equal(expected, HexMath.GetDistanceFromEdge(HexCoord.Of(x, y), Params(MapShape.Hexagonal, true, radius: 4)));
+
+    [Theory]
+    [InlineData(0, 0, 3)]   // left 5, right 4, top 4, bottom (-1)/2 + 3 = 3 (truncating division)
+    [InlineData(3, 2, 2)]   // left 4, right 5, top 2, bottom 5
+    public void DistanceFromEdgeRectangular(int x, int y, int expected) =>
+        Assert.Equal(expected, HexMath.GetDistanceFromEdge(HexCoord.Of(x, y), Params(MapShape.Rectangular, false, width: 10, height: 8)));
+
+    [Theory]
+    [InlineData(0, 0, 3)]
+    [InlineData(3, 2, 2)]
+    [InlineData(-9, 9, 3)]  // left/right are ignored when wrapping (they would be -13 / 18 without)
+    public void DistanceFromEdgeRectangularWrapIgnoresSides(int x, int y, int expected) =>
+        Assert.Equal(expected, HexMath.GetDistanceFromEdge(HexCoord.Of(x, y), Params(MapShape.Rectangular, true, width: 10, height: 8)));
+
     [Fact]
     public void ZeroIndexed()
     {

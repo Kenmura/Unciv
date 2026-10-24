@@ -1,4 +1,5 @@
 using System.Globalization;
+using Unciv.Logic.Map.Tiles;
 using Unciv.Mathematics;
 using Unciv.Utils;
 
@@ -193,6 +194,42 @@ public static class HexMath
         }
         return hexesToReturn;
     }
+
+    public static int GetDistanceFromEdge(HexCoord position, MapParameters mapParameters)
+    {
+        int x = position.x;
+        int y = position.y;
+        if (mapParameters.Shape == MapShape.Rectangular)
+        {
+            int height = mapParameters.MapSize.Height;
+            int width = mapParameters.MapSize.Width;
+            int left = mapParameters.WorldWrap ? int.MaxValue : width / 2 - (x - y);
+            int right = mapParameters.WorldWrap ? int.MaxValue : (width - 1) / 2 - (y - x);
+            int top = height / 2 - (x + y) / 2;
+            // kotlin's Int division rounds in different directions depending on sign! Thus 1 extra `-1`
+            int bottom = (x + y - 1) / 2 + (height - 1) / 2;
+            return Math.Min(Math.Min(left, right), Math.Min(top, bottom));
+        }
+        else
+        {
+            int radius = mapParameters.MapSize.Radius;
+            if (!mapParameters.WorldWrap) return radius - GetDistance(position, HexCoord.Zero);
+
+            // The non-wrapping method holds in the upper two and lower two 'triangles' of the hexagon
+            // but needs special casing for left and right 'wedges', where only distance from the
+            // 'choke points' counts (upper and lower hex at the 'seam' where height is smallest).
+            // These are at (radius,0) and (0,-radius)
+            if (Math.Sign(x) == Math.Sign(y)) return radius - GetDistance(position, HexCoord.Zero);
+            // left wedge - the 'choke points' are not wrapped relative to us
+            if (x > 0) return Math.Min(GetDistance(position, HexCoord.Of(radius, 0)), GetDistance(position, HexCoord.Of(0, -radius)));
+            // right wedge - compensate wrap by using a hex 1 off along the edge - same result
+            return Math.Min(GetDistance(position, HexCoord.Of(1, radius)), GetDistance(position, HexCoord.Of(-radius, -1)));
+        }
+    }
+
+    public static int TilesAndNeighborUniqueIndex(Tile tile, Tile neighbor) =>
+        tile.ZeroBasedIndex * 6 + // each tile has 6 neighbors
+        tile.TileMap.GetNeighborTileClockPosition(tile, neighbor) / 2 - 1; // min: 2, max: 12, step 2; Divide by 2 and it's numbers 1-6, -1 to get 0-5
 
     public static int GetDistance(Vector2 origin, Vector2 destination) =>
         GetDistance(KotlinMath.FloatToInt(origin.x), KotlinMath.FloatToInt(origin.y), KotlinMath.FloatToInt(destination.x), KotlinMath.FloatToInt(destination.y));
