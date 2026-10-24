@@ -3,8 +3,6 @@
 # Civilization.cs is actively growing (T061/T063/T065 ports): cap is 2 above today's 22 so those rebases do not collide; lower it afterwards.
 Unciv.Core/Logic/Civilization/Civilization.cs|24
 Unciv.Core/Logic/Civilization/Managers/TechManager.cs|14
-# City.cs is the faithful port of the giant City.kt; T061 adds its 3 managers (Unciv.Logic.City.Managers) to its dependencies.
-Unciv.Core/Logic/City/City.cs|14
 Unciv.Core/Logic/City/CityConstructions.cs|14
 # GameInfo.cs is the top of the graph (the faithful port of GameInfo.kt uses every logic area); T071 adds turn handling to its own file.
 Unciv.Core/Logic/GameInfo.cs|15

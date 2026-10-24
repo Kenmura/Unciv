@@ -441,6 +441,17 @@ public class CityCoreTests
     }
 
     [Fact]
+    public void GetGameResource_RoutesStatsAndStoredFoodToTheCity()
+    {
+        var w = NewWorld();
+        w.City.AddStat(Stat.Food, 3);
+        w.City.AddStat(Stat.Gold, 11);
+        Assert.Equal(3, w.City.GetGameResource(Stat.Food));
+        Assert.Equal(11, w.City.GetGameResource(Stat.Gold));
+        Assert.Equal(3, w.City.GetGameResource(SubStat.StoredFood));
+    }
+
+    [Fact]
     public void AddGameResource_StoredFoodAndStockpiledResources()
     {
         var w = NewWorld(configure: ruleset =>

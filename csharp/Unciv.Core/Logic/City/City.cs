@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.City.Managers;
-using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
@@ -12,7 +11,6 @@ using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
-using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
@@ -32,7 +30,8 @@ namespace Unciv.Logic.City;
 //   is ported in T093, which adds them (they are the only users of the caches).
 // - annexCity / puppetCity / liberateCity / moveToCiv: CityConquestFunctions (T064).
 // - resetSpecialistsControl reads UncivGame.Current.settings (client state): its two inputs are explicit parameters.
-// - T065 retyped the unit access of getGarrison / destroyCity / sellBuilding to MapUnit.
+// - T128: getGarrison, unitToPromotions and isConnectedToCapital(predicate) live in CityUnitAndConnectionAccess.cs (a partial of this class) so
+//   this file does not depend on the MapUnits / Civilization.Transients namespaces.
 // - Kotlin HashSet<Tile> tilesInRange is a LinkedHashSet (identity-hashed Tile keys have no deterministic JVM order); it is only read by
 //   getWorkableTiles / workTile, in tile order.
 
@@ -44,7 +43,7 @@ public enum CityFlags
     Resistance,
 }
 
-public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, ILocalUniqueCacheCity
+public partial class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, ILocalUniqueCacheCity
 {
     private static T Lateinit<T>(T? value, string name) where T : class =>
         value ?? throw new InvalidOperationException($"lateinit property {name} has not been initialized");
@@ -191,9 +190,6 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     [JsonPropertyName("unitShouldUseSavedPromotion")]
     public JavaHashMap<string, bool> UnitShouldUseSavedPromotion { get; set; } = new();
 
-    [JsonPropertyName("unitToPromotions")]
-    public JavaHashMap<string, Unciv.Logic.Map.MapUnits.UnitPromotions> UnitToPromotions { get; set; } = new();
-
     [JsonPropertyName("cityAIFocus")]
     [JsonInclude]
     private string cityAIFocus = CityFocus.NoFocus.ToString();
@@ -314,19 +310,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
 
     public bool IsConnectedToCapital() => Civ.Cache.CitiesConnectedToCapitalToMediums.ContainsKey(this);
 
-    public bool IsConnectedToCapital(Func<HashSet<CapitalConnectionMedium>, bool> connectionTypePredicate)
-    {
-        if (!Civ.Cache.CitiesConnectedToCapitalToMediums.TryGetValue(this, out var mediumTypes)) return false;
-        return connectionTypePredicate(mediumTypes);
-    }
-
     public bool IsGarrisoned() => GetGarrison() != null;
-
-    public MapUnitClass? GetGarrison()
-    {
-        var unit = GetCenterTile().MilitaryUnit;
-        return unit != null && ReferenceEquals(unit.Civ, Civ) && unit.CanGarrison() ? unit : null;
-    }
 
     public bool HasFlag(CityFlags flag) => FlagsCountdown.ContainsKey(flag.ToString());
     public int GetFlag(CityFlags flag) => FlagsCountdown[flag.ToString()];
