@@ -973,7 +973,12 @@ public static class UniqueTriggerActivation
                         return null;
 
                     if (!isAll)
-                        explorableTiles = explorableTiles.Shuffled(tileBasedRandom).Take(amount.ToInt());
+                    {
+                        // Kotlin Sequence.shuffled(...).take(n) is lazy: the draw and the explored filter run when the function executes
+                        var candidates = explorableTiles;
+                        int takeCount = amount.ToInt();
+                        explorableTiles = DeferredShuffleTake(candidates, tileBasedRandom, takeCount);
+                    }
 
                     return () =>
                     {
@@ -1526,6 +1531,11 @@ public static class UniqueTriggerActivation
         Stat.Faith => NotificationIcon.Faith,
         _ => throw new ArgumentOutOfRangeException(nameof(stat)),
     };
+
+    private static IEnumerable<T> DeferredShuffleTake<T>(IEnumerable<T> source, GameRandom random, int count)
+    {
+        foreach (var item in source.Shuffled(random).Take(count)) yield return item;
+    }
 
     /// <summary>The <c>MusicTrackChooserFlags</c> entry whose name equals <paramref name="name"/> ignoring case, or null.</summary>
     private static string? MusicTrackChooserFlagName(string name)
