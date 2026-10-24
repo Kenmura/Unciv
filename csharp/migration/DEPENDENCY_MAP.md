@@ -30,7 +30,6 @@ flowchart TD
     T039["T039<br/>TileMap"]
     T040["T040<br/>Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, Map..."]
     T041["T041<br/>MapGenerator pipeline (audit existing partial work first)"]
-    T042["T042<br/>OdMap import/export"]
     T045["T045<br/>GameSetupInfo"]
     T046["T046<br/>GameInfo core and the hooks waiting for it"]
     T052["T052<br/>UniqueTriggerActivation and UniqueTriggerExecutors"]
@@ -107,7 +106,6 @@ flowchart TD
   T075 --> T041
   T076 --> T041
   T077 --> T041
-  T039 --> T042
   T028 --> T052
   T055 --> T052
   T056 --> T052
@@ -231,7 +229,6 @@ flowchart TD
   class T039 done
   class T040 review
   class T041 avail
-  class T042 review
   class T045 done
   class T046 avail
   class T052 avail
@@ -272,7 +269,6 @@ flowchart TD
 | T037 | Available | T036, T035 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T040 | Needs-Review [Claude] | T039 | Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization |
 | T041 | Available | T039, T010, T016, T017, T073, T074, T075, T076, T077 | MapGenerator pipeline (audit existing partial work first) |
-| T042 | Needs-Review [Claude] | T039 | OdMap import/export |
 | T052 | Available | T028, T055, T056, T057, T060, T065, T066 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T054 | In-Progress [Claude] | T053 | Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions |
 | T055 | Available | T034, T045, T039, T053 | Civilization core: Civilization, ExploredRegion, PopupAlert |

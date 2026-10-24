@@ -335,7 +335,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Reset (split into sub-tickets; re-dispatch after subs Done); was 'In-Progress [Claude]'.
 
 ### T042 OdMap import/export
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T039
 - Source: core/src/com/unciv/logic/map/OdMapExport.kt, OdMapImport.kt, OdTerrain.kt
 - Fixtures: tests/src/com/unciv/logic/OdMapExportTests.kt, tests/src/com/unciv/logic/OdMapImportTests.kt
