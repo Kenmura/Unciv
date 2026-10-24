@@ -37,6 +37,9 @@ public sealed class GameClientState
     /// <summary>The unported <c>TradeEvaluation</c> (TODO(T089): set by its port). TurnManager throws when it must validate a trade and this is null.</summary>
     public ITradeValidity? TradeEvaluation { get; set; }
 
+    /// <summary>The A* attack pathing of <c>City.getLandAttackPath</c> / <c>getAmphibiousAttackPath</c> (TODO(T093): set by PathingMap). Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
+    public Automation.Civilization.ICityAttackPathing? AttackPathing { get; set; }
+
     /// <summary><c>worldScreen?.autoPlay</c>: null when there is no client (headless simulation).</summary>
     public IAutoPlay? AutoPlay { get; set; }
 
