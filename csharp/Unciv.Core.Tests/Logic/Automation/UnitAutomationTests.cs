@@ -12,7 +12,7 @@ namespace Unciv.Core.Tests.Logic.Automation;
 // T090. BattleHelper.kt, HeadTowardsEnemyCityAutomation.kt and UseGoldAutomation.kt have no Kotlin test fixture: these are C#-only cases with
 // expected values derived by hand from the Kotlin source.
 [Collection("RulesetCache")]
-public class UnitAutomationTests
+public partial class UnitAutomationTests
 {
     private readonly TestGame testGame = new();
     private readonly CivilizationObject civ;

@@ -23,7 +23,7 @@ namespace Unciv.Logic.Map.MapUnits;
 // Stripped / deferred:
 // - getMovementString (needs UncivGame.Current.settings number format: UI), Timers.timeThis profiling, the @Readonly/@Cache/@LocalState
 //   purity annotations, VisibleForTesting.
-// - doAction's UnitAutomation calls (GameView(..).getMapUnitView): TODO(T156).
+// - doAction's UnitAutomation calls (GameView(..).getMapUnitView) are wired (T156).
 // - UniqueTriggerActivation.triggerUnique is the T052 stub (returns false).
 
 /// <summary>
@@ -993,8 +993,8 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
             return;
         }
 
-        // TODO(T156): if (isAutomated()) UnitAutomation.automateUnitMoves(GameView(civ.gameInfo, civ).getMapUnitView(this))
-        // TODO(T156): if (isExploring()) UnitAutomation.automatedExplore(GameView(civ.gameInfo, civ).getMapUnitView(this))
+        if (IsAutomated()) AutomateUnitMoves();
+        if (IsExploring()) AutomatedExplore();
     }
 
     public void HealBy(int amount)

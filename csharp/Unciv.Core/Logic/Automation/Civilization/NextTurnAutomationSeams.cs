@@ -25,4 +25,11 @@ internal static class NextTurnAutomationSeams
         }
         return minDistance;
     }
+
+    /// <summary>Kotlin <c>NextTurnAutomation.applyPromotions(unitView)</c>. TODO(T094)</summary>
+    internal static void ApplyPromotions(Unciv.View.MapUnitView unitView)
+    {
+        // TODO(T094): Port NextTurnAutomation.applyPromotions
+        _ = unitView;
+    }
 }

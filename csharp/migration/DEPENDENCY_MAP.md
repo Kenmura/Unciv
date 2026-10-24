@@ -163,7 +163,7 @@ flowchart TD
   class T143 done
   class T152 done
   class T154 waiting
-  class T156 prog
+  class T156 review
   class T157 waiting
   class T158 prog
 ```
@@ -196,7 +196,7 @@ xychart-beta
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T092 | **On deck** (after T091) | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | T091 | In-Progress [Claude] | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation |
-| T156 | In-Progress [Antigravity] | T090, T155 | 7 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
+| T156 | Needs-Review [Antigravity] | T090, T155 | 7 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | T094 | Available (waiting on T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
