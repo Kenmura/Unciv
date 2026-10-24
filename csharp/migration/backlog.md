@@ -986,13 +986,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Implemented (T090). Deviations: (1) BattleSeams.cs deleted: GreatGeneralImplementation now calls HeadTowardsEnemyCityAutomation.GetEnemyCitiesByPriority(GameView(..).GetMapUnitView(general)). (2) NextTurnAutomation.getForeignCityNearCapital/CityDistance are ported faithfully (small, pure) as internal NextTurnAutomationSeams (TODO(T094) moves them into NextTurnAutomation); CityStateSeams.GetForeignCityNearCapital (T068) still throws until T094. (3) UseGoldAutomation: NextTurnAutomation.valueCityStateAlliance goes through the INextTurnAutomation hook (0 without a hook; its includeQuests=true argument is TODO(T094)). The Kotlin TreeMap tie-break Tile.hashCode() (JVM identity hash, nondeterministic) is the tile position instead; per-tile city sets are LinkedHashSets. (4) tryUpgradeUnit: the human/automatedUnitsCanUpgrade/worldScreen guard is UI settings (dropped; default true). (5) Kotlin sequences stay lazy IEnumerable; sortedBy/sortedWith = stable OrderBy/ThenBy; minByOrNull = Enumerable.MinBy (first minimum); attack values use Int wrapping and the Double 1.0/0 Infinity of getCityAttackValue. (6) Tests (UnitAutomationTests, C#-only, no Kotlin fixtures; golden values none): parity quirk covered - embarked melee units cannot disembark to attack because landing uses all movement. timeThis dropped (T027).
 
 ### T091 Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T090, T080, T063
 - Source: core/src/com/unciv/logic/automation/unit/CivilianUnitAutomation.kt, SpecificUnitAutomation.kt, ReligiousUnitAutomation.kt, city/ConstructionAutomation.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/*.cs, csharp/Unciv.Core/Logic/Automation/City/ConstructionAutomation.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~CivilianAutomationTests`
-- Claimed:
+- Claimed: 2026-10-24T18:51Z
 - Notes: Created by the backlog audit. ~1.2k LOC. ConstructionAutomation is called by CityConstructions.chooseNextConstruction (T063, TODO(T091)). Wires the SpecificUnitAutomation seam of GreatGeneralImplementation (T082). Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
 
 ### T092 Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation
