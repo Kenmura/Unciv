@@ -426,13 +426,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     - Ran Gate (59 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 474/474 passed).
 
 ### T024 Holiday dates
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T01:54:11Z
 - Depends: none
 - Source: core/src/com/unciv/logic/HolidayDates.kt
 - Fixtures: tests/src/com/unciv/logic/HolidayDatesTest.kt
 - Deliverables: csharp/Unciv.Core/Logic/HolidayDates.cs, tests
-- Claimed: 2026-10-24T01:50:53Z
-- Claimed:
+- Gate: `dotnet test --filter FullyQualifiedName~HolidayDatesTests`
 - Notes: Time is an explicit input (DateOnly/ints), never DateTime.Now. Use vetted rounding/calendar helpers.
   - Implementer notes (Claude): `Unciv.Logic.HolidayDates` (`Holidays` enum + `HolidaysExtensions.GetByYear/GetChance/SafeValueOf`, `DateRange`, `GetHolidayByYear`, `GetHolidayByDate`, `GetMonth`) on `DateOnly`; tables generated from the Kotlin source by script (77 equinoxes, 28 Passover, 17 Diwali, 77 Lunar New Year entries, counts asserted). `Random(date.hashCode())` and `Random(year)` use `GameRandom(int)` with a ported `LocalDate.hashCode`; `getHolidayByDate` draws `nextFloat` only for holidays whose range contains the date, in enum order, like upstream. `DateRange.hashCode` = `HashOf` of the two LocalDate hashes.
     - Deviations (class remarks): no `LocalDate.now()` defaults (callers pass today), the `easterEgg`/`month` system properties are explicit parameters, `DateRange.Never` is a fixed empty range, Qingming uses the UTC date of the equinox instant (upstream uses the JVM default time zone, which changes results by a day: I measured Qingming 2024 differing in a CDT container), years outside 1..9999 throw (`DateOnly`).
