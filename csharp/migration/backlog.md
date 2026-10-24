@@ -70,7 +70,7 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Ran Gate (24 passed) and full `dotnet test`.
 
 ### T005 Counter
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T00:45:17Z
 - Depends: none
 - Source: core/src/com/unciv/models/Counter.kt
@@ -78,6 +78,12 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
 - Deliverables: csharp/Unciv.Core/Models/Counter.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~CounterTests`
 - Notes: Drop libGDX Json serialization; leave a TODO ticket for the JSON layer. Preserve LinkedHashMap insertion order.
+  - Implementer notes (Claude): Kotlin `Counter<K> : LinkedHashMap<K,Int>` is a composition over `OrderedDictionary<K,int>` (not IDictionary: Kotlin `add(key,value)` means add-to-existing, which clashes with `IDictionary.Add`). Exposes the Map surface: Count, IsEmpty, ContainsKey/Value, Keys, Values, Get, indexer, Put, Remove(key), PutAll, Clear, KeyValuePair enumeration (supports `foreach (var (k,v) in c)`), AbstractMap-style Equals/GetHashCode/ToString (`{a=1, b=2}`; equality order-insensitive).
+  - Namespace `Unciv.Models`. `ZERO` lives on non-generic static `Counter` (`Counter.ZERO`); only Put throws (NotSupportedException), as Kotlin. Operators `+` and `*` map Kotlin plus/times; `plusAssign`/`minusAssign` are `PlusAssign`/`MinusAssign` methods (C# `+=` would rebind to a new instance). `Remove(K)` vs `Remove(Counter)` overloads as Kotlin.
+  - Quirks kept: copy constructor / Clone / PutAll bypass zero-removal (Kotlin `super.put`, HashMap internals); `Clone()` always returns a plain Counter.
+  - Deviations: `counter.Remove(counter)` throws InvalidOperationException (JVM: ConcurrentModificationException when >1 entry; .NET also throws for a single entry). `counter.Add(counter)` works on both. K is constrained `notnull`.
+  - Not ported: Json.Serializable `write`/`read` (including the GDX int-as-float `.toInt()` comment) and the `IsPartOfGameInfoSerialization` marker - see T007. Fixture: Kotlin only tests Counter via JSON round-trip (SerializationTests), so behaviour tests were written from the Kotlin source.
+  - Ran Gate (17 passed) and full `dotnet test`.
 
 ### T006 HexMath
 - State: Available
@@ -87,3 +93,12 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
 - Deliverables: csharp/Unciv.Core/Logic/Map/HexMath.cs, csharp/Unciv.Core.Tests/Logic/Map/HexMathTests.cs
 - Gate: `dotnet test --filter FullyQualifiedName~HexMathTests`
 - Notes: HexMath references `Tile` and Json. Port only the pure functions now; add follow-up tickets (with Depends on the Tile ticket) for the Tile/Json-dependent members. Fixtures use Ruleset/Terrain – port only cases that don't need them and list the rest in a follow-up ticket.
+
+### T007 JSON layer for ported data classes (Counter, Stats, ...)
+- State: Available
+- Depends: T004, T005
+- Source: core/src/com/unciv/models/Counter.kt (`write`/`read`), libGDX Json behaviour as used by Unciv; core/src/com/unciv/json/*
+- Fixtures: tests/src/com/unciv/logic/SerializationTests.kt (Counter round-trip); generate golden JSON by running the Kotlin code
+- Deliverables: to be designed (System.Text.Json converters under csharp/Unciv.Core/Json/), tests
+- Gate: `dotnet test --filter FullyQualifiedName~Json`
+- Notes: Needs a design pass first (brainstorm): libGDX Json is lenient (unquoted keys, float-valued ints, class-name tags). Counter's compact `{name: value}` format, reading `value` objects, and Stats/StatMap/Stat enum serialization all need converters. Also `IsPartOfGameInfoSerialization` marker interface.
