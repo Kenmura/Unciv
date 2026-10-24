@@ -1031,13 +1031,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by T095: the Civilopedia members of the ruleset objects that T096/T097 do not list. T095 already added MakeLink to every IRulesetObject (abstract on RulesetObject/RulesetStatsObject), GlobalUniques.getCivilopediaTextLines and civilopediaText in Combine. Remaining: getCivilopediaTextLines/Header/getSortGroup/getSubCategory/getIconName for Policy, Speed, Victory, Belief (+ getCivilopediaBeliefsEntry/getCivilopediaReligionEntry, getBeliefsMatching, then add the two virtual entries to CivilopediaCategories.Belief in GetCategoryIterator), Tutorial, UnitType, UnitNameGroup, Promotion, CityStateType, Personality, Difficulty (Era/Nation/Technology/BaseUnit are T097; Building/Improvement/Resource/Terrain are T096); Ruleset.allICivilopediaText; RulesetValidator.checkCivilopediaText using FormattedLine.UnsupportedReasons with an IFormattedLineImageCheck. Override pattern (see GlobalUniques): list ICivilopediaText in the class base list and declare a public GetCivilopediaTextLines(CivilopediaContext).
 
 ### T109 Hardening sweep: non-blocking review findings from T033-T095
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: C# files named in the notes (no Kotlin source: parity fixes and missing tests)
 - Fixtures: none
 - Deliverables: fixes and tests in csharp/Unciv.Core and csharp/Unciv.Core.Tests
 - Gate: dotnet test
-- Claimed:
+- Claimed: 2026-10-24T11:23Z
 - Notes: Owns every non-blocking finding that adversarial reviews left unfixed. Fix each (with a test) and tick it off with ticket.py note.
   - Findings to fix (source ticket: finding):
     - T095: FormattedLine name->category static cache is two unsynchronised statics and ignores GameInfo changes (Kotlin same, but make thread-safe or document); EngineColors.ValueOf throws FormatException for non-ASCII Unicode digits ("#٣٣٣": IsHex uses char.IsDigit like Kotlin, Java parseInt accepts them) - catch in ParseColor or hand-parse so it matches Kotlin; no JSON writer support for NaN ImageSize.
