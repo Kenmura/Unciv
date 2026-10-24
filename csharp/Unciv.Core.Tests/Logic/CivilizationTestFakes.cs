@@ -10,11 +10,8 @@ using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
 using DifficultyObject = Unciv.Models.Ruleset.Nation.Difficulty;
-using EraObject = Unciv.Models.Ruleset.Tech.Era;
-using PolicyObject = Unciv.Models.Ruleset.Policy;
 using SpeedObject = Unciv.Models.Ruleset.Speed;
 using StatsObject = Unciv.Models.StatTypes.Stats;
-using TechnologyObject = Unciv.Models.Ruleset.Tech.Technology;
 using TileResourceObject = Unciv.Models.Ruleset.Tile.TileResource;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
@@ -50,65 +47,9 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     Civilization IGameInfoState.GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
     IEnumerable<ICityState> IGameInfoState.GetCities() => Civs.SelectMany(it => it.Cities);
     List<Civilization> IGameInfoState.GetAliveMajorCivs() => Civs.Where(it => it.IsAlive() && it.IsMajorCiv()).ToList();
-}
-
-internal sealed class FakePolicies : IPolicyManager
-{
-    public UniqueMap PolicyUniques { get; } = new();
-    public HashSet<string> Adopted { get; } = [];
-    public int Culture { get; set; }
-    public IReadOnlyCollection<string> AdoptedPolicies => Adopted;
-    public IReadOnlyCollection<string> CompletedBranches => [];
-    public int StoredCulture => Culture;
-    public void AddCulture(int added) => Culture += added;
-    public bool IsAdopted(string policyName) => Adopted.Contains(policyName);
-    public IEnumerable<PolicyObject> GetAdoptedPoliciesMatching(string filter, GameContext gameContext) => throw new NotSupportedException();
-    public IPolicyManager Clone() => throw new NotSupportedException();
-    public void SetTransients(Civilization civInfo) => Transients++;
-    public int Transients { get; private set; }
-}
-
-internal sealed class FakeTech : ITechManager
-{
-    public UniqueMap TechUniques { get; } = new();
-    public EraObject EraData { get; set; } = new() { Name = "Ancient era", EraNumber = 0 };
-    public HashSet<string> Researched { get; } = [];
-    public TechnologyObject? Current { get; set; }
-    public int Science { get; set; }
-    public int Repeating { get; set; }
-    public EraObject Era => EraData;
-    public int FreeTechs { get; set; }
-    public bool CanResearch { get; set; } = true;
-    public IReadOnlyList<TechnologyObject> ResearchedTechnologies { get; set; } = [];
-    public IReadOnlyCollection<string> TechsResearched => Researched;
-    public int RepeatingTechsResearched => Repeating;
-    public bool IsRevealed(TileResourceObject resource) => Researched.Contains(resource.Name);
-    public bool IsResearched(string techName) => Researched.Contains(techName);
-    public bool IsResearched(INonPerpetualConstruction construction) => throw new NotSupportedException();
-    public HashSet<string> Researchable { get; } = [];
-    public bool CanBeResearched(string techName) => Researchable.Contains(techName);
-    public List<string> Added { get; } = [];
-    public void AddTechnology(string techName, bool showNotification = true)
-    {
-        Added.Add(techName);
-        Researched.Add(techName);
-    }
-    public bool CanResearchTech() => CanResearch;
-    public TechnologyObject? CurrentTechnology() => Current;
-    public int ResearchOfTech(string techName) => 42;
-    public void AddScience(int scienceGet) => Science += scienceGet;
-    public ITechManager Clone() => throw new NotSupportedException();
-    public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
-}
-
-internal sealed class FakeGoldenAges : IGoldenAgeManager
-{
-    public int Happiness { get; set; }
-    public Civilization CivInfo { get; set; } = null!;
-    public bool IsGoldenAge() => false;
-    public void AddHappiness(int amount) => Happiness += amount;
-    public int StoredHappiness => Happiness;
-    public IGoldenAgeManager Clone() => throw new NotSupportedException();
+    public List<(Civilization Civ, TileResourceObject Resource, int MaxDistance)> ExploredResourceNotifications { get; } = [];
+    public void NotifyExploredResources(Civilization civInfo, TileResourceObject resource, int maxDistance) =>
+        ExploredResourceNotifications.Add((civInfo, resource, maxDistance));
 }
 
 internal sealed class FakeUnitManager : IUnitManager
@@ -118,7 +59,13 @@ internal sealed class FakeUnitManager : IUnitManager
     public IEnumerable<IMapUnitState> GetCivUnits() => [];
     public void RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => throw new NotSupportedException();
     public IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId) => throw new NotSupportedException();
-    public IMapUnitState? AddUnit(BaseUnit baseUnit, ICityState? city = null) => throw new NotSupportedException();
+    public List<(BaseUnit Unit, ICityState? City)> AddedUnits { get; } = [];
+    public IMapUnitState? AddedUnitResult { get; set; }
+    public IMapUnitState? AddUnit(BaseUnit baseUnit, ICityState? city = null)
+    {
+        AddedUnits.Add((baseUnit, city));
+        return AddedUnitResult;
+    }
 }
 
 internal sealed class FakeCityStateFunctions : ICityStateFunctions
@@ -196,10 +143,10 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     public ICityState Clone() => throw new NotSupportedException();
     public Civilization? CivData { get; set; }
     Civilization ICityState.Civ => CivData ?? throw new NotSupportedException();
-    public FakeCityReligion ReligionData { get; } = new();
-    public ICityReligionManager Religion => ReligionData;
     public HexCoord LocationData { get; set; }
     public override HexCoord Location => LocationData;
+    public FakeCityReligion ReligionData { get; } = new();
+    public ICityReligionManager Religion => ReligionData;
     public bool HolyCity { get; set; }
     public bool IsHolyCity() => HolyCity;
     public bool IsHolyCityOf(string? religionName) => HolyCity && ReligionData.ReligionThisIsTheHolyCityOf == religionName;
@@ -224,7 +171,8 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     IEnumerable<Tile> ICityState.GetTiles() => TileObjects;
     IEnumerable<Tile> ICityState.GetWorkedTiles() => [];
     public void StopWorkingTile(Tile tile) => throw new NotSupportedException();
-    public void UpdateCityStats(bool updateCivStats) => throw new NotSupportedException();
+    public int StatsUpdateCalls { get; private set; }
+    public void UpdateCityStats(bool updateCivStats) => StatsUpdateCalls++;
     public UniqueMap BuiltBuildingUniqueMap => BuiltUniques;
     public IEnumerable<Building> GetBuiltBuildings() => BuiltBuildingObjects;
     public void AddBuilding(Building building) => BuiltBuildingObjects.Add(building);
@@ -248,6 +196,20 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     }
     public bool IsBeingConstructedOrEnqueued(string constructionName) => false;
     public bool IsBuildable(Building building) => false;
+    public Counter<string> GreatPersonPoints { get; } = new();
+    public Counter<string> GetGreatPersonPoints() => GreatPersonPoints;
+    public List<string> ConstructionQueue { get; } = [];
+    public void EditConstructionQueue(Action<List<string>> edit)
+    {
+        var copy = new List<string>(ConstructionQueue);
+        edit(copy);
+        ConstructionQueue.Clear();
+        ConstructionQueue.AddRange(copy);
+    }
+    public int PopulationReassignments { get; private set; }
+    public override void ReassignPopulationDeferred() => PopulationReassignments++;
+    public int InProgressValidations { get; private set; }
+    public void ValidateInProgressConstructions() => InProgressValidations++;
     public IEnumerable<UniqueObject> GetMatchingUniquesWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext) =>
         NonLocalUniques.Where(it => it.Type == uniqueType);
     public void ForEachMatchingUniqueWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op)

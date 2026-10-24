@@ -146,7 +146,13 @@ public class CivilizationCoreTests
     private static (Civilization Civ, FakeGameInfoState Info) NewCiv(string name = "Rome", PlayerType playerType = PlayerType.Human)
     {
         var info = new FakeGameInfoState();
+        info.Map = new TileMap();
         var civ = new Civilization(new NationObject { Name = name }) { GameInfo = info, PlayerType = playerType };
+        civ.Tech.CivInfo = civ;
+        civ.Policies.CivInfo = civ;
+        civ.GoldenAges.CivInfo = civ;
+        civ.GreatPeople.CivInfo = civ;
+        civ.CityStateFunctions = new FakeCityStateFunctions();
         info.Civs.Add(civ);
         return (civ, info);
     }
@@ -184,7 +190,7 @@ public class CivilizationCoreTests
         var civ = new Civilization("Rome");
         Assert.Throws<InvalidOperationException>(() => civ.GameInfo);
         Assert.Throws<InvalidOperationException>(() => civ.Nation);
-        Assert.Throws<InvalidOperationException>(() => civ.Tech);
+        Assert.Throws<InvalidOperationException>(() => civ.Tech.CivInfo);
         Assert.Throws<InvalidOperationException>(() => civ.Units);
         Assert.Same(GameContext.IgnoreConditionalsState, civ.GetGameContextForStartBias());
         civ.GameInfo = new FakeGameInfoState();
@@ -373,12 +379,11 @@ public class CivilizationCoreTests
     [Fact]
     public void AddStat_RoutesToTheManagers()
     {
-        var (civ, _) = NewCiv();
-        var policies = new FakePolicies();
-        var tech = new FakeTech();
+        var (civ, info) = NewCiv();
+        info.RulesetData.Technologies.Put("Writing", new TechnologyObject { Name = "Writing", Cost = 50 });
+        var policies = civ.Policies;
+        var tech = civ.Tech;
         var religion = new ReligionManager();
-        civ.Policies = policies;
-        civ.Tech = tech;
         civ.ReligionManager = religion;
         civ.Stats.Happiness = 9;
 
@@ -391,9 +396,9 @@ public class CivilizationCoreTests
         civ.AddStat(Stat.Food, 100); // ignored
         civ.AddStat(Stat.Happiness, 100); // ignored
 
-        Assert.Equal(3, policies.Culture);
+        Assert.Equal(3, policies.StoredCulture);
         Assert.Equal(5, civ.TotalCultureForContests); // only positive amounts count
-        Assert.Equal(7, tech.Science);
+        Assert.Equal(7, tech.GetOverflowScience()); // no current technology: stored as overflow
         Assert.Equal(11, civ.Gold);
         Assert.Equal(3, religion.StoredFaith);
         Assert.Equal(4, civ.TotalFaithForContests);
@@ -404,7 +409,8 @@ public class CivilizationCoreTests
         Assert.Equal(9, civ.GetStatReserve(Stat.Happiness));
         Assert.Equal(0, civ.GetStatReserve(Stat.Food));
         Assert.Equal(0, civ.GetStatReserve(Stat.Science)); // no current technology
-        tech.Current = new TechnologyObject { Name = "Writing" };
+        tech.TechsToResearch.Add("Writing");
+        tech.TechsInProgress["Writing"] = 42;
         Assert.Equal(42, civ.GetStatReserve(Stat.Science));
     }
 
@@ -412,7 +418,6 @@ public class CivilizationCoreTests
     public void AddStats_TruncatesFractionalAmounts()
     {
         var (civ, _) = NewCiv();
-        civ.Policies = new FakePolicies();
         civ.AddStats(new StatsObject(gold: 2.9f, culture: -0.5f));
         Assert.Equal(2, civ.Gold);
     }
@@ -421,9 +426,6 @@ public class CivilizationCoreTests
     public void AddGameResource_And_GetGameResource_CoverStatsSubStatsAndResources()
     {
         var (civ, _) = NewCiv();
-        var goldenAges = new FakeGoldenAges();
-        civ.GoldenAges = goldenAges;
-        civ.Policies = new FakePolicies();
         civ.AddGameResource(Stat.Gold, 8);
         civ.AddGameResource(SubStat.GoldenAgePoints, 5);
         civ.AddGameResource(Stat.Culture, 3);
@@ -519,13 +521,9 @@ public class CivilizationCoreTests
         var city = new FakeCityState("c", new FakeCiv("Rome"));
         city.NonLocalUniques.Add(Make("city"));
         civ.Cities = [city];
-        var policies = new FakePolicies();
-        policies.PolicyUniques.AddUnique(Make("policy"));
-        civ.Policies = policies;
-        var tech = new FakeTech();
-        tech.TechUniques.AddUnique(Make("tech"));
-        tech.EraData.Uniques = ["Cannot be traded"];
-        civ.Tech = tech;
+        civ.Policies.PolicyUniques.AddUnique(Make("policy"));
+        civ.Tech.TechUniques.AddUnique(Make("tech"));
+        civ.Tech.Era = new EraObject { Name = "Ancient era", EraNumber = 0, Uniques = ["Cannot be traded"] };
         civ.TemporaryUniques.Add(new TemporaryUnique(timed, 3));
         var cityStates = new FakeCityStateFunctions();
         cityStates.Provided.Add(Make("cityState"));
@@ -561,12 +559,9 @@ public class CivilizationCoreTests
             "Cannot be traded <upon discovering [Currency] technology>",
             "Cannot be traded",
         ];
-        civ.Policies = new FakePolicies();
-        civ.Tech = new FakeTech();
         var city = new FakeCityState("c", new FakeCiv("Rome"));
         city.BuiltUniques.AddUnique(new UniqueObject("Cannot be traded <upon discovering [Writing] technology>", UniqueTarget.Building, "Library"));
         civ.Cities = [city];
-        civ.Policies = new FakePolicies();
 
         Assert.Equal(3, civ.GetTriggeredUniques(UniqueType.TriggerUponResearch, GameContext.EmptyState).Count());
         Assert.Equal(2, civ.GetTriggeredUniques(UniqueType.TriggerUponResearch, GameContext.EmptyState, it => it.Params[0] == "Writing").Count());
@@ -590,13 +585,10 @@ public class CivilizationCoreTests
         civ.Stats.Happiness = 12;
         civ.Stats.StatsForNextTurn = new StatsObject(food: 2.5f, production: 3.4f);
         civ.AddGold(77);
-        var tech = new FakeTech { ResearchedTechnologies = [new TechnologyObject { Name = "a" }, new TechnologyObject { Name = "b" }] };
-        civ.Tech = tech;
-        var policies = new FakePolicies();
-        policies.Adopted.Add("Liberty");
-        policies.Adopted.Add("Liberty Complete");
-        policies.Adopted.Add("Tradition");
-        civ.Policies = policies;
+        civ.Tech.ResearchedTechnologies = [new TechnologyObject { Name = "a" }, new TechnologyObject { Name = "b" }];
+        civ.Policies.AdoptedPolicies.Add("Liberty");
+        civ.Policies.AdoptedPolicies.Add("Liberty Complete");
+        civ.Policies.AdoptedPolicies.Add("Tradition");
         var city = new FakeCityState("c", new FakeCiv("Rome")) { PopulationData = 4 };
         city.TileLocations.AddRange([HexCoord.Of(0, 0), HexCoord.Of(1, 0)]);
         civ.Cities = [city, new FakeCityState("d", new FakeCiv("Rome")) { PopulationData = 6 }];
@@ -638,8 +630,8 @@ public class CivilizationCoreTests
         // MapParameters.numberOfTiles of a radius 10 hexagon: 1 + 3 * 10 * 9 = 271 tiles -> modifier 1276 / 271, then (m - 1) / 3 + 1
         double modifier = 1276 / 271.0;
         modifier = (modifier - 1) / 3 + 1;
-        civ.Tech = new FakeTech { Repeating = 2 };
-        ((FakeTech)civ.Tech).Researched.UnionWith(["a", "b", "c"]);
+        civ.Tech.RepeatingTechsResearched = 2;
+        foreach (var name in new[] { "a", "b", "c" }) civ.Tech.TechsResearched.Add(name);
         var city = new FakeCityState("c", new FakeCiv("Rome")) { PopulationData = 5 };
         civ.Cities = [city, new FakeCityState("d", new FakeCiv("Rome")) { PopulationData = 2 }];
 
@@ -762,12 +754,8 @@ public class CivilizationCoreTests
         var (civ, info) = NewCiv();
         info.RulesetData.Technologies.Put("Writing", new TechnologyObject { Name = "Writing" });
         info.RulesetData.Policies.Put("Liberty", new PolicyObject { Name = "Liberty" });
-        var tech = new FakeTech();
-        tech.Researched.Add("Writing");
-        civ.Tech = tech;
-        var policies = new FakePolicies();
-        policies.Adopted.Add("Liberty");
-        civ.Policies = policies;
+        civ.Tech.TechsResearched.Add("Writing");
+        civ.Policies.AdoptedPolicies.Add("Liberty");
         civ.Stats.Happiness = 4;
 
         var progress = (IGameProgressCivilization)civ;
@@ -807,11 +795,13 @@ public class CivilizationCoreTests
         civ.TemporaryUniques.Add(new TemporaryUnique(new UniqueObject("Cannot be traded <for [3] turns>", UniqueTarget.Global, "x"), 3));
         civ.CityStatePersonality = Unciv.Logic.Civilization.Diplomacy.CityStatePersonality.Hostile;
         civ.LastSeenImprovement[HexCoord.Of(0, 0)] = "Farm";
-        civ.Policies = new CloneablePolicies();
-        civ.Tech = new CloneableTech();
+        civ.Policies.StoredCulture = 7;
+        civ.Policies.AdoptedPolicies.Add("Liberty");
+        civ.Tech.FreeTechs = 2;
+        civ.Tech.TechsResearched.Add("Writing");
         civ.QuestManager = new CloneableQuests();
-        civ.GoldenAges = new CloneableGoldenAges();
-        civ.GreatPeople = new CloneableGreatPeople();
+        civ.GoldenAges.StoredHappiness = 9;
+        civ.GreatPeople.FreeGreatPeople = 3;
 
         var clone = civ.Clone();
         Assert.NotSame(civ, clone);
@@ -837,46 +827,18 @@ public class CivilizationCoreTests
         var temporary = Assert.Single(clone.TemporaryUniques);
         Assert.NotSame(civ.TemporaryUniques[0], temporary);
         Assert.Equal(3, temporary.TurnsLeft);
-        Assert.IsType<CloneablePolicies>(clone.Policies);
         Assert.NotSame(civ.Policies, clone.Policies);
+        Assert.Equal(7, clone.Policies.StoredCulture);
+        Assert.True(clone.Policies.IsAdopted("Liberty"));
+        Assert.NotSame(civ.Tech, clone.Tech);
+        Assert.Equal(2, clone.Tech.FreeTechs);
+        Assert.True(clone.Tech.IsResearched("Writing"));
+        Assert.Equal(9, clone.GoldenAges.StoredHappiness);
+        Assert.Equal(3, clone.GreatPeople.FreeGreatPeople);
         Assert.Same(clone, clone.CivConstructions.CivInfo); // setTransients(clone)
     }
 
     private const Unciv.Logic.Civilization.Diplomacy.CityStatePersonality CityStatePersonalityHostile = Unciv.Logic.Civilization.Diplomacy.CityStatePersonality.Hostile;
-
-    private sealed class CloneablePolicies : IPolicyManager
-    {
-        public UniqueMap PolicyUniques { get; } = new();
-        public IReadOnlyCollection<string> AdoptedPolicies => [];
-        public int StoredCulture => 0;
-        public IReadOnlyCollection<string> CompletedBranches => [];
-        public bool IsAdopted(string policyName) => false;
-        public IEnumerable<PolicyObject> GetAdoptedPoliciesMatching(string filter, GameContext gameContext) => [];
-        public void AddCulture(int culture) { }
-        public IPolicyManager Clone() => new CloneablePolicies();
-        public void SetTransients(Civilization civInfo) { }
-    }
-
-    private sealed class CloneableTech : ITechManager
-    {
-        public UniqueMap TechUniques { get; } = new();
-        public EraObject Era => new();
-        public int FreeTechs => 0;
-        public IReadOnlyList<TechnologyObject> ResearchedTechnologies => [];
-        public IReadOnlyCollection<string> TechsResearched => [];
-        public int RepeatingTechsResearched => 0;
-        public bool IsRevealed(TileResourceObject resource) => false;
-        public bool IsResearched(string techName) => false;
-        public bool IsResearched(INonPerpetualConstruction construction) => false;
-        public bool CanBeResearched(string techName) => false;
-        public void AddTechnology(string techName, bool showNotification = true) { }
-        public bool CanResearchTech() => false;
-        public TechnologyObject? CurrentTechnology() => null;
-        public int ResearchOfTech(string techName) => 0;
-        public void AddScience(int scienceGet) { }
-        public ITechManager Clone() => new CloneableTech();
-        public void SetTransients(Civilization civInfo) { }
-    }
 
     private sealed class CloneableQuests : IQuestManager
     {
@@ -884,20 +846,6 @@ public class CivilizationCoreTests
         public void SetTransients(Civilization civInfo) { }
     }
 
-    private sealed class CloneableGoldenAges : IGoldenAgeManager
-    {
-        public Civilization CivInfo { get; set; } = null!;
-        public bool IsGoldenAge() => false;
-        public void AddHappiness(int amount) { }
-        public int StoredHappiness => 0;
-        public IGoldenAgeManager Clone() => new CloneableGoldenAges();
-    }
-
-    private sealed class CloneableGreatPeople : IGreatPersonManager
-    {
-        public Civilization CivInfo { get; set; } = null!;
-        public IGreatPersonManager Clone() => new CloneableGreatPeople();
-    }
 }
 
 internal static class CivilizationTestExtensions

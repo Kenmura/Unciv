@@ -2,7 +2,6 @@ using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
-using Unciv.Models.Ruleset.Tech;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
@@ -43,70 +42,8 @@ public interface IGameInfoState : IConstructionGameInfo
     new IEnumerable<ICityState> GetCities();
     /// <summary><c>gameInfo.getAliveMajorCivs()</c></summary>
     List<Civilization> GetAliveMajorCivs();
-}
-
-/// <summary>What Civilization reads from <c>TechManager</c>.</summary>
-public interface ITechManager
-{
-    ITechManager Clone();
-    /// <summary><c>tech.setTransients(civInfo)</c></summary>
-    void SetTransients(Civilization civInfo);
-    bool IsRevealed(TileResource resource);
-    bool IsResearched(string techName);
-    /// <summary><c>tech.isResearched(construction)</c></summary>
-    bool IsResearched(INonPerpetualConstruction construction);
-    /// <summary><c>tech.canBeResearched(techName)</c></summary>
-    bool CanBeResearched(string techName);
-    /// <summary><c>tech.addTechnology(techName, showNotification)</c></summary>
-    void AddTechnology(string techName, bool showNotification = true);
-    UniqueMap TechUniques { get; }
-    Era Era { get; }
-    bool CanResearchTech();
-    int FreeTechs { get; }
-    Technology? CurrentTechnology();
-    int ResearchOfTech(string techName);
-    void AddScience(int scienceGet);
-    /// <summary><c>tech.researchedTechnologies</c>, in list order.</summary>
-    IReadOnlyList<Technology> ResearchedTechnologies { get; }
-    /// <summary><c>tech.techsResearched</c> (a set of names).</summary>
-    IReadOnlyCollection<string> TechsResearched { get; }
-    int RepeatingTechsResearched { get; }
-}
-
-/// <summary>What Civilization reads from <c>PolicyManager</c>.</summary>
-public interface IPolicyManager
-{
-    IPolicyManager Clone();
-    void SetTransients(Civilization civInfo);
-    UniqueMap PolicyUniques { get; }
-    /// <summary><c>policies.adoptedPolicies</c> (a set of names).</summary>
-    IReadOnlyCollection<string> AdoptedPolicies { get; }
-    bool IsAdopted(string policyName);
-    /// <summary><c>policies.completedBranches</c> (a set of branch names).</summary>
-    IReadOnlyCollection<string> CompletedBranches { get; }
-    /// <summary><c>policies.getAdoptedPoliciesMatching(filter, gameContext)</c></summary>
-    IEnumerable<Policy> GetAdoptedPoliciesMatching(string filter, GameContext gameContext);
-    void AddCulture(int culture);
-    int StoredCulture { get; }
-}
-
-/// <summary>What Civilization reads from <c>GoldenAgeManager</c>.</summary>
-public interface IGoldenAgeManager
-{
-    IGoldenAgeManager Clone();
-    /// <summary><c>goldenAges.civInfo</c>, a <c>lateinit var</c> set by <c>Civilization.setTransients</c>.</summary>
-    Civilization CivInfo { get; set; }
-    bool IsGoldenAge();
-    void AddHappiness(int amount);
-    int StoredHappiness { get; }
-}
-
-/// <summary>What Civilization reads from <c>GreatPersonManager</c>.</summary>
-public interface IGreatPersonManager
-{
-    IGreatPersonManager Clone();
-    /// <summary><c>greatPeople.civInfo</c>, a <c>lateinit var</c> set by <c>Civilization.setTransients</c>.</summary>
-    Civilization CivInfo { get; set; }
+    /// <summary><c>gameInfo.notifyExploredResources(civInfo, resource, maxDistance)</c></summary>
+    void NotifyExploredResources(Civilization civInfo, TileResource resource, int maxDistance);
 }
 
 /// <summary>What Civilization reads from <c>QuestManager</c>.</summary>
@@ -268,6 +205,12 @@ public interface ICityState : IGameContextCity
     void RemoveBuilding(Building building);
     /// <summary><c>city.cityConstructions.chooseNextConstruction()</c></summary>
     void ChooseNextConstruction();
+    /// <summary><c>city.getGreatPersonPoints()</c></summary>
+    Counter<string> GetGreatPersonPoints();
+    /// <summary><c>city.cityConstructions.editQueue(edit)</c>: edits a copy of the queue and then replaces the queue by it.</summary>
+    void EditConstructionQueue(Action<List<string>> edit);
+    /// <summary><c>city.cityConstructions.validateInProgressConstructions()</c></summary>
+    void ValidateInProgressConstructions();
     IEnumerable<UniqueObject> GetMatchingUniquesWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext);
     void ForEachMatchingUniqueWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
     // T058

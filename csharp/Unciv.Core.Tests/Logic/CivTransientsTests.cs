@@ -18,8 +18,9 @@ public class CivTransientsTests
         var info = new FakeGameInfoState();
         var civ = new Civilization(new NationObject { Name = name }) { GameInfo = info, PlayerType = PlayerType.Human };
         info.Civs.Add(civ);
-        civ.Policies = new FakePolicies();
-        civ.Tech = new FakeTech();
+        civ.Policies.CivInfo = civ;
+        civ.Tech.CivInfo = civ;
+        civ.Tech.Era = new Unciv.Models.Ruleset.Tech.Era { Name = "Ancient era", EraNumber = 0 };
         civ.CityStateFunctions = new FakeCityStateFunctions();
         civ.Units = new FakeUnitManager();
         civ.CivConstructions.SetTransients(civ);

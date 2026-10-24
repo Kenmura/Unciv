@@ -24,8 +24,6 @@ public class CivReligionVictoryTests
         var info = new FakeGameInfoState { ReligionEnabled = true };
         var civ = new Civilization(new NationObject { Name = name }) { GameInfo = info, PlayerType = playerType };
         Wire(civ);
-        civ.Policies = new FakePolicies();
-        civ.Tech = new FakeTech();
         civ.Units = new FakeUnitManager { Count = 1 };
         civ.CityStateFunctions = new FakeCityStateFunctions();
         info.Civs.Add(civ);
@@ -40,6 +38,8 @@ public class CivReligionVictoryTests
     {
         civ.ReligionManager.CivInfo = civ;
         civ.VictoryManager.CivInfo = civ;
+        civ.Policies.CivInfo = civ;
+        civ.Tech.CivInfo = civ;
         civ.EspionageManager.CivInfo = civ;
     }
 
@@ -446,8 +446,6 @@ public class CivReligionVictoryTests
         var (civ, info) = NewCiv();
         var victory = AddVictory(info, "Diplomatic", "Win diplomatic vote", "Complete [2] Policy branches");
         civ.VictoryManager.CivInfo = civ;
-        var policies = new FakePoliciesWithBranches();
-        civ.Policies = policies;
         var manager = civ.VictoryManager;
 
         Assert.Equal(victory.MilestoneObjects[0], manager.GetNextMilestone(victory));
@@ -458,9 +456,9 @@ public class CivReligionVictoryTests
         manager.HasEverWonDiplomaticVote = true;
         Assert.Equal(victory.MilestoneObjects[1], manager.GetNextMilestone(victory));
         Assert.Equal(1, manager.AmountMilestonesCompleted(victory));
-        policies.Completed.Add("Tradition");
+        CompleteBranch(info, civ, "Tradition");
         Assert.Null(manager.GetVictoryTypeAchieved());
-        policies.Completed.Add("Liberty");
+        CompleteBranch(info, civ, "Liberty");
         Assert.Null(manager.GetNextMilestone(victory));
         Assert.Equal(2, manager.AmountMilestonesCompleted(victory));
         Assert.Equal("Diplomatic", manager.GetVictoryTypeAchieved());
@@ -501,8 +499,6 @@ public class CivReligionVictoryTests
         {
             var civ = new Civilization(new NationObject { Name = $"Civ{i}" }) { GameInfo = info };
             Wire(civ);
-            civ.Policies = new FakePolicies();
-            civ.Tech = new FakeTech();
             civ.CityStateFunctions = new FakeCityStateFunctions();
             civ.Units = new FakeUnitManager { Count = 1 };
             info.Civs.Add(civ);
@@ -648,7 +644,6 @@ public class CivReligionVictoryTests
         civ.VictoryManager.CivInfo = civ;
         var victory = AddVictory(info, "V",
             "Complete [3] Policy branches", "Have at least [5] [Gold]", "Destroy all players", "Win diplomatic vote");
-        civ.Policies = new FakePoliciesWithBranches();
         var milestones = victory.MilestoneObjects;
         Assert.Equal("{Complete [3] Policy branches} (0/3)", milestones[0].GetVictoryScreenButtonHeaderText(false, civ));
         Assert.Equal("{Complete [3] Policy branches} (3/3)", milestones[0].GetVictoryScreenButtonHeaderText(true, civ));
@@ -673,29 +668,36 @@ public class CivReligionVictoryTests
         Assert.Equal(3, victory.RequiredSpaceshipPartsAsCounter.SumValues()); // the requirement itself is untouched
     }
 
-    private sealed class FakePoliciesWithBranches : IPolicyManager
+    /// <summary>Adds a policy branch to the ruleset whose only policy is the branch completion and adopts it.</summary>
+    private static void CompleteBranch(FakeGameInfoState info, Civilization civ, string name)
     {
-        public HashSet<string> Completed { get; } = [];
-        public UniqueMap PolicyUniques { get; } = new();
-        public IReadOnlyCollection<string> AdoptedPolicies => [];
-        public IReadOnlyCollection<string> CompletedBranches => Completed;
-        public int StoredCulture => 0;
-        public bool IsAdopted(string policyName) => false;
-        public IEnumerable<PolicyObject> GetAdoptedPoliciesMatching(string filter, GameContext gameContext) => [];
-        public void AddCulture(int culture) { }
-        public IPolicyManager Clone() => throw new NotSupportedException();
-        public void SetTransients(Civilization civInfo) { }
+        var complete = new PolicyObject { Name = name + PolicyObject.BranchCompleteSuffix };
+        info.RulesetData.PolicyBranches.Put(name, new PolicyBranch { Name = name, Policies = [complete] });
+        civ.Policies.AdoptedPolicies.Add(complete.Name);
+    }
+
+    private static Unciv.Models.Ruleset.Tech.Technology AddTech(FakeGameInfoState info, string name, params string[] prerequisites)
+    {
+        if (!info.RulesetData.Eras.ContainsKey("Ancient era"))
+            info.RulesetData.Eras.Put("Ancient era", new Unciv.Models.Ruleset.Tech.Era { Name = "Ancient era", EraNumber = 0 });
+        var tech = new Unciv.Models.Ruleset.Tech.Technology
+        {
+            Name = name,
+            Cost = 100,
+            Prerequisites = [.. prerequisites],
+            Column = new Unciv.Models.Ruleset.Tech.TechColumn { ColumnNumber = 0, Era = "Ancient era" },
+        };
+        info.RulesetData.Technologies.Put(name, tech);
+        return tech;
     }
 
     // ---- Spy and EspionageManager
 
-    private static (Civilization Civ, FakeGameInfoState Info, FakeTech Tech) NewSpyCiv(string name = "Rome")
+    private static (Civilization Civ, FakeGameInfoState Info, TechManager Tech) NewSpyCiv(string name = "Rome")
     {
         var (civ, info) = NewCiv(name);
-        var tech = new FakeTech();
-        civ.Tech = tech;
         civ.EspionageManager.SetTransients(civ);
-        return (civ, info, tech);
+        return (civ, info, civ.Tech);
     }
 
     [Fact]
@@ -848,7 +850,7 @@ public class CivReligionVictoryTests
     {
         var (civ, info, _) = NewSpyCiv();
         var (other, _) = NewCiv("Egypt");
-        other.Tech = new FakeTech();
+        AddTech(info, "Writing");
         info.Civs.Add(other);
         var city = new FakeCityState("abroad", new FakeCiv("Egypt")) { CivData = other, LocationData = HexCoord.Of(5, 6) };
         var spy = civ.EspionageManager.AddSpy();
@@ -862,8 +864,7 @@ public class CivReligionVictoryTests
             civ.Notifications.Single().Text);
 
         // techs to steal but no science in the city: silently back to surveillance
-        ((FakeTech)other.Tech).Researched.Add("Writing");
-        ((FakeTech)civ.Tech).Researchable.Add("Writing");
+        other.Tech.TechsResearched.Add("Writing");
         spy.SetAction(SpyAction.StealingTech);
         spy.EndTurn();
         Assert.Equal(SpyAction.Surveillance, spy.Action);
@@ -875,14 +876,11 @@ public class CivReligionVictoryTests
     {
         var (civ, info, tech) = NewSpyCiv();
         var (other, _) = NewCiv("Egypt");
-        var otherTech = new FakeTech();
-        otherTech.Researched.Add("Writing");
-        other.Tech = otherTech;
+        other.Tech.TechsResearched.Add("Writing");
         other.Diplomacy["Rome"] = new FakeDiplomacyManager(civ) { CivInfo = other };
         other.EspionageManager.SetTransients(other);
         info.Civs.Add(other);
-        tech.Researchable.Add("Writing");
-        info.RulesetData.Technologies["Writing"] = new Unciv.Models.Ruleset.Tech.Technology { Name = "Writing", Cost = 100 };
+        AddTech(info, "Writing");
         var city = new FakeCityState("abroad", new FakeCiv("Egypt")) { CivData = other, LocationData = HexCoord.Of(5, 6) };
         city.CurrentCityStats[Unciv.Models.StatTypes.Stat.Science] = 10f;
         var spy = civ.EspionageManager.AddSpy();
@@ -906,11 +904,11 @@ public class CivReligionVictoryTests
         {
             Assert.Contains(other.Notifications, it => it.Text.Contains("was found and killed", StringComparison.Ordinal));
             Assert.Equal(SpyAction.Dead, spy.Action);
-            Assert.Empty(tech.Added);
+            Assert.False(tech.IsResearched("Writing"));
         }
         else
         {
-            Assert.Equal(["Writing"], tech.Added);
+            Assert.True(tech.IsResearched("Writing"));
             Assert.Contains(civ.Notifications, it => it.Text == "Your spy [Spy 1] stole the Technology [Writing] from [abroad]!");
             Assert.Equal(2, spy.Rank);
             Assert.Equal(SpyAction.StealingTech, spy.Action); // progress was reset
@@ -963,12 +961,11 @@ public class CivReligionVictoryTests
     {
         var (civ, info, tech) = NewSpyCiv();
         var (other, _) = NewCiv("Egypt");
-        var otherTech = new FakeTech();
-        other.Tech = otherTech;
         info.Civs.Add(other);
-        foreach (var name in new[] { "Writing", "Pottery", "Masonry", "Bronze" }) otherTech.Researched.Add(name);
-        tech.Researched.Add("Pottery"); // we know it already
-        tech.Researchable.UnionWith(["Writing", "Pottery", "Bronze"]);
+        foreach (var name in new[] { "Writing", "Pottery", "Bronze" }) AddTech(info, name);
+        AddTech(info, "Masonry", "Writing");
+        foreach (var name in new[] { "Writing", "Pottery", "Masonry", "Bronze" }) other.Tech.TechsResearched.Add(name);
+        tech.TechsResearched.Add("Pottery"); // we know it already
         Assert.Equal(["Writing", "Bronze"], civ.EspionageManager.GetTechsToSteal(other).OrderByDescending(it => it)); // Masonry is not researchable yet
         Assert.Equal(2, civ.EspionageManager.GetTechsToSteal(other).Count);
     }

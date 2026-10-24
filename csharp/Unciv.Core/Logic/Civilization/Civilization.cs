@@ -187,21 +187,9 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     /// </summary>
     public string CivId { get; set; } = "";
 
-    private ITechManager? tech;
-    /// <summary>TODO(T056): becomes <c>var tech = TechManager()</c>.</summary>
-    public ITechManager Tech
-    {
-        get => Lateinit(tech, "tech");
-        set => tech = value;
-    }
+    public TechManager Tech { get; set; } = new();
 
-    private IPolicyManager? policies;
-    /// <summary>TODO(T056): becomes <c>var policies = PolicyManager()</c>.</summary>
-    public IPolicyManager Policies
-    {
-        get => Lateinit(policies, "policies");
-        set => policies = value;
-    }
+    public PolicyManager Policies { get; set; } = new();
 
     /// <summary>Kotlin <c>var civConstructions = CivConstructions()</c>.</summary>
     public CivConstructions CivConstructions { get; set; } = new();
@@ -216,21 +204,9 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
 
     public ReligionManager ReligionManager { get; set; } = new();
 
-    private IGoldenAgeManager? goldenAges;
-    /// <summary>TODO(T056): becomes <c>var goldenAges = GoldenAgeManager()</c>.</summary>
-    public IGoldenAgeManager GoldenAges
-    {
-        get => Lateinit(goldenAges, "goldenAges");
-        set => goldenAges = value;
-    }
+    public GoldenAgeManager GoldenAges { get; set; } = new();
 
-    private IGreatPersonManager? greatPeople;
-    /// <summary>TODO(T056): becomes <c>var greatPeople = GreatPersonManager()</c>.</summary>
-    public IGreatPersonManager GreatPeople
-    {
-        get => Lateinit(greatPeople, "greatPeople");
-        set => greatPeople = value;
-    }
+    public GreatPersonManager GreatPeople { get; set; } = new();
 
     public EspionageManager EspionageManager { get; set; } = new();
 
