@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
+using Unciv.Core.Tests.Support;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Managers;
@@ -1207,5 +1208,160 @@ public class CivReligionVictoryTests
         Assert.Equal(spy, civ.EspionageManager.SpyList[0]);
         spy.SetAction(SpyAction.Moving, 1);
         Assert.Empty(civ.EspionageManager.GetTilesVisibleViaSpies());
+    }
+}
+
+// T153: the map-backed leftovers of T057/T111, over the real TestGame (ruins, prophets and spies need real tiles, units and cities).
+[Collection("RulesetCache")]
+public sealed class CivReligionVictoryMapTests
+{
+    private readonly TestGame testGame = new();
+    private readonly Civilization civ;
+
+    public CivReligionVictoryMapTests()
+    {
+        testGame.MakeHexagonalMap(4);
+        civ = testGame.AddCiv(isPlayer: true);
+    }
+
+    private RuinReward AddReward(string name, params string[] uniques)
+    {
+        var reward = new RuinReward { Name = name, Notification = name };
+        foreach (var unique in uniques) reward.Uniques.Add(unique);
+        testGame.Ruleset.RuinRewards[name] = reward;
+        return reward;
+    }
+
+    private static List<string> LastChosen(RuinsManager manager) =>
+        (List<string>)typeof(RuinsManager).GetField("lastChosenRewards", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(manager)!;
+
+    [Fact]
+    public void RuinsManager_SelectNextRuinsReward_SkipsRewardsWithoutEffectAndRemembersTheWinner()
+    {
+        testGame.Ruleset.RuinRewards.Clear();
+        AddReward("Dud", "[This Unit] gains [10] XP <after turn number [999]>");
+        AddReward("Xp", "[This Unit] gains [10] XP");
+        var unit = testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.TileMap[0, 0]);
+
+        civ.RuinsManager.SelectNextRuinsReward(unit);
+
+        Assert.Equal(10, unit.Promotions.XP);
+        Assert.Equal(["", "Xp"], LastChosen(civ.RuinsManager));
+    }
+
+    [Fact]
+    public void RuinsManager_SelectNextRuinsReward_NeverRepeatsTheLastTwoChosenRewards()
+    {
+        testGame.Ruleset.RuinRewards.Clear();
+        AddReward("A", "[This Unit] gains [10] XP");
+        AddReward("B", "[This Unit] gains [10] XP");
+        AddReward("C", "[This Unit] gains [10] XP");
+        var unit = testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.TileMap[0, 0]);
+
+        civ.RuinsManager.SelectNextRuinsReward(unit);
+        civ.RuinsManager.SelectNextRuinsReward(unit);
+        civ.RuinsManager.SelectNextRuinsReward(unit);
+
+        var chosen = LastChosen(civ.RuinsManager);
+        Assert.Equal(2, chosen.Distinct().Count());
+        Assert.Contains(chosen[1], new[] { "A", "B", "C" });
+    }
+
+    [Fact]
+    public void RuinsManager_SelectNextRuinsReward_UnavailableAndDifficultyExcludedRewardsAreNeverPicked()
+    {
+        testGame.Ruleset.RuinRewards.Clear();
+        AddReward("Hidden", "[This Unit] gains [10] XP", "Unavailable");
+        var excluded = AddReward("Excluded", "[This Unit] gains [10] XP");
+        excluded.ExcludedDifficulties = [testGame.GameInfo.Difficulty];
+        var unit = testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.TileMap[0, 0]);
+
+        civ.RuinsManager.SelectNextRuinsReward(unit);
+
+        Assert.Equal(0, unit.Promotions.XP);
+        Assert.Equal(["", ""], LastChosen(civ.RuinsManager));
+    }
+
+    [Fact]
+    public void ReligionManager_FoundReligion_NeedsACityCenterAndMarksTheFoundingCity()
+    {
+        var city = testGame.AddCity(civ, testGame.TileMap[0, 0]);
+        var prophet = testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.TileMap[1, 1]);
+        var manager = civ.ReligionManager;
+
+        Assert.False(manager.MayFoundReligionHere(prophet.GetTile()));
+        manager.FoundReligion(prophet); // not a city centre: ignored
+        Assert.Equal(ReligionState.None, manager.ReligionState);
+
+        prophet.PutInTile(city.GetCenterTile());
+        Assert.True(manager.MayFoundReligionHere(city.GetCenterTile()));
+        manager.FoundReligion(prophet);
+        Assert.Equal(ReligionState.FoundingReligion, manager.ReligionState);
+        Assert.True((bool)typeof(ReligionManager).GetField("shouldChoosePantheonBelief", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(manager)!);
+    }
+
+    [Fact]
+    public void ReligionManager_UseProphetForEnhancingReligion_NotifiesOtherHumansWithTheirKnowledge()
+    {
+        var city = testGame.AddCity(civ, testGame.TileMap[0, 0]);
+        var religion = testGame.AddReligion(civ);
+        var manager = civ.ReligionManager;
+        typeof(ReligionManager).GetProperty(nameof(ReligionManager.ReligionState))!.SetValue(manager, ReligionState.Religion);
+        var prophet = testGame.AddDefaultMeleeUnitWithUniques(civ, city.GetCenterTile());
+        var other = testGame.AddCiv(isPlayer: true);
+        var unaware = testGame.AddCiv(isPlayer: true);
+        civ.DiplomacyFunctions.MakeCivilizationsMeet(other);
+
+        // MayEnhanceReligionAtAll needs enough follower and enhancer beliefs left to choose from.
+        if (!manager.MayEnhanceReligionHere(city.GetCenterTile()))
+        {
+            testGame.CreateBelief(BeliefType.Follower);
+            testGame.CreateBelief(BeliefType.Enhancer);
+        }
+        Assert.True(manager.MayEnhanceReligionHere(city.GetCenterTile()));
+        manager.UseProphetForEnhancingReligion(prophet);
+
+        Assert.Equal(ReligionState.EnhancingReligion, manager.ReligionState);
+        Assert.Contains(other.Notifications, it => it.Text == $"[{civ.CivName}] has enhanced [{religion.DisplayName}]!");
+        Assert.Contains(unaware.Notifications, it => it.Text == $"[An unknown civilization] has enhanced [{religion.DisplayName}]!");
+        Assert.DoesNotContain(civ.Notifications, it => it.Text.Contains("has enhanced"));
+    }
+
+    [Fact]
+    public void Spy_CanMoveTo_NeedsAnExploredCityNobodyElseIsWatching_AndAlwaysItsOwnCity()
+    {
+        var other = testGame.AddCiv();
+        var city = testGame.AddCity(other, testGame.TileMap[2, 2]);
+        var spy = civ.EspionageManager.AddSpy();
+        var rival = civ.EspionageManager.AddSpy();
+
+        Assert.False(spy.CanMoveTo(city)); // unexplored
+        city.GetCenterTile().SetExplored(civ, true);
+        Assert.True(spy.CanMoveTo(city));
+
+        rival.MoveTo(city);
+        Assert.False(spy.CanMoveTo(city)); // taken by the other spy
+        Assert.True(rival.CanMoveTo(city)); // already there
+    }
+
+    [Fact]
+    public void EspionageManager_GetTilesVisibleViaSpies_ListsTheRingAroundEverySetUpSpyCity()
+    {
+        var other = testGame.AddCiv();
+        var city = testGame.AddCity(other, testGame.TileMap[2, 2]);
+        var spy = civ.EspionageManager.AddSpy();
+        Assert.Empty(civ.EspionageManager.GetTilesVisibleViaSpies()); // hideout
+
+        spy.MoveTo(city);
+        Assert.Empty(civ.EspionageManager.GetTilesVisibleViaSpies()); // still moving, not set up
+
+        spy.SetAction(SpyAction.EstablishNetwork, 3);
+        Assert.Empty(civ.EspionageManager.GetTilesVisibleViaSpies()); // a network under construction sees nothing yet
+
+        spy.SetAction(SpyAction.Surveillance);
+        var visible = civ.EspionageManager.GetTilesVisibleViaSpies().ToList();
+        Assert.Equal(7, visible.Count);
+        Assert.Contains(city.GetCenterTile(), visible);
+        Assert.All(visible, tile => Assert.True(tile.AerialDistanceTo(city.GetCenterTile()) <= 1));
     }
 }

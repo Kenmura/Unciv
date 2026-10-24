@@ -1720,7 +1720,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T142.
 
 ### T153 T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T111
 - Source: csharp/Unciv.Core/Logic/Civilization/Managers/{RuinsManager,ReligionManager,EspionageManager}.cs, Models/Spy.cs
 - Fixtures: none
@@ -1728,6 +1728,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~CivReligionVictoryTests
 - Claimed: 2026-10-24T18:06Z
 - Notes:
+  - Added CivReligionVictoryMapTests (TestGame-backed) in CivReligionVictoryTests.cs: SelectNextRuinsReward (dud skipped, last-two never repeated, Unavailable/difficulty-excluded), FoundReligion, UseProphetForEnhancingReligion (notifies other humans by knowledge), Spy.CanMoveTo (explored, taken, own city), GetTilesVisibleViaSpies (only set-up spies, ring of 7). No parity bug found. Private ReligionState setter/fields reached via reflection.
 
 ### T154 Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143)
 - State: Available

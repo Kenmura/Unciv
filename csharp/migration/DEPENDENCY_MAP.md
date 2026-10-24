@@ -238,7 +238,7 @@ flowchart TD
   class T150 waiting
   class T151 review
   class T152 ready
-  class T153 prog
+  class T153 review
   class T154 waiting
 ```
 
@@ -285,5 +285,5 @@ flowchart TD
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T150 | Available (waiting on T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T151 | Needs-Review [Claude] | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
-| T153 | In-Progress [Claude] | T111 | 0 | T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies |
+| T153 | Needs-Review [Claude] | T111 | 0 | T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
