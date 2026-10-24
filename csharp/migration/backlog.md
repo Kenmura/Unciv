@@ -189,7 +189,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified `IntRange.cs`, `GameRandomExtensions.cs`, and `GameRandomExtensionsTests.cs` against Kotlin stdlib 2.3.0: `NextInt(IntRange)` 3-way overflow split (`Last < MAX` / `First > MIN` / full range), `Random`/`RandomOrNull` RNG consumption parity (including 1-element consuming a draw and empty consuming nothing), and Kotlin's reverse Fisher-Yates `Shuffle` (`for i in lastIndex downTo 1: j = nextInt(i + 1)`). Re-ran Gate (3/3 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 231/231 passed).
 
 ### T011 State-hash determinism harness
-- State: In-Review [Claude]
+- State: Available
 - Claimed: 2026-10-24T01:28:15Z
 - Depends: T010
 - Source: design ticket (no Kotlin source); reference tests/src/com/unciv/logic/GameSerializationTests.kt for what constitutes game state
@@ -205,6 +205,11 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     - Sequential and unordered collection helpers: `AddSequence` (order-preserving) and `AddUnorderedMap` (deterministically sorts entries via `StringComparer.Ordinal`).
     - Added `csharp/migration/DETERMINISM.md` documenting determinism invariants and usage.
     - Ran Gate (9 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 240/240 passed).
+  - Review notes (Claude): **Changes requested.** Gate 10/10 and Standard checks (build -warnaserror, format, full test 342/342) pass; no suppressions. FNV-1a 64 over the documented byte layout (ints little endian, string = length + UTF-16LE units, null = int -1, `IStateHashable` = marker 1 then body) is **correct**: I re-derived the hashes with an independent Python implementation (and an independent XorWow port, checked against the JVM sequence for seed 42) and they match bit-for-bit for bool/int/long/float/string/null/HexCoord/Stats/Counter/unordered map/GameRandom before and after a step. I added those as `GoldenHashes_PinAlgorithmAndByteLayout` because every original test only compares the hasher with itself (equal/not-equal), so a layout change would have passed unnoticed. Findings:
+    1. **Must fix:** `AddUnorderedMap` is only order-independent if `keyToString` is injective. With two keys mapping to the same string (e.g. `_ => "same"`, or objects whose `ToString` collides) `OrderBy` keeps the source order, which is exactly the unordered order, so the hash depends on it (reproduced: `[(1,10),(2,20)]` and `[(2,20),(1,10)]` hash differently). Throw `ArgumentException` on duplicate key strings (cheapest), or break ties by the hash of the value; add a test.
+    2. Should fix: no unordered *set* helper (`AddUnorderedSet<T>(items, toKey)`), which the first real state (visible tiles, explored sets, civ sets) needs. Add it with the same duplicate rule, plus an `Add<TEnum>` overload that hashes the enum **name** (stable across reordering), since enum values currently do not compile with `Add`.
+    3. Should fix (doc): DETERMINISM.md says Kotlin-generated hashes are a goal but does not give the byte layout; add the layout table above (and the three Python-verified example hashes) so a JVM harness can reproduce them. Also note that `Add(Counter)` is deliberately insertion-order sensitive (Kotlin `LinkedHashMap` order is game relevant) while Counter *equality* is not, and link T017 (`JavaHash`, `stateBasedRandom`) and T044 (JVM `HashMap` order) from section 2.4/2.5.
+    4. Note only: 64-bit FNV is for desync detection, not integrity; collisions are possible (about 2^-64 per comparison). `Add(uint)`/`Add(char)` silently widen to long/int, so prefer explicit casts at call sites.
 
 ### T012 Command layer design
 - State: Done
