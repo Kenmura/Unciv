@@ -108,7 +108,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~Json`
 - Notes: Needs a design pass first (brainstorm): libGDX Json is lenient (unquoted keys, float-valued ints, class-name tags). Counter's compact `{name: value}` format, reading `value` objects, and Stats/StatMap/Stat enum serialization all need converters. Also `IsPartOfGameInfoSerialization` marker interface.
 
-### T007 Seeded deterministic RNG
+### T010 Seeded deterministic RNG
 - State: Available
 - Depends: none
 - Source: kotlin.random.Random (XorWow, as used via `Random(seed)` across core/src, 29 import sites), plus the one `java.util.Random` use (grep it)
@@ -117,16 +117,16 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~GameRandomTests`
 - Notes: Must reproduce Kotlin's sequences bit-for-bit so ported map generation matches the original for the same seed. All engine code uses this type; reviewers reject `System.Random`.
 
-### T008 State-hash determinism harness
+### T011 State-hash determinism harness
 - State: Available
-- Depends: T007
+- Depends: T010
 - Source: design ticket (no Kotlin source); reference tests/src/com/unciv/logic/GameSerializationTests.kt for what constitutes game state
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Utils/StateHasher.cs (stable canonical hash over engine state, order-explicit), tests, and a short `csharp/migration/DETERMINISM.md`
 - Gate: `dotnet test --filter FullyQualifiedName~StateHasherTests`
 - Notes: Later tickets extend it: run N turns from a seed and compare hashes across runs (and against Kotlin-generated hashes where feasible).
 
-### T009 Command layer design
+### T012 Command layer design
 - State: Available
 - Depends: none
 - Source: design ticket; study how UI actions mutate `GameInfo` (e.g. `core/src/com/unciv/logic/automation` and `UnitActions`, `CityConstructions`)
@@ -168,5 +168,5 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C006 Networked play client
 - State: Blocked
-- Depends: T009, C001
+- Depends: T012, C001
 - Scope: client for our own authoritative server (to be designed; separate server ticket needed), lobby, turn notifications, reconnect/resume.

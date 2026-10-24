@@ -70,7 +70,7 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 
 1. Diff the C# against the Kotlin line by line for behavioural fidelity: numeric types, rounding, null handling, ordering, equality/hash semantics, mutability, serialization names.
 2. **Determinism checklist** – confirm each of these, or reject:
-   - Randomness goes only through the engine's seeded RNG (T007), never `System.Random` or time.
+   - Randomness goes only through the engine's seeded RNG (T010), never `System.Random` or time.
    - No hash-ordered iteration (`Dictionary`/`HashSet`) feeds game state or output where Kotlin used insertion-ordered or sorted collections.
    - Float/Double/Int widths and rounding match Kotlin; no silent `float`→`double` promotion; Kotlin `Int` overflow and division semantics preserved.
    - No wall-clock, culture-sensitive formatting/parsing, or threading nondeterminism in engine logic.
