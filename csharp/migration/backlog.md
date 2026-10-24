@@ -378,7 +378,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Container of `GameParameters` and `MapParameters` with the two cloning constructors (from another setup; from a `GameInfo` when that exists: leave that constructor as `TODO(T0xx)` pointing at the GameInfo ticket). `mapFile` (FileHandle, transient) and `fromSettings` (reads `UncivGame.Current.settings.lastGameSetup`, applies QuickStart defaults: `shape = rectangular`, `worldWrap = true`, `espionageEnabled = true`) are client concerns; port the default-setup branch as a plain factory taking an optional difficulty if it is useful to headless tests.
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
-- State: In-Review [Claude]
+- State: Done
 - Depends: T006, T007, T010
 - Source: core/src/com/unciv/logic/map/MapSize.kt, MapParameters.kt, NeighborDirection.kt, logic/map/tile/RoadStatus.kt
 - Fixtures: none - generate golden values (incl. MapSize radius/size math, MapParameters JSON)
@@ -403,6 +403,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     3. Changed `RoadStatus.cs` namespace to `Unciv.Logic.Map.Tiles` and noted the namespace convention on T038.
     4. Changed `MapParameters.BaseRuleset` default to `Models.Metadata.BaseRuleset.Civ_V_GnK.FullName()`.
     5. Ran Gate (`~MapParametersTests`, 6/6 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
+  - Re-review (Claude): **Pass.** All four findings fixed: `Mods` is now a `LinkedHashSet` (test removes/re-adds and checks order, also through `Clone`), `NiceToString` uses HALF_UP over the shortest double digits with negative zero preserved (tie cases `0.125f`, `-2.625f`, `0.3125f`, `-14.625f`, `-0.001f` asserted), the namespace is `Unciv.Logic.Map.Tiles`, the base ruleset default comes from `BaseRuleset.Civ_V_GnK`. Gate 6/6, Standard checks 481/481. Non-blocking follow-up for whoever touches `MapParameters` next: `NiceToString` throws `OverflowException` for |x| >= ~7.9e28 and `FormatException` for NaN/Infinity (decimal), where Java prints the full digits / `NaN` / `Infinity`. It is only `ToString` (debug output) on absurd JSON input, so it does not block. Remember for T038: `Tile` is now free as a class name in `Unciv.Logic.Map`.
 
 ### T023 Translation core (headless)
 - State: Needs-Review [Antigravity]
