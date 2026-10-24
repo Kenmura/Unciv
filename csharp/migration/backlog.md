@@ -437,13 +437,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Rework notes (Claude): the copy constructor (and `Clone()`) no longer copies `MapFile` (verified upstream behaviour on the JVM: null), test now asserts null; the GameInfo constructor note became `TODO(T046)`. Gate 8/8, Standard checks pass (build clean, format clean, full test green).
 
 ### T047 Log facade
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: core/src/com/unciv/utils/Log.kt (API shape only; the `Gdx.app.log` backend is Won't port, T043)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Utils/Log.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~LogTests`
-- Claimed:
+- Claimed: 2026-10-24T02:11:47Z
 - Notes: The engine has 191 `Log.error/debug/...` call sites in 42 files (grep `import com.unciv.utils.Log` and `import com.unciv.utils.debug` under logic/ and models/). Provide a static `Log` with the same method names and printf-style signature, forwarding to an injectable sink (`Log.Sink`, default no-op), no clock, no thread, no console by default; the sink gets level, tag (caller class) and the formatted message so a Godot client or a test can capture it. Also decide the `debug(...)` flavour (Kotlin top-level `debug` takes a format string and args). Then replace the places where earlier tickets dropped a log call and left a note (IdChecker, Translations swallow-on-read-error), and search the code for `TODO(T047)`.
 
 ### T048 Engine options replacing the DebugUtils flags the rules read
