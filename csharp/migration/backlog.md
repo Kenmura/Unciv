@@ -1774,13 +1774,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Added CivReligionVictoryMapTests (TestGame-backed) in CivReligionVictoryTests.cs: SelectNextRuinsReward (dud skipped, last-two never repeated, Unavailable/difficulty-excluded), FoundReligion, UseProphetForEnhancingReligion (notifies other humans by knowledge), Spy.CanMoveTo (explored, taken, own city), GetTilesVisibleViaSpies (only set-up spies, ring of 7). No parity bug found. Private ReligionState setter/fields reached via reflection.
 
 ### T154 Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T143, T094
 - Source: tests/src/com/unciv/uniques/CountableTests.kt, ExpressionTests.kt, UniqueErrorTests.kt (testEducatedEliteGreatPersonGifting), models/ruleset/VictoryAvailabilityTests.kt, VictoryMilestoneTests.kt
 - Fixtures: (the test files above)
 - Deliverables: csharp/Unciv.Core.Tests/**, ported tests
 - Gate: dotnet test
-- Claimed:
+- Claimed: 2026-10-24T23:46Z
 - Notes: Split from T143 at claim time. Remaining deferred cases: CountableTests TestGame cases (testRulesetValidation, testForEveryWithInvalidCountable, testPerCountableForGlobalAndLocalResources, testStatOrResourcePerTurn, testStatsCountables, testKnownCivsCountable, testOwnedTilesCountable, testFilteredCitiesCountable, testFilteredBuildingsCountable, testPoliciesCountables, testEraNumberCountable, testSpeedModifierCountable, countableCanUseContext) and ExpressionTests state cases; UniqueErrorTests.testEducatedEliteGreatPersonGifting (a ported draft fails with NotImplementedException from CityStateSeams.GetForeignCityNearCapital: needs T094 NextTurnAutomation; the UncivGame settings tutorial workaround is not needed); VictoryAvailabilityTests/VictoryMilestoneTests (check DeferredRulesetMembersTests/RulesetObjectTests for what is already covered). Many CountableTests cases may already be covered over fakes in Models/Ruleset/Unique/CountableTests.cs: port the real-game variant only where the Kotlin case differs.
 
 ### T155 Air unit automation: AirUnitAutomation
