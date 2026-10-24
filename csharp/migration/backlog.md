@@ -188,7 +188,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ran Gate (`~GameRandomExtensionsTests`, 3 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 231/231.
 
 ### T011 State-hash determinism harness
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Claimed: 2026-10-24T01:21:57Z
 - Depends: T010
 - Source: design ticket (no Kotlin source); reference tests/src/com/unciv/logic/GameSerializationTests.kt for what constitutes game state
@@ -196,6 +196,14 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: csharp/Unciv.Core/Utils/StateHasher.cs (stable canonical hash over engine state, order-explicit), tests, and a short `csharp/migration/DETERMINISM.md`
 - Gate: `dotnet test --filter FullyQualifiedName~StateHasherTests`
 - Notes: Later tickets extend it: run N turns from a seed and compare hashes across runs (and against Kotlin-generated hashes where feasible).
+  - Implementer notes (Antigravity): Created `StateHasher` and `IStateHashable` in `Unciv.Utils`:
+    - 64-bit FNV-1a canonical hashing algorithm (`FnvOffsetBasis`, `FnvPrime`).
+    - Canonical NaN handling for `float` (`0x7fc00000`) and `double` (`0x7ff8000000000000L`) to prevent IEEE 754 payload divergence.
+    - Explicit hashing over primitive types (bool, byte, int, long, float, double, string with length prefix and UTF-16 code units, distinguished null sentinel).
+    - Domain type hashing over `HexCoord`, `Vector2`, `Vector3`, `Stats`, `StatMap`, `Counter<K>`, and `GameRandom` (which implements `IStateHashable` to hash its PRNG state).
+    - Sequential and unordered collection helpers: `AddSequence` (order-preserving) and `AddUnorderedMap` (deterministically sorts entries via `StringComparer.Ordinal`).
+    - Added `csharp/migration/DETERMINISM.md` documenting determinism invariants and usage.
+    - Ran Gate (9 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 240/240 passed).
 
 ### T012 Command layer design
 - State: Done

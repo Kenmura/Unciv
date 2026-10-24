@@ -9,7 +9,7 @@ namespace Unciv.Utils;
 /// Deterministic random number generator replicating Kotlin's <c>kotlin.random.XorWowRandom</c>.
 /// All Unciv engine code uses this type to ensure exact seed reproducibility across runs and ports.
 /// </summary>
-public class GameRandom
+public class GameRandom : IStateHashable
 {
     private int x;
     private int y;
@@ -17,6 +17,11 @@ public class GameRandom
     private int w;
     private int v;
     private int addend;
+
+    public void HashState(StateHasher hasher)
+    {
+        hasher.Add(x).Add(y).Add(z).Add(w).Add(v).Add(addend);
+    }
 
     public GameRandom(int seed)
         : this(seed, seed >> 31)
