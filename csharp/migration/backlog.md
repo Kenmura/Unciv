@@ -1111,7 +1111,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T114 (T059 review): TradeOffersList.Add hides List.Add and merges; IList<TradeOffer>.Add does NOT merge (pinned by a T114 test). Saved lists never hold duplicates, so the JSON converter may use plain adds; just do not rely on IList.Add for merging.
 
 ### T114 Hardening sweep 2: non-blocking findings from T056, T059, T108 reviews
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: none
 - Source: C# files named in the notes (no Kotlin source: parity fixes and missing tests)
 - Fixtures: none
