@@ -624,7 +624,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Traps kept: Kotlin kept the lines `[[Warrior]] has fully healed` (shortDisplayName already has brackets); maxByOrNull/minByOrNull pick the FIRST extreme (citadel, alternate cycle); `list.remove(unit)` is by reference; Float.pow via (float)Math.Pow; xp cost is (n*10*modifier).toInt() via KotlinMath.FloatToInt; unit order of civ.units is game state (rotated to nextPotentiallyDueAt on every add/remove).
 
 ### T067 Unit movement: MovementCost, UnitMovement
-- State: In-Review [Claude]
+- State: Needs-Review [Claude]
 - Depends: T065, T054
 - Source: core/src/com/unciv/logic/map/mapunit/movement/MovementCost.kt, UnitMovement.kt (and PathsToTilesWithinTurn if present), core/src/com/unciv/logic/map/pathingmap/FixedPointMovement.kt
 - Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, FixedPointMovementTest.kt (TestGame-based: T072)
@@ -642,6 +642,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Tests: FixedPointMovementTests (all 12 Kotlin tests), UnitMovementTests (canPassThrough/embark/ocean/enemy-unit cases, MovementCost, GetDistanceToTiles, MoveToTile, GetShortestPath, teleport, swap, PathfindingCache) over a real Civilization/TileMap/MapUnit. The TestGame-based remainder of UnitMovementTests.kt (cities, diplomacy, carriers, barbarian camps, A* parameter set) is T072/T093.
       - Follow-up for T040's seams: T134.
   - Review 1 fixes [Claude]: FixedPointMovement.ToString now uses KotlinNumberText.FloatToString (deviation removed); railroad cost test and ToString tests added; escort assertion simplified. Accepted nits: Int.MinValue / -1 throws instead of wrapping; int.Parse accepts whitespace (ruleset-validated data); Movement setter stays public for the MapUnit test fake.
+  - Review 2 fix [Claude]: coverage ratchet (T122) failed for the three new files; added tests (mixed-type FPM operators, roads/double-movement targets, enemy-territory penalty, zone of control, escort swap/pair move, paradrop, air landing reason, A* branches through a fake IUnitPathingMapFactory). Now MovementCost 90.7%, UnitMovement 86.0%, FixedPointMovement 100%; baseline updated. Note: MapUnitCache never fills ParadropDestinationTileFilters in Kotlin either (the paradrop unit action does, T079).
 
 ### T068 Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions
 - State: Available

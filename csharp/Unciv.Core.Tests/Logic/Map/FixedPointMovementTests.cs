@@ -145,4 +145,29 @@ public class FixedPointMovementTests
         Assert.Equal(int.MinValue, (big + FixedPointMovement.FpmFromFixedPointBits(1)).Bits);
         Assert.Equal(0, FixedPointMovement.FpmFromMovement(float.NaN).Bits); // Kotlin NaN.toInt() == 0
     }
+
+    [Fact]
+    public void MixedTypeOperatorsMatchKotlin()
+    {
+        var one = FixedPointMovement.FpmOne;
+        var half = FixedPointMovement.FpmPointFive;
+        Assert.Equal(60, (one + 1).Bits);
+        Assert.Equal(0, (one - 1).Bits);
+        Assert.Equal(15, (one - 0.5f).Bits);
+        Assert.Equal(45, (one + 0.5f).Bits);
+        Assert.Equal(15, (one - half).Bits);
+        Assert.Equal(90, (one * 3).Bits);
+        Assert.Equal(1350, (one * 1.5f).Bits); // Kotlin: fpmFromMovement(bits * multiplier)
+        Assert.Equal(15, (half * one).Bits);
+        Assert.Equal(60, (one / half).Bits);
+        Assert.Equal(10, (one / 3).Bits);
+        Assert.Equal(450, (one / 2f).Bits);
+        Assert.True(one > half && half < one && one >= FixedPointMovement.FpmFromMovement(1) && half <= one);
+        Assert.True(one > 0 && one < 2 && one >= 1 && one <= 1);
+        Assert.True(one > 0.5f && one < 1.5f && one >= 1f && one <= 1f);
+        Assert.True(one == FixedPointMovement.FpmFromMovement(1) && one != half);
+        Assert.True(one.Equals((object)FixedPointMovement.FpmFromMovement(1.0f)));
+        Assert.False(one.Equals("1"));
+        Assert.Equal(30, one.GetHashCode());
+    }
 }

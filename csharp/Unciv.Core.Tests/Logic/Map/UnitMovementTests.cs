@@ -24,6 +24,12 @@ public class UnitMovementTests
             return RealUnit(civ ?? Civ, baseUnit, TileAt(x, y));
         }
 
+        public MapUnitClass Civilian(int x, int y, string name = "Settler", Civilization? civ = null)
+        {
+            var baseUnit = Ruleset.Units.TryGetValue(name, out var existing) ? existing : MapUnitFactory.NewBaseUnit(Ruleset, name, "Land", strength: 0);
+            return RealUnit(civ ?? Civ, baseUnit, TileAt(x, y));
+        }
+
         public void SetTerrain(int x, int y, string terrain)
         {
             var tile = TileAt(x, y);
@@ -422,5 +428,180 @@ public class UnitMovementTests
         var unit = w.Unit("Warrior", "Land", 0, 0);
         unit.Movement.ClearPathfindingCache();
         Assert.Null(unit.Movement.GetRoadPath(w.TileAt(0, 0))?.FirstOrDefault(it => it == w.TileAt(4, 4)));
+    }
+
+    // ---- MovementCost branches
+
+    [Fact]
+    public void MovementCost_RoadsRiversAndDoubleMovementTargets()
+    {
+        var w = NewWorld();
+        w.Civ.Tech.MovementSpeedOnRoads = 0.5f;
+        var unit = w.Unit("Warrior", "Land", 1, 1);
+        w.TileAt(1, 1).RoadStatus = Unciv.Logic.Map.Tiles.RoadStatus.Road;
+        w.TileAt(2, 1).RoadStatus = Unciv.Logic.Map.Tiles.RoadStatus.Road;
+        Assert.Equal(0.5f, MovementCost.GetMovementCostBetweenAdjacentTiles(unit, w.TileAt(1, 1), w.TileAt(2, 1)));
+
+        w.SetTerrain(1, 2, "Hill");
+        w.TileAt(2, 1).SetTerrainFeatures(["Forest"]);
+        var skier = w.Unit("Skier", "Land", 3, 3, null, "Double movement in [Forest]", "Double movement in [Hill]");
+        Assert.Equal(1f, MovementCost.GetMovementCostBetweenAdjacentTiles(skier, w.TileAt(0, 1), w.TileAt(2, 1))); // feature
+        Assert.Equal(1f, MovementCost.GetMovementCostBetweenAdjacentTiles(skier, w.TileAt(0, 1), w.TileAt(1, 2))); // hill
+        Assert.Equal(2f, MovementCost.GetMovementCostBetweenAdjacentTiles(unit, w.TileAt(0, 1), w.TileAt(1, 2)));
+        var filtered = w.Unit("Walker", "Land", 3, 4, null, "Double movement in [Land]", "Double movement in [Hill]");
+        Assert.Equal(0.5f, MovementCost.GetMovementCostBetweenAdjacentTiles(filtered, w.TileAt(0, 1), w.TileAt(0, 2)));
+    }
+
+    [Fact]
+    public void MovementCost_EnemyTerritoryPenalty()
+    {
+        var w = NewWorld();
+        var barbarians = MapUnitFactory.NewCiv(Constants.Barbarians, w.Info);
+        var city = MapUnitFactory.NewCity(barbarians, "Camp", HexCoord.Of(4, 4));
+        w.TileAt(2, 1).SetOwningCity(city);
+        barbarians.HasActiveEnemyMovementPenalty = true;
+        barbarians.EnemyMovementPenaltyUniques = [new Unciv.Models.Ruleset.Unique.Unique("Enemy [Military] units must spend [1] extra movement points when inside your territory")];
+        var unit = w.Unit("Warrior", "Land", 1, 1);
+        Assert.Equal(2f, MovementCost.GetMovementCostBetweenAdjacentTiles(unit, w.TileAt(1, 1), w.TileAt(2, 1)));
+        Assert.Equal(1f, MovementCost.GetMovementCostBetweenAdjacentTiles(unit, w.TileAt(1, 1), w.TileAt(1, 2)));
+    }
+
+    [Fact]
+    public void MovementCost_ZoneOfControl()
+    {
+        var w = NewWorld();
+        var from = w.TileAt(2, 2);
+        var to = from.Neighbors[0];
+        var common = from.Neighbors.First(it => it != to && it.AerialDistanceTo(to) == 1);
+        var barbarians = MapUnitFactory.NewCiv(Constants.Barbarians, w.Info);
+        w.Unit("Brute", "Land", common.Position.x, common.Position.y, barbarians);
+        var unit = w.Unit("Warrior", "Land", from.Position.x, from.Position.y);
+        Assert.Equal(100f, MovementCost.GetMovementCostBetweenAdjacentTiles(unit, from, to));
+        Assert.Equal(1f, MovementCost.GetMovementCostBetweenAdjacentTiles(unit, from, to, considerZoneOfControl: false));
+        var ignoring = w.Unit("Ghost", "Land", 0, 0, null, "Ignores Zone of Control");
+        Assert.Equal(1f, MovementCost.GetMovementCostBetweenAdjacentTiles(ignoring, from, to));
+    }
+
+    // ---- UnitMovement branches
+
+    [Fact]
+    public void TwoEscortsCanSwap()
+    {
+        var w = NewWorld();
+        Explore(w);
+        var settler1 = w.Civilian(1, 1);
+        var settler2 = w.Civilian(2, 2);
+        var warrior1 = w.Unit("Warrior", "Land", 1, 1);
+        var warrior2 = w.Unit("Warrior", "Land", 2, 2);
+        warrior1.StartEscorting();
+        warrior2.StartEscorting();
+        Assert.Same(warrior1, settler1.GetOtherEscortUnit());
+
+        Assert.True(warrior1.Movement.CanUnitSwapTo(w.TileAt(2, 2)));
+        Assert.True(warrior2.Movement.CanUnitSwapTo(w.TileAt(1, 1)));
+        warrior1.Movement.SwapMoveToTile(w.TileAt(2, 2), keepEscorting: true);
+
+        Assert.Same(w.TileAt(2, 2), warrior1.CurrentTile);
+        Assert.Same(w.TileAt(2, 2), settler1.CurrentTile);
+        Assert.Same(w.TileAt(1, 1), warrior2.CurrentTile);
+        Assert.Same(w.TileAt(1, 1), settler2.CurrentTile);
+    }
+
+    [Fact]
+    public void TwoEscortsCanNotSwapWhenTheCivilianHasNoMovement()
+    {
+        var w = NewWorld();
+        Explore(w);
+        var settler1 = w.Civilian(1, 1);
+        w.Civilian(2, 2);
+        var warrior1 = w.Unit("Warrior", "Land", 1, 1);
+        var warrior2 = w.Unit("Warrior", "Land", 2, 2);
+        warrior1.StartEscorting();
+        warrior2.StartEscorting();
+        settler1.CurrentMovement = 0f;
+        Assert.False(warrior1.Movement.CanReachInCurrentTurn(w.TileAt(2, 2)));
+        Assert.True(warrior2.Movement.CanReachInCurrentTurn(w.TileAt(1, 1)));
+        Assert.True(warrior1.Movement.CanMoveTo(w.TileAt(2, 2), allowSwap: true));
+        Assert.False(warrior1.Movement.CanUnitSwapTo(w.TileAt(2, 2)));
+    }
+
+    [Fact]
+    public void EscortedPair_MovesTogether_AndReachableTilesAreTheIntersection()
+    {
+        var w = NewWorld();
+        Explore(w);
+        var settler = w.Civilian(0, 0);
+        var warrior = w.Unit("Warrior", "Land", 0, 0);
+        warrior.StartEscorting();
+        Assert.Equal(warrior.Movement.GetReachableTilesInCurrentTurn().ToHashSet(), settler.Movement.GetReachableTilesInCurrentTurn().ToHashSet());
+        var target = warrior.CurrentTile.Neighbors[0];
+        warrior.Movement.MoveToTile(target);
+        Assert.Same(target, warrior.CurrentTile);
+        Assert.Same(target, settler.CurrentTile);
+        var fort = w.Unit("Fort", "Land", 4, 4, null, "Cannot move");
+        Assert.Equal([fort.CurrentTile], fort.Movement.GetReachableTilesInCurrentTurn());
+        Assert.True(fort.Movement.CanReach(fort.CurrentTile));
+        Assert.False(fort.Movement.CanReach(w.TileAt(0, 0)));
+    }
+
+    [Fact]
+    public void Paradrop_TeleportsTheUnit_AndLimitsRangeAndVisibility()
+    {
+        var w = NewWorld();
+        Explore(w);
+        var unit = w.Unit("Paratrooper", "Land", 0, 0);
+        unit.Cache.ParadropDestinationTileFilters["Land"] = 2; // filled by the paradrop unit action (T079), not by the cache
+        unit.Action = "Paradrop";
+        var near = w.TileAt(1, 1);
+        var far = w.TileAt(4, 4);
+        w.Civ.ViewableTiles = new HashSet<TileClass> { near, far };
+        Assert.True(unit.Movement.CanReach(near));
+        Assert.False(unit.Movement.CanReach(far)); // too far
+        Assert.False(unit.Movement.CanReach(w.TileAt(0, 1))); // not visible
+        Assert.Equal([near], unit.Movement.GetReachableTilesInCurrentTurn().Where(it => it == near || it == far).ToList());
+        unit.Movement.MoveToTile(near);
+        Assert.Same(near, unit.CurrentTile);
+        Assert.Null(unit.Action);
+        Assert.Equal(1, unit.AttacksThisTurn);
+        Assert.Equal(UnitMovementMemoryType.UnitTeleported, unit.MostRecentMoveType);
+        Assert.Same(near, unit.Movement.GetTileToMoveToThisTurn(near));
+    }
+
+    [Fact]
+    public void AirUnits_CanOnlyLandWhereTransportIsPossible()
+    {
+        var w = NewWorld();
+        var plane = w.Unit("Fighter", "Air", 0, 0);
+        Assert.Equal(UnitMovement.CannotMoveToReason.NoAirUnitTransport, plane.Movement.GetCannotMoveToReason(w.TileAt(3, 3)));
+        Assert.False(plane.Movement.CanMoveTo(w.TileAt(3, 3)));
+    }
+
+    [Fact]
+    public void AStarBranches_GoThroughThePathingMapFactory()
+    {
+        var w = NewWorld();
+        var unit = w.Unit("Warrior", "Land", 0, 0);
+        var factory = new FakePathingMaps(unit);
+        unit.Movement.PathingMaps = factory;
+        Assert.Same(factory.Paths, unit.Movement.GetDistanceToTiles());
+        Assert.Same(factory.Paths, unit.Movement.GetMovementToTilesAtPosition(unit.CurrentTile.Position, 2f));
+        Assert.Equal(factory.Path, unit.Movement.GetShortestPath(w.TileAt(1, 1)));
+        Assert.Equal([unit.CurrentTile, .. factory.Path], unit.Movement.GetRoadPath(w.TileAt(1, 1)));
+        unit.Movement.ClearPathfindingCache();
+        Assert.Equal(4, factory.Cleared);
+        Assert.Throws<ArgumentException>(() => unit.Movement.GetMovementToTilesAtPosition(unit.CurrentTile.Position, 2f, considerZoneOfControl: false, includeOtherEscortUnit: false));
+        Assert.Same(factory.Paths, unit.Movement.GetMovementToTilesAtPosition(unit.CurrentTile.Position, 2f, considerZoneOfControl: false));
+    }
+
+    private sealed class FakePathingMaps(MapUnitClass unit) : IUnitPathingMapFactory, IUnitPathingMap
+    {
+        public PathsToTilesWithinTurn Paths { get; } = new();
+        public List<TileClass> Path { get; } = [unit.CurrentTile.Neighbors[0]];
+        public int Cleared { get; private set; }
+        public IUnitPathingMap CreateUnitPathingMap(MapUnitClass mapUnit, bool considerZoneOfControl = true, bool includeEscortUnit = true) => this;
+        public IUnitPathingMap CreateRoadPathingMap(Civilization civ, TileClass startTile) => this;
+        public PathsToTilesWithinTurn GetMovementToTilesAtPosition() => Paths;
+        public List<TileClass>? GetShortestPath(TileClass destination) => Path;
+        public void Clear() => Cleared++;
     }
 }
