@@ -1,0 +1,10 @@
+# Banned APIs for test projects: looser than BannedSymbols.txt (tests may use threads or System.Random for
+# fixtures), but still no wall-clock time, and no culture-dependent behaviour that could make tests flaky per machine.
+P:System.DateTime.Now;Wall-clock dependence makes tests flaky
+P:System.DateTime.UtcNow;Wall-clock dependence makes tests flaky
+M:System.Guid.NewGuid();Non-deterministic test data
+M:System.String.ToUpper();Culture-dependent; use ToUpperInvariant
+M:System.String.ToLower();Culture-dependent; use ToLowerInvariant
+M:System.String.Format(System.String,System.Object);Culture-dependent; use an IFormatProvider overload
+M:System.String.Format(System.String,System.Object,System.Object);Culture-dependent; use an IFormatProvider overload
+M:System.String.Format(System.String,System.Object[]);Culture-dependent; use an IFormatProvider overload

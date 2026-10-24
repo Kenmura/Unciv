@@ -138,7 +138,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Target is an authoritative-server model: clients send commands, server validates/applies, broadcasts commands or diffs. Must not depend on Unciv's multiplayer code. Reviewer must check it keeps lockstep as a possible future option (pure, deterministic apply).
 
 ### T013 Style & analyzer baseline
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T00:55:38Z
 - Depends: none
 - Source: design ticket (no Kotlin). Config only: `csharp/Directory.Build.props`, `Directory.Packages.props`, `BannedSymbols.txt`, `[*.cs]` in `.editorconfig`
@@ -146,6 +146,11 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: build-time analyzer + banned-API config, ArchitectureTests, SuppressionPolicyTests, `csharp/AGENTS.md`, PROTOCOL.md Gate/Review updates
 - Gate: `dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test`
 - Notes: Land when the board is quiet; once Done, every ticket's Gate gains the build + format steps. Existing code is fixed only as needed to pass.
+  - Implementer notes (Claude): Added `Directory.Build.props` (warnings-as-errors, unchecked arithmetic, invariant globalization, `AnalysisLevel=latest` with a curated rule set: `latest-recommended` was tried and rejected, its design rules such as CA1051/CA1708/CA1711/CA1715/CA2201 fight Kotlin-faithful ports), `Directory.Packages.props` (central versions), `BannedSymbols.txt` (+ looser `BannedSymbols.Tests.txt`) via BannedApiAnalyzers 3.3.4, `csharp/.editorconfig` (`[*.cs]`; kept separate from the Kotlin-oriented repo-root file), `Policy/ArchitectureTests` and `Policy/SourcePolicyTests`, `csharp/AGENTS.md` (+ `CLAUDE.md` symlink), PROTOCOL.md "Standard checks".
+  - Verified: a probe file using Random, DateTime.Now, Guid.NewGuid, Math.Round, List/Array.Sort, string.GetHashCode/ToUpper/Format fails the build with RS0030 for each; removing a `JUSTIFY` comment fails `SourcePolicyTests`. Standard checks green, 112/112 tests (106 existing + 6 new).
+  - Changes to existing files, minimal: unused `using` removed (Perlin.cs, PerlinTests.cs); private static `valuesAsMap` renamed `ValuesAsMap` (Stat.cs); `LongPriorityQueue.Remove(long value)` gets a narrow `#pragma warning disable IDE0060` with `JUSTIFY: T001` (the unused parameter is the preserved Kotlin quirk). Scoped `.editorconfig` exceptions: Vector2/Vector3 lowercase fields, LongPriorityQueue Kotlin names, StatsTests namespace/alias (IDE0065).
+  - Deliberate calls: no MPL file-header rule (existing ported files have none and Kotlin sources carry none); private fields are camelCase with no underscore prefix (mirrors Kotlin); single-line `case X: ...; break;` statements are preserved (formatter would otherwise explode ported switches); naming is checked by `dotnet format`, not `dotnet build`.
+  - Reviewer: please check the banned-API list for anything the Kotlin code legitimately needs (e.g. a rounding helper will be required once a ticket ports `roundToInt`).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

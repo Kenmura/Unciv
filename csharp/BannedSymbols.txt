@@ -1,0 +1,58 @@
+# Banned APIs for the deterministic engine (Unciv.Core). Enforced at build time by
+# Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030, error). Each message names the replacement.
+# Need an exception? Add a vetted helper in Unciv.Core instead of suppressing; see AGENTS.md.
+
+# --- Randomness and time: engine state may only depend on the seeded RNG (T010) and explicit turn counters ---
+T:System.Random;Use the engine's seeded RNG (T010); System.Random breaks determinism
+T:System.Security.Cryptography.RandomNumberGenerator;Use the engine's seeded RNG (T010)
+M:System.Guid.NewGuid();Non-deterministic; derive ids from engine state or the seeded RNG
+P:System.Environment.TickCount;Wall-clock dependence
+P:System.Environment.TickCount64;Wall-clock dependence
+P:System.DateTime.Now;Wall-clock dependence; pass time in explicitly if it is not game state
+P:System.DateTime.UtcNow;Wall-clock dependence; pass time in explicitly if it is not game state
+P:System.DateTime.Today;Wall-clock dependence
+P:System.DateTimeOffset.Now;Wall-clock dependence
+P:System.DateTimeOffset.UtcNow;Wall-clock dependence
+T:System.Diagnostics.Stopwatch;Wall-clock dependence
+
+# --- Threading: engine logic is single-threaded for determinism ---
+T:System.Threading.Thread;Threading nondeterminism in engine logic
+T:System.Threading.Tasks.Parallel;Threading nondeterminism in engine logic
+M:System.Threading.Tasks.Task.Run(System.Action);Threading nondeterminism in engine logic
+M:System.Threading.Tasks.Task.Run(System.Func{System.Threading.Tasks.Task});Threading nondeterminism in engine logic
+
+# --- Rounding: .NET rounds half to even by default; Kotlin roundToInt/roundToLong round half up ---
+M:System.Math.Round(System.Double);Banker's rounding differs from Kotlin; pass MidpointRounding explicitly or use a vetted helper
+M:System.Math.Round(System.Double,System.Int32);Banker's rounding differs from Kotlin; pass MidpointRounding explicitly
+M:System.Math.Round(System.Decimal);Banker's rounding differs from Kotlin; pass MidpointRounding explicitly
+M:System.Math.Round(System.Decimal,System.Int32);Banker's rounding differs from Kotlin; pass MidpointRounding explicitly
+M:System.MathF.Round(System.Single);Banker's rounding differs from Kotlin; pass MidpointRounding explicitly
+M:System.MathF.Round(System.Single,System.Int32);Banker's rounding differs from Kotlin; pass MidpointRounding explicitly
+
+# --- Sorting: List.Sort/Array.Sort are unstable, Kotlin sortedBy/sortedWith are stable ---
+M:System.Collections.Generic.List`1.Sort();Unstable sort; use a stable OrderBy/ThenBy
+M:System.Collections.Generic.List`1.Sort(System.Comparison{`0});Unstable sort; use a stable OrderBy/ThenBy
+M:System.Collections.Generic.List`1.Sort(System.Collections.Generic.IComparer{`0});Unstable sort; use a stable OrderBy/ThenBy
+M:System.Collections.Generic.List`1.Sort(System.Int32,System.Int32,System.Collections.Generic.IComparer{`0});Unstable sort; use a stable OrderBy/ThenBy
+M:System.Array.Sort(System.Array);Unstable sort; use a stable OrderBy/ThenBy
+M:System.Array.Sort``1(``0[]);Unstable sort; use a stable OrderBy/ThenBy
+M:System.Array.Sort``1(``0[],System.Comparison{``0});Unstable sort; use a stable OrderBy/ThenBy
+M:System.Array.Sort``1(``0[],System.Collections.Generic.IComparer{``0});Unstable sort; use a stable OrderBy/ThenBy
+M:System.Span`1.Sort();Unstable sort; use a stable OrderBy/ThenBy
+
+# --- Hashing and culture: values must not vary per process or per locale ---
+M:System.String.GetHashCode();Randomized per process; use an explicit stable hash
+M:System.String.GetHashCode(System.StringComparison);Randomized per process; use an explicit stable hash
+M:System.String.ToUpper();Culture-dependent; use ToUpperInvariant
+M:System.String.ToLower();Culture-dependent; use ToLowerInvariant
+M:System.String.CompareTo(System.String);Culture-sensitive; use string.CompareOrdinal
+M:System.String.CompareTo(System.Object);Culture-sensitive; use string.CompareOrdinal
+M:System.String.Compare(System.String,System.String);Culture-sensitive; use string.CompareOrdinal
+M:System.String.Format(System.String,System.Object);Culture-dependent; use an IFormatProvider overload (CultureInfo.InvariantCulture)
+M:System.String.Format(System.String,System.Object,System.Object);Culture-dependent; use an IFormatProvider overload (CultureInfo.InvariantCulture)
+M:System.String.Format(System.String,System.Object[]);Culture-dependent; use an IFormatProvider overload (CultureInfo.InvariantCulture)
+M:System.Single.Parse(System.String);Culture-dependent; pass CultureInfo.InvariantCulture
+M:System.Double.Parse(System.String);Culture-dependent; pass CultureInfo.InvariantCulture
+M:System.Int32.Parse(System.String);Culture-dependent; pass CultureInfo.InvariantCulture
+M:System.Int64.Parse(System.String);Culture-dependent; pass CultureInfo.InvariantCulture
+M:System.Convert.ToString(System.Object);Culture-dependent; use an IFormatProvider overload

@@ -1,5 +1,4 @@
 using Unciv.Logic.Map.MapGenerator;
-using Xunit;
 
 namespace Unciv.Core.Tests.Logic.Map.MapGenerator;
 

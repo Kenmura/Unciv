@@ -168,7 +168,10 @@ public class LongPriorityQueue
     }
 
     // Quirk preserved from Kotlin: the argument is ignored, the head is removed.
+    // JUSTIFY: T001 IDE0060 the unused parameter is the Kotlin behaviour being preserved.
+#pragma warning disable IDE0060
     public bool Remove(long value)
+#pragma warning restore IDE0060
     {
         if (size == 0) return false;
         FillHole(0);
