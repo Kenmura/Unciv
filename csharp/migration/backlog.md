@@ -58,7 +58,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified fidelity to libGDX Vector2/Vector3 semantics: mutable class representation, raw float bit equality and hashing (distinguishing -0f, canonicalizing NaN), single-precision float math, Vector3 Crs mutator semantics, and namespace isolation under Unciv.Mathematics. Re-ran Gate (11/11 passed) and full test suite (106/106 passed).
 
 ### T004 Stat enum and Stats
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T00:47:26Z
 - Depends: none
 - Source: core/src/com/unciv/models/stats/Stat.kt, Stats.kt, INamed.kt, NamedStats.kt, SubStat.kt, GameResource.kt
@@ -74,6 +74,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Stats: properties PascalCase; ctor named args are lowercase as in Kotlin. `Equals(Stats)` overload only; `==`/`Equals(object)` stay identity (Kotlin parity; deliberately not IEquatable). Operators `+ - * (int/float) /`. Float `coerceAtMost/AtLeast` reproduced for Min/Max (NaN behaviour differs from Math.Min/Max). Regex uses `[0-9]` and `\A..\z` (Java `\d` is ASCII; .NET `$` accepts trailing newline). `Parse` failure throws NullReferenceException (Kotlin `!!` NPE).
   - `StatMap` extends `OrderedDictionary<string,Stats>` (LinkedHashMap order); its `Add(source, stats)` hides the base `Add`. `StatValuePair` is a record (NaN/-0 equality differs slightly from a Kotlin data class). Json serialization not ported (`Stats` is JSON-deserialized by libGDX in Kotlin; JSON ticket needed).
   - Ran Gate (24 passed) and full `dotnet test`.
+  - Review (Antigravity): Pass. Line-by-line verification confirms exact fidelity to Kotlin semantics: float math precision, lazy non-zero iteration reflecting in-place mutations, CoerceAtMost/CoerceAtLeast NaN behavior on aggregates, stringification and regex parsing parity, StatMap OrderedDictionary behavior, and proper namespace isolation. Re-ran Gate (24/24 passed) and full test suite (106/106 passed).
 
 ### T005 Counter
 - State: Needs-Review [Claude]
