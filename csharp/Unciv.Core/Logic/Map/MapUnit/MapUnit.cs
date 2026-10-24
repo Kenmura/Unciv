@@ -8,7 +8,6 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
-using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
@@ -370,7 +369,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
 
     public Tile GetMovementDestination()
     {
-        var destination = Action!.Replace("moveTo ", "", StringComparison.Ordinal).Split(',').ToList();
+        var destination = Action.NotNull().Replace("moveTo ", "", StringComparison.Ordinal).Split(',').ToList();
         // Kotlin dropLastWhile { it.isEmpty() }
         while (destination.Count > 0 && destination[^1].Length == 0) destination.RemoveAt(destination.Count - 1);
         var destinationVector = HexCoord.Of(KotlinMath.FloatToInt(destination[0].ToFloat()), KotlinMath.FloatToInt(destination[1].ToFloat()));
@@ -394,10 +393,10 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         if (!HasMovement()) return false;
         var tile = GetTile();
         if (tile.ImprovementInProgress != null &&
-            CanBuildImprovement(tile.GetTileImprovementInProgress()!) &&
+            CanBuildImprovement(tile.GetTileImprovementInProgress().NotNull()) &&
             !tile.IsMarkedForCreatesOneImprovement()
         ) return false;
-        if (includeOtherEscortUnit && IsEscorting() && !GetOtherEscortUnit()!.IsIdle(false)) return false;
+        if (includeOtherEscortUnit && IsEscorting() && !GetOtherEscortUnit().NotNull().IsIdle(false)) return false;
         return !(IsFortified() || IsExploring() || IsSleeping() || IsAutomated() || IsMoving() || IsGuarding());
     }
 
@@ -615,7 +614,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         healing = unchecked(healing + GetMatchingUniques(UniqueType.Heal, checkCivInfoUniques: true).SumOf(it => it.Params[0].ToInt()));
 
         var healingCity = (CityObject?)tile.GetTilesInDistance(1).FirstOrDefault(it =>
-            it.IsCityCenter() && ((CityObject)it.GetCity()!).GetMatchingUniques(UniqueType.CityHealingUnits).Any())?.GetCity();
+            it.IsCityCenter() && ((CityObject)it.GetCity().NotNull()).GetMatchingUniques(UniqueType.CityHealingUnits).Any())?.GetCity();
         if (healingCity != null)
         {
             healingCity.ForEachMatchingUnique(UniqueType.CityHealingUnits, unique =>
@@ -973,7 +972,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     {
         if (Action == null && !IsAutomated()) return;
         if (!HasMovement()) return; // We've already done stuff this turn, and can't do any more stuff
-        if (IsEscorting() && !GetOtherEscortUnit()!.HasMovement()) return;
+        if (IsEscorting() && !GetOtherEscortUnit().NotNull().HasMovement()) return;
 
         var enemyUnitsInWalkingDistance = Movement.GetDistanceToTilesKeys()
             .Where(it => it.MilitaryUnit != null && Civ.IsAtWarWith(it.MilitaryUnit.Civ))
@@ -1150,7 +1149,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
             {
                 var currentUntransportedUnits = tile.GetUnits().Count(it => it.Type.IsAirUnit() && !it.IsTransported);
                 // Tile units includes us, we were just added
-                IsTransported = currentUntransportedUnits > ((CityObject)tile.GetCity()!).GetMaxAirUnits();
+                IsTransported = currentUntransportedUnits > ((CityObject)tile.GetCity().NotNull()).GetMaxAirUnits();
             }
         }
         MoveThroughTile(tile);
@@ -1162,7 +1161,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         if (GetOtherEscortUnit() != null)
         {
             escorting = true;
-            GetOtherEscortUnit()!.escorting = true;
+            GetOtherEscortUnit().NotNull().escorting = true;
         }
         else
         {
@@ -1210,7 +1209,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
 
         // Songhai unique
         Civ.ForEachMatchingUnique(UniqueType.GoldFromEncampmentsAndCities, Cache.State, unique =>
-            goldGained *= unique.Params[0].ToPercent());
+            goldGained *= 1 + unique.Params[0].ToFloat() / 100); // Kotlin String.toPercent(), inlined: the extension lives in a UI namespace
 
         Civ.AddGold(KotlinMath.FloatToInt(goldGained));
         Civ.AddNotification(

@@ -123,8 +123,8 @@ public class MapUnitCache(MapUnit mapUnit)
         HasStrengthBonusInRadiusUnique = mapUnit.HasUnique(UniqueType.StrengthBonusInRadius, GameContext.IgnoreConditionalsState);
         HasCitadelPlacementUnique = mapUnit.GetMatchingUniques(UniqueType.ConstructImprovementInstantly)
             .Select(it => mapUnit.Civ.GameInfo.Ruleset.TileImprovements.TryGetValue(it.Params[0], out var improvement) ? improvement : null)
-            .Where(it => it != null)
-            .Any(it => ((IHasUniques)it!).HasUnique(UniqueType.OneTimeTakeOverTilesInRadius));
+            .OfType<TileImprovement>()
+            .Any(it => ((IHasUniques)it).HasUnique(UniqueType.OneTimeTakeOverTilesInRadius));
     }
 
     // Kotlin minOfOrNull { it.params[0].toFloat() } over a Sequence: null when empty. Params are validated numbers.
