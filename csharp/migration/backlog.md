@@ -396,6 +396,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Deviations: EnumMap -> Dictionary; Pair<String,Stats> -> value tuple; canImprovementBeBuiltHere defaults (resourceIsVisible, gameContext) are nullable params resolved in the body; ImprovementBuildingProblem permanent/reportable flags are extension methods IsPermanent/IsReportable; riverTerrain lazy is an explicit cache; getTileStatsBreakdown source name null prints "null" like Kotlin.
     Quirks kept: clearImprovement in TileNormalizer also clears the improvement queue (stopWorkingOnImprovement) and does not reset the tileImprovement cache; closestCity is the first minimum; notification is emitted once per stat inside the loop.
     Fixture TileImprovementConstructionTests needs TestGame (T072); tests here use fakes (TileStatTests, 37 cases).
+  - Post-review fix (multiplier hoisted out of loop, matches Kotlin repeat() evaluating count once) re-reviewed: pass.
 
 ### T055 Civilization core: Civilization, ExploredRegion, PopupAlert
 - State: In-Progress [Claude]
