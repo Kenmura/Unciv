@@ -11,7 +11,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Logic.Battle;
 
 // Ported from core/src/com/unciv/logic/battle/BattleUnitCapture.kt (T082). Purity annotations dropped.
-// Battle.triggerDefeatUniques / Battle.destroyIfDefeated are reached through BattleSeams (TODO(T083)).
+// Battle.triggerDefeatUniques / Battle.destroyIfDefeated are Battle.TriggerDefeatUniques / Battle.DestroyIfDefeated (T083).
 public static class BattleUnitCapture
 {
     public static bool TryCaptureMilitaryUnit(ICombatant attacker, ICombatant defender, TileClass attackedTile)
@@ -168,11 +168,11 @@ public static class BattleUnitCapture
                 $"An enemy [{attacker.GetName()}] has destroyed our [{defender.GetName()}]",
                 defender.GetTile().Position, NotificationCategory.War, attacker.GetName(),
                 NotificationIcon.War, defender.GetName());
-            BattleSeams.TriggerDefeatUniques(defender, attacker, capturedUnitTile);
+            Battle.TriggerDefeatUniques(defender, attacker, capturedUnitTile);
         }
 
         if (checkDefeat)
-            BattleSeams.DestroyIfDefeated(defenderCiv, attacker.GetCivInfo());
+            Battle.DestroyIfDefeated(defenderCiv, attacker.GetCivInfo());
         capturedUnit.UpdateVisibleTiles();
     }
 

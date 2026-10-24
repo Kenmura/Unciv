@@ -627,8 +627,8 @@ public sealed class ViewTests : IDisposable
     }
 
     // Kotlin's ViewPurityTest `non-Readonly functions in owned Views always return Boolean` is @Ignore'd for exactly these
-    // (CityView.tryRaisePriority/tryLowerPriority return Int?; tryBombard/attackOrNuke return Battle.DamageDealt and are deferred to T083).
-    private static readonly HashSet<string> KnownNonBooleanTryMembers = ["CityView.TryRaisePriority", "CityView.TryLowerPriority"];
+    // (CityView.tryRaisePriority/tryLowerPriority return Int?; tryBombard returns Battle.DamageDealt).
+    private static readonly HashSet<string> KnownNonBooleanTryMembers = ["CityView.TryRaisePriority", "CityView.TryLowerPriority", "CityView.TryBombard"];
 
     // `TryGet...` navigation members (TryGetCityView, TryGetMapUnitView) are @Readonly in Kotlin: they only look something up.
     private static bool IsStateChanging(MethodInfo method) =>

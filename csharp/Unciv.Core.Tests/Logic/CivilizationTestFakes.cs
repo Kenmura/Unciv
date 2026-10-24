@@ -206,6 +206,10 @@ internal class FakeCityStateFunctions : ICityStateFunctions
     public int TurnsForGreatPersonFromCityState() => GreatPersonTurns;
     public List<Civilization> PatronGifts { get; } = [];
     public void GiveGreatPersonToPatron(Civilization receivingCiv) => PatronGifts.Add(receivingCiv);
+    public List<string> BarbarianKillers { get; } = [];
+    public void ThreateningBarbarianKilledBy(Civilization otherCiv) => BarbarianKillers.Add(otherCiv.CivId);
+    public List<string> DestroyedBy { get; } = [];
+    public void CityStateDestroyed(Civilization attacker) => DestroyedBy.Add(attacker.CivId);
 }
 
 /// <summary>

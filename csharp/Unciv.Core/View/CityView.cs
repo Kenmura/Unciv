@@ -1,3 +1,4 @@
+using Unciv.Logic.Battle;
 using Unciv.Logic.City;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
@@ -13,7 +14,6 @@ using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/CityView.kt (T085). Stripped: the purity annotations.
-// Deferred: tryBombard (Battle.attackOrNuke, TODO(T083)).
 // Kotlin's CityView re-declares the superclass's `protected open val city`; here the base class's City property serves.
 
 /// <summary>
@@ -399,7 +399,8 @@ public class CityView(CityClass city, CivilizationClass viewer, bool spectatorMo
         return true;
     }
 
-    // TODO(T083): tryBombard needs Battle.attackOrNuke
+    public DamageDealt TryBombard(AttackableTileView attackableTileView) =>
+        Battle.AttackOrNuke(new CityCombatant(City), attackableTileView.Unwrap());
 }
 
 // Helpers built on top of the view API, rather than being part of it

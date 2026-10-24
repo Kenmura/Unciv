@@ -20,6 +20,9 @@ public interface INextTurnAutomation
 
     /// <summary><c>NextTurnAutomation.automateCivMoves(civInfo)</c></summary>
     void AutomateCivMoves(Civilization civInfo);
+
+    /// <summary><c>NextTurnAutomation.valueCityStateAlliance(civView, cityState)</c> (Battle.automateCityConquer, T083). With no hook installed the alliance is valued 0.</summary>
+    int ValueCityStateAlliance(Civilization civInfo, Civilization cityState);
 }
 
 /// <summary>What <c>TurnManager</c> calls on <c>TradeEvaluation</c> (T089).</summary>

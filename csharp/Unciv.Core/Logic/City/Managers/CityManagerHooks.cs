@@ -10,10 +10,9 @@ using TradeObject = Unciv.Logic.Trade.Trade;
 
 namespace Unciv.Logic.City.Managers;
 
-// T061: the seam of the city managers. CityPopulationManager calls Automation, a static Kotlin object, through a replaceable instance
-// property of CityPopulationManager (no mutable static state). T087 ported Automation: the default now calls it, and the property stays so
-// that CityManagerTests can drive the population logic with controlled ranks over a fake game state.
-// T083 owns the remaining seam members (ICityConquestExternals: Battle.destroyIfDefeated and the client-state settings) and replaces them by direct calls.
+// T061/T083: the replaceable hooks of the city managers (no mutable static state). They are not seams of unported code: the defaults call the
+// ported Automation (T087), Battle (T083) and TradeLogic (T086); the properties stay so that the tests can drive the city logic with controlled
+// ranks and record the Battle / TradeLogic calls over a fake game state.
 
 /// <summary>The members of Kotlin <c>Automation</c> that CityPopulationManager calls.</summary>
 internal interface ICityWorkAutomation
@@ -29,8 +28,8 @@ internal interface ICityWorkAutomation
 }
 
 /// <summary>
-/// The members of Kotlin <c>Battle</c> (T083) and <c>TradeLogic</c> (T086) that CityConquestFunctions calls (T064). It is a replaceable instance
-/// property of <see cref="CityObject.ConquestExternals"/> (no mutable static state) that T083/T086 replace by direct calls.
+/// The members of Kotlin <c>Battle</c> and <c>TradeLogic</c> that CityConquestFunctions calls. It is a replaceable instance
+/// property of <see cref="CityObject.ConquestExternals"/>: the default calls the ported Battle and TradeLogic, tests install stand-ins.
 /// </summary>
 internal interface ICityConquestExternals
 {
@@ -38,13 +37,9 @@ internal interface ICityConquestExternals
     void DestroyIfDefeated(CivilizationObject attackedCiv, CivilizationObject attacker, HexCoord? notificationLocation);
     /// <summary><c>TradeLogic(ourCiv, theirCiv)</c> with <c>currentTrade</c> = <paramref name="trade"/>, then <c>acceptTrade(false)</c></summary>
     void AcceptTrade(CivilizationObject ourCiv, CivilizationObject theirCiv, TradeObject trade);
-    /// <summary><c>UncivGame.Current.settings.autoAssignSpecialistsInNewCities</c> (client state, read by <c>city.resetSpecialistsControl()</c>); the GameSettings default is true (GameInfo.ClientState.AutoAssignSpecialistsInNewCities; the Battle port T083 wires it)</summary>
-    bool AutoAssignSpecialistsInNewCities { get; }
-    /// <summary><c>UncivGame.Current.settings.multiplayer.getUserId()</c> (client state, read by <c>city.resetSpecialistsControl()</c>; GameInfo.ClientState.UserId, wired by the Battle port T083)</summary>
-    string? LocalUserId { get; }
 }
 
-internal static class CityManagerSeams
+internal static class CityManagerHooks
 {
     private sealed class RealAutomation : ICityWorkAutomation
     {
@@ -56,14 +51,11 @@ internal static class CityManagerSeams
             AutomationObject.GetTileForConstructionImprovement(city, improvement);
     }
 
-    private sealed class ConquestNotPorted : ICityConquestExternals
+    private sealed class RealConquestExternals : ICityConquestExternals
     {
-        public bool AutoAssignSpecialistsInNewCities => true;
-        public string? LocalUserId => null;
-        // TODO(T083): Battle.destroyIfDefeated
         public void DestroyIfDefeated(CivilizationObject attackedCiv, CivilizationObject attacker, HexCoord? notificationLocation) =>
-            throw new NotSupportedException("Battle is not ported yet (TODO(T083))");
-        // T086: TradeLogic is ported; its TradeEvaluation seam (T089) still throws when it is reached.
+            Battle.Battle.DestroyIfDefeated(attackedCiv, attacker, notificationLocation);
+        // TradeLogic's TradeEvaluation seam (T089) still throws when it is reached.
         public void AcceptTrade(CivilizationObject ourCiv, CivilizationObject theirCiv, TradeObject trade)
         {
             var tradeLogic = new TradeLogic(ourCiv, theirCiv);
@@ -72,8 +64,8 @@ internal static class CityManagerSeams
         }
     }
 
-    /// <summary>The default of <see cref="CityObject.ConquestExternals"/>: Battle throws, TradeLogic is wired (T086). T083 replaces the property by direct calls.</summary>
-    internal static readonly ICityConquestExternals UnportedConquest = new ConquestNotPorted();
+    /// <summary>The default of <see cref="CityObject.ConquestExternals"/>: the ported Battle and TradeLogic; tests install stand-ins.</summary>
+    internal static readonly ICityConquestExternals RealConquest = new RealConquestExternals();
 
     /// <summary>The default of <see cref="CityPopulationManager.Automation"/>: the ported <c>Automation</c> (T087).</summary>
     internal static readonly ICityWorkAutomation RealCityWork = new RealAutomation();

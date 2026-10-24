@@ -16,7 +16,6 @@ namespace Unciv.View;
 // Ported from core/src/com/unciv/view/MapUnitView.kt (T085). Stripped: the purity annotations.
 // Deferred, each with the ticket that ports what it calls:
 //   TODO(T139): containsAttackableEnemy, getAttackableEnemies (TargetHelper), tryAirSweep (AirInterception)
-//   TODO(T083): tryMovePreparingAttack, attackOrNuke (Battle), mayUseNuke, tryNuke (Nuke)
 //   TODO(T080): canInvokeUnitAction, tryInvokeUnitAction (UnitActions)
 //   TODO(T139): getMovementString, getTurnsToBuild, tryStartWorkingOnImprovement (engine members not ported yet)
 // The Kotlin file's `/** How many tiles away ... */` doc comment dangling above containsAttackableEnemy belongs to getAirUnitMovementRange.
@@ -251,7 +250,22 @@ public class MapUnitView : ForeignMapUnitView
         return true;
     }
 
-    // TODO(T083): tryMovePreparingAttack, attackOrNuke need Battle.movePreparingAttack/attackOrNuke; mayUseNuke, tryNuke need Nuke
+    /// <summary>Moves the unit to <paramref name="attackableTileView"/>, handles siege setup, and returns <c>true</c> if an attack is still possible.</summary>
+    public bool TryMovePreparingAttack(AttackableTileView attackableTileView, bool tryHealPillage = false) =>
+        Battle.MovePreparingAttack(new MapUnitCombatant(Unit), attackableTileView.Unwrap(), tryHealPillage);
+
+    /// <summary>Meant to be called only after all prerequisite checks (e.g. <see cref="TryMovePreparingAttack"/>) have been done.</summary>
+    public DamageDealt AttackOrNuke(AttackableTileView attackableTileView) =>
+        Battle.AttackOrNuke(new MapUnitCombatant(Unit), attackableTileView.Unwrap());
+
+    public bool MayUseNuke(TileView targetTileView) => Nuke.MayUseNuke(new MapUnitCombatant(Unit), targetTileView.Unwrap());
+
+    public bool TryNuke(TileView targetTileView)
+    {
+        Nuke.NUKE(new MapUnitCombatant(Unit), targetTileView.Unwrap());
+        return true;
+    }
+
     // TODO(T139): tryAirSweep needs AirInterception.airSweep
     // TODO(T080): canInvokeUnitAction, tryInvokeUnitAction need UnitActions
 

@@ -132,6 +132,11 @@ public interface ICityStateFunctions
     int TurnsForGreatPersonFromCityState();
     /// <summary><c>cityStateFunctions.giveGreatPersonToPatron(receivingCiv)</c></summary>
     void GiveGreatPersonToPatron(Civilization receivingCiv);
+    // T083 (Battle)
+    /// <summary><c>cityStateFunctions.threateningBarbarianKilledBy(otherCiv)</c></summary>
+    void ThreateningBarbarianKilledBy(Civilization otherCiv);
+    /// <summary><c>cityStateFunctions.cityStateDestroyed(attacker)</c></summary>
+    void CityStateDestroyed(Civilization attacker);
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>

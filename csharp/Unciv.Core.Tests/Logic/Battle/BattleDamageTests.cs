@@ -459,10 +459,16 @@ public class BattleDamageTests
     }
 
     [Fact]
-    public void ExtraRangedAttackIsASeamUntilBattleIsPorted()
+    public void ExtraRangedAttackBonusDamageIsZeroWithoutTheUniqueAndSumsTheFakeUnitsWithIt()
     {
-        Assert.Throws<NotImplementedException>(() =>
-            BattleDamage.GetExtraRangedAttackBonusDamage(new MapUnitCombatant(defaultAttackerUnit), new MapUnitCombatant(defaultDefenderUnit), defaultAttackerTile)); // TODO(T083)
+        var plain = BattleDamage.GetExtraRangedAttackBonusDamage(new MapUnitCombatant(defaultAttackerUnit), new MapUnitCombatant(defaultDefenderUnit), defaultAttackerTile);
+        Assert.Equal((0, 0), plain);
+
+        var attackerUnit = testGame.AddDefaultMeleeUnitWithUniques(attackerCiv, testGame.GetTile(1, 0),
+            "Before engaging in combat performs an extra ranged attack with [50]% of melee combat strength");
+        var (max, min) = BattleDamage.GetExtraRangedAttackBonusDamage(new MapUnitCombatant(attackerUnit), new MapUnitCombatant(defaultDefenderUnit), defaultAttackerTile);
+        Assert.True(max >= min);
+        Assert.True(min > 0);
     }
 
     [Fact]

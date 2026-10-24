@@ -9,7 +9,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Logic.Battle;
 
 // Ported from core/src/com/unciv/logic/battle/AirInterception.kt (T082).
-// Battle.takeDamage / Battle.addXp are reached through BattleSeams (TODO(T083)); Battle.DamageDealt is the DamageDealt record.
+// Battle.takeDamage / Battle.addXp are Battle.TakeDamage / Battle.AddXp (T083); Battle.DamageDealt is the DamageDealt record.
 //
 // Deviation: Kotlin shuffles the potential interceptors in airSweep with the unseeded kotlin.random.Random.Default. Here the shuffle uses
 // the state-based seeded RNG of the attack context (determinism rule); only the order of equal-chance interceptors differs from Kotlin.
@@ -86,11 +86,11 @@ public static class AirInterception
             }
 
             // Damage if Air v Air should work similar to Melee
-            var damageDealt = BattleSeams.TakeDamage(attacker, new MapUnitCombatant(interceptor));
+            var damageDealt = Battle.TakeDamage(attacker, new MapUnitCombatant(interceptor));
 
             // 5 XP to both
-            BattleSeams.AddXp(new MapUnitCombatant(interceptor), 5, attacker);
-            BattleSeams.AddXp(attacker, 5, new MapUnitCombatant(interceptor));
+            Battle.AddXp(new MapUnitCombatant(interceptor), 5, attacker);
+            Battle.AddXp(attacker, 5, new MapUnitCombatant(interceptor));
 
             var locationsInterceptorUnknown =
                 LocationAction.Of(attackedTile.Position, attacker.Unit.CurrentTile.Position);
@@ -197,7 +197,7 @@ public static class AirInterception
 
         attacker.TakeDamage(damage);
         if (damage > 0)
-            BattleSeams.AddXp(new MapUnitCombatant(interceptor), 2, attacker);
+            Battle.AddXp(new MapUnitCombatant(interceptor), 2, attacker);
 
         AddInterceptionNotifications(attacker, interceptor, damage);
 

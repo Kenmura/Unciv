@@ -34,11 +34,9 @@ public sealed class CityConquestFunctionsFixtureTests
         testGame.GameInfo.CurrentPlayer = testGame.GameInfo.CurrentPlayerCiv.CivId;
     }
 
-    /// <summary>Battle (T083) is not ported: its Battle.destroyIfDefeated is a no-op stand-in installed on every city (the tests never look at it).</summary>
+    /// <summary>Battle.destroyIfDefeated is a no-op stand-in installed on every city (the tests never look at it).</summary>
     private sealed class StandInConquestExternals : ICityConquestExternals
     {
-        public bool AutoAssignSpecialistsInNewCities => true;
-        public string? LocalUserId => null;
         public void DestroyIfDefeated(Civilization attackedCiv, Civilization attacker, HexCoord? notificationLocation) { }
         public void AcceptTrade(Civilization ourCiv, Civilization theirCiv, Unciv.Logic.Trade.Trade trade) { }
     }

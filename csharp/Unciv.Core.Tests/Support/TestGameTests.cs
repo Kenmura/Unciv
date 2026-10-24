@@ -223,7 +223,7 @@ public class TestGameTests
     [Fact]
     public void TimedConditionalUniqueIsTriggerableOnAGamePolicy()
     {
-        // TimedUniquesTests.testConditionalTimedUniqueIsTriggerable on the real fixture (Strength/Expires need BattleDamage and TurnManager, T083/T071)
+        // TimedUniquesTests.testConditionalTimedUniqueIsTriggerable on the real fixture (Strength/Expires need BattleDamage (ported, T081) and TurnManager, T071)
         var game = new TestGame();
         var policy = game.CreatePolicy("[+42]% Strength <when attacking> <for [Military] units> <for [1] turns>");
         var unique = policy.UniqueObjects.First(it => it.Type == UniqueType.Strength);

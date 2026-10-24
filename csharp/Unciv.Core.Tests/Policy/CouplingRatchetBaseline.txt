@@ -10,3 +10,5 @@ Unciv.Core/Logic/City/CityConstructions.cs|14
 Unciv.Core/Logic/GameInfo.cs|15
 # T052: faithful port of UniqueTriggerActivation.kt, which touches every game area (units, cities, techs, policies, religion, espionage, map)
 Unciv.Core/Models/Ruleset/Unique/UniqueTriggerActivation.cs|15
+# T083: faithful port of Battle.kt (883 lines), which touches units, cities, civs, uniques, stats and notifications
+Unciv.Core/Logic/Battle/Battle.cs|13

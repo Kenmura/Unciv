@@ -627,8 +627,8 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
 
     public void MoveToCiv(CivilizationObject newCivInfo) => new CityConquestFunctions(this).MoveToCiv(newCivInfo);
 
-    /// <summary>Seam for the not yet ported <c>Battle</c> (T083) and <c>TradeLogic</c> (T086): tests install a stand-in. Not serialized, not cloned.</summary>
-    internal ICityConquestExternals ConquestExternals { get; set; } = CityManagerSeams.UnportedConquest;
+    /// <summary>Seam for <c>Battle</c> and <c>TradeLogic</c> (ported, T083/T086): tests install a stand-in. Not serialized, not cloned.</summary>
+    internal ICityConquestExternals ConquestExternals { get; set; } = CityManagerHooks.RealConquest;
 
     internal void TryUpdateRoadStatus()
     {

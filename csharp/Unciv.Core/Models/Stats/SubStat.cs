@@ -1,6 +1,8 @@
+using Unciv.Logic.Civilization;
+
 namespace Unciv.Models.StatTypes;
 
-// Stripped: `icon` (NotificationIcon string constants) - restore with the NotificationIcon ticket.
+// `icon` (NotificationIcon string constants) is the Icon() extension (T083).
 public enum SubStat
 {
     GoldenAgePoints,
@@ -14,6 +16,14 @@ public static class SubStatExtensions
     {
         SubStat.GoldenAgePoints => "Golden Age points",
         SubStat.StoredFood => "Stored Food",
+        _ => throw new ArgumentOutOfRangeException(nameof(subStat)),
+    };
+
+    /// <summary>Kotlin constructor parameter `icon` (T083: Battle.plunderFromDamage reads it).</summary>
+    public static string Icon(this SubStat subStat) => subStat switch
+    {
+        SubStat.GoldenAgePoints => NotificationIcon.Happiness,
+        SubStat.StoredFood => NotificationIcon.Food,
         _ => throw new ArgumentOutOfRangeException(nameof(subStat)),
     };
 

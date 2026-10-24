@@ -15,7 +15,7 @@ namespace Unciv.Logic.Battle;
 //
 // Deviations: purity annotations dropped. The Kotlin default arguments of calculateDamageToAttacker / calculateDamageToDefender
 // (`tileToAttackFrom = defender.getTile()`, `randomnessFactor = getRandomness(...)`) are nullable parameters evaluated at call time.
-// Battle.getExtraRangedAttackFakeUnits is reached through BattleSeams (TODO(T083)).
+// Battle.getExtraRangedAttackFakeUnits is Battle.GetExtraRangedAttackFakeUnits (T083).
 public static class BattleDamage
 {
     private static string GetModifierStringFromUnique(UniqueObject unique)
@@ -286,7 +286,7 @@ public static class BattleDamage
     {
         int maxExtra = 0;
         int minExtra = 0;
-        foreach (var fakeAttacker in BattleSeams.GetExtraRangedAttackFakeUnits(attacker))
+        foreach (var fakeAttacker in Battle.GetExtraRangedAttackFakeUnits(attacker))
         {
             maxExtra = unchecked(maxExtra + CalculateDamageToDefender(fakeAttacker, defender, tileToAttackFrom, 1f));
             minExtra = unchecked(minExtra + CalculateDamageToDefender(fakeAttacker, defender, tileToAttackFrom, 0f));

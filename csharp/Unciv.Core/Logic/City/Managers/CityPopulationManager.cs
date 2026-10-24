@@ -16,7 +16,7 @@ namespace Unciv.Logic.City.Managers;
 // Ported from core/src/com/unciv/logic/city/managers/CityPopulationManager.kt (T061).
 //
 // Stripped: the purity annotations and the timeThis profiling wrapper of autoAssignPopulation.
-// Automation.rankStatsForCityWork / rankSpecialist / rankTileForCityWork go through CityPopulationManager.Automation (CityManagerSeams, default: the real Automation, T087). Kotlin `getNewSpecialists()` is an alias of specialistAllocations and is kept as such.
+// Automation.rankStatsForCityWork / rankSpecialist / rankTileForCityWork go through CityPopulationManager.Automation (CityManagerHooks, default: the real Automation, T087). Kotlin `getNewSpecialists()` is an alias of specialistAllocations and is kept as such.
 // The members tests override (AutoAssignPopulation, UnassignExtraPopulation, GetPopulationFilterAmount) are virtual so that City tests can
 // count the calls without a full map and automation.
 
@@ -46,7 +46,7 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
     [JsonIgnore]
     internal ICityWorkAutomation Automation
     {
-        get => automation ?? CityManagerSeams.RealCityWork;
+        get => automation ?? CityManagerHooks.RealCityWork;
         set => automation = value;
     }
     private ICityWorkAutomation? automation;

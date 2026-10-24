@@ -7,7 +7,6 @@ using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 namespace Unciv.Core.Tests.Logic.Battle;
 
 // C#-only tests (T082): the Kotlin tree has no tests for BattleUnitCapture, AirInterception or GreatGeneralImplementation.getBestAffectedTroopsTile.
-// Paths that reach the Battle seams (T083: takeDamage, addXp, triggerDefeatUniques, a real civ defeat) assert the seam exception.
 public static partial class BattleSupportTests
 {
     [Collection("RulesetCache")]
@@ -79,7 +78,7 @@ public static partial class BattleSupportTests
         }
 
         [Fact]
-        public void CityStatesDestroyCapturedSettlersButTheDestructionReachesTheDefeatUniquesSeam()
+        public void CityStatesDestroyCapturedSettlers()
         {
             var cityState = testGame.AddCiv(cityStateType: "Cultured");
             cityState.DiplomacyFunctions.MakeCivilizationsMeet(defenderCiv);
@@ -87,8 +86,7 @@ public static partial class BattleSupportTests
             var guard = testGame.AddUnit("Warrior", cityState, testGame.GetTile(0, 0));
             var settler = testGame.AddUnit("Settler", defenderCiv, testGame.GetTile(1, 0));
 
-            Assert.Throws<NotImplementedException>(() =>
-                BattleUnitCapture.CaptureCivilianUnit(new MapUnitCombatant(guard), new MapUnitCombatant(settler), checkDefeat: false));
+            BattleUnitCapture.CaptureCivilianUnit(new MapUnitCombatant(guard), new MapUnitCombatant(settler), checkDefeat: false);
 
             Assert.True(settler.IsDestroyed);
             Assert.Contains(defenderCiv.Notifications, it => it.Text == "An enemy [Warrior] has destroyed our [Settler]");
@@ -209,8 +207,7 @@ public static partial class BattleSupportTests
             var warrior = testGame.AddUnit("Warrior", attackerCiv, testGame.GetTile(0, 0));
             var worker = testGame.AddUnit(testGame.CreateBaseUnit("Civilian", "Uncapturable").Name, defenderCiv, testGame.GetTile(1, 0));
 
-            Assert.Throws<NotImplementedException>(() =>
-                BattleUnitCapture.CaptureCivilianUnit(new MapUnitCombatant(warrior), new MapUnitCombatant(worker), checkDefeat: false));
+            BattleUnitCapture.CaptureCivilianUnit(new MapUnitCombatant(warrior), new MapUnitCombatant(worker), checkDefeat: false);
             Assert.True(worker.IsDestroyed);
         }
 
@@ -305,17 +302,20 @@ public static partial class BattleSupportTests
         }
 
         [Fact]
-        public void AnInterceptorTakesTheShotDamagesTheAttackerAndThenReachesTheXpSeam()
+        public void AnInterceptorTakesTheShotAndDamagesTheAttackerAndBothEarnXp()
         {
             var attacker = testGame.AddUnit("Fighter", attackerCiv, testGame.GetTile(0, 0));
             var interceptor = testGame.AddUnit("Fighter", defenderCiv, testGame.GetTile(2, 0));
 
-            // 100% chance fighter: the shot is always taken and always hits, so damage > 0 and Battle.addXp (T083) is reached
-            Assert.Throws<NotImplementedException>(() =>
-                AirInterception.TryInterceptAirAttack(new MapUnitCombatant(attacker), testGame.GetTile(0, 1), defenderCiv, null));
+            // 100% chance fighter: the shot is always taken and always hits, so damage > 0
+            var damage = AirInterception.TryInterceptAirAttack(new MapUnitCombatant(attacker), testGame.GetTile(0, 1), defenderCiv, null);
 
             Assert.Equal(1, interceptor.AttacksThisTurn);
             Assert.True(attacker.Health < 100);
+            Assert.Equal(100 - attacker.Health, damage.DefenderDealt);
+            Assert.Equal(0, damage.AttackerDealt); // the interceptor is not hurt
+            Assert.Equal(100, interceptor.Health);
+            Assert.Equal(2, interceptor.Promotions.XP);
         }
 
         [Fact]
@@ -332,16 +332,20 @@ public static partial class BattleSupportTests
         }
 
         [Fact]
-        public void AirSweepPrefersAirInterceptorsAndThenNeedsTheBattleDamageSeam()
+        public void AirSweepPrefersAirInterceptorsOverLandOnes()
         {
             var attacker = testGame.AddUnit("Fighter", attackerCiv, testGame.GetTile(0, 0));
             var airInterceptor = testGame.AddUnit("Fighter", defenderCiv, testGame.GetTile(2, 0));
             testGame.AddDefaultRangedUnitWithUniques(defenderCiv, testGame.GetTile(2, 1), "[100]% chance to intercept air attacks");
 
-            // the land interceptor on the swept tile is passed over for the air one; Battle.takeDamage (T083) is the next step
-            Assert.Throws<NotImplementedException>(() => AirInterception.AirSweep(new MapUnitCombatant(attacker), testGame.GetTile(2, 1)));
+            // the land interceptor on the swept tile is passed over for the air one
+            AirInterception.AirSweep(new MapUnitCombatant(attacker), testGame.GetTile(2, 1));
 
             Assert.Equal(1, airInterceptor.AttacksThisTurn);
+            Assert.True(attacker.Health < 100);
+            Assert.True(airInterceptor.Health < 100);
+            Assert.Equal(5, attacker.Promotions.XP);
+            Assert.Equal(5, airInterceptor.Promotions.XP);
         }
 
         [Fact]
@@ -424,23 +428,10 @@ public static partial class BattleSupportTests
         }
 
         [Fact]
-        public void BattleSeamsStillWaitForT083AndT090()
+        public void TheEnemyCityPriorityStillWaitsForT090()
         {
             var warrior = testGame.AddUnit("Warrior", civ, testGame.GetTile(0, 0));
-            var other = testGame.AddUnit("Warrior", enemy, testGame.GetTile(1, 0));
-            var ours = new MapUnitCombatant(warrior);
-            var theirs = new MapUnitCombatant(other);
-            Assert.Throws<NotImplementedException>(() => BattleSeams.GetExtraRangedAttackFakeUnits(ours));
-            Assert.Throws<NotImplementedException>(() => BattleSeams.MayUseNuke(ours, other.GetTile()));
-            Assert.Throws<NotImplementedException>(() => BattleSeams.TakeDamage(ours, theirs));
-            Assert.Throws<NotImplementedException>(() => BattleSeams.AddXp(ours, 1, theirs));
-            Assert.Throws<NotImplementedException>(() => BattleSeams.TriggerDefeatUniques(ours, theirs, other.GetTile()));
             Assert.Throws<NotImplementedException>(() => BattleSeams.GetEnemyCitiesByPriority(warrior));
-            BattleSeams.DestroyIfDefeated(civ, enemy); // not defeated: nothing happens
-            var vanquished = testGame.AddCiv();
-            Assert.True(vanquished.IsDefeated()); // no cities, no units
-            Assert.Throws<NotImplementedException>(() => BattleSeams.DestroyIfDefeated(vanquished, civ));
-            BattleSeams.DestroyIfDefeated(enemy, civ); // not defeated: nothing happens
         }
 
         [Fact]

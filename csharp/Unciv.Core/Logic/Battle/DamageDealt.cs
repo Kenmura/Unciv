@@ -1,6 +1,6 @@
 namespace Unciv.Logic.Battle;
 
-// Kotlin Battle.DamageDealt (Battle.kt, T083). Declared here because AirInterception (T082) returns it; T083 may move it into Battle.
+// Kotlin Battle.DamageDealt (Battle.kt, T083). Declared here (not nested in Battle) because AirInterception (T082) returns it.
 
 /// <param name="AttackerDealt">Damage done by attacker to defender</param>
 /// <param name="DefenderDealt">Damage done by defender to attacker</param>

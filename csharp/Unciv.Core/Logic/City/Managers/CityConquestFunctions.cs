@@ -16,7 +16,7 @@ namespace Unciv.Logic.City.Managers;
 // Ported from core/src/com/unciv/logic/city/managers/CityConquestFunctions.kt (T064).
 //
 // Stripped: the purity annotations; GUI.setUpdateWorldOnNextRender() in annexCity (a client redraw request, not part of the engine).
-// Seams: Battle.destroyIfDefeated (T083) and TradeLogic.acceptTrade (T086) go through City.ConquestExternals (CityManagerSeams).
+// Seams: Battle.destroyIfDefeated and TradeLogic.acceptTrade go through City.ConquestExternals (CityManagerHooks).
 // Quirks kept: the tileBasedRandom is seeded by the Kotlin data class hashCode of the center tile's position (HexCoord.GetHashCode is
 // that hash) and is consumed in call order (gold, then destroyBuildingsOnCapture); the `max(0, min(50, ..)) / 50f` turn modifier is float.
 
@@ -396,7 +396,7 @@ public class CityConquestFunctions(CityObject city)
         }
 
         city.ResetDisabledConstructions();
-        city.ResetSpecialistsControl(city.ConquestExternals.AutoAssignSpecialistsInNewCities, city.ConquestExternals.LocalUserId);
+        city.ResetSpecialistsControl(city.Civ.GameInfo.ClientState.AutoAssignSpecialistsInNewCities, city.Civ.GameInfo.ClientState.UserId);
 
         newCiv.Cache.UpdateOurTiles();
         oldCiv.Cache.UpdateOurTiles();

@@ -779,4 +779,34 @@ public sealed class ViewCityUnitTests
         Assert.Equal(0f, bombard.GetMovementLeftAfterMovingToAttackTile());
         Assert.Equal(defender, ((MapUnitCombatantView)bombard.GetCombatant()!).GetUnitView().Unwrap());
     }
+
+    [Fact]
+    public void MapUnitView_AttackMembersCallBattleAndNuke()
+    {
+        var uv = OwnUnit("Warrior", 0, 0);
+        var defender = AddUnit("Warrior", foreign, 2, 0);
+        var from = game.GetTile(new HexCoord(1, 0));
+        var atv = new AttackableTileView(new Unciv.Logic.Battle.AttackableTile(from, defender.GetTile(), 1f, new Unciv.Logic.Battle.MapUnitCombatant(defender)), player, false, view);
+
+        Assert.True(uv.TryMovePreparingAttack(atv));
+        Assert.Equal(from, uv.Unwrap().GetTile());
+        var damage = uv.AttackOrNuke(atv);
+        Assert.True(damage.AttackerDealt > 0);
+        Assert.True(defender.Health < 100);
+        Assert.False(uv.MayUseNuke(view.GetTile(uv.Unwrap().GetTile()))); // never the tile the nuke is on
+        Assert.True(uv.TryNuke(view.GetTile(defender.GetTile()))); // not a nuclear weapon: nothing happens
+    }
+
+    [Fact]
+    public void CityView_TryBombardAttacksTheTile()
+    {
+        var defender = AddUnit("Warrior", foreign, 2, 0);
+        var bombard = new AttackableTileView(new Unciv.Logic.Battle.AttackableTile(city.GetCenterTile(), defender.GetTile(), 0f, new Unciv.Logic.Battle.MapUnitCombatant(defender)), player, false, view);
+
+        var damage = CityView().TryBombard(bombard);
+
+        Assert.True(damage.AttackerDealt > 0);
+        Assert.True(defender.Health < 100);
+        Assert.True(city.AttackedThisTurn);
+    }
 }

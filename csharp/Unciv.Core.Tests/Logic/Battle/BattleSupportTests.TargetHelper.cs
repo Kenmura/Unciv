@@ -1,6 +1,7 @@
 using Unciv.Core.Tests.Support;
 using Unciv.Logic.Battle;
 using Unciv.Logic.Map;
+using BattleObject = Unciv.Logic.Battle.Battle;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
@@ -266,15 +267,15 @@ public static partial class BattleSupportTests
         }
 
         [Fact]
-        public void BattleSeamNukesAndCombatantOfTileAreWired()
+        public void CombatantOfTileIsWired()
         {
-            Assert.Null(BattleSeams.GetMapCombatantOfTile(testGame.GetTile(1, 0)));
+            Assert.Null(BattleObject.GetMapCombatantOfTile(testGame.GetTile(1, 0)));
             var civilian = testGame.AddUnit("Worker", defenderCiv, testGame.GetTile(1, 0));
-            Assert.Equal(civilian, ((MapUnitCombatant)BattleSeams.GetMapCombatantOfTile(testGame.GetTile(1, 0))!).Unit);
+            Assert.Equal(civilian, ((MapUnitCombatant)BattleObject.GetMapCombatantOfTile(testGame.GetTile(1, 0))!).Unit);
             var warrior = testGame.AddUnit("Warrior", defenderCiv, testGame.GetTile(1, 0));
-            Assert.Equal(warrior, ((MapUnitCombatant)BattleSeams.GetMapCombatantOfTile(testGame.GetTile(1, 0))!).Unit);
+            Assert.Equal(warrior, ((MapUnitCombatant)BattleObject.GetMapCombatantOfTile(testGame.GetTile(1, 0))!).Unit);
             testGame.AddCity(defenderCiv, testGame.GetTile(2, 0));
-            Assert.IsType<CityCombatant>(BattleSeams.GetMapCombatantOfTile(testGame.GetTile(2, 0)));
+            Assert.IsType<CityCombatant>(BattleObject.GetMapCombatantOfTile(testGame.GetTile(2, 0)));
         }
     }
 }

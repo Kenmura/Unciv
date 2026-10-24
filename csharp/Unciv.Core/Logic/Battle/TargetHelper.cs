@@ -8,7 +8,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Logic.Battle;
 
 // Ported from core/src/com/unciv/logic/battle/TargetHelper.kt (T082). Purity annotations and timeThis dropped (T027 policy).
-// Nuke.mayUseNuke and Battle.getMapCombatantOfTile are reached through BattleSeams (T083).
+// Nuke.mayUseNuke and Battle.getMapCombatantOfTile are ported with Battle (T083).
 public static class TargetHelper
 {
     public static List<AttackableTile> GetAttackableEnemies(
@@ -54,17 +54,17 @@ public static class TargetHelper
 
                 if (unit.IsNuclearWeapon())
                 {
-                    if (BattleSeams.MayUseNuke(new MapUnitCombatant(unit), tile))
-                        attackableTiles.Add(new AttackableTile(reachableTile, tile, movementLeft, BattleSeams.GetMapCombatantOfTile(tile)));
+                    if (Nuke.MayUseNuke(new MapUnitCombatant(unit), tile))
+                        attackableTiles.Add(new AttackableTile(reachableTile, tile, movementLeft, Battle.GetMapCombatantOfTile(tile)));
                 }
                 else if (tilesWithEnemies.Contains(tile))
-                    attackableTiles.Add(new AttackableTile(reachableTile, tile, movementLeft, BattleSeams.GetMapCombatantOfTile(tile)));
+                    attackableTiles.Add(new AttackableTile(reachableTile, tile, movementLeft, Battle.GetMapCombatantOfTile(tile)));
                 else if (tilesWithoutEnemies.Contains(tile))
                     continue; // avoid checking the same empty tile multiple times
                 else if (TileContainsAttackableEnemy(unit, tile, tilesToCheck) || unit.IsPreparingAirSweep())
                 {
                     tilesWithEnemies.Add(tile);
-                    attackableTiles.Add(new AttackableTile(reachableTile, tile, movementLeft, BattleSeams.GetMapCombatantOfTile(tile)));
+                    attackableTiles.Add(new AttackableTile(reachableTile, tile, movementLeft, Battle.GetMapCombatantOfTile(tile)));
                 }
                 else
                     tilesWithoutEnemies.Add(tile);
@@ -95,7 +95,7 @@ public static class TargetHelper
         bool visible = tilesToCheck != null ? tilesToCheck.Contains(tile) : unit.Civ.ViewableTiles.Contains(tile);
         if (!visible || !ContainsAttackableEnemy(tile, new MapUnitCombatant(unit)))
             return false;
-        var mapCombatant = BattleSeams.GetMapCombatantOfTile(tile);
+        var mapCombatant = Battle.GetMapCombatantOfTile(tile);
 
         return !unit.BaseUnit.IsMelee() || mapCombatant is not MapUnitCombatant mapUnitCombatant || !mapUnitCombatant.Unit.IsCivilian()
             || unit.Movement.CanPassThrough(tile);
@@ -110,7 +110,7 @@ public static class TargetHelper
                 return false;
         }
 
-        var tileCombatant = BattleSeams.GetMapCombatantOfTile(tile);
+        var tileCombatant = Battle.GetMapCombatantOfTile(tile);
         if (tileCombatant == null) return false;
         if (tileCombatant.GetCivInfo() == combatant.GetCivInfo()) return false;
         // If the user automates units, one may capture the city before the user had a chance to decide what to do with it,

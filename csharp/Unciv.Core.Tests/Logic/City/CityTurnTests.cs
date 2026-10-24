@@ -16,7 +16,7 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 namespace Unciv.Core.Tests.Logic.CityTests;
 
 // T064: CityTurnManager and CityConquestFunctions over the same real Civilization / TileMap / City world as CityManagerTests (the
-// TestGame-based Kotlin fixture CityConquestFunctionsTest is ported with T072). Battle (T083) and TradeLogic (T086) are stand-ins
+// TestGame-based Kotlin fixture CityConquestFunctionsTest is ported with T072). Battle and TradeLogic are recording stand-ins
 // installed on City.ConquestExternals.
 public sealed class CityTurnTests
 {
@@ -24,8 +24,6 @@ public sealed class CityTurnTests
     {
         public List<(string Defeated, string Attacker, HexCoord? Location)> DestroyIfDefeatedCalls { get; } = [];
         public List<(string Our, string Their, TradeObject Trade)> AcceptedTrades { get; } = [];
-        public bool AutoAssignSpecialistsInNewCities => true;
-        public string? LocalUserId => null;
         public void DestroyIfDefeated(Civilization attackedCiv, Civilization attacker, HexCoord? notificationLocation) =>
             DestroyIfDefeatedCalls.Add((attackedCiv.CivId, attacker.CivId, notificationLocation));
         public void AcceptTrade(Civilization ourCiv, Civilization theirCiv, TradeObject trade) =>
@@ -707,15 +705,12 @@ public sealed class CityTurnTests
     }
 
     [Fact]
-    public void ConquestFunctions_WithoutBattleAndTradeLogic_ThrowNotSupported()
+    public void DefaultConquestExternals_DestroyIfDefeated_IsTheRealBattle()
     {
-        var externals = new CityConquestFunctionsSeamProbe();
-        Assert.Throws<NotSupportedException>(() => externals.DestroyIfDefeated());
-    }
-
-    private sealed class CityConquestFunctionsSeamProbe
-    {
-        private readonly ICityConquestExternals unported = CityManagerSeams.UnportedConquest;
-        public void DestroyIfDefeated() => unported.DestroyIfDefeated(null!, null!, null);
+        var w = NewWorld();
+        var other = w.City.Civ;
+        // a civ that is not defeated: Battle.destroyIfDefeated does nothing
+        CityManagerHooks.RealConquest.DestroyIfDefeated(other, other, null);
+        Assert.Empty(other.PopupAlerts);
     }
 }

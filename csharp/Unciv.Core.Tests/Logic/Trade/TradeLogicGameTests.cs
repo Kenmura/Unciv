@@ -279,7 +279,7 @@ public class TradeLogicGameTests
         var (_, a, b) = Setup();
         var trade = new TradeObject();
         trade.OurOffers.Add(new TradeOffer(Constants.OpenBorders, TradeOfferType.Agreement, 1, 30));
-        CityManagerSeams.UnportedConquest.AcceptTrade(a, b, trade);
+        CityManagerHooks.RealConquest.AcceptTrade(a, b, trade);
         Assert.True(b.GetDiplomacyManager(a)!.HasOpenBorders);
     }
 }
