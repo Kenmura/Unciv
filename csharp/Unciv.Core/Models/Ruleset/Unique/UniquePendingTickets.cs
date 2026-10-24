@@ -4,22 +4,6 @@ namespace Unciv.Models.Ruleset.Unique;
 // as the Kotlin calls the real classes, so the owning ticket replaces the stub by deleting it here and adding the real class
 // (same namespace, same member names); no caller changes.
 
-/// <summary>Stub for T028 (<c>Conditionals.kt</c>). Delete this class when T028 adds the real one.</summary>
-public static class Conditionals
-{
-    // TODO(T028): port Conditionals.conditionalApplies(unique: Unique?, conditional: Unique, state: GameContext)
-    public static bool ConditionalApplies(Unique? unique, Unique conditional, GameContext state) =>
-        throw new NotImplementedException("Conditionals is ported by T028");
-}
-
-/// <summary>Stub for T028 (<c>Countables.kt</c>). Delete this class when T028 adds the real one.</summary>
-public static class Countables
-{
-    // TODO(T028): port Countables.getCountableAmount(countable: String, gameContext: GameContext): Int?
-    public static int? GetCountableAmount(string countable, GameContext gameContext) =>
-        throw new NotImplementedException("Countables is ported by T028");
-}
-
 /// <summary>
 /// The members of a <c>DeprecatedUniqueType</c> entry that <see cref="Unique"/> reads, plus <c>@Deprecated(replaceWith=...)</c>.
 /// T029 builds these from its table; T029 may add the other annotation fields (message, level).

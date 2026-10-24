@@ -358,8 +358,7 @@ public static class UniqueParameterTypeExtensions
     private static readonly IReadOnlySet<string> UnitTriggerTargetStatic = SetOf(
         Constants.ThisUnit, Constants.TargetUnit);
 
-    // TODO(T028): Wire Countables implementation into CountablesProvider once Countables is ported in T028.
-    public static ICountablesParameterProvider CountablesProvider { get; set; } = DefaultCountablesParameterProvider.Instance;
+    public static ICountablesParameterProvider CountablesProvider { get; set; } = CountablesParameterProvider.Instance;
 
     public static string ParameterName(this UniqueParameterType type) => type switch
     {
@@ -1283,18 +1282,5 @@ public static class UniqueParameterTypeExtensions
                 result.Add(item);
         }
         return result;
-    }
-
-    private sealed class DefaultCountablesParameterProvider : ICountablesParameterProvider
-    {
-        public static readonly DefaultCountablesParameterProvider Instance = new();
-
-        public bool IsKnownValue(string parameterText, IRulesetParameterView ruleset) =>
-            ToIntOrNull(parameterText) != null || StatExtensions.IsStat(parameterText);
-
-        public IReadOnlySet<string> GetKnownValuesForAutocomplete(IRulesetParameterView ruleset) => EmptySet;
-
-        public UniqueParameterErrorSeverity? GetErrorSeverity(string parameterText, IRulesetParameterView ruleset) =>
-            IsKnownValue(parameterText, ruleset) ? null : UniqueParameterErrorSeverity.RulesetSpecific;
     }
 }

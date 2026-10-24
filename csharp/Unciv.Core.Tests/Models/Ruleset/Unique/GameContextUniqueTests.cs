@@ -226,6 +226,8 @@ public class GameContextUniqueTests
     private sealed class FakeRegion(int rectHashCode) : IGameContextRegion
     {
         public int RectHashCode { get; } = rectHashCode;
+        public int ContinentId => 0;
+        public string Type => "";
     }
 
     [Fact]

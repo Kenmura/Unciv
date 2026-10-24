@@ -12,7 +12,7 @@ namespace Unciv.Models.Ruleset.Unique;
 // and GameInfo implement them when they are ported (T046 onwards); nothing else here changes. Member names mirror the Kotlin members.
 
 /// <summary>What <see cref="GameContext"/> reads from <c>GameInfo</c>.</summary>
-public interface IGameContextGameInfo
+public partial interface IGameContextGameInfo
 {
     int Turns { get; }
     /// <summary><c>GameInfo.gameId</c>.</summary>
@@ -22,7 +22,7 @@ public interface IGameContextGameInfo
 }
 
 /// <summary>What <see cref="GameContext"/> reads from <c>Civilization</c>.</summary>
-public interface IGameContextCivilization
+public partial interface IGameContextCivilization
 {
     /// <summary><c>civ.gameInfo</c>; <c>null</c> while it is not set (map generation).</summary>
     IGameContextGameInfo? GameInfo { get; }
@@ -33,7 +33,7 @@ public interface IGameContextCivilization
 }
 
 /// <summary>What <see cref="GameContext"/> reads from <c>City</c>.</summary>
-public interface IGameContextCity
+public partial interface IGameContextCity
 {
     /// <summary><c>city.id</c>.</summary>
     string Id { get; }
@@ -44,7 +44,7 @@ public interface IGameContextCity
 }
 
 /// <summary>What <see cref="GameContext"/> reads from <c>MapUnit</c>.</summary>
-public interface IGameContextUnit
+public partial interface IGameContextUnit
 {
     string Name { get; }
     IGameContextCivilization Civ { get; }
@@ -54,7 +54,7 @@ public interface IGameContextUnit
 }
 
 /// <summary>What <see cref="GameContext"/> reads from <c>Tile</c>.</summary>
-public interface IGameContextTile
+public partial interface IGameContextTile
 {
     HexCoord Position { get; }
     /// <summary><c>tile.tileMap.gameInfo</c>; <c>null</c> while it is not set (map generation).</summary>
@@ -68,7 +68,7 @@ public interface IGameContextTile
 /// What <see cref="GameContext"/> reads from <c>ICombatant</c>. Kotlin tests <c>is MapUnitCombatant</c> and <c>is CityCombatant</c>:
 /// <see cref="Unit"/> is non-null exactly for a MapUnitCombatant, <see cref="City"/> exactly for a CityCombatant.
 /// </summary>
-public interface IGameContextCombatant
+public partial interface IGameContextCombatant
 {
     IGameContextCivilization GetCivInfo();
     IGameContextTile GetTile();
@@ -78,7 +78,7 @@ public interface IGameContextCombatant
 }
 
 /// <summary>What <see cref="GameContext"/> reads from <c>Region</c>.</summary>
-public interface IGameContextRegion
+public partial interface IGameContextRegion
 {
     /// <summary><c>region.rect.hashCode()</c> (libGDX <c>Rectangle</c>).</summary>
     int RectHashCode { get; }

@@ -130,12 +130,20 @@ public class UniqueTests
     [Fact]
     public void ConditionalsApplyShortCircuits()
     {
-        // No modifiers, ignoreConditionals and timed uniques never reach Conditionals (T028)
+        // No modifiers, ignoreConditionals and timed uniques never reach Conditionals
         Assert.True(new UniqueObject("[+1 Gold] from every [Shrine]").ConditionalsApply(GameContext.EmptyState));
         Assert.True(new UniqueObject("[+1 Gold] from every [Shrine] <when attacking>").ConditionalsApply(GameContext.IgnoreConditionalsState));
         Assert.True(new UniqueObject("[+25]% Strength <when attacking> <for [1] turns>").ConditionalsApply(GameContext.EmptyState));
-        // TODO(T028): with Conditionals ported, a unique with a real conditional is evaluated by it
-        Assert.Throws<NotImplementedException>(() => new UniqueObject("[+1 Gold] <when attacking>").ConditionalsApply(GameContext.EmptyState));
+        // A unique with a real conditional is evaluated by Conditionals: "when attacking" needs a combat action in the state
+        var attacking = new UniqueObject("[+1 Gold] <when attacking>");
+        Assert.False(attacking.ConditionalsApply(GameContext.EmptyState));
+        var civ = new FakeCiv("civ");
+        var combatant = new FakeCombatant(civ, new FakeTile(new Unciv.Logic.Map.HexCoord(0, 0)), "Warrior");
+        Assert.True(attacking.ConditionalsApply(GameContext.ForCombatants(combatant, combatAction: Unciv.Logic.Battle.CombatAction.Attack)));
+        Assert.False(attacking.ConditionalsApply(GameContext.ForCombatants(combatant, combatAction: Unciv.Logic.Battle.CombatAction.Defend)));
+        // every modifier must apply, and evaluation stops at the first that does not
+        var both = new UniqueObject("[+1 Gold] <when defending> <when attacking>");
+        Assert.False(both.ConditionalsApply(GameContext.ForCombatants(combatant, combatAction: Unciv.Logic.Battle.CombatAction.Attack)));
     }
 
     [Fact]

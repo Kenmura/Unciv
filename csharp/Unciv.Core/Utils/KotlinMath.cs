@@ -15,6 +15,16 @@ public static class KotlinMath
         return FloatToInt(rounded);
     }
 
+    // kotlin.math.roundToInt(Double): half-up (java.lang.Math.round), saturating, NaN throws.
+    public static int RoundToInt(double value)
+    {
+        if (double.IsNaN(value)) throw new ArgumentException("Cannot round NaN value.", nameof(value));
+        double floor = Math.Floor(value);
+        // value - floor is exact for doubles; when |value| >= 2^52 it is 0
+        double rounded = value - floor >= 0.5 ? floor + 1.0 : floor;
+        return DoubleToInt(rounded);
+    }
+
     // Kotlin Float.toInt(): truncates toward zero, saturates at Int.MIN/MAX, NaN becomes 0. (C# `(int)` is unspecified there.)
     public static int FloatToInt(float value)
     {

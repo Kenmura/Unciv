@@ -136,7 +136,7 @@ public class IHasUniquesUniqueTests
         IHasUniques plain = new TestObject("Plain", "[+1 Food] from every [Farm]");
         Assert.False(plain.IsUnavailableBySettings(game));
         Assert.False(plain.IsHiddenFromCivilopedia(game));
-        // without game-based conditionals the Unavailable unique never consults Conditionals (T028 adds the cases with real conditionals)
+        // without game-based conditionals the Unavailable unique never consults Conditionals (the cases with real conditionals are below)
         IHasUniques unavailable = new TestObject("Unavailable", "Unavailable");
         Assert.False(unavailable.IsUnavailableBySettings(game));
         IHasUniques hidden = new TestObject("Hidden", "Will not be displayed in Civilopedia");
@@ -144,4 +144,47 @@ public class IHasUniquesUniqueTests
         // the ruleset is ignored once the game is known
         Assert.False(plain.IsHiddenFromCivilopedia(game, new FakeFeatures(false, false)));
     }
+
+    [Fact]
+    public void UnavailableAndOnlyAvailableUseTheRealGameBasedConditionals()
+    {
+        var game = new FakeGameInfo { Turns = 3, GameId = "g", ReligionEnabled = true, EspionageEnabled = false, DifficultyName = "Prince" };
+        game.GameParameters.VictoryTypes.Add("Scientific");
+        game.GameParameters.Speed = "Quick";
+        game.FakeRulesetData.DifficultyList.AddRange(["Settler", "Prince", "King"]);
+
+        // Unavailable: unavailable exactly when a game-based modifier applies
+        Assert.True(Unavailable("when religion is enabled").IsUnavailableBySettings(game));
+        Assert.False(Unavailable("when religion is disabled").IsUnavailableBySettings(game));
+        Assert.True(Unavailable("when espionage is disabled").IsUnavailableBySettings(game));
+        Assert.True(Unavailable("when [Scientific] Victory is enabled").IsUnavailableBySettings(game));
+        Assert.False(Unavailable("when [Scientific] Victory is disabled").IsUnavailableBySettings(game));
+        Assert.True(Unavailable("on [Quick] game speed").IsUnavailableBySettings(game));
+        Assert.False(Unavailable("on [Marathon] game speed").IsUnavailableBySettings(game));
+        Assert.True(Unavailable("on [Prince] difficulty").IsUnavailableBySettings(game));
+        Assert.True(Unavailable("on [Settler] difficulty or higher").IsUnavailableBySettings(game));
+        Assert.False(Unavailable("on [King] difficulty or higher").IsUnavailableBySettings(game));
+        Assert.True(Unavailable("on [King] difficulty or lower").IsUnavailableBySettings(game));
+
+        // OnlyAvailable: unavailable exactly when a game-based modifier does NOT apply
+        Assert.False(OnlyAvailable("when religion is enabled").IsUnavailableBySettings(game));
+        Assert.True(OnlyAvailable("when religion is disabled").IsUnavailableBySettings(game));
+        Assert.True(OnlyAvailable("when espionage is enabled").IsUnavailableBySettings(game));
+        Assert.False(OnlyAvailable("when [Scientific] Victory is enabled").IsUnavailableBySettings(game));
+        Assert.True(OnlyAvailable("on [Marathon] game speed").IsUnavailableBySettings(game));
+        Assert.False(OnlyAvailable("on [Prince] difficulty").IsUnavailableBySettings(game));
+
+        // modifiers that are not game based are ignored, even when they would not apply
+        Assert.False(Unavailable("when attacking").IsUnavailableBySettings(game));
+        Assert.False(OnlyAvailable("when attacking").IsUnavailableBySettings(game));
+        // one failing OnlyAvailable modifier among several is enough
+        IHasUniques mixed = new TestObject("Mixed", "Only available <when religion is enabled> <when espionage is enabled>");
+        Assert.True(mixed.IsUnavailableBySettings(game));
+        // and the check feeds IsHiddenFromCivilopedia
+        Assert.True(Unavailable("when religion is enabled").IsHiddenFromCivilopedia(game));
+        Assert.False(Unavailable("when religion is disabled").IsHiddenFromCivilopedia(game));
+    }
+
+    private static IHasUniques Unavailable(string modifier) => new TestObject("Thing", $"Unavailable <{modifier}>");
+    private static IHasUniques OnlyAvailable(string modifier) => new TestObject("Thing", $"Only available <{modifier}>");
 }

@@ -72,9 +72,9 @@ public class LocalUniqueCacheUniqueTests
         var cache = new LocalUniqueCache();
         // IgnoreConditionals lets the conditional unique through without evaluating it
         Assert.Equal(new[] { civUnique, conditional }, cache.ForCivGetMatchingUniques(civ, UniqueType.Strength, GameContext.IgnoreConditionalsState).ToArray());
-        // The cached list is the unfiltered one: a second call with the default state still has both uniques to evaluate
-        // (and fails here only because Conditionals are T028's)
-        Assert.Throws<NotImplementedException>(() => cache.ForCivGetMatchingUniques(civ, UniqueType.Strength).ToList());
+        // The cached list is the unfiltered one: a second call with the default state still has both uniques to evaluate,
+        // and the real Conditionals reject "when attacking" (no combat action in the owner's state)
+        Assert.Equal(new[] { civUnique }, cache.ForCivGetMatchingUniques(civ, UniqueType.Strength).ToArray());
         Assert.Equal(1, civ.GetMatchingUniquesCalls);
     }
 }
