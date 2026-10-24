@@ -1,6 +1,7 @@
 using Unciv.Logic.Battle;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnit.Actions;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Tile;
@@ -16,7 +17,6 @@ namespace Unciv.View;
 // Deferred, each with the ticket that ports what it calls:
 //   TODO(T139): containsAttackableEnemy, getAttackableEnemies (TargetHelper), tryAirSweep (AirInterception)
 //   TODO(T083): tryMovePreparingAttack, attackOrNuke (Battle), mayUseNuke, tryNuke (Nuke)
-//   TODO(T079): canPillage (UnitActionsPillage)
 //   TODO(T080): canInvokeUnitAction, tryInvokeUnitAction (UnitActions)
 //   TODO(T139): getMovementString, getTurnsToBuild, tryStartWorkingOnImprovement (engine members not ported yet)
 // The Kotlin file's `/** How many tiles away ... */` doc comment dangling above containsAttackableEnemy belongs to getAirUnitMovementRange.
@@ -253,7 +253,9 @@ public class MapUnitView : ForeignMapUnitView
 
     // TODO(T083): tryMovePreparingAttack, attackOrNuke need Battle.movePreparingAttack/attackOrNuke; mayUseNuke, tryNuke need Nuke
     // TODO(T139): tryAirSweep needs AirInterception.airSweep
-    // TODO(T080): canInvokeUnitAction, tryInvokeUnitAction need UnitActions; TODO(T079): canPillage needs UnitActionsPillage.canPillage
+    // TODO(T080): canInvokeUnitAction, tryInvokeUnitAction need UnitActions
+
+    public bool CanPillage(TileView tileView) => UnitActionsPillage.CanPillage(Unit, tileView.Unwrap());
 
     public bool TryFortifyIfCan()
     {
@@ -294,13 +296,13 @@ public static class MapUnitViewExtensions
     // Unit state derived from MapUnitView.Action
     public static bool IsMoving(this MapUnitView view) => view.Action?.StartsWith("moveTo", StringComparison.Ordinal) == true;
 
-    public static bool IsExploring(this MapUnitView view) => view.Action == UnitActionNames.Explore;
+    public static bool IsExploring(this MapUnitView view) => view.Action == UnitActionType.Explore.Value();
 
     public static bool IsAutomatingRoadConnection(this MapUnitView view) => view.Action == Constants.ConnectRoadAction;
 
-    public static bool IsPreparingParadrop(this MapUnitView view) => view.Action == UnitActionNames.Paradrop;
+    public static bool IsPreparingParadrop(this MapUnitView view) => view.Action == UnitActionType.Paradrop.Value();
 
-    public static bool IsPreparingAirSweep(this MapUnitView view) => view.Action == UnitActionNames.AirSweep;
+    public static bool IsPreparingAirSweep(this MapUnitView view) => view.Action == UnitActionType.AirSweep.Value();
 
     public static string? GetImprovementInProgress(this MapUnitView view) => view.GetTile().ImprovementInProgress;
 

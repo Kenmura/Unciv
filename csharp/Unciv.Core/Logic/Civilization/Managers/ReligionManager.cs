@@ -9,6 +9,7 @@ using Unciv.Models.Ruleset.Unit;
 using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
+using MapUnitObject = Unciv.Logic.Map.MapUnits.MapUnit;
 
 namespace Unciv.Logic.Civilization.Managers;
 
@@ -549,7 +550,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         }
     }
 
-    public bool MaySpreadReligionAtAll(IMapUnitState missionary)
+    public bool MaySpreadReligionAtAll(MapUnitObject missionary)
     {
         if (!CivInfo.IsMajorCiv()) return false; // Only major civs
         if (!CivInfo.GameInfo.IsReligionEnabled()) return false; // No religion, no spreading
@@ -560,7 +561,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         return true;
     }
 
-    public bool MaySpreadReligionNow(IMapUnitState missionary)
+    public bool MaySpreadReligionNow(MapUnitObject missionary)
     {
         if (!MaySpreadReligionAtAll(missionary)) return false;
         if (missionary.GetTile().GetOwner() == null) return false;

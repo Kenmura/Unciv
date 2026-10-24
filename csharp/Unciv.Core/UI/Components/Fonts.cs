@@ -16,4 +16,5 @@ public static class Fonts
     public const char Culture = '♪';      // U+266A 'eighth note'
     public const char Happiness = '⌣';    // U+2323 'smile'
     public const char Faith = '☮';        // U+262E 'peace symbol'
+    public const char Death = '☠';        // U+2620 'skull and crossbones'
 }

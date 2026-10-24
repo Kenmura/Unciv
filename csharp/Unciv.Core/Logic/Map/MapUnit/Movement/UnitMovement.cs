@@ -1,6 +1,7 @@
 using System.Collections;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
@@ -657,7 +658,7 @@ public class UnitMovement
 
     private void MoveAirUnitToTile(Tile destination)
     {
-        if (Unit.Action != UnitActionNames.Automate) Unit.Action = null;
+        if (Unit.Action != UnitActionType.Automate.Value()) Unit.Action = null;
         Unit.RemoveFromTile();
         Unit.IsTransported = false; // it has left the carrier by own means
         Unit.PutInTile(destination);

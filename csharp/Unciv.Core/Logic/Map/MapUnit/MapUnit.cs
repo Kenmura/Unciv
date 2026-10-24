@@ -25,7 +25,6 @@ namespace Unciv.Logic.Map.MapUnits;
 //   purity annotations, VisibleForTesting.
 // - doAction's UnitAutomation calls (GameView(..).getMapUnitView): TODO(T090).
 // - UniqueTriggerActivation.triggerUnique is the T052 stub (returns false).
-// - UnitActionType.value strings are UnitActionNames (TODO(T079)).
 
 /// <summary>
 /// The immutable properties and mutable game state of an individual unit present on the map.
@@ -337,8 +336,8 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
 
     public bool IsActionUntilHealed() => Action?.EndsWith("until healed", StringComparison.Ordinal) == true;
 
-    public bool IsFortified() => Action?.StartsWith(UnitActionNames.Fortify, StringComparison.Ordinal) == true;
-    public bool IsGuarding() => Action == UnitActionNames.Guard;
+    public bool IsFortified() => Action?.StartsWith(UnitActionType.Fortify.Value(), StringComparison.Ordinal) == true;
+    public bool IsGuarding() => Action == UnitActionType.Guard.Value();
     public bool IsFortifyingUntilHealed() => IsFortified() && IsActionUntilHealed();
 
     public int GetFortificationTurns()
@@ -347,7 +346,7 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         return TurnsFortified;
     }
 
-    public bool IsSleeping() => Action?.StartsWith(UnitActionNames.Sleep, StringComparison.Ordinal) == true;
+    public bool IsSleeping() => Action?.StartsWith(UnitActionType.Sleep.Value(), StringComparison.Ordinal) == true;
     public bool IsSleepingUntilHealed() => IsSleeping() && IsActionUntilHealed();
 
     public bool IsMoving() => Action?.StartsWith("moveTo", StringComparison.Ordinal) == true;
@@ -364,10 +363,10 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     public bool IsAutomated() => Automated;
 
     public bool IsAutomatingRoadConnection() => Action == Constants.ConnectRoadAction;
-    public bool IsExploring() => Action == UnitActionNames.Explore;
-    public bool IsPreparingParadrop() => Action == UnitActionNames.Paradrop;
-    public bool IsPreparingAirSweep() => Action == UnitActionNames.AirSweep;
-    public bool IsSetUpForSiege() => Action == UnitActionNames.SetUp;
+    public bool IsExploring() => Action == UnitActionType.Explore.Value();
+    public bool IsPreparingParadrop() => Action == UnitActionType.Paradrop.Value();
+    public bool IsPreparingAirSweep() => Action == UnitActionType.AirSweep.Value();
+    public bool IsSetUpForSiege() => Action == UnitActionType.SetUp.Value();
 
     /// <param name="includeOtherEscortUnit">
     /// determines whether this method will also check if it's other escort unit is idle if it has one.
@@ -851,7 +850,7 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
 
         foreach (var status in StatusMap.Values) status.SetTransients(this);
         UpdateUniques();
-        if (Action == UnitActionNames.Automate)
+        if (Action == UnitActionType.Automate.Value())
         {
             Automated = true;
             Action = null;

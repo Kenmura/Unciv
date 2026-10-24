@@ -578,6 +578,7 @@ public sealed class ViewCityUnitTests
         Assert.True(uv.TryResetAction());
         Assert.True(uv.TryMoveToTile(target));
         Assert.Equal(target.Unwrap(), unit.GetTile());
+        Assert.False(uv.CanPillage(target)); // nothing to pillage there (T079: UnitActionsPillage.canPillage)
         Assert.True(uv.TryHeadTowards(view.GetTile(game.GetTile(new HexCoord(3, 0)))));
         unit.CurrentMovement = unit.GetMaxMovement();
         Assert.True(uv.TryStopWorkingOnImprovement());
