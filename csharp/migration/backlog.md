@@ -701,7 +701,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Platform file IO behind an interface.
 
 ### T043 Record Won't-port scope
-- State: Needs-Review [Antigravity]
+- State: In-Review [Claude]
 - Depends: none
 - Source: logic/multiplayer, logic/github, logic/UncivKtor.kt, logic/files/{FileChooser,PlatformSaverLoader}.kt, utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt, models/translations/TranslationFileWriter.kt, models/skins, models/tilesets, ui tests
 - Fixtures: none
