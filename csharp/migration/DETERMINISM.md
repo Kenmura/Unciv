@@ -43,6 +43,11 @@ Determinism enables:
 - All strings and numbers parse and format with `CultureInfo.InvariantCulture`.
 - String comparisons and ordering use `StringComparer.Ordinal` / `string.CompareOrdinal`.
 
+
+### 2.6 Debug and cheat flags
+- Upstream `DebugUtils` is a process-wide mutable object whose flags the rules read: `VISIBLE_MAP` (vision), `SUPERCHARGED` (city yields), `SIMULATE_UNTIL_TURN` (turn handling; the engine resets it itself), `CIV_IDS_IN_EXPERIMENT_GROUP` (AI A/B switches). A static cannot take part in "initial state + command log reproduces the game", so these live in `Unciv.Logic.EngineOptions` (T048), an instance owned by the game (the `GameInfo` port holds it, `TODO(T046)`), included in the state hash, changed only through a command.
+- The pure display flags (`SHOW_TILE_COORDS`, `SHOW_TILE_IMAGE_LOCATIONS`, `SHOW_FPS`) are client concerns and not ported. `ShowSettlerScores`/`SettlerScores` are diagnostics output that rules never read; they are kept on the object but excluded from the hash.
+- Porting rule: wherever Kotlin reads `DebugUtils.X`, take an `EngineOptions` from the game being operated on; never add a static.
 ---
 
 ## 3. State Hashing Harness (`StateHasher`)
