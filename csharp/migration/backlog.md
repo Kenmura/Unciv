@@ -649,13 +649,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review 2 fix [Claude]: coverage ratchet (T122) failed for the three new files; added tests (mixed-type FPM operators, roads/double-movement targets, enemy-territory penalty, zone of control, escort swap/pair move, paradrop, air landing reason, A* branches through a fake IUnitPathingMapFactory). Now MovementCost 90.7%, UnitMovement 86.0%, FixedPointMovement 100%; baseline updated. Note: MapUnitCache never fills ParadropDestinationTileFilters in Kotlin either (the paradrop unit action does, T079).
 
 ### T068 Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T059, T064, T066
 - Source: core/src/com/unciv/logic/civilization/diplomacy/DiplomacyTurnManager.kt, DeclareWar.kt, CityStateFunctions.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/* remaining cases (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/Civilization/Diplomacy/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~DiplomacyTurnTests`
-- Claimed:
+- Claimed: 2026-10-24T15:21Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.6k LOC (CityStateFunctions is 850); split at claim time if needed. Concrete Civilization, City, MapUnit. Battle/NextTurnAutomation/CityCombatant references: seam or `TODO(T0xx)` naming a real Planned ticket.
   - Backlog audit: CityStateFunctions' NextTurnAutomation calls: TODO(T094). DeclareWar is called by Battle (T083) and TradeLogic (T086).
   - DeclareWar(): DiplomacyManager.DeclareWar() throws NotImplementedException (TODO(T068)); implement it as DeclareWar.declareWar(this, reason) with a DeclareWarReason parameter, and implement the ICityStateFunctions members GetTributeWillingness/CanProvideStat that T059 added to the seam.
