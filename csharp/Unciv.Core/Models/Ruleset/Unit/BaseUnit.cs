@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
@@ -23,11 +24,11 @@ namespace Unciv.Models.Ruleset.Unit;
 /// </summary>
 public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitParameterView
 {
-    private readonly Lazy<UnitTypeObject> type;
+    private UnitTypeObject? type;
     private readonly Lazy<bool> isGreatPerson;
     private readonly Lazy<bool> isMilitary;
-    private readonly Lazy<bool> isLandUnit;
-    private readonly Lazy<bool> isWaterUnit;
+    private bool? isLandUnit;
+    private bool? isWaterUnit;
     private IRulesetConstructionView? ruleset;
     private int cachedForceEvaluation = -1;
     private readonly Dictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal);
@@ -35,12 +36,8 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public BaseUnit()
     {
         var self = (IHasUniques)this;
-        type = new Lazy<UnitTypeObject>(() => Ruleset.GetUnitType(UnitType)
-            ?? throw new InvalidOperationException($"Unit {Name} has unit type {UnitType} which is not present in ruleset!"));
         isGreatPerson = new Lazy<bool>(() => self.GetMatchingUniques(UniqueType.GreatPerson).Any());
         isMilitary = new Lazy<bool>(() => IsRanged() || IsMelee());
-        isLandUnit = new Lazy<bool>(() => Type.IsLandUnit());
-        isWaterUnit = new Lazy<bool>(() => Type.IsWaterUnit());
         CostFunctions = new BaseUnitCost(this);
     }
 
@@ -55,7 +52,10 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public string UnitType { get; set; } = "";
 
     [JsonIgnore]
-    public UnitTypeObject Type => type.Value;
+    public UnitTypeObject Type =>
+        // Kotlin `by lazy` retries after an exception, so this is not a System.Lazy
+        type ??= Ruleset.GetUnitType(UnitType)
+            ?? throw new InvalidOperationException($"Unit {Name} has unit type {UnitType} which is not present in ruleset!");
 
     public string? RequiredTech { get; set; }
     public string? RequiredResource { get; set; }
@@ -63,7 +63,28 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Unit;
 
     public string ReplacementTextForUniques { get; set; } = "";
-    public LinkedHashSet<string> Promotions { get; set; } = [];
+    /// <summary>Kotlin <c>HashSet&lt;String&gt;</c>: JVM hash order (see HASH_ORDER_AUDIT.md), it reaches <see cref="EvaluateForce"/>.</summary>
+    [JsonConverter(typeof(PromotionSetConverter))]
+    public JavaHashSet<string> Promotions { get; set; } = new();
+
+    private sealed class PromotionSetConverter : JsonConverter<JavaHashSet<string>>
+    {
+        public override JavaHashSet<string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var set = new JavaHashSet<string>();
+            if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException("Expected an array of promotion names");
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                set.Add(reader.GetString() ?? throw new JsonException("Null promotion name"));
+            return set;
+        }
+
+        public override void Write(Utf8JsonWriter writer, JavaHashSet<string> value, JsonSerializerOptions options)
+        {
+            writer.WriteStartArray();
+            foreach (var item in value) writer.WriteStringValue(item);
+            writer.WriteEndArray();
+        }
+    }
     public string? ObsoleteTech { get; set; }
 
     public IEnumerable<string> TechsThatObsoleteThis() => ObsoleteTech == null ? [] : [ObsoleteTech];
@@ -141,6 +162,9 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
         ruleset != null ? RulesetUniqueMap.HasTagUnique(uniqueTag) : UniqueMap.HasTagUnique(uniqueTag);
 
     bool IRulesetObjectParameterView.HasTagUnique(string uniqueTag) => ((IHasUniques)this).HasTagUnique(uniqueTag);
+
+    bool IRulesetObjectParameterView.HasTagUniqueIgnoringConditionals(string uniqueTag) =>
+        ((IHasUniques)this).HasTagUnique(uniqueTag, GameContext.IgnoreConditionalsState);
 
     IEnumerable<UniqueObject> IHasUniques.GetMatchingUniques(UniqueType uniqueType, GameContext? state)
     {
@@ -298,10 +322,10 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public bool IsCivilian() => !IsMilitary;
 
     [JsonIgnore]
-    public bool IsLandUnit => isLandUnit.Value;
+    public bool IsLandUnit => isLandUnit ??= Type.IsLandUnit();
 
     [JsonIgnore]
-    public bool IsWaterUnit => isWaterUnit.Value;
+    public bool IsWaterUnit => isWaterUnit ??= Type.IsWaterUnit();
 
     public bool IsAirUnit() => Type.IsAirUnit();
 

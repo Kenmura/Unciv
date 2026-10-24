@@ -323,6 +323,29 @@ public class RulesetUnitTests
     }
 
     [Fact]
+    public void LazyMembersRetryAfterAnException()
+    {
+        // Kotlin `by lazy` does not cache an exception
+        var ruleset = MakeRuleset();
+        var unit = new BaseUnit { Name = "Horseman", UnitType = "Mounted" };
+        Assert.Throws<InvalidOperationException>(() => unit.IsLandUnit);
+        unit.SetRuleset(ruleset);
+        Assert.True(unit.IsLandUnit);
+        Assert.False(unit.IsWaterUnit);
+    }
+
+    [Fact]
+    public void PromotionsIterateInJvmHashOrderAndHideNothingFromTheView()
+    {
+        var unit = Read<BaseUnit>("""{ "name": "U", "promotions": ["b", "a", "c"] }""");
+        Assert.Equal(["a", "b", "c"], unit.Promotions); // String.hashCode order, not insertion order
+        var ruleset = MakeRuleset();
+        ruleset.GlobalUniques.UnitUniques = ["Must set up to ranged attack"];
+        var v = MakeUnit(ruleset, "V");
+        Assert.True(((IRulesetObjectParameterView)v).HasTagUniqueIgnoringConditionals("Must set up to ranged attack"));
+    }
+
+    [Fact]
     public void UnitWithUnknownUnitTypeFailsOnSetRuleset()
     {
         var unit = new BaseUnit { Name = "Ghost", UnitType = "Nope" };
