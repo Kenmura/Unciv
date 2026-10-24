@@ -1142,7 +1142,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Not compared: mapParameters output (MapParameters' own wiring writes defaults that Kotlin omits; only read/values are asserted).
 
 ### T110 Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T107, T065
 - Source: core/src/com/unciv/logic/map/tile/Tile.kt (serialized unit fields)
 - Fixtures: none - generate golden JSON by running the Kotlin Json on a map with units

@@ -61,7 +61,6 @@ flowchart TD
     T104["T104<br/>Marker, seam and stale-comment sweep (final)"]
     T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
     T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
-    T110["T110<br/>Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)"]
     T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
     T115["T115<br/>Retype Tile city seams to City and move the Tile/Pathfinding..."]
     T123["T123<br/>Policy follow-up: eliminate allowlisted mutable statics (Eve..."]
@@ -269,7 +268,6 @@ flowchart TD
   class T104 waiting
   class T106 ondeck
   class T107 done
-  class T110 review
   class T111 ondeck
   class T115 ready
   class T123 ready
@@ -324,5 +322,4 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T110 | Needs-Review [Antigravity] | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T139 | Available (waiting on T085, T082, T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
