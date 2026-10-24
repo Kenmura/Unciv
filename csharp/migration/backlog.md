@@ -296,7 +296,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 
 
 ### T019 Event bus
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: none
 - Source: core/src/com/unciv/logic/event/EventBus.kt, Event.kt
 - Fixtures: none - generate golden values
@@ -304,6 +304,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~EventBusTests`
 - Claimed: 2026-10-24T01:28:10Z
 - Notes: Listener invocation order must be deterministic (registration order). Replace Kotlin weak/threading specifics with deterministic single-threaded equivalents; note deviations.
+  - Implementer notes (Antigravity): Ported `EventBus` and `EventReceiver` under `Unciv.Logic.Event`:
+    - Synchronous, deterministic dispatch invoking matching listeners in strictly monotonic registration order (using `NextSeq` and stable `OrderBy`).
+    - Full polymorphic dispatch: event types dispatch to listeners registered for the concrete event class, any base classes, and implemented interfaces (assignable from event type).
+    - Deduplicated execution per event dispatch matching Kotlin's `getListeners` Set semantics.
+    - Lifecycle management via `EventReceiver` (`Receive<T>`, `StopReceiving()`, `IDisposable`) and `EventBus.Reset()`.
+    - WeakReferences and GDX render-thread dependencies removed for deterministic headless execution.
+    - Ran Gate (7 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 348/348 passed).
 
 ### T020 MultiFilter and IdChecker
 - State: Available
