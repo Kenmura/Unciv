@@ -94,7 +94,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified fidelity against Kotlin original: non-zero integer map behavior, insertion-order preservation via OrderedDictionary, zero-removal on mutating methods, super.put zero-retention on copy constructor/Clone/PutAll, Counter.ZERO Put restriction, and AbstractMap value-based equality and hashing semantics. Re-ran Gate (17/17 passed) and full test suite (106/106 passed).
 
 ### T006 HexMath
-- State: Available
+- State: In-Progress [Antigravity]
+- Claimed: 2026-10-24T00:51:46Z
 - Depends: T003
 - Source: core/src/com/unciv/logic/map/HexMath.kt
 - Fixtures: tests/src/com/unciv/logic/map/HexmathTests.kt
