@@ -137,9 +137,9 @@ public class CivConstructions : IsPartOfGameInfoSerialization
             AddFreeStatBuildings(stat, amount);
     }
 
-    /// <summary>Kotlin <c>cities.take(n)</c>, which throws for a negative count.</summary>
-    private IEnumerable<ICityState> TakeCities(int amount) =>
-        amount < 0 ? throw new ArgumentException($"Requested element count {amount} is less than zero.") : CivInfo.Cities.Take(amount);
+    /// <summary>Kotlin <c>cities.take(n)</c>, which throws for a negative count and returns a copy (so completing a construction cannot disturb the iteration).</summary>
+    private List<ICityState> TakeCities(int amount) =>
+        amount < 0 ? throw new ArgumentException($"Requested element count {amount} is less than zero.") : CivInfo.Cities.Take(amount).ToList();
 
     public void AddFreeStatBuildings(Stat stat, int amount)
     {

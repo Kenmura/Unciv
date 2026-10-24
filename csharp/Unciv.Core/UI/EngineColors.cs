@@ -1,4 +1,3 @@
-using System.Globalization;
 
 namespace Unciv.Models;
 
@@ -52,7 +51,13 @@ public static class EngineColors
     public static EngineColor ValueOf(string hex)
     {
         if (hex[0] == '#') hex = hex[1..];
-        float Part(int start) => int.Parse(hex.AsSpan(start, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture) / 255f;
+        // Java parseInt/Character.digit accept any Unicode decimal digit, int.Parse(HexNumber) accepts ASCII only
+        static int Digit(char c) =>
+            char.IsDigit(c) ? (int)char.GetNumericValue(c)
+            : c is >= 'a' and <= 'f' ? c - 'a' + 10
+            : c is >= 'A' and <= 'F' ? c - 'A' + 10
+            : throw new FormatException($"Invalid hex digit '{c}'");
+        float Part(int start) => (Digit(hex[start]) * 16 + Digit(hex[start + 1])) / 255f;
         return new EngineColor(Part(0), Part(2), Part(4), hex.Length != 8 ? 1f : Part(6));
     }
 

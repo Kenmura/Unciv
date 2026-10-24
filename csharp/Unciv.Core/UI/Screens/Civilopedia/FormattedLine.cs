@@ -45,9 +45,11 @@ public sealed class FormattedLine
     /// <summary>Default color for text and icons</summary>
     public static readonly EngineColor DefaultColor = EngineColor.White;
 
-    // Cache to quickly match Categories to names (Kotlin: single-entry cache keyed on ruleset identity)
-    private static Ruleset? RulesetCachedInNameMap;
-    private static Dictionary<string, CivilopediaCategories>? AllObjectNamesCategoryMap;
+    // Cache to quickly match Categories to names (Kotlin: single-entry cache keyed on ruleset identity, two unsynchronised statics).
+    // Here ruleset and map are one immutable entry published through a single volatile write, so a reader never pairs a map with the wrong ruleset.
+    private sealed record NameMapCache(Ruleset Ruleset, Dictionary<string, CivilopediaCategories> Map);
+
+    private static volatile NameMapCache? NameMapCacheInstance;
 
     private readonly Lazy<LinkTypeEnum> linkType;
     private readonly Lazy<EngineColor> displayColor;
@@ -107,6 +109,7 @@ public sealed class FormattedLine
     public string ExtraImage { get; }
 
     /// <summary>Width of the <see cref="ExtraImage"/>, height is calculated preserving aspect ratio. Defaults to available width.</summary>
+    [JsonNumberHandling(JsonNumberHandling.AllowNamedFloatingPointLiterals)] // default is NaN, which System.Text.Json would otherwise refuse to write
     public float ImageSize { get; }
 
     /// <summary>Text size, defaults to <see cref="Constants.DefaultFontSize"/>. Use size or <see cref="Header"/> but not both.</summary>
@@ -119,6 +122,7 @@ public sealed class FormattedLine
     public int Indent { get; }
 
     /// <summary>Defines vertical padding between rows, defaults to 5f.</summary>
+    [JsonNumberHandling(JsonNumberHandling.AllowNamedFloatingPointLiterals)]
     public float Padding { get; }
 
     /// <summary>Sets text color, accepts 6/3-digit web colors (e.g. #FFA040) or names as defined by <see cref="EngineColors"/>.</summary>
@@ -236,11 +240,12 @@ public sealed class FormattedLine
         var explicitLinks = unique.GetModifiers(UniqueType.CivilopediaLink);
         if (explicitLinks.Count != 0)
             return explicitLinks[0].Params[0];
-        if (AllObjectNamesCategoryMap == null || !ReferenceEquals(RulesetCachedInNameMap, ruleSet))
-            AllObjectNamesCategoryMap = InitNamesCategoryMap(context);
+        var cache = NameMapCacheInstance;
+        if (cache == null || !ReferenceEquals(cache.Ruleset, ruleSet))
+            NameMapCacheInstance = cache = new NameMapCache(ruleSet, InitNamesCategoryMap(context));
         foreach (var parameter in unique.Params.Concat(unique.Modifiers.SelectMany(it => it.Params)))
         {
-            if (!AllObjectNamesCategoryMap.TryGetValue(parameter, out var category)) continue;
+            if (!cache.Map.TryGetValue(parameter, out var category)) continue;
             return category + "/" + parameter;
         }
         return "";
@@ -273,7 +278,6 @@ public sealed class FormattedLine
             foreach (var (key, value) in objects)
                 if (!value.IsHiddenFromCivilopedia(context.GameInfo, ruleSet))
                     result[key] = category; // later categories win, like toMap
-        RulesetCachedInNameMap = ruleSet;
         return result;
     }
 

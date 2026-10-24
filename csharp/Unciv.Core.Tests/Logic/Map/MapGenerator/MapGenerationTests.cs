@@ -47,6 +47,15 @@ public class MapGenerationTests
     }
 
     [Fact]
+    public void PowSignedFollowsKotlinSignSemantics()
+    {
+        Assert.Equal(4.0, MapElevationGenerator.PowSigned(2.0, 2.0));
+        Assert.Equal(-4.0, MapElevationGenerator.PowSigned(-2.0, 2.0));
+        Assert.Equal(0.0, MapElevationGenerator.PowSigned(0.0, 2.0));
+        Assert.True(double.IsNaN(MapElevationGenerator.PowSigned(double.NaN, 2.0))); // Math.Sign would throw
+    }
+
+    [Fact]
     public void TestAllLandmassGenerations()
     {
         var ruleset = GenRuleset();

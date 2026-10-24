@@ -156,9 +156,11 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; } = [];
     public Building? CheapestStatBuilding(Stat stat) => null;
     public List<Building> Completed { get; } = [];
+    public Action<Building>? OnCompleteConstruction { get; set; }
     public void CompleteConstruction(Building building)
     {
         Completed.Add(building);
+        OnCompleteConstruction?.Invoke(building);
         Buildings.Add(building.Name);
     }
     public bool IsBeingConstructedOrEnqueued(string constructionName) => false;

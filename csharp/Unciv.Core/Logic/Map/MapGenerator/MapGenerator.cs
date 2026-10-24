@@ -21,8 +21,8 @@ namespace Unciv.Logic.Map.MapGenerator;
 // - The gameInfo parameter is the IGameInfoState seam of GameInfo (T046 retypes it).
 // - Kotlin keeps the water tiles of spawnLakesAndCoasts in a HashSet<Tile> and takes first(): Tile has identity hashing there, so the order
 //   was arbitrary. Here it is the map's tile order. The per-step debug timing output (consoleTimings = false) is stripped.
-// - convertTerrains on the river step iterates the resulting tile set (a Kotlin HashSet with identity hashing, so arbitrary order).
-//   The C# HashSet iterates in insertion order as long as nothing is removed.
+// - convertTerrains on the river step iterates the resulting tile set, a Kotlin mutableSetOf (LinkedHashSet, insertion ordered): LinkedHashSet<T> here.
+// - Kotlin's unused gameParameters argument of resolveAutoMapSize is dropped.
 public class MapGenerator
 {
     private readonly CancellationToken cancellationToken;
@@ -163,7 +163,7 @@ public class MapGenerator
     public TileMap GenerateMap(MapParameters mapParameters, GameParameters? gameParameters = null, IGameInfoState? gameInfo = null)
     {
         gameParameters ??= new GameParameters();
-        var mapSize = mapParameters.MapSize.Name != MapSize.AutoName ? mapParameters.MapSize : ResolveAutoMapSize(mapParameters, gameParameters, gameInfo);
+        var mapSize = mapParameters.MapSize.Name != MapSize.AutoName ? mapParameters.MapSize : ResolveAutoMapSize(mapParameters, gameInfo);
         var mapType = mapParameters.Type;
 
         mapParameters.Seed = ResolveSeed(mapParameters.Seed);
@@ -232,9 +232,8 @@ public class MapGenerator
         return map;
     }
 
-    private static MapSize ResolveAutoMapSize(MapParameters mapParameters, GameParameters gameParameters, IGameInfoState? gameInfo)
+    private static MapSize ResolveAutoMapSize(MapParameters mapParameters, IGameInfoState? gameInfo)
     {
-        _ = gameParameters;
         if (gameInfo == null) return mapParameters.MapSize;
 
         var numberOfMajorCivs = gameInfo.Civilizations.Count(it => it.IsMajorCiv());
@@ -337,7 +336,7 @@ public class MapGenerator
                 case MapGeneratorSteps.Continents: map.AssignContinents(TileMap.AssignContinentsMode.Reassign); break;
                 case MapGeneratorSteps.NaturalWonders: new NaturalWonderGenerator(Ruleset, randomness).SpawnNaturalWonders(map); break;
                 case MapGeneratorSteps.Rivers:
-                    var resultingTiles = new HashSet<Tile>();
+                    var resultingTiles = new LinkedHashSet<Tile>();
                     new RiverGenerator(map, randomness, Ruleset).SpawnRivers(resultingTiles);
                     ConvertTerrains(resultingTiles);
                     break;

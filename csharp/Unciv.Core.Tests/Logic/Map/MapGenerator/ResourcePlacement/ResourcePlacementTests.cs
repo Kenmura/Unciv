@@ -219,6 +219,26 @@ public class ResourcePlacementTests
     }
 
     [Fact]
+    public void GeneratesNaturallyOnRejectsNaNTemperatureAndHumidity()
+    {
+        // Kotlin `x !in a..b` is true for NaN, so the resource does not generate
+        var scenario = MakeScenario();
+        var tile = scenario.Map.Values[0];
+        var resource = new TileResource
+        {
+            Name = "Ranged",
+            TerrainsCanBeFoundOn = ["Grassland"],
+            Uniques = ["Occurs at temperature between [-0.5] and [0.5] and humidity between [0.2] and [0.8]"],
+        };
+        tile.Temperature = double.NaN;
+        tile.Humidity = 0.5;
+        Assert.False(resource.GeneratesNaturallyOn(tile));
+        tile.Temperature = 0.0;
+        tile.Humidity = double.NaN;
+        Assert.False(resource.GeneratesNaturallyOn(tile));
+    }
+
+    [Fact]
     public void PlaceMajorDepositsUsesFallbackWeightingsAndTerrainFrequency()
     {
         var scenario = MakeScenario();

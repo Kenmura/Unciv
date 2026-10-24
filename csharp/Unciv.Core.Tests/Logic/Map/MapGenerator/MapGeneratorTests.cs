@@ -103,6 +103,28 @@ public sealed class MapGeneratorTests : IDisposable
         Assert.Equal(LoadGolden()[caseName], Dump(Generate(MapType.Perlin, MapShape.Hexagonal, false, 3, mirroring: mirroring)));
     }
 
+    [Theory]
+    [InlineData(MirroringType.TopBottom)]
+    [InlineData(MirroringType.AroundCenterTile)]
+    public void TopBottomAndAroundCenterMirroringCopyTilesOntoTheirMirrorImage(string mirroring)
+    {
+        var map = Generate(MapType.Perlin, MapShape.Hexagonal, false, 3, mirroring: mirroring);
+        int checkedTiles = 0;
+        foreach (var tile in map.Values)
+        {
+            if (tile.GetRow() <= 0) continue; // the row <= 0 half is the source, row > 0 is overwritten
+            // TopBottom flips (x, y) -> (-y, -x); AroundCenterTile additionally flips left-right: (x, y) -> (y, x) of that = (-x, -y)
+            var (mx, my) = mirroring == MirroringType.TopBottom ? (-tile.Position.Y, -tile.Position.X) : (-tile.Position.X, -tile.Position.Y);
+            var mirror = map.GetIfTileExistsOrNull(mx, my);
+            if (mirror == null) continue;
+            checkedTiles++;
+            Assert.Equal(mirror.BaseTerrain, tile.BaseTerrain);
+            Assert.Equal(mirror.TerrainFeatures, tile.TerrainFeatures);
+            Assert.Equal(mirror.Resource, tile.Resource);
+        }
+        Assert.True(checkedTiles > 10);
+    }
+
     [Fact]
     public void EmptyMapIsAllOceanAndMatchesKotlinGolden()
     {
@@ -302,7 +324,7 @@ public sealed class MapGeneratorTests : IDisposable
         var range = new GeneratorClass.TerrainOccursRange(terrain, ((Unciv.Models.Ruleset.Unique.IHasUniques)terrain).GetMatchingUniques(Unciv.Models.Ruleset.Unique.UniqueType.TileGenerationConditions).First());
         Assert.True(range.TempFrom < -1f);
         Assert.Equal(-1.0000001f, range.TempFrom);
-        Assert.True(range.HumidFrom < 0f);
+        Assert.Equal(-float.Epsilon, range.HumidFrom); // 0 minus Float.ulp(0f) = -Float.MIN_VALUE
         Assert.Equal(0.5f, range.TempTo);
         Assert.True(range.IsConstrained);
     }

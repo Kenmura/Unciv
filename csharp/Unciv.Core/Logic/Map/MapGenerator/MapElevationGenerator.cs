@@ -24,7 +24,9 @@ internal class MapElevationGenerator(
     private readonly List<MapGenerator.TerrainOccursRange> mountains = terrains
         .Where(it => (it.Terrain.Type == TerrainType.Land || it.Terrain.Type == TerrainType.TerrainFeature) && it.OccursInChains && !it.RareFeature).ToList();
 
-    private static double PowSigned(double value, double exponent) => Math.Pow(Math.Abs(value), exponent) * Math.Sign(value);
+    // Kotlin sign(NaN) is NaN and sign(+-0.0) is +-0.0; Math.Sign throws on NaN and returns an int
+    internal static double PowSigned(double value, double exponent) =>
+        Math.Pow(Math.Abs(value), exponent) * (value > 0 ? 1.0 : value < 0 ? -1.0 : value);
 
     /// <summary><see cref="MapParameters.ElevationExponent"/> favors high elevation</summary>
     public void RaiseMountainsAndHills()

@@ -143,6 +143,53 @@ public class CivTransientsTests
     }
 
     [Fact]
+    public void TakeCities_ThrowsForNegativeAmounts()
+    {
+        var (civ, info) = NewCiv();
+        var granary = new Building { Name = "Granary" };
+        info.RulesetData.Buildings.Put("Granary", granary);
+        civ.Cities = [new FakeCityState("c1", new FakeCiv("Rome"))];
+
+        Assert.Throws<ArgumentException>(() => civ.CivConstructions.AddFreeBuildings(granary, -1));
+        Assert.Throws<ArgumentException>(() => civ.CivConstructions.AddFreeStatBuildings(Unciv.Models.StatTypes.Stat.Food, -1));
+    }
+
+    [Fact]
+    public void AddFreeBuildings_ByAmount_SnapshotsTheCityListLikeKotlinTake()
+    {
+        var (civ, info) = NewCiv();
+        var granary = new Building { Name = "Granary" };
+        info.RulesetData.Buildings.Put("Granary", granary);
+        var first = new FakeCityState("c1", new FakeCiv("Rome"));
+        var cities = new List<ICityState> { first };
+        civ.Cities = cities;
+        first.OnCompleteConstruction = _ => cities.Add(new FakeCityState("c2", new FakeCiv("Rome")));
+
+        civ.CivConstructions.AddFreeBuildings(granary, 5); // would throw "collection was modified" with a lazy Take
+
+        Assert.Single(first.Completed);
+        Assert.Equal(2, cities.Count);
+    }
+
+    [Fact]
+    public void AddFreeBuildings_CityLocalUniquesDoNotLeakIntoOtherCities()
+    {
+        var (civ, info) = NewCiv();
+        var library = new Building { Name = "Library" };
+        info.RulesetData.Buildings.Put("Library", library);
+        var first = new FakeCityState("c1", new FakeCiv("Rome")) { CivData = civ };
+        var second = new FakeCityState("c2", new FakeCiv("Rome")) { CivData = civ };
+        foreach (var city in new[] { first, second }) city.CityFilters.Add("in this city");
+        first.LocalUniques.Add(new UniqueObject("Gain a free [Library] [in this city]", UniqueTarget.Building, "Test"));
+        civ.Cities = [first, second];
+
+        civ.CivConstructions.AddFreeBuildings();
+
+        Assert.Same(library, Assert.Single(first.Completed));
+        Assert.Empty(second.Completed); // a city-local unique of the first city never leaks into the second
+    }
+
+    [Fact]
     public void CountConstructedObjects_CountsBuiltAndSpaceshipParts()
     {
         var (civ, _) = NewCiv();

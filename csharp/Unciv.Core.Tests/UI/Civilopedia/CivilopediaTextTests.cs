@@ -629,5 +629,27 @@ public class CivilopediaTextTests
         Assert.Equal("Resources/Iron", list[2].Link);
     }
 
+    // region T109 hardening
+
+    [Fact]
+    public void NonAsciiUnicodeDigitsParseLikeJavaParseInt()
+    {
+        // Kotlin isDigit() and Java parseInt both accept Arabic-Indic digits: "#٣٣٣" is 0x33 per channel
+        var color = new FormattedLine("a", color: "#\u0663\u0663\u0663").DisplayColor;
+        var expected = new FormattedLine("a", color: "#333333").DisplayColor;
+        Assert.Equal(expected, color);
+        Assert.Equal(expected, new FormattedLine("a", color: "#\u0663\u0663\u0663\u0663\u0663\u0663").DisplayColor);
+    }
+
+    [Fact]
+    public void LineWithNanImageSizeAndPaddingRoundTripsThroughJson()
+    {
+        var json = Unciv.Json.UncivJson.Serialize(new FormattedLine("a"));
+        var back = Unciv.Json.UncivJson.Deserialize<FormattedLine>(json)!;
+        Assert.True(float.IsNaN(back.ImageSize));
+        Assert.True(float.IsNaN(back.Padding));
+        Assert.Equal("a", back.Text);
+    }
+
     // endregion
 }

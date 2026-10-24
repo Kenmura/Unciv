@@ -27,8 +27,8 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public override string MakeLink() => $"Unit/{Name}";
 
     private UnitTypeObject? type;
-    private readonly Lazy<bool> isGreatPerson;
-    private readonly Lazy<bool> isMilitary;
+    private bool? isGreatPerson;
+    private bool? isMilitary;
     private bool? isLandUnit;
     private bool? isWaterUnit;
     private IRulesetConstructionView? ruleset;
@@ -37,9 +37,6 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
 
     public BaseUnit()
     {
-        var self = (IHasUniques)this;
-        isGreatPerson = new Lazy<bool>(() => self.GetMatchingUniques(UniqueType.GreatPerson).Any());
-        isMilitary = new Lazy<bool>(() => IsRanged() || IsMelee());
         CostFunctions = new BaseUnitCost(this);
     }
 
@@ -297,7 +294,8 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public bool IsCityFounder() => ((IHasUniques)this).HasUnique(UniqueType.FoundCity, GameContext.IgnoreConditionalsState);
 
     [JsonIgnore]
-    public bool IsGreatPerson => isGreatPerson.Value;
+    // Kotlin `by lazy` retries after an exception, so these are not System.Lazy
+    public bool IsGreatPerson => isGreatPerson ??= ((IHasUniques)this).GetMatchingUniques(UniqueType.GreatPerson).Any();
 
     public bool IsGreatPersonOfType(string type) =>
         ((IHasUniques)this).GetMatchingUniques(UniqueType.GreatPerson).Any(it => it.Params[0] == type);
@@ -319,7 +317,7 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public bool IsMelee() => !IsRanged() && Strength > 0;
 
     [JsonIgnore]
-    public bool IsMilitary => isMilitary.Value;
+    public bool IsMilitary => isMilitary ??= IsRanged() || IsMelee();
 
     public bool IsCivilian() => !IsMilitary;
 

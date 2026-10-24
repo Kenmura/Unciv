@@ -12,7 +12,6 @@ namespace Unciv.Logic.Map.MapGenerator.Mapregions;
 // Ensures that starting positions of civs have enough yield that they aren't at a disadvantage.
 // Deviations: Kotlin's unseeded shuffled() / random() (Random.Default) have no counterpart in the engine (no unseeded randomness), so they
 // draw from a state based GameRandom per call site; MapRegionResources (T077) is called directly;
-// TileResource.generatesNaturallyOn (not yet ported on TileResource) is GeneratesNaturallyOn below.
 public static class StartNormalizer
 {
     /// <summary>Attempts to improve the start on <paramref name="startTile"/> as needed to make it decent.
@@ -137,7 +136,7 @@ public static class StartNormalizer
 
                 if (plot.TileResource != null) continue;
 
-                var bonusToPlace = productionBonuses.Where(it => GeneratesNaturallyOn(it, plot)).ToList().RandomOrNull(rng);
+                var bonusToPlace = productionBonuses.Where(it => it.GeneratesNaturallyOn(plot)).ToList().RandomOrNull(rng);
                 if (bonusToPlace != null)
                 {
                     plot.TileResource = bonusToPlace;
@@ -238,7 +237,7 @@ public static class StartNormalizer
                 continue; // Don't put bonuses on snow hills
 
             var validBonuses = ruleset.TileResources.Values.Where(it =>
-                it.ResourceType == ResourceType.Bonus && it.Food >= 1 && GeneratesNaturallyOn(it, plot)).ToList();
+                it.ResourceType == ResourceType.Bonus && it.Food >= 1 && it.GeneratesNaturallyOn(plot)).ToList();
             var goodPlotForOasis = canPlaceOasis && oasisEquivalent!.OccursOn.Contains(plot.LastTerrain.Name);
 
             if (validBonuses.Count != 0 || goodPlotForOasis)
@@ -280,37 +279,5 @@ public static class StartNormalizer
             .Select(it => it[stat]).ToList();
         var bestImprovementYield = improvements.Count == 0 ? (float?)null : improvements.Max();
         return baseYield + (bestImprovementYield ?? 0f);
-    }
-
-    /// <summary><c>TileResource.generatesNaturallyOn(tile)</c></summary>
-    private static bool GeneratesNaturallyOn(TileResource resource, Tile tile)
-    {
-        if (!resource.TerrainsCanBeFoundOn.Contains(tile.LastTerrain.Name)) return false;
-        var gameContext = new GameContext(tile: tile);
-        var self = (IHasUniques)resource;
-        if (self.HasUnique(UniqueType.NoNaturalGeneration, gameContext)) return false;
-        if (tile.AllTerrains.Any(it => ((IHasUniques)it).HasUnique(UniqueType.BlocksResources, gameContext))) return false;
-
-        var smallerLandmassUniques = self.GetMatchingUniques(UniqueType.NaturalWonderSmallerLandmass, gameContext).ToList();
-        var largerLandmassUniques = self.GetMatchingUniques(UniqueType.NaturalWonderLargerLandmass, gameContext).ToList();
-
-        if (smallerLandmassUniques.Count != 0 || largerLandmassUniques.Count != 0)
-        {
-            var sortedContinents = tile.TileMap.ContinentsSortedBySize;
-            foreach (var unique in smallerLandmassUniques)
-                if (sortedContinents.Take(int.Parse(unique.Params[0], System.Globalization.CultureInfo.InvariantCulture)).Contains(tile.GetContinent())) return false;
-            foreach (var unique in largerLandmassUniques)
-                if (!sortedContinents.Take(int.Parse(unique.Params[0], System.Globalization.CultureInfo.InvariantCulture)).Contains(tile.GetContinent())) return false;
-        }
-        if (tile.Temperature != null && tile.Humidity != null) // Only works when in map generation
-        {
-            foreach (var unique in self.GetMatchingUniques(UniqueType.TileGenerationConditions, gameContext))
-            {
-                var p = unique.Params.Select(it => double.Parse(it, System.Globalization.CultureInfo.InvariantCulture)).ToList();
-                if (tile.Temperature < p[0] || tile.Temperature > p[1]) return false;
-                if (tile.Humidity < p[2] || tile.Humidity > p[3]) return false;
-            }
-        }
-        return true;
     }
 }

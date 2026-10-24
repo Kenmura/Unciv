@@ -15,7 +15,7 @@ public class RiverGenerator(TileMap tileMap, MapGenerationRandomness randomness,
     private readonly int minRiverLength = ruleset.ModOptions.Constants.MinRiverLength;
     private readonly int maxRiverLength = ruleset.ModOptions.Constants.MaxRiverLength;
 
-    public void SpawnRivers(ISet<Tile>? resultingTiles = null)
+    public void SpawnRivers(ICollection<Tile>? resultingTiles = null)
     {
         if (maxRiverLength <= 0) return;
         if (!tileMap.Values.Any(it => it.IsWater)) return;
@@ -54,7 +54,7 @@ public class RiverGenerator(TileMap tileMap, MapGenerationRandomness randomness,
         return null;
     }
 
-    private void SpawnRiver(Tile initialPosition, ISet<Tile>? resultingTiles)
+    private void SpawnRiver(Tile initialPosition, ICollection<Tile>? resultingTiles)
     {
         var endPosition = GetClosestWaterTile(initialPosition)
             ?? throw new InvalidOperationException("No water found for river destination");
@@ -63,7 +63,7 @@ public class RiverGenerator(TileMap tileMap, MapGenerationRandomness randomness,
 
     /// <summary>Spawns a river from <paramref name="initialPosition"/> to <paramref name="endPosition"/>.
     /// If <paramref name="resultingTiles"/> is supplied, it will contain all affected tiles, for map editor.</summary>
-    public void SpawnRiver(Tile initialPosition, Tile endPosition, ISet<Tile>? resultingTiles)
+    public void SpawnRiver(Tile initialPosition, Tile endPosition, ICollection<Tile>? resultingTiles)
     {
         // Recommendation: Draw a bunch of hexagons on paper before trying to understand this, it's super helpful!
         var sides = Enum.GetValues<RiverCoordinate.BottomRightOrLeft>();
@@ -163,7 +163,7 @@ public class RiverGenerator(TileMap tileMap, MapGenerationRandomness randomness,
                 yield return myBottomRight; // tile to our bottom-right
         }
 
-        public void PaintTo(RiverCoordinate newCoordinate, ISet<Tile>? resultingTiles)
+        public void PaintTo(RiverCoordinate newCoordinate, ICollection<Tile>? resultingTiles)
         {
             if (newCoordinate.position == position) // same tile, switched right-to-left
                 PaintBottom(resultingTiles);
@@ -183,7 +183,7 @@ public class RiverGenerator(TileMap tileMap, MapGenerationRandomness randomness,
             }
         }
 
-        private void PaintBottom(ISet<Tile>? resultingTiles)
+        private void PaintBottom(ICollection<Tile>? resultingTiles)
         {
             myTile.HasBottomRiver = true;
             if (resultingTiles == null) return;
@@ -191,7 +191,7 @@ public class RiverGenerator(TileMap tileMap, MapGenerationRandomness randomness,
             if (myBottomCenter != null) resultingTiles.Add(myBottomCenter);
         }
 
-        private void PaintBottomLeft(ISet<Tile>? resultingTiles)
+        private void PaintBottomLeft(ICollection<Tile>? resultingTiles)
         {
             myTile.HasBottomLeftRiver = true;
             if (resultingTiles == null) return;
@@ -199,7 +199,7 @@ public class RiverGenerator(TileMap tileMap, MapGenerationRandomness randomness,
             if (myBottomLeft != null) resultingTiles.Add(myBottomLeft);
         }
 
-        private void PaintBottomRight(ISet<Tile>? resultingTiles)
+        private void PaintBottomRight(ICollection<Tile>? resultingTiles)
         {
             myTile.HasBottomRightRiver = true;
             if (resultingTiles == null) return;
