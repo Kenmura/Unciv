@@ -177,6 +177,30 @@ public static partial class DiplomacyAiTests
             Assert.Equal(baseline + 15f, Baseline(w));
         }
 
+        [Fact]
+        public void AlliedWar_JoinsInWhenAFriendFightsTheTarget()
+        {
+            var w = ArmedWorld();
+            w.SetOpinion(w.A, w.T, 50f); // T is our Friend
+            w.Diplo(w.T, w.B).DeclareWar();
+            var baseline = Baseline(w);
+            w.Diplo(w.T, w.B).SetFlag(DiplomacyFlags.Denunciation, 10);
+            Assert.Equal(baseline + 2f, Baseline(w)); // denunciation by the friend: +2
+            w.Diplo(w.A, w.T).SetFlag(DiplomacyFlags.DeclarationOfFriendship, 10);
+            Assert.Equal(baseline + 2f + 3f, Baseline(w)); // a friendship-declared ally at war with the target counts 5 instead of the plain 2
+            w.Diplo(w.A, w.T).SetFlag(DiplomacyFlags.DefensivePact, 10);
+            Assert.Equal(baseline + 2f + 13f, Baseline(w)); // a defensive pact ally counts 15 instead of 2
+        }
+
+        [Fact]
+        public void HumanTargets_ScaleTheCombatRatioByTheDifficultyUnitCostModifier()
+        {
+            var human = ArmedWorld(bIsHuman: true);
+            var ai = ArmedWorld();
+            // the default difficulty has an AI unit cost modifier of 1: the ratio is unchanged
+            Assert.Equal(Baseline(ai), Baseline(human));
+        }
+
         // ---- attack paths
 
         private static void MakeBarrier(World w, string terrain)
