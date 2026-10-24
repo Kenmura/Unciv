@@ -345,7 +345,7 @@ flowchart TD
   class T061 done
   class T062 done
   class T063 done
-  class T064 prog
+  class T064 review
   class T065 done
   class T066 review
   class T067 prog
@@ -418,7 +418,7 @@ flowchart TD
 | T133 | **On deck** (after T066) | T066 | 0 | Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager |
 | T066 | Needs-Review [Claude] | T065, T060 | 47 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T046 | Available (waiting on T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
-| T064 | In-Progress [Claude] | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
+| T064 | Needs-Review [Claude] | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T069 | Available (waiting on T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T035 | Available (waiting on T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |

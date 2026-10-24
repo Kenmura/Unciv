@@ -20,7 +20,7 @@ namespace Unciv.Core.Tests.Logic.CityTests;
 public sealed class CityManagerTests
 {
     /// <summary>Tile rank = its food + 0.5 * its production; a specialist ranks as given in <see cref="SpecialistRanks"/>.</summary>
-    private sealed class StandInAutomation : ICityWorkAutomation
+    internal sealed class StandInAutomation : ICityWorkAutomation
     {
         public Dictionary<string, float> SpecialistRanks { get; } = [];
         public float RankStatsForCityWork(Stats stats, CityObject city, bool areWeRankingSpecialist) => stats.Food + 0.5f * stats.Production;
@@ -28,7 +28,7 @@ public sealed class CityManagerTests
         public float RankTileForCityWork(TileClass tile, CityObject city) => RankStatsForCityWork(tile.Stats.GetTileStats(city, city.Civ), city, false);
     }
 
-    private static Ruleset MakeRuleset()
+    internal static Ruleset MakeRuleset()
     {
         var ruleset = new Ruleset();
         ruleset.Terrains.Put("Grassland", new Terrain { Name = "Grassland", Type = TerrainType.Land, Food = 2f });
@@ -40,7 +40,7 @@ public sealed class CityManagerTests
         return ruleset;
     }
 
-    private static Civilization MakeCiv(FakeGameInfoState info, string name, bool human = true, string? cityStateType = null,
+    internal static Civilization MakeCiv(FakeGameInfoState info, string name, bool human = true, string? cityStateType = null,
         List<string>? nationCities = null, List<string>? nationUniques = null)
     {
         var civ = new Civilization(new NationObject { Name = name, CityStateType = cityStateType, Cities = nationCities ?? [], Uniques = nationUniques ?? [] })
@@ -62,7 +62,7 @@ public sealed class CityManagerTests
         return civ;
     }
 
-    private sealed record World(Civilization Civ, FakeGameInfoState Info, TileMap Map, CityObject City, FakeCityStats Stats, FakeCityConstructions Constructions, StandInAutomation Ranking)
+    internal sealed record World(Civilization Civ, FakeGameInfoState Info, TileMap Map, CityObject City, FakeCityStats Stats, FakeCityConstructions Constructions, StandInAutomation Ranking)
     {
         public TileClass TileAt(int x, int y) => Map[HexCoord.Of(x, y)];
         public CityPopulationManager Population => City.Population;
@@ -71,7 +71,7 @@ public sealed class CityManagerTests
     }
 
     /// <summary>A civ with one city at (4,4) on a 9x9 grassland map (so that the work range 3 fits), with the real managers.</summary>
-    private static World NewWorld(bool human = true, string? cityStateType = null, Action<Ruleset>? configure = null, bool claim = true)
+    internal static World NewWorld(bool human = true, string? cityStateType = null, Action<Ruleset>? configure = null, bool claim = true, List<string>? nationUniques = null)
     {
         var ruleset = MakeRuleset();
         configure?.Invoke(ruleset);
@@ -82,7 +82,7 @@ public sealed class CityManagerTests
                 map.TileList.Add(new TileClass { Position = HexCoord.Of(x, y), BaseTerrain = x == 5 && y == 4 ? "Hill" : "Grassland" });
         map.SetTransients(ruleset);
         info.Map = map;
-        var civ = MakeCiv(info, "Rome", human, cityStateType);
+        var civ = MakeCiv(info, "Rome", human, cityStateType, nationUniques: nationUniques);
         var constructions = new FakeCityConstructions();
         var city = new CityObject
         {

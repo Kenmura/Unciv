@@ -4,6 +4,7 @@ using Unciv.Json;
 using Unciv.Logic.Map;
 using Unciv.UI.Screens.OverviewScreen;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 
 namespace Unciv.Logic.Civilization;
 
@@ -42,6 +43,10 @@ public sealed class TechAction(string techName = "") : NotificationAction
 public sealed class CityAction(HexCoord city = default) : NotificationAction
 {
     internal HexCoord City { get; } = city;
+
+    /// <summary>Kotlin <c>CityAction.withLocation(city)</c> (T064)</summary>
+    public static IEnumerable<NotificationAction> WithLocation(CityObject city) =>
+        [new LocationAction(city.Location), new CityAction(city.Location)];
 }
 
 /// <summary>enter diplomacy screen</summary>

@@ -566,7 +566,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     TestGame-based fixtures (FreeBuildingTests, production cases) remain T072.
 
 ### T064 City turn and conquest: CityTurnManager, CityConquestFunctions
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T060, T061, T063
 - Source: core/src/com/unciv/logic/city/managers/CityTurnManager.kt, CityConquestFunctions.kt
 - Fixtures: tests/src/com/unciv/logic/city/CityConquestFunctionsTest.kt (TestGame-based: T072)
@@ -575,6 +575,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T12:34Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~600 LOC. Conquest touches units, diplomacy and religion: concrete T055-T063 classes, MapUnit via `IMapUnitState` (retyped by T065).
   - From T060: City.AnnexCity/PuppetCity/LiberateCity/MoveToCiv throw InvalidOperationException (TODO(T064)); replace the bodies by CityConquestFunctions(this).annexCity() etc. City.DestroyCity is ported, but only exercised against fake sub-objects.
+  - Implemented CityTurnManager + CityConquestFunctions (Logic/City/Managers). City.AnnexCity/PuppetCity/LiberateCity/MoveToCiv now delegate to CityConquestFunctions (TODO(T064) throws removed; test ConquestFunctions_AreNotPortedYet replaced).
+    Seams: Battle.destroyIfDefeated (T083) and TradeLogic(a,b).currentTrade+acceptTrade(false) (T086) go through ICityConquestExternals (CityManagerSeams.cs), a replaceable internal instance property City.ConquestExternals that defaults to throwing NotSupported (owner markers T083/T086), like CityPopulationManager.Automation. It also carries the two client settings read by resetSpecialistsControl in moveToCiv (autoAssignSpecialistsInNewCities default true, local user id null; TODO(T046)). T083/T086 replace the property by direct calls.
+    Stripped: timeThis wrappers, GUI.setUpdateWorldOnNextRender, city.clearCaches() (TODO(T093) at the 2 Kotlin call sites in CityTurnManager). Added CityAction.WithLocation(city) (Kotlin companion, deferred by T0xx notes in NotificationActions).
+    Traps kept: tileBasedRandom = GameRandom(centerTile.Position.GetHashCode()) (Kotlin data class hash 31x+y), consumed gold roll first then per-building nextInt(100)<34 in built-building order; goldPlundered float->int truncation; Kotlin when-branch order in destroyBuildingsOnCapture (else-if chain). Snapshot copies (ToList) added where Kotlin iterates a live sequence while removing buildings/units. nextTurnFlags keys snapshot via ToList.
+    Tests: Unciv.Core.Tests/Logic/City/CityTurnTests.cs (30 cases) over the real Civilization/TileMap/City world of CityManagerTests (helpers made internal; FakeCityConstructions got ChooseNextConstructionIsNoOp, FakeCityStats.ResetCounters). TestGame-based CityConquestFunctionsTest stays with T072. Coverage: CityTurnManager 92.5%, CityConquestFunctions 88.7% (uncovered: stockpiled-resource/trigger-unique branches of startTurn, resurrection notifications, capital relocation in moveToCiv).
 
 ### T065 MapUnit core: MapUnit, MapUnitCache
 - State: Done

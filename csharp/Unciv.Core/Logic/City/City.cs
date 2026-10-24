@@ -30,7 +30,7 @@ namespace Unciv.Logic.City;
 // - timeThis profiling wrappers and the purity annotations.
 // - getLandAttackPath / getAmphibiousAttackPath / getRoadPath / getRoadPathToAny, their PathingMap caches and clearCaches: PathingMap
 //   is ported in T093, which adds them (they are the only users of the caches).
-// - annexCity / puppetCity / liberateCity / moveToCiv: CityConquestFunctions is ported in T064 (until then they throw).
+// - annexCity / puppetCity / liberateCity / moveToCiv: CityConquestFunctions (T064).
 // - resetSpecialistsControl reads UncivGame.Current.settings (client state): its two inputs are explicit parameters.
 // - T065 retyped the unit access of getGarrison / destroyCity / sellBuilding to MapUnit.
 // - Kotlin HashSet<Tile> tilesInRange is a LinkedHashSet (identity-hashed Tile keys have no deterministic JVM order); it is only read by
@@ -589,19 +589,18 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
         }
     }
 
-    // TODO(T064): CityConquestFunctions(this).annexCity()
-    public void AnnexCity() => throw new InvalidOperationException("CityConquestFunctions is not ported yet (TODO(T064))");
+    public void AnnexCity() => new CityConquestFunctions(this).AnnexCity();
 
     /// <summary>This happens when we either puppet OR annex, basically whenever we conquer a city and don't liberate it</summary>
-    // TODO(T064): CityConquestFunctions(this).puppetCity(conqueringCiv)
-    public void PuppetCity(CivilizationObject conqueringCiv) => throw new InvalidOperationException("CityConquestFunctions is not ported yet (TODO(T064))");
+    public void PuppetCity(CivilizationObject conqueringCiv) => new CityConquestFunctions(this).PuppetCity(conqueringCiv);
 
     /// <summary>Liberating is returning a city to its founder - makes you LOSE warmongering points</summary>
-    // TODO(T064): CityConquestFunctions(this).liberateCity(conqueringCiv)
-    public void LiberateCity(CivilizationObject conqueringCiv) => throw new InvalidOperationException("CityConquestFunctions is not ported yet (TODO(T064))");
+    public void LiberateCity(CivilizationObject conqueringCiv) => new CityConquestFunctions(this).LiberateCity(conqueringCiv);
 
-    // TODO(T064): CityConquestFunctions(this).moveToCiv(newCivInfo)
-    public void MoveToCiv(CivilizationObject newCivInfo) => throw new InvalidOperationException("CityConquestFunctions is not ported yet (TODO(T064))");
+    public void MoveToCiv(CivilizationObject newCivInfo) => new CityConquestFunctions(this).MoveToCiv(newCivInfo);
+
+    /// <summary>Seam for the not yet ported <c>Battle</c> (T083) and <c>TradeLogic</c> (T086): tests install a stand-in. Not serialized, not cloned.</summary>
+    internal ICityConquestExternals ConquestExternals { get; set; } = CityManagerSeams.UnportedConquest;
 
     internal void TryUpdateRoadStatus()
     {

@@ -1035,16 +1035,6 @@ public class CityCoreTests
     }
 
     [Fact]
-    public void ConquestFunctions_AreNotPortedYet()
-    {
-        var w = NewWorld();
-        Assert.Throws<InvalidOperationException>(() => w.City.AnnexCity());
-        Assert.Throws<InvalidOperationException>(() => w.City.PuppetCity(w.Civ));
-        Assert.Throws<InvalidOperationException>(() => w.City.LiberateCity(w.Civ));
-        Assert.Throws<InvalidOperationException>(() => w.City.MoveToCiv(w.Civ));
-    }
-
-    [Fact]
     public void FoundingCivObject_ResolvesTheSerializedCivIdLazily()
     {
         var w = NewWorld();

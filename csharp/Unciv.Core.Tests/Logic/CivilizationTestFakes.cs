@@ -260,6 +260,7 @@ internal sealed class FakeCityExpansion : CityExpansionManager
 internal sealed class FakeCityStats(CityObject city) : CityStats(city)
 {
     public int UpdateCalls { get; private set; }
+    public void ResetCounters() => UpdateCalls = 0;
     public List<bool> UpdateCivStatsArguments { get; } = [];
     public override void Update(IConstruction? currentConstruction = null, bool updateTileStats = true, bool updateCivStats = true, bool calculateGrowthModifiers = true)
     {
@@ -287,7 +288,11 @@ internal sealed class FakeCityConstructions : CityConstructions
     public override int GetWorkDone(string constructionName) => 0;
     public IConstruction? CurrentConstruction { get; set; }
     public override IConstruction GetCurrentConstruction() => CurrentConstruction ?? throw new NotSupportedException();
-    public override void ChooseNextConstruction() => throw new NotSupportedException();
+    public bool ChooseNextConstructionIsNoOp { get; set; }
+    public override void ChooseNextConstruction()
+    {
+        if (!ChooseNextConstructionIsNoOp) throw new NotSupportedException();
+    }
     public int InProgressValidations { get; private set; }
     public override void ValidateInProgressConstructions() => InProgressValidations++;
     public override Building? CheapestStatBuilding(Stat stat) => null;
