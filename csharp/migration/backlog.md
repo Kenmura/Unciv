@@ -462,7 +462,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (Antigravity): Pass. Verified EngineOptions design and implementation against Kotlin DebugUtils.kt and DETERMINISM.md: instance-owned mutable state replacing global statics, proper exclusion of UI flags (SHOW_TILE_COORDS, SHOW_TILE_IMAGE_LOCATIONS, SHOW_FPS), IStateHashable inclusion of rule-affecting fields with order-independent CivIdsInExperimentGroup set hashing, diagnostic separation for SettlerScores, independent deep cloning, and documentation in DETERMINISM.md 2.6. Re-ran Gate (~EngineOptionsTests, 5/5 passed) and Standard checks (dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test — 675/675 passed).
 
 ### T049 Model leaves: ModConstants, UncivSound, TutorialTrigger
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: none
 - Source: core/src/com/unciv/models/{ModConstants,UncivSound,TutorialTrigger}.kt
 - Fixtures: tests/src/com/unciv/logic/ModConstantsTests.kt (4 tests); otherwise generate golden values for the reflective equals/hashCode/toString/merge
@@ -471,6 +471,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T02:42:00Z
 - Notes: Found missing while expanding the backlog; they are needed by T030 (`ModOptions.constants`, `Tutorial`/`TutorialTrigger`) and `Stat.purchaseSound`. ModConstants uses Java reflection for `merge/equals/hashCode/toString` over `declaredFields` in declaration order, with `hashCode` chaining `withHash(field.hashCode())` and `equals` being Java boxed `equals` (Double/Float compare bits: `NaN == NaN`, `0.0 != -0.0`); use C# reflection over the properties in declaration order and `JavaHash`/`Randomness.WithHash`, and the Java `toString` of floats/doubles (`JavaFormat.ToJavaString`, T047). Nested data class `UnitUpgradeCost` needs Kotlin data-class `equals/hashCode/toString`. `ImmutableColor` is NOT ported here (no engine Color type yet): decide with Nation (T032).
 - Implementer notes: Properties are PascalCase with `[JsonPropertyName]` equal to the Kotlin names (generated from the Kotlin source, 44 constants), reflected in `MetadataToken` (declaration) order. The nested data class is `ModConstants.UpgradeCostConstants` (a nested type cannot share the name of the `UnitUpgradeCost` property); its `ToString` still prints `UnitUpgradeCost(...)`. Hash codes of `Defaults` (670061036) and of the `{99, 6.0}` instance (1000388743) and the `toString` forms are golden values from the real JVM class. `TutorialTrigger` keeps the Kotlin entry names; `Value()`/`IsCivilopedia()` are extension methods. `UncivSound` is a record with the static instances. `TODO(T030)` marks the upstream "implement as unique conditionals" note.
+  - Review (Antigravity): Pass. Verified `ModConstants.cs`, `UncivSound.cs`, `TutorialTrigger.cs`, and `ModConstantsTests.cs` against Kotlin sources: all 44 `ModConstants` properties and `[JsonPropertyName]` mappings in declaration (`MetadataToken`) order, Java boxed `Equals`/`GetHashCode` (via `JavaHash` and `WithHash` matching JVM golden hashes `670061036` and `1000388743`), `ToString` and `Merge` reflection semantics, `UpgradeCostConstants` data-class parity, all 19 `UncivSound` constants, and all 41 `TutorialTrigger` entries + `Value()`/`IsCivilopedia()`. Re-ran Gate (`~ModConstantsTests`, 8/8 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 675/675 passed).
 
 ### T046 GameInfo core and the hooks waiting for it
 - State: Available
@@ -585,13 +586,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - **Fix made by reviewer:** Kotlin's `toFloatOrNull` accepts Java hex float literals (`0x1.8p1`, `ScreenFloatValueRegEx` `HexString` branch); the port rejected them. Added hex validation + value parsing and 13 theory cases + a value test. Value is exact up to 53 significant bits (only validity is used by the engine).
     - **For downstream tickets:** (1) `UniqueParameterErrorSeverity` is declared at namespace level here, not nested in `UniqueType`; T026 must reuse it and add the `RulesetErrorSeverity` mapping (`PossibleFilteringUnique→WarningOptionsOnly`, `RulesetSpecific→Warning`, `RulesetInvariant→Error`). (2) `IRulesetObjectParameterView.HasTagUnique` and `HasGreatPersonUnique`/`HasRegionUnique` are text-matching defaults; Kotlin goes through `UniqueMap`/`hasUnique(UniqueType)` (conditionals evaluated against `GameContext.EmptyState`, timed triggerables excluded), so T027/T030 must override them. (3) `RulesetMapView` over `Dictionary` is insertion-ordered only without removals; T034's ruleset maps must preserve load order for autocomplete output. (4) `CountablesProvider` default is a stub until T028 (already TODO-marked).
 ### T026 Unique system: UniqueType enum
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: T025
 - Source: core/src/com/unciv/models/ruleset/unique/UniqueType.kt
 - Fixtures: none - generate golden values (text/params/targets per entry, from Kotlin)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/UniqueType.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueTypeTests`
-- Claimed: 2026-10-24T02:32:36Z
+- Claimed: 2026-10-24T02:48:00Z
 - Notes: ~1.2k LOC mostly data. Preserve declaration order (ordinal) and placeholder text exactly. Consider a generated-from-Kotlin consistency test over all entries.
   - Implementer notes (Claude):
     - Deliverables: `UniqueType.cs` (enum, 638 entries, ordinals = Kotlin declaration order), `UniqueTypeData.cs` (declaration-ordered table `Rows[ordinal]` = the Kotlin constructor args: text, targets, flags, docDescription), `UniqueTypeExtensions.cs` (`Text`, `PlaceholderText`, `TargetTypes`, `Flags`, `DocDescription`, `ParameterTypeMap`, `CanAcceptUniqueTarget`, `UniqueTypeMap`, `Entries`), `UniqueTypeTests.cs` + `Golden/UniqueType.golden.tsv` (csproj copies it to the output).
