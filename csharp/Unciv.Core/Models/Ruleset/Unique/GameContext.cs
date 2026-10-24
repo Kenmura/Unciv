@@ -190,7 +190,9 @@ public sealed class GameContext : IEquatable<GameContext>
 
     /// <summary>
     /// Kotlin data class <c>copy()</c>. The stored <c>gameInfo</c> is copied as is and never re-derived from the new members,
-    /// unless <paramref name="gameInfo"/> is given.
+    /// unless <paramref name="gameInfo"/> is given. A <c>null</c> argument means "keep"; to set a member to <c>null</c> pass
+    /// <c>new CopyArg&lt;T&gt;(null)</c> (a variable that merely holds <c>null</c> converts to exactly that). <paramref name="combatAction"/>
+    /// can only be replaced, not cleared; no Kotlin caller of <c>copy()</c> clears it.
     /// </summary>
     public GameContext Copy(
         CopyArg<IGameContextCivilization>? civInfo = null,
