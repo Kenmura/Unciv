@@ -54,7 +54,6 @@ flowchart TD
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
     T144["T144<br/>Port TileUniquesTests.pillageYieldTest (split from T103)"]
     T148["T148<br/>Deferred TestGame fixtures needing Tile.startWorkingOnImprov..."]
-    T149["T149<br/>Deferred civilization fixtures needing Battle: DiplomacyMana..."]
     T150["T150<br/>Deferred civilization fixtures needing TradeEvaluation: Gold..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
@@ -195,7 +194,6 @@ flowchart TD
   class T143 done
   class T144 ready
   class T148 prog
-  class T149 review
   class T150 prog
   class T152 ready
   class T154 waiting
@@ -219,7 +217,7 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 28]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
@@ -256,6 +254,5 @@ xychart-beta
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T148 | In-Progress [Claude] | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T149 | Needs-Review [Claude] | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T150 | In-Progress [Claude] | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

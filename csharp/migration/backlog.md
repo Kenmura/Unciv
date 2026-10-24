@@ -1690,7 +1690,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T141: Tile.startWorkingOnImprovement/queueImprovement, TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource are ported in T139.
 
 ### T149 Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T142, T083
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/DiplomacyManagerTests.kt (should change opinions when liberating city / conquering city, liberating city-state keeps third-party influence and applies Civ5 liberator formula)
