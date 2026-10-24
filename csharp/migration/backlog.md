@@ -375,7 +375,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Container of `GameParameters` and `MapParameters` with the two cloning constructors (from another setup; from a `GameInfo` when that exists: leave that constructor as `TODO(T0xx)` pointing at the GameInfo ticket). `mapFile` (FileHandle, transient) and `fromSettings` (reads `UncivGame.Current.settings.lastGameSetup`, applies QuickStart defaults: `shape = rectangular`, `worldWrap = true`, `espionageEnabled = true`) are client concerns; port the default-setup branch as a plain factory taking an optional difficulty if it is useful to headless tests.
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T006, T007, T010
 - Source: core/src/com/unciv/logic/map/MapSize.kt, MapParameters.kt, NeighborDirection.kt, logic/map/tile/RoadStatus.kt
 - Fixtures: none - generate golden values (incl. MapSize radius/size math, MapParameters JSON)
@@ -383,6 +383,12 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~MapParametersTests`
 - Claimed: 2026-10-24T01:39:11Z
 - Notes: Unblocks half of T015. Watch Kotlin Int/Float rounding in MapSize custom-size logic (roundToInt is half-up).
+  - Implementer notes (Antigravity):
+    - Ported `MapSize` (`Predefined` enum + extension properties, custom radius and width/height constructors via `HexMath`, `GetPredefinedOrNextSmaller`, `FixUndesiredSizes`, `Clone`, JSON serialization) under `Unciv.Logic.Map`.
+    - Ported `MapParameters` (`MapShape`, `MapGeneratedMainType`, `MapType`, `MirroringType`, `MapResourceSetting` + extensions, all Kotlin JSON property names including lowercase `temperatureintensity`, `GetArea`, `NumberOfTiles`, `ToString` with `NiceToString` formatting, `Clone`, and deterministic `Seed = 0L` default + `Reseed(long)` / `Reseed(GameRandom)` / `ResetAdvancedSettings`) under `Unciv.Logic.Map`.
+    - Ported `NeighborDirection` (`0..5` ordinals + `ByClockPosition` / `GetClockPosition`) and `RoadStatus` (`None = 0`, `Road = 1`, `Railroad = 2` + `GetUpkeep`/`GetMovement`/`GetMovementImproved`/`GetRemoveAction`; `Improvement(Ruleset)` noted as `TODO(T034)`).
+    - Verified golden values generated on the JVM from compiled Kotlin `MapSize`, `MapParameters`, and `UncivJsonKt.json().toJson(...)` in `MapParametersTests`.
+    - Ran Gate (6/6 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 421/421 passed).
 
 ### T023 Translation core (headless)
 - State: In-Progress [Antigravity]
