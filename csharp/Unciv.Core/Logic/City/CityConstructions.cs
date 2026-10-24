@@ -92,6 +92,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
 
     #region Serialized Fields
     public JavaHashSet<string> BuiltBuildings { get; set; } = new();
+    [JsonInclude]
     public JavaHashMap<string, int> InProgressConstructions { get; private set; } = new();
     public bool CurrentConstructionIsUserSet { get; set; }
 
@@ -103,6 +104,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
     /// Maps cities by id to a set of the buildings they received (by nation equivalent name)
     /// Source: <see cref="UniqueType.GainFreeBuildings"/>
     /// </summary>
+    [JsonInclude]
     public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; private set; } = [];
     #endregion
 

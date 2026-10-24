@@ -24,7 +24,8 @@ internal sealed class FakeUnitPromotions : IUnitPromotions
     public int NumberOfPromotions => Promotions.Count;
     public int XP { get; set; }
     public int XpForNextPromotion() => 10;
-    public IPromotionTree CreatePromotionTree() => throw new NotSupportedException();
+    public FakePromotionTree Tree { get; } = new();
+    public IPromotionTree CreatePromotionTree() => Tree;
     public MapUnitClass? TransientsSetFor { get; private set; }
     public void AddPromotion(string promotionName, bool isFree = false)
     {
@@ -40,6 +41,14 @@ internal sealed class FakeUnitPromotions : IUnitPromotions
         return clone;
     }
     public void SetTransients(MapUnitClass unit) => TransientsSetFor = unit;
+}
+
+internal sealed class FakePromotionTree : IPromotionTree
+{
+    public List<string> Possible { get; } = [];
+    public List<string> Nodes { get; } = [];
+    public IEnumerable<string> PossiblePromotionNames => Possible;
+    public IEnumerable<string> AllNodePromotionNames() => Nodes;
 }
 
 internal sealed class FakeUnitMovement : IUnitMovement
