@@ -66,7 +66,6 @@ flowchart TD
     T148["T148<br/>Deferred TestGame fixtures needing Tile.startWorkingOnImprov..."]
     T149["T149<br/>Deferred civilization fixtures needing Battle: DiplomacyMana..."]
     T150["T150<br/>Deferred civilization fixtures needing TradeEvaluation: Gold..."]
-    T151["T151<br/>Deferred civilization fixtures needing JSON wiring: QuestTes..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
     T153["T153<br/>T111 leftovers: map-backed tests for RuinsManager.SelectNext..."]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
@@ -231,7 +230,6 @@ flowchart TD
   class T148 waiting
   class T149 ondeck
   class T150 ondeck
-  class T151 review
   class T152 ready
   class T153 review
   class T154 waiting
@@ -250,10 +248,10 @@ Generated from the git history of `backlog.md` (UTC; the last point is the curre
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 01:32", "24 02:39", "24 03:45", "24 04:52", "24 05:59", "24 07:06", "24 08:12", "24 09:19", "24 10:26", "24 11:33", "24 12:39", "24 13:46", "24 14:53", "24 15:59", "24 17:06", "24 18:13"]
+    x-axis ["24 01:32", "24 02:39", "24 03:46", "24 04:52", "24 05:59", "24 07:06", "24 08:13", "24 09:19", "24 10:26", "24 11:33", "24 12:40", "24 13:46", "24 14:53", "24 16:00", "24 17:07", "24 18:13"]
     y-axis "Tickets" 0 --> 67
     line [31, 32, 29, 24, 21, 21, 21, 21, 39, 55, 58, 60, 56, 48, 36, 35]
-    line [3, 5, 2, 2, 0, 0, 0, 0, 4, 2, 4, 0, 1, 4, 4, 5]
+    line [3, 5, 2, 2, 0, 0, 0, 0, 4, 2, 4, 0, 1, 4, 4, 4]
 ```
 
 ## Incomplete tickets
@@ -297,6 +295,5 @@ xychart-beta
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T151 | Needs-Review [Claude] | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
 | T153 | Needs-Review [Claude] | T111 | 0 | T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

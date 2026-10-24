@@ -1698,7 +1698,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T142: TradeLogic.AcceptTrade calls TradeEvaluation.GetTradeAcceptability, which throws until T089 lands.
 
 ### T151 Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T142, T140
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/QuestTests.kt, tests/src/com/unciv/logic/GameSerializationTests.kt
