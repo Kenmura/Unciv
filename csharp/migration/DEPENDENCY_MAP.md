@@ -353,7 +353,7 @@ flowchart TD
   class T057 done
   class T058 done
   class T059 done
-  class T060 prog
+  class T060 review
   class T061 ondeck
   class T062 ondeck
   class T063 waiting
@@ -409,7 +409,7 @@ flowchart TD
 | T061 | **On deck** (after T060) | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T062 | **On deck** (after T060) | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
 | T112 | **On deck** (after T060) | T060 | 0 | Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype |
-| T060 | In-Progress [Claude] | T055, T056, T057, T058 | 56 | City core: City, CityFocus, CityResources, CityEspionageManager |
+| T060 | Needs-Review [Claude] | T055, T056, T057, T058 | 56 | City core: City, CityFocus, CityResources, CityEspionageManager |
 | T066 | Available (waiting on T065, T060) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T060, T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
