@@ -1658,7 +1658,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented (Claude). Fixtures/Map/UnitMovementFixtureTests (all 25 Kotlin cases) and PathfindingFixtureTests (54 of 58) over the real TestGame, ClassicPathfinding parameter set only. Not ported: the AStarPathfinding parameter set and the 3 A*-only cases (shortestPathEvenWhenItsWayMoreTiles, canPauseBeforeMountainsToCrossWithoutDamage, getMovementToTilesAtPosition_withNegativeMovement_ReturnsOrigin): noted on T093. connectRoadAction needs RoadToAutomation: noted on T092. Kotlin quirk kept: getShortestPath_avoidsUnfriendly/DoesNotAvoidAllies assert path1.size twice (typo for path2). No engine bugs found; all pass first run.
 
 ### T146 UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T083, T141
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/UnitFormationTests.kt (test escort attack and move civilian unit, test escort attack with ranged unit)
@@ -1666,6 +1666,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~UnitFormationFixture
 - Claimed: 2026-10-24T18:31Z
 - Notes: Split from T141: Battle (T083) not ported yet.
+  - Ported both Battle.Attack escort cases (TestEscortAttackAndMoveCivilianUnit, TestEscortAttackWithRangedUnit). DebugUtils.VISIBLE_MAP maps to testGame.GameInfo.EngineOptions.VisibleMap (T048). No engine changes needed; all pass first run. Full suite 3728 pass.
 
 ### T147 MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps
 - State: Done

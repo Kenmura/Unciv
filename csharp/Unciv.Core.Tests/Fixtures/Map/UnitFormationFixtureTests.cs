@@ -5,7 +5,7 @@ using Unciv.Logic.Civilization;
 namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
 // T141: port of tests/src/com/unciv/logic/map/UnitFormationTests.kt over the real TestGame.
-// Deferred (see the follow-up tickets named in T141 Notes): the two Battle.attack cases (T083) and the Tile.startWorkingOnImprovement
+// T146 adds the two Battle.attack cases. Deferred (see T141 Notes): the Tile.startWorkingOnImprovement
 // tail of `formation idle units` (T148).
 [Collection("RulesetCache")]
 public sealed class UnitFormationFixtureTests
@@ -197,6 +197,58 @@ public sealed class UnitFormationFixtureTests
         civilianUnit.StartEscorting();
         civilianDistanceToTiles = civilianUnit.Movement.GetDistanceToTiles();
         Assert.All(militaryUnit.Movement.GetDistanceToTiles().Keys, it => Assert.True(civilianDistanceToTiles.ContainsKey(it)));
+    }
+
+    [Fact]
+    public void TestEscortAttackAndMoveCivilianUnit()
+    {
+        SetUp(3);
+        var enemyCiv = testGame.AddCiv();
+        civInfo.DiplomacyFunctions.MakeCivilizationsMeet(enemyCiv);
+        civInfo.GetDiplomacyManager(enemyCiv)!.DeclareWar();
+        var centerTile = testGame.GetTile(0, 0);
+        var enemyTile = testGame.GetTile(2, 2);
+        var scout = testGame.AddUnit("Warrior", civInfo, centerTile);
+        var civilianUnit = testGame.AddUnit("Worker", civInfo, centerTile);
+        var enemyUnit = testGame.AddUnit("Warrior", enemyCiv, enemyTile);
+        enemyUnit.Health = 1; // Needs to be killable by the scout
+        scout.StartEscorting();
+        Assert.True(scout.IsEscorting());
+        Assert.True(civilianUnit.IsEscorting());
+
+        Assert.Single(TargetHelper.GetAttackableEnemies(scout, scout.Movement.GetDistanceToTiles()));
+        Battle.Attack(new MapUnitCombatant(scout), new MapUnitCombatant(enemyUnit));
+        Assert.Equal(0, enemyUnit.Health);
+        Assert.Equal(enemyTile, scout.GetTile());
+        Assert.Equal(enemyTile, civilianUnit.GetTile());
+        Assert.True(scout.IsEscorting());
+        Assert.True(civilianUnit.IsEscorting());
+    }
+
+    [Fact]
+    public void TestEscortAttackWithRangedUnit()
+    {
+        SetUp(3);
+        var enemyCiv = testGame.AddCiv();
+        testGame.GameInfo.EngineOptions.VisibleMap = true;
+        civInfo.DiplomacyFunctions.MakeCivilizationsMeet(enemyCiv);
+        civInfo.GetDiplomacyManager(enemyCiv)!.DeclareWar();
+        var centerTile = testGame.GetTile(0, 0);
+        var enemyTile = testGame.GetTile(3, 3);
+        var archer = testGame.AddUnit("Archer", civInfo, centerTile);
+        var civilianUnit = testGame.AddUnit("Worker", civInfo, centerTile);
+        var enemyUnit = testGame.AddUnit("Warrior", enemyCiv, enemyTile);
+        enemyUnit.Health = 1; // Needs to be killable by the scout
+        archer.StartEscorting();
+        Assert.True(archer.IsEscorting());
+        Assert.True(civilianUnit.IsEscorting());
+
+        Assert.Single(TargetHelper.GetAttackableEnemies(archer, archer.Movement.GetDistanceToTiles()));
+        Battle.Attack(new MapUnitCombatant(archer), new MapUnitCombatant(enemyUnit));
+        Assert.Equal(0, enemyUnit.Health);
+        Assert.True(archer.IsEscorting());
+        Assert.True(civilianUnit.IsEscorting());
+        Assert.Equal(archer.GetTile(), civilianUnit.GetTile());
     }
 
     [Fact]
