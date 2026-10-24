@@ -1763,13 +1763,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T143 at claim time. Remaining deferred cases: CountableTests TestGame cases (testRulesetValidation, testForEveryWithInvalidCountable, testPerCountableForGlobalAndLocalResources, testStatOrResourcePerTurn, testStatsCountables, testKnownCivsCountable, testOwnedTilesCountable, testFilteredCitiesCountable, testFilteredBuildingsCountable, testPoliciesCountables, testEraNumberCountable, testSpeedModifierCountable, countableCanUseContext) and ExpressionTests state cases; UniqueErrorTests.testEducatedEliteGreatPersonGifting (a ported draft fails with NotImplementedException from CityStateSeams.GetForeignCityNearCapital: needs T094 NextTurnAutomation; the UncivGame settings tutorial workaround is not needed); VictoryAvailabilityTests/VictoryMilestoneTests (check DeferredRulesetMembersTests/RulesetObjectTests for what is already covered). Many CountableTests cases may already be covered over fakes in Models/Ruleset/Unique/CountableTests.cs: port the real-game variant only where the Kotlin case differs.
 
 ### T155 Air unit automation: AirUnitAutomation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T090
 - Source: core/src/com/unciv/logic/automation/unit/AirUnitAutomation.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/AirUnitAutomation.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~AirUnitAutomationTests`
-- Claimed:
+- Claimed: 2026-10-24T18:53Z
 - Notes: Split from T090 at claim time (T090 ported BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation and UnitAutomation.tryUpgradeUnit). ~300 LOC. Calls into UnitAutomation/SpecificUnitAutomation members not yet ported are TODO(T###) seams naming their owner (UnitAutomation rest: next ticket; SpecificUnitAutomation: T091).
 
 ### T156 Unit automation: UnitAutomation (all but tryUpgradeUnit)
