@@ -726,14 +726,15 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (adversarial, isolated subagent): first pass CHANGES-REQUESTED for missing tests only (diplomatic-vote win branch, "near territory" notifications, autoplay-stop branch, CheckForVictory loop). Fixed in the follow-up commit with tests for each; no parity/determinism/policy findings. Standard checks + coverage re-run after the fix and rebase: pass.
 
 ### T072 Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T035, T052, T062, T063, T064, T067, T068, T069, T071
 - Source: none (ports tests only)
-- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt, VisibilityTests.kt, UpgradeTests.kt, UnitMovementTests.kt, FixedPointMovementTest.kt, UnitFormationTests.kt, tests/src/com/unciv/logic/city/*, tests/src/com/unciv/logic/civilization/** (incl. diplomacy), GameSerializationTests.kt, PathfindingTests.kt and the deferred cases listed by T055-T071
-- Deliverables: csharp/Unciv.Core.Tests/** ported tests
+- Fixtures: tests/src/com/unciv/logic/city/CityTest.kt, city/managers/CityFounderTest.kt, CityExpansionManagerTest.kt, CityPopulationManagerTest.kt, CityTurnManagerWltkTest.kt, city/CityConquestFunctionsTest.kt (SPLIT at claim: city slice only; map and civilization slices are the follow-up tickets)
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/City/*.cs
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
 - Claimed: 2026-10-24T17:10Z
 - Notes: Created because T035 (TestGame) can only exist once the whole chain is ported, and each earlier ticket deferred its TestGame-based fixtures. Port them over the real TestGame, one test class per Kotlin class; any real behavioural bug found goes back to the owning ticket as a review note. Split by Kotlin test directory at claim time if too large. Also ports the Countables/Conditionals tests T028 deferred that need real game state, if T035 did not.
+  - Claude 2026-10-24: SPLIT at claim time (the original scope is ~250 Kotlin test cases). This ticket ports the city slice only: CityTest (12), CityFounderTest (13), CityExpansionManagerTest (13), CityPopulationManagerTest (15), CityTurnManagerWltkTest (2), CityConquestFunctionsTest (14) = 69 tests in csharp/Unciv.Core.Tests/Fixtures/City/ (namespace Unciv.Core.Tests.Fixtures.CityFixtures, so the Gate filter `~Fixtures` selects them). The map and civilization directories moved to two new follow-up tickets. Deviations: (1) CityExpansionManagerTest builds a second CityExpansionManager and points it at the city; the port uses city.Expansion (same class and state). (2) Battle.destroyIfDefeated is T083: CityConquestFunctions tests install a no-op ICityConquestExternals on each city. (3) the two focus/specialist "best job" population tests install a focus-aware ICityWorkAutomation stand-in (the real Automation is T087; TestGame's stand-in ignores CityFocus). No behavioural bug found.
 
 ### T073 MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator
 - State: Done
@@ -1558,6 +1559,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes:
   - Found by T100: Civilization (and everything reachable from it, e.g. Civilization.GameInfo -> Ruleset -> Building) has no JSON wiring, so UncivJson.Serialize(game with civs) throws NotSupportedException; GameInfo.SetTransients also refuses a game without a human civ. Wire the serialized fields (and JsonIgnore the transients), then extend UncivFilesTests with GameSerializationTests' full round trips (canSaveAndLoadUncompressedGame/CompressedGame: gameId, turns, version, cities) and assert the T011 StateHasher hash survives GameInfo -> file -> GameInfo, plus Autosaves.LoadLatestAutosave on real games.
+
+### T141 Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder)
+- State: Available
+- Depends: T072
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt, VisibilityTests.kt, UpgradeTests.kt, UnitFormationTests.kt, UnitMovementTests.kt and PathfindingTests.kt (cases not yet in Logic/Map/*Tests.cs)
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Map/*.cs
+- Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
+- Claimed:
+- Notes: Split from T072 at claim time (T072 ported the city slice). Same pattern: namespace Unciv.Core.Tests.Fixtures.*, [Collection("RulesetCache")], real TestGame; behavioural bugs go back to the owning ticket as review notes.
+
+### T142 Deferred TestGame fixtures: civilization directory and GameSerializationTests
+- State: Available
+- Depends: T072
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/civilization/** (QuestTests, DefensivePactTests, FreeBuildingTests, CityMovingTests, CapitalConnectionsFinderTests, GreatPersonSelectionTest, EspionageTests, diplomacy/*, managers/GoldenAgeManagerTest, ThreatManagerTests), GameSerializationTests.kt
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/*.cs
+- Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
+- Claimed:
+- Notes: Split from T072 at claim time. ThreatManagerTests needs ThreatManager (T087) so depend on it when claiming if still not Done. Same pattern as T072 city fixtures.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

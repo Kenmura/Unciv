@@ -64,6 +64,8 @@ flowchart TD
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T139["T139<br/>Views B leftovers: members blocked on unported engine code (..."]
     T140["T140<br/>Civilization and manager JSON wiring (full GameInfo save/loa..."]
+    T141["T141<br/>Deferred TestGame fixtures: map directory (FreshWater, TileI..."]
+    T142["T142<br/>Deferred TestGame fixtures: civilization directory and GameS..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -145,6 +147,8 @@ flowchart TD
   T083 --> T139
   T079 --> T139
   T080 --> T139
+  T072 --> T141
+  T072 --> T142
   C001 --> C002
   C002 --> C003
   C002 --> C004
@@ -196,7 +200,7 @@ flowchart TD
   class T067 done
   class T068 done
   class T071 done
-  class T072 prog
+  class T072 review
   class T078 done
   class T079 prog
   class T080 ondeck
@@ -232,6 +236,8 @@ flowchart TD
   class T129 ready
   class T139 waiting
   class T140 ready
+  class T141 ondeck
+  class T142 ondeck
 ```
 
 ## Incomplete tickets
@@ -250,15 +256,17 @@ flowchart TD
 | T088 | **On deck** (after T087) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T080 | **On deck** (after T079) | T079, T061, T068 | 9 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T103 | **On deck** (after T072) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
+| T141 | **On deck** (after T072) | T072 | 0 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder) |
+| T142 | **On deck** (after T072) | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | T079 | In-Progress [Claude] | T052, T057, T063, T066, T067 | 15 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T087 | In-Progress [Claude] | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T090 | Available (waiting on T087, T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
+| T072 | Needs-Review [Claude] | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 5 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| T072 | In-Progress [Claude] | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
