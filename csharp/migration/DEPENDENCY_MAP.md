@@ -30,10 +30,8 @@ flowchart TD
     T039["T039<br/>TileMap"]
     T040["T040<br/>Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, Map..."]
     T041["T041<br/>MapGenerator pipeline (audit existing partial work first)"]
-    T042["T042<br/>OdMap import/export"]
     T045["T045<br/>GameSetupInfo"]
     T046["T046<br/>GameInfo core and the hooks waiting for it"]
-    T049["T049<br/>Model leaves: ModConstants, UncivSound, TutorialTrigger"]
     T052["T052<br/>UniqueTriggerActivation and UniqueTriggerExecutors"]
     T053["T053<br/>Tile core (part 2a): Tile"]
     T054["T054<br/>Tile core (part 2b): TileStatFunctions, TileImprovementFunct..."]
@@ -273,10 +271,6 @@ flowchart TD
   T095 --> T097
   T062 --> T097
   T057 --> T097
-  T034 --> T098
-  T039 --> T098
-  T042 --> T098
-  T049 --> T098
   T041 --> T099
   T046 --> T099
   T061 --> T099
@@ -374,10 +368,8 @@ flowchart TD
   class T039 done
   class T040 done
   class T041 prog
-  class T042 done
   class T045 done
   class T046 waiting
-  class T049 done
   class T052 waiting
   class T053 done
   class T054 done
@@ -424,7 +416,7 @@ flowchart TD
   class T095 prog
   class T096 waiting
   class T097 waiting
-  class T098 review
+  class T098 done
   class T099 waiting
   class T100 waiting
   class T101 waiting
@@ -468,12 +460,11 @@ flowchart TD
 | T088 | Available (waiting on T087, T086, T081, T068) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T071 | Available (waiting on T046, T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
 | T083 | Available (waiting on T081, T082, T052, T064, T068, T079, T035) | T081, T082, T052, T064, T068, T079, T035 | 12 | Battle C: Battle, Nuke |
-| T098 | Needs-Review [Claude] | T034, T039, T042, T049 | 12 | Save/load A: FileConversions, MapSaver, IMediaFinder |
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T041 | In-Progress [Claude] | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 10 | MapGenerator pipeline (audit existing partial work first) |
-| T099 | Available (waiting on T041, T046, T061, T066, T078, T098) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
+| T099 | Available (waiting on T041, T046, T061, T066, T078) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
 | T080 | Available (waiting on T079, T061, T068) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
-| T100 | Available (waiting on T071, T098) | T071, T098 | 8 | Save/load B: UncivFiles |
+| T100 | Available (waiting on T071) | T071, T098 | 8 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080, T063) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080, T035) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
@@ -488,7 +479,7 @@ flowchart TD
 | T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T067, T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011 | 1 | End-to-end determinism over N turns |
-| T103 | Available (waiting on T072, T052, T098, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
+| T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052, T057, T062) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |

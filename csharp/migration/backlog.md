@@ -868,7 +868,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~1.0k LOC. Takes the Nation/Era/Technology/BaseUnit members deferred by T032/T033/T034 (makeLink, getSortGroup/getSubCategory, civilopedia text, Nation.getStartBias, Era.getStartingUnits/getEraGatedObjects/matchesFilter, Technology.matchesFilter/getDescription, Difficulty/...) - recheck T032's Notes for the exact list. Seam rule as T053.
 
 ### T098 Save/load A: FileConversions, MapSaver, IMediaFinder
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T034, T039, T042, T049
 - Source: core/src/com/unciv/logic/files/FileConversions.kt, MapSaver.kt, IMediaFinder.kt
 - Fixtures: tests/src/com/unciv/logic/MediaFinderTests.kt, MapSaver parts of tests/src/com/unciv/logic/SerializationTests.kt
