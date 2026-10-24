@@ -16,7 +16,6 @@ namespace Unciv.View;
 // Ported from core/src/com/unciv/view/MapUnitView.kt (T085). Stripped: the purity annotations.
 // Deferred, each with the ticket that ports what it calls:
 //   TODO(T139): containsAttackableEnemy, getAttackableEnemies (TargetHelper), tryAirSweep (AirInterception)
-//   TODO(T080): canInvokeUnitAction, tryInvokeUnitAction (UnitActions)
 //   TODO(T139): getMovementString, getTurnsToBuild, tryStartWorkingOnImprovement (engine members not ported yet)
 // The Kotlin file's `/** How many tiles away ... */` doc comment dangling above containsAttackableEnemy belongs to getAirUnitMovementRange.
 
@@ -267,7 +266,14 @@ public class MapUnitView : ForeignMapUnitView
     }
 
     // TODO(T139): tryAirSweep needs AirInterception.airSweep
-    // TODO(T080): canInvokeUnitAction, tryInvokeUnitAction need UnitActions
+
+    /// <summary><c>true</c> if <see cref="TryInvokeUnitAction"/> would currently find an enabled action of type <paramref name="unitActionType"/></summary>
+    public bool CanInvokeUnitAction(UnitActionType unitActionType) =>
+        UnitActions.GetUnitActions(Unit, unitActionType).Any(it => it.Action != null);
+
+    /// <summary>Invokes the first enabled action of type <paramref name="unitActionType"/></summary>
+    /// <returns>whether an action was invoked</returns>
+    public bool TryInvokeUnitAction(UnitActionType unitActionType) => UnitActions.InvokeUnitAction(Unit, unitActionType);
 
     public bool CanPillage(TileView tileView) => UnitActionsPillage.CanPillage(Unit, tileView.Unwrap());
 

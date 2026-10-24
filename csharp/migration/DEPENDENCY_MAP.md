@@ -190,7 +190,7 @@ flowchart TD
   class T072 done
   class T078 done
   class T079 done
-  class T080 prog
+  class T080 review
   class T081 done
   class T082 done
   class T083 review
@@ -270,7 +270,7 @@ xychart-beta
 | T149 | **On deck** (after T083) | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T083 | Needs-Review [Claude] | T081, T082, T052, T064, T068, T079, T035 | 17 | Battle C: Battle, Nuke |
-| T080 | In-Progress [Antigravity] | T079, T061, T068 | 12 | Unit actions B: UnitActions, UnitActionsFromUniques |
+| T080 | Needs-Review [Antigravity] | T079, T061, T068 | 12 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 7 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
