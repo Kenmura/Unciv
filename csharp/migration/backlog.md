@@ -333,13 +333,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - State: Done (full ticket: backlog-archive.md)
 
 ### T050 Engine UI-package leaf types and EngineColor
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T007, T021, T022, T023
 - Source: core/src/com/unciv/ui/screens/victoryscreen/RankingType.kt, core/src/com/unciv/ui/components/MayaCalendar.kt, core/src/com/unciv/ui/components/MapArrowType.kt (`UnitMovementMemoryType`), core/src/com/unciv/ui/screens/overviewscreen/EmpireOverviewCategories.kt, core/src/com/unciv/ui/screens/mapeditorscreen/MapGeneratorSteps.kt, core/src/com/unciv/ui/components/extensions/FormattingExtensions.kt, core/src/com/unciv/ui/components/extensions/Scene2dExtensions.kt (`colorFromRGB`), core/src/com/unciv/ui/components/extensions/TimeExtensions.kt (`isLargerThan`), core/src/com/unciv/models/ModConstants.kt (`ImmutableColor`)
 - Fixtures: none - generate golden values by running the Kotlin classes on the JVM
 - Deliverables: csharp/Unciv.Core/UI/RankingType.cs, MayaCalendar.cs, UnitMovementMemoryType.cs, EmpireOverviewCategories.cs, MapGeneratorSteps.cs, FormattingExtensions.cs, EngineColor.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UiLeafTypesTests`
-- Claimed: 
+- Claimed: 2026-10-24T04:43Z
 - Notes: Implements the UI-package leaf types carved out for the engine in T043 (#7) and the engine-owned color type (`EngineColor` / `ImmutableColor` / `ColorFromRGB`) needed by `Specialist` (T030), `Terrain` (T031), `Nation`/`CityStateType`/`Era` (T032), `Promotion` (T033), and `ModConstants` (T049). Strip libGDX `Image`/`Actor`/`Popup`/`BaseScreen` UI methods; keep `MayaCalendar.startTurnForMaya` deferred (`TODO` on Civilization).
 
 ### T051 Serialization leaf models: LastSeenImprovement, CivRankingHistory, Notification
