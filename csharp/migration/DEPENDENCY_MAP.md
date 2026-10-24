@@ -46,7 +46,6 @@ flowchart TD
     T081["T081<br/>Battle A: ICombatant, MapUnitCombatant, CityCombatant, Battl..."]
     T082["T082<br/>Battle B: attack recording, TargetHelper, BattleUnitCapture,..."]
     T083["T083<br/>Battle C: Battle, Nuke"]
-    T084["T084<br/>Views A: View, GameView, OwnedView, CivView, ForeignCivView,..."]
     T085["T085<br/>Views B: CityView, ForeignCityView, CityConstructionsView, M..."]
     T086["T086<br/>TradeLogic"]
     T087["T087<br/>Automation core: Automation, AutomationCache, ThreatManager,..."]
@@ -197,8 +196,6 @@ flowchart TD
   T052 --> T111
   T060 --> T111
   T065 --> T111
-  T084 --> T138
-  T086 --> T138
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -273,9 +270,8 @@ flowchart TD
   class T081 done
   class T082 prog
   class T083 waiting
-  class T084 done
   class T085 prog
-  class T086 review
+  class T086 done
   class T087 ondeck
   class T088 waiting
   class T089 waiting
@@ -303,7 +299,7 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T130 prog
-  class T138 ondeck
+  class T138 ready
 ```
 
 ## Incomplete tickets
@@ -317,16 +313,15 @@ flowchart TD
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
+| T138 | **Ready to start** | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
 | T052 | **On deck** (after T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T087 | **On deck** (after T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T071 | **On deck** (after T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
-| T138 | **On deck** (after T086) | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
 | T070 | In-Progress [Claude] | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T085 | In-Progress [Claude] | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
-| T086 | Needs-Review [Claude] | T059, T068, T057 | 15 | TradeLogic |
 | T079 | Available (waiting on T052) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T082 | In-Progress [Claude] | T081, T046, T067, T035 | 13 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
-| T088 | Available (waiting on T087, T086) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
+| T088 | Available (waiting on T087) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T083 | Available (waiting on T082, T052, T079) | T081, T082, T052, T064, T068, T079, T035 | 12 | Battle C: Battle, Nuke |
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T080 | Available (waiting on T079) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
@@ -340,7 +335,7 @@ flowchart TD
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | T101 | Available (waiting on T094, T071) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
+| T089 | Available (waiting on T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
