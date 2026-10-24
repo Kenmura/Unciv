@@ -201,7 +201,7 @@ flowchart TD
   class T079 prog
   class T080 ondeck
   class T081 done
-  class T082 review
+  class T082 done
   class T083 ondeck
   class T085 done
   class T086 done
@@ -248,13 +248,12 @@ flowchart TD
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T140 | **Ready to start** | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
-| T083 | **On deck** (after T082, T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
+| T083 | **On deck** (after T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
 | T088 | **On deck** (after T087) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T080 | **On deck** (after T079) | T079, T061, T068 | 9 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T079 | In-Progress [Claude] | T052, T057, T063, T066, T067 | 15 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
-| T082 | Needs-Review [Claude] | T081, T046, T067, T035 | 14 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T087 | In-Progress [Claude] | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
-| T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
+| T090 | Available (waiting on T087, T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
@@ -275,4 +274,4 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T139 | Available (waiting on T082, T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
+| T139 | Available (waiting on T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
