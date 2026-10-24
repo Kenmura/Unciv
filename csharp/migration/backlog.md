@@ -1339,13 +1339,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T124 Hardening: CityStats test coverage gaps from T062 review
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T062
 - Source: csharp/Unciv.Core/Logic/City/CityStats.cs, GreatPersonPointsBreakdown.cs
 - Fixtures: none
 - Deliverables: tests in CityStatsTests.cs for NullifiesStat distinct, trade routes, GetGrowthBonus + We Love The King Day, StatPercentBonus by construction type, UpdateTileStats, GreatPersonBoostWithFriendship and GreatPersonEarnedFaster (uses TestGame once T072 lands)
 - Gate: dotnet test --filter FullyQualifiedName~CityStatsTests
-- Claimed:
+- Claimed: 2026-10-24T16:23Z
 - Notes:
 
 ### T125 Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding)
