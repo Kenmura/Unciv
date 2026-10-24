@@ -94,6 +94,7 @@
     "Unciv.Core/Logic/Files/FileConversions.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/Files/IMediaFinder.cs": {"branch": 74.14, "line": 78.74},
     "Unciv.Core/Logic/Files/MapSaver.cs": {"branch": 50.0, "line": 76.0},
+    "Unciv.Core/Logic/Files/UncivFiles.cs": {"branch": 95.24, "line": 90.96},
     "Unciv.Core/Logic/GameClientState.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/GameInfo.cs": {"branch": 89.1, "line": 93.49},
     "Unciv.Core/Logic/GameInfoTurn.cs": {"branch": 84.62, "line": 97.81},

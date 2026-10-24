@@ -258,7 +258,7 @@ flowchart TD
   class T097 done
   class T098 done
   class T099 done
-  class T100 prog
+  class T100 review
   class T101 waiting
   class T102 waiting
   class T103 waiting
@@ -298,7 +298,7 @@ flowchart TD
 | T083 | Available (waiting on T082, T052, T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T080 | Available (waiting on T079) | T079, T061, T068 | 9 | Unit actions B: UnitActions, UnitActionsFromUniques |
-| T100 | In-Progress [Claude] | T071, T098, T107 | 9 | Save/load B: UncivFiles |
+| T100 | Needs-Review [Claude] | T071, T098, T107 | 9 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
