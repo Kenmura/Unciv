@@ -5,8 +5,9 @@ clobbered neighbouring tickets). Run from anywhere: python3 -I tools/ticket.py <
 READ
   list [STATE]              one line per open ticket: id, state, deps, title
   show T027 [Field]         whole ticket (backlog.md, then backlog-archive.md) or one field
-  ready                     everything workable now: Needs-Review first, then Available with deps all Done
-  next [AGENT]              the single pick of the Work Loop (review > implement)
+  ready                     everything workable now: Needs-Review first, then Available with deps all Done,
+                            most downstream-unblocking first (direct + transitive incomplete dependents)
+  next [AGENT]              the single pick of the Work Loop (review, else the ready ticket that unblocks most)
   blockers T033             for each dependency not Done: its id, state and title
   stale                     In-Progress/In-Review claims older than 3 hours
   check                     validate the backlog (states, deps exist, no cycles, unique ids); exit 1 on errors
@@ -106,14 +107,37 @@ def all_states():
     return st
 
 
+def downstream_counts(ts):
+    """id -> number of incomplete tickets that depend on it, directly or through other tickets."""
+    open_deps = {i: set(deps_of(d)) for i, _, s, d, _ in ts if not s.startswith(("Done", "Won't"))}
+    children = {}
+    for i, ds in open_deps.items():
+        for d in ds:
+            children.setdefault(d, set()).add(i)
+    counts = {}
+    for i in open_deps:
+        seen, stack = set(), [i]
+        while stack:
+            for c in children.get(stack.pop(), ()):
+                if c not in seen:
+                    seen.add(c)
+                    stack.append(c)
+        counts[i] = len(seen)
+    return counts
+
+
 def ready_list(ts):
+    """Reviews first, then workable tickets ordered by how many incomplete tickets they unblock
+    (direct and downstream), ties by id. Rows: (kind, id, title, state, downstream_count)."""
     done = {i for i, s in all_states().items() if s.startswith("Done")}
-    out = [("REVIEW", i, t, s) for i, t, s, _, _ in ts if s.startswith("Needs-Review")]
+    counts = downstream_counts(ts)
+    out = [("REVIEW", i, t, s, counts.get(i, 0)) for i, t, s, _, _ in ts if s.startswith("Needs-Review")]
+    impl = []
     for i, t, s, d, _ in ts:
         deps = deps_of(d)
         if s == "Available" and set(deps) <= done and (deps or d.lower().startswith("none")):
-            out.append(("IMPLEMENT", i, t, s))
-    return out
+            impl.append(("IMPLEMENT", i, t, s, counts.get(i, 0)))
+    return out + sorted(impl, key=lambda r: (-r[4], r[1]))
 
 
 # ---------------------------------------------------------------- mutation core
@@ -495,8 +519,8 @@ def main():
                     return
         die(f"{args[0]} not found")
     elif cmd == "ready":
-        for k, i, t, s in ready_list(ts):
-            print(f"{k} {i} {t}" + (f" ({s})" if k == "REVIEW" else ""))
+        for k, i, t, s, n in ready_list(ts):
+            print(f"{k} {i} [unblocks {n}] {t}" + (f" ({s})" if k == "REVIEW" else ""))
     elif cmd == "next":
         me = args[0].lower() if args else ""
         for i, t, s, _, _ in ts:
@@ -507,9 +531,9 @@ def main():
         if mine and me:
             print(f"SELF-REVIEW {mine[0][0]} {mine[0][1]}: sole agent, review via isolated adversarial subagent")
             return
-        for k, i, t, _ in ready_list(ts):
+        for k, i, t, _, n in ready_list(ts):
             if k == "IMPLEMENT":
-                print(f"IMPLEMENT {i} {t}")
+                print(f"IMPLEMENT {i} [unblocks {n}] {t}")
                 return
         print("NONE: nothing reviewable and nothing Available with deps Done")
     elif cmd == "blockers":
