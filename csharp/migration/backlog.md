@@ -265,13 +265,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Deferred from T006.
 
 ### T018 Utils: collection/string extensions, exceptions, Versioning
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: T010
 - Source: core/src/com/unciv/utils/CollectionExtensions.kt, utils/StringExtensions.kt, logic/UncivExceptions.kt, logic/Versioning.kt
 - Fixtures: none - generate golden values for ordering-sensitive helpers
 - Deliverables: csharp/Unciv.Core/Utils/CollectionExtensions.cs, StringExtensions.cs, Logic/UncivExceptions.cs, Logic/Versioning.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UtilsTests`
-- Claimed: 2026-10-24T01:24:47Z
+- Claimed: 2026-10-24T01:29:00Z
 - Notes: Randomness.kt is covered by T016/T017; do not duplicate. Skip Log/Concurrency/Display/DebugUtils/PlatformSpecific (platform code; Won't port, see T043).
   - Implementer notes (Claude): `Utils/CollectionExtensions.cs` (`RandomWeighted` x2, `WithItem`/`WithoutItem` for lists and sets, `AddToMapOfSets`/`Contains` for sparse maps of sets, `GetOrPut` for sparse lists), `Utils/StringExtensions.cs` (`ToUUIDOrNull`, `IsUUID`), `Logic/UncivExceptions.cs` (`UncivShowableException`, `MissingModsException` incl. the `joinToString(limit = 5)` message, `MissingNationException`), `Logic/Versioning.cs` (`Version`, `CompatibilityVersion`, `IHasGameInfoSerializationVersion`, `GameInfoSerializationVersion`; JSON names stay Kotlin-lowercase via `JsonPropertyName`, ordering by number only, equality by all fields). 56 `UtilsTests` (Gate), full suite 341/341, build -warnaserror and format clean.
   - Goldens: `randomWeighted` and `MissingModsException` messages from the compiled classes in the installed Unciv.jar (kotlin-stdlib 2.3.0 Random); UUID accept/reject and parsed bits from OpenJDK 25 `UUID.fromString` over 42 probe inputs. **`UUID.fromString` is lenient** and `IdChecker` (T020) relies on it via `isUUID()`: five dash-separated hex numbers of any length (`1-1-1-1-1` is a UUID), optional `+`, Unicode decimal digits (`Character.digit`), at most 36 chars, each component must fit a signed Long (`7fffffffffffffff` ok, `8000000000000000` rejected), 35-char strings with a short last component parse. Ported exactly, including the bit masks. Note it differs from `System.Guid.TryParse`; do not "simplify" to that.
