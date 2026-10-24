@@ -1,3 +1,5 @@
+using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -45,6 +47,8 @@ public interface IGameInfoState : IConstructionGameInfo
     List<Civilization> GetAliveCityStates();
     /// <summary><c>gameInfo.getAliveMajorCivs()</c></summary>
     List<Civilization> GetAliveMajorCivs();
+    /// <summary><c>gameInfo.barbarians</c> (T065: MapUnit.clearEncampment). TODO(T078): becomes the BarbarianManager field.</summary>
+    IBarbarianManager Barbarians { get; }
     /// <summary><c>gameInfo.notifyExploredResources(civInfo, resource, maxDistance)</c></summary>
     void NotifyExploredResources(Civilization civInfo, TileResource resource, int maxDistance);
     /// <summary>
@@ -61,6 +65,8 @@ public interface IQuestManager
     void SetTransients(Civilization civInfo);
     /// <summary><c>questManager.justMet(otherCiv)</c> (T059: DiplomacyFunctions.meetCiv)</summary>
     void JustMet(Civilization otherCiv);
+    /// <summary><c>questManager.barbarianCampCleared(civ, position)</c> (T065: MapUnit.clearEncampment)</summary>
+    void BarbarianCampCleared(Civilization civ, HexCoord position);
 }
 
 /// <summary>What Civilization reads from <c>CityStateFunctions</c>.</summary>
@@ -89,6 +95,8 @@ public interface IUnitManager
     IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId);
     /// <summary><c>civ.units.addUnit(baseUnit, city)</c>; <c>null</c> when the unit cannot be placed.</summary>
     IMapUnitState? AddUnit(BaseUnit baseUnit, CityObject? city = null);
+    /// <summary><c>civ.units.addUnit(mapUnit, updateCivInfo)</c> (T065: MapUnit.assignOwner)</summary>
+    void AddUnit(MapUnit mapUnit, bool updateCivInfo = true);
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>

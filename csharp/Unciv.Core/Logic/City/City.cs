@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -12,6 +13,7 @@ using Unciv.Models.StatTypes;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using ICityReligionManager = Unciv.Logic.Civilization.ICityReligionManager;
+using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
@@ -31,7 +33,7 @@ namespace Unciv.Logic.City;
 //   is ported in T093, which adds them (they are the only users of the caches).
 // - annexCity / puppetCity / liberateCity / moveToCiv: CityConquestFunctions is ported in T064 (until then they throw).
 // - resetSpecialistsControl reads UncivGame.Current.settings (client state): its two inputs are explicit parameters.
-// - getGarrison / destroyCity / sellBuilding reach MapUnit (T065) through the IMapUnitState / IGameContextUnit seams.
+// - T065 retyped the unit access of getGarrison / destroyCity / sellBuilding to MapUnit.
 // - Kotlin HashSet<Tile> tilesInRange is a LinkedHashSet (identity-hashed Tile keys have no deterministic JVM order); it is only read by
 //   getWorkableTiles / workTile, in tile order.
 
@@ -318,10 +320,9 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
 
     public bool IsGarrisoned() => GetGarrison() != null;
 
-    /// <summary>TODO(T065): the military unit of the center tile is a MapUnit; until then it is reached through the IMapUnitState seam.</summary>
-    public Civilization.IMapUnitState? GetGarrison()
+    public MapUnitClass? GetGarrison()
     {
-        var unit = (Civilization.IMapUnitState?)GetCenterTile().MilitaryUnit;
+        var unit = GetCenterTile().MilitaryUnit;
         return unit != null && ReferenceEquals(unit.Civ, Civ) && unit.CanGarrison() ? unit : null;
     }
 
@@ -570,7 +571,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
         if (!CanBeDestroyed() && !overrideSafeties) return;
 
         // Destroy planes stationed in city
-        foreach (var airUnit in GetCenterTile().AirUnits.ToList()) ((Civilization.IMapUnitState)airUnit).Destroy();
+        foreach (var airUnit in GetCenterTile().AirUnits.ToList()) airUnit.Destroy();
 
         // Evacuate spies BEFORE relinquishing tile ownership, because spy lookup uses tile.owningCity
         // to find which city a spy is stationed in (after save/load when the transient city field is null).
@@ -597,8 +598,8 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
         // Well, the water unit has to return to the water!
         foreach (var unit in GetCenterTile().GetUnits().ToList())
         {
-            if (!unit.CanPassThrough(GetCenterTile()))
-                ((Civilization.IMapUnitState)unit).TeleportToClosestMoveableTile();
+            if (!unit.Movement.CanPassThrough(GetCenterTile()))
+                unit.Movement.TeleportToClosestMoveableTile();
         }
 
         // Update proximity rankings for all civs
@@ -911,7 +912,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     int IGameContextCity.GetResourcesGeneratedByCityAmount(string resourceName) => GetResourcesGeneratedByCity().SumBy(resourceName);
     IGameContextReligion? IGameContextCity.GetMajorityReligion() => Religion.GetMajorityReligion();
     int IGameContextCity.GetPopulationFilterAmount(string filter) => Population.GetPopulationFilterAmount(filter);
-    bool IGameContextCity.CenterTileMilitaryUnitCanGarrison() => ((Civilization.IMapUnitState?)GetCenterTile().MilitaryUnit)?.CanGarrison() == true;
+    bool IGameContextCity.CenterTileMilitaryUnitCanGarrison() => GetCenterTile().MilitaryUnit?.CanGarrison() == true;
     IEnumerable<IGameContextTile> IGameContextCity.GetWorkedTiles() => GetWorkedTiles();
     IEnumerable<IGameContextTile> IGameContextCity.GetTiles() => GetTiles();
     IEnumerable<UniqueObject> IConstructionCity.GetMatchingUniques(UniqueType uniqueType, GameContext? gameContext) =>

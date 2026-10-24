@@ -834,6 +834,7 @@ public class CivilizationCoreTests
     private sealed class CloneableQuests : IQuestManager
     {
         public IQuestManager Clone() => new CloneableQuests();
+        public void BarbarianCampCleared(Civilization civ, HexCoord position) => throw new NotSupportedException();
         public void JustMet(Civilization otherCiv) { }
         public void SetTransients(Civilization civInfo) { }
     }

@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Unciv.Json;
@@ -7,7 +6,6 @@ using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
-using Unciv.Models.Ruleset.Unique;
 
 namespace Unciv.Core.Tests.Logic.Files;
 
@@ -170,13 +168,8 @@ public class MapSaverRoundTripTests
         Assert.Throws<NotSupportedException>(() => UncivJson.Deserialize<Tile>("{\"airUnits\":[{}]}"));
         // Absent, null and empty unit fields are what a unit-less map has
         Assert.Equal("{}", UncivJson.Serialize(UncivJson.Deserialize<Tile>("{\"militaryUnit\":null,\"civilianUnit\":null,\"airUnits\":[]}")));
-        var tile = new Tile { MilitaryUnit = DispatchProxy.Create<IGameContextUnit, UnitProxy>() };
+        var tile = new Tile { MilitaryUnit = new Unciv.Logic.Map.MapUnits.MapUnit() };
         Assert.Throws<NotSupportedException>(() => UncivJson.Serialize(tile));
-    }
-
-    public class UnitProxy : DispatchProxy
-    {
-        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) => null;
     }
 
     [Fact]

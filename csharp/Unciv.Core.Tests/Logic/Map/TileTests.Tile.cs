@@ -5,6 +5,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Logic.Map;
@@ -86,13 +87,6 @@ public partial class TileTests
         public override bool IsCapital() => true;
         public bool JustConquered { get; set; }
         public override bool HasJustBeenConquered => JustConquered;
-    }
-
-    private sealed class TileUnit(string unitName, TileCiv unitCiv) : FakeUnit(unitName, 2f, unitCiv)
-    {
-        public bool Embarked { get; set; }
-        public override bool IsEmbarked() => Embarked;
-        public override IGameContextUnit Clone() => new TileUnit(Name, unitCiv) { Embarked = Embarked };
     }
 
     [Fact]
@@ -306,13 +300,13 @@ public partial class TileTests
     {
         var map = TileMapOf(TileRuleset());
         var tile = map[HexCoord.Of(2, 2)];
-        var civ = new TileCiv("A");
+        var civ = MapUnitFactory.NewCiv("A");
         Assert.Empty(tile.GetUnits());
         Assert.Null(tile.GetFirstUnit());
-        var air1 = new TileUnit("Fighter", civ);
-        var air2 = new TileUnit("Bomber", civ);
-        var civilian = new TileUnit("Worker", civ);
-        var military = new TileUnit("Warrior", civ);
+        var air1 = MapUnitFactory.NewUnit(civ, "Fighter", "Air");
+        var air2 = MapUnitFactory.NewUnit(civ, "Bomber", "Air");
+        var civilian = MapUnitFactory.NewUnit(civ, "Worker");
+        var military = MapUnitFactory.NewUnit(civ, "Warrior");
         tile.AirUnits.Add(air1);
         tile.AirUnits.Add(air2);
         Assert.Same(air1, tile.GetFirstUnit());
@@ -331,18 +325,22 @@ public partial class TileTests
     {
         var map = TileMapOf(TileRuleset(), baseTerrain: "Coast");
         var tile = map[HexCoord.Of(2, 2)];
-        var owner = new TileCiv("A");
-        var enemy = new TileCiv("B");
-        enemy.AtWarWith.Add(owner);
-        tile.SetOwningCity(new TileCity("c", owner, HexCoord.Zero));
+        var info = new FakeGameInfoState();
+        var owner = MapUnitFactory.NewCiv("A", info);
+        var enemy = MapUnitFactory.NewCiv(Constants.Barbarians, info); // barbarians are at war with everybody
+        tile.SetOwningCity(new CityObject { Civ = owner });
         Assert.False(tile.IsBlockaded());
-        var ship = new TileUnit("Trireme", enemy);
+        var ship = MapUnitFactory.NewUnit(enemy, "Trireme", "Water", tile.Neighbors[0]);
         tile.Neighbors[0].MilitaryUnit = ship;
         Assert.True(tile.IsBlockaded());
-        ship.Embarked = true;
+        // A land unit on water is embarked, and embarked units do not blockade
+        var embarked = MapUnitFactory.NewUnit(enemy, "Raft", "Land", tile.Neighbors[1]);
+        tile.Neighbors[0].MilitaryUnit = null;
+        tile.Neighbors[1].MilitaryUnit = embarked;
+        Assert.True(embarked.IsEmbarked());
         Assert.False(tile.IsBlockaded());
-        ship.Embarked = false;
-        tile.MilitaryUnit = new TileUnit("Frigate", owner); // an own unit on the tile unblocks it
+        tile.MilitaryUnit = MapUnitFactory.NewUnit(owner, "Frigate", "Water", tile); // an own unit on the tile unblocks it
+        tile.Neighbors[0].MilitaryUnit = ship;
         Assert.False(tile.IsBlockaded());
     }
 
@@ -377,7 +375,7 @@ public partial class TileTests
         tile.SetTileResource(tile.Ruleset.TileResources["Wheat"]);
         tile.QueueImprovement("Farm", 5);
         tile.HasBottomRiver = true;
-        tile.CivilianUnit = new TileUnit("Worker", civ);
+        tile.CivilianUnit = MapUnitFactory.NewUnit(MapUnitFactory.NewCiv("A"), "Worker");
         tile.SetContinent(3);
         var clone = tile.Clone();
         Assert.Equal(tile.Position, clone.Position);
@@ -723,7 +721,7 @@ public partial class TileTests
         tile.SetTileResource(iron, false);
         tile.SetRoadStatus(RoadStatus.Road, null);
         tile.SetImprovementBasic("Farm");
-        tile.CivilianUnit = new TileUnit("Worker", new TileCiv("A"));
+        tile.CivilianUnit = MapUnitFactory.NewUnit(MapUnitFactory.NewCiv("A"), "Worker");
         Assert.Equal("Tile @HexCoord(x=1, y=2), Grassland, Forest, {2} {Iron}, Road, Farm, Worker - A", tile.ToString());
         Assert.Equal("Tile @HexCoord(x=0, y=0), uninitialized", new TileClass().ToString());
     }

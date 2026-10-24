@@ -2,6 +2,7 @@ using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.City;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -12,8 +13,10 @@ using Unciv.Models.StatTypes;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using DifficultyObject = Unciv.Models.Ruleset.Nation.Difficulty;
+using MapUnit = Unciv.Logic.Map.MapUnits.MapUnit;
 using SpeedObject = Unciv.Models.Ruleset.Speed;
 using StatsObject = Unciv.Models.StatTypes.Stats;
+using TileClass = Unciv.Logic.Map.Tiles.Tile;
 using TileResourceObject = Unciv.Models.Ruleset.Tile.TileResource;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
@@ -51,6 +54,8 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
         CivsSortedCalls.Add((includeCityStates, includeDefeated, civToSortFirst));
         return Civs.Where(it => additionalFilter == null || additionalFilter(it)).ToList();
     }
+    public FakeBarbarianManager BarbarianFake { get; } = new();
+    IBarbarianManager IGameInfoState.Barbarians => BarbarianFake;
     public override TileMap TileMap => Map ?? throw new NotSupportedException();
     public override IGameContextCivilization GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
     Civilization IGameInfoState.GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
@@ -62,13 +67,25 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
         ExploredResourceNotifications.Add((civInfo, resource, maxDistance));
 }
 
+internal sealed class FakeBarbarianManager : IBarbarianManager
+{
+    public List<MapUnit> Spawned { get; } = [];
+    public MapUnit? SpawnResult { get; set; }
+    public MapUnit? SpawnBarbarian(TileClass tile, Civilization civ)
+    {
+        if (SpawnResult != null) Spawned.Add(SpawnResult);
+        return SpawnResult;
+    }
+}
+
 internal sealed class FakeUnitManager : IUnitManager
 {
     public int Count { get; set; }
     public int GetCivUnitsSize() => Count;
     public List<IMapUnitState> CivUnits { get; } = [];
     public IEnumerable<IMapUnitState> GetCivUnits() => CivUnits;
-    public void RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => throw new NotSupportedException();
+    public List<(IGameContextUnit Unit, bool UpdateCivInfo)> RemovedUnits { get; } = [];
+    public void RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => RemovedUnits.Add((unit, updateCivInfo));
     public IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId) => throw new NotSupportedException();
     public List<(BaseUnit Unit, CityObject? City)> AddedUnits { get; } = [];
     public IMapUnitState? AddedUnitResult { get; set; }
@@ -77,6 +94,8 @@ internal sealed class FakeUnitManager : IUnitManager
         AddedUnits.Add((baseUnit, city));
         return AddedUnitResult;
     }
+    public List<(MapUnit Unit, bool UpdateCivInfo)> AssignedUnits { get; } = [];
+    public void AddUnit(MapUnit mapUnit, bool updateCivInfo = true) => AssignedUnits.Add((mapUnit, updateCivInfo));
 }
 
 internal sealed class FakeQuestManager : IQuestManager
@@ -85,6 +104,8 @@ internal sealed class FakeQuestManager : IQuestManager
     public void JustMet(Civilization otherCiv) => Met.Add(otherCiv.CivId);
     public IQuestManager Clone() => throw new NotSupportedException();
     public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
+    public List<(string Civ, HexCoord Position)> ClearedCamps { get; } = [];
+    public void BarbarianCampCleared(Civilization civ, HexCoord position) => ClearedCamps.Add((civ.CivId, position));
 }
 
 internal sealed class FakeCityStateFunctions : ICityStateFunctions

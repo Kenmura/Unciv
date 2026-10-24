@@ -89,7 +89,3 @@ public interface ICityExpansionManager
     void RelinquishOwnership(Tile tile);
 }
 
-/// <summary>
-/// What City stores of <c>UnitPromotions</c> (<c>city.unitToPromotions</c> values; only copied by <c>City.clone</c>). TODO(T066): replaced by UnitPromotions.
-/// </summary>
-public interface IUnitPromotions;

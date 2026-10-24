@@ -6,7 +6,7 @@ using Unciv.Utils;
 namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/RuinsManager.kt (T057).
-// MapUnit is not ported yet: the triggering unit is its IMapUnitState seam.
+// The triggering unit is typed by the IMapUnitState seam, which MapUnit (T065) implements.
 public class RuinsManager : IsPartOfGameInfoSerialization
 {
     private readonly List<string> lastChosenRewards;

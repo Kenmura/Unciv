@@ -8,6 +8,7 @@ using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
 using MapGeneratorClass = Unciv.Logic.Map.MapGenerator.MapGenerator;
+using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 
 namespace Unciv.Logic.Map.Tiles;
 
@@ -30,9 +31,9 @@ namespace Unciv.Logic.Map.Tiles;
 public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistorySource
 {
     #region Serialized fields
-    public IGameContextUnit? MilitaryUnit { get; set; }
-    public IGameContextUnit? CivilianUnit { get; set; }
-    public List<IGameContextUnit> AirUnits { get; set; } = [];
+    public MapUnitClass? MilitaryUnit { get; set; }
+    public MapUnitClass? CivilianUnit { get; set; }
+    public List<MapUnitClass> AirUnits { get; set; } = [];
 
     public HexCoord Position { get; set; } = new();
     private string? baseTerrain;
@@ -209,6 +210,8 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     IGameContextGameInfo? IGameContextTile.GameInfo => IsTilemapInitialized() && TileMap.HasGameInfo() ? TileMap.GameInfo : null;
     IEnumerable<IGameContextTile> IGameContextTile.Neighbors => Neighbors;
     IEnumerable<IGameContextUnit> IGameContextTile.AirUnits => AirUnits;
+    IGameContextUnit? IGameContextTile.MilitaryUnit => MilitaryUnit;
+    IEnumerable<IGameContextUnit> IGameContextTile.GetUnits() => GetUnits();
     IEnumerable<IGameContextTile> IGameContextTile.GetTilesInDistance(int distance) => GetTilesInDistance(distance);
     bool IGameContextTile.MatchesFilter(string filter) => MatchesFilter(filter);
     int ITileHistorySource.Turns => TileMap.GameInfo.Turns;
@@ -273,7 +276,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     public bool IsHill() => GetHillTerrain() != null;
 
     /// <summary>Returns military, civilian and air units in tile</summary>
-    public IEnumerable<IGameContextUnit> GetUnits()
+    public IEnumerable<MapUnitClass> GetUnits()
     {
         // common case - do not allocate memory for a new sequence
         if (MilitaryUnit == null && CivilianUnit == null && AirUnits.Count == 0)
@@ -281,7 +284,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         return GetUnitsIterator();
     }
 
-    private IEnumerable<IGameContextUnit> GetUnitsIterator()
+    private IEnumerable<MapUnitClass> GetUnitsIterator()
     {
         if (MilitaryUnit != null) yield return MilitaryUnit;
         if (CivilianUnit != null) yield return CivilianUnit;
@@ -292,7 +295,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     }
 
     /// <summary>This is for performance reasons of canPassThrough() - faster than getUnits().firstOrNull()</summary>
-    public IGameContextUnit? GetFirstUnit()
+    public MapUnitClass? GetFirstUnit()
     {
         if (MilitaryUnit != null) return MilitaryUnit;
         if (CivilianUnit != null) return CivilianUnit;
@@ -475,7 +478,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         if (unit != null)
         {
             if (unit.Civ == owner) return false;            // Own - unblocks tile;
-            if (unit.Civ.IsAtWarWith(owner)) return true;   // Enemy - blocks tile;
+            if (unit.Civ.IsAtWarWith((Civilization.Civilization)owner)) return true;   // Enemy - blocks tile;
             return false;                                   // Neutral - unblocks tile;
         }
         if (IsLand) // Only water tiles are blocked if empty
@@ -489,7 +492,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
             if (neighborUnit == null) continue;
 
             // Embarked units do not blockade adjacent tiles
-            if (neighborUnit.Civ.IsAtWarWith(owner) && !neighborUnit.IsEmbarked())
+            if (neighborUnit.Civ.IsAtWarWith((Civilization.Civilization)owner) && !neighborUnit.IsEmbarked())
                 return true;
         }
         return false;
@@ -855,9 +858,9 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     {
         foreach (var unit in GetUnits())
         {
-            unit.SetCurrentTile(this);
+            unit.CurrentTile = this;
             if (unitCivTransients)
-                unit.AssignOwner(TileMap.GameInfo.GetCivilization(unit.Owner), false);
+                unit.AssignOwner((Civilization.Civilization)TileMap.GameInfo.GetCivilization(unit.Owner), false);
             unit.SetTransients(Ruleset);
         }
     }
@@ -1026,7 +1029,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
 
     /// <summary>If the unit isn't in the ruleset we can't even know what type of unit this is! So check each place
     /// This works with no transients so can be called from gameInfo.setTransients with no fear</summary>
-    public void RemoveUnit(IGameContextUnit mapUnit)
+    public void RemoveUnit(MapUnitClass mapUnit)
     {
         if (AirUnits.Contains(mapUnit)) AirUnits.Remove(mapUnit);
         else if (CivilianUnit == mapUnit) CivilianUnit = null;

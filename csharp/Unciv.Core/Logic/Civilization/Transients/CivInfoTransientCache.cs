@@ -13,7 +13,7 @@ namespace Unciv.Logic.Civilization.Transients;
 // Ported from core/src/com/unciv/logic/civilization/transients/CivInfoTransientCache.kt (T058).
 //
 // Deviations:
-// - MapUnit and the managers are the seams of CivilizationSeams.cs until T065/T059 retype them.
+// - MapUnit is reached through the IMapUnitState seam (implemented by MapUnit, T065); the managers are the seams of CivilizationSeams.cs until T059 retypes them.
 // - Kotlin keeps the unique buildings/improvements/units, the viewable tiles and the "viewed civs" in java.util.HashSet/HashMap keyed by
 //   identity-hashed objects, i.e. in an arbitrary order that reaches the order of notifications and natural-wonder discovery. They are
 //   insertion-ordered here (LinkedHashSet, OrderedDictionary), which is one of the legal Kotlin orders and deterministic.
