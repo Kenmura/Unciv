@@ -280,7 +280,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Asset JSON is read from the Kotlin repo's android/assets/jsons (read-only). Compare object counts/ids/uniques against Kotlin-generated dump (record how generated).
 
 ### T038 Tile core (part 1): TileHistory
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T022, T034
 - Source: core/src/com/unciv/logic/map/tile/*.kt
 - Fixtures: none (TileHistory has no Kotlin tests; ported tests assert the documented behaviour and JSON format)
@@ -302,7 +302,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T039 TileMap
 - State: Available
-- Depends: T038
+- Depends: T038, T053
 - Source: core/src/com/unciv/logic/map/TileMap.kt
 - Fixtures: tests/src/com/unciv/logic/map/VisibilityTests.kt, tests/src/com/unciv/logic/map/UpgradeTests.kt (map-only parts)
 - Deliverables: csharp/Unciv.Core/Logic/Map/TileMap.cs, tests
