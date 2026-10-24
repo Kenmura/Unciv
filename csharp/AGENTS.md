@@ -9,6 +9,9 @@ Run all three, inside `dotnet-dev`, from your own worktree's `csharp/`:
     dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test
 
 If `dotnet format` complains, run `dotnet format` (no flag) and review the diff. It must touch only your files.
+When marking a ticket `Done` on passing review, publish and push progress to remote:
+
+    git push origin csharp-migration
 
 ## Porting rules
 - Port behaviour, not style. Do not "improve", simplify, or reorder the Kotlin logic; keep its quirks and note them in the ticket.

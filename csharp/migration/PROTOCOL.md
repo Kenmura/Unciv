@@ -58,6 +58,12 @@ Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs t
   git rebase csharp-migration && git push . HEAD:csharp-migration
   ```
   The push is fast-forward only. If it is rejected, the other agent published first: `git rebase csharp-migration`, re-read `backlog.md`, re-check your ticket choice still holds, and publish again.
+- **Push to Remote on Review Pass:**
+  Whenever a ticket passes review and is marked `Done`, push the integration branch to `origin`:
+  ```
+  git push origin csharp-migration
+  ```
+  This ensures `origin/csharp-migration` on GitHub is always kept up to date with verified progress.
 - **A claim only counts once it is published.** Publish the claim commit before doing any real work on the ticket. If you lost the race, pick another ticket; do not keep working on the lost one.
 - **Before each ticket and before each review:** `git rebase csharp-migration` so you see the other agent's published work. Reviewers review the implementer's *published* commits, never anyone's working files.
 - Never push to `master`, never force-push or rewrite `csharp-migration`. Merging to `master` is the human's decision.
@@ -101,7 +107,7 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 3. Check that ported tests cover every Kotlin test case and add cases for any untested branch you find.
 4. Run the Gate and the Standard checks yourself. Do not trust the implementer's claim.
 5. Confirm the diff adds no new `#pragma warning disable`, `SuppressMessage`, `NoWarn` or `.editorconfig`/`BannedSymbols*.txt` change unless the ticket is a policy ticket; any suppression needs a `JUSTIFY: T###` comment that you agree with.
-6. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`. Publish either way.
+6. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`. Publish either way. **If Pass:** immediately push to remote: `git push origin csharp-migration`.
 
 ## Running until budget is exhausted
 
