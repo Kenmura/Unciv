@@ -92,8 +92,6 @@ flowchart TD
   T065 --> T035
   T036 --> T037
   T035 --> T037
-  T038 --> T039
-  T053 --> T039
   T039 --> T040
   T039 --> T041
   T010 --> T041
@@ -206,7 +204,7 @@ flowchart TD
   class T036 done
   class T037 avail
   class T038 done
-  class T039 prog
+  class T039 done
   class T040 avail
   class T041 avail
   class T042 avail
@@ -214,7 +212,7 @@ flowchart TD
   class T046 avail
   class T052 avail
   class T053 done
-  class T054 avail
+  class T054 prog
   class T055 avail
   class T056 avail
   class T057 avail
@@ -243,12 +241,11 @@ flowchart TD
 | T046 | Available | T034, T039, T045, T055, T060, T065 | GameInfo core and the hooks waiting for it |
 | T035 | Available | T034, T038, T039, T046, T053, T054, T057, T061, T065 | Test-support port: TestGame helper and deferred fixtures |
 | T037 | Available | T036, T035 | Golden test: load and validate Vanilla and bundled mod rulesets |
-| T039 | In-Progress [Claude] | T038, T053 | TileMap |
 | T040 | Available | T039 | Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization |
 | T041 | Available | T039, T010, T016, T017 | MapGenerator pipeline (audit existing partial work first) |
 | T042 | Available | T039 | OdMap import/export |
 | T052 | Available | T028, T055, T056, T057, T060, T065, T066 | UniqueTriggerActivation and UniqueTriggerExecutors |
-| T054 | Available | T053 | Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions |
+| T054 | In-Progress [Claude] | T053 | Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions |
 | T055 | Available | T034, T045, T039, T053 | Civilization core: Civilization, ExploredRegion, PopupAlert |
 | T056 | Available | T055 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
 | T057 | Available | T055 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |

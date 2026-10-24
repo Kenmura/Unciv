@@ -375,13 +375,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created from T027's review: T027 deferred `UniqueTriggerExecutors.triggerGlobalAlerts` (needs `Civilization.addNotification`, ported by T055) and the 1.5k-LOC `UniqueTriggerActivation`. Split by trigger family if it exceeds scope. Wires the `TODO(T052)` call sites left by T054, T063, T065 and `EventChoice.triggerChoice` (T030). Uses concrete Civilization, City, MapUnit and their managers; no new seams needed.
 
 ### T054 Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T053
 - Source: core/src/com/unciv/logic/map/tile/TileStatFunctions.kt, TileImprovementFunctions.kt, TileNormalizer.kt, civilization/managers/ImprovementFunctions.kt
 - Fixtures: tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt (needs TestGame: T072)
 - Deliverables: csharp/Unciv.Core/Logic/Map/Tile/TileStatFunctions.cs, TileImprovementFunctions.cs, TileNormalizer.cs, csharp/Unciv.Core/Logic/Civilization/Managers/ImprovementFunctions.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~TileStatTests`
-- Claimed:
+- Claimed: 2026-10-24T10:24Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~850 LOC. Uses concrete Tile (T053) and the Civilization/City/MapUnit seams (add the members it calls to the T053 seams files). `TileImprovementFunctions` calls `UniqueTriggerActivation.triggerUnique` (lines ~287/293): leave those two call sites as a clearly marked hook (`TODO(T052)`) and let T052 wire them. Adds the delegating Tile members deferred by T053. Stat results are Float arithmetic: keep exact order of operations.
 
 ### T055 Civilization core: Civilization, ExploredRegion, PopupAlert
