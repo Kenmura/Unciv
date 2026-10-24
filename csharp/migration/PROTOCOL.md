@@ -41,9 +41,17 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 2. Otherwise **implement.** Pick the first `Available` ticket whose `Depends` are all `Done`. If none, report that and stop.
 3. **Claim** atomically: edit only that ticket's `State` to `In-Progress [You]` (or `In-Review [You]`), commit with message `migration: claim T### [You]`. If the commit conflicts with another agent's claim, drop yours and pick another.
 
+### Context discipline
+
+- One ticket per invocation keeps context small; do not roll straight into another ticket unless the user says to continue.
+- Read only the files listed in the ticket. For anything else, `grep` instead of opening whole files.
+- **Optional delegation:** if the ticket's Source is over ~500 lines or touches more than 3 files, and your harness supports subagents, delegate the *read-and-brief* step. The brief returns: files involved, semantic traps (numeric types, rounding, ordering, null handling), stripped or deferred members, and fixture cases to port.
+- Never delegate the port itself, the claim/state commits, or the final Gate run. Run the Gate yourself.
+- Subagent output is a brief, not evidence: verify any claim you rely on against the Kotlin source.
+
 ### Implement
 
-1. Read every Source file listed in the ticket and its test fixtures.
+1. Read every Source file listed in the ticket and its test fixtures (or use the subagent brief above, spot-checked).
 2. Port tests first (xUnit, same cases, same names where possible), then the implementation. Preserve behaviour exactly, including quirks, integer/float semantics (Kotlin `Int` division, `Float` vs `Double`, rounding mode) and iteration order. Do not "improve" logic.
 3. Replace libGDX/UI types with small engine-owned equivalents in `Unciv.Core` (e.g. `Vector2`) – never add UI dependencies. If a ticket needs a type owned by another ticket, stop and mark `Blocked` with a note.
 4. Run the ticket's Gate command. It must exit 0, and the whole solution must still pass `dotnet test`.
