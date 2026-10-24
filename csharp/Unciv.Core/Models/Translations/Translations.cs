@@ -1,4 +1,5 @@
 using System.Collections;
+using Unciv.Logic;
 using Unciv.Models.Metadata;
 using Unciv.Utils;
 
@@ -36,6 +37,11 @@ public sealed class Translations : IEnumerable<KeyValuePair<string, TranslationE
 
     /// <summary>Used by <c>tr()</c> whenever GameInfo is not initialized (allowing new game screen to use mod translations).</summary>
     public LinkedHashSet<string> TranslationActiveMods { get; set; } = [];
+
+    /// <summary>Stands in for <c>UncivGame.Current.gameInfo</c>.</summary>
+    public GameInfo? CurrentGame { get; set; }
+
+    internal TranslationCache.ActiveModsCache? ActiveModsCache { get; set; }
 
     /// <summary>
     /// Searches for the translation entry of a given <paramref name="text"/> for a given <paramref name="language"/>.

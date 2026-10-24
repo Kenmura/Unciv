@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Unciv.Logic;
 using Unciv.Utils;
 
 namespace Unciv.Models.Translations;
@@ -15,9 +16,24 @@ public static class TranslationCache
 {
     private static LanguageCache? CachedLangData;
 
-    // TODO(T137): upstream uses the mods of the running GameInfo (gameParameters.mods + baseRuleset) when there is one, and falls back to
-    // Translations.translationActiveMods only otherwise; the engine has no UncivGame.Current to ask (GameInfo is ported by T046).
-    public static LinkedHashSet<string> ActiveMods => Translations.Current.TranslationActiveMods;
+    /// <summary>
+    /// Mods active in the current game, or set by MainMenuScreen via <see cref="Translations.TranslationActiveMods"/>.
+    /// </summary>
+    public static LinkedHashSet<string> ActiveMods
+    {
+        get
+        {
+            var cache = Translations.Current.ActiveModsCache;
+            if (cache?.IsValid() == true)
+            {
+                return cache.ActiveMods;
+            }
+
+            var newCache = ActiveModsCache.Create();
+            Translations.Current.ActiveModsCache = newCache;
+            return newCache.ActiveMods;
+        }
+    }
 
     public static string Language => GetLangData().Language;
 
@@ -185,6 +201,66 @@ public static class TranslationCache
             // Ensure not followed by (ascii) letter or digit, more portable than "\b"
             pattern.Append("(?![A-Za-z0-9_])");
             return new Regex(pattern.ToString(), RegexOptions.CultureInvariant);
+        }
+    }
+
+    internal sealed class ActiveModsCache
+    {
+        public LinkedHashSet<string> ActiveMods { get; }
+        private readonly int cachedHash;
+
+        public ActiveModsCache(LinkedHashSet<string> activeMods, int cachedHash)
+        {
+            ActiveMods = activeMods;
+            this.cachedHash = cachedHash;
+        }
+
+        public bool IsValid() => cachedHash == GetCurrentHash();
+
+        public static ActiveModsCache Create()
+        {
+            var gameInfo = Translations.Current.CurrentGame;
+            var fallbackMods = Translations.Current.TranslationActiveMods;
+            int hash = GetCurrentHash(gameInfo, fallbackMods);
+            var mods = GetCurrentSet(gameInfo, fallbackMods);
+            return new ActiveModsCache(mods, hash);
+        }
+
+        private static int GetCurrentHash() =>
+            GetCurrentHash(Translations.Current.CurrentGame, Translations.Current.TranslationActiveMods);
+
+        private static int GetCurrentHash(GameInfo? gameInfo, LinkedHashSet<string>? fallbackMods)
+        {
+            if (gameInfo?.GameParameters != null)
+            {
+                int modsHash = gameInfo.GameParameters.Mods?.GetHashCode() ?? 0;
+                int baseRulesetHash = gameInfo.GameParameters.BaseRuleset == null ? 0 : JavaHash.HashCode(gameInfo.GameParameters.BaseRuleset);
+                return Randomness.HashOf(modsHash, baseRulesetHash);
+            }
+
+            return fallbackMods?.GetHashCode() ?? 0;
+        }
+
+        private static LinkedHashSet<string> GetCurrentSet(GameInfo? gameInfo, LinkedHashSet<string>? fallbackMods)
+        {
+            if (gameInfo?.GameParameters == null)
+            {
+                return fallbackMods ?? [];
+            }
+
+            var par = gameInfo.GameParameters;
+            var set = new LinkedHashSet<string>();
+            if (par.Mods != null)
+            {
+                set.AddAll(par.Mods);
+            }
+
+            if (par.BaseRuleset != null)
+            {
+                set.Add(par.BaseRuleset);
+            }
+
+            return set;
         }
     }
 }

@@ -1,3 +1,4 @@
+using Unciv.Logic;
 using Unciv.Models.StatTypes;
 using Unciv.Models.Translations;
 using Unciv.Utils;
@@ -462,5 +463,107 @@ public class TranslationTests : IDisposable
         Assert.Equal("a\u0085", "\u001F \u00A0a\u0085 \u2003".KotlinTrim());
         Assert.Equal("", " \t ".KotlinTrim());
         Assert.True(" \t\u2003".IsKotlinBlank());
+    }
+
+    [Fact]
+    public void ActiveMods_WithNoGame_ReturnsTranslationActiveMods()
+    {
+        Trans.Current.CurrentGame = null;
+        Trans.Current.TranslationActiveMods = ["ModAlpha", "ModBeta"];
+
+        var activeMods = TranslationCache.ActiveMods;
+        Assert.Equal(["ModAlpha", "ModBeta"], activeMods);
+        Assert.Same(Trans.Current.TranslationActiveMods, activeMods);
+
+        Trans.Current.TranslationActiveMods.Add("ModGamma");
+        var updatedMods = TranslationCache.ActiveMods;
+        Assert.Equal(["ModAlpha", "ModBeta", "ModGamma"], updatedMods);
+    }
+
+    [Fact]
+    public void ActiveMods_WithActiveGame_ReturnsModsAndBaseRuleset()
+    {
+        Trans.Current.TranslationActiveMods = ["FallbackMod"];
+        var gameInfo = new GameInfo();
+        gameInfo.GameParameters.BaseRuleset = "BaseRulesetA";
+        gameInfo.GameParameters.Mods = ["Mod1", "Mod2"];
+        Trans.Current.CurrentGame = gameInfo;
+
+        var activeMods = TranslationCache.ActiveMods;
+        Assert.Equal(["Mod1", "Mod2", "BaseRulesetA"], activeMods);
+        Assert.DoesNotContain("FallbackMod", activeMods);
+    }
+
+    [Fact]
+    public void ActiveMods_WithBaseRulesetAlreadyInMods_DoesNotDuplicate()
+    {
+        var gameInfo = new GameInfo();
+        gameInfo.GameParameters.BaseRuleset = "RulesetX";
+        gameInfo.GameParameters.Mods = ["RulesetX", "ModY"];
+        Trans.Current.CurrentGame = gameInfo;
+
+        var activeMods = TranslationCache.ActiveMods;
+        Assert.Equal(["RulesetX", "ModY"], activeMods);
+        Assert.Equal(2, activeMods.Count);
+    }
+
+    [Fact]
+    public void ActiveMods_CacheInvalidation_WhenModsChange()
+    {
+        var gameInfo = new GameInfo();
+        gameInfo.GameParameters.BaseRuleset = "BaseRulesetA";
+        gameInfo.GameParameters.Mods = ["Mod1", "Mod2"];
+        Trans.Current.CurrentGame = gameInfo;
+
+        var first = TranslationCache.ActiveMods;
+        var second = TranslationCache.ActiveMods;
+        Assert.Same(first, second);
+
+        gameInfo.GameParameters.Mods.Add("Mod3");
+        var afterModAdd = TranslationCache.ActiveMods;
+        Assert.NotSame(first, afterModAdd);
+        Assert.Equal(["Mod1", "Mod2", "Mod3", "BaseRulesetA"], afterModAdd);
+
+        gameInfo.GameParameters.BaseRuleset = "BaseRulesetB";
+        var afterBaseChange = TranslationCache.ActiveMods;
+        Assert.NotSame(afterModAdd, afterBaseChange);
+        Assert.Equal(["Mod1", "Mod2", "Mod3", "BaseRulesetB"], afterBaseChange);
+    }
+
+    [Fact]
+    public void ActiveMods_CacheInvalidation_WhenGameClearedOrSet()
+    {
+        Trans.Current.TranslationActiveMods = ["FallbackMod"];
+        Trans.Current.CurrentGame = null;
+
+        Assert.Equal(["FallbackMod"], TranslationCache.ActiveMods);
+
+        var gameInfo = new GameInfo();
+        gameInfo.GameParameters.BaseRuleset = "BaseRulesetA";
+        gameInfo.GameParameters.Mods = ["Mod1"];
+        Trans.Current.CurrentGame = gameInfo;
+
+        Assert.Equal(["Mod1", "BaseRulesetA"], TranslationCache.ActiveMods);
+
+        Trans.Current.CurrentGame = null;
+        Assert.Equal(["FallbackMod"], TranslationCache.ActiveMods);
+    }
+
+    [Fact]
+    public void ActiveMods_Integration_TrResolvesFromGameMods()
+    {
+        var modTranslations = new Trans();
+        modTranslations["CustomBuilding"] = new TranslationEntry("CustomBuilding") { ["English"] = "Monument of Mod" };
+        Trans.Current.ModsWithTranslations["MyMod"] = modTranslations;
+
+        var gameInfo = new GameInfo();
+        gameInfo.GameParameters.BaseRuleset = "Civ V - Gods & Kings";
+        gameInfo.GameParameters.Mods = ["MyMod"];
+        Trans.Current.CurrentGame = gameInfo;
+
+        Assert.Equal("Monument of Mod", "CustomBuilding".Tr());
+
+        gameInfo.GameParameters.Mods.Clear();
+        Assert.Equal("CustomBuilding", "CustomBuilding".Tr());
     }
 }

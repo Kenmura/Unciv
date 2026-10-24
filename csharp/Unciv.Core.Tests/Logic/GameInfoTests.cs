@@ -212,7 +212,7 @@ public sealed class GameInfoTests : IDisposable
         Assert.True(game.Civilizations[1].IsSpectator());
         Assert.Same(game.Civilizations[1], game.GetSpectator("player-1"));
         Assert.Equal(2, game.Civilizations.Count);
-        // Creating a temporary spectator for an unknown player runs Civilization.setTransients, which needs the QuestManager (TODO(T069)): untestable here.
+        // Creating a temporary spectator for an unknown player runs Civilization.setTransients.
     }
 
     [Fact]
