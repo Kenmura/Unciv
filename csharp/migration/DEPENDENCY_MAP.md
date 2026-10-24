@@ -355,7 +355,7 @@ flowchart TD
   class T056 prog
   class T057 prog
   class T058 prog
-  class T059 ready
+  class T059 prog
   class T060 waiting
   class T061 waiting
   class T062 waiting
@@ -407,7 +407,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T059 | **Ready to start** | T055 | 36 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
 | T108 | **Ready to start** | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
 | T109 | **Ready to start** | none | 0 | Hardening sweep: non-blocking review findings from T033-T095 |
 | T057 | In-Progress [Claude] | T055 | 55 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
@@ -420,6 +419,7 @@ flowchart TD
 | T062 | Available (waiting on T060, T058) | T060, T058 | 40 | CityStats and GreatPersonPointsBreakdown |
 | T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 40 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T060, T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 37 | GameInfo core and the hooks waiting for it |
+| T059 | In-Progress [Claude] | T055 | 36 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
 | T063 | Available (waiting on T060, T062) | T060, T062 | 35 | CityConstructions |
 | T064 | Available (waiting on T060, T061, T063) | T060, T061, T063 | 32 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T068 | Available (waiting on T059, T064, T066) | T059, T064, T066 | 31 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
