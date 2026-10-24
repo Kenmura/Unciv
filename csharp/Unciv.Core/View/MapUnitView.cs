@@ -82,7 +82,7 @@ public class MapUnitView : ForeignMapUnitView
         return city.Civ == Unit.Civ && !city.IsPuppet;
     }
 
-    public new CivView Civ() => GameView.GetCivView(Unit.Civ);
+    public override CivView Civ() => GameView.GetCivView(Unit.Civ);
 
     public MapUnitView? GetOtherEscortUnit()
     {

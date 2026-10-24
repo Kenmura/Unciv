@@ -502,6 +502,7 @@ public sealed class ViewCityUnitTests
         Assert.True(uv.CanSaveDefaultPromotions());
         Assert.Equal(player, uv.Civ().GetCiv());
         Assert.IsType<CivView>(uv.Civ());
+        Assert.IsType<CivView>(((ForeignMapUnitView)uv).Civ()); // Kotlin `override fun civ()`: virtual dispatch through the base type
         Assert.Null(uv.GetOtherEscortUnit());
         Assert.Equal(unit.Action, uv.Action);
         Assert.False(uv.IsEscorting());
