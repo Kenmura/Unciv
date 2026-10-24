@@ -359,12 +359,12 @@ flowchart TD
   class T057 done
   class T058 done
   class T059 review
-  class T060 ready
-  class T061 waiting
-  class T062 waiting
+  class T060 prog
+  class T061 ondeck
+  class T062 ondeck
   class T063 waiting
   class T064 waiting
-  class T065 waiting
+  class T065 ondeck
   class T066 waiting
   class T067 waiting
   class T068 waiting
@@ -411,11 +411,11 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T060 | **Ready to start** | T055, T056, T057, T058 | 54 | City core: City, CityFocus, CityResources, CityEspionageManager |
-| T065 | Available (waiting on T060) | T055, T056, T060 | 47 | MapUnit core: MapUnit, MapUnitCache |
+| T065 | **On deck** (after T060) | T055, T056, T060 | 47 | MapUnit core: MapUnit, MapUnitCache |
+| T061 | **On deck** (after T060) | T060 | 41 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
+| T062 | **On deck** (after T060) | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
+| T060 | In-Progress [Claude] | T055, T056, T057, T058 | 54 | City core: City, CityFocus, CityResources, CityEspionageManager |
 | T066 | Available (waiting on T065, T060) | T065, T060 | 44 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
-| T061 | Available (waiting on T060) | T060 | 41 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
-| T062 | Available (waiting on T060) | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
 | T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 41 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T060, T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 38 | GameInfo core and the hooks waiting for it |
 | T059 | Needs-Review [Claude] | T055 | 37 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
