@@ -852,7 +852,8 @@ Unlike Unciv's legacy per-unit automation (`automateUnitMoves` cascading individ
 All tickets start in `Blocked` until foundational engine systems (GameInfo, TileMap, Unit, Ruleset) are in place, but can be unblocked as their specific prerequisites land.
 
 ### A001 AI defines & data tables loader
-- State: Blocked
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T02:43:29Z
 - Depends: T007, T021
 - Source: `csharp/migration/ai-spec/data/ai_defines.tsv`, `grand_strategy_flavors.tsv`, `tactical_moves.tsv`
 - Deliverables: `csharp/Unciv.Core/AI/Data/` data models for `GlobalAIDefines`, `GrandStrategyFlavors`, `TacticalMoveDefinition`, TSV/JSON loader, unit tests
