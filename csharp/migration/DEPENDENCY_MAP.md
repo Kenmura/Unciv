@@ -299,7 +299,7 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T130 prog
-  class T138 ready
+  class T138 prog
 ```
 
 ## Incomplete tickets
@@ -313,7 +313,6 @@ flowchart TD
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
-| T138 | **Ready to start** | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
 | T052 | **On deck** (after T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T087 | **On deck** (after T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T071 | **On deck** (after T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
@@ -350,3 +349,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T130 | In-Progress [Antigravity] | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
+| T138 | In-Progress [Claude] | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |

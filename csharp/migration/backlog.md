@@ -1506,13 +1506,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T138 Views A leftovers: TradeView and CivView.getTradeView
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T084, T086
 - Source: core/src/com/unciv/view/TradeView.kt, CivView.kt (getTradeView)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/View/TradeView.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~ViewTests
-- Claimed:
+- Claimed: 2026-10-24T16:30Z
 - Notes: From T084: TradeView needs TradeLogic (T086), which T084 does not depend on. Port TradeView and CivView.GetTradeView, plus TradeOffer.getOfferText if still open.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
