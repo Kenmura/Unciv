@@ -376,14 +376,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Container of `GameParameters` and `MapParameters` with the two cloning constructors (from another setup; from a `GameInfo` when that exists: leave that constructor as `TODO(T0xx)` pointing at the GameInfo ticket). `mapFile` (FileHandle, transient) and `fromSettings` (reads `UncivGame.Current.settings.lastGameSetup`, applies QuickStart defaults: `shape = rectangular`, `worldWrap = true`, `espionageEnabled = true`) are client concerns; port the default-setup branch as a plain factory taking an optional difficulty if it is useful to headless tests.
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T006, T007, T010
 - Source: core/src/com/unciv/logic/map/MapSize.kt, MapParameters.kt, NeighborDirection.kt, logic/map/tile/RoadStatus.kt
 - Fixtures: none - generate golden values (incl. MapSize radius/size math, MapParameters JSON)
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapSize.cs, MapParameters.cs, NeighborDirection.cs, Tile/RoadStatus.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MapParametersTests`
-- Claimed: 2026-10-24T01:39:11Z
-- Review-Claimed: 2026-10-24T01:46:31Z [Claude]
+- Claimed: 2026-10-24T01:48:35Z
 - Notes: Unblocks half of T015. Watch Kotlin Int/Float rounding in MapSize custom-size logic (roundToInt is half-up).
   - Implementer notes (Antigravity):
     - Ported `MapSize` (`Predefined` enum + extension properties, custom radius and width/height constructors via `HexMath`, `GetPredefinedOrNextSmaller`, `FixUndesiredSizes`, `Clone`, JSON serialization) under `Unciv.Logic.Map`.
