@@ -838,13 +838,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~855 LOC. Final automation ticket: replaces every TODO(T094) seam (TurnManager.automate and cityBombardment/goldToScience T070, CityStateFunctions T068, Battle.valueCityStateAlliance T083, UniqueTriggerActivation.chooseGreatPerson T052, Civilization.automateTurn) and runs one full AI turn through all automation tickets. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
 
 ### T095 Civilopedia text model A: FormattedLine, ICivilopediaText, CivilopediaCategories, FormattedLineListBuilder, DescriptionHelpers
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T034
 - Source: core/src/com/unciv/ui/screens/civilopediascreen/FormattedLine.kt, ICivilopediaText.kt, CivilopediaCategories.kt, core/src/com/unciv/ui/objectdescriptions/FormattedLineListBuilder.kt, DescriptionHelpers.kt
 - Fixtures: none - generate golden values (line text/link/format data)
 - Deliverables: csharp/Unciv.Core/UI/Screens/Civilopedia/*.cs, csharp/Unciv.Core/UI/ObjectDescriptions/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~CivilopediaTextTests`
-- Claimed:
+- Claimed: 2026-10-24T10:53Z
 - Notes: Created by the backlog audit: Non-goals #7 says to decide the Civilopedia/FormattedLine engine text model once, and T030/T031/T032/T033 deferred their getCivilopediaTextLines/makeLink/getSortGroup/getSubCategory/getShortDescription members to 'the Civilopedia text types, which have no ticket yet'. Decision: the engine owns the data model (FormattedLine as plain data: text, link, icon NAME strings, colour as EngineColor/hex, size/format flags; no Image/Actor/Table rendering, no ImageGetter, no KeyboardBinding), the Godot client renders it. ~1.1k LOC. Port ICivilopediaText as an interface with default methods like IHasUniques. T095-T097 also finish the deferred members on the ruleset objects (list the ones taken in Notes). Seam rule as T053.
 
 ### T096 Civilopedia text model B: Building, Improvement, Resource, Tile descriptions

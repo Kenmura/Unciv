@@ -421,7 +421,7 @@ flowchart TD
   class T092 waiting
   class T093 waiting
   class T094 waiting
-  class T095 ready
+  class T095 prog
   class T096 waiting
   class T097 waiting
   class T098 prog
@@ -438,7 +438,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T095 | **Ready to start** | T034 | 4 | Civilopedia text model A: FormattedLine, ICivilopediaText, CivilopediaCategories, FormattedLineListBuilder, DescriptionHelpers |
 | T055 | Needs-Review [Claude] | T034, T045, T039, T053 | 58 | Civilization core: Civilization, ExploredRegion, PopupAlert |
 | T057 | Available (waiting on T055) | T055 | 54 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
 | T056 | Available (waiting on T055) | T055 | 53 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
@@ -478,6 +477,7 @@ flowchart TD
 | T091 | Available (waiting on T090, T080, T063) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080, T035) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
+| T095 | In-Progress [Claude] | T034 | 4 | Civilopedia text model A: FormattedLine, ICivilopediaText, CivilopediaCategories, FormattedLineListBuilder, DescriptionHelpers |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T072 | Available (waiting on T035, T052, T062, T063, T064, T067, T068, T069, T071) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
