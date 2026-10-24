@@ -87,6 +87,7 @@ flowchart TD
     T125["T125<br/>Policy: harden NullForgivingTests scanner (interpolation hol..."]
     T126["T126<br/>PromotionTree port (IPromotionTree seam, CityConstructions s..."]
     T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
+    T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -283,6 +284,7 @@ flowchart TD
   T063 --> T127
   T065 --> T127
   T120 --> T127
+  T065 --> T128
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -398,6 +400,7 @@ flowchart TD
   class T125 ready
   class T126 waiting
   class T127 ondeck
+  class T128 ondeck
 ```
 
 ## Incomplete tickets
@@ -415,7 +418,8 @@ flowchart TD
 | T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T127 | **On deck** (after T061, T063, T065) | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
-| T065 | Needs-Review [Claude] | T055, T056, T060 | 50 | MapUnit core: MapUnit, MapUnitCache |
+| T128 | **On deck** (after T065) | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
+| T065 | In-Review [Antigravity] | T055, T056, T060 | 51 | MapUnit core: MapUnit, MapUnitCache |
 | T061 | In-Progress [Claude] | T060 | 43 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
