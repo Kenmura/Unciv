@@ -1351,6 +1351,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Found by T122 review: coverage dropped when T063 and others landed with tests to follow. Review step lists uncovered ranges with coverage.py --report.
 
+### T131 Hardening: T063 review follow-ups (CityConstructions test gaps, Java-order freeBuildingsProvidedFromThisCity, IConstructionCity cast)
+- State: Available
+- Depends: T063
+- Source: csharp/Unciv.Core/Logic/City/CityConstructions.cs
+- Fixtures: none
+- Deliverables: tests for ChooseNextConstruction, CreatesOneImprovement paths (marker place/remove/validate), TriggerNewBuildingUniques, Korean tech boost, stockpile branch of ValidateConstructionQueue, ConstructionBegun and TriggersAlertOnCompletion notifications, Building/BaseUnit NotMetRejections and MaxNumberBuildable, CanUnitEnterTile; FreeBuildingsProvidedFromThisCity as JavaHashMap<string,JavaHashSet<string>> (with CivConstructions); replace the (City) cast in BaseUnit.CanBePurchasedWithStat by a City-typed parameter
+- Gate: dotnet test --filter FullyQualifiedName~CityConstructionsTests
+- Claimed:
+- Notes: From the T063 adversarial review (non-blocking findings).
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.

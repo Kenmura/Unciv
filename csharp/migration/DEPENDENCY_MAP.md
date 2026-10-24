@@ -89,6 +89,7 @@ flowchart TD
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
+    T131["T131<br/>Hardening: T063 review follow-ups (CityConstructions test ga..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -281,6 +282,7 @@ flowchart TD
   T120 --> T127
   T096 --> T129
   T097 --> T129
+  T063 --> T131
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -398,6 +400,7 @@ flowchart TD
   class T128 ready
   class T129 waiting
   class T130 ready
+  class T131 ondeck
 ```
 
 ## Incomplete tickets
@@ -415,9 +418,10 @@ flowchart TD
 | T064 | **On deck** (after T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T126 | **On deck** (after T063, T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T127 | **On deck** (after T063) | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
+| T131 | **On deck** (after T063) | T063 | 0 | Hardening: T063 review follow-ups (CityConstructions test gaps, Java-order freeBuildingsProvidedFromThisCity, IConstructionCity cast) |
 | T066 | In-Progress [Claude] | T065, T060 | 46 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T046 | Available (waiting on T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
-| T063 | Needs-Review [Claude] | T060, T062 | 38 | CityConstructions |
+| T063 | Needs-Review [Claude] | T060, T062 | 39 | CityConstructions |
 | T068 | Available (waiting on T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | Available (waiting on T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
