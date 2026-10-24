@@ -462,13 +462,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (Antigravity): Pass. Verified EngineOptions design and implementation against Kotlin DebugUtils.kt and DETERMINISM.md: instance-owned mutable state replacing global statics, proper exclusion of UI flags (SHOW_TILE_COORDS, SHOW_TILE_IMAGE_LOCATIONS, SHOW_FPS), IStateHashable inclusion of rule-affecting fields with order-independent CivIdsInExperimentGroup set hashing, diagnostic separation for SettlerScores, independent deep cloning, and documentation in DETERMINISM.md 2.6. Re-ran Gate (~EngineOptionsTests, 5/5 passed) and Standard checks (dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test — 675/675 passed).
 
 ### T049 Model leaves: ModConstants, UncivSound, TutorialTrigger
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: none
 - Source: core/src/com/unciv/models/{ModConstants,UncivSound,TutorialTrigger}.kt
 - Fixtures: tests/src/com/unciv/logic/ModConstantsTests.kt (4 tests); otherwise generate golden values for the reflective equals/hashCode/toString/merge
 - Deliverables: csharp/Unciv.Core/Models/ModConstants.cs, UncivSound.cs, TutorialTrigger.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~ModConstantsTests`
-- Claimed: 2026-10-24T02:17:59Z
+- Claimed: 2026-10-24T02:42:00Z
 - Notes: Found missing while expanding the backlog; they are needed by T030 (`ModOptions.constants`, `Tutorial`/`TutorialTrigger`) and `Stat.purchaseSound`. ModConstants uses Java reflection for `merge/equals/hashCode/toString` over `declaredFields` in declaration order, with `hashCode` chaining `withHash(field.hashCode())` and `equals` being Java boxed `equals` (Double/Float compare bits: `NaN == NaN`, `0.0 != -0.0`); use C# reflection over the properties in declaration order and `JavaHash`/`Randomness.WithHash`, and the Java `toString` of floats/doubles (`JavaFormat.ToJavaString`, T047). Nested data class `UnitUpgradeCost` needs Kotlin data-class `equals/hashCode/toString`. `ImmutableColor` is NOT ported here (no engine Color type yet): decide with Nation (T032).
 - Implementer notes: Properties are PascalCase with `[JsonPropertyName]` equal to the Kotlin names (generated from the Kotlin source, 44 constants), reflected in `MetadataToken` (declaration) order. The nested data class is `ModConstants.UpgradeCostConstants` (a nested type cannot share the name of the `UnitUpgradeCost` property); its `ToString` still prints `UnitUpgradeCost(...)`. Hash codes of `Defaults` (670061036) and of the `{99, 6.0}` instance (1000388743) and the `toString` forms are golden values from the real JVM class. `TutorialTrigger` keeps the Kotlin entry names; `Value()`/`IsCivilopedia()` are extension methods. `UncivSound` is a record with the static instances. `TODO(T030)` marks the upstream "implement as unique conditionals" note.
 
