@@ -3,6 +3,11 @@
 Rules: see `PROTOCOL.md`. Tell an agent **"Begin Conversion work"** to start.
 Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX math/JVM stdlib). Expand as needed.
 
+## Non-goals
+See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for these are `Won't port`.
+
+## Engine track
+
 ### T001 LongPriorityQueue
 - State: Done
 - Claimed: 2026-10-24T00:43:00Z
@@ -102,3 +107,66 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
 - Deliverables: to be designed (System.Text.Json converters under csharp/Unciv.Core/Json/), tests
 - Gate: `dotnet test --filter FullyQualifiedName~Json`
 - Notes: Needs a design pass first (brainstorm): libGDX Json is lenient (unquoted keys, float-valued ints, class-name tags). Counter's compact `{name: value}` format, reading `value` objects, and Stats/StatMap/Stat enum serialization all need converters. Also `IsPartOfGameInfoSerialization` marker interface.
+
+### T007 Seeded deterministic RNG
+- State: Available
+- Depends: none
+- Source: kotlin.random.Random (XorWow, as used via `Random(seed)` across core/src, 29 import sites), plus the one `java.util.Random` use (grep it)
+- Fixtures: none – generate golden sequences by running Kotlin `Random(seed)` for several seeds and calls (`nextInt`, `nextInt(bound)`, `nextInt(range)`, `nextFloat`, `nextDouble`, `nextBoolean`)
+- Deliverables: csharp/Unciv.Core/Utils/GameRandom.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~GameRandomTests`
+- Notes: Must reproduce Kotlin's sequences bit-for-bit so ported map generation matches the original for the same seed. All engine code uses this type; reviewers reject `System.Random`.
+
+### T008 State-hash determinism harness
+- State: Available
+- Depends: T007
+- Source: design ticket (no Kotlin source); reference tests/src/com/unciv/logic/GameSerializationTests.kt for what constitutes game state
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Utils/StateHasher.cs (stable canonical hash over engine state, order-explicit), tests, and a short `csharp/migration/DETERMINISM.md`
+- Gate: `dotnet test --filter FullyQualifiedName~StateHasherTests`
+- Notes: Later tickets extend it: run N turns from a seed and compare hashes across runs (and against Kotlin-generated hashes where feasible).
+
+### T009 Command layer design
+- State: Available
+- Depends: none
+- Source: design ticket; study how UI actions mutate `GameInfo` (e.g. `core/src/com/unciv/logic/automation` and `UnitActions`, `CityConstructions`)
+- Fixtures: none
+- Deliverables: `csharp/migration/COMMANDS.md` proposing a serializable command/event model (player action → validate → apply → event), plus a minimal `ICommand` skeleton in Unciv.Core with tests
+- Gate: `dotnet test --filter FullyQualifiedName~CommandTests`
+- Notes: Target is an authoritative-server model: clients send commands, server validates/applies, broadcasts commands or diffs. Must not depend on Unciv's multiplayer code. Reviewer must check it keeps lockstep as a possible future option (pure, deterministic apply).
+
+## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
+
+Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
+
+### C001 Godot project skeleton
+- State: Blocked
+- Depends: T006 and a loadable game state (ticket to be added)
+- Deliverables: csharp/Unciv.Godot/ project consuming Unciv.Core, empty scene, CI-friendly headless build
+- Gate: `dotnet build Unciv.Godot` (headless; no editor required)
+
+### C002 3D hex terrain rendering
+- State: Blocked
+- Depends: C001
+- Scope: 3D hex tile meshes with per-terrain materials and elevation (grass, plains, desert, tundra, snow, hills, mountains, forest/jungle, water with depth), smooth blending between adjacent terrains, fog of war and visibility tinting, tile yields and improvements as in-world props.
+- Notes: Grass rendered as real textured/shaded terrain with instanced vegetation; no flat sprite tiles.
+
+### C003 Resource and improvement props
+- State: Blocked
+- Depends: C002
+- Scope: 3D resource props, including **horses** (animated or posed horse herds on the Horses resource tile), cattle, sheep, wheat, iron, etc., plus improvements (farms, pastures, mines, roads).
+
+### C004 3D military units
+- State: Blocked
+- Depends: C002
+- Scope: 3D unit models with idle, move, attack, damage and death animations for combat units; formation or multiple figures per unit; selection, path preview and attack-range overlays; combat resolved by the engine, presented by the client.
+
+### C005 Civ 5-style UI shell
+- State: Blocked
+- Depends: C002
+- Scope: top bar (yields, science/culture/gold/happiness), minimap, unit panel, city screen, tech/policy trees, diplomacy, turn banner, notifications, tooltips.
+
+### C006 Networked play client
+- State: Blocked
+- Depends: T009, C001
+- Scope: client for our own authoritative server (to be designed; separate server ticket needed), lobby, turn notifications, reconnect/resume.

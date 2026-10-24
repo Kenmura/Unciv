@@ -12,6 +12,14 @@ On seeing it, read this file, then `csharp/migration/backlog.md`, then run the
 Work Loop below **continuously**: finish a ticket, then immediately start the
 next one, until a Stop Condition is met. Do not pause to ask the user.
 
+## Goals and non-goals
+
+Long-term goal: a headless, **deterministic** C# engine driving a Godot client with a Civ 5-style UI (see `backlog.md`, Client track), playable online with friends over our **own** networking. The port exists to serve that goal.
+
+Non-goals (mark such tickets `Won't port`, do not port them):
+- Unciv's multiplayer stack (`logic/multiplayer`, apiv2, Dropbox sync, `server/`) and any dependency on the original implementers' servers.
+- libGDX UI/screens, Android/desktop launchers, platform-specific code.
+
 ## Layout
 
 - `csharp/Unciv.Core/` – headless engine (no UI, no libGDX). Namespaces mirror Kotlin packages (`com.unciv.logic.map` → `Unciv.Logic.Map`).
@@ -61,9 +69,14 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 ### Review
 
 1. Diff the C# against the Kotlin line by line for behavioural fidelity: numeric types, rounding, null handling, ordering, equality/hash semantics, mutability, serialization names.
-2. Check that ported tests cover every Kotlin test case and add cases for any untested branch you find.
-3. Run the Gate and full `dotnet test` yourself. Do not trust the implementer's claim.
-4. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`.
+2. **Determinism checklist** – confirm each of these, or reject:
+   - Randomness goes only through the engine's seeded RNG (T007), never `System.Random` or time.
+   - No hash-ordered iteration (`Dictionary`/`HashSet`) feeds game state or output where Kotlin used insertion-ordered or sorted collections.
+   - Float/Double/Int widths and rounding match Kotlin; no silent `float`→`double` promotion; Kotlin `Int` overflow and division semantics preserved.
+   - No wall-clock, culture-sensitive formatting/parsing, or threading nondeterminism in engine logic.
+3. Check that ported tests cover every Kotlin test case and add cases for any untested branch you find.
+4. Run the Gate and full `dotnet test` yourself. Do not trust the implementer's claim.
+5. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`.
 
 ## Running until budget is exhausted
 
@@ -90,6 +103,8 @@ When the backlog runs low, an agent that finds nothing `Available` should first 
 - Never mark `Done` without a passing Gate you ran in this session.
 - New tickets discovered along the way are appended to the backlog as `Available` with correct `Depends`.
 - Do not touch Gradle/Android build files.
+- **Assets:** never copy Firaxis/Civ 5 art, icons, sounds, fonts or music. Record the source and license of every asset in `csharp/migration/ASSETS.md`. Unciv's own assets keep their original license; check before reuse.
+- Ported files keep the original MPL-2.0 license notice (see repo `LICENSE`).
 - Generated golden values (for code without Kotlin tests) must come from running the Kotlin code; record how in `Notes`.
 
 ## Ticket format
