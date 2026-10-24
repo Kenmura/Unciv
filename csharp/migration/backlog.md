@@ -70,7 +70,8 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Ran Gate (24 passed) and full `dotnet test`.
 
 ### T005 Counter
-- State: Available
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T00:45:17Z
 - Depends: none
 - Source: core/src/com/unciv/models/Counter.kt
 - Fixtures: grep tests/ for `Counter`; otherwise generate golden values
