@@ -52,6 +52,7 @@ flowchart TD
     T155["T155<br/>Air unit automation: AirUnitAutomation"]
     T156["T156<br/>Unit automation: UnitAutomation (all but tryUpgradeUnit)"]
     T157["T157<br/>Deferred automation fixture: GreatPersonSelectionTest automa..."]
+    T158["T158<br/>ConstructionAutomation (split from T091)"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -174,6 +175,7 @@ flowchart TD
   class T155 ready
   class T156 waiting
   class T157 waiting
+  class T158 ready
 ```
 
 ## Remaining tickets over time
@@ -191,7 +193,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 24]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 25]
     line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
 ```
 
@@ -203,8 +205,9 @@ xychart-beta
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
+| T158 | **Ready to start** | T085, T063 | 0 | ConstructionAutomation (split from T091) |
 | T092 | **On deck** (after T091) | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
-| T091 | In-Progress [Claude] | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
+| T091 | In-Progress [Claude] | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation |
 | T156 | Available (waiting on T155) | T090, T155 | 7 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | T094 | Available (waiting on T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
