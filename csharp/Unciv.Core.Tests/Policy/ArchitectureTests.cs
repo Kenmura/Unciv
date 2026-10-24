@@ -30,6 +30,7 @@ public class ArchitectureTests
             .Where(type => type.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
             .Where(type => type.FullName?.StartsWith('<') != true) // compiler-emitted <PrivateImplementationDetails> and friends
             .Where(type => !(type.Namespace ?? "").StartsWith("Unciv", StringComparison.Ordinal))
+            .Where(type => !(type.Namespace ?? "").StartsWith("Coverlet.Core.Instrumentation.Tracker", StringComparison.Ordinal)) // injected by coverage runs (tools/coverage.py)
             .Select(type => type.FullName)
             .ToList();
 

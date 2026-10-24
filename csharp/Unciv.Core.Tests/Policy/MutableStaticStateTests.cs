@@ -44,6 +44,7 @@ public class MutableStaticStateTests
         {
             if (type.GetCustomAttribute<CompilerGeneratedAttribute>() != null || type.FullName?.StartsWith('<') == true) continue;
             if (IsInsideCompilerGeneratedType(type)) continue;
+            if (type.FullName?.StartsWith("Coverlet.Core.Instrumentation.Tracker", StringComparison.Ordinal) == true) continue; // injected by coverage runs (tools/coverage.py)
             var typeName = type.FullName!;
 
             foreach (var field in type.GetFields(AllStatics))

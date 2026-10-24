@@ -397,7 +397,7 @@ flowchart TD
   class T111 waiting
   class T115 waiting
   class T120 done
-  class T122 prog
+  class T122 review
   class T123 ready
   class T124 ready
   class T125 ready
@@ -471,6 +471,6 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
-| T122 | In-Progress [Claude] | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
+| T122 | Needs-Review [Claude] | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | T126 | Available (waiting on T063, T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T129 | Available (waiting on T096, T097) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |

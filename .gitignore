@@ -201,3 +201,6 @@ detekt/reports.html
 # Agent worktrees
 /.worktrees/
 
+
+# Coverage run output (csharp/migration/tools/coverage.py)
+/csharp/migration/.coverage/

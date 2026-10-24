@@ -1250,7 +1250,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review PASS (code). Standard checks were green on b2caf80b2+T121 (1911 tests) before T063 WIP seams landed on csharp-migration; the current tip fails to build in CivilizationSeams.cs/City.cs (ICityConstructions, IUnitPromotions), unrelated to T121. Civilization.cs baseline 24 is deliberate headroom (measured 22): lower to 22 after T061/T063/T065 land.
 
 ### T122 Policy: coverage reporting and ratchet for changed files (coverlet)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
@@ -1260,6 +1260,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: adversarial reviews keep reporting untested ported branches (T053: CanCivPassThrough/ProvidesYield/GetWorkingCity/IsLocked/ProvidesResources/UnitHeight; T054: ProductionBonusWhenRemoved/RestrictedBuildableImprovements; T073 thin RNG-stream coverage; T107, T114). Add coverlet (collector), a script that runs dotnet test with coverage in dotnet-dev and writes per-file line and branch coverage, a baseline of current coverage, and a --check mode that fails when a file's coverage drops below its baseline (ratchet; new files must reach 80% line coverage unless excused with a reason). Report the files a ticket touched in the Review step. Keep the run time reasonable (collect once per ticket, not per test run); document in PROTOCOL.md under Standard checks.
+  - Implemented tools/coverage.py (coverlet cobertura, one cached instrumented run via dotnet-dev; --check/--report/--update-baseline/--all/--run), migration/coverage-baseline.json (244 files, grandfathered at current line%), PROTOCOL.md Standard-checks paragraph, .gitignore for .coverage/. coverlet.collector was already in Directory.Packages.props/test csproj. Coverlet injects Coverlet.Core.Instrumentation.Tracker types that broke ArchitectureTests.AllTypesLiveUnderTheUncivNamespace and MutableStaticStateTests under coverage: both now skip that namespace (JUSTIFY-free, narrow). Default check scope = .cs files changed vs csharp-migration; new files need >=80% or an "excused" baseline entry; baseline only ever ratchets up.
 
 ### T123 Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core
 - State: Available
