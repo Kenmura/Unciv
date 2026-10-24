@@ -764,13 +764,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     ResourceDiversityTest.kt needs the full MapGenerator (T041); own xUnit tests exercise the logic directly on a small all-land fallback ruleset.
 
 ### T078 Barbarians: BarbarianManager, BarbarianEncampment
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T060, T065, T066
 - Source: core/src/com/unciv/logic/automation/civilization/BarbarianManager.kt, BarbarianEncampment.kt (the data/spawn logic; BarbarianAutomation.kt is T094)
 - Fixtures: none - generate golden values (seeded encampment spawning)
 - Deliverables: csharp/Unciv.Core/Logic/Civilization/BarbarianManager.cs, BarbarianEncampment.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~BarbarianManagerTests`
-- Claimed:
+- Claimed: 2026-10-24T12:49Z
 - Notes: Created by the backlog audit: GameInfo.barbarians is a serialized GameInfo field (T046 depends on this ticket), and no ticket covered it. ~330 LOC. Random draws via the engine RNG in Kotlin order; encampment/unit iteration order is game state. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T079 UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion

@@ -330,7 +330,7 @@ flowchart TD
   class T040 done
   class T041 done
   class T045 done
-  class T046 waiting
+  class T046 ondeck
   class T052 waiting
   class T053 done
   class T054 done
@@ -347,11 +347,11 @@ flowchart TD
   class T066 done
   class T067 review
   class T068 ondeck
-  class T069 waiting
+  class T069 ondeck
   class T070 waiting
   class T071 waiting
   class T072 waiting
-  class T078 ready
+  class T078 prog
   class T079 waiting
   class T080 waiting
   class T081 waiting
@@ -401,7 +401,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T078 | **Ready to start** | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
@@ -414,12 +413,13 @@ flowchart TD
 | T132 | **Ready to start** | T097 | 0 | T097 review follow-ups: game context for Technology unit/obsoleted filters, BaseUnit.GetDescription ruleset |
 | T133 | **Ready to start** | T066 | 0 | Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager |
 | T135 | **Ready to start** | T066 | 0 | T066 review follow-ups: UnitPromotions JSON round-trip, tie-break and promotion-trigger tests |
+| T046 | **On deck** (after T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T068 | **On deck** (after T064) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
+| T069 | **On deck** (after T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T129 | **On deck** (after T096) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T134 | **On deck** (after T067) | T067 | 0 | Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing) |
-| T046 | Available (waiting on T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
+| T078 | In-Progress [Claude] | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T064 | Needs-Review [Claude] | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
-| T069 | Available (waiting on T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T067 | In-Review [Claude] | T065, T054 | 24 | Unit movement: MovementCost, UnitMovement |
 | T035 | Available (waiting on T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
