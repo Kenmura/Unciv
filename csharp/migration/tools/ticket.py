@@ -468,7 +468,12 @@ def cmd_add(argv):
         die("add needs --title")
     prefix = opts["--prefix"]
     known = all_states()
-    tid = f"{prefix}{max([int(i[1:]) for i in known if i.startswith(prefix)] or [0]) + 1:03d}"
+    # Also look at the published branch so two worktrees adding at once do not pick the same id.
+    ids = {i for i in known if i.startswith(prefix)}
+    for name in ("backlog.md", "backlog-archive.md"):
+        shown = git("show", f"{BRANCH}:{(HERE / name).relative_to(Path(git('rev-parse', '--show-toplevel').stdout.strip()))}", check=False)
+        ids |= set(re.findall(rf"^### ({prefix}\d+)\b", shown.stdout, re.M))
+    tid = f"{prefix}{max([int(i[1:]) for i in ids] or [0]) + 1:03d}"
     deps = opts.get("--depends", "none")
     bad = [d for d in deps_of(deps) if d not in known]
     if bad:
