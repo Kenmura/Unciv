@@ -1400,13 +1400,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From T097 review. (1) GetEnabledUnits and GetObsoletedObjects must take the CivilopediaContext and pass context?.GameInfo ?? civInfo?.GameInfo to IsHiddenFromCivilopedia (as GetFilteredBuildings does), pass context from GetCivilopediaTextLines; add a test with a game that disables nukes. (2) BaseUnitDescriptions.GetDescription should use the unit's own ruleset for tileResources if exposed; add a City-based test once T072/TestGame exists.
 
 ### T133 Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T066
 - Source: core/src/com/unciv/logic/civilization/Civilization.kt
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Logic/Civilization/Civilization.cs (val units = UnitManager(this)), CivilizationSeams.cs (remove IUnitManager), UnitManager.cs, callers of Units.* and civilization tests replacing FakeUnitManager
 - Gate: dotnet test
-- Claimed:
+- Claimed: 2026-10-24T14:35Z
 - Notes: Follow-up of T066: UnitManager implements the IUnitManager seam; Civilization tests (CivilizationTestFakes.FakeUnitManager { Count = n }, ~35 sites) count units without MapUnits, so the retype was left out of T066. Kotlin shape: units is a val initialised in the Civilization constructor.
 
 ### T134 Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing)
