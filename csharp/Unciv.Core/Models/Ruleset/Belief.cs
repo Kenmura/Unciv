@@ -71,18 +71,19 @@ public class Belief : RulesetObject, ICivilopediaText
             b.AddUniques(this, SeparatorType.None);
         });
 
-    public static IEnumerable<Belief> GetBeliefsMatching(string name, Ruleset ruleset) =>
+    // Kotlin reads UncivGame.getGameInfoOrNull() implicitly; here the caller passes the loaded game, if any (gameInfo).
+    public static IEnumerable<Belief> GetBeliefsMatching(string name, Ruleset ruleset, IGameContextGameInfo? gameInfo = null) =>
         ruleset.Beliefs.Values
-            .Where(it => !((IHasUniques)it).IsHiddenFromCivilopedia(null, ruleset))
+            .Where(it => !((IHasUniques)it).IsHiddenFromCivilopedia(gameInfo, ruleset))
             .Where(it => ((IHasUniques)it).HasUniquesMentioning(name));
 
     /// <summary>
     /// Get CivilopediaText lines for all Beliefs referencing a given name in an unique parameter,
     /// With optional spacing and "See Also:" header.
     /// </summary>
-    public static IEnumerable<FormattedLine> GetCivilopediaTextMatching(string name, Ruleset ruleset, bool withSeeAlso = true)
+    public static IEnumerable<FormattedLine> GetCivilopediaTextMatching(string name, Ruleset ruleset, bool withSeeAlso = true, IGameContextGameInfo? gameInfo = null)
     {
-        var matchingBeliefs = GetBeliefsMatching(name, ruleset).ToList();
+        var matchingBeliefs = GetBeliefsMatching(name, ruleset, gameInfo).ToList();
         if (matchingBeliefs.Count == 0) yield break;
         if (withSeeAlso)
         {

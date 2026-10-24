@@ -1,6 +1,7 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tech;
 using Unciv.Models.Ruleset.Unique;
@@ -9,6 +10,7 @@ using Unciv.Utils;
 using EraObject = Unciv.Models.Ruleset.Tech.Era;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using PolicyObject = Unciv.Models.Ruleset.Policy;
+using TileImprovementObject = Unciv.Models.Ruleset.Tile.TileImprovement;
 using TileResourceObject = Unciv.Models.Ruleset.Tile.TileResource;
 
 namespace Unciv.Core.Tests.Logic;
@@ -520,9 +522,9 @@ public class CivManagerTests
         public required Technology Philosophy { get; init; }
     }
 
-    private static TechWorld NewTechWorld()
+    private static TechWorld NewTechWorld(string[]? uniques = null)
     {
-        var (civ, info) = NewCiv();
+        var (civ, info) = NewCiv(uniques);
         var ancient = new EraObject { Name = "Ancient era", EraNumber = 0 };
         var classical = new EraObject { Name = "Classical era", EraNumber = 1 };
         info.RulesetData.Eras.Put(ancient.Name, ancient);
@@ -769,5 +771,264 @@ public class CivManagerTests
         Assert.Equal("6", tech.TurnsToTech("Writing")); // 110 / 20 = 5.5
         tech.TechsInProgress["Writing"] = 500;
         Assert.Equal("0", tech.TurnsToTech("Writing")); // nothing left to do
+    }
+
+    // ---- T114: cases the T056 review found missing
+
+    private static TileImprovementObject Improvement(string name, string? techRequired = null, params string[] uniques) =>
+        new() { Name = name, TechRequired = techRequired, Uniques = [.. uniques] };
+
+    [Fact]
+    public void Tech_BestRoadAvailableFollowsTheRequiredTechsAndBuildingProblems()
+    {
+        var world = NewTechWorld();
+        world.Info.RulesetData.TileImprovements.Put("Road", Improvement("Road", "Agriculture"));
+        world.Info.RulesetData.TileImprovements.Put("Railroad", Improvement("Railroad", "Writing"));
+        var tech = world.Civ.Tech;
+        Assert.Equal(RoadStatus.None, tech.GetBestRoadAvailable());
+        tech.AddTechnology("Agriculture");
+        Assert.Equal(RoadStatus.Road, tech.GetBestRoadAvailable());
+        tech.AddTechnology("Writing");
+        Assert.Equal(RoadStatus.Railroad, tech.GetBestRoadAvailable());
+
+        // A railroad that can never be built falls back to the road
+        var blocked = NewTechWorld();
+        blocked.Info.RulesetData.TileImprovements.Put("Road", Improvement("Road"));
+        blocked.Info.RulesetData.TileImprovements.Put("Railroad", Improvement("Railroad", null, "Unbuildable"));
+        Assert.Equal(RoadStatus.Road, blocked.Civ.Tech.GetBestRoadAvailable());
+
+        // Mods may have no roads at all
+        Assert.Equal(RoadStatus.None, NewTechWorld().Civ.Tech.GetBestRoadAvailable());
+    }
+
+    [Fact]
+    public void Tech_TransientBooleansReadTheOceanAndRoadUniques()
+    {
+        var plain = NewTechWorld();
+        plain.Civ.Tech.SetTransients(plain.Civ);
+        var tech = plain.Civ.Tech;
+        Assert.Equal((false, false, false, false, false, false), (tech.UnitsCanEmbark, tech.AllUnitsCanEnterOcean, tech.EmbarkedUnitsCanEnterOcean, tech.SpecificUnitsCanEnterOcean, tech.RoadsConnectAcrossRivers, false));
+        Assert.Equal(0.5f, tech.MovementSpeedOnRoads);
+
+        var all = NewTechWorld(["Enables [All] units to enter ocean tiles", "Roads connect tiles across rivers", "Improves movement speed on roads", "Enables embarkation for land units"]);
+        all.Civ.Tech.SetTransients(all.Civ);
+        Assert.Equal((true, true, true, false, true), (all.Civ.Tech.UnitsCanEmbark, all.Civ.Tech.AllUnitsCanEnterOcean, all.Civ.Tech.EmbarkedUnitsCanEnterOcean, all.Civ.Tech.SpecificUnitsCanEnterOcean, all.Civ.Tech.RoadsConnectAcrossRivers));
+        Assert.Equal(1f / 3f, all.Civ.Tech.MovementSpeedOnRoads);
+
+        var embarked = NewTechWorld(["Enables [Embarked] units to enter ocean tiles"]);
+        embarked.Civ.Tech.SetTransients(embarked.Civ);
+        Assert.Equal((false, true, false), (embarked.Civ.Tech.AllUnitsCanEnterOcean, embarked.Civ.Tech.EmbarkedUnitsCanEnterOcean, embarked.Civ.Tech.SpecificUnitsCanEnterOcean));
+
+        var specific = NewTechWorld(["Enables [Great Admiral] units to enter ocean tiles"]);
+        specific.Civ.Tech.SetTransients(specific.Civ);
+        Assert.Equal((false, false, true), (specific.Civ.Tech.AllUnitsCanEnterOcean, specific.Civ.Tech.EmbarkedUnitsCanEnterOcean, specific.Civ.Tech.SpecificUnitsCanEnterOcean));
+    }
+
+    [Fact]
+    public void Tech_IsObsoleteOnceTheObsoletingTechIsResearched()
+    {
+        var world = NewTechWorld();
+        var warrior = new BaseUnit { Name = "Warrior", ObsoleteTech = "Writing" };
+        var archer = new BaseUnit { Name = "Archer" };
+        Assert.False(world.Civ.Tech.IsObsolete(warrior));
+        world.Civ.Tech.AddTechnology("Agriculture");
+        Assert.False(world.Civ.Tech.IsObsolete(warrior));
+        world.Civ.Tech.AddTechnology("Writing");
+        Assert.True(world.Civ.Tech.IsObsolete(warrior));
+        Assert.False(world.Civ.Tech.IsObsolete(archer)); // never obsolete
+    }
+
+    [Fact]
+    public void Tech_OverflowScienceIsLimitedToTheLargerOfFiveTurnsOfScienceAndTheTechCost()
+    {
+        var world = NewTechWorld();
+        var tech = world.Civ.Tech;
+        tech.TechsToResearch.Add("Agriculture");
+        tech.AddScience(1000); // cost 104: 896 left over, limited to max(0 * 5, base cost 100)
+        Assert.True(tech.IsResearched("Agriculture"));
+        Assert.Equal(100, tech.GetOverflowScience());
+
+        var rich = NewTechWorld();
+        rich.Civ.Stats.StatsForNextTurn = new Unciv.Models.StatTypes.Stats(science: 30.9f);
+        rich.Civ.Tech.TechsToResearch.Add("Agriculture");
+        rich.Civ.Tech.AddScience(1000); // max(30 * 5, 100) = 150
+        Assert.Equal(150, rich.Civ.Tech.GetOverflowScience());
+
+        var small = NewTechWorld();
+        small.Civ.Tech.TechsToResearch.Add("Agriculture");
+        small.Civ.Tech.AddScience(104 + 7);
+        Assert.Equal(7, small.Civ.Tech.GetOverflowScience()); // below the limit: untouched
+    }
+
+    [Fact]
+    public void Tech_UpdateResearchProgressCompletesATechThatStoredOverflowNowPays()
+    {
+        var world = NewTechWorld();
+        var tech = world.Civ.Tech;
+        tech.UpdateResearchProgress(); // nothing being researched
+        tech.AddScience(5); // stored as overflow
+        tech.TechsToResearch.Add("Agriculture");
+        tech.TechsInProgress["Agriculture"] = 90;
+        tech.UpdateResearchProgress(); // 90 + 5 < 104: nothing changes
+        Assert.False(tech.IsResearched("Agriculture"));
+        Assert.Equal(5, tech.GetOverflowScience());
+        Assert.Equal(90, tech.ResearchOfTech("Agriculture"));
+
+        tech.TechsInProgress["Agriculture"] = 100; // 100 + 5 >= 104
+        tech.UpdateResearchProgress();
+        Assert.True(tech.IsResearched("Agriculture"));
+        Assert.Equal(1, tech.GetOverflowScience()); // 105 - 104 left over
+    }
+
+    [Fact]
+    public void Tech_ScienceOfLast8TurnsMayBeNegative_AndTruncatesTowardsZero()
+    {
+        var world = NewTechWorld();
+        var tech = world.Civ.Tech;
+        world.Info.Turns = 0;
+        tech.EndTurn(-7);
+        world.Info.Turns = 1;
+        tech.EndTurn(-4);
+        Assert.Equal(-11, tech.GetScienceFromGreatScientist());
+        world.Info.SpeedData.ScienceCostModifier = 1.5f;
+        Assert.Equal(-16, tech.GetScienceFromGreatScientist()); // -16.5 truncated towards zero
+    }
+
+    [Fact]
+    public void Tech_EnteringAnEraAnnouncesItToKnownCivsAndUnlockedPolicyBranches()
+    {
+        var world = NewTechWorld();
+        AddBranch(world.Info.RulesetData, "Tradition", "Classical era");
+        AddBranch(world.Info.RulesetData, "Liberty", "Ancient era"); // adoptable already, not announced
+        var other = new Civilization(new NationObject { Name = "Greece" })
+        {
+            GameInfo = world.Info,
+            PlayerType = PlayerType.Human,
+            Units = new FakeUnitManager { Count = 1 },
+            CityStateFunctions = new FakeCityStateFunctions(),
+        };
+        world.Info.Civs.Add(other);
+        world.Civ.DiplomacyFunctions.MakeCivilizationsMeet(other);
+
+        world.Civ.Tech.AddTechnology("Agriculture", showNotification: false);
+        world.Civ.Tech.AddTechnology("Writing", showNotification: false); // era change without notifications
+        Assert.Empty(other.Notifications);
+        Assert.DoesNotContain(world.Civ.Notifications, it => it.Text.Contains("entered", StringComparison.Ordinal));
+
+        var again = NewTechWorld();
+        AddBranch(again.Info.RulesetData, "Tradition", "Classical era");
+        AddBranch(again.Info.RulesetData, "Liberty", "Ancient era");
+        var neighbour = new Civilization(new NationObject { Name = "Greece" })
+        {
+            GameInfo = again.Info,
+            PlayerType = PlayerType.Human,
+            Units = new FakeUnitManager { Count = 1 },
+            CityStateFunctions = new FakeCityStateFunctions(),
+        };
+        again.Info.Civs.Add(neighbour);
+        again.Civ.DiplomacyFunctions.MakeCivilizationsMeet(neighbour);
+        again.Civ.Tech.AddTechnology("Agriculture");
+        Assert.DoesNotContain(neighbour.Notifications, it => it.Text.Contains("entered", StringComparison.Ordinal)); // still the Ancient era
+        again.Civ.Tech.AddTechnology("Writing");
+        Assert.Contains(again.Civ.Notifications, it => it.Text == "You have entered the [Classical era]!");
+        Assert.Contains(neighbour.Notifications, it => it.Text == "[Rome] has entered the [Classical era]!");
+        var unlocked = Assert.Single(again.Civ.Notifications, it => it.Text.EndsWith("policy branch unlocked!", StringComparison.Ordinal));
+        Assert.Equal("[Tradition] policy branch unlocked!", unlocked.Text);
+    }
+
+    [Fact]
+    public void Tech_TheMayanLongCountIsAnnouncedOnTheNamedTechOnly()
+    {
+        var world = NewTechWorld(["Receive a free Great Person at the end of every [Long Count cycle] (every 394 years), after researching [Writing]. Each bonus person can only be chosen once."]);
+        world.Civ.Tech.AddTechnology("Agriculture");
+        Assert.DoesNotContain(world.Civ.Notifications, it => it.Text.Contains("Long Count", StringComparison.Ordinal));
+        world.Civ.Tech.AddTechnology("Writing");
+        var notification = Assert.Single(world.Civ.Notifications, it => it.Text == "You have unlocked [The Long Count]!");
+        Assert.IsType<MayaLongCountAction>(Assert.Single(notification.Actions!));
+    }
+
+    [Fact]
+    public void Policy_AdoptableBranchesAreInRulesetOrderAndRespectTheEra()
+    {
+        var (civ, info) = NewCivWithPolicies();
+        var classical = new EraObject { Name = "Classical era", EraNumber = 1 };
+        info.RulesetData.Eras.Put(classical.Name, classical);
+        var (tradition, _, _) = AddBranch(info.RulesetData, "Tradition", "Ancient era");
+        var (liberty, _, _) = AddBranch(info.RulesetData, "Liberty", "Classical era");
+        var policies = civ.Policies;
+        policies.StoredCulture = 100;
+        Assert.Equal([tradition], policies.AdoptableBranches);
+        civ.Tech.Era = classical;
+        Assert.Equal([tradition, liberty], policies.AdoptableBranches);
+        policies.Adopt(tradition);
+        Assert.Equal([liberty], policies.AdoptableBranches); // adopted: no longer new
+        Assert.Equal([tradition], policies.IncompleteBranches); // Liberty's members need Liberty itself first
+    }
+
+    [Fact]
+    public void Policy_RemovingAPolicyKeepsTheAdoptionCountWhenAssumedFreeOrAlreadyZeroAndThrowsForNonAdopted()
+    {
+        var (civ, info) = NewCivWithPolicies();
+        var (branch, _, complete) = AddBranch(info.RulesetData);
+        var policies = civ.Policies;
+        policies.StoredCulture = 1000;
+        policies.Adopt(branch);
+        policies.Adopt(branch.Policies[0]);
+        policies.RemovePolicy(branch.Policies[0], assumeWasFree: true); // the member
+        // Kotlin quirk kept: the recursive removal of the branch completion does not pass assumeWasFree on, so it still counts one down
+        Assert.False(policies.IsAdopted(complete.Name));
+        Assert.Equal(policies.GetPolicyCultureCost(1), policies.GetCultureNeededForNextPolicy());
+
+        policies.RemovePolicy(branch, assumeWasFree: true);
+        Assert.Equal(policies.GetPolicyCultureCost(1), policies.GetCultureNeededForNextPolicy()); // the count was not touched
+
+        policies.StoredCulture = 1000;
+        policies.Adopt(branch);
+        Assert.Equal(policies.GetPolicyCultureCost(2), policies.GetCultureNeededForNextPolicy());
+        policies.RemovePolicy(branch);
+        Assert.Equal(policies.GetPolicyCultureCost(1), policies.GetCultureNeededForNextPolicy());
+
+        // Free policies leave the count at 0, and removing one must not drive it negative
+        var (freeCiv, freeInfo) = NewCivWithPolicies();
+        var (freeBranch, _, _) = AddBranch(freeInfo.RulesetData);
+        freeCiv.Policies.FreePolicies = 1;
+        freeCiv.Policies.Adopt(freeBranch);
+        freeCiv.Policies.RemovePolicy(freeBranch);
+        Assert.Equal(25, freeCiv.Policies.GetCultureNeededForNextPolicy());
+
+        var error = Assert.Throws<InvalidOperationException>(() => freeCiv.Policies.RemovePolicy(freeBranch));
+        Assert.Equal("Attempt to remove non-adopted Policy Tradition", error.Message);
+        Assert.Equal(25, freeCiv.Policies.GetCultureNeededForNextPolicy()); // a failed removal changes nothing
+    }
+
+    [Fact]
+    public void Policy_CultureRefundRoundsHalfUpForOddPercentages()
+    {
+        var (civ, info) = NewCivWithPolicies();
+        var (branch, member, _) = AddBranch(info.RulesetData);
+        civ.Policies.StoredCulture = 1000;
+        civ.Policies.Adopt(branch);
+        civ.Policies.Adopt(member);
+
+        var refunds = civ.Policies.GetCultureRefundMap([member, branch], 33);
+        Assert.Equal(10, refunds[member]); // 30 * 33 / 100f = 9.9
+        Assert.Equal(8, refunds[branch]); // 25 * 33 / 100f = 8.25
+        refunds = civ.Policies.GetCultureRefundMap([member, branch], 2);
+        Assert.Equal(1, refunds[member]); // 0.6
+        Assert.Equal(1, refunds[branch]); // 0.5 rounds up, where .NET's Math.Round would give 0
+    }
+
+    [Fact]
+    public void Policy_CultureOfLast8TurnsMayBeNegative_AndTruncatesTowardsZero()
+    {
+        var (civ, info) = NewCivWithPolicies();
+        AddBranch(info.RulesetData);
+        info.Turns = 1;
+        civ.Policies.EndTurn(-6);
+        info.Turns = 2;
+        civ.Policies.EndTurn(-5);
+        Assert.Equal(-11, civ.Policies.GetCultureFromGreatWriter());
+        info.SpeedData.CultureCostModifier = 1.5f;
+        Assert.Equal(-16, civ.Policies.GetCultureFromGreatWriter()); // -16.5 truncated towards zero
     }
 }

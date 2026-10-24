@@ -42,8 +42,13 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     DifficultyObject IConstructionGameInfo.GetDifficulty() => Difficulty;
     public JavaHashMap<string, Religion> ReligionMap { get; } = new();
     JavaHashMap<string, Religion> IGameInfoState.Religions => ReligionMap;
-    IEnumerable<Civilization> IGameInfoState.GetCivsSorted(bool includeCityStates, bool includeDefeated, Civilization? civToSortFirst, Func<Civilization, bool>? additionalFilter) =>
-        throw new NotSupportedException();
+    public List<(bool IncludeCityStates, bool IncludeDefeated, Civilization? SortFirst)> CivsSortedCalls { get; } = [];
+    /// <summary>Stand-in for GameInfo.getCivsSorted (T046): records the arguments and applies only the additional filter, in civ order.</summary>
+    IEnumerable<Civilization> IGameInfoState.GetCivsSorted(bool includeCityStates, bool includeDefeated, Civilization? civToSortFirst, Func<Civilization, bool>? additionalFilter)
+    {
+        CivsSortedCalls.Add((includeCityStates, includeDefeated, civToSortFirst));
+        return Civs.Where(it => additionalFilter == null || additionalFilter(it)).ToList();
+    }
     public override TileMap TileMap => Map ?? throw new NotSupportedException();
     public override IGameContextCivilization GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
     Civilization IGameInfoState.GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
@@ -58,7 +63,8 @@ internal sealed class FakeUnitManager : IUnitManager
 {
     public int Count { get; set; }
     public int GetCivUnitsSize() => Count;
-    public IEnumerable<IMapUnitState> GetCivUnits() => [];
+    public List<IMapUnitState> CivUnits { get; } = [];
+    public IEnumerable<IMapUnitState> GetCivUnits() => CivUnits;
     public void RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => throw new NotSupportedException();
     public IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId) => throw new NotSupportedException();
     public List<(BaseUnit Unit, ICityState? City)> AddedUnits { get; } = [];
@@ -80,7 +86,8 @@ internal sealed class FakeQuestManager : IQuestManager
 
 internal sealed class FakeCityStateFunctions : ICityStateFunctions
 {
-    public int GetTributeWillingness(Civilization demandingCiv, bool demandingWorker = false) => throw new NotSupportedException();
+    public int TributeWillingness { get; set; }
+    public int GetTributeWillingness(Civilization demandingCiv, bool demandingWorker = false) => TributeWillingness;
     public int AllyUpdates { get; private set; }
     public void UpdateAllyCivForCityState() => AllyUpdates++;
     public bool CanProvideStat(Stat statType) => false;

@@ -1,7 +1,11 @@
+using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
+using Unciv.Logic.Map;
 using Unciv.Logic.Trade;
+using Unciv.Models;
 using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 
@@ -10,7 +14,6 @@ namespace Unciv.Core.Tests.Logic.Diplomacy;
 // T059: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList. The Kotlin fixtures (DiplomacyManagerTests,
 // GoldGiftingTests, DefensivePactTests) are TestGame-based (T072); the cases that need no map, city or unit are ported here over
 // the Civilization seam fakes, the rest are hand-derived from the Kotlin source.
-[Collection("TranslationState")] // Denounce logs through the process-wide Log.Backend that LogTests replaces
 public class DiplomacyCoreTests
 {
     private static Civilization AddCiv(FakeGameInfoState info, string name, PlayerType playerType = PlayerType.AI, string? cityStateType = null)
@@ -863,5 +866,397 @@ public class DiplomacyCoreTests
 
         Assert.Equal(5 - 2, supply.SumBy("Iron"));
         Assert.All(supply, it => Assert.Equal("Trade", it.Origin));
+    }
+
+    // ---- T114: previously untested DiplomacyManager / DiplomacyFunctions members
+
+    /// <summary>A unit standing on a tile: only <c>CurrentTile</c> and the teleport call are answered.</summary>
+    public class TeleportingUnitProxy : System.Reflection.DispatchProxy
+    {
+        public Unciv.Logic.Map.Tiles.Tile? Tile { get; set; }
+        public int Teleports { get; set; }
+        protected override object? Invoke(System.Reflection.MethodInfo? targetMethod, object?[]? args)
+        {
+            switch (targetMethod?.Name)
+            {
+                case "get_CurrentTile": return Tile;
+                case "TeleportToClosestMoveableTile": Teleports++; return null;
+                default: throw new NotSupportedException(targetMethod?.Name);
+            }
+        }
+    }
+
+    private sealed class OwnerCity(Civilization owner) : FakeCity("owner", new FakeCiv("dummy"))
+    {
+        public override IGameContextCivilization Civ => owner;
+        public override string Name => "Owned";
+        public override HexCoord Location => HexCoord.Of(99, 99);
+    }
+
+    private static (IMapUnitState Unit, TeleportingUnitProxy Proxy) UnitOn(Civilization? tileOwner)
+    {
+        var tile = new Unciv.Logic.Map.Tiles.Tile { Position = HexCoord.Of(0, 0), BaseTerrain = "Grassland" };
+        var map = new Unciv.Logic.Map.TileMap(1) { GameInfo = new FakeGameInfo() };
+        map.TileList.Add(tile);
+        var ruleset = new Ruleset();
+        ruleset.Terrains.Put("Grassland", new Unciv.Models.Ruleset.Tile.Terrain { Name = "Grassland", Type = Unciv.Models.Ruleset.Tile.TerrainType.Land });
+        map.SetTransients(ruleset);
+        if (tileOwner != null) tile.SetOwningCity(new OwnerCity(tileOwner));
+        var unit = System.Reflection.DispatchProxy.Create<IMapUnitState, TeleportingUnitProxy>();
+        var proxy = (TeleportingUnitProxy)(object)unit;
+        proxy.Tile = tile;
+        return (unit, proxy);
+    }
+
+    private static void SetUniques(Civilization civ, params string[] uniques)
+    {
+        // Nation.UniqueMap is built once, so the test uniques live in the (clearable) policy unique map, which Civilization.GetMatchingUniques also reads
+        civ.Policies.PolicyUniques.Clear();
+        foreach (var text in uniques)
+            civ.Policies.PolicyUniques.AddUnique(new Unciv.Models.Ruleset.Unique.Unique(text, UniqueTarget.Global, "test"));
+    }
+
+    [Fact]
+    public void MakePeace_SetsPeaceOnBothSidesNotifiesCommonAcquaintancesAndTeleportsUnits()
+    {
+        var (_, a, b, c, d) = FourCivs();
+        c.PlayerType = PlayerType.Human; // AI civs get no notifications
+        d.PlayerType = PlayerType.Human;
+        Meet(a, b);
+        Meet(a, c);
+        Meet(b, c);
+        Meet(a, d); // d is not known to b
+        a.GetDiplomacyManager(b)!.DiplomaticStatus = DiplomaticStatus.War;
+        b.GetDiplomacyManager(a)!.DiplomaticStatus = DiplomaticStatus.War;
+        var (unitOfAInBLand, proxyA) = UnitOn(b);
+        var (unitOfAInOwnLand, proxyOwn) = UnitOn(a);
+        var (unitOfBInALand, proxyB) = UnitOn(a);
+        ((FakeUnitManager)a.Units).CivUnits.AddRange([unitOfAInBLand, unitOfAInOwnLand]);
+        ((FakeUnitManager)b.Units).CivUnits.Add(unitOfBInALand);
+
+        a.GetDiplomacyManager(b)!.MakePeace();
+
+        Assert.Equal(DiplomaticStatus.Peace, a.GetDiplomacyManager(b)!.DiplomaticStatus);
+        Assert.Equal(DiplomaticStatus.Peace, b.GetDiplomacyManager(a)!.DiplomaticStatus);
+        Assert.Equal((1, 0, 1), (proxyA.Teleports, proxyOwn.Teleports, proxyB.Teleports)); // units leave the other side's territory
+        Assert.Contains(c.Notifications, it => it.Text == "[A] and [B] have signed a Peace Treaty!");
+        Assert.DoesNotContain(d.Notifications, it => it.Text.Contains("Peace Treaty", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void MakePeace_AllyCityStatesMakePeaceWithTreatyAndOtherCityStatesLoseInfluence()
+    {
+        var info = new FakeGameInfoState();
+        var a = AddCiv(info, "A");
+        var b = AddCiv(info, "B");
+        var allyState = AddCiv(info, "Geneva", cityStateType: "Militaristic");
+        var otherState = AddCiv(info, "Zurich", cityStateType: "Mercantile");
+        foreach (var state in new[] { allyState, otherState })
+        {
+            Meet(a, state);
+            Meet(b, state);
+            state.GetDiplomacyManager(b)!.DiplomaticStatus = DiplomaticStatus.War;
+            b.GetDiplomacyManager(state)!.DiplomaticStatus = DiplomaticStatus.War;
+        }
+        Meet(a, b);
+        allyState.AllyCiv = a;
+        otherState.GetDiplomacyManager(a)!.SetInfluenceWithoutSideEffects(20f);
+
+        a.GetDiplomacyManager(b)!.MakePeace();
+
+        // Our ally city-state makes peace with b and gets a Peace Treaty trade on both sides
+        Assert.Equal(DiplomaticStatus.Peace, allyState.GetDiplomacyManager(b)!.DiplomaticStatus);
+        var treaty = Assert.Single(allyState.GetDiplomacyManager(b)!.Trades);
+        Assert.Equal(Constants.PeaceTreaty, Assert.Single(treaty.OurOffers).Name);
+        Assert.Single(b.GetDiplomacyManager(allyState)!.Trades);
+        // The other city-state, still at war with b, likes a less
+        Assert.Equal(DiplomaticStatus.War, otherState.GetDiplomacyManager(b)!.DiplomaticStatus);
+        Assert.Equal(10f, otherState.GetDiplomacyManager(a)!.GetInfluence());
+    }
+
+    [Fact]
+    public void UpdateHasOpenBorders_TeleportsUnitsOutWhenBordersCloseButNotWhenAnOfferOrAllianceKeepsThemOpen()
+    {
+        var (_, a, b, _, _) = FourCivs();
+        Meet(a, b);
+        var manager = a.GetDiplomacyManager(b)!;
+        var (inside, insideProxy) = UnitOn(b);
+        var (elsewhere, elsewhereProxy) = UnitOn(null);
+        ((FakeUnitManager)a.Units).CivUnits.AddRange([inside, elsewhere]);
+
+        manager.UpdateHasOpenBorders(); // were closed, still closed: nothing happens
+        Assert.False(manager.HasOpenBorders);
+        Assert.Equal(0, insideProxy.Teleports);
+
+        var trade = new Trade();
+        trade.TheirOffers.Add(new TradeOffer(Constants.OpenBorders, TradeOfferType.Agreement, 1, 30));
+        manager.Trades.Add(trade);
+        manager.UpdateHasOpenBorders();
+        Assert.True(manager.HasOpenBorders);
+        manager.UpdateHasOpenBorders(); // still open
+        Assert.Equal(0, insideProxy.Teleports);
+
+        trade.TheirOffers[0].Duration = 0; // the agreement ran out
+        manager.UpdateHasOpenBorders();
+        Assert.False(manager.HasOpenBorders);
+        Assert.Equal(1, insideProxy.Teleports);
+        Assert.Equal(0, elsewhereProxy.Teleports);
+
+        // A city-state may always enter its ally's territory
+        var info = new FakeGameInfoState();
+        var cityState = AddCiv(info, "Geneva", cityStateType: "Militaristic");
+        var human = AddCiv(info, "H", PlayerType.Human);
+        Meet(cityState, human);
+        cityState.AllyCiv = human;
+        var stateManager = cityState.GetDiplomacyManager(human)!;
+        stateManager.UpdateHasOpenBorders();
+        Assert.True(stateManager.HasOpenBorders);
+        cityState.AllyCiv = null;
+        stateManager.UpdateHasOpenBorders();
+        Assert.False(stateManager.HasOpenBorders);
+    }
+
+    [Fact]
+    public void IsConsideredFriendlyTerritory_FriendlyCityStatesTheUniqueAndOpenBorders()
+    {
+        var info = new FakeGameInfoState();
+        var cityState = AddCiv(info, "Geneva", cityStateType: "Militaristic");
+        var a = AddCiv(info, "A");
+        var b = AddCiv(info, "B");
+        Meet(cityState, a);
+        Meet(a, b);
+        var stateManager = cityState.GetDiplomacyManager(a)!;
+        stateManager.DiplomaticStatus = DiplomaticStatus.Peace;
+        Assert.False(stateManager.IsConsideredFriendlyTerritory()); // neutral, no open borders
+        stateManager.SetInfluenceWithoutSideEffects(30f);
+        Assert.True(stateManager.IsConsideredFriendlyTerritory()); // Friend
+        stateManager.SetInfluenceWithoutSideEffects(0f);
+        SetUniques(a, "City-State territory always counts as friendly territory");
+        Assert.True(stateManager.IsConsideredFriendlyTerritory());
+
+        // between major civs only the open borders of the other side count
+        var manager = a.GetDiplomacyManager(b)!;
+        Assert.False(manager.IsConsideredFriendlyTerritory());
+        b.GetDiplomacyManager(a)!.HasOpenBorders = true;
+        Assert.True(manager.IsConsideredFriendlyTerritory());
+        Assert.False(b.GetDiplomacyManager(a)!.IsConsideredFriendlyTerritory());
+    }
+
+    [Fact]
+    public void CityStateInfluence_RestingPointDegradeAndTurnsToRelationshipChange()
+    {
+        var info = new FakeGameInfoState();
+        var cityState = AddCiv(info, "Geneva", cityStateType: "Militaristic");
+        var a = AddCiv(info, "A");
+        var b = AddCiv(info, "B");
+        Meet(cityState, a);
+        var manager = cityState.GetDiplomacyManager(a)!;
+        manager.DiplomaticStatus = DiplomaticStatus.Peace;
+
+        Assert.Equal(0f, manager.GetCityStateInfluenceRestingPoint());
+        manager.SetInfluenceWithoutSideEffects(0f);
+        Assert.Equal(0f, manager.GetCityStateInfluenceDegrade()); // at the resting point: no degrade
+
+        SetUniques(a, "Resting point for Influence with City-States is increased by [10]", "Resting point for Influence with City-States is increased by [5]");
+        manager.DiplomaticStatus = DiplomaticStatus.Protector;
+        manager.SetFlag(DiplomacyFlags.WaryOf, 10);
+        Assert.Equal(10f + 5f + 10f - 20f, manager.GetCityStateInfluenceRestingPoint());
+        manager.RemoveFlag(DiplomacyFlags.WaryOf);
+        manager.DiplomaticStatus = DiplomaticStatus.Peace;
+        Assert.Equal(15f, manager.GetCityStateInfluenceRestingPoint());
+
+        // religion based resting point: needs a capital whose majority religion is a's religion
+        var religion = new Religion("Faith", info, a, 1);
+        a.ReligionManager.Religion = religion;
+        SetUniques(a, "Resting point for Influence with City-States following this religion [7]");
+        Assert.Equal(0f, manager.GetCityStateInfluenceRestingPoint()); // no city
+        var capital = new FakeCityState("cap", new FakeCiv("Geneva")) { Capital = true };
+        capital.ReligionData.Majority = religion;
+        cityState.Cities = [capital];
+        Assert.Equal(7f, manager.GetCityStateInfluenceRestingPoint());
+        capital.ReligionData.Majority = null;
+        Assert.Equal(0f, manager.GetCityStateInfluenceRestingPoint());
+        capital.ReligionData.Majority = religion;
+
+        // degrade: 1 per turn; hostile city-states 1.5; aggressors 2; the unique percentages add; same religion -25%; others' uniques add
+        SetUniques(a);
+        manager.SetInfluenceWithoutSideEffects(10f);
+        capital.ReligionData.Majority = null;
+        Assert.Equal(1f, manager.GetCityStateInfluenceDegrade());
+        cityState.CityStatePersonality = CityStatePersonality.Hostile;
+        Assert.Equal(1.5f, manager.GetCityStateInfluenceDegrade());
+        cityState.CityStatePersonality = CityStatePersonality.Neutral;
+        a.NumMinorCivsAttacked = 2;
+        Assert.Equal(2f, manager.GetCityStateInfluenceDegrade());
+        a.NumMinorCivsAttacked = 0;
+        SetUniques(a, "[50]% City-State Influence degradation");
+        Assert.Equal(1.5f, manager.GetCityStateInfluenceDegrade());
+        SetUniques(a, "[-300]% City-State Influence degradation");
+        Assert.Equal(0f, manager.GetCityStateInfluenceDegrade()); // clamped at -100%
+        SetUniques(a);
+        SetUniques(b, "Influence of all other civilizations with all city-states degrades [100]% faster");
+        Assert.Equal(2f, manager.GetCityStateInfluenceDegrade());
+        SetUniques(b);
+        a.ReligionManager.Religion = religion;
+        SetUniques(a, "Resting point for Influence with City-States following this religion [0]");
+        capital.ReligionData.Majority = religion;
+        Assert.Equal(0.75f, manager.GetCityStateInfluenceDegrade());
+
+        // turns to relationship change: Ally at 60, Friend at 30; asked from either side, only ever relevant for city-state vs major civ
+        SetUniques(a);
+        capital.ReligionData.Majority = null;
+        manager.SetInfluenceWithoutSideEffects(70f);
+        cityState.AllyCiv = a;
+        Assert.Equal(11, manager.GetTurnsToRelationshipChange()); // ceil((70 - 60) / 1) + 1
+        Assert.Equal(11, a.GetDiplomacyManager(cityState)!.GetTurnsToRelationshipChange());
+        cityState.AllyCiv = null;
+        manager.SetInfluenceWithoutSideEffects(35.5f);
+        Assert.Equal(7, manager.GetTurnsToRelationshipChange()); // Friend: ceil(5.5) + 1
+        manager.SetInfluenceWithoutSideEffects(10f);
+        Assert.Equal(0, manager.GetTurnsToRelationshipChange()); // neither Ally nor Friend
+        manager.SetInfluenceWithoutSideEffects(0f);
+        Assert.Equal(0, manager.GetTurnsToRelationshipChange());
+    }
+
+    [Fact]
+    public void SetReligionBasedModifier_AddsAndRemovesBelieveSameReligion()
+    {
+        var (info, a, b, _, _) = FourCivs();
+        Meet(a, b);
+        foreach (var civ in new[] { a, b }) civ.ReligionManager.CivInfo = civ;
+        var religion = new Religion("Faith", info, a, 1);
+        var manager = a.GetDiplomacyManager(b)!;
+        manager.SetReligionBasedModifier();
+        Assert.False(manager.HasModifier(DiplomaticModifiers.BelieveSameReligion)); // nobody has a majority religion
+
+        foreach (var civ in new[] { a, b })
+            civ.Cities = [new FakeCityState(civ.CivId + "City", new FakeCiv(civ.CivId)) { ReligionData = { Majority = religion } }];
+        manager.SetReligionBasedModifier();
+        Assert.Equal(5f, manager.GetModifier(DiplomaticModifiers.BelieveSameReligion));
+
+        b.Cities = [new FakeCityState("other", new FakeCiv("B"))]; // b's city follows nothing
+        manager.SetReligionBasedModifier();
+        Assert.False(manager.HasModifier(DiplomaticModifiers.BelieveSameReligion));
+    }
+
+    [Fact]
+    public void CanSignEmbassyAndResearchAndDefensivePactChecks()
+    {
+        var (info, a, b, _, _) = FourCivs();
+        Meet(a, b);
+        var ab = a.GetDiplomacyManager(b)!;
+        var ba = b.GetDiplomacyManager(a)!;
+        a.Tech.Era = new() { Name = "Ancient era", ResearchAgreementCost = 100 };
+        b.Tech.Era = new() { Name = "Ancient era", ResearchAgreementCost = 100 };
+        a.Cities = [new FakeCityState("a", new FakeCiv("A")) { Capital = true }];
+        b.Cities = [new FakeCityState("b", new FakeCiv("B")) { Capital = true }];
+
+        // embassies
+        Assert.False(a.DiplomacyFunctions.CanOfferEmbassyTo(b)); // needs the unique
+        Assert.False(a.DiplomacyFunctions.CanEstablishEmbassyWith(b));
+        SetUniques(a, "Enables establishment of embassies");
+        Assert.True(a.DiplomacyFunctions.CanOfferEmbassyTo(b));
+        Assert.True(a.DiplomacyFunctions.CanEstablishEmbassyWith(b));
+        ba.SetModifier(DiplomaticModifiers.EstablishedEmbassy, 1f);
+        Assert.False(a.DiplomacyFunctions.CanOfferEmbassyTo(b)); // they already hold our embassy
+        ab.SetModifier(DiplomaticModifiers.SharedEmbassies, 1f);
+        Assert.False(a.DiplomacyFunctions.CanEstablishEmbassyWith(b));
+        ba.RemoveModifier(DiplomaticModifiers.EstablishedEmbassy);
+        ab.RemoveModifier(DiplomaticModifiers.SharedEmbassies);
+        ab.SetFlag(DiplomacyFlags.Denunciation, 30);
+        Assert.False(a.DiplomacyFunctions.CanEstablishEmbassyWith(b)); // denounced this turn (30 turns left) by either side
+        Assert.False(a.DiplomacyFunctions.CanOfferEmbassyTo(b));
+        ab.SetFlag(DiplomacyFlags.Denunciation, 29);
+        Assert.True(a.DiplomacyFunctions.CanEstablishEmbassyWith(b)); // only the turn of the denunciation blocks
+        ab.RemoveFlag(DiplomacyFlags.Denunciation);
+        ba.SetFlag(DiplomacyFlags.Denunciation, 30);
+        Assert.False(a.DiplomacyFunctions.CanEstablishEmbassyWith(b));
+        ba.RemoveFlag(DiplomacyFlags.Denunciation);
+        ab.DiplomaticStatus = DiplomaticStatus.War;
+        Assert.False(a.DiplomacyFunctions.CanEstablishEmbassyWith(b));
+        ab.DiplomaticStatus = DiplomaticStatus.Peace;
+        b.Cities = [];
+        Assert.False(a.DiplomacyFunctions.CanEstablishEmbassyWith(b)); // no capital to put it in
+        var cityState = AddCiv(info, "Geneva", cityStateType: "Militaristic");
+        Meet(a, cityState);
+        Assert.False(a.DiplomacyFunctions.CanOfferEmbassyTo(cityState)); // major civs only
+
+        // embassy requirement
+        Assert.True(a.DiplomacyFunctions.MeetsEmbassyRequirementFor(b));
+        SetUniques(a, "Requires establishing embassies to conduct advanced diplomacy");
+        Assert.False(a.DiplomacyFunctions.MeetsEmbassyRequirementFor(b));
+        ab.SetModifier(DiplomaticModifiers.SharedEmbassies, 1f);
+        Assert.True(a.DiplomacyFunctions.MeetsEmbassyRequirementFor(b));
+        ab.RemoveModifier(DiplomaticModifiers.SharedEmbassies);
+
+        // research agreements
+        SetUniques(a, "Enables Research agreements");
+        SetUniques(b, "Enables Research agreements");
+        ab.SetFlag(DiplomacyFlags.DeclarationOfFriendship, 30);
+        Assert.True(a.DiplomacyFunctions.CanSignResearchAgreement());
+        Assert.True(a.DiplomacyFunctions.CanSignResearchAgreementNoCostWith(b));
+        Assert.False(a.DiplomacyFunctions.CanSignResearchAgreementWith(b)); // no gold
+        a.AddGold(100);
+        Assert.False(a.DiplomacyFunctions.CanSignResearchAgreementWith(b)); // b is short
+        b.AddGold(100);
+        Assert.True(a.DiplomacyFunctions.CanSignResearchAgreementWith(b));
+        ba.SetFlag(DiplomacyFlags.ResearchAgreement, 10);
+        Assert.False(a.DiplomacyFunctions.CanSignResearchAgreementNoCostWith(b)); // already signed (checked on the other side too)
+        ba.RemoveFlag(DiplomacyFlags.ResearchAgreement);
+        SetUniques(b);
+        Assert.False(a.DiplomacyFunctions.CanSignResearchAgreementNoCostWith(b));
+        Assert.False(b.DiplomacyFunctions.CanSignResearchAgreement());
+        Assert.False(a.DiplomacyFunctions.CanSignResearchAgreement() && cityState.DiplomacyFunctions.CanSignResearchAgreement());
+
+        // defensive pacts
+        SetUniques(a, "Enables Defensive Pacts");
+        SetUniques(b, "Enables Defensive Pacts");
+        Assert.True(a.DiplomacyFunctions.CanSignDefensivePact());
+        Assert.True(a.DiplomacyFunctions.CanSignDefensivePactWith(b));
+        ab.SetFlag(DiplomacyFlags.DefensivePact, 10);
+        Assert.False(a.DiplomacyFunctions.CanSignDefensivePactWith(b));
+        ab.RemoveFlag(DiplomacyFlags.DefensivePact);
+        ab.DiplomaticStatus = DiplomaticStatus.DefensivePact;
+        Assert.False(a.DiplomacyFunctions.CanSignDefensivePactWith(b));
+        ab.DiplomaticStatus = DiplomaticStatus.Peace;
+        ab.RemoveFlag(DiplomacyFlags.DeclarationOfFriendship);
+        Assert.False(a.DiplomacyFunctions.CanSignDefensivePactWith(b)); // needs a declaration of friendship
+        SetUniques(b);
+        Assert.False(b.DiplomacyFunctions.CanSignDefensivePact());
+        Assert.False(cityState.DiplomacyFunctions.CanSignDefensivePact());
+    }
+
+    [Fact]
+    public void GetKnownCivsSorted_ForwardsTheFlagsAndExcludesSelfAndUnmetCivs()
+    {
+        var (info, a, b, c, _) = FourCivs();
+        Meet(a, b);
+        Meet(b, c);
+        Assert.Equal([b], a.DiplomacyFunctions.GetKnownCivsSorted());
+        Assert.Equal((true, false, null), info.CivsSortedCalls[^1]);
+        Assert.Equal([a, c], b.DiplomacyFunctions.GetKnownCivsSorted(includeCityStates: false, includeDefeated: true));
+        Assert.Equal((false, true, null), info.CivsSortedCalls[^1]);
+    }
+
+    [Fact]
+    public void TradeOffer_HashCodeIsAFixedCombineOfTheFields()
+    {
+        // Kotlin's data-class hash: ((name.hashCode() * 31 + type) * 31 + amount) * 31 + duration, with Java's String.hashCode
+        var offer = new TradeOffer("Iron", TradeOfferType.Strategic_Resource, 2, 30);
+        var expected = ((("Iron".Aggregate(0, (h, ch) => 31 * h + ch) * 31 + (int)TradeOfferType.Strategic_Resource) * 31 + 2) * 31) + 30;
+        Assert.Equal(expected, offer.GetHashCode());
+        Assert.NotEqual(offer.GetHashCode(), offer.Copy(duration: 31).GetHashCode());
+    }
+
+    [Fact]
+    public void TradeOffersList_AddHidesListAddSoThatOnlyThroughTheTypeItMerges()
+    {
+        var list = new TradeOffersList();
+        IList<TradeOffer> asList = list;
+        asList.Add(new TradeOffer("Iron", TradeOfferType.Strategic_Resource, 2, 30));
+        asList.Add(new TradeOffer("Iron", TradeOfferType.Strategic_Resource, 3, 30));
+        Assert.Equal(2, list.Count); // IList.Add does not merge: save loading must go through TradeOffersList.Add
+        list.Add(new TradeOffer("Iron", TradeOfferType.Strategic_Resource, 1, 30));
+        Assert.Equal(3, list[0].Amount);
     }
 }

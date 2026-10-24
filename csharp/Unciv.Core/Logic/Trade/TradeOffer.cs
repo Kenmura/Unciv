@@ -1,5 +1,6 @@
 using Unciv.Json;
 using Unciv.Models.Ruleset;
+using Unciv.Utils;
 
 namespace Unciv.Logic.Trade;
 
@@ -59,7 +60,9 @@ public class TradeOffer : IsPartOfGameInfoSerialization
     public override bool Equals(object? obj) =>
         obj is TradeOffer other && other.Name == Name && other.Type == Type && other.Amount == Amount && other.Duration == Duration;
 
-    public override int GetHashCode() => HashCode.Combine(Name, Type, Amount, Duration);
+    // Kotlin's generated data-class hash (31 * h + field hash, in field order) with Java's String hash: deterministic, unlike HashCode.Combine.
+    // The JVM's enum hash is an identity hash, so the ordinal stands in for it.
+    public override int GetHashCode() => unchecked((((JavaHash.HashCode(Name) * 31 + (int)Type) * 31 + Amount) * 31) + Duration);
 
     public override string ToString() => $"TradeOffer(name={Name}, type={Type}, amount={Amount}, duration={Duration})";
 }

@@ -16,6 +16,12 @@ internal static class KotlinNumberText
 
         // "R" gives the shortest round-trip digits; take them apart and lay them out the Java way
         var roundTrip = value.ToString("R", CultureInfo.InvariantCulture);
+        // Java renders at least two digits and then picks the 2-digit decimal closest to the exact value (subnormals: 1.4E-45, not 1E-45)
+        if (CountSignificant(roundTrip) == 1)
+        {
+            var twoDigits = value.ToString("E1", CultureInfo.InvariantCulture);
+            if (float.Parse(twoDigits, CultureInfo.InvariantCulture) == value) roundTrip = twoDigits;
+        }
         var negative = roundTrip.StartsWith('-');
         if (negative) roundTrip = roundTrip[1..];
 
@@ -53,6 +59,13 @@ internal static class KotlinNumberText
             result = mantissa + "E" + (pointPos - 1).ToString(CultureInfo.InvariantCulture);
         }
         return negative ? "-" + result : result;
+    }
+
+    private static int CountSignificant(string text)
+    {
+        var ePos = text.IndexOf('E');
+        var mantissa = ePos >= 0 ? text[..ePos] : text;
+        return mantissa.Replace("-", "").Replace(".", "").Trim('0').Length;
     }
 
     /// <summary>Kotlin <c>Float.toInt()</c>: truncates toward zero, saturates, NaN is 0.</summary>

@@ -192,7 +192,7 @@ internal sealed class FakeTile(HexCoord position) : IGameContextTile
 internal partial class FakeCity(string id, FakeCiv civ, FakeTile? center = null) : IGameContextCity, ILocalUniqueCacheCity
 {
     public string Id { get; } = id;
-    public IGameContextCivilization Civ { get; } = civ;
+    public virtual IGameContextCivilization Civ => civ;
     public Dictionary<string, int> Resources { get; } = new();
     public Dictionary<Stat, int> StatReserves { get; } = new();
     public IGameContextTile? GetCenterTileOrNull() => center;

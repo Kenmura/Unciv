@@ -389,6 +389,25 @@ public class CivilopediaTextDTests
     }
 
     [Fact]
+    public void BeliefsMatchingHonoursTheGivenGameInfo()
+    {
+        var ruleset = new Ruleset();
+        ruleset.Beliefs["Tithe"] = new Belief(BeliefType.Founder) { Name = "Tithe", Uniques = ["[+1 Gold] from every [Temple]", "Only available <when religion is enabled>"] };
+        var game = new Unciv.Core.Tests.Models.Ruleset.Unique.FakeGameInfo { ReligionEnabled = false };
+        Assert.Equal(["Tithe"], Belief.GetBeliefsMatching("Temple", ruleset).Select(it => it.Name));
+        Assert.Empty(Belief.GetBeliefsMatching("Temple", ruleset, game));
+        Assert.Empty(Belief.GetCivilopediaTextMatching("Temple", ruleset, gameInfo: game));
+        game.ReligionEnabled = true;
+        Assert.Equal(["Tithe"], Belief.GetBeliefsMatching("Temple", ruleset, game).Select(it => it.Name));
+    }
+
+    [Theory]
+    [InlineData(1.4E-45f, "1.4E-45")]
+    [InlineData(2.8E-45f, "2.8E-45")]
+    [InlineData(1e-10f, "1.0E-10")]
+    public void KotlinFloatToStringSubnormalsUseTwoDigits(float value, string expected) => Assert.Equal(expected, KotlinNumberText.FloatToString(value));
+
+    [Fact]
     public void CategoryIteratorAppendsVirtualBeliefEntries()
     {
         var ruleset = new Ruleset();
