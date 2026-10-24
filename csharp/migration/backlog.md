@@ -834,3 +834,74 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - State: Blocked
 - Depends: T012, C001
 - Scope: client for our own authoritative server (to be designed; separate server ticket needed), lobby, turn notifications, reconnect/resume.
+
+## Game AI track (Civ 5 behavioral spec)
+
+Architecture and behavioral requirements reverse-engineered from Civilization V (base, Gods & Kings, Brave New World).
+Specification document: `csharp/migration/ai-spec/SPEC.md`. Shipped XML/TSV tuning data: `csharp/migration/ai-spec/data/`.
+
+**Key Architectural Principle:**
+Unlike Unciv's legacy per-unit automation (`automateUnitMoves` cascading individual unit heuristics), Civ 5 uses a **layered, flavor-driven, target-centric priority queue**:
+1. Leader personality flavors (0..20) + Grand Strategy evaluation (10-turn commitment lock, hysteresis).
+2. Economic, Military, and City strategies adjusting flavors and needs.
+3. Target-centric Tactical AI (`TacticalMoveQueue`: city capture, high-value kill, overkill prevention recruit units first).
+4. Homeland AI (`HomelandMoveQueue`: civilian/non-combat units and idle garrison).
+5. Operations & Armies (multi-unit planned attacks/escorts).
+
+All tickets start in `Blocked` until foundational engine systems (GameInfo, TileMap, Unit, Ruleset) are in place, but can be unblocked as their specific prerequisites land.
+
+### A001 AI defines & data tables loader
+- State: Blocked
+- Depends: T007, T021
+- Source: `csharp/migration/ai-spec/data/ai_defines.tsv`, `grand_strategy_flavors.tsv`, `tactical_moves.tsv`
+- Deliverables: `csharp/Unciv.Core/AI/Data/` data models for `GlobalAIDefines`, `GrandStrategyFlavors`, `TacticalMoveDefinition`, TSV/JSON loader, unit tests
+- Gate: `dotnet test --filter FullyQualifiedName~AIDefinesTests`
+- Notes: Provides typed access to the ~1,600 XML-derived defines, flavor vectors, and tactical move priorities.
+
+### A002 Leader flavor system & Grand Strategy evaluation
+- State: Blocked
+- Depends: A001, T010, T021
+- Source: `csharp/migration/ai-spec/SPEC.md` §2, §3 (`evaluateGrandStrategy`)
+- Deliverables: `csharp/Unciv.Core/AI/GrandStrategy/` (`LeaderPersonalityFlavors`, `GrandStrategy`, `GrandStrategyEvaluator`), tests
+- Gate: `dotnet test --filter FullyQualifiedName~GrandStrategyTests`
+- Notes: Evaluates 4 grand strategies (Conquest, Culture, UN, Spaceship). Preserves dot product flavor scoring, 10-turn lock (`AI_GRAND_STRATEGY_NUM_TURNS_STRATEGY_MUST_BE_ACTIVE`), hysteresis (`AI_GRAND_STRATEGY_CURRENT_STRATEGY_WEIGHT = 50`), rival-chasing penalty, and RNG noise using `GameRandom`.
+
+### A003 Victory scorers (BNW)
+- State: Blocked
+- Depends: A002, T030
+- Source: `csharp/migration/ai-spec/SPEC.md` §4 (Conquest §4.1, Culture §4.2, Diplomatic §4.3, Spaceship §4.4)
+- Deliverables: `csharp/Unciv.Core/AI/GrandStrategy/Scorers/` (`ConquestScorer`, `CultureScorer`, `DiplomaticScorer`, `SpaceshipScorer`), tests
+- Gate: `dotnet test --filter FullyQualifiedName~VictoryScorerTests`
+- Notes: Uses Brave New World formulas (Tourism/Influence ahead comparisons, World Congress voting power, stat ratios). Returns -100 if victory condition disabled.
+
+### A004 Target-centric Tactical AI: TacticalMoveQueue & recruitment
+- State: Blocked
+- Depends: A001, T039, T040
+- Source: `csharp/migration/ai-spec/SPEC.md` §6.1, §6.2, §6.4
+- Deliverables: `csharp/Unciv.Core/AI/Tactical/` (`TacticalMoveQueue`, `TacticalMoveType`, `TacticalTarget`, `TacticalRecruiter`), tests
+- Gate: `dotnet test --filter FullyQualifiedName~TacticalAITests`
+- Notes: Replaces per-unit movement loops with a prioritized move queue. Critical high-value moves (e.g. `CAPTURE_CITY`, `DESTROY_HIGH_UNIT`) scan the board for valid targets and recruit the best candidate units across the civilization before lower-priority moves run.
+
+### A005 Tactical overkill assignment & coordinated multi-unit attacks
+- State: Blocked
+- Depends: A004
+- Source: `csharp/migration/ai-spec/SPEC.md` §6.4, §6.5
+- Deliverables: `csharp/Unciv.Core/AI/Tactical/OverkillAssigner.cs`, damage estimator integrations, tests
+- Gate: `dotnet test --filter FullyQualifiedName~OverkillTests`
+- Notes: Solves the "one unit attacking at a time" weakness. Groups sufficient attackers to guarantee destruction without over-allocating, freeing remaining units for other tactical goals.
+
+### A006 Homeland AI priority move queue
+- State: Blocked
+- Depends: A004
+- Source: `csharp/migration/ai-spec/SPEC.md` §7
+- Deliverables: `csharp/Unciv.Core/AI/Homeland/` (`HomelandMoveQueue`, `HomelandMovePriority`), tests
+- Gate: `dotnet test --filter FullyQualifiedName~HomelandAITests`
+- Notes: Handles non-combat and idle units (workers, settlers, great people, trade units, exploration, garrison) using the same prioritized move-queue architecture with `AI_HOMELAND_MOVE_PRIORITY_*` tunables.
+
+### A007 Operations and armies layer
+- State: Blocked
+- Depends: A004, A005
+- Source: `csharp/migration/ai-spec/SPEC.md` §8
+- Deliverables: `csharp/Unciv.Core/AI/Operations/` (`AIOperation`, `ArmyAI`, operation types: `CityAttack`, `BarbarianCamp`, etc.), tests
+- Gate: `dotnet test --filter FullyQualifiedName~OperationTests`
+- Notes: Coordinates multi-unit strategic movements, muster staging areas, recruitment locks, and forward deployments.
