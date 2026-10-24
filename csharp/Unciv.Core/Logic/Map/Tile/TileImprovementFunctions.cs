@@ -295,7 +295,8 @@ public class TileImprovementFunctions(Tile tile)
         foreach (var unique in improvement.UniqueObjects)
         {
             if (unique.HasTriggerConditional() || !unique.ConditionalsApply(gameContext)) continue;
-            for (var i = 0; i < unique.GetUniqueMultiplier(gameContext); i++)
+            var multiplier = unique.GetUniqueMultiplier(gameContext); // evaluated once, like repeat()
+            for (var i = 0; i < multiplier; i++)
                 TriggerUnique(unique, civ, unit);
         }
 

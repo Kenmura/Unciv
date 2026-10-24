@@ -382,7 +382,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created from T027's review: T027 deferred `UniqueTriggerExecutors.triggerGlobalAlerts` (needs `Civilization.addNotification`, ported by T055) and the 1.5k-LOC `UniqueTriggerActivation`. Split by trigger family if it exceeds scope. Wires the `TODO(T052)` call sites left by T054, T063, T065 and `EventChoice.triggerChoice` (T030). Uses concrete Civilization, City, MapUnit and their managers; no new seams needed.
 
 ### T054 Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T053
 - Source: core/src/com/unciv/logic/map/tile/TileStatFunctions.kt, TileImprovementFunctions.kt, TileNormalizer.kt, civilization/managers/ImprovementFunctions.kt
 - Fixtures: tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt (needs TestGame: T072)
