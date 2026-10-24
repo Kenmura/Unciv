@@ -14,8 +14,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
 // T141: port of tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt over the real TestGame.
-// Deferred to the follow-up ticket named in T141 Notes (needs Tile.startWorkingOnImprovement, ported in T139, tests in T148): stockpiledImprovementCostIsChargedOnlyWhenAffordable
-// and nonStockpileImprovementCostsDoNotChargeTheStockpile.
+// T148 adds the two Tile.StartWorkingOnImprovement stockpile cases.
 [Collection("RulesetCache")]
 public sealed class TileImprovementConstructionFixtureTests
 {
@@ -526,5 +525,66 @@ public sealed class TileImprovementConstructionFixtureTests
         var predictedGoldDelta = (int)civ.Stats.StatsForNextTurn.Gold;
         new TurnManager(civ).EndTurn();
         Assert.Equal(goldBeforeTurn + predictedGoldDelta, civ.Gold);
+    }
+
+    [Fact]
+    public void StockpiledImprovementCostIsChargedOnlyWhenAffordable()
+    {
+        var resource = testGame.CreateResource(UniqueType.Stockpiled.Text());
+        var improvement = testGame.CreateTileImprovement($"Costs [1] [{resource.Name}]");
+        improvement.TerrainsCanBeBuiltOn = ["Land"];
+        var tiles = city.GetCenterTile().Neighbors.ToList();
+        var unpaidTile = tiles[0];
+        var exactTile = tiles[1];
+        var secondTile = tiles[2];
+        var paidTile = tiles[3];
+        var anotherCopy = tiles[4];
+        var worker = testGame.AddUnit("Worker", civInfo, unpaidTile);
+        var state = new GameContext(civInfo, unit: worker, tile: unpaidTile);
+
+        Assert.Contains(ImprovementBuildingProblem.MissingResources,
+            unpaidTile.ImprovementFunctions.GetImprovementBuildingProblems(improvement, state).ToHashSet());
+        unpaidTile.StartWorkingOnImprovement(improvement, civInfo, worker);
+        Assert.Equal(0, civInfo.GetResourceAmount(resource.Name));
+        Assert.Null(unpaidTile.ImprovementInProgress);
+
+        civInfo.GainStockpiledResource(resource, 1);
+        exactTile.StartWorkingOnImprovement(improvement, civInfo, worker);
+        Assert.Equal(0, civInfo.GetResourceAmount(resource.Name));
+        Assert.Equal(improvement.Name, exactTile.ImprovementInProgress);
+        secondTile.StartWorkingOnImprovement(improvement, civInfo, worker);
+        Assert.Equal(0, civInfo.GetResourceAmount(resource.Name));
+        Assert.Null(secondTile.ImprovementInProgress);
+
+        civInfo.GainStockpiledResource(resource, 2);
+        paidTile.StartWorkingOnImprovement(improvement, civInfo, worker);
+        Assert.Equal(1, civInfo.GetResourceAmount(resource.Name));
+        Assert.Equal(improvement.Name, paidTile.ImprovementInProgress);
+        Assert.True(anotherCopy.ImprovementFunctions.CanBuildImprovement(improvement, state));
+    }
+
+    [Fact]
+    public void NonStockpileImprovementCostsDoNotChargeTheStockpile()
+    {
+        var stockpiled = testGame.CreateResource(UniqueType.Stockpiled.Text());
+        var consumed = testGame.CreateResource();
+        civInfo.GainStockpiledResource(stockpiled, 3);
+        var consumesImprovement = testGame.CreateTileImprovement($"Consumes [1] [{consumed.Name}]");
+        consumesImprovement.TerrainsCanBeBuiltOn = ["Land"];
+        var freeImprovement = testGame.CreateTileImprovement();
+        freeImprovement.TerrainsCanBeBuiltOn = ["Land"];
+        var tiles = city.GetCenterTile().Neighbors.ToList();
+        var worker = testGame.AddUnit("Worker", civInfo, tiles[0]);
+        var state = new GameContext(civInfo, unit: worker, tile: tiles[0]);
+
+        Assert.Contains(ImprovementBuildingProblem.MissingResources,
+            tiles[0].ImprovementFunctions.GetImprovementBuildingProblems(consumesImprovement, state).ToHashSet());
+        tiles[0].StartWorkingOnImprovement(consumesImprovement, civInfo, worker);
+        Assert.Equal(3, civInfo.GetResourceAmount(stockpiled.Name));
+        Assert.Equal(consumesImprovement.Name, tiles[0].ImprovementInProgress);
+
+        tiles[1].StartWorkingOnImprovement(freeImprovement, civInfo, worker);
+        Assert.Equal(3, civInfo.GetResourceAmount(stockpiled.Name));
+        Assert.Equal(freeImprovement.Name, tiles[1].ImprovementInProgress);
     }
 }

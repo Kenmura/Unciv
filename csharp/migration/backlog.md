@@ -1680,7 +1680,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented in LenientJson.QuoteBareKeys: bare string values (libGDX minimal JSON) are now quoted up to the next , } ] line break or comment start; true/false/null and numbers stay literals; strict JSON is unchanged. Applied in MapSaver.MapFromJson and FileConversions.ReadJson (maps, previews, saves). Colons inside bare values are kept (as libGDX). FreshWaterFixtureTests now uses the original Kotlin base64 string. LenientStringConverter (T151) untouched.
 
 ### T148 Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T139, T141
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt (stockpiledImprovementCostIsChargedOnlyWhenAffordable, nonStockpileImprovementCostsDoNotChargeTheStockpile), UnitFormationTests.kt (tail of formation idle units: Farm startWorkingOnImprovement)
@@ -1688,6 +1688,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~MapFixtures
 - Claimed: 2026-10-24T18:39Z
 - Notes: Split from T141: Tile.startWorkingOnImprovement/queueImprovement, TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource are ported in T139.
+  - Implemented: ported the two stockpile cases (TileImprovementConstructionFixtureTests) and the Farm StartWorkingOnImprovement tail of FormationIdleUnits. No engine changes needed; no parity bug found. Gate, Standard checks and coverage check pass.
 
 ### T149 Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases
 - State: Done

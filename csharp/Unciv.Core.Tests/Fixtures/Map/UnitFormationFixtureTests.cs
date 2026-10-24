@@ -5,8 +5,7 @@ using Unciv.Logic.Civilization;
 namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
 // T141: port of tests/src/com/unciv/logic/map/UnitFormationTests.kt over the real TestGame.
-// T146 adds the two Battle.attack cases. Deferred (see T141 Notes): the Tile.startWorkingOnImprovement
-// tail of `formation idle units` (T148).
+// T146 adds the two Battle.attack cases; T148 adds the Tile.StartWorkingOnImprovement tail of `formation idle units`.
 [Collection("RulesetCache")]
 public sealed class UnitFormationFixtureTests
 {
@@ -86,6 +85,12 @@ public sealed class UnitFormationFixtureTests
         Assert.True(civilianUnit.IsIdle());
         Assert.True(militaryUnit.IsIdle());
         civilianUnit.CurrentMovement = 0f;
+        Assert.False(civilianUnit.IsIdle());
+        Assert.False(militaryUnit.IsIdle());
+        civilianUnit.CurrentMovement = 2f;
+        var farm = testGame.Ruleset.TileImprovements["Farm"];
+        civInfo.Tech.TechsResearched.Add(farm.TechRequired!);
+        centerTile.StartWorkingOnImprovement(farm, civInfo, civilianUnit);
         Assert.False(civilianUnit.IsIdle());
         Assert.False(militaryUnit.IsIdle());
     }
