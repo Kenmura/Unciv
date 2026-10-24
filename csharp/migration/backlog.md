@@ -1125,13 +1125,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     LIMITATION: Civilization has no JSON wiring, so a full GameInfo with civs cannot be serialized and SetTransients needs a human civ; tests use civ-less games and assert the load reaches SetTransients. Full round trips and the T011 state-hash preservation are deferred to new ticket T140 (depends on T100).
 
 ### T101 Simulation: Simulation, SimulationStep, MutableInt
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T099, T094, T071, T011
 - Source: core/src/com/unciv/logic/simulation/Simulation.kt, SimulationStep.kt, MutableInt.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Simulation/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~SimulationTests`
-- Claimed:
+- Claimed: 2026-10-24T23:46Z
 - Notes: Created by the backlog audit. ~390 LOC. Headless multi-game AI simulation runner; threads/Concurrency become a sequential loop (Non-goals #4), UncivGame.Current/settings replaced by parameters, Timers dropped. Used by T102.
 
 ### T102 End-to-end determinism over N turns

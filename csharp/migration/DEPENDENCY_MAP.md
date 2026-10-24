@@ -102,8 +102,8 @@ flowchart TD
   class T094 done
   class T097 done
   class T100 done
-  class T101 ready
-  class T102 waiting
+  class T101 prog
+  class T102 ondeck
   class T103 done
   class T104 waiting
   class T106 done
@@ -127,22 +127,22 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 15]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 2]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 14]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 3]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T101 | **Ready to start** | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | T154 | **Ready to start** | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
+| T102 | **On deck** (after T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
+| T101 | In-Progress [Claude] | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | In-Progress [Claude] | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
-| T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
