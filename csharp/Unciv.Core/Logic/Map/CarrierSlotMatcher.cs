@@ -1,9 +1,9 @@
-using Unciv.Models.Ruleset.Unique;
+using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 
 namespace Unciv.Logic.Map;
 
 // Ported from core/src/com/unciv/logic/map/CarrierSlotMatcher.kt (T040). Stripped: the purity annotations.
-// MapUnit is typed by its seam IGameContextUnit (matchesFilter(filter)); T067 retypes it.
+// Retyped from IGameContextUnit to MapUnit in T134.
 // unitToSlot is a Dictionary (Kotlin LinkedHashMap): it is only looked up by key, searched by value (values are unique) or read as a
 // whole set of values, so enumeration order never reaches the result.
 
@@ -27,7 +27,7 @@ public static class CarrierSlotMatcher
     /// <param name="carriedUnits">Units already carried by this carrier</param>
     /// <param name="newUnit">The unit we want to fit</param>
     /// <returns>Number of available slots for newUnit (negative if carrier is overcapacity, counting number of units that would need to be removed to conform to the ruleset)</returns>
-    public static int AvailableCapacity(ICollection<SlotRule> slotRules, IEnumerable<IGameContextUnit> carriedUnits, IGameContextUnit newUnit)
+    public static int AvailableCapacity(ICollection<SlotRule> slotRules, IEnumerable<MapUnitClass> carriedUnits, MapUnitClass newUnit)
     {
         if (slotRules.Count == 0) return 0;
 
@@ -39,7 +39,7 @@ public static class CarrierSlotMatcher
         }
 
         // Find optimal assignment of carried units including the new unit to slots
-        var allUnits = new List<IGameContextUnit> { newUnit };
+        var allUnits = new List<MapUnitClass> { newUnit };
         allUnits.AddRange(carriedUnits);
 
         switch (MaxBipartiteMatching(slots, allUnits))
@@ -65,7 +65,7 @@ public static class CarrierSlotMatcher
     /// and the matching size is maximized.
     /// </summary>
     /// <returns>Success: the allocated slot indices. Failure: Overallocation count (0: no place for new unit, 1: there's even one too many already loaded,...)</returns>
-    private static BipartiteMatchingResult MaxBipartiteMatching(List<string> slots, List<IGameContextUnit> units)
+    private static BipartiteMatchingResult MaxBipartiteMatching(List<string> slots, List<MapUnitClass> units)
     {
         var unitToSlot = new Dictionary<int, int>(); // unit index -> slot index
         var slotUsed = new bool[slots.Count];
@@ -97,7 +97,7 @@ public static class CarrierSlotMatcher
     /// DFS to find an augmenting path for a unit.
     /// Either assigns the unit to a free slot, or recursively reassigns the current occupant of a slot and takes it.
     /// </summary>
-    private static bool DfsAugmentingPath(int unitIdx, List<IGameContextUnit> units, List<string> slots,
+    private static bool DfsAugmentingPath(int unitIdx, List<MapUnitClass> units, List<string> slots,
         bool[] slotUsed, bool[] visited, Dictionary<int, int> unitToSlot)
     {
         var unit = units[unitIdx];

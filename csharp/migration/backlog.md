@@ -1410,7 +1410,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Follow-up of T066: UnitManager implements the IUnitManager seam; Civilization tests (CivilizationTestFakes.FakeUnitManager { Count = n }, ~35 sites) count units without MapUnits, so the retype was left out of T066. Kotlin shape: units is a val initialised in the Civilization constructor.
 
 ### T134 Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing)
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T067
 - Source: csharp/Unciv.Core/Logic/Map/CarrierSlotMatcher.cs, MapVisualization.cs, MapPathing.cs, MapPathingSeams.cs
 - Fixtures: none

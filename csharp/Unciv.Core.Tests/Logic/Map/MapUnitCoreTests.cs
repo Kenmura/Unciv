@@ -1141,7 +1141,7 @@ public class MapUnitCoreTests
         unit.AddMovementMemory();
         Assert.Equal(2, unit.MovementMemories.Count);
         Assert.Equal([UnitMovementMemoryType.UnitAttacked, UnitMovementMemoryType.UnitTeleported], unit.MovementMemories.Select(it => it.Type));
-        Assert.Equal([HexCoord.Of(2, 2), HexCoord.Of(2, 2)], ((IGameContextUnit)unit).MovementMemoryPositions);
+        Assert.Equal([HexCoord.Of(2, 2), HexCoord.Of(2, 2)], unit.MovementMemories.Select(it => it.Position));
         Assert.Equal("UnitMovementMemory(HexCoord(x=2, y=2), UnitAttacked)", unit.MovementMemories[0].ToString());
     }
 
@@ -1230,7 +1230,6 @@ public class MapUnitCoreTests
         Assert.False(unit.IsVisibleTo(egypt)); // not in view
         egypt.ViewableTiles = new HashSet<TileClass> { tile };
         Assert.True(unit.IsVisibleTo(egypt));
-        Assert.True(((IGameContextUnit)unit).IsVisibleTo(egypt));
         var ghost = w.Unit("Ghost", "Land", 2, 2, null, "Invisible to others");
         Assert.True(ghost.HasActiveInvisibilityUnique(egypt));
         Assert.False(ghost.IsVisibleTo(egypt));

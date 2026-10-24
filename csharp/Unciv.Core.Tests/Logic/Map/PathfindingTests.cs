@@ -3,7 +3,8 @@ using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
-using Unciv.Models.Ruleset.Unique;
+using CivilizationClass = Unciv.Logic.Civilization.Civilization;
+using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Logic.Map;
@@ -22,8 +23,8 @@ public class PathfindingTests
         Add("Grassland", TerrainType.Land);
         Add("Mountain", TerrainType.Land, impassable: true);
         Add("Ocean", TerrainType.Water);
-        ruleset.TileImprovements.Put("Road", new TileImprovement { Name = "Road" });
-        ruleset.TileImprovements.Put("Railroad", new TileImprovement { Name = "Railroad" });
+        ruleset.TileImprovements.Put("Road", new TileImprovement { Name = "Road", TechRequired = "The Wheel", Uniques = ["Can be built outside your borders"] });
+        ruleset.TileImprovements.Put("Railroad", new TileImprovement { Name = "Railroad", TechRequired = "Railroad", Uniques = ["Can be built outside your borders"] });
         return ruleset;
     }
 
@@ -268,28 +269,13 @@ public class PathfindingTests
 
     // ---- MapPathing
 
-    private sealed class PathCiv : FakeCiv
+    private static CivilizationClass ExploredCiv(TileMap map)
     {
-        public PathCiv() : base("Rome") { }
-        public HashSet<TileClass> Explored { get; } = [];
-        public HashSet<TileClass> Buildable { get; } = [];
-        public bool ForestRoads { get; set; }
-        public override bool HasExplored(TileClass tile) => Explored.Contains(tile);
-        public override bool CanBuildImprovementOn(TileClass tile, TileImprovement improvement) => Buildable.Contains(tile);
-        public override bool ForestsAndJunglesAreRoads => ForestRoads;
-        public override bool CanPassThroughTiles(IGameContextCivilization otherCiv) => false;
-    }
-
-    private sealed class PathCity(FakeCiv civ) : FakeCity("Rome", civ)
-    {
-        public override HexCoord Location => HexCoord.Zero;
-    }
-
-    private static PathCiv ExploredCiv(TileMap map)
-    {
-        var civ = new PathCiv();
-        civ.Explored.UnionWith(map.Values);
-        civ.Buildable.UnionWith(map.Values);
+        var civ = MapUnitFactory.NewCiv("Rome");
+        civ.Tech.TechsResearched.Add("The Wheel");
+        civ.Tech.TechsResearched.Add("Railroad");
+        foreach (var tile in map.Values)
+            tile.SetExplored(civ, true);
         return civ;
     }
 
@@ -297,7 +283,7 @@ public class PathfindingTests
     public void RoadPreferredMovementCost_HalfOnRoadAndRailroad_OneOtherwise()
     {
         var map = HexMap(2);
-        var civ = new PathCiv();
+        var civ = MapUnitFactory.NewCiv("Rome");
         var from = map[HexCoord.Zero];
         var plain = map[HexCoord.Of(1, 0)];
         var road = map[HexCoord.Of(0, 1)];
@@ -315,13 +301,15 @@ public class PathfindingTests
     public void RoadPreferredMovementCost_ForestsAreRoadsForSomeCivs()
     {
         var map = HexMap(2);
-        var civ = new PathCiv { ForestRoads = true };
+        var info = new FakeGameInfoState { Map = map };
+        var civ = MapUnitFactory.NewCiv("Rome", info);
+        civ.Nation.ForestsAndJunglesAreRoads = true;
         var forest = map[HexCoord.Of(1, 0)];
         forest.SetTerrainFeatures(["Forest"]);
-        map.GameInfo = new FakeGameInfo();
-        forest.SetOwningCity(new PathCity(civ)); // forests only count as roads in friendly territory
+        map.GameInfo = info;
+        forest.SetOwningCity(MapUnitFactory.NewCity(civ, "Rome", HexCoord.Zero)); // forests only count as roads in friendly territory
         Assert.Equal(.5f, MapPathing.RoadPreferredMovementCost(civ, map[HexCoord.Zero], forest));
-        civ.ForestRoads = false;
+        civ.Nation.ForestsAndJunglesAreRoads = false;
         Assert.Equal(1f, MapPathing.RoadPreferredMovementCost(civ, map[HexCoord.Zero], forest));
     }
 
@@ -336,12 +324,12 @@ public class PathfindingTests
         var plain = map[HexCoord.Of(-1, 0)];
         SetTerrain(water, "Ocean");
         SetTerrain(mountain, "Mountain");
-        civ.Explored.Remove(unexplored);
+        unexplored.SetExplored(civ, false);
         Assert.False(MapPathing.IsValidRoadPathTile(civ, water));
         Assert.False(MapPathing.IsValidRoadPathTile(civ, mountain));
         Assert.False(MapPathing.IsValidRoadPathTile(civ, unexplored));
         Assert.True(MapPathing.IsValidRoadPathTile(civ, plain));
-        civ.Buildable.Remove(plain);
+        civ.Tech.TechsResearched.Clear(); // civ cannot build roads without the tech
         Assert.False(MapPathing.IsValidRoadPathTile(civ, plain));
         plain.RoadStatus = RoadStatus.Road; // existing road needs no buildability
         Assert.True(MapPathing.IsValidRoadPathTile(civ, plain));
@@ -413,7 +401,7 @@ public class PathfindingTests
     public void GetConnection_DefaultsAreUnitCostAndAerialDistance()
     {
         var map = HexMap(4);
-        var civ = new PathCiv();
+        var civ = MapUnitFactory.NewCiv("Rome");
         var start = map[HexCoord.Zero];
         var end = map[HexCoord.Of(3, 3)];
         var path = MapPathing.GetConnection(civ, start, end, (_, _) => true)!;
@@ -424,17 +412,12 @@ public class PathfindingTests
 
     // ---- CarrierSlotMatcher
 
-    private sealed class CarriedUnit : FakeUnit
+    private static int Capacity(CarrierSlotMatcher.SlotRule[] rules, string[] carried, string newUnit)
     {
-        private readonly string kind;
-
-        public CarriedUnit(string kind) : base(kind, 2f, new FakeCiv("Rome")) => this.kind = kind;
-
-        public override bool MatchesFilter(string filter) => filter == "all" || filter == kind;
+        var civ = MapUnitFactory.NewCiv("Rome");
+        var carriedUnits = carried.Select(it => MapUnitFactory.NewUnit(civ, it)).ToList();
+        return CarrierSlotMatcher.AvailableCapacity(rules, carriedUnits, MapUnitFactory.NewUnit(civ, newUnit));
     }
-
-    private static int Capacity(CarrierSlotMatcher.SlotRule[] rules, string[] carried, string newUnit) =>
-        CarrierSlotMatcher.AvailableCapacity(rules, carried.Select(it => (IGameContextUnit)new CarriedUnit(it)), new CarriedUnit(newUnit));
 
     [Fact]
     public void Carrier_NoRules_NoCapacity() => Assert.Equal(0, Capacity([], [], "Fighter"));
@@ -480,26 +463,12 @@ public class PathfindingTests
         public override TileMap TileMap => map;
     }
 
-    private sealed class VisCiv(string id) : FakeCiv(id)
-    {
-        public HashSet<TileClass> Viewable { get; } = [];
-        public override bool IsTileViewable(TileClass tile) => Viewable.Contains(tile);
-    }
-
-    private sealed class VisUnit(FakeCiv civ, FakeTile tile) : FakeUnit("Warrior", 2f, civ, tile)
-    {
-        public List<HexCoord> Memories { get; } = [];
-        public bool Visible { get; set; }
-        public override IEnumerable<HexCoord> MovementMemoryPositions => Memories;
-        public override bool IsVisibleTo(IGameContextCivilization civ) => Visible;
-    }
-
     [Fact]
     public void MapVisualization_OwnUnitPastIsAlwaysVisible()
     {
         var map = HexMap(2);
-        var me = new VisCiv("Me");
-        var unit = new VisUnit(me, new FakeTile(HexCoord.Zero));
+        var me = MapUnitFactory.NewCiv("Me");
+        var unit = MapUnitFactory.NewUnit(me, "Warrior", tile: map[HexCoord.Zero]);
         Assert.True(new MapVisualization(new VisGameInfo(map), me).IsUnitPastVisible(unit));
     }
 
@@ -507,28 +476,31 @@ public class PathfindingTests
     public void MapVisualization_ForeignUnitPastNeedsVisibleUnitAndAllTilesViewable()
     {
         var map = HexMap(2);
-        var me = new VisCiv("Me");
-        var other = new VisCiv("Them");
-        var unit = new VisUnit(other, new FakeTile(HexCoord.Zero)) { Visible = true };
-        unit.Memories.Add(HexCoord.Of(1, 0));
+        var me = MapUnitFactory.NewCiv("Me");
+        var other = MapUnitFactory.NewCiv("Them");
+        var unit = MapUnitFactory.NewUnit(other, "Warrior", tile: map[HexCoord.Zero]);
+        unit.MovementMemories.Add(new MapUnitClass.UnitMovementMemory(HexCoord.Of(1, 0), Unciv.Logic.Map.MapUnits.UnitMovementMemoryType.UnitMoved));
         var visualization = new MapVisualization(new VisGameInfo(map), me);
-        me.Viewable.Add(map[HexCoord.Zero]);
+        var meViewable = new HashSet<TileClass> { map[HexCoord.Zero] };
+        me.ViewableTiles = meViewable;
         Assert.False(visualization.IsUnitPastVisible(unit)); // memory tile not viewable
-        me.Viewable.Add(map[HexCoord.Of(1, 0)]);
+        meViewable.Add(map[HexCoord.Of(1, 0)]);
         Assert.True(visualization.IsUnitPastVisible(unit));
-        unit.Visible = false;
-        Assert.False(visualization.IsUnitPastVisible(unit));
+        var invisible = MapUnitFactory.NewUnit(other, "Submarine", tile: map[HexCoord.Zero], uniques: "Invisible to others");
+        invisible.MovementMemories.Add(new MapUnitClass.UnitMovementMemory(HexCoord.Of(1, 0), Unciv.Logic.Map.MapUnits.UnitMovementMemoryType.UnitMoved));
+        Assert.False(visualization.IsUnitPastVisible(invisible));
     }
 
     [Fact]
     public void MapVisualization_ForeignUnitWithoutMemories_ChecksOnlyCurrentTile()
     {
         var map = HexMap(2);
-        var me = new VisCiv("Me");
-        var unit = new VisUnit(new VisCiv("Them"), new FakeTile(HexCoord.Zero)) { Visible = true };
+        var me = MapUnitFactory.NewCiv("Me");
+        var other = MapUnitFactory.NewCiv("Them");
+        var unit = MapUnitFactory.NewUnit(other, "Warrior", tile: map[HexCoord.Zero]);
         var visualization = new MapVisualization(new VisGameInfo(map), me);
         Assert.False(visualization.IsUnitPastVisible(unit));
-        me.Viewable.Add(map[HexCoord.Zero]);
+        me.ViewableTiles = new HashSet<TileClass> { map[HexCoord.Zero] };
         Assert.True(visualization.IsUnitPastVisible(unit));
     }
 
@@ -536,17 +508,16 @@ public class PathfindingTests
     public void MapVisualization_AttackVisible_IfOwnOrEitherEndViewable()
     {
         var map = HexMap(2);
-        var me = new VisCiv("Me");
-        var other = new VisCiv("Them");
+        var me = MapUnitFactory.NewCiv("Me");
+        var other = MapUnitFactory.NewCiv("Them");
         var visualization = new MapVisualization(new VisGameInfo(map), me);
         var source = HexCoord.Of(1, 0);
         var target = HexCoord.Of(0, 1);
         Assert.True(visualization.IsAttackVisible(me, source, target));
         Assert.False(visualization.IsAttackVisible(other, source, target));
-        me.Viewable.Add(map[source]);
+        me.ViewableTiles = new HashSet<TileClass> { map[source] };
         Assert.True(visualization.IsAttackVisible(other, source, target));
-        me.Viewable.Clear();
-        me.Viewable.Add(map[target]);
+        me.ViewableTiles = new HashSet<TileClass> { map[target] };
         Assert.True(visualization.IsAttackVisible(other, source, target));
     }
 }

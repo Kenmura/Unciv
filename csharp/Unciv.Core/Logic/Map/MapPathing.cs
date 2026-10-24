@@ -1,13 +1,11 @@
 using Unciv.Logic.Map.Tiles;
-using Unciv.Models.Ruleset.Unique;
+using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 
 namespace Unciv.Logic.Map;
 
 // Ported from core/src/com/unciv/logic/map/MapPathing.kt (T040). Stripped: the purity annotations, the Log.debug calls.
-// Civilization is typed by its seam IGameContextCivilization (T055 retypes it); the improvementFunctions.canBuildImprovement call
-// is the seam IGameContextCivilization.CanBuildImprovementOn (TileImprovementFunctions is T054).
-// Not ported: the private getPath(unit, ...) overload. It has no caller in Kotlin (and would only be reachable through
-// UnitMovement, T067); T067 adds it if a caller appears.
+// Retyped to concrete Civilization in T134.
+// Not ported: the private getPath(unit, ...) overload. It has no caller in Kotlin.
 
 public static class MapPathing
 {
@@ -17,7 +15,7 @@ public static class MapPathing
     /// Otherwise, we set every tile to have equal value since building a road on any of them makes the original movement cost irrelevant.
     /// </summary>
     /// <remarks>The unused <c>from</c> parameter keeps the signature expected by the AStar and getConnection <c>cost</c> parameter.</remarks>
-    internal static float RoadPreferredMovementCost(IGameContextCivilization civ, Tile _, Tile to)
+    internal static float RoadPreferredMovementCost(CivilizationClass civ, Tile _, Tile to)
     {
         // hasRoadConnection accounts for civs that treat jungle/forest as roads
         // Ignore road over river penalties.
@@ -27,7 +25,7 @@ public static class MapPathing
         return 1f;
     }
 
-    public static bool IsValidRoadPathTile(IGameContextCivilization civ, Tile tile)
+    public static bool IsValidRoadPathTile(CivilizationClass civ, Tile tile)
     {
         var roadImprovement = tile.Ruleset.RoadImprovement;
         var railRoadImprovement = tile.Ruleset.RailroadImprovement;
@@ -39,8 +37,8 @@ public static class MapPathing
 
         return tile.HasRoadConnection(civ, false)
             || tile.HasRailroadConnection(false)
-            || (roadImprovement != null && civ.CanBuildImprovementOn(tile, roadImprovement))
-            || (railRoadImprovement != null && civ.CanBuildImprovementOn(tile, railRoadImprovement));
+            || (roadImprovement != null && tile.ImprovementFunctions.CanBuildImprovement(roadImprovement, civ.State))
+            || (railRoadImprovement != null && tile.ImprovementFunctions.CanBuildImprovement(railRoadImprovement, civ.State));
     }
 
     /// <summary>
@@ -50,7 +48,7 @@ public static class MapPathing
     /// <param name="startTile">The starting tile of the path.</param>
     /// <param name="endTile">The destination tile of the path.</param>
     /// <returns>The tiles from <paramref name="startTile"/> to <paramref name="endTile"/>, or null if no valid path is found.</returns>
-    public static List<Tile>? GetRoadPath(IGameContextCivilization civ, Tile startTile, Tile endTile) =>
+    public static List<Tile>? GetRoadPath(CivilizationClass civ, Tile startTile, Tile endTile) =>
         GetConnection(civ, startTile, endTile, IsValidRoadPathTile, RoadPreferredMovementCost, (_, _, _) => 0f);
 
     /// <summary>
@@ -64,12 +62,12 @@ public static class MapPathing
     /// <param name="cost">Defaults to a constant 1f.</param>
     /// <param name="heuristic">Defaults to the aerial distance from the 'from' tile to the 'to' tile.</param>
     public static List<Tile>? GetConnection(
-        IGameContextCivilization civ,
+        CivilizationClass civ,
         Tile startTile,
         Tile endTile,
-        Func<IGameContextCivilization, Tile, bool> predicate,
-        Func<IGameContextCivilization, Tile, Tile, float>? cost = null,
-        Func<IGameContextCivilization, Tile, Tile, float>? heuristic = null)
+        Func<CivilizationClass, Tile, bool> predicate,
+        Func<CivilizationClass, Tile, Tile, float>? cost = null,
+        Func<CivilizationClass, Tile, Tile, float>? heuristic = null)
     {
         cost ??= (_, _, _) => 1f;
         heuristic ??= (_, from, to) => from.AerialDistanceTo(to);

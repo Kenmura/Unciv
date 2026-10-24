@@ -1333,8 +1333,6 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     bool IGameContextUnit.MatchesFilter(string filter) => MatchesFilter(filter);
     bool IGameContextUnit.HasPromotionOrStatus(string name) => Promotions.Promotions.Contains(name) || HasStatus(name);
     bool IGameContextUnit.AbilityToTimesUsedIsEmpty => AbilityToTimesUsed.IsEmpty;
-    IEnumerable<HexCoord> IGameContextUnit.MovementMemoryPositions => MovementMemories.Select(it => it.Position);
-    bool IGameContextUnit.IsVisibleTo(IGameContextCivilization civ) => IsVisibleTo((Civilization.Civilization)civ);
     IGameContextUnit IGameContextUnit.Clone() => Clone();
     void IGameContextUnit.SetCurrentTile(Tile tile) => CurrentTile = tile;
     void IGameContextUnit.AssignOwner(IGameContextCivilization civInfo, bool updateCivInfo) => AssignOwner((Civilization.Civilization)civInfo, updateCivInfo);

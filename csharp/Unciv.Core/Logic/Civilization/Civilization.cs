@@ -1402,8 +1402,6 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     int IGameContextCivilization.GetCivResourceSupplyAmount(string resourceName) => GetCivResourceSupply().SumBy(resourceName);
     IEnumerable<TileImprovement> IGameContextCivilization.UniqueImprovements => Cache.UniqueImprovements;
     float IGameContextCivilization.GetGameProgressModifier(UniqueObject unique) => unique.GetGameProgressModifier(this);
-    bool IGameContextCivilization.CanBuildImprovementOn(Tile tile, TileImprovement improvement) =>
-        tile.ImprovementFunctions.CanBuildImprovement(improvement, State);
     int IConstructionCivilization.GetBuiltItemsWithIncreasingCost(string name) => CivConstructions.GetBuiltItemsWithIncreasingCost(name);
     int IConstructionCivilization.GetBoughtItemsWithIncreasingPrice(string name) => CivConstructions.GetBoughtItemsWithIncreasingPrice(name);
     int IGameProgressCivilization.ResearchedTechnologiesCount => Tech.ResearchedTechnologies.Count;
