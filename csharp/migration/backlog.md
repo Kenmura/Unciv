@@ -1637,7 +1637,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented (Claude, tests only): Uniques/GlobalUniquesTests.cs (50 cases, all of GlobalUniquesTests.kt), Uniques/ResourceTests.cs (23 cases, all of ResourceTests.kt), Uniques/TimedUniquesTests.cs (3 cases; adds testConditionalTimedUniqueStrength/Expires). All passed first run, no engine bugs found. Narrowed at claim: the remaining deferred TestGame cases (CountableTests/ExpressionTests state cases, UniqueErrorTests.testEducatedEliteGreatPersonGifting which needs T094, Victory fixtures) split to T154.
 
 ### T144 Port TileUniquesTests.pillageYieldTest (split from T103)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T080, T103
 - Source: tests/src/com/unciv/uniques/TileUniquesTests.kt
 - Fixtures: (same)

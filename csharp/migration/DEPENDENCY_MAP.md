@@ -52,7 +52,6 @@ flowchart TD
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
-    T144["T144<br/>Port TileUniquesTests.pillageYieldTest (split from T103)"]
     T148["T148<br/>Deferred TestGame fixtures needing Tile.startWorkingOnImprov..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
@@ -191,7 +190,6 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T143 done
-  class T144 review
   class T148 review
   class T152 prog
   class T154 waiting
@@ -215,7 +213,7 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 26]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
@@ -249,7 +247,6 @@ xychart-beta
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
-| T144 | Needs-Review [Claude] | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
 | T148 | Needs-Review [Claude] | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T152 | In-Progress [Claude] | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
