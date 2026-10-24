@@ -1098,7 +1098,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit: the stale Planned paragraph listed 'end-to-end determinism over N turns (uses T011)'. Runs AI-only games (several seeds, map sizes, vanilla + one mod) for N turns through GameStarter, TurnManager and NextTurnAutomation, compares the T011 state hash every turn with goldens exported from the Kotlin game, then save -> load -> continue and checks hash equality. Any divergence goes back to the owning ticket as a review note. Also run with DETERMINISM.md / HASH_ORDER_AUDIT.md checks.
 
 ### T103 Remaining Kotlin tests sweep: uniques, filters, tutorials
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T072, T052, T098, T097
 - Source: tests/src/com/unciv/uniques/CarrierTests.kt, EventCircularTriggersTest.kt, logic/filter/CityCivFilterTests.kt, PolicyFilterTests.kt, TechFilterTests.kt, TileFilterTests.kt, UnitFilterTests.kt, logic/TutorialTranslationTests.kt, view/GameViewMovementHistoryTest.kt
 - Fixtures: (the test files above)
@@ -1108,6 +1108,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit: these Kotlin tests were named by no ticket (they all need TestGame, Civilization/City/MapUnit, filters or the Civilopedia/tutorial data). One test class per Kotlin class; also ports any remaining T027/T028/T030/T033/T034/T036/T057 cases still deferred (check their Notes) and the TimedUniquesTests cases listed in T035 if T035 did not. Real bugs go back to the owning ticket as review notes.
   - Backlog audit: besides the ported-over-TestGame cases, also covers T028's deferred CountableTests/ExpressionTests cases that need real game state, T036's UniqueErrorTests.testEducatedEliteGreatPersonGifting and the T036/T057 deferred validator cases, and anything the Kotlin ResourceTests (tests/src/com/unciv/uniques/ResourceTests.kt) needs from T106.
   - Narrowed at claim: GlobalUniquesTests + deferred remnants split to T143, TileUniquesTests (needs UnitActions) to T144. T103 now covers Carrier, EventCircularTriggers, 5 filter tests, TutorialTranslation, GameViewMovementHistory.
+  - Implemented (tests only, 29 cases): CarrierTests (Logic/), GameViewMovementHistoryTests (View/), Logic/Filter/{CityCiv,Tile,Unit,Policy,Tech}FilterTests, Models/Ruleset/{EventCircularTriggers,TutorialTranslation}Tests, Support/TestParcours.cs helper. All passed first run, no behavioural bugs found. Kotlin 'TODO: Bug' comment in CityCivFilterTests reworded because SourcePolicyTests bans bare TODO.
 
 ### T104 Marker, seam and stale-comment sweep (final)
 - State: Available

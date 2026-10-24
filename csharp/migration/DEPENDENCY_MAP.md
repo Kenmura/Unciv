@@ -220,7 +220,7 @@ flowchart TD
   class T100 done
   class T101 waiting
   class T102 waiting
-  class T103 prog
+  class T103 review
   class T104 waiting
   class T106 done
   class T107 done
@@ -265,7 +265,7 @@ flowchart TD
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
-| T103 | In-Progress [Claude] | T072, T052, T098, T097 | 3 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
+| T103 | Needs-Review [Claude] | T072, T052, T098, T097 | 3 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T088) | T086, T088, T085 | 1 | TradeEvaluation |
