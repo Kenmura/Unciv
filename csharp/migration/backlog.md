@@ -304,13 +304,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified `HASH_ORDER_AUDIT.md`, `JavaHashMap.cs`, and `JavaHashMapTests.cs`. Hash spreading `h ^ (h >>> 16)`, power-of-two table sizing via `TableSizeFor`, bucket redistribution upon `Resize()` maintaining order, Kotlin `MapCapacity` parity, explicit exception on treeification threshold, and strict typing restriction via `JavaHashCodes.Default<T>` to only deterministic JVM hash types ensure deterministic iteration order. Re-ran Gate (`~JavaHashTests`, 45/45 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 387/387 passed).
 
 ### T019 Event bus
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T01:38:27Z
 - Depends: none
 - Source: core/src/com/unciv/logic/event/EventBus.kt, Event.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Event/EventBus.cs, Event.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~EventBusTests`
-- Claimed: 2026-10-24T01:37:42Z
 - Notes: Listener invocation order must be deterministic (registration order). Replace Kotlin weak/threading specifics with deterministic single-threaded equivalents; note deviations.
   - Implementer notes (Antigravity): Ported `EventBus` and `EventReceiver` under `Unciv.Logic.Event`:
     - Synchronous, deterministic dispatch invoking matching listeners in strictly monotonic registration order (using `NextSeq` and stable `OrderBy`).
