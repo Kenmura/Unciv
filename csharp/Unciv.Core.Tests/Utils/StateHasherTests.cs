@@ -187,4 +187,30 @@ public class StateHasherTests
         Assert.Equal(16, hex1.Length);
         Assert.Equal(h1.ToString("X16", System.Globalization.CultureInfo.InvariantCulture), hex1);
     }
+
+    // Golden values from an independent implementation (Python: FNV-1a 64 over the byte layout in DETERMINISM.md,
+    // XorWow ported separately and checked against the JVM sequence for seed 42). They pin the algorithm and the
+    // encoding, which the equal/not-equal tests above cannot: a changed byte layout would silently break desync detection.
+    [Fact]
+    public void GoldenHashes_PinAlgorithmAndByteLayout()
+    {
+        Assert.Equal("CBF29CE484222325", StateHasher.ComputeHexString(_ => { }));
+        Assert.Equal("AF63BC4C8601B62C", StateHasher.ComputeHexString(h => h.Add(true)));
+        Assert.Equal("8D9AADC8352FDF7F", StateHasher.ComputeHexString(h => h.Add(42))); // little endian
+        Assert.Equal("FC1A35225397861C", StateHasher.ComputeHexString(h => h.Add(-2L)));
+        Assert.Equal("4A98C77F9BA36558", StateHasher.ComputeHexString(h => h.Add(1.5f)));
+        Assert.Equal("D969796611AEC9B7", StateHasher.ComputeHexString(h => h.Add("Unciv"))); // length, then UTF-16LE units
+        Assert.Equal("994F76653E2A3951", StateHasher.ComputeHexString(h => h.Add((string?)null))); // int -1
+        Assert.Equal("06CD822B3B579854", StateHasher.ComputeHexString(h => h.Add(HexCoord.Of(2, 3))));
+        Assert.Equal("98E9A7BD4727F542", StateHasher.ComputeHexString(h => h.Add(new Stats { Production = 10f, Gold = 5f, Food = 2f })));
+        Assert.Equal("A0EB07B7D19A60A0", StateHasher.ComputeHexString(h => h.Add(new Counter<string> { ["Rome"] = 1, ["Greece"] = 2 })));
+
+        var unordered = new Dictionary<string, int> { ["Zulu"] = 10, ["Alpha"] = 20, ["Bravo"] = 30 };
+        Assert.Equal("2313DBCFFE886890", StateHasher.ComputeHexString(h => h.AddUnorderedMap(unordered, k => k, (hasher, v) => hasher.Add(v))));
+
+        var rng = new GameRandom(42);
+        Assert.Equal("D0EA959456A64405", StateHasher.ComputeHexString(h => h.Add(rng))); // marker 1, then x y z w v addend
+        Assert.Equal(972016666, rng.NextInt());
+        Assert.Equal("2D219475C54F82E4", StateHasher.ComputeHexString(h => h.Add(rng)));
+    }
 }
