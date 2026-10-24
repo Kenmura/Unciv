@@ -350,13 +350,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Minor: nested `IdChecker.Friend` stands in for `multiplayer.FriendList.Friend` (multiplayer is a non-goal); fine, note it. `Log.error` calls are dropped (no logging in the engine), also fine.
 
 ### T021 Metadata models: LocaleCode, GameParameters, GameSetupInfo, Player, BaseRuleset, ModCategories
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: T007
 - Source: core/src/com/unciv/models/metadata/LocaleCode.kt, GameParameters.kt, GameSetupInfo.kt, Player.kt, BaseRuleset.kt, ModCategories.kt
 - Fixtures: none - generate golden JSON by serializing from Kotlin
 - Deliverables: csharp/Unciv.Core/Models/Metadata/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MetadataTests`
-- Claimed: 2026-10-24T01:38:09Z
+- Claimed: 2026-10-24T01:46:25Z
 - Notes: Serialized field names must match Kotlin JSON. GameSettings/Migrations/OverviewPersistableData are client settings: out of scope unless a later ticket needs them.
   - Implementer notes (Claude): `Models/Metadata/` `LocaleCode` (+`LocaleCodeExtensions`), `BaseRuleset` (+`FullName`), `Player`, `GameParameters`, `ModCategory`; `Logic/Civilization/PlayerType`; also **`Unciv/Constants.cs`** (all of Constants.kt: pure constants, no ticket owned it, needed by `Player` and by everything after) and **`Utils/LinkedHashSet<T>`** (Kotlin `LinkedHashSet`/`setOf` order; used for `GameParameters.mods` and `Constants.All`). 15 `MetadataTests`; full suite 430/430; build -warnaserror and format clean.
   - Goldens from the real compiled classes (installed Unciv.jar, libGDX `json()`, OpenJDK 25): all 54 `LocaleCode` entries (tag, `fastlaneFolder()`, `languageName()`, unused), `getSupportedLanguages` count 47, `GameParameters` JSON as the game writes it, `toString` incl. the six-mod limit (`mods=(M1,...,M6,...)`), `clone` (godMode reset), old-style JSON reading. **JDK trap:** Indonesian's tag is `in-ID`; OpenJDK 17+ reports language `id`, older JDKs/Android `in` (both folders exist in `fastlane/`), so `FastlaneFolder` maps legacy `in`/`iw`/`ji` to `id`/`he`/`yi` and says so.
