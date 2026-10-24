@@ -16,7 +16,7 @@ namespace Unciv.Logic.City.Managers;
 // Ported from core/src/com/unciv/logic/city/managers/CityExpansionManager.kt (T061).
 //
 // Stripped: the purity annotations. Kotlin's local exception classes in buyTile are private nested classes with the same names.
-// Tile.getCity() / getOwner() are typed by the Tile seams (IGameContextCity / IGameContextCivilization, retyped by T115); City, Civilization
+// Tile.GetCity() is typed City (retyped by T115); getOwner() is typed by the Tile seam (IGameContextCivilization); City, Civilization
 // and MapUnit instances are compared by reference like Kotlin (none of the three has equals).
 
 public class CityExpansionManager : IsPartOfGameInfoSerialization

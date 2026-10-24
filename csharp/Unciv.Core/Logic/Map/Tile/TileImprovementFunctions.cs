@@ -4,6 +4,8 @@ using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
+using CityClass = Unciv.Logic.City.City;
+using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using TileImprovementObject = Unciv.Models.Ruleset.Tile.TileImprovement;
 
 namespace Unciv.Logic.Map.Tiles;
@@ -220,8 +222,8 @@ public class TileImprovementFunctions(Tile tile)
             var city = Tile.OwningCity;
             if (city == null) return;
             if (civToActivateBroaderEffects == null) return;
-            city.UpdateCityStats();
-            city.Civ.UpdateCivResources();
+            city.CityStats.Update();
+            city.Civ.Cache.UpdateCivResources();
             city.ReassignPopulationDeferred();
         }
 
@@ -343,9 +345,10 @@ public class TileImprovementFunctions(Tile tile)
 
     private void TryProvideProductionToClosestCity(string removedTerrainFeature, IGameContextCivilization civ)
     {
-        IGameContextCity? closestCity = null;
+        var cities = civ is CivilizationObject concreteCiv ? concreteCiv.Cities : civ.Cities.OfType<CityClass>();
+        CityClass? closestCity = null;
         var closestDistance = 0;
-        foreach (var city in civ.Cities) // minByOrNull: the first minimum wins
+        foreach (var city in cities) // minByOrNull: the first minimum wins
         {
             var d = city.GetCenterTile().AerialDistanceTo(Tile);
             if (closestCity == null || d < closestDistance)
@@ -401,6 +404,6 @@ public class TileImprovementFunctions(Tile tile)
                 $"Cannot remove {nameof(UniqueType.CreatesOneImprovement)} marker from {Tile.Position} without an improvement in progress");
         Tile.ImprovementQueue.Clear();
         if (removeConstruction)
-            Tile.OwningCity?.RemoveCreateOneImprovementConstruction(improvementInProgress);
+            Tile.OwningCity?.CityConstructions.RemoveCreateOneImprovementConstruction(improvementInProgress);
     }
 }

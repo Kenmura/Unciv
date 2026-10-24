@@ -3,7 +3,7 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Models.Ruleset.Tile;
 
-// Open owners: T115 (retype the city seams), T065 (MapUnit), T046 (GameInfo); T104 lists survivors.
+// Open owners: T065 (MapUnit), T046 (GameInfo); T104 lists survivors.
 // T053 (Tile) is the bottom of the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo cycle: it compiles against the
 // interfaces below instead of the classes that are not ported yet. The seam rule (backlog, T053 notes): the ticket that ports a class
 // implements its seam and then retypes the seam-typed members of Tile to the concrete class. Member names mirror the Kotlin members.

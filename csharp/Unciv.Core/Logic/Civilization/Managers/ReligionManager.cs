@@ -15,8 +15,7 @@ using MapUnitObject = Unciv.Logic.Map.MapUnits.MapUnit;
 namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/ReligionManager.kt (T057).
-// - City, MapUnit and GameInfo are not ported yet: they are used through their seams (CivilizationSeams.cs). A tile's city is still
-//   typed IGameContextCity by Tile, so the calls that need City members cast it with CityOf (TODO(T115): retype Tile.GetCity).
+// - City, MapUnit and GameInfo are not ported yet: they are used through their seams (CivilizationSeams.cs).
 // - Kotlin's `Random(seed)` is a GameRandom.
 // - The 'remainingFoundableReligionsBreakdown' Sequence of Pair is an iterator of tuples.
 public class ReligionManager : IsPartOfGameInfoSerialization
@@ -335,14 +334,11 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         return true;
     }
 
-    // TODO(T115): Tile.GetCity() is typed by its IGameContextCity seam; City is not ported yet
-    private static CityObject CityOf(Tile tile) => (CityObject)tile.GetCity().NotNull();
-
     public bool MayFoundReligionHere(Tile tile)
     {
         if (!MayFoundReligionAtAll()) return false;
         if (!tile.IsCityCenter()) return false;
-        if (CityOf(tile).IsHolyCity()) return false;
+        if (tile.GetCity().NotNull().IsHolyCity()) return false;
         // No double holy cities. Not sure if these were allowed in the base game
         return true;
     }
@@ -352,7 +348,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         if (!MayFoundReligionHere(prophet.GetTile())) return; // How did you do this?
         if (ReligionState == ReligionState.None) shouldChoosePantheonBelief = true;
         ReligionState = ReligionState.FoundingReligion;
-        CivInfo.ReligionManager.foundingCityId = CityOf(prophet.GetTile()).Id;
+        CivInfo.ReligionManager.foundingCityId = prophet.GetTile().GetCity().NotNull().Id;
     }
 
     public bool MayEnhanceReligionAtAll()
@@ -580,9 +576,9 @@ public class ReligionManager : IsPartOfGameInfoSerialization
     {
         if (!MaySpreadReligionAtAll(missionary)) return false;
         if (missionary.GetTile().GetOwner() == null) return false;
-        if (((CityObject?)missionary.GetTile().OwningCity)?.Religion.GetMajorityReligion()?.Name == missionary.Religion)
+        if (missionary.GetTile().OwningCity?.Religion.GetMajorityReligion()?.Name == missionary.Religion)
             return false;
-        if (CityOf(missionary.GetTile()).Religion.IsProtectedByInquisitor(missionary.Religion)) return false;
+        if (missionary.GetTile().GetCity().NotNull().Religion.IsProtectedByInquisitor(missionary.Religion)) return false;
         return true;
     }
 

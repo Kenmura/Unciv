@@ -489,8 +489,7 @@ public class Spy : IsPartOfGameInfoSerialization
     public CityObject? GetCityOrNull()
     {
         if (location == null) return null;
-        // TODO(T115): Tile.GetCity() is typed by its IGameContextCity seam; City is not ported yet
-        city ??= (CityObject?)CivInfo.GameInfo.TileMap[location.Value].GetCity();
+        city ??= CivInfo.GameInfo.TileMap[location.Value].GetCity();
         return city;
     }
 

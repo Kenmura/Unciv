@@ -3,6 +3,7 @@ using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
+using CityClass = Unciv.Logic.City.City;
 using TileImprovementObject = Unciv.Models.Ruleset.Tile.TileImprovement;
 
 namespace Unciv.Logic.Map.Tiles;
@@ -43,7 +44,7 @@ public class TileStatFunctions(Tile tile)
 
     public Stats GetTileStats(IGameContextCivilization? observingCiv) => GetTileStats(Tile.GetCity(), observingCiv);
 
-    public Stats GetTileStats(IGameContextCity? city, IGameContextCivilization? observingCiv)
+    public Stats GetTileStats(CityClass? city, IGameContextCivilization? observingCiv)
     {
         var statsBreakdown = GetTileStatsBreakdown(city, observingCiv);
 
@@ -64,7 +65,7 @@ public class TileStatFunctions(Tile tile)
         return statsBreakdown.ToStats();
     }
 
-    public List<(string Cause, Stats Stats)> GetTileStatsBreakdown(IGameContextCity? city, IGameContextCivilization? observingCiv)
+    public List<(string Cause, Stats Stats)> GetTileStatsBreakdown(CityClass? city, IGameContextCivilization? observingCiv)
     {
         var gameContext = new GameContext(civInfo: observingCiv, city: city, tile: Tile);
         var listOfStats = GetTerrainStatsBreakdown(gameContext);
@@ -175,7 +176,7 @@ public class TileStatFunctions(Tile tile)
         return list;
     }
 
-    /// <summary>Gets basic stats to start off <see cref="GetTileStats(IGameContextCity?, IGameContextCivilization?)"/> or the start yield, independently mutable result</summary>
+    /// <summary>Gets basic stats to start off <see cref="GetTileStats(CityClass?, IGameContextCivilization?)"/> or the start yield, independently mutable result</summary>
     public List<(string Cause, Stats Stats)> GetTerrainStatsBreakdown(GameContext? gameContext = null)
     {
         gameContext ??= new GameContext();
@@ -203,7 +204,7 @@ public class TileStatFunctions(Tile tile)
     }
 
     // Only gets the tile percentage bonus, not the improvement percentage bonus
-    public Dictionary<TilePercentageCategory, Stats> GetTilePercentageStats(IGameContextCivilization? observingCiv, IGameContextCity? city)
+    public Dictionary<TilePercentageCategory, Stats> GetTilePercentageStats(IGameContextCivilization? observingCiv, CityClass? city)
     {
         var terrainStats = new Stats();
         var gameContext = new GameContext(civInfo: observingCiv, city: city, tile: Tile);
@@ -297,7 +298,7 @@ public class TileStatFunctions(Tile tile)
     public Stats GetStatDiffForImprovement(
         TileImprovementObject improvement,
         IGameContextCivilization observingCiv,
-        IGameContextCity? city,
+        CityClass? city,
         Stats? currentTileStats = null)
     {
         var currentStats = currentTileStats ?? GetTileStats(city, observingCiv);
@@ -315,7 +316,7 @@ public class TileStatFunctions(Tile tile)
     private Stats GetExtraImprovementStats(
         TileImprovementObject improvement,
         IGameContextCivilization observingCiv,
-        IGameContextCity? city)
+        CityClass? city)
     {
         var stats = new Stats();
 

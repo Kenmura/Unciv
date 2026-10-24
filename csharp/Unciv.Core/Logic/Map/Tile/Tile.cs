@@ -7,6 +7,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
+using CityClass = Unciv.Logic.City.City;
 using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 using MapGeneratorClass = Unciv.Logic.Map.MapGenerator.MapGenerator;
 using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
@@ -122,8 +123,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
 
     private bool isCityCenterInternal;
 
-    /// <summary>TODO(T115): retype to <c>City</c>.</summary>
-    public IGameContextCity? OwningCity { get; private set; }
+    public CityClass? OwningCity { get; private set; }
 
     private Terrain? baseTerrainObject;
 
@@ -303,7 +303,8 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         return null;
     }
 
-    public IGameContextCity? GetCity() => OwningCity;
+    public CityClass? GetCity() => OwningCity;
+    IGameContextCity? IGameContextTile.GetCity() => GetCity();
 
     internal Terrain GetNaturalWonder() =>
         NaturalWonder == null ? throw new InvalidOperationException("No natural wonder exists for this tile!")
@@ -461,9 +462,9 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         return uniques;
     }
 
-    public IGameContextCity? GetWorkingCity()
+    public CityClass? GetWorkingCity()
     {
-        var civInfo = GetOwner();
+        var civInfo = GetCity()?.Civ;
         if (civInfo == null) return null;
         if (OwningCity?.IsWorked(this) == true) return OwningCity; // common case
         return civInfo.Cities.FirstOrDefault(it => it != OwningCity && it.IsWorked(this));
@@ -513,7 +514,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     public bool IsLocked()
     {
         var workingCity = GetWorkingCity();
-        return workingCity != null && workingCity.IsTileLocked(Position);
+        return workingCity != null && workingCity.LockedTiles.Contains(Position);
     }
 
     public bool ProvidesResources(IGameContextCivilization civInfo)
@@ -881,7 +882,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         }
     }
 
-    public void SetOwningCity(IGameContextCity? city)
+    public void SetOwningCity(CityClass? city)
     {
         if (roadOwner != "" && roadOwnerObject == null)
             roadOwnerObject = TileMap.GameInfo.GetCivilization(roadOwner);
@@ -1206,7 +1207,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         }
 
         OwningCity?.ReassignPopulationDeferred();
-        OwningCity?.Civ.UpdateCivResources();
+        OwningCity?.Civ.Cache.UpdateCivResources();
     }
 
     private void ClearAllPathfindingCaches()

@@ -8,7 +8,6 @@ using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.Utils;
-using CityClass = Unciv.Logic.City.City;
 using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 
 namespace Unciv.View;
@@ -74,7 +73,7 @@ public class MapUnitView : ForeignMapUnitView
     /// <summary><c>true</c> if this unit stands in a non-puppet city of its own civ, so its promotions can be saved as the city's default.</summary>
     public bool CanSaveDefaultPromotions()
     {
-        var city = (CityClass?)Unit.CurrentTile.GetCity();
+        var city = Unit.CurrentTile.GetCity();
         if (city == null) return false;
         return city.Civ == Unit.Civ && !city.IsPuppet;
     }
@@ -232,7 +231,7 @@ public class MapUnitView : ForeignMapUnitView
     /// <summary>Remembers this unit's promotions as the default for new units of its type built in the city it stands in.</summary>
     public bool TrySaveDefaultPromotions()
     {
-        var city = (CityClass?)Unit.CurrentTile.GetCity();
+        var city = Unit.CurrentTile.GetCity();
         if (city == null) return false;
         city.UnitShouldUseSavedPromotion[Unit.BaseUnit.Name] = true;
         city.UnitToPromotions[Unit.BaseUnit.Name] = Unit.Promotions;

@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
+using Unciv.Core.Tests.Support;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
@@ -6,6 +7,7 @@ using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
+using Civilization = Unciv.Logic.Civilization.Civilization;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Logic.Map;
@@ -55,6 +57,15 @@ public partial class TileTests
         tile.SetTerrainTransients();
     }
 
+    private static (TestGame Game, TileMap Map) GameWithMap(int width = 5, int height = 5, string baseTerrain = "Grassland")
+    {
+        var game = new TestGame();
+        var map = TileMapOf(game.Ruleset, width, height, baseTerrain);
+        game.GameInfo.TileMap = map;
+        map.GameInfo = game.GameInfo;
+        return (game, map);
+    }
+
     private class TileCiv(string id, FakeGameInfo? gameInfo = null) : FakeCiv(id, gameInfo)
     {
         public HashSet<IGameContextCivilization> AtWarWith { get; } = [];
@@ -71,22 +82,6 @@ public partial class TileTests
         public override bool MatchesFilter(string filter, GameContext? state, bool multiFilter) => filter == CivId;
         public HashSet<TileClass> Viewable { get; } = [];
         public override bool IsTileViewable(TileClass tile) => Viewable.Contains(tile);
-    }
-
-    private sealed class TileCity(string id, TileCiv civ, HexCoord location) : FakeCity(id, civ)
-    {
-        public override string Name => "Rome";
-        public override HexCoord Location => location;
-        public HashSet<TileClass> Worked { get; } = [];
-        public override bool IsWorked(TileClass tile) => Worked.Contains(tile);
-        public TileClass? CenterTile { get; set; }
-        public override TileClass GetCenterTile() => CenterTile ?? throw new InvalidOperationException("CenterTile not set");
-        public override void ReassignPopulationDeferred() { }
-        public bool Locked { get; set; }
-        public override bool IsTileLocked(HexCoord position) => Locked;
-        public override bool IsCapital() => true;
-        public bool JustConquered { get; set; }
-        public override bool HasJustBeenConquered => JustConquered;
     }
 
     [Fact]
@@ -233,31 +228,32 @@ public partial class TileTests
     [Fact]
     public void ForestAndJungleAreRoads_NeedsNationFlagFeatureAndFriendlyTerritory()
     {
-        var map = TileMapOf(TileRuleset());
+        var (game, map) = GameWithMap(5, 5);
         var tile = map[HexCoord.Of(2, 2)];
         tile.AddTerrainFeature("Forest");
-        var civ = new TileCiv("A") { Forests = true };
+        var civ = game.AddCiv();
+        civ.Nation.ForestsAndJunglesAreRoads = true;
         Assert.False(tile.HasConnection(civ)); // not owned: not friendly
         Assert.Equal(RoadStatus.None, tile.GetConnectionStatus(civ));
-        var city = new TileCity("c", civ, HexCoord.Of(0, 0));
+        var city = game.AddCity(civ, map[HexCoord.Of(0, 0)]);
         tile.SetOwningCity(city);
         Assert.True(tile.HasConnection(civ));
         Assert.Equal(RoadStatus.Road, tile.GetConnectionStatus(civ));
         Assert.True(tile.HasRoadConnection(civ, true));
-        civ.Forests = false;
+        civ.Nation.ForestsAndJunglesAreRoads = false;
         Assert.False(tile.HasConnection(civ));
     }
 
     [Fact]
     public void SetOwningCity_SetsOwnerCityCenterAndRoadOwner()
     {
-        var map = TileMapOf(TileRuleset());
-        var civ = new TileCiv("A");
-        ((FakeGameInfo)map.GameInfo).Turns = 7;
-        var city = new TileCity("c", civ, HexCoord.Of(2, 2));
+        var (game, map) = GameWithMap(5, 5);
+        var civ = game.AddCiv();
+        civ.CivId = "A";
+        game.GameInfo.Turns = 7;
         var center = map[HexCoord.Of(2, 2)];
+        var city = game.AddCity(civ, center);
         var other = map[HexCoord.Of(2, 3)];
-        center.SetOwningCity(city);
         other.SetOwningCity(city);
         Assert.True(center.IsCityCenter());
         Assert.False(other.IsCityCenter());
@@ -550,23 +546,28 @@ public partial class TileTests
     [Fact]
     public void MatchesFilter_OwnershipFilters()
     {
-        var map = TileMapOf(TileRuleset());
+        var (game, map) = GameWithMap(5, 5);
         var tile = map[HexCoord.Of(2, 2)];
-        var owner = new TileCiv("A");
-        var visitor = new TileCiv("B");
-        tile.SetOwningCity(new TileCity("c", owner, HexCoord.Zero));
+        var owner = game.AddCiv();
+        owner.CivId = "A";
+        owner.Nation.Name = "A";
+        var visitor = game.AddCiv();
+        visitor.CivId = "B";
+        visitor.Nation.Name = "B";
+        var city = game.AddCity(owner, map[HexCoord.Of(0, 0)]);
+        tile.SetOwningCity(city);
         Assert.True(tile.MatchesFilter("your", owner));
         Assert.False(tile.MatchesFilter("your", visitor));
         Assert.False(tile.MatchesFilter("Unowned"));
         Assert.True(tile.MatchesFilter("Friendly", owner));
         Assert.False(tile.MatchesFilter("Foreign", owner));
-        Assert.True(tile.MatchesFilter("Foreign", visitor)); // owner.Friendly is false
-        owner.Friendly = true; // the owner's diplomacy with the visitor
+        Assert.True(tile.MatchesFilter("Foreign", visitor));
+        visitor.GetDiplomacyManagerOrMeet(owner).HasOpenBorders = true;
         Assert.True(tile.MatchesFilter("Friendly Land", visitor));
         Assert.False(tile.MatchesFilter("Enemy", visitor));
-        visitor.AtWarWith.Add(owner);
+        visitor.GetDiplomacyManagerOrMeet(owner).DeclareWar();
         Assert.True(tile.MatchesFilter("Enemy Land", visitor));
-        Assert.True(tile.MatchesFilter("A")); // falls through to the owner's filter match (the fake matches civ names)
+        Assert.True(tile.MatchesFilter("A")); // falls through to the owner's filter match
         Assert.False(tile.MatchesFilter("Z"));
     }
 
@@ -599,11 +600,10 @@ public partial class TileTests
     [Fact]
     public void CanBeSettled_RejectsWaterImpassableNearbyCitiesAndForeignTerritory()
     {
-        var map = TileMapOf(TileRuleset(), 9, 9);
-        var info = new SettleGameInfo();
-        map.GameInfo = info;
+        var (game, map) = GameWithMap(9, 9);
         var tile = map[HexCoord.Of(4, 4)];
-        var civ = new TileCiv("A");
+        var civ = game.AddCiv();
+        var other = game.AddCiv();
         Assert.True(tile.CanBeSettled(civ));
         SetBase(tile, "Coast");
         Assert.False(tile.CanBeSettled(civ));
@@ -613,22 +613,16 @@ public partial class TileTests
         Assert.True(tile.CanBeSettled(civ));
         // a city centre within minimalCityDistance (3) on the same continent
         var near = map[HexCoord.Of(5, 5)];
-        near.SetOwningCity(new TileCity("c", civ, near.Position));
+        var nearCity = game.AddCity(civ, near);
         Assert.False(tile.CanBeSettled(civ));
         // foreign territory: city further away, but its borders cover the tile
         var far = map[HexCoord.Of(0, 0)];
-        var other = new TileCiv("B");
-        far.SetOwningCity(new TileCity("d", other, far.Position));
+        var farCity = game.AddCity(other, far);
         near.SetOwningCity(null);
         Assert.True(tile.CanBeSettled(civ));
-        tile.SetOwningCity(new TileCity("d", other, far.Position));
+        tile.SetOwningCity(farCity);
         Assert.False(tile.CanBeSettled(civ));
         Assert.True(tile.CanBeSettled(other));
-    }
-
-    private sealed class SettleGameInfo : FakeGameInfo
-    {
-        public override Unciv.Models.ModConstants GetModConstants() => new();
     }
 
     [Fact]
@@ -768,36 +762,37 @@ public partial class TileTests
     [Fact]
     public void CanCivPassThrough_OwnerWarAndConquestRules()
     {
-        var map = TileMapOf(TileRuleset());
-        var owner = new TileCiv("A");
-        var visitor = new TileCiv("B");
+        var (game, map) = GameWithMap(5, 5);
+        var owner = game.AddCiv();
+        var visitor = game.AddCiv();
         var tile = map[HexCoord.Of(2, 3)];
         Assert.True(tile.CanCivPassThrough(visitor)); // unowned
-        var city = new TileCity("c", owner, HexCoord.Of(2, 2));
-        map[HexCoord.Of(2, 2)].SetOwningCity(city);
+        var city = game.AddCity(owner, map[HexCoord.Of(2, 2)]);
         tile.SetOwningCity(city);
         Assert.True(tile.CanCivPassThrough(owner));
         Assert.False(tile.CanCivPassThrough(visitor)); // foreign land: decided by CanPassThroughTiles
-        visitor.CanPassThrough = true;
+        visitor.GetDiplomacyManagerOrMeet(owner).HasOpenBorders = true;
         Assert.True(tile.CanCivPassThrough(visitor));
 
         var center = map[HexCoord.Of(2, 2)];
-        visitor.AtWarWith.Add(owner);
+        visitor.GetDiplomacyManagerOrMeet(owner).DeclareWar();
         Assert.False(center.CanCivPassThrough(visitor)); // an enemy city centre blocks even with open borders
-        city.JustConquered = true;
+        city.HasJustBeenConquered = true;
         Assert.True(center.CanCivPassThrough(visitor));
     }
 
     [Fact]
     public void WorkingCityIsLockedAndProvidesYield()
     {
-        var ruleset = TileRuleset();
-        ruleset.TileImprovements["Farm"].Uniques = ["Tile provides yield without assigned population"];
-        var map = TileMapOf(ruleset);
-        var civ = new TileCiv("A");
-        var owning = new TileCity("c1", civ, HexCoord.Of(0, 0));
-        var other = new TileCity("c2", civ, HexCoord.Of(4, 4));
-        civ.FakeCities.AddRange([owning, other]);
+        var (game, map) = GameWithMap(5, 5);
+        game.Ruleset.TileImprovements["Farm"] = new TileImprovement
+        {
+            Name = "Farm",
+            Uniques = ["Tile provides yield without assigned population"]
+        };
+        var civ = game.AddCiv();
+        var owning = game.AddCity(civ, map[HexCoord.Of(0, 0)]);
+        var other = game.AddCity(civ, map[HexCoord.Of(4, 4)]);
         var tile = map[HexCoord.Of(2, 2)];
         Assert.Null(tile.GetWorkingCity()); // no owner
         Assert.False(tile.ProvidesYield()); // no city
@@ -807,14 +802,14 @@ public partial class TileTests
         Assert.False(tile.IsLocked());
         Assert.False(tile.ProvidesYield());
 
-        other.Worked.Add(tile); // worked by a different city of the same civ
+        other.WorkedTiles.Add(tile.Position); // worked by a different city of the same civ
         Assert.Same(other, tile.GetWorkingCity());
         Assert.True(tile.IsWorked());
         Assert.True(tile.ProvidesYield());
-        owning.Worked.Add(tile);
+        owning.WorkedTiles.Add(tile.Position);
         Assert.Same(owning, tile.GetWorkingCity()); // the owning city is checked first
-        other.Worked.Clear();
-        owning.Worked.Clear();
+        other.WorkedTiles.Clear();
+        owning.WorkedTiles.Clear();
 
         tile.SetImprovementBasic("Farm");
         Assert.True(tile.ProvidesYield()); // improvement unique, unworked
@@ -824,28 +819,32 @@ public partial class TileTests
         tile.SetImprovementBasic("Road");
         Assert.False(tile.ProvidesYield());
 
-        owning.Worked.Add(tile);
+        owning.WorkedTiles.Add(tile.Position);
         Assert.False(tile.IsLocked());
-        owning.Locked = true;
+        owning.LockedTiles.Add(tile.Position);
         Assert.True(tile.IsLocked());
         Assert.False(map[HexCoord.Of(0, 0)].IsLocked()); // not worked, not locked
         var centerTile = map[HexCoord.Of(0, 0)];
-        centerTile.SetOwningCity(owning);
         Assert.True(centerTile.ProvidesYield()); // city centres always provide yield
     }
 
     [Fact]
     public void ProvidesResources_CityCentreImprovementAndGreatImprovementRules()
     {
-        var ruleset = TileRuleset();
+        var game = new TestGame();
+        var ruleset = game.Ruleset;
         ruleset.TileResources["Iron"].ImprovedBy = ["Mine"];
+        ruleset.TileResources["Iron"].RevealedBy = null;
         ruleset.TileResources["Wheat"].ImprovedBy = ["Farm"];
         ruleset.TileImprovements["Mine"] = new TileImprovement { Name = "Mine", TurnsToBuild = 5, TechRequired = "Mining" };
-        ruleset.TileImprovements["Farm"].TurnsToBuild = 3;
+        ruleset.TileImprovements["Farm"] = new TileImprovement { Name = "Farm", TurnsToBuild = 3 };
         ruleset.TileImprovements["Fort"] = new TileImprovement { Name = "Fort", Uniques = ["Great Improvement"] };
         foreach (var resource in ruleset.TileResources.Values) resource.SetTransients(ruleset);
-        var map = TileMapOf(ruleset);
-        var civ = new TileCiv("A");
+        var map = TileMapOf(ruleset, 5, 5);
+        game.GameInfo.TileMap = map;
+        map.GameInfo = game.GameInfo;
+        var civ = game.AddCiv();
+        civ.Tech.TechsResearched.Clear();
         var tile = map[HexCoord.Of(2, 2)];
 
         Assert.False(tile.ProvidesResources(civ)); // no resource (CanSeeResource is false)
@@ -865,31 +864,39 @@ public partial class TileTests
         tile.SetTileResource("Iron");
         tile.SetImprovementBasic("Mine");
         Assert.False(tile.ProvidesResources(civ)); // tech missing
-        civ.ResearchedTechs.Add("Mining");
+        civ.Tech.TechsResearched.Add("Mining");
         Assert.True(tile.ProvidesResources(civ));
 
         // City centre: needs a buildable improvement whose tech is known
         var centre = map[HexCoord.Of(1, 1)];
-        centre.SetOwningCity(new TileCity("c", civ, HexCoord.Of(1, 1)));
+        game.AddCity(civ, centre);
         centre.SetTileResource("Iron");
-        civ.ResearchedTechs.Clear();
+        civ.Tech.TechsResearched.Clear();
         Assert.False(centre.ProvidesResources(civ));
-        civ.ResearchedTechs.Add("Mining");
+        civ.Tech.TechsResearched.Add("Mining");
         Assert.True(centre.ProvidesResources(civ));
         ruleset.TileImprovements["Mine"].TurnsToBuild = -1; // only 'placeable', not buildable by workers
         Assert.False(centre.ProvidesResources(civ));
     }
 
-    private static (TileMap Map, TileCiv Civ, TileCity City) ProductionBonusScenario(string bonusUnique)
+    private static (TestGame Game, Civilization Civ, CityObject City) ProductionBonusScenario(string bonusUnique)
     {
-        var ruleset = TileRuleset();
-        ruleset.Terrains["Forest"].Uniques = ["Rough terrain", bonusUnique];
-        ruleset.TileImprovements["Remove Forest"] = new TileImprovement { Name = "Remove Forest" };
-        var map = TileMapOf(ruleset, 9, 9);
-        var civ = new TileCiv("A", (FakeGameInfo)map.GameInfo);
-        var city = new TileCity("c", civ, HexCoord.Of(2, 2)) { CenterTile = map[HexCoord.Of(2, 2)] };
-        civ.FakeCities.Add(city);
-        return (map, civ, city);
+        var (game, map) = GameWithMap(10, 10);
+        game.GameInfo.Speed.Modifier = 1f;
+        game.Ruleset.Terrains["Forest"] = new Terrain
+        {
+            Name = "Forest",
+            Type = TerrainType.TerrainFeature,
+            Uniques = ["Rough terrain", bonusUnique]
+        };
+        game.Ruleset.TileImprovements["Remove Forest"] = new TileImprovement { Name = "Remove Forest" };
+        var civ = game.AddCiv(isPlayer: true);
+        civ.CivId = "A";
+        civ.Nation.Name = "A";
+        var city = game.AddCity(civ, map[HexCoord.Of(2, 2)]);
+        city.Name = "Rome";
+        civ.Notifications.Clear();
+        return (game, civ, city);
     }
 
     private static TileClass ForestAt(TileMap map, int x, int y)
@@ -902,56 +909,58 @@ public partial class TileTests
     [Fact]
     public void RemovingFeature_ProductionBonusGoesToClosestCityScaledByDistanceAndOwnership()
     {
-        var (map, civ, city) = ProductionBonusScenario("Provides a one-time bonus of [+10 Production] to the closest city when cut down");
+        var (game, civ, city) = ProductionBonusScenario("Provides a one-time bonus of [+10 Production] to the closest city when cut down");
+        var map = game.TileMap;
         var adjacentUnowned = ForestAt(map, 2, 3);
+        adjacentUnowned.SetOwningCity(null);
         adjacentUnowned.SetImprovement("Remove Forest", civ);
         Assert.Empty(adjacentUnowned.TerrainFeatures);
-        Assert.Equal(6, city.AddedStats[Unciv.Models.StatTypes.Stat.Production]); // 10 * 2/3 for foreign or unowned land, truncated
+        Assert.Equal(6, city.CityConstructions.ProductionOverflow); // 10 * 2/3 for foreign or unowned land, truncated
         Assert.Single(civ.Notifications);
         Assert.Contains("Clearing a [Forest]", civ.Notifications[0].Text);
         Assert.Contains("[Rome]", civ.Notifications[0].Text);
 
-        city.AddedStats.Clear();
+        city.CityConstructions.ProductionOverflow = 0;
         var ownedAdjacent = ForestAt(map, 3, 2);
         ownedAdjacent.SetOwningCity(city);
         ownedAdjacent.SetImprovement("Remove Forest", civ);
-        Assert.Equal(10, city.AddedStats[Unciv.Models.StatTypes.Stat.Production]); // distance 1, own tile: full
+        Assert.Equal(10, city.CityConstructions.ProductionOverflow); // distance 1, own tile: full
 
-        city.AddedStats.Clear();
+        city.CityConstructions.ProductionOverflow = 0;
         var ownedFar = ForestAt(map, 2, 5); // distance 3: (6-3)/4 = 0.75
         ownedFar.SetOwningCity(city);
         ownedFar.SetImprovement("Remove Forest", civ);
-        Assert.Equal(7, city.AddedStats[Unciv.Models.StatTypes.Stat.Production]); // 7.5 truncated
+        Assert.Equal(7, city.CityConstructions.ProductionOverflow); // 7.5 truncated
 
-        city.AddedStats.Clear();
+        city.CityConstructions.ProductionOverflow = 0;
         var tooFar = ForestAt(map, 2, 8); // distance 6 > 5
         tooFar.SetOwningCity(city);
         tooFar.SetImprovement("Remove Forest", civ);
-        Assert.Empty(city.AddedStats);
+        Assert.Equal(0, city.CityConstructions.ProductionOverflow);
     }
 
     [Fact]
     public void RemovingFeature_NoBonusWithoutCivOrUnique()
     {
-        var (map, civ, city) = ProductionBonusScenario("Provides a one-time bonus of [+10 Production] to the closest city when cut down");
-        var tile = ForestAt(map, 2, 3);
+        var (game, civ, city) = ProductionBonusScenario("Provides a one-time bonus of [+10 Production] to the closest city when cut down");
+        var tile = ForestAt(game.TileMap, 2, 3);
         tile.SetImprovement("Remove Forest"); // no civ: no broader effects
-        Assert.Empty(city.AddedStats);
+        Assert.Equal(0, city.CityConstructions.ProductionOverflow);
 
-        var (map2, civ2, city2) = ProductionBonusScenario("Rough terrain");
-        ForestAt(map2, 2, 3).SetImprovement("Remove Forest", civ2);
-        Assert.Empty(city2.AddedStats);
-        Assert.Empty(civ.Notifications);
+        var (game2, civ2, city2) = ProductionBonusScenario("Rough terrain");
+        ForestAt(game2.TileMap, 2, 3).SetImprovement("Remove Forest", civ2);
+        Assert.Equal(0, city2.CityConstructions.ProductionOverflow);
+        Assert.Empty(civ2.Notifications);
     }
 
     [Fact]
     public void RemovingFeature_ProductionBonusAppliesGameSpeedModifier()
     {
-        var (map, civ, city) = ProductionBonusScenario("Provides a one-time bonus of [+10 Production] to the closest city when cut down <(modified by game speed)>");
-        ((FakeGameInfo)map.GameInfo).FakeSpeedData.Modifier = 1.5f;
-        ForestAt(map, 3, 2).SetOwningCity(city);
-        map[HexCoord.Of(3, 2)].SetImprovement("Remove Forest", civ);
-        Assert.Equal(15, city.AddedStats[Unciv.Models.StatTypes.Stat.Production]);
+        var (game, civ, city) = ProductionBonusScenario("Provides a one-time bonus of [+10 Production] to the closest city when cut down <(modified by game speed)>");
+        game.GameInfo.Speed.Modifier = 1.5f;
+        ForestAt(game.TileMap, 3, 2).SetOwningCity(city);
+        game.TileMap[HexCoord.Of(3, 2)].SetImprovement("Remove Forest", civ);
+        Assert.Equal(15, city.CityConstructions.ProductionOverflow);
     }
 
     [Fact]

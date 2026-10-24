@@ -8,6 +8,7 @@ using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
+using City = Unciv.Logic.City.City;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 
 namespace Unciv.Core.Tests.Logic.Diplomacy;
@@ -878,13 +879,6 @@ public class DiplomacyCoreTests
         public override void TeleportToClosestMoveableTile() => Teleports++;
     }
 
-    private sealed class OwnerCity(Civilization owner) : FakeCity("owner", new FakeCiv("dummy"))
-    {
-        public override IGameContextCivilization Civ => owner;
-        public override string Name => "Owned";
-        public override HexCoord Location => HexCoord.Of(99, 99);
-    }
-
     private static (MapUnit Unit, TeleportingMovement Movement) UnitOn(Civilization? tileOwner)
     {
         var tile = new Unciv.Logic.Map.Tiles.Tile { Position = HexCoord.Of(0, 0), BaseTerrain = "Grassland" };
@@ -893,7 +887,7 @@ public class DiplomacyCoreTests
         var ruleset = new Ruleset();
         ruleset.Terrains.Put("Grassland", new Unciv.Models.Ruleset.Tile.Terrain { Name = "Grassland", Type = Unciv.Models.Ruleset.Tile.TerrainType.Land });
         map.SetTransients(ruleset);
-        if (tileOwner != null) tile.SetOwningCity(new OwnerCity(tileOwner));
+        if (tileOwner != null) tile.SetOwningCity(new City { Civ = tileOwner, Name = "Owned", Location = HexCoord.Of(99, 99) });
         var unit = new MapUnit { CurrentTile = tile };
         var movement = new TeleportingMovement(unit);
         unit.Movement = movement;

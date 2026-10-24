@@ -49,7 +49,7 @@ public static class UniqueTriggerActivation
         // Kotlin default parameter: tile = city?.getCenterTile() ?: unit?.currentTile (C# cannot tell an explicit null from "not given")
         tile ??= city?.GetCenterTile() ?? unit?.CurrentTile;
 
-        var relevantCityLazy = new KotlinLazy<CityObject?>(() => city ?? tile?.GetCity() as CityObject);
+        var relevantCityLazy = new KotlinLazy<CityObject?>(() => city ?? tile?.GetCity());
         CityObject? RelevantCity() => relevantCityLazy.Value;
         IEnumerable<CityObject> GetApplicableCities(string cityFilter) =>
             cityFilter == "in this city"
@@ -1426,7 +1426,7 @@ public static class UniqueTriggerActivation
 
                     var citiesWithAdjacentTiles = tilesToTakeOver
                         .SelectMany(it => it.Neighbors.Append(it))
-                        .Select(it => it.OwningCity as CityObject)
+                        .Select(it => it.OwningCity)
                         .OfType<CityObject>()
                         .Where(it => it.Civ == civInfo)
                         .Distinct()

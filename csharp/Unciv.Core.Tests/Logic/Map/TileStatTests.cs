@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
+using Unciv.Core.Tests.Support;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
@@ -6,6 +7,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using CityObject = Unciv.Logic.City.City;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
@@ -99,15 +101,7 @@ public class TileStatTests
         public override IEnumerable<TileImprovement> UniqueImprovements => Replacements;
     }
 
-    private sealed class StatCity(string id, StatCiv civ, TileClass center) : FakeCity(id, civ)
-    {
-        public override string Name => "Rome";
-        public override HexCoord Location => center.Position;
-        public override TileClass GetCenterTile() => center;
-        public override void ReassignPopulationDeferred() { }
-    }
-
-    private static Stats Yield(TileClass tile, StatCiv? civ = null, StatCity? city = null) => tile.Stats.GetTileStats(city, civ);
+    private static Stats Yield(TileClass tile, IGameContextCivilization? civ = null, CityObject? city = null) => tile.Stats.GetTileStats(city, civ);
 
     // ---- TileStatFunctions ----
 
@@ -213,11 +207,11 @@ public class TileStatTests
     [Fact]
     public void CityCenterGetsTheDefaultMinimum()
     {
-        var map = MapOf(MakeRuleset(), "Mountain");
-        var tile = CenterTile(map);
-        var civ = new StatCiv("Rome", map.GameInfo as FakeGameInfo);
-        var city = new StatCity("c", civ, tile);
-        tile.SetOwningCity(city);
+        var game = new TestGame();
+        game.MakeRectangularMap(5, 5, "Mountain");
+        var tile = game.GetTile(2, 2);
+        var civ = game.AddCiv();
+        var city = game.AddCity(civ, tile);
         var stats = Yield(tile, civ, city);
         Assert.Equal(2f, stats.Food);
         Assert.Equal(1f, stats.Production);
@@ -226,11 +220,16 @@ public class TileStatTests
     [Fact]
     public void EnsureMinimumStatsUniqueOverridesTheDefaultMinimum()
     {
-        var map = MapOf(MakeRuleset());
-        var tile = CenterTile(map);
-        var civ = new StatCiv("Rome", map.GameInfo as FakeGameInfo);
-        var city = new StatCity("c", civ, tile);
-        tile.SetOwningCity(city);
+        var game = new TestGame();
+        game.Ruleset.TileImprovements["City center"] = new TileImprovement
+        {
+            Name = "City center",
+            Uniques = ["Ensures a minimum tile yield of [+3 Gold]", "Irremovable"]
+        };
+        game.MakeRectangularMap(5, 5, "Grassland");
+        var tile = game.GetTile(2, 2);
+        var civ = game.AddCiv();
+        var city = game.AddCity(civ, tile);
         tile.SetImprovementBasic("City center");
         var stats = Yield(tile, civ, city);
         Assert.Equal(2f, stats.Food);
@@ -261,16 +260,17 @@ public class TileStatTests
     [Fact]
     public void StatsFromTilesUniqueOfTheCityIsAddedToMatchingTerrain()
     {
-        var map = MapOf(MakeRuleset());
-        var tile = CenterTile(map);
-        var civ = new StatCiv("Rome", map.GameInfo as FakeGameInfo);
-        var city = new StatCity("c", civ, map[HexCoord.Of(0, 0)]);
-        city.LocalUniques.Add(new UniqueObject("[+1 Culture] from [Grassland] tiles [in this city]"));
-        city.CityFilters.Add("in this city");
+        var game = new TestGame();
+        game.MakeRectangularMap(5, 5, "Grassland");
+        var tile = game.GetTile(2, 2);
+        var civ = game.AddCiv();
+        var city = game.AddCity(civ, game.GetTile(0, 0));
+        var building = game.CreateBuilding("[+1 Culture] from [Grassland] tiles [in this city]");
+        city.CityConstructions.AddBuilding(building);
         var stats = Yield(tile, civ, city);
         Assert.Equal(1f, stats.Culture);
         var names = tile.Stats.GetTileStatsBreakdown(city, civ).Select(it => it.Cause).ToList();
-        Assert.Contains("{null} ({[+1 Culture] from [Grassland] tiles [in this city]})", names);
+        Assert.Contains($"{{{building.Name}}} ({{[+1 Culture] from [Grassland] tiles [in this city]}})", names);
     }
 
     [Fact]
@@ -453,15 +453,18 @@ public class TileStatTests
     [Fact]
     public void SetImprovement_BroaderEffectsUpdateTheOwningCity()
     {
-        var map = MapOf(MakeRuleset());
-        var tile = CenterTile(map);
-        var civ = new StatCiv("Rome", (FakeGameInfo)map.GameInfo);
-        var city = new StatCity("c", civ, map[HexCoord.Of(0, 0)]);
+        var game = new TestGame();
+        game.MakeRectangularMap(5, 5, "Grassland");
+        var tile = game.GetTile(2, 2);
+        var civ = game.AddCiv();
+        var city = game.AddCity(civ, game.GetTile(0, 0));
+        var fakeStats = new FakeCityStats(city);
+        city.CityStats = fakeStats;
         tile.SetOwningCity(city);
         tile.SetImprovement("Farm");
-        Assert.Equal(0, city.CityStatsUpdates);
+        Assert.Equal(0, fakeStats.UpdateCalls);
         tile.SetImprovement("Farm", civ);
-        Assert.Equal(1, city.CityStatsUpdates);
+        Assert.Equal(1, fakeStats.UpdateCalls);
     }
 
     [Fact]

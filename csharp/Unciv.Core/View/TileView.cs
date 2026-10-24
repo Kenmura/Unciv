@@ -46,20 +46,20 @@ public class TileView : View<Tile>
 
     public ForeignCityView? OwningCity()
     {
-        var city = (CityClass?)tile.OwningCity;
+        var city = tile.OwningCity;
         return city == null ? null : ToForeignCityView(city);
     }
 
     /// <summary>The city whose center is this tile, if any</summary>
     public ForeignCityView? GetCity()
     {
-        var city = (CityClass?)tile.GetCity();
+        var city = tile.GetCity();
         return city == null ? null : ToForeignCityView(city);
     }
 
     public ForeignCityView? GetWorkingCity()
     {
-        var city = (CityClass?)tile.GetWorkingCity();
+        var city = tile.GetWorkingCity();
         return city == null ? null : ToForeignCityView(city);
     }
 
@@ -116,7 +116,7 @@ public class TileView : View<Tile>
         var gameView = TileMapView.GameView;
         if (gameView == null) return null;
         if (tile.IsCityCenter())
-            return gameView.GetForeignCityView(((CityClass?)tile.GetCity()).NotNull()).AsCombatant();
+            return gameView.GetForeignCityView(tile.GetCity().NotNull()).AsCombatant();
 
         var militaryUnit = tile.MilitaryUnit;
         if (militaryUnit != null && IsVisible(militaryUnit))
