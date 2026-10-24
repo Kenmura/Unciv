@@ -332,13 +332,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Large (mapregions, resourceplacement, rivers, elevation, landmass). Split into sub-tickets at claim time if >1.5k LOC. Same seed must reproduce Kotlin maps: add golden maps generated from Kotlin.
 
 ### T042 OdMap import/export
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T039
 - Source: core/src/com/unciv/logic/map/OdMapExport.kt, OdMapImport.kt, OdTerrain.kt
 - Fixtures: tests/src/com/unciv/logic/OdMapExportTests.kt, tests/src/com/unciv/logic/OdMapImportTests.kt
 - Deliverables: csharp/Unciv.Core/Logic/Map/OdMap*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~OdMap`
-- Claimed:
+- Claimed: 2026-10-24T10:24Z
 - Notes: Platform file IO behind an interface.
 
 ### T043 Record Won't-port scope
