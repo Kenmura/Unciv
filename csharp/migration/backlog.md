@@ -531,7 +531,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T060: City.Population/Expansion/Religion are lateinit-style properties typed ICityPopulationManager/ICityExpansionManager/ICityReligionManager (CitySeams.cs, CivilizationSeams.cs). Implement them, retype the City properties and replace the lateinit by Kotlin's initializers, drop seam-only members (e.g. ICityPopulationManager.City/GetPopulationFilterAmount stay as real members). City.ResetSpecialistsControl takes the UncivGame settings as parameters (autoAssignSpecialistsInNewCities, localUserId); CityFounder passes them. Civilization.addCity (TODO(T061) in Civilization.cs) is yours too.
 
 ### T062 CityStats and GreatPersonPointsBreakdown
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T060, T058
 - Source: core/src/com/unciv/logic/city/CityStats.kt, GreatPersonPointsBreakdown.kt
 - Fixtures: stat-related cases in tests/src/com/unciv/logic/city/CityTest.kt (TestGame-based: T072)
@@ -1242,6 +1242,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Policy/MutableStaticStateAllowlist.cs entries tagged (T123) removed by converting to instance/injected state or frozen collections; non-parallel xUnit collection for Log/EventBus tests
 - Gate: dotnet test --filter FullyQualifiedName~MutableStaticStateTests
+- Claimed:
+- Notes:
+
+### T124 Hardening: CityStats test coverage gaps from T062 review
+- State: Available
+- Depends: T062
+- Source: csharp/Unciv.Core/Logic/City/CityStats.cs, GreatPersonPointsBreakdown.cs
+- Fixtures: none
+- Deliverables: tests in CityStatsTests.cs for NullifiesStat distinct, trade routes, GetGrowthBonus + We Love The King Day, StatPercentBonus by construction type, UpdateTileStats, GreatPersonBoostWithFriendship and GreatPersonEarnedFaster (uses TestGame once T072 lands)
+- Gate: dotnet test --filter FullyQualifiedName~CityStatsTests
 - Claimed:
 - Notes:
 

@@ -66,7 +66,6 @@ flowchart TD
     T092["T092<br/>Worker and road automation: WorkerAutomation, RoadBetweenCit..."]
     T093["T093<br/>PathingMap: PathingMap, PathingMapCache, PathingMapAStarPath..."]
     T094["T094<br/>NextTurnAutomation and BarbarianAutomation (automation integ..."]
-    T095["T095<br/>Civilopedia text model A: FormattedLine, ICivilopediaText, C..."]
     T096["T096<br/>Civilopedia text model B: Building, Improvement, Resource, T..."]
     T097["T097<br/>Civilopedia text model C: BaseUnit, Nation, Technology descr..."]
     T098["T098<br/>Save/load A: FileConversions, MapSaver, IMediaFinder"]
@@ -87,6 +86,7 @@ flowchart TD
     T121["T121<br/>Policy: coupling ratchet - cap distinct Unciv namespaces imp..."]
     T122["T122<br/>Policy: coverage reporting and ratchet for changed files (co..."]
     T123["T123<br/>Policy follow-up: eliminate allowlisted mutable statics (Eve..."]
+    T124["T124<br/>Hardening: CityStats test coverage gaps from T062 review"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -136,8 +136,6 @@ flowchart TD
   T066 --> T052
   T068 --> T052
   T070 --> T052
-  T060 --> T063
-  T062 --> T063
   T060 --> T064
   T061 --> T064
   T063 --> T064
@@ -236,12 +234,6 @@ flowchart TD
   T078 --> T094
   T083 --> T094
   T035 --> T094
-  T095 --> T096
-  T062 --> T096
-  T054 --> T096
-  T095 --> T097
-  T062 --> T097
-  T057 --> T097
   T041 --> T099
   T046 --> T099
   T061 --> T099
@@ -351,8 +343,8 @@ flowchart TD
   class T059 done
   class T060 done
   class T061 prog
-  class T062 review
-  class T063 ondeck
+  class T062 done
+  class T063 ready
   class T064 waiting
   class T065 prog
   class T066 ondeck
@@ -379,9 +371,8 @@ flowchart TD
   class T092 waiting
   class T093 waiting
   class T094 waiting
-  class T095 done
-  class T096 ondeck
-  class T097 ondeck
+  class T096 ready
+  class T097 ready
   class T098 done
   class T099 waiting
   class T100 waiting
@@ -400,27 +391,28 @@ flowchart TD
   class T121 ready
   class T122 ready
   class T123 ready
+  class T124 ready
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T063 | **Ready to start** | T060, T062 | 36 | CityConstructions |
+| T097 | **Ready to start** | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
+| T096 | **Ready to start** | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T118 | **Ready to start** | none | 0 | Policy: marker check - every TODO(T###) names an open ticket, every NotSupported/NotImplemented seam has an owner |
 | T120 | **Ready to start** | none | 0 | Policy: size ratchet - maximum file length and method length with a shrink-only baseline |
 | T121 | **Ready to start** | none | 0 | Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline |
 | T122 | **Ready to start** | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
+| T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
 | T066 | **On deck** (after T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
-| T063 | **On deck** (after T062) | T060, T062 | 36 | CityConstructions |
 | T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
-| T097 | **On deck** (after T062) | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
-| T096 | **On deck** (after T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T065 | In-Progress [Claude] | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
 | T061 | In-Progress [Claude] | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
-| T062 | Needs-Review [Claude] | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T064 | Available (waiting on T061, T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T068 | Available (waiting on T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
@@ -428,9 +420,9 @@ flowchart TD
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T035 | Available (waiting on T046, T061, T065) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T052 | Available (waiting on T046, T061, T063, T064, T065, T066, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
-| T081 | Available (waiting on T065, T067, T062, T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
+| T081 | Available (waiting on T065, T067, T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T084 | Available (waiting on T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
-| T085 | Available (waiting on T084, T081, T062, T063, T066, T067) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
+| T085 | Available (waiting on T084, T081, T063, T066, T067) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T079 | Available (waiting on T052, T063, T066, T067) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T086 | Available (waiting on T068) | T059, T068, T057 | 14 | TradeLogic |
 | T087 | Available (waiting on T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
@@ -447,7 +439,7 @@ flowchart TD
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| T072 | Available (waiting on T035, T052, T062, T063, T064, T067, T068, T069, T071) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
+| T072 | Available (waiting on T035, T052, T063, T064, T067, T068, T069, T071) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | T094 | Available (waiting on T088, T090, T091, T092, T078, T083, T035) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | T101 | Available (waiting on T099, T094, T071) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
@@ -455,7 +447,7 @@ flowchart TD
 | T093 | Available (waiting on T067, T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
-| T106 | Available (waiting on T063, T066, T052, T062) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
+| T106 | Available (waiting on T063, T066, T052) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
