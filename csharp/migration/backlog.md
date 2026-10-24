@@ -369,7 +369,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified `LocaleCode`, `BaseRuleset`, `Player`, `PlayerType`, `GameParameters`, `ModCategory`, `Constants`, `LinkedHashSet`, and `MetadataTests` against Kotlin sources: all 54 `LocaleCode` entries and OpenJDK 17+ `in` -> `id` fastlane folder mapping, `GameParameters` JSON field order and `ShowCivilizationStatsRaw` vs `ShowCivilizationStats` setter/fallback semantics, `Clone()` godMode reset, `ToString()` 6-mod limit, `ModCategory` topic-only equality/JVM hash, and `LinkedHashSet` insertion order + set equality. Re-ran Gate (`~MetadataTests`, 15/15 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
 
 ### T045 GameSetupInfo
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T021, T022
 - Source: core/src/com/unciv/models/metadata/GameSetupInfo.kt
 - Fixtures: none - generate golden values by running the Kotlin class
@@ -377,6 +377,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~GameSetupInfo`
 - Claimed: 2026-10-24T01:58:26Z
 - Notes: Container of `GameParameters` and `MapParameters` with the two cloning constructors (from another setup; from a `GameInfo` when that exists: leave that constructor as `TODO(T0xx)` pointing at the GameInfo ticket). `mapFile` (FileHandle, transient) and `fromSettings` (reads `UncivGame.Current.settings.lastGameSetup`, applies QuickStart defaults: `shape = rectangular`, `worldWrap = true`, `espionageEnabled = true`) are client concerns; port the default-setup branch as a plain factory taking an optional difficulty if it is useful to headless tests.
+  - Implementer notes (Antigravity): Ported `GameSetupInfo` in `Unciv.Models.Metadata`:
+    - Properties `GameParameters`, `MapParameters`, transient `MapFile` (marked `[JsonIgnore]`).
+    - Copy constructor and `Clone()` performing deep clones of both parameter sets.
+    - `CreateDefault(defaultDifficulty)` implementing the QuickStart defaults from upstream `fromSettings` (`shape = Rectangular`, `worldWrap = true`, `espionageEnabled = true`, optional difficulty override).
+    - Note added for constructor taking `GameInfo` once `GameInfo` is ported.
+    - 8 unit tests in `GameSetupInfoTests` covering constructors, deep cloning, `CreateDefault`, JSON serialization, and Kotlin-style JSON deserialization.
+    - Ran Gate (8/8 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 548/548 passed).
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
 - State: Done
