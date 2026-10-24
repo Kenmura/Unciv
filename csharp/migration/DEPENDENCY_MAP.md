@@ -81,7 +81,6 @@ flowchart TD
     T110["T110<br/>Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)"]
     T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
     T115["T115<br/>Retype Tile city seams to City and move the Tile/Pathfinding..."]
-    T117["T117<br/>Policy: reflection test forbidding mutable static state in U..."]
     T118["T118<br/>Policy: marker check - every TODO(T###) names an open ticket..."]
     T119["T119<br/>Policy: forbid unchecked null-forgiving '!' (Kotlin !! throw..."]
     T120["T120<br/>Policy: size ratchet - maximum file length and method length..."]
@@ -286,7 +285,6 @@ flowchart TD
   T065 --> T111
   T060 --> T115
   T035 --> T115
-  T117 --> T123
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -396,13 +394,12 @@ flowchart TD
   class T110 ondeck
   class T111 waiting
   class T115 waiting
-  class T117 review
   class T118 ready
   class T119 prog
   class T120 ready
   class T121 ready
   class T122 ready
-  class T123 ondeck
+  class T123 ready
 ```
 
 ## Incomplete tickets
@@ -413,13 +410,13 @@ flowchart TD
 | T120 | **Ready to start** | none | 0 | Policy: size ratchet - maximum file length and method length with a shrink-only baseline |
 | T121 | **Ready to start** | none | 0 | Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline |
 | T122 | **Ready to start** | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
+| T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T066 | **On deck** (after T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T063 | **On deck** (after T062) | T060, T062 | 36 | CityConstructions |
 | T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T097 | **On deck** (after T062) | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
 | T096 | **On deck** (after T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
-| T123 | **On deck** (after T117) | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T065 | In-Progress [Claude] | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
 | T061 | In-Progress [Claude] | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
@@ -459,7 +456,6 @@ flowchart TD
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052, T062) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
-| T117 | Needs-Review [Claude] | none | 1 | Policy: reflection test forbidding mutable static state in Unciv.Core |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |

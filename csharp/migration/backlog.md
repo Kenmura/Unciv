@@ -1163,7 +1163,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - KotlinLazy<T> (Unciv.Utils): Kotlin SYNCHRONIZED lazy port (lock, volatile flag, retry on exception, initializer released after success, null results cached). Bans T:System.Lazy`1 and System.Threading.LazyInitializer in BannedSymbols.txt (verified RS0030 fires). All 45 'new Lazy<' sites migrated mechanically (Civilization's PublicationOnly arg dropped: Kotlin source uses default by lazy = SYNCHRONIZED). Tests: KotlinLazyTests (cache, retry, null, concurrency). Standard checks pass.
 
 ### T117 Policy: reflection test forbidding mutable static state in Unciv.Core
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
