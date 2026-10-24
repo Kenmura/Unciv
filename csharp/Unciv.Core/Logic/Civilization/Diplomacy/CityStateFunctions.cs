@@ -20,7 +20,7 @@ namespace Unciv.Logic.Civilization.Diplomacy;
 // - NextTurnAutomation.getForeignCityNearCapital (giveGreatPersonToPatron, giveMilitaryUnitToPatron): CityStateSeams.GetForeignCityNearCapital, TODO(T094).
 // - CityCombatant(capital).getDefendingStrength() (getTributeModifiers): CityStateSeams.GetCityDefendingStrength, TODO(T081).
 // - The QuestManager calls (influenceGainedByGift, receiveGoldGift, getTributeModifiers' callers, cityStateBullied, cityStateAttacked,
-//   makeOtherCityStatesWaryOfAttacker, cityStateDestroyed) go through the IQuestManager members that T068 added; T069 implements them.
+//   makeOtherCityStatesWaryOfAttacker, cityStateDestroyed) go through the QuestManager members (T069).
 // - Kotlin `Random(seed)` is GameRandom, `Sequence`s that are only iterated are IEnumerable.
 
 public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions

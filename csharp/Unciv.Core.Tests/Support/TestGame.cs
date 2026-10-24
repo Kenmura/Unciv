@@ -172,7 +172,6 @@ public sealed class TestGame
         if (isPlayer) civInfo.PlayerType = PlayerType.Human;
         civInfo.Cache.UpdateState();
         GameInfo.Civilizations.Add(civInfo);
-        WireUnportedManagers(civInfo);
         civInfo.SetTransients();
 
         // Add 1 tech to the player so the era is computed correctly
@@ -189,11 +188,6 @@ public sealed class TestGame
         barbarianCivilization.Cache.UpdateState();
         GameInfo.Civilizations.Add(barbarianCivilization);
         return barbarianCivilization;
-    }
-
-    private static void WireUnportedManagers(Civilization civ)
-    {
-        try { _ = civ.QuestManager; } catch (InvalidOperationException) { civ.QuestManager = new NoopQuestManager(); }
     }
 
     public CityObject AddCity(Civilization civInfo, TileClass tile, bool replacePalace = false, int initialPopulation = 1)
@@ -343,22 +337,4 @@ internal sealed class StandInAutomation : ICityWorkAutomation
     public float RankStatsForCityWork(Stats stats, CityObject city, bool areWeRankingSpecialist) => stats.Food + 0.5f * stats.Production;
     public float RankSpecialist(string specialist, CityObject city) => 0f;
     public float RankTileForCityWork(TileClass tile, CityObject city) => RankStatsForCityWork(tile.Stats.GetTileStats(city, city.Civ), city, false);
-}
-
-/// <summary>Stand-in for the unported QuestManager (T069).</summary>
-internal sealed class NoopQuestManager : IQuestManager
-{
-    public IQuestManager Clone() => new NoopQuestManager();
-    public void SetTransients(Civilization civInfo)
-    {
-    }
-    public void JustMet(Civilization otherCiv)
-    {
-    }
-    public void BarbarianCampCleared(Civilization civ, HexCoord position)
-    {
-    }
-    public void HandleIndividualQuests()
-    {
-    }
 }
