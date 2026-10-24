@@ -288,7 +288,7 @@ flowchart TD
   class T083 waiting
   class T084 done
   class T085 ondeck
-  class T086 prog
+  class T086 review
   class T087 waiting
   class T088 waiting
   class T089 waiting
@@ -339,7 +339,7 @@ flowchart TD
 | T138 | **On deck** (after T086) | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
 | T070 | In-Progress [Claude] | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T081 | In-Progress [Claude] | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
-| T086 | In-Progress [Claude] | T059, T068, T057 | 15 | TradeLogic |
+| T086 | Needs-Review [Claude] | T059, T068, T057 | 15 | TradeLogic |
 | T079 | Available (waiting on T052) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T087 | Available (waiting on T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T088 | Available (waiting on T087, T086, T081) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |

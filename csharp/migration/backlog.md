@@ -876,7 +876,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~885 LOC. See T084 for why Views exist. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T086 TradeLogic
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T059, T068, T057
 - Source: core/src/com/unciv/logic/trade/TradeLogic.kt
 - Fixtures: none - generate golden values (trade acceptance, offer filtering)
