@@ -58,8 +58,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified fidelity to libGDX Vector2/Vector3 semantics: mutable class representation, raw float bit equality and hashing (distinguishing -0f, canonicalizing NaN), single-precision float math, Vector3 Crs mutator semantics, and namespace isolation under Unciv.Mathematics. Re-ran Gate (11/11 passed) and full test suite (106/106 passed).
 
 ### T004 Stat enum and Stats
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T00:42:53Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T00:47:26Z
 - Depends: none
 - Source: core/src/com/unciv/models/stats/Stat.kt, Stats.kt, INamed.kt, NamedStats.kt, SubStat.kt, GameResource.kt
 - Fixtures: grep tests/ for `Stats`; otherwise generate golden values
