@@ -136,11 +136,11 @@ public interface IMapUnitState : IGameContextUnit
     IUnitPromotions Promotions { get; }
     /// <summary><c>unit.movement.canMoveTo(tile)</c></summary>
     bool CanMoveTo(Tile tile);
-    /// <summary><c>PromotionTree(unit)</c>, a UI-package class in Kotlin. TODO(T125)</summary>
+    /// <summary><c>PromotionTree(unit)</c>, a UI-package class in Kotlin. TODO(T126)</summary>
     IPromotionTree CreatePromotionTree();
 }
 
-/// <summary>What CityConstructions reads from <c>PromotionTree</c>. TODO(T125)</summary>
+/// <summary>What CityConstructions reads from <c>PromotionTree</c>. TODO(T126)</summary>
 public interface IPromotionTree
 {
     /// <summary><c>promotionTree.possiblePromotions</c> (the promotion names, in tree order).</summary>
