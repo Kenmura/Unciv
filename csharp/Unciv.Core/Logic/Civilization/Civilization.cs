@@ -1,5 +1,6 @@
 using Unciv.Json;
 using Unciv.Logic.Civilization.Diplomacy;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapGenerator.Mapregions;
 using Unciv.Logic.Map.Tiles;
@@ -227,13 +228,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         set => questManager = value;
     }
 
-    private IReligionManager? religionManager;
-    /// <summary>TODO(T057): becomes <c>var religionManager = ReligionManager()</c>.</summary>
-    public IReligionManager ReligionManager
-    {
-        get => Lateinit(religionManager, "religionManager");
-        set => religionManager = value;
-    }
+    public ReligionManager ReligionManager { get; set; } = new();
 
     private IGoldenAgeManager? goldenAges;
     /// <summary>TODO(T056): becomes <c>var goldenAges = GoldenAgeManager()</c>.</summary>
@@ -251,29 +246,11 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         set => greatPeople = value;
     }
 
-    private IEspionageManager? espionageManager;
-    /// <summary>TODO(T057): becomes <c>var espionageManager = EspionageManager()</c>.</summary>
-    public IEspionageManager EspionageManager
-    {
-        get => Lateinit(espionageManager, "espionageManager");
-        set => espionageManager = value;
-    }
+    public EspionageManager EspionageManager { get; set; } = new();
 
-    private IVictoryManager? victoryManager;
-    /// <summary>TODO(T057): becomes <c>var victoryManager = VictoryManager()</c>.</summary>
-    public IVictoryManager VictoryManager
-    {
-        get => Lateinit(victoryManager, "victoryManager");
-        set => victoryManager = value;
-    }
+    public VictoryManager VictoryManager { get; set; } = new();
 
-    private IRuinsManager? ruinsManager;
-    /// <summary>TODO(T057): becomes <c>var ruinsManager = RuinsManager()</c>.</summary>
-    public IRuinsManager RuinsManager
-    {
-        get => Lateinit(ruinsManager, "ruinsManager");
-        set => ruinsManager = value;
-    }
+    public RuinsManager RuinsManager { get; set; } = new();
 
     /// <summary>Kotlin <c>HashMap&lt;String, DiplomacyManager&gt;</c>: java.util.HashMap iteration order. TODO(T059): retype to DiplomacyManager.</summary>
     public JavaHashMap<string, IDiplomacyManager> Diplomacy { get; set; } = new();

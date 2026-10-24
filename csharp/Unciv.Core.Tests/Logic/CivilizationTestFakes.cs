@@ -2,10 +2,12 @@ using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
+using Unciv.Utils;
 using DifficultyObject = Unciv.Models.Ruleset.Nation.Difficulty;
 using EraObject = Unciv.Models.Ruleset.Tech.Era;
 using PolicyObject = Unciv.Models.Ruleset.Policy;
@@ -40,8 +42,13 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     GlobalUniques IGameInfoState.GetGlobalUniques() => Globals;
     IDictionary<string, string?> IGameInfoState.DiplomaticVictoryVotesCast => Votes;
     DifficultyObject IConstructionGameInfo.GetDifficulty() => Difficulty;
+    public JavaHashMap<string, Religion> ReligionMap { get; } = new();
+    JavaHashMap<string, Religion> IGameInfoState.Religions => ReligionMap;
     public override TileMap TileMap => Map ?? throw new NotSupportedException();
     public override IGameContextCivilization GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
+    Civilization IGameInfoState.GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
+    IEnumerable<ICityState> IGameInfoState.GetCities() => Civs.SelectMany(it => it.Cities);
+    List<Civilization> IGameInfoState.GetAliveMajorCivs() => Civs.Where(it => it.IsAlive() && it.IsMajorCiv()).ToList();
 }
 
 internal sealed class FakePolicies : IPolicyManager
@@ -50,6 +57,7 @@ internal sealed class FakePolicies : IPolicyManager
     public HashSet<string> Adopted { get; } = [];
     public int Culture { get; set; }
     public IReadOnlyCollection<string> AdoptedPolicies => Adopted;
+    public IReadOnlyCollection<string> CompletedBranches => [];
     public int StoredCulture => Culture;
     public void AddCulture(int added) => Culture += added;
     public bool IsAdopted(string policyName) => Adopted.Contains(policyName);
@@ -75,31 +83,21 @@ internal sealed class FakeTech : ITechManager
     public int RepeatingTechsResearched => Repeating;
     public bool IsRevealed(TileResourceObject resource) => Researched.Contains(resource.Name);
     public bool IsResearched(string techName) => Researched.Contains(techName);
+    public bool IsResearched(INonPerpetualConstruction construction) => throw new NotSupportedException();
+    public HashSet<string> Researchable { get; } = [];
+    public bool CanBeResearched(string techName) => Researchable.Contains(techName);
+    public List<string> Added { get; } = [];
+    public void AddTechnology(string techName, bool showNotification = true)
+    {
+        Added.Add(techName);
+        Researched.Add(techName);
+    }
     public bool CanResearchTech() => CanResearch;
     public TechnologyObject? CurrentTechnology() => Current;
     public int ResearchOfTech(string techName) => 42;
     public void AddScience(int scienceGet) => Science += scienceGet;
     public ITechManager Clone() => throw new NotSupportedException();
     public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
-}
-
-internal sealed class FakeReligionManager : IReligionManager
-{
-    public IFounderReligion? Religion { get; set; }
-    public int StoredFaith { get; set; }
-    public Unciv.Logic.Civilization.Managers.ReligionState ReligionState => Unciv.Logic.Civilization.Managers.ReligionState.None;
-    public int GreatProphetsEarned() => 0;
-    public IReligionManager Clone() => throw new NotSupportedException();
-    public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
-}
-
-internal sealed class FakeFounderReligion(UniqueMap map) : IFounderReligion
-{
-    public UniqueMap FounderBeliefUniqueMap { get; } = map;
-    public bool MatchesFilter(string filter, GameContext state, IGameContextCivilization? civ) => throw new NotSupportedException();
-    public bool IsMajorReligion() => throw new NotSupportedException();
-    public bool IsEnhancedReligion() => throw new NotSupportedException();
-    public bool HasBelief(string belief) => throw new NotSupportedException();
 }
 
 internal sealed class FakeGoldenAges : IGoldenAgeManager
@@ -141,6 +139,7 @@ internal sealed class FakeUnitManager : IUnitManager
     public IEnumerable<IMapUnitState> GetCivUnits() => [];
     public void RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => throw new NotSupportedException();
     public IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId) => throw new NotSupportedException();
+    public IMapUnitState? AddUnit(BaseUnit baseUnit, ICityState? city = null) => throw new NotSupportedException();
 }
 
 internal sealed class FakeCityStateFunctions : ICityStateFunctions
@@ -151,6 +150,8 @@ internal sealed class FakeCityStateFunctions : ICityStateFunctions
     {
         foreach (var unique in GetUniquesProvidedByCityStates(uniqueType, gameContext)) op(unique);
     }
+    public int AllyUpdates { get; private set; }
+    public void UpdateAllyCivForCityState() => AllyUpdates++;
 }
 
 internal sealed class FakeDiplomacyFunctions : IDiplomacyFunctions
@@ -178,6 +179,17 @@ internal sealed class FakeDiplomacyManager(Civilization otherCiv) : IDiplomacyMa
     public IDiplomacyManager OtherCivDiplomacy() => otherCiv.Diplomacy[CivInfo.CivId];
     public void UpdateHasOpenBorders() => throw new NotSupportedException();
     public IDiplomacyManager Clone() => throw new NotSupportedException();
+    public List<float> SpiedOnUsModifiers { get; } = [];
+    public void AddSpiedOnUsModifier(float amount) => SpiedOnUsModifiers.Add(amount);
+    public List<(int Amount, bool Adjust)> DiscoveredSpiesFlags { get; } = [];
+    public void SetDiscoveredSpiesInOurCitiesFlag(int amount, bool adjustWithGameSpeed) => DiscoveredSpiesFlags.Add((amount, adjustWithGameSpeed));
+    public bool AgreedToNotSendSpies { get; set; }
+    public bool HasAgreedToNotSendSpiesFlag() => AgreedToNotSendSpies;
+    public float Influence { get; set; }
+    public float GetInfluence() => Influence;
+    public void SetInfluence(float amount) => Influence = amount;
+    public void AddInfluence(float amount) => Influence += amount;
+    public void ReduceInfluence(float amount) => Influence -= amount;
 }
 
 internal sealed class FakeTradeRequest(string requestingCiv) : ITradeRequest
@@ -199,6 +211,23 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     public override string Name => cityName;
     string ICityState.Name { get => cityName; set => cityName = value; }
     public ICityState Clone() => throw new NotSupportedException();
+    public Civilization? CivData { get; set; }
+    Civilization ICityState.Civ => CivData ?? throw new NotSupportedException();
+    public FakeCityReligion ReligionData { get; } = new();
+    public ICityReligionManager Religion => ReligionData;
+    public HexCoord LocationData { get; set; }
+    public override HexCoord Location => LocationData;
+    public bool HolyCity { get; set; }
+    public bool IsHolyCity() => HolyCity;
+    public bool IsHolyCityOf(string? religionName) => HolyCity && ReligionData.ReligionThisIsTheHolyCityOf == religionName;
+    public Civilization? FoundingCivObject { get; set; }
+    public List<UniqueObject> SpyUniques { get; } = [];
+    public IEnumerable<UniqueObject> GetMatchingUniques(UniqueType uniqueType, GameContext gameContext, bool includeCivUniques) =>
+        SpyUniques.Where(it => it.Type == uniqueType);
+    public void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, bool includeCivUniques, Action<UniqueObject> op)
+    {
+        foreach (var unique in GetMatchingUniques(uniqueType, gameContext, includeCivUniques)) op(unique);
+    }
     public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
     GameContext ICityState.State => GameContext.ForCity(this);
     public bool Capital { get; set; }
@@ -224,4 +253,27 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     {
         foreach (var unique in GetMatchingUniquesWithNonLocalEffects(uniqueType, gameContext)) op(unique);
     }
+}
+
+internal sealed class FakeCityReligion : ICityReligionManager
+{
+    public string? ReligionThisIsTheHolyCityOf { get; set; }
+    public Dictionary<string, int> Pressure { get; } = [];
+    public Religion? Majority { get; set; }
+    public void AddPressure(string religionName, int amount, bool shouldUpdateFollowers = true) =>
+        Pressure[religionName] = Pressure.GetValueOrDefault(religionName) + amount;
+    public Religion? GetMajorityReligion() => Majority;
+    public Dictionary<string, int> Followers { get; } = [];
+    public int GetFollowersOf(string religion) => Followers.GetValueOrDefault(religion);
+    public bool IsProtectedByInquisitor(string? fromReligion = null) => false;
+}
+
+internal sealed class FakeCivConstructions : ICivConstructions
+{
+    public Counter<string> Bought { get; } = new();
+    public ICivConstructions Clone() => throw new NotSupportedException();
+    public void SetTransients(Civilization civInfo) { }
+    public int GetBuiltItemsWithIncreasingCost(string name) => 0;
+    public int GetBoughtItemsWithIncreasingPrice(string name) => Bought[name];
+    public void AddBoughtItemsWithIncreasingPrice(string name, int amount) => Bought.Add(name, amount);
 }

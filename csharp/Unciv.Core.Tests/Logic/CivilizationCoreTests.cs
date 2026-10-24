@@ -1,6 +1,8 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
+using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
@@ -374,7 +376,7 @@ public class CivilizationCoreTests
         var (civ, _) = NewCiv();
         var policies = new FakePolicies();
         var tech = new FakeTech();
-        var religion = new FakeReligionManager();
+        var religion = new ReligionManager();
         civ.Policies = policies;
         civ.Tech = tech;
         civ.ReligionManager = religion;
@@ -528,9 +530,10 @@ public class CivilizationCoreTests
         var cityStates = new FakeCityStateFunctions();
         cityStates.Provided.Add(Make("cityState"));
         civ.CityStateFunctions = cityStates;
-        var founder = new UniqueMap();
-        founder.AddUnique(Make("founder"));
-        civ.ReligionManager = new FakeReligionManager { Religion = new FakeFounderReligion(founder) };
+        info.RulesetData.Beliefs["founder"] = new Belief(BeliefType.Founder) { Name = "founder", Uniques = ["Cannot be traded"] };
+        var founderReligion = new Religion("Faith", info, civ, 1);
+        founderReligion.AddBelief("founder");
+        civ.ReligionManager = new ReligionManager { Religion = founderReligion };
         civ.CivResourcesUniqueMap.AddUnique(Make("resource"));
         info.Globals.Uniques = ["Cannot be traded"];
 
@@ -560,7 +563,6 @@ public class CivilizationCoreTests
         ];
         civ.Policies = new FakePolicies();
         civ.Tech = new FakeTech();
-        civ.ReligionManager = new FakeReligionManager();
         var city = new FakeCityState("c", new FakeCiv("Rome"));
         city.BuiltUniques.AddUnique(new UniqueObject("Cannot be traded <upon discovering [Writing] technology>", UniqueTarget.Building, "Library"));
         civ.Cities = [city];
@@ -694,21 +696,17 @@ public class CivilizationCoreTests
     [Fact]
     public void PreferredVictoryTypes_UsesTheSingleAvailableVictoryElseNationAndPersonality()
     {
-        var (civ, _) = NewCiv("Rome", PlayerType.Human);
+        var (civ, info) = NewCiv("Rome", PlayerType.Human);
         civ.Nation.PreferredVictoryType = "Scientific";
-        civ.VictoryManager = new FakeVictoryManager("Scientific", "Cultural");
+        foreach (var name in new[] { "Scientific", "Cultural", "Domination" })
+            info.RulesetData.Victories[name] = new Victory { Name = name };
+        civ.VictoryManager.CivInfo = civ;
+        info.GameParameters.VictoryTypes = ["Scientific", "Cultural"];
         Assert.Equal(["Scientific"], civ.GetPreferredVictoryTypes()); // human: neutral personality (preferredVictoryType Neutral)
-        civ.VictoryManager = new FakeVictoryManager("Cultural");
+        info.GameParameters.VictoryTypes = ["Cultural"];
         Assert.Equal(["Cultural"], civ.GetPreferredVictoryTypes());
-        civ.VictoryManager = new FakeVictoryManager("Domination", "Cultural");
+        info.GameParameters.VictoryTypes = ["Domination", "Cultural"];
         Assert.Equal([Constants.NeutralVictoryType], civ.GetPreferredVictoryTypes());
-    }
-
-    private sealed class FakeVictoryManager(params string[] names) : IVictoryManager
-    {
-        public Civilization CivInfo { get; set; } = null!;
-        public IEnumerable<Victory> GetAvailableVictories() => names.Select(it => new Victory { Name = it });
-        public IVictoryManager Clone() => throw new NotSupportedException();
     }
 
     [Fact]
@@ -718,7 +716,6 @@ public class CivilizationCoreTests
         var egypt = new Civilization(new NationObject { Name = "Egypt" }) { GameInfo = info, PlayerType = PlayerType.Human, Units = new FakeUnitManager { Count = 1 } };
         info.Civs.Add(egypt);
         rome.Units = new FakeUnitManager { Count = 0 };
-        rome.EspionageManager = new FakeEspionage();
         info.GameParameters.IsOnlineMultiplayer = true; // no map reveal
         var romeSeesEgypt = new FakeDiplomacyManager(egypt) { CivInfo = rome };
         var egyptSeesRome = new FakeDiplomacyManager(rome) { CivInfo = egypt };
@@ -739,13 +736,6 @@ public class CivilizationCoreTests
         Assert.Equal("Persia", Assert.Single(egypt.TradeRequests).RequestingCiv);
         Assert.Equal(1, romeSeesEgypt.TradesCleared);
         Assert.Equal(1, egyptSeesRome.TradesCleared);
-    }
-
-    private sealed class FakeEspionage : IEspionageManager
-    {
-        public void RemoveAllSpies() { }
-        public IEspionageManager Clone() => throw new NotSupportedException();
-        public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
     }
 
     [Fact]
@@ -820,13 +810,9 @@ public class CivilizationCoreTests
         civ.Policies = new CloneablePolicies();
         civ.Tech = new CloneableTech();
         civ.CivConstructions = new CloneableConstructions();
-        civ.ReligionManager = new CloneableReligion();
         civ.QuestManager = new CloneableQuests();
         civ.GoldenAges = new CloneableGoldenAges();
         civ.GreatPeople = new CloneableGreatPeople();
-        civ.RuinsManager = new CloneableRuins();
-        civ.EspionageManager = new CloneableEspionage();
-        civ.VictoryManager = new CloneableVictory();
 
         var clone = civ.Clone();
         Assert.NotSame(civ, clone);
@@ -864,6 +850,7 @@ public class CivilizationCoreTests
         public UniqueMap PolicyUniques { get; } = new();
         public IReadOnlyCollection<string> AdoptedPolicies => [];
         public int StoredCulture => 0;
+        public IReadOnlyCollection<string> CompletedBranches => [];
         public bool IsAdopted(string policyName) => false;
         public IEnumerable<PolicyObject> GetAdoptedPoliciesMatching(string filter, GameContext gameContext) => [];
         public void AddCulture(int culture) { }
@@ -881,6 +868,9 @@ public class CivilizationCoreTests
         public int RepeatingTechsResearched => 0;
         public bool IsRevealed(TileResourceObject resource) => false;
         public bool IsResearched(string techName) => false;
+        public bool IsResearched(INonPerpetualConstruction construction) => false;
+        public bool CanBeResearched(string techName) => false;
+        public void AddTechnology(string techName, bool showNotification = true) { }
         public bool CanResearchTech() => false;
         public TechnologyObject? CurrentTechnology() => null;
         public int ResearchOfTech(string techName) => 0;
@@ -896,16 +886,7 @@ public class CivilizationCoreTests
         public void SetTransients(Civilization civInfo) => Owner = civInfo;
         public int GetBuiltItemsWithIncreasingCost(string name) => 0;
         public int GetBoughtItemsWithIncreasingPrice(string name) => 0;
-    }
-
-    private sealed class CloneableReligion : IReligionManager
-    {
-        public IFounderReligion? Religion => null;
-        public int StoredFaith { get; set; }
-        public Unciv.Logic.Civilization.Managers.ReligionState ReligionState => Unciv.Logic.Civilization.Managers.ReligionState.None;
-        public int GreatProphetsEarned() => 0;
-        public IReligionManager Clone() => new CloneableReligion();
-        public void SetTransients(Civilization civInfo) { }
+        public void AddBoughtItemsWithIncreasingPrice(string name, int amount) { }
     }
 
     private sealed class CloneableQuests : IQuestManager
@@ -929,25 +910,6 @@ public class CivilizationCoreTests
         public IGreatPersonManager Clone() => new CloneableGreatPeople();
     }
 
-    private sealed class CloneableRuins : IRuinsManager
-    {
-        public IRuinsManager Clone() => new CloneableRuins();
-        public void SetTransients(Civilization civInfo) { }
-    }
-
-    private sealed class CloneableEspionage : IEspionageManager
-    {
-        public void RemoveAllSpies() { }
-        public IEspionageManager Clone() => new CloneableEspionage();
-        public void SetTransients(Civilization civInfo) { }
-    }
-
-    private sealed class CloneableVictory : IVictoryManager
-    {
-        public Civilization CivInfo { get; set; } = null!;
-        public IEnumerable<Victory> GetAvailableVictories() => [];
-        public IVictoryManager Clone() => new CloneableVictory();
-    }
 }
 
 internal static class CivilizationTestExtensions

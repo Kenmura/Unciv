@@ -1,0 +1,134 @@
+using Unciv.Json;
+using Unciv.Logic.Map.Tiles;
+using Unciv.Models;
+using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
+
+namespace Unciv.Logic.Civilization.Managers;
+
+// Ported from core/src/com/unciv/logic/civilization/managers/EspionageManager.kt (T057).
+// City is not ported yet: it is used through its ICityState seam (T060 retypes it).
+public class EspionageManager : IsPartOfGameInfoSerialization
+{
+    public List<Spy> SpyList { get; set; } = [];
+    public LinkedHashSet<string> ErasSpyEarnedFor { get; } = new();
+
+    private Civilization? civInfo;
+    /// <summary>Transient. Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    public Civilization CivInfo
+    {
+        get => civInfo ?? throw new InvalidOperationException("lateinit property civInfo has not been initialized");
+        set => civInfo = value;
+    }
+
+    /// <summary>
+    /// Transient. Part of the nextTurnAction of MoveSpies.
+    /// We need to store if the player has clicked the button already
+    /// </summary>
+    public bool DismissedShouldMoveSpies { get; set; }
+
+    public EspionageManager Clone()
+    {
+        var toReturn = new EspionageManager();
+        foreach (var spy in SpyList) toReturn.SpyList.Add(spy.Clone());
+        toReturn.ErasSpyEarnedFor.AddAll(ErasSpyEarnedFor);
+        return toReturn;
+    }
+
+    public void SetTransients(Civilization civInfo)
+    {
+        CivInfo = civInfo;
+        foreach (var spy in SpyList)
+        {
+            spy.SetTransients(civInfo);
+        }
+    }
+
+    public void EndTurn()
+    {
+        foreach (var spy in SpyList.ToList())
+            spy.EndTurn();
+    }
+
+    public string GetSpyName()
+    {
+        var rng = CivInfo.State.StateBasedRandom("EspianageManager.getSpyName");
+        var usedSpyNames = SpyList.Select(it => it.Name).ToHashSet();
+        var validSpyNames = CivInfo.Nation.SpyNames.Where(it => !usedSpyNames.Contains(it)).ToList();
+        return validSpyNames.RandomOrNull(rng)
+            ?? $"Spy {SpyList.Count + 1}"; // +1 as non-programmers count from 1
+    }
+
+    public Spy AddSpy()
+    {
+        string spyName = GetSpyName();
+        var newSpy = new Spy(spyName, GetStartingSpyRank());
+        newSpy.SetTransients(CivInfo);
+        SpyList.Add(newSpy);
+        return newSpy;
+    }
+
+    public IEnumerable<Tile> GetTilesVisibleViaSpies() =>
+        SpyList
+            .Where(it => it.IsSetUp())
+            .Select(it => it.GetCityOrNull())
+            .OfType<ICityState>()
+            .SelectMany(it => it.GetCenterTile().GetTilesInDistance(1));
+
+    public LinkedHashSet<string> GetTechsToSteal(Civilization otherCiv)
+    {
+        var techsToSteal = new LinkedHashSet<string>();
+        foreach (var tech in otherCiv.Tech.TechsResearched)
+        {
+            if (CivInfo.Tech.IsResearched(tech)) continue;
+            if (!CivInfo.Tech.CanBeResearched(tech)) continue;
+            techsToSteal.Add(tech);
+        }
+        return techsToSteal;
+    }
+
+    public List<Spy> GetSpiesInCity(ICityState city) => SpyList.Where(it => it.GetCityOrNull() == city).ToList();
+
+    public int GetStartingSpyRank() =>
+        1 + CivInfo.GetMatchingUniques(UniqueType.SpyStartingLevel).Sum(it => int.Parse(it.Params[0], System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// Returns a list of all cities with our spies in them.
+    /// The list needs to be stable across calls on the same turn.
+    /// </summary>
+    public List<ICityState> GetCitiesWithOurSpies() =>
+        SpyList.Where(it => it.IsSetUp()).Select(it => it.GetCityOrNull()).OfType<ICityState>().ToList();
+
+    public Spy? GetSpyAssignedToCity(ICityState city) => SpyList.FirstOrDefault(it => it.GetCityOrNull() == city);
+
+    /// <summary>
+    /// Determines whether the NextTurnAction MoveSpies should be shown or not
+    /// </summary>
+    /// <returns>true if there are spies waiting to be moved</returns>
+    public bool ShouldShowMoveSpies() => !DismissedShouldMoveSpies && SpyList.Any(it => it.IsIdle())
+        && CivInfo.GameInfo.GetCities().Any(it => CivInfo.HasExplored(it.GetCenterTile()) && GetSpyAssignedToCity(it) == null);
+
+    public List<Spy> GetIdleSpies() => SpyList.Where(it => it.IsIdle()).ToList();
+
+    /// <summary>
+    /// Takes all spies away from their cities.
+    /// Called when the civ is destroyed.
+    /// </summary>
+    public void RemoveAllSpies()
+    {
+        foreach (var spy in SpyList) spy.MoveTo(null);
+    }
+
+    /// <summary>
+    /// Recalls all spies stationed in any of <paramref name="otherCiv"/>'s cities to the hideout.
+    ///
+    /// Called when <paramref name="otherCiv"/> is destroyed via console <c>civ remove</c>.
+    /// Not using CityEspionageManager.removeAllPresentSpies, so no notifications.
+    /// </summary>
+    internal void RecallAllSpiesFrom(Civilization otherCiv)
+    {
+        var toRecall = SpyList.Where(it => it.GetCityOrNull() is { } city && otherCiv.Cities.Contains(city)).ToList();
+        foreach (var spy in toRecall)
+            spy.MoveTo(null);
+    }
+}

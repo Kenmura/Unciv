@@ -1,11 +1,13 @@
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tech;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
+using Unciv.Utils;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Logic.Civilization;
@@ -33,6 +35,14 @@ public interface IGameInfoState : IConstructionGameInfo
     GlobalUniques GetGlobalUniques();
     /// <summary><c>gameInfo.diplomaticVictoryVotesCast</c> (<c>HashMap&lt;String, String?&gt;</c>).</summary>
     IDictionary<string, string?> DiplomaticVictoryVotesCast { get; }
+    /// <summary><c>gameInfo.religions</c> (<c>HashMap&lt;String, Religion&gt;</c>), in java.util.HashMap order. TODO(T046): becomes a GameInfo field.</summary>
+    JavaHashMap<string, Religion> Religions { get; }
+    /// <summary><c>gameInfo.getCivilization(civID)</c>; throws when there is no such civilization (Kotlin <c>first</c>).</summary>
+    new Civilization GetCivilization(string civId);
+    /// <summary><c>gameInfo.getCities()</c>, in civilization then city order.</summary>
+    new IEnumerable<ICityState> GetCities();
+    /// <summary><c>gameInfo.getAliveMajorCivs()</c></summary>
+    List<Civilization> GetAliveMajorCivs();
 }
 
 /// <summary>What Civilization reads from <c>TechManager</c>.</summary>
@@ -43,6 +53,12 @@ public interface ITechManager
     void SetTransients(Civilization civInfo);
     bool IsRevealed(TileResource resource);
     bool IsResearched(string techName);
+    /// <summary><c>tech.isResearched(construction)</c></summary>
+    bool IsResearched(INonPerpetualConstruction construction);
+    /// <summary><c>tech.canBeResearched(techName)</c></summary>
+    bool CanBeResearched(string techName);
+    /// <summary><c>tech.addTechnology(techName, showNotification)</c></summary>
+    void AddTechnology(string techName, bool showNotification = true);
     UniqueMap TechUniques { get; }
     Era Era { get; }
     bool CanResearchTech();
@@ -66,28 +82,12 @@ public interface IPolicyManager
     /// <summary><c>policies.adoptedPolicies</c> (a set of names).</summary>
     IReadOnlyCollection<string> AdoptedPolicies { get; }
     bool IsAdopted(string policyName);
+    /// <summary><c>policies.completedBranches</c> (a set of branch names).</summary>
+    IReadOnlyCollection<string> CompletedBranches { get; }
     /// <summary><c>policies.getAdoptedPoliciesMatching(filter, gameContext)</c></summary>
     IEnumerable<Policy> GetAdoptedPoliciesMatching(string filter, GameContext gameContext);
     void AddCulture(int culture);
     int StoredCulture { get; }
-}
-
-/// <summary>What Civilization reads from <c>Religion</c> beyond <see cref="IGameContextReligion"/>.</summary>
-public interface IFounderReligion : IGameContextReligion
-{
-    /// <summary><c>religion.founderBeliefUniqueMap</c></summary>
-    UniqueMap FounderBeliefUniqueMap { get; }
-}
-
-/// <summary>What Civilization reads from <c>ReligionManager</c>.</summary>
-public interface IReligionManager
-{
-    IReligionManager Clone();
-    void SetTransients(Civilization civInfo);
-    IFounderReligion? Religion { get; }
-    int StoredFaith { get; set; }
-    Managers.ReligionState ReligionState { get; }
-    int GreatProphetsEarned();
 }
 
 /// <summary>What Civilization reads from <c>GoldenAgeManager</c>.</summary>
@@ -109,31 +109,6 @@ public interface IGreatPersonManager
     Civilization CivInfo { get; set; }
 }
 
-/// <summary>What Civilization reads from <c>VictoryManager</c>.</summary>
-public interface IVictoryManager
-{
-    IVictoryManager Clone();
-    /// <summary><c>victoryManager.civInfo</c>, a <c>lateinit var</c> set by <c>Civilization.setTransients</c>.</summary>
-    Civilization CivInfo { get; set; }
-    /// <summary><c>victoryManager.getAvailableVictories()</c> (a map of victory name to <c>Victory</c>), in map order.</summary>
-    IEnumerable<Victory> GetAvailableVictories();
-}
-
-/// <summary>What Civilization reads from <c>RuinsManager</c>.</summary>
-public interface IRuinsManager
-{
-    IRuinsManager Clone();
-    void SetTransients(Civilization civInfo);
-}
-
-/// <summary>What Civilization reads from <c>EspionageManager</c>.</summary>
-public interface IEspionageManager
-{
-    IEspionageManager Clone();
-    void SetTransients(Civilization civInfo);
-    void RemoveAllSpies();
-}
-
 /// <summary>What Civilization reads from <c>QuestManager</c>.</summary>
 public interface IQuestManager
 {
@@ -150,6 +125,8 @@ public interface ICivConstructions
     int GetBuiltItemsWithIncreasingCost(string name);
     /// <summary><c>civConstructions.boughtItemsWithIncreasingPrice[name]</c></summary>
     int GetBoughtItemsWithIncreasingPrice(string name);
+    /// <summary><c>civConstructions.boughtItemsWithIncreasingPrice.add(name, amount)</c></summary>
+    void AddBoughtItemsWithIncreasingPrice(string name, int amount);
 }
 
 /// <summary>What Civilization reads from <c>DiplomacyManager</c>.</summary>
@@ -171,6 +148,16 @@ public interface IDiplomacyManager
     void ClearTrades();
     /// <summary><c>diplomacyManager.otherCivDiplomacy()</c></summary>
     IDiplomacyManager OtherCivDiplomacy();
+    /// <summary><c>diplomacyManager.addModifier(DiplomaticModifiers.SpiedOnUs, amount)</c></summary>
+    void AddSpiedOnUsModifier(float amount);
+    /// <summary><c>diplomacyManager.setFlag(DiplomacyFlags.DiscoveredSpiesInOurCities, amount, adjustWithGameSpeed)</c></summary>
+    void SetDiscoveredSpiesInOurCitiesFlag(int amount, bool adjustWithGameSpeed);
+    /// <summary><c>diplomacyManager.hasFlag(DiplomacyFlags.AgreedToNotSendSpies)</c></summary>
+    bool HasAgreedToNotSendSpiesFlag();
+    float GetInfluence();
+    void SetInfluence(float amount);
+    void AddInfluence(float amount);
+    void ReduceInfluence(float amount);
 }
 
 /// <summary>What Civilization reads from <c>DiplomacyFunctions</c>.</summary>
@@ -193,6 +180,7 @@ public interface ICityStateFunctions
 {
     IEnumerable<UniqueObject> GetUniquesProvidedByCityStates(UniqueType uniqueType, GameContext gameContext);
     void ForEachUniqueProvidedByCityStates(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
+    void UpdateAllyCivForCityState();
 }
 
 /// <summary>What Civilization reads from <c>CivInfoTransientCache</c>.</summary>
@@ -228,6 +216,8 @@ public interface IUnitManager
     void RemoveUnit(IGameContextUnit unit, bool updateCivInfo);
     /// <summary><c>baseUnit.newMapUnit(civInfo, unitId)</c></summary>
     IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId);
+    /// <summary><c>civ.units.addUnit(baseUnit, city)</c>; <c>null</c> when the unit cannot be placed.</summary>
+    IMapUnitState? AddUnit(BaseUnit baseUnit, ICityState? city = null);
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>
@@ -235,12 +225,44 @@ public interface IMapUnitState : IGameContextUnit
 {
     void Destroy();
     int GetForceEvaluation();
+    /// <summary><c>unit.civ</c></summary>
+    new Civilization Civ { get; }
+    /// <summary><c>unit.getTile()</c></summary>
+    new Tile GetTile();
+    /// <summary><c>unit.religion</c></summary>
+    string? Religion { get; set; }
+    /// <summary><c>unit.hasUnique(uniqueType, gameContext)</c></summary>
+    bool HasUnique(UniqueType uniqueType, GameContext? gameContext = null);
+}
+
+/// <summary>What the religion managers read from <c>CityReligionManager</c> (<c>city.religion</c>).</summary>
+public interface ICityReligionManager
+{
+    string? ReligionThisIsTheHolyCityOf { get; set; }
+    void AddPressure(string religionName, int amount, bool shouldUpdateFollowers = true);
+    Religion? GetMajorityReligion();
+    int GetFollowersOf(string religion);
+    bool IsProtectedByInquisitor(string? fromReligion = null);
 }
 
 /// <summary>What Civilization reads from <c>City</c>.</summary>
 public interface ICityState : IGameContextCity
 {
     ICityState Clone();
+    /// <summary><c>city.civ</c></summary>
+    new Civilization Civ { get; }
+    /// <summary><c>city.religion</c></summary>
+    ICityReligionManager Religion { get; }
+    /// <summary><c>city.isHolyCity()</c></summary>
+    bool IsHolyCity();
+    /// <summary><c>city.isHolyCityOf(religionName)</c></summary>
+    bool IsHolyCityOf(string? religionName);
+    /// <summary><c>city.foundingCivObject</c></summary>
+    Civilization? FoundingCivObject { get; }
+    /// <summary><c>city.getMatchingUniques(uniqueType, gameContext, includeCivUniques)</c></summary>
+    IEnumerable<UniqueObject> GetMatchingUniques(UniqueType uniqueType, GameContext gameContext, bool includeCivUniques);
+    /// <summary><c>city.forEachMatchingUnique(uniqueType, gameContext, includeCivUniques, op)</c></summary>
+    void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, bool includeCivUniques, Action<UniqueObject> op);
     /// <summary><c>city.setTransients(civInfo)</c></summary>
     void SetTransients(Civilization civInfo);
     /// <summary><c>city.state</c></summary>
