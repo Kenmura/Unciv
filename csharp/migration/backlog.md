@@ -130,7 +130,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ran Gate (9 passed) and full `dotnet test` (131 passed).
 
 ### T010 Seeded deterministic RNG
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Claimed: 2026-10-24T00:59:38Z
 - Depends: none
 - Source: kotlin.random.Random (XorWow, as used via `Random(seed)` across core/src, 29 import sites), plus the one `java.util.Random` use (grep it)
@@ -138,6 +138,12 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: csharp/Unciv.Core/Utils/GameRandom.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~GameRandomTests`
 - Notes: Must reproduce Kotlin's sequences bit-for-bit so ported map generation matches the original for the same seed. All engine code uses this type; reviewers reject `System.Random`.
+  - Implementer notes (Antigravity): Ported `kotlin.random.XorWowRandom` bit-for-bit to `Unciv.Utils.GameRandom`.
+  - Implemented 32-bit int and 64-bit long seed constructors, invariant check (`(x | y | z | w | v) != 0`), 64 warmup rounds, and `NextBits` taking upper bits.
+  - Implemented `NextInt()`, `NextInt(until)`, `NextInt(from, until)`, `NextLong()`, `NextLong(until)`, `NextLong(from, until)`, `NextFloat()`, `NextDouble()`, `NextDouble(until)`, `NextDouble(from, until)`, `NextBoolean()`, `NextBytes()`, and Kotlin lowercase aliases.
+  - Strictly deterministic: unseeded constructors omitted per Roslyn BannedApiAnalyzers (`RS0030`).
+  - Golden values generated directly from OpenJDK 25 running `kotlin.random.Random(seed)` in `instrumented-kotlin-stdlib-2.3.0.jar` across int, ranges, float, double, boolean, and long seeds, confirmed bit-for-bit identical.
+  - Ran Gate (10 passed) and full `dotnet test` (147 passed).
 
 ### T011 State-hash determinism harness
 - State: Available
