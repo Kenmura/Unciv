@@ -1574,7 +1574,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
   - Found by T100: Civilization (and everything reachable from it, e.g. Civilization.GameInfo -> Ruleset -> Building) has no JSON wiring, so UncivJson.Serialize(game with civs) throws NotSupportedException; GameInfo.SetTransients also refuses a game without a human civ. Wire the serialized fields (and JsonIgnore the transients), then extend UncivFilesTests with GameSerializationTests' full round trips (canSaveAndLoadUncompressedGame/CompressedGame: gameId, turns, version, cities) and assert the T011 StateHasher hash survives GameInfo -> file -> GameInfo, plus Autosaves.LoadLatestAutosave on real games.
 
-### T141 Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder)
+### T141 Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation minus Battle cases)
 - State: In-Progress [Claude]
 - Depends: T072
 - Source: none (ports tests only)
@@ -1583,6 +1583,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
 - Claimed: 2026-10-24T17:32Z
 - Notes: Split from T072 at claim time (T072 ported the city slice). Same pattern: namespace Unciv.Core.Tests.Fixtures.*, [Collection("RulesetCache")], real TestGame; behavioural bugs go back to the owning ticket as review notes.
+  - Narrowed at claim: UnitMovement and Pathfinding remainder split to T145, Battle-dependent escort cases to the next ticket.
 
 ### T142 Deferred TestGame fixtures: civilization directory and GameSerializationTests
 - State: Available
@@ -1613,6 +1614,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~TileUniquesTests`
 - Claimed:
 - Notes: Needs UnitActions.invokeUnitAction (T080).
+
+### T145 Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs)
+- State: Available
+- Depends: T072
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, PathfindingTests.kt
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Map/*.cs
+- Gate: dotnet test --filter FullyQualifiedName~Fixtures
+- Claimed:
+- Notes: Split from T141 at claim time (scope). Same pattern as T072: namespace Unciv.Core.Tests.Fixtures.*, [Collection("RulesetCache")], real TestGame.
+
+### T146 UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack)
+- State: Available
+- Depends: T083, T141
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/map/UnitFormationTests.kt (test escort attack and move civilian unit, test escort attack with ranged unit)
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Map/UnitFormationFixtureTests.cs
+- Gate: dotnet test --filter FullyQualifiedName~UnitFormationFixture
+- Claimed:
+- Notes: Split from T141: Battle (T083) not ported yet.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

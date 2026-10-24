@@ -67,6 +67,8 @@ flowchart TD
     T142["T142<br/>Deferred TestGame fixtures: civilization directory and GameS..."]
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
     T144["T144<br/>Port TileUniquesTests.pillageYieldTest (split from T103)"]
+    T145["T145<br/>Deferred TestGame fixtures: map directory remainder (UnitMov..."]
+    T146["T146<br/>UnitFormationTests Battle-dependent escort attack cases (nee..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -146,6 +148,8 @@ flowchart TD
   T080 --> T139
   T080 --> T144
   T103 --> T144
+  T083 --> T146
+  T141 --> T146
   C001 --> C002
   C002 --> C003
   C002 --> C004
@@ -236,6 +240,8 @@ flowchart TD
   class T142 ready
   class T143 ready
   class T144 waiting
+  class T145 ready
+  class T146 waiting
 ```
 
 ## Incomplete tickets
@@ -251,10 +257,11 @@ flowchart TD
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T142 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | T143 | **Ready to start** | T103 | 0 | Port GlobalUniquesTests + deferred TestGame fixtures (split from T103) |
-| T083 | **On deck** (after T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
+| T145 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
+| T083 | **On deck** (after T079) | T081, T082, T052, T064, T068, T079, T035 | 14 | Battle C: Battle, Nuke |
 | T088 | **On deck** (after T087) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T080 | **On deck** (after T079) | T079, T061, T068 | 10 | Unit actions B: UnitActions, UnitActionsFromUniques |
-| T079 | Needs-Review [Claude] | T052, T057, T063, T066, T067 | 16 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
+| T079 | Needs-Review [Claude] | T052, T057, T063, T066, T067 | 17 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T087 | Needs-Review [Claude] | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T090 | Available (waiting on T087, T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
@@ -268,6 +275,7 @@ flowchart TD
 | T089 | Available (waiting on T088) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
+| T141 | In-Progress [Claude] | T072 | 1 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation minus Battle cases) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -278,5 +286,5 @@ flowchart TD
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T139 | Available (waiting on T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T140 | In-Progress [Claude] | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
-| T141 | In-Progress [Claude] | T072 | 0 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder) |
 | T144 | Available (waiting on T080) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
+| T146 | Available (waiting on T083, T141) | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
