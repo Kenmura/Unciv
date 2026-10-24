@@ -312,13 +312,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   Review notes (adversarial review PASS, non-blocking): startingLocationsByNation outer map is insertion-ordered Dictionary while Kotlin HashMap<String> iterates in string-hash order (GameStarter reads keys/values): use JavaHashMap in the GameStarter ticket; placeUnitNearTile/stripPlayer untested until T072; T040 may replace the flood-fill with BFS.
 
 ### T040 Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T039
 - Source: core/src/com/unciv/logic/map/BFS.kt, AStar.kt, MapPathing.kt, CarrierSlotMatcher.kt, MapVisualization.kt
 - Fixtures: tests/src/com/unciv/logic/map/PathfindingTests.kt, tests/src/com/unciv/logic/map/pathingmap/*
 - Deliverables: csharp/Unciv.Core/Logic/Map/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~PathfindingTests`
-- Claimed:
+- Claimed: 2026-10-24T10:25Z
 - Notes: Priority-queue tie-breaking must match Kotlin exactly (uses T001). CarrierSlotMatcher and MapPathing need MapUnit/UnitMovement: compile them against `IGameContextUnit`/`IMapUnitState` seam members (see the SEAM RULE in T053); T067 replaces them with concrete UnitMovement calls. PathfindingTests that need TestGame are in T072.
 
 ### T041 MapGenerator pipeline (audit existing partial work first)

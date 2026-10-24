@@ -205,7 +205,7 @@ flowchart TD
   class T037 avail
   class T038 done
   class T039 done
-  class T040 avail
+  class T040 prog
   class T041 avail
   class T042 prog
   class T045 done
@@ -241,7 +241,7 @@ flowchart TD
 | T046 | Available | T034, T039, T045, T055, T060, T065 | GameInfo core and the hooks waiting for it |
 | T035 | Available | T034, T038, T039, T046, T053, T054, T057, T061, T065 | Test-support port: TestGame helper and deferred fixtures |
 | T037 | Available | T036, T035 | Golden test: load and validate Vanilla and bundled mod rulesets |
-| T040 | Available | T039 | Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization |
+| T040 | In-Progress [Claude] | T039 | Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization |
 | T041 | Available | T039, T010, T016, T017 | MapGenerator pipeline (audit existing partial work first) |
 | T042 | In-Progress [Claude] | T039 | OdMap import/export |
 | T052 | Available | T028, T055, T056, T057, T060, T065, T066 | UniqueTriggerActivation and UniqueTriggerExecutors |
