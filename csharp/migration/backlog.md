@@ -1436,7 +1436,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented. PromotionTree lives in Unciv.Logic.Map.MapUnits (PromotionTree.cs). Deviations: (1) the MapUnitView constructor is not ported (UI view); (2) the collator comes from the new IGameInfoState.Collator seam member (GameInfo: ClientState.Collator, invariant culture by default) instead of GUI.getSettings(); (3) IPromotionTree and UnitPromotions.CreatePromotionTree (virtual seam) removed, CityConstructions.CompleteConstruction calls new PromotionTree(unit) like Kotlin; the test fake (TestUnitPromotions/FakePromotionTree) is gone and the saved-promotion test uses real promotions with Row/UnitTypes. Quirks kept: detectLoop runs before the node's own parents are linked so it never fires (dead guard, covered by test); canBuyUpTo counts only non-FreePromotion nodes; sort stable by (row<0 ? max : row==0 ? MIN+col : col), row, collated translated name. No golden values (no Kotlin tests).
 
 ### T127 Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: T061, T063, T065, T120
 - Source:
 - Fixtures: none
