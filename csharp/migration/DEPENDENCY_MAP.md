@@ -93,6 +93,7 @@ flowchart TD
     T133["T133<br/>Retype Civilization.Units to UnitManager, drop IUnitManager ..."]
     T134["T134<br/>Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatche..."]
     T135["T135<br/>T066 review follow-ups: UnitPromotions JSON round-trip, tie-..."]
+    T136["T136<br/>T064 review follow-up: cover uncovered CityConquestFunctions..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -274,6 +275,7 @@ flowchart TD
   T096 --> T129
   T097 --> T129
   T067 --> T134
+  T064 --> T136
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -395,6 +397,7 @@ flowchart TD
   class T133 ready
   class T134 ondeck
   class T135 ready
+  class T136 ondeck
 ```
 
 ## Incomplete tickets
@@ -418,8 +421,9 @@ flowchart TD
 | T069 | **On deck** (after T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T129 | **On deck** (after T096) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T134 | **On deck** (after T067) | T067 | 0 | Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing) |
+| T136 | **On deck** (after T064) | T064 | 0 | T064 review follow-up: cover uncovered CityConquestFunctions/CityTurnManager branches |
 | T078 | In-Progress [Claude] | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
-| T064 | In-Review [Claude] | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
+| T064 | In-Review [Claude] | T060, T061, T063 | 34 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T070 | Available (waiting on T068, T064, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T067 | In-Review [Claude] | T065, T054 | 24 | Unit movement: MovementCost, UnitMovement |
 | T035 | Available (waiting on T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
