@@ -5,6 +5,10 @@
   ticket.py show T027       one ticket (searches backlog.md, then backlog-archive.md)
   ticket.py next [AGENT]    what the Work Loop would pick: a Needs-Review ticket not by AGENT,
                             else the first Available ticket whose deps are all Done
+  ticket.py ready           every ticket that can be worked now (parallel dispatch): Needs-Review first,
+                            then each Available ticket whose deps are all Done
+  ticket.py claim T### AGENT [STATE]
+                            set ONLY that ticket's State (default "In-Progress [AGENT]") and Claimed (UTC now)
   ticket.py archive         move Done ticket bodies to backlog-archive.md, leaving a stub
 """
 import re
@@ -79,6 +83,32 @@ def main():
                 print(f"IMPLEMENT {i} {t}")
                 return
         print("NONE: nothing reviewable and nothing Available with deps Done")
+    elif cmd == "ready":
+        done = {i for i, _, s, _, _ in ts if s.startswith("Done")}
+        for i, t, s, d, _ in ts:
+            if s.startswith("Needs-Review"):
+                print(f"REVIEW {i} {t} ({s})")
+        for i, t, s, d, _ in ts:
+            deps = re.findall(r"\b[A-Z]\d{3}\b", d)
+            if s == "Available" and set(deps) <= done and (deps or d.lower().startswith("none")):
+                print(f"IMPLEMENT {i} {t}")
+    elif cmd == "claim":
+        from datetime import datetime, timezone
+        tid, agent = sys.argv[2], sys.argv[3]
+        state = sys.argv[4] if len(sys.argv) > 4 else f"In-Progress [{agent}]"
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+        lines = BACKLOG.read_text(encoding="utf-8").split("\n")
+        start = next((n for n, l in enumerate(lines) if l.startswith(f"### {tid} ")), None)
+        if start is None:
+            sys.exit(f"{tid} not found in backlog.md")
+        end = next((n for n in range(start + 1, len(lines)) if lines[n].startswith("#")), len(lines))
+        for n in range(start + 1, end):
+            if lines[n].startswith("- State:"):
+                lines[n] = f"- State: {state}"
+            elif lines[n].startswith("- Claimed:"):
+                lines[n] = f"- Claimed: {stamp}"
+        BACKLOG.write_text("\n".join(lines), encoding="utf-8")
+        print(f"{tid}: {state} {stamp}")
     elif cmd == "archive":
         text = BACKLOG.read_text(encoding="utf-8")
         moved = []

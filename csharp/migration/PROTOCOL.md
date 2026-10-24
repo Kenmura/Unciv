@@ -59,7 +59,7 @@ The build enforces `Directory.Build.props`, `.editorconfig` and `BannedSymbols.t
 
 ## Worktrees and the shared branch
 
-Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs to the human. Agents never share a working directory: concurrent builds corrupt `bin/`/`obj/`, and checkouts move files under each other.
+Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs to the human. Agents (and parallel subagents) never share a working directory: concurrent builds corrupt `bin/`/`obj/`, and checkouts move files under each other.
 
 - **Integration branch:** `csharp-migration`. It is the shared board and is never checked out anywhere. If it doesn't exist, create it from `master` (`git branch csharp-migration master`).
 - **Your worktree (first run only):**
@@ -95,13 +95,21 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
    - **Multi-Agent Mode:** Find a `Needs-Review` ticket whose implementer is NOT you. If one exists, go to Review.
    - **Single-Agent Mode (Budget for only 1 agent):** If running as the sole active agent, review your own completed `Needs-Review` ticket by dispatching an isolated **Adversarial Review Subagent** (applying `.agents/skills/adversarial-review/SKILL.md` with Auditor, Adversary, and Pragmatist personas). If the subagent approves, mark `Done`, commit `migration: review T### pass [Adversarial Review]`, and push to remote.
 2. Otherwise **implement.** Pick the first `Available` ticket whose `Depends` are all `Done`. If none, report that and stop.
-3. **Claim** atomically: edit only that ticket's `State` to `In-Progress [You]` (or `In-Review [You]`), commit with message `migration: claim T### [You] <UTC timestamp>`, and put the same timestamp in the ticket's `Claimed:` line. **Publish it immediately.** If the publish is rejected and the rebased backlog shows the ticket taken, drop your claim and pick another.
+3. **Claim** atomically (use `ticket.py claim T### <You>`, see Parallel subagents): edit only that ticket's `State` to `In-Progress [You]` (or `In-Review [You]`), commit with message `migration: claim T### [You] <UTC timestamp>`, and put the same timestamp in the ticket's `Claimed:` line. **Publish it immediately.** If the publish is rejected and the rebased backlog shows the ticket taken, drop your claim and pick another.
 
 ### Context discipline
 
 - **Backlog access.** `backlog.md` holds only open tickets (Done ones are stubs; full text in `backlog-archive.md`). Use, from `csharp/migration/`:
   `python3 -I tools/ticket.py next <You>` (what the Work Loop picks), `... show T###` (one ticket, ~1-3KB), `... list [State]` (one line each).
   Edit only your ticket's lines in `backlog.md`; to find them use `grep -n '^### T###'`. Never `Read` the whole file.
+- **Parallel subagents.** When `python3 -I tools/ticket.py ready` lists several tickets, the orchestrator dispatches one subagent per ticket **in parallel** (one message, several Agent calls). Rules:
+  - **One worktree per subagent**: `git -C /var/home/nickmarc/repos/Unciv worktree add .worktrees/<you>-T### -b agent/<you>-T### csharp-migration` (remove it after the ticket is Done and published). Never let two subagents share a working directory or branch; concurrent builds corrupt `bin/`/`obj/`.
+  - Only dispatch tickets that are independent: no dependency between them (`ready` already guarantees deps are Done) and no overlap in Deliverables or in shared files (`IHasUniques.cs`, `*Seams.cs`, `Utils/*Extensions.cs`, `.csproj`). If two tickets would extend the same seam file, run them one after the other.
+  - **Claim with the tool**: `python3 -I tools/ticket.py claim T### <You>` edits only that ticket's `State` and `Claimed` lines (hand edits have clobbered neighbouring tickets). Check `git diff` shows only those two lines, commit, then publish. If the publish is rejected, `git rebase csharp-migration`, re-run `ticket.py show T###`, and re-publish; if someone else's claim now holds the ticket, drop yours.
+  - **Publishing is serialised by git**: every publish is `git rebase csharp-migration && git push . HEAD:csharp-migration`; on rejection rebase and retry (backlog.md conflicts: take `csharp-migration`'s text and re-apply only your own ticket's lines). Pushing to `origin` after Done is `git push origin csharp-migration` and is safe to repeat.
+  - Several tickets in `Needs-Review` by the same implementer are reviewed in parallel too, each by its own isolated review subagent.
+  - The orchestrator keeps at most **4** subagents running at once (CPU/RAM: each runs a full `dotnet build/test`), refills the slot as each returns, and after each return re-runs `ticket.py ready`.
+  - A ticket's Done-publish may land while another subagent works: before its own review/Done publish each subagent rebases and re-runs the Standard checks if `csharp-migration` moved in files it touches.
 - **One ticket = one fresh subagent** when the harness has subagents: the orchestrator runs `ticket.py next`, then dispatches a subagent with the ticket ID, agent name and this file's path; the subagent does claim → implement/review → Gate → publish and returns a **3-line report** (ticket, outcome, commit). The orchestrator then loops. The orchestrator itself never reads Kotlin or C# sources, so its context stays flat. Without subagents, rely on auto-compaction.
 - Run the Standard checks with output trimmed: `... 2>&1 | tail -40`, and read the full log only on failure.
 - Periodically run `python3 -I tools/ticket.py archive` (and commit) when many tickets are Done.
