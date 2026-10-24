@@ -1798,7 +1798,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T152.
 
 ### T158 ConstructionAutomation (split from T091)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T085, T063
 - Source: core/src/com/unciv/logic/automation/city/ConstructionAutomation.kt
 - Fixtures: none - generate golden values
