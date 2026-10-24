@@ -960,7 +960,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Kotlin TODO comments were reworded to "Kotlin note:" (SourcePolicyTests).
 
 ### T089 TradeEvaluation
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: T086, T088, T085
 - Source: core/src/com/unciv/logic/trade/TradeEvaluation.kt
 - Fixtures: none - generate golden values (offer valuation per TradeOfferType)

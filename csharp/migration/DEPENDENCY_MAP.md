@@ -53,7 +53,6 @@ flowchart TD
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T139["T139<br/>Views B leftovers: members blocked on unported engine code (..."]
     T141["T141<br/>Deferred TestGame fixtures: map directory (FreshWater, TileI..."]
-    T142["T142<br/>Deferred TestGame fixtures: civilization directory and GameS..."]
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
     T144["T144<br/>Port TileUniquesTests.pillageYieldTest (split from T103)"]
     T146["T146<br/>UnitFormationTests Battle-dependent escort attack cases (nee..."]
@@ -119,8 +118,6 @@ flowchart TD
   T100 --> T104
   T139 --> T148
   T141 --> T148
-  T142 --> T150
-  T089 --> T150
   T143 --> T154
   T094 --> T154
   T090 --> T155
@@ -179,7 +176,7 @@ flowchart TD
   class T081 done
   class T083 done
   class T088 done
-  class T089 review
+  class T089 done
   class T090 prog
   class T091 ondeck
   class T092 waiting
@@ -202,13 +199,12 @@ flowchart TD
   class T129 ready
   class T139 prog
   class T141 done
-  class T142 done
   class T143 done
   class T144 ready
   class T146 prog
   class T148 ondeck
   class T149 ready
-  class T150 ondeck
+  class T150 ready
   class T152 ready
   class T154 waiting
   class T155 ondeck
@@ -231,7 +227,7 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 32]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3]
 ```
 
 ## Incomplete tickets
@@ -246,11 +242,11 @@ xychart-beta
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T144 | **Ready to start** | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
 | T149 | **Ready to start** | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
+| T150 | **Ready to start** | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T091 | **On deck** (after T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T155 | **On deck** (after T090) | T090 | 7 | Air unit automation: AirUnitAutomation |
 | T148 | **On deck** (after T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T090 | In-Progress [Claude] | T087, T088, T082, T083 | 14 | Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 7 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | T156 | Available (waiting on T090, T155) | T090, T155 | 6 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
@@ -258,7 +254,6 @@ xychart-beta
 | T094 | Available (waiting on T090, T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| T089 | In-Review [Antigravity] | T086, T088, T085 | 2 | TradeEvaluation |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T090, T092, T156) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
@@ -271,6 +266,6 @@ xychart-beta
 | C004 | Blocked | C002 | 0 | 3D military units |
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
-| T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T146 | In-Progress [Claude] | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
