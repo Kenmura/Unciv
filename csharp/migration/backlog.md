@@ -316,13 +316,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     - Ran Gate (7 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 348/348 passed).
 
 ### T020 MultiFilter and IdChecker
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: none
 - Source: core/src/com/unciv/logic/MultiFilter.kt, logic/IdChecker.kt
 - Fixtures: tests/src/com/unciv/logic/MultiFilterTests.kt, tests/src/com/unciv/logic/IdHelperTests.kt
 - Deliverables: csharp/Unciv.Core/Logic/MultiFilter.cs, IdChecker.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MultiFilterTests|FullyQualifiedName~IdCheckerTests`
-- Claimed:
+- Claimed: 2026-10-24T01:34:12Z
 - Notes: Pure string logic; keep Kotlin Regex/string semantics exact (culture-invariant).
 
 ### T021 Metadata models: LocaleCode, GameParameters, GameSetupInfo, Player, BaseRuleset, ModCategories
