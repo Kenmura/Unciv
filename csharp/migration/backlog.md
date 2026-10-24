@@ -116,7 +116,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     5. Note only: `TestHexCoordFormatAndParseBack` uses `System.Random(42)` (allowed in tests); once T010 is Done switch it to `GameRandom(42)` to match the Kotlin sequence. HexCoord is a value type here (Kotlin: reference data class), so nullability/identity differ; document for consumers.
 
 ### T007 JSON layer for ported data classes (Counter, Stats, ...)
-- State: In-Review [Claude]
+- State: Available
 - Claimed: 2026-10-24T01:09:05Z
 - Depends: T004, T005
 - Source: core/src/com/unciv/models/Counter.kt (`write`/`read`), libGDX Json behaviour as used by Unciv; core/src/com/unciv/json/*; core/src/com/unciv/logic/map/HexMath.kt (`HexCoord.Serializer`)
@@ -134,6 +134,11 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     - `IIsPartOfGameInfoSerialization` / `IsPartOfGameInfoSerialization`: marker interfaces.
   - Ported tests from `SerializationTests.kt` (`test Counter(String) serialization roundtrip`) and `HexmathTests.kt` (`testSerializedHexCoordIsCompact`, `testCanDeserializeVerboseVector2Format`, `testHexCoordVector2SerDeser`).
   - Ran Gate (9 passed) and full `dotnet test` (131 passed).
+  - Review notes (Claude): **Changes requested.** Gate 9/9 and Standard checks (build -warnaserror, format, full test 137/137) pass; no suppressions added. Findings:
+    1. **Must fix (fidelity, reproduced against real libGDX 1.14.2 via `java -cp gdx-1.14.2.jar`):** Kotlin truncates, the C# rounds. `JsonValue.getInt`/`asInt` on a float is `(int)double`, and `HexCoord.Serializer.read` reads a Float then `.toInt()`: `1.9 gives 1`, `-1.9 gives -1`, `2.5 gives 2`, `1.5 gives 1`. Both `CounterConverter.ReadValueAsInt` and `HexCoordConverter.ReadValueAsInt` use `Math.Round(..., ToEven)` (1.9 gives 2, 1.5 gives 2). Replace with truncation toward zero with Java `(int)` saturation (NaN gives 0, out of range clamps), via a shared tested helper (see T006 review note 2, `FloatToInt`/`DoubleToInt`). `TestCounterLenientReading` asserts the wrong value (`2 // rounded from float`); fix it to 1 and add cases for 1.5, -1.9, 2.5, and a HexCoord with fractional x/y. Also, the two `ReadValueAsInt` copies are identical: share one internal helper.
+    2. Should fix: Kotlin's `Counter.read` for an object entry is `entry.getInt("value")`, which throws when `value` is missing; the converter silently yields 0. Same for non-numeric tokens (null/bool/array), where `asInt` throws or maps bool to 0/1. Match: throw `JsonException` when `value` is absent.
+    3. Should fix: `CounterConverter.ConvertKey` uses `Convert.ChangeType` for non-string K. Kotlin keeps the raw String name (unchecked cast), and `ChangeType` throws for enums and is culture-sensitive. Either restrict the factory to `string` keys until a ticket needs more (preferred, clear error otherwise) or convert with the invariant culture and enum parsing.
+    4. Note only: the Counter doc says it serializes non-zero entries; Kotlin `write` writes *all* entries (copy-constructed Counters may hold zeros) and the C# does the same, which is correct. Stats/HexCoord/Vector2 readers are case-insensitive and accept strings, a superset of libGDX (exact field names, `ignoreUnknownFields`), acceptable but say so in the ticket notes. `JsonStringEnumConverter` is registered for all enums; fine for now, revisit when ruleset enums arrive. HexCoord read of a top-level number (not an object) throws; Kotlin does too (`readValue("x"...)` on a primitive is null/0), so no action.
 
 ### T010 Seeded deterministic RNG
 - State: In-Progress [Antigravity]
