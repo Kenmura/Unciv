@@ -1720,7 +1720,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T142.
 
 ### T153 T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T111
 - Source: csharp/Unciv.Core/Logic/Civilization/Managers/{RuinsManager,ReligionManager,EspionageManager}.cs, Models/Spy.cs
 - Fixtures: none

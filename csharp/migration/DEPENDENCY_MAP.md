@@ -67,7 +67,6 @@ flowchart TD
     T149["T149<br/>Deferred civilization fixtures needing Battle: DiplomacyMana..."]
     T150["T150<br/>Deferred civilization fixtures needing TradeEvaluation: Gold..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
-    T153["T153<br/>T111 leftovers: map-backed tests for RuinsManager.SelectNext..."]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
   end
   subgraph CTRACK["Client track (Godot)"]
@@ -231,7 +230,6 @@ flowchart TD
   class T149 ondeck
   class T150 ondeck
   class T152 ready
-  class T153 review
   class T154 waiting
 ```
 
@@ -248,10 +246,10 @@ Generated from the git history of `backlog.md` (UTC; the last point is the curre
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 01:32", "24 02:39", "24 03:46", "24 04:52", "24 05:59", "24 07:06", "24 08:13", "24 09:20", "24 10:26", "24 11:33", "24 12:40", "24 13:47", "24 14:53", "24 16:00", "24 17:07", "24 18:14"]
+    x-axis ["24 01:32", "24 02:39", "24 03:46", "24 04:53", "24 06:00", "24 07:06", "24 08:13", "24 09:20", "24 10:27", "24 11:34", "24 12:41", "24 13:48", "24 14:54", "24 16:01", "24 17:08", "24 18:15"]
     y-axis "Tickets" 0 --> 67
-    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 55, 58, 60, 56, 48, 36, 34]
-    line [3, 5, 2, 2, 0, 0, 0, 0, 4, 2, 4, 0, 1, 4, 4, 5]
+    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 58, 58, 60, 56, 47, 36, 34]
+    line [3, 5, 2, 2, 0, 0, 0, 0, 4, 2, 4, 0, 1, 5, 2, 4]
 ```
 
 ## Incomplete tickets
@@ -295,5 +293,4 @@ xychart-beta
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T147 | In-Progress [Claude] | T107 | 0 | MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T153 | Needs-Review [Claude] | T111 | 0 | T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
