@@ -1001,6 +1001,24 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Created by T095: the Civilopedia members of the ruleset objects that T096/T097 do not list. T095 already added MakeLink to every IRulesetObject (abstract on RulesetObject/RulesetStatsObject), GlobalUniques.getCivilopediaTextLines and civilopediaText in Combine. Remaining: getCivilopediaTextLines/Header/getSortGroup/getSubCategory/getIconName for Policy, Speed, Victory, Belief (+ getCivilopediaBeliefsEntry/getCivilopediaReligionEntry, getBeliefsMatching, then add the two virtual entries to CivilopediaCategories.Belief in GetCategoryIterator), Tutorial, UnitType, UnitNameGroup, Promotion, CityStateType, Personality, Difficulty (Era/Nation/Technology/BaseUnit are T097; Building/Improvement/Resource/Terrain are T096); Ruleset.allICivilopediaText; RulesetValidator.checkCivilopediaText using FormattedLine.UnsupportedReasons with an IFormattedLineImageCheck. Override pattern (see GlobalUniques): list ICivilopediaText in the class base list and declare a public GetCivilopediaTextLines(CivilopediaContext).
 
+### T109 Hardening sweep: non-blocking review findings from T033-T095
+- State: Available
+- Depends: none
+- Source: C# files named in the notes (no Kotlin source: parity fixes and missing tests)
+- Fixtures: none
+- Deliverables: fixes and tests in csharp/Unciv.Core and csharp/Unciv.Core.Tests
+- Gate: dotnet test
+- Claimed:
+- Notes: Owns every non-blocking finding that adversarial reviews left unfixed. Fix each (with a test) and tick it off with ticket.py note.
+  - Findings to fix (source ticket: finding):
+    - T095: FormattedLine name->category static cache is two unsynchronised statics and ignores GameInfo changes (Kotlin same, but make thread-safe or document); EngineColors.ValueOf throws FormatException for non-ASCII Unicode digits ("#٣٣٣": IsHex uses char.IsDigit like Kotlin, Java parseInt accepts them) - catch in ParseColor or hand-parse so it matches Kotlin; no JSON writer support for NaN ImageSize.
+    - T076: NaN comparison in GeneratesNaturallyOn; an unused ruleset parameter.
+    - T073: NaN edge case in PowSigned; thin RNG-stream test coverage (MapGenerationRandomness).
+    - T054: untested ported branches (ProductionBonusWhenRemoved, RestrictedBuildableImprovements, and others the review listed).
+    - T053: untested Tile members CanCivPassThrough, ProvidesYield, GetWorkingCity, IsLocked, ProvidesResources, UnitHeight/TileHeight.
+    - T033: BaseUnit isGreatPerson and isMilitary use System.Lazy, which caches exceptions (Kotlin lazy does not); mirror the fix made for Type/IsLandUnit/IsWaterUnit.
+    Later hardening findings from other tickets: add them here with ticket.py note.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.

@@ -81,6 +81,7 @@ flowchart TD
     T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
     T108["T108<br/>Civilopedia text model D: remaining ruleset objects' civilop..."]
     T108["T108<br/>Civilopedia text model D: remaining ruleset objects' civilop..."]
+    T109["T109<br/>Hardening sweep: non-blocking review findings from T033-T095"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -397,6 +398,7 @@ flowchart TD
   class T107 done
   class T108 ready
   class T108 ready
+  class T109 ready
 ```
 
 ## Incomplete tickets
@@ -408,6 +410,7 @@ flowchart TD
 | T059 | **Ready to start** | T055 | 36 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
 | T108 | **Ready to start** | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
 | T108 | **Ready to start** | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
+| T109 | **Ready to start** | none | 0 | Hardening sweep: non-blocking review findings from T033-T095 |
 | T057 | In-Progress [Claude] | T055 | 54 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
 | T060 | Available (waiting on T056, T057, T058) | T055, T056, T057, T058 | 52 | City core: City, CityFocus, CityResources, CityEspionageManager |
 | T065 | Available (waiting on T056, T060) | T055, T056, T060 | 45 | MapUnit core: MapUnit, MapUnitCache |
