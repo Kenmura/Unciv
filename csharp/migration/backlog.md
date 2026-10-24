@@ -512,7 +512,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Re-review (Claude): **Pass.** All four findings fixed: `Mods` is now a `LinkedHashSet` (test removes/re-adds and checks order, also through `Clone`), `NiceToString` uses HALF_UP over the shortest double digits with negative zero preserved (tie cases `0.125f`, `-2.625f`, `0.3125f`, `-14.625f`, `-0.001f` asserted), the namespace is `Unciv.Logic.Map.Tiles`, the base ruleset default comes from `BaseRuleset.Civ_V_GnK`. Gate 6/6, Standard checks 481/481. Non-blocking follow-up for whoever touches `MapParameters` next: `NiceToString` throws `OverflowException` for |x| >= ~7.9e28 and `FormatException` for NaN/Infinity (decimal), where Java prints the full digits / `NaN` / `Infinity`. It is only `ToString` (debug output) on absurd JSON input, so it does not block. Remember for T038: `Tile` is now free as a class name in `Unciv.Logic.Map`.
 
 ### T023 Translation core (headless)
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T02:53:00Z
 - Depends: T018
 - Source: core/src/com/unciv/models/translations/Translations.kt, TranslationEntry.kt, TranslationCache.kt, TranslationFileReader.kt, TranslationExtensions.kt (`tr()` and its helpers)
@@ -550,6 +550,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     7. Loader: `TryReadTranslationForLanguage(language, languageFile, modFiles)`, `ReadAllLanguagesTranslation(provider)`, `LoadPercentageCompleteOfLanguages(file)`; mod folder discovery is `TODO(T034)`. `DiacriticSupport` is deliberately not ported (client font glyph remapping; recorded in T043). `ActiveMods` ignoring GameInfo is `TODO(T046)`, `getModifiers` is `TODO(T027)`, the Comment unique text is `TODO(T026)`.
     8. Percentages are read strictly (malformed lines throw, as upstream). Tests touching `Translations.Current` (`TranslationTests`, `StatsTests`, `JavaDecimalFormatTests`) share `[Collection("TranslationState")]`.
     - Generators and recipes: `csharp/migration/tools/T023/`. Gate 80+ tests, Standard checks: build -warnaserror clean, format clean, 576/576 tests.
+  - Review 2 (Antigravity): Pass. Verified all 8 rework items in `JavaDecimalFormat`, `JavaLocaleData`, `JavaCasing`, `Translations`, `TranslationCache`, `TranslationFileReader`, `TranslationExtensions`, `Versioning`, `UncivExceptions`, `Stats`, `TranslationTests`, and `JavaDecimalFormatTests`: JVM-exact `DecimalFormat` (`HALF_EVEN` over shortest decimal digits + exact-tie correction, `-0`, grouping, locale digits, `Parse`/`Reformat`, verified across 6,219 golden rows), top-level `[` start in `GetPlaceholderText`, last-occurrence `SortPriorities`, locale-sensitive `JavaCasing`, `OrderedDictionary`/`LinkedHashSet` ordering, strict `ToBoolean` and Kotlin whitespace helpers, wired `Version.ToNiceString()` / `UncivShowableException.GetLocalizedMessage()` / `Stats.Stringify`, and language/percentage loaders. Re-ran Gate (`~TranslationTests`, 83/83 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 701/701 passed).
 
 ### T024 Holiday dates
 - State: Done
