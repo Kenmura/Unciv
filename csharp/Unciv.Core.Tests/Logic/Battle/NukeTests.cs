@@ -249,7 +249,7 @@ public class NukeTests
 
         Assert.Equal(healthBefore / 2, city.Health);
         Assert.InRange(city.Population.Population, 4, 7);
-        Assert.Contains(defenderCiv.Notifications, it => it.Text.Contains("has attacked", StringComparison.Ordinal) || it.Text.Contains("has destroyed", StringComparison.Ordinal));
+        Assert.Contains(defenderCiv.Notifications, it => it.Text.StartsWith("An enemy [", StringComparison.Ordinal) && it.Text.Contains(" has attacked [" + city.Name + "]", StringComparison.Ordinal));
     }
 
     [Fact]

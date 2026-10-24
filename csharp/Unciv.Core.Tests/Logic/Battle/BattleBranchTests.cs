@@ -464,12 +464,13 @@ public class BattleBranchTests
             "Upon capturing a city, receive [1] times its [Gold] production as [Nonsense] immediately", "Gain [11] [Gold] <upon conquering a city>");
         SetGold(attackerCiv, 0);
         var faithBefore = attackerCiv.ReligionManager.StoredFaith;
+        int expectedFaith = Unciv.Utils.KotlinMath.FloatToInt(city.CityStats.CurrentCityStats[Unciv.Models.StatTypes.Stat.Gold]);
 
         BattleObject.Attack(C(attacker), new CityCombatant(city));
 
         Assert.Equal(attackerCiv, city.Civ);
         Assert.Equal(11, attackerCiv.Gold);
-        Assert.True(attackerCiv.ReligionManager.StoredFaith >= faithBefore);
+        Assert.Equal(faithBefore + expectedFaith, attackerCiv.ReligionManager.StoredFaith);
     }
 
     [Fact]
@@ -639,5 +640,84 @@ public class BattleBranchTests
 
         Assert.True(barbarian.IsDestroyed);
         Assert.Equal([attackerCiv.CivId], fake.BarbarianKillers);
+    }
+
+    [Fact]
+    public void ConquestTriggersAreEvaluatedLazilySoEarlierTriggersAffectLaterConditionals()
+    {
+        testGame.AddCity(defenderCiv, testGame.GetTile(-4, 0));
+        var city = testGame.AddCity(defenderCiv, testGame.GetTile(0, 1), initialPopulation: 5);
+        city.Health = 1;
+        attackerCiv.PlayerType = PlayerType.AI;
+        MakeCurrentPlayerSomeoneElse();
+        var attacker = Melee(attackerCiv, 0, 2, "Gain [100] [Gold] <upon conquering a city>", "Gain [7] [Gold] <upon conquering a city> <when above [50] [Gold]>");
+        SetGold(attackerCiv, 0);
+
+        BattleObject.Attack(C(attacker), new CityCombatant(city));
+
+        Assert.Equal(107, attackerCiv.Gold);
+    }
+
+    [Fact]
+    public void FlatXpBonusesWrapOnOverflowLikeKotlin()
+    {
+        var attacker = Melee(attackerCiv, 1, 0, "[2147483647] XP gained from combat", "[2147483647] XP gained from combat");
+        var defender = Melee(defenderCiv, 0, 0);
+
+        BattleObject.AddXp(C(attacker), 0, C(defender));
+
+        Assert.Equal(-2, attacker.Promotions.XP);
+    }
+
+    [Fact]
+    public void TheExtraRangedFakeUnitDelegatesToTheWrappedUnitExceptForRangedAndStrength()
+    {
+        var attacker = Melee(attackerCiv, 1, 0, "Before engaging in combat performs an extra ranged attack with [50]% of melee combat strength");
+        var wrapped = C(attacker);
+        var fake = BattleObject.GetExtraRangedAttackFakeUnits(wrapped).Single();
+        var other = C(Melee(defenderCiv, 0, 0));
+
+        Assert.True(fake.IsRanged());
+        Assert.Equal(wrapped.IsMelee(), fake.IsMelee());
+        Assert.Equal(((ICombatant)wrapped).IsAirUnit(), fake.IsAirUnit());
+        Assert.Equal(((ICombatant)wrapped).IsWaterUnit(), fake.IsWaterUnit());
+        Assert.Equal(((ICombatant)wrapped).IsLandUnit(), fake.IsLandUnit());
+        Assert.False(fake.IsCity());
+        Assert.Equal(wrapped.IsCivilian(), fake.IsCivilian());
+        Assert.Equal(wrapped.GetNotificationDisplay("our "), fake.GetNotificationDisplay("our "));
+        Assert.Equal(wrapped.GetName(), fake.GetName());
+        Assert.Equal(wrapped.GetHealth(), fake.GetHealth());
+        Assert.Equal(wrapped.GetMaxHealth(), fake.GetMaxHealth());
+        Assert.Equal(wrapped.GetUnitType(), fake.GetUnitType());
+        Assert.Equal(wrapped.GetDefendingStrength(other), fake.GetDefendingStrength(other));
+        Assert.Equal(wrapped.GetCivInfo(), fake.GetCivInfo());
+        Assert.Equal(wrapped.GetTile(), fake.GetTile());
+        Assert.Equal(wrapped.IsVisibleTo(defenderCiv), fake.IsVisibleTo(defenderCiv));
+        Assert.Equal(wrapped.CanAttack(), fake.CanAttack());
+        Assert.Equal(wrapped.MatchesFilter("Military"), fake.MatchesFilter("Military"));
+        Assert.Equal(wrapped.GetAttackSound(), fake.GetAttackSound());
+        Assert.Empty(fake.GetTriggeredUniques(UniqueType.TriggerUponCombat, GameContext.EmptyState));
+        Assert.Equal(attacker.BaseUnit.Strength / 2, fake.GetAttackingStrength(other)); // 50% of the melee strength, always ranged
+        Assert.False(fake.IsDefeated());
+        fake.TakeDamage(10);
+        Assert.Equal(90, attacker.Health);
+        Assert.Contains("Extra ranged attack of", fake.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ADestroyingUnitThatRemovesTheLastCityDefeatsTheCiv()
+    {
+        var lonely = testGame.AddCiv(isPlayer: true);
+        lonely.DiplomacyFunctions.MakeCivilizationsMeet(attackerCiv);
+        var city = testGame.AddCity(lonely, testGame.GetTile(0, 1));
+        testGame.AddCity(attackerCiv, testGame.GetTile(4, 0));
+        city.Health = 1;
+        city.IsOriginalCapital = false;
+        var attacker = Ranged(attackerCiv, 0, 3, "Destroys [All] cities instead of capturing");
+
+        BattleObject.Attack(C(attacker), new CityCombatant(city));
+
+        Assert.Empty(lonely.Cities);
+        Assert.Contains(attackerCiv.PopupAlerts, it => it.Type == AlertType.Defeated && it.Value == lonely.CivId);
     }
 }

@@ -655,9 +655,8 @@ public static class Battle
 
         var gameContext = new GameContext(civInfo: civ, ourCombatant: unitCombatant, theirCombatant: otherCombatant);
 
-        int baseXP = unchecked(amount + unitCombatant
-            .GetMatchingUniques(UniqueType.FlatXPGain, gameContext, true)
-            .Sum(it => it.Params[0].ToInt()));
+        int baseXP = unchecked(amount + KotlinMath.SumOf(
+            unitCombatant.GetMatchingUniques(UniqueType.FlatXPGain, gameContext, true), it => it.Params[0].ToInt()));
 
         double xpBonus = 0.0;
         foreach (var unique in unitCombatant.GetMatchingUniques(UniqueType.PercentageXPGain, gameContext, true))
@@ -783,7 +782,7 @@ public static class Battle
             clientState.AddCompletedTutorialTask("Conquer a city");
 
         foreach (var unique in attackerCiv.GetTriggeredUniques(UniqueType.TriggerUponConqueringCity, gameContext)
-                     .Concat(attacker.Unit.GetTriggeredUniques(UniqueType.TriggerUponConqueringCity, gameContext)).ToList())
+                     .Concat(attacker.Unit.GetTriggeredUniques(UniqueType.TriggerUponConqueringCity, gameContext))) // lazy, like the Kotlin sequences
             UniqueTriggerActivation.TriggerUnique(unique, attacker.Unit);
     }
 
