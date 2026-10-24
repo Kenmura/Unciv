@@ -194,14 +194,14 @@ flowchart TD
   class T127 ready
   class T128 ready
   class T129 ready
-  class T139 ready
+  class T139 prog
   class T141 done
   class T142 done
   class T143 done
   class T144 ready
   class T145 review
   class T146 ready
-  class T148 waiting
+  class T148 ondeck
   class T149 ready
   class T150 ondeck
   class T152 ready
@@ -223,15 +223,14 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 32]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 31]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T139 | **Ready to start** | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
@@ -243,6 +242,7 @@ xychart-beta
 | T149 | **Ready to start** | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T091 | **On deck** (after T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
+| T148 | **On deck** (after T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T090 | In-Progress [Claude] | T087, T088, T082, T083 | 12 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 7 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
@@ -255,6 +255,7 @@ xychart-beta
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
+| T139 | In-Progress [Claude] | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -264,5 +265,4 @@ xychart-beta
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T145 | In-Review [Antigravity] | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
-| T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
