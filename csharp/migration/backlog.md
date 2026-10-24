@@ -189,7 +189,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified `IntRange.cs`, `GameRandomExtensions.cs`, and `GameRandomExtensionsTests.cs` against Kotlin stdlib 2.3.0: `NextInt(IntRange)` 3-way overflow split (`Last < MAX` / `First > MIN` / full range), `Random`/`RandomOrNull` RNG consumption parity (including 1-element consuming a draw and empty consuming nothing), and Kotlin's reverse Fisher-Yates `Shuffle` (`for i in lastIndex downTo 1: j = nextInt(i + 1)`). Re-ran Gate (3/3 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 231/231 passed).
 
 ### T011 State-hash determinism harness
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T01:31:14Z
 - Depends: T010
 - Source: design ticket (no Kotlin source); reference tests/src/com/unciv/logic/GameSerializationTests.kt for what constitutes game state
@@ -211,6 +211,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     3. Should fix (doc): DETERMINISM.md says Kotlin-generated hashes are a goal but does not give the byte layout; add the layout table above (and the three Python-verified example hashes) so a JVM harness can reproduce them. Also note that `Add(Counter)` is deliberately insertion-order sensitive (Kotlin `LinkedHashMap` order is game relevant) while Counter *equality* is not, and link T017 (`JavaHash`, `stateBasedRandom`) and T044 (JVM `HashMap` order) from section 2.4/2.5.
     4. Note only: 64-bit FNV is for desync detection, not integrity; collisions are possible (about 2^-64 per comparison). `Add(uint)`/`Add(char)` silently widen to long/int, so prefer explicit casts at call sites.
   - Rework notes (Claude), addressing the review above: (1) `AddUnorderedMap` now throws `ArgumentException` on duplicate key strings (checked after the ordinal sort); (2) new `AddUnorderedSet<T>(items, toKey)` (same duplicate rule, hashes the keys) and `Add<TEnum>(value)` hashing the enum member name; (3) DETERMINISM.md gains the byte-layout table (section 3.3), the Python-verified reference hashes, the note that Counter/StatMap/sequence hashes are deliberately insertion-order sensitive, and links to T017/T044 from 2.4/2.5. New tests: duplicate rejection (map + set), set order independence with an independently computed golden (`D671FB1B30AC7CCC`), enum golden (`386D968BEA3072E9`, equal to hashing the string "Gold"). Ran Gate (`~StateHasherTests`, 13 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` green.
+  - Review 2 (Antigravity): Pass. Verified `AddUnorderedMap` and `AddUnorderedSet` duplicate key string rejection, `Add<TEnum>` enum member name hashing, `DETERMINISM.md` byte-layout specification and cross-references, and golden FNV-1a 64-bit hashes. Re-ran Gate (`~StateHasherTests`, 13/13 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 352/352 passed).
 
 ### T012 Command layer design
 - State: Done
