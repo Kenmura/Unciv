@@ -215,7 +215,7 @@ flowchart TD
   class T052 waiting
   class T053 done
   class T054 done
-  class T055 prog
+  class T055 review
   class T056 waiting
   class T057 waiting
   class T058 waiting
@@ -244,7 +244,7 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T055 | In-Progress [Claude] | T034, T045, T039, T053 | 21 | Civilization core: Civilization, ExploredRegion, PopupAlert |
+| T055 | Needs-Review [Claude] | T034, T045, T039, T053 | 21 | Civilization core: Civilization, ExploredRegion, PopupAlert |
 | T056 | Available (waiting on T055) | T055 | 17 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
 | T057 | Available (waiting on T055) | T055 | 17 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
 | T058 | Available (waiting on T055) | T055, T054 | 17 | Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions |
