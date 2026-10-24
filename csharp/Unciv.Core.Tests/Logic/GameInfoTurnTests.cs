@@ -1,6 +1,7 @@
 using Unciv.Core.Tests.Support;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
+using Unciv.Models.Ruleset.Unique;
 using CityObject = Unciv.Logic.City.City;
 
 namespace Unciv.Core.Tests.Logic;
@@ -22,11 +23,11 @@ public sealed class GameInfoTurnTests
     private GameInfo Info => game.GameInfo;
 
     /// <summary>A human civ and an AI civ, each with a capital, the human being the current player.</summary>
-    private (Civilization Human, Civilization Ai) HumanAndAi()
+    private (Civilization Human, Civilization Ai) HumanAndAi(string[]? humanUniques = null, string[]? aiUniques = null)
     {
         game.MakeHexagonalMap(6);
-        var human = game.AddCiv(isPlayer: true);
-        var ai = game.AddCiv();
+        var human = game.AddCiv(humanUniques, isPlayer: true);
+        var ai = game.AddCiv(aiUniques);
         game.AddCity(human, game.GetTile(0, 0));
         game.AddCity(ai, game.GetTile(4, 4));
         Info.CurrentPlayerCiv = human;
@@ -271,18 +272,40 @@ public sealed class GameInfoTurnTests
         Assert.DoesNotContain(human.Notifications, it => it.Text.Contains("spotted", StringComparison.Ordinal));
     }
 
+    /// <summary>Both civs vote for the human: two votes are enough to win a two-civ game.</summary>
+    private (Civilization Human, Civilization Ai) VotedGame()
+    {
+        var (human, ai) = HumanAndAi();
+        Info.DiplomaticVictoryVotesCast[human.CivId] = human.CivId;
+        Info.DiplomaticVictoryVotesCast[ai.CivId] = human.CivId;
+        Assert.True(human.VictoryManager.HasEnoughVotesForDiplomaticVictory());
+        return (human, ai);
+    }
+
     [Fact]
     public void ProcessDiplomaticVictory_RunsOnce()
     {
-        var (human, _) = HumanAndAi();
+        var (human, ai) = VotedGame();
         Assert.False(Info.DiplomaticVictoryVotesProcessed);
 
         Info.ProcessDiplomaticVictory();
 
         Assert.True(Info.DiplomaticVictoryVotesProcessed);
-        Assert.False(human.VictoryManager.HasEverWonDiplomaticVote);
+        Assert.True(human.VictoryManager.HasEverWonDiplomaticVote);
+        Assert.False(ai.VictoryManager.HasEverWonDiplomaticVote);
+
+        human.VictoryManager.HasEverWonDiplomaticVote = false;
         Info.ProcessDiplomaticVictory(); // second call returns early
+        Assert.False(human.VictoryManager.HasEverWonDiplomaticVote);
+    }
+
+    [Fact]
+    public void ProcessDiplomaticVictory_WithoutVotesWinsNothing()
+    {
+        var (human, _) = HumanAndAi();
+        Info.ProcessDiplomaticVictory();
         Assert.True(Info.DiplomaticVictoryVotesProcessed);
+        Assert.False(human.VictoryManager.HasEverWonDiplomaticVote);
     }
 
     [Fact]
@@ -292,6 +315,59 @@ public sealed class GameInfoTurnTests
         Assert.False(Info.CheckForVictory());
         Info.VictoryData = new VictoryData("x", "Scientific", 3);
         Assert.True(Info.CheckForVictory());
+    }
+
+    [Fact]
+    public void CheckForVictory_FindsAWinningCiv()
+    {
+        var (human, _) = HumanAndAi([UniqueType.TriggersVictory.Text()]);
+        Assert.True(human.VictoryManager.HasWon());
+
+        Assert.True(Info.CheckForVictory());
+        Assert.Equal(human.CivId, Info.VictoryData?.WinningCiv);
+    }
+
+    [Fact]
+    public void NextTurn_StopsAutoPlayWhenACivHasWonUnlessOneMoreTurnIsOn()
+    {
+        var (_, ai) = HumanAndAi(aiUniques: [UniqueType.TriggersVictory.Text()]);
+        Assert.True(ai.VictoryManager.HasWon());
+        var autoPlay = new FakeAutoPlay();
+        Info.ClientState.AutoPlay = autoPlay;
+
+        Info.OneMoreTurnMode = true;
+        Info.NextTurn(0);
+        Assert.Equal(0, autoPlay.Stops);
+
+        Info.OneMoreTurnMode = false;
+        Info.NextTurn(0);
+        Assert.Equal(1, autoPlay.Stops);
+
+        autoPlay.Playing = false;
+        Info.NextTurn(0);
+        Assert.Equal(1, autoPlay.Stops);
+
+        Info.ClientState.AutoPlay = null;
+        Info.NextTurn(0); // no client: nothing to stop
+    }
+
+    [Fact]
+    public void NextTurn_NotifiesAboutVisibleEnemyUnitsNearTheTerritory()
+    {
+        var (human, ai, city) = AtWar();
+        var near = city.GetCenterTile().GetTilesAtDistance(2)
+            .Where(it => it.GetOwner() == null && it.IsLand && it.Neighbors.Any(n => n.GetOwner() == human)).ToList();
+        Assert.True(near.Count >= 3);
+        game.AddUnit("Warrior", ai, near[0]);
+
+        Info.NextTurn(0);
+        Assert.Contains(human.Notifications, it => it.Text == "An enemy [Warrior] was spotted near our territory");
+
+        human.Notifications.Clear();
+        game.AddUnit("Archer", ai, near[1]);
+        game.AddUnit("Spearman", ai, near[2]);
+        Info.NextTurn(0);
+        Assert.Contains(human.Notifications, it => it.Text == "[3] enemy units were spotted near our territory");
     }
 
     [Fact]
