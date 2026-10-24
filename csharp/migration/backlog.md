@@ -143,7 +143,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     4. Note only: the Counter doc says it serializes non-zero entries; Kotlin `write` writes *all* entries (copy-constructed Counters may hold zeros) and the C# does the same, which is correct. Stats/HexCoord/Vector2 readers are case-insensitive and accept strings, a superset of libGDX (exact field names, `ignoreUnknownFields`), acceptable but say so in the ticket notes. `JsonStringEnumConverter` is registered for all enums; fine for now, revisit when ruleset enums arrive. HexCoord read of a top-level number (not an object) throws; Kotlin does too (`readValue("x"...)` on a primitive is null/0), so no action.
 
 ### T010 Seeded deterministic RNG
-- State: In-Review [Claude]
+- State: Available
 - Claimed: 2026-10-24T01:13:13Z
 - Depends: none
 - Source: kotlin.random.Random (XorWow, as used via `Random(seed)` across core/src, 29 import sites), plus the one `java.util.Random` use (grep it)
@@ -157,6 +157,20 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Strictly deterministic: unseeded constructors omitted per Roslyn BannedApiAnalyzers (`RS0030`).
   - Golden values generated directly from OpenJDK 25 running `kotlin.random.Random(seed)` in `instrumented-kotlin-stdlib-2.3.0.jar` across int, ranges, float, double, boolean, and long seeds, confirmed bit-for-bit identical.
   - Ran Gate (10 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 147 passed).
+  - Review notes (Claude): **Changes requested.** Gate 10/10 and Standard checks (build -warnaserror, format, full test 200/200) pass; no suppressions. Verified against the real `kotlin.random` (kotlin-stdlib 2.3.0 jar, run via `java` in `dotnet-dev`, harness not committed): constructors, warmup, `NextInt()`, `NextBits`, `NextLong()`/`NextLong(until)`/`NextLong(from,until)` incl. power-of-two and full-range, `NextDouble*`, `NextBytes` (7- and 8-byte arrays) all match bit-for-bit for seeds 0/1/42/-7 and long seeds 0/42/-1/2^40. One real defect:
+    1. **Must fix:** `NextInt(from, until)` mishandles the `until - from` int overflow cases. Kotlin: `if (n > 0 || n == Int.MIN_VALUE)` uses the normal path (for `n == Int.MIN_VALUE`, `n and -n == n` is true, so `nextBits(fastLog2(n)) = nextBits(31)`, then `from + rnd`); otherwise (n < 0, i.e. span > Int.MAX_VALUE) it rejection-samples `nextInt()` until `r in from until until`. The C# does the opposite: `n == int.MinValue` takes the rejection loop (wrong value) and every other negative `n` throws "Random range is empty" (Kotlin returns a value). Reproduced (temporary test, not committed). Golden values from Kotlin, each call on a fresh `Random(seed)` consumed in this order, seed 0: `nextInt(-1073741824, 1073741824)=106586390` then `nextInt(-1073741824, 1073741824)=-369141976` then `nextInt(-2000000000, 2000000000)=-649160781` then `nextInt(Int.MIN_VALUE, Int.MAX_VALUE)=-1454478562` then `nextInt(Int.MIN_VALUE+1, Int.MAX_VALUE)=-1464141532`. Seed 42 same calls: `-587733491, -203452384, -408207414, -112774692, 1162768683`. Add these as tests (sequence order matters), fix the branch (`n > 0 || n == int.MinValue` first, the empty-range check stays `until <= from`, else rejection loop), and keep `NextLong` as is (verified correct).
+    2. The ticket's Fixtures list `nextInt(range)` and Unciv uses it heavily (`(1..10).random(rng)`, `Collection.random(rng)`, `shuffled(rng)`), but none of it is ported; the Notes claim "Kotlin lowercase aliases", which do not exist in the file (fine under the naming rules; just correct the note). Range/collection helpers are split out to **T016** so this ticket stays small.
+    3. Note only: `GameRandom(int, int, int, int, int, int)` and `(int, int)` are public, the Kotlin equivalents are `internal`; make them `internal` (tests use `InternalsVisibleTo` or go through the public seeds) unless a test needs them.
+
+### T016 Kotlin random extensions (IntRange.random, Collection.random, shuffled)
+- State: Available
+- Depends: T010
+- Source: kotlin.random extension functions as used in core/src: `IntRange.random(Random)`, `Random.nextInt(IntRange)`, `Collection.random(Random)`, `randomOrNull(Random)`, `shuffled(Random)`, `MutableList.shuffle(Random)` (grep `random(rng)`, `shuffled(`, `nextInt(` in core/src/com/unciv/logic)
+- Fixtures: none - generate golden values by running the Kotlin stdlib (kotlin-stdlib jar, java harness in `dotnet-dev`) for several seeds and sizes; include the exact edge cases of `nextInt(IntRange)` (`last == Int.MAX_VALUE`, `first == Int.MIN_VALUE`, full range, empty range throws)
+- Deliverables: csharp/Unciv.Core/Utils/GameRandomExtensions.cs (and a small `IntRange` struct only if needed), tests
+- Gate: `dotnet test --filter FullyQualifiedName~GameRandomExtensionsTests`
+- Notes: Kotlin `Collection.random` is `elementAt(random.nextInt(size))` and throws NoSuchElementException when empty; `shuffled`/`shuffle(Random)` is the Kotlin Fisher-Yates (`for i in lastIndex downTo 1: j = random.nextInt(i + 1); swap`), not `java.util.Collections.shuffle`. Check each against the stdlib source before porting. `java.util.Random` has exactly one use in core/src (grep it) and needs its own decision: port the JVM LCG or replace and note it.
+
 
 ### T011 State-hash determinism harness
 - State: Available
