@@ -71,6 +71,7 @@
     "Unciv.Core/Logic/Civilization/Managers/RuinsManager.cs": {"branch": 25.0, "line": 19.7},
     "Unciv.Core/Logic/Civilization/Managers/TechManager.cs": {"branch": 85.71, "line": 92.87},
     "Unciv.Core/Logic/Civilization/Managers/TriggerUniqueSeam.cs": {"branch": 100.0, "line": 0.0},
+    "Unciv.Core/Logic/Civilization/Managers/TurnManager.cs": {"branch": 86.7, "line": 88.96},
     "Unciv.Core/Logic/Civilization/Managers/UnitManager.cs": {"branch": 66.67, "line": 71.97},
     "Unciv.Core/Logic/Civilization/Managers/VictoryManager.cs": {"branch": 83.87, "line": 93.46},
     "Unciv.Core/Logic/Civilization/Notification.cs": {"branch": 91.3, "line": 95.83},

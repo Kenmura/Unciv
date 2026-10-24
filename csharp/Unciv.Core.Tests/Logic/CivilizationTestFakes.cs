@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
+using Unciv.Logic;
 using Unciv.Logic.City;
 using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization;
@@ -57,6 +58,9 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     }
     public HashSet<string> SpaceResourceNames { get; } = [];
     IReadOnlySet<string> IGameInfoState.SpaceResources => SpaceResourceNames;
+    public VictoryData? VictoryData { get; set; }
+    public GameClientState ClientStateData { get; } = new();
+    GameClientState IGameInfoState.ClientState => ClientStateData;
     public bool UsersTurn { get; set; } = true;
     bool IGameInfoState.IsUsersTurn() => UsersTurn;
     public bool AutoAssignCityProduction { get; set; }
@@ -193,6 +197,12 @@ internal class FakeCityStateFunctions : ICityStateFunctions
     public List<string> UnitGiftRequests { get; } = [];
     public void AskForUnitGifts(Civilization attacker) => UnitGiftRequests.Add(attacker.CivId);
     public int GetNumThreateningBarbarians() => 0;
+    public int ElectionsHeld { get; private set; }
+    public void HoldElections() => ElectionsHeld++;
+    public int GreatPersonTurns { get; set; } = 20;
+    public int TurnsForGreatPersonFromCityState() => GreatPersonTurns;
+    public List<Civilization> PatronGifts { get; } = [];
+    public void GiveGreatPersonToPatron(Civilization receivingCiv) => PatronGifts.Add(receivingCiv);
 }
 
 /// <summary>

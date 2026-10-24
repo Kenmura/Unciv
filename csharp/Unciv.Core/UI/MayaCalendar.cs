@@ -1,11 +1,12 @@
 using System.Globalization;
+using Unciv.Logic.Civilization;
 using Unciv.Utils;
 
 namespace Unciv.UI.Components;
 
 // core/src/com/unciv/ui/components/MayaCalendar.kt
-// Stripped: openPopup (Popup/BaseScreen), startTurnForMaya and isNewCycle (need Civilization/GameInfo/NextTurnAutomation;
-// TODO(T070) follow-up on Civilization when the Maya unique is ported - MayaYear.Baktuns is exposed via YearToBaktuns for it).
+// Stripped: openPopup (Popup/BaseScreen). startTurnForMaya (T070): NextTurnAutomation.chooseGreatPerson is the INextTurnAutomation hook
+// on the ClientState (TODO(T094)), skipped when none is set.
 public static class MayaCalendar
 {
     private const string IconFolder = "MayaCalendar/";
@@ -85,6 +86,18 @@ public static class MayaCalendar
 
     public static string YearToMayaDate(int year) => new MayaYear(year).ToString();
 
-    /// <summary>The b'ak'tun of a year; Kotlin <c>isNewCycle</c> compares these for two years.</summary>
+    /// <summary>The b'ak'tun of a year.</summary>
     public static int YearToBaktuns(int year) => new MayaYear(year).Baktuns;
+
+    private static bool IsNewCycle(int year, int otherYear) => new MayaYear(year).Baktuns != new MayaYear(otherYear).Baktuns;
+
+    public static void StartTurnForMaya(Civilization civInfo)
+    {
+        var game = civInfo.GameInfo;
+        int year = game.GetYear(0);
+        if (!IsNewCycle(year, game.GetYear(-1))) return;
+        civInfo.GreatPeople.TriggerMayanGreatPerson();
+        if (civInfo.IsAI() || game.IsFullAutoPlayAI)
+            game.ClientState.NextTurnAutomation?.ChooseGreatPerson(civInfo); // TODO(T094)
+    }
 }

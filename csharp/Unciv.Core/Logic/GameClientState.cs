@@ -1,4 +1,5 @@
 using Unciv.Logic.City.Managers;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Utils;
 
 namespace Unciv.Logic;
@@ -21,6 +22,21 @@ public sealed class GameClientState
 
     /// <summary><c>worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c></summary>
     public bool IsFullAutoPlayAI { get; set; }
+
+    /// <summary><c>settings.automatedUnitsMoveOnTurnStart</c></summary>
+    public bool AutomatedUnitsMoveOnTurnStart { get; set; }
+
+    /// <summary><c>settings.citiesAutoBombardAtEndOfTurn</c></summary>
+    public bool CitiesAutoBombardAtEndOfTurn { get; set; }
+
+    /// <summary><c>settings.notificationsLogMaxTurns</c></summary>
+    public int NotificationsLogMaxTurns { get; set; } = 5;
+
+    /// <summary>The unported <c>NextTurnAutomation</c> (TODO(T094): set by its port). Null means "not ported": the calls are skipped.</summary>
+    public INextTurnAutomation? NextTurnAutomation { get; set; }
+
+    /// <summary>The unported <c>TradeEvaluation</c> (TODO(T089): set by its port). TurnManager throws when it must validate a trade and this is null.</summary>
+    public ITradeValidity? TradeEvaluation { get; set; }
 
     /// <summary><c>settings.multiplayer.getUserId()</c>; the GameSettings default is the empty string.</summary>
     public string UserId { get; set; } = "";

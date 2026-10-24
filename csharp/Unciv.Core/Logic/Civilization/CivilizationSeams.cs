@@ -1,3 +1,4 @@
+using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -77,6 +78,16 @@ public interface IGameInfoState : IConstructionGameInfo
     bool AlternateUnitCycleOrder { get; }
     /// <summary><c>UncivGame.Current.settings.addCompletedTutorialTask(task)</c> (client setting; T066: Tile.doWorkerTurn).</summary>
     void AddCompletedTutorialTask(string task);
+    // T070 (TurnManager)
+    /// <summary><c>gameInfo.tileMap</c></summary>
+    new TileMap TileMap { get; }
+    /// <summary><c>gameInfo.victoryData</c></summary>
+    VictoryData? VictoryData { get; set; }
+    /// <summary><c>gameInfo.processDiplomaticVictory()</c> (GameInfo turn handling, T071).</summary>
+    void ProcessDiplomaticVictory() =>
+        throw new NotSupportedException("this IGameInfoState does not implement ProcessDiplomaticVictory (TODO(T071): drop the default when GameInfo implements it)");
+    /// <summary>The client settings and hooks that stand in for <c>UncivGame.Current</c> (T046).</summary>
+    GameClientState ClientState { get; }
 }
 
 /// <summary>What Civilization reads from <c>CityStateFunctions</c>.</summary>
@@ -113,6 +124,13 @@ public interface ICityStateFunctions
     void AskForUnitGifts(Civilization attacker);
     /// <summary><c>cityStateFunctions.getNumThreateningBarbarians()</c> (T069: QuestManager.tryBarbarianInvasion)</summary>
     int GetNumThreateningBarbarians();
+    // T070 (TurnManager)
+    /// <summary><c>cityStateFunctions.holdElections()</c></summary>
+    void HoldElections();
+    /// <summary><c>cityStateFunctions.turnsForGreatPersonFromCityState()</c></summary>
+    int TurnsForGreatPersonFromCityState();
+    /// <summary><c>cityStateFunctions.giveGreatPersonToPatron(receivingCiv)</c></summary>
+    void GiveGreatPersonToPatron(Civilization receivingCiv);
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>
