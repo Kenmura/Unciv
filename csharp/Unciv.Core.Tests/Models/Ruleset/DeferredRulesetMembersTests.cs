@@ -348,6 +348,11 @@ public class DeferredRulesetMembersTests
         var plain = game.AddCiv();
         Assert.Equal(10, improvement.GetTurnsToBuild(plain, game.AddUnit("Worker", plain, game.GetTile(0, 0))));
 
+        // -100% rate: increase == 0 -> buildTime 0 -> clamped to one turn
+        var never = game.AddCiv(["Can build [All] improvements at a [-100]% rate"]);
+        Assert.Equal(1, improvement.GetTurnsToBuild(never, game.AddUnit("Worker", never, game.GetTile(0, 1))));
+        Assert.Equal(1f, plain.GameInfo.Speed.ImprovementBuildLengthModifier);
+
         // +100% rate halves the time (speed modifier of the simulation speed is 1)
         var fast = game.AddCiv(["Can build [All] improvements at a [100]% rate"]);
         var fastWorker = game.AddUnit("Worker", fast, game.GetTile(1, 0));
