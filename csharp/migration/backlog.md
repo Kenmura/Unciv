@@ -602,7 +602,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Update after rebase onto T054: Tile.SetBaseTerrain/RemoveImprovement now real (T054); NaturalWonderSeams.cs only keeps the SetConnectedByRiver(convertTerrains) seam (T041).
 
 ### T075 MapGenerator C: mapregions Region, MapGenTileData, MapRegions, RegionStartFinder
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T039, T010, T016, T017
 - Source: core/src/com/unciv/logic/map/mapgenerator/mapregions/Region.kt, MapGenTileData.kt, MapRegions.kt, RegionStartFinder.kt
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
@@ -610,6 +610,10 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
 - Claimed: 2026-10-24T10:32Z
 - Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
+  - Ported Region, MapGenTileData, MapRegions (+TileDataMap, getTileFertility, getRegionPriority, anonymizeUnique, isWaterOnlyResource, getTerrainRule as MapRegionFunctions), RegionStartFinder into Unciv.Logic.Map.MapGenerator.Mapregions (namespace "Mapregions" to avoid clashing with class MapRegions). Source LOC was ~950, no split needed.
+    Seams (Mapregions/MapRegionsSeams.cs): IMapRegionsCivilization (T055: CivName, CivId, GetStartBias, StateBasedRandom) replaces Civilization; MapRegionsSeams.NormalizeStart (T076), PlaceMinorCivs (T076), AssignLuxuries/PlaceLuxuries/PlaceStrategicAndBonuses (T077) throw NotSupportedException until those tickets replace them. So AssignRegions / PlaceResourcesAndMinorCivs are untested end-to-end until T076/T077 (AssignRegions calls NormalizeStart).
+    Deviations: libGDX Rectangle is a readonly struct so Region.Rect is a settable property. Kotlin HashSet<Tile> (identity hash, order not reproducible on the JVM either) -> insertion-ordered LinkedHashSet; maxByOrNull/minByOrNull = first extremum (MapRegionsSelection helpers). civsAddedToContinent and Region.TerrainCounts are JavaHashMap (iteration order feeds results / toString). Region implements IGameContextRegion incl. libGDX Rectangle.hashCode.
+    Trap: HexMath.getRow truncates toward zero (faithful), so adjacent regions can share a row of tiles at negative rows; Region.Tiles overlap is Kotlin behaviour, not a bug. No Kotlin tests cover these classes; tests in Unciv.Core.Tests/Logic/Map/MapGenerator/Mapregions/MapRegionsTests.cs.
 
 ### T076 MapGenerator D: mapregions StartNormalizer, MinorCivPlacer
 - State: Available
