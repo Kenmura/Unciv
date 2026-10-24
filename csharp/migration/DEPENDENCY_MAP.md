@@ -54,6 +54,11 @@ flowchart TD
     T070["T070<br/>Civilization TurnManager"]
     T071["T071<br/>GameInfo turn handling and BackwardCompatibility"]
     T072["T072<br/>Deferred TestGame-based fixtures sweep (Tile, Civilization, ..."]
+    T073["T073<br/>MapGenerator A: MapGenerationRandomness, MapResourceSetting,..."]
+    T074["T074<br/>MapGenerator B: RiverGenerator, NaturalWonderGenerator"]
+    T075["T075<br/>MapGenerator C: mapregions Region, MapGenTileData, MapRegion..."]
+    T076["T076<br/>MapGenerator D: mapregions StartNormalizer, MinorCivPlacer"]
+    T077["T077<br/>MapGenerator E: resourceplacement (Luxury, StrategicBonus, M..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -97,6 +102,11 @@ flowchart TD
   T010 --> T041
   T016 --> T041
   T017 --> T041
+  T073 --> T041
+  T074 --> T041
+  T075 --> T041
+  T076 --> T041
+  T077 --> T041
   T039 --> T042
   T028 --> T052
   T055 --> T052
@@ -154,6 +164,20 @@ flowchart TD
   T068 --> T072
   T069 --> T072
   T071 --> T072
+  T039 --> T073
+  T010 --> T073
+  T016 --> T073
+  T017 --> T073
+  T039 --> T074
+  T010 --> T074
+  T016 --> T074
+  T017 --> T074
+  T039 --> T075
+  T010 --> T075
+  T016 --> T075
+  T017 --> T075
+  T075 --> T076
+  T075 --> T077
   C000 --> C001
   T006 --> C001
   C001 --> C002
@@ -206,7 +230,7 @@ flowchart TD
   class T038 done
   class T039 done
   class T040 prog
-  class T041 prog
+  class T041 avail
   class T042 prog
   class T045 done
   class T046 avail
@@ -231,6 +255,11 @@ flowchart TD
   class T070 avail
   class T071 avail
   class T072 avail
+  class T073 avail
+  class T074 avail
+  class T075 avail
+  class T076 avail
+  class T077 avail
 ```
 
 ## Incomplete tickets
@@ -242,7 +271,7 @@ flowchart TD
 | T035 | Available | T034, T038, T039, T046, T053, T054, T057, T061, T065 | Test-support port: TestGame helper and deferred fixtures |
 | T037 | Available | T036, T035 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T040 | In-Progress [Claude] | T039 | Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization |
-| T041 | In-Progress [Claude] | T039, T010, T016, T017 | MapGenerator pipeline (audit existing partial work first) |
+| T041 | Available | T039, T010, T016, T017, T073, T074, T075, T076, T077 | MapGenerator pipeline (audit existing partial work first) |
 | T042 | In-Progress [Claude] | T039 | OdMap import/export |
 | T052 | Available | T028, T055, T056, T057, T060, T065, T066 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T054 | In-Progress [Claude] | T053 | Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions |
@@ -264,6 +293,11 @@ flowchart TD
 | T070 | Available | T068, T064, T066, T069 | Civilization TurnManager |
 | T071 | Available | T046, T070 | GameInfo turn handling and BackwardCompatibility |
 | T072 | Available | T035, T062, T063, T064, T067, T068, T069, T071 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
+| T073 | Available | T039, T010, T016, T017 | MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator |
+| T074 | Available | T039, T010, T016, T017 | MapGenerator B: RiverGenerator, NaturalWonderGenerator |
+| T075 | Available | T039, T010, T016, T017 | MapGenerator C: mapregions Region, MapGenTileData, MapRegions, RegionStartFinder |
+| T076 | Available | T075 | MapGenerator D: mapregions StartNormalizer, MinorCivPlacer |
+| T077 | Available | T075 | MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources) |
 | C001 | Blocked | C000, T006 | Godot project skeleton |
 | C002 | Blocked | C001 | 3D hex terrain rendering |
 | C003 | Blocked | C002 | Resource and improvement props |

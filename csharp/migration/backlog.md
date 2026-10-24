@@ -322,14 +322,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Priority-queue tie-breaking must match Kotlin exactly (uses T001). CarrierSlotMatcher and MapPathing need MapUnit/UnitMovement: compile them against `IGameContextUnit`/`IMapUnitState` seam members (see the SEAM RULE in T053); T067 replaces them with concrete UnitMovement calls. PathfindingTests that need TestGame are in T072.
 
 ### T041 MapGenerator pipeline (audit existing partial work first)
-- State: In-Progress [Claude]
-- Depends: T039, T010, T016, T017
-- Source: core/src/com/unciv/logic/map/mapgenerator/**
+- State: Available
+- Depends: T039, T010, T016, T017, T073, T074, T075, T076, T077
+- Source: core/src/com/unciv/logic/map/mapgenerator/MapGenerator.kt (rest of pipeline; sub-tickets cover other files)
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt, ResourceDiversityTest.kt, mapgenerator/NaturalWonderGeneratorTests.kt
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
-- Claimed: 2026-10-24T10:25Z
+- Claimed:
 - Notes: Large (mapregions, resourceplacement, rivers, elevation, landmass). Split into sub-tickets at claim time if >1.5k LOC. Same seed must reproduce Kotlin maps: add golden maps generated from Kotlin.
+  - Split at claim: sub-tickets T073-T077 cover all other files (~4.2k LOC). T041 itself = MapGenerator.kt (817 LOC) orchestration + golden Kotlin maps for same-seed reproduction; becomes ready when subs are Done.
+  - Reset (split into sub-tickets; re-dispatch after subs Done); was 'In-Progress [Claude]'.
 
 ### T042 OdMap import/export
 - State: In-Progress [Claude]
@@ -563,6 +565,56 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
 - Claimed:
 - Notes: Created because T035 (TestGame) can only exist once the whole chain is ported, and each earlier ticket deferred its TestGame-based fixtures. Port them over the real TestGame, one test class per Kotlin class; any real behavioural bug found goes back to the owning ticket as a review note. Split by Kotlin test directory at claim time if too large. Also ports the Countables/Conditionals tests T028 deferred that need real game state, if T035 did not.
+
+### T073 MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator
+- State: Available
+- Depends: T039, T010, T016, T017
+- Source: core/src/com/unciv/logic/map/mapgenerator/MapGenerationRandomness.kt, MapResourceSetting.kt, MapElevationGenerator.kt, MapLandmassGenerator.kt
+- Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
+- Claimed:
+- Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
+
+### T074 MapGenerator B: RiverGenerator, NaturalWonderGenerator
+- State: Available
+- Depends: T039, T010, T016, T017
+- Source: core/src/com/unciv/logic/map/mapgenerator/RiverGenerator.kt, NaturalWonderGenerator.kt
+- Fixtures: tests/src/com/unciv/logic/map/mapgenerator/NaturalWonderGeneratorTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
+- Claimed:
+- Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
+
+### T075 MapGenerator C: mapregions Region, MapGenTileData, MapRegions, RegionStartFinder
+- State: Available
+- Depends: T039, T010, T016, T017
+- Source: core/src/com/unciv/logic/map/mapgenerator/mapregions/Region.kt, MapGenTileData.kt, MapRegions.kt, RegionStartFinder.kt
+- Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/MapRegions/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
+- Claimed:
+- Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
+
+### T076 MapGenerator D: mapregions StartNormalizer, MinorCivPlacer
+- State: Available
+- Depends: T075
+- Source: core/src/com/unciv/logic/map/mapgenerator/mapregions/StartNormalizer.kt, MinorCivPlacer.kt
+- Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/MapRegions/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
+- Claimed:
+- Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
+
+### T077 MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources)
+- State: Available
+- Depends: T075
+- Source: core/src/com/unciv/logic/map/mapgenerator/resourceplacement/*.kt
+- Fixtures: tests/src/com/unciv/logic/map/ResourceDiversityTest.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/ResourcePlacement/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
+- Claimed:
+- Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
 
 ### Planned (not yet ticketed)
 Deferred until the ruleset and map tickets land (decided with the user). Civilization, City, MapUnit, diplomacy core, quests and GameInfo are now ticketed (T046, T053-T072, acyclic via seam interfaces, see the SEAM RULE in T053). Still unticketed: TradeLogic/TradeEvaluation, Battle, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
