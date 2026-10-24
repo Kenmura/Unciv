@@ -398,7 +398,7 @@ flowchart TD
   class T111 waiting
   class T115 waiting
   class T116 prog
-  class T117 prog
+  class T117 review
   class T118 ready
   class T119 ready
   class T120 ready
@@ -462,7 +462,7 @@ flowchart TD
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052, T062) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
-| T117 | In-Progress [Claude] | none | 1 | Policy: reflection test forbidding mutable static state in Unciv.Core |
+| T117 | Needs-Review [Claude] | none | 1 | Policy: reflection test forbidding mutable static state in Unciv.Core |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
