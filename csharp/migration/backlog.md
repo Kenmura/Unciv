@@ -830,7 +830,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review notes (Adversarial Review, PASS): no parity defects. Non-blocking follow-ups: pillage loot routed to a city / closest-city selection and game-progress modifier branches untested (needs city fixtures); stats/stockpile cost activation paths partly uncovered.
 
 ### T080 Unit actions B: UnitActions, UnitActionsFromUniques
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T079, T061, T068
 - Source: core/src/com/unciv/logic/map/mapunit/actions/UnitActions.kt, UnitActionsFromUniques.kt
 - Fixtures: none
