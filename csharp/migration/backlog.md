@@ -1606,13 +1606,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Scope narrowed at claim: ported EspionageTests, FreeBuildingTests, DefensivePactTests, GoldenAgeManagerTest, CityMovingTests, CapitalConnectionsFinderTests, DiplomacyManagerTests (18 of 21 cases), GoldGiftingTests (9 of 14). ThreatManagerTests were already ported over TestGame by T087 (AutomationCoreTests.ThreatManager.cs). All pass unchanged against the engine, no bug found. Deferred: T149 (3 DiplomacyManagerTests conquest cases, need Battle T083), T150 (5 GoldGifting trade cases, need TradeEvaluation T089), T151 (QuestTests, GameSerializationTests, need JSON wiring T140), T152 (GreatPersonSelectionTest, UI/mock bound).
 
 ### T143 Port GlobalUniquesTests + deferred TestGame fixtures (split from T103)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T103
 - Source: tests/src/com/unciv/uniques/GlobalUniquesTests.kt (50 tests), ResourceTests.kt
 - Fixtures: (the test files above)
 - Deliverables: csharp/Unciv.Core.Tests/**, ported tests
 - Gate: `dotnet test`
-- Claimed:
+- Claimed: 2026-10-24T17:55Z
 - Notes: Split from T103 at claim time (scope >100 cases). Also ports deferred T028 CountableTests/ExpressionTests state cases, T036 UniqueErrorTests.testEducatedEliteGreatPersonGifting and deferred T036/T057 validator cases, TimedUniquesTests from T035, and ResourceTests once T106 is Done (add that dependency if needed).
 
 ### T144 Port TileUniquesTests.pillageYieldTest (split from T103)
