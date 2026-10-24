@@ -794,7 +794,8 @@ Deferred until the ruleset and map tickets land (decided with the user): Civiliz
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
 
 ### C000 Headless Godot test & snapshot harness
-- State: Blocked
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T02:50:09Z
 - Depends: none (infrastructure/tooling)
 - Deliverables:
   - Godot 4.x .NET CLI runtime setup in `dotnet-dev` container.
