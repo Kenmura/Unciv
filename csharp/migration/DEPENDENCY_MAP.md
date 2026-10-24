@@ -259,7 +259,7 @@ xychart-beta
 | T094 | Available (waiting on T090, T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| T089 | Needs-Review [Claude] | T086, T088, T085 | 2 | TradeEvaluation |
+| T089 | In-Review [Antigravity] | T086, T088, T085 | 2 | TradeEvaluation |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T090, T092, T156) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
