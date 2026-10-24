@@ -82,21 +82,33 @@ public class MutableStaticStateTests
         return field.Name.StartsWith('<') && field.Name.EndsWith(suffix, StringComparison.Ordinal) ? field.Name[1..^suffix.Length] : null;
     }
 
-    // Mutable if it is an array, or a non-read-only collection/dictionary. Immutable/read-only wrappers are fine.
-    private static bool IsMutableCollectionType(Type type)
+    // Mutable if it is an array or exposes collection mutation (ICollection/IList/IDictionary, generic or not, also when
+    // declared as an interface type). Read-only wrappers, frozen and immutable collections are fine.
+    internal static bool IsMutableCollectionType(Type type)
     {
-        if (type == typeof(string)) return false;
         if (type.IsArray) return true;
-        if (!typeof(IEnumerable).IsAssignableFrom(type)) return false;
-        if (type.Namespace == "System.Collections.Immutable" || type.Name.StartsWith("ReadOnly", StringComparison.Ordinal) || type.Name.StartsWith("Frozen", StringComparison.Ordinal)) return false;
-        if (type.IsGenericType)
-        {
-            var def = type.GetGenericTypeDefinition();
-            if (def == typeof(IReadOnlyList<>) || def == typeof(IReadOnlyCollection<>) || def == typeof(IReadOnlyDictionary<,>) || def == typeof(IReadOnlySet<>) || def == typeof(IEnumerable<>)) return false;
-        }
-        // User-defined types: mutable only if they expose a collection-mutating interface.
-        return type.GetInterfaces().Append(type).Any(i => i == typeof(IList) || i == typeof(IDictionary) ||
-            (i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(ICollection<>) || i.GetGenericTypeDefinition() == typeof(ISet<>))
-             && type.GetMethod("Add") != null && !type.Name.StartsWith("ReadOnly", StringComparison.Ordinal)));
+        if (type.Namespace is "System.Collections.Immutable" or "System.Collections.Frozen") return false;
+        if (type.Name.StartsWith("ReadOnly", StringComparison.Ordinal)) return false;
+        return type.GetInterfaces().Append(type).Any(i => i == typeof(ICollection) || i == typeof(IList) || i == typeof(IDictionary) ||
+            (i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(ICollection<>) || i.GetGenericTypeDefinition() == typeof(ISet<>))));
     }
+
+    [Theory]
+    [InlineData(typeof(Queue<int>), true)]
+    [InlineData(typeof(Stack<int>), true)]
+    [InlineData(typeof(System.Collections.Concurrent.ConcurrentQueue<int>), true)]
+    [InlineData(typeof(System.Collections.Concurrent.ConcurrentDictionary<int, int>), true)]
+    [InlineData(typeof(IList<int>), true)]
+    [InlineData(typeof(IDictionary<int, int>), true)]
+    [InlineData(typeof(ISet<int>), true)]
+    [InlineData(typeof(HashSet<int>), true)]
+    [InlineData(typeof(int[]), true)]
+    [InlineData(typeof(IReadOnlyList<int>), false)]
+    [InlineData(typeof(IReadOnlyDictionary<int, int>), false)]
+    [InlineData(typeof(System.Collections.ObjectModel.ReadOnlyCollection<int>), false)]
+    [InlineData(typeof(System.Collections.Frozen.FrozenDictionary<int, int>), false)]
+    [InlineData(typeof(System.Collections.Immutable.ImmutableArray<int>), false)]
+    [InlineData(typeof(string), false)]
+    public void DetectorClassifiesCollectionTypes(Type type, bool mutable) =>
+        Assert.Equal(mutable, IsMutableCollectionType(type));
 }
