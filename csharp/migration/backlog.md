@@ -343,7 +343,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     - Ran Gate (24/24 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 376/376 passed).
 
 ### T021 Metadata models: LocaleCode, GameParameters, GameSetupInfo, Player, BaseRuleset, ModCategories
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T007
 - Source: core/src/com/unciv/models/metadata/LocaleCode.kt, GameParameters.kt, GameSetupInfo.kt, Player.kt, BaseRuleset.kt, ModCategories.kt
 - Fixtures: none - generate golden JSON by serializing from Kotlin
@@ -351,6 +351,21 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~MetadataTests`
 - Claimed: 2026-10-24T01:38:09Z
 - Notes: Serialized field names must match Kotlin JSON. GameSettings/Migrations/OverviewPersistableData are client settings: out of scope unless a later ticket needs them.
+  - Implementer notes (Claude): `Models/Metadata/` `LocaleCode` (+`LocaleCodeExtensions`), `BaseRuleset` (+`FullName`), `Player`, `GameParameters`, `ModCategory`; `Logic/Civilization/PlayerType`; also **`Unciv/Constants.cs`** (all of Constants.kt: pure constants, no ticket owned it, needed by `Player` and by everything after) and **`Utils/LinkedHashSet<T>`** (Kotlin `LinkedHashSet`/`setOf` order; used for `GameParameters.mods` and `Constants.All`). 15 `MetadataTests`; full suite 430/430; build -warnaserror and format clean.
+  - Goldens from the real compiled classes (installed Unciv.jar, libGDX `json()`, OpenJDK 25): all 54 `LocaleCode` entries (tag, `fastlaneFolder()`, `languageName()`, unused), `getSupportedLanguages` count 47, `GameParameters` JSON as the game writes it, `toString` incl. the six-mod limit (`mods=(M1,...,M6,...)`), `clone` (godMode reset), old-style JSON reading. **JDK trap:** Indonesian's tag is `in-ID`; OpenJDK 17+ reports language `id`, older JDKs/Android `in` (both folders exist in `fastlane/`), so `FastlaneFolder` maps legacy `in`/`iw`/`ji` to `id`/`he`/`yi` and says so.
+  - **libGDX json facts that shaped the port:** it writes only fields differing from a fresh instance (default `GameParameters` is `{"players":[{"playerType":"Human"},{},{},{}]}`) and reads fields directly, bypassing Kotlin setters. So the C# writes every field (reads back identically; deliberate deviation, names and relative order equal Kotlin's) and `showCivilizationStats` is split into `ShowCivilizationStatsRaw` (the json-facing backing field) and `ShowCivilizationStats` (Kotlin getter fallback to `ShowVictoryStats`, setter updating both; `clone()` relies on it). A test pins that the order of `showVictoryStats`/`showCivilizationStats` in a file does not matter.
+  - Not ported / deferred: `LocaleCode.locale()`, `find(Locale)`, `getSystemLanguage`, `getLocale` (java.util.Locale/UncivGame, client); `Player.chosenNation`/`setNationTransient`/Nation constructor (`TODO(T032)`); `Speed.DEFAULT` is a private constant `"Quick"` until Speed exists (`TODO(T030)`); the `ModCategories` list, `mergeOnline`, `save`, `fromSelectBox` (client/network: Won't port), only `Category` as `ModCategory`; **`GameSetupInfo` is moved to T45** (needs `MapParameters` (T022); its `fromSettings` reads client settings). The deprecated `showVictoryStats` is kept as a plain property (no `[Obsolete]`, which would fail the build at its own use).
+  - Upstream `TODO` comments in Constants.kt were reworded to "Upstream note" (bare TODO fails `SourcePolicyTests`).
+- Ran Gate (`~MetadataTests`).
+
+### T45 GameSetupInfo
+- State: Available
+- Depends: T021, T022
+- Source: core/src/com/unciv/models/metadata/GameSetupInfo.kt
+- Fixtures: none - generate golden values by running the Kotlin class
+- Deliverables: csharp/Unciv.Core/Models/Metadata/GameSetupInfo.cs, tests (add to MetadataTests or a GameSetupInfoTests class)
+- Gate: `dotnet test --filter FullyQualifiedName~GameSetupInfo`
+- Notes: Container of `GameParameters` and `MapParameters` with the two cloning constructors (from another setup; from a `GameInfo` when that exists: leave that constructor as `TODO(T0xx)` pointing at the GameInfo ticket). `mapFile` (FileHandle, transient) and `fromSettings` (reads `UncivGame.Current.settings.lastGameSetup`, applies QuickStart defaults: `shape = rectangular`, `worldWrap = true`, `espionageEnabled = true`) are client concerns; port the default-setup branch as a plain factory taking an optional difficulty if it is useful to headless tests.
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
 - State: In-Progress [Antigravity]
