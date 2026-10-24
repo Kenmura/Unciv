@@ -359,7 +359,7 @@ flowchart TD
   class T053 done
   class T054 done
   class T055 done
-  class T056 prog
+  class T056 review
   class T057 done
   class T058 done
   class T059 prog
@@ -416,7 +416,7 @@ flowchart TD
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T060 | **On deck** (after T056) | T055, T056, T057, T058 | 54 | City core: City, CityFocus, CityResources, CityEspionageManager |
-| T056 | In-Progress [Claude] | T055 | 55 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
+| T056 | Needs-Review [Claude] | T055 | 55 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
 | T065 | Available (waiting on T056, T060) | T055, T056, T060 | 47 | MapUnit core: MapUnit, MapUnitCache |
 | T066 | Available (waiting on T065, T060) | T065, T060 | 44 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T061 | Available (waiting on T060) | T060 | 41 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
