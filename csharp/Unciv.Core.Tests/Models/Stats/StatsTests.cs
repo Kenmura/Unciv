@@ -4,6 +4,7 @@ namespace Unciv.Core.Tests.Models.Stats;
 
 using Stats = Unciv.Models.StatTypes.Stats;
 
+[Collection("TranslationState")]
 public class StatsTests
 {
     // Port of BasicTests.statParserWorks
@@ -160,14 +161,14 @@ public class StatsTests
     public void ToStringVariants()
     {
         var s = new Stats(production: 1.9f, food: -1.9f);
-        Assert.Equal("+1 Production, -1 Food", s.ToString());               // toInt truncates toward zero
+        Assert.Equal("+1 \u2699Production, -1 \u2042Food", s.ToString());   // toInt truncates toward zero; stat names carry their font character
         Assert.Equal("+1 Production, -1 Food", s.ToStringWithoutIcons());
         Assert.Equal("1 Production, -1 Food", s.ToStringForNotifications().Replace("+", ""));
         Assert.Equal("+1 Production, -1 Food", s.ToStringForNotifications());
-        Assert.Equal("+1 , -1 ", s.ToStringOnlyIcons());                    // icon characters are stripped for now
-        Assert.Equal("1 , -1 ", s.ToStringOnlyIcons(addPlusSign: false));
+        Assert.Equal("+1 \u2699, -1 \u2042", s.ToStringOnlyIcons());
+        Assert.Equal("1 \u2699, -1 \u2042", s.ToStringOnlyIcons(addPlusSign: false));
         Assert.Equal("", new Stats().ToString());
-        Assert.Equal("+0 Gold", new Stats(gold: 0.3f).ToString());          // 0.3f != 0 so it is listed; > 0 gives a sign
+        Assert.Equal("+0 \u00A4Gold", new Stats(gold: 0.3f).ToString());          // 0.3f != 0 so it is listed; > 0 gives a sign
     }
 
     [Fact]

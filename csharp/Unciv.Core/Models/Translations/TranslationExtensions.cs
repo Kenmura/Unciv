@@ -1,5 +1,6 @@
 using System.Text;
 using Unciv.Models.StatTypes;
+using Unciv.Utils;
 
 namespace Unciv.Models.Translations;
 
@@ -141,7 +142,7 @@ public static class TranslationExtensions
 
     private static void TrimEnd(StringBuilder sb)
     {
-        while (sb.Length > 0 && char.IsWhiteSpace(sb[^1]))
+        while (sb.Length > 0 && sb[^1].IsKotlinWhitespace())
         {
             sb.Length--;
         }
@@ -220,7 +221,7 @@ public static class TranslationExtensions
     private static string TranslateConditionals(string text, string language, bool hideIcons, int firstPos)
     {
         var langData = TranslationCache.GetLangData();
-        var culture = langData.Culture;
+        string localeLanguage = langData.LocaleLanguage;
         bool conditionalsAfterUnique = langData.ConditionalsAfterUnique;
         bool shouldCapitalize = langData.ShouldCapitalize;
         string spaceEquivalent = langData.SpaceEquivalent;
@@ -247,7 +248,8 @@ public static class TranslationExtensions
         string translatedBaseUnique = baseSb.ToString().TrNoConditionals(language, hideIcons);
         var sb = new StringBuilder(text.Length + 16);
 
-        void AppendChangingFirstChar(string s, Func<char, char> transform)
+        // Char.uppercase(locale) / lowercase(locale): locale dependent and possibly more than one character
+        void AppendChangingFirstChar(string s, Func<char, string, string> transform)
         {
             if (string.IsNullOrEmpty(s)) return;
             if (!shouldCapitalize)
@@ -255,20 +257,20 @@ public static class TranslationExtensions
                 sb.Append(s);
                 return;
             }
-            sb.Append(transform(s[0]));
+            sb.Append(transform(s[0], localeLanguage));
             if (s.Length > 1)
                 sb.Append(s, 1, s.Length - 1);
         }
 
         if (conditionalsAfterUnique)
-            AppendChangingFirstChar(translatedBaseUnique, char.ToUpperInvariant);
+            AppendChangingFirstChar(translatedBaseUnique, JavaCasing.ToUpper);
 
         bool capitalizeOnce = !conditionalsAfterUnique;
         foreach (var translatedConditional in translatedConditionals)
         {
             if (capitalizeOnce)
             {
-                AppendChangingFirstChar(translatedConditional, char.ToUpperInvariant);
+                AppendChangingFirstChar(translatedConditional, JavaCasing.ToUpper);
                 capitalizeOnce = false;
             }
             else
@@ -281,7 +283,7 @@ public static class TranslationExtensions
         if (!conditionalsAfterUnique)
         {
             sb.Append(spaceEquivalent);
-            AppendChangingFirstChar(translatedBaseUnique, char.ToLowerInvariant);
+            AppendChangingFirstChar(translatedBaseUnique, JavaCasing.ToLower);
         }
 
         return sb.ToString();
@@ -292,7 +294,7 @@ public static class TranslationExtensions
         if (Stats.IsStats(text))
         {
             var stats = Stats.Parse(text);
-            return TranslateStats(stats, language, hideStatIcons);
+            return hideStatIcons ? stats.ToStringWithoutIcons() : stats.ToString();
         }
 
         string translationBeforeNumberScan = Translations.Current.GetText(text, language, TranslationCache.ActiveMods);
@@ -319,19 +321,6 @@ public static class TranslationExtensions
             return iconChar + translation;
 
         return translation;
-    }
-
-    private static string TranslateStats(Stats stats, string language, bool hideStatIcons)
-    {
-        return string.Join(", ", stats.AsSequence().Select(it =>
-        {
-            string sign = it.Value > 0 ? "+" : "";
-            string amount = ((int)it.Value).Tr(language);
-            string statName = it.Key.ToString();
-            string translatedName = statName.Tr(language, hideIcons: true, hideStats: true);
-            string icon = hideStatIcons ? "" : it.Key.Character().ToString();
-            return $"{sign}{amount} {icon}{translatedName}";
-        }));
     }
 
     private static bool ContainsAnyDigit(string text)
@@ -363,8 +352,9 @@ public static class TranslationExtensions
         int firstPos = stringToParse.IndexOf('[');
         if (firstPos < 0) return stringToParse;
 
+        // Unlike getPlaceholderParameters, the scan starts at the first top-level '[', skipping any inside a complete {} or <> group
         var key = new StringBuilder(stringToParse.Length);
-        ParsePairs(stringToParse, '[', ']', firstPos, true,
+        ParsePairs(stringToParse, '[', ']', int.MinValue, true,
             emitInside: (_, _) => key.Append("[]"),
             emitOutside: (start, end) => key.Append(stringToParse, start, end - start)
         );
@@ -427,6 +417,7 @@ public static class TranslationExtensions
         return result;
     }
 
+    // TODO(T027): String.getModifiers() (the same scan, producing Unique objects) once Unique exists
     public static IEnumerable<string> GetModifierTexts(this string text)
     {
         var result = new List<string>();
@@ -458,7 +449,7 @@ public static class TranslationExtensions
         string baseText = text.RemoveConditionals();
         if (baseText.Contains('<') || baseText.Contains('>'))
             return "mismatched conditional braces";
-        if (!text.TrimStart().StartsWith(baseText.TrimStart(), StringComparison.Ordinal))
+        if (!text.KotlinTrimStart().StartsWith(baseText.KotlinTrimStart(), StringComparison.Ordinal))
             return "text between or after conditionals";
         if (recursionDepth >= MaxConditionalNesting)
             return "excessive nesting of conditionals";

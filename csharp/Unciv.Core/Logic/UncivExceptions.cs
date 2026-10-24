@@ -1,3 +1,5 @@
+using Unciv.Models.Translations;
+
 namespace Unciv.Logic;
 
 // core/src/com/unciv/logic/UncivExceptions.kt
@@ -5,8 +7,11 @@ namespace Unciv.Logic;
 /// <summary>
 /// An exception marking an error as suitable to be shown to the user. <c>Message</c> is the untranslated error text.
 /// </summary>
-// TODO(T023): add GetLocalizedMessage() = Message.tr() once translation exists
-public class UncivShowableException(string errorText, Exception? cause = null) : Exception(errorText, cause);
+public class UncivShowableException(string errorText, Exception? cause = null) : Exception(errorText, cause)
+{
+    /// <summary>The translated message (Kotlin <c>getLocalizedMessage() = message.tr()</c>).</summary>
+    public string GetLocalizedMessage() => Message.Tr();
+}
 
 /// <summary>
 /// A game or map cannot be loaded because mods are missing. The message lists only the first five names;

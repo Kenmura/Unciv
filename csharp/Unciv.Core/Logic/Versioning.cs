@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Unciv.Json;
+using Unciv.Models.Translations;
 
 namespace Unciv.Logic;
 
@@ -8,7 +9,6 @@ namespace Unciv.Logic;
 /// <summary>
 /// Wrapper for a release version. <c>Text</c> corresponds to BuildConfig.appVersion, <c>Number</c> to appCodeNumber.
 /// </summary>
-// TODO(T023): ToNiceString() = "[$text] (Build [$number])".tr()
 public sealed record Version(
     [property: JsonPropertyName("text")] string Text,
     [property: JsonPropertyName("number")] int Number) : IIsPartOfGameInfoSerialization
@@ -17,6 +17,8 @@ public sealed record Version(
     public static Version Current { get; } = new("4.22.13", 1275);
 
     public string ToSerializeString() => $"{Text} (Build {Number})";
+
+    public string ToNiceString() => $"[{Text}] (Build [{Number}])".Tr();
 }
 
 public interface IHasGameInfoSerializationVersion

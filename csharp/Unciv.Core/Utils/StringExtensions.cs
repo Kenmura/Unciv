@@ -77,4 +77,28 @@ public static class StringExtensions
         }
         return -1;
     }
+
+    /// <summary>
+    /// Kotlin <c>Char.isWhitespace()</c> on the JVM: <c>Character.isWhitespace(c) || Character.isSpaceChar(c)</c>, that is space, line and paragraph
+    /// separators (including the no-break ones), the ASCII controls TAB, LF, VT, FF, CR, and FS, GS, RS, US. Unlike <c>char.IsWhiteSpace</c>
+    /// it does not include U+0085, and it does include U+001C..U+001F.
+    /// </summary>
+    public static bool IsKotlinWhitespace(this char c) =>
+        c is '\t' or '\n' or '\v' or '\f' or '\r' or (>= '\u001C' and <= '\u001F')
+        || CharUnicodeInfo.GetUnicodeCategory(c) is UnicodeCategory.SpaceSeparator or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator;
+
+    /// <summary>Kotlin <c>String.trimStart()</c>.</summary>
+    public static string KotlinTrimStart(this string text)
+    {
+        int start = 0;
+        while (start < text.Length && text[start].IsKotlinWhitespace())
+        {
+            start++;
+        }
+
+        return text[start..];
+    }
+
+    /// <summary>Kotlin <c>CharSequence.isBlank()</c>.</summary>
+    public static bool IsKotlinBlank(this string text) => text.All(IsKotlinWhitespace);
 }

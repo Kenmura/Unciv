@@ -1,5 +1,8 @@
 using System.Collections;
+using System.Globalization;
 using System.Text.RegularExpressions;
+using Unciv.Models.Translations;
+using Unciv.Utils;
 
 namespace Unciv.Models.StatTypes;
 
@@ -164,24 +167,27 @@ public class Stats : IEnumerable<Stats.StatValuePair>
         Faith *= 7;
     }
 
-    /// <summary>
-    /// Hook standing in for Kotlin's `String.tr(hideStats)` (translation layer, not yet ported).
-    /// Arguments: text, hideStats. Default is identity, i.e. untranslated English without stat icons.
-    /// </summary>
-    public static Func<string, bool, string> Translate { get; set; } = (text, _) => text;
-
-    // Stripped: Fonts character icons (no font layer yet) - `showIcon` only matters when translating/with icons;
-    // without a character table the icon prefix is empty.
     private string Stringify(bool showSign = true, bool showName = true, bool showIcon = true, bool translate = true)
     {
         return string.Join(", ", AsSequence().Select(it =>
         {
             string sign = showSign && it.Value > 0 ? "+" : "";
-            string amount = translate ? Translate(((int)it.Value).ToString(), false) : ((int)it.Value).ToString();
+            int whole = KotlinMath.FloatToInt(it.Value);
+            string amount = translate ? whole.Tr() : whole.ToString(CultureInfo.InvariantCulture);
             string label;
-            if (!showName) label = "";   // Kotlin: the stat's font character
-            else if (translate) label = Translate(it.Key.ToString(), !showIcon);
-            else label = it.Key.ToString();   // Kotlin: (showIcon ? character : "") + name
+            if (!showName)
+            {
+                label = it.Key.Character().ToString();
+            }
+            else if (translate)
+            {
+                label = it.Key.ToString().Tr(hideStats: !showIcon);
+            }
+            else
+            {
+                label = (showIcon ? it.Key.Character().ToString() : "") + it.Key;
+            }
+
             return $"{sign}{amount} {label}";
         }));
     }

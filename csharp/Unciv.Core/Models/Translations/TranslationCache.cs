@@ -1,132 +1,120 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Unciv.Utils;
 
 namespace Unciv.Models.Translations;
 
+/// <summary>
+/// Caches repeatedly used values that are only dependent on the current language - call <see cref="GetLangData"/> to get a
+/// <see cref="LanguageCache"/> with <c>ConditionalsAfterUnique</c>, <c>ShouldCapitalize</c>, <c>SpaceEquivalent</c>, <c>SortPriorities</c>,
+/// <c>NumberRegex</c>, <c>Format</c>, <c>Reformat</c>. Ported from <c>TranslationCache.kt</c>; the language setting comes from
+/// <see cref="Translations.CurrentLanguage"/> instead of <c>UncivGame.Current.settings</c>.
+/// </summary>
 public static class TranslationCache
 {
     private static LanguageCache? CachedLangData;
 
-    public static IReadOnlySet<string> ActiveMods => Translations.Current.TranslationActiveMods;
+    // TODO(T046): upstream uses the mods of the running GameInfo (gameParameters.mods + baseRuleset) when there is one, and falls back to
+    // Translations.translationActiveMods only otherwise; there is no GameInfo to ask yet. T046 is the GameInfo ticket.
+    public static LinkedHashSet<string> ActiveMods => Translations.Current.TranslationActiveMods;
 
     public static string Language => GetLangData().Language;
 
     public static LanguageCache GetLangData()
     {
-        string currentLang = Translations.Current.CurrentLanguage;
+        string setting = Translations.Current.CurrentLanguage;
         var data = CachedLangData;
-        if (data != null && data.Language == currentLang) return data;
-        var newData = LanguageCache.Create(currentLang);
+        if (data != null && data.Language == setting)
+        {
+            return data;
+        }
+
+        var newData = LanguageCache.Create(setting);
         CachedLangData = newData;
         return newData;
     }
 
+    /// <summary>Call this when updating translation tables.</summary>
     public static void InvalidateLanguage()
     {
         CachedLangData = null;
     }
 
-    public static LanguageCache GetNumberFormatForLanguage(string language) =>
-        LanguageCache.Create(language);
+    /// <summary>Uncached, bypassing the cached language, for unit tests.</summary>
+    public static JavaDecimalFormat GetNumberFormatForLanguage(string language) =>
+        new(SymbolsFor(language));
+
+    /// <summary>
+    /// <c>NumberFormat.getInstance(LocaleCode.getLocale(language))</c>. Upstream falls back to <c>Locale.getDefault()</c> for a language that is not
+    /// a LocaleCode, which depends on the machine; the port uses the English data.
+    /// </summary>
+    internal static JavaNumberSymbols SymbolsFor(string language) =>
+        JavaLocaleData.NumberSymbols.TryGetValue(language, out var symbols) ? symbols : JavaLocaleData.NumberSymbols["English"];
 
     public sealed class LanguageCache
     {
         public string Language { get; }
-        public CultureInfo Culture { get; }
-        public char ZeroDigit { get; }
+
+        /// <summary>The language subtag of <c>LocaleCode.getLocale(language)</c>, selects the case mapping.</summary>
+        public string LocaleLanguage { get; }
+
         public bool ConditionalsAfterUnique { get; }
+
         public bool ShouldCapitalize { get; }
+
         public string SpaceEquivalent { get; }
+
         public IReadOnlyDictionary<string, int> SortPriorities { get; }
+
+        /// <summary>A Regex able to find numbers that were formatted in the current language _or_ plain positive ASCII digit numbers.</summary>
         public Regex NumberRegex { get; }
 
-        public LanguageCache(
+        private readonly JavaDecimalFormat formatter;
+
+        private LanguageCache(
             string language,
-            CultureInfo culture,
-            char zeroDigit,
+            JavaNumberSymbols symbols,
             bool conditionalsAfterUnique,
             bool shouldCapitalize,
             string spaceEquivalent,
-            IReadOnlyDictionary<string, int> sortPriorities,
-            Regex numberRegex)
+            IReadOnlyDictionary<string, int> sortPriorities)
         {
             Language = language;
-            Culture = culture;
-            ZeroDigit = zeroDigit;
+            LocaleLanguage = symbols.LocaleLanguage;
             ConditionalsAfterUnique = conditionalsAfterUnique;
             ShouldCapitalize = shouldCapitalize;
             SpaceEquivalent = spaceEquivalent;
             SortPriorities = sortPriorities;
-            NumberRegex = numberRegex;
+            formatter = new JavaDecimalFormat(symbols);
+            NumberRegex = BuildNumberRegex(formatter);
         }
 
-        public string Format(int value) => FormatInteger(value);
-        public string Format(long value) => FormatInteger(value);
-        public string Format(float value) => FormatFloat(value);
-        public string Format(double value) => FormatFloat(value);
+        public string Format(int value) => formatter.Format((long)value);
 
-        private string FormatInteger(long value)
-        {
-            string raw = value.ToString(CultureInfo.InvariantCulture);
-            if (ZeroDigit == '0') return raw;
-            return ShiftDigits(raw, ZeroDigit);
-        }
+        public string Format(long value) => formatter.Format(value);
 
-        private string FormatFloat(double value)
-        {
-            string raw = value.ToString("0.###", CultureInfo.InvariantCulture);
-            if (ZeroDigit == '0') return raw;
-            return ShiftDigits(raw, ZeroDigit);
-        }
+        /// <summary>A Kotlin <c>Float</c> boxed as <c>Number</c> is formatted through its <c>double</c> value.</summary>
+        public string Format(float value) => formatter.Format((double)value);
 
+        public string Format(double value) => formatter.Format(value);
+
+        /// <summary>Reformat a number given as plain ASCII digits or in this language's format; null if it doesn't parse completely.</summary>
         public string? Reformat(string numericString)
         {
-            var sb = new StringBuilder(numericString.Length);
-            bool negative = false;
-            int i = 0;
-            if (i < numericString.Length && numericString[i] == '-')
+            int index = 0;
+            object? number = formatter.Parse(numericString, ref index);
+            if (number == null)
             {
-                negative = true;
-                i++;
-            }
-            for (; i < numericString.Length; i++)
-            {
-                char c = numericString[i];
-                if (c == ',') continue;
-                if (c >= '0' && c <= '9')
-                    sb.Append(c);
-                else if (ZeroDigit != '0' && c >= ZeroDigit && c <= ZeroDigit + 9)
-                    sb.Append((char)('0' + (c - ZeroDigit)));
-                else
-                    return null;
-            }
-            if (sb.Length == 0) return null;
-            if (!long.TryParse(sb.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out long val))
                 return null;
-            if (negative) val = -val;
-
-            string formatted = val.ToString("#,##0", CultureInfo.InvariantCulture);
-            if (ZeroDigit == '0') return formatted;
-            return ShiftDigits(formatted, ZeroDigit);
-        }
-
-        private static string ShiftDigits(string text, char zeroDigit)
-        {
-            var res = new StringBuilder(text.Length);
-            foreach (char c in text)
-            {
-                if (c >= '0' && c <= '9')
-                    res.Append((char)(zeroDigit + (c - '0')));
-                else
-                    res.Append(c);
             }
-            return res.ToString();
+
+            return index == numericString.Length ? formatter.Format(number) : null;
         }
 
         public static LanguageCache Create(string language)
         {
-            char zeroDigit = GetZeroDigitForLanguage(language);
+            var symbols = SymbolsFor(language);
 
             var tr = Translations.Current;
             string conditionalOrdering = tr.GetConditionalOrder(language);
@@ -134,38 +122,69 @@ public static class TranslationCache
             bool shouldCapitalize = tr.ShouldCapitalize(language);
             string spaceEquivalent = tr.GetSpaceEquivalent(language);
 
+            // Somewhere, we asked the translators to reorder all possible conditionals in a way that
+            // makes sense in their language. We get this ordering, and map their placeholderText to their ordinal.
+            // A repeated placeholderText keeps the last position (buildMap { put } semantics).
             var sortPriorities = new Dictionary<string, int>(StringComparer.Ordinal);
-            int idx = 0;
-            foreach (var modifier in conditionalOrdering.GetModifierTexts())
+            int index = 0;
+            foreach (string text in conditionalOrdering.GetModifierTexts())
             {
-                string key = modifier.GetPlaceholderText();
-                if (!sortPriorities.ContainsKey(key))
-                {
-                    sortPriorities[key] = idx++;
-                }
+                sortPriorities[text.GetPlaceholderText()] = index++;
             }
 
-            string digit = zeroDigit == '0' ? "[0-9]" : $"[0-9{zeroDigit}-{(char)(zeroDigit + 9)}]";
-            string pattern = $"(?={digit}|-)(?<![A-Za-z0-9_])-?{digit}+(?:,{digit}{{3}})*(?![A-Za-z0-9_])";
-            var numberRegex = new Regex(pattern, RegexOptions.CultureInvariant);
-
-            return new LanguageCache(
-                language,
-                CultureInfo.InvariantCulture,
-                zeroDigit,
-                conditionalsAfterUnique,
-                shouldCapitalize,
-                spaceEquivalent,
-                sortPriorities,
-                numberRegex);
+            return new LanguageCache(language, symbols, conditionalsAfterUnique, shouldCapitalize, spaceEquivalent, sortPriorities);
         }
 
-        private static char GetZeroDigitForLanguage(string language) => language switch
+        private static void Quoted(StringBuilder sb, string text) => sb.Append(Regex.Escape(text));
+
+        private static void Optional(StringBuilder sb, string text)
         {
-            "Bangla" => '০',
-            "Arabic" => '٠',
-            "Persian_(Pinglish-DIN)" or "Persian_(Pinglish-UN)" => '۰',
-            _ => '0'
-        };
+            if (text.Length == 0)
+            {
+                return;
+            }
+
+            if (text.Length == 1)
+            {
+                Quoted(sb, text);
+                sb.Append('?');
+            }
+            else
+            {
+                sb.Append("(?:");
+                Quoted(sb, text);
+                sb.Append(")?");
+            }
+        }
+
+        private static Regex BuildNumberRegex(JavaDecimalFormat format)
+        {
+            char zero = format.ZeroDigit;
+            // ASCII plus the locale's own digits, NOT \p{Nd}, because that would re-format e.g. "２"
+            string digit = zero == '0' ? "[0-9]" : $"[0-9{zero}-{(char)(zero + 9)}]";
+            var pattern = new StringBuilder();
+            // Since we might include a "-", a "\b" won't do:
+            // First, a look-ahead for a (unicode) digit or negativePrefix mitigates the extra cost of a look-behind.
+            pattern.Append("(?=").Append(digit);
+            if (format.NegativePrefix.Length > 0)
+            {
+                pattern.Append('|');
+                Quoted(pattern, format.NegativePrefix);
+            }
+
+            pattern.Append(')');
+            // Now, do a look-behind for "not a (ascii) letter or digit"
+            pattern.Append("(?<![A-Za-z0-9_])");
+            // Main number pattern
+            Optional(pattern, format.NegativePrefix);
+            pattern.Append(digit).Append('+');
+            pattern.Append("(?:");
+            Quoted(pattern, format.GroupingSeparator.ToString());
+            pattern.Append(digit).Append('{').Append(format.GroupingSize.ToString(CultureInfo.InvariantCulture)).Append("})*");
+            Optional(pattern, format.NegativeSuffix);
+            // Ensure not followed by (ascii) letter or digit, more portable than "\b"
+            pattern.Append("(?![A-Za-z0-9_])");
+            return new Regex(pattern.ToString(), RegexOptions.CultureInvariant);
+        }
     }
 }

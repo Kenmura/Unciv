@@ -1,10 +1,12 @@
 using Unciv.Models.StatTypes;
 using Unciv.Models.Translations;
+using Unciv.Utils;
 using StatsModel = Unciv.Models.StatTypes.Stats;
 using Trans = Unciv.Models.Translations.Translations;
 
 namespace Unciv.Core.Tests.Models.Translations;
 
+[Collection("TranslationState")]
 public class TranslationTests : IDisposable
 {
     public TranslationTests()
@@ -318,5 +320,144 @@ public class TranslationTests : IDisposable
         Assert.Equal(100, percentages["English"]);
         Assert.Equal(95, percentages["German"]);
         Assert.Equal(80, percentages["Spanish"]);
+    }
+
+    // Expected values: the real Kotlin getPlaceholderText / getPlaceholderParameters on the JVM
+    [Theory]
+    [InlineData("{a [b]} [c]", "{a [b]} []", "b|c")]
+    [InlineData("<x [y]> [z]", "[]", "z")]
+    [InlineData("{a [b]} c", "{a [b]} c", "b")]
+    [InlineData("x {[y]} [z] {[w]}", "x {[y]} [] {[w]}", "y|z")]
+    [InlineData("[a] {b [c]}", "[] {b [c]}", "a")]
+    [InlineData("a <b> {c [d]} [e]", "a {c [d]} []", "d|e")]
+    public void PlaceholderTextSkipsBracketsInsideGroups(string input, string text, string parameters)
+    {
+        Assert.Equal(text, input.GetPlaceholderText());
+        Assert.Equal(parameters, string.Join("|", input.GetPlaceholderParameters()));
+    }
+
+    [Fact]
+    public void RepeatedConditionalOrderEntryKeepsLastPosition()
+    {
+        // buildMap { put(placeholderText, index) }: a -> 2, b -> 1, so <b> sorts before <a>
+        Trans.Current[Trans.ConditionalOrderingKey] = new TranslationEntry(Trans.ConditionalOrderingKey) { ["English"] = "<a> <b> <a>" };
+        TranslationCache.InvalidateLanguage();
+        Assert.Equal("X b a", "x <a> <b>".Tr());
+    }
+
+    [Fact]
+    public void NumbersInTextAreReformattedWithGrouping()
+    {
+        AddTranslation("Population 1234", "Population 1234");
+        Assert.Equal("Population 1,234", "Population 1234".Tr());
+        Assert.Equal("1,234", 1234.Tr());
+    }
+
+    [Theory]
+    [InlineData("English", "ice <vs cities>", "Ice vs cities")]
+    [InlineData("Turkish", "ice <vs cities>", "\u0130ce vs cities")]
+    [InlineData("English", "\u00DFa <vs cities>", "SSa vs cities")]
+    [InlineData("German", "\u00DFa <vs cities>", "SSa vs cities")]
+    public void FirstCharacterCasingFollowsTheLocale(string language, string input, string expected)
+    {
+        Trans.Current.CurrentLanguage = language;
+        TranslationCache.InvalidateLanguage();
+        Assert.Equal(expected, input.Tr());
+    }
+
+    [Fact]
+    public void ConditionalsBeforeUniqueLowercasesTheBaseWithTheLocale()
+    {
+        Trans.Current[Trans.ConditionalPlacementKey] = new TranslationEntry(Trans.ConditionalPlacementKey) { ["Turkish"] = "before" };
+        Trans.Current.CurrentLanguage = "Turkish";
+        TranslationCache.InvalidateLanguage();
+        Assert.Equal("Vs cities ice", "\u0130ce <vs cities>".Tr());
+    }
+
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("TRUE", true)]
+    [InlineData(" true ", false)]
+    [InlineData("false", false)]
+    [InlineData("yes", false)]
+    public void BooleanSettingsParseLikeKotlinToBoolean(string value, bool expected)
+    {
+        Trans.Current[Trans.ShouldCapitalizeKey] = new TranslationEntry(Trans.ShouldCapitalizeKey) { ["English"] = value };
+        Trans.Current[Trans.EffectBeforeCauseKey] = new TranslationEntry(Trans.EffectBeforeCauseKey) { ["English"] = value };
+        Assert.Equal(expected, Trans.Current.ShouldCapitalize("English"));
+        Assert.Equal(expected, Trans.Current.TriggerNotificationEffectBeforeCause("English"));
+    }
+
+    [Fact]
+    public void ActiveModsAreSearchedInOrder()
+    {
+        const string key = "Hello [name]";
+        var translations = new Trans();
+        translations.TryReadTranslationForLanguage("English", new StringTranslationFileHandle("English", $"{key} = Base [name]\n"), [
+            ("ModA", new StringTranslationFileHandle("English", $"{key} = A [name]\n")),
+            ("ModB", new StringTranslationFileHandle("English", $"{key} = B [name]\n")),
+            ("ModC", new MissingTranslationFileHandle("English")),
+        ]);
+
+        Assert.Equal(["ModA", "ModB"], translations.ModsWithTranslations.Keys.ToArray());
+        Assert.Equal("Base [name]", translations.GetText("Hello []", "English"));
+        Assert.Equal("A [name]", translations.GetText("Hello []", "English", new LinkedHashSet<string>(["ModA", "ModB"])));
+        Assert.Equal("B [name]", translations.GetText("Hello []", "English", new LinkedHashSet<string>(["ModB", "ModA"])));
+        Assert.Equal("Base [name]", translations.GetText("Hello []", "English", new LinkedHashSet<string>(["ModC"])));
+        Assert.Equal("Hello []", translations.GetText("Hello []", "French", new LinkedHashSet<string>(["ModA"])));
+    }
+
+    [Fact]
+    public void ReadAllLanguagesLoadsOnlyExistingFiles()
+    {
+        var translations = new Trans();
+        translations.ReadAllLanguagesTranslation(language => language switch
+        {
+            "English" => new StringTranslationFileHandle(language, "Hello = Hello\n"),
+            "German" => new StringTranslationFileHandle(language, "Hello = Hallo\n"),
+            _ => new MissingTranslationFileHandle(language),
+        });
+        Assert.Equal(["English", "German"], translations.GetLanguages().Order().ToArray());
+        Assert.Equal("Hallo", translations.GetText("Hello", "German"));
+        Assert.Equal("[comment]", translations.GetText("Comment []", "German"));
+    }
+
+    [Fact]
+    public void LanguagePercentagesAreReadStrictly()
+    {
+        var percentages = TranslationFileReader.ReadLanguagePercentages(new StringReader("# comment\n\nEnglish = 100\nGerman = 97\n"));
+        Assert.Equal(100, percentages["English"]);
+        Assert.Equal(97, percentages["German"]);
+        Assert.ThrowsAny<Exception>(() => TranslationFileReader.ReadLanguagePercentages(new StringReader("German = 9 7\n")));
+        Assert.ThrowsAny<Exception>(() => TranslationFileReader.ReadLanguagePercentages(new StringReader("German\n")));
+    }
+
+    [Fact]
+    public void StatsStringsUseTheTranslationLayer()
+    {
+        var stats = new StatsModel(production: 1234f);
+        Assert.Equal("+1,234 \u2699Production", stats.ToString());
+        Assert.Equal("+1,234 Production", stats.ToStringWithoutIcons());
+        Assert.Equal("+1,234 \u2699Production", "+1234 Production".Tr());
+        Assert.Equal("+1,234 Production", "+1234 Production".Tr(hideStats: true));
+    }
+
+    [Fact]
+    public void LogicTextsAreTranslated()
+    {
+        AddTranslation("[text] (Build [number])", "[number] build of [text]");
+        Assert.Equal("1,275 build of 4.22.13", new Unciv.Logic.Version("4.22.13", 1275).ToNiceString());
+        AddTranslation("Missing [thing]", "Absent: [thing]");
+        Assert.Equal("Absent: Foo", new Unciv.Logic.UncivShowableException("Missing [Foo]").GetLocalizedMessage());
+    }
+
+    [Fact]
+    public void KotlinWhitespaceDiffersFromDotNetAtTheEdges()
+    {
+        Assert.True('\u00A0'.IsKotlinWhitespace());
+        Assert.True('\u001F'.IsKotlinWhitespace());
+        Assert.False('\u0085'.IsKotlinWhitespace());
+        Assert.Equal("a\u0085 ", "\u001F \u00A0a\u0085 ".KotlinTrimStart());
+        Assert.True(" \t\u2003".IsKotlinBlank());
     }
 }

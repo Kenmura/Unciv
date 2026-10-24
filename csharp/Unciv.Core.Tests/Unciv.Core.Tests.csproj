@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <None Include="Logic\Golden\*.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Models\Translations\*.tsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

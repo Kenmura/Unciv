@@ -1,18 +1,20 @@
 using System.Globalization;
+using Unciv.Utils;
 
 namespace Unciv.Models.Translations;
 
 public static class TranslationFileReader
 {
+    // TODO(T026): this is UniqueType.Comment.text; use the enum member once UniqueType exists
     public const string CommentUniqueText = "Comment [comment]";
 
-    public static Dictionary<string, string> Read(TextReader reader)
+    public static OrderedDictionary<string, string> Read(TextReader reader)
     {
-        var translations = new Dictionary<string, string>(StringComparer.Ordinal);
+        var translations = new OrderedDictionary<string, string>(StringComparer.Ordinal);
         string? line;
         while ((line = reader.ReadLine()) != null)
         {
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#')) continue;
+            if (line.IsKotlinBlank() || line.StartsWith('#')) continue;
             int separatorIndex = line.IndexOf(" = ", StringComparison.Ordinal);
             if (separatorIndex < 0) continue;
 
@@ -28,13 +30,13 @@ public static class TranslationFileReader
         return translations;
     }
 
-    public static Dictionary<string, string> Read(ITranslationFileHandle file)
+    public static OrderedDictionary<string, string> Read(ITranslationFileHandle file)
     {
         using var reader = file.OpenReader();
         return Read(reader);
     }
 
-    public static Dictionary<string, string> Read(string content)
+    public static OrderedDictionary<string, string> Read(string content)
     {
         using var reader = new StringReader(content);
         return Read(reader);
@@ -47,15 +49,9 @@ public static class TranslationFileReader
         while ((line = reader.ReadLine()) != null)
         {
             if (string.IsNullOrEmpty(line) || line.StartsWith('#')) continue;
-            int separatorIndex = line.IndexOf(" = ", StringComparison.Ordinal);
-            if (separatorIndex < 0) continue;
-
-            string language = line[..separatorIndex];
-            string valueStr = line[(separatorIndex + 3)..];
-            if (int.TryParse(valueStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out int percent))
-            {
-                percentages[language] = percent;
-            }
+            // Upstream does not guard this: a line without " = " or with a non-integer value throws
+            string[] splitLine = line.Split(" = ");
+            percentages[splitLine[0]] = int.Parse(splitLine[1], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
         }
         return percentages;
     }

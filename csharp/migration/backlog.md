@@ -423,6 +423,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - 8 unit tests in `GameSetupInfoTests` covering constructors, deep cloning, `CreateDefault`, JSON serialization, and Kotlin-style JSON deserialization.
     - Ran Gate (8/8 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 548/548 passed).
 
+### T046 GameInfo core and the hooks waiting for it
+- State: Available
+- Depends: T034, T039, T045
+- Source: core/src/com/unciv/logic/GameInfo.kt (and what it needs to stand alone: GameInfoPreview is not part of it)
+- Fixtures: none yet - design pass first; break into smaller tickets before implementing
+- Deliverables: to be defined when T039 is Done
+- Gate: `n/a (planning ticket)`
+- Claimed:
+- Notes: Placeholder created by T023 so that `TODO(T046)` markers have a target. Waiting on it: `TranslationCache.ActiveMods` should use the running game's `gameParameters.mods + baseRuleset` instead of `Translations.TranslationActiveMods` when a game exists (see `ActiveModsCache` in TranslationCache.kt), and the `GameSetupInfo(gameInfo)` constructor of T045. An agent reaching this ticket should split it (GameInfo core / turn handling / serialization) and expand the backlog accordingly.
+
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
 - State: Done
 - Depends: T006, T007, T010
@@ -452,7 +462,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Re-review (Claude): **Pass.** All four findings fixed: `Mods` is now a `LinkedHashSet` (test removes/re-adds and checks order, also through `Clone`), `NiceToString` uses HALF_UP over the shortest double digits with negative zero preserved (tie cases `0.125f`, `-2.625f`, `0.3125f`, `-14.625f`, `-0.001f` asserted), the namespace is `Unciv.Logic.Map.Tiles`, the base ruleset default comes from `BaseRuleset.Civ_V_GnK`. Gate 6/6, Standard checks 481/481. Non-blocking follow-up for whoever touches `MapParameters` next: `NiceToString` throws `OverflowException` for |x| >= ~7.9e28 and `FormatException` for NaN/Infinity (decimal), where Java prints the full digits / `NaN` / `Infinity`. It is only `ToString` (debug output) on absurd JSON input, so it does not block. Remember for T038: `Tile` is now free as a class name in `Unciv.Logic.Map`.
 
 ### T023 Translation core (headless)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T01:57:25Z
 - Depends: T018
 - Source: core/src/com/unciv/models/translations/Translations.kt, TranslationEntry.kt, TranslationCache.kt, TranslationFileReader.kt, TranslationExtensions.kt (`tr()` and its helpers)
@@ -480,6 +490,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     7. **Missing pieces need explicit markers or a Won't-port entry**: `tryReadTranslationForLanguage`/`readAllLanguagesTranslation`/`loadPercentageCompleteOfLanguages` (the `ITranslationFileHandle` plumbing exists but nothing loads a language: add a loader taking handles/readers, with the mod-folder handling as `TODO(T034)` since it needs `RulesetCache`), `DiacriticSupport` (say explicitly it is skipped), `TranslationCache.ActiveMods` ignoring `GameInfo` mods (`TODO` on the GameInfo ticket), `String.getModifiers()` (`TODO(T027)`), `UniqueType.Comment.text` literal (`TODO(T026)`).
     8. Minor: `TrimEnd` uses `char.IsWhiteSpace`, Kotlin `isWhitespace` differs at U+0085 and U+001C..U+001F (rare); `ReadLanguagePercentages` silently skips malformed lines where Kotlin throws; `Translations.Current`/`CachedLangData` are unsynchronised statics: put a `[Collection]` on every test class touching them once a second class does (the Stats wiring in item 6 will); `GetByYear`-style `Tr(this int/long/float/double)` only, fine.
   - Recipe for the number golden (so you need not rebuild it): a Java class using `com.unciv.models.metadata.LocaleCode.Companion.getLocale(lang)` and `NumberFormat.getInstance(locale)` (cast to `DecimalFormat`), one `L` row per language with the symbols above and one `N` row per (language, number) with `format(n)`; classpath = installed Unciv.jar + kotlin-stdlib + libGDX.
+  - Rework notes (Claude), answering the review item by item:
+    1. Number formatting: new `JavaDecimalFormat` (format of long and double with the JVM's shortest-digits + `HALF_EVEN` + exact-tie correction, `-0`, NaN, infinities; `parse(text, pos)` with prefix, grouping, decimal point and the Long/Double result rule incl. `-0` -> `-0.0`) over generated `JavaLocaleData` (symbols of all 54 `LocaleCode` languages, JDK 25 / CLDR). `LanguageCache` uses it for `Format`, `Reformat` and builds `NumberRegex` exactly as `getNumberRegex` (negative prefix, grouping size, locale digits). Unknown language: English data (upstream: `Locale.getDefault()`, machine dependent). Checked against the real `DecimalFormat`: 237,264 rows (6 languages x 38k fuzz doubles incl. all k/1000, k/8000 ties and widened floats, 54 languages x fixed numbers and parse/reformat probes): all agree except 54 rows for a 23-digit number that parses to 1.0E23, where the JVM's historic digit generator prints `9.999999999999999E22` (documented on the class, not in the golden). A thinned 6,219-row golden is committed (`NumberFormat.golden.tsv`).
+    2. `GetPlaceholderText` scans from the first top-level `[` (6 JVM cases as tests); `GetPlaceholderParameters` unchanged.
+    3. `SortPriorities` last occurrence wins, index counts every entry (test).
+    4. First-character casing: `JavaCasing` over generated tables of the differences between the JVM's `String.toUpperCase/LowerCase(locale)` and `char.ToUpperInvariant/ToLowerInvariant` (105 root deviations incl. `ß` -> `SS`, ligatures; `tr` and `lt` own tables); locale language comes from the language's `LocaleCode`.
+    5. `Translations` is an `OrderedDictionary`, `TranslationActiveMods` a `LinkedHashSet`, `Get/GetText` take `IEnumerable<string>` and honour its order (test with two mods); `TranslationFileReader.Read` returns an `OrderedDictionary`; booleans parse with `equals("true", ignoreCase)`; `IsKotlinWhitespace/KotlinTrimStart/IsKotlinBlank` replace .NET whitespace in `TrimEnd`, `ValidateConditionals`, `Read`.
+    6. `Version.ToNiceString()` and `UncivShowableException.GetLocalizedMessage()` done (their `TODO(T023)` removed). `Stats.Translate` hook removed: `Stats.Stringify` is now the Kotlin one (`Tr()` for the amount and the name with `hideStats`, stat font characters, `toInt` via `KotlinMath.FloatToInt`), `TranslationExtensions.TranslateStats` deleted, so `Stats.ToString()` is `+1 \u2699Production, -1 \u2042Food` like upstream (StatsTests updated).
+    7. Loader: `TryReadTranslationForLanguage(language, languageFile, modFiles)`, `ReadAllLanguagesTranslation(provider)`, `LoadPercentageCompleteOfLanguages(file)`; mod folder discovery is `TODO(T034)`. `DiacriticSupport` is deliberately not ported (client font glyph remapping; recorded in T043). `ActiveMods` ignoring GameInfo is `TODO(T046)`, `getModifiers` is `TODO(T027)`, the Comment unique text is `TODO(T026)`.
+    8. Percentages are read strictly (malformed lines throw, as upstream). Tests touching `Translations.Current` (`TranslationTests`, `StatsTests`, `JavaDecimalFormatTests`) share `[Collection("TranslationState")]`.
+    - Generators and recipes: `csharp/migration/tools/T023/`. Gate 80+ tests, Standard checks: build -warnaserror clean, format clean, 576/576 tests.
 
 ### T024 Holiday dates
 - State: Done
@@ -683,7 +703,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/migration/backlog.md (Won't-port list), PROTOCOL.md pointer
 - Gate: `n/a (docs only)`
 - Claimed: 2026-10-24T02:01:45Z
-- Notes: Docs-only ticket. Review each entry before listing: logic/files/UncivFiles and MapSaver, FileConversions, IMediaFinder may still be needed for save/load and are NOT on this list; handle them in the Phase E tickets.
+- Notes: Docs-only ticket. Review each entry before listing: logic/files/UncivFiles and MapSaver, FileConversions, IMediaFinder may still be needed for save/load and are NOT on this list; handle them in the Phase E tickets. Also list (from T023): `DiacriticSupport` and the libGDX font glyph remapping, `TranslationFileWriter`, `Gdx.files` based translation lookup (replaced by `ITranslationFileHandle`).
   - Implementer notes (Antigravity):
     - Documented the exhaustive, categorized Won't-port inventory in `backlog.md` under `## Non-goals (Won't port)`.
     - Enumerated files and detailed technical rationale across 8 categories: Multiplayer/Server stack, GitHub/mod downloading, Platform-specific file pickers (`FileChooser`, `PlatformSaverLoader`), Platform host utilities (`Display`, `PlatformSpecific`, `Concurrency`, `Log`, `DebugUtils`), Translation file writer dev tooling (`TranslationFileWriter`), 2D Scene2D skins & sprite sheets (`models/skins/`, `models/tilesets/`), libGDX UI screens and desktop/android launchers, and libGDX UI tests (`tests/src/com/unciv/ui/`).
