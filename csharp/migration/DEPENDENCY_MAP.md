@@ -385,7 +385,7 @@ flowchart TD
   class T110 ondeck
   class T111 waiting
   class T115 waiting
-  class T118 ready
+  class T118 prog
   class T119 prog
   class T120 ready
   class T121 ready
@@ -401,7 +401,6 @@ flowchart TD
 | T063 | **Ready to start** | T060, T062 | 36 | CityConstructions |
 | T097 | **Ready to start** | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
 | T096 | **Ready to start** | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
-| T118 | **Ready to start** | none | 0 | Policy: marker check - every TODO(T###) names an open ticket, every NotSupported/NotImplemented seam has an owner |
 | T120 | **Ready to start** | none | 0 | Policy: size ratchet - maximum file length and method length with a shrink-only baseline |
 | T121 | **Ready to start** | none | 0 | Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline |
 | T122 | **Ready to start** | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
@@ -459,4 +458,5 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
+| T118 | In-Progress [Claude] | none | 0 | Policy: marker check - every TODO(T###) names an open ticket, every NotSupported/NotImplemented seam has an owner |
 | T119 | In-Progress [Claude] | none | 0 | Policy: forbid unchecked null-forgiving '!' (Kotlin !! throws, C# ! hides the null) |
