@@ -87,6 +87,7 @@ flowchart TD
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
     T131["T131<br/>Hardening: T063 review follow-ups (CityConstructions test ga..."]
+    T137["T137<br/>TranslationCache.ActiveMods from the running GameInfo"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -251,6 +252,7 @@ flowchart TD
   T065 --> T111
   T060 --> T115
   T035 --> T115
+  T046 --> T137
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -306,7 +308,7 @@ flowchart TD
   class T039 done
   class T040 done
   class T041 done
-  class T046 prog
+  class T046 review
   class T052 waiting
   class T053 done
   class T054 done
@@ -366,6 +368,7 @@ flowchart TD
   class T129 ready
   class T130 ready
   class T131 prog
+  class T137 ondeck
 ```
 
 ## Incomplete tickets
@@ -386,7 +389,8 @@ flowchart TD
 | T035 | **On deck** (after T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T084 | **On deck** (after T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
 | T099 | **On deck** (after T046) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
-| T046 | In-Progress [Claude] | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
+| T137 | **On deck** (after T046) | T046 | 0 | TranslationCache.ActiveMods from the running GameInfo |
+| T046 | Needs-Review [Claude] | T034, T039, T045, T055, T060, T065, T078 | 40 | GameInfo core and the hooks waiting for it |
 | T070 | Available (waiting on T068, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T052 | Available (waiting on T046, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |

@@ -17,7 +17,7 @@ namespace Unciv.Logic;
 /// Users to port: <c>GameInfo</c> (<see cref="SimulateUntilTurn"/>: <c>isSimulation()</c> is <c>turns &lt; SimulateUntilTurn</c>, <c>nextTurn</c> resets it),
 /// <c>CityStats</c> (<see cref="Supercharged"/>), <c>CivInfoTransientCache</c> and <c>Tile.isVisible</c> (<see cref="VisibleMap"/>),
 /// <c>Simulation</c> (<see cref="CivIdsInExperimentGroup"/>), <c>CityLocationTileRanker</c> (<see cref="ShowSettlerScores"/>, <see cref="SettlerScores"/>).
-/// The object belongs to the game (TODO(T046): a property of GameInfo, copied by its constructors), not to a static.
+/// The object belongs to the game (a property of GameInfo, copied by GameInfo.Clone), not to a static.
 /// </remarks>
 public sealed class EngineOptions : IStateHashable
 {

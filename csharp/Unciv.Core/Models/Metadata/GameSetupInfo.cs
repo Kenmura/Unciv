@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Unciv.Logic;
 using Unciv.Logic.Map;
 
 namespace Unciv.Models.Metadata;
@@ -36,7 +37,10 @@ public class GameSetupInfo
         // MapFile is not copied: upstream's cloning constructor leaves the transient mapFile at null
     }
 
-    // TODO(T046): constructor(gameInfo: GameInfo) : this(gameInfo.gameParameters.clone(), gameInfo.tileMap.mapParameters.clone())
+    public GameSetupInfo(GameInfo gameInfo)
+        : this(gameInfo.GameParameters.Clone(), gameInfo.TileMap.MapParameters.Clone())
+    {
+    }
 
     /// <summary>
     /// Creates a deep copy of this <see cref="GameSetupInfo"/>.

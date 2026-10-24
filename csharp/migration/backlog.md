@@ -132,7 +132,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - State: Done (full ticket: backlog-archive.md)
 
 ### T046 GameInfo core and the hooks waiting for it
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T034, T039, T045, T055, T060, T065, T078
 - Source: core/src/com/unciv/logic/GameInfo.kt (fields, setTransients, queries; turn handling is T071)
 - Fixtures: tests/src/com/unciv/logic/SerializationTests.kt GameInfo parts, LoadGameTest.kt (TestGame-based: T072)
@@ -144,6 +144,10 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - T057 added to the IGameInfoState seam: Religions (JavaHashMap<string, Religion>, Kotlin HashMap order), GetCivilization(civID) returning Civilization, GetCities() returning ICityState, GetAliveMajorCivs(); GameInfo implements them and Religion/ReligionManager/VictoryManager/Milestone are retyped to the concrete GameInfo. GameInfo.setTransients must call religion.setTransients(this) for every religion.
   - From T114 (T059 review): DiplomacyFunctions.GetKnownCivsSorted forwards (includeCityStates, includeDefeated, null, it != civ && civ.Knows(it)) to IGameInfoState.GetCivsSorted; T114 tests it only against a fake that applies the filter, so the real GameInfo.GetCivsSorted needs its own sorting tests.
   - From T063: IGameInfoState gained IsUnavailableBySettingsCached(IHasUniques), SpaceResources, IsUsersTurn() (multiplayer extension, client settings), AutoAssignCityProduction (settings.autoAssignCityProduction) and IsFullAutoPlayAI (worldScreen autoPlay): GameInfo implements them (CityConstructions.ChooseNextConstruction reads them).
+  - Implemented (Claude). GameInfo.cs: fields/serialization names, Clone, setTransients, queries, GetCivsSorted, GetYear, explored-resource notifications, CalculateChecksum, GameInfoPreview, VictoryData; GameClientState.cs (new, engine-owned replacement for UncivGame.Current.settings/worldScreen reads); GameSetupInfo(GameInfo) ctor; EngineOptions now GameInfo.EngineOptions. GameInfo implements IGameInfoState (and thus IGameContextGameInfo/IConstructionGameInfo).
+    Deviations: currentTurnStartTime default 0 and gameId default "" (Kotlin: wall clock/SecureRandom) - GameStarter (T099) must set both; GameInfoPreview.RandomGameId(rng) is the seeded generator. Second mods loop of setTransients iterates a snapshot (Kotlin always throws ConcurrentModificationException there). Checksum hashes this port's JSON so values differ from Kotlin. diplomaticVictoryVotesCast is a Dictionary (seam type), not java HashMap. Github.repoNameToFolderName inlined privately. IQuestManager gained a default HandleObsoleteGlobalQuests (throws until T069).
+    NOT done / deferred: (1) Retyping the seam-typed GameInfo fields (TileMap/Civilization/BarbarianManager/Religion/MapGenerator parameters) to the concrete GameInfo: the existing tests use FakeGameInfoState through those seams, so it waits for TestGame (T035/T072); GameInfo already satisfies every seam, so nothing else is blocked. (2) TranslationCache.ActiveMods -> new ticket T137. (3) recordRankingStats and all turn handling stay in T071; setTransients carries TODO(T071) markers for removeMissingModReferences, convertFortify, migrateToTileHistory, migrateGreatGeneralPools, ensureUnitIds. (4) Civilization/City/MapUnit have no JSON attributes yet, so the full-game save round trip (SerializationTests) is T072/T100; GameInfoTests round-trips the GameInfo-own fields only. (5) GetSpectator creating a temporary spectator needs QuestManager (T069): untested.
+    Added GameInfo.cs to CouplingRatchetBaseline.txt (15 namespaces, giant top-of-graph port). Gate GameInfoTests: 40 tests pass; Standard checks and coverage ratchet pass (GameInfo.cs 92.7%).
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
 - State: Done (full ticket: backlog-archive.md)
@@ -1454,6 +1458,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
         - `LiberateCity_ResurrectedCiv_MakesPeaceAndClearsDiplomaticFlagsAndModifiers`: covers peace treaty and clearing frozen flags/modifiers on both sides for resurrected civ.
         - `LiberateCity_TeleportsUnitsOutOfCityAndUnpassableTiles`: covers unit teleport loops on center tile and unpassable territory tiles.
     - Coverage: `CityConquestFunctions.cs` line coverage 100.0%, branch coverage 96.5%; `CityTurnManager.cs` line coverage 100.0%, branch coverage 93.0%. Zero uncovered lines. Standard suite (2312 tests) and formatting green.
+
+### T137 TranslationCache.ActiveMods from the running GameInfo
+- State: Available
+- Depends: T046
+- Source: core/src/com/unciv/models/translations/TranslationCache.kt (ActiveModsCache)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Models/Translations/TranslationCache.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~TranslationTests
+- Claimed:
+- Notes:
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

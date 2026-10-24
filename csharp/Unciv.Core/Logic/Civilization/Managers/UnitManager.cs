@@ -9,7 +9,7 @@ using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationC
 namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/UnitManager.kt (T066). Stripped: the purity annotations.
-// GUI.getSettings().alternateUnitCycleOrder is IGameInfoState.AlternateUnitCycleOrder (client setting seam, TODO(T046)).
+// GUI.getSettings().alternateUnitCycleOrder is IGameInfoState.AlternateUnitCycleOrder (client setting seam, backed by GameInfo.ClientState).
 
 public class UnitManager(Civilization civInfo)
 {

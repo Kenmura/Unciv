@@ -31,9 +31,9 @@ internal interface ICityConquestExternals
     void DestroyIfDefeated(CivilizationObject attackedCiv, CivilizationObject attacker, HexCoord? notificationLocation);
     /// <summary><c>TradeLogic(ourCiv, theirCiv)</c> with <c>currentTrade</c> = <paramref name="trade"/>, then <c>acceptTrade(false)</c></summary>
     void AcceptTrade(CivilizationObject ourCiv, CivilizationObject theirCiv, TradeObject trade);
-    /// <summary><c>UncivGame.Current.settings.autoAssignSpecialistsInNewCities</c> (client state, read by <c>city.resetSpecialistsControl()</c>); the GameSettings default is true. TODO(T046)</summary>
+    /// <summary><c>UncivGame.Current.settings.autoAssignSpecialistsInNewCities</c> (client state, read by <c>city.resetSpecialistsControl()</c>); the GameSettings default is true (GameInfo.ClientState.AutoAssignSpecialistsInNewCities; the Battle port T083 wires it)</summary>
     bool AutoAssignSpecialistsInNewCities { get; }
-    /// <summary><c>UncivGame.Current.settings.multiplayer.getUserId()</c> (client state, read by <c>city.resetSpecialistsControl()</c>). TODO(T046)</summary>
+    /// <summary><c>UncivGame.Current.settings.multiplayer.getUserId()</c> (client state, read by <c>city.resetSpecialistsControl()</c>; GameInfo.ClientState.UserId, wired by the Battle port T083)</summary>
     string? LocalUserId { get; }
 }
 

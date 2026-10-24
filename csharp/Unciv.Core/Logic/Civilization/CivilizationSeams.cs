@@ -35,7 +35,7 @@ public interface IGameInfoState : IConstructionGameInfo
     GlobalUniques GetGlobalUniques();
     /// <summary><c>gameInfo.diplomaticVictoryVotesCast</c> (<c>HashMap&lt;String, String?&gt;</c>).</summary>
     IDictionary<string, string?> DiplomaticVictoryVotesCast { get; }
-    /// <summary><c>gameInfo.religions</c> (<c>HashMap&lt;String, Religion&gt;</c>), in java.util.HashMap order. TODO(T046): becomes a GameInfo field.</summary>
+    /// <summary><c>gameInfo.religions</c> (<c>HashMap&lt;String, Religion&gt;</c>), in java.util.HashMap order.</summary>
     JavaHashMap<string, Religion> Religions { get; }
     /// <summary><c>gameInfo.getCivilization(civID)</c>; throws when there is no such civilization (Kotlin <c>first</c>).</summary>
     new Civilization GetCivilization(string civId);
@@ -61,17 +61,17 @@ public interface IGameInfoState : IConstructionGameInfo
     bool IsUnavailableBySettingsCached(IHasUniques construction);
     /// <summary><c>gameInfo.spaceResources</c></summary>
     IReadOnlySet<string> SpaceResources { get; }
-    /// <summary><c>gameInfo.isUsersTurn()</c> (multiplayer extension reading the local user id from the client settings). TODO(T046)</summary>
+    /// <summary><c>gameInfo.isUsersTurn()</c> (multiplayer extension reading the local user id from the client settings).</summary>
     bool IsUsersTurn();
-    /// <summary><c>UncivGame.Current.settings.autoAssignCityProduction</c> (client setting). TODO(T046)</summary>
+    /// <summary><c>UncivGame.Current.settings.autoAssignCityProduction</c> (client setting).</summary>
     bool AutoAssignCityProduction { get; }
-    /// <summary><c>UncivGame.Current.worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c> (client state). TODO(T046)</summary>
+    /// <summary><c>UncivGame.Current.worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c> (client state).</summary>
     bool IsFullAutoPlayAI { get; }
     /// <summary><c>gameInfo.getNextUnitId()</c> (T066: BaseUnit.newMapUnit)</summary>
     int GetNextUnitId();
-    /// <summary><c>GUI.getSettings().alternateUnitCycleOrder</c> (client setting). TODO(T046)</summary>
+    /// <summary><c>GUI.getSettings().alternateUnitCycleOrder</c> (client setting).</summary>
     bool AlternateUnitCycleOrder { get; }
-    /// <summary><c>UncivGame.Current.settings.addCompletedTutorialTask(task)</c> (client setting; T066: Tile.doWorkerTurn). TODO(T046)</summary>
+    /// <summary><c>UncivGame.Current.settings.addCompletedTutorialTask(task)</c> (client setting; T066: Tile.doWorkerTurn).</summary>
     void AddCompletedTutorialTask(string task);
 }
 
@@ -86,6 +86,8 @@ public interface IQuestManager
     void BarbarianCampCleared(Civilization civ, HexCoord position);
     /// <summary><c>questManager.handleIndividualQuests()</c> (T066: UnitManager.addUnit)</summary>
     void HandleIndividualQuests();
+    /// <summary><c>questManager.handleObsoleteGlobalQuests()</c> (T046: GameInfo, via IGameContextGameInfo.HandleObsoleteGlobalQuestsOfAliveCityStates)</summary>
+    void HandleObsoleteGlobalQuests() => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
 }
 
 /// <summary>What Civilization reads from <c>CityStateFunctions</c>.</summary>

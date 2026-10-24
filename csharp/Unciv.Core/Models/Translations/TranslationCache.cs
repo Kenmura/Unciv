@@ -15,8 +15,8 @@ public static class TranslationCache
 {
     private static LanguageCache? CachedLangData;
 
-    // TODO(T046): upstream uses the mods of the running GameInfo (gameParameters.mods + baseRuleset) when there is one, and falls back to
-    // Translations.translationActiveMods only otherwise; there is no GameInfo to ask yet. T046 is the GameInfo ticket.
+    // TODO(T137): upstream uses the mods of the running GameInfo (gameParameters.mods + baseRuleset) when there is one, and falls back to
+    // Translations.translationActiveMods only otherwise; the engine has no UncivGame.Current to ask (GameInfo is ported by T046).
     public static LinkedHashSet<string> ActiveMods => Translations.Current.TranslationActiveMods;
 
     public static string Language => GetLangData().Language;
