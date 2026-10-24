@@ -704,7 +704,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review notes (adversarial review): FAIL on one finding, fixed in the review-fix commit: Kotlin maxByOrNull returns a single element without calling the selector, so a one-city civ makes no random draw for the spawn city (the earlier note "one draw per element" was wrong for size 1). TurnManager.DoRevoltSpawn now skips the draw; test replays the RNG to check the rebel unit. All other parity points confirmed. Standard checks pass on rebased tree (2650 tests).
 
 ### T071 GameInfo turn handling and BackwardCompatibility
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T046, T070
 - Source: core/src/com/unciv/logic/GameInfo.kt (nextTurn and turn-related members), BackwardCompatibility.kt (GameInfo/GameInfoPreview extensions)
 - Fixtures: tests/src/com/unciv/logic/GameSerializationTests.kt (TestGame-based: T072)
@@ -718,6 +718,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Semantic traps kept: ChangeBuildingNameIfNotInRuleset's removeBuilding(name) is a no-op for a name the ruleset lacks (always the case when it is called), so the old name stays in builtBuildings (test documents it); viewableTiles is a HashSet so the order of the per-tile enemy notifications follows it, as upstream; removeUnitsAndPromotions still scans promotions of a unit it just removed.
     Unused-by-Kotlin-callers helpers (ChangeBuildingNameIfNotInRuleset, ReplaceUpdatedTechName, ReplaceDiplomacyFlag) are internal/public templates, tested.
     Gate (GameInfoTurnTests) and Standard checks pass; coverage check passed, baseline updated.
+  - Review (adversarial, isolated subagent): first pass CHANGES-REQUESTED for missing tests only (diplomatic-vote win branch, "near territory" notifications, autoplay-stop branch, CheckForVictory loop). Fixed in the follow-up commit with tests for each; no parity/determinism/policy findings. Standard checks + coverage re-run after the fix and rebase: pass.
 
 ### T072 Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest)
 - State: Available
