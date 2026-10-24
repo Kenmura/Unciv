@@ -998,13 +998,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented CivilianUnitAutomation, SpecificUnitAutomation (partials: ImprovementPlacer, TradeAndWonders; split to stay inside the size/coupling ratchets) and ReligiousUnitAutomation; ConstructionAutomation moved to T158 (CityConstructions markers retargeted). Rebased over T156: UnitAutomation now calls CivilianUnitAutomation.AutomateCivilianUnit directly (CivilianUnitAutomationSeams stub deleted) and the civilians call the real UnitAutomation.TryExplore/Wander/TryEnterOwnClosestCity. Only the civ's WorkerAutomation (roadToAutomation.automateConnectRoad, automateWorkerAction, automateWorkBoats, getBasePriority) is a seam: IUnitAutomationSeams on GameClientState.UnitAutomationSeams, TODO(T092) owns it (null = calls skipped, automateWorkBoats false so the boat then explores). Quirks kept: Kotlin minByOrNull/maxByOrNull = first extremum (LINQ MinBy/MaxBy or stable OrderBy); roundToInt half-up (KotlinMath); determineBestInquisitorCityToConvert iterates only OUR cities (as Kotlin); `throw Exception("City within distance")` kept. Kotlin "TODO:" comments rewritten "Kotlin todo:" (marker policy). The coverage baseline for UnitAutomation.cs was a stale 100% from T090's stub; lowered to the real 49.87/41.56 and T159 filed to raise it. Uncovered by tests: foundReligion/enhanceReligion branches of automateCivilianUnit that need a full ReligionState progression, and the pillaged-tile branch of automateImprovementPlacer.
 
 ### T092 Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T091, T080, T035
 - Source: core/src/com/unciv/logic/automation/unit/WorkerAutomation.kt, RoadBetweenCitiesAutomation.kt, RoadToAutomation.kt
 - Fixtures: tests/src/com/unciv/logic/automation/unit/WorkerAutomationTest.kt
 - Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~WorkerAutomationTests`
-- Claimed:
+- Claimed: 2026-10-24T22:30Z
 - Notes: Created by the backlog audit. ~1.2k LOC. Civilization.workerAutomation (T055 seam) is TODO(T092). Tile/improvement choice order is game state. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
   - T145: port Kotlin PathfindingTests.connectRoadAction (RoadToAutomation.automateConnectRoad; asserts queued Road and non-empty automatedRoadConnectionPath) into Fixtures/Map/PathfindingFixtureTests.
 
