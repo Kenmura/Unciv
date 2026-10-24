@@ -312,7 +312,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   Review notes (adversarial review PASS, non-blocking): startingLocationsByNation outer map is insertion-ordered Dictionary while Kotlin HashMap<String> iterates in string-hash order (GameStarter reads keys/values): use JavaHashMap in the GameStarter ticket; placeUnitNearTile/stripPlayer untested until T072; T040 may replace the flood-fill with BFS.
 
 ### T040 Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T039
 - Source: core/src/com/unciv/logic/map/BFS.kt, AStar.kt, MapPathing.kt, CarrierSlotMatcher.kt, MapVisualization.kt
 - Fixtures: tests/src/com/unciv/logic/map/PathfindingTests.kt, tests/src/com/unciv/logic/map/pathingmap/*
@@ -320,6 +320,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~PathfindingTests`
 - Claimed: 2026-10-24T10:25Z
 - Notes: Priority-queue tie-breaking must match Kotlin exactly (uses T001). CarrierSlotMatcher and MapPathing need MapUnit/UnitMovement: compile them against `IGameContextUnit`/`IMapUnitState` seam members (see the SEAM RULE in T053); T067 replaces them with concrete UnitMovement calls. PathfindingTests that need TestGame are in T072.
+  - IMPLEMENTED (T040): BFS.cs, AStar.cs, MapPathing.cs, CarrierSlotMatcher.cs, MapVisualization.cs, MapPathingSeams.cs in Logic/Map (namespace Unciv.Logic.Map). Seams added: IGameContextGameInfo.TileMap; IGameContextCivilization.HasExplored(tile), CanBuildImprovementOn(tile, improvement) (= tile.improvementFunctions.canBuildImprovement(improvement, civ.state); T054's TileImprovementFunctions or T055 implements it); IGameContextUnit.MovementMemoryPositions, IsVisibleTo(civ). Civilization/MapUnit are typed by IGameContextCivilization/IGameContextUnit (T055/T067 retype; MatchesFilter(filter) already existed). Deviations: (1) java.util.PriorityQueue is reproduced by an internal binary heap (AStar.JavaPriorityQueue, same siftUp/siftDown/poll) with Float.compareTo semantics (-0f<0f, NaN greatest); tie order verified against JDK output in tests. (2) The private unused getPath(unit,...) overload of MapPathing is not ported (no Kotlin caller; T067 adds it if needed). (3) getConnection default cost/heuristic are null defaults resolved inside. (4) getReachedTiles returns a live read-only IReadOnlyCollection of the key set. (5) Log.debug calls dropped. (6) TileMap.assignContinents still uses its private flood fill (BFS only fed a set/count; not switched). (7) CarrierSlotMatcher.SlotRule is a record struct; unitToSlot a Dictionary (only keyed/value-searched, values unique). PathfindingTests.kt, PathingMapTest.kt, RouteNodeTest.kt all run on TestGame/real units (and pathingmap classes are not in this ticket): deferred to T067/T072. PathfindingTests.cs holds hand-derived tests for BFS/AStar/MapPathing/CarrierSlotMatcher/MapVisualization. FakeUnit.MatchesFilter made virtual; stubs in UniqueTestFakes.MapPathingSeams.cs. Gate and Standard checks pass (1260 tests).
 
 ### T041 MapGenerator pipeline (audit existing partial work first)
 - State: Available

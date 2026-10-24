@@ -246,7 +246,7 @@ internal partial class FakeUnit(string name, float currentMovement, FakeCiv civ,
     public IGameContextTile GetTile() => tile ?? throw new InvalidOperationException("lateinit property currentTile has not been initialized");
 
     public HashSet<string> UnitFilters { get; } = new();
-    public bool MatchesFilter(string filter) => UnitFilters.Contains(filter);
+    public virtual bool MatchesFilter(string filter) => UnitFilters.Contains(filter);
     public HashSet<string> PromotionsAndStatuses { get; } = new();
     public bool HasPromotionOrStatus(string name) => PromotionsAndStatuses.Contains(name);
     public int Health { get; set; } = 100;
