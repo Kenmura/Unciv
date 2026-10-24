@@ -1595,7 +1595,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented Fixtures/Map: FreshWaterFixtureTests (uses an equivalent strict-JSON map string; the Kotlin string is libGDX minimal JSON that MapSaver cannot read: T147), UpgradeFixtureTests, VisibilityFixtureTests (same 18 cases as TileMapTests over real TestGame), UnitFormationFixtureTests (13 of 16), TileImprovementConstructionFixtureTests (24 of 26). Kotlin runTestParcours replaced by collecting failures and one Assert. Deferred: UnitMovement/Pathfinding remainder (T145), Battle.attack escort cases (T146), startWorkingOnImprovement-dependent cases (T148). No engine bugs found by these fixtures.
 
 ### T142 Deferred TestGame fixtures: civilization directory and GameSerializationTests
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T072
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/** (QuestTests, DefensivePactTests, FreeBuildingTests, CityMovingTests, CapitalConnectionsFinderTests, GreatPersonSelectionTest, EspionageTests, diplomacy/*, managers/GoldenAgeManagerTest, ThreatManagerTests), GameSerializationTests.kt

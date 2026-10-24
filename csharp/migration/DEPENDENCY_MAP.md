@@ -58,7 +58,6 @@ flowchart TD
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T139["T139<br/>Views B leftovers: members blocked on unported engine code (..."]
-    T140["T140<br/>Civilization and manager JSON wiring (full GameInfo save/loa..."]
     T141["T141<br/>Deferred TestGame fixtures: map directory (FreshWater, TileI..."]
     T142["T142<br/>Deferred TestGame fixtures: civilization directory and GameS..."]
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
@@ -144,9 +143,6 @@ flowchart TD
   T083 --> T149
   T142 --> T150
   T089 --> T150
-  T142 --> T151
-  T140 --> T151
-  T142 --> T152
   C001 --> C002
   C002 --> C003
   C002 --> C004
@@ -228,9 +224,8 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T139 ondeck
-  class T140 done
   class T141 done
-  class T142 review
+  class T142 done
   class T143 ready
   class T144 ondeck
   class T145 ready
@@ -239,8 +234,8 @@ flowchart TD
   class T148 waiting
   class T149 ondeck
   class T150 waiting
-  class T151 ondeck
-  class T152 ondeck
+  class T151 ready
+  class T152 ready
 ```
 
 ## Incomplete tickets
@@ -256,21 +251,20 @@ flowchart TD
 | T143 | **Ready to start** | T103 | 0 | Port GlobalUniquesTests + deferred TestGame fixtures (split from T103) |
 | T145 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
 | T147 | **Ready to start** | T107 | 0 | MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps |
+| T151 | **Ready to start** | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
+| T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T090 | **On deck** (after T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T089 | **On deck** (after T088) | T086, T088, T085 | 2 | TradeEvaluation |
 | T139 | **On deck** (after T083, T080) | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T144 | **On deck** (after T080) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
 | T146 | **On deck** (after T083) | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
-| T149 | **On deck** (after T142, T083) | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
-| T151 | **On deck** (after T142) | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
-| T152 | **On deck** (after T142) | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
+| T149 | **On deck** (after T083) | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T083 | In-Progress [Claude] | T081, T082, T052, T064, T068, T079, T035 | 16 | Battle C: Battle, Nuke |
 | T088 | In-Progress [Claude] | T087, T086, T081, T068 | 14 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T080 | In-Progress [Antigravity] | T079, T061, T068 | 11 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
-| T142 | Needs-Review [Claude] | T072 | 4 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
@@ -288,4 +282,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | In-Progress [Claude] | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T150 | Available (waiting on T142, T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
+| T150 | Available (waiting on T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
