@@ -36,7 +36,7 @@ Determinism enables:
 - Iteration order of hash-based collections (`Dictionary<K, V>`, `HashSet<T>`) is undefined and must **never** feed game mutation, serialization output, or random seeds.
 - Collections where insertion order matters use `OrderedDictionary<K, V>` or `Counter<K>`.
 - Any sorting over game state must use stable ordering (`OrderBy` / `ThenBy`), as `List<T>.Sort()` and `Array.Sort()` are unstable quicksort implementations and are banned.
-- Kotlin's own `HashSet`/`HashMap` iterate in JVM hash order, which no C# collection reproduces. Where a Kotlin call site iterates one, the order is a porting decision tracked by T044; do not rely on it silently.
+- Kotlin's own `HashSet`/`HashMap` iterate in JVM hash order, which no C# collection reproduces. Where a Kotlin call site iterates one, port it with `JavaHashSet`/`JavaHashMap` (bit-exact JVM bucket order for String/Int/Long/Boolean/`HexCoord` keys) or, for enum and identity-hash keys, with an insertion-ordered collection; `HASH_ORDER_AUDIT.md` lists every occurrence and the policy (T044).
 
 ### 2.5 Culture and Hashing
 - `string.GetHashCode()` is randomized per process in .NET Core/.NET 5+ and is strictly banned. Where Kotlin hashes into state (`GameContext.stateBasedRandom`), use `JavaHash` and `Randomness.HashOf` (T017), which reproduce the JVM values bit-for-bit.
