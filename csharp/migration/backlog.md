@@ -4,7 +4,8 @@ Rules: see `PROTOCOL.md`. Tell an agent **"Begin Conversion work"** to start.
 Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX math/JVM stdlib). Expand as needed.
 
 ### T001 LongPriorityQueue
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T00:43:00Z
 - Depends: none
 - Source: core/src/com/unciv/utils/LongPriorityQueue.kt
 - Fixtures: tests/src/com/unciv/utils/LongPriorityQueueTest.kt
