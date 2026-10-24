@@ -29,14 +29,30 @@ Non-goals (mark such tickets `Won't port`, do not port them):
 
 ## Environment
 
-All dotnet commands run in the distrobox container `dotnet-dev`:
+All dotnet commands run in the distrobox container `dotnet-dev`, from **your own worktree** (see Worktrees):
 
 ```
-distrobox enter dotnet-dev -- bash -c 'cd /var/home/nickmarc/repos/Unciv/csharp && <command>'
+distrobox enter dotnet-dev -- bash -c 'cd <your-worktree>/csharp && <command>'
 ```
 
-Gate commands in the backlog are written as the inner `<command>` only. The repo
-path is the same inside the container (home is shared).
+Gate commands in the backlog are written as the inner `<command>` only. Home is shared with the container, so worktree paths are identical inside it.
+
+## Worktrees and the shared branch
+
+Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs to the human. Agents never share a working directory: concurrent builds corrupt `bin/`/`obj/`, and checkouts move files under each other.
+
+- **Integration branch:** `csharp-migration`. It is the shared board and is never checked out anywhere. If it doesn't exist, create it from `master` (`git branch csharp-migration master`).
+- **Your worktree (first run only):**
+  `git -C /var/home/nickmarc/repos/Unciv worktree add ../Unciv-wt-<you> -b agent/<you> csharp-migration`
+  If it already exists, reuse it. Work only there, on branch `agent/<you>`.
+- **Publish** (do this after *every* state change: claim, implement, review, reset, backlog expansion):
+  ```
+  git rebase csharp-migration && git push . HEAD:csharp-migration
+  ```
+  The push is fast-forward only. If it is rejected, the other agent published first: `git rebase csharp-migration`, re-read `backlog.md`, re-check your ticket choice still holds, and publish again.
+- **A claim only counts once it is published.** Publish the claim commit before doing any real work on the ticket. If you lost the race, pick another ticket; do not keep working on the lost one.
+- **Before each ticket and before each review:** `git rebase csharp-migration` so you see the other agent's published work. Reviewers review the implementer's *published* commits, never anyone's working files.
+- Never push to `master`, never force-push or rewrite `csharp-migration`. Merging to `master` is the human's decision.
 
 ## States
 
@@ -45,10 +61,10 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 
 ## Work Loop
 
-0. `git pull --rebase` (if a remote exists). Identify yourself by a stable name: `Claude` or `Antigravity`.
+0. Identify yourself by a stable name (`Claude` or `Antigravity`), ensure your worktree exists (see Worktrees), and `git rebase csharp-migration`.
 1. **Review first.** Find a `Needs-Review` ticket whose implementer is NOT you. If one exists, go to Review. Never review your own work.
 2. Otherwise **implement.** Pick the first `Available` ticket whose `Depends` are all `Done`. If none, report that and stop.
-3. **Claim** atomically: edit only that ticket's `State` to `In-Progress [You]` (or `In-Review [You]`), commit with message `migration: claim T### [You] <UTC timestamp>`, and put the same timestamp in the ticket's `Claimed:` line. If the commit conflicts with another agent's claim, drop yours and pick another.
+3. **Claim** atomically: edit only that ticket's `State` to `In-Progress [You]` (or `In-Review [You]`), commit with message `migration: claim T### [You] <UTC timestamp>`, and put the same timestamp in the ticket's `Claimed:` line. **Publish it immediately.** If the publish is rejected and the rebased backlog shows the ticket taken, drop your claim and pick another.
 
 ### Context discipline
 
@@ -64,7 +80,7 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 2. Port tests first (xUnit, same cases, same names where possible), then the implementation. Preserve behaviour exactly, including quirks, integer/float semantics (Kotlin `Int` division, `Float` vs `Double`, rounding mode) and iteration order. Do not "improve" logic.
 3. Replace libGDX/UI types with small engine-owned equivalents in `Unciv.Core` (e.g. `Vector2`) – never add UI dependencies. If a ticket needs a type owned by another ticket, stop and mark `Blocked` with a note.
 4. Run the ticket's Gate command. It must exit 0, and the whole solution must still pass `dotnet test`.
-5. Set `State` to `Needs-Review [You]`, fill `Notes` (deviations, assumptions, semantic traps), commit `migration: implement T### [You]`.
+5. Set `State` to `Needs-Review [You]`, fill `Notes` (deviations, assumptions, semantic traps), commit `migration: implement T### [You]`, and publish.
 
 ### Review
 
@@ -76,13 +92,13 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
    - No wall-clock, culture-sensitive formatting/parsing, or threading nondeterminism in engine logic.
 3. Check that ported tests cover every Kotlin test case and add cases for any untested branch you find.
 4. Run the Gate and full `dotnet test` yourself. Do not trust the implementer's claim.
-5. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`.
+5. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`. Publish either way.
 
 ## Running until budget is exhausted
 
 Agents may be cut off at any moment by a usage limit, so the repo must always be recoverable:
 
-- Commit after every state change (claim, implement, review). Never hold uncommitted work across tickets.
+- Commit and publish after every state change (claim, implement, review). Never hold uncommitted work across tickets.
 - **Stale claims:** an `In-Progress` or `In-Review` ticket whose `Claimed:` timestamp is more than 3 hours old with no newer commit touching its deliverables is abandoned. Any agent may reset it to `Available` (commit `migration: reset stale T###`) and keep the partial files for the next implementer to build on or discard.
 - If a usage limit is hit mid-ticket, do not mark anything `Done`. Stop; the stale-claim rule handles the rest.
 - If a rate limit reports a reset time, wait for it and resume the loop. If the harness cannot wait, stop.
@@ -95,7 +111,7 @@ Stop and report only when one of these is true:
 3. The same ticket has failed its Gate or been sent back 3 times: mark it `Blocked` with notes, then continue with other tickets.
 4. The environment is broken (`dotnet-dev` unavailable, build of the untouched solution fails). Report instead of working around it.
 
-When the backlog runs low, an agent that finds nothing `Available` should first try to **expand it**: scan the Kotlin tree for the next leaf files whose dependencies are all `Done`, append tickets in the standard format, commit, and continue.
+When the backlog runs low, an agent that finds nothing `Available` should first try to **expand it**: scan the Kotlin tree for the next leaf files whose dependencies are all `Done`, append tickets in the standard format, commit, publish, and continue.
 
 ## Rules
 
