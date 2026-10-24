@@ -1025,6 +1025,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - T053: untested Tile members CanCivPassThrough, ProvidesYield, GetWorkingCity, IsLocked, ProvidesResources, UnitHeight/TileHeight.
     - T033: BaseUnit isGreatPerson and isMilitary use System.Lazy, which caches exceptions (Kotlin lazy does not); mirror the fix made for Type/IsLandUnit/IsWaterUnit.
     Later hardening findings from other tickets: add them here with ticket.py note.
+  - T041: river-step HashSet could be LinkedHashSet and its header comment about Kotlin set order is inaccurate (mutableSetOf is insertion ordered); TopBottom/AroundCenterTile mirroring untested; HumidFrom exact value not asserted; '_ = gameParameters' in ResolveAutoMapSize.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
