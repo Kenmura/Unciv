@@ -322,13 +322,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Priority-queue tie-breaking must match Kotlin exactly (uses T001). CarrierSlotMatcher and MapPathing need MapUnit/UnitMovement: compile them against `IGameContextUnit`/`IMapUnitState` seam members (see the SEAM RULE in T053); T067 replaces them with concrete UnitMovement calls. PathfindingTests that need TestGame are in T072.
 
 ### T041 MapGenerator pipeline (audit existing partial work first)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T039, T010, T016, T017
 - Source: core/src/com/unciv/logic/map/mapgenerator/**
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt, ResourceDiversityTest.kt, mapgenerator/NaturalWonderGeneratorTests.kt
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
-- Claimed:
+- Claimed: 2026-10-24T10:25Z
 - Notes: Large (mapregions, resourceplacement, rivers, elevation, landmass). Split into sub-tickets at claim time if >1.5k LOC. Same seed must reproduce Kotlin maps: add golden maps generated from Kotlin.
 
 ### T042 OdMap import/export
