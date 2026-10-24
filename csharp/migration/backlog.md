@@ -279,15 +279,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Asset JSON is read from the Kotlin repo's android/assets/jsons (read-only). Compare object counts/ids/uniques against Kotlin-generated dump (record how generated).
 
-### T038 Tile core: Tile, TileHistory, TileNormalizer, TileStatFunctions, TileImprovementFunctions
-- State: In-Progress [Claude]
+### T038 Tile core (part 1): TileHistory
+- State: Needs-Review [Claude]
 - Depends: T022, T034
 - Source: core/src/com/unciv/logic/map/tile/*.kt
-- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt
+- Fixtures: none (TileHistory has no Kotlin tests; ported tests assert the documented behaviour and JSON format)
 - Deliverables: csharp/Unciv.Core/Logic/Map/Tile/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~TileTests`
 - Claimed: 2026-10-24T05:45Z
 - Notes: Tile.kt is 1.3k LOC; split off Tile stats/improvements if needed. Civ/City/Unit references go behind interfaces from T027. Kotlin lazy/cached fields must not change observable behaviour. Use namespace `Unciv.Logic.Map.Tiles` (matching `RoadStatus.cs` in T022) so the namespace does not collide with the `Tile` class name.
+  **Claude 2026-10-24 (scope reduced):** Tile.kt, TileNormalizer, TileStatFunctions and TileImprovementFunctions use TileMap, GameInfo, Civilization, City, MapUnit, UnitMovement and MapGenerator, none of which exist in C# (same blocker as T035); stubbing them would invent API. Moved to T053 (Blocked). Delivered here: `TileHistory.cs` (TileHistory, TileHistoryState, CityCenterType, JSON converter `{"12":["China","R"]}`, null owner written as null) plus `ITileHistorySource` seam (Turns, OwnerCivID, IsCityCenter, IsCityCapital) that Tile must implement. Quirks kept: TileHistoryState has no equals (reference equality), so TileHistory.Equals needs identical state instances; Clone shares state instances; GetState is floorEntry on a SortedList. Tests in `Unciv.Core.Tests/Logic/Map/TileTests.cs`. Standard checks pass.
+
+### T053 Tile core (part 2): Tile, TileNormalizer, TileStatFunctions, TileImprovementFunctions
+- State: Blocked
+- Depends: T038, T039, T046, Civilization, City and MapUnit tickets (not yet ticketed; see Planned)
+- Source: core/src/com/unciv/logic/map/tile/Tile.kt, TileNormalizer.kt, TileStatFunctions.kt, TileImprovementFunctions.kt
+- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/Tile/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~TileTests`
+- Claimed:
+- Notes: Split from T038 (blocked on TileMap/GameInfo/Civilization/City/MapUnit/UnitMovement, which do not exist in C#). Note T039 (TileMap) needs Tile and Tile needs TileMap: port them together or seam one via small interfaces. Tile must implement `ITileHistorySource` (T038). Use namespace `Unciv.Logic.Map.Tiles`. Tile.kt is 1.3k LOC; delegate the read-and-brief step. Kotlin lazy/cached fields must not change observable behaviour.
 
 ### T039 TileMap
 - State: Available
