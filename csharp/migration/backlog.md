@@ -443,7 +443,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - T057 added to the seams you retype: ITechManager.IsResearched(INonPerpetualConstruction)/CanBeResearched(string)/AddTechnology(string, bool showNotification = true) and IPolicyManager.CompletedBranches (used by EspionageManager, Spy, Milestone). TechManager.techsResearched is read in iteration order by EspionageManager.GetTechsToSteal (feeds a seeded random pick), so it must keep java.util.HashSet order.
 
 ### T057 Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T055
 - Source: core/src/com/unciv/logic/civilization/managers/ReligionManager.kt, RuinsManager.kt, VictoryManager.kt, EspionageManager.kt, core/src/com/unciv/models/Religion.kt, Spy.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/EspionageTests.kt (TestGame-based: T072); VictoryAvailabilityTests/VictoryMilestoneTests deferred by T030
@@ -1048,6 +1048,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Later hardening findings from other tickets: add them here with ticket.py note.
   - T041: river-step HashSet could be LinkedHashSet and its header comment about Kotlin set order is inaccurate (mutableSetOf is insertion ordered); TopBottom/AroundCenterTile mirroring untested; HumidFrom exact value not asserted; '_ = gameParameters' in ResolveAutoMapSize.
   - Flaky test seen once under the full parallel run (T058): Unciv.Core.Tests.Utils.LogTests.LambdaParametersAreEvaluatedOnlyWhenLogging (LogTests.cs:143) failed, passed on rerun and in isolation; likely shared static Log state across parallel test classes.
+
+### T111 T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests
+- State: Available
+- Depends: T057, T052, T060, T065
+- Source: csharp/Unciv.Core/Logic/Civilization/Managers/{ReligionManager,EspionageManager,VictoryManager}.cs, Models/Spy.cs
+- Fixtures: none
+- Deliverables: fixes + tests in csharp/Unciv.Core.Tests/Logic/CivReligionVictoryTests.cs
+- Gate: dotnet test --filter FullyQualifiedName~CivReligionVictoryTests
+- Claimed:
+- Notes: From T057 review (non-blocking): (1) IGameInfoState.DiplomaticVictoryVotesCast is IDictionary but Kotlin is java.util.HashMap: use JavaHashMap (vote-tie text order). (2) Enumerable.Sum throws on int overflow where Kotlin sumOf wraps (GetStartingSpyRank, Spy.GetEfficiencyModifier): unchecked loop. (3) Enum.Parse<BeliefType> accepts numeric strings, Kotlin valueOf does not. (4) Add tests for RuinsManager.SelectNextRuinsReward, GenerateProphet, FoundReligion/UseProphetForEnhancingReligion, ChooseBeliefs founding/enhancing, Spy.InitiateCoup/CanMoveTo, GetTilesVisibleViaSpies, with Kotlin-derived golden seeds (after T052/T060/T065 make them testable). (5) Share the duplicated ParseInt helper.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
