@@ -556,7 +556,7 @@ public sealed class CityTurnTests
         w.Civ.CivConstructions.AddFreeBuildings(monument, 1);
         w.Constructions.AddBuilding(monument);
         w.Constructions.BuiltUniques.AddUnique(BuildingUnique("Indicates the capital city"));
-        w.City.CityConstructions.FreeBuildingsProvidedFromThisCity["c1"] = ["Monument"];
+        w.City.CityConstructions.FreeBuildingsProvidedFromThisCity["c1"] = JavaHashSet<string>.HashSetOf("Monument");
         Assert.Contains(w.City.CityConstructions.GetBuiltBuildings(), b => b.Name == "Monument");
         Assert.Contains("Monument", w.Civ.CivConstructions.GetFreeBuildingNames(w.City));
 

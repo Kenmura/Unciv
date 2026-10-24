@@ -1400,7 +1400,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Found by T122 review: coverage dropped when T063 and others landed with tests to follow. Review step lists uncovered ranges with coverage.py --report.
 
 ### T131 Hardening: T063 review follow-ups (CityConstructions test gaps, Java-order freeBuildingsProvidedFromThisCity, IConstructionCity cast)
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T063
 - Source: csharp/Unciv.Core/Logic/City/CityConstructions.cs
 - Fixtures: none

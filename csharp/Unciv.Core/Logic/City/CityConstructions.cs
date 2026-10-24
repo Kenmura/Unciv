@@ -105,7 +105,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
     /// Source: <see cref="UniqueType.GainFreeBuildings"/>
     /// </summary>
     [JsonInclude]
-    public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; private set; } = [];
+    public JavaHashMap<string, JavaHashSet<string>> FreeBuildingsProvidedFromThisCity { get; private set; } = new();
     #endregion
 
     #region pure functions
@@ -118,7 +118,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
         toReturn.ConstructionQueue = new List<string>(ConstructionQueue);
         toReturn.ProductionOverflow = ProductionOverflow;
         foreach (var (key, value) in FreeBuildingsProvidedFromThisCity)
-            toReturn.FreeBuildingsProvidedFromThisCity[key] = [.. value];
+            toReturn.FreeBuildingsProvidedFromThisCity[key] = new JavaHashSet<string>(value);
         return toReturn;
     }
 

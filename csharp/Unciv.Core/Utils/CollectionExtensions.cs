@@ -87,6 +87,28 @@ public static class CollectionExtensions
         where TKey : notnull =>
         map.TryGetValue(key, out var set) && set.Contains(element);
 
+    /// <summary>
+    /// Adds to a sparse Java-order map of sets, creating the set for <paramref name="key"/> when needed.
+    /// Returns false if the element was already present, true if it was new (like Set.add).
+    /// </summary>
+    public static bool AddToMapOfSets<TKey, TElement>(this JavaHashMap<TKey, JavaHashSet<TElement>> map, TKey key, TElement element)
+        where TKey : notnull
+        where TElement : notnull
+    {
+        if (!map.TryGetValue(key, out var set))
+        {
+            set = new JavaHashSet<TElement>();
+            map[key] = set;
+        }
+        return set.Add(element);
+    }
+
+    /// <summary>Whether in a sparse Java-order map of sets the <paramref name="element"/> exists for <paramref name="key"/>.</summary>
+    public static bool Contains<TKey, TElement>(this JavaHashMap<TKey, JavaHashSet<TElement>> map, TKey key, TElement element)
+        where TKey : notnull
+        where TElement : notnull =>
+        map.TryGetValue(key, out var set) && set.Contains(element);
+
     /// <summary>For lists that replace hashmaps: they contain nulls where we don't know the answer yet.</summary>
     public static T GetOrPut<T>(this List<T?> list, int index, Func<T> getValue) where T : class
     {

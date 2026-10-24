@@ -59,7 +59,8 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     IReadOnlySet<string> IGameInfoState.SpaceResources => SpaceResourceNames;
     public bool UsersTurn { get; set; } = true;
     bool IGameInfoState.IsUsersTurn() => UsersTurn;
-    bool IGameInfoState.AutoAssignCityProduction => false;
+    public bool AutoAssignCityProduction { get; set; }
+    bool IGameInfoState.AutoAssignCityProduction => AutoAssignCityProduction;
     bool IGameInfoState.IsFullAutoPlayAI => false;
     public int LastUnitId { get; set; }
     int IGameInfoState.GetNextUnitId() => ++LastUnitId;
@@ -248,7 +249,7 @@ internal sealed class FakeCityState
     public List<Building> Completed => ConstructionsFake.Completed;
     public IReadOnlyList<string> ConstructionQueue => ConstructionsFake.ConstructionQueue;
     public int InProgressValidations => ConstructionsFake.InProgressValidations;
-    public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity => ConstructionsFake.FreeBuildingsProvidedFromThisCity;
+    public JavaHashMap<string, JavaHashSet<string>> FreeBuildingsProvidedFromThisCity => ConstructionsFake.FreeBuildingsProvidedFromThisCity;
     public JavaHashSet<string> Buildings => ConstructionsFake.BuiltNames;
     public int StatsUpdateCalls => StatsFake.UpdateCalls;
     public Action<Building>? OnCompleteConstruction { get => ConstructionsFake.OnCompleteConstruction; set => ConstructionsFake.OnCompleteConstruction = value; }

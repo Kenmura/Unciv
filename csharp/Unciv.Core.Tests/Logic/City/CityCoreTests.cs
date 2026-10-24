@@ -7,6 +7,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
@@ -895,7 +896,7 @@ public class CityCoreTests
         w.Fake.BuiltBuildingObjects.Add(Make("Forge", it => it.RequiredResource = "Iron"));
         w.Fake.BuiltBuildingObjects.Add(Make("Smithy", it => it.RequiredResource = "Iron"));
         Assert.Equal(2, w.City.GetResourcesGeneratedByCity().SumBy("Iron"));
-        w.Fake.FreeBuildingsProvidedFromThisCity[w.City.Id] = ["Forge"];
+        w.Fake.FreeBuildingsProvidedFromThisCity[w.City.Id] = JavaHashSet<string>.HashSetOf("Forge");
         Assert.Equal(3, w.City.GetResourcesGeneratedByCity().SumBy("Iron"));
     }
 

@@ -197,17 +197,18 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
 
     public int GetProductionCost(IConstructionCivilization civInfo, IConstructionCity? city) => CostFunctions.GetProductionCost(civInfo, city);
 
-    public bool CanBePurchasedWithStat(IConstructionCity? city, Stat stat)
+    public bool CanBePurchasedWithStat(CityObject? city, Stat stat)
     {
         if (city == null) return INonPerpetualConstruction.CanBePurchasedWithStatDefault(this, null, stat);
-        // The engine's only IConstructionCity is City (the interface exists for the port order, see ConstructionSeams.cs)
-        var realCity = (CityObject)city;
         if (((IHasUniques)this).HasUnique(UniqueType.CannotBePurchased)) return false;
-        if (GetRejectionReasons(realCity.CityConstructions).Any(it => it.Type != RejectionReasonType.Unbuildable))
+        if (GetRejectionReasons(city.CityConstructions).Any(it => it.Type != RejectionReasonType.Unbuildable))
             return false;
         if (CostFunctions.CanBePurchasedWithStat(city, stat)) return true;
         return INonPerpetualConstruction.CanBePurchasedWithStatDefault(this, city, stat);
     }
+
+    bool INonPerpetualConstruction.CanBePurchasedWithStat(IConstructionCity? city, Stat stat) =>
+        CanBePurchasedWithStat(city as CityObject, stat);
 
     public float? GetBaseBuyCost(IConstructionCity city, Stat stat)
     {

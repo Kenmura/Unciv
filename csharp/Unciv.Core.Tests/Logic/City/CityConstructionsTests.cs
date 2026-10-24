@@ -3,9 +3,11 @@ using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Json;
 using Unciv.Logic.City;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Tech;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
@@ -69,6 +71,15 @@ public class CityConstructionsTests
         building.Ruleset = w.Ruleset;
         w.Ruleset.Buildings.Put(name, building);
         return building;
+    }
+
+    private static BaseUnit AddUnit(World w, string name, Action<BaseUnit>? init = null)
+    {
+        var unit = new BaseUnit { Name = name, Cost = 100, UnitType = "Melee" };
+        init?.Invoke(unit);
+        unit.SetRuleset(w.Ruleset);
+        w.Ruleset.Units.Put(name, unit);
+        return unit;
     }
 
     private static void Queue(World w, params string[] names) => w.Constructions.EditQueue(it => { it.Clear(); it.AddRange(names); });
@@ -609,14 +620,14 @@ public class CityConstructionsTests
         w.Constructions.EditQueue(it => it.Add("Gold"));
         w.Constructions.ProductionOverflow = 9;
         w.Constructions.CurrentConstructionIsUserSet = true;
-        w.Constructions.FreeBuildingsProvidedFromThisCity["c9"] = ["Monument"];
+        w.Constructions.FreeBuildingsProvidedFromThisCity["c9"] = JavaHashSet<string>.HashSetOf("Monument");
         var clone = w.Constructions.Clone();
         Assert.Equal(["Monument"], clone.BuiltBuildings.ToList());
         Assert.Equal(4, clone.InProgressConstructions["Granary"]);
         Assert.Equal(["Gold"], clone.ConstructionQueue);
         Assert.Equal(9, clone.ProductionOverflow);
         Assert.True(clone.CurrentConstructionIsUserSet);
-        Assert.Equal(["Monument"], clone.FreeBuildingsProvidedFromThisCity["c9"]);
+        Assert.Equal(["Monument"], clone.FreeBuildingsProvidedFromThisCity["c9"].ToList());
         clone.InProgressConstructions["Granary"] = 5;
         clone.FreeBuildingsProvidedFromThisCity["c9"].Add("Other");
         Assert.Equal(4, w.Constructions.InProgressConstructions["Granary"]);
@@ -633,6 +644,8 @@ public class CityConstructionsTests
         c.EditQueue(it => it.AddRange(["Pyramids", "Gold"]));
         c.CurrentConstructionIsUserSet = true;
         c.ProductionOverflow = 3;
+        c.FreeBuildingsProvidedFromThisCity.AddToMapOfSets("c1", "Monument");
+        c.FreeBuildingsProvidedFromThisCity.AddToMapOfSets("c1", "Granary");
         var json = UncivJson.Serialize(c);
         Assert.Contains("\"constructionQueue\":[\"Pyramids\",\"Gold\"]", json, StringComparison.OrdinalIgnoreCase);
         var back = UncivJson.Deserialize<CityConstructions>(json).NotNull();
@@ -641,6 +654,7 @@ public class CityConstructionsTests
         Assert.Equal(12, back.InProgressConstructions["Pyramids"]);
         Assert.True(back.CurrentConstructionIsUserSet);
         Assert.Equal(3, back.ProductionOverflow);
+        Assert.Equal(c.FreeBuildingsProvidedFromThisCity["c1"].ToList(), back.FreeBuildingsProvidedFromThisCity["c1"].ToList());
     }
 
     [Fact]
@@ -652,5 +666,322 @@ public class CityConstructionsTests
         Assert.False(w.Constructions.CanAddToQueue(PerpetualConstruction.Gold));
         Assert.True(PerpetualConstruction.Idle.ShouldBeDisplayed(w.Constructions));
         Assert.Equal("", PerpetualConstruction.Idle.GetProductionTooltip(w.City));
+    }
+
+    [Fact]
+    public void ChooseNextConstruction_HandlesIdleAutomationAndEarlyReturns()
+    {
+        var w = NewWorld();
+        AddBuilding(w, "Monument");
+        // Empty queue: ChooseNextConstruction is safe and leaves queue idle/empty
+        w.Constructions.ChooseNextConstruction();
+        Assert.True(w.Constructions.IsQueueEmptyOrIdle());
+
+        // Non-perpetual construction in queue: returns early without changing queue
+        Queue(w, "Monument");
+        w.Constructions.CurrentConstructionIsUserSet = false;
+        w.Constructions.ChooseNextConstruction();
+        Assert.Equal(["Monument"], w.Constructions.ConstructionQueue);
+
+        // Perpetual construction with CurrentConstructionIsUserSet = true: returns early
+        Queue(w, "Nothing");
+        w.Constructions.CurrentConstructionIsUserSet = true;
+        w.Constructions.ChooseNextConstruction();
+        Assert.Equal(["Nothing"], w.Constructions.ConstructionQueue);
+
+        // Automation branches: Puppet or AI civ safely execute without modifying queue
+        w.City.IsPuppet = true;
+        w.Constructions.CurrentConstructionIsUserSet = false;
+        w.Constructions.ChooseNextConstruction();
+        Assert.Equal(["Nothing"], w.Constructions.ConstructionQueue);
+
+        // Active human player with AutoAssignCityProduction
+        w.City.IsPuppet = false;
+        w.Info.AutoAssignCityProduction = true;
+        w.Constructions.ChooseNextConstruction();
+        Assert.Equal(["Nothing"], w.Constructions.ConstructionQueue);
+    }
+
+    [Fact]
+    public void CreatesOneImprovement_PlaceRemoveAndValidateMarkers()
+    {
+        var w = NewWorld();
+        w.Ruleset.TileImprovements.Put("Citadel", new TileImprovement { Name = "Citadel", TerrainsCanBeBuiltOn = ["Land"] });
+        var building = AddBuilding(w, "Great Wall", it => it.Uniques = ["Creates a [Citadel] improvement on a specific tile"]);
+
+        var centerTile = w.City.GetCenterTile();
+        var ownedTile = w.City.TileMap[HexCoord.Of(2, 3)];
+        w.City.Tiles.Add(centerTile.Position);
+        w.City.Tiles.Add(ownedTile.Position);
+        centerTile.SetOwningCity(w.City);
+        ownedTile.SetOwningCity(w.City);
+
+        // CanPlaceCreateOneImprovementOn checks
+        Assert.False(w.Constructions.CanPlaceCreateOneImprovementOn(w.Ruleset.TileImprovements["Citadel"], centerTile));
+        Assert.True(w.Constructions.CanPlaceCreateOneImprovementOn(w.Ruleset.TileImprovements["Citadel"], ownedTile));
+
+        // Foreign tile throws InvalidOperationException
+        var foreignTile = w.City.TileMap[HexCoord.Of(0, 0)];
+        Assert.Throws<InvalidOperationException>(() =>
+            w.Constructions.TryPlaceCreateOneImprovementMarker(w.Ruleset.TileImprovements["Citadel"], foreignTile));
+
+        // TryPlaceCreateOneImprovementMarker places marker and is idempotent
+        Assert.True(w.Constructions.TryPlaceCreateOneImprovementMarker(w.Ruleset.TileImprovements["Citadel"], ownedTile));
+        Assert.True(ownedTile.IsMarkedForCreatesOneImprovement("Citadel"));
+        Assert.True(w.Constructions.TryPlaceCreateOneImprovementMarker(w.Ruleset.TileImprovements["Citadel"], ownedTile));
+
+        // AddToQueue requires tile for CreatesOneImprovement
+        w.Constructions.RemoveAll();
+        ownedTile.ImprovementFunctions.RemoveCreatesOneImprovementMarker(removeConstruction: false);
+        Assert.Throws<ArgumentException>(() => w.Constructions.AddToQueue("Great Wall"));
+        Assert.Throws<ArgumentException>(() => w.Constructions.AddToQueue("Great Wall", centerTile));
+
+        // AddToQueue with valid tile
+        w.Constructions.AddToQueue("Great Wall", ownedTile);
+        Assert.Equal(["Great Wall"], w.Constructions.ConstructionQueue);
+        Assert.True(ownedTile.IsMarkedForCreatesOneImprovement("Citadel"));
+
+        // RemoveFromQueue clears the marker
+        w.Constructions.RemoveFromQueue(0, automatic: false);
+        Assert.False(ownedTile.IsMarkedForCreatesOneImprovement("Citadel"));
+
+        // RemoveCreateOneImprovementConstruction removes the building from queue when marker is removed
+        w.Constructions.AddToQueue("Great Wall", ownedTile);
+        Assert.Equal(["Great Wall"], w.Constructions.ConstructionQueue);
+        w.Constructions.RemoveCreateOneImprovementConstruction("Citadel");
+        Assert.DoesNotContain("Great Wall", w.Constructions.ConstructionQueue);
+
+        // ValidateCreatesOneImprovementMarkers cleans orphaned markers when queue does not have the building
+        ownedTile.ImprovementFunctions.MarkForCreatesOneImprovement("Citadel");
+        Assert.True(ownedTile.IsMarkedForCreatesOneImprovement("Citadel"));
+        w.Constructions.EditQueue(it => it.Clear());
+        w.Constructions.EndTurn(new Stats(production: 1f));
+        Assert.False(ownedTile.IsMarkedForCreatesOneImprovement("Citadel"));
+
+        // CompleteConstruction places the improvement and clears the marker
+        w.Constructions.AddToQueue("Great Wall", ownedTile);
+        w.Constructions.CompleteConstruction(building);
+        Assert.False(ownedTile.IsMarkedForCreatesOneImprovement("Citadel"));
+        Assert.Equal("Citadel", ownedTile.Improvement);
+    }
+
+    [Fact]
+    public void TriggerNewBuildingUniques_TriggersBuildingCivAndCityUniques()
+    {
+        var w = NewWorld();
+        var building = AddBuilding(w, "Observatory", it => it.Uniques =
+        [
+            "Gain [50] [Gold]",
+            "Gain [100] [Gold] <when above [50] [Happiness]>"
+        ]);
+
+        w.Civ.Nation.UniqueMap.AddUnique(new Unique(
+            "Gain [30] [Gold] <upon constructing a [Observatory] building>",
+            UniqueTarget.Nation, "CivUnique"));
+        w.Civ.Nation.UniqueMap.AddUnique(new Unique(
+            "Gain [20] [Gold] <upon constructing a [Observatory] building in [all] cities>",
+            UniqueTarget.Nation, "CityFilterUnique"));
+
+        // Executes without exception across building uniques (conditional and unconditional) and civ/city triggered uniques
+        var exception = Record.Exception(() => w.Constructions.TriggerNewBuildingUniques(building));
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void KoreanTechBoost_GrantsHalfMedianTechCostInCapital()
+    {
+        var w = NewWorld();
+        var palace = AddBuilding(w, "Palace", it => it.Uniques = ["Indicates the capital city"]);
+        w.Constructions.AddBuilding(palace);
+
+        var library = AddBuilding(w, "Library", it => it.Science = 2);
+        w.Civ.Nation.UniqueMap.AddUnique(new Unique(
+            "Receive a tech boost when scientific buildings/wonders are built in capital",
+            UniqueTarget.Nation, "Korea"));
+
+        w.Ruleset.Technologies.Put("T1", new Technology { Name = "T1", Cost = 100 });
+        w.Ruleset.Technologies.Put("T2", new Technology { Name = "T2", Cost = 200 });
+        w.Ruleset.Technologies.Put("T3", new Technology { Name = "T3", Cost = 300 });
+
+        Assert.True(w.City.IsCapital());
+        Assert.True(library.IsStatRelated(Stat.Science, w.City));
+        w.Civ.HasEverOwnedOriginalCapital = true;
+        w.Civ.GameInfo.TileMap!.MapParameters.MapSize = new MapSize(MapSize.Predefined.Tiny);
+
+        // Odd number of researchable techs: median of [100, 200, 300] is 200. Boost = roundToInt(0.5 * 200) = 100
+        w.Constructions.CompleteConstruction(library);
+        Assert.Equal(100, w.Civ.Tech.GetOverflowScience());
+
+        // Even number of researchable techs: median of [100, 200, 300, 400] is (200 + 300) / 2 = 250. Boost = roundToInt(0.5 * 250) = 125
+        w.Ruleset.Technologies.Put("T4", new Technology { Name = "T4", Cost = 400 });
+        var university = AddBuilding(w, "University", it => it.PercentStatBonus = new Stats(science: 33f));
+        w.Constructions.CompleteConstruction(university);
+        Assert.Equal(225, w.Civ.Tech.GetOverflowScience());
+
+        // Non-capital city gets no boost
+        var w2 = NewWorld();
+        w2.Civ.HasEverOwnedOriginalCapital = true;
+        w2.Civ.GameInfo.TileMap!.MapParameters.MapSize = new MapSize(MapSize.Predefined.Tiny);
+        var lib2 = AddBuilding(w2, "Library2", it => it.Science = 2);
+        w2.Civ.Nation.UniqueMap.AddUnique(new Unique(
+            "Receive a tech boost when scientific buildings/wonders are built in capital",
+            UniqueTarget.Nation, "Korea"));
+        w2.Ruleset.Technologies.Put("T1", new Technology { Name = "T1", Cost = 100 });
+        w2.Constructions.CompleteConstruction(lib2);
+        Assert.False(w2.City.IsCapital());
+        Assert.Equal(0, w2.Civ.Tech.GetOverflowScience());
+    }
+
+    [Fact]
+    public void ValidateConstructionQueue_StockpileBranchRemovesUnfundedConstructions()
+    {
+        var w = NewWorld();
+        w.Ruleset.TileResources.Put("Uranium", new TileResource { Name = "Uranium", ResourceType = ResourceType.Strategic, Uniques = ["Stockpiled"] });
+        AddBuilding(w, "Nuclear Plant", it => it.Uniques = ["Costs [2] [Uranium]"]);
+
+        // When civ has 0 Uranium, first construction with workDone == 0 is removed from queue
+        w.Civ.ResourceStockpiles["Uranium"] = 0;
+        Queue(w, "Nuclear Plant");
+        w.Constructions.EndTurn(new Stats());
+        Assert.True(w.Constructions.IsQueueEmptyOrIdle());
+
+        // When civ has 2 Uranium, construction stays in queue and stockpiled resource is deducted when construction begins
+        w.Civ.ResourceStockpiles["Uranium"] = 2;
+        Queue(w, "Nuclear Plant");
+        w.Constructions.EndTurn(new Stats());
+        Assert.Equal(["Nuclear Plant"], w.Constructions.ConstructionQueue);
+        Assert.Equal(0, w.Civ.ResourceStockpiles["Uranium"]);
+
+        // When work is already done on the item, shortage does NOT remove it from queue
+        w.Civ.ResourceStockpiles["Uranium"] = 0;
+        w.Constructions.InProgressConstructions["Nuclear Plant"] = 10;
+        w.Constructions.EndTurn(new Stats());
+        Assert.Equal(["Nuclear Plant"], w.Constructions.ConstructionQueue);
+    }
+
+    [Fact]
+    public void Notifications_ConstructionBegunAndTriggersAlertOnCompletion()
+    {
+        var w = NewWorld();
+        var greece = new Civilization(new NationObject { Name = "Greece" })
+        {
+            CivId = "Greece",
+            GameInfo = w.Info,
+            PlayerType = PlayerType.Human,
+        };
+        greece.Units = new TestUnitManager(greece);
+        greece.CityStateFunctions = new FakeCityStateFunctions();
+        w.Info.Civs.Add(greece);
+
+        var persia = new Civilization(new NationObject { Name = "Persia" })
+        {
+            CivId = "Persia",
+            GameInfo = w.Info,
+            PlayerType = PlayerType.Human,
+        };
+        persia.Units = new TestUnitManager(persia);
+        persia.CityStateFunctions = new FakeCityStateFunctions();
+        w.Info.Civs.Add(persia);
+
+        // Greece has explored Rome's city center; Persia has not explored and does not know Rome
+        w.City.GetCenterTile().SetExplored(greece, true);
+        greece.Diplomacy[w.Civ.CivId] = new DiplomacyManager(greece, w.Civ);
+
+        var apollo = AddBuilding(w, "Apollo Project", it => it.Uniques =
+        [
+            "Triggers a global alert upon build start",
+            "Triggers a global alert upon completion"
+        ]);
+        apollo.Cost = 10;
+
+        // Starting construction notifies other civs with specific exploration awareness
+        Queue(w, "Apollo Project");
+        w.Constructions.EndTurn(new Stats());
+
+        Assert.Contains(greece.Notifications, it => it.Text == $"The city of [{w.City.Name}] has started constructing [Apollo Project]!");
+        Assert.Contains(persia.Notifications, it => it.Text == "[An unknown civilization] has started constructing [Apollo Project]!");
+
+        // Completing construction notifies other civs based on whether they know Rome
+        w.Constructions.CompleteConstruction(apollo);
+        Assert.Contains(greece.Notifications, it => it.Text == $"[{w.Civ.CivName}] has completed [Apollo Project]!");
+        Assert.Contains(persia.Notifications, it => it.Text == "[An unknown civilization] has completed [Apollo Project]!");
+    }
+
+    [Fact]
+    public void BuildingAndBaseUnit_NotMetRejectionsAndMaxNumberBuildable()
+    {
+        var w = NewWorld();
+        // Building MaxNumberBuildable
+        var wonder = AddBuilding(w, "Heroic Epic", it => it.Uniques = ["Limited to [1] per Civilization"]);
+        Assert.Empty(wonder.GetRejectionReasons(w.Constructions));
+        Assert.True(wonder.ShouldBeDisplayed(w.Constructions));
+        w.Constructions.AddBuilding(wonder);
+        Assert.Contains(wonder.GetRejectionReasons(w.Constructions), it => it.Type == RejectionReasonType.AlreadyBuilt);
+
+        var fake2 = new FakeCityState("c2", new FakeCiv("Rome")) { CivData = w.Civ, LocationData = HexCoord.Of(2, 4) };
+        fake2.City.CityConstructions = new CityConstructions();
+        fake2.City.SetTransients(w.Civ);
+        w.Civ.Cities = [w.City, fake2.City];
+        Assert.Contains(wonder.GetRejectionReasons((CityConstructions)fake2.City.CityConstructions), it => it.Type == RejectionReasonType.MaxNumberBuildable);
+        Assert.False(wonder.ShouldBeDisplayed((CityConstructions)fake2.City.CityConstructions));
+
+        // BaseUnit MaxNumberBuildable
+        MapUnitFactory.AddUnitTypes(w.Ruleset);
+        var unit = AddUnit(w, "HeroUnit", it => it.Uniques = ["Limited to [1] per Civilization"]);
+        var heroMapUnit = unit.NewMapUnit(w.Civ, 1);
+        w.Civ.Units.AddUnit(heroMapUnit);
+        Assert.Contains(unit.GetRejectionReasons(w.Civ, w.City), it => it.Type == RejectionReasonType.MaxNumberBuildable);
+
+        // Building NotMetRejections with ConditionalBuildingBuiltAmount and ConditionalBuildingBuiltAll
+        AddBuilding(w, "Colosseum");
+        var circus = AddBuilding(w, "Circus Maximus", it => it.Uniques =
+            ["Only available <if [Colosseum] is constructed in at least [2] of [All] cities>"]);
+        Assert.Contains(circus.GetRejectionReasons(w.Constructions), it => it.Type == RejectionReasonType.RequiresBuildingInSomeCities);
+
+        AddBuilding(w, "Library");
+        var nationalCollege = AddBuilding(w, "National College", it => it.Uniques =
+            ["Only available <if [Library] is constructed in all [All] cities>"]);
+        Assert.Contains(nationalCollege.GetRejectionReasons(w.Constructions), it => it.Type == RejectionReasonType.RequiresBuildingInAllCities);
+
+        // BaseUnit NotMetRejections with ConditionalBuildingBuiltAmount and ConditionalBuildingBuiltAll
+        var unitAmount = AddUnit(w, "Knight", it => it.Uniques =
+            ["Only available <if [Colosseum] is constructed in at least [2] of [All] cities>"]);
+        Assert.Contains(unitAmount.GetRejectionReasons(w.Civ, w.City), it => it.Type == RejectionReasonType.RequiresBuildingInSomeCities);
+
+        var unitAll = AddUnit(w, "Paladin", it => it.Uniques =
+            ["Only available <if [Library] is constructed in all [All] cities>"]);
+        Assert.Contains(unitAll.GetRejectionReasons(w.Civ, w.City), it => it.Type == RejectionReasonType.RequiresBuildingInAllCities);
+    }
+
+    [Fact]
+    public void BaseUnit_CanUnitEnterTile_AndCanBePurchasedWithStat()
+    {
+        var w = NewWorld();
+        var centerTile = w.City.GetCenterTile();
+        w.City.Tiles.Add(centerTile.Position);
+        centerTile.SetOwningCity(w.City);
+
+        MapUnitFactory.AddUnitTypes(w.Ruleset);
+        w.Ruleset.UnitTypes.Put("Air", new UnitType { Name = "Air", MovementType = "Air" });
+        w.Ruleset.UnitTypes.Put("Water", new UnitType { Name = "Water", MovementType = "Water" });
+
+        var warrior = AddUnit(w, "Warrior", it => it.UnitType = "Melee");
+        Assert.True(warrior.CanUnitEnterTile(w.City));
+
+        var trireme = AddUnit(w, "Trireme", it => it.UnitType = "Water");
+        Assert.True(trireme.CanUnitEnterTile(w.City)); // Boats can enter friendly city center tiles
+
+        var fighter = AddUnit(w, "Fighter", it => it.UnitType = "Air");
+        Assert.True(fighter.CanUnitEnterTile(w.City));
+        Assert.DoesNotContain(fighter.GetRejectionReasons(w.Civ, w.City), it => it.Type == RejectionReasonType.NoPlaceToPutUnit);
+
+        // If city air capacity is full, air unit cannot enter
+        w.Ruleset.ModOptions.Constants.CityAirUnitCapacity = 0;
+        Assert.False(fighter.CanUnitEnterTile(w.City));
+        Assert.Contains(fighter.GetRejectionReasons(w.Civ, w.City), it => it.Type == RejectionReasonType.NoPlaceToPutUnit);
+
+        // CanBePurchasedWithStat accepts City directly without cast
+        Assert.True(warrior.CanBePurchasedWithStat(w.City, Stat.Gold));
+        Assert.False(warrior.CanBePurchasedWithStat(w.City, Stat.Science));
     }
 }
