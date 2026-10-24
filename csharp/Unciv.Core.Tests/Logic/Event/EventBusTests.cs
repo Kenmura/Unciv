@@ -120,4 +120,82 @@ public class EventBusTests : IDisposable
 
         Assert.True(received);
     }
+
+    private interface IMarker : IEvent;
+    private interface IOther : IEvent;
+    private class BaseEvent : IMarker;
+    private sealed class DerivedEvent : BaseEvent, IOther;
+
+    [Fact]
+    public void Send_RunsListenersInGlobalRegistrationOrderAcrossTypes()
+    {
+        // Deviation from Kotlin (see EventBus remarks): the subtype listener registered first still runs first
+        using var receiver = new EventReceiver();
+        var log = new List<string>();
+
+        receiver.Receive<TestDerivedEvent>(_ => log.Add("Derived"));
+        receiver.Receive<IEvent>(_ => log.Add("IEvent"));
+        receiver.Receive<TestDerivedEvent>(_ => log.Add("Derived2"));
+
+        EventBus.Send(new TestDerivedEvent("x", 1));
+
+        Assert.Equal(["Derived", "IEvent", "Derived2"], log);
+    }
+
+    [Fact]
+    public void Send_NotifiesEachListenerOnceEvenWhenReachableOnSeveralPaths()
+    {
+        // Kotlin runs the IEvent listener twice here (once per path through the diamond); we run it once
+        using var receiver = new EventReceiver();
+        var log = new List<string>();
+
+        receiver.Receive<DerivedEvent>(_ => log.Add("Derived"));
+        receiver.Receive<IOther>(_ => log.Add("Other"));
+        receiver.Receive<BaseEvent>(_ => log.Add("Base"));
+        receiver.Receive<IMarker>(_ => log.Add("Marker"));
+        receiver.Receive<IEvent>(_ => log.Add("IEvent"));
+        receiver.Receive<DerivedEvent>(_ => log.Add("Derived2"));
+
+        EventBus.Send(new DerivedEvent());
+
+        Assert.Equal(["Derived", "Other", "Base", "Marker", "IEvent", "Derived2"], log);
+    }
+
+    [Fact]
+    public void Send_ListenersChangedDuringDispatchAreHandledPredictably()
+    {
+        using var receiver = new EventReceiver();
+        using var lateReceiver = new EventReceiver();
+        var log = new List<string>();
+        var victim = new EventReceiver();
+
+        receiver.Receive<TestBaseEvent>(_ =>
+        {
+            log.Add("first");
+            victim.StopReceiving(); // deactivated before its turn: skipped (Kotlin would still call it once)
+            lateReceiver.Receive<TestBaseEvent>(_ => log.Add("late")); // registered during dispatch: next event
+        });
+        victim.Receive<TestBaseEvent>(_ => log.Add("victim"));
+
+        EventBus.Send(new TestBaseEvent("one"));
+        Assert.Equal(["first"], log);
+
+        log.Clear();
+        EventBus.Send(new TestBaseEvent("two"));
+        Assert.Equal(["first", "late"], log);
+    }
+
+    [Fact]
+    public void Send_FilterDecidesPerListenerAndRunsBeforeTheHandler()
+    {
+        using var receiver = new EventReceiver();
+        var log = new List<string>();
+
+        receiver.Receive<IEvent>(e => { log.Add("filter-all"); return true; }, _ => log.Add("handler-all"));
+        receiver.Receive<TestDerivedEvent>(e => { log.Add("filter-no"); return false; }, _ => log.Add("handler-no"));
+
+        EventBus.Send(new TestDerivedEvent("x", 1));
+
+        Assert.Equal(["filter-all", "handler-all", "filter-no"], log);
+    }
 }

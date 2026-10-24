@@ -1,9 +1,23 @@
 namespace Unciv.Logic.Event;
 
 /// <summary>
-/// Deterministic, synchronous event bus matching Kotlin's <c>com.unciv.logic.event.EventBus</c>.
-/// Invokes registered listeners synchronously in deterministic registration order.
+/// Deterministic, synchronous event bus after Kotlin's <c>com.unciv.logic.event.EventBus</c>.
 /// </summary>
+/// <remarks>
+/// Deliberate deviations (checked by running the real Kotlin EventBus on <c>Derived : Base, Other</c>, <c>Base : Marker</c>,
+/// with every interface extending <c>Event</c>, listeners registered most specific first):
+/// <list type="bullet">
+/// <item>Kotlin dispatches grouped by registered class, ancestors before the concrete class
+/// (<c>[Event, Marker, Base, Event, Other, Derived, Derived2]</c>); registration order only counts within one class.
+/// Here listeners run in global registration order across all matching types (<c>[Derived, Other, Base, Marker, Event, Derived2]</c>),
+/// because .NET gives no declared supertype order to reproduce.</item>
+/// <item>Kotlin notifies a listener once per path through the type hierarchy (the "set" holds fresh wrapper objects), so a diamond
+/// runs a listener twice. Here each listener runs at most once per event.</item>
+/// <item>Kotlin dispatches over a snapshot, so a listener removed by an earlier handler of the same event still runs once.
+/// Here a listener deactivated during dispatch is skipped; a listener registered during dispatch waits for the next event.</item>
+/// <item>No weak references: a receiver that is never stopped or disposed keeps its listeners alive.</item>
+/// </list>
+/// </remarks>
 public static class EventBus
 {
     private static long NextSeq;
@@ -19,7 +33,7 @@ public static class EventBus
         public bool IsActive { get; set; } = true;
     }
 
-    public static void Send<T>(T @event) where T : notnull
+    public static void Send<T>(T @event) where T : IEvent
     {
         ArgumentNullException.ThrowIfNull(@event);
 
@@ -53,10 +67,9 @@ public static class EventBus
         foreach (var reg in toInvoke)
         {
             if (!reg.IsActive) continue;
-            IEvent eventObj = (IEvent)(object)@event;
-            if (reg.Filter == null || reg.Filter(eventObj))
+            if (reg.Filter == null || reg.Filter(@event))
             {
-                reg.Handler(eventObj);
+                reg.Handler(@event);
             }
         }
     }
