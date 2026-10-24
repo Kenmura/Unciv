@@ -688,7 +688,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Rebase fixes (Claude): tip had 2 failing MarkerOwnershipTests (stale TODO(T068)). GameStarter.onCivilizationCreated doc now says TODO(T104) (not T069: T069 becomes Done and the marker test rejects Done owners); CityStateSeams.cs header names its open owners T094/T081. Added QuestManager virtuals (GetInvestmentMultiplier, ReceivedGoldGift, CityStateBullied, CityStateConquered, WasAttackedBy, WantsDead) for T068's FakeQuestManager; ICityStateFunctions.GetNumThreateningBarbarians is a new non-default seam member (CityStateFunctions already has it).
 
 ### T070 Civilization TurnManager
-- State: In-Review [Claude]
+- State: Done
 - Depends: T068, T064, T066, T069
 - Source: core/src/com/unciv/logic/civilization/managers/TurnManager.kt
 - Fixtures: tests/src/com/unciv/logic/NextTurnLatencyTest.kt is a benchmark: do not port

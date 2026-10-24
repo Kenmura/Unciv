@@ -18,14 +18,10 @@ flowchart TD
     T006["T006<br/>HexMath"]
     T011["T011<br/>State-hash determinism harness"]
     T012["T012<br/>Command layer design"]
-    T028["T028<br/>Unique system: Conditionals and Countables"]
     T035["T035<br/>Test-support port: TestGame helper and deferred fixtures"]
     T039["T039<br/>TileMap"]
     T040["T040<br/>Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, Map..."]
-    T046["T046<br/>GameInfo core and the hooks waiting for it"]
     T052["T052<br/>UniqueTriggerActivation and UniqueTriggerExecutors"]
-    T055["T055<br/>Civilization core: Civilization, ExploredRegion, PopupAlert"]
-    T056["T056<br/>Civilization managers: TechManager, PolicyManager, GoldenAge..."]
     T057["T057<br/>Civilization managers: ReligionManager (+Religion), RuinsMan..."]
     T060["T060<br/>City core: City, CityFocus, CityResources, CityEspionageMana..."]
     T061["T061<br/>City managers: CityPopulationManager, CityExpansionManager, ..."]
@@ -37,7 +33,6 @@ flowchart TD
     T067["T067<br/>Unit movement: MovementCost, UnitMovement"]
     T068["T068<br/>Diplomacy turn and city states: DiplomacyTurnManager, Declar..."]
     T069["T069<br/>QuestManager and quest helpers"]
-    T070["T070<br/>Civilization TurnManager"]
     T071["T071<br/>GameInfo turn handling and BackwardCompatibility"]
     T072["T072<br/>Deferred TestGame-based fixtures sweep (Tile, Civilization, ..."]
     T078["T078<br/>Barbarians: BarbarianManager, BarbarianEncampment"]
@@ -94,21 +89,6 @@ flowchart TD
     A006["A006<br/>Homeland AI priority move queue"]
     A007["A007<br/>Operations and armies layer"]
   end
-  T028 --> T052
-  T046 --> T052
-  T055 --> T052
-  T056 --> T052
-  T057 --> T052
-  T060 --> T052
-  T061 --> T052
-  T063 --> T052
-  T064 --> T052
-  T065 --> T052
-  T066 --> T052
-  T068 --> T052
-  T070 --> T052
-  T046 --> T071
-  T070 --> T071
   T035 --> T072
   T052 --> T072
   T062 --> T072
@@ -242,14 +222,10 @@ flowchart TD
   class T006 done
   class T011 done
   class T012 done
-  class T028 done
   class T035 done
   class T039 done
   class T040 done
-  class T046 done
-  class T052 ondeck
-  class T055 done
-  class T056 done
+  class T052 ready
   class T057 done
   class T060 done
   class T061 done
@@ -261,8 +237,7 @@ flowchart TD
   class T067 done
   class T068 done
   class T069 done
-  class T070 review
-  class T071 ondeck
+  class T071 ready
   class T072 waiting
   class T078 done
   class T079 waiting
@@ -306,6 +281,8 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T052 | **Ready to start** | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
+| T071 | **Ready to start** | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
@@ -313,10 +290,7 @@ flowchart TD
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
-| T052 | **On deck** (after T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T087 | **On deck** (after T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
-| T071 | **On deck** (after T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
-| T070 | In-Review [Claude] | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T085 | In-Progress [Claude] | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T079 | Available (waiting on T052) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T082 | In-Progress [Claude] | T081, T046, T067, T035 | 13 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
