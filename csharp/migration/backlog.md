@@ -1222,7 +1222,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Split off: T112 (drop IsCityConnectedToCapital after T060), T113 (T056 (a) JSON converters for Java collections), T114 (findings appended to T109 during this work: T056 review, T059 follow-ups/review, T108 review).
 
 ### T111 T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T057, T052, T060, T065
 - Source: csharp/Unciv.Core/Logic/Civilization/Managers/{ReligionManager,EspionageManager,VictoryManager}.cs, Models/Spy.cs
 - Fixtures: none

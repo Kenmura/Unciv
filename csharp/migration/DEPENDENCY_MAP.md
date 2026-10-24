@@ -50,7 +50,6 @@ flowchart TD
     T104["T104<br/>Marker, seam and stale-comment sweep (final)"]
     T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
     T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
-    T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
     T115["T115<br/>Retype Tile city seams to City and move the Tile/Pathfinding..."]
     T123["T123<br/>Policy follow-up: eliminate allowlisted mutable statics (Eve..."]
     T125["T125<br/>Policy: harden NullForgivingTests scanner (interpolation hol..."]
@@ -144,7 +143,6 @@ flowchart TD
   T083 --> T149
   T142 --> T150
   T089 --> T150
-  T111 --> T153
   C001 --> C002
   C002 --> C003
   C002 --> C004
@@ -218,7 +216,6 @@ flowchart TD
   class T104 waiting
   class T106 done
   class T107 done
-  class T111 review
   class T115 ready
   class T123 ready
   class T125 ready
@@ -238,7 +235,7 @@ flowchart TD
   class T150 waiting
   class T151 ready
   class T152 ready
-  class T153 ondeck
+  class T153 ready
 ```
 
 ## Incomplete tickets
@@ -255,13 +252,13 @@ flowchart TD
 | T147 | **Ready to start** | T107 | 0 | MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps |
 | T151 | **Ready to start** | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
 | T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
+| T153 | **Ready to start** | T111 | 0 | T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies |
 | T090 | **On deck** (after T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T089 | **On deck** (after T088) | T086, T088, T085 | 2 | TradeEvaluation |
 | T139 | **On deck** (after T083, T080) | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T144 | **On deck** (after T080) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
 | T146 | **On deck** (after T083) | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T149 | **On deck** (after T083) | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
-| T153 | **On deck** (after T111) | T111 | 0 | T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies |
 | T083 | In-Progress [Claude] | T081, T082, T052, T064, T068, T079, T035 | 16 | Battle C: Battle, Nuke |
 | T088 | In-Progress [Claude] | T087, T086, T081, T068 | 14 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T080 | In-Progress [Antigravity] | T079, T061, T068 | 11 | Unit actions B: UnitActions, UnitActionsFromUniques |
@@ -275,7 +272,6 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
-| T111 | Needs-Review [Claude] | T057, T052, T060, T065 | 1 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
