@@ -255,7 +255,7 @@ flowchart TD
   class T070 avail
   class T071 avail
   class T072 avail
-  class T073 avail
+  class T073 prog
   class T074 avail
   class T075 avail
   class T076 avail
@@ -293,7 +293,7 @@ flowchart TD
 | T070 | Available | T068, T064, T066, T069 | Civilization TurnManager |
 | T071 | Available | T046, T070 | GameInfo turn handling and BackwardCompatibility |
 | T072 | Available | T035, T062, T063, T064, T067, T068, T069, T071 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
-| T073 | Available | T039, T010, T016, T017 | MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator |
+| T073 | In-Progress [Claude] | T039, T010, T016, T017 | MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator |
 | T074 | Available | T039, T010, T016, T017 | MapGenerator B: RiverGenerator, NaturalWonderGenerator |
 | T075 | Available | T039, T010, T016, T017 | MapGenerator C: mapregions Region, MapGenTileData, MapRegions, RegionStartFinder |
 | T076 | Available | T075 | MapGenerator D: mapregions StartNormalizer, MinorCivPlacer |
