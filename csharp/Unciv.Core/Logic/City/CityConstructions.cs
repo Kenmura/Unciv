@@ -22,9 +22,9 @@ namespace Unciv.Logic.City;
 // - timeThis profiling, the purity annotations and the "single read, the field may be swapped by another thread" comments are dropped; the
 //   queue is still only ever replaced as a whole, never mutated in place (see EditQueue).
 // - getProductionMarkup is the Kotlin member of the same name; FormattedLine is T095's class.
-// - chooseNextConstruction: the Kotlin `ConstructionAutomation(this).chooseNextConstruction()` is TODO(T091) and
-//   `Automation.getTileForConstructionImprovement(city, improvement)` is TODO(T087). Until those are ported an automated choice leaves the
-//   queue as it is (empty after an automatic removal, which getConstruction("") reads as Idle) and no tile is auto-chosen.
+// - chooseNextConstruction: the Kotlin `ConstructionAutomation(this).chooseNextConstruction()` is TODO(T091). Until it is ported an automated
+//   choice leaves the queue as it is (empty after an automatic removal, which getConstruction("") reads as Idle).
+//   `Automation.getTileForConstructionImprovement(city, improvement)` is ported (T087).
 //   The client settings Kotlin reads from UncivGame.Current (settings.autoAssignCityProduction, worldScreen.autoPlay, multiplayer user id)
 //   are the IGameInfoState members IsUsersTurn / AutoAssignCityProduction / IsFullAutoPlayAI, which T046 implements.
 // - completeConstruction's saved-promotion block builds PromotionTree(unit) (a UI-package class in Kotlin, ported in T126).
@@ -902,12 +902,9 @@ public class CityConstructions : IsPartOfGameInfoSerialization
         }
     }
 
-    /// <summary>TODO(T087): <c>Automation.getTileForConstructionImprovement(city, improvement)</c>; until then no tile is chosen automatically.</summary>
-    private TileClass? GetTileForConstructionImprovementAutomation(TileImprovement improvement)
-    {
-        _ = improvement;
-        return null;
-    }
+    /// <summary><c>Automation.getTileForConstructionImprovement(city, improvement)</c></summary>
+    private TileClass? GetTileForConstructionImprovementAutomation(TileImprovement improvement) =>
+        City.Population.Automation.GetTileForConstructionImprovement(City, improvement);
 
     /// <summary>Whether this city may mark its own <paramref name="tile"/> to create <paramref name="improvement"/> when construction completes.</summary>
     public bool CanPlaceCreateOneImprovementOn(TileImprovement improvement, TileClass tile) =>

@@ -13,8 +13,7 @@ namespace Unciv.Logic.Civilization.Managers;
 // Deviations:
 // - Kotlin HashSet/HashMap of PolicyBranch (identity hash, arbitrary order) are insertion ordered here (ruleset order); the AI-only
 //   priorityMap is a Dictionary because its order never reaches anything (getMaxPriority takes a max).
-// - priorityMap needs IHasUniques.getWeightForAiDecision, which is not ported yet; a PolicyBranch is neither BaseUnit nor Building,
-//   so that function reduces to the AiChoiceWeight product, which GetWeightForAiDecision below applies.
+// - priorityMap uses IHasUniques.GetWeightForAiDecision (T087); a PolicyBranch is neither BaseUnit nor Building, so it is the AiChoiceWeight product.
 // - Deferred: the UniqueTriggerActivation.triggerUnique calls (TriggerUniqueSeam, T052).
 
 public class PolicyManager : IsPartOfGameInfoSerialization
@@ -72,19 +71,11 @@ public class PolicyManager : IsPartOfGameInfoSerialization
                 foreach (var victoryType in CivInfo.GetPreferredVictoryTypes())
                     victoryPriority += branch.Priorities.GetValueOrDefault(victoryType, 0);
                 var personalityPriority = CivInfo.GetPersonality().Priorities.GetValueOrDefault(branch.Name, 0);
-                var branchPriority = (victoryPriority + personalityPriority) * GetWeightForAiDecision(branch);
+                var branchPriority = (victoryPriority + personalityPriority) * ((IHasUniques)branch).GetWeightForAiDecision(CivInfo.State);
                 value[branch] = KotlinMath.RoundToInt(branchPriority);
             }
             return value;
         }
-    }
-
-    private float GetWeightForAiDecision(PolicyBranch branch)
-    {
-        var weight = 1f;
-        foreach (var unique in ((IHasUniques)branch).GetMatchingUniques(UniqueType.AiChoiceWeight, CivInfo.State))
-            weight *= unique.Params[0].ToPercent();
-        return weight;
     }
 
     /// <summary>A set of newly adoptable <see cref="PolicyBranch"/>es.</summary>

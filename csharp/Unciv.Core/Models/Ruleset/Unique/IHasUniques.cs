@@ -1,4 +1,5 @@
 using Unciv.Models.StatTypes;
+using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Unique;
@@ -32,8 +33,7 @@ public interface IRulesetTechView
 /// Ported from core/src/com/unciv/models/ruleset/unique/IHasUniques.kt.
 /// </summary>
 /// <remarks>
-/// Not ported yet, because the types are not ported: <c>getWeightForAiDecision</c> (TODO(T087): BaseUnit, Building, and with them the
-/// Personality part). <c>requiredTechnologies</c>, <c>era</c>, <c>techColumn</c> and <c>availableInEra</c> take an <see cref="IRulesetTechView"/>
+/// <c>requiredTechnologies</c>, <c>era</c>, <c>techColumn</c> and <c>availableInEra</c> take an <see cref="IRulesetTechView"/>
 /// instead of <c>Ruleset</c>.
 /// The <c>isHiddenFromCivilopedia(ruleset)</c> overload reads <c>UncivGame.getGameInfoOrNull()</c>, a client global: callers pass the
 /// <c>gameInfo</c> explicitly to the other overload.
@@ -157,6 +157,37 @@ public interface IHasUniques : INamed, IRulesetObjectParameterView
         var eraAvailable = Era(ruleset);
         if (eraAvailable == null) return true; // No technologies are required, so available in the starting era.
         return eraAvailable.EraNumber <= ruleset.GetEra(requestedEra).NotNull().EraNumber;
+    }
+
+    /// <summary>
+    /// Product of the <see cref="UniqueType.AiChoiceWeight"/> uniques; for a <see cref="Unit.BaseUnit"/> or <see cref="Building"/> also
+    /// of the civ's personality <see cref="UniqueType.PersonalityAiWeight"/> uniques whose filter matches.
+    /// </summary>
+    float GetWeightForAiDecision(GameContext gameContext)
+    {
+        var weight = 1f;
+        foreach (var unique in GetMatchingUniques(UniqueType.AiChoiceWeight, gameContext))
+            weight *= unique.Params[0].ToPercent();
+
+        // todo (upstream): we should have an IHasMatchesFilter?
+        if (this is not (Unit.BaseUnit or Building)) return weight;
+        var personality = gameContext.CivInfo?.GetPersonality();
+        if (personality == null) return weight;
+
+        foreach (var unique in ((IHasUniques)personality).GetMatchingUniques(UniqueType.PersonalityAiWeight, gameContext))
+        {
+            var factor = unique.Params[0].ToPercent();
+            switch (this)
+            {
+                case Unit.BaseUnit unit when unit.MatchesFilter(unique.Params[1], gameContext):
+                    weight *= factor;
+                    break;
+                case Building building when building.MatchesFilter(unique.Params[1], gameContext):
+                    weight *= factor;
+                    break;
+            }
+        }
+        return weight;
     }
 
     /// <summary>Do this object's <see cref="UniqueType.OnlyAvailable"/> and <see cref="UniqueType.Unavailable"/> uniques all pass for <paramref name="gameContext"/>?</summary>

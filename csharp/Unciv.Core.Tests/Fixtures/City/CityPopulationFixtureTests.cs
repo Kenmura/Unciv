@@ -1,18 +1,13 @@
 using Unciv.Core.Tests.Support;
 using Unciv.Logic.City;
-using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
-using Unciv.Models.StatTypes;
 using CityObject = Unciv.Logic.City.City;
-using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Fixtures.CityFixtures;
 
 // T072: port of tests/src/com/unciv/logic/city/managers/CityPopulationManagerTest.kt over the real TestGame.
-// The "best job" cases depend on the city-work ranking: TestGame installs the T035 stand-in (food + 0.5 * production, no
-// CityFocus) in place of Automation (T087), so the assertions below hold for that ranking, and the focus case uses
-// a focus-aware ranking installed locally.
+// The "best job" cases depend on the city-work ranking, which is the ported Automation (T087).
 [Collection("RulesetCache")]
 public sealed class CityPopulationFixtureTests
 {
@@ -183,7 +178,6 @@ public sealed class CityPopulationFixtureTests
     [Fact]
     public void ShouldAutomaticallyAssignNewPopToBestJobAccordingToCityFocus()
     {
-        testGame.GameInfo.ClientState.CityWorkAutomation = new FocusAwareAutomation();
         city.SetCityFocus(CityFocus.GoldFocus);
         city.ClearWorkedTiles();
         var anchorTile2 = city.TileMap[new HexCoord(-1, 0)];
@@ -210,7 +204,6 @@ public sealed class CityPopulationFixtureTests
     [Fact]
     public void ShouldAutomaticallyAssignNewPopToBestJobWithSpecialists()
     {
-        testGame.GameInfo.ClientState.CityWorkAutomation = new FocusAwareAutomation();
         city.SetCityFocus(CityFocus.GoldFocus);
         city.ClearWorkedTiles();
         var anchorTile3 = city.TileMap[new HexCoord(-1, 0)];
@@ -227,16 +220,5 @@ public sealed class CityPopulationFixtureTests
 
         Assert.Equal(2, city.Population.Population);
         Assert.True(city.Population.SpecialistAllocations.ContainsKey("Merchant"));
-    }
-
-    /// <summary>Stand-in for Automation.rankStatsForCityWork honouring a gold focus (the real one is T087's).</summary>
-    private sealed class FocusAwareAutomation : ICityWorkAutomation
-    {
-        public float RankStatsForCityWork(Stats stats, CityObject cityToRank, bool areWeRankingSpecialist) =>
-            cityToRank.GetCityFocus() == CityFocus.GoldFocus ? stats.Gold * 3f + stats.Food * 0.1f : stats.Food + 0.5f * stats.Production;
-        public float RankSpecialist(string specialist, CityObject cityToRank) =>
-            specialist == "Merchant" && cityToRank.GetCityFocus() == CityFocus.GoldFocus ? 10f : 0f;
-        public float RankTileForCityWork(TileClass tile, CityObject cityToRank) =>
-            RankStatsForCityWork(tile.Stats.GetTileStats(cityToRank, cityToRank.Civ), cityToRank, false);
     }
 }

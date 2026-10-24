@@ -90,7 +90,7 @@ public static class UniqueTriggerActivation
                     if (civInfo.IsAI() || eventObj.Presentation == Event.PresentationType.None)
                         return () =>
                         {
-                            var choice = choices.ToList().RandomWeighted(rng, it => it.GetWeightForAiDecision(gameContext));
+                            var choice = choices.ToList().RandomWeighted(rng, it => ((IHasUniques)it).GetWeightForAiDecision(gameContext));
                             return choice.TriggerChoice(civInfo, unit);
                         };
                     if (eventObj.Presentation == Event.PresentationType.Alert)

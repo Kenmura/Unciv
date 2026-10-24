@@ -16,7 +16,7 @@ namespace Unciv.Logic.City.Managers;
 // Ported from core/src/com/unciv/logic/city/managers/CityPopulationManager.kt (T061).
 //
 // Stripped: the purity annotations and the timeThis profiling wrapper of autoAssignPopulation.
-// Seam: Automation.rankStatsForCityWork / rankSpecialist / rankTileForCityWork (T087) goes through CityPopulationManager.Automation (CityManagerSeams). Kotlin `getNewSpecialists()` is an alias of specialistAllocations and is kept as such.
+// Automation.rankStatsForCityWork / rankSpecialist / rankTileForCityWork go through CityPopulationManager.Automation (CityManagerSeams, default: the real Automation, T087). Kotlin `getNewSpecialists()` is an alias of specialistAllocations and is kept as such.
 // The members tests override (AutoAssignPopulation, UnassignExtraPopulation, GetPopulationFilterAmount) are virtual so that City tests can
 // count the calls without a full map and automation.
 
@@ -39,13 +39,11 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
     [JsonInclude]
     public Counter<string> SpecialistAllocations { get; private set; } = new();
 
-    /// <summary>Seam for the not yet ported <c>Automation</c> (T087): tests install a stand-in. Not serialized, not cloned.</summary>
+    /// <summary>The <c>Automation</c> ranking calls (T087): the ported object unless a test installs a stand-in. Not serialized, not cloned.</summary>
     [JsonIgnore]
     internal ICityWorkAutomation Automation
     {
-        // Kotlin CityFounder.foundCity auto-assigns population while it creates the city, so a harness (TestGame, T035) cannot install a stand-in
-        // on the instance in time: it sets GameClientState.CityWorkAutomation instead. TODO(T087): remove both with the seam.
-        get => automation ?? (city?.Civ.GameInfo as GameInfo)?.ClientState.CityWorkAutomation ?? CityManagerSeams.Unported;
+        get => automation ?? CityManagerSeams.RealCityWork;
         set => automation = value;
     }
     private ICityWorkAutomation? automation;

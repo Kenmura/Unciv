@@ -349,13 +349,13 @@ public class UniqueTriggerTests
     {
         var choice = new EventChoice { Name = "Weighted" };
         choice.Uniques.Add("Free Technology");
-        Assert.Equal(1f, choice.GetWeightForAiDecision(new GameContext(civ)));
+        Assert.Equal(1f, ((IHasUniques)choice).GetWeightForAiDecision(new GameContext(civ)));
         Assert.True(choice.TriggerChoice(civ));
         Assert.Equal(1, civ.Tech.FreeTechs);
         var weighted = new EventChoice { Name = "Weighted2" };
         weighted.Uniques.Add("[50]% weight to this choice for AI decisions");
         weighted.Uniques.Add("[300]% weight to this choice for AI decisions");
-        Assert.Equal(6f, weighted.GetWeightForAiDecision(new GameContext(civ)));
+        Assert.Equal(6f, ((IHasUniques)weighted).GetWeightForAiDecision(new GameContext(civ)));
     }
 
     [Fact]

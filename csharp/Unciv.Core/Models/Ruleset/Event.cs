@@ -1,7 +1,6 @@
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset.Unique;
-using Unciv.UI.Components.Extensions;
 
 namespace Unciv.Models.Ruleset;
 
@@ -70,17 +69,5 @@ public class EventChoice : RulesetObject
                 if (UniqueTriggerActivation.TriggerUnique(unique, civ, unit: unit)) success = true;
         }
         return success;
-    }
-
-    /// <summary>
-    /// <c>IHasUniques.getWeightForAiDecision</c> for an object that is neither a BaseUnit nor a Building: the product of its AiChoiceWeight uniques.
-    /// TODO(T087): replaced by the generic IHasUniques.GetWeightForAiDecision.
-    /// </summary>
-    public float GetWeightForAiDecision(GameContext gameContext)
-    {
-        var weight = 1f;
-        foreach (var unique in ((IHasUniques)this).GetMatchingUniques(UniqueType.AiChoiceWeight, gameContext))
-            weight *= unique.Params[0].ToPercent();
-        return weight;
     }
 }

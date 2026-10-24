@@ -15,8 +15,8 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Core.Tests.Logic.CityTests;
 
 // T061: CityPopulationManager, CityExpansionManager, CityReligionManager and CityFounder over a real Civilization / TileMap / City with the
-// real managers (the TestGame-based Kotlin fixtures are ported with T072). Automation (T087) is a
-// stand-in installed on the population manager.
+// real managers (the TestGame-based Kotlin fixtures are ported with T072). Automation is a
+// stand-in installed on the population manager, to control the ranks.
 public sealed class CityManagerTests
 {
     /// <summary>Tile rank = its food + 0.5 * its production; a specialist ranks as given in <see cref="SpecialistRanks"/>.</summary>
@@ -26,6 +26,7 @@ public sealed class CityManagerTests
         public float RankStatsForCityWork(Stats stats, CityObject city, bool areWeRankingSpecialist) => stats.Food + 0.5f * stats.Production;
         public float RankSpecialist(string specialist, CityObject city) => SpecialistRanks.GetValueOrDefault(specialist);
         public float RankTileForCityWork(TileClass tile, CityObject city) => RankStatsForCityWork(tile.Stats.GetTileStats(city, city.Civ), city, false);
+        public TileClass? GetTileForConstructionImprovement(CityObject city, TileImprovement improvement) => null;
     }
 
     internal static Ruleset MakeRuleset()

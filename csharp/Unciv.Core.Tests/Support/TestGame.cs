@@ -57,7 +57,6 @@ public sealed class TestGame
         }
         Ruleset.AddGlobalUniques(addGlobalUniques);
 
-        GameInfo.ClientState.CityWorkAutomation = new StandInAutomation();
         GameInfo.Ruleset = Ruleset;
         GameInfo.Difficulty = "Prince";
         GameInfo.GameParameters.Speed = Speed.DefaultForSimulation;
@@ -326,15 +325,4 @@ public sealed class TestGame
 
     public Promotion CreateUnitPromotion(params string[] uniques) =>
         CreateRulesetObject(Ruleset.UnitPromotions, uniques, () => new Promotion());
-}
-
-/// <summary>
-/// Stand-in for the unported Automation (T087), which Kotlin <c>CityFounder.foundCity</c> reaches through population auto-assignment: a tile ranks as its
-/// food + 0.5 * production, a specialist ranks 0. Cities founded by TestGame therefore may work other tiles than Kotlin's would.
-/// </summary>
-internal sealed class StandInAutomation : ICityWorkAutomation
-{
-    public float RankStatsForCityWork(Stats stats, CityObject city, bool areWeRankingSpecialist) => stats.Food + 0.5f * stats.Production;
-    public float RankSpecialist(string specialist, CityObject city) => 0f;
-    public float RankTileForCityWork(TileClass tile, CityObject city) => RankStatsForCityWork(tile.Stats.GetTileStats(city, city.Civ), city, false);
 }

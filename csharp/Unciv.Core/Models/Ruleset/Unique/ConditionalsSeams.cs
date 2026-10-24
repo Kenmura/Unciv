@@ -80,6 +80,8 @@ public partial interface IGameContextCivilization
     /// <summary><c>civ.goldenAges.isGoldenAge()</c></summary>
     bool IsGoldenAge();
     int GetEraNumber();
+    /// <summary><c>civ.getPersonality()</c> (T087: IHasUniques.getWeightForAiDecision)</summary>
+    Nation.Personality GetPersonality();
     /// <summary><c>civ.matchesFilter(filter, state)</c></summary>
     bool MatchesFilter(string filter, GameContext? state);
     IGameContextCity? GetCapital();

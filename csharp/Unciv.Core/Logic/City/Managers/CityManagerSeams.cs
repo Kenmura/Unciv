@@ -1,17 +1,20 @@
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Logic.Trade;
+using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.StatTypes;
+using AutomationObject = Unciv.Logic.Automation.Automation;
 using CityObject = Unciv.Logic.City.City;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using TradeObject = Unciv.Logic.Trade.Trade;
 
 namespace Unciv.Logic.City.Managers;
 
-// T061: the seam of the city managers. CityPopulationManager calls Automation (ported by T087), a static Kotlin object, so the seam is a
-// replaceable instance property of CityPopulationManager (no mutable static state) that T087 replaces by direct calls. Until then the default throws, like an unported call should.
+// T061: the seam of the city managers. CityPopulationManager calls Automation, a static Kotlin object, through a replaceable instance
+// property of CityPopulationManager (no mutable static state). T087 ported Automation: the default now calls it, and the property stays so
+// that CityManagerTests can drive the population logic with controlled ranks over a fake game state.
 
-/// <summary>The members of Kotlin <c>Automation</c> that CityPopulationManager calls. TODO(T087)</summary>
+/// <summary>The members of Kotlin <c>Automation</c> that CityPopulationManager calls.</summary>
 internal interface ICityWorkAutomation
 {
     /// <summary><c>Automation.rankStatsForCityWork(stats, city, areWeRankingSpecialist)</c></summary>
@@ -20,6 +23,8 @@ internal interface ICityWorkAutomation
     float RankSpecialist(string specialist, CityObject city);
     /// <summary><c>Automation.rankTileForCityWork(tile, city)</c></summary>
     float RankTileForCityWork(Tile tile, CityObject city);
+    /// <summary><c>Automation.getTileForConstructionImprovement(city, improvement)</c> (CityConstructions)</summary>
+    Tile? GetTileForConstructionImprovement(CityObject city, TileImprovement improvement);
 }
 
 /// <summary>
@@ -40,17 +45,14 @@ internal interface ICityConquestExternals
 
 internal static class CityManagerSeams
 {
-    private sealed class NotPorted : ICityWorkAutomation
+    private sealed class RealAutomation : ICityWorkAutomation
     {
-        // TODO(T087): Automation.rankStatsForCityWork
         public float RankStatsForCityWork(Stats stats, CityObject city, bool areWeRankingSpecialist) =>
-            throw new NotSupportedException("Automation is not ported yet (TODO(T087))");
-        // TODO(T087): Automation.rankSpecialist
-        public float RankSpecialist(string specialist, CityObject city) =>
-            throw new NotSupportedException("Automation is not ported yet (TODO(T087))");
-        // TODO(T087): Automation.rankTileForCityWork
-        public float RankTileForCityWork(Tile tile, CityObject city) =>
-            throw new NotSupportedException("Automation is not ported yet (TODO(T087))");
+            AutomationObject.RankStatsForCityWork(stats, city, areWeRankingSpecialist);
+        public float RankSpecialist(string specialist, CityObject city) => AutomationObject.RankSpecialist(specialist, city);
+        public float RankTileForCityWork(Tile tile, CityObject city) => AutomationObject.RankTileForCityWork(tile, city);
+        public Tile? GetTileForConstructionImprovement(CityObject city, TileImprovement improvement) =>
+            AutomationObject.GetTileForConstructionImprovement(city, improvement);
     }
 
     private sealed class ConquestNotPorted : ICityConquestExternals
@@ -72,6 +74,6 @@ internal static class CityManagerSeams
     /// <summary>The default of <see cref="CityObject.ConquestExternals"/>: Battle throws, TradeLogic is wired (T086). T083 replaces the property by direct calls.</summary>
     internal static readonly ICityConquestExternals UnportedConquest = new ConquestNotPorted();
 
-    /// <summary>The default of <see cref="CityPopulationManager.Automation"/>: throws. T087 replaces the property by direct calls of <c>Automation</c>.</summary>
-    internal static readonly ICityWorkAutomation Unported = new NotPorted();
+    /// <summary>The default of <see cref="CityPopulationManager.Automation"/>: the ported <c>Automation</c> (T087).</summary>
+    internal static readonly ICityWorkAutomation RealCityWork = new RealAutomation();
 }

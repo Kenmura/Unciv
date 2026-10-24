@@ -207,7 +207,7 @@ flowchart TD
   class T083 ondeck
   class T085 done
   class T086 done
-  class T087 prog
+  class T087 review
   class T088 ondeck
   class T089 waiting
   class T090 waiting
@@ -257,7 +257,7 @@ flowchart TD
 | T080 | **On deck** (after T079) | T079, T061, T068 | 10 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T143 | **On deck** (after T103) | T103 | 0 | Port GlobalUniquesTests + deferred TestGame fixtures (split from T103) |
 | T079 | In-Progress [Claude] | T052, T057, T063, T066, T067 | 16 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
-| T087 | In-Progress [Claude] | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
+| T087 | Needs-Review [Claude] | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T090 | Available (waiting on T087, T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |

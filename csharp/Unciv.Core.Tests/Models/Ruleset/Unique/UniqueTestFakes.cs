@@ -125,6 +125,7 @@ internal partial class FakeCiv(string civId, IGameContextGameInfo? gameInfo = nu
     public bool IsGoldenAge() => GoldenAge;
     public int EraNumber { get; set; }
     public int GetEraNumber() => EraNumber;
+    public Unciv.Models.Ruleset.Nation.Personality GetPersonality() => Unciv.Models.Ruleset.Nation.Personality.NeutralPersonality;
     public HashSet<string> MatchingCivFilters { get; } = new();
     public bool MatchesFilter(string filter, GameContext? state) => MatchingCivFilters.Contains(filter);
     public FakeCity? Capital { get; set; }

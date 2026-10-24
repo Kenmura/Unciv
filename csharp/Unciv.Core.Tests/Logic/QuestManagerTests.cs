@@ -67,7 +67,7 @@ public sealed class QuestManagerTests : IDisposable
     private UncivCiv AddCityTo(UncivCiv civ, int landIndex)
     {
         var land = game.TileMap.Values.Where(it => it.IsLand && !it.IsImpassible()).ToList();
-        // Civilization.AddCity would auto-assign population through Automation (T087): wire the city by hand
+        // wire the city by hand (no founding, so no population auto-assignment)
         var city = new CityObject { Id = civ.CivId + "-city", Name = civ.CivId + " City", Location = land[landIndex].Position };
         civ.Cities = [city];
         city.SetTransients(civ);
