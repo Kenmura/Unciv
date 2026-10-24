@@ -354,7 +354,7 @@ flowchart TD
   class T055 done
   class T056 prog
   class T057 prog
-  class T058 ready
+  class T058 prog
   class T059 ready
   class T060 waiting
   class T061 waiting
@@ -407,12 +407,12 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T058 | **Ready to start** | T055, T054 | 54 | Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions |
 | T059 | **Ready to start** | T055 | 36 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
 | T108 | **Ready to start** | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
 | T109 | **Ready to start** | none | 0 | Hardening sweep: non-blocking review findings from T033-T095 |
 | T057 | In-Progress [Claude] | T055 | 55 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
 | T056 | In-Progress [Claude] | T055 | 54 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
+| T058 | In-Progress [Claude] | T055, T054 | 54 | Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions |
 | T060 | Available (waiting on T056, T057, T058) | T055, T056, T057, T058 | 53 | City core: City, CityFocus, CityResources, CityEspionageManager |
 | T065 | Available (waiting on T056, T060) | T055, T056, T060 | 46 | MapUnit core: MapUnit, MapUnitCache |
 | T066 | Available (waiting on T065, T060) | T065, T060 | 43 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |

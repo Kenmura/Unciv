@@ -449,13 +449,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Backlog audit: Logic/Civilization/Managers/ReligionState.cs holds a 'TODO(T052)' marker saying the enum moves with ReligionManager: that is this ticket (move the enum into ReligionManager.cs / its Kotlin file layout and delete the marker). SpyFleeReason / Spy used by TradeLogic (T086).
 
 ### T058 Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T055, T054
 - Source: core/src/com/unciv/logic/civilization/transients/CivInfoTransientCache.kt, CivInfoStatsForNextTurn.kt, CapitalConnectionsFinder.kt, civilization/CivConstructions.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/CapitalConnectionsFinderTests.kt (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/Civilization/Transients/*.cs, CivConstructions.cs, tests (+ retype Civilization seams)
 - Gate: `dotnet test --filter FullyQualifiedName~CivTransientsTests`
-- Claimed:
+- Claimed: 2026-10-24T11:04Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC. Concrete Civilization and Tile; cities via the `ICityState` seam (extend it with `cityStats`, `isCapital`, `getCenterTile`, buildings...). Resource/uniques caches must keep Kotlin's iteration order (LinkedHashMap) as they feed stats. `CivConstructions` calls `City`/`CityConstructions`: seam members, retyped by T060/T063.
 
 ### T059 Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList
