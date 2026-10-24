@@ -119,8 +119,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Re-reviewed rework against Kotlin line by line; `KotlinMath` (RoundToInt/FloatToInt/DoubleToInt/Mod) is exact and tested. Gate 20/20 and Standard checks (build -warnaserror, format, full test 200/200) re-run by reviewer; no new suppressions. Non-blocking notes: `Math.Abs(int.MinValue)` throws OverflowException in C# where Kotlin `abs` wraps (only reachable with extreme coords); `Math.Sin/Cos` may differ from JVM by 1 ulp, so golden values for map generation should be checked when it is ported. Kotlin Tile-dependent and JSON tests are deferred to T015/T007 as per ticket.
 
 ### T007 JSON layer for ported data classes (Counter, Stats, ...)
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T01:14:48Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T01:18:17Z
 - Depends: T004, T005
 - Source: core/src/com/unciv/models/Counter.kt (`write`/`read`), libGDX Json behaviour as used by Unciv; core/src/com/unciv/json/*; core/src/com/unciv/logic/map/HexMath.kt (`HexCoord.Serializer`)
 - Fixtures: tests/src/com/unciv/logic/SerializationTests.kt (Counter round-trip); tests/src/com/unciv/logic/map/HexmathTests.kt (HexCoord JSON ser/deser); generate golden JSON by running the Kotlin code
