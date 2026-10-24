@@ -577,7 +577,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T060: City.AnnexCity/PuppetCity/LiberateCity/MoveToCiv throw InvalidOperationException (TODO(T064)); replace the bodies by CityConquestFunctions(this).annexCity() etc. City.DestroyCity is ported, but only exercised against fake sub-objects.
 
 ### T065 MapUnit core: MapUnit, MapUnitCache
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T055, T056, T060
 - Source: core/src/com/unciv/logic/map/mapunit/MapUnit.kt, MapUnitCache.kt
 - Fixtures: tests/src/com/unciv/logic/map/UnitFormationTests.kt (TestGame-based: T072)
