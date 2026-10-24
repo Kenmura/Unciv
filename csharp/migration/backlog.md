@@ -1798,7 +1798,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T152.
 
 ### T158 ConstructionAutomation (split from T091)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T085, T063
 - Source: core/src/com/unciv/logic/automation/city/ConstructionAutomation.kt
 - Fixtures: none - generate golden values
@@ -1806,6 +1806,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~ConstructionAutomationTests
 - Claimed: 2026-10-24T18:57Z
 - Notes: Split from T091 at claim time (T091 keeps CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation). ~400 LOC. timeThis profiling dropped (T027 policy).
+  - Implemented ConstructionAutomation (lazy LINQ mirrors Kotlin sequences; maxBy uses Kotlin Float.compareTo order; average() in Double). Deviations: UncivGame.screen is CityScreen notification suppression dropped (headless); unused buildingsForVictory and productionForConstruction record dropped; timeThis dropped. Seams: WorkerAutomationSeams (hasWorkableSeaResource/isNotBonusResourceOrWorkable, TODO(T092) moves them); NextTurnAutomationSeams (T094). CityConstructionsAutomation.cs is a thin wrapper to keep CityConstructions under its coupling-ratchet cap. Tests are C#-only (no Kotlin fixture). Side effect: loading a game with empty queue now picks a construction, so UncivFilesTests BusyGame settles its queue first; CityConstructionsTests drops the fake-state automation branches (covered by ConstructionAutomationTests). Coverage 92% lines.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
