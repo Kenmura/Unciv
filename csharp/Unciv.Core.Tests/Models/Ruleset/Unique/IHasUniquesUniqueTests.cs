@@ -1,5 +1,5 @@
-using Unciv.Utils;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Core.Tests.Models.Ruleset.Unique;
