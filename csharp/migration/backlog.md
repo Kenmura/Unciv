@@ -1794,13 +1794,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T152.
 
 ### T158 ConstructionAutomation (split from T091)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T085, T063
 - Source: core/src/com/unciv/logic/automation/city/ConstructionAutomation.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Automation/City/ConstructionAutomation.cs, tests; wire CityConstructions.chooseNextConstruction (TODO(T091) seams in CityConstructions.cs retargeted to this ticket)
 - Gate: dotnet test --filter FullyQualifiedName~ConstructionAutomationTests
-- Claimed:
+- Claimed: 2026-10-24T18:57Z
 - Notes: Split from T091 at claim time (T091 keeps CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation). ~400 LOC. timeThis profiling dropped (T027 policy).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core

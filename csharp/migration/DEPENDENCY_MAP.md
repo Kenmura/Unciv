@@ -173,7 +173,7 @@ flowchart TD
   class T155 prog
   class T156 ondeck
   class T157 waiting
-  class T158 ready
+  class T158 prog
 ```
 
 ## Remaining tickets over time
@@ -191,8 +191,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 24]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 23]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
 ```
 
 ## Incomplete tickets
@@ -202,7 +202,6 @@ xychart-beta
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
-| T158 | **Ready to start** | T085, T063 | 0 | ConstructionAutomation (split from T091) |
 | T092 | **On deck** (after T091) | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | T156 | **On deck** (after T155) | T090, T155 | 7 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
 | T091 | In-Progress [Claude] | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation |
@@ -227,3 +226,4 @@ xychart-beta
 | T128 | Needs-Review [Claude] | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | Available (waiting on T094) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
+| T158 | In-Progress [Claude] | T085, T063 | 0 | ConstructionAutomation (split from T091) |
