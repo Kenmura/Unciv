@@ -1777,13 +1777,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented AirUnitAutomation (automateFighter/Bomber/Nukes/Missile + private helpers) on the view layer; 18 C#-only tests (no Kotlin fixture), hand-derived expectations. Deviations: Kotlin HashMap<TileView,..> (tilesReached/pathsToCities) -> LinkedHashMap (insertion order; JVM identity-hash order is not reproducible and only affects minBy/maxBy ties). maxByOrNull/minByOrNull = first extreme, as LINQ MaxBy/MinBy. Nuke value sums wrap (unchecked). The 'outnumbered, no bonus -> return' branch in automateFighter is unreachable in Kotlin too (needs used+unused < enemyFighters <= unused). No seams: all callees (BattleHelper, HeadTowardsEnemyCityAutomation, ThreatManager, Nuke, TargetHelper, view layer) already ported. Coverage 90.6% line.
 
 ### T156 Unit automation: UnitAutomation (all but tryUpgradeUnit)
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T090, T155
 - Source: core/src/com/unciv/logic/automation/unit/UnitAutomation.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/UnitAutomation*.cs (partial class started in T090), tests; wires MapUnit.doAction and UnitActionsSeams (TODO(T090) call sites)
 - Gate: `dotnet test --filter FullyQualifiedName~UnitAutomationTests`
-- Claimed:
+- Claimed: 2026-10-24T19:27Z
 - Notes: Split from T090 at claim time. ~620 LOC (UnitAutomation.kt is 677 lines; tryUpgradeUnit already ported in T090 as a partial class member). Retype the MapUnit.doAction and UnitActionsSeams (automatedExplore/automateUnitMoves via GameView) call sites. Calls to CivilianUnitAutomation/SpecificUnitAutomation/WorkerAutomation (T091/T092), NextTurnAutomation (T094) are TODO(T###) seams naming the owner. timeThis dropped (T027 policy).
 
 ### T157 Deferred automation fixture: GreatPersonSelectionTest automation cases
