@@ -42,7 +42,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Claude): Pass. Permutation/grad tables identical to Kotlin; algorithm line-by-line equal. Golden values independently reproduced with a Python port of the Kotlin source (5 spot-checks bit-exact). Gate 27/27 and full `dotnet test` 54/54 re-run by reviewer. Minor non-issue: `(int)Math.Floor` on NaN/huge inputs is unspecified vs Kotlin saturation; irrelevant for map-gen inputs.
 
 ### T003 Vector2 / Vector3 shims
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T00:45:16Z
 - Depends: none
 - Source: libGDX `com.badlogic.gdx.math.Vector2/Vector3` (only members used by Unciv logic code; grep `core/src/com/unciv/logic`)
@@ -55,6 +55,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ported members: ctors, Cpy, Set, SetZero, Add, Sub, Scl (scalar/vector), Len, Len2, Nor, Dot, Crs, Dst, Dst2, IsZero (Vector3: Crs returns this-mutated, Nor uses libGDX len2 shortcut). Grep showed Unciv logic only uses ctor, x/y/z, add, set, scl, cpy, Zero; extras are cheap libGDX-faithful additions.
   - Not ported: angle/rotate/lerp/clamp/limit/epsilonEquals/interpolate/Matrix ops, Pool/Poolable, Json. ToString uses invariant shortest-roundtrip ("1" vs Java "1.0").
   - Ran Gate (11 passed) and full `dotnet test`.
+  - Review (Antigravity): Pass. Verified fidelity to libGDX Vector2/Vector3 semantics: mutable class representation, raw float bit equality and hashing (distinguishing -0f, canonicalizing NaN), single-precision float math, Vector3 Crs mutator semantics, and namespace isolation under Unciv.Mathematics. Re-ran Gate (11/11 passed) and full test suite (106/106 passed).
 
 ### T004 Stat enum and Stats
 - State: Needs-Review [Claude]
