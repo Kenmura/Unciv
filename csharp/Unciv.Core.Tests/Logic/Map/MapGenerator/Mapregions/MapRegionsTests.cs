@@ -120,4 +120,15 @@ public class MapRegionsTests
         Assert.Null(MapRegionFunctions.GetRegionPriority(new Terrain { Name = "X", Type = TerrainType.Land }));
         Assert.Equal("RULE <in [Featureless] [Tundra] tiles>", MapRegionFunctions.GetTerrainRule(terrain, new Ruleset()).Text);
     }
+
+    [Fact]
+    public void NegativeBiasKeyIgnoresAvoidedTerrainLikeKotlin()
+    {
+        var map = LandMap(LandRuleset());
+        var region = new Region(map, new Unciv.Mathematics.Rectangle(0, 0, 1, 1));
+        region.TerrainCounts["Desert"] = 5;
+        region.TerrainCounts["Plains"] = 3;
+        Assert.Equal(-3, MapRegions.NegativeBiasKey(region, ["Plains"]));
+        Assert.Equal(0, MapRegions.NegativeBiasKey(region, ["Tundra"]));
+    }
 }

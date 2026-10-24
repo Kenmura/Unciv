@@ -422,7 +422,7 @@ public class MapRegions(Ruleset ruleset)
             // Try to find a region not of the avoided types, secondary sort by
             // least number of undesired terrains (weighed double) / most number of desired terrains
             var startRegion = unpickedRegions.Where(it => !avoided.Contains(it.Type))
-                .MinByOrNull(it => unchecked((2 * SumOfTerrainCounts(it, avoided)) - SumOfTerrainCounts(it, preferred)));
+                .MinByOrNull(it => NegativeBiasKey(it, preferred));
             if (startRegion != null)
             {
                 LogAssignRegion(true, BiasTypes.Negative, civ, startRegion);
@@ -455,6 +455,12 @@ public class MapRegions(Ruleset ruleset)
             if (names.Contains(terrain)) sum = unchecked(sum + count);
         return sum;
     }
+
+    /// <summary>
+    /// Sort key of the negative-bias pass. Kotlin quirk kept on purpose: in MapRegions.kt the lambda body is
+    /// `2 * avoidedSum` NEWLINE `- preferredSum`, which parses as two statements, so the key is just `-preferredSum`.
+    /// </summary>
+    internal static int NegativeBiasKey(Region region, List<string> preferred) => unchecked(-SumOfTerrainCounts(region, preferred));
 
     /// <summary>Sets region.type</summary>
     private void AssignRegionTypes()
