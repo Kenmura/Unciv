@@ -210,7 +210,7 @@ flowchart TD
   class T006 done
   class T010 done
   class T012 done
-  class T015 avail
+  class T015 prog
   class T016 done
   class T017 done
   class T022 done
@@ -258,7 +258,7 @@ flowchart TD
 
 | Ticket | State | Depends on | Title |
 |---|---|---|---|
-| T015 | Available | T039, T022 | HexMath Tile/Map dependent functions |
+| T015 | In-Progress [Claude] | T039, T022 | HexMath Tile/Map dependent functions |
 | T046 | Available | T034, T039, T045, T055, T060, T065 | GameInfo core and the hooks waiting for it |
 | T035 | Available | T034, T038, T039, T046, T053, T054, T057, T061, T065 | Test-support port: TestGame helper and deferred fixtures |
 | T037 | Available | T036, T035 | Golden test: load and validate Vanilla and bundled mod rulesets |
