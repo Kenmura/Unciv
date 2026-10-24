@@ -1436,13 +1436,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented. PromotionTree lives in Unciv.Logic.Map.MapUnits (PromotionTree.cs). Deviations: (1) the MapUnitView constructor is not ported (UI view); (2) the collator comes from the new IGameInfoState.Collator seam member (GameInfo: ClientState.Collator, invariant culture by default) instead of GUI.getSettings(); (3) IPromotionTree and UnitPromotions.CreatePromotionTree (virtual seam) removed, CityConstructions.CompleteConstruction calls new PromotionTree(unit) like Kotlin; the test fake (TestUnitPromotions/FakePromotionTree) is gone and the saved-promotion test uses real promotions with Row/UnitTypes. Quirks kept: detectLoop runs before the node's own parents are linked so it never fires (dead guard, covered by test); canBuyUpTo counts only non-FreePromotion nodes; sort stable by (row<0 ? max : row==0 ? MIN+col : col), row, collated translated name. No golden values (no Kotlin tests).
 
 ### T127 Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T061, T063, T065, T120
 - Source:
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Policy/SizeRatchetBaseline.txt
 - Gate: dotnet test --filter FullyQualifiedName~SizeRatchetTests
-- Claimed: 2026-10-24T18:59Z
+- Claimed: 2026-10-24T19:54Z
 - Notes: Follow-up of T120: Tile.cs (1650) and Civilization.cs (1600) caps were deliberately generous; set them to actual size (or delete the entries if <=1500).
   - T121 (coupling ratchet): Civilization.cs coupling baseline is 24 against a measured 22, deliberate headroom for T061/T063/T065; lower it to the measured value once they land.
   -   - T127 implemented: SizeRatchetBaseline.txt Tile.cs 1650->1578, Civilization.cs 1600->1533 (both still >1500 so entries kept). CouplingRatchetBaseline.txt Civilization.cs stays 24: measured is 24 now (not 22), so no lowering possible, comment updated. No code change, no JSON property order change.
