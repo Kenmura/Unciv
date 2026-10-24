@@ -244,8 +244,8 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Source: core/src/com/unciv/models/ruleset/Ruleset.kt, RulesetCache.kt
 - Fixtures: tests/src/com/unciv/uniques/ResourceTests.kt (static parts)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Ruleset.cs, RulesetCache.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~RulesetLoadTests`
 - Claimed: 2026-10-24T05:16Z
-- Claimed:
 - Notes: File access behind an interface (no libGDX FileHandle). Load order of files/mods must be deterministic and equal to Kotlin's. Implements the interfaces left by T025 (`IRulesetParameterView` via `RulesetMapView<T>`) and T027.
 
 ### T035 Test-support port: TestGame helper and deferred fixtures
