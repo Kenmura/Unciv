@@ -676,6 +676,5 @@ public class CityStateFunctionsDiplomacyTurnTests
         var (_, cs, a) = CityStateAndMajor();
         var city = AddCity(cs).City;
         Assert.Throws<NotImplementedException>(() => CityStateSeams.GetForeignCityNearCapital(city, a)); // TODO(T094)
-        Assert.Throws<NotImplementedException>(() => CityStateSeams.GetCityDefendingStrength(city)); // TODO(T081)
     }
 }

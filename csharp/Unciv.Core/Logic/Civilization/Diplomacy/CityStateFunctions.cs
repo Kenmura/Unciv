@@ -18,7 +18,7 @@ namespace Unciv.Logic.Civilization.Diplomacy;
 //
 // Deviations / deferred (each names its ticket):
 // - NextTurnAutomation.getForeignCityNearCapital (giveGreatPersonToPatron, giveMilitaryUnitToPatron): CityStateSeams.GetForeignCityNearCapital, TODO(T094).
-// - CityCombatant(capital).getDefendingStrength() (getTributeModifiers): CityStateSeams.GetCityDefendingStrength, TODO(T081).
+// - CityCombatant(capital).getDefendingStrength() (getTributeModifiers): CityStateSeams.GetCityDefendingStrength (CityCombatant, T081).
 // - The QuestManager calls (influenceGainedByGift, receiveGoldGift, getTributeModifiers' callers, cityStateBullied, cityStateAttacked,
 //   makeOtherCityStatesWaryOfAttacker, cityStateDestroyed) go through the QuestManager members (T069).
 // - Kotlin `Random(seed)` is GameRandom, `Sequence`s that are only iterated are IEnumerable.
