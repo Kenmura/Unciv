@@ -406,7 +406,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Re-review (Claude): **Pass.** All four findings fixed: `Mods` is now a `LinkedHashSet` (test removes/re-adds and checks order, also through `Clone`), `NiceToString` uses HALF_UP over the shortest double digits with negative zero preserved (tie cases `0.125f`, `-2.625f`, `0.3125f`, `-14.625f`, `-0.001f` asserted), the namespace is `Unciv.Logic.Map.Tiles`, the base ruleset default comes from `BaseRuleset.Civ_V_GnK`. Gate 6/6, Standard checks 481/481. Non-blocking follow-up for whoever touches `MapParameters` next: `NiceToString` throws `OverflowException` for |x| >= ~7.9e28 and `FormatException` for NaN/Infinity (decimal), where Java prints the full digits / `NaN` / `Infinity`. It is only `ToString` (debug output) on absurd JSON input, so it does not block. Remember for T038: `Tile` is now free as a class name in `Unciv.Logic.Map`.
 
 ### T023 Translation core (headless)
-- State: Needs-Review [Antigravity]
+- State: In-Review [Claude]
 - Claimed: 2026-10-24T01:40:33Z
 - Depends: T018
 - Source: core/src/com/unciv/models/translations/Translations.kt, TranslationEntry.kt, TranslationCache.kt, TranslationFileReader.kt, TranslationExtensions.kt (`tr()` and its helpers)
