@@ -48,7 +48,7 @@ public class GameSetupInfoTests
         Assert.NotSame(original.MapParameters, cloned.MapParameters);
         Assert.Equal("Emperor", cloned.GameParameters.Difficulty);
         Assert.Equal("TestMap", cloned.MapParameters.Name);
-        Assert.Equal("path/to/map.json", cloned.MapFile);
+        Assert.Null(cloned.MapFile); // the transient map file is not part of a clone, as upstream
 
         // Mutating original does not mutate clone
         original.GameParameters.Difficulty = "Deity";

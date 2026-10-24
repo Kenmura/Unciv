@@ -33,12 +33,10 @@ public class GameSetupInfo
     public GameSetupInfo(GameSetupInfo setup)
         : this(setup.GameParameters.Clone(), setup.MapParameters.Clone())
     {
-        MapFile = setup.MapFile;
+        // MapFile is not copied: upstream's cloning constructor leaves the transient mapFile at null
     }
 
-    // Upstream constructor:
-    // constructor(gameInfo: GameInfo) : this(gameInfo.gameParameters.clone(), gameInfo.tileMap.mapParameters.clone())
-    // Note: constructor(GameInfo gameInfo) will be added once GameInfo and TileMap are ported (Planned: GameInfo).
+    // TODO(T046): constructor(gameInfo: GameInfo) : this(gameInfo.gameParameters.clone(), gameInfo.tileMap.mapParameters.clone())
 
     /// <summary>
     /// Creates a deep copy of this <see cref="GameSetupInfo"/>.
