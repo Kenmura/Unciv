@@ -310,13 +310,9 @@ public class TileImprovementFunctions(Tile tile)
             TriggerUnique(unique, civ, unit);
     }
 
-    // TODO(T052): UniqueTriggerActivation.triggerUnique(unique, civ, unit = unit, tile = tile) - T052 wires the two call sites through here.
-    private void TriggerUnique(Unique unique, IGameContextCivilization civ, IGameContextUnit? unit)
-    {
-        _ = unique;
-        _ = civ;
-        _ = unit;
-    }
+    // The civ and unit arrive as their seams (Tile is ported before them); the only implementations are Civilization and MapUnit.
+    private void TriggerUnique(Unique unique, IGameContextCivilization civ, IGameContextUnit? unit) =>
+        UniqueTriggerActivation.TriggerUnique(unique, (Civilization.Civilization)civ, unit: (Unciv.Logic.Map.MapUnits.MapUnit?)unit, tile: Tile);
 
     private void ActivateRemovalImprovement(string improvementName, IGameContextCivilization? civToActivateBroaderEffects)
     {

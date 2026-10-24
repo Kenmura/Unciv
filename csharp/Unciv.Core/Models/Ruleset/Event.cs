@@ -1,9 +1,12 @@
+using Unciv.Logic.Civilization;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.UI.Components.Extensions;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/Event.kt
-// Not ported yet: EventChoice.triggerChoice (needs Civilization, MapUnit and UniqueTriggerActivation, T052) and the keyShortcut parsing (UI).
+// Not ported yet: the keyShortcut parsing (UI).
 public class Event : RulesetObject
 {
     /// <summary>
@@ -54,4 +57,30 @@ public class EventChoice : RulesetObject
 
     /// <summary>Keyboard support - not user-rebindable, mod control only. Will be parsed by the client.</summary>
     public string KeyShortcut { get; set; } = "";
+
+    public bool TriggerChoice(Civilization civ, MapUnit? unit = null)
+    {
+        var success = false;
+        var gameContext = new GameContext(civ, unit: unit);
+        foreach (var unique in UniqueObjects)
+        {
+            if (!unique.IsTriggerable || !unique.ConditionalsApply(gameContext)) continue;
+            int repeats = unique.GetUniqueMultiplier(gameContext);
+            for (int i = 0; i < repeats; i++)
+                if (UniqueTriggerActivation.TriggerUnique(unique, civ, unit: unit)) success = true;
+        }
+        return success;
+    }
+
+    /// <summary>
+    /// <c>IHasUniques.getWeightForAiDecision</c> for an object that is neither a BaseUnit nor a Building: the product of its AiChoiceWeight uniques.
+    /// TODO(T087): replaced by the generic IHasUniques.GetWeightForAiDecision.
+    /// </summary>
+    public float GetWeightForAiDecision(GameContext gameContext)
+    {
+        var weight = 1f;
+        foreach (var unique in ((IHasUniques)this).GetMatchingUniques(UniqueType.AiChoiceWeight, gameContext))
+            weight *= unique.Params[0].ToPercent();
+        return weight;
+    }
 }

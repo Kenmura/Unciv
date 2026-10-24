@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Unciv.Json;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.UI.Screens.OverviewScreen;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
@@ -69,6 +70,12 @@ public sealed class MapUnitAction(HexCoord location = default, int id = Constant
 {
     internal HexCoord Location { get; } = location;
     internal int Id { get; } = id;
+
+    /// <summary>Kotlin <c>MapUnitAction(unit)</c></summary>
+    public static MapUnitAction Of(MapUnit unit) => new(unit.CurrentTile.Position, unit.Id);
+
+    /// <summary>Kotlin <c>MapUnitAction(units)</c>, one action per unit</summary>
+    public static IEnumerable<MapUnitAction> Of(IEnumerable<MapUnit> units) => units.Select(Of);
 }
 
 /// <summary>A notification action that shows a Civilopedia entry, e.g. for a Wonder.</summary>

@@ -547,8 +547,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
 
     /// <summary>Kotlin <c>UniqueTriggerActivation.triggerUnique(unique, civ)</c>.</summary>
     private static void TriggerUnique(UniqueObject unique, Civilization civ) =>
-        // TODO(T052): UniqueTriggerActivation.triggerUnique(unique, civ) is ported with T052.
-        throw new NotImplementedException($"UniqueTriggerActivation.triggerUnique({unique}, {civ}) needs T052");
+        UniqueTriggerActivation.TriggerUnique(unique, civ);
 
     public bool HasFlag(DiplomacyFlags flag) => FlagsCountdown.ContainsKey(flag.ToString());
 

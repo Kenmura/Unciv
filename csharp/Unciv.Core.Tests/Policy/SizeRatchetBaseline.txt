@@ -10,3 +10,6 @@ Unciv.Core/Models/Ruleset/Unique/UniqueTypeData.cs|2592
 Unciv.Core/Logic/Map/Tile/Tile.cs|1650
 Unciv.Core/Logic/Civilization/Civilization.cs|1600
 Unciv.Core/Models/Ruleset/Building.cs::Building.GetRejectionReasons|193
+# T052: faithful port of the 1.4k-line Kotlin when over UniqueType (one branch per trigger type); split by family later.
+Unciv.Core/Models/Ruleset/Unique/UniqueTriggerActivation.cs::UniqueTriggerActivation.GetTriggerFunction|1500
+Unciv.Core/Models/Ruleset/Unique/UniqueTriggerActivation.cs|1600

@@ -75,6 +75,7 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     bool IGameInfoState.AlternateUnitCycleOrder => AlternateCycleOrder;
     public List<string> TutorialTasks { get; } = [];
     void IGameInfoState.AddCompletedTutorialTask(string task) => TutorialTasks.Add(task);
+    List<string> IGameInfoState.UnitNamesTaken { get; } = [];
     bool IGameInfoState.IsUnavailableBySettingsCached(IHasUniques construction) => construction.IsUnavailableBySettings(this);
     public FakeBarbarianManager BarbarianFake { get; } = new();
     /// <summary>When set, <see cref="IGameInfoState.Barbarians"/> is this real manager instead of <see cref="BarbarianFake"/>.</summary>

@@ -53,6 +53,9 @@ public sealed class GameClientState
     /// <summary>Test-harness hook for the unported Automation (T087), see <c>CityPopulationManager.Automation</c>. Null (the default) means "not ported".</summary>
     internal ICityWorkAutomation? CityWorkAutomation { get; set; }
 
+    /// <summary>The client's sound and music players (<c>SoundPlayer</c>, <c>musicController</c>) for the PlaySound/ChooseMusic triggers. Null (headless) means "no audio".</summary>
+    public IClientAudio? Audio { get; set; }
+
     /// <summary><c>settings.addCompletedTutorialTask(task)</c> without the settings file save and the UI flag.</summary>
     public bool AddCompletedTutorialTask(string tutorialTask) => TutorialTasksCompleted.Add(tutorialTask);
 }
@@ -65,4 +68,15 @@ public interface IAutoPlay
 
     /// <summary><c>autoPlay.stopAutoPlay()</c></summary>
     void StopAutoPlay();
+}
+
+/// <summary>What <c>UniqueTriggerActivation</c> calls on the client's <c>SoundPlayer</c> and <c>musicController</c>.</summary>
+public interface IClientAudio
+{
+    /// <summary><c>SoundPlayer.get(UncivSound(soundName)) != null</c></summary>
+    bool HasSound(string soundName);
+    /// <summary><c>SoundPlayer.play(UncivSound(soundName))</c></summary>
+    void PlaySound(string soundName);
+    /// <summary><c>musicController.chooseTrack(prefix, suffixes, flags)</c>; flags are the matched <c>MusicTrackChooserFlags</c> names.</summary>
+    void ChooseMusic(string prefix, IReadOnlyList<string> suffixes, IReadOnlyList<string> flags);
 }

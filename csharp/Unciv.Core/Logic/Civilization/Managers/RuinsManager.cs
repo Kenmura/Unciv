@@ -1,4 +1,5 @@
 using Unciv.Json;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
@@ -6,7 +7,7 @@ using Unciv.Utils;
 namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/RuinsManager.kt (T057).
-// The triggering unit is typed by the IMapUnitState seam, which MapUnit (T065) implements.
+// The triggering unit is typed by the MapUnit seam, which is the MapUnit.
 public class RuinsManager : IsPartOfGameInfoSerialization
 {
     private readonly List<string> lastChosenRewards;
@@ -47,7 +48,7 @@ public class RuinsManager : IsPartOfGameInfoSerialization
         lastChosenRewards[1] = reward;
     }
 
-    private List<RuinReward> GetShuffledPossibleRewards(IMapUnitState triggeringUnit)
+    private List<RuinReward> GetShuffledPossibleRewards(MapUnit triggeringUnit)
     {
         var candidates =
             ValidRewards.Where(it => IsPossibleReward(it, triggeringUnit))
@@ -63,7 +64,7 @@ public class RuinsManager : IsPartOfGameInfoSerialization
         return candidates;
     }
 
-    private bool IsPossibleReward(RuinReward ruinReward, IMapUnitState unit)
+    private bool IsPossibleReward(RuinReward ruinReward, MapUnit unit)
     {
         if (lastChosenRewards.Contains(ruinReward.Name)) return false;
         if (ruinReward.IsUnavailableBySettings(CivInfo.GameInfo)) return false;
@@ -75,16 +76,16 @@ public class RuinsManager : IsPartOfGameInfoSerialization
         return true;
     }
 
-    public void SelectNextRuinsReward(IMapUnitState triggeringUnit)
+    public void SelectNextRuinsReward(MapUnit triggeringUnit)
     {
         foreach (var possibleReward in GetShuffledPossibleRewards(triggeringUnit))
         {
             bool atLeastOneUniqueHadEffect = false;
             foreach (var unique in possibleReward.UniqueObjects)
             {
-                if (!unique.ConditionalsApply(triggeringUnit.CacheState)) continue;
+                if (!unique.ConditionalsApply(triggeringUnit.Cache.State)) continue;
                 bool uniqueTriggered = false;
-                int repeats = unique.GetUniqueMultiplier(triggeringUnit.CacheState);
+                int repeats = unique.GetUniqueMultiplier(triggeringUnit.Cache.State);
                 for (int i = 0; i < repeats; i++)
                 {
                     uniqueTriggered =

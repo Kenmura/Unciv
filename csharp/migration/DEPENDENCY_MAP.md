@@ -223,7 +223,7 @@ flowchart TD
   class T035 done
   class T039 done
   class T040 done
-  class T052 prog
+  class T052 review
   class T057 done
   class T060 done
   class T061 done
@@ -288,7 +288,7 @@ flowchart TD
 | T072 | **On deck** (after T052) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | T106 | **On deck** (after T052) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
 | T111 | **On deck** (after T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
-| T052 | In-Progress [Claude] | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 20 | UniqueTriggerActivation and UniqueTriggerExecutors |
+| T052 | Needs-Review [Claude] | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 20 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T082 | Needs-Review [Claude] | T081, T046, T067, T035 | 14 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T087 | In-Progress [Claude] | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T083 | Available (waiting on T082, T052, T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |

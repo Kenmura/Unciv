@@ -303,12 +303,8 @@ public class CivInfoTransientCache(Civilization civInfo)
         }
     }
 
-    // TODO(T052): UniqueTriggerActivation.triggerUnique(unique, civInfo, tile = tile, triggerNotificationText = "due to discovering a Natural Wonder")
-    private void TriggerUnique(UniqueObject unique, Tile tile)
-    {
-        _ = unique;
-        _ = tile;
-    }
+    private void TriggerUnique(UniqueObject unique, Tile tile) =>
+        UniqueTriggerActivation.TriggerUnique(unique, CivInfo, tile: tile, triggerNotificationText: "due to discovering a Natural Wonder");
 
     public void UpdateHasActiveEnemyMovementPenalty()
     {
