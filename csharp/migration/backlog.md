@@ -407,7 +407,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (Antigravity): Pass. Verified `LocaleCode`, `BaseRuleset`, `Player`, `PlayerType`, `GameParameters`, `ModCategory`, `Constants`, `LinkedHashSet`, and `MetadataTests` against Kotlin sources: all 54 `LocaleCode` entries and OpenJDK 17+ `in` -> `id` fastlane folder mapping, `GameParameters` JSON field order and `ShowCivilizationStatsRaw` vs `ShowCivilizationStats` setter/fallback semantics, `Clone()` godMode reset, `ToString()` 6-mod limit, `ModCategory` topic-only equality/JVM hash, and `LinkedHashSet` insertion order + set equality. Re-ran Gate (`~MetadataTests`, 15/15 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
 
 ### T045 GameSetupInfo
-- State: In-Review [Claude]
+- State: Available
 - Depends: T021, T022
 - Source: core/src/com/unciv/models/metadata/GameSetupInfo.kt
 - Fixtures: none - generate golden values by running the Kotlin class
@@ -422,6 +422,10 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Note added for constructor taking `GameInfo` once `GameInfo` is ported.
     - 8 unit tests in `GameSetupInfoTests` covering constructors, deep cloning, `CreateDefault`, JSON serialization, and Kotlin-style JSON deserialization.
     - Ran Gate (8/8 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 548/548 passed).
+  - Review notes (Claude): **Changes requested** (two small items). Gate 8/8, Standard checks (build -warnaserror, format, full test 584/584) pass, no suppressions. Verified against the real Kotlin `GameSetupInfo` on the JVM: libGDX JSON of a modified setup (`{"gameParameters":{"difficulty":"Settler","players":[{"playerType":"Human"},{},{},{}],"espionageEnabled":true},"mapParameters":{"shape":"Rectangular","mapSize":{...},"worldWrap":true,"mods":["ModB","ModA"],"seed":77}}`) deserializes in C# to the same difficulty, 4 players with default AI types, espionage, seed, ordered mods and map size; the clone-through-constructor JSON equals the original plus the `showCivilizationStats` field that `GameParameters.clone()` writes through its setter (already covered by T021). Defaults and the QuickStart branch of `fromSettings` (`shape = Rectangular`, `worldWrap = true`, `espionageEnabled = true`, difficulty only when given) match.
+    1. **The cloning constructor copies `MapFile`; upstream does not.** Kotlin `constructor(setup) : this(setup.gameParameters.clone(), setup.mapParameters.clone())` leaves `mapFile` at its default `null` (it is a separate `@Transient var`). Probe: `s.MapFile = "x"; new GameSetupInfo(s).MapFile` is `null` upstream, `"x"` here. Remove the `MapFile = setup.MapFile;` line in the copy constructor (and so `Clone()`), and change the assertion at `GameSetupInfoTests` line ~51 (`Assert.Equal("path/to/map.json", cloned.MapFile)`) to `Assert.Null`.
+    2. The note for the `GameInfo` constructor is prose ("Planned: GameInfo"); the protocol wants a marker. I created **T046** (GameInfo core) as the target: write `// TODO(T046): constructor(GameInfo) = this(gameInfo.gameParameters.clone(), gameInfo.tileMap.mapParameters.clone())`.
+    - Optional, no change required: the saved-settings branch of `fromSettings` (`GameSetupInfo(lastGameSetup).apply { mapParameters.reseed() }`) is a client/settings concern; if a headless caller needs it, it is `new GameSetupInfo(last)` followed by `MapParameters.Reseed(...)` with an explicit seed source, never the clock.
 
 ### T046 GameInfo core and the hooks waiting for it
 - State: Available
