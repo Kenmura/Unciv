@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Models.StatTypes;
 
@@ -75,12 +76,12 @@ public enum QuestType
 /// </summary>
 public class Quest : INamed
 {
-    private readonly Lazy<QuestName> questNameInstance;
+    private readonly KotlinLazy<QuestName> questNameInstance;
 
     public Quest()
     {
         // lazy only ensures evaluation happens after deserialization
-        questNameInstance = new Lazy<QuestName>(() => QuestNameExtensions.Find(Name));
+        questNameInstance = new KotlinLazy<QuestName>(() => QuestNameExtensions.Find(Name));
     }
 
     /// <summary>Unique identifier name of the quest, it is also shown. Must match a <see cref="QuestNameExtensions.GetValue"/> for the Quest to have any functionality.</summary>

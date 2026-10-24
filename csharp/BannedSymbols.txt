@@ -57,3 +57,7 @@ M:System.Double.Parse(System.String);Culture-dependent; pass CultureInfo.Invaria
 M:System.Int32.Parse(System.String);Culture-dependent; pass CultureInfo.InvariantCulture
 M:System.Int64.Parse(System.String);Culture-dependent; pass CultureInfo.InvariantCulture
 M:System.Convert.ToString(System.Object);Culture-dependent; use an IFormatProvider overload
+
+# --- Lazy initialisation (T116) ---
+T:System.Lazy`1;System.Lazy<T> caches factory exceptions forever, Kotlin `by lazy` retries; use Unciv.Utils.KotlinLazy<T>
+T:System.Threading.LazyInitializer;Different exception/retry semantics from Kotlin `by lazy`; use Unciv.Utils.KotlinLazy<T>

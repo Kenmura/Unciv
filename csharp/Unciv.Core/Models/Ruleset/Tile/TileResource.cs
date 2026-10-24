@@ -13,14 +13,14 @@ public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceP
 {
     public override string MakeLink() => $"Resource/{Name}";
 
-    private readonly Lazy<bool> isCityWide;
-    private readonly Lazy<bool> isStockpiled;
+    private readonly KotlinLazy<bool> isCityWide;
+    private readonly KotlinLazy<bool> isStockpiled;
 
     public TileResource()
     {
         var self = (IHasUniques)this;
-        isCityWide = new Lazy<bool>(() => self.HasUnique(UniqueType.CityResource, GameContext.IgnoreConditionalsState));
-        isStockpiled = new Lazy<bool>(() => self.HasUnique(UniqueType.Stockpiled, GameContext.IgnoreConditionalsState));
+        isCityWide = new KotlinLazy<bool>(() => self.HasUnique(UniqueType.CityResource, GameContext.IgnoreConditionalsState));
+        isStockpiled = new KotlinLazy<bool>(() => self.HasUnique(UniqueType.Stockpiled, GameContext.IgnoreConditionalsState));
     }
 
     public ResourceType ResourceType { get; set; } = ResourceType.Bonus;

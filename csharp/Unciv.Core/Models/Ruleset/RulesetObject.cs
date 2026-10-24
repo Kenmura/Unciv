@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
@@ -16,13 +17,13 @@ public interface IRulesetObject : IHasUniques, ICivilopediaText
 
 public abstract class RulesetObject : IRulesetObject
 {
-    private readonly Lazy<IReadOnlyList<UniqueObject>> uniqueObjects;
-    private readonly Lazy<UniqueMap> uniqueMap;
+    private readonly KotlinLazy<IReadOnlyList<UniqueObject>> uniqueObjects;
+    private readonly KotlinLazy<UniqueMap> uniqueMap;
 
     protected RulesetObject()
     {
-        uniqueObjects = new Lazy<IReadOnlyList<UniqueObject>>(() => ((IHasUniques)this).UniqueObjectsProvider());
-        uniqueMap = new Lazy<UniqueMap>(() => ((IHasUniques)this).UniqueMapProvider());
+        uniqueObjects = new KotlinLazy<IReadOnlyList<UniqueObject>>(() => ((IHasUniques)this).UniqueObjectsProvider());
+        uniqueMap = new KotlinLazy<UniqueMap>(() => ((IHasUniques)this).UniqueMapProvider());
     }
 
     public virtual string Name { get; set; } = "";
@@ -52,13 +53,13 @@ public abstract class RulesetObject : IRulesetObject
 /// <summary>Same, but inherits from NamedStats - I couldn't find a way to unify the declarations but this is fine</summary>
 public abstract class RulesetStatsObject : NamedStats, IRulesetObject
 {
-    private readonly Lazy<IReadOnlyList<UniqueObject>> uniqueObjects;
-    private readonly Lazy<UniqueMap> uniqueMap;
+    private readonly KotlinLazy<IReadOnlyList<UniqueObject>> uniqueObjects;
+    private readonly KotlinLazy<UniqueMap> uniqueMap;
 
     protected RulesetStatsObject()
     {
-        uniqueObjects = new Lazy<IReadOnlyList<UniqueObject>>(() => ((IHasUniques)this).UniqueObjectsProvider());
-        uniqueMap = new Lazy<UniqueMap>(() => ((IHasUniques)this).UniqueMapProvider());
+        uniqueObjects = new KotlinLazy<IReadOnlyList<UniqueObject>>(() => ((IHasUniques)this).UniqueObjectsProvider());
+        uniqueMap = new KotlinLazy<UniqueMap>(() => ((IHasUniques)this).UniqueMapProvider());
     }
 
     public string OriginRuleset { get; set; } = "";

@@ -120,19 +120,19 @@ public class TileMap : IsPartOfGameInfoSerialization
     public int BottomY { get; set; }
     public int Width { get; set; }
 
-    private readonly Lazy<int> maxLatitude;
+    private readonly KotlinLazy<int> maxLatitude;
     public int MaxLatitude => maxLatitude.Value;
 
-    private readonly Lazy<int> maxLongitude;
+    private readonly KotlinLazy<int> maxLongitude;
     public int MaxLongitude => maxLongitude.Value;
 
-    private readonly Lazy<LinkedHashSet<string>> naturalWonders;
+    private readonly KotlinLazy<LinkedHashSet<string>> naturalWonders;
     public IReadOnlySet<string> NaturalWonders => naturalWonders.Value;
 
-    private readonly Lazy<LinkedHashSet<string>> resources;
+    private readonly KotlinLazy<LinkedHashSet<string>> resources;
     public IReadOnlySet<string> Resources => resources.Value;
 
-    private readonly Lazy<LinkedHashSet<TileResource>> resourceObjects;
+    private readonly KotlinLazy<LinkedHashSet<TileResource>> resourceObjects;
     public IReadOnlySet<TileResource> ResourceObjects => resourceObjects.Value;
 
     // Excluded from Serialization by having no own backing field
@@ -153,13 +153,13 @@ public class TileMap : IsPartOfGameInfoSerialization
     public TileMap(int initialCapacity = 10)
     {
         TileList = new List<Tile>(initialCapacity);
-        maxLatitude = new Lazy<int>(() => Values.Count == 0 ? 0 : Values.Max(it => Math.Abs(it.Latitude)));
-        maxLongitude = new Lazy<int>(() => Values.Count == 0 ? 0 : Values.Max(it => Math.Abs(it.Longitude)));
-        naturalWonders = new Lazy<LinkedHashSet<string>>(() =>
+        maxLatitude = new KotlinLazy<int>(() => Values.Count == 0 ? 0 : Values.Max(it => Math.Abs(it.Latitude)));
+        maxLongitude = new KotlinLazy<int>(() => Values.Count == 0 ? 0 : Values.Max(it => Math.Abs(it.Longitude)));
+        naturalWonders = new KotlinLazy<LinkedHashSet<string>>(() =>
             new LinkedHashSet<string>(TileList.Where(it => it.IsNaturalWonder()).Select(it => it.NaturalWonder!)));
-        resources = new Lazy<LinkedHashSet<string>>(() =>
+        resources = new KotlinLazy<LinkedHashSet<string>>(() =>
             new LinkedHashSet<string>(TileList.Select(it => it.Resource).OfType<string>()));
-        resourceObjects = new Lazy<LinkedHashSet<TileResource>>(() =>
+        resourceObjects = new KotlinLazy<LinkedHashSet<TileResource>>(() =>
             new LinkedHashSet<TileResource>(TileList.Select(it => it.TileResource).OfType<TileResource>()));
     }
 

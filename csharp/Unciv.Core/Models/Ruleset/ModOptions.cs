@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Models.Ruleset.Unique;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
@@ -7,13 +8,13 @@ namespace Unciv.Models.Ruleset;
 // core/src/com/unciv/models/ruleset/ModOptions.kt
 public class ModOptions : IHasUniques
 {
-    private readonly Lazy<IReadOnlyList<UniqueObject>> uniqueObjects;
-    private readonly Lazy<UniqueMap> uniqueMap;
+    private readonly KotlinLazy<IReadOnlyList<UniqueObject>> uniqueObjects;
+    private readonly KotlinLazy<UniqueMap> uniqueMap;
 
     public ModOptions()
     {
-        uniqueObjects = new Lazy<IReadOnlyList<UniqueObject>>(() => ((IHasUniques)this).UniqueObjectsProvider());
-        uniqueMap = new Lazy<UniqueMap>(() => ((IHasUniques)this).UniqueMapProvider());
+        uniqueObjects = new KotlinLazy<IReadOnlyList<UniqueObject>>(() => ((IHasUniques)this).UniqueObjectsProvider());
+        uniqueMap = new KotlinLazy<UniqueMap>(() => ((IHasUniques)this).UniqueMapProvider());
     }
 
     #region Modder choices

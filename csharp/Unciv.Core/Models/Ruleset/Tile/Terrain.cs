@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Globalization;
 using System.Text.Json.Serialization;
 using Unciv.Logic;
@@ -11,14 +12,14 @@ public class Terrain : RulesetStatsObject, IRulesetTerrainParameterView
 {
     public override string MakeLink() => $"Terrain/{Name}";
 
-    private readonly Lazy<bool> isRough;
-    private readonly Lazy<bool> isMountain;
-    private readonly Lazy<bool> isHill;
-    private readonly Lazy<bool> isFreshwater;
-    private readonly Lazy<bool> isCoast;
-    private readonly Lazy<bool> isOcean;
-    private readonly Lazy<bool> isVegetation;
-    private readonly Lazy<bool> isIce;
+    private readonly KotlinLazy<bool> isRough;
+    private readonly KotlinLazy<bool> isMountain;
+    private readonly KotlinLazy<bool> isHill;
+    private readonly KotlinLazy<bool> isFreshwater;
+    private readonly KotlinLazy<bool> isCoast;
+    private readonly KotlinLazy<bool> isOcean;
+    private readonly KotlinLazy<bool> isVegetation;
+    private readonly KotlinLazy<bool> isIce;
 
     /// <summary>Terrain filter matching is "pure" - input always returns same output, and it's called a bajillion times</summary>
     private readonly Dictionary<string, bool> cachedMatchesFilterResult = [];
@@ -28,15 +29,15 @@ public class Terrain : RulesetStatsObject, IRulesetTerrainParameterView
     public Terrain()
     {
         var self = (IHasUniques)this;
-        isRough = new Lazy<bool>(() => self.HasUnique(UniqueType.RoughTerrain));
-        isMountain = new Lazy<bool>(() => self.HasUnique(UniqueType.OccursInChains));
-        isHill = new Lazy<bool>(() => self.HasUnique(UniqueType.OccursInGroups));
-        isFreshwater = new Lazy<bool>(() => self.HasUnique(UniqueType.FreshWater));
-        isCoast = new Lazy<bool>(() => Type == TerrainType.Water && !IsFreshwater
+        isRough = new KotlinLazy<bool>(() => self.HasUnique(UniqueType.RoughTerrain));
+        isMountain = new KotlinLazy<bool>(() => self.HasUnique(UniqueType.OccursInChains));
+        isHill = new KotlinLazy<bool>(() => self.HasUnique(UniqueType.OccursInGroups));
+        isFreshwater = new KotlinLazy<bool>(() => self.HasUnique(UniqueType.FreshWater));
+        isCoast = new KotlinLazy<bool>(() => Type == TerrainType.Water && !IsFreshwater
             && (self.HasUnique(UniqueType.CoastalWater) || Name == Constants.Coast));
-        isOcean = new Lazy<bool>(() => Type == TerrainType.Water && !IsFreshwater && !IsCoast);
-        isVegetation = new Lazy<bool>(() => self.HasUnique(UniqueType.Vegetation));
-        isIce = new Lazy<bool>(() => Type == TerrainType.TerrainFeature && Impassable && OccursOn.Contains(Constants.Ocean));
+        isOcean = new KotlinLazy<bool>(() => Type == TerrainType.Water && !IsFreshwater && !IsCoast);
+        isVegetation = new KotlinLazy<bool>(() => self.HasUnique(UniqueType.Vegetation));
+        isIce = new KotlinLazy<bool>(() => Type == TerrainType.TerrainFeature && Impassable && OccursOn.Contains(Constants.Ocean));
     }
 
     /// <summary>Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>

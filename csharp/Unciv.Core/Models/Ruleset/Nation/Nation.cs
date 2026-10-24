@@ -18,17 +18,17 @@ public class Nation : RulesetObject
     private List<int>? outerColor;
     private ImmutableColor outerColorObject = new(EngineColor.White);
     private ImmutableColor innerColorObject = new(EngineColor.Black);
-    private readonly Lazy<bool> isCityState;
-    private readonly Lazy<bool> isMajorCiv;
-    private readonly Lazy<bool> isBarbarian;
-    private readonly Lazy<bool> isSpectator;
+    private readonly KotlinLazy<bool> isCityState;
+    private readonly KotlinLazy<bool> isMajorCiv;
+    private readonly KotlinLazy<bool> isBarbarian;
+    private readonly KotlinLazy<bool> isSpectator;
 
     public Nation()
     {
-        isCityState = new Lazy<bool>(() => CityStateType != null);
-        isBarbarian = new Lazy<bool>(() => Name == Constants.Barbarians);
-        isSpectator = new Lazy<bool>(() => Name == Constants.Spectator);
-        isMajorCiv = new Lazy<bool>(() => !IsBarbarian && !IsCityState && !IsSpectator);
+        isCityState = new KotlinLazy<bool>(() => CityStateType != null);
+        isBarbarian = new KotlinLazy<bool>(() => Name == Constants.Barbarians);
+        isSpectator = new KotlinLazy<bool>(() => Name == Constants.Spectator);
+        isMajorCiv = new KotlinLazy<bool>(() => !IsBarbarian && !IsCityState && !IsSpectator);
     }
 
     public string LeaderName { get; set; } = "";

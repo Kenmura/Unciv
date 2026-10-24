@@ -321,7 +321,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     public string? CityStateUniqueUnit { get; set; }
     #endregion
 
-    private readonly Lazy<CityStateTypeObject> cityStateType;
+    private readonly KotlinLazy<CityStateTypeObject> cityStateType;
     public CityStateTypeObject CityStateType => cityStateType.Value;
 
     public Civilization()
@@ -330,7 +330,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         Cache = new CivInfoTransientCache(this);
         DiplomacyFunctions = new DiplomacyFunctions(this);
         // PublicationOnly: Kotlin `by lazy` does not cache a failed initializer (e.g. gameInfo not yet set), unlike ExecutionAndPublication
-        cityStateType = new Lazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType!], LazyThreadSafetyMode.PublicationOnly);
+        cityStateType = new KotlinLazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType!]);
     }
 
     public Civilization(string civName) : this()

@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.UI.Components.Extensions;
@@ -10,16 +11,16 @@ public class CityStateType : RulesetObject
 {
     public override string MakeLink() => $"CityStateType/{Name}";
 
-    private readonly Lazy<UniqueMap> friendBonusUniqueMap;
-    private readonly Lazy<UniqueMap> allyBonusUniqueMap;
-    private readonly Lazy<EngineColor> colorObject;
+    private readonly KotlinLazy<UniqueMap> friendBonusUniqueMap;
+    private readonly KotlinLazy<UniqueMap> allyBonusUniqueMap;
+    private readonly KotlinLazy<EngineColor> colorObject;
 
     public CityStateType()
     {
         var self = (IHasUniques)this;
-        friendBonusUniqueMap = new Lazy<UniqueMap>(() => self.UniqueMapProvider(self.UniqueObjectsProvider(FriendBonusUniques)));
-        allyBonusUniqueMap = new Lazy<UniqueMap>(() => self.UniqueMapProvider(self.UniqueObjectsProvider(AllyBonusUniques)));
-        colorObject = new Lazy<EngineColor>(() => ColorExtensions.ColorFromRGB(Color));
+        friendBonusUniqueMap = new KotlinLazy<UniqueMap>(() => self.UniqueMapProvider(self.UniqueObjectsProvider(FriendBonusUniques)));
+        allyBonusUniqueMap = new KotlinLazy<UniqueMap>(() => self.UniqueMapProvider(self.UniqueObjectsProvider(AllyBonusUniques)));
+        colorObject = new KotlinLazy<EngineColor>(() => ColorExtensions.ColorFromRGB(Color));
     }
 
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.CityState;

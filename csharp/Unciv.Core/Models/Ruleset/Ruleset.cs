@@ -24,7 +24,7 @@ namespace Unciv.Models.Ruleset;
 //   supported, the shipped rulesets do not use them.
 // - BackwardCompatibility.updateDeprecations for ModOptions has an empty body upstream, so Load does not call anything.
 // - `createHashmap`'s "missing a name" exception cannot happen: a C# Name is never null.
-// - Kotlin's `by lazy` caches are Lazy<T>; the maps are LinkedHashMap (ordered), exposed as read-only dictionaries to everything but the loader.
+// - Kotlin's `by lazy` caches are KotlinLazy<T>; the maps are LinkedHashMap (ordered), exposed as read-only dictionaries to everything but the loader.
 
 /// <summary>
 /// A Ruleset instance can represent a built-in ruleset, a mod or a combined ruleset.
@@ -85,12 +85,12 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
     // endregion
 
     // region cache fields
-    private readonly Lazy<IReadOnlyList<BaseUnit>> greatGeneralUnits;
-    private readonly Lazy<IReadOnlyList<TileImprovement>> tileRemovals;
-    private readonly Lazy<IReadOnlyList<TileImprovement>> nonRoadTileRemovals;
-    private readonly Lazy<IReadOnlySet<int>> allHappinessLevelsThatAffectUniques;
-    private readonly Lazy<TileImprovement?> roadImprovement;
-    private readonly Lazy<TileImprovement?> railroadImprovement;
+    private readonly KotlinLazy<IReadOnlyList<BaseUnit>> greatGeneralUnits;
+    private readonly KotlinLazy<IReadOnlyList<TileImprovement>> tileRemovals;
+    private readonly KotlinLazy<IReadOnlyList<TileImprovement>> nonRoadTileRemovals;
+    private readonly KotlinLazy<IReadOnlySet<int>> allHappinessLevelsThatAffectUniques;
+    private readonly KotlinLazy<TileImprovement?> roadImprovement;
+    private readonly KotlinLazy<TileImprovement?> railroadImprovement;
 
     public IReadOnlyList<BaseUnit> GreatGeneralUnits => greatGeneralUnits.Value;
 
@@ -497,7 +497,7 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
         // Add objects that might not be present in base ruleset mods, but are required
         if (ModOptions.IsBaseRuleset)
         {
-            var fallbackLazy = new Lazy<Ruleset>(RulesetCache.GetVanillaRuleset); // clone at most once
+            var fallbackLazy = new KotlinLazy<Ruleset>(RulesetCache.GetVanillaRuleset); // clone at most once
             // This one should be temporary
             if (UnitTypes.Count == 0)
                 UnitTypes.PutAll(fallbackLazy.Value.UnitTypes);

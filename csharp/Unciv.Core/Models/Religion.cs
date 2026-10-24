@@ -63,12 +63,12 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
         }
     }
 
-    private readonly Lazy<List<string>> buildingsPurchasableByBeliefs;
+    private readonly KotlinLazy<List<string>> buildingsPurchasableByBeliefs;
     public List<string> BuildingsPurchasableByBeliefs => buildingsPurchasableByBeliefs.Value;
 
     public Religion()
     {
-        buildingsPurchasableByBeliefs = new Lazy<List<string>>(UnlockedBuildingsPurchasable);
+        buildingsPurchasableByBeliefs = new KotlinLazy<List<string>>(UnlockedBuildingsPurchasable);
     }
 
     public Religion(string name, IGameInfoState gameInfo, Civilization foundingCiv, int foundingTurn) : this()

@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
@@ -16,11 +17,11 @@ public class Policy : RulesetObject, ICivilopediaText
     public const string BranchCompleteSuffix = " Complete";
 
     private PolicyBranch? branch;
-    private readonly Lazy<PolicyBranchTypes> policyBranchType;
+    private readonly KotlinLazy<PolicyBranchTypes> policyBranchType;
 
     public Policy()
     {
-        policyBranchType = new Lazy<PolicyBranchTypes>(() => this switch
+        policyBranchType = new KotlinLazy<PolicyBranchTypes>(() => this switch
         {
             PolicyBranch => PolicyBranchTypes.BranchStart,
             _ when IsBranchCompleteByName(Name) => PolicyBranchTypes.BranchComplete,

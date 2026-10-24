@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
@@ -17,8 +18,8 @@ public class Speed : RulesetObject, IGameContextSpeed, ICivilopediaText
     /// <summary>One <c>turns</c> row after parsing: <c>yearInterval</c> years per turn until turn <c>untilTurn</c>.</summary>
     public readonly record struct YearsPerTurnRow(float YearInterval, int UntilTurn);
 
-    private readonly Lazy<List<YearsPerTurnRow>> yearsPerTurn;
-    private readonly Lazy<Dictionary<Stat, float>> statCostModifiers;
+    private readonly KotlinLazy<List<YearsPerTurnRow>> yearsPerTurn;
+    private readonly KotlinLazy<Dictionary<Stat, float>> statCostModifiers;
 
     public Speed()
     {
@@ -32,9 +33,9 @@ public class Speed : RulesetObject, IGameContextSpeed, ICivilopediaText
         BarbarianModifier = Modifier;
         ImprovementBuildLengthModifier = Modifier;
         GoldenAgeLengthModifier = Modifier;
-        yearsPerTurn = new Lazy<List<YearsPerTurnRow>>(() =>
+        yearsPerTurn = new KotlinLazy<List<YearsPerTurnRow>>(() =>
             Turns.Select(row => new YearsPerTurnRow(row["yearsPerTurn"], (int)row["untilTurn"])).ToList());
-        statCostModifiers = new Lazy<Dictionary<Stat, float>>(() =>
+        statCostModifiers = new KotlinLazy<Dictionary<Stat, float>>(() =>
         {
             var map = new Dictionary<Stat, float>();
             foreach (var stat in Enum.GetValues<Stat>())

@@ -18,12 +18,12 @@ public class Building : RulesetStatsObject, INonPerpetualConstruction
 
     private IRulesetConstructionView? ruleset;
     private readonly Dictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal);
-    private readonly Lazy<string?> improvementToCreate;
+    private readonly KotlinLazy<string?> improvementToCreate;
 
     public Building()
     {
         // This can be 'by lazy' across all rulesets because it only checks building uniques
-        improvementToCreate = new Lazy<string?>(() =>
+        improvementToCreate = new KotlinLazy<string?>(() =>
             ((IHasUniques)this).GetMatchingUniques(UniqueType.CreatesOneImprovement).FirstOrDefault()?.Params[0]);
     }
 

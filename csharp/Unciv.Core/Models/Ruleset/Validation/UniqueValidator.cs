@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unique.Expressions;
@@ -22,7 +23,7 @@ public class UniqueValidator(Ruleset ruleset, bool tryFixUnknownUniques = false)
     /// <summary>Used to determine if certain uniques are used for filtering</summary>
     private readonly HashSet<string> allUniqueParameters = [];
 
-    private readonly Lazy<bool> anyAncientRuins = new(() =>
+    private readonly KotlinLazy<bool> anyAncientRuins = new(() =>
         ruleset.TileImprovements.Values
             .SelectMany(it => ((IHasUniques)it).UniqueObjects)
             .Any(it => it.Type == UniqueType.IsAncientRuinsEquivalent));
@@ -97,7 +98,7 @@ public class UniqueValidator(Ruleset ruleset, bool tryFixUnknownUniques = false)
     {
         severityToReport ??= AllParameterSeverities;
         bool reportRulesetSpecificErrors = severityToReport.Contains(UniqueParameterErrorSeverity.RulesetSpecific);
-        var prefix = new Lazy<string>(() => GetUniqueContainerPrefix(uniqueContainer) + $"\"{unique.Text}\"");
+        var prefix = new KotlinLazy<string>(() => GetUniqueContainerPrefix(uniqueContainer) + $"\"{unique.Text}\"");
         if (unique.Type == null)
         {
             if (unique.DeprecatedType != null && reportRulesetSpecificErrors)

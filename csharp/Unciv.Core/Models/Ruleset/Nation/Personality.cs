@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
@@ -17,7 +18,7 @@ public class Personality : RulesetObject, ICivilopediaText
     public FormattedLine? GetCivilopediaTextHeader() => this.GetCivilopediaTextHeaderImpl();
     public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) => this.GetPersonalityCivilopediaTextLines(context);
 
-    private static readonly Lazy<Personality> NeutralPersonalityLazy = new(() => new Personality { IsNeutralPersonality = true });
+    private static readonly KotlinLazy<Personality> NeutralPersonalityLazy = new(() => new Personality { IsNeutralPersonality = true });
 
     public static Personality NeutralPersonality => NeutralPersonalityLazy.Value;
 

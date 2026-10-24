@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using Unciv.Models.Ruleset.Unique;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
@@ -10,15 +11,15 @@ public class IHasUniquesUniqueTests
 {
     private sealed class TestObject : IHasUniques
     {
-        private readonly Lazy<IReadOnlyList<UniqueObject>> uniqueObjects;
-        private readonly Lazy<UniqueMap> uniqueMap;
+        private readonly KotlinLazy<IReadOnlyList<UniqueObject>> uniqueObjects;
+        private readonly KotlinLazy<UniqueMap> uniqueMap;
 
         public TestObject(string name, params string[] uniques)
         {
             Name = name;
             Uniques = uniques.ToList();
-            uniqueObjects = new Lazy<IReadOnlyList<UniqueObject>>(() => ((IHasUniques)this).UniqueObjectsProvider());
-            uniqueMap = new Lazy<UniqueMap>(() => ((IHasUniques)this).UniqueMapProvider());
+            uniqueObjects = new KotlinLazy<IReadOnlyList<UniqueObject>>(() => ((IHasUniques)this).UniqueObjectsProvider());
+            uniqueMap = new KotlinLazy<UniqueMap>(() => ((IHasUniques)this).UniqueMapProvider());
         }
 
         public string Name { get; set; }

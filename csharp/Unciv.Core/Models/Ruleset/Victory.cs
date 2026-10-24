@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Logic.Civilization;
 using Unciv.Models.Ruleset.Unique;
@@ -70,13 +71,13 @@ public class Victory : RulesetObject, ICivilopediaText
         Score,
     }
 
-    private readonly Lazy<List<Milestone>> milestoneObjects;
-    private readonly Lazy<Counter<string>> requiredSpaceshipPartsAsCounter;
+    private readonly KotlinLazy<List<Milestone>> milestoneObjects;
+    private readonly KotlinLazy<Counter<string>> requiredSpaceshipPartsAsCounter;
 
     public Victory()
     {
-        milestoneObjects = new Lazy<List<Milestone>>(() => Milestones.Select(it => new Milestone(it, this)).ToList());
-        requiredSpaceshipPartsAsCounter = new Lazy<Counter<string>>(() =>
+        milestoneObjects = new KotlinLazy<List<Milestone>>(() => Milestones.Select(it => new Milestone(it, this)).ToList());
+        requiredSpaceshipPartsAsCounter = new KotlinLazy<Counter<string>>(() =>
         {
             var parts = new Counter<string>();
             foreach (string spaceshipPart in RequiredSpaceshipParts)

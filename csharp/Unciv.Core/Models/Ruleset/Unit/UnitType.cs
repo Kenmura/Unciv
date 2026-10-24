@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.UI.ObjectDescriptions;
 using Unciv.UI.Screens.Civilopedia;
@@ -29,11 +30,11 @@ public class UnitType : RulesetObject, ICivilopediaText
 
     public string? GetSubCategory(Ruleset ruleset) => unitMovementType.Value?.ToString() ?? "Other";
 
-    private readonly Lazy<UnitMovementType?> unitMovementType;
+    private readonly KotlinLazy<UnitMovementType?> unitMovementType;
 
     public UnitType()
     {
-        unitMovementType = new Lazy<UnitMovementType?>(() => MovementType == null ? null : ParseMovementType(MovementType));
+        unitMovementType = new KotlinLazy<UnitMovementType?>(() => MovementType == null ? null : ParseMovementType(MovementType));
     }
 
     public UnitType(string name, string? domain = null) : this()

@@ -15,19 +15,19 @@ internal sealed class BaseRulesetValidator : RulesetValidator
 {
     // for UnitTypes fallback, used only if a mod fails to provide
     // the UnitTypes entirely (ruleset.unitTypes.isEmpty() is true).
-    private readonly Lazy<Ruleset> vanillaRuleset = new(RulesetCache.GetVanillaRuleset);
+    private readonly KotlinLazy<Ruleset> vanillaRuleset = new(RulesetCache.GetVanillaRuleset);
 
     /// <summary>Collects known technology prerequisite paths: key is the technology name, value a Set of its prerequisites including indirect ones</summary>
     private readonly Dictionary<string, HashSet<string>> prereqsHashMap = [];
 
-    private readonly Lazy<bool> anyAncientRuins;
+    private readonly KotlinLazy<bool> anyAncientRuins;
 
     // CityStatePersonality.entries names
     private static readonly string[] CityStatePersonalities = ["Friendly", "Neutral", "Hostile", "Irrational"];
 
     public BaseRulesetValidator(Ruleset ruleset, bool tryFixUnknownUniques) : base(ruleset, tryFixUnknownUniques)
     {
-        anyAncientRuins = new Lazy<bool>(() =>
+        anyAncientRuins = new KotlinLazy<bool>(() =>
             ruleset.TileImprovements.Values
                 .SelectMany(it => ((IHasUniques)it).UniqueObjects)
                 .Any(it => it.Type == UniqueType.IsAncientRuinsEquivalent));

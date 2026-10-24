@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using System.Text.Json.Serialization;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -51,8 +52,8 @@ public sealed class FormattedLine
 
     private static volatile NameMapCache? NameMapCacheInstance;
 
-    private readonly Lazy<LinkTypeEnum> linkType;
-    private readonly Lazy<EngineColor> displayColor;
+    private readonly KotlinLazy<LinkTypeEnum> linkType;
+    private readonly KotlinLazy<EngineColor> displayColor;
 
     /// <summary>Kotlin primary constructor. Keep all JSON-read attributes here.</summary>
     [JsonConstructor]
@@ -86,8 +87,8 @@ public sealed class FormattedLine
         Starred = starred;
         Centered = centered;
         IconCrossed = iconCrossed;
-        linkType = new Lazy<LinkTypeEnum>(() => HasProtocol(Link) ? LinkTypeEnum.External : Link.Length != 0 ? LinkTypeEnum.Internal : LinkTypeEnum.None);
-        displayColor = new Lazy<EngineColor>(() => ParseColor() ?? DefaultColor);
+        linkType = new KotlinLazy<LinkTypeEnum>(() => HasProtocol(Link) ? LinkTypeEnum.External : Link.Length != 0 ? LinkTypeEnum.Internal : LinkTypeEnum.None);
+        displayColor = new KotlinLazy<EngineColor>(() => ParseColor() ?? DefaultColor);
     }
 
     /// <summary>Looks for linkable ruleset objects in <see cref="UniqueObject"/> parameters and returns a linked <see cref="FormattedLine"/> if successful, a plain one otherwise</summary>
