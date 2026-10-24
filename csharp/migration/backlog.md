@@ -219,13 +219,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Ordered collections stay ordered (ResourceSupplyList). **Implemented (Claude):** ported ResourceType, TerrainType, Terrain, TileResource, TileImprovement, ResourceSupplyList in Unciv.Models.Ruleset.Tile; tests in RulesetTileTests (22). No Kotlin tests exist: expectations derived by hand from the Kotlin source (no golden run). Deferred (need Ruleset/T034, Civilization/MapUnit/Tile/T046-T048, engine colour T050, or Civilopedia text types): Terrain.displayAs/getColor/civilopedia members, TileResource.getImprovements/isImprovedBy/setTransients(ruleset)/getImprovingImprovement/generatesNaturallyOn, TileImprovement.getTurnsToBuild/getConstructorUnits/getCreatingUnits/getDescription/civilopedia members, ResourceSupplyList.subtractResourceRequirements, ResourceType.getColor (use GetColorString). Traps: (1) ResourceSupplyList is a wrapper (not an ArrayList subclass) so Add keeps merge semantics; it returns true when a merged entry cancels to 0 and is removed (as Kotlin); ResourceSupply is a class with Kotlin data-class equality and internal Amount setter; ApplyModifiers uses Kotlin float->int truncation (NaN -> 0). (2) Terrain.RGB needs [JsonPropertyName("RGB")] only for clarity (json is case-insensitive). (3) TileResource.ImprovementStats is nullable like Kotlin. (4) enum `.name` filters use ToString(); ResourceType/TerrainType keep Kotlin ordinals. (5) IHasUniques default methods are called through ((IHasUniques)this). Gate and Standard checks pass (904 tests).
 
 ### T032 Ruleset nation and tech objects: Nation, CityStateType, Difficulty, Personality(Value), Era, TechColumn, Technology
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T030
 - Source: core/src/com/unciv/models/ruleset/nation/*.kt, models/ruleset/tech/*.kt
 - Fixtures: tests/src/com/unciv/logic/map/CityStateTypeStartBiasTests.kt (if type-only)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Nation/*.cs, Tech/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetNationTechTests`
-- Claimed:
+- Claimed: 2026-10-24T04:54Z
 - Notes: Colors: engine-owned color type, no libGDX Color. **From T027:** `IHasUniques` still lacks `requiredTechnologies`, `era`, `techColumn`, `availableInEra` (need Technology/Era/TechColumn) and the Personality half of `getWeightForAiDecision`; add them to `IHasUniques.cs` (see its class remarks).
 
 ### T033 Ruleset unit and construction objects: BaseUnit, BaseUnitCost, Promotion, UnitType, UnitNameGroup, Building, IConstruction, PerpetualConstruction
