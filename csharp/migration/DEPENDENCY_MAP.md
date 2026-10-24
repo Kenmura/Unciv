@@ -186,7 +186,7 @@ flowchart TD
   class T123 ready
   class T125 ready
   class T127 ready
-  class T128 ready
+  class T128 prog
   class T129 prog
   class T143 done
   class T152 prog
@@ -210,8 +210,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 25]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 24]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
 ```
 
 ## Incomplete tickets
@@ -221,7 +221,6 @@ xychart-beta
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
-| T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T091 | **On deck** (after T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T155 | **On deck** (after T090) | T090 | 7 | Air unit automation: AirUnitAutomation |
 | T090 | In-Progress [Claude] | T087, T088, T082, T083 | 14 | Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit |
@@ -244,6 +243,7 @@ xychart-beta
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
+| T128 | In-Progress [Claude] | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | In-Progress [Claude] | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T152 | In-Progress [Claude] | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

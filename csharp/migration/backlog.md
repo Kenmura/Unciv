@@ -1444,13 +1444,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - T121 (coupling ratchet): Civilization.cs coupling baseline is 24 against a measured 22, deliberate headroom for T061/T063/T065; lower it to the measured value once they land.
 
 ### T128 Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T065
 - Source: none (policy follow-up of T065/T121)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Logic/City/City.cs (and seams), CouplingRatchetBaseline.txt
 - Gate: dotnet test --filter FullyQualifiedName~CouplingRatchetTests
-- Claimed:
+- Claimed: 2026-10-24T18:45Z
 - Notes: T065 had to add City.cs|13 to CouplingRatchetBaseline.txt because City now depends on the MapUnits namespace. Remove the dependency by going through a seam (or whatever Kotlin structure allows), then lower the baseline entry to the limit (12) and delete it if it no longer exceeds.
   - T061 (Claude): City.cs now imports Unciv.Logic.City.Managers (its 3 managers), so its CouplingRatchetBaseline entry is 14, not 13; decoupling City.cs (lowering to <= 12) covers it.
 
