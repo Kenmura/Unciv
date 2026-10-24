@@ -198,7 +198,7 @@ flowchart TD
   class T146 prog
   class T148 ready
   class T149 review
-  class T150 ready
+  class T150 prog
   class T152 ready
   class T154 waiting
   class T155 ondeck
@@ -220,8 +220,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 30]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 29]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
 ```
 
 ## Incomplete tickets
@@ -235,7 +235,6 @@ xychart-beta
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T144 | **Ready to start** | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
 | T148 | **Ready to start** | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T150 | **Ready to start** | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T091 | **On deck** (after T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T155 | **On deck** (after T090) | T090 | 7 | Air unit automation: AirUnitAutomation |
@@ -261,4 +260,5 @@ xychart-beta
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T146 | In-Progress [Claude] | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T149 | Needs-Review [Claude] | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
+| T150 | In-Progress [Claude] | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
