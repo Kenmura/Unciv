@@ -220,7 +220,6 @@ public class CityCoreTests
         Assert.Throws<InvalidOperationException>(() => city.TileMap);
         Assert.Throws<InvalidOperationException>(() => city.GetCenterTile());
         Assert.Null(city.GetCenterTileOrNull());
-        Assert.Throws<InvalidOperationException>(() => city.CityConstructions);
     }
 
     [Fact]

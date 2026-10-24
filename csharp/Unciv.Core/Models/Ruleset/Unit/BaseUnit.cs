@@ -1,9 +1,13 @@
 using System.Text.Json.Serialization;
 using Unciv.Logic;
+using Unciv.Logic.City;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
+using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 using UnitTypeObject = Unciv.Models.Ruleset.Unit.UnitType;
 
@@ -12,10 +16,8 @@ namespace Unciv.Models.Ruleset.Unit;
 // core/src/com/unciv/models/ruleset/unit/BaseUnit.kt
 // This is BaseUnit because Unit is already a base Kotlin class and to avoid mixing the two up
 //
-// Not ported yet, because they need Civilization, City, CityConstructions, MapUnit, Tile or the description/Civilopedia types (T046 onwards, T034):
-// getShortDescription, getDescription, makeLink, getCivilopediaTextLines, getSortGroup, getSubCategory, newMapUnit, getRejectionReasons (and notMetRejections),
-// canUnitEnterTile, isBuildable, shouldBeDisplayed, construct, addConstructionBonuses. Because canBePurchasedWithStat reads getRejectionReasons, its
-// city overload throws NotSupportedException until then.
+// Not ported yet, because they need the description/Civilopedia types: getShortDescription, getDescription, getCivilopediaTextLines, getSortGroup,
+// getSubCategory (T097). newMapUnit is IUnitManager.NewMapUnit (the unit is created by the UnitManager seam, T066).
 
 /// <summary>
 /// This is the basic info of the units, as specified in Units.json,
@@ -181,8 +183,13 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public bool CanBePurchasedWithStat(IConstructionCity? city, Stat stat)
     {
         if (city == null) return INonPerpetualConstruction.CanBePurchasedWithStatDefault(this, null, stat);
-        // TODO(T106): needs getRejectionReasons(city.cityConstructions); fail loudly instead of answering wrongly.
-        throw new NotSupportedException("BaseUnit.CanBePurchasedWithStat(city) needs getRejectionReasons, which is not ported yet");
+        // The engine's only IConstructionCity is City (the interface exists for the port order, see ConstructionSeams.cs)
+        var realCity = (CityObject)city;
+        if (((IHasUniques)this).HasUnique(UniqueType.CannotBePurchased)) return false;
+        if (GetRejectionReasons(realCity.CityConstructions).Any(it => it.Type != RejectionReasonType.Unbuildable))
+            return false;
+        if (CostFunctions.CanBePurchasedWithStat(city, stat)) return true;
+        return INonPerpetualConstruction.CanBePurchasedWithStatDefault(this, city, stat);
     }
 
     public float? GetBaseBuyCost(IConstructionCity city, Stat stat)
@@ -407,4 +414,209 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
 
     /// <summary>Kotlin <c>String.toInt()</c></summary>
     private static int ParseInt(string text) => int.Parse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture);
+
+    public bool ShouldBeDisplayed(CityConstructions cityConstructions)
+    {
+        var rejectionReasons = GetRejectionReasons(cityConstructions).ToList();
+
+        if (((IHasUniques)this).HasUnique(UniqueType.ShowsWhenUnbuilable, cityConstructions.City.State) &&
+            !rejectionReasons.Any(it => it.IsNeverVisible()))
+            return true;
+
+        if (!rejectionReasons.Any(it => !it.ShouldShow)) return true;
+        if (((INonPerpetualConstruction)this).CanBePurchasedWithAnyStat(cityConstructions.City)
+            && rejectionReasons.All(it => it.Type == RejectionReasonType.Unbuildable)) return true;
+        return false;
+    }
+
+    public IEnumerable<RejectionReason> GetRejectionReasons(CityConstructions cityConstructions) =>
+        GetRejectionReasons(cityConstructions.City.Civ, cityConstructions.City);
+
+    public IEnumerable<RejectionReason> GetRejectionReasons(CivilizationObject civ, CityObject? city = null, Counter<string>? additionalResources = null)
+    {
+        additionalResources ??= Counter.ZERO;
+        var self = (IHasUniques)this;
+        var stateForConditionals = city?.State ?? civ.State;
+
+        if (city != null && IsWaterUnit && !city.IsNaval())
+            yield return RejectionReasonType.WaterUnitsInCoastalCities.ToInstance();
+
+        foreach (var unique in self.GetMatchingUniques(UniqueType.OnlyAvailable, GameContext.IgnoreConditionalsState))
+            foreach (var reason in NotMetRejections(unique, civ, city)) yield return reason;
+
+        foreach (var unique in self.GetMatchingUniques(UniqueType.CanOnlyBeBuiltWhen, GameContext.IgnoreConditionalsState))
+            foreach (var reason in NotMetRejections(unique, civ, city, true)) yield return reason;
+
+        foreach (var _ in self.GetMatchingUniques(UniqueType.Unavailable, stateForConditionals))
+            yield return RejectionReasonType.ShouldNotBeDisplayed.ToInstance();
+
+        if (city != null)
+            foreach (var unique in self.GetMatchingUniques(UniqueType.RequiresPopulation))
+                if (ParseInt(unique.Params[0]) > city.Population.Population)
+                    yield return RejectionReasonType.PopulationRequirement.ToInstance(unique.GetDisplayText());
+
+        foreach (var requiredTech in self.RequiredTechs())
+            if (!civ.Tech.IsResearched(requiredTech))
+                yield return RejectionReasonType.RequiresTech.ToInstance($"{requiredTech} not researched");
+
+        foreach (var obsoleteTech in TechsAtWhichNoLongerAvailable())
+            if (civ.Tech.IsResearched(obsoleteTech))
+                yield return RejectionReasonType.Obsoleted.ToInstance($"Obsolete by {obsoleteTech}");
+
+        if (UniqueTo != null && !civ.MatchesFilter(UniqueTo, stateForConditionals))
+            yield return RejectionReasonType.UniqueToOtherNation.ToInstance($"Unique to {UniqueTo}");
+        if (civ.Cache.UniqueUnits.Any(it => it.Replaces == Name))
+            yield return RejectionReasonType.ReplacedByOurUnique.ToInstance("Our unique unit replaces this");
+
+        if (civ.GameInfo.IsUnavailableBySettingsCached(this))
+            yield return RejectionReasonType.DisabledBySetting.ToInstance();
+
+        if (self.HasUnique(UniqueType.Unbuildable, stateForConditionals))
+            yield return RejectionReasonType.Unbuildable.ToInstance();
+
+        if ((civ.IsCityState || civ.IsOneCityChallenger()) && self.HasUnique(UniqueType.FoundCity, GameContext.IgnoreConditionalsState))
+            yield return RejectionReasonType.NoSettlerForOneCityPlayers.ToInstance();
+
+        if (self.GetMatchingUniques(UniqueType.MaxNumberBuildable, stateForConditionals).Any(it =>
+                civ.CivConstructions.CountConstructedObjects(this, city) >= ParseInt(it.Params[0])))
+            yield return RejectionReasonType.MaxNumberBuildable.ToInstance();
+
+        if (!civ.IsBarbarian) // Barbarians don't need resources
+        {
+            var civResources = civ.GetCivResourcesByName();
+            int Available(string resource) => (civResources.TryGetValue(resource, out var amount) ? amount : 0) + additionalResources[resource];
+            foreach (var (resource, requiredAmount) in GetResourceRequirementsPerTurn(stateForConditionals))
+            {
+                var availableAmount = Available(resource);
+                if (availableAmount < requiredAmount)
+                {
+                    var message = resource.GetNeedMoreAmountString(requiredAmount - availableAmount);
+                    yield return RejectionReasonType.ConsumesResources.ToInstance(message);
+                }
+            }
+
+            // If we've already paid the unit costs, we don't need to pay it again
+            if (city == null || city.CityConstructions.GetWorkDone(Name) == 0)
+                foreach (var (resourceName, amount) in ((IConstruction)this).GetStockpiledResourceRequirements(stateForConditionals))
+                {
+                    var availableResources = city?.GetAvailableResourceAmount(resourceName) ?? civ.GetResourceAmount(resourceName);
+                    if (availableResources < amount)
+                        yield return RejectionReasonType.ConsumesResources.ToInstance(resourceName.GetNeedMoreAmountString(amount - availableResources));
+                }
+        }
+
+        foreach (var unique in civ.GetMatchingUniques(UniqueType.CannotBuildUnits, stateForConditionals))
+            if (MatchesFilter(unique.Params[0], stateForConditionals))
+            {
+                yield return RejectionReasonType.CannotBeBuilt.ToInstance();
+            }
+
+        if (city != null && IsAirUnit() && !CanUnitEnterTile(city))
+        {
+            // Not actually added to civ so doesn't require destroy
+            yield return RejectionReasonType.NoPlaceToPutUnit.ToInstance();
+        }
+    }
+
+    /// <summary>Kotlin creates a fake unit via newMapUnit; here it is created through the UnitManager seam.</summary>
+    public bool CanUnitEnterTile(CityObject city)
+    {
+        // MapUnit is the only IGameContextUnit the UnitManager creates (T066 retypes the seam)
+        var fakeUnit = (MapUnit)city.Civ.Units.NewMapUnit(this, Constants.NoId);
+        return fakeUnit.Movement.CanMoveTo(city.GetCenterTile());
+    }
+
+    /// <summary>
+    /// Copy of <see cref="Building"/>.NotMetRejections to handle inverted conditionals.
+    /// Also custom handles <see cref="UniqueType.ConditionalBuildingBuiltAmount"/>, and <see cref="UniqueType.ConditionalBuildingBuiltAll"/>
+    /// </summary>
+    private static IEnumerable<RejectionReason> NotMetRejections(UniqueObject unique, CivilizationObject civ, CityObject? city, bool built = false)
+    {
+        foreach (var conditional in unique.Modifiers)
+        {
+            // We yield a rejection only when conditionals are NOT met
+            if (Conditionals.ConditionalApplies(unique, conditional, city?.State ?? civ.State))
+                continue;
+            switch (conditional.Type)
+            {
+                case UniqueType.ConditionalBuildingBuiltAmount:
+                    var building = civ.GetEquivalentBuilding(conditional.Params[0]).Name;
+                    var amount = ParseInt(conditional.Params[1]);
+                    var cityFilter = conditional.Params[2];
+                    var numberOfCities = civ.Cities.Count(it =>
+                        it.CityConstructions.ContainsBuildingOrEquivalent(building) && it.MatchesFilter(cityFilter));
+                    if (numberOfCities < amount)
+                    {
+                        yield return RejectionReasonType.RequiresBuildingInSomeCities.ToInstance(
+                            $"Requires a [{building}] in at least [{amount}] cities" +
+                            $" ({numberOfCities}/{numberOfCities})");
+                    }
+                    break;
+                case UniqueType.ConditionalBuildingBuiltAll:
+                    var allBuilding = civ.GetEquivalentBuilding(conditional.Params[0]).Name;
+                    // Kotlin: `it.matchesFilter(cityFilter)` on its own line is a discarded statement, only `!it.isPuppet && ...` is the lambda result
+                    if (civ.Cities.Any(it => !it.IsPuppet && !it.CityConstructions.ContainsBuildingOrEquivalent(allBuilding)))
+                    {
+                        yield return RejectionReasonType.RequiresBuildingInAllCities.ToInstance(
+                            $"Requires a [{allBuilding}] in all cities");
+                    }
+                    break;
+                default:
+                    if (built)
+                        yield return RejectionReasonType.CanOnlyBeBuiltInSpecificCities.ToInstance(unique.GetDisplayText());
+                    else
+                        yield return RejectionReasonType.ShouldNotBeDisplayed.ToInstance();
+                    break;
+            }
+        }
+    }
+
+    public bool IsBuildable(CivilizationObject civInfo) => !GetRejectionReasons(civInfo).Any();
+
+    public bool IsBuildable(CityConstructions cityConstructions) => !GetRejectionReasons(cityConstructions).Any();
+
+    public MapUnit? Construct(CityConstructions cityConstructions, Stat? boughtWith)
+    {
+        var civInfo = cityConstructions.City.Civ;
+        var unit = (MapUnit?)civInfo.Units.AddUnit(this, cityConstructions.City);
+        if (unit == null) return null; // couldn't place the unit, so there's actually no unit =(
+
+        //movement penalty
+        if (boughtWith != null && !civInfo.GameInfo.GameParameters.GodMode && !unit.HasUnique(UniqueType.CanMoveImmediatelyOnceBought))
+            unit.CurrentMovement = 0f;
+
+        AddConstructionBonuses(unit, cityConstructions);
+
+        return unit;
+    }
+
+    public void AddConstructionBonuses(MapUnit unit, CityConstructions cityConstructions)
+    {
+        var civInfo = cityConstructions.City.Civ;
+
+        var xp = 0;
+
+        cityConstructions.City.ForEachMatchingUnique(UniqueType.UnitStartingExperience, unique =>
+        {
+            if (unit.MatchesFilter(unique.Params[0]) && cityConstructions.City.MatchesFilter(unique.Params[2]))
+                xp += ParseInt(unique.Params[1]);
+        });
+        unit.Promotions.XP = xp;
+
+        cityConstructions.City.ForEachMatchingUnique(UniqueType.UnitStartingPromotions, unique =>
+        {
+            if (!cityConstructions.City.MatchesFilter(unique.Params[1])) return;
+            var filter = unique.Params[0];
+            var promotion = unique.Params[^1];
+
+            var isRelevantPromotion = filter == "relevant"
+                && civInfo.GameInfo.Ruleset.UnitPromotions.Values
+                    .Any(it => it.Name == promotion && it.UnitTypes.Contains(Type.Name));
+
+            if (isRelevantPromotion || unit.MatchesFilter(filter))
+            {
+                unit.Promotions.AddPromotion(promotion, isFree: true);
+            }
+        });
+    }
 }

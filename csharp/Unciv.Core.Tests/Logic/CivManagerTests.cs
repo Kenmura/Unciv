@@ -698,8 +698,8 @@ public class CivManagerTests
         var swordsman = new BaseUnit { Name = "Swordsman" };
         var archer = new BaseUnit { Name = "Archer", ObsoleteTech = "Agriculture" }; // no upgrade: nothing to replace
         foreach (var unit in new[] { warrior, swordsman, archer }) world.Info.RulesetData.Units.Put(unit.Name, unit);
-        city.ConstructionQueue.AddRange(["Warrior", "Granary", "Warrior"]);
-        other.ConstructionQueue.AddRange(["Granary"]);
+        city.ConstructionsFake.EditQueue(it => it.AddRange(["Warrior", "Granary", "Warrior"]));
+        other.ConstructionsFake.EditQueue(it => it.AddRange(["Granary"]));
 
         world.Civ.Tech.AddTechnology("Agriculture");
 

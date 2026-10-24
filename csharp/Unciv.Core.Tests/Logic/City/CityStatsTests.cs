@@ -398,5 +398,7 @@ public class CityStatsTests
         public Counter<string> GetResourceRequirementsPerTurn(GameContext? state = null) => new();
         public IReadOnlySet<string> RequiredResources(GameContext? state = null) => new HashSet<string>();
         public Counter<string> GetStockpiledResourceRequirements(GameContext state) => new();
+        public bool IsBuildable(CityConstructions cityConstructions) => true;
+        public bool ShouldBeDisplayed(CityConstructions cityConstructions) => true;
     }
 }

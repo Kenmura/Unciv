@@ -220,7 +220,7 @@ public class CityFounder
         {
             if (!ruleset.Buildings.TryGetValue(buildingName, out var building)) continue;
             var uniqueBuilding = civInfo.GetEquivalentBuilding(building);
-            if (city.CityConstructions.IsBuildable(uniqueBuilding))
+            if (uniqueBuilding.IsBuildable(city.CityConstructions))
                 city.CityConstructions.AddBuilding(uniqueBuilding, tryAddFreeBuildings: false);
         }
 

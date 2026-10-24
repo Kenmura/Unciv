@@ -1,4 +1,5 @@
 using System.Globalization;
+using Unciv.Logic.City;
 using Unciv.Models.Ruleset.Nation;
 using Unciv.Models.Ruleset.Tech;
 using Unciv.Models.Ruleset.Unique;
@@ -14,8 +15,6 @@ namespace Unciv.Models.Ruleset;
 // City, Civilization and CityConstructions are not ported yet (T046 onwards). The members the ported cost and buy-cost math reads are the
 // interfaces below; the classes implement them when they are ported. Member names mirror the Kotlin members.
 //
-// Not ported yet, because they need CityConstructions, MapUnit or Tile (T046 onwards): IConstruction.isBuildable and shouldBeDisplayed,
-// INonPerpetualConstruction.getRejectionReasons and isPurchasable.
 
 /// <summary>What the construction cost math reads from <c>GameInfo</c> beyond <see cref="IGameContextGameInfo"/>.</summary>
 public interface IConstructionGameInfo : IGameContextGameInfo
@@ -56,6 +55,9 @@ public interface IConstructionCity : IGameContextCity
 
 public interface IConstruction : INamed
 {
+    bool IsBuildable(CityConstructions cityConstructions);
+    bool ShouldBeDisplayed(CityConstructions cityConstructions);
+
     /// <summary>
     /// Gets *per turn* resource requirements - does not include immediate costs for stockpiled resources.
     /// Uses <paramref name="state"/> to determine which civ or city this is built for
@@ -81,6 +83,12 @@ public interface INonPerpetualConstruction : IConstruction, IHasUniques
     int GetProductionCost(IConstructionCivilization civInfo, IConstructionCity? city);
 
     int? GetStatBuyCost(IConstructionCity city, Stat stat);
+
+    IEnumerable<RejectionReason> GetRejectionReasons(CityConstructions cityConstructions);
+
+    /// <summary>Checks if the construction should be purchasable, not whether it can be bought with a stat at all</summary>
+    bool IsPurchasable(CityConstructions cityConstructions) =>
+        GetRejectionReasons(cityConstructions).All(it => it.Type == RejectionReasonType.Unbuildable);
 
     /// <summary>Only checks if it has the unique to be bought with this stat, not whether it is purchasable at all</summary>
     bool CanBePurchasedWithStat(IConstructionCity? city, Stat stat) => CanBePurchasedWithStatDefault(this, city, stat);

@@ -49,10 +49,25 @@ public interface IUnitPromotions
     void AddPromotion(string promotionName, bool isFree = false);
     /// <summary><c>promotions.getPromotions(sorted)</c></summary>
     IEnumerable<Promotion> GetPromotions(bool sorted = false);
+    /// <summary><c>promotions.XP</c></summary>
+    int XP { get; set; }
+    /// <summary><c>promotions.xpForNextPromotion()</c></summary>
+    int XpForNextPromotion();
+    /// <summary><c>PromotionTree(unit)</c> (a UI-package class in Kotlin; its constructor reads <c>unit.promotions</c>). TODO(T126)</summary>
+    IPromotionTree CreatePromotionTree();
     /// <summary><c>promotions.clone(unit)</c></summary>
     IUnitPromotions Clone(MapUnit unit);
     /// <summary><c>promotions.setTransients(unit)</c></summary>
     void SetTransients(MapUnit unit);
+}
+
+/// <summary>What CityConstructions reads from <c>PromotionTree</c>. TODO(T126)</summary>
+public interface IPromotionTree
+{
+    /// <summary><c>promotionTree.possiblePromotions</c> (the promotion names, in tree order).</summary>
+    IEnumerable<string> PossiblePromotionNames { get; }
+    /// <summary><c>promotionTree.allNodes()</c> (the node promotion names, in order).</summary>
+    IEnumerable<string> AllNodePromotionNames();
 }
 
 /// <summary>What MapUnit reads from <c>BarbarianManager</c> (<c>gameInfo.barbarians</c>). T078 implements it.</summary>

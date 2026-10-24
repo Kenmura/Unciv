@@ -55,6 +55,13 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
         CivsSortedCalls.Add((includeCityStates, includeDefeated, civToSortFirst));
         return Civs.Where(it => additionalFilter == null || additionalFilter(it)).ToList();
     }
+    public HashSet<string> SpaceResourceNames { get; } = [];
+    IReadOnlySet<string> IGameInfoState.SpaceResources => SpaceResourceNames;
+    public bool UsersTurn { get; set; } = true;
+    bool IGameInfoState.IsUsersTurn() => UsersTurn;
+    bool IGameInfoState.AutoAssignCityProduction => false;
+    bool IGameInfoState.IsFullAutoPlayAI => false;
+    bool IGameInfoState.IsUnavailableBySettingsCached(IHasUniques construction) => construction.IsUnavailableBySettings(this);
     public FakeBarbarianManager BarbarianFake { get; } = new();
     IBarbarianManager IGameInfoState.Barbarians => BarbarianFake;
     public override TileMap TileMap => Map ?? throw new NotSupportedException();
@@ -178,10 +185,10 @@ internal sealed class FakeCityState
         }
     }
     public List<Building> Completed => ConstructionsFake.Completed;
-    public List<string> ConstructionQueue => ConstructionsFake.ConstructionQueue;
+    public IReadOnlyList<string> ConstructionQueue => ConstructionsFake.ConstructionQueue;
     public int InProgressValidations => ConstructionsFake.InProgressValidations;
     public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity => ConstructionsFake.FreeBuildingsProvidedFromThisCity;
-    public HashSet<string> Buildings => ConstructionsFake.BuiltNames;
+    public JavaHashSet<string> Buildings => ConstructionsFake.BuiltNames;
     public int StatsUpdateCalls => StatsFake.UpdateCalls;
     public Action<Building>? OnCompleteConstruction { get => ConstructionsFake.OnCompleteConstruction; set => ConstructionsFake.OnCompleteConstruction = value; }
 
@@ -255,56 +262,45 @@ internal sealed class FakeCityStats(CityObject city) : CityStats(city)
     public override bool HasExtraAnnexUnhappiness() => ExtraAnnexUnhappiness;
 }
 
-internal sealed class FakeCityConstructions : ICityConstructions
+internal sealed class FakeCityConstructions : CityConstructions
 {
-    public CityObject City { get; set; } = null!;
-    public void SetTransients() { }
     public FakeCityConstructions? CloneResult { get; set; }
-    public ICityConstructions Clone() => CloneResult ?? throw new NotSupportedException();
-    public UniqueMap BuiltUniques { get; } = new();
-    public UniqueMap BuiltBuildingUniqueMap => BuiltUniques;
+    public override void SetTransients() { }
+    public override CityConstructions Clone() => CloneResult ?? throw new NotSupportedException();
+    public UniqueMap BuiltUniques => BuiltBuildingUniqueMap;
     public List<Building> BuiltBuildingObjects { get; } = [];
-    public IEnumerable<Building> GetBuiltBuildings() => BuiltBuildingObjects;
-    public HashSet<string> BuiltNames { get; } = [];
-    public IReadOnlySet<string> BuiltBuildings => BuiltNames;
-    public bool ContainsBuildingOrEquivalent(string buildingName) => BuiltNames.Contains(buildingName);
+    public override IEnumerable<Building> GetBuiltBuildings() => BuiltBuildingObjects;
+    public JavaHashSet<string> BuiltNames => BuiltBuildings;
+    public override bool ContainsBuildingOrEquivalent(string buildingName) => BuiltNames.Contains(buildingName);
+    public override void AddBuilding(Building building, bool tryAddFreeBuildings = true) => BuiltBuildingObjects.Add(building);
+    public override void RemoveBuilding(Building building) => BuiltBuildingObjects.Remove(building);
     public int ProductionAdded { get; private set; }
-    public void AddProductionPoints(int productionToAdd) => ProductionAdded += productionToAdd;
-    public int GetWorkDone(string constructionName) => 0;
+    public override void AddProductionPoints(int productionToAdd) => ProductionAdded += productionToAdd;
+    public override int GetWorkDone(string constructionName) => 0;
     public IConstruction? CurrentConstruction { get; set; }
-    public IConstruction GetCurrentConstruction() => CurrentConstruction ?? throw new NotSupportedException();
-    public void AddBuilding(Building building, bool tryAddFreeBuildings = true) => BuiltBuildingObjects.Add(building);
-    public void RemoveBuilding(Building building) => BuiltBuildingObjects.Remove(building);
-    public void ChooseNextConstruction() => throw new NotSupportedException();
-    public List<string> ConstructionQueue { get; } = [];
-    public void EditQueue(Action<List<string>> edit)
-    {
-        var copy = new List<string>(ConstructionQueue);
-        edit(copy);
-        ConstructionQueue.Clear();
-        ConstructionQueue.AddRange(copy);
-    }
+    public override IConstruction GetCurrentConstruction() => CurrentConstruction ?? throw new NotSupportedException();
+    public override void ChooseNextConstruction() => throw new NotSupportedException();
     public int InProgressValidations { get; private set; }
-    public void ValidateInProgressConstructions() => InProgressValidations++;
-    public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; } = [];
-    public Building? CheapestStatBuilding(Stat stat) => null;
+    public override void ValidateInProgressConstructions() => InProgressValidations++;
+    public override Building? CheapestStatBuilding(Stat stat) => null;
     public List<Building> Completed { get; } = [];
     public Action<Building>? OnCompleteConstruction { get; set; }
-    public void CompleteConstruction(Building building)
+    public override bool CompleteConstruction(INonPerpetualConstruction construction)
     {
+        var building = (Building)construction;
         Completed.Add(building);
         OnCompleteConstruction?.Invoke(building);
         BuiltNames.Add(building.Name);
+        return true;
     }
-    public bool IsBeingConstructedOrEnqueued(string constructionName) => false;
-    public bool IsBuildable(Building building) => false;
-    public void RemoveCreateOneImprovementConstruction(string improvement) { }
+    public override bool IsBeingConstructedOrEnqueued(string constructionName) => false;
+    public override void RemoveCreateOneImprovementConstruction(string improvement) { }
     public string CurrentConstructionNameData { get; set; } = "";
-    public string CurrentConstructionName() => CurrentConstructionNameData;
+    public override string CurrentConstructionName() => CurrentConstructionNameData;
     public StatTreeNode StatsData { get; set; } = new();
-    public StatTreeNode GetStats() => StatsData;
+    public override StatTreeNode GetStats() => StatsData;
     public float MaintenanceCosts { get; set; }
-    public float GetMaintenanceCosts() => MaintenanceCosts;
+    public override float GetMaintenanceCosts() => MaintenanceCosts;
 }
 
 internal sealed class FakeCityReligion : CityReligionManager

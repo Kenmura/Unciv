@@ -1,15 +1,22 @@
+using Unciv.Logic.City;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using Unciv.UI.Components;
+using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/PerpetualConstruction.kt
-// Not ported yet, because they need City, CityConstructions or the Fonts UI constants (T046 onwards): getProductionTooltip, getConversionRate,
-// isBuildable and shouldBeDisplayed (StatConversion reads city.cityStats and the civ's EnablesStatProduction uniques).
 public abstract class PerpetualConstruction(string name, string description) : IConstruction
 {
     public string Name { get; set; } = name;
     public string Description { get; } = description;
+
+    public abstract string GetProductionTooltip(City city, bool withIcon = false);
+
+    public abstract bool IsBuildable(CityConstructions cityConstructions);
+
+    public bool ShouldBeDisplayed(CityConstructions cityConstructions) => IsBuildable(cityConstructions);
 
     public Counter<string> GetStockpiledResourceRequirements(GameContext state) => Counter.ZERO;
 
@@ -23,6 +30,22 @@ public abstract class PerpetualConstruction(string name, string description) : I
         : PerpetualConstruction(stat.ToString(), $"Convert production to [{stat}] at a rate of [rate] to 1")
     {
         public Stat Stat { get; } = stat;
+
+        public override string GetProductionTooltip(City city, bool withIcon = false) =>
+            $"\r\n{KotlinMath.RoundToInt(city.CityStats.CurrentCityStats.Production / GetConversionRate(city))}{(withIcon ? Stat.Character() : "")}/{Fonts.Turn}";
+
+        public int GetConversionRate(City city) => KotlinMath.RoundToInt(1 / city.CityStats.GetStatConversionRate(Stat));
+
+        public override bool IsBuildable(CityConstructions cityConstructions)
+        {
+            var city = cityConstructions.City;
+            if (Stat == Stat.Faith && !city.Civ.GameInfo.IsReligionEnabled())
+                return false;
+
+            var context = city.State;
+            return city.Civ.GetMatchingUniques(UniqueType.EnablesStatProduction, context)
+                .Any(it => it.Params[0] == Stat.ToString());
+        }
     }
 
     public sealed class ScienceConstruction() : StatConversion(Stat.Science);
@@ -30,7 +53,11 @@ public abstract class PerpetualConstruction(string name, string description) : I
     public sealed class CultureConstruction() : StatConversion(Stat.Culture);
     public sealed class FaithConstruction() : StatConversion(Stat.Faith);
     public sealed class FoodConstruction() : StatConversion(Stat.Food);
-    public sealed class IdleConstruction() : PerpetualConstruction("Nothing", "The city will not produce anything.");
+    public sealed class IdleConstruction() : PerpetualConstruction("Nothing", "The city will not produce anything.")
+    {
+        public override string GetProductionTooltip(City city, bool withIcon = false) => "";
+        public override bool IsBuildable(CityConstructions cityConstructions) => true;
+    }
 
     public static readonly StatConversion Science = new ScienceConstruction();
     public static readonly StatConversion Gold = new GoldConstruction();

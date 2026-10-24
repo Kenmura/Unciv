@@ -1,17 +1,19 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
 using Unciv.Logic;
+using Unciv.Logic.City;
+using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
+using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/Building.kt
-// Not ported yet, because they need CityConstructions, Civilization, MapUnit, Tile or the description/Civilopedia types (T046 onwards, T034):
-// getShortDescription, getDescription, makeLink, getCivilopediaTextLines, getSortGroup, getSubCategory, shouldBeDisplayed, getRejectionReasons
-// (and notMetRejections), isBuildable, construct.
+// Not ported yet, because they need the description/Civilopedia types: getShortDescription, getDescription, getCivilopediaTextLines, getSortGroup,
+// getSubCategory (T096).
 public class Building : RulesetStatsObject, INonPerpetualConstruction
 {
     public override string MakeLink() => IsAnyWonder() ? $"Wonder/{Name}" : $"Building/{Name}";
@@ -374,4 +376,284 @@ public class Building : RulesetStatsObject, INonPerpetualConstruction
 
     /// <summary>Kotlin <c>String.toFloat()</c></summary>
     private static float ParseFloat(string text) => float.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture);
+
+    public bool ShouldBeDisplayed(CityConstructions cityConstructions)
+    {
+        if (cityConstructions.IsBeingConstructedOrEnqueued(Name))
+            return false;
+        foreach (var unique in ((IHasUniques)this).GetMatchingUniques(UniqueType.MaxNumberBuildable))
+        {
+            if (cityConstructions.City.Civ.CivConstructions.CountConstructedObjects(this) >= ParseInt(unique.Params[0]))
+                return false;
+        }
+
+        var rejectionReasons = GetRejectionReasons(cityConstructions).ToList();
+
+        if (((IHasUniques)this).HasUnique(UniqueType.ShowsWhenUnbuilable, cityConstructions.City.State) &&
+            !rejectionReasons.Any(it => it.IsNeverVisible()))
+            return true;
+
+        if (rejectionReasons.Any(it => it.Type == RejectionReasonType.RequiresBuildingInSomeCities)
+            && cityConstructions.City.Civ.GameInfo.GameParameters.OneCityChallenge)
+            return false; // You will never be able to get more cities, this building is effectively disabled
+
+        if (!rejectionReasons.Any(it => !it.ShouldShow)) return true;
+        return ((INonPerpetualConstruction)this).CanBePurchasedWithAnyStat(cityConstructions.City)
+            && rejectionReasons.All(it => it.Type == RejectionReasonType.Unbuildable);
+    }
+
+    public IEnumerable<RejectionReason> GetRejectionReasons(CityConstructions cityConstructions)
+    {
+        var city = cityConstructions.City;
+        var cityCenter = city.GetCenterTile();
+        var civ = city.Civ;
+        var stateForConditionals = city.State;
+
+        if (cityConstructions.IsBuilt(Name))
+            yield return RejectionReasonType.AlreadyBuilt.ToInstance();
+
+        if (civ.GameInfo.IsUnavailableBySettingsCached(this))
+        {
+            // Repeat the starting era test isHiddenBySettings already did to change the RejectionReasonType
+            if (IsHiddenByStartingEra(civ.GameInfo))
+                yield return RejectionReasonType.WonderDisabledEra.ToInstance();
+            else
+                yield return RejectionReasonType.DisabledBySetting.ToInstance();
+        }
+
+        foreach (var unique in UniqueObjects)
+        {
+            // skip uniques that don't have conditionals apply
+            // EXCEPT for [UniqueType.OnlyAvailable] and [UniqueType.CanOnlyBeBuiltInCertainCities]
+            // since they trigger (reject) only if conditionals ARE NOT met
+            if (unique.Type != UniqueType.OnlyAvailable && unique.Type != UniqueType.CanOnlyBeBuiltWhen &&
+                !unique.ConditionalsApply(stateForConditionals)) continue;
+
+            switch (unique.Type)
+            {
+                // for buildings that are created as side effects of other things, and not directly built,
+                // or for buildings that can only be bought
+                case UniqueType.Unbuildable:
+                    yield return RejectionReasonType.Unbuildable.ToInstance();
+                    break;
+
+                case UniqueType.OnlyAvailable:
+                    foreach (var reason in NotMetRejections(unique, cityConstructions)) yield return reason;
+                    break;
+
+                case UniqueType.CanOnlyBeBuiltWhen:
+                    foreach (var reason in NotMetRejections(unique, cityConstructions, true)) yield return reason;
+                    break;
+
+                case UniqueType.Unavailable:
+                    yield return RejectionReasonType.ShouldNotBeDisplayed.ToInstance();
+                    break;
+
+                case UniqueType.RequiresPopulation:
+                    if (ParseInt(unique.Params[0]) > city.Population.Population)
+                        yield return RejectionReasonType.PopulationRequirement.ToInstance(unique.Text);
+                    break;
+
+                case UniqueType.MustBeOn:
+                    if (!cityCenter.MatchesTerrainFilter(unique.Params[0], civ))
+                        yield return RejectionReasonType.MustBeOnTile.ToInstance(unique.Text);
+                    break;
+
+                case UniqueType.MustNotBeOn:
+                    if (cityCenter.MatchesTerrainFilter(unique.Params[0], civ))
+                        yield return RejectionReasonType.MustNotBeOnTile.ToInstance(unique.Text);
+                    break;
+
+                case UniqueType.MustBeNextTo:
+                    if (!cityCenter.IsAdjacentTo(unique.Params[0], civ) && !cityCenter.MatchesFilter(unique.Params[0], civ))
+                        yield return RejectionReasonType.MustBeNextToTile.ToInstance(unique.Text);
+                    break;
+
+                case UniqueType.MustNotBeNextTo:
+                    if (cityCenter.GetTilesInDistance(1).Any(it => it.MatchesFilter(unique.Params[0], civ)))
+                        yield return RejectionReasonType.MustNotBeNextToTile.ToInstance(unique.Text);
+                    break;
+
+                case UniqueType.MustHaveOwnedWithinTiles:
+                    if (!cityCenter.GetTilesInDistance(ParseInt(unique.Params[1]))
+                        .Any(it => it.MatchesFilter(unique.Params[0], civ) && ReferenceEquals(it.GetOwner(), civ)))
+                        yield return RejectionReasonType.MustOwnTile.ToInstance(unique.Text);
+                    break;
+
+                case UniqueType.ObsoleteWith:
+                    if (civ.Tech.IsResearched(unique.Params[0]))
+                        yield return RejectionReasonType.Obsoleted.ToInstance(unique.Text);
+                    break;
+
+                case UniqueType.MaxNumberBuildable:
+                    if (civ.CivConstructions.CountConstructedObjects(this, cityConstructions.City) >= ParseInt(unique.Params[0]))
+                        yield return RejectionReasonType.MaxNumberBuildable.ToInstance();
+                    break;
+
+                // To be replaced with `Only available <after [Apollo Project] has been build>`
+                case UniqueType.SpaceshipPart:
+                    if (!civ.HasUnique(UniqueType.EnablesConstructionOfSpaceshipParts))
+                        yield return RejectionReasonType.RequiresBuildingInSomeCity.ToInstance("Apollo project not built!");
+                    break;
+
+                case UniqueType.CreatesOneImprovement:
+                    var improvement = Ruleset.GetTileImprovement(unique.Params[0]);
+                    if (improvement == null)
+                    {
+                        yield return RejectionReasonType.NoSuchImprovement.ToInstance($"Unknown improvement: {unique.Params[0]}");
+                    }
+                    else if (!city.GetTiles().Any(it => !it.ImprovementFunctions.CanBuildImprovement(improvement, city.State)))
+                    {
+                        yield return RejectionReasonType.NoTileCanContainImprovement.ToInstance();
+                    }
+                    break;
+            }
+        }
+
+        if (UniqueTo != null && !civ.MatchesFilter(UniqueTo, stateForConditionals))
+            yield return RejectionReasonType.UniqueToOtherNation.ToInstance($"Unique to {UniqueTo}");
+
+        if (civ.Cache.UniqueBuildings.Any(it => it.Replaces == Name))
+            yield return RejectionReasonType.ReplacedByOurUnique.ToInstance();
+
+        foreach (var requiredTech in ((IHasUniques)this).RequiredTechs())
+            if (!civ.Tech.IsResearched(requiredTech))
+                yield return RejectionReasonType.RequiresTech.ToInstance($"{requiredTech} not researched!");
+
+        // All Wonders
+        if (IsAnyWonder())
+        {
+            if (civ.Cities.Any(it => it != cityConstructions.City && it.CityConstructions.IsBeingConstructedOrEnqueued(Name)))
+                yield return RejectionReasonType.WonderBeingBuiltElsewhere.ToInstance();
+
+            if (civ.IsCityState)
+                yield return RejectionReasonType.CityStateWonder.ToInstance();
+
+            if (cityConstructions.City.IsPuppet)
+                yield return RejectionReasonType.PuppetWonder.ToInstance();
+        }
+
+        // World Wonders
+        if (IsWonder)
+        {
+            if (civ.GameInfo.GetCities().Any(it => it.CityConstructions.IsBuilt(Name)))
+                yield return RejectionReasonType.WonderAlreadyBuilt.ToInstance();
+        }
+
+        // National Wonders
+        if (IsNationalWonder)
+        {
+            if (civ.Cities.Any(it => it.CityConstructions.IsBuilt(Name)))
+                yield return RejectionReasonType.NationalWonderAlreadyBuilt.ToInstance();
+        }
+
+        if (RequiredBuilding != null && !cityConstructions.ContainsBuildingOrEquivalent(RequiredBuilding))
+        {
+            yield return RejectionReasonType.RequiresBuildingInThisCity.ToInstance($"Requires a [{civ.GetEquivalentBuilding(RequiredBuilding).Name}] in this city");
+        }
+
+        foreach (var (resourceName, requiredAmount) in GetResourceRequirementsPerTurn(stateForConditionals))
+        {
+            var availableAmount = cityConstructions.City.GetAvailableResourceAmount(resourceName);
+            if (availableAmount < requiredAmount)
+            {
+                yield return RejectionReasonType.ConsumesResources.ToInstance(resourceName.GetNeedMoreAmountString(requiredAmount - availableAmount));
+            }
+        }
+
+        // If we've already paid the unit costs, we don't need to pay it again
+        if (cityConstructions.GetWorkDone(Name) == 0)
+            foreach (var (resourceName, amount) in ((IConstruction)this).GetStockpiledResourceRequirements(stateForConditionals))
+            {
+                var availableResources = cityConstructions.City.GetAvailableResourceAmount(resourceName);
+                if (availableResources < amount)
+                    yield return RejectionReasonType.ConsumesResources.ToInstance(resourceName.GetNeedMoreAmountString(amount - availableResources));
+            }
+
+        if (RequiredNearbyImprovedResources != null)
+        {
+            var containsResourceWithImprovement = cityConstructions.City.GetWorkableTiles()
+                .Any(it =>
+                {
+                    var tileResource = it.TileResource;
+                    if (tileResource == null) return false;
+                    var improvement = it.GetUnpillagedTileImprovement();
+                    if (improvement == null) return false;
+                    return RequiredNearbyImprovedResources.Contains(tileResource.Name) &&
+                        ReferenceEquals(it.GetOwner(), civ) &&
+                        (tileResource.IsImprovedBy(improvement.Name) ||
+                            it.IsCityCenter() ||
+                            (improvement.IsGreatImprovement() && tileResource.ResourceType == ResourceType.Strategic));
+                });
+            if (!containsResourceWithImprovement)
+                yield return RejectionReasonType.RequiresNearbyResource.ToInstance($"Nearby [{string.Join(", ", RequiredNearbyImprovedResources)}] required");
+        }
+
+        foreach (var unique in civ.GetMatchingUniques(UniqueType.CannotBuildBuildings, stateForConditionals))
+            if (MatchesFilter(unique.Params[0], stateForConditionals))
+            {
+                yield return RejectionReasonType.CannotBeBuilt.ToInstance();
+            }
+    }
+
+    /// <summary>
+    /// Handles inverted conditional rejections and cumulative conditional reporting
+    /// See also <see cref="Unit.BaseUnit"/>.NotMetRejections
+    /// </summary>
+    private static IEnumerable<RejectionReason> NotMetRejections(UniqueObject unique, CityConstructions cityConstructions, bool built = false)
+    {
+        var civ = cityConstructions.City.Civ;
+        foreach (var conditional in unique.Modifiers)
+        {
+            // We yield a rejection only when conditionals are NOT met
+            if (Conditionals.ConditionalApplies(unique, conditional, cityConstructions.City.State))
+                continue;
+            switch (conditional.Type)
+            {
+                case UniqueType.ConditionalBuildingBuiltAmount:
+                    var building = civ.GetEquivalentBuilding(conditional.Params[0]).Name;
+                    var amount = ParseInt(conditional.Params[1]);
+                    var cityFilter = conditional.Params[2];
+                    var numberOfCities = civ.Cities.Count(it =>
+                        it.CityConstructions.ContainsBuildingOrEquivalent(building) && it.MatchesFilter(cityFilter));
+                    if (numberOfCities < amount)
+                    {
+                        yield return RejectionReasonType.RequiresBuildingInSomeCities.ToInstance(
+                            $"Requires a [{building}] in at least [{amount}] of [{cityFilter}] cities" +
+                            $" ({numberOfCities}/{numberOfCities})");
+                    }
+                    break;
+                case UniqueType.ConditionalBuildingBuiltAll:
+                    var allBuilding = civ.GetEquivalentBuilding(conditional.Params[0]).Name;
+                    var allCityFilter = conditional.Params[1];
+                    // Kotlin: `it.matchesFilter(cityFilter)` on its own line is a discarded statement, only `!it.isPuppet && ...` is the lambda result
+                    if (civ.Cities.Any(it => !it.IsPuppet && !it.CityConstructions.ContainsBuildingOrEquivalent(allBuilding)))
+                    {
+                        yield return RejectionReasonType.RequiresBuildingInAllCities.ToInstance(
+                            $"Requires a [{allBuilding}] in all [{allCityFilter}] cities");
+                    }
+                    break;
+                default:
+                    if (built)
+                        yield return RejectionReasonType.CanOnlyBeBuiltInSpecificCities.ToInstance(unique.Text);
+                    else
+                        yield return RejectionReasonType.ShouldNotBeDisplayed.ToInstance();
+                    break;
+            }
+        }
+    }
+
+    public bool IsBuildable(CityConstructions cityConstructions) => !GetRejectionReasons(cityConstructions).Any();
+
+    public void Construct(CityConstructions cityConstructions)
+    {
+        var civInfo = cityConstructions.City.Civ;
+
+        if (civInfo.GameInfo.SpaceResources.Contains(Name))
+        {
+            civInfo.VictoryManager.CurrentsSpaceshipParts.Add(Name, 1);
+        }
+
+        cityConstructions.AddBuilding(this);
+    }
 }

@@ -21,7 +21,7 @@ namespace Unciv.Logic.City;
 // Ported from core/src/com/unciv/logic/city/City.kt (T060).
 //
 // City is ported BEFORE its sub-objects (seam rule, T053 notes): population, cityConstructions, expansion, religion and cityStats are typed
-// by their seams in CitySeams.cs / CivilizationSeams.cs, as lateinit-style properties (reading before assignment throws) because the Kotlin
+// by their seams in CivilizationSeams.cs, as lateinit-style properties (reading before assignment throws) because the Kotlin
 // initializers (`var population = CityPopulationManager()`) have nothing to construct yet. The ticket porting a sub-object replaces its
 // property by `= new XManager()` and retypes it (T061 did population, expansion, religion; T062: cityStats; T063: cityConstructions).
 // Kotlin City has no equals/hashCode: this class keeps reference identity.
@@ -102,13 +102,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
 
     public CityPopulationManager Population { get; set; } = new();
 
-    private ICityConstructions? cityConstructions;
-    /// <summary>TODO(T063): becomes <c>var cityConstructions = CityConstructions()</c>.</summary>
-    public ICityConstructions CityConstructions
-    {
-        get => Lateinit(cityConstructions, "cityConstructions");
-        set => cityConstructions = value;
-    }
+    public CityConstructions CityConstructions { get; set; } = new();
 
     public CityExpansionManager Expansion { get; set; } = new();
 
@@ -175,7 +169,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     public JavaHashMap<string, bool> UnitShouldUseSavedPromotion { get; set; } = new();
 
     /// <summary>TODO(T066): retype to <c>HashMap&lt;String, UnitPromotions&gt;</c>.</summary>
-    public JavaHashMap<string, IUnitPromotions> UnitToPromotions { get; set; } = new();
+    public JavaHashMap<string, Unciv.Logic.Map.MapUnits.IUnitPromotions> UnitToPromotions { get; set; } = new();
 
     [JsonPropertyName("cityAIFocus")]
     [JsonInclude]
@@ -886,7 +880,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     bool IGameContextCity.MatchesFilter(string filter, IGameContextCivilization? viewingCiv) =>
         MatchesFilter(filter, (CivilizationObject?)viewingCiv, true);
     bool IGameContextCity.ContainsBuildingOrEquivalent(string buildingName) => CityConstructions.ContainsBuildingOrEquivalent(buildingName);
-    IReadOnlySet<string> IGameContextCity.BuiltBuildings => CityConstructions.BuiltBuildings;
+    IReadOnlySet<string> IGameContextCity.BuiltBuildings => new ReadOnlyJavaHashSet<string>(CityConstructions.BuiltBuildings);
     int IGameContextCity.CountBuiltBuildingsMatchingFilter(string filter, GameContext state) =>
         CityConstructions.GetBuiltBuildings().Count(it => it.MatchesFilter(filter, state));
     float IGameContextCity.GetCurrentCityStat(Stat stat) => CityStats.CurrentCityStats[stat];

@@ -14,7 +14,7 @@ namespace Unciv.Logic.Civilization;
 // Ported from core/src/com/unciv/logic/civilization/CivConstructions.kt (T058).
 //
 // Deviations:
-// - CityConstructions is not ported yet (T063): it is the ICityConstructions seam (CitySeams.cs), retyped then.
+// - CityConstructions is not ported yet (T063): it is ported (T063) and the seam is retyped.
 // - The three private HashMap<String, HashSet<String>> maps are System Dictionary/HashSet (as the AddToMapOfSets helper is), so the
 //   iteration order of getFreeBuildingNames' result is insertion order, not java.util.HashSet order; nothing in the rules iterates it.
 // - The Kotlin lazy `sequence { ... }` of free building names is a C# iterator; `hasFreeBuildingByName` stops at the first match like the
@@ -211,7 +211,7 @@ public class CivConstructions : IsPartOfGameInfoSerialization
             }
 
             foreach (var building in autoGrantedBuildings)
-                if (city.CityConstructions.IsBuildable(building))
+                if (building.IsBuildable(city.CityConstructions))
                     city.CityConstructions.CompleteConstruction(building);
         }
     }

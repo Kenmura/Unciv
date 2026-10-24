@@ -585,8 +585,6 @@ public class RulesetUnitTests
         Assert.False(unit.CanBePurchasedWithStat(null, Stat.Faith));
         Assert.False(unit.CanBePurchasedWithStat(null, Stat.Production));
         Assert.Equal(PurchaseReason.Invalid, construction.CanBePurchasedWithStatReasons(null, Stat.Happiness));
-        var (_, _, city) = MakeWorld();
-        Assert.Throws<NotSupportedException>(() => unit.CanBePurchasedWithStat(city, Stat.Gold));
     }
 
     // endregion

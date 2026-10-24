@@ -22,6 +22,9 @@ internal sealed class FakeUnitPromotions : IUnitPromotions
     public List<Promotion> PromotionObjects { get; } = [];
     public List<(string Name, bool IsFree)> Added { get; } = [];
     public int NumberOfPromotions => Promotions.Count;
+    public int XP { get; set; }
+    public int XpForNextPromotion() => 10;
+    public IPromotionTree CreatePromotionTree() => throw new NotSupportedException();
     public MapUnitClass? TransientsSetFor { get; private set; }
     public void AddPromotion(string promotionName, bool isFree = false)
     {

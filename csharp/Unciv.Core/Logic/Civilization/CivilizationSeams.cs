@@ -56,6 +56,17 @@ public interface IGameInfoState : IConstructionGameInfo
     /// Barbarians and spectators are always excluded; the sort (the player's civ first, then majors, then by translated name) belongs to GameInfo.
     /// </summary>
     IEnumerable<Civilization> GetCivsSorted(bool includeCityStates = true, bool includeDefeated = false, Civilization? civToSortFirst = null, Func<Civilization, bool>? additionalFilter = null);
+    // T063 (CityConstructions, Building, BaseUnit)
+    /// <summary><c>gameInfo.isUnavailableBySettingsCached(obj)</c></summary>
+    bool IsUnavailableBySettingsCached(IHasUniques construction);
+    /// <summary><c>gameInfo.spaceResources</c></summary>
+    IReadOnlySet<string> SpaceResources { get; }
+    /// <summary><c>gameInfo.isUsersTurn()</c> (multiplayer extension reading the local user id from the client settings). TODO(T046)</summary>
+    bool IsUsersTurn();
+    /// <summary><c>UncivGame.Current.settings.autoAssignCityProduction</c> (client setting). TODO(T046)</summary>
+    bool AutoAssignCityProduction { get; }
+    /// <summary><c>UncivGame.Current.worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c> (client state). TODO(T046)</summary>
+    bool IsFullAutoPlayAI { get; }
 }
 
 /// <summary>What Civilization reads from <c>QuestManager</c>.</summary>
