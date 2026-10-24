@@ -228,7 +228,7 @@ flowchart TD
   class T139 ondeck
   class T141 done
   class T142 done
-  class T143 review
+  class T143 done
   class T144 ondeck
   class T145 ready
   class T146 ondeck
@@ -275,7 +275,6 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
-| T143 | Needs-Review [Claude] | T103 | 1 | Port GlobalUniquesTests + deferred TestGame fixtures (split from T103) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -287,4 +286,4 @@ flowchart TD
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T150 | Available (waiting on T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T151 | In-Progress [Claude] | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
-| T154 | Available (waiting on T143, T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
+| T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

@@ -1614,7 +1614,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Scope narrowed at claim: ported EspionageTests, FreeBuildingTests, DefensivePactTests, GoldenAgeManagerTest, CityMovingTests, CapitalConnectionsFinderTests, DiplomacyManagerTests (18 of 21 cases), GoldGiftingTests (9 of 14). ThreatManagerTests were already ported over TestGame by T087 (AutomationCoreTests.ThreatManager.cs). All pass unchanged against the engine, no bug found. Deferred: T149 (3 DiplomacyManagerTests conquest cases, need Battle T083), T150 (5 GoldGifting trade cases, need TradeEvaluation T089), T151 (QuestTests, GameSerializationTests, need JSON wiring T140), T152 (GreatPersonSelectionTest, UI/mock bound).
 
 ### T143 Port GlobalUniquesTests + deferred TestGame fixtures (split from T103)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T103
 - Source: tests/src/com/unciv/uniques/GlobalUniquesTests.kt (50 tests), ResourceTests.kt
 - Fixtures: (the test files above)
