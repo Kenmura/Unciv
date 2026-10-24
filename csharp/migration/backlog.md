@@ -518,7 +518,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review round 1 fixes: [JsonInclude] on foundingCiv/cityAIFocus/flagsCountdown (+ metadata test), per-group double sums in StatPercentFromObjectToResource, unchecked Int sum in GetAvailableResourceAmount, T065 note. Trailing-default overloads of forEach*Unique left as callers pass State (seam simplification).
 
 ### T061 City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: T060
 - Source: core/src/com/unciv/logic/city/managers/CityPopulationManager.kt, CityExpansionManager.kt, CityReligionManager.kt, CityFounder.kt
 - Fixtures: tests/src/com/unciv/logic/city/managers/* (TestGame-based: T072)
