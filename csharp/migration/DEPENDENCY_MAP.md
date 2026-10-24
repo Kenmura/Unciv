@@ -108,7 +108,7 @@ flowchart TD
   class T104 waiting
   class T106 done
   class T107 done
-  class T154 prog
+  class T154 review
   class T157 prog
 ```
 
@@ -150,5 +150,5 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T154 | In-Progress [Claude] | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
+| T154 | Needs-Review [Claude] | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | In-Progress [Claude] | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
