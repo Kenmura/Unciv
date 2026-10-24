@@ -190,7 +190,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Later tickets extend it: run N turns from a seed and compare hashes across runs (and against Kotlin-generated hashes where feasible).
 
 ### T012 Command layer design
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T01:16:28Z
 - Depends: none
 - Source: design ticket; study how UI actions mutate `GameInfo` (e.g. `core/src/com/unciv/logic/automation` and `UnitActions`, `CityConstructions`)
@@ -198,6 +198,20 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: `csharp/migration/COMMANDS.md` proposing a serializable command/event model (player action → validate → apply → event), plus a minimal `ICommand` skeleton in Unciv.Core with tests
 - Gate: `dotnet test --filter FullyQualifiedName~CommandTests`
 - Notes: Target is an authoritative-server model: clients send commands, server validates/applies, broadcasts commands or diffs. Must not depend on Unciv's multiplayer code. Reviewer must check it keeps lockstep as a possible future option (pure, deterministic apply).
+  - Implementer notes (Claude): Design is `csharp/migration/COMMANDS.md`; skeleton in `Unciv.Core/Commands/` (`ICommand<TState>` with `Validate(state, actorId)`/`Apply(state, actorId)`, `CommandValidation`, `GameEvent`, `CommandEnvelope`, `CommandRegistry<TState>`, `CommandProcessor<TState>` with `Submit` (server role) and `Replay` (follower/lockstep role)). 10 `CommandTests` on a toy counter game cover: accept/number/log, reject leaves state+log+seq untouched, actor taken from the submitter never the payload, unknown type / malformed payload rejected not thrown, JSON round-trip, registry misuse, **replaying a serialized log reproduces the state** (the lockstep property), contiguous-seq enforcement, replay of a no-longer-valid command is a desync, and a throwing `Apply` faults the processor.
+  - Findings that matter for later tickets (details in COMMANDS.md): Kotlin has no command layer (unit actions are closures; UI calls mutators directly); `GameInfo.nextTurn` reads wall-clock and `UncivGame.Current.worldScreen`; about 29 wall-clock reads outside `multiplayer`, 31 unseeded `.random()/.shuffled()/.shuffle()` calls, 34 `logic/` files touching `UncivGame.`/`GUI.`. **Unciv already has state-derived randomness**: `GameContext.stateBasedRandom(caller, seed) = Random(hashOf(caller.hashCode(), seed, this.hashCode()))` (used by ConditionalChance, barbarian camps, AI diplomacy rolls, city ids) which depends on JVM `String.hashCode`, data-class/`Float` hash codes and `hashOf`; `string.GetHashCode` is banned here, so this needs its own bit-exact port: new ticket **T017**.
+  - Decisions a reviewer should challenge: faulted-processor instead of rollback on a throwing `Apply`; `Submit(actor, command)` round-trips through the wire form on purpose; no `GameRandom` parameter on `Apply` (state owns the RNG); events are not serializable yet (open question in COMMANDS.md).
+  - Ran Gate (`~CommandTests`, 10 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 228/228.
+
+### T017 JVM hash codes and state-based randomness helpers
+- State: Available
+- Depends: T010
+- Source: core/src/com/unciv/utils/Randomness.kt (`hashOf`, `withHash`, `pseudoRandomUuid`, rest of the file); `GameContext.stateBasedRandom` in core/src/com/unciv/models/ruleset/unique/GameContext.kt (only the formula; `GameContext.hashCode` ports with GameContext)
+- Fixtures: none - generate golden values by running the JVM: `String.hashCode`, `Integer/Long/Float/Double/Boolean.hashCode`, `hashOf(...)`, `Random(hashOf(..)).nextInt()` for several inputs (java in `dotnet-dev`, kotlin-stdlib jar on the classpath)
+- Deliverables: csharp/Unciv.Core/Utils/JavaHash.cs (String via UTF-16 code units `31*h + c`, Float via `floatToIntBits` (canonical NaN), Double/Long fold, Boolean 1231/1237, data-class chain `31*h + x`), the `hashOf`/`withHash`/`pseudoRandomUuid` port, tests
+- Gate: `dotnet test --filter FullyQualifiedName~JavaHashTests`
+- Notes: `string.GetHashCode` is banned (randomized per process); anything that hashes into game state must use these. Check `HexCoord` (data class: `31 * x + y`) and `Counter`/`Stats` hash against the JVM too, since `GameContext.hashCode` mixes tile positions and `currentMovement.hashCode()`.
+
 
 ### T013 Style & analyzer baseline
 - State: Done
