@@ -14,14 +14,15 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/CivView.kt (T084). Stripped: the purity annotations.
-// Deferred (TODO(T085): needs CityView/MapUnitView): cities(), getUnits,
-// and the helpers idleUnitsCount, dueUnitsCount, getCapital, isHolyCityBlocked.
+// T085 added cities(), getUnits and the helpers idleUnitsCount, dueUnitsCount, getCapital, isHolyCityBlocked.
 
 /// <summary>View of a <see cref="CivilizationClass"/> from the perspective of the viewer via the <see cref="GameView"/>.</summary>
 public class CivView(CivilizationClass civ, CivilizationClass viewer, bool spectatorMode, GameView gameView)
     : ForeignCivView(civ, viewer, spectatorMode, gameView)
 {
     // Navigation
+    public override IReadOnlyList<CityView> Cities() => Civ.Cities.Select(it => GameView.GetCityView(it)).ToList();
+
     public TradeView GetTradeView(ForeignCivView otherCiv) => new(Civ, otherCiv.Unwrap(), GameView);
 
     // Data retrieval
@@ -133,6 +134,9 @@ public class CivView(CivilizationClass civ, CivilizationClass viewer, bool spect
     // Units
     public bool HasMovedAutomatedUnitsThisTurn() => Civ.HasMovedAutomatedUnits;
 
+    /// <summary>The civ's own units, wrapped for the viewer's own use (e.g. movement-plan arrows).</summary>
+    public List<MapUnitView> GetUnits() => Civ.Units.GetCivUnits().Select(it => GameView.GetMapUnitView(it)).ToList();
+
     public StatMap GetStatMapForNextTurn() => Civ.Stats.GetStatMapForNextTurn();
 
     public JavaHashMap<string, float> GetHappinessBreakdown() => Civ.Stats.GetHappinessBreakdown();
@@ -199,6 +203,21 @@ public class CivView(CivilizationClass civ, CivilizationClass viewer, bool spect
 // This is so we can separate the minimal API, from the helpful API.
 public static class CivViewExtensions
 {
+    public static int IdleUnitsCount(this CivView civView, bool due) => civView.GetUnits().Count(it => it.IsIdle() && it.Due == due);
+
+    public static int DueUnitsCount(this CivView civView) => civView.GetUnits().Count(it => it.Due && it.IsIdle());
+
     /// <summary><c>true</c> if we are at war with any known, non-defeated civ</summary>
     public static bool IsAtWar(this CivView civView) => civView.GetKnownCivs().Any(it => !it.IsDefeated() && civView.IsAtWarWith(it));
+
+    /// <summary>Our capital city, or <c>null</c> if we have none</summary>
+    public static CityView? GetCapital(this CivView civView) => civView.Cities().FirstOrDefault(it => it.IsCapital());
+
+    /// <summary><c>true</c> if the holy city of our religion has been blocked by another religion's inquisitor, see <see cref="ForeignCityView.IsBlockedHolyCity"/></summary>
+    public static bool IsHolyCityBlocked(this CivView civView)
+    {
+        var religionName = civView.GetReligion()?.Name;
+        if (religionName == null) return false;
+        return civView.Cities().Any(it => it.IsBlockedHolyCity() && it.GetReligionThisIsTheHolyCityOf() == religionName);
+    }
 }

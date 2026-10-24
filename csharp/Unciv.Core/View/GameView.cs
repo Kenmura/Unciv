@@ -1,16 +1,16 @@
 using Unciv.Logic;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
+using CityClass = Unciv.Logic.City.City;
 using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 
 namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/GameView.kt (T084). Stripped: the purity annotations.
-// Deferred to T085 (Views B), because the view types they return are ported there: getCityView, getForeignCityView,
-// getForeignMapUnitView, getMapUnitView, getUnitsWithVisibleMovementHistory (TODO(T085)). getSpyView is complete.
-// GameViewMovementHistoryTest needs TestGame and the unit views (TODO(T085), T103).
+// T085 added the city/unit view factories and getUnitsWithVisibleMovementHistory.
 
 /// <summary>View of a <see cref="GameInfo"/> from the perspective of <see cref="Viewer"/>.</summary>
 public class GameView : View<GameInfo>
@@ -38,6 +38,14 @@ public class GameView : View<GameInfo>
     // These can be cached in the future if we see a need, for now - simplicity
     public CivView GetCivView(CivilizationClass civ) => new(civ, viewer, SpectatorMode, this);
 
+    public CityView GetCityView(CityClass city) => new(city, viewer, SpectatorMode, this);
+
+    public ForeignCityView GetForeignCityView(CityClass city) => new(city, viewer, SpectatorMode, this);
+
+    public ForeignMapUnitView GetForeignMapUnitView(MapUnit unit) => new(unit, viewer, SpectatorMode, this);
+
+    public MapUnitView GetMapUnitView(MapUnit unit) => new(unit, viewer, SpectatorMode, this);
+
     public ForeignCivView GetForeignCivView(CivilizationClass civ) => new(civ, viewer, SpectatorMode, this);
 
     public DiplomacyManagerView GetDiplomacyManagerView(DiplomacyManager diplomacyManager) => new(diplomacyManager, viewer, SpectatorMode, this);
@@ -51,6 +59,13 @@ public class GameView : View<GameInfo>
 
     /// <summary>Resolves the same tile from this game's viewing perspective, e.g. after a spectator toggles fog of war.</summary>
     public TileView GetTile(TileView tileView) => TileMapView.GetTile(tileView.Unwrap());
+
+    /// <summary>Units whose past movements may be displayed from this view's perspective.</summary>
+    public IEnumerable<ForeignMapUnitView> GetUnitsWithVisibleMovementHistory() =>
+        gameInfo.Civilizations
+            .SelectMany(it => it.Units.GetCivUnits())
+            .Where(mapVisualization.IsUnitPastVisible)
+            .Select(GetForeignMapUnitView);
 
     /// <summary>Visible attacks, including records retained after the attacking unit has disappeared.</summary>
     public IEnumerable<(HexCoord, HexCoord)> GetVisibleAttacks()

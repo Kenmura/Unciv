@@ -873,7 +873,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (isolated adversarial, Auditor/Adversary/Pragmatist): PASS. Correction: ViewTests has 27 tests. Non-blocking: TileMap.StartingLocationsByNation is a Dictionary (Kotlin insertion-ordered); T085 must keep the TODO markers.
 
 ### T085 Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T084, T081, T062, T063, T066, T067
 - Source: core/src/com/unciv/view/CityView.kt, ForeignCityView.kt, CityConstructionsView.kt, MapUnitView.kt, ForeignMapUnitView.kt, CombatantView.kt, AttackableTileView.kt
 - Fixtures: tests/src/com/unciv/view/ViewPurityTest.kt (shared with T084)
@@ -881,6 +881,10 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~ViewCityUnitTests`
 - Claimed: 2026-10-24T16:29Z
 - Notes: Created by the backlog audit. ~885 LOC. See T084 for why Views exist. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+  - Implemented Views B: ForeignCityView, CityView, CityConstructionsView, ForeignMapUnitView, MapUnitView, CombatantView (+ MapUnitCombatantView, CityCombatantView), AttackableTileView; retrofitted the T084 deferrals (GameView city/unit factories + getUnitsWithVisibleMovementHistory, ForeignCivView/CivView.cities, CivView.getUnits and the idle/due/capital/holy-city helpers, SpyView city members, TileView city/unit/combatant members, CityView overloads of getTileStats/getTileStatsBreakdown, getImprovementBuildingProblems). Tests: ViewCityUnitTests (Gate), ViewTests structural checks extended.
+    Deviations: Kotlin `sealed class CombatantView` is an abstract class with an internal ctor. Kotlin @Deprecated escape hatches (getUnit, getCityConstructions, tileView, getViewingCiv) not ported. Kotlin `protected open val city/unit` is a protected non-virtual property City/Unit. DebugUtils.VISIBLE_MAP = viewer.GameInfo.EngineOptions.VisibleMap. C# CivView.Cities() is a covariant override returning IReadOnlyList<CityView> (List is invariant). Tile.getCity() is the owning city (as in Kotlin), so MapUnitView.canSaveDefaultPromotions is true anywhere in a city's territory.
+    Structural test: Kotlin's non-Readonly-returns-Boolean ViewPurityTest case is @Ignore'd for CityView.tryRaisePriority/tryLowerPriority (Int?); the C# test lists them as known exceptions, and treats TryGet* navigation members as read-only (they are @Readonly in Kotlin).
+    Deferred members (engine code not ported yet) are listed in the file headers and ticket T139 (TODO(T082)/TODO(T083)/TODO(T079)/TODO(T080)/TODO(T139) markers). Kotlin GameViewMovementHistoryTest: unit-view dependent cases are covered by GameView_CityAndUnitFactories_AndMovementHistory; the attack cases were already in ViewTests.
 
 ### T086 TradeLogic
 - State: Done
@@ -1516,6 +1520,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T16:30Z
 - Notes: From T084: TradeView needs TradeLogic (T086), which T084 does not depend on. Port TradeView and CivView.GetTradeView, plus TradeOffer.getOfferText if still open.
   - Implemented TradeView (explicit fields instead of primary ctor: CS9107) and CivView.GetTradeView. TradeOffer.getOfferText stays unported (UI-side translation/Fonts text, see TradeOffer.cs). TradeLogic still uses the T089 evaluation seam; TradeView does not call it. Tests in ViewTests: stage/propose/retract/load-pending, live lists.
+
+### T139 Views B leftovers: members blocked on unported engine code (battle, unit actions, build time)
+- State: Available
+- Depends: T085, T082, T083, T079, T080
+- Source: core/src/com/unciv/view/MapUnitView.kt, CityView.kt, ForeignCityView.kt, core/src/com/unciv/models/ruleset/tile/TileImprovement.kt (getTurnsToBuild), core/src/com/unciv/logic/map/tile/Tile.kt (startWorkingOnImprovement, queueImprovement), core/src/com/unciv/logic/map/mapunit/MapUnit.kt (getMovementString)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/View/MapUnitView.cs, CityView.cs, ForeignCityView.cs, TileImprovement.GetTurnsToBuild, Tile.StartWorkingOnImprovement/QueueImprovement, MapUnit.GetMovementString, tests
+- Gate: dotnet test --filter FullyQualifiedName~ViewCityUnitTests
+- Claimed:
+- Notes: Created by T085. Members T085 had to defer: ForeignCityView.getBombardableTiles (TargetHelper, T082); CityView.tryBombard (Battle.attackOrNuke, T083); MapUnitView.containsAttackableEnemy/getAttackableEnemies (TargetHelper, T082), tryAirSweep (AirInterception, T082), tryMovePreparingAttack/attackOrNuke/mayUseNuke/tryNuke (Battle/Nuke, T083), canPillage (UnitActionsPillage, T079), canInvokeUnitAction/tryInvokeUnitAction (UnitActions, T080); getTurnsToBuild, tryStartWorkingOnImprovement (need TileImprovement.getTurnsToBuild, Tile.startWorkingOnImprovement/queueImprovement(improvement, civ, unit) and Civilization.gainStockpiledResource) and getMovementString (UncivGame settings number format). Port them here and move the TODO(T139) markers. CityView.tryBombard/MapUnitView.attackOrNuke return Battle.DamageDealt, so keep them in the ViewTests KnownNonBooleanTryMembers list (Kotlin ViewPurityTest is @Ignore'd for the same reason).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

@@ -626,6 +626,14 @@ public sealed class ViewTests : IDisposable
         return false;
     }
 
+    // Kotlin's ViewPurityTest `non-Readonly functions in owned Views always return Boolean` is @Ignore'd for exactly these
+    // (CityView.tryRaisePriority/tryLowerPriority return Int?; tryBombard/attackOrNuke return Battle.DamageDealt and are deferred to T083).
+    private static readonly HashSet<string> KnownNonBooleanTryMembers = ["CityView.TryRaisePriority", "CityView.TryLowerPriority"];
+
+    // `TryGet...` navigation members (TryGetCityView, TryGetMapUnitView) are @Readonly in Kotlin: they only look something up.
+    private static bool IsStateChanging(MethodInfo method) =>
+        method.Name.StartsWith("Try", StringComparison.Ordinal) && !method.Name.StartsWith("TryGet", StringComparison.Ordinal);
+
     private static IEnumerable<MethodInfo> DeclaredMethods(Type type) =>
         type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
             .Where(it => !it.IsSpecialName && it.Name is not ("Equals" or "GetHashCode" or "ToString"));
@@ -634,7 +642,8 @@ public sealed class ViewTests : IDisposable
     public void ViewTypes_AreDiscovered()
     {
         var names = ViewTypes().Select(it => it.Name).ToHashSet();
-        foreach (var expected in new[] { "GameView", "CivView", "ForeignCivView", "TileView", "TileMapView", "DiplomacyManagerView", "SpyView", "TradeView" })
+        foreach (var expected in new[] { "GameView", "CivView", "ForeignCivView", "TileView", "TileMapView", "DiplomacyManagerView", "SpyView", "TradeView",
+            "ForeignCityView", "CityView", "CityConstructionsView", "ForeignMapUnitView", "MapUnitView", "MapUnitCombatantView", "CityCombatantView", "AttackableTileView" })
             Assert.Contains(expected, names);
     }
 
@@ -644,7 +653,7 @@ public sealed class ViewTests : IDisposable
         var violations = new List<string>();
         foreach (var type in ViewTypes().Where(it => !IsOwnedViewType(it) || it.Name.StartsWith("Foreign", StringComparison.Ordinal)))
         {
-            violations.AddRange(DeclaredMethods(type).Where(it => it.Name.StartsWith("Try", StringComparison.Ordinal))
+            violations.AddRange(DeclaredMethods(type).Where(it => IsStateChanging(it))
                 .Select(it => $"{type.Name}.{it.Name} is a state-changing member of a read-only view"));
             violations.AddRange(type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                 .Where(it => it.SetMethod is { IsPublic: true })
@@ -660,7 +669,7 @@ public sealed class ViewTests : IDisposable
         foreach (var type in ViewTypes())
         {
             if (IsOwnedViewType(type))
-                violations.AddRange(DeclaredMethods(type).Where(it => it.Name.StartsWith("Try", StringComparison.Ordinal) && it.ReturnType != typeof(bool))
+                violations.AddRange(DeclaredMethods(type).Where(it => IsStateChanging(it) && it.ReturnType != typeof(bool) && !KnownNonBooleanTryMembers.Contains($"{type.Name}.{it.Name}"))
                     .Select(it => $"{type.Name}.{it.Name} returns {it.ReturnType.Name} instead of bool"));
             violations.AddRange(type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                 .Where(it => it.SetMethod is { IsPublic: true })

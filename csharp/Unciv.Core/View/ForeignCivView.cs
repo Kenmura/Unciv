@@ -10,7 +10,6 @@ using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/ForeignCivView.kt (T084). Stripped: the purity annotations.
-// Deferred to T085 (ForeignCityView): cities() (TODO(T085)).
 
 /// <summary>Should contain information that should be knowable to us about foreign civilizations. Superclass of <see cref="CivView"/>.</summary>
 public class ForeignCivView(CivilizationClass civ, CivilizationClass viewer, bool spectatorMode, GameView gameView)
@@ -58,6 +57,9 @@ public class ForeignCivView(CivilizationClass civ, CivilizationClass viewer, boo
     public bool IsMajorCiv() => Civ.IsMajorCiv();
 
     public bool IsDefeated() => Civ.IsDefeated();
+
+    public virtual IReadOnlyList<ForeignCityView> Cities() =>
+        Civ.Cities.Where(it => it.GetCenterTile().IsExplored(Viewer)).Select(it => GameView.GetForeignCityView(it)).ToList();
 
     public Nation GetNation() => Civ.Nation;
 

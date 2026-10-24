@@ -1,20 +1,22 @@
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Components.Extensions;
+using Unciv.Utils;
+using CityClass = Unciv.Logic.City.City;
 using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 
 namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/TileView.kt (T084). Stripped: the purity annotations.
 // DebugUtils.VISIBLE_MAP is the viewer game's EngineOptions.VisibleMap (T048).
-// Deferred to T085 (they return or take CityView/ForeignCityView/MapUnitView/ForeignMapUnitView/CombatantView): owningCity, getCity,
-// getWorkingCity, civilianUnit, militaryUnit, getVisibleUnits, getCombatant, the CityView parameter of getTileStats and
-// getTileStatsBreakdown, and getImprovementBuildingProblems (its MapUnitView parameter; TODO(T085)).
+// T085 added owningCity, getCity, getWorkingCity, civilianUnit, militaryUnit, getVisibleUnits, getCombatant, the CityView parameter of
+// getTileStats/getTileStatsBreakdown and getImprovementBuildingProblems.
 
 /// <summary>View of a <see cref="Tile"/> from the perspective of the viewer via the <see cref="TileMapView"/>.</summary>
 public class TileView : View<Tile>
@@ -40,6 +42,89 @@ public class TileView : View<Tile>
         if (Viewer == null) return null;
         var gameView = TileMapView.GameView;
         return gameView?.GetForeignCivView(owner);
+    }
+
+    public ForeignCityView? OwningCity()
+    {
+        var city = (CityClass?)tile.OwningCity;
+        return city == null ? null : ToForeignCityView(city);
+    }
+
+    /// <summary>The city whose center is this tile, if any</summary>
+    public ForeignCityView? GetCity()
+    {
+        var city = (CityClass?)tile.GetCity();
+        return city == null ? null : ToForeignCityView(city);
+    }
+
+    public ForeignCityView? GetWorkingCity()
+    {
+        var city = (CityClass?)tile.GetWorkingCity();
+        return city == null ? null : ToForeignCityView(city);
+    }
+
+    private ForeignCityView? ToForeignCityView(CityClass city)
+    {
+        if (Viewer == null) return null;
+        var gameView = TileMapView.GameView;
+        return gameView?.GetForeignCityView(city);
+    }
+
+    private bool IsVisible(MapUnit unit)
+    {
+        if (Viewer == null) return false;
+        return IsVisibleMapDebug() || unit.IsVisibleTo(Viewer);
+    }
+
+    private ForeignMapUnitView ToForeignMapUnitView(MapUnit unit) => TileMapView.GameView.NotNull().GetForeignMapUnitView(unit);
+
+    public ForeignMapUnitView? CivilianUnit
+    {
+        get
+        {
+            var unit = tile.CivilianUnit;
+            if (unit == null) return null;
+            if (!IsVisible(unit)) return null;
+            return ToForeignMapUnitView(unit);
+        }
+    }
+
+    public ForeignMapUnitView? MilitaryUnit
+    {
+        get
+        {
+            var unit = tile.MilitaryUnit;
+            if (unit == null) return null;
+            if (!IsVisible(unit)) return null;
+            return ToForeignMapUnitView(unit);
+        }
+    }
+
+    public List<ForeignMapUnitView> GetVisibleUnits()
+    {
+        if (Viewer == null) return [];
+        return tile.GetUnits()
+            .Where(it => IsVisible(it))
+            .Select(it => ToForeignMapUnitView(it))
+            .ToList();
+    }
+
+    public CombatantView? GetCombatant()
+    {
+        if (Viewer == null) return null;
+        if (!IsExplored()) return null;
+        var gameView = TileMapView.GameView;
+        if (gameView == null) return null;
+        if (tile.IsCityCenter())
+            return gameView.GetForeignCityView(((CityClass?)tile.GetCity()).NotNull()).AsCombatant();
+
+        var militaryUnit = tile.MilitaryUnit;
+        if (militaryUnit != null && IsVisible(militaryUnit))
+            return ToForeignMapUnitView(militaryUnit).AsCombatant();
+        var civilianUnit = tile.CivilianUnit;
+        if (civilianUnit != null && IsVisible(civilianUnit))
+            return ToForeignMapUnitView(civilianUnit).AsCombatant();
+        return null;
     }
 
     private bool IsVisibleMapDebug() => Viewer?.GameInfo.EngineOptions.VisibleMap == true;
@@ -173,14 +258,36 @@ public class TileView : View<Tile>
 
     public Ruleset GetRuleset() => tile.Ruleset;
 
-    public Stats GetTileStats(CivView? viewingCiv) =>
-        tile.Stats.GetTileStats(tile.GetCity(), viewingCiv?.Unwrap());
+    public Stats GetTileStats(CivView? viewingCiv, CityView? cityView = null)
+    {
+        var city = cityView?.Unwrap() ?? tile.GetCity();
+        return tile.Stats.GetTileStats(city, viewingCiv?.Unwrap());
+    }
 
-    public List<(string Cause, Stats Stats)> GetTileStatsBreakdown(CivView? viewingCiv) =>
-        tile.Stats.GetTileStatsBreakdown(tile.GetCity(), viewingCiv?.Unwrap());
+    public List<(string Cause, Stats Stats)> GetTileStatsBreakdown(CivView? viewingCiv, CityView? cityView = null)
+    {
+        var city = cityView?.Unwrap() ?? tile.GetCity();
+        return tile.Stats.GetTileStatsBreakdown(city, viewingCiv?.Unwrap());
+    }
 
     /// <summary>Base terrain, natural wonder (if any), then terrain features, in order - the last one is the "top" terrain</summary>
     public List<Terrain> GetAllTerrains() => tile.AllTerrains.ToList();
+
+    /// <summary><paramref name="pretendLastTerrainRemoved"/> checks against a copy of this tile with its top terrain feature removed</summary>
+    public HashSet<ImprovementBuildingProblem> GetImprovementBuildingProblems(TileImprovement improvement, MapUnitView unitView, bool pretendLastTerrainRemoved = false)
+    {
+        var tileToCheck = pretendLastTerrainRemoved ? GetTileWithoutLastTerrain() : tile;
+        return tileToCheck.ImprovementFunctions.GetImprovementBuildingProblems(improvement, unitView.Unwrap().Cache.State).ToHashSet();
+    }
+
+    /// <summary>Fresh copy of the tile with its top terrain feature removed - not cached, since the tile can change</summary>
+    private Tile GetTileWithoutLastTerrain()
+    {
+        var newTile = tile.Clone(addUnits: false);
+        newTile.SetTerrainTransients();
+        newTile.RemoveTerrainFeature(newTile.LastTerrain.Name);
+        return newTile;
+    }
 
     public Stats GetStatDiffForImprovement(TileImprovement improvement, CivView civView) =>
         tile.Stats.GetStatDiffForImprovement(improvement, civView.Unwrap(), tile.GetCity());
