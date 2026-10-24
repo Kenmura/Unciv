@@ -180,6 +180,7 @@ STYLES = {  # kind -> (class name, mermaid style)
 
 STATE_LINE = re.compile(r"^(?:### ([A-Z]\d+)\b|- State:[ \t]*(\S*))", re.M)
 CHART_POINTS = 16
+NICE_STEPS = [3600, 7200, 10800, 21600, 43200, 86400, 172800, 604800]
 NEW_COLOUR, ACTIVE_COLOUR = "#1a7f37", "#b58900"
 
 
@@ -236,17 +237,17 @@ def render_chart():
     if len(pts) < 2:
         return []
     t0, t1 = pts[0][0], pts[-1][0]
-    width = max((t1 - t0) / CHART_POINTS, 1)
-    bins = []  # last known value in each time bin, carried forward over empty bins
-    for b in range(CHART_POINTS):
-        edge = t0 + (b + 1) * width
-        inside = [p for p in pts if p[0] <= edge + (1 if b == CHART_POINTS - 1 else 0)]
-        bins.append((int(edge), *inside[-1][1:]))
-    fmt = "%d %H:%M" if width < 86400 else "%m-%d"
-    labels = [datetime.fromtimestamp(t, timezone.utc).strftime(fmt) for t, _, _ in bins]
+    # Bin edges sit on round clock times (a "nice" step giving at most CHART_POINTS bins), so labels read 14:00, 16:00, ...
+    step = next((x for x in NICE_STEPS if (t1 - t0) / x <= CHART_POINTS), NICE_STEPS[-1])
+    edges = list(range((t0 // step + 1) * step, (t1 // step + 1) * step + 1, step)) or [t1]
+    bins = [(e, *[p for p in pts if p[0] <= e][-1][1:]) for e in edges]  # last known value at each edge
+    stamp = datetime.fromtimestamp
+    multi_day = stamp(edges[0], timezone.utc).date() != stamp(edges[-1], timezone.utc).date()
+    fmt = "%m-%d" if step >= 86400 else "%d %H:00" if multi_day else "%H:00"
+    labels = [stamp(t, timezone.utc).strftime(fmt) for t, _, _ in bins]
     top = max(n + a for _, n, a in bins)
     return ["## Remaining tickets over time", "",
-            "Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). "
+            "Generated from the git history of `backlog.md` (UTC; each point is the backlog as of that time, the last one the current backlog). "
             "Completed tickets (Done, Won't port) are not counted.", "",
             "| Line | Meaning |", "|---|---|",
             f"| green | New: Available or Blocked, not started yet |",

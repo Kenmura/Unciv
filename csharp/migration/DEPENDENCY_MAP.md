@@ -233,7 +233,7 @@ flowchart TD
 
 ## Remaining tickets over time
 
-Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). Completed tickets (Done, Won't port) are not counted.
+Generated from the git history of `backlog.md` (UTC; each point is the backlog as of that time, the last one the current backlog). Completed tickets (Done, Won't port) are not counted.
 
 | Line | Meaning |
 |---|---|
@@ -244,10 +244,10 @@ Generated from the git history of `backlog.md` (UTC; the last point is the curre
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 01:32", "24 02:39", "24 03:46", "24 04:53", "24 06:00", "24 07:07", "24 08:14", "24 09:22", "24 10:29", "24 11:36", "24 12:43", "24 13:50", "24 14:57", "24 16:04", "24 17:11", "24 18:18"]
-    y-axis "Tickets" 0 --> 67
-    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 56, 58, 60, 56, 47, 34, 33]
-    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 3, 4, 0, 1, 5, 3, 4]
+    x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
+    y-axis "Tickets" 0 --> 65
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 33]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
