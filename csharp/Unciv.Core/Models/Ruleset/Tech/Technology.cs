@@ -10,6 +10,8 @@ namespace Unciv.Models.Ruleset.Tech;
 // makeLink, getCivilopediaTextLines.
 public class Technology : RulesetObject
 {
+    public override string MakeLink() => $"Technology/{Name}";
+
     public int Cost { get; set; }
 
     /// <summary>Kotlin `HashSet`: insertion-ordered here, so iteration is deterministic</summary>

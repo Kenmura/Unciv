@@ -45,7 +45,7 @@ public class Belief : RulesetObject
         return filter == Type.ToString(); // Belief type
     }
 
-    public string MakeLink() => $"Belief/{Name}";
+    public override string MakeLink() => $"Belief/{Name}";
 }
 
 /// <summary>

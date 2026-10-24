@@ -10,6 +10,8 @@ namespace Unciv.Models.Ruleset.Tile;
 // getConstructorUnits/getCreatingUnits (Ruleset.units, T034).
 public class TileImprovement : RulesetStatsObject
 {
+    public override string MakeLink() => $"Improvement/{Name}";
+
     public string? Replaces { get; set; }
     public List<string> TerrainsCanBeBuiltOn { get; set; } = [];
     public string? TechRequired { get; set; }

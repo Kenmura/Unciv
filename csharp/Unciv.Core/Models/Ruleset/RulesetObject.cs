@@ -1,14 +1,15 @@
 using System.Text.Json.Serialization;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using Unciv.UI.Screens.Civilopedia;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/RulesetObject.kt
-// Not ported yet: ICivilopediaText (civilopediaText, FormattedLine, getCivilopediaTextLines...) - it needs Ruleset (T034) and the Civilopedia text types.
+// IRulesetObject is an ICivilopediaText (T095). The per-type MakeLink/getCivilopediaTextLines/getSortGroup/getSubCategory members are ported by T096/T097.
 
-public interface IRulesetObject : IHasUniques
+public interface IRulesetObject : IHasUniques, ICivilopediaText
 {
     string OriginRuleset { get; set; }
 }
@@ -27,6 +28,8 @@ public abstract class RulesetObject : IRulesetObject
     public virtual string Name { get; set; } = "";
     public string OriginRuleset { get; set; } = "";
 
+    public List<FormattedLine> CivilopediaText { get; set; } = [];
+
     /// <summary>Can not be a hashset as that would remove doubles</summary>
     public List<string> Uniques { get; set; } = [];
 
@@ -37,6 +40,8 @@ public abstract class RulesetObject : IRulesetObject
     public UniqueMap UniqueMap => uniqueMap.Value;
 
     public abstract UniqueTarget GetUniqueTarget();
+
+    public abstract string MakeLink();
 
     /// <summary>Virtual so subclasses can extend the default (C# cannot call `super` on a default interface method, see <see cref="IHasUniques.IsUnavailableBySettingsDefault"/>)</summary>
     public virtual bool IsUnavailableBySettings(IGameContextGameInfo gameInfo) => IHasUniques.IsUnavailableBySettingsDefault(this, gameInfo);
@@ -58,6 +63,8 @@ public abstract class RulesetStatsObject : NamedStats, IRulesetObject
 
     public string OriginRuleset { get; set; } = "";
 
+    public List<FormattedLine> CivilopediaText { get; set; } = [];
+
     /// <summary>Can not be a hashset as that would remove doubles</summary>
     public List<string> Uniques { get; set; } = [];
 
@@ -68,6 +75,8 @@ public abstract class RulesetStatsObject : NamedStats, IRulesetObject
     public UniqueMap UniqueMap => uniqueMap.Value;
 
     public abstract UniqueTarget GetUniqueTarget();
+
+    public abstract string MakeLink();
 
     /// <summary>Virtual so subclasses can extend the default (C# cannot call `super` on a default interface method, see <see cref="IHasUniques.IsUnavailableBySettingsDefault"/>)</summary>
     public virtual bool IsUnavailableBySettings(IGameContextGameInfo gameInfo) => IHasUniques.IsUnavailableBySettingsDefault(this, gameInfo);

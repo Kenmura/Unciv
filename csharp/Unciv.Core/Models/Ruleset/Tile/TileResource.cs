@@ -11,6 +11,8 @@ namespace Unciv.Models.Ruleset.Tile;
 // makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034's successors).
 public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceParameterView
 {
+    public override string MakeLink() => $"Resource/{Name}";
+
     private readonly Lazy<bool> isCityWide;
     private readonly Lazy<bool> isStockpiled;
 

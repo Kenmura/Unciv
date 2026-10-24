@@ -25,7 +25,7 @@ public class Event : RulesetObject
     public string Text { get; set; } = "";
 
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Event;
-    public string MakeLink() => $"Event/{Name}";
+    public override string MakeLink() => $"Event/{Name}";
 
     // todo: add unrepeatable events
 
@@ -50,7 +50,7 @@ public class EventChoice : RulesetObject
 {
     public string Text { get; set; } = "";
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.EventChoice;
-    public string MakeLink() => "";
+    public override string MakeLink() => "";
 
     /// <summary>Keyboard support - not user-rebindable, mod control only. Will be parsed by the client.</summary>
     public string KeyShortcut { get; set; } = "";

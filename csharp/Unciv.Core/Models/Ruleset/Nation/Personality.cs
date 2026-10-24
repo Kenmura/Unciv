@@ -11,6 +11,8 @@ namespace Unciv.Models.Ruleset.Nation;
 /// </summary>
 public class Personality : RulesetObject
 {
+    public override string MakeLink() => $"Personality/{Name}";
+
     private static readonly Lazy<Personality> NeutralPersonalityLazy = new(() => new Personality { IsNeutralPersonality = true });
 
     public static Personality NeutralPersonality => NeutralPersonalityLazy.Value;

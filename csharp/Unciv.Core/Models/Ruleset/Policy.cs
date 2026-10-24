@@ -81,5 +81,5 @@ public class Policy : RulesetObject
                 .Select(it => $"• {it.GetDisplayText().Tr()}"));
     }
 
-    public string MakeLink() => $"Policy/{Name}";
+    public override string MakeLink() => $"Policy/{Name}";
 }

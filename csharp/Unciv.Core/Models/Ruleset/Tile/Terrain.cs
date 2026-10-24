@@ -9,6 +9,8 @@ namespace Unciv.Models.Ruleset.Tile;
 // Not ported yet: displayAs (needs Ruleset, T034), getColor (engine colour type, T050), makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034).
 public class Terrain : RulesetStatsObject, IRulesetTerrainParameterView
 {
+    public override string MakeLink() => $"Terrain/{Name}";
+
     private readonly Lazy<bool> isRough;
     private readonly Lazy<bool> isMountain;
     private readonly Lazy<bool> isHill;

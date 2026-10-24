@@ -7,6 +7,8 @@ namespace Unciv.Models.Ruleset.Unit;
 // getSortGroup, getSubCategory.
 public class UnitNameGroup : RulesetObject
 {
+    public override string MakeLink() => $"Unit Names/{Name}";
+
     /// <summary>A list of names available for this historical figure group.</summary>
     public List<string> UnitNames { get; set; } = [];
 

@@ -109,5 +109,5 @@ public class Speed : RulesetObject, IGameContextSpeed
     // Note: Speed uniques will be treated as part of GlobalUniques
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Speed;
 
-    public string MakeLink() => $"Speed/{Name}";
+    public override string MakeLink() => $"Speed/{Name}";
 }

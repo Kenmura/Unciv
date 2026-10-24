@@ -15,7 +15,7 @@ public class RuinReward : RulesetObject
     public string Color { get; set; } = "";
 
     /// <summary>No own category on Civilopedia screen</summary>
-    public string MakeLink() => "";
+    public override string MakeLink() => "";
 
     public override bool IsUnavailableBySettings(IGameContextGameInfo gameInfo) =>
         ExcludedDifficulties.Contains(gameInfo.GetDifficultyName()) ||

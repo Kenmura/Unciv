@@ -18,6 +18,8 @@ public class RulesetObjectTests
     public sealed class StatsObject : RulesetStatsObject
     {
         public override UniqueTarget GetUniqueTarget() => UniqueTarget.Building;
+
+        public override string MakeLink() => "";
     }
 
     private static T Read<T>(string json) => UncivJson.Deserialize<T>(json)!;

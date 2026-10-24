@@ -24,6 +24,8 @@ namespace Unciv.Models.Ruleset.Unit;
 /// </summary>
 public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitParameterView
 {
+    public override string MakeLink() => $"Unit/{Name}";
+
     private UnitTypeObject? type;
     private readonly Lazy<bool> isGreatPerson;
     private readonly Lazy<bool> isMilitary;

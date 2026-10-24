@@ -14,6 +14,8 @@ namespace Unciv.Models.Ruleset;
 // (and notMetRejections), isBuildable, construct.
 public class Building : RulesetStatsObject, INonPerpetualConstruction
 {
+    public override string MakeLink() => IsAnyWonder() ? $"Wonder/{Name}" : $"Building/{Name}";
+
     private IRulesetConstructionView? ruleset;
     private readonly Dictionary<string, bool> cachedMatchesFilterResult = new(StringComparer.Ordinal);
     private readonly Lazy<string?> improvementToCreate;

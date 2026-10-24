@@ -7,6 +7,8 @@ namespace Unciv.Models.Ruleset.Nation;
 // Kotlin's `override lateinit var name` is the inherited Name here (default empty instead of throwing when unset).
 public class Difficulty : RulesetObject
 {
+    public override string MakeLink() => $"Difficulty/{Name}";
+
     public int BaseHappiness { get; set; }
     public float ExtraHappinessPerLuxury { get; set; }
     public float ResearchCostModifier { get; set; } = 1f;

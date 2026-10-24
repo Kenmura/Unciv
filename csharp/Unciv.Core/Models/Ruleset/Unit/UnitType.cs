@@ -18,6 +18,8 @@ public enum UnitMovementType
 
 public class UnitType : RulesetObject
 {
+    public override string MakeLink() => $"UnitType/{Name}";
+
     private readonly Lazy<UnitMovementType?> unitMovementType;
 
     public UnitType()

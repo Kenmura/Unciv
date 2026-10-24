@@ -8,6 +8,8 @@ namespace Unciv.Models.Ruleset.Nation;
 // Not ported yet: makeLink (Civilopedia).
 public class CityStateType : RulesetObject
 {
+    public override string MakeLink() => $"CityStateType/{Name}";
+
     private readonly Lazy<UniqueMap> friendBonusUniqueMap;
     private readonly Lazy<UniqueMap> allyBonusUniqueMap;
     private readonly Lazy<EngineColor> colorObject;

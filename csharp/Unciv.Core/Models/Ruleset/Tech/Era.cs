@@ -10,6 +10,8 @@ namespace Unciv.Models.Ruleset.Tech;
 // fallback to the client global UncivGame.Current.gameInfo does not exist here, so without a state it is false like Kotlin without a loaded game. The pure data and getColor/getHexColor are here.
 public class Era : RulesetObject
 {
+    public override string MakeLink() => $"Era/{Name}";
+
     public int EraNumber { get; set; } = -1;
     public int ResearchAgreementCost { get; set; } = 300;
     public int StartingSettlerCount { get; set; } = 1;

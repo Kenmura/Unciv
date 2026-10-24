@@ -29,5 +29,5 @@ public class Tutorial : RulesetObject
     public List<string>? Steps { get; set; }
 
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Tutorial;
-    public string MakeLink() => $"Tutorial/{Name}";
+    public override string MakeLink() => $"Tutorial/{Name}";
 }

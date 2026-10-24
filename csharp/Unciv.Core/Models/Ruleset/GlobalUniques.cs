@@ -1,18 +1,26 @@
 using Unciv.Models.Ruleset.Unique;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/GlobalUniques.kt
-// Not ported yet: the Civilopedia members (getCivilopediaTextLines, and the civilopediaText that combine() concatenates), they need the Civilopedia text types.
-public class GlobalUniques : RulesetObject
+public class GlobalUniques : RulesetObject, ICivilopediaText
 {
     public GlobalUniques()
     {
         Name = "Global Uniques";
     }
 
-    public string MakeLink() => "Tutorial/Global Uniques";
+    public override string MakeLink() => "Tutorial/Global Uniques";
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) =>
+        FormattedLineListBuilder.BuildCivilopediaText(context, b =>
+        {
+            b.AddUniques(this, extraSeparator: () => b.Add("Global Effect", header: 4));
+            b.AddUniques(UnitUniques.Select(it => new UniqueObject(it)), extraSeparator: () => b.Add("Units", header: 4));
+        });
 
     public List<string> UnitUniques { get; set; } = [];
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.GlobalUniques;
@@ -45,6 +53,7 @@ public class GlobalUniques : RulesetObject
             result.Uniques.AddRange(source.Uniques);
             if (source is not GlobalUniques sourceGlobal) continue;
             result.UnitUniques.AddRange(sourceGlobal.UnitUniques);
+            result.CivilopediaText.AddRange(sourceGlobal.CivilopediaText);
         }
         return result;
     }

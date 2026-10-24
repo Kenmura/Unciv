@@ -8,6 +8,8 @@ namespace Unciv.Models.Ruleset.Unit;
 // getSortGroup.
 public class Promotion : RulesetObject
 {
+    public override string MakeLink() => $"Promotion/{Name}";
+
     public List<string> Prerequisites { get; set; } = [];
 
     /// <summary>The json parser wouldn't agree to deserialize this as a list of UnitTypes. =(</summary>

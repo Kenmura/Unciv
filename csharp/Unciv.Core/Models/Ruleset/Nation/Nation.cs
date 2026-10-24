@@ -11,6 +11,8 @@ namespace Unciv.Models.Ruleset.Nation;
 // getCivilopediaTextLines and getStartBias (reads ruleset.cityStateTypes).
 public class Nation : RulesetObject
 {
+    public override string MakeLink() => $"Nation/{Name}";
+
     // region Serialized fields
     private List<int>? outerColor;
     private ImmutableColor outerColorObject = new(EngineColor.White);

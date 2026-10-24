@@ -101,7 +101,7 @@ public class Victory : RulesetObject
     public bool EnablesMaxTurns() => MilestoneObjects.Any(it => it.Type == MilestoneType.ScoreAfterTimeOut);
 
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Victory;
-    public string MakeLink() => $"Victory/{Name}";
+    public override string MakeLink() => $"Victory/{Name}";
 }
 
 public class Milestone
