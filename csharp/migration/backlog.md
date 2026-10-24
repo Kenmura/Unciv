@@ -812,13 +812,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~755 LOC. UnitActions calls UnitAutomation (automatedExplore/automateUnitMoves via GameView): leave a TODO(T090) seam. GUI.getWorldScreen/UncivGame.settings.* are UI and dropped; UnitActionsFromUniques.getFoundCityAction uses CityFounder (T061). Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T081 Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T060, T065, T067, T062, T035
 - Source: core/src/com/unciv/logic/battle/ICombatant.kt, MapUnitCombatant.kt, CityCombatant.kt, BattleConstants.kt, AttackableTile.kt, BattleDamage.kt
 - Fixtures: tests/src/com/unciv/logic/battle/BattleDamageTest.kt
 - Deliverables: csharp/Unciv.Core/Logic/Battle/*.cs (CombatAction.cs already exists from T027), tests
 - Gate: `dotnet test --filter FullyQualifiedName~BattleDamageTests`
-- Claimed:
+- Claimed: 2026-10-24T16:05Z
 - Notes: Created by the backlog audit (Battle was only in the stale Planned paragraph). ~650 LOC. BattleDamage.kt keeps the CombatAction enum already in Logic/Battle/CombatAction.cs. UncivSound fields stay as the T049 enum. Float vs Int damage arithmetic and rounding must match Kotlin exactly. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T082 Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation

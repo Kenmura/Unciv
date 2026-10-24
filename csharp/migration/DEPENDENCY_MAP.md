@@ -289,11 +289,11 @@ flowchart TD
   class T078 done
   class T079 waiting
   class T080 waiting
-  class T081 ready
-  class T082 waiting
+  class T081 prog
+  class T082 ondeck
   class T083 waiting
   class T084 done
-  class T085 waiting
+  class T085 ondeck
   class T086 prog
   class T087 waiting
   class T088 waiting
@@ -332,7 +332,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T081 | **Ready to start** | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T037 | **Ready to start** | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
@@ -344,14 +343,15 @@ flowchart TD
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T130 | **Ready to start** | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
 | T070 | **On deck** (after T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
+| T085 | **On deck** (after T081) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
+| T082 | **On deck** (after T081) | T081, T046, T067, T035 | 13 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T138 | **On deck** (after T086) | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
 | T069 | In-Progress [Claude] | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T052 | Available (waiting on T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
-| T085 | Available (waiting on T081) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
+| T081 | In-Progress [Claude] | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T086 | In-Progress [Claude] | T059, T068, T057 | 15 | TradeLogic |
 | T079 | Available (waiting on T052) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T087 | Available (waiting on T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
-| T082 | Available (waiting on T081) | T081, T046, T067, T035 | 13 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T088 | Available (waiting on T087, T086, T081) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T071 | Available (waiting on T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
 | T083 | Available (waiting on T081, T082, T052, T079) | T081, T082, T052, T064, T068, T079, T035 | 12 | Battle C: Battle, Nuke |
