@@ -3,6 +3,7 @@ using Unciv.Logic.Map.MapGenerator;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Utils;
+using TerrainOccursRange = Unciv.Logic.Map.MapGenerator.MapGenerator.TerrainOccursRange;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Logic.Map.MapGenerator;

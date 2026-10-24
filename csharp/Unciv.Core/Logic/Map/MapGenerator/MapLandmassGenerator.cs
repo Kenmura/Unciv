@@ -186,7 +186,7 @@ public class MapLandmassGenerator
             double latitude =
                 tileMap.MapParameters.Shape == MapShape.FlatEarth
                     // North is at the edges instead of at the top
-                    ? 2 * MapGeneratorSeams.GetTileRadius(tile, tileMap) - 1
+                    ? 2 * MapGenerator.GetTileRadius(tile, tileMap) - 1
                     : (double)tile.Latitude / tileMap.MaxLatitude;
             // Elevation declines faster and faster towards the north
             const double southElevation = 0.15;

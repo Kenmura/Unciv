@@ -3,12 +3,13 @@ using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Translations;
 using Unciv.UI.Components.Extensions;
+using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Nation;
 
 // core/src/com/unciv/models/ruleset/nation/Nation.kt
 // Not ported yet, they need Ruleset and the Civilopedia text types (T034): makeLink, getSortGroup, getSubCategory,
-// getCivilopediaTextLines and getStartBias (reads ruleset.cityStateTypes).
+// getCivilopediaTextLines.
 public class Nation : RulesetObject
 {
     public override string MakeLink() => $"Nation/{Name}";
@@ -122,6 +123,21 @@ public class Nation : RulesetObject
 
     public ImmutableColor GetOuterColor() => outerColorObject;
     public ImmutableColor GetInnerColor() => innerColorObject;
+
+    /// <summary>Kotlin <c>getStartBias(ruleset, gameContext)</c>: the nation's own start bias, its StartBias uniques and those of its city state type, in that order.</summary>
+    public LinkedHashSet<string> GetStartBias(Ruleset ruleset, GameContext? gameContext = null)
+    {
+        var context = gameContext ?? GameContext.IgnoreConditionalsState;
+        var result = new LinkedHashSet<string>();
+        result.AddAll(StartBias);
+        foreach (var unique in UniqueMap.GetMatchingUniques(UniqueType.StartBias, context))
+            result.Add(unique.Params[0]);
+        if (CityStateType == null) return result;
+        if (!ruleset.CityStateTypes.TryGetValue(CityStateType, out var type)) return result;
+        foreach (var unique in type.UniqueMap.GetMatchingUniques(UniqueType.StartBias, context))
+            result.Add(unique.Params[0]);
+        return result;
+    }
 
     public void SetTransients()
     {

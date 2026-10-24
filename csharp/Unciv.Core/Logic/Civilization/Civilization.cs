@@ -1,6 +1,7 @@
 using Unciv.Json;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapGenerator.Mapregions;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -50,7 +51,7 @@ public enum Proximity
     Distant,
 }
 
-public class Civilization : IsPartOfGameInfoSerialization, IConstructionCivilization, IGameProgressCivilization, ILocalUniqueCacheCivilization
+public class Civilization : IsPartOfGameInfoSerialization, IConstructionCivilization, IGameProgressCivilization, ILocalUniqueCacheCivilization, IMapRegionsCivilization
 {
     private static T Lateinit<T>(T? value, string name) where T : class =>
         value ?? throw new InvalidOperationException($"lateinit property {name} has not been initialized");
@@ -73,6 +74,12 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     /// </summary>
     public GameContext GetGameContextForStartBias() =>
         IsGameInfoInitialized ? new GameContext(gameInfo: gameInfo) : GameContext.IgnoreConditionalsState;
+
+    // IMapRegionsCivilization (T075 seam, implemented by T041): what MapRegions / MinorCivPlacer read from a Civilization
+    List<string> IMapRegionsCivilization.GetStartBias(Ruleset ruleset) =>
+        ruleset.Nations[CivName].GetStartBias(ruleset, GetGameContextForStartBias()).ToList();
+
+    GameRandom IMapRegionsCivilization.StateBasedRandom(string caller) => State.StateBasedRandom(caller);
 
     private NationObject? nation;
     /// <summary>Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>

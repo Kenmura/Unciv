@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Json;
+using Unciv.Logic.Map.MapGenerator;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Mathematics;
 using Unciv.Models.Metadata;
@@ -18,7 +19,6 @@ namespace Unciv.Logic.Map;
 // Stripped: the @Readonly purity annotations.
 // T107 wired the Gdx-compatible JSON: TileMapJsonConverter, StartingLocationJsonConverter and PreviewJsonConverter at the end of the class.
 // Deviations:
-// - MapLandmassGenerator.getInitializationTerrain (T041, called by the two generating constructors) is inlined as a private helper.
 // - assignContinents flood-fills with a private helper instead of BFS (T040, which depends on this ticket). BFS only fed a set and a
 //   count, so visiting order is irrelevant; T040 may switch it to BFS.
 // - switchPlayersNation (marked "currently unreachable" in Kotlin) needs the Civilization constructor: TODO(T055).
@@ -177,7 +177,7 @@ public class TileMap : IsPartOfGameInfoSerialization
         : this(HexMath.GetNumberOfTilesInHexagon(radius))
     {
         StartingLocations.Clear();
-        var firstAvailableLandTerrain = GetInitializationTerrain(ruleset, TerrainType.Land);
+        var firstAvailableLandTerrain = MapLandmassGenerator.GetInitializationTerrain(ruleset, TerrainType.Land);
         foreach (var vector in HexMath.GetHexCoordsInDistance(HexCoord.Zero, radius, worldWrap))
             TileList.Add(new Tile { Position = vector.AsSerializable(), BaseTerrain = firstAvailableLandTerrain });
         SetTransients(ruleset);
@@ -188,7 +188,7 @@ public class TileMap : IsPartOfGameInfoSerialization
         : this(width * height)
     {
         StartingLocations.Clear();
-        var firstAvailableLandTerrain = GetInitializationTerrain(ruleset, TerrainType.Land);
+        var firstAvailableLandTerrain = MapLandmassGenerator.GetInitializationTerrain(ruleset, TerrainType.Land);
 
         // world-wrap maps must always have an even width, so round down
         var wrapAdjustedWidth = worldWrap && width % 2 != 0 ? width - 1 : width;
@@ -209,11 +209,6 @@ public class TileMap : IsPartOfGameInfoSerialization
 
         SetTransients(ruleset);
     }
-
-    /// <summary>Kotlin <c>MapLandmassGenerator.getInitializationTerrain</c> (T041), which the TileMap constructors call.</summary>
-    private static string GetInitializationTerrain(Ruleset ruleset, TerrainType type) =>
-        ruleset.Terrains.Values.FirstOrDefault(it => it.Type == type && !((IHasUniques)it).HasUnique(UniqueType.NoNaturalGeneration))?.Name
-            ?? throw new InvalidOperationException($"Cannot create map - no {type} terrains found!");
 
     #endregion
     #region Operators and Standards

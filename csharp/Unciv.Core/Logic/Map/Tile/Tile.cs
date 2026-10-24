@@ -7,6 +7,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
+using MapGeneratorClass = Unciv.Logic.Map.MapGenerator.MapGenerator;
 
 namespace Unciv.Logic.Map.Tiles;
 
@@ -19,8 +20,7 @@ namespace Unciv.Logic.Map.Tiles;
 // T054 added the `improvementFunctions` and `stats` fields, removeImprovement, both setImprovement overloads, setBaseTerrain and
 // setPillaged (+ clearAllPathfindingCaches).
 // Still deferred (they need TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource and the settings tutorial tasks, T046/T048):
-// doWorkerTurn, startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit); and the convertTerrains parameter of
-// setConnectedByRiver (MapGenerator.Helpers.convertTerrains).
+// doWorkerTurn, startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit).
 // T107 added the Gdx-compatible JSON (TileJsonConverter at the end of the class). Unit fields are not wired yet: TODO(T108).
 
 /// <summary>
@@ -1221,8 +1221,9 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     /// </summary>
     /// <param name="otherTile">The neighbor tile in the direction the river we wish to change is (If it's not a neighbor, this does nothing).</param>
     /// <param name="newValue">The new river edge state: <c>true</c> to create a river, <c>false</c> to remove one.</param>
+    /// <param name="convertTerrains">If true, calls MapGenerator's convertTerrains to apply <see cref="UniqueType.ChangesTerrain"/> effects.</param>
     /// <returns>The state did change (<c>false</c>: the edge already had the <paramref name="newValue"/>)</returns>
-    public bool SetConnectedByRiver(Tile otherTile, bool newValue)
+    public bool SetConnectedByRiver(Tile otherTile, bool newValue, bool convertTerrains = false)
     {
         Tile owner;
         int edge; // 0 = bottom-left, 1 = bottom-right, 2 = bottom
@@ -1243,6 +1244,8 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         else owner.HasBottomRiver = newValue;
         foreach (var tile in new[] { this, otherTile })
             tile.ResetAdjacentToRiverTransient(newValue);
+        if (convertTerrains)
+            MapGeneratorClass.Helpers.ConvertTerrains(Ruleset, [this, otherTile]);
         return true;
     }
 

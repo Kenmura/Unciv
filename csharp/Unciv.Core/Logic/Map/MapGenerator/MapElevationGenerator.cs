@@ -11,17 +11,17 @@ namespace Unciv.Logic.Map.MapGenerator;
 internal class MapElevationGenerator(
     TileMap tileMap,
     Ruleset ruleset,
-    IReadOnlyList<TerrainOccursRange> terrains,
+    IReadOnlyList<MapGenerator.TerrainOccursRange> terrains,
     MapGenerationRandomness randomness)
 {
     private const string Rising = "~Raising~";
     private const string Lowering = "~Lowering~";
 
-    private readonly List<TerrainOccursRange> flats = terrains
+    private readonly List<MapGenerator.TerrainOccursRange> flats = terrains
         .Where(it => !it.Terrain.Impassable && it.Terrain.Type == TerrainType.Land && !it.RareFeature && !it.IsRough).ToList();
-    private readonly List<TerrainOccursRange> hills = terrains
+    private readonly List<MapGenerator.TerrainOccursRange> hills = terrains
         .Where(it => (it.Terrain.Type == TerrainType.Land || it.Terrain.Type == TerrainType.TerrainFeature) && it.OccursInGroups && !it.RareFeature).ToList();
-    private readonly List<TerrainOccursRange> mountains = terrains
+    private readonly List<MapGenerator.TerrainOccursRange> mountains = terrains
         .Where(it => (it.Terrain.Type == TerrainType.Land || it.Terrain.Type == TerrainType.TerrainFeature) && it.OccursInChains && !it.RareFeature).ToList();
 
     private static double PowSigned(double value, double exponent) => Math.Pow(Math.Abs(value), exponent) * Math.Sign(value);
@@ -202,7 +202,7 @@ internal class MapElevationGenerator(
         }
     }
 
-    private static bool HasTerrain(Tile tile, List<TerrainOccursRange> terrains)
+    private static bool HasTerrain(Tile tile, List<MapGenerator.TerrainOccursRange> terrains)
     {
         foreach (var terrain in terrains)
         {
@@ -220,7 +220,7 @@ internal class MapElevationGenerator(
         return false;
     }
 
-    private void ApplyTerrain(Tile tile, List<TerrainOccursRange> terrainsToChooseFrom)
+    private void ApplyTerrain(Tile tile, List<MapGenerator.TerrainOccursRange> terrainsToChooseFrom)
     {
         var matching = terrainsToChooseFrom.Where(it => it.MatchesTempAndTerrain(tile)).ToList();
         var desiredTerrain = (matching.Count != 0 ? matching : terrainsToChooseFrom).Random(randomness.RNG);

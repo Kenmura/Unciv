@@ -16,6 +16,7 @@
   <ItemGroup>
     <None Include="Logic\Golden\*.tsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Logic\Map\Golden\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Logic\Map\MapGenerator\Golden\*.tsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Models\Translations\*.tsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Models\Ruleset\Unique\Golden\*.tsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

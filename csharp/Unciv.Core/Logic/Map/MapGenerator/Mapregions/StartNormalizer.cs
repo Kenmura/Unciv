@@ -1,3 +1,4 @@
+using Unciv.Logic.Map.MapGenerator.ResourcePlacement;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
@@ -10,7 +11,7 @@ namespace Unciv.Logic.Map.MapGenerator.Mapregions;
 // core/src/com/unciv/logic/map/mapgenerator/mapregions/StartNormalizer.kt
 // Ensures that starting positions of civs have enough yield that they aren't at a disadvantage.
 // Deviations: Kotlin's unseeded shuffled() / random() (Random.Default) have no counterpart in the engine (no unseeded randomness), so they
-// draw from a state based GameRandom per call site; MapRegionResources (T077) is reached through MapRegionResourcesSeams;
+// draw from a state based GameRandom per call site; MapRegionResources (T077) is called directly;
 // TileResource.generatesNaturallyOn (not yet ported on TileResource) is GeneratesNaturallyOn below.
 public static class StartNormalizer
 {
@@ -82,7 +83,7 @@ public static class StartNormalizer
             var candidateTiles = startTile.GetTilesAtDistance(2).Shuffled(shuffleRng);
             foreach (var resource in validResources)
             {
-                var resourcesAdded = MapRegionResourcesSeams.TryAddingResourceToTiles(tileData, resource, 1, candidateTiles, majorDeposit: false);
+                var resourcesAdded = MapRegionResources.TryAddingResourceToTiles(tileData, resource, 1, candidateTiles, majorDeposit: false);
                 if (resourcesAdded > 0) break;
             }
         }
@@ -95,13 +96,13 @@ public static class StartNormalizer
             .Concat(startTile.GetTilesAtDistance(3).Shuffled(shuffleRng)).ToList();
         foreach (var resource in ruleset.TileResources.Values.Where(it => ((IHasUniques)it).HasUnique(UniqueType.StrategicBalanceResource)).ToList())
         {
-            if (MapRegionResourcesSeams.TryAddingResourceToTiles(tileData, resource, 1, candidateTiles, majorDeposit: true) == 0)
+            if (MapRegionResources.TryAddingResourceToTiles(tileData, resource, 1, candidateTiles, majorDeposit: true) == 0)
             {
                 // Fallback mode - force placement, even on an otherwise inappropriate terrain. Do still respect water and impassible tiles!
                 var resourceTiles = MapRegionFunctions.IsWaterOnlyResource(resource, ruleset)
                     ? candidateTiles.Where(it => it.IsWater && !it.IsImpassible()).ToList()
                     : candidateTiles.Where(it => it.IsLand && !it.IsImpassible()).ToList();
-                MapRegionResourcesSeams.PlaceResourcesInTiles(tileData, 999, resourceTiles, [resource], majorDeposit: true);
+                MapRegionResources.PlaceResourcesInTiles(tileData, 999, resourceTiles, [resource], majorDeposit: true);
             }
         }
     }
