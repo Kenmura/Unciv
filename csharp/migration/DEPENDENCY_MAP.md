@@ -246,8 +246,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 01:32", "24 02:39", "24 03:46", "24 04:53", "24 06:00", "24 07:07", "24 08:14", "24 09:21", "24 10:28", "24 11:35", "24 12:42", "24 13:49", "24 14:56", "24 16:03", "24 17:10", "24 18:17"]
     y-axis "Tickets" 0 --> 67
-    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 57, 58, 60, 56, 47, 35, 33]
-    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 2, 4, 0, 1, 5, 3, 4]
+    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 58, 58, 60, 56, 47, 35, 33]
+    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 1, 4, 0, 1, 5, 3, 4]
 ```
 
 ## Incomplete tickets
@@ -267,7 +267,7 @@ xychart-beta
 | T146 | **On deck** (after T083) | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T149 | **On deck** (after T083) | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
-| T083 | Needs-Review [Claude] | T081, T082, T052, T064, T068, T079, T035 | 17 | Battle C: Battle, Nuke |
+| T083 | In-Review [Antigravity] | T081, T082, T052, T064, T068, T079, T035 | 17 | Battle C: Battle, Nuke |
 | T091 | Available (waiting on T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 7 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
