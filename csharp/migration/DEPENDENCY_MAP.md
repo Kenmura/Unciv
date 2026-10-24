@@ -42,7 +42,6 @@ flowchart TD
     T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
     T123["T123<br/>Policy follow-up: eliminate allowlisted mutable statics (Eve..."]
     T125["T125<br/>Policy: harden NullForgivingTests scanner (interpolation hol..."]
-    T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
@@ -159,7 +158,6 @@ flowchart TD
   class T107 done
   class T123 ready
   class T125 ready
-  class T127 review
   class T143 done
   class T152 done
   class T154 waiting
@@ -184,7 +182,7 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 21]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 2]
 ```
 
 ## Incomplete tickets
@@ -211,7 +209,6 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T127 | Needs-Review [Antigravity] | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | Available (waiting on T094) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
 | T158 | In-Progress [Claude] | T085, T063 | 0 | ConstructionAutomation (split from T091) |
