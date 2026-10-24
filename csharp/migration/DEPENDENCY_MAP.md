@@ -83,6 +83,7 @@ flowchart TD
     T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
     T112["T112<br/>Hardening: drop CivInfoTransientCache.IsCityConnectedToCapit..."]
     T114["T114<br/>Hardening sweep 2: non-blocking findings from T056, T059, T1..."]
+    T115["T115<br/>Retype Tile city seams to City and move the Tile/Pathfinding..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -286,6 +287,8 @@ flowchart TD
   T060 --> T111
   T065 --> T111
   T060 --> T112
+  T060 --> T115
+  T035 --> T115
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -397,27 +400,28 @@ flowchart TD
   class T111 waiting
   class T112 ondeck
   class T114 prog
+  class T115 waiting
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T065 | **On deck** (after T060) | T055, T056, T060 | 47 | MapUnit core: MapUnit, MapUnitCache |
-| T061 | **On deck** (after T060) | T060 | 41 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
+| T065 | **On deck** (after T060) | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
+| T061 | **On deck** (after T060) | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T062 | **On deck** (after T060) | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
 | T112 | **On deck** (after T060) | T060 | 0 | Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype |
-| T060 | In-Progress [Claude] | T055, T056, T057, T058 | 55 | City core: City, CityFocus, CityResources, CityEspionageManager |
-| T066 | Available (waiting on T065, T060) | T065, T060 | 44 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
-| T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 41 | Barbarians: BarbarianManager, BarbarianEncampment |
-| T046 | Available (waiting on T060, T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 38 | GameInfo core and the hooks waiting for it |
+| T060 | In-Progress [Claude] | T055, T056, T057, T058 | 56 | City core: City, CityFocus, CityResources, CityEspionageManager |
+| T066 | Available (waiting on T065, T060) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
+| T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
+| T046 | Available (waiting on T060, T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T063 | Available (waiting on T060, T062) | T060, T062 | 36 | CityConstructions |
 | T064 | Available (waiting on T060, T061, T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T068 | Available (waiting on T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | Available (waiting on T060, T065, T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
+| T035 | Available (waiting on T046, T061, T065) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T067 | Available (waiting on T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
-| T035 | Available (waiting on T046, T061, T065) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 22 | Test-support port: TestGame helper and deferred fixtures |
 | T052 | Available (waiting on T046, T060, T061, T063, T064, T065, T066, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T060, T065, T067, T062, T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T084 | Available (waiting on T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
@@ -461,3 +465,4 @@ flowchart TD
 | T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T111 | Available (waiting on T052, T060, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T114 | In-Progress [Claude] | none | 0 | Hardening sweep 2: non-blocking findings from T056, T059, T108 reviews |
+| T115 | Available (waiting on T060, T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
