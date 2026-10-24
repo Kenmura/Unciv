@@ -350,7 +350,7 @@ flowchart TD
   class T057 done
   class T059 done
   class T060 done
-  class T061 prog
+  class T061 review
   class T062 done
   class T063 prog
   class T064 ondeck
@@ -418,7 +418,7 @@ flowchart TD
 | T127 | **On deck** (after T061, T063, T065) | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T128 | **On deck** (after T065) | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T065 | In-Review [Antigravity] | T055, T056, T060 | 51 | MapUnit core: MapUnit, MapUnitCache |
-| T061 | In-Progress [Claude] | T060 | 43 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
+| T061 | Needs-Review [Claude] | T060 | 43 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T063 | In-Progress [Claude] | T060, T062 | 38 | CityConstructions |

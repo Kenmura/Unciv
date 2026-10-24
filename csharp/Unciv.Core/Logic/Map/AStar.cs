@@ -131,7 +131,7 @@ public class AStar
     public int Size() => tilesReached.Count;
 
     /// <summary><c>Float.compareTo</c> on the JVM: a total order where -0f &lt; 0f and NaN is greater than everything (incl. +Infinity).</summary>
-    private static int JavaFloatCompare(float a, float b)
+    internal static int JavaFloatCompare(float a, float b)
     {
         if (a < b) return -1;
         if (a > b) return 1;

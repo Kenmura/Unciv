@@ -518,7 +518,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review round 1 fixes: [JsonInclude] on foundingCiv/cityAIFocus/flagsCountdown (+ metadata test), per-group double sums in StatPercentFromObjectToResource, unchecked Int sum in GetAvailableResourceAmount, T065 note. Trailing-default overloads of forEach*Unique left as callers pass State (seam simplification).
 
 ### T061 City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T060
 - Source: core/src/com/unciv/logic/city/managers/CityPopulationManager.kt, CityExpansionManager.kt, CityReligionManager.kt, CityFounder.kt
 - Fixtures: tests/src/com/unciv/logic/city/managers/* (TestGame-based: T072)
@@ -529,6 +529,12 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Backlog audit: CityPopulationManager's Automation calls (autoAssignPopulation ranking): TODO(T087).
   - T057 defined ICityReligionManager (AddPressure, GetMajorityReligion returning Religion?, GetFollowersOf, IsProtectedByInquisitor, ReligionThisIsTheHolyCityOf): CityReligionManager implements it, then retype City.religion and delete the seam (ReligionManager/Spy use it through ICityState.Religion).
   - From T060: City.Population/Expansion/Religion are lateinit-style properties typed ICityPopulationManager/ICityExpansionManager/ICityReligionManager (CitySeams.cs, CivilizationSeams.cs). Implement them, retype the City properties and replace the lateinit by Kotlin's initializers, drop seam-only members (e.g. ICityPopulationManager.City/GetPopulationFilterAmount stay as real members). City.ResetSpecialistsControl takes the UncivGame settings as parameters (autoAssignSpecialistsInNewCities, localUserId); CityFounder passes them. Civilization.addCity (TODO(T061) in Civilization.cs) is yours too.
+  - Implemented (Unciv.Core/Logic/City/Managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder, CityManagerSeams; tests Unciv.Core.Tests/Logic/City/CityManagerTests.cs, 48 tests). City.Population/Expansion/Religion are now concrete with Kotlin initializers; ICityPopulationManager/ICityExpansionManager/ICityReligionManager seams deleted; ICityConstructions.AddBuilding(building, tryAddFreeBuildings = true) added for CityFounder (T063 implements). Civilization.AddCity(location, unit, autoAssignSpecialistsInNewCities = true, localUserId = null) added (settings are explicit params, default = GameSettings default).
+    - Seams added to IMapUnitState (T065 implements): IsSleeping, HasUniqueToBuildImprovements, HasUniqueToCreateWaterImprovements, Due, Action, GetTriggeredUniques(trigger, ctx). FoundCity/AddCity take IMapUnitState? for `unit` (T065 retype).
+    - CityManagerSeams (internal static): Automation (ICityWorkAutomation: RankStatsForCityWork/RankSpecialist/RankTileForCityWork) -> T087 replaces by direct Automation calls; GreatPersonPercentageBonus(city) -> T062 adds City.getGreatPersonPercentageBonus and replaces. Both default to throwing NotSupportedException; tests install stand-ins (CityManagerTests runs sequentially).
+    - Test-only virtuals: CityPopulationManager.AutoAssignPopulation/UnassignExtraPopulation/GetPopulationFilterAmount, CityExpansionManager.RelinquishOwnership/SetTransients, CityReligionManager.SetTransients/AddPressure/GetMajorityReligion(Name)/GetFollowersOf/IsProtectedByInquisitor (City tests' fakes now subclass the real managers). Population.Population has an internal setter (Kotlin private set) with [JsonInclude].
+    - Traps kept: remainders HashMap -> JavaHashMap (tie order); maxByOrNull = first max with Float.compareTo (AStar.JavaFloatCompare made internal); Int division for pressurePerFollower and population/2; Counter.get(null)=0 in getPressureDeficit; withItem/withoutItem copy JavaHashSet; foodRequired is Double math, toInt saturating; Tile.getCity()/getOwner() still IGameContextCity/Civilization seams (T115) so casts are used.
+    - Not testable yet: CityFounder.FoundCity end to end needs CityConstructions (T063) and CityStats (T062) (lateinit seams); only the name generation (internal GenerateNewCityName/BorrowCityName) is tested. T072 ports the TestGame fixtures.
 
 ### T062 CityStats and GreatPersonPointsBreakdown
 - State: Done
@@ -1307,6 +1313,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~CouplingRatchetTests
 - Claimed:
 - Notes: T065 had to add City.cs|13 to CouplingRatchetBaseline.txt because City now depends on the MapUnits namespace. Remove the dependency by going through a seam (or whatever Kotlin structure allows), then lower the baseline entry to the limit (12) and delete it if it no longer exceeds.
+  - T061 (Claude): City.cs now imports Unciv.Logic.City.Managers (its 3 managers), so its CouplingRatchetBaseline entry is 14, not 13; decoupling City.cs (lowering to <= 12) covers it.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

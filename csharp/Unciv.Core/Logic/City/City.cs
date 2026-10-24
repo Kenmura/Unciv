@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 using Unciv.Json;
+using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
-using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -12,7 +12,6 @@ using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
-using ICityReligionManager = Unciv.Logic.Civilization.ICityReligionManager;
 using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
@@ -24,7 +23,7 @@ namespace Unciv.Logic.City;
 // City is ported BEFORE its sub-objects (seam rule, T053 notes): population, cityConstructions, expansion, religion and cityStats are typed
 // by their seams in CitySeams.cs / CivilizationSeams.cs, as lateinit-style properties (reading before assignment throws) because the Kotlin
 // initializers (`var population = CityPopulationManager()`) have nothing to construct yet. The ticket porting a sub-object replaces its
-// property by `= new XManager()` and retypes it (T061: population, expansion, religion; T062: cityStats; T063: cityConstructions).
+// property by `= new XManager()` and retypes it (T061 did population, expansion, religion; T062: cityStats; T063: cityConstructions).
 // Kotlin City has no equals/hashCode: this class keeps reference identity.
 //
 // Stripped / deferred:
@@ -101,13 +100,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     public int TurnAcquired { get; set; }
     public int Health { get; set; } = 200;
 
-    private ICityPopulationManager? population;
-    /// <summary>TODO(T061): becomes <c>var population = CityPopulationManager()</c>.</summary>
-    public ICityPopulationManager Population
-    {
-        get => Lateinit(population, "population");
-        set => population = value;
-    }
+    public CityPopulationManager Population { get; set; } = new();
 
     private ICityConstructions? cityConstructions;
     /// <summary>TODO(T063): becomes <c>var cityConstructions = CityConstructions()</c>.</summary>
@@ -117,21 +110,9 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
         set => cityConstructions = value;
     }
 
-    private ICityExpansionManager? expansion;
-    /// <summary>TODO(T061): becomes <c>var expansion = CityExpansionManager()</c>.</summary>
-    public ICityExpansionManager Expansion
-    {
-        get => Lateinit(expansion, "expansion");
-        set => expansion = value;
-    }
+    public CityExpansionManager Expansion { get; set; } = new();
 
-    private ICityReligionManager? religion;
-    /// <summary>TODO(T061): becomes <c>var religion = CityReligionManager()</c>.</summary>
-    public ICityReligionManager Religion
-    {
-        get => Lateinit(religion, "religion");
-        set => religion = value;
-    }
+    public CityReligionManager Religion { get; set; } = new();
 
     /// <summary>Transient: class carries no persisted fields.</summary>
     [JsonIgnore]

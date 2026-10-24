@@ -221,7 +221,6 @@ public class CityCoreTests
         Assert.Throws<InvalidOperationException>(() => city.GetCenterTile());
         Assert.Null(city.GetCenterTileOrNull());
         Assert.Throws<InvalidOperationException>(() => city.CityConstructions);
-        Assert.Throws<InvalidOperationException>(() => city.Population);
     }
 
     [Fact]
@@ -652,10 +651,7 @@ public class CityCoreTests
 
     private static CityObject Clone(World w)
     {
-        w.Fake.PopulationFake.CloneResult = new FakeCityPopulation();
         w.Fake.ConstructionsFake.CloneResult = new FakeCityConstructions();
-        w.Fake.ExpansionFake.CloneResult = new FakeCityExpansion();
-        w.Fake.ReligionData.CloneResult = new FakeCityReligion();
         return w.City.Clone();
     }
 

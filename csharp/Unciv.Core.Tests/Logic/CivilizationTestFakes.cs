@@ -1,5 +1,6 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.City;
+using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
@@ -221,35 +222,24 @@ internal sealed class FakeCityState
 
 }
 
-internal sealed class FakeCityPopulation : ICityPopulationManager
+internal sealed class FakeCityPopulation : CityPopulationManager
 {
-    public CityObject City { get; set; } = null!;
-    public FakeCityPopulation? CloneResult { get; set; }
-    public ICityPopulationManager Clone() => CloneResult ?? throw new NotSupportedException();
-    public int PopulationValue { get; set; }
-    public int Population => PopulationValue;
-    public int FoodStored { get; set; }
-    public Counter<string> SpecialistAllocations { get; } = new();
+    public int PopulationValue { get => Population; set => Population = value; }
     public int AutoAssignCalls { get; private set; }
-    public void AutoAssignPopulation() => AutoAssignCalls++;
+    internal override void AutoAssignPopulation() => AutoAssignCalls++;
     public int UnassignCalls { get; private set; }
-    public void UnassignExtraPopulation() => UnassignCalls++;
+    public override void UnassignExtraPopulation() => UnassignCalls++;
     public Dictionary<string, int> ByFilter { get; } = [];
-    public int GetPopulationFilterAmount(string filter) => ByFilter.GetValueOrDefault(filter);
-    public Counter<string> GetNewSpecialists() => SpecialistAllocations;
+    public override int GetPopulationFilterAmount(string filter) => ByFilter.GetValueOrDefault(filter);
     public int FreePopulation { get; set; }
-    public int GetFreePopulation() => FreePopulation;
-    public int GetNumberOfSpecialists() => SpecialistAllocations.SumValues();
+    public override int GetFreePopulation() => FreePopulation;
 }
 
-internal sealed class FakeCityExpansion : ICityExpansionManager
+internal sealed class FakeCityExpansion : CityExpansionManager
 {
-    public CityObject City { get; set; } = null!;
-    public void SetTransients() { }
-    public FakeCityExpansion? CloneResult { get; set; }
-    public ICityExpansionManager Clone() => CloneResult ?? throw new NotSupportedException();
+    public override void SetTransients() { }
     public List<Tile> Relinquished { get; } = [];
-    public void RelinquishOwnership(Tile tile) => Relinquished.Add(tile);
+    public override void RelinquishOwnership(Tile tile) => Relinquished.Add(tile);
 }
 
 internal sealed class FakeCityStats(CityObject city) : CityStats(city)
@@ -283,7 +273,7 @@ internal sealed class FakeCityConstructions : ICityConstructions
     public int GetWorkDone(string constructionName) => 0;
     public IConstruction? CurrentConstruction { get; set; }
     public IConstruction GetCurrentConstruction() => CurrentConstruction ?? throw new NotSupportedException();
-    public void AddBuilding(Building building) => BuiltBuildingObjects.Add(building);
+    public void AddBuilding(Building building, bool tryAddFreeBuildings = true) => BuiltBuildingObjects.Add(building);
     public void RemoveBuilding(Building building) => BuiltBuildingObjects.Remove(building);
     public void ChooseNextConstruction() => throw new NotSupportedException();
     public List<string> ConstructionQueue { get; } = [];
@@ -317,29 +307,18 @@ internal sealed class FakeCityConstructions : ICityConstructions
     public float GetMaintenanceCosts() => MaintenanceCosts;
 }
 
-internal sealed class FakeCityReligion : ICityReligionManager
+internal sealed class FakeCityReligion : CityReligionManager
 {
-    public string? ReligionThisIsTheHolyCityOf { get; set; }
-    public bool BlockedHolyCity { get; set; }
-    public bool IsBlockedHolyCity => BlockedHolyCity;
+    public bool BlockedHolyCity { get => IsBlockedHolyCity; set => IsBlockedHolyCity = value; }
     public Dictionary<string, int> Pressure { get; } = [];
     public Religion? Majority { get; set; }
-    public void AddPressure(string religionName, int amount, bool shouldUpdateFollowers = true) =>
+    public override void AddPressure(string religionName, int amount, bool shouldUpdateFollowers = true) =>
         Pressure[religionName] = Pressure.GetValueOrDefault(religionName) + amount;
-    public Religion? GetMajorityReligion() => Majority;
-    public string? GetMajorityReligionName() => Majority?.Name;
+    public override Religion? GetMajorityReligion() => Majority;
+    public override string? GetMajorityReligionName() => Majority?.Name;
     public Dictionary<string, int> Followers { get; } = [];
-    public int GetFollowersOf(string religion) => Followers.GetValueOrDefault(religion);
+    public override int GetFollowersOf(string religion) => Followers.GetValueOrDefault(religion);
     public int FollowersOfMajority { get; set; }
-    public int GetFollowersOfMajorityReligion() => FollowersOfMajority;
-    public bool IsProtectedByInquisitor(string? fromReligion = null) => false;
-    public FakeCityReligion? CloneResult { get; set; }
-    public ICityReligionManager Clone() => CloneResult ?? throw new NotSupportedException();
-    public void SetTransients(CityObject city) { }
-    public IEnumerable<UniqueObject> GetUniques(UniqueType uniqueType) => [];
-    public IEnumerable<UniqueObject> GetAllUniques() => [];
-    public void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op) { }
-    public void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Func<UniqueObject, bool> filter, Action<UniqueObject> op) { }
-    public void ForEachUnique(Func<UniqueObject, bool> filter, Action<UniqueObject> op) { }
+    public override int GetFollowersOfMajorityReligion() => FollowersOfMajority;
+    public override bool IsProtectedByInquisitor(string? fromReligion = null) => false;
 }
-

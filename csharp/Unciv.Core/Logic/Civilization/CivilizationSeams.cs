@@ -125,33 +125,3 @@ public interface IMapUnitState : IGameContextUnit
     /// <summary><c>unit.getResourceRequirementsPerTurn()</c></summary>
     Counter<string> GetResourceRequirementsPerTurn();
 }
-
-/// <summary>What the religion managers and City read from <c>CityReligionManager</c> (<c>city.religion</c>). TODO(T061)</summary>
-public interface ICityReligionManager
-{
-    string? ReligionThisIsTheHolyCityOf { get; set; }
-    void AddPressure(string religionName, int amount, bool shouldUpdateFollowers = true);
-    Religion? GetMajorityReligion();
-    /// <summary><c>city.religion.getMajorityReligionName()</c> (T059: DiplomacyManager)</summary>
-    string? GetMajorityReligionName();
-    int GetFollowersOf(string religion);
-    /// <summary>T062: <c>religion.getFollowersOfMajorityReligion()</c></summary>
-    int GetFollowersOfMajorityReligion();
-    bool IsProtectedByInquisitor(string? fromReligion = null);
-    // T060 (City)
-    ICityReligionManager Clone();
-    /// <summary><c>religion.setTransients(city)</c></summary>
-    void SetTransients(Unciv.Logic.City.City city);
-    /// <summary><c>religion.isBlockedHolyCity</c></summary>
-    bool IsBlockedHolyCity { get; }
-    /// <summary><c>religion.getUniques(uniqueType)</c></summary>
-    IEnumerable<UniqueObject> GetUniques(UniqueType uniqueType);
-    /// <summary><c>religion.getAllUniques()</c></summary>
-    IEnumerable<UniqueObject> GetAllUniques();
-    /// <summary><c>religion.forEachMatchingUnique(uniqueType, gameContext, op)</c></summary>
-    void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
-    /// <summary><c>religion.forEachMatchingUnique(uniqueType, gameContext, filter, op)</c></summary>
-    void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Func<UniqueObject, bool> filter, Action<UniqueObject> op);
-    /// <summary><c>religion.forEachUnique(filter, op)</c></summary>
-    void ForEachUnique(Func<UniqueObject, bool> filter, Action<UniqueObject> op);
-}

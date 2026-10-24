@@ -1,5 +1,3 @@
-using Unciv.Logic.Map.Tiles;
-using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
@@ -31,7 +29,8 @@ public interface ICityConstructions
     int GetWorkDone(string constructionName);
     /// <summary><c>cityConstructions.getCurrentConstruction()</c></summary>
     IConstruction GetCurrentConstruction();
-    void AddBuilding(Building building);
+    /// <summary><c>cityConstructions.addBuilding(building, tryAddFreeBuildings)</c> (T061: CityFounder passes false)</summary>
+    void AddBuilding(Building building, bool tryAddFreeBuildings = true);
     void RemoveBuilding(Building building);
     void ChooseNextConstruction();
     /// <summary><c>cityConstructions.editQueue(edit)</c>: edits a copy of the queue and then replaces the queue by it.</summary>
@@ -54,38 +53,7 @@ public interface ICityConstructions
     float GetMaintenanceCosts();
 }
 
-/// <summary>What City reads from <c>CityPopulationManager</c> (<c>city.population</c>). TODO(T061)</summary>
-public interface ICityPopulationManager
-{
-    /// <summary><c>population.city</c> (assigned by <c>City.setTransients</c>).</summary>
-    City City { get; set; }
-    ICityPopulationManager Clone();
-    /// <summary><c>population.population</c></summary>
-    int Population { get; }
-    /// <summary><c>population.foodStored</c></summary>
-    int FoodStored { get; set; }
-    /// <summary><c>population.specialistAllocations</c></summary>
-    Counter<string> SpecialistAllocations { get; }
-    void AutoAssignPopulation();
-    void UnassignExtraPopulation();
-    int GetPopulationFilterAmount(string filter);
-    // T062 (CityStats)
-    /// <summary><c>population.getNewSpecialists()</c> (the specialist allocations).</summary>
-    Counter<string> GetNewSpecialists();
-    /// <summary><c>population.getFreePopulation()</c></summary>
-    int GetFreePopulation();
-    /// <summary><c>population.getNumberOfSpecialists()</c></summary>
-    int GetNumberOfSpecialists();
-}
-
-/// <summary>What City reads from <c>CityExpansionManager</c> (<c>city.expansion</c>). TODO(T061)</summary>
-public interface ICityExpansionManager
-{
-    /// <summary><c>expansion.city</c> (assigned by <c>City.setTransients</c>).</summary>
-    City City { get; set; }
-    void SetTransients();
-    ICityExpansionManager Clone();
-    /// <summary><c>expansion.relinquishOwnership(tile)</c></summary>
-    void RelinquishOwnership(Tile tile);
-}
-
+/// <summary>
+/// What City stores of <c>UnitPromotions</c> (<c>city.unitToPromotions</c> values; only copied by <c>City.clone</c>). TODO(T066): replaced by UnitPromotions.
+/// </summary>
+public interface IUnitPromotions;

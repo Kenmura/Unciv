@@ -1,9 +1,11 @@
 using Unciv.Json;
+using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapGenerator.Mapregions;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Logic.Trade;
 using Unciv.Models;
@@ -38,7 +40,7 @@ namespace Unciv.Logic.Civilization;
 // Stripped / deferred:
 // - timeThis profiling wrappers and the purity annotations.
 // - getWorkerAutomation / workerAutomationCache (WorkerAutomation belongs to the unit-automation port).
-// - addCity (CityFounder): TODO(T061).
+// - addCity (CityFounder): its two client-settings inputs of resetSpecialistsControl are explicit parameters (T061).
 // - isAIOrAutoPlaying: the UncivGame.Current.worldScreen auto-play check is UI state; a headless engine has none, so it is `false`.
 // - Kotlin HashMap/HashSet fields keep java.util iteration order (JavaHashMap/JavaHashSet), except neutralRoads, whose seam
 //   (IGameContextCivilization.NeutralRoads, T053) is an ISet<HexCoord>; its only Kotlin iteration (CivInfoStatsForNextTurn, T058) sums.
@@ -1184,7 +1186,16 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     }
     #endregion
 
-    // TODO(T061): addCity(location, unit) = CityFounder().foundCity(this, location, unit) + cityConstructions.chooseNextConstruction()
+    /// <summary>
+    /// Kotlin <c>addCity(location, unit)</c>. <paramref name="autoAssignSpecialistsInNewCities"/> and <paramref name="localUserId"/> are the
+    /// client settings <c>CityFounder</c> passes to <c>City.resetSpecialistsControl</c> (see there).
+    /// </summary>
+    public CityObject AddCity(HexCoord location, MapUnit? unit = null, bool autoAssignSpecialistsInNewCities = true, string? localUserId = null)
+    {
+        var newCity = new CityFounder().FoundCity(this, location, unit, autoAssignSpecialistsInNewCities, localUserId);
+        newCity.CityConstructions.ChooseNextConstruction();
+        return newCity;
+    }
 
     /// <summary>
     /// Destroy what's left of a Civilization
