@@ -5,7 +5,7 @@ using Unciv.Logic.Civilization.Diplomacy;
 namespace Unciv.Core.Tests.Fixtures.CivilizationFixtures;
 
 // T142: port of tests/src/com/unciv/logic/civilization/diplomacy/GoldGiftingTests.kt over the real TestGame.
-// The five trade cases (AcceptTrade evaluates trades via TradeEvaluation) are deferred to T150.
+// The five trade cases are in GoldGiftingTradeFixtureTests (T150).
 [Collection("RulesetCache")]
 public sealed class GoldGiftingFixtureTests
 {

@@ -194,7 +194,7 @@ flowchart TD
   class T143 done
   class T144 prog
   class T148 prog
-  class T150 prog
+  class T150 review
   class T152 ready
   class T154 waiting
   class T155 ondeck
@@ -254,5 +254,5 @@ xychart-beta
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T144 | In-Progress [Claude] | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
 | T148 | In-Progress [Claude] | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T150 | In-Progress [Claude] | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
+| T150 | Needs-Review [Claude] | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

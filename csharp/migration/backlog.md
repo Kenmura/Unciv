@@ -1701,7 +1701,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Implemented: 3 conquest cases ported in DiplomacyManagerConquestFixtureTests.cs (separate file; Battle.DestroyIfDefeated is ported and wired via CityManagerHooks, so no seam to retarget). All pass unchanged against the engine, no parity bug found.
 
 ### T150 Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T142, T089
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/GoldGiftingTests.kt (Excess gold from a trade become a gift; Can ask for 90 percent...; Gold gifted impact trade acceptability; Gold gifted uses pure gold multiplier constant; Gold gifted uses gold multiplier constant)
@@ -1709,6 +1709,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures.Civilization`
 - Claimed: 2026-10-24T18:38Z
 - Notes: Split from T142: TradeLogic.AcceptTrade calls TradeEvaluation.GetTradeAcceptability, which throws until T089 lands.
+  - Implemented: 5 GoldGiftingTests trade cases ported in GoldGiftingTradeFixtureTests.cs over real TestGame/TradeLogic/TradeEvaluation; all pass unchanged, no engine bug found. Updated stale T150 comment in GoldGiftingFixtureTests.cs. Standard checks + coverage check pass (3744 tests, 0 failed).
 
 ### T151 Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests
 - State: Done
