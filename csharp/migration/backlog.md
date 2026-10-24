@@ -290,7 +290,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   **Claude 2026-10-24 (scope reduced):** Tile.kt, TileNormalizer, TileStatFunctions and TileImprovementFunctions use TileMap, GameInfo, Civilization, City, MapUnit, UnitMovement and MapGenerator, none of which exist in C# (same blocker as T035); stubbing them would invent API. Moved to T053 (Blocked). Delivered here: `TileHistory.cs` (TileHistory, TileHistoryState, CityCenterType, JSON converter `{"12":["China","R"]}`, null owner written as null) plus `ITileHistorySource` seam (Turns, OwnerCivID, IsCityCenter, IsCityCapital) that Tile must implement. Quirks kept: TileHistoryState has no equals (reference equality), so TileHistory.Equals needs identical state instances; Clone shares state instances; GetState is floorEntry on a SortedList. Tests in `Unciv.Core.Tests/Logic/Map/TileTests.cs`. Standard checks pass.
 
 ### T053 Tile core (part 2a): Tile
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T038
 - Source: core/src/com/unciv/logic/map/tile/Tile.kt
 - Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt (both need TestGame: deferred to T072; port only what runs without it)
