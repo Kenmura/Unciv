@@ -80,7 +80,6 @@ flowchart TD
     T110["T110<br/>Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)"]
     T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
     T115["T115<br/>Retype Tile city seams to City and move the Tile/Pathfinding..."]
-    T119["T119<br/>Policy: forbid unchecked null-forgiving '!' (Kotlin !! throw..."]
     T120["T120<br/>Policy: size ratchet - maximum file length and method length..."]
     T121["T121<br/>Policy: coupling ratchet - cap distinct Unciv namespaces imp..."]
     T122["T122<br/>Policy: coverage reporting and ratchet for changed files (co..."]
@@ -277,7 +276,6 @@ flowchart TD
   T065 --> T111
   T060 --> T115
   T035 --> T115
-  T119 --> T125
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -386,13 +384,12 @@ flowchart TD
   class T110 ondeck
   class T111 waiting
   class T115 waiting
-  class T119 review
   class T120 prog
   class T121 ready
   class T122 ready
   class T123 ready
   class T124 ready
-  class T125 ondeck
+  class T125 ready
 ```
 
 ## Incomplete tickets
@@ -405,11 +402,11 @@ flowchart TD
 | T122 | **Ready to start** | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
+| T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
 | T066 | **On deck** (after T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T064 | **On deck** (after T061, T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
-| T125 | **On deck** (after T119) | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
 | T065 | In-Progress [Claude] | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
 | T061 | In-Progress [Claude] | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
@@ -448,7 +445,6 @@ flowchart TD
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
-| T119 | Needs-Review [Claude] | none | 1 | Policy: forbid unchecked null-forgiving '!' (Kotlin !! throws, C# ! hides the null) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |

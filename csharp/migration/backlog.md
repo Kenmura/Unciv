@@ -1189,7 +1189,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Added MarkerOwnershipTests (4 tests: parses backlog.md/backlog-archive.md text; TODO(T###) must name an existing non-Done ticket, scanning Unciv.Core + Unciv.Core.Tests except Policy/; NotSupported/NotImplemented throws need an open TODO or JUSTIFY: T### within 3 lines; *Seams*.cs header comment must name an open owner). Fixes: stale markers retargeted (T033->T087, T050->T070, T034/T055->T104 which owns them per its notes), two already-retyped T059 and the T054 upstream note de-marked; 11 permanent throws got JUSTIFY: T118; BaseUnit throw -> TODO(T106); seam headers gained open owners (T046/T061/T063/T065/T066/T115/T104). Rebase often: new markers by other tickets are checked by this test.
 
 ### T119 Policy: forbid unchecked null-forgiving '!' (Kotlin !! throws, C# ! hides the null)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
