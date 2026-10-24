@@ -21,7 +21,7 @@ namespace Unciv.Logic.Map.Tiles;
 // setPillaged (+ clearAllPathfindingCaches).
 // Still deferred (they need TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource and the settings tutorial tasks, T046/T048):
 // doWorkerTurn, startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit).
-// T107 added the Gdx-compatible JSON (TileJsonConverter at the end of the class). Unit fields are not wired yet: TODO(T108).
+// T107 added the Gdx-compatible JSON (TileJsonConverter at the end of the class). Unit fields are not wired yet: TODO(T110).
 
 /// <summary>
 /// A single hex of the map. Kotlin <c>Tile</c> has no <c>equals</c>/<c>hashCode</c>: this class keeps reference identity.
@@ -1287,7 +1287,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     /// Reads and writes the serialized fields the way the libGDX Json does for Kotlin <c>Tile</c> (T107): field names are the Kotlin ones,
     /// fields equal to the default of a fresh <c>Tile()</c> are omitted, unknown fields are ignored, and a list may be a plain array or the
     /// <c>{"class":..., "items":[...]}</c> form. <c>exploredBy</c> (a Java HashSet there) is written in ordinal order, which is deterministic.
-    /// The unit fields need MapUnit (TODO(T108)): writing a tile that holds units, or reading them, throws.
+    /// The unit fields need MapUnit (TODO(T110)): writing a tile that holds units, or reading them, throws.
     /// </summary>
     internal sealed class TileJsonConverter : JsonConverter<Tile>
     {
@@ -1306,7 +1306,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
                 {
                     case "militaryUnit" or "civilianUnit" or "airUnits":
                         if (isNull || (reader.TokenType == JsonTokenType.StartArray && IsEmptyArray(ref reader))) break;
-                        throw new NotSupportedException($"Tile.{name}: unit JSON is not wired yet (TODO(T108))");
+                        throw new NotSupportedException($"Tile.{name}: unit JSON is not wired yet (TODO(T110))");
                     case "position":
                         tile.Position = isNull ? default : new HexCoordConverter().Read(ref reader, typeof(HexCoord), options);
                         break;
@@ -1439,7 +1439,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         public override void Write(Utf8JsonWriter writer, Tile value, JsonSerializerOptions options)
         {
             if (value.MilitaryUnit != null || value.CivilianUnit != null || value.AirUnits.Count > 0)
-                throw new NotSupportedException("Tile unit JSON is not wired yet (TODO(T108))");
+                throw new NotSupportedException("Tile unit JSON is not wired yet (TODO(T110))");
             writer.WriteStartObject();
             if (value.Position != default)
             {

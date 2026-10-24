@@ -984,10 +984,10 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Found by T098: TileMap and TileMap.Preview have no JSON wiring (TileMap.cs says so), so MapSaver TileMap/Preview round trips are untested. Wire Kotlin-compatible JSON (tileList, mapParameters, ruleset names, startingLocations, etc.) and add round-trip and golden tests; remove the TODO in TileMap.cs.
   - Golden: Logic/Map/Golden/MapSaver.golden.json came from the real Kotlin MapSaver.mapToSavedString (saveZipped=false) via a throwaway GdxTestRunner test (not committed) that built TileMap(3, 2, Civ_V_GnK) and set rivers, roads, queue, history, exploredBy, starting locations; run with ./gradlew --offline :tests:test --tests ...
     Wiring is by JsonConverters (TileJsonConverter nested in Tile, TileMapJsonConverter/StartingLocationJsonConverter/PreviewJsonConverter nested in TileMap): Kotlin field names, Gdx default omission (0/false/null/empty/-1/Usage.Player), unknown fields ignored, lists accept plain array or {"class","items"}; tile and tileList re-serialize byte-identical to Kotlin (test).
-    Deviations: exploredBy (Java HashSet order in Kotlin) is written ordinal-sorted; Tile units (militaryUnit/civilianUnit/airUnits) throw NotSupportedException on read (non-empty) and write: follow-up T108 (needs T065). RoadStatus/Usage names parse case-insensitively. TileMap.Preview has a read-only converter; its MapParameters setter is now internal.
+    Deviations: exploredBy (Java HashSet order in Kotlin) is written ordinal-sorted; Tile units (militaryUnit/civilianUnit/airUnits) throw NotSupportedException on read (non-empty) and write: follow-up T110 (needs T065). RoadStatus/Usage names parse case-insensitively. TileMap.Preview has a read-only converter; its MapParameters setter is now internal.
     Not compared: mapParameters output (MapParameters' own wiring writes defaults that Kotlin omits; only read/values are asserted).
 
-### T108 Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)
+### T110 Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)
 - State: Available
 - Depends: T107, T065
 - Source: core/src/com/unciv/logic/map/tile/Tile.kt (serialized unit fields)

@@ -33,6 +33,8 @@ WRITE (each touches only the named ticket's block, verified before the file is w
   drop T###                 delete a mistakenly added ticket: only if it is Available, unclaimed, depended on by nobody
                             and the newest ticket of its prefix (ids stay dense)
   graph                     regenerate DEPENDENCY_MAP.md (also done automatically by every write command)
+  renumber OLD NEW TITLE_SUBSTR [--refs T1,T2]
+                            fix a duplicate id (parallel `add` calls): rename that block, update the id in --refs tickets
   publish [--origin]        git rebase csharp-migration && git push . HEAD:csharp-migration (clean tree only)
   archive                   move Done ticket bodies to backlog-archive.md, leaving a stub
 """
@@ -544,6 +546,27 @@ def cmd_drop(args):
     print(f"{tid}: dropped")
 
 
+def cmd_renumber(argv):
+    """renumber OLD NEW TITLE_SUBSTRING [--refs T1,T2]: fix a duplicate id created by parallel `add` calls.
+    Renames the OLD block whose title contains TITLE_SUBSTRING, and replaces the id token in the --refs tickets."""
+    old, new, sub = argv[0], argv[1], argv[2]
+    refs = argv[argv.index("--refs") + 1].split(",") if "--refs" in argv else []
+    if new in all_states():
+        die(f"{new} already exists")
+    lines = BACKLOG.read_text(encoding="utf-8").split("\n")
+    hits = [n for n, l in enumerate(lines) if l.startswith(f"### {old} ") and sub in l]
+    if len(hits) != 1:
+        die(f"expected exactly one '### {old}' header containing '{sub}', found {len(hits)}")
+    lines[hits[0]] = lines[hits[0]].replace(f"### {old} ", f"### {new} ", 1)
+    token = re.compile(rf"\b{old}\b")
+    for tid in refs:
+        a, b = locate(lines, tid)
+        for n in range(a, b):
+            lines[n] = token.sub(new, lines[n])
+    write_backlog(lines)
+    print(f"{old} ({sub}) -> {new}; refs updated in: {', '.join(refs) or 'none'}")
+
+
 def cmd_check():
     errs = []
     seen = set()
@@ -642,6 +665,8 @@ def main():
         cmd_stale()
     elif cmd == "check":
         cmd_check()
+    elif cmd == "renumber":
+        cmd_renumber(args)
     elif cmd == "claim":
         cmd_claim(args)
     elif cmd == "state":

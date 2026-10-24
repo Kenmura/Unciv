@@ -80,8 +80,8 @@ flowchart TD
     T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
     T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
     T108["T108<br/>Civilopedia text model D: remaining ruleset objects' civilop..."]
-    T108["T108<br/>Civilopedia text model D: remaining ruleset objects' civilop..."]
     T109["T109<br/>Hardening sweep: non-blocking review findings from T033-T095"]
+    T110["T110<br/>Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -283,6 +283,8 @@ flowchart TD
   T052 --> T106
   T057 --> T106
   T062 --> T106
+  T107 --> T110
+  T065 --> T110
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -397,23 +399,22 @@ flowchart TD
   class T106 waiting
   class T107 done
   class T108 ready
-  class T108 ready
   class T109 ready
+  class T110 waiting
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T058 | **Ready to start** | T055, T054 | 53 | Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions |
+| T058 | **Ready to start** | T055, T054 | 54 | Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions |
 | T059 | **Ready to start** | T055 | 36 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
 | T108 | **Ready to start** | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
-| T108 | **Ready to start** | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
 | T109 | **Ready to start** | none | 0 | Hardening sweep: non-blocking review findings from T033-T095 |
-| T057 | In-Progress [Claude] | T055 | 54 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
-| T056 | In-Progress [Claude] | T055 | 53 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
-| T060 | Available (waiting on T056, T057, T058) | T055, T056, T057, T058 | 52 | City core: City, CityFocus, CityResources, CityEspionageManager |
-| T065 | Available (waiting on T056, T060) | T055, T056, T060 | 45 | MapUnit core: MapUnit, MapUnitCache |
+| T057 | In-Progress [Claude] | T055 | 55 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
+| T056 | In-Progress [Claude] | T055 | 54 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
+| T060 | Available (waiting on T056, T057, T058) | T055, T056, T057, T058 | 53 | City core: City, CityFocus, CityResources, CityEspionageManager |
+| T065 | Available (waiting on T056, T060) | T055, T056, T060 | 46 | MapUnit core: MapUnit, MapUnitCache |
 | T066 | Available (waiting on T065, T060) | T065, T060 | 43 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T061 | Available (waiting on T060) | T060 | 40 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T062 | Available (waiting on T060, T058) | T060, T058 | 40 | CityStats and GreatPersonPointsBreakdown |
@@ -467,3 +468,4 @@ flowchart TD
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T096 | Available (waiting on T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
