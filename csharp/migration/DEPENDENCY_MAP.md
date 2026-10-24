@@ -65,7 +65,6 @@ flowchart TD
     T092["T092<br/>Worker and road automation: WorkerAutomation, RoadBetweenCit..."]
     T093["T093<br/>PathingMap: PathingMap, PathingMapCache, PathingMapAStarPath..."]
     T094["T094<br/>NextTurnAutomation and BarbarianAutomation (automation integ..."]
-    T096["T096<br/>Civilopedia text model B: Building, Improvement, Resource, T..."]
     T097["T097<br/>Civilopedia text model C: BaseUnit, Nation, Technology descr..."]
     T098["T098<br/>Save/load A: FileConversions, MapSaver, IMediaFinder"]
     T099["T099<br/>GameStarter"]
@@ -92,7 +91,6 @@ flowchart TD
     T133["T133<br/>Retype Civilization.Units to UnitManager, drop IUnitManager ..."]
     T134["T134<br/>Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatche..."]
     T135["T135<br/>T066 review follow-ups: UnitPromotions JSON round-trip, tie-..."]
-    T136["T136<br/>T064 review follow-up: cover uncovered CityConquestFunctions..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -257,8 +255,6 @@ flowchart TD
   T065 --> T111
   T060 --> T115
   T035 --> T115
-  T096 --> T129
-  T097 --> T129
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -352,7 +348,6 @@ flowchart TD
   class T092 waiting
   class T093 waiting
   class T094 waiting
-  class T096 prog
   class T097 done
   class T098 done
   class T099 waiting
@@ -372,14 +367,13 @@ flowchart TD
   class T126 ready
   class T127 ready
   class T128 ready
-  class T129 ondeck
+  class T129 ready
   class T130 ready
   class T131 ready
   class T132 ready
   class T133 ready
   class T134 ready
-  class T135 ready
-  class T136 ready
+  class T135 prog
 ```
 
 ## Incomplete tickets
@@ -396,14 +390,12 @@ flowchart TD
 | T126 | **Ready to start** | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
+| T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T130 | **Ready to start** | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
 | T131 | **Ready to start** | T063 | 0 | Hardening: T063 review follow-ups (CityConstructions test gaps, Java-order freeBuildingsProvidedFromThisCity, IConstructionCity cast) |
 | T132 | **Ready to start** | T097 | 0 | T097 review follow-ups: game context for Technology unit/obsoleted filters, BaseUnit.GetDescription ruleset |
 | T133 | **Ready to start** | T066 | 0 | Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager |
 | T134 | **Ready to start** | T067 | 0 | Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing) |
-| T135 | **Ready to start** | T066 | 0 | T066 review follow-ups: UnitPromotions JSON round-trip, tie-break and promotion-trigger tests |
-| T136 | **Ready to start** | T064 | 0 | T064 review follow-up: cover uncovered CityConquestFunctions/CityTurnManager branches |
-| T129 | **On deck** (after T096) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T070 | Available (waiting on T068, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T035 | Available (waiting on T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T052 | Available (waiting on T046, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
@@ -432,7 +424,6 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
-| T096 | In-Progress [Antigravity] | T095, T062, T054 | 1 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T052) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
@@ -447,3 +438,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
+| T135 | In-Progress [Antigravity] | T066 | 0 | T066 review follow-ups: UnitPromotions JSON round-trip, tie-break and promotion-trigger tests |
