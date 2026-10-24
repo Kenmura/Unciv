@@ -38,7 +38,15 @@ public static class BaseUnitDescriptions
     {
         var lines = new List<string>();
         var availableResources = city.Civ.GetCivResourcesByName();
-        var tileResources = city.Civ.GameInfo.Ruleset.TileResources;
+        Ruleset? unitRuleset = null;
+        try
+        {
+            unitRuleset = baseUnit.Ruleset as Ruleset;
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        var tileResources = unitRuleset?.TileResources ?? city.Civ.GameInfo.Ruleset.TileResources;
 
         // Consumes
         foreach (var (resourceName, amount) in baseUnit.GetResourceRequirementsPerTurn(city.Civ.State))

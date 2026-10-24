@@ -124,7 +124,7 @@ public static class TechnologyDescriptions
                 lineList.Add(new FormattedLine(entry.GetText(), link: entry.Improvement.MakeLink()));
         }
 
-        var enabledUnits = GetEnabledUnits(name, ruleset, null).ToList();
+        var enabledUnits = GetEnabledUnits(name, ruleset, null, context).ToList();
         if (enabledUnits.Count != 0)
         {
             lineList.Add(new FormattedLine());
@@ -135,7 +135,7 @@ public static class TechnologyDescriptions
 
         // TODO(T129): the "{Wonders enabled}:" and "{Buildings enabled}:" sections go here (need Building.getShortDescription, T096)
 
-        var obsoletedObjects = GetObsoletedObjects(name, ruleset, null).ToList();
+        var obsoletedObjects = GetObsoletedObjects(name, ruleset, null, context).ToList();
         if (obsoletedObjects.Count != 0)
         {
             lineList.Add(new FormattedLine());
@@ -189,8 +189,8 @@ public static class TechnologyDescriptions
     /// nuclear weapons and religion settings, and without those expressly hidden from Civilopedia.
     /// </summary>
     // Used for Civilopedia, Alert and Picker, so if any of these decide to ignore the "Will not be displayed in Civilopedia" unique this needs refactoring
-    private static IEnumerable<RulesetStatsObject> GetObsoletedObjects(string techName, Ruleset ruleset, Civilization? civInfo) =>
-        GetFilteredBuildings(ruleset, civInfo, null, _ => true).Cast<RulesetStatsObject>()
+    private static IEnumerable<RulesetStatsObject> GetObsoletedObjects(string techName, Ruleset ruleset, Civilization? civInfo, CivilopediaContext? context = null) =>
+        GetFilteredBuildings(ruleset, civInfo, context, _ => true).Cast<RulesetStatsObject>()
             .Concat(ruleset.TileResources.Values)
             .Concat(ruleset.TileImprovements.Values.Where(it => it.UniqueTo == null || civInfo?.MatchesFilter(it.UniqueTo) == true))
             .Where(obj => ((IHasUniques)obj).GetMatchingUniques(UniqueType.ObsoleteWith).Any(it => it.Params[0] == techName));
@@ -208,12 +208,12 @@ public static class TechnologyDescriptions
     /// nuclear weapons and religion settings, and without those expressly hidden from Civilopedia.
     /// </summary>
     // Used for Civilopedia, Alert and Picker, so if any of these decide to ignore the "Will not be displayed in Civilopedia"/HiddenFromCivilopedia unique this needs refactoring
-    private static IEnumerable<BaseUnit> GetEnabledUnits(string techName, Ruleset ruleset, Civilization? civInfo) =>
+    private static IEnumerable<BaseUnit> GetEnabledUnits(string techName, Ruleset ruleset, Civilization? civInfo, CivilopediaContext? context = null) =>
         ruleset.Units.Values.Where(it =>
             ((IHasUniques)it).RequiredTechs().Contains(techName)
             && ((it.UniqueTo != null && civInfo?.MatchesFilter(it.UniqueTo) == true)
                 || (it.UniqueTo == null && (civInfo == null || civInfo.GetEquivalentUnit(it) == it)))
-            && !((IHasUniques)it).IsHiddenFromCivilopedia(civInfo?.GameInfo, ruleset));
+            && !((IHasUniques)it).IsHiddenFromCivilopedia(context?.GameInfo ?? civInfo?.GameInfo, ruleset));
 
     /// <summary>Tests whether a Unique means bonus Stats enabled by <paramref name="techName"/></summary>
     private static bool IsImprovementStatsEnabledByTech(UniqueObject unique, string techName) =>

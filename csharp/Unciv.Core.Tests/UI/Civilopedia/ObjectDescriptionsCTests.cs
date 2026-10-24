@@ -471,5 +471,43 @@ public class ObjectDescriptionsCTests
             pottery.GetDescription(civ));
     }
 
+    [Fact]
+    public void TechnologyCivilopediaLines_GameContextNuclearWeaponsFiltering()
+    {
+        var (ruleset, _, _) = TechRuleset();
+        var nuclearFission = new Technology { Name = "Nuclear Fission", Cost = 100, Column = new TechColumn { Era = "Ancient era" } };
+        ruleset.Technologies.Put(nuclearFission.Name, nuclearFission);
+
+        var bazooka = Unit("Bazooka", strength: 85);
+        bazooka.RequiredTech = "Nuclear Fission";
+
+        var atomicBomb = Unit("Atomic Bomb", strength: 0, uniques: "Nuclear weapon of Strength [2]");
+        atomicBomb.RequiredTech = "Nuclear Fission";
+
+        ruleset.Units.Put(bazooka.Name, bazooka);
+        ruleset.Units.Put(atomicBomb.Name, atomicBomb);
+
+        var oldShelter = new Building { Name = "Old Shelter", Cost = 50 };
+        oldShelter.Uniques.Add("Obsolete with [Nuclear Fission]");
+        oldShelter.Uniques.Add("Enables nuclear weapon");
+        ruleset.Buildings.Put(oldShelter.Name, oldShelter);
+
+        // Without gameInfo or with NuclearWeaponsEnabled = true, both units and the obsoleted building appear
+        var contextDefault = new CivilopediaContext(ruleset);
+        var linesDefault = Dump(((ICivilopediaText)nuclearFission).GetCivilopediaTextLines(contextDefault));
+        Assert.Contains("Atomic Bomb", linesDefault);
+        Assert.Contains("Bazooka", linesDefault);
+        Assert.Contains("[Old Shelter] obsoleted", linesDefault);
+
+        // With NuclearWeaponsEnabled = false, atomic bomb and old shelter are hidden from Civilopedia
+        var fakeGameInfo = new FakeGameInfoState { RulesetData = ruleset };
+        fakeGameInfo.GameParameters.NuclearWeaponsEnabled = false;
+        var contextNoNukes = new CivilopediaContext(ruleset, fakeGameInfo);
+        var linesNoNukes = Dump(((ICivilopediaText)nuclearFission).GetCivilopediaTextLines(contextNoNukes));
+        Assert.DoesNotContain("Atomic Bomb", linesNoNukes);
+        Assert.Contains("Bazooka", linesNoNukes);
+        Assert.DoesNotContain("Old Shelter", linesNoNukes);
+    }
+
     // endregion
 }
