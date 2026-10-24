@@ -459,7 +459,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Not covered here (TestGame-based, T072): EspionageTests, full ReligionManager.FoundReligion/UseProphetForEnhancingReligion/MaySpread flows (need MapUnit/Tile cities), Milestone ScoreAfterTimeOut positive case (needs a TileMap for the score), RuinsManager.SelectNextRuinsReward effects (need T052).
 
 ### T058 Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T055, T054
 - Source: core/src/com/unciv/logic/civilization/transients/CivInfoTransientCache.kt, CivInfoStatsForNextTurn.kt, CapitalConnectionsFinder.kt, civilization/CivConstructions.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/CapitalConnectionsFinderTests.kt (TestGame-based: T072)
@@ -1049,6 +1049,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Later hardening findings from other tickets: add them here with ticket.py note.
   - T041: river-step HashSet could be LinkedHashSet and its header comment about Kotlin set order is inaccurate (mutableSetOf is insertion ordered); TopBottom/AroundCenterTile mirroring untested; HumidFrom exact value not asserted; '_ = gameParameters' in ResolveAutoMapSize.
   - Flaky test seen once under the full parallel run (T058): Unciv.Core.Tests.Utils.LogTests.LambdaParametersAreEvaluatedOnlyWhenLogging (LogTests.cs:143) failed, passed on rerun and in isolation; likely shared static Log state across parallel test classes.
+  - T058 review non-blocking: add regression tests for AddFreeBuildings lazy per-city re-evaluation and the negative-amount TakeCities throw; CivConstructions Take(n) is lazy (Kotlin take copies) - add .ToList() if City port makes city-list mutation reachable; CivInfoTransientCache.IsCityConnectedToCapital is a convenience not in Kotlin (drop at T060 retype).
 
 ### T111 T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests
 - State: Available
