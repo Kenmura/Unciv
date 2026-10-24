@@ -58,7 +58,6 @@ flowchart TD
     T144["T144<br/>Port TileUniquesTests.pillageYieldTest (split from T103)"]
     T145["T145<br/>Deferred TestGame fixtures: map directory remainder (UnitMov..."]
     T146["T146<br/>UnitFormationTests Battle-dependent escort attack cases (nee..."]
-    T147["T147<br/>MapSaver: read libGDX minimal-JSON (unquoted string values) ..."]
     T148["T148<br/>Deferred TestGame fixtures needing Tile.startWorkingOnImprov..."]
     T149["T149<br/>Deferred civilization fixtures needing Battle: DiplomacyMana..."]
     T150["T150<br/>Deferred civilization fixtures needing TradeEvaluation: Gold..."]
@@ -202,7 +201,6 @@ flowchart TD
   class T144 ready
   class T145 review
   class T146 ready
-  class T147 review
   class T148 waiting
   class T149 ready
   class T150 ondeck
@@ -226,7 +224,7 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 32]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3]
 ```
 
 ## Incomplete tickets
@@ -266,6 +264,5 @@ xychart-beta
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T145 | In-Review [Antigravity] | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
-| T147 | Needs-Review [Claude] | T107 | 0 | MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

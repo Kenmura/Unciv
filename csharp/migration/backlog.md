@@ -1662,7 +1662,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T141: Battle (T083) not ported yet.
 
 ### T147 MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T107
 - Source: core/src/com/unciv/logic/files/MapSaver.kt
 - Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt (testingMap)
