@@ -883,7 +883,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Source: core/src/com/unciv/logic/trade/TradeLogic.kt
 - Fixtures: none - generate golden values (trade acceptance, offer filtering)
 - Deliverables: csharp/Unciv.Core/Logic/Trade/TradeLogic.cs, tests
-- Gate: `dotnet test --filter FullyQualifiedName~TradeLogicTests`
+- Gate: `dotnet test --filter FullyQualifiedName~TradeLogic`
 - Claimed: 2026-10-24T15:52Z
 - Notes: Created by the backlog audit (TradeLogic was 'Planned, after T068'). ~290 LOC. TradeOfferType.kt is ported by T059 together with TradeOffer. TradeEvaluation (T089) is separate because it needs the diplomacy automation (T088).
   - DiplomacyManager.MakePeaceOneSide builds a plain Trade instead of TradeLogic(...).currentTrade; switch it to TradeLogic when this lands (optional, behaviour is identical).
@@ -891,6 +891,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - City.ConquestExternals default AcceptTrade now runs TradeLogic(..).CurrentTrade.Set(trade); AcceptTrade(false) (no gifts evaluated); its unported-throws test assertion was dropped. The TradeLogic constructor still hits the T089 seam only when a third civ at war is known (peace-proposal offers).
       - Kotlin `+=` on the offers lists is plusAssign (AddRange, no merge); embassy offer instance is shared between both lists as in Kotlin. DiplomacyManager.MakePeaceOneSide left on a plain Trade (identical behaviour; avoids the T089 seam throwing there).
       - Not covered by tests (need map/city/units): Embassy exploration, City transfer, Stockpiled_Resource, Technology.
+  -   - Review notes: adversarial review (Auditor/Adversary/Pragmatist) found no parity deviations; requested WarType (TeamWar/JoinWar), resource-offer filtering and mod-option tests, added. Gate widened to ~TradeLogic to include TradeLogicGameTests. Known limitation: major-civ liberation path can hit the T089 seam via peace-proposal offers.
 
 ### T087 Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation
 - State: Available
