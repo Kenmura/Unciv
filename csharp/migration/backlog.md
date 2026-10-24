@@ -178,13 +178,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (Adversarial Review subagent, single-agent mode, Auditor/Adversary/Pragmatist): Pass. Re-ran Standard checks (build -warnaserror 0 warnings, format clean, 773/773) and the Gate (`~UniqueTests` 53/53); no suppressions or policy-file changes in the diff. Verified all eight self-review fixes against the Kotlin. Non-blocking, left as is: `Copy` cannot clear `combatAction` (documented; no Kotlin caller does) and `CopyArg` is heavier than the two real call sites need (kept for data-class fidelity), `TemporaryUnique` throws `ArgumentOutOfRangeException` where Kotlin throws `NoSuchElementException` (caller bug in both), `DeprecatedUniqueTypes.UniqueTypeMap` is an `internal` mutable test seam that T029 must turn back into a read-only table.
 
 ### T028 Unique system: Conditionals and Countables
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T027
 - Source: core/src/com/unciv/models/ruleset/unique/Conditionals.kt, Countables.kt, expressions/{Expressions,Node,Operator,Parser,Tokenizer}.kt (the expression parser behind `ExpressionTests`)
 - Fixtures: tests/src/com/unciv/uniques/CountableTests.kt, tests/src/com/unciv/uniques/ExpressionTests.kt
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/Conditionals.cs, Countables.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~CountableTests|FullyQualifiedName~ExpressionTests`
-- Claimed:
+- Claimed: 2026-10-24T03:57Z
 - Notes: Fixtures that need TestGame are deferred to T035; port the rest now and list the deferred cases in Notes. Expression evaluation: Double vs Int semantics exact. Wire `Countables` into `UniqueParameterTypeExtensions.CountablesProvider` (or replace `TODO(T028)` in `UniqueParameterType.cs`). **From T027:** delete the stub classes `Conditionals` and `Countables` in `Unique/UniquePendingTickets.cs` and add the real ones (same names and signatures: `Conditionals.ConditionalApplies(Unique?, Unique, GameContext)`, `Countables.GetCountableAmount(string, GameContext) : int?`). `Unique.ConditionalsApply`/`GetUniqueMultiplier` already call them; add tests for a real conditional and for `ForEveryCountable`/`ForEveryAmountCountable`. `GameContext` is a class with state interfaces (`IGameContext*`), use its `Relevant*` members and `StateBasedRandom`. **Also from T027's review:** (a) rewrite the two tests that pin the stub (`UniqueTests.ConditionalsApplyShortCircuits`, `LocalUniqueCacheUniqueTests.ExplicitGameContext...` assert `Assert.Throws<NotImplementedException>`); (b) add tests for the `?? 0`, `multiplier / perEvery` and multiplicative stacking of `ForEveryCountable`/`ForEveryAmountCountable` (incl. `perEvery = -1` with a countable of `int.MinValue`, which wraps like the JVM; `perEvery = 0` throws on both sides, with different exception types); (c) test `IHasUniques.IsUnavailableBySettings` with real game-based conditionals (`Unavailable`/`OnlyAvailable`).
 
 ### T029 Deprecated uniques and BackwardCompatibility
