@@ -562,13 +562,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review notes (Antigravity): **Pass.** Gate (5/5) and Standard checks (build -warnaserror, format, 540/540 tests) pass cleanly. Line-by-line verification against `HolidayDates.kt` confirms enum values/ordering, chance weights, and lazy PRNG evaluation matching upstream. Verified determinism with explicit `DateOnly` inputs and UTC-anchored equinox date table. Verified `LocalDate.hashCode` and `DateRange.GetHashCode` reproduction. 15 holidays x 83 years (2019..2101) and daily sweep (2023..2030) verified against JVM golden dataset. No warning suppressions.
 
 ### T025 Unique system: UniqueTarget, UniqueFlag, UniqueParameterType
-- State: Needs-Review [Antigravity]
+- State: In-Review [Claude]
 - Depends: T018
 - Source: core/src/com/unciv/models/ruleset/unique/UniqueTarget.kt, UniqueFlag.kt, UniqueParameterType.kt
 - Fixtures: none - generate golden values (parameter matching/validation results)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/UniqueTarget.cs, UniqueFlag.cs, UniqueParameterType.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueParameterTypeTests`
-- Claimed: 2026-10-24T01:52:57Z
+- Claimed: 2026-10-24T02:29:29Z (review)
 - Notes: UniqueParameterType (797 LOC) references Ruleset for validation; introduce minimal interfaces (e.g. IRulesetView) and note them for T034 to implement. Enum ordinals/names must match Kotlin (serialized).
   - Implementer notes (Antigravity):
     - Ported `UniqueTarget` (all 34 enum values in declaration order, `UniqueTargetModifierType`, `DocumentationString`, `InheritsFrom`, `ModifierType`, `CanAcceptUniqueTarget`, `IsAcceptableModifierFor(IUniqueTargetView)`, `Displayable`, `CanIncludeSuppression`) under `Unciv.Models.Ruleset.Unique`.
