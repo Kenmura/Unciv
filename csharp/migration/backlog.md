@@ -604,13 +604,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Ran Gate (`~UniqueTypeTests`, 9/9) and Standard checks (build -warnaserror 0 warnings, format clean, 675/675).
   - Review (Antigravity): Pass. Verified `UniqueType.cs` (all 638 entries in declaration order), `UniqueTypeData.cs`, `UniqueTypeExtensions.cs`, and `UniqueTypeTests.cs` against `UniqueType.kt` and the JVM golden dump (`UniqueType.golden.tsv`): text, placeholder text, target sets, flag order, doc descriptions, parameter type maps (`/` split, ASCII trailing digits stripped, `SafeValueOf`), `CanAcceptUniqueTarget` across all 638 x 34 pairs, and `UniqueTypeMap`. Also wired `UniqueType.Comment.Text()` into `TranslationFileReader.CommentUniqueText` (resolving `TODO(T026)`). Re-ran Gate (`~UniqueTypeTests`, 9/9 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 692/692 passed).
 ### T027 Unique system: Unique, UniqueMap, LocalUniqueCache, TemporaryUnique, IHasUniques, GameContext
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T026, T020
 - Source: core/src/com/unciv/models/ruleset/unique/Unique.kt, UniqueMap.kt, LocalUniqueCache.kt, TemporaryUnique.kt, IHasUniques.kt, GameContext.kt, UniqueTriggerExecutors.kt
 - Fixtures: tests/src/com/unciv/uniques/TimedUniquesTests.kt (where state-independent)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueTests`
-- Claimed:
+- Claimed: 2026-10-24T03:21:29Z
 - Notes: UniqueMap must preserve insertion order. GameContext depends on Civilization/City/Tile: use state interfaces, owned by this ticket, implemented later. `stateBasedRandom` formula comes from T017. UniqueTriggerActivation (1.5k LOC) is deferred to land with Civ/City/Unit. Have `Unique` implement `IUniqueTargetView` and `IHasUniques` implement `IRulesetObjectParameterView` (from T025).
 
 ### T028 Unique system: Conditionals and Countables
