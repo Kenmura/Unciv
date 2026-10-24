@@ -1728,7 +1728,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Parity bug found+fixed in engine: the Clear Barbarian Camp fixture JSON has "data1":0 for a String field; libGDX reads any primitive into a String (JsonValue.asString) but System.Text.Json threw. Added Json/LenientStringConverter (numbers/bools read as raw text, write unchanged) registered in UncivJson defaults, with tests in JsonTests. Kotlin Random(seed) in testAlternativeBarbarianCampsAreUsed maps to GameRandom(seed); the sampled-variety assertion is seed-sensitive across RNGs but passes.
 
 ### T152 Deferred civilization fixture: GreatPersonSelectionTest
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T142
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/GreatPersonSelectionTest.kt (8 cases; uses WorldScreen/NextTurnButton/AutoPlay UI and Mockito: port only the engine-level GreatPersonManager cases, mark the UI-bound cases Won't port in Notes)
@@ -1736,6 +1736,8 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures.Civilization`
 - Claimed: 2026-10-24T18:42Z
 - Notes: Split from T142.
+  - Ported 5 of 8 cases (engine-level GreatPersonManager) to GreatPersonSelectionFixtureTests: normal choice (both base rulesets), Maya pool, invalid/exhausted/stale/cityless, blocked placement, option-query independence. The Kotlin set-equality asserts on LongCountGPPool use SetEquals (JavaHashSet is unordered); mutation via options cast to ISet is wrapped in try/catch like runCatching.
+    Not ported: 'automation commits its preferred...' and 'automation retains a pick...' need NextTurnAutomation.chooseGreatPerson (still a seam, T094): split to T157 (depends T094). 'deferred pending choice remains the next turn action...' mocks WorldScreen/NextTurnButton/AutoPlay via Mockito and reflection on libGDX UI classes: Won't port (UI-only; NextTurnAction/WorldScreen are non-goals).
 
 ### T153 T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies
 - State: Done
@@ -1777,6 +1779,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~UnitAutomationTests`
 - Claimed:
 - Notes: Split from T090 at claim time. ~620 LOC (UnitAutomation.kt is 677 lines; tryUpgradeUnit already ported in T090 as a partial class member). Retype the MapUnit.doAction and UnitActionsSeams (automatedExplore/automateUnitMoves via GameView) call sites. Calls to CivilianUnitAutomation/SpecificUnitAutomation/WorkerAutomation (T091/T092), NextTurnAutomation (T094) are TODO(T###) seams naming the owner. timeThis dropped (T027 policy).
+
+### T157 Deferred automation fixture: GreatPersonSelectionTest automation cases
+- State: Available
+- Depends: T094,T152
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/civilization/GreatPersonSelectionTest.kt (2 cases: 'automation commits its preferred available great person', 'automation retains a pick when its chosen unit cannot be placed'; need NextTurnAutomation.chooseGreatPerson from T094; GameView(...).civView wrapper replaced by passing the Civilization to ChooseGreatPerson)
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/GreatPersonSelectionAutomationFixtureTests.cs
+- Gate: `dotnet test --filter FullyQualifiedName~GreatPersonSelectionAutomation`
+- Claimed:
+- Notes: Split from T152.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
