@@ -20,14 +20,14 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
    - *Reason:* Native Android/desktop file chooser dialogs and OS-specific storage wrappers. *(Note: Pure engine save/load abstractions in `UncivFiles.kt`, `MapSaver.kt`, `FileConversions.kt`, and `IMediaFinder.kt` remain deferred to the engine save/load ticket and are NOT ruled out).*
 
 4. **Platform & Host Utilities (`core/src/com/unciv/utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt`)**:
-   - `Display.kt`: libGDX display queries, DPI scaling, and screen sizing.
+   - `Display.kt`: libGDX display queries, DPI scaling, and screen sizing (engine reads it only through `GameSettings`, see 9).
    - `PlatformSpecific.kt`: Native platform hooks (Android clipboard, vibration, external browser launch).
-   - `Concurrency.kt`: libGDX main/GL thread dispatchers (`launchOnGLThread`, etc.).
-   - `Log.kt`: libGDX `Gdx.app.log` logging wrapper.
-   - `DebugUtils.kt`: libGDX debug FPS rendering and memory counter tooling.
+   - `Concurrency.kt`: libGDX main/GL thread dispatchers (`launchOnGLThread`, etc.). The engine users (`AlternatingStateManager` `Concurrency.run`, `RulesetCache` `Concurrency.parallelize`) run their work **synchronously and in order**: ruleset loading in the engine is single-threaded and deterministic.
+   - `Log.kt`: only the libGDX `Gdx.app.log` backend is Won't-port. The engine **does** get a thin `Log` facade (191 call sites in 42 engine files): see **T047**; do not silently drop log calls in the meantime, leave `// TODO(T047)` at the site.
+   - `DebugUtils.kt`: the UI-only flags (`SHOW_TILE_COORDS`, `SHOW_TILE_IMAGE_LOCATIONS`, `SHOW_FPS`) are Won't-port. The flags the game rules read are **not**: `SIMULATE_UNTIL_TURN` (`GameInfo`), `SUPERCHARGED` (`CityStats`), `VISIBLE_MAP` (`CivInfoTransientCache`), `CIV_IDS_IN_EXPERIMENT_GROUP`, `SETTLER_SCORES`/`SHOW_SETTLER_SCORES` (`CityLocationTileRanker`). They become an explicit engine options object, see **T048**.
 
-5. **Translation Authoring Dev Tooling (`core/src/com/unciv/models/translations/TranslationFileWriter.kt`)**:
-   - `TranslationFileWriter.kt`.
+5. **Translation Authoring Dev Tooling (`core/src/com/unciv/models/translations/TranslationFileWriter.kt`)** and translation rendering glue:
+   - `TranslationFileWriter.kt`; `ui/components/fonts/DiacriticSupport.kt` and the libGDX font glyph remapping (fake alphabets for bitmap fonts); the `Gdx.files.internal` based translation file lookup (replaced by `ITranslationFileHandle`, T023).
    - *Reason:* Developer tooling for updating `.properties` files, generating template diffs, and formatting translation sources. The engine only needs headless read-only translation runtime support.
 
 6. **2D Scene2D Skins & Sprite Sheet Models (`core/src/com/unciv/models/skins/`, `core/src/com/unciv/models/tilesets/`)**:
@@ -36,8 +36,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
    - *Reason:* Superseded entirely by the Godot 2D/3D client rendering architecture.
 
 7. **libGDX UI and Launchers (`core/src/com/unciv/ui/`, `android/`, `desktop/`)**:
-   - All libGDX screens, Scene2D actors, stage wrappers, sound/music playback hooks, and desktop/android launcher harnesses.
+   - Screens, Scene2D actors, popups, stage wrappers, sound/music playback hooks, image loading, and desktop/android launcher harnesses.
    - *Reason:* Client concerns handled exclusively by the Godot client track.
+   - **But 106 engine files import `com.unciv.ui.*`.** These types are needed by the engine and are **not** Won't-port; each is ported as engine data, replaced, or cut at the call site by whoever ports the first file that needs it (check this list first, do not redo the analysis):
+     - Port as engine data/enums/functions: `ui.screens.victoryscreen.RankingType` (12 uses), `ui.components.MayaCalendar` (4), `ui.components.UnitMovementMemoryType` (3), `ui.audio.UncivSound` (enum field of `Stat`; keep the enum, drop playback), `ui.screens.overviewscreen.EmpireOverviewCategories` (3), `ui.screens.mapeditorscreen.MapGeneratorSteps`, `ui.components.extensions.{toPercent (31), colorFromRGB, isLargerThan, getNeedMoreAmountString}`, `ui.components.fonts.Fonts` stat characters (already in `Stat.cs`).
+     - Decide once as an engine text model (the client wants the same text): `ui.screens.civilopediascreen.{FormattedLine (15), ICivilopediaText, CivilopediaCategories}` and `ui.objectdescriptions.*` (`FormattedLineListBuilder`, `BaseUnit/Building/Technology/Nation/Resource/ImprovementDescriptions`, `uniquesToCivilopediaTextLines`). The ruleset object tickets (T030-T033) must say how they handle `getCivilopediaTextLines`/`getShortDescription`.
+     - Cut at the call site: `ui.images.ImageGetter`/`Portrait*`/`AtlasPreview` (icon names are strings in the engine), `ui.audio.SoundPlayer`/`MusicTrackChooserFlags`, `ui.popups.*` and `ui.screens.*Screen` references inside notification actions (a notification action becomes data: a type plus parameters), `ui.crashhandling`, `ui.components.widgets.*`, `ui.components.input.KeyboardBinding`.
+
+9. **Client settings and multiplayer residue reachable from the engine**:
+   - `models/metadata/GameSettings.kt` (and `GameSettingsMultiplayer`, `ChatWebSocket`/`FriendList` imports) is a client settings model, not ported. Engine code that reads `UncivGame.Current.settings.*` (language for `tr()`, ...) takes explicit parameters instead (`Translations.CurrentLanguage` is the stand-in, T023).
+   - `logic.multiplayer.isUsersTurn` (used by `CityConstructions`) is replaced by the command layer's actor/turn validation (COMMANDS.md). `FriendList.Friend` (used by `IdChecker`) lives on as a nested data class in the port.
 
 8. **libGDX UI Unit Tests (`tests/src/com/unciv/ui/`)**:
    - `KeyBindingTests.kt`, `LineChartTests.kt`, `ModFontsTests.kt`, `NativeBitmapFontDataTest.kt`, `EditorMapHolderMemoryTest.kt`, `DevConsoleTests.kt`, `RankingTypeTests.kt`, `WorldMapMovementOverlayTest.kt`.
@@ -428,6 +436,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Optional, no change required: the saved-settings branch of `fromSettings` (`GameSetupInfo(lastGameSetup).apply { mapParameters.reseed() }`) is a client/settings concern; if a headless caller needs it, it is `new GameSetupInfo(last)` followed by `MapParameters.Reseed(...)` with an explicit seed source, never the clock.
   - Rework notes (Claude): the copy constructor (and `Clone()`) no longer copies `MapFile` (verified upstream behaviour on the JVM: null), test now asserts null; the GameInfo constructor note became `TODO(T046)`. Gate 8/8, Standard checks pass (build clean, format clean, full test green).
 
+### T047 Log facade
+- State: Available
+- Depends: none
+- Source: core/src/com/unciv/utils/Log.kt (API shape only; the `Gdx.app.log` backend is Won't port, T043)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Utils/Log.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~LogTests`
+- Claimed:
+- Notes: The engine has 191 `Log.error/debug/...` call sites in 42 files (grep `import com.unciv.utils.Log` and `import com.unciv.utils.debug` under logic/ and models/). Provide a static `Log` with the same method names and printf-style signature, forwarding to an injectable sink (`Log.Sink`, default no-op), no clock, no thread, no console by default; the sink gets level, tag (caller class) and the formatted message so a Godot client or a test can capture it. Also decide the `debug(...)` flavour (Kotlin top-level `debug` takes a format string and args). Then replace the places where earlier tickets dropped a log call and left a note (IdChecker, Translations swallow-on-read-error), and search the code for `TODO(T047)`.
+
+### T048 Engine options replacing the DebugUtils flags the rules read
+- State: Available
+- Depends: none
+- Source: core/src/com/unciv/utils/DebugUtils.kt, and its engine users: logic/GameInfo.kt (`SIMULATE_UNTIL_TURN`), logic/city/CityStats.kt (`SUPERCHARGED`), logic/civilization/transients/CivInfoTransientCache.kt (`VISIBLE_MAP`), logic/automation/unit/CityLocationTileRanker.kt (`SETTLER_SCORES`, `SHOW_SETTLER_SCORES`), anything using `CIV_IDS_IN_EXPERIMENT_GROUP`
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Utils/EngineOptions.cs (name open), a design note in DETERMINISM.md, tests
+- Gate: `dotnet test --filter FullyQualifiedName~EngineOptionsTests`
+- Claimed:
+- Notes: These flags change game results (extra yields, whole-map vision, turn simulation), so a hidden mutable static breaks the "log + initial state reproduces the game" rule. Decide: an options object that is part of the game state/setup (hashed by StateHasher) and changed only through a command, or a per-process object that must be identical on all peers and is stamped into the game's start record. The UI-only flags are not ported.
+
 ### T046 GameInfo core and the hooks waiting for it
 - State: Available
 - Depends: T034, T039, T045
@@ -701,7 +729,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Platform file IO behind an interface.
 
 ### T043 Record Won't-port scope
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: logic/multiplayer, logic/github, logic/UncivKtor.kt, logic/files/{FileChooser,PlatformSaverLoader}.kt, utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt, models/translations/TranslationFileWriter.kt, models/skins, models/tilesets, ui tests
 - Fixtures: none
@@ -722,6 +750,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     4. **`Concurrency` and the multiplayer residue are referenced from the engine.** `AlternatingStateManager` (`Concurrency.run`) and `RulesetCache` (`Concurrency.parallelize`) need a stated replacement (run the work synchronously/in order: ruleset loading must be deterministic and single-threaded in the engine). `logic.multiplayer.isUsersTurn` (used by `CityConstructions`), `FriendList.Friend` (used by `IdChecker`; the port has a nested stand-in) and `GameSettingsMultiplayer`/`ChatWebSocket` (inside `models/metadata/GameSettings.kt`) are reachable from engine code: say what replaces `isUsersTurn` (the command layer's actor/turn check, COMMANDS.md) and that `GameSettings` itself is a client settings model that is not ported (it is currently in neither list: state it, since `UncivGame.Current.settings.*` is read in engine code, e.g. `language` for translations, replaced by explicit parameters).
     5. Add the entries I put into the ticket's Notes after the implementer finished: `ui/components/fonts/DiacriticSupport` (and the libGDX font glyph remapping) and the `Gdx.files`-based translation lookup (replaced by `ITranslationFileHandle`); list #5 only names `TranslationFileWriter`.
     - Good: the categorization and rationale text for #1-#6 and #8 is accurate, the engine save/load exclusion note for `UncivFiles`/`MapSaver`/`FileConversions`/`IMediaFinder` is right, and the `PROTOCOL.md` pointer is in place. Standard checks (build, format, tests) pass; nothing else changed.
+  - Rework notes (Claude): all five review items applied to the Non-goals section (entries 4, 5, 7 and the new 9): the `ui/` carve-out list with a disposition per type, `DebugUtils` split (new ticket **T048**), `Log` facade policy (new ticket **T047**, `TODO(T047)` at call sites meanwhile), `Concurrency` replacement, multiplayer/settings residue, `DiacriticSupport` and the `Gdx.files` lookup. Docs only; no code changed.
 
 ### Planned (not yet ticketed)
 Deferred until the ruleset and map tickets land (decided with the user): Civilization (split ~5: core, diplomacy, policy/tech managers, notifications/quests, vision/stats), Trade, City + CityStats + production, UnitManager/MapUnit (movement, actions), UniqueTriggerActivation, Battle, GameInfo, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
