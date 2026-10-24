@@ -298,5 +298,24 @@ public sealed class FormattedLine
 
     public override int GetHashCode() => throw new InvalidOperationException("FormattedLine isn't supposed to be compared or used as hash key");
 
+    /// <summary>Kotlin data class <c>copy</c>: a copy with the given attributes replaced.</summary>
+    public FormattedLine Copy(
+        string? text = null,
+        string? link = null,
+        string? icon = null,
+        string? extraImage = null,
+        float? imageSize = null,
+        int? size = null,
+        int? header = null,
+        int? indent = null,
+        float? padding = null,
+        string? color = null,
+        bool? separator = null,
+        bool? starred = null,
+        bool? centered = null,
+        bool? iconCrossed = null) =>
+        new(text ?? Text, link ?? Link, icon ?? Icon, extraImage ?? ExtraImage, imageSize ?? ImageSize, size ?? Size, header ?? Header,
+            indent ?? Indent, padding ?? Padding, color ?? Color, separator ?? Separator, starred ?? Starred, centered ?? Centered, iconCrossed ?? IconCrossed);
+
     public override bool Equals(object? obj) => throw new InvalidOperationException("FormattedLine isn't supposed to be compared or used as hash key");
 }

@@ -1,16 +1,28 @@
 using System.Text.Json.Serialization;
 using Unciv.Logic;
+using Unciv.Logic.Civilization;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Tech;
 
 // core/src/com/unciv/models/ruleset/tech/Technology.kt
-// Not ported yet, they need Ruleset, Civilization and the Civilopedia/description types (T034, T046): getSortGroup, getSubCategory, getDescription,
-// makeLink, getCivilopediaTextLines.
-public class Technology : RulesetObject
+public class Technology : RulesetObject, ICivilopediaText, IHasUniques
 {
     public override string MakeLink() => $"Technology/{Name}";
+
+    public int GetSortGroup(Ruleset ruleset) => Column == null ? -1 : ((IHasUniques)this).Era(ruleset)?.EraNumber ?? -1;
+
+    public string? GetSubCategory(Ruleset ruleset) => Column == null ? null : ((IHasUniques)this).Era(ruleset)?.Name;
+
+    /// <summary>Get Civilization-specific description for TechPicker or AlertType.TechResearched</summary>
+    public string GetDescription(Civilization viewingCiv) => TechnologyDescriptions.GetDescription(this, viewingCiv);
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) => TechnologyDescriptions.GetCivilopediaTextLines(this, context);
+
+    Era? IHasUniques.Era(IRulesetTechView ruleset) => ruleset.GetEra(Era());
 
     public int Cost { get; set; }
 

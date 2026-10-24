@@ -6,6 +6,9 @@ public static class Fonts
 {
     public const char Turn = '⏳';        // U+23F3 'hourglass'
     public const char Strength = '†';     // U+2020 'dagger'
+    public const char RangedStrength = '‡'; // U+2021 'double dagger'
+    public const char Movement = '➡';     // U+27A1 'black rightwards arrow'
+    public const char Range = '…';        // U+2026 'horizontal ellipsis'
     public const char Production = '⚙';   // U+2699 'gear'
     public const char Gold = '¤';         // U+00A4 'currency sign'
     public const char Food = '⁂';         // U+2042 'asterism'

@@ -3,16 +3,22 @@ using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Translations;
 using Unciv.UI.Components.Extensions;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 
 namespace Unciv.Models.Ruleset.Nation;
 
 // core/src/com/unciv/models/ruleset/nation/Nation.kt
-// Not ported yet, they need Ruleset and the Civilopedia text types (T034): makeLink, getSortGroup, getSubCategory,
-// getCivilopediaTextLines.
-public class Nation : RulesetObject
+public class Nation : RulesetObject, ICivilopediaText
 {
     public override string MakeLink() => $"Nation/{Name}";
+
+    public int GetSortGroup(Ruleset ruleset) => IsCityState ? 1 : IsBarbarian ? 9 : 0;
+
+    public string? GetSubCategory(Ruleset ruleset) => IsCityState ? "City-States" : IsBarbarian ? "Other" : "Civilizations";
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) => this.GetNationCivilopediaTextLines(context);
 
     // region Serialized fields
     private List<int>? outerColor;

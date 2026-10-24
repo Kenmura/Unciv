@@ -5,6 +5,8 @@ using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Components.Extensions;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
@@ -16,16 +18,31 @@ namespace Unciv.Models.Ruleset.Unit;
 // core/src/com/unciv/models/ruleset/unit/BaseUnit.kt
 // This is BaseUnit because Unit is already a base Kotlin class and to avoid mixing the two up
 //
-// Not ported yet, because they need the description/Civilopedia types: getShortDescription, getDescription, getCivilopediaTextLines, getSortGroup,
-// getSubCategory (T097). newMapUnit is IUnitManager.NewMapUnit (the unit is created by the UnitManager seam, T066).
+// Not ported yet, because they need the UnitManager seam or CityConstructions: newMapUnit is IUnitManager.NewMapUnit (the unit is created by the UnitManager seam, T066).
 
 /// <summary>
 /// This is the basic info of the units, as specified in Units.json,
 /// in contrast to MapUnit, which is a specific unit of a certain type that appears on the map
 /// </summary>
-public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitParameterView
+public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstruction, IRulesetUnitParameterView
 {
     public override string MakeLink() => $"Unit/{Name}";
+
+    /// <summary>Generate short description as comma-separated string for Technology description "Units enabled" and GreatPersonPickerScreen</summary>
+    public string GetShortDescription(Func<UniqueObject, bool>? uniqueExclusionFilter = null) =>
+        BaseUnitDescriptions.GetShortDescription(this, uniqueExclusionFilter);
+
+    /// <summary>Generate description as multi-line string for CityScreen addSelectedConstructionTable</summary>
+    /// <param name="city">Supplies civInfo to show available resources after resource requirements</param>
+    public string GetDescription(CityObject city) => BaseUnitDescriptions.GetDescription(this, city);
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) => this.GetBaseUnitCivilopediaTextLines(context);
+
+    private Tech.Era? RequiredTechEra(Ruleset ruleset) =>
+        RequiredTech == null ? null : ((IHasUniques?)ruleset.GetTechnology(RequiredTech))?.Era(ruleset);
+
+    public int GetSortGroup(Ruleset ruleset) => RequiredTechEra(ruleset)?.EraNumber ?? 100;
+    public string? GetSubCategory(Ruleset ruleset) => RequiredTechEra(ruleset)?.Name ?? "Other";
 
     private UnitTypeObject? type;
     private bool? isGreatPerson;

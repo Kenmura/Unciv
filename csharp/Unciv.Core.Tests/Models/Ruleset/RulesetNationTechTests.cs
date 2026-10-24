@@ -4,6 +4,7 @@ using Unciv.Models.Ruleset.Nation;
 using Unciv.Models.Ruleset.Tech;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using BuildingObject = Unciv.Models.Ruleset.Building;
 using StatsObject = Unciv.Models.StatTypes.Stats;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
@@ -359,7 +360,7 @@ public class RulesetNationTechTests
     public void RequiredTechnologiesEraAndColumnTakeTheMaximum()
     {
         var (view, early, late) = World();
-        var obj = new Technology { Uniques = ["Only available <after discovering [Pottery]>", "Only available <after discovering [Philosophy]>"] };
+        var obj = new BuildingObject { Name = "Obj", Uniques = ["Only available <after discovering [Pottery]>", "Only available <after discovering [Philosophy]>"] };
         IHasUniques self = obj;
         Assert.Equal([early, late], self.RequiredTechnologies(view));
         Assert.Equal("Classical era", self.Era(view)!.Name);
@@ -372,7 +373,7 @@ public class RulesetNationTechTests
     public void NoRequiredTechsMeansNoEraNoColumnAndAlwaysAvailable()
     {
         var (view, _, _) = World();
-        IHasUniques self = new Technology();
+        IHasUniques self = new BuildingObject { Name = "Obj" };
         Assert.Empty(self.RequiredTechnologies(view));
         Assert.Null(self.Era(view));
         Assert.Null(self.TechColumn(view));
@@ -383,7 +384,7 @@ public class RulesetNationTechTests
     public void UnknownRequiredTechIsNullAndIgnored()
     {
         var (view, _, _) = World();
-        IHasUniques self = new Technology { Uniques = ["Only available <after discovering [Nope]>"] };
+        IHasUniques self = new BuildingObject { Name = "Obj", Uniques = ["Only available <after discovering [Nope]>"] };
         Assert.Single(self.RequiredTechnologies(view));
         Assert.Null(self.Era(view));
         Assert.Null(self.TechColumn(view));
@@ -398,7 +399,7 @@ public class RulesetNationTechTests
         view.Eras["B"] = new Era { Name = "B", EraNumber = 2 };
         view.Techs["t1"] = new Technology { Name = "t1", Column = new TechColumn { Era = "A", ColumnNumber = 3 } };
         view.Techs["t2"] = new Technology { Name = "t2", Column = new TechColumn { Era = "B", ColumnNumber = 3 } };
-        IHasUniques self = new Technology { Uniques = ["Only available <after discovering [t1]>", "Only available <after discovering [t2]>"] };
+        IHasUniques self = new BuildingObject { Name = "Obj", Uniques = ["Only available <after discovering [t1]>", "Only available <after discovering [t2]>"] };
         Assert.Equal("A", self.Era(view)!.Name);
         Assert.Equal("t1", self.TechColumn(view) == view.Techs["t1"].Column ? "t1" : "t2");
     }
