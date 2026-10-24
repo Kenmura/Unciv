@@ -38,12 +38,16 @@
     "Unciv.Core/Logic/City/Managers/CityTurnManager.cs": {"branch": 83.33, "line": 92.52},
     "Unciv.Core/Logic/Civilization/CivConstructions.cs": {"branch": 54.55, "line": 64.46},
     "Unciv.Core/Logic/Civilization/CivRankingHistory.cs": {"branch": 62.5, "line": 75.0},
-    "Unciv.Core/Logic/Civilization/Civilization.cs": {"branch": 61.8, "line": 69.25},
+    "Unciv.Core/Logic/Civilization/Civilization.cs": {"branch": 71.15, "line": 78.79},
     "Unciv.Core/Logic/Civilization/CivilizationSeams.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Logic/Civilization/Diplomacy/CityStateFunctions.cs": {"branch": 71.36, "line": 72.73},
     "Unciv.Core/Logic/Civilization/Diplomacy/CityStatePersonality.cs": {"branch": 100.0, "line": 0.0},
+    "Unciv.Core/Logic/Civilization/Diplomacy/CityStateSeams.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Logic/Civilization/Diplomacy/DeclareWar.cs": {"branch": 95.57, "line": 98.06},
     "Unciv.Core/Logic/Civilization/Diplomacy/Demand.cs": {"branch": 100.0, "line": 93.66},
     "Unciv.Core/Logic/Civilization/Diplomacy/DiplomacyFunctions.cs": {"branch": 90.32, "line": 93.8},
-    "Unciv.Core/Logic/Civilization/Diplomacy/DiplomacyManager.cs": {"branch": 75.89, "line": 85.21},
+    "Unciv.Core/Logic/Civilization/Diplomacy/DiplomacyManager.cs": {"branch": 78.52, "line": 86.77},
+    "Unciv.Core/Logic/Civilization/Diplomacy/DiplomacyTurnManager.cs": {"branch": 77.03, "line": 87.58},
     "Unciv.Core/Logic/Civilization/Diplomacy/DiplomaticModifiers.cs": {"branch": 14.55, "line": 11.32},
     "Unciv.Core/Logic/Civilization/Diplomacy/RelationshipLevel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/Civilization/ExploredRegion.cs": {"branch": 59.72, "line": 78.42},
@@ -264,6 +268,7 @@
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0}
   },
   "excused": {
+    "Unciv.Core/Logic/Civilization/Diplomacy/CityStateFunctions.cs": "election rigging, diplomatic marriage, worker tribute, the military part of tribute willingness and the in-border unit checks need a TileMap, spies and units: TestGame fixtures (T072); the great-person/military-gift paths are blocked on NextTurnAutomation (T094) and CityCombatant (T081)",
     "Unciv.Core/Logic/Civilization/Managers/UnitManager.cs": "T099 only retargets a TODO marker comment; the file keeps T066 coverage (T104 final sweep owns it)"
   }
 }

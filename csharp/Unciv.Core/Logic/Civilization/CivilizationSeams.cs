@@ -122,7 +122,7 @@ public interface ICityStateFunctions
     /// The real CityStateFunctions (T068) implements it; the throwing default lets the test fakes compile.
     /// </summary>
     bool InitCityState(Ruleset ruleset, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng) =>
-        throw new NotSupportedException("this ICityStateFunctions does not implement InitCityState");
+        throw new NotSupportedException("this ICityStateFunctions does not implement InitCityState (TODO(T104): drop the default once the test fakes implement it)");
     // T068 (DeclareWar, DiplomacyTurnManager); the concrete CityStateFunctions implements all of these
     /// <summary><c>cityStateFunctions.getNotificationActions()</c></summary>
     IEnumerable<NotificationAction> GetNotificationActions();

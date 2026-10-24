@@ -4,7 +4,6 @@ using Unciv.Models.StatTypes;
 
 namespace Unciv.Models.Ruleset.Unique;
 
-// Open owners: T104 (final seam sweep decides which of these survive; the classes themselves are ported and implement them).
 // The members of GameInfo, Civilization, City, MapUnit, Tile, Region, the combatants and Ruleset that Conditionals.kt, Countables.kt and
 // the expression Nodes read, as partial extensions of the interfaces GameContext.cs declares (see the comment there).
 // The classes are ported from T046 onwards (open owner: T104, final seam sweep) and implement these; nothing in Conditionals or Countables changes then.
