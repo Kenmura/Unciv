@@ -1658,13 +1658,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T141: Battle (T083) not ported yet.
 
 ### T147 MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T107
 - Source: core/src/com/unciv/logic/files/MapSaver.kt
 - Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt (testingMap)
 - Deliverables: csharp/Unciv.Core/Json/LenientJson.cs, MapSaver tests
 - Gate: dotnet test --filter FullyQualifiedName~MapSaver
-- Claimed:
+- Claimed: 2026-10-24T18:14Z
 - Notes: Found in T141: the Kotlin FreshWaterTests map string is zipped libGDX minimal JSON ({mapParameters:{type:Empty,...}} unquoted keys AND values). LenientJson.QuoteBareKeys only quotes keys, so MapSaver.MapFromSavedString throws. Old Unciv saves in that format cannot be loaded. T141 embeds an equivalent strict-JSON string instead; once this lands, switch FreshWaterFixtureTests to the original Kotlin string.
 
 ### T148 Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail)
