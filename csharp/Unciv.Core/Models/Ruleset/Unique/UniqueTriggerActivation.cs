@@ -1,4 +1,5 @@
 using Unciv.Logic.Civilization;
+using CityObject = Unciv.Logic.City.City;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Models.Ruleset.Unique;
@@ -9,7 +10,7 @@ namespace Unciv.Models.Ruleset.Unique;
 public static class UniqueTriggerActivation
 {
     // TODO(T052): getTriggerFunction(...)?.invoke() ?: false. Until then a trigger has no effect and reports failure.
-    public static bool TriggerUnique(Unique unique, Civilization civInfo, ICityState? city = null, IMapUnitState? unit = null, TileClass? tile = null,
+    public static bool TriggerUnique(Unique unique, Civilization civInfo, CityObject? city = null, IMapUnitState? unit = null, TileClass? tile = null,
         string? notification = null, string? triggerNotificationText = null)
     {
         _ = unique;
@@ -23,7 +24,7 @@ public static class UniqueTriggerActivation
     }
 
     // TODO(T052): TriggerUnique(unique, city.civ, city, tile = city.getCenterTile(), ...)
-    public static bool TriggerUnique(Unique unique, ICityState city, string? notification = null, string? triggerNotificationText = null) =>
+    public static bool TriggerUnique(Unique unique, CityObject city, string? notification = null, string? triggerNotificationText = null) =>
         TriggerUnique(unique, city.Civ, city, null, city.GetCenterTile(), notification, triggerNotificationText);
 
     // TODO(T052): TriggerUnique(unique, unit.civ, unit = unit, tile = unit.currentTile, ...)

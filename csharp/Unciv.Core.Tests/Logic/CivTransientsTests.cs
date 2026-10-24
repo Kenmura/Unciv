@@ -4,6 +4,7 @@ using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
+using CityObject = Unciv.Logic.City.City;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
@@ -106,8 +107,7 @@ public class CivTransientsTests
         var library = new Building { Name = "Library" };
         info.RulesetData.Buildings.Put("Library", library);
         var city = new FakeCityState("c1", new FakeCiv("Rome")) { CivData = civ };
-        city.CityFilters.Add("in this city");
-        city.LocalUniques.Add(new UniqueObject("Gain a free [Library] [in this city]", UniqueTarget.Building, "Test"));
+        city.LocalUniques.AddUnique(new UniqueObject("Gain a free [Library] [in this city]", UniqueTarget.Building, "Test"));
         civ.Cities = [city];
 
         civ.CivConstructions.AddFreeBuildings();
@@ -161,7 +161,7 @@ public class CivTransientsTests
         var granary = new Building { Name = "Granary" };
         info.RulesetData.Buildings.Put("Granary", granary);
         var first = new FakeCityState("c1", new FakeCiv("Rome"));
-        var cities = new List<ICityState> { first };
+        var cities = new List<CityObject> { first };
         civ.Cities = cities;
         first.OnCompleteConstruction = _ => cities.Add(new FakeCityState("c2", new FakeCiv("Rome")));
 
@@ -179,8 +179,7 @@ public class CivTransientsTests
         info.RulesetData.Buildings.Put("Library", library);
         var first = new FakeCityState("c1", new FakeCiv("Rome")) { CivData = civ };
         var second = new FakeCityState("c2", new FakeCiv("Rome")) { CivData = civ };
-        foreach (var city in new[] { first, second }) city.CityFilters.Add("in this city");
-        first.LocalUniques.Add(new UniqueObject("Gain a free [Library] [in this city]", UniqueTarget.Building, "Test"));
+        first.LocalUniques.AddUnique(new UniqueObject("Gain a free [Library] [in this city]", UniqueTarget.Building, "Test"));
         civ.Cities = [first, second];
 
         civ.CivConstructions.AddFreeBuildings();

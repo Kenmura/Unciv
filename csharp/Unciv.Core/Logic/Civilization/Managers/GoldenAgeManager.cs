@@ -80,7 +80,7 @@ public class GoldenAgeManager : IsPartOfGameInfoSerialization
         });
         //Golden Age can happen mid turn with Great Artist effects
         foreach (var city in CivInfo.Cities)
-            city.UpdateCityStats(true);
+            city.CityStats.Update(updateCivStats: true);
     }
 
     public void EndTurn(int happiness)

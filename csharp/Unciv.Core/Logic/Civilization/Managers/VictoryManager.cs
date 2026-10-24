@@ -58,7 +58,7 @@ public class VictoryManager : IsPartOfGameInfoSerialization
         {
             foreach (var city in civ.Cities)
             {
-                foreach (var building in city.GetBuiltBuildings())
+                foreach (var building in city.CityConstructions.GetBuiltBuildings())
                 {
                     if (((IHasUniques)building).HasUnique(UniqueType.OneTimeTriggerVoting, GameContext.IgnoreConditionalsState))
                         return (building.Name, civ.CivId);

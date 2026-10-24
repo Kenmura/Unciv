@@ -121,7 +121,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
 
     private bool isCityCenterInternal;
 
-    /// <summary>T060 retypes it to <c>City</c>.</summary>
+    /// <summary>TODO(T115): retype to <c>City</c>.</summary>
     public IGameContextCity? OwningCity { get; private set; }
 
     private Terrain? baseTerrainObject;

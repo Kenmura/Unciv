@@ -355,7 +355,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         // This ALSO has the side-effect of updating the CivInfo statForNextTurn so we don't need to call it explicitly
         foreach (var city in CivInfo.Cities)
         {
-            city.UpdateCityStats(true);
+            city.CityStats.Update(updateCivStats: true);
             city.ReassignPopulationDeferred();
         }
 
@@ -395,7 +395,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         // This ALSO has the side-effect of updating the CivInfo statForNextTurn so we don't need to call it explicitly
         foreach (var city in CivInfo.Cities)
         {
-            city.UpdateCityStats(true);
+            city.CityStats.Update(updateCivStats: true);
             city.ReassignPopulationDeferred();
         }
     }

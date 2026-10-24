@@ -12,7 +12,7 @@ namespace Unciv.Logic.Civilization.Transients;
 // Ported from core/src/com/unciv/logic/civilization/transients/CivInfoStatsForNextTurn.kt (T058).
 //
 // Deviations:
-// - City, MapUnit and the managers are the seams of CivilizationSeams.cs until T060/T065/T059/T057 retype them.
+// - MapUnit and the managers are the seams of CivilizationSeams.cs until T065/T059 retype them.
 // - getHappinessBreakdown returns a JavaHashMap: the Kotlin HashMap<String, Float> is iterated in java.util.HashMap order (String keys
 //   have a deterministic JVM hash) and Civilization.updateStatsForNextTurn sums its values as Float, so the order is observable.
 // - Kotlin Float/Double/Int arithmetic is kept (no widening); sumOf over Int wraps.
@@ -165,13 +165,13 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
 
     public int GetUnitSupplyFromPop()
     {
-        var totalSupply = CivInfo.Cities.SumOf(it => it.Population) * CivInfo.GameInfo.Ruleset.ModOptions.Constants.UnitSupplyPerPopulation;
+        var totalSupply = CivInfo.Cities.SumOf(it => it.Population.Population) * CivInfo.GameInfo.Ruleset.ModOptions.Constants.UnitSupplyPerPopulation;
 
         CivInfo.ForEachMatchingUnique(UniqueType.UnitSupplyPerPop, unique =>
         {
             var applicablePopulation = CivInfo.Cities
                 .Where(it => it.MatchesFilter(unique.Params[2], null))
-                .SumOf(it => it.Population / unique.Params[1].ToInt());
+                .SumOf(it => it.Population.Population / unique.Params[1].ToInt());
             totalSupply += unique.Params[0].ToDouble() * applicablePopulation;
         });
         return KotlinMath.DoubleToInt(totalSupply);
@@ -187,7 +187,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
         var statMap = new StatMap();
         foreach (var city in CivInfo.Cities)
         {
-            foreach (var entry in city.FinalStatList)
+            foreach (var entry in city.CityStats.FinalStatList)
                 statMap.Add(entry.Key, entry.Value);
         }
 
@@ -304,7 +304,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
             // There appears to be a concurrency problem? In concurrent thread in ConstructionsTable.getConstructionButtonDTOs
             // Literally no idea how, since happinessList is ONLY replaced, NEVER altered.
             // Oh well, toList() should solve the problem, wherever it may come from.
-            foreach (var (key, value) in city.HappinessList.ToList())
+            foreach (var (key, value) in city.CityStats.HappinessList.ToList())
                 statMap[key] = value + (statMap.TryGetValue(key, out var existing) ? existing : 0f);
         }
 

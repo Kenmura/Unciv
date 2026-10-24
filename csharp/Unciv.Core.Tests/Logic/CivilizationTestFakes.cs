@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
+using Unciv.Logic.City;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
@@ -9,6 +10,7 @@ using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 using DifficultyObject = Unciv.Models.Ruleset.Nation.Difficulty;
 using SpeedObject = Unciv.Models.Ruleset.Speed;
 using StatsObject = Unciv.Models.StatTypes.Stats;
@@ -52,7 +54,8 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     public override TileMap TileMap => Map ?? throw new NotSupportedException();
     public override IGameContextCivilization GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
     Civilization IGameInfoState.GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
-    IEnumerable<ICityState> IGameInfoState.GetCities() => Civs.SelectMany(it => it.Cities);
+    IEnumerable<CityObject> IGameInfoState.GetCities() => Civs.SelectMany(it => it.Cities);
+    List<Civilization> IGameInfoState.GetAliveCityStates() => Civs.Where(it => it.IsAlive() && it.IsCityState).ToList();
     List<Civilization> IGameInfoState.GetAliveMajorCivs() => Civs.Where(it => it.IsAlive() && it.IsMajorCiv()).ToList();
     public List<(Civilization Civ, TileResourceObject Resource, int MaxDistance)> ExploredResourceNotifications { get; } = [];
     public void NotifyExploredResources(Civilization civInfo, TileResourceObject resource, int maxDistance) =>
@@ -67,9 +70,9 @@ internal sealed class FakeUnitManager : IUnitManager
     public IEnumerable<IMapUnitState> GetCivUnits() => CivUnits;
     public void RemoveUnit(IGameContextUnit unit, bool updateCivInfo) => throw new NotSupportedException();
     public IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId) => throw new NotSupportedException();
-    public List<(BaseUnit Unit, ICityState? City)> AddedUnits { get; } = [];
+    public List<(BaseUnit Unit, CityObject? City)> AddedUnits { get; } = [];
     public IMapUnitState? AddedUnitResult { get; set; }
-    public IMapUnitState? AddUnit(BaseUnit baseUnit, ICityState? city = null)
+    public IMapUnitState? AddUnit(BaseUnit baseUnit, CityObject? city = null)
     {
         AddedUnits.Add((baseUnit, city));
         return AddedUnitResult;
@@ -100,66 +103,160 @@ internal sealed class FakeCityStateFunctions : ICityStateFunctions
     public ResourceSupplyList GetCityStateResourcesForAlly() => new();
 }
 
-/// <summary>A city of a <see cref="Civilization"/>: the seam members Civilization calls, over data the tests fill.</summary>
-internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ), ICityState
+/// <summary>
+/// A real <see cref="CityObject"/> whose sub-objects (population, constructions, stats, expansion, religion) are the data-holding fakes below,
+/// which the tests fill. Converts implicitly to the city.
+/// </summary>
+internal sealed class FakeCityState
 {
-    private string cityName = id;
-    public int PopulationData { get; set; }
-    public List<HexCoord> TileLocations { get; } = [];
-    public List<Tile> TileObjects { get; } = [];
-    public UniqueMap BuiltUniques { get; } = new();
-    public List<UniqueObject> NonLocalUniques { get; } = [];
-    public List<Building> BuiltBuildingObjects { get; } = [];
-
-    public override string Name => cityName;
-    string ICityState.Name { get => cityName; set => cityName = value; }
-    public ICityState Clone() => throw new NotSupportedException();
-    public Civilization? CivData { get; set; }
-    Civilization ICityState.Civ => CivData ?? throw new NotSupportedException();
-    public HexCoord LocationData { get; set; }
-    public override HexCoord Location => LocationData;
+    public CityObject City { get; } = new();
+    public FakeCityPopulation PopulationFake { get; } = new();
+    public FakeCityConstructions ConstructionsFake { get; } = new();
+    public FakeCityStats StatsFake { get; } = new();
+    public FakeCityExpansion ExpansionFake { get; } = new();
     public FakeCityReligion ReligionData { get; } = new();
-    public ICityReligionManager Religion => ReligionData;
-    public bool HolyCity { get; set; }
-    public bool IsHolyCity() => HolyCity;
-    public bool IsHolyCityOf(string? religionName) => HolyCity && ReligionData.ReligionThisIsTheHolyCityOf == religionName;
-    public Civilization? FoundingCivObject { get; set; }
-    public List<UniqueObject> SpyUniques { get; } = [];
-    public IEnumerable<UniqueObject> GetMatchingUniques(UniqueType uniqueType, GameContext gameContext, bool includeCivUniques) =>
-        SpyUniques.Where(it => it.Type == uniqueType);
-    public void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, bool includeCivUniques, Action<UniqueObject> op)
+
+    public FakeCityState(string id, FakeCiv civ)
     {
-        foreach (var unique in GetMatchingUniques(uniqueType, gameContext, includeCivUniques)) op(unique);
+        _ = civ;
+        City.Id = id;
+        City.Name = id;
+        City.Population = PopulationFake;
+        City.CityConstructions = ConstructionsFake;
+        City.CityStats = StatsFake;
+        City.Expansion = ExpansionFake;
+        City.Religion = ReligionData;
+        Registry.Add(City, this);
     }
-    public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
-    GameContext ICityState.State => GameContext.ForCity(this);
-    public bool Capital { get; set; }
-    public override bool IsCapital() => Capital;
-    public bool IsOriginalCapital { get; set; }
-    public bool IsPuppet { get; set; }
-    public bool IsBeingRazed { get; set; }
-    public void AnnexCity() => throw new NotSupportedException();
-    public int Population => PopulationData;
-    Tile ICityState.GetCenterTile() => throw new NotSupportedException();
-    public IReadOnlyCollection<HexCoord> Tiles => TileLocations;
-    IEnumerable<Tile> ICityState.GetTiles() => TileObjects;
-    IEnumerable<Tile> ICityState.GetWorkedTiles() => [];
-    public void StopWorkingTile(Tile tile) => throw new NotSupportedException();
-    public int StatsUpdateCalls { get; private set; }
-    public void UpdateCityStats(bool updateCivStats) => StatsUpdateCalls++;
+
+    public static implicit operator CityObject(FakeCityState fake) => fake.City;
+
+    public Civilization? CivData { set => City.Civ = value!; }
+    public HexCoord LocationData { get => City.Location; set => City.Location = value; }
+    public int PopulationData { get => PopulationFake.PopulationValue; set => PopulationFake.PopulationValue = value; }
+    public UniqueMap BuiltUniques => ConstructionsFake.BuiltUniques;
+    public List<Building> BuiltBuildingObjects => ConstructionsFake.BuiltBuildingObjects;
+    public List<Building> Completed => ConstructionsFake.Completed;
+    public List<string> ConstructionQueue => ConstructionsFake.ConstructionQueue;
+    public int InProgressValidations => ConstructionsFake.InProgressValidations;
+    public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity => ConstructionsFake.FreeBuildingsProvidedFromThisCity;
+    public HashSet<string> Buildings => ConstructionsFake.BuiltNames;
+    public int StatsUpdateCalls => StatsFake.UpdateCalls;
+    public Action<Building>? OnCompleteConstruction { get => ConstructionsFake.OnCompleteConstruction; set => ConstructionsFake.OnCompleteConstruction = value; }
+    public Counter<string> GreatPersonPoints => StatsFake.GreatPersonPoints;
+
+    /// <summary>Whether the built buildings include one that "Indicates the capital city".</summary>
+    public bool Capital
+    {
+        set
+        {
+            if (value) ConstructionsFake.BuiltUniques.AddUnique(new UniqueObject("Indicates the capital city", UniqueTarget.Building, "Palace"));
+            else foreach (var unique in ConstructionsFake.BuiltUniques.GetAllUniques().ToList()) ConstructionsFake.BuiltUniques.RemoveUnique(unique);
+        }
+    }
+
+    /// <summary>The tiles the city owns, by position (<c>city.tiles</c>).</summary>
+    public TileLocationAdder TileLocations => new(City);
+
+    internal sealed class TileLocationAdder(CityObject city)
+    {
+        public void AddRange(IEnumerable<HexCoord> positions)
+        {
+            foreach (var position in positions) city.Tiles.Add(position);
+        }
+    }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<CityObject, FakeCityState> Registry = new();
+
+    /// <summary>The fake that built <paramref name="city"/>.</summary>
+    public static FakeCityState Of(CityObject city) => Registry.TryGetValue(city, out var fake) ? fake : throw new InvalidOperationException("Not a FakeCityState city");
+
+    /// <summary><c>city.shouldReassignPopulation</c> as the 0/1 count of deferred reassignments the tests care about.</summary>
+    public int PopulationReassignments => City.ShouldReassignPopulation ? 1 : 0;
+
+    /// <summary><c>city.cityStats.currentCityStats</c></summary>
+    public StatsObject CurrentCityStats => StatsFake.CurrentCityStats;
+
+    /// <summary>The uniques of the built buildings that only apply in this city (<c>builtBuildingUniqueMap</c> entries with "in this city").</summary>
+    public UniqueMap LocalUniques => ConstructionsFake.BuiltUniques;
+
+}
+
+internal sealed class FakeCityPopulation : ICityPopulationManager
+{
+    public CityObject City { get; set; } = null!;
+    public FakeCityPopulation? CloneResult { get; set; }
+    public ICityPopulationManager Clone() => CloneResult ?? throw new NotSupportedException();
+    public int PopulationValue { get; set; }
+    public int Population => PopulationValue;
+    public int FoodStored { get; set; }
+    public Counter<string> SpecialistAllocations { get; } = new();
+    public int AutoAssignCalls { get; private set; }
+    public void AutoAssignPopulation() => AutoAssignCalls++;
+    public int UnassignCalls { get; private set; }
+    public void UnassignExtraPopulation() => UnassignCalls++;
+    public Dictionary<string, int> ByFilter { get; } = [];
+    public int GetPopulationFilterAmount(string filter) => ByFilter.GetValueOrDefault(filter);
+}
+
+internal sealed class FakeCityExpansion : ICityExpansionManager
+{
+    public CityObject City { get; set; } = null!;
+    public void SetTransients() { }
+    public FakeCityExpansion? CloneResult { get; set; }
+    public ICityExpansionManager Clone() => CloneResult ?? throw new NotSupportedException();
+    public List<Tile> Relinquished { get; } = [];
+    public void RelinquishOwnership(Tile tile) => Relinquished.Add(tile);
+}
+
+internal sealed class FakeCityStats : ICityStats
+{
+    public int UpdateCalls { get; private set; }
+    public List<bool> UpdateCivStatsArguments { get; } = [];
+    public void Update(IConstruction? currentConstruction = null, bool updateTileStats = true, bool updateCivStats = true, bool calculateGrowthModifiers = true)
+    {
+        UpdateCalls++;
+        UpdateCivStatsArguments.Add(updateCivStats);
+    }
+    public StatsObject CurrentCityStats { get; set; } = new();
+    public bool ExtraAnnexUnhappiness { get; set; }
+    public bool HasExtraAnnexUnhappiness() => ExtraAnnexUnhappiness;
+    public IEnumerable<KeyValuePair<string, StatsObject>> FinalStatList => [];
+    public IEnumerable<KeyValuePair<string, float>> HappinessList => [];
+    public Counter<string> GreatPersonPoints { get; } = new();
+    public Counter<string> GetGreatPersonPoints() => GreatPersonPoints;
+}
+
+internal sealed class FakeCityConstructions : ICityConstructions
+{
+    public CityObject City { get; set; } = null!;
+    public void SetTransients() { }
+    public FakeCityConstructions? CloneResult { get; set; }
+    public ICityConstructions Clone() => CloneResult ?? throw new NotSupportedException();
+    public UniqueMap BuiltUniques { get; } = new();
     public UniqueMap BuiltBuildingUniqueMap => BuiltUniques;
+    public List<Building> BuiltBuildingObjects { get; } = [];
     public IEnumerable<Building> GetBuiltBuildings() => BuiltBuildingObjects;
+    public HashSet<string> BuiltNames { get; } = [];
+    public IReadOnlySet<string> BuiltBuildings => BuiltNames;
+    public bool ContainsBuildingOrEquivalent(string buildingName) => BuiltNames.Contains(buildingName);
+    public int ProductionAdded { get; private set; }
+    public void AddProductionPoints(int productionToAdd) => ProductionAdded += productionToAdd;
+    public int GetWorkDone(string constructionName) => 0;
+    public IConstruction GetCurrentConstruction() => throw new NotSupportedException();
     public void AddBuilding(Building building) => BuiltBuildingObjects.Add(building);
     public void RemoveBuilding(Building building) => BuiltBuildingObjects.Remove(building);
     public void ChooseNextConstruction() => throw new NotSupportedException();
-    public bool ConnectedToCapitalStatus { get; set; }
-    public bool ContainsBuildingUnique(UniqueType uniqueType) => false;
-    public bool IsBlockaded() => false;
-    public ResourceSupplyList GetResourcesGeneratedByCity() => new();
-    public IEnumerable<KeyValuePair<string, StatsObject>> FinalStatList => [];
-    public IEnumerable<KeyValuePair<string, float>> HappinessList => [];
-    IEnumerable<UniqueObject> ICityState.GetLocalMatchingUniques(UniqueType uniqueType, GameContext? gameContext) =>
-        GetLocalMatchingUniques(uniqueType, gameContext ?? GameContext.EmptyState);
+    public List<string> ConstructionQueue { get; } = [];
+    public void EditQueue(Action<List<string>> edit)
+    {
+        var copy = new List<string>(ConstructionQueue);
+        edit(copy);
+        ConstructionQueue.Clear();
+        ConstructionQueue.AddRange(copy);
+    }
+    public int InProgressValidations { get; private set; }
+    public void ValidateInProgressConstructions() => InProgressValidations++;
     public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; } = [];
     public Building? CheapestStatBuilding(Stat stat) => null;
     public List<Building> Completed { get; } = [];
@@ -168,35 +265,18 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     {
         Completed.Add(building);
         OnCompleteConstruction?.Invoke(building);
-        Buildings.Add(building.Name);
+        BuiltNames.Add(building.Name);
     }
     public bool IsBeingConstructedOrEnqueued(string constructionName) => false;
     public bool IsBuildable(Building building) => false;
-    public Counter<string> GreatPersonPoints { get; } = new();
-    public Counter<string> GetGreatPersonPoints() => GreatPersonPoints;
-    public List<string> ConstructionQueue { get; } = [];
-    public void EditConstructionQueue(Action<List<string>> edit)
-    {
-        var copy = new List<string>(ConstructionQueue);
-        edit(copy);
-        ConstructionQueue.Clear();
-        ConstructionQueue.AddRange(copy);
-    }
-    public int PopulationReassignments { get; private set; }
-    public override void ReassignPopulationDeferred() => PopulationReassignments++;
-    public int InProgressValidations { get; private set; }
-    public void ValidateInProgressConstructions() => InProgressValidations++;
-    public IEnumerable<UniqueObject> GetMatchingUniquesWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext) =>
-        NonLocalUniques.Where(it => it.Type == uniqueType);
-    public void ForEachMatchingUniqueWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op)
-    {
-        foreach (var unique in GetMatchingUniquesWithNonLocalEffects(uniqueType, gameContext)) op(unique);
-    }
+    public void RemoveCreateOneImprovementConstruction(string improvement) { }
 }
 
 internal sealed class FakeCityReligion : ICityReligionManager
 {
     public string? ReligionThisIsTheHolyCityOf { get; set; }
+    public bool BlockedHolyCity { get; set; }
+    public bool IsBlockedHolyCity => BlockedHolyCity;
     public Dictionary<string, int> Pressure { get; } = [];
     public Religion? Majority { get; set; }
     public void AddPressure(string religionName, int amount, bool shouldUpdateFollowers = true) =>
@@ -206,5 +286,13 @@ internal sealed class FakeCityReligion : ICityReligionManager
     public Dictionary<string, int> Followers { get; } = [];
     public int GetFollowersOf(string religion) => Followers.GetValueOrDefault(religion);
     public bool IsProtectedByInquisitor(string? fromReligion = null) => false;
+    public FakeCityReligion? CloneResult { get; set; }
+    public ICityReligionManager Clone() => CloneResult ?? throw new NotSupportedException();
+    public void SetTransients(CityObject city) { }
+    public IEnumerable<UniqueObject> GetUniques(UniqueType uniqueType) => [];
+    public IEnumerable<UniqueObject> GetAllUniques() => [];
+    public void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op) { }
+    public void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Func<UniqueObject, bool> filter, Action<UniqueObject> op) { }
+    public void ForEachUnique(Func<UniqueObject, bool> filter, Action<UniqueObject> op) { }
 }
 

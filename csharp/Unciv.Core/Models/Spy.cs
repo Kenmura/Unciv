@@ -7,12 +7,12 @@ using Unciv.Logic.Map;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Models;
 
 // Ported from core/src/com/unciv/models/Spy.kt (T057).
-// - City is not ported yet: it is used through its ICityState seam (T060 retypes it).
 // - Kotlin `assert(...)` (JVM assertions are off by default) is not ported: setAction's "turns > 0 for a countdown action" and
 //   incrementTechStealingProgress's "canStealTech() == Yes" preconditions are comments.
 // - Kotlin `Random(seed)` is a GameRandom.
@@ -99,7 +99,7 @@ public class Spy : IsPartOfGameInfoSerialization
     private EspionageManager EspionageManager =>
         espionageManager ?? throw new InvalidOperationException("lateinit property espionageManager has not been initialized");
 
-    private ICityState? city;
+    private CityObject? city;
 
     /// <summary>Kotlin <c>private constructor()</c>, used by the deserializer.</summary>
     private Spy()
@@ -230,7 +230,7 @@ public class Spy : IsPartOfGameInfoSerialization
         var stealableTechs = EspionageManager.GetTechsToSteal(GetCity().Civ);
         if (stealableTechs.Count == 0) return CanStealTechResult.NoTechsToSteal;
 
-        float cityScience = GetCity().GetCurrentCityStat(Stat.Science);
+        float cityScience = GetCity().CityStats.CurrentCityStats[Stat.Science];
         if (cityScience <= 0f) return CanStealTechResult.NoScienceInCity;
 
         return CanStealTechResult.Yes;
@@ -244,7 +244,7 @@ public class Spy : IsPartOfGameInfoSerialization
     {
         // Kotlin: assert(canStealTech() == CanStealTech.Yes)
 
-        float progressThisTurn = GetCity().GetCurrentCityStat(Stat.Science);
+        float progressThisTurn = GetCity().CityStats.CurrentCityStats[Stat.Science];
         // 25% spy bonus for each level
         int rankTechStealModifier = Rank * CivInfo.GameInfo.Ruleset.ModOptions.Constants.SpyRankStealPercentBonus;
         progressThisTurn *= (rankTechStealModifier + 75f) / 100f;
@@ -421,7 +421,7 @@ public class Spy : IsPartOfGameInfoSerialization
         return successPercentage / 100f;
     }
 
-    public void MoveTo(ICityState? newCity)
+    public void MoveTo(CityObject? newCity)
     {
         if (newCity == null)
         {
@@ -436,7 +436,7 @@ public class Spy : IsPartOfGameInfoSerialization
         SetAction(SpyAction.Moving, 1);
     }
 
-    private bool CanDismissAgreementToNotSendSpies(ICityState targetCity)
+    private bool CanDismissAgreementToNotSendSpies(CityObject targetCity)
     {
         var otherCivDiplomacyManager = targetCity.Civ.GetDiplomacyManager(CivInfo);
         if (otherCivDiplomacyManager == null) return false;
@@ -456,7 +456,7 @@ public class Spy : IsPartOfGameInfoSerialization
                otherCivTechResearchLevel <= ourTechResearchLevel + 10f;
     }
 
-    public bool CanMoveTo(ICityState targetCity)
+    public bool CanMoveTo(CityObject targetCity)
     {
         if (CanDismissAgreementToNotSendSpies(targetCity)) return false;
         if (GetCityOrNull() == targetCity) return true;
@@ -471,11 +471,11 @@ public class Spy : IsPartOfGameInfoSerialization
     public bool IsDoingWork() => Action.IsDoingWork(this);
 
     /// <summary>Returns the City this Spy is in, or <c>null</c> if it is in the hideout.</summary>
-    public ICityState? GetCityOrNull()
+    public CityObject? GetCityOrNull()
     {
         if (location == null) return null;
-        // TODO(T060): Tile.GetCity() is typed by its IGameContextCity seam; City is not ported yet
-        city ??= (ICityState?)CivInfo.GameInfo.TileMap[location.Value].GetCity();
+        // TODO(T115): Tile.GetCity() is typed by its IGameContextCity seam; City is not ported yet
+        city ??= (CityObject?)CivInfo.GameInfo.TileMap[location.Value].GetCity();
         return city;
     }
 
@@ -483,7 +483,7 @@ public class Spy : IsPartOfGameInfoSerialization
     /// Non-null version of <see cref="GetCityOrNull"/> for the frequent case it is known the spy cannot be in the hideout.
     /// </summary>
     /// <exception cref="NullReferenceException">if the spy is in the hideout</exception>
-    public ICityState GetCity() => GetCityOrNull() ?? throw new NullReferenceException("The spy is in the hideout");
+    public CityObject GetCity() => GetCityOrNull() ?? throw new NullReferenceException("The spy is in the hideout");
 
     public string GetLocationName() => GetCityOrNull()?.Name ?? Constants.SpyHideout;
 

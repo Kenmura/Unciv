@@ -919,7 +919,7 @@ public class CivReligionVictoryTests
     public void Spy_Coup_RequiresACityStateWhoseAllyIsNotUs_AndTheChanceIsClamped()
     {
         var (civ, info, _) = NewSpyCiv();
-        var cityState = new Civilization(new NationObject { Name = "Geneva", CityStateType = "Cultured" }) { GameInfo = info };
+        var cityState = new Civilization(new NationObject { Name = "Geneva", CityStateType = "Cultured" }) { GameInfo = info, CityStateFunctions = new FakeCityStateFunctions() };
         info.Civs.Add(cityState);
         var influence = new DiplomacyManager(cityState, civ) { DiplomaticStatus = DiplomaticStatus.Peace };
         cityState.Diplomacy["Rome"] = influence;

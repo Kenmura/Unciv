@@ -12,6 +12,7 @@ using Unciv.Models.Translations;
 using Unciv.UI.Components;
 using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 using EraObject = Unciv.Models.Ruleset.Tech.Era;
 using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
 
@@ -442,9 +443,9 @@ public class TechManager : IsPartOfGameInfoSerialization
 
         // Apply each to all cities - and remember which cities had which obsoleted unit
         //  in their construction queues in this Map<String, MutableSet<City>>:
-        var unitUpgrades = new LinkedHashMap<string, LinkedHashSet<ICityState>>();
-        foreach (var key in obsoleteUnits.Keys) unitUpgrades.Put(key, new LinkedHashSet<ICityState>());
-        string? TransformConstruction(string old, ICityState city)
+        var unitUpgrades = new LinkedHashMap<string, LinkedHashSet<CityObject>>();
+        foreach (var key in obsoleteUnits.Keys) unitUpgrades.Put(key, new LinkedHashSet<CityObject>());
+        string? TransformConstruction(string old, CityObject city)
         {
             if (!unitUpgrades.TryGetValue(old, out var entry)) return old;  // Entry OK, not obsolete
             entry.Add(city);  // Remember city has updated its queue
@@ -452,7 +453,7 @@ public class TechManager : IsPartOfGameInfoSerialization
         }
         foreach (var city in CivInfo.Cities)
         {
-            city.EditConstructionQueue(queue =>
+            city.CityConstructions.EditQueue(queue =>
             {
                 var transformed = queue.Select(it => TransformConstruction(it, city)).OfType<string>().ToList();
                 queue.Clear();
@@ -470,7 +471,7 @@ public class TechManager : IsPartOfGameInfoSerialization
             //so the hammers from the obsolete unit are guaranteed to go to the upgraded unit
             //and players don't think they lost all their production mid turn
             foreach (var city in cities)
-                city.ValidateInProgressConstructions();
+                city.CityConstructions.ValidateInProgressConstructions();
 
             var locationAction = LocationAction.Of(cities.Select(it => it.Location));
             var cityText = cities.Count == 1 ? $"[{cities.First().Name}]"

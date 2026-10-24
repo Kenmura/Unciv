@@ -1,4 +1,3 @@
-using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -7,6 +6,7 @@ using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Logic.Civilization;
@@ -39,7 +39,9 @@ public interface IGameInfoState : IConstructionGameInfo
     /// <summary><c>gameInfo.getCivilization(civID)</c>; throws when there is no such civilization (Kotlin <c>first</c>).</summary>
     new Civilization GetCivilization(string civId);
     /// <summary><c>gameInfo.getCities()</c>, in civilization then city order.</summary>
-    new IEnumerable<ICityState> GetCities();
+    new IEnumerable<CityObject> GetCities();
+    /// <summary><c>gameInfo.getAliveCityStates()</c> (T060: City.destroyCity)</summary>
+    List<Civilization> GetAliveCityStates();
     /// <summary><c>gameInfo.getAliveMajorCivs()</c></summary>
     List<Civilization> GetAliveMajorCivs();
     /// <summary><c>gameInfo.notifyExploredResources(civInfo, resource, maxDistance)</c></summary>
@@ -85,7 +87,7 @@ public interface IUnitManager
     /// <summary><c>baseUnit.newMapUnit(civInfo, unitId)</c></summary>
     IGameContextUnit NewMapUnit(BaseUnit baseUnit, int? unitId);
     /// <summary><c>civ.units.addUnit(baseUnit, city)</c>; <c>null</c> when the unit cannot be placed.</summary>
-    IMapUnitState? AddUnit(BaseUnit baseUnit, ICityState? city = null);
+    IMapUnitState? AddUnit(BaseUnit baseUnit, CityObject? city = null);
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>
@@ -115,7 +117,7 @@ public interface IMapUnitState : IGameContextUnit
     Counter<string> GetResourceRequirementsPerTurn();
 }
 
-/// <summary>What the religion managers read from <c>CityReligionManager</c> (<c>city.religion</c>).</summary>
+/// <summary>What the religion managers and City read from <c>CityReligionManager</c> (<c>city.religion</c>). TODO(T061)</summary>
 public interface ICityReligionManager
 {
     string? ReligionThisIsTheHolyCityOf { get; set; }
@@ -125,82 +127,20 @@ public interface ICityReligionManager
     string? GetMajorityReligionName();
     int GetFollowersOf(string religion);
     bool IsProtectedByInquisitor(string? fromReligion = null);
-}
-
-/// <summary>What Civilization reads from <c>City</c>.</summary>
-public interface ICityState : IGameContextCity
-{
-    ICityState Clone();
-    /// <summary><c>city.civ</c></summary>
-    new Civilization Civ { get; }
-    /// <summary><c>city.religion</c></summary>
-    ICityReligionManager Religion { get; }
-    /// <summary><c>city.isHolyCity()</c></summary>
-    bool IsHolyCity();
-    /// <summary><c>city.isHolyCityOf(religionName)</c></summary>
-    bool IsHolyCityOf(string? religionName);
-    /// <summary><c>city.foundingCivObject</c></summary>
-    Civilization? FoundingCivObject { get; }
-    /// <summary><c>city.getMatchingUniques(uniqueType, gameContext, includeCivUniques)</c></summary>
-    IEnumerable<UniqueObject> GetMatchingUniques(UniqueType uniqueType, GameContext gameContext, bool includeCivUniques);
-    /// <summary><c>city.forEachMatchingUnique(uniqueType, gameContext, includeCivUniques, op)</c></summary>
-    void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, bool includeCivUniques, Action<UniqueObject> op);
-    /// <summary><c>city.setTransients(civInfo)</c></summary>
-    void SetTransients(Civilization civInfo);
-    /// <summary><c>city.state</c></summary>
-    GameContext State { get; }
-    new string Name { get; set; }
-    bool IsOriginalCapital { get; }
-    bool IsPuppet { get; }
-    bool IsBeingRazed { get; set; }
-    void AnnexCity();
-    /// <summary><c>city.population.population</c></summary>
-    int Population { get; }
-    /// <summary><c>city.getCenterTile()</c> (T059: DiplomacyFunctions.meetCiv)</summary>
-    new Tile GetCenterTile();
-    /// <summary><c>city.tiles</c> (a set of positions).</summary>
-    IReadOnlyCollection<HexCoord> Tiles { get; }
-    new IEnumerable<Tile> GetTiles();
-    new IEnumerable<Tile> GetWorkedTiles();
-    void StopWorkingTile(Tile tile);
-    /// <summary><c>city.cityStats.update(updateCivStats)</c></summary>
-    void UpdateCityStats(bool updateCivStats);
-    /// <summary><c>city.cityConstructions.builtBuildingUniqueMap</c></summary>
-    UniqueMap BuiltBuildingUniqueMap { get; }
-    /// <summary><c>city.cityConstructions.getBuiltBuildings()</c></summary>
-    IEnumerable<Building> GetBuiltBuildings();
-    void AddBuilding(Building building);
-    void RemoveBuilding(Building building);
-    /// <summary><c>city.cityConstructions.chooseNextConstruction()</c></summary>
-    void ChooseNextConstruction();
-    /// <summary><c>city.getGreatPersonPoints()</c></summary>
-    Counter<string> GetGreatPersonPoints();
-    /// <summary><c>city.cityConstructions.editQueue(edit)</c>: edits a copy of the queue and then replaces the queue by it.</summary>
-    void EditConstructionQueue(Action<List<string>> edit);
-    /// <summary><c>city.cityConstructions.validateInProgressConstructions()</c></summary>
-    void ValidateInProgressConstructions();
-    IEnumerable<UniqueObject> GetMatchingUniquesWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext);
-    void ForEachMatchingUniqueWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
-    // T058
-    /// <summary><c>city.connectedToCapitalStatus</c></summary>
-    bool ConnectedToCapitalStatus { get; set; }
-    /// <summary><c>city.containsBuildingUnique(uniqueType)</c></summary>
-    bool ContainsBuildingUnique(UniqueType uniqueType);
-    bool IsBlockaded();
-    ResourceSupplyList GetResourcesGeneratedByCity();
-    /// <summary><c>city.cityStats.finalStatList</c> (a <c>LinkedHashMap</c>), in map order.</summary>
-    IEnumerable<KeyValuePair<string, Stats>> FinalStatList { get; }
-    /// <summary><c>city.cityStats.happinessList</c> (a <c>LinkedHashMap</c>), in map order.</summary>
-    IEnumerable<KeyValuePair<string, float>> HappinessList { get; }
-    IEnumerable<UniqueObject> GetLocalMatchingUniques(UniqueType uniqueType, GameContext? gameContext = null);
-    /// <summary><c>city.cityConstructions.freeBuildingsProvidedFromThisCity</c> (a <c>HashMap&lt;String, HashSet&lt;String&gt;&gt;</c>).</summary>
-    Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; }
-    /// <summary><c>city.cityConstructions.cheapestStatBuilding(stat)</c></summary>
-    Building? CheapestStatBuilding(Stat stat);
-    /// <summary><c>city.cityConstructions.completeConstruction(building)</c></summary>
-    void CompleteConstruction(Building building);
-    /// <summary><c>city.cityConstructions.isBeingConstructedOrEnqueued(name)</c></summary>
-    bool IsBeingConstructedOrEnqueued(string constructionName);
-    /// <summary><c>building.isBuildable(city.cityConstructions)</c></summary>
-    bool IsBuildable(Building building);
+    // T060 (City)
+    ICityReligionManager Clone();
+    /// <summary><c>religion.setTransients(city)</c></summary>
+    void SetTransients(Unciv.Logic.City.City city);
+    /// <summary><c>religion.isBlockedHolyCity</c></summary>
+    bool IsBlockedHolyCity { get; }
+    /// <summary><c>religion.getUniques(uniqueType)</c></summary>
+    IEnumerable<UniqueObject> GetUniques(UniqueType uniqueType);
+    /// <summary><c>religion.getAllUniques()</c></summary>
+    IEnumerable<UniqueObject> GetAllUniques();
+    /// <summary><c>religion.forEachMatchingUnique(uniqueType, gameContext, op)</c></summary>
+    void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
+    /// <summary><c>religion.forEachMatchingUnique(uniqueType, gameContext, filter, op)</c></summary>
+    void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Func<UniqueObject, bool> filter, Action<UniqueObject> op);
+    /// <summary><c>religion.forEachUnique(filter, op)</c></summary>
+    void ForEachUnique(Func<UniqueObject, bool> filter, Action<UniqueObject> op);
 }

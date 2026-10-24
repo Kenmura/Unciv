@@ -3,11 +3,11 @@ using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 
 namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/EspionageManager.kt (T057).
-// City is not ported yet: it is used through its ICityState seam (T060 retypes it).
 public class EspionageManager : IsPartOfGameInfoSerialization
 {
     public List<Spy> SpyList { get; set; } = [];
@@ -72,7 +72,7 @@ public class EspionageManager : IsPartOfGameInfoSerialization
         SpyList
             .Where(it => it.IsSetUp())
             .Select(it => it.GetCityOrNull())
-            .OfType<ICityState>()
+            .OfType<CityObject>()
             .SelectMany(it => it.GetCenterTile().GetTilesInDistance(1));
 
     public LinkedHashSet<string> GetTechsToSteal(Civilization otherCiv)
@@ -87,7 +87,7 @@ public class EspionageManager : IsPartOfGameInfoSerialization
         return techsToSteal;
     }
 
-    public List<Spy> GetSpiesInCity(ICityState city) => SpyList.Where(it => it.GetCityOrNull() == city).ToList();
+    public List<Spy> GetSpiesInCity(CityObject city) => SpyList.Where(it => it.GetCityOrNull() == city).ToList();
 
     public int GetStartingSpyRank() =>
         1 + CivInfo.GetMatchingUniques(UniqueType.SpyStartingLevel).Sum(it => int.Parse(it.Params[0], System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture));
@@ -96,10 +96,10 @@ public class EspionageManager : IsPartOfGameInfoSerialization
     /// Returns a list of all cities with our spies in them.
     /// The list needs to be stable across calls on the same turn.
     /// </summary>
-    public List<ICityState> GetCitiesWithOurSpies() =>
-        SpyList.Where(it => it.IsSetUp()).Select(it => it.GetCityOrNull()).OfType<ICityState>().ToList();
+    public List<CityObject> GetCitiesWithOurSpies() =>
+        SpyList.Where(it => it.IsSetUp()).Select(it => it.GetCityOrNull()).OfType<CityObject>().ToList();
 
-    public Spy? GetSpyAssignedToCity(ICityState city) => SpyList.FirstOrDefault(it => it.GetCityOrNull() == city);
+    public Spy? GetSpyAssignedToCity(CityObject city) => SpyList.FirstOrDefault(it => it.GetCityOrNull() == city);
 
     /// <summary>
     /// Determines whether the NextTurnAction MoveSpies should be shown or not

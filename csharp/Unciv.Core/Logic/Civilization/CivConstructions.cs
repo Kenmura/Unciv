@@ -7,13 +7,14 @@ using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 
 namespace Unciv.Logic.Civilization;
 
 // Ported from core/src/com/unciv/logic/civilization/CivConstructions.kt (T058).
 //
 // Deviations:
-// - City and CityConstructions are not ported yet (T060/T063): they are the ICityState seam (CivilizationSeams.cs), retyped then.
+// - CityConstructions is not ported yet (T063): it is the ICityConstructions seam (CitySeams.cs), retyped then.
 // - The three private HashMap<String, HashSet<String>> maps are System Dictionary/HashSet (as the AddToMapOfSets helper is), so the
 //   iteration order of getFreeBuildingNames' result is insertion order, not java.util.HashSet order; nothing in the rules iterates it.
 // - The Kotlin lazy `sequence { ... }` of free building names is a C# iterator; `hasFreeBuildingByName` stops at the first match like the
@@ -103,16 +104,16 @@ public class CivConstructions : IsPartOfGameInfoSerialization
         if (freeBuildings.TryGetValue(cityId, out var own))
             foreach (var name in own) yield return name;
         foreach (var city in CivInfo.Cities)
-            if (city.FreeBuildingsProvidedFromThisCity.TryGetValue(cityId, out var provided))
+            if (city.CityConstructions.FreeBuildingsProvidedFromThisCity.TryGetValue(cityId, out var provided))
                 foreach (var name in provided) yield return name;
     }
 
     /// <summary>Gets a Set of all building names the <paramref name="city"/> has for free, from nationwide sources or buildings in other cities</summary>
-    public LinkedHashSet<string> GetFreeBuildingNames(ICityState city) =>
+    public LinkedHashSet<string> GetFreeBuildingNames(CityObject city) =>
         new(GetFreeBuildingNamesSequence(city.Id));
 
     /// <summary>Tests whether the <paramref name="city"/> has <paramref name="building"/> for free, from nationwide sources or buildings in other cities</summary>
-    public bool HasFreeBuilding(ICityState city, Building building) =>
+    public bool HasFreeBuilding(CityObject city, Building building) =>
         HasFreeBuildingByName(city.Id, building.Name);
 
     /// <summary>Tests whether a city by <paramref name="cityId"/> has a building named <paramref name="buildingName"/> for free, from nationwide sources or buildings in other cities</summary>
@@ -138,7 +139,7 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     }
 
     /// <summary>Kotlin <c>cities.take(n)</c>, which throws for a negative count and returns a copy (so completing a construction cannot disturb the iteration).</summary>
-    private List<ICityState> TakeCities(int amount) =>
+    private List<CityObject> TakeCities(int amount) =>
         amount < 0 ? throw new ArgumentException($"Requested element count {amount} is less than zero.") : CivInfo.Cities.Take(amount).ToList();
 
     public void AddFreeStatBuildings(Stat stat, int amount)
@@ -146,12 +147,12 @@ public class CivConstructions : IsPartOfGameInfoSerialization
         foreach (var city in TakeCities(amount))
         {
             if (freeStatBuildingsProvided.Contains(stat.ToString(), city.Id)) continue;
-            var building = city.CheapestStatBuilding(stat);
+            var building = city.CityConstructions.CheapestStatBuilding(stat);
             if (building == null) continue;
 
             freeStatBuildingsProvided.AddToMapOfSets(stat.ToString(), city.Id);
             AddFreeBuilding(city.Id, building.Name);
-            city.CompleteConstruction(building);
+            city.CityConstructions.CompleteConstruction(building);
         }
     }
 
@@ -176,11 +177,11 @@ public class CivConstructions : IsPartOfGameInfoSerialization
         foreach (var city in TakeCities(amount))
         {
             if (freeSpecificBuildingsProvided.Contains(equivalentBuilding.Name, city.Id)
-                || city.ContainsBuildingOrEquivalent(building.Name)) continue;
+                || city.CityConstructions.ContainsBuildingOrEquivalent(building.Name)) continue;
 
             freeSpecificBuildingsProvided.AddToMapOfSets(equivalentBuilding.Name, city.Id);
             AddFreeBuilding(city.Id, equivalentBuilding.Name);
-            city.CompleteConstruction(equivalentBuilding);
+            city.CityConstructions.CompleteConstruction(equivalentBuilding);
         }
     }
 
@@ -203,15 +204,15 @@ public class CivConstructions : IsPartOfGameInfoSerialization
             foreach (var unique in freeBuildingUniques.ToList())
             {
                 var freeBuilding = city.Civ.GetEquivalentBuilding(unique.Params[0]);
-                city.FreeBuildingsProvidedFromThisCity.AddToMapOfSets(city.Id, freeBuilding.Name);
+                city.CityConstructions.FreeBuildingsProvidedFromThisCity.AddToMapOfSets(city.Id, freeBuilding.Name);
 
-                if (city.ContainsBuildingOrEquivalent(freeBuilding.Name)) continue;
-                city.CompleteConstruction(freeBuilding);
+                if (city.CityConstructions.ContainsBuildingOrEquivalent(freeBuilding.Name)) continue;
+                city.CityConstructions.CompleteConstruction(freeBuilding);
             }
 
             foreach (var building in autoGrantedBuildings)
-                if (city.IsBuildable(building))
-                    city.CompleteConstruction(building);
+                if (city.CityConstructions.IsBuildable(building))
+                    city.CityConstructions.CompleteConstruction(building);
         }
     }
 
@@ -226,17 +227,17 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     /// <param name="objectToCount">The building or unit to count.</param>
     /// <param name="ignoreQueueOf">If given, that city's own construction queue is not counted,
     /// so an already-enqueued entry doesn't count against itself when its availability is re-checked.</param>
-    public int CountConstructedObjects(INonPerpetualConstruction objectToCount, ICityState? ignoreQueueOf = null)
+    public int CountConstructedObjects(INonPerpetualConstruction objectToCount, CityObject? ignoreQueueOf = null)
     {
         var amountInSpaceShip = CivInfo.VictoryManager.CurrentsSpaceshipParts[objectToCount.Name];
 
         return amountInSpaceShip + objectToCount switch
         {
             Building => CivInfo.Cities.Count(it =>
-                it.ContainsBuildingOrEquivalent(objectToCount.Name)
-                || (!ReferenceEquals(it, ignoreQueueOf) && it.IsBeingConstructedOrEnqueued(objectToCount.Name))),
+                it.CityConstructions.ContainsBuildingOrEquivalent(objectToCount.Name)
+                || (!ReferenceEquals(it, ignoreQueueOf) && it.CityConstructions.IsBeingConstructedOrEnqueued(objectToCount.Name))),
             BaseUnit => CivInfo.Units.GetCivUnits().Count(it => it.Name == objectToCount.Name) +
-                CivInfo.Cities.Count(it => !ReferenceEquals(it, ignoreQueueOf) && it.IsBeingConstructedOrEnqueued(objectToCount.Name)),
+                CivInfo.Cities.Count(it => !ReferenceEquals(it, ignoreQueueOf) && it.CityConstructions.IsBeingConstructedOrEnqueued(objectToCount.Name)),
             _ => 0,
         };
     }

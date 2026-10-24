@@ -5,6 +5,7 @@ using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Logic.Civilization.Transients;
@@ -12,7 +13,7 @@ namespace Unciv.Logic.Civilization.Transients;
 // Ported from core/src/com/unciv/logic/civilization/transients/CivInfoTransientCache.kt (T058).
 //
 // Deviations:
-// - City, MapUnit and the managers are the seams of CivilizationSeams.cs until T060/T065/T059/T057 retype them.
+// - MapUnit and the managers are the seams of CivilizationSeams.cs until T065/T059 retype them.
 // - Kotlin keeps the unique buildings/improvements/units, the viewable tiles and the "viewed civs" in java.util.HashSet/HashMap keyed by
 //   identity-hashed objects, i.e. in an arbitrary order that reaches the order of notifications and natural-wonder discovery. They are
 //   insertion-ordered here (LinkedHashSet, OrderedDictionary), which is one of the legal Kotlin orders and deterministic.
@@ -38,7 +39,7 @@ public class CivInfoTransientCache(Civilization civInfo)
     public LinkedHashSet<Building> UniqueBuildings { get; } = new();
 
     /// <summary>Contains mapping of cities to travel mediums from ALL civilizations connected by trade routes to the capital</summary>
-    public OrderedDictionary<ICityState, HashSet<CapitalConnectionMedium>> CitiesConnectedToCapitalToMediums { get; set; } = [];
+    public OrderedDictionary<CityObject, HashSet<CapitalConnectionMedium>> CitiesConnectedToCapitalToMediums { get; set; } = [];
 
     /// <summary>Ally/friend city-state bonus UniqueMaps</summary>
     public IReadOnlyList<UniqueMap> CityStateBonusUniqueMaps { get; private set; } = [];
@@ -320,15 +321,15 @@ public class CivInfoTransientCache(Civilization civInfo)
     {
         if (CivInfo.Cities.Count == 0) return; // No cities to connect
 
-        List<ICityState> oldConnectedCities = initialSetup
+        List<CityObject> oldConnectedCities = initialSetup
             ? CivInfo.Cities.Where(it => it.ConnectedToCapitalStatus).Distinct().ToList()
             : CitiesConnectedToCapitalToMediums.Keys.ToList();
-        var oldConnectedCitiesSet = new HashSet<ICityState>(oldConnectedCities);
+        var oldConnectedCitiesSet = new HashSet<CityObject>(oldConnectedCities);
 
         CitiesConnectedToCapitalToMediums = new CapitalConnectionsFinder(CivInfo).Find();
 
         var newConnectedCities = CitiesConnectedToCapitalToMediums.Keys.ToList();
-        var newConnectedCitiesSet = new HashSet<ICityState>(newConnectedCities);
+        var newConnectedCitiesSet = new HashSet<CityObject>(newConnectedCities);
 
         foreach (var city in newConnectedCities)
             if (!oldConnectedCitiesSet.Contains(city) && ReferenceEquals(city.Civ, CivInfo) && !ReferenceEquals(city, CivInfo.GetCapital()))
@@ -337,7 +338,7 @@ public class CivInfoTransientCache(Civilization civInfo)
 
         // This may still contain cities that have just been destroyed by razing - thus the population test
         foreach (var city in oldConnectedCities)
-            if (!newConnectedCitiesSet.Contains(city) && ReferenceEquals(city.Civ, CivInfo) && city.Population > 0)
+            if (!newConnectedCitiesSet.Contains(city) && ReferenceEquals(city.Civ, CivInfo) && city.Population.Population > 0)
                 CivInfo.AddNotification($"[{city.Name}] has been disconnected from your capital!",
                     city.Location, Notification.NotificationCategory.Cities, NotificationIcon.Gold);
 
@@ -514,5 +515,5 @@ public class CivInfoTransientCache(Civilization civInfo)
     }
 
     /// <summary><c>cache.citiesConnectedToCapitalToMediums.keys.contains(city)</c></summary>
-    public bool IsCityConnectedToCapital(ICityState city) => CitiesConnectedToCapitalToMediums.ContainsKey(city);
+    public bool IsCityConnectedToCapital(CityObject city) => CitiesConnectedToCapitalToMediums.ContainsKey(city);
 }

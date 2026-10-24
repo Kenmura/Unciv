@@ -200,7 +200,7 @@ public class Milestone
         switch (Type ?? throw new NullReferenceException("Milestone has no type"))
         {
             case MilestoneType.BuiltBuilding:
-                return civInfo.Cities.Any(it => it.BuiltBuildings.Contains(Params[0]));
+                return civInfo.Cities.Any(it => it.CityConstructions.BuiltBuildings.Contains(Params[0]));
             case MilestoneType.AddedSSPartsInCapital:
                 return GetIncompleteSpaceshipParts(civInfo).IsEmpty();
             case MilestoneType.DestroyAllPlayers:
@@ -220,7 +220,7 @@ public class Milestone
                     return relevantCivs.Count != 0 && relevantCivs.All(it => GetMoreCountableThanOtherCivPercent(civInfo, it) > 100f);
                 }
             case MilestoneType.BuildingBuiltGlobally:
-                return civInfo.GameInfo.GetCities().Any(it => it.BuiltBuildings.Contains(Params[0]));
+                return civInfo.GameInfo.GetCities().Any(it => it.CityConstructions.BuiltBuildings.Contains(Params[0]));
             case MilestoneType.WinDiplomaticVote:
                 return civInfo.VictoryManager.HasEverWonDiplomaticVote;
             case MilestoneType.ScoreAfterTimeOut:

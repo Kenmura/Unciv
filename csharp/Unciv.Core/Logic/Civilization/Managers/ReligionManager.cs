@@ -8,12 +8,13 @@ using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 
 namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/ReligionManager.kt (T057).
 // - City, MapUnit and GameInfo are not ported yet: they are used through their seams (CivilizationSeams.cs). A tile's city is still
-//   typed IGameContextCity by Tile, so the calls that need City members cast it with CityOf (TODO(T060): retype Tile.GetCity).
+//   typed IGameContextCity by Tile, so the calls that need City members cast it with CityOf (TODO(T115): retype Tile.GetCity).
 // - Kotlin's `Random(seed)` is a GameRandom.
 // - The 'remainingFoundableReligionsBreakdown' Sequence of Pair is an iterator of tuples.
 public class ReligionManager : IsPartOfGameInfoSerialization
@@ -152,7 +153,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         Religion = religion;
         CivInfo.GameInfo.Religions[beliefName] = religion;
         foreach (var city in CivInfo.Cities)
-            city.Religion.AddPressure(beliefName, 200 * city.Population);
+            city.Religion.AddPressure(beliefName, 200 * city.Population.Population);
 
         var humanPlayers = CivInfo.GameInfo.Civilizations.Where(it => it.IsHuman() && !ReferenceEquals(it, CivInfo)).ToList();
         foreach (var civ in humanPlayers)
@@ -212,7 +213,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
 
         if (new GameRandom(CivInfo.GameInfo.Turns).NextFloat() < prophetSpawnChance)
         {
-            ICityState? birthCity;
+            CityObject? birthCity;
             if (ReligionState <= ReligionState.Pantheon) birthCity = CivInfo.GetCapital();
             else
             {
@@ -231,7 +232,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
     }
 
     // TODO(T106): BaseUnit.addConstructionBonuses(unit, cityConstructions) is one of the BaseUnit members deferred by T032
-    private static void AddConstructionBonuses(BaseUnit baseUnit, IMapUnitState unit, ICityState city)
+    private static void AddConstructionBonuses(BaseUnit baseUnit, IMapUnitState unit, CityObject city)
     {
         _ = baseUnit;
         _ = unit;
@@ -330,8 +331,8 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         return true;
     }
 
-    // TODO(T060): Tile.GetCity() is typed by its IGameContextCity seam; City is not ported yet
-    private static ICityState CityOf(Tile tile) => (ICityState)tile.GetCity()!;
+    // TODO(T115): Tile.GetCity() is typed by its IGameContextCity seam; City is not ported yet
+    private static CityObject CityOf(Tile tile) => (CityObject)tile.GetCity()!;
 
     public bool MayFoundReligionHere(Tile tile)
     {
@@ -530,7 +531,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
 
         var holyCity = CivInfo.Cities.First(it => it.Id == foundingCityId);
         holyCity.Religion.ReligionThisIsTheHolyCityOf = newReligion.Name;
-        holyCity.Religion.AddPressure(name, holyCity.Population * 500);
+        holyCity.Religion.AddPressure(name, holyCity.Population.Population * 500);
 
         foundingCityId = null;
         shouldChoosePantheonBelief = false;
@@ -571,7 +572,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
     {
         if (!MaySpreadReligionAtAll(missionary)) return false;
         if (missionary.GetTile().GetOwner() == null) return false;
-        if (((ICityState?)missionary.GetTile().OwningCity)?.Religion.GetMajorityReligion()?.Name == missionary.Religion)
+        if (((CityObject?)missionary.GetTile().OwningCity)?.Religion.GetMajorityReligion()?.Name == missionary.Religion)
             return false;
         if (CityOf(missionary.GetTile()).Religion.IsProtectedByInquisitor(missionary.Religion)) return false;
         return true;
@@ -592,7 +593,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
             .Sum(it => it.Religion.GetFollowersOf(Religion.Name));
     }
 
-    public ICityState? GetHolyCity()
+    public CityObject? GetHolyCity()
     {
         if (Religion == null) return null;
         return CivInfo.GameInfo.GetCities().FirstOrDefault(it => it.IsHolyCityOf(Religion.Name));

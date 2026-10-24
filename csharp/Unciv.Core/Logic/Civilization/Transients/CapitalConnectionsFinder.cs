@@ -2,13 +2,14 @@ using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset.Unique;
+using CityObject = Unciv.Logic.City.City;
 
 namespace Unciv.Logic.Civilization.Transients;
 
 // Ported from core/src/com/unciv/logic/civilization/transients/CapitalConnectionsFinder.kt (T058).
 //
 // Deviations:
-// - City is the ICityState seam until T060. Cities are keyed by reference (Kotlin City has no equals/hashCode).
+// - Cities are keyed by reference (Kotlin City has no equals/hashCode).
 // - The result map is insertion-ordered (Kotlin: a java.util.HashMap with identity-hashed City keys, i.e. an arbitrary order that reaches
 //   the order of the "connected/disconnected" notifications). Insertion order is the deterministic choice.
 // - EnumSet<CapitalConnectionMedium> is a HashSet (only membership and any() are used).
@@ -46,12 +47,12 @@ public static class CapitalConnectionMediumExtensions
 public class CapitalConnectionsFinder
 {
     private readonly Civilization civInfo;
-    private List<ICityState> citiesToCheck;
-    private readonly OrderedDictionary<ICityState, HashSet<CapitalConnectionMedium>> citiesReachedToMediums = [];
-    private List<ICityState> newCitiesToCheck = null!; // Kotlin lateinit
+    private List<CityObject> citiesToCheck;
+    private readonly OrderedDictionary<CityObject, HashSet<CapitalConnectionMedium>> citiesReachedToMediums = [];
+    private List<CityObject> newCitiesToCheck = null!; // Kotlin lateinit
 
     /// <summary>All cities we want to know about, including our own</summary>
-    private readonly List<ICityState> openBordersCivCities;
+    private readonly List<CityObject> openBordersCivCities;
 
     private readonly bool roadIsResearched;
     private readonly bool railroadIsResearched;
@@ -63,7 +64,7 @@ public class CapitalConnectionsFinder
         citiesToCheck = capital == null ? [] : [capital];
         foreach (var city in citiesToCheck) citiesReachedToMediums[city] = [CapitalConnectionMedium.Start];
 
-        openBordersCivCities = civInfo.GameInfo.GetCities().Cast<ICityState>().Where(it => CanEnterBordersOf(it.Civ)).ToList();
+        openBordersCivCities = civInfo.GameInfo.GetCities().Cast<CityObject>().Where(it => CanEnterBordersOf(it.Civ)).ToList();
 
         var ruleset = civInfo.GameInfo.Ruleset;
         roadIsResearched = ruleset.TileImprovements.TryGetValue(nameof(RoadStatus.Road), out var road)
@@ -72,7 +73,7 @@ public class CapitalConnectionsFinder
             && (railroad.TechRequired == null || civInfo.Tech.IsResearched(railroad.TechRequired));
     }
 
-    public OrderedDictionary<ICityState, HashSet<CapitalConnectionMedium>> Find()
+    public OrderedDictionary<CityObject, HashSet<CapitalConnectionMedium>> Find()
     {
         // We map which cities we've reached, to the mediums they've been reached by -
         // this is so we know that if we've seen which cities can be connected by port A, and one
@@ -100,7 +101,7 @@ public class CapitalConnectionsFinder
         return citiesReachedToMediums;
     }
 
-    private void CheckRoad(ICityState cityToConnectFrom)
+    private void CheckRoad(CityObject cityToConnectFrom)
     {
         Check(
             cityToConnectFrom,
@@ -109,7 +110,7 @@ public class CapitalConnectionsFinder
             tileFilter: tile => tile.HasConnection(civInfo));
     }
 
-    private void CheckRailroad(ICityState cityToConnectFrom)
+    private void CheckRailroad(CityObject cityToConnectFrom)
     {
         Check(
             cityToConnectFrom,
@@ -118,7 +119,7 @@ public class CapitalConnectionsFinder
             tileFilter: tile => tile.GetUnpillagedRoad() == RoadStatus.Railroad);
     }
 
-    private void CheckHarbor(ICityState cityToConnectFrom)
+    private void CheckHarbor(CityObject cityToConnectFrom)
     {
         Check(
             cityToConnectFrom,
@@ -129,14 +130,14 @@ public class CapitalConnectionsFinder
             cityFilter: city => ReferenceEquals(city.Civ, civInfo) && ContainsHarbor(city) && !city.IsBlockaded()); // use only own harbors
     }
 
-    private static bool ContainsHarbor(ICityState city) =>
+    private static bool ContainsHarbor(CityObject city) =>
         city.ContainsBuildingUnique(UniqueType.ConnectTradeRoutes);
 
-    private void Check(ICityState cityToConnectFrom,
+    private void Check(CityObject cityToConnectFrom,
         CapitalConnectionMedium transportType,
         CapitalConnectionMedium? overridingTransportType,
         Func<Tile, bool> tileFilter,
-        Func<ICityState, bool>? cityFilter = null)
+        Func<CityObject, bool>? cityFilter = null)
     {
         cityFilter ??= _ => true;
         // This is the time-saving mechanism we discussed earlier - If I arrived at this city via a certain BFS,
@@ -161,7 +162,7 @@ public class CapitalConnectionsFinder
         }
     }
 
-    private void AddCityIfFirstEncountered(ICityState reachedCity)
+    private void AddCityIfFirstEncountered(CityObject reachedCity)
     {
         if (!citiesReachedToMediums.ContainsKey(reachedCity))
         {
@@ -170,7 +171,7 @@ public class CapitalConnectionsFinder
         }
     }
 
-    private bool WasPreviouslyReached(ICityState city, CapitalConnectionMedium transportType, CapitalConnectionMedium? overridingTransportType)
+    private bool WasPreviouslyReached(CityObject city, CapitalConnectionMedium transportType, CapitalConnectionMedium? overridingTransportType)
     {
         var mediums = citiesReachedToMediums[city];
         return mediums.Contains(transportType) || (overridingTransportType != null && mediums.Contains(overridingTransportType.Value));

@@ -35,13 +35,14 @@ public class CivManagerTests
         civ.Policies.CivInfo = civ;
         civ.GoldenAges.CivInfo = civ;
         civ.GreatPeople.CivInfo = civ;
+        civ.CivConstructions.SetTransients(civ);
         info.Civs.Add(civ);
         return (civ, info);
     }
 
     private static FakeCityState AddCity(Civilization civ, string id)
     {
-        var city = new FakeCityState(id, new FakeCiv("Rome"));
+        var city = new FakeCityState(id, new FakeCiv("Rome")) { CivData = civ };
         civ.Cities = [.. civ.Cities, city];
         return city;
     }
@@ -232,7 +233,7 @@ public class CivManagerTests
         Assert.Null(manager.ChooseFreeGreatPerson("Great Scientist"));
         Assert.Equal(1, manager.FreeGreatPeople);
         Assert.Same(scientist, units.AddedUnits.Single().Unit);
-        Assert.Same(city, units.AddedUnits.Single().City);
+        Assert.Same(city.City, units.AddedUnits.Single().City);
 
         units.AddedUnitResult = NewPlacedUnit();
         manager.LongCountGPPool.Add("Great Scientist");
@@ -366,7 +367,7 @@ public class CivManagerTests
     {
         var (civ, info) = NewCivWithPolicies();
         var (branch, member, complete) = AddBranch(info.RulesetData);
-        var city = (FakeCityState)civ.Cities[0];
+        var city = FakeCityState.Of(civ.Cities[0]);
         var policies = civ.Policies;
         policies.StoredCulture = 200;
         policies.ShouldOpenPolicyPicker = true;

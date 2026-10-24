@@ -493,10 +493,10 @@ public class CivilizationCoreTests
         var second = new FakeCityState("b", new FakeCiv("Rome"));
         civ.Cities = [first, second];
         Assert.Null(civ.GetCapital(false));
-        Assert.Same(first, civ.GetCapital());
+        Assert.Same(first.City, civ.GetCapital());
         second.Capital = true;
-        Assert.Same(second, civ.GetCapital(false));
-        Assert.Same(second, ((IGameContextCivilization)civ).GetCapital());
+        Assert.Same(second.City, civ.GetCapital(false));
+        Assert.Same(second.City, ((IGameContextCivilization)civ).GetCapital());
     }
 
     [Fact]
@@ -508,7 +508,7 @@ public class CivilizationCoreTests
         var nation = civ.Nation;
         nation.Uniques = ["Cannot be traded"];
         var city = new FakeCityState("c", new FakeCiv("Rome"));
-        city.NonLocalUniques.Add(Make("city"));
+        city.BuiltUniques.AddUnique(Make("city"));
         civ.Cities = [city];
         civ.Policies.PolicyUniques.AddUnique(Make("policy"));
         civ.Tech.TechUniques.AddUnique(Make("tech"));

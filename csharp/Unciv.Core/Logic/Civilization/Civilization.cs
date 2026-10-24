@@ -16,6 +16,7 @@ using Unciv.Models.Translations;
 using Unciv.UI.Components.Extensions;
 using Unciv.UI.Screens.VictoryScreen;
 using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 using CityStateTypeObject = Unciv.Models.Ruleset.Nation.CityStateType;
 using DifficultyObject = Unciv.Models.Ruleset.Nation.Difficulty;
 using EraObject = Unciv.Models.Ruleset.Tech.Era;
@@ -247,9 +248,9 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     /// <summary>
     /// if we only use lists, and change the list each time the cities are changed,
     /// we won't get concurrent modification exceptions.
-    /// This is basically a way to ensure our lists are immutable. TODO(T060): retype to City.
+    /// This is basically a way to ensure our lists are immutable.
     /// </summary>
-    public IReadOnlyList<ICityState> Cities { get; set; } = [];
+    public IReadOnlyList<CityObject> Cities { get; set; } = [];
     public int CitiesCreated { get; set; }
 
     /// <summary>
@@ -469,7 +470,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
 
     public bool Knows(string otherCivName) => Diplomacy.ContainsKey(otherCivName);
     public bool Knows(Civilization otherCiv) => Knows(otherCiv.CivId);
-    public ICityState? GetCapital(bool firstCityIfNoCapital = true) =>
+    public CityObject? GetCapital(bool firstCityIfNoCapital = true) =>
         Cities.FirstOrDefault(it => it.IsCapital()) ?? (firstCityIfNoCapital ? Cities.FirstOrDefault() : null);
 
     public bool IsHuman() => PlayerType == PlayerType.Human;
@@ -534,7 +535,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         Stats.Happiness = KotlinMath.RoundToInt(happinessSum);
         if (Stats.Happiness != previousHappiness && GameInfo.Ruleset.AllHappinessLevelsThatAffectUniques.Any(it =>
                 Stats.Happiness < it != previousHappiness < it)) // If move from being below them to not, or vice versa
-            foreach (var city in Cities) city.UpdateCityStats(false);
+            foreach (var city in Cities) city.CityStats.Update(updateCivStats: false);
 
         var newStats = new Models.StatTypes.Stats();
         foreach (var statsForTurn in Stats.GetStatMapForNextTurn().Values) newStats.Add(statsForTurn);
@@ -593,7 +594,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         return newResourceSupplyList;
     }
 
-    public bool IsCapitalConnectedToCity(ICityState city) => Cache.IsCityConnectedToCapital(city);
+    public bool IsCapitalConnectedToCity(CityObject city) => Cache.IsCityConnectedToCapital(city);
 
     /// <summary>
     /// Returns a dictionary of ALL resource names, and the amount that the civ has of each
@@ -708,7 +709,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         var uniques = new List<UniqueObject>();
         uniques.AddRange(Nation.UniqueMap.GetAllUniques());
         if (!ignoreCities)
-            foreach (var city in Cities) uniques.AddRange(city.BuiltBuildingUniqueMap.GetAllUniques());
+            foreach (var city in Cities) uniques.AddRange(city.CityConstructions.BuiltBuildingUniqueMap.GetAllUniques());
         if (ReligionManager.Religion != null)
             uniques.AddRange(ReligionManager.Religion.FounderBeliefUniqueMap.GetAllUniques());
         uniques.AddRange(Policies.PolicyUniques.GetAllUniques());
@@ -738,7 +739,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         if (!ignoreCities)
         {
             foreach (var city in Cities)
-                city.BuiltBuildingUniqueMap.ForEachUnique(UniqueFilter, ListOp);
+                city.CityConstructions.BuiltBuildingUniqueMap.ForEachUnique(UniqueFilter, ListOp);
         }
         ReligionManager.Religion?.FounderBeliefUniqueMap.ForEachUnique(UniqueFilter, ListOp);
         Policies.PolicyUniques.ForEachUnique(UniqueFilter, ListOp);
@@ -840,7 +841,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         return baseUnit;
     }
 
-    public Building? CapitalCityIndicator(ICityState? city = null)
+    public Building? CapitalCityIndicator(CityObject? city = null)
     {
         var gameContext = city != null && ReferenceEquals(city.Civ, this) ? city.State
             : city == null ? State
@@ -897,7 +898,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         switch (category)
         {
             case RankingType.Score: return KotlinMath.DoubleToInt(CalculateTotalScore());
-            case RankingType.Population: return Cities.Sum(it => it.Population);
+            case RankingType.Population: return Cities.Sum(it => it.Population.Population);
             case RankingType.Growth: return KotlinMath.RoundToInt(Stats.StatsForNextTurn.Food);
             case RankingType.Production: return KotlinMath.RoundToInt(Stats.StatsForNextTurn.Production);
             case RankingType.Gold: return Gold;
@@ -959,10 +960,10 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
 
         var modConstants = GameInfo.Ruleset.ModOptions.Constants;
         scoreBreakdown["Cities"] = Cities.Count * 10 * mapSizeModifier;
-        scoreBreakdown["Population"] = Cities.Sum(it => it.Population) * modConstants.ScoreFromPopulation * mapSizeModifier;
+        scoreBreakdown["Population"] = Cities.Sum(it => it.Population.Population) * modConstants.ScoreFromPopulation * mapSizeModifier;
         scoreBreakdown["Tiles"] = Cities.Sum(city => city.GetTiles().Count(it => !it.IsWater)) * 1 * mapSizeModifier;
         scoreBreakdown["Wonders"] = modConstants.ScoreFromWonders * (double)Cities
-            .Sum(city => city.GetBuiltBuildings().Count(it => it.IsWonder));
+            .Sum(city => city.CityConstructions.GetBuiltBuildings().Count(it => it.IsWonder));
         scoreBreakdown["Technologies"] = Tech.TechsResearched.Count * 4.0;
         scoreBreakdown["Future Tech"] = Tech.RepeatingTechsResearched * 10.0;
 
@@ -1233,37 +1234,37 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     public Proximity UpdateProximity(Civilization otherCiv, Proximity? preCalculated = null) => Cache.UpdateProximity(otherCiv, preCalculated);
 
     /// <summary>Removes current capital then moves capital to argument city if not null</summary>
-    public void MoveCapitalTo(ICityState? city, ICityState? oldCapital)
+    public void MoveCapitalTo(CityObject? city, CityObject? oldCapital)
     {
         // Add new capital first so the civ doesn't get stuck in a state where it has cities but no capital
         var newCapitalIndicator = city == null ? null : CapitalCityIndicator(city);
         if (newCapitalIndicator != null)
         {
             // move new capital
-            city!.AddBuilding(newCapitalIndicator);
+            city!.CityConstructions.AddBuilding(newCapitalIndicator);
             city.IsBeingRazed = false; // stop razing the new capital if it was being razed
 
             // move the buildings with MovedToNewCapital unique
             if (oldCapital != null)
             {
                 // Get the Set of the buildings to move
-                var buildingsToMove = oldCapital.GetBuiltBuildings()
+                var buildingsToMove = oldCapital.CityConstructions.GetBuiltBuildings()
                     .Where(it => ((IHasUniques)it).HasUnique(UniqueType.MovesToNewCapital))
                     .Distinct().ToList();
 
-                foreach (var building in buildingsToMove) oldCapital.RemoveBuilding(building);
+                foreach (var building in buildingsToMove) oldCapital.CityConstructions.RemoveBuilding(building);
 
                 // Add the buildings to new capital
-                foreach (var building in buildingsToMove) city.AddBuilding(building);
+                foreach (var building in buildingsToMove) city.CityConstructions.AddBuilding(building);
             }
         }
 
         var oldCapitalIndicator = oldCapital == null ? null : CapitalCityIndicator(oldCapital);
-        if (oldCapitalIndicator != null) oldCapital!.RemoveBuilding(oldCapitalIndicator);
+        if (oldCapitalIndicator != null) oldCapital!.CityConstructions.RemoveBuilding(oldCapitalIndicator);
     }
 
     /// <param name="oldCapital"><c>null</c> when destroying, otherwise old capital</param>
-    public void MoveCapitalToNextLargest(ICityState? oldCapital)
+    public void MoveCapitalToNextLargest(CityObject? oldCapital)
     {
         var availableCities = Cities.Where(it => !it.IsCapital()).ToList();
         if (availableCities.Count == 0)
@@ -1273,11 +1274,11 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         }
 
         // Kotlin maxByOrNull: the first element with the maximum population wins
-        static ICityState? LargestOrNull(IEnumerable<ICityState> candidates)
+        static CityObject? LargestOrNull(IEnumerable<CityObject> candidates)
         {
-            ICityState? best = null;
+            CityObject? best = null;
             foreach (var candidate in candidates)
-                if (best == null || candidate.Population > best.Population) best = candidate;
+                if (best == null || candidate.Population.Population > best.Population.Population) best = candidate;
             return best;
         }
 
