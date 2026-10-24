@@ -182,7 +182,7 @@ flowchart TD
   class T072 done
   class T078 done
   class T079 done
-  class T080 ready
+  class T080 prog
   class T081 done
   class T082 done
   class T083 prog
@@ -212,12 +212,12 @@ flowchart TD
   class T127 ready
   class T128 ready
   class T129 ready
-  class T139 waiting
+  class T139 ondeck
   class T140 prog
   class T141 prog
   class T142 ready
   class T143 ready
-  class T144 waiting
+  class T144 ondeck
   class T145 ready
   class T146 ondeck
 ```
@@ -226,7 +226,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T080 | **Ready to start** | T079, T061, T068 | 10 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T111 | **Ready to start** | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
@@ -239,9 +238,12 @@ flowchart TD
 | T145 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
 | T090 | **On deck** (after T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T089 | **On deck** (after T088) | T086, T088, T085 | 1 | TradeEvaluation |
+| T139 | **On deck** (after T083, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
+| T144 | **On deck** (after T080) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
 | T146 | **On deck** (after T083, T141) | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T083 | In-Progress [Claude] | T081, T082, T052, T064, T068, T079, T035 | 14 | Battle C: Battle, Nuke |
 | T088 | In-Progress [Claude] | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
+| T080 | In-Progress [Antigravity] | T079, T061, T068 | 10 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
@@ -261,6 +263,4 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T139 | Available (waiting on T083, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T140 | In-Progress [Claude] | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
-| T144 | Available (waiting on T080) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |

@@ -830,13 +830,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review notes (Adversarial Review, PASS): no parity defects. Non-blocking follow-ups: pillage loot routed to a city / closest-city selection and game-progress modifier branches untested (needs city fixtures); stats/stockpile cost activation paths partly uncovered.
 
 ### T080 Unit actions B: UnitActions, UnitActionsFromUniques
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T079, T061, T068
 - Source: core/src/com/unciv/logic/map/mapunit/actions/UnitActions.kt, UnitActionsFromUniques.kt
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapUnit/Actions/UnitActions.cs, UnitActionsFromUniques.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UnitActionsBTests`
-- Claimed:
+- Claimed: 2026-10-24T17:39Z
 - Notes: Created by the backlog audit. ~755 LOC. UnitActions calls UnitAutomation (automatedExplore/automateUnitMoves via GameView): leave a TODO(T090) seam. GUI.getWorldScreen/UncivGame.settings.* are UI and dropped; UnitActionsFromUniques.getFoundCityAction uses CityFounder (T061). Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T081 Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage
