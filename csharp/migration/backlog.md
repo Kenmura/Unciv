@@ -1222,13 +1222,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Split off: T112 (drop IsCityConnectedToCapital after T060), T113 (T056 (a) JSON converters for Java collections), T114 (findings appended to T109 during this work: T056 review, T059 follow-ups/review, T108 review).
 
 ### T111 T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T057, T052, T060, T065
 - Source: csharp/Unciv.Core/Logic/Civilization/Managers/{ReligionManager,EspionageManager,VictoryManager}.cs, Models/Spy.cs
 - Fixtures: none
 - Deliverables: fixes + tests in csharp/Unciv.Core.Tests/Logic/CivReligionVictoryTests.cs
 - Gate: dotnet test --filter FullyQualifiedName~CivReligionVictoryTests
-- Claimed:
+- Claimed: 2026-10-24T17:53Z
 - Notes: From T057 review (non-blocking): (1) IGameInfoState.DiplomaticVictoryVotesCast is IDictionary but Kotlin is java.util.HashMap: use JavaHashMap (vote-tie text order). (2) Enumerable.Sum throws on int overflow where Kotlin sumOf wraps (GetStartingSpyRank, Spy.GetEfficiencyModifier): unchecked loop. (3) Enum.Parse<BeliefType> accepts numeric strings, Kotlin valueOf does not. (4) Add tests for RuinsManager.SelectNextRuinsReward, GenerateProphet, FoundReligion/UseProphetForEnhancingReligion, ChooseBeliefs founding/enhancing, Spy.InitiateCoup/CanMoveTo, GetTilesVisibleViaSpies, with Kotlin-derived golden seeds (after T052/T060/T065 make them testable). (5) Share the duplicated ParseInt helper.
 
 ### T112 Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype
