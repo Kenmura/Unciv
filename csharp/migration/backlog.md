@@ -688,7 +688,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Rebase fixes (Claude): tip had 2 failing MarkerOwnershipTests (stale TODO(T068)). GameStarter.onCivilizationCreated doc now says TODO(T104) (not T069: T069 becomes Done and the marker test rejects Done owners); CityStateSeams.cs header names its open owners T094/T081. Added QuestManager virtuals (GetInvestmentMultiplier, ReceivedGoldGift, CityStateBullied, CityStateConquered, WasAttackedBy, WantsDead) for T068's FakeQuestManager; ICityStateFunctions.GetNumThreateningBarbarians is a new non-default seam member (CityStateFunctions already has it).
 
 ### T070 Civilization TurnManager
-- State: Needs-Review [Claude]
+- State: In-Review [Claude]
 - Depends: T068, T064, T066, T069
 - Source: core/src/com/unciv/logic/civilization/managers/TurnManager.kt
 - Fixtures: tests/src/com/unciv/logic/NextTurnLatencyTest.kt is a benchmark: do not port
@@ -701,6 +701,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Deviations: NextTurnProgress is an optional `Action` called where Kotlin calls progressBar?.increment(). UncivGame.Current.settings values (automatedUnitsMoveOnTurnStart, citiesAutoBombardAtEndOfTurn, notificationsLogMaxTurns=5) are GameClientState fields, reached via the new IGameInfoState.ClientState. VERSION is Version.Current.
     Seams: INextTurnAutomation (hook GameClientState.NextTurnAutomation; takes the Civilization where Kotlin builds GameView(...).civView; null hook = call skipped; owner T094: automateGoldToSciencePercentage, automateCityBombardment, chooseGreatPerson, automateCivMoves) and ITradeValidity (GameClientState.TradeEvaluation; owner T089; StartTurn throws NotSupportedException if a trade request must be validated and no hook is set). IGameInfoState gained TileMap, VictoryData, ClientState and ProcessDiplomaticVictory (default interface method throws NotSupportedException, TODO(T071) drops it when GameInfo implements it). ICityStateFunctions gained HoldElections, TurnsForGreatPersonFromCityState, GiveGreatPersonToPatron (real CityStateFunctions already had them).
     Traps kept: maxByOrNull draws one random number per element and keeps the first maximum (revolt city/tile/unit selection); randomOrNull on an empty list draws nothing; Int*Float revolt turns use FloatToInt; EndTurn archives notifications before the defeated/spectator early return; flag loop snapshots keys.
+  - Review notes (adversarial review): FAIL on one finding, fixed in the review-fix commit: Kotlin maxByOrNull returns a single element without calling the selector, so a one-city civ makes no random draw for the spawn city (the earlier note "one draw per element" was wrong for size 1). TurnManager.DoRevoltSpawn now skips the draw; test replays the RNG to check the rebel unit. All other parity points confirmed. Standard checks pass on rebased tree (2650 tests).
 
 ### T071 GameInfo turn handling and BackwardCompatibility
 - State: Available
