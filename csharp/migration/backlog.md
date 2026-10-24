@@ -4,7 +4,7 @@ Rules: see `PROTOCOL.md`. Tell an agent **"Begin Conversion work"** to start.
 Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX math/JVM stdlib). Expand as needed.
 
 ### T001 LongPriorityQueue
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T00:43:00Z
 - Depends: none
 - Source: core/src/com/unciv/utils/LongPriorityQueue.kt
@@ -18,6 +18,7 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Not ported: `plus`/`minus` operators (void-returning; use Add/Remove), purity annotations, Java `Collection<Long>` → `ICollection<long>`.
   - hashCode mirrors `Objects.hash` chaining, but comparator hash is .NET identity hash so values differ from the JVM's; equality uses reference equality of the comparator, as Kotlin.
   - Ran: `dotnet test --filter FullyQualifiedName~LongPriorityQueueTests` and full `dotnet test` — all green.
+  - Review (Antigravity): Pass. Line-by-line verification against Kotlin source confirms exact behavioral fidelity: all quirks preserved (head removal ignoring value, copyInto tail behavior on clone, off-by-one next guard, DefaultComparator singleton reference equality), fail-fast stream and iterator mutation tracking verified. Gate 27/27 and full test suite passed.
 
 ### T002 Perlin noise
 - State: Done
