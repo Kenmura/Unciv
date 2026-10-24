@@ -1459,7 +1459,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Claude: City.cs split via a partial (CityUnitAndConnectionAccess.cs holds UnitToPromotions, IsConnectedToCapital(predicate), GetGarrison; the MapUnits and Civilization.Transients namespaces left City.cs, 14 -> 12). Baseline entry deleted (limit 12). No behaviour change; added GetGameResource test to keep City.cs coverage from regressing.
 
 ### T129 Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T096, T097
 - Source: core/src/com/unciv/ui/objectdescriptions/NationDescriptions.kt (addUniqueBuildingsText, addUniqueImprovementsText), TechnologyDescriptions.kt (buildings/wonders enabled sections of getDescription and getCivilopediaTextLines)
 - Fixtures: none - generate golden values
