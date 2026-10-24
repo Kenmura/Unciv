@@ -1,0 +1,638 @@
+0	Stats	[stats]	[]	Global,Terrain,Improvement		<null>	Stats	0011011110110000111011101000000000
+1	StatsPerCity	[stats] [cityFilter]	[] []	Global,FollowerBelief		<null>	Stats;CityFilter	0011011111110000001011101000000000
+2	StatsFromSpecialist	[stats] from every specialist [cityFilter]	[] from every specialist []	Global,FollowerBelief		<null>	Stats;CityFilter	0011011111110000001011101000000000
+3	StatsPerPopulation	[stats] per [positiveAmount] population [cityFilter]	[] per [] population []	Global,FollowerBelief		<null>	Stats;PositiveNumber;CityFilter	0011011111110000001011101000000000
+4	StatsPerPolicies	[stats] per [positiveAmount] social policies adopted	[] per [] social policies adopted	Global		Only works for civ-wide stats	Stats;PositiveNumber	0011011110110000001011101000000000
+5	StatsPerStat	[stats] per every [positiveAmount] [civWideStat]	[] per every [] []	Global		<null>	Stats;PositiveNumber;CivWideStatName	0011011110110000001011101000000000
+6	StatsFromCitiesOnSpecificTiles	[stats] in cities on [terrainFilter] tiles	[] in cities on [] tiles	Global,FollowerBelief		<null>	Stats;TerrainFilter	0011011111110000001011101000000000
+7	StatsFromBuildings	[stats] from all [buildingFilter] buildings	[] from all [] buildings	Global,FollowerBelief		<null>	Stats;BuildingFilter	0011011111110000001011101000000000
+8	StatsFromTiles	[stats] from [tileFilter] tiles [cityFilter]	[] from [] tiles []	Global,FollowerBelief		<null>	Stats;TileFilter;CityFilter	0011011111110000001011101000000000
+9	StatsFromTilesWithout	[stats] from [tileFilter] tiles without [tileFilter] [cityFilter]	[] from [] tiles without [] []	Global,FollowerBelief		<null>	Stats;TileFilter;TileFilter;CityFilter	0011011111110000001011101000000000
+10	StatsFromObject	[stats] from every [tileFilter/specialist/buildingFilter]	[] from every []	Global,FollowerBelief		<null>	Stats;TileFilter/Specialist/BuildingFilter	0011011111110000001011101000000000
+11	StatsFromTradeRoute	[stats] from each Trade Route	[] from each Trade Route	Global,FollowerBelief		<null>	Stats	0011011111110000001011101000000000
+12	StatsFromGlobalCitiesFollowingReligion	[stats] for each global city following this religion	[] for each global city following this religion	FounderBelief		<null>	Stats	0000000010000000000000000000000000
+13	StatsFromGlobalFollowers	[stats] from every [positiveAmount] global followers [cityFilter]	[] from every [] global followers []	FounderBelief		<null>	Stats;PositiveNumber;CityFilter	0000000010000000000000000000000000
+14	StatPercentBonus	[relativeAmount]% [stat]	[]% []	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber;StatName	0011011111110000001011101000000000
+15	StatPercentBonusCities	[relativeAmount]% [stat] [cityFilter]	[]% [] []	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber;StatName;CityFilter	0011011111110000001011101000000000
+16	StatPercentFromObject	[relativeAmount]% [stat] from every [tileFilter/buildingFilter]	[]% [] from every []	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber;StatName;TileFilter/BuildingFilter	0011011111110000001011101000000000
+17	StatPercentFromObjectToResource	[positiveAmount]% of [stat] from every [improvementFilter/buildingFilter] in the city added to [resource]	[]% of [] from every [] in the city added to []	Building		<null>	PositiveNumber;StatName;ImprovementFilter/BuildingFilter;Resource	0000000000110000000000000000000000
+18	AllStatsPercentFromObject	[relativeAmount]% Yield from every [tileFilter/buildingFilter]	[]% Yield from every []	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber;TileFilter/BuildingFilter	0011011111110000001011101000000000
+19	StatPercentFromReligionFollowers	[relativeAmount]% [stat] from every follower, up to [relativeAmount]%	[]% [] from every follower, up to []%	FounderBelief,FollowerBelief		<null>	RelativeNumber;StatName;RelativeNumber	0000000011000000000000000000000000
+20	BonusStatsFromCityStates	[relativeAmount]% [stat] from City-States	[]% [] from City-States	Global		<null>	RelativeNumber;StatName	0011011110110000001011101000000000
+21	StatPercentFromTradeRoutes	[relativeAmount]% [stat] from Trade Routes	[]% [] from Trade Routes	Global		<null>	RelativeNumber;StatName	0011011110110000001011101000000000
+22	NullifiesStat	Nullifies [stat] [cityFilter]	Nullifies [] []	Global		<null>	StatName;CityFilter	0011011110110000001011101000000000
+23	NullifiesGrowth	Nullifies Growth [cityFilter]	Nullifies Growth []	Global		<null>	CityFilter	0011011110110000001011101000000000
+24	PercentProductionBuildings	[relativeAmount]% Production when constructing [buildingFilter] buildings [cityFilter]	[]% Production when constructing [] buildings []	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber;BuildingFilter;CityFilter	0011011111110000001011101000000000
+25	PercentProductionUnits	[relativeAmount]% Production when constructing [baseUnitFilter] units [cityFilter]	[]% Production when constructing [] units []	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber;BaseUnitFilter;CityFilter	0011011111110000001011101000000000
+26	PercentProductionWonders	[relativeAmount]% Production when constructing [buildingFilter] wonders [cityFilter]	[]% Production when constructing [] wonders []	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber;BuildingFilter;CityFilter	0011011111110000001011101000000000
+27	PercentProductionBuildingsInCapital	[relativeAmount]% Production towards any buildings that already exist in the Capital	[]% Production towards any buildings that already exist in the Capital	Global,FollowerBelief		<null>	RelativeNumber	0011011111110000001011101000000000
+28	PercentYieldFromPillaging	[relativeAmount]% Yield from pillaging tiles	[]% Yield from pillaging tiles	Global,Unit		<null>	RelativeNumber	0011011110110111001011101000000000
+29	PercentHealthFromPillaging	[relativeAmount]% Health from pillaging tiles	[]% Health from pillaging tiles	Global,Unit		<null>	RelativeNumber	0011011110110111001011101000000000
+30	CityStateMilitaryUnits	Provides military units every ≈[positiveAmount] turns	Provides military units every ≈[] turns	CityState		<null>	PositiveNumber	0000000000000000000000001000000000
+31	CityStateUniqueLuxury	Provides a unique luxury	Provides a unique luxury	CityState		<null>		0000000000000000000000001000000000
+32	CityStateGiftedUnitsStartWithXp	Military Units gifted from City-States start with [positiveAmount] XP	Military Units gifted from City-States start with [] XP	Global		<null>	PositiveNumber	0011011110110000001011101000000000
+33	CityStateMoreGiftedUnits	Militaristic City-States grant units [positiveAmount] times as fast when you are at war with a common nation	Militaristic City-States grant units [] times as fast when you are at war with a common nation	Global		<null>	PositiveNumber	0011011110110000001011101000000000
+34	CityStateGoldGiftsProvideMoreInfluence	Gifts of Gold to City-States generate [relativeAmount]% more Influence	Gifts of Gold to City-States generate []% more Influence	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+35	CityStateCanBeBoughtForGold	Can spend Gold to annex or puppet a City-State that has been your Ally for [nonNegativeAmount] turns	Can spend Gold to annex or puppet a City-State that has been your Ally for [] turns	Global		<null>	NonNegativeNumber	0011011110110000001011101000000000
+36	CityStateTerritoryAlwaysFriendly	City-State territory always counts as friendly territory	City-State territory always counts as friendly territory	Global		<null>		0011011110110000001011101000000000
+37	CityStateCanGiftGreatPeople	Allied City-States will occasionally gift Great People	Allied City-States will occasionally gift Great People	Global		<null>		0011011110110000001011101000000000
+38	CityStateInfluenceDegradation	[relativeAmount]% City-State Influence degradation	[]% City-State Influence degradation	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+39	CityStateRestingPoint	Resting point for Influence with City-States is increased by [amount]	Resting point for Influence with City-States is increased by []	Global		<null>	Number	0011011110110000001011101000000000
+40	CityStateStatPercent	Allied City-States provide [stat] equal to [relativeAmount]% of what they produce for themselves	Allied City-States provide [] equal to []% of what they produce for themselves	Global		<null>	StatName;RelativeNumber	0011011110110000001011101000000000
+41	CityStateResources	[relativeAmount]% resources gifted by City-States	[]% resources gifted by City-States	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+42	CityStateLuxuryHappiness	[relativeAmount]% Happiness from luxury resources gifted by City-States	[]% Happiness from luxury resources gifted by City-States	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+43	CityStateInfluenceRecoversTwiceNormalRate	City-State Influence recovers at twice the normal rate	City-State Influence recovers at twice the normal rate	Global		<null>		0011011110110000001011101000000000
+44	GrowthPercentBonus	[relativeAmount]% growth [cityFilter]	[]% growth []	Global,FollowerBelief		<null>	RelativeNumber;CityFilter	0011011111110000001011101000000000
+45	CarryOverFood	[amount]% Food is carried over after population increases [cityFilter]	[]% Food is carried over after population increases []	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	Number;CityFilter	0011011111110000001011101000000000
+46	FoodConsumptionByPopulation	[relativeAmount]% Food consumption by [populationFilter] [cityFilter]	[]% Food consumption by [] []	Global,FollowerBelief		<null>	RelativeNumber;PopulationFilter;CityFilter	0011011111110000001011101000000000
+47	UnhappinessFromCitiesPercentage	[relativeAmount]% unhappiness from the number of cities	[]% unhappiness from the number of cities	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+48	UnhappinessFromPopulationTypePercentageChange	[relativeAmount]% Unhappiness from [populationFilter] [cityFilter]	[]% Unhappiness from [] []	Global,FollowerBelief		<null>	RelativeNumber;PopulationFilter;CityFilter	0011011111110000001011101000000000
+49	BonusHappinessFromLuxury	[amount] Happiness from each type of luxury resource	[] Happiness from each type of luxury resource	Global		<null>	Number	0011011110110000001011101000000000
+50	RetainHappinessFromLuxury	Retain [relativeAmount]% of the happiness from a luxury after the last copy has been traded away	Retain []% of the happiness from a luxury after the last copy has been traded away	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+51	ExcessHappinessToGlobalStat	[relativeAmount]% of excess happiness converted to [stat]	[]% of excess happiness converted to []	Global		<null>	RelativeNumber;StatName	0011011110110000001011101000000000
+52	CannotBuildUnits	Cannot build [baseUnitFilter] units	Cannot build [] units	Global		<null>	BaseUnitFilter	0011011110110000001011101000000000
+53	EnablesConstructionOfSpaceshipParts	Enables construction of Spaceship parts	Enables construction of Spaceship parts	Global		<null>		0011011110110000001011101000000000
+54	BuyUnitsIncreasingCost	May buy [baseUnitFilter] units for [nonNegativeAmount] [stat] [cityFilter] at an increasing price ([amount])	May buy [] units for [] [] [] at an increasing price ([])	Global,FollowerBelief		<null>	BaseUnitFilter;NonNegativeNumber;StatName;CityFilter;Number	0011011111110000001011101000000000
+55	BuyBuildingsIncreasingCost	May buy [buildingFilter] buildings for [nonNegativeAmount] [stat] [cityFilter] at an increasing price ([amount])	May buy [] buildings for [] [] [] at an increasing price ([])	Global,FollowerBelief		<null>	BuildingFilter;NonNegativeNumber;StatName;CityFilter;Number	0011011111110000001011101000000000
+56	BuyUnitsForAmountStat	May buy [baseUnitFilter] units for [nonNegativeAmount] [stat] [cityFilter]	May buy [] units for [] [] []	Global,FollowerBelief		<null>	BaseUnitFilter;NonNegativeNumber;StatName;CityFilter	0011011111110000001011101000000000
+57	BuyBuildingsForAmountStat	May buy [buildingFilter] buildings for [nonNegativeAmount] [stat] [cityFilter]	May buy [] buildings for [] [] []	Global,FollowerBelief		<null>	BuildingFilter;NonNegativeNumber;StatName;CityFilter	0011011111110000001011101000000000
+58	BuyUnitsWithStat	May buy [baseUnitFilter] units with [stat] [cityFilter]	May buy [] units with [] []	Global,FollowerBelief		<null>	BaseUnitFilter;StatName;CityFilter	0011011111110000001011101000000000
+59	BuyBuildingsWithStat	May buy [buildingFilter] buildings with [stat] [cityFilter]	May buy [] buildings with [] []	Global,FollowerBelief		<null>	BuildingFilter;StatName;CityFilter	0011011111110000001011101000000000
+60	BuyUnitsByProductionCost	May buy [baseUnitFilter] units with [stat] for [nonNegativeAmount] times their normal Production cost	May buy [] units with [] for [] times their normal Production cost	Global,FollowerBelief		<null>	BaseUnitFilter;StatName;NonNegativeNumber	0011011111110000001011101000000000
+61	BuyBuildingsByProductionCost	May buy [buildingFilter] buildings with [stat] for [nonNegativeAmount] times their normal Production cost	May buy [] buildings with [] for [] times their normal Production cost	Global,FollowerBelief		<null>	BuildingFilter;StatName;NonNegativeNumber	0011011111110000001011101000000000
+62	BuyItemsDiscount	[stat] cost of purchasing items in cities [relativeAmount]%	[] cost of purchasing items in cities []%	Global,FollowerBelief		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	StatName;RelativeNumber	0011011111110000001011101000000000
+63	BuyBuildingsDiscount	[stat] cost of purchasing [buildingFilter] buildings [relativeAmount]%	[] cost of purchasing [] buildings []%	Global,FollowerBelief		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	StatName;BuildingFilter;RelativeNumber	0011011111110000001011101000000000
+64	BuyUnitsDiscount	[stat] cost of purchasing [baseUnitFilter] units [relativeAmount]%	[] cost of purchasing [] units []%	Global,FollowerBelief		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	StatName;BaseUnitFilter;RelativeNumber	0011011111110000001011101000000000
+65	EnablesStatProduction	Enables conversion of city production to [stat]	Enables conversion of city production to []	Global		<null>	StatName	0011011110110000001011101000000000
+66	ProductionToStatConversionBonus	Production to [stat] conversion in cities changed by [relativeAmount]%	Production to [] conversion in cities changed by []%	Global		<null>	StatName;RelativeNumber	0011011110110000001011101000000000
+67	RoadMovementSpeed	Improves movement speed on roads	Improves movement speed on roads	Global		<null>		0011011110110000001011101000000000
+68	RoadsConnectAcrossRivers	Roads connect tiles across rivers	Roads connect tiles across rivers	Global		<null>		0011011110110000001011101000000000
+69	RoadMaintenance	[relativeAmount]% maintenance on road & railroads	[]% maintenance on road & railroads	Global		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110000001011101000000000
+70	NoImprovementMaintenanceInSpecificTiles	No Maintenance costs for improvements in [tileFilter] tiles	No Maintenance costs for improvements in [] tiles	Global		<null>	TileFilter	0011011110110000001011101000000000
+71	SpecificImprovementTime	[relativeAmount]% construction time for [improvementFilter] improvements	[]% construction time for [] improvements	Global,Unit		<null>	RelativeNumber;ImprovementFilter	0011011110110111001011101000000000
+72	ImprovementTimeIncrease	Can build [improvementFilter] improvements at a [relativeAmount]% rate	Can build [] improvements at a []% rate	Global,Unit		<null>	ImprovementFilter;RelativeNumber	0011011110110111001011101000000000
+73	GainFreeBuildings	Gain a free [buildingName] [cityFilter]	Gain a free [] []	Triggerable,Global		Free buildings CANNOT be self-removing - this leads to an endless loop of trying to add the building	BuildingName;CityFilter	1111011111111111011111101001000000
+74	BuildingMaintenance	[relativeAmount]% maintenance cost for [buildingFilter] buildings [cityFilter]	[]% maintenance cost for [] buildings []	Global,FollowerBelief		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber;BuildingFilter;CityFilter	0011011111110000001011101000000000
+75	RemoveBuilding	Remove [buildingFilter] [cityFilter]	Remove [] []	Triggerable,Global		<null>	BuildingFilter;CityFilter	1111011111111111011111101001000000
+76	OneTimeSellBuilding	Sell [buildingFilter] buildings [cityFilter]	Sell [] buildings []	Triggerable,Global		<null>	BuildingFilter;CityFilter	1111011111111111011111101001000000
+77	BorderGrowthPercentage	[relativeAmount]% Culture cost of natural border growth [cityFilter]	[]% Culture cost of natural border growth []	Global,FollowerBelief		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber;CityFilter	0011011111110000001011101000000000
+78	TileCostPercentage	[relativeAmount]% Gold cost of acquiring tiles [cityFilter]	[]% Gold cost of acquiring tiles []	Global,FollowerBelief		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber;CityFilter	0011011111110000001011101000000000
+79	LessPolicyCostFromCities	Each city founded increases culture cost of policies [relativeAmount]% less than normal	Each city founded increases culture cost of policies []% less than normal	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+80	LessPolicyCost	[relativeAmount]% Culture cost of adopting new Policies	[]% Culture cost of adopting new Policies	Global		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110000001011101000000000
+81	LessTechCostFromCities	Each city founded increases Science cost of Technologies [relativeAmount]% less than normal	Each city founded increases Science cost of Technologies []% less than normal	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+82	LessTechCost	[relativeAmount]% Science cost of researching new Technologies	[]% Science cost of researching new Technologies	Global		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110000001011101000000000
+83	StatsFromNaturalWonders	[stats] for every known Natural Wonder	[] for every known Natural Wonder	Global		<null>	Stats	0011011110110000001011101000000000
+84	StatBonusWhenDiscoveringNaturalWonder	[stats] for discovering a Natural Wonder (bonus enhanced to [stats] if first to discover it)	[] for discovering a Natural Wonder (bonus enhanced to [] if first to discover it)	Global		<null>	Stats;Stats	0011011110110000001011101000000000
+85	GreatPersonPointPercentage	[relativeAmount]% Great Person generation [cityFilter]	[]% Great Person generation []	Global,FollowerBelief		<null>	RelativeNumber;CityFilter	0011011111110000001011101000000000
+86	PercentGoldFromTradeMissions	[relativeAmount]% Gold from Great Merchant trade missions	[]% Gold from Great Merchant trade missions	Global,Unit		<null>	RelativeNumber	0011011110110111001011101000000000
+87	GreatGeneralProvidesDoubleCombatBonus	Great General provides double combat bonus	Great General provides double combat bonus	Global,Unit		<null>		0011011110110111001011101000000000
+88	MayanGainGreatPerson	Receive a free Great Person at the end of every [comment] (every 394 years), after researching [tech]. Each bonus person can only be chosen once.	Receive a free Great Person at the end of every [] (every 394 years), after researching []. Each bonus person can only be chosen once.	Global		<null>	Comment;Technology	0011011110110000001011101000000000
+89	MayanCalendarDisplay	Once The Long Count activates, the year on the world screen displays as the traditional Mayan Long Count.	Once The Long Count activates, the year on the world screen displays as the traditional Mayan Long Count.	Global		<null>		0011011110110000001011101000000000
+90	BaseUnitSupply	[amount] Unit Supply	[] Unit Supply	Global		<null>	Number	0011011110110000001011101000000000
+91	UnitSupplyPerPop	[amount] Unit Supply per [positiveAmount] population [cityFilter]	[] Unit Supply per [] population []	Global		<null>	Number;PositiveNumber;CityFilter	0011011110110000001011101000000000
+92	UnitSupplyPerCity	[amount] Unit Supply per city	[] Unit Supply per city	Global		<null>	Number	0011011110110000001011101000000000
+93	FreeUnits	[amount] units cost no maintenance	[] units cost no maintenance	Global		<null>	Number	0011011110110000001011101000000000
+94	UnitsInCitiesNoMaintenance	Units in cities cost no Maintenance	Units in cities cost no Maintenance	Global		<null>		0011011110110000001011101000000000
+95	LandUnitEmbarkation	Enables embarkation for land units	Enables embarkation for land units	Global		<null>		0011011110110000001011101000000000
+96	UnitsMayEnterOcean	Enables [mapUnitFilter] units to enter ocean tiles	Enables [] units to enter ocean tiles	Global		<null>	MapUnitFilter	0011011110110000001011101000000000
+97	LandUnitsCrossTerrainAfterUnitGained	Land units may cross [terrainName] tiles after the first [baseUnitFilter] is earned	Land units may cross [] tiles after the first [] is earned	Global		<null>	TerrainName;BaseUnitFilter	0011011110110000001011101000000000
+98	EnemyUnitsSpendExtraMovement	Enemy [mapUnitFilter] units must spend [positiveAmount] extra movement points when inside your territory	Enemy [] units must spend [] extra movement points when inside your territory	Global		<null>	MapUnitFilter;PositiveNumber	0011011110110000001011101000000000
+99	UnitStartingExperience	New [baseUnitFilter] units start with [amount] XP [cityFilter]	New [] units start with [] XP []	Global,FollowerBelief		<null>	BaseUnitFilter;Number;CityFilter	0011011111110000001011101000000000
+100	UnitStartingPromotions	All newly-trained [baseUnitFilter] units [cityFilter] receive the [promotion] promotion	All newly-trained [] units [] receive the [] promotion	Global,FollowerBelief		<null>	BaseUnitFilter;CityFilter;Promotion	0011011111110000001011101000000000
+101	CityHealingUnits	[mapUnitFilter] Units adjacent to this city heal [amount] HP per turn when healing	[] Units adjacent to this city heal [] HP per turn when healing	Global,FollowerBelief		<null>	MapUnitFilter;Number	0011011111110000001011101000000000
+102	XPForPromotionModifier	[relativeAmount]% XP required for promotions	[]% XP required for promotions	Global		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110000001011101000000000
+103	BetterDefensiveBuildings	[relativeAmount]% City Strength from defensive buildings	[]% City Strength from defensive buildings	Global		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110000001011101000000000
+104	StrengthForCities	[relativeAmount]% Strength for cities	[]% Strength for cities	Global,FollowerBelief		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber	0011011111110000001011101000000000
+105	ConsumesResources	Consumes [amount] [resource]	Consumes [] []	Building,Unit,Improvement		<null>	Number;Resource	0000000000110111010000000000000000
+106	ProvidesResources	Provides [amount] [resource]	Provides [] []	Global,FollowerBelief,Improvement		<null>	Number;Resource	0011011111110000011011101000000000
+107	CostsResources	Costs [amount] [stockpiledResource]	Costs [] []	Building,Unit,Improvement	AcceptsSpeedModifier	These resources are removed *when work begins* on the construction. Do not confuse with "costs [amount] [stockpiledResource]" (lowercase 'c'), the Unit Action Modifier.	Number;StockpiledResource	0000000000110111010000000000000000
+108	PercentResourceProduction	[relativeAmount]% [resourceFilter] resource production	[]% [] resource production	Global		<null>	RelativeNumber;ResourceFilter	0011011110110000001011101000000000
+109	EnablesEmbassies	Enables establishment of embassies	Enables establishment of embassies	Global		<null>		0011011110110000001011101000000000
+110	RequiresEmbassiesForDiplomacy	Requires establishing embassies to conduct advanced diplomacy	Requires establishing embassies to conduct advanced diplomacy	Global		<null>		0011011110110000001011101000000000
+111	EnablesOpenBorders	Enables Open Borders agreements	Enables Open Borders agreements	Global		<null>		0011011110110000001011101000000000
+112	EnablesResearchAgreements	Enables Research agreements	Enables Research agreements	Global		<null>		0011011110110000001011101000000000
+113	ScienceFromResearchAgreements	Science gained from research agreements [relativeAmount]%	Science gained from research agreements []%	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+114	EnablesDefensivePacts	Enables Defensive Pacts	Enables Defensive Pacts	Global		<null>		0011011110110000001011101000000000
+115	GreatPersonBoostWithFriendship	When declaring friendship, both parties gain a [relativeAmount]% boost to great person generation	When declaring friendship, both parties gain a []% boost to great person generation	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+116	OtherCivsCityStateRelationsDegradeFaster	Influence of all other civilizations with all city-states degrades [relativeAmount]% faster	Influence of all other civilizations with all city-states degrades []% faster	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+117	GainInfluenceWithUnitGiftToCityState	Gain [amount] Influence with a [baseUnitFilter] gift to a City-State	Gain [] Influence with a [] gift to a City-State	Global		<null>	Number;BaseUnitFilter	0011011110110000001011101000000000
+118	RestingPointOfCityStatesFollowingReligionChange	Resting point for Influence with City-States following this religion [amount]	Resting point for Influence with City-States following this religion []	Global		<null>	Number	0011011110110000001011101000000000
+119	NotifiedOfBarbarianEncampments	Notified of new Barbarian encampments	Notified of new Barbarian encampments	Global		<null>		0011011110110000001011101000000000
+120	GoldFromEncampmentsAndCities	Receive [relativeAmount]% Gold from Barbarian encampments and pillaging Cities	Receive []% Gold from Barbarian encampments and pillaging Cities	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+121	GainFromEncampment	When conquering an encampment, earn [amount] Gold and recruit a Barbarian unit	When conquering an encampment, earn [] Gold and recruit a Barbarian unit	Global		<null>	Number	0011011110110000001011101000000000
+122	GainFromDefeatingUnit	When defeating a [mapUnitFilter] unit, earn [amount] Gold and recruit it	When defeating a [] unit, earn [] Gold and recruit it	Global		<null>	MapUnitFilter;Number	0011011110110000001011101000000000
+123	DisablesReligion	Starting in this era disables religion	Starting in this era disables religion	Era		<null>		0000010000000000000000000000000000
+124	FreeExtraBeliefs	May choose [amount] additional [beliefType] beliefs when [foundingOrEnhancing] a religion	May choose [] additional [] beliefs when [] a religion	Global		<null>	Number;BeliefTypeName;FoundingOrEnhancing	0011011110110000001011101000000000
+125	FreeExtraAnyBeliefs	May choose [amount] additional belief(s) of any type when [foundingOrEnhancing] a religion	May choose [] additional belief(s) of any type when [] a religion	Global		<null>	Number;FoundingOrEnhancing	0011011110110000001011101000000000
+126	StatsWhenAdoptingReligion	[stats] when a city adopts this religion for the first time	[] when a city adopts this religion for the first time	Global	AcceptsSpeedModifier	<null>	Stats	0011011110110000001011101000000000
+127	NaturalReligionSpreadStrength	[relativeAmount]% Natural religion spread [cityFilter]	[]% Natural religion spread []	Global,FollowerBelief		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber;CityFilter	0011011111110000001011101000000000
+128	ReligionSpreadDistance	Religion naturally spreads to cities [amount] tiles away	Religion naturally spreads to cities [] tiles away	Global,FollowerBelief		<null>	Number	0011011111110000001011101000000000
+129	MayNotGenerateGreatProphet	May not generate great prophet equivalents naturally	May not generate great prophet equivalents naturally	Global		<null>		0011011110110000001011101000000000
+130	FaithCostOfGreatProphetChange	[relativeAmount]% Faith cost of generating Great Prophet equivalents	[]% Faith cost of generating Great Prophet equivalents	Global		<null>	RelativeNumber	0011011110110000001011101000000000
+131	SpyEffectiveness	[relativeAmount]% spy effectiveness [cityFilter]	[]% spy effectiveness []	Global		<null>	RelativeNumber;CityFilter	0011011110110000001011101000000000
+132	EnemySpyEffectiveness	[relativeAmount]% enemy spy effectiveness [cityFilter]	[]% enemy spy effectiveness []	Global		<null>	RelativeNumber;CityFilter	0011011110110000001011101000000000
+133	SpyStartingLevel	New spies start with [amount] level(s)	New spies start with [] level(s)	Global		<null>	Number	0011011110110000001011101000000000
+134	CounterIntelligenceSpyRankBonus	Spies in [cityFilter] cities act as though they have [relativeAmount] levels for [spyAction]	Spies in [] cities act as though they have [] levels for []	Global		Temporary effective rank change ([relativeAmount] added to rank, e.g. +1) for spies doing the given action in a matching city. Does not permanently level the spy. Stacks additively, capped by maxSpyRank.	CityFilter;RelativeNumber;SpyAction	0011011110110000001011101000000000
+135	StartingTech	Starting tech	Starting tech	Tech		<null>		0000001000000000000000000000000000
+136	StartsWithTech	Starts with [tech]	Starts with []	Nation		<null>	Technology	0001000000000000000000000000000000
+137	StartsWithPolicy	Starts with [policy] adopted	Starts with [] adopted	Nation		<null>	Policy	0001000000000000000000000000000000
+138	StartBias	Start bias [terrainFilter]	Start bias []	Nation,CityState		Same effect as a Nation startBias field entry. Merged with the startBias field and, for city-states, with matching uniques on their CityStateType. Conditionals run against GameInfo only during map generation / start placement (no Civilization — it may be only partially initialized). Do not use conditionals that require tiles, cities, or units.	TerrainFilter	0001000000000000000000001000000000
+139	TriggersVictory	Triggers victory	Triggers victory	Global		<null>		0011011110110000001011101000000000
+140	TriggersCulturalVictory	Triggers a Cultural Victory upon completion	Triggers a Cultural Victory upon completion	Global		<null>		0011011110110000001011101000000000
+141	MayBuyConstructionsInPuppets	May buy items in puppet cities	May buy items in puppet cities	Global		<null>		0011011110110000001011101000000000
+142	MayNotAnnexCities	May not annex cities	May not annex cities	Global		<null>		0011011110110000001011101000000000
+143	BorrowsCityNames	"Borrows" city names from other civilizations in the game	"Borrows" city names from other civilizations in the game	Global		<null>		0011011110110000001011101000000000
+144	CitiesAreRazedXTimesFaster	Cities are razed [amount] times as fast	Cities are razed [] times as fast	Global		<null>	Number	0011011110110000001011101000000000
+145	TechBoostWhenScientificBuildingsBuiltInCapital	Receive a tech boost when scientific buildings/wonders are built in capital	Receive a tech boost when scientific buildings/wonders are built in capital	Global		<null>		0011011110110000001011101000000000
+146	ResearchableMultipleTimes	Can be continually researched	Can be continually researched	Tech		<null>		0000001000000000000000000000000000
+147	GoldenAgeLength	[relativeAmount]% Golden Age length	[]% Golden Age length	Global		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110000001011101000000000
+148	PopulationLossFromNukes	Population loss from nuclear attacks [relativeAmount]% [cityFilter]	Population loss from nuclear attacks []% []	Global		<null>	RelativeNumber;CityFilter	0011011110110000001011101000000000
+149	GarrisonDamageFromNukes	Damage to garrison from nuclear attacks [relativeAmount]% [cityFilter]	Damage to garrison from nuclear attacks []% []	Global		<null>	RelativeNumber;CityFilter	0011011110110000001011101000000000
+150	SpawnRebels	Rebel units may spawn	Rebel units may spawn	Global		<null>		0011011110110000001011101000000000
+151	OnlyFirstAvailableChoiceIsChosen	Only the first available choice is offered	Only the first available choice is offered	Event		When triggered, only the first choice (in declaration order) whose conditionals apply is offered. This makes the event equivalent to a `when`/`case` statement.		0000000000000000000000000010000000
+152	Unbuildable	Unbuildable	Unbuildable	Building,Unit,Improvement		Blocks from being built, possibly by conditional. However it can still appear in the menu and be bought with other means such as Gold or Faith		0000000000110111010000000000000000
+153	CannotBePurchased	Cannot be purchased	Cannot be purchased	Building,Unit		<null>		0000000000110111000000000000000000
+154	CanBePurchasedWithStat	Can be purchased with [stat] [cityFilter]	Can be purchased with [] []	Building,Unit		<null>	StatName;CityFilter	0000000000110111000000000000000000
+155	CanBePurchasedForAmountStat	Can be purchased for [amount] [stat] [cityFilter]	Can be purchased for [] [] []	Building,Unit		<null>	Number;StatName;CityFilter	0000000000110111000000000000000000
+156	MaxNumberBuildable	Limited to [amount] per Civilization	Limited to [] per Civilization	Building,Unit		<null>	Number	0000000000110111000000000000000000
+157	OnlyAvailable	Only available	Only available	Tech,Policy,FounderBelief,FollowerBelief,Building,Unit,Promotion,Improvement,Ruins,Event,EventChoice,Victory		Meant to be used together with conditionals, like "Only available <after adopting [policy]> <while the empire is happy>". Only allows Building when ALL conditionals are met. Will also block Upgrade and Transform actions. See also CanOnlyBeBuiltWhen		0000001111110111010100000011100000
+158	Unavailable	Unavailable	Unavailable	Tech,Policy,FounderBelief,FollowerBelief,Building,Unit,Promotion,Improvement,Ruins,Event,EventChoice,Victory		Meant to be used together with conditionals, like "Unavailable <after generating a Great Prophet>".		0000001111110111010100000011100000
+159	CannotBuildBuildings	Cannot build [buildingFilter] buildings	Cannot build [] buildings	Global		<null>	BuildingFilter	0011011110110000001011101000000000
+160	ConvertFoodToProductionWhenConstructed	Excess Food converted to Production when under construction	Excess Food converted to Production when under construction	Building,Unit		<null>		0000000000110111000000000000000000
+161	RequiresPopulation	Requires at least [amount] population	Requires at least [] population	Building,Unit		<null>	Number	0000000000110111000000000000000000
+162	TriggersAlertOnStart	Triggers a global alert upon build start	Triggers a global alert upon build start	Building,Unit		<null>		0000000000110111000000000000000000
+163	TriggersAlertOnCompletion	Triggers a global alert upon completion	Triggers a global alert upon completion	Building,Unit		<null>		0000000000110111000000000000000000
+164	CostIncreasesPerCity	Cost increases by [amount] per owned city	Cost increases by [] per owned city	Building,Unit		<null>	Number	0000000000110111000000000000000000
+165	CostIncreasesWhenBuilt	Cost increases by [amount] when built	Cost increases by [] when built	Building,Unit		<null>	Number	0000000000110111000000000000000000
+166	CostPercentageChange	[amount]% production cost	[]% production cost	Building,Unit		Intended to be used with conditionals to dynamically alter construction costs. Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	Number	0000000000110111000000000000000000
+167	CanOnlyBeBuiltWhen	Can only be built	Can only be built	Building,Unit		Meant to be used together with conditionals, like "Can only be built <after adopting [policy]> <while the empire is happy>". Only allows Building when ALL conditionals are met. Will also NOT block Upgrade and Transform actions. See also OnlyAvailable.		0000000000110111000000000000000000
+168	MustHaveOwnedWithinTiles	Must have an owned [tileFilter] within [amount] tiles	Must have an owned [] within [] tiles	Building		<null>	TileFilter;Number	0000000000110000000000000000000000
+169	EnablesNuclearWeapons	Enables nuclear weapon	Enables nuclear weapon	Building		<null>		0000000000110000000000000000000000
+170	MustBeOn	Must be on [tileFilter]	Must be on []	Building		<null>	TileFilter	0000000000110000000000000000000000
+171	MustNotBeOn	Must not be on [tileFilter]	Must not be on []	Building		<null>	TileFilter	0000000000110000000000000000000000
+172	MustBeNextTo	Must be next to [tileFilter]	Must be next to []	Building,Improvement		<null>	TileFilter	0000000000110000010000000000000000
+173	MustNotBeNextTo	Must not be next to [tileFilter]	Must not be next to []	Building		<null>	TileFilter	0000000000110000000000000000000000
+174	Unsellable	Unsellable	Unsellable	Building		<null>		0000000000110000000000000000000000
+175	ObsoleteWith	Obsolete with [tech]	Obsolete with []	Building,Improvement,Resource		<null>	Technology	0000000000110000011000000000000000
+176	IndicatesCapital	Indicates the capital city	Indicates the capital city	Building		<null>		0000000000110000000000000000000000
+177	MovesToNewCapital	Moves to new capital when capital changes	Moves to new capital when capital changes	Building		<null>		0000000000110000000000000000000000
+178	ProvidesExtraLuxuryFromCityResources	Provides 1 extra copy of each improved luxury resource near this City	Provides 1 extra copy of each improved luxury resource near this City	Building		<null>		0000000000110000000000000000000000
+179	DestroyedWhenCityCaptured	Destroyed when the city is captured	Destroyed when the city is captured	Building		<null>		0000000000110000000000000000000000
+180	NotDestroyedWhenCityCaptured	Never destroyed when the city is captured	Never destroyed when the city is captured	Building		<null>		0000000000110000000000000000000000
+181	GoldFromCapturingCity	[relativeAmount]% Gold given to enemy if city is captured	[]% Gold given to enemy if city is captured	Building		<null>	RelativeNumber	0000000000110000000000000000000000
+182	RemovesAnnexUnhappiness	Removes extra unhappiness from annexed cities	Removes extra unhappiness from annexed cities	Building		<null>		0000000000110000000000000000000000
+183	ConnectTradeRoutes	Connects trade routes over water	Connects trade routes over water	Building		<null>		0000000000110000000000000000000000
+184	GainBuildingWhereBuildable	Automatically built in all cities where it is buildable	Automatically built in all cities where it is buildable	Building		<null>		0000000000110000000000000000000000
+185	CreatesOneImprovement	Creates a [improvementName] improvement on a specific tile	Creates a [] improvement on a specific tile	Building	NoConditionals	When choosing to construct this building, the player must select a tile where the improvement can be built. Upon building completion, the tile will gain this improvement. Limited to one per building.	ImprovementName	0000000000110000000000000000000000
+186	FoundCity	Founds a new city	Founds a new city	UnitAction		<null>		0000000000001111000000000000000000
+187	FoundPuppetCity	Founds a new puppet city	Founds a new puppet city	UnitAction		<null>		0000000000001111000000000000000000
+188	ConstructImprovementInstantly	Can instantly construct a [improvementFilter] improvement	Can instantly construct a [] improvement	UnitAction		<null>	ImprovementFilter	0000000000001111000000000000000000
+189	CreateWaterImprovements	May create improvements on water resources	May create improvements on water resources	Unit		<null>		0000000000000111000000000000000000
+190	BuildImprovements	Can build [improvementFilter/terrainFilter] improvements on tiles	Can build [] improvements on tiles	Unit		<null>	ImprovementFilter/TerrainFilter	0000000000000111000000000000000000
+191	CanSpreadReligion	Can Spread Religion	Can Spread Religion	UnitAction		<null>		0000000000001111000000000000000000
+192	CanRemoveHeresy	Can remove other religions from cities	Can remove other religions from cities	UnitAction		<null>		0000000000001111000000000000000000
+193	MayFoundReligion	May found a religion	May found a religion	UnitAction		<null>		0000000000001111000000000000000000
+194	MayEnhanceReligion	May enhance a religion	May enhance a religion	UnitAction		<null>		0000000000001111000000000000000000
+195	AddInCapital	Can be added to [comment] in the Capital	Can be added to [] in the Capital	Unit		<null>	Comment	0000000000000111000000000000000000
+196	PreventSpreadingReligion	Prevents spreading of religion to the city it is next to	Prevents spreading of religion to the city it is next to	Unit		<null>		0000000000000111000000000000000000
+197	RemoveOtherReligions	Removes other religions when spreading religion	Removes other religions when spreading religion	Unit		<null>		0000000000000111000000000000000000
+198	MayParadrop	May Paradrop to [tileFilter] tiles up to [positiveAmount] tiles away	May Paradrop to [] tiles up to [] tiles away	Unit		<null>	TileFilter;PositiveNumber	0000000000000111000000000000000000
+199	CanAirsweep	Can perform Air Sweep	Can perform Air Sweep	Unit		<null>		0000000000000111000000000000000000
+200	CanSpeedupConstruction	Can speed up construction of a building	Can speed up construction of a building	Unit		<null>		0000000000000111000000000000000000
+201	CanSpeedupWonderConstruction	Can speed up the construction of a wonder	Can speed up the construction of a wonder	Unit		<null>		0000000000000111000000000000000000
+202	CanHurryResearch	Can hurry technology research	Can hurry technology research	Unit		<null>		0000000000000111000000000000000000
+203	CanHurryPolicy	Can generate a large amount of culture	Can generate a large amount of culture	Unit		<null>		0000000000000111000000000000000000
+204	CanTradeWithCityStateForGoldAndInfluence	Can undertake a trade mission with City-State, giving a large sum of gold and [amount] Influence	Can undertake a trade mission with City-State, giving a large sum of gold and [] Influence	Unit		<null>	Number	0000000000000111000000000000000000
+205	CanTransform	Can transform to [unit]	Can transform to []	UnitAction		By default consumes all movement	UnitName	0000000000001111000000000000000000
+206	AutomationPrimaryAction	Automation is a primary action	Automation is a primary action	Unit	HiddenToUsers	<null>		0000000000000111000000000000000000
+207	Strength	[relativeAmount]% Strength	[]% Strength	Global,Unit		Multiple bonuses stack additively: +50% + +50% = +100%	RelativeNumber	0011011110110111001011101000000000
+208	StrengthAmount	[relativeAmount] Strength	[] Strength	Global,Unit		<null>	RelativeNumber	0011011110110111001011101000000000
+209	StrengthNearCapital	[relativeAmount]% Strength decreasing with distance from the capital	[]% Strength decreasing with distance from the capital	Global,Unit		<null>	RelativeNumber	0011011110110111001011101000000000
+210	FlankAttackBonus	[relativeAmount]% to Flank Attack bonuses	[]% to Flank Attack bonuses	Global,Unit		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110111001011101000000000
+211	StrengthForAdjacentEnemies	[relativeAmount]% Strength for enemy [mapUnitFilter] units in adjacent [tileFilter] tiles	[]% Strength for enemy [] units in adjacent [] tiles	Unit		<null>	RelativeNumber;MapUnitFilter;TileFilter	0000000000000111000000000000000000
+212	StrengthBonusInRadius	[relativeAmount]% Strength bonus for [mapUnitFilter] units within [amount] tiles	[]% Strength bonus for [] units within [] tiles	Unit		<null>	RelativeNumber;MapUnitFilter;Number	0000000000000111000000000000000000
+213	AdditionalAttacks	[amount] additional attacks per turn	[] additional attacks per turn	Global,Unit		<null>	Number	0011011110110111001011101000000000
+214	Movement	[amount] Movement	[] Movement	Global,Unit		<null>	Number	0011011110110111001011101000000000
+215	Sight	[amount] Sight	[] Sight	Global,Unit,Terrain,Improvement		<null>	Number	0011011110110111111011101000000000
+216	Range	[amount] Range	[] Range	Global,Unit		<null>	Number	0011011110110111001011101000000000
+217	AirInterceptionRange	[relativeAmount] Air Interception Range	[] Air Interception Range	Global,Unit		<null>	RelativeNumber	0011011110110111001011101000000000
+218	Heal	[amount] HP when healing	[] HP when healing	Global,Unit		<null>	Number	0011011110110111001011101000000000
+219	ExtraRangedAttack	Before engaging in combat performs an extra ranged attack with [amount]% of melee combat strength	Before engaging in combat performs an extra ranged attack with []% of melee combat strength	Unit		<null>	Number	0000000000000111000000000000000000
+220	SpreadReligionStrength	[relativeAmount]% Spread Religion Strength	[]% Spread Religion Strength	Global,Unit		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110111001011101000000000
+221	StatsWhenSpreading	When spreading religion to a city, gain [amount] times the amount of followers of other religions as [stat]	When spreading religion to a city, gain [] times the amount of followers of other religions as []	Global,Unit		<null>	Number;StatName	0011011110110111001011101000000000
+222	CanOnlyAttackUnits	Can only attack [combatantFilter] units	Can only attack [] units	Unit		<null>	CombatantFilter	0000000000000111000000000000000000
+223	CanOnlyAttackTiles	Can only attack [tileFilter] tiles	Can only attack [] tiles	Unit		<null>	TileFilter	0000000000000111000000000000000000
+224	CannotAttack	Cannot attack	Cannot attack	Unit		<null>		0000000000000111000000000000000000
+225	MustSetUp	Must set up to ranged attack	Must set up to ranged attack	Unit		<null>		0000000000000111000000000000000000
+226	SelfDestructs	Self-destructs when attacking	Self-destructs when attacking	Unit		<null>		0000000000000111000000000000000000
+227	AttackAcrossCoast	Eliminates combat penalty for attacking across a coast	Eliminates combat penalty for attacking across a coast	Unit		<null>		0000000000000111000000000000000000
+228	AttackOnSea	May attack when embarked	May attack when embarked	Unit		<null>		0000000000000111000000000000000000
+229	AttackAcrossRiver	Eliminates combat penalty for attacking over a river	Eliminates combat penalty for attacking over a river	Unit		<null>		0000000000000111000000000000000000
+230	BlastRadius	Blast radius [amount]	Blast radius []	Unit		<null>	Number	0000000000000111000000000000000000
+231	IndirectFire	Ranged attacks may be performed over obstacles	Ranged attacks may be performed over obstacles	Global,Unit		<null>		0011011110110111001011101000000000
+232	NuclearWeapon	Nuclear weapon of Strength [amount]	Nuclear weapon of Strength []	Unit		<null>	Number	0000000000000111000000000000000000
+233	NoDefensiveTerrainBonus	No defensive terrain bonus	No defensive terrain bonus	Global,Unit		<null>		0011011110110111001011101000000000
+234	NoDefensiveTerrainPenalty	No defensive terrain penalty	No defensive terrain penalty	Global,Unit		<null>		0011011110110111001011101000000000
+235	NoDamagePenaltyWoundedUnits	No damage penalty for wounded units	No damage penalty for wounded units	Global,Unit		<null>		0011011110110111001011101000000000
+236	Uncapturable	Uncapturable	Uncapturable	Unit		<null>		0000000000000111000000000000000000
+237	WithdrawsBeforeMeleeCombat	Withdraws before melee combat	Withdraws before melee combat	Unit		<null>		0000000000000111000000000000000000
+238	CannotCaptureCities	Unable to capture cities	Unable to capture cities	Global,Unit		<null>		0011011110110111001011101000000000
+239	CannotPillage	Unable to pillage tiles	Unable to pillage tiles	Global,Unit		<null>		0011011110110111001011101000000000
+240	CanDestroyCities	Destroys [cityFilter] cities instead of capturing	Destroys [] cities instead of capturing	Unit		The unit will destroy [cityFilter] cities instead of capturing them, also allows non-melee units to destroy cities.Capital cities (including city states) are immune to this effect.	CityFilter	0000000000000111000000000000000000
+241	NoMovementToPillage	No movement cost to pillage	No movement cost to pillage	Global,Unit		<null>		0011011110110111001011101000000000
+242	CanMoveAfterAttacking	Can move after attacking	Can move after attacking	Unit		<null>		0000000000000111000000000000000000
+243	TransferMovement	Transfer Movement to [mapUnitFilter]	Transfer Movement to []	Unit		<null>	MapUnitFilter	0000000000000111000000000000000000
+244	CanMoveImmediatelyOnceBought	Can move immediately once bought	Can move immediately once bought	Unit		<null>		0000000000000111000000000000000000
+245	HealsOutsideFriendlyTerritory	May heal outside of friendly territory	May heal outside of friendly territory	Global,Unit		<null>		0011011110110111001011101000000000
+246	HealingEffectsDoubled	All healing effects doubled	All healing effects doubled	Global,Unit		Does not stack		0011011110110111001011101000000000
+247	HealsAfterKilling	Heals [amount] damage if it kills a unit	Heals [] damage if it kills a unit	Global,Unit		<null>	Number	0011011110110111001011101000000000
+248	HealOnlyByPillaging	Can only heal by pillaging	Can only heal by pillaging	Global,Unit		<null>		0011011110110111001011101000000000
+249	HealsEvenAfterAction	Unit will heal every turn, even if it performs an action	Unit will heal every turn, even if it performs an action	Unit		<null>		0000000000000111000000000000000000
+250	HealAdjacentUnits	All adjacent units heal [amount] HP when healing	All adjacent units heal [] HP when healing	Unit		<null>	Number	0000000000000111000000000000000000
+251	NoSight	No Sight	No Sight	Unit		<null>		0000000000000111000000000000000000
+252	CanSeeOverObstacles	Can see over obstacles	Can see over obstacles	Unit		<null>		0000000000000111000000000000000000
+253	CarryAirUnits	Can carry [amount] [mapUnitFilter] units	Can carry [] [] units	Unit		Using several of these uniques with complex overlapping filters is supported.	Number;MapUnitFilter	0000000000000111000000000000000000
+254	CarryExtraAirUnits	Can carry [amount] extra [mapUnitFilter] units	Can carry [] extra [] units	Building,Unit		For buildings, supports using `Air` for `mapUnitFilter` to increase city air unit capacity.	Number;MapUnitFilter	0000000000110111000000000000000000
+255	CannotBeCarriedBy	Cannot be carried by [mapUnitFilter] units	Cannot be carried by [] units	Unit		<null>	MapUnitFilter	0000000000000111000000000000000000
+256	ChanceInterceptAirAttacks	[relativeAmount]% chance to intercept air attacks	[]% chance to intercept air attacks	Unit		<null>	RelativeNumber	0000000000000111000000000000000000
+257	DamageFromInterceptionReduced	Damage taken from interception reduced by [relativeAmount]%	Damage taken from interception reduced by []%	Unit		<null>	RelativeNumber	0000000000000111000000000000000000
+258	DamageWhenIntercepting	[relativeAmount]% Damage when intercepting	[]% Damage when intercepting	Unit		<null>	RelativeNumber	0000000000000111000000000000000000
+259	ExtraInterceptionsPerTurn	[amount] extra interceptions may be made per turn	[] extra interceptions may be made per turn	Unit		<null>	Number	0000000000000111000000000000000000
+260	CannotBeIntercepted	Cannot be intercepted	Cannot be intercepted	Unit		<null>		0000000000000111000000000000000000
+261	CannotInterceptUnits	Cannot intercept [mapUnitFilter] units	Cannot intercept [] units	Unit		<null>	MapUnitFilter	0000000000000111000000000000000000
+262	StrengthWhenAirsweep	[relativeAmount]% Strength when performing Air Sweep	[]% Strength when performing Air Sweep	Unit		<null>	RelativeNumber	0000000000000111000000000000000000
+263	UnitMaintenanceDiscount	[relativeAmount]% maintenance costs	[]% maintenance costs	Global,Unit		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110111001011101000000000
+264	UnitUpgradeCost	[relativeAmount]% Gold cost of upgrading	[]% Gold cost of upgrading	Global,Unit		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110111001011101000000000
+265	DamageUnitsPlunder	Earn [amount]% of the damage done to [combatantFilter] units as [stockpile]	Earn []% of the damage done to [] units as []	Global,Unit		<null>	Number;CombatantFilter;Stockpile	0011011110110111001011101000000000
+266	CaptureCityPlunder	Upon capturing a city, receive [amount] times its [stat] production as [stockpile] immediately	Upon capturing a city, receive [] times its [] production as [] immediately	Global,Unit		<null>	Number;StatName;Stockpile	0011011110110111001011101000000000
+267	KillUnitPlunder	Earn [amount]% of killed [mapUnitFilter] unit's [costOrStrength] as [stockpile]	Earn []% of killed [] unit's [] as []	Global,Unit		<null>	Number;MapUnitFilter;CostOrStrength;Stockpile	0011011110110111001011101000000000
+268	KillUnitPlunderNearCity	Earn [amount]% of [mapUnitFilter] unit's [costOrStrength] as [stockpile] when killed within 4 tiles of a city following this religion	Earn []% of [] unit's [] as [] when killed within 4 tiles of a city following this religion	FollowerBelief		<null>	Number;MapUnitFilter;CostOrStrength;Stockpile	0000000001000000000000000000000000
+269	KillUnitCapture	May capture killed [mapUnitFilter] units	May capture killed [] units	Unit		<null>	MapUnitFilter	0000000000000111000000000000000000
+270	FlatXPGain	[amount] XP gained from combat	[] XP gained from combat	Global,Unit		<null>	Number	0011011110110111001011101000000000
+271	PercentageXPGain	[relativeAmount]% XP gained from combat	[]% XP gained from combat	Global,Unit		Multiple bonuses stack multiplicatively: +50% + +50% = x1.5 * x1.5 = +125%	RelativeNumber	0011011110110111001011101000000000
+272	GreatPersonFromCombat	Can be earned through combat	Can be earned through combat	Unit		<null>		0000000000000111000000000000000000
+273	GreatPersonEarnedFaster	[greatPerson] is earned [relativeAmount]% faster	[] is earned []% faster	Global,Unit		<null>	GreatPerson;RelativeNumber	0011011110110111001011101000000000
+274	Invisible	Invisible to others	Invisible to others	Unit		<null>		0000000000000111000000000000000000
+275	InvisibleToNonAdjacent	Invisible to non-adjacent units	Invisible to non-adjacent units	Unit		<null>		0000000000000111000000000000000000
+276	CanSeeInvisibleUnits	Can see invisible [mapUnitFilter] units	Can see invisible [] units	Unit		<null>	MapUnitFilter	0000000000000111000000000000000000
+277	RuinsUpgrade	May upgrade to [unit] through ruins-like effects	May upgrade to [] through ruins-like effects	Unit		<null>	UnitName	0000000000000111000000000000000000
+278	CanUpgrade	Can upgrade to [unit]	Can upgrade to []	Unit		<null>	UnitName	0000000000000111000000000000000000
+279	DestroysImprovementUponAttack	Destroys tile improvements when attacking	Destroys tile improvements when attacking	Unit		<null>		0000000000000111000000000000000000
+280	CannotMove	Cannot move	Cannot move	Unit		<null>		0000000000000111000000000000000000
+281	DoubleMovementOnTerrain	Double movement in [terrainFilter]	Double movement in []	Unit		<null>	TerrainFilter	0000000000000111000000000000000000
+282	AllTilesCost1Move	All tiles cost 1 movement	All tiles cost 1 movement	Unit		<null>		0000000000000111000000000000000000
+283	CanMoveOnWater	May travel on Water tiles without embarking	May travel on Water tiles without embarking	Unit		<null>		0000000000000111000000000000000000
+284	CanPassImpassable	Can pass through impassable tiles	Can pass through impassable tiles	Unit		<null>		0000000000000111000000000000000000
+285	IgnoresTerrainCost	Ignores terrain cost	Ignores terrain cost	Unit		<null>		0000000000000111000000000000000000
+286	IgnoresZOC	Ignores Zone of Control	Ignores Zone of Control	Unit		<null>		0000000000000111000000000000000000
+287	RoughTerrainPenalty	Rough terrain penalty	Rough terrain penalty	Unit		<null>		0000000000000111000000000000000000
+288	CanEnterIceTiles	Can enter ice tiles	Can enter ice tiles	Unit		<null>		0000000000000111000000000000000000
+289	CannotEmbark	Cannot embark	Cannot embark	Unit		<null>		0000000000000111000000000000000000
+290	CannotEnterOcean	Cannot enter ocean tiles	Cannot enter ocean tiles	Unit		<null>		0000000000000111000000000000000000
+291	CanEnterForeignTiles	May enter foreign tiles without open borders	May enter foreign tiles without open borders	Unit		<null>		0000000000000111000000000000000000
+292	CanEnterForeignTilesButLosesReligiousStrength	May enter foreign tiles without open borders, but loses [amount] religious strength each turn it ends there	May enter foreign tiles without open borders, but loses [] religious strength each turn it ends there	Unit		<null>	Number	0000000000000111000000000000000000
+293	ReducedDisembarkCost	[nonNegativeAmount] Movement point cost to disembark	[] Movement point cost to disembark	Global,Unit		<null>	NonNegativeNumber	0011011110110111001011101000000000
+294	ReducedEmbarkCost	[nonNegativeAmount] Movement point cost to embark	[] Movement point cost to embark	Global,Unit		<null>	NonNegativeNumber	0011011110110111001011101000000000
+295	ForestsAndJunglesAreRoads	All units move through Forest and Jungle Tiles in friendly territory as if they have roads. These tiles can be used to establish City Connections upon researching the Wheel.	All units move through Forest and Jungle Tiles in friendly territory as if they have roads. These tiles can be used to establish City Connections upon researching the Wheel.	Nation		<null>		0001000000000000000000000000000000
+296	IgnoreHillMovementCost	Units ignore terrain costs when moving into any tile with Hills	Units ignore terrain costs when moving into any tile with Hills	Nation		<null>		0001000000000000000000000000000000
+297	CannotBeBarbarian	Never appears as a Barbarian unit	Never appears as a Barbarian unit	Unit	HiddenToUsers	<null>		0000000000000111000000000000000000
+298	ReligiousUnit	Religious Unit	Religious Unit	Unit		<null>		0000000000000111000000000000000000
+299	SpaceshipPart	Spaceship part	Spaceship part	Building,Unit		<null>		0000000000110111000000000000000000
+300	TakeReligionOverBirthCity	Takes your religion over the one in their birth city	Takes your religion over the one in their birth city	Unit		<null>		0000000000000111000000000000000000
+301	CannotBeHurried	Cannot be hurried	Cannot be hurried	Tech,Building		<null>		0000001000110000000000000000000000
+302	GreatPerson	Great Person - [comment]	Great Person - []	Unit		<null>	Comment	0000000000000111000000000000000000
+303	GPPointPool	Is part of Great Person group [comment]	Is part of Great Person group []	Unit		Great people in the same group increase teach other's costs when gained. Gaining one will make all others in the same group cost more GPP.	Comment	0000000000000111000000000000000000
+304	UnitActionConsumeUnit	by consuming this unit	by consuming this unit	UnitActionModifier		<null>		0000000000000000000000000000000010
+305	UnitActionMovementCost	for [amount] movement	for [] movement	UnitActionModifier		Will consume up to [amount] of Movement to execute	Number	0000000000000000000000000000000010
+306	UnitActionMovementCostAll	for all movement	for all movement	UnitActionModifier		Will consume all Movement to execute		0000000000000000000000000000000010
+307	UnitActionMovementCostRequired	requires [nonNegativeAmount] movement	requires [] movement	UnitActionModifier		Requires [nonNegativeAmount] of Movement to execute. Unit's Movement is rounded up	NonNegativeNumber	0000000000000000000000000000000010
+308	UnitActionStatsCost	costs [stats] stats	costs [] stats	UnitActionModifier		A positive Integer value will be subtracted from your stock. Food and Production will be removed from Closest City's current stock	Stats	0000000000000000000000000000000010
+309	UnitActionStockpileCost	costs [amount] [stockpiledResource]	costs [] []	UnitActionModifier		A positive Integer value will be subtracted from your stock. Do not confuse with "Costs [amount] [stockpiledResource]" (uppercase 'C') for Improvements, Buildings, and Units.	Number;StockpiledResource	0000000000000000000000000000000010
+310	UnitActionRemovingPromotion	removing the [promotion] promotion/status	removing the [] promotion/status	UnitActionModifier		Removes the promotion/status from the unit - this is not a cost, units will be able to activate the action even without the promotion/status. To limit, use <with the [promotion] promotion> conditional	Promotion	0000000000000000000000000000000010
+311	UnitActionOnce	once	once	UnitActionModifier		<null>		0000000000000000000000000000000010
+312	UnitActionLimitedTimes	[positiveAmount] times	[] times	UnitActionModifier		<null>	PositiveNumber	0000000000000000000000000000000010
+313	UnitActionExtraLimitedTimes	[nonNegativeAmount] additional time(s)	[] additional time(s)	UnitActionModifier		<null>	NonNegativeNumber	0000000000000000000000000000000010
+314	UnitActionAfterWhichConsumed	after which this unit is consumed	after which this unit is consumed	UnitActionModifier		<null>		0000000000000000000000000000000010
+315	NaturalWonderNeighborCount	Must be adjacent to [amount] [simpleTerrain] tiles	Must be adjacent to [] [] tiles	Terrain	HiddenToUsers	<null>	Number;SimpleTerrain	0000000000000000100000000000000000
+316	NaturalWonderNeighborsRange	Must be adjacent to [amount] to [amount] [simpleTerrain] tiles	Must be adjacent to [] to [] [] tiles	Terrain	HiddenToUsers	<null>	Number;Number;SimpleTerrain	0000000000000000100000000000000000
+317	NaturalWonderSmallerLandmass	Must not be on [amount] largest landmasses	Must not be on [] largest landmasses	Terrain,Resource	HiddenToUsers	<null>	Number	0000000000000000101000000000000000
+318	NaturalWonderLargerLandmass	Must be on [amount] largest landmasses	Must be on [] largest landmasses	Terrain,Resource	HiddenToUsers	<null>	Number	0000000000000000101000000000000000
+319	NaturalWonderLatitude	Occurs on latitudes from [amount] to [amount] percent of distance equator to pole	Occurs on latitudes from [] to [] percent of distance equator to pole	Terrain	HiddenToUsers	<null>	Number;Number	0000000000000000100000000000000000
+320	NaturalWonderGroups	Occurs in groups of [amount] to [amount] tiles	Occurs in groups of [] to [] tiles	Terrain	HiddenToUsers	<null>	Number;Number	0000000000000000100000000000000000
+321	NaturalWonderConvertNeighbors	Neighboring tiles will convert to [baseTerrain/terrainFeature]	Neighboring tiles will convert to []	Terrain	HiddenToUsers	Supports conditionals that need only a Tile as context and nothing else, like `<with [n]% chance>`, and applies them per neighbor.\nIf your mod renames Coast or Lakes, do not use this with one of these as parameter, as the code preventing artifacts won't work.	BaseTerrain/TerrainFeature	0000000000000000100000000000000000
+322	GrantsStatsToFirstToDiscover	Grants [stats] to the first civilization to discover it	Grants [] to the first civilization to discover it	Terrain		<null>	Stats	0000000000000000100000000000000000
+323	DamagesContainingUnits	Units ending their turn on this terrain take [amount] damage	Units ending their turn on this terrain take [] damage	Terrain	NoConditionals	<null>	Number	0000000000000000100000000000000000
+324	TerrainGrantsPromotion	Grants [promotion] ([comment]) to adjacent [mapUnitFilter] units for the rest of the game	Grants [] ([]) to adjacent [] units for the rest of the game	Terrain		<null>	Promotion;Comment;MapUnitFilter	0000000000000000100000000000000000
+325	GrantsCityStrength	[amount] Strength for cities built on this terrain	[] Strength for cities built on this terrain	Terrain		<null>	Number	0000000000000000100000000000000000
+326	ProductionBonusWhenRemoved	Provides a one-time bonus of [stats] to the closest city when cut down	Provides a one-time bonus of [] to the closest city when cut down	Terrain	AcceptsSpeedModifier,AcceptsGameProgressModifier	<null>	Stats	0000000000000000100000000000000000
+327	Vegetation	Vegetation	Vegetation	Terrain,Improvement		<null>		0000000000000000110000000000000000
+328	TileProvidesYieldWithoutPopulation	Tile provides yield without assigned population	Tile provides yield without assigned population	Terrain,Improvement		<null>		0000000000000000110000000000000000
+329	NullifyYields	Nullifies all other stats this tile provides	Nullifies all other stats this tile provides	Terrain		<null>		0000000000000000100000000000000000
+330	RestrictedBuildableImprovements	Only [improvementFilter] improvements may be built on this tile	Only [] improvements may be built on this tile	Terrain		<null>	ImprovementFilter	0000000000000000100000000000000000
+331	BlocksLineOfSightAtSameElevation	Blocks line-of-sight from tiles at same elevation	Blocks line-of-sight from tiles at same elevation	Terrain		<null>		0000000000000000100000000000000000
+332	VisibilityElevation	Has an elevation of [amount] for visibility calculations	Has an elevation of [] for visibility calculations	Terrain		<null>	Number	0000000000000000100000000000000000
+333	OverrideFertility	Always Fertility [amount] for Map Generation	Always Fertility [] for Map Generation	Terrain	HiddenToUsers	<null>	Number	0000000000000000100000000000000000
+334	AddFertility	[amount] to Fertility for Map Generation	[] to Fertility for Map Generation	Terrain	HiddenToUsers	<null>	Number	0000000000000000100000000000000000
+335	RegionRequirePercentSingleType	A Region is formed with at least [amount]% [simpleTerrain] tiles, with priority [amount]	A Region is formed with at least []% [] tiles, with priority []	Terrain	HiddenToUsers	<null>	Number;SimpleTerrain;Number	0000000000000000100000000000000000
+336	RegionRequirePercentTwoTypes	A Region is formed with at least [amount]% [simpleTerrain] tiles and [simpleTerrain] tiles, with priority [amount]	A Region is formed with at least []% [] tiles and [] tiles, with priority []	Terrain	HiddenToUsers	<null>	Number;SimpleTerrain;SimpleTerrain;Number	0000000000000000100000000000000000
+337	RegionRequireFirstLessThanSecond	A Region can not contain more [simpleTerrain] tiles than [simpleTerrain] tiles	A Region can not contain more [] tiles than [] tiles	Terrain	HiddenToUsers	<null>	SimpleTerrain;SimpleTerrain	0000000000000000100000000000000000
+338	IgnoreBaseTerrainForRegion	Base Terrain on this tile is not counted for Region determination	Base Terrain on this tile is not counted for Region determination	Terrain	HiddenToUsers	<null>		0000000000000000100000000000000000
+339	RegionExtraResource	Starts in regions of this type receive an extra [resource]	Starts in regions of this type receive an extra []	Terrain	HiddenToUsers	<null>	Resource	0000000000000000100000000000000000
+340	BlocksResources	Never receives any resources	Never receives any resources	Terrain	HiddenToUsers	<null>		0000000000000000100000000000000000
+341	ChangesTerrain	Becomes [terrainName] when adjacent to [terrainFilter]	Becomes [] when adjacent to []	Terrain	HiddenToUsers	<null>	TerrainName;TerrainFilter	0000000000000000100000000000000000
+342	HasQuality	Considered [terrainQuality] when determining start locations	Considered [] when determining start locations	Terrain	HiddenToUsers	<null>	TerrainQuality	0000000000000000100000000000000000
+343	NoNaturalGeneration	Doesn't generate naturally	Doesn't generate naturally	Terrain,Resource	HiddenToUsers	<null>		0000000000000000101000000000000000
+344	TileGenerationConditions	Occurs at temperature between [fraction] and [fraction] and humidity between [fraction] and [fraction]	Occurs at temperature between [] and [] and humidity between [] and []	Terrain,Resource	HiddenToUsers	<null>	Fraction;Fraction;Fraction;Fraction	0000000000000000101000000000000000
+345	OccursInChains	Occurs in chains at high elevations	Occurs in chains at high elevations	Terrain	HiddenToUsers	<null>		0000000000000000100000000000000000
+346	OccursInGroups	Occurs in groups around high elevations	Occurs in groups around high elevations	Terrain	HiddenToUsers	<null>		0000000000000000100000000000000000
+347	MajorStrategicFrequency	Every [amount] tiles with this terrain will receive a major deposit of a strategic resource.	Every [] tiles with this terrain will receive a major deposit of a strategic resource.	Terrain	HiddenToUsers	<null>	Number	0000000000000000100000000000000000
+348	RareFeature	Rare feature	Rare feature	Terrain		<null>		0000000000000000100000000000000000
+349	DestroyableByNukesChance	[amount]% Chance to be destroyed by nukes	[]% Chance to be destroyed by nukes	Terrain		<null>	Number	0000000000000000100000000000000000
+350	FreshWater	Fresh water	Fresh water	Terrain		<null>		0000000000000000100000000000000000
+351	RoughTerrain	Rough terrain	Rough terrain	Terrain		<null>		0000000000000000100000000000000000
+352	CoastalWater	Coastal Water	Coastal Water	Terrain		Marks water tiles as Coast - all other water tiles count as Ocean. These distinctions are relevant e.g. for map generator or the ability to navigate here.\nNote that terrain filters do not recognize this distinction, filtering for "Coast" or "Ocean" will only look for a terrain of that name.\nAlso note that for compatibility reasons, terrains named "Coast" are assuned to have this Unique even if it's missing. This may be removed in a future version.\nA tile marked this way marks adjacent land tiles as "Coastal", so they fulfill the terrain filter, and cities built there can build ships, Harbor, etc.		0000000000000000100000000000000000
+353	ExcludedFromMapEditor	Excluded from map editor	Excluded from map editor	Nation,Terrain,Improvement,Resource	HiddenToUsers	<null>		0001000000000000111000000000000000
+354	ResourceAmountOnTiles	Deposits in [tileFilter] tiles always provide [amount] resources	Deposits in [] tiles always provide [] resources	Resource		<null>	TileFilter;Number	0000000000000000001000000000000000
+355	CityStateOnlyResource	Can only be created by Mercantile City-States	Can only be created by Mercantile City-States	Resource		<null>		0000000000000000001000000000000000
+356	Stockpiled	Stockpiled	Stockpiled	Resource		This resource is accumulated each turn, rather than having a set of producers and consumers at a given moment.The current stockpiled amount can be affected with trigger uniques.		0000000000000000001000000000000000
+357	CityResource	City-level resource	City-level resource	Resource		This resource is calculated on a per-city level rather than a per-civ level		0000000000000000001000000000000000
+358	CannotBeTraded	Cannot be traded	Cannot be traded	Resource		<null>		0000000000000000001000000000000000
+359	NotShownOnWorldScreen	Not shown on world screen	Not shown on world screen	Promotion,Resource	HiddenToUsers	<null>		0000000000000001001000000000000000
+360	ResourceWeighting	Generated with weight [amount]	Generated with weight []	Resource	HiddenToUsers	The probability for this resource to be chosen is (this resource weight) / (sum weight of all eligible resources). Resources without a unique are given weight `1`	Number	0000000000000000001000000000000000
+361	MinorDepositWeighting	Minor deposits generated with weight [amount]	Minor deposits generated with weight []	Resource	HiddenToUsers	The probability for this resource to be chosen is (this resource weight) / (sum weight of all eligible resources). Resources without a unique are not generated as minor deposits.	Number	0000000000000000001000000000000000
+362	LuxuryWeightingForCityStates	Generated near City States with weight [amount]	Generated near City States with weight []	Resource	HiddenToUsers	The probability for this resource to be chosen is (this resource weight) / (sum weight of all eligible resources). Only assignable to luxuries, resources without a unique are given weight `1`	Number	0000000000000000001000000000000000
+363	LuxurySpecialPlacement	Special placement during map generation	Special placement during map generation	Resource	HiddenToUsers	<null>		0000000000000000001000000000000000
+364	ResourceFrequency	Generated on every [amount] tiles	Generated on every [] tiles	Resource	HiddenToUsers	<null>	Number	0000000000000000001000000000000000
+365	StrategicBalanceResource	Guaranteed with Strategic Balance resource option	Guaranteed with Strategic Balance resource option	Resource		<null>		0000000000000000001000000000000000
+366	AiWillSellAt	AI will sell at [amount] Gold	AI will sell at [] Gold	Resource	HiddenToUsers	<null>	Number	0000000000000000001000000000000000
+367	AiWillBuyAt	AI will buy at [amount] Gold	AI will buy at [] Gold	Resource	HiddenToUsers	<null>	Number	0000000000000000001000000000000000
+368	ImprovementBuildableByFreshWater	Can also be built on tiles adjacent to fresh water	Can also be built on tiles adjacent to fresh water	Improvement		<null>		0000000000000000010000000000000000
+369	ImprovementStatsOnTile	[stats] from [tileFilter] tiles	[] from [] tiles	Improvement		<null>	Stats;TileFilter	0000000000000000010000000000000000
+370	ImprovementStatsForAdjacencies	[stats] for each adjacent [tileFilter]	[] for each adjacent []	Improvement		<null>	Stats;TileFilter	0000000000000000010000000000000000
+371	EnsureMinimumStats	Ensures a minimum tile yield of [stats]	Ensures a minimum tile yield of []	Improvement		<null>	Stats	0000000000000000010000000000000000
+372	CanBuildOutsideBorders	Can be built outside your borders	Can be built outside your borders	Improvement		<null>		0000000000000000010000000000000000
+373	CanBuildJustOutsideBorders	Can be built just outside your borders	Can be built just outside your borders	Improvement		<null>		0000000000000000010000000000000000
+374	CanOnlyBeBuiltOnTile	Can only be built on [tileFilter] tiles	Can only be built on [] tiles	Improvement		<null>	TileFilter	0000000000000000010000000000000000
+375	CannotBuildOnTile	Cannot be built on [tileFilter] tiles	Cannot be built on [] tiles	Improvement		<null>	TileFilter	0000000000000000010000000000000000
+376	CanOnlyImproveResource	Can only be built to improve a resource	Can only be built to improve a resource	Improvement		<null>		0000000000000000010000000000000000
+377	NoFeatureRemovalNeeded	Does not need removal of [terrainFeature]	Does not need removal of []	Improvement		<null>	TerrainFeature	0000000000000000010000000000000000
+378	RemovesFeaturesIfBuilt	Removes removable features when built	Removes removable features when built	Improvement		<null>		0000000000000000010000000000000000
+379	DefensiveBonus	Gives a defensive bonus of [relativeAmount]%	Gives a defensive bonus of []%	Improvement		Does not accept unit-based conditionals	RelativeNumber	0000000000000000010000000000000000
+380	ImprovementMaintenance	Costs [amount] [stat] per turn when in your territory	Costs [] [] per turn when in your territory	Improvement		<null>	Number;StatName	0000000000000000010000000000000000
+381	ImprovementAllMaintenance	Costs [amount] [stat] per turn	Costs [] [] per turn	Improvement		<null>	Number;StatName	0000000000000000010000000000000000
+382	DamagesAdjacentEnemyUnits	Adjacent enemy units ending their turn take [amount] damage	Adjacent enemy units ending their turn take [] damage	Improvement		<null>	Number	0000000000000000010000000000000000
+383	GreatImprovement	Great Improvement	Great Improvement	Improvement		<null>		0000000000000000010000000000000000
+384	IsAncientRuinsEquivalent	Provides a random bonus when entered	Provides a random bonus when entered	Improvement		<null>		0000000000000000010000000000000000
+385	IsBarbarianCampEquivalent	Marks a barbarian camp	Marks a barbarian camp	Improvement	HiddenToUsers	When several barbarian camp improvements are available, each new camp chooses one randomly.		0000000000000000010000000000000000
+386	Unpillagable	Unpillagable	Unpillagable	Improvement		<null>		0000000000000000010000000000000000
+387	PillageYieldRandom	Pillaging this improvement yields approximately [stats]	Pillaging this improvement yields approximately []	Improvement	AcceptsSpeedModifier,AcceptsGameProgressModifier	<null>	Stats	0000000000000000010000000000000000
+388	PillageYieldFixed	Pillaging this improvement yields [stats]	Pillaging this improvement yields []	Improvement	AcceptsSpeedModifier,AcceptsGameProgressModifier	<null>	Stats	0000000000000000010000000000000000
+389	DestroyedWhenPillaged	Destroyed when pillaged	Destroyed when pillaged	Improvement		<null>		0000000000000000010000000000000000
+390	Irremovable	Irremovable	Irremovable	Improvement		<null>		0000000000000000010000000000000000
+391	AutomatedUnitsWillNotReplace	Will not be replaced by automated units	Will not be replaced by automated units	Improvement		<null>		0000000000000000010000000000000000
+392	ImprovesResources	Improves [resourceFilter] resource in this tile	Improves [] resource in this tile	Improvement	NoConditionals	This is offered as an alternative to the improvedBy field of a resource. The result will be cached within the resource definition when loading a game, without knowledge about terrain, cities, civs, units or time. Therefore, most conditionals will not work, only those **not** dependent on game state.	ResourceFilter	0000000000000000010000000000000000
+393	WillNotBuild	Will not build [baseUnitFilter/buildingFilter]	Will not build []	Personality		<null>	BaseUnitFilter/BuildingFilter	0000100000000000000000000000000000
+394	PersonalityAiWeight	[relativeAmount]% weight to [baseUnitFilter/buildingFilter] for AI decisions	[]% weight to [] for AI decisions	Personality	HiddenToUsers	<null>	RelativeNumber;BaseUnitFilter/BuildingFilter	0000100000000000000000000000000000
+395	ConditionalEveryTurns	every [positiveAmount] turns	every [] turns	Conditional		<null>	PositiveNumber	0000000000000000000000000000010000
+396	ConditionalBeforeTurns	before turn number [nonNegativeAmount]	before turn number []	Conditional		<null>	NonNegativeNumber	0000000000000000000000000000010000
+397	ConditionalAfterTurns	after turn number [nonNegativeAmount]	after turn number []	Conditional		<null>	NonNegativeNumber	0000000000000000000000000000010000
+398	ConditionalSpeed	on [speed] game speed	on [] game speed	Conditional		<null>	Speed	0000000000000000000000000000010000
+399	ConditionalDifficulty	on [difficulty] difficulty	on [] difficulty	Conditional		<null>	Difficulty	0000000000000000000000000000010000
+400	ConditionalDifficultyOrHigher	on [difficulty] difficulty or higher	on [] difficulty or higher	Conditional		<null>	Difficulty	0000000000000000000000000000010000
+401	ConditionalDifficultyOrLower	on [difficulty] difficulty or lower	on [] difficulty or lower	Conditional		<null>	Difficulty	0000000000000000000000000000010000
+402	ConditionalVictoryEnabled	when [victoryType] Victory is enabled	when [] Victory is enabled	Conditional		<null>	VictoryT	0000000000000000000000000000010000
+403	ConditionalVictoryDisabled	when [victoryType] Victory is disabled	when [] Victory is disabled	Conditional		<null>	VictoryT	0000000000000000000000000000010000
+404	ConditionalReligionEnabled	when religion is enabled	when religion is enabled	Conditional		<null>		0000000000000000000000000000010000
+405	ConditionalReligionDisabled	when religion is disabled	when religion is disabled	Conditional		<null>		0000000000000000000000000000010000
+406	ConditionalEspionageEnabled	when espionage is enabled	when espionage is enabled	Conditional		<null>		0000000000000000000000000000010000
+407	ConditionalEspionageDisabled	when espionage is disabled	when espionage is disabled	Conditional		<null>		0000000000000000000000000000010000
+408	ConditionalNuclearWeaponsEnabled	when nuclear weapons are enabled	when nuclear weapons are enabled	Conditional		<null>		0000000000000000000000000000010000
+409	ConditionalNuclearWeaponsDisabled	when nuclear weapons are disabled	when nuclear weapons are disabled	Conditional		<null>		0000000000000000000000000000010000
+410	ConditionalChance	with [nonNegativeAmount]% chance	with []% chance	Conditional		<null>	NonNegativeNumber	0000000000000000000000000000010000
+411	ConditionalTutorialsEnabled	if tutorials are enabled	if tutorials are enabled	Conditional	HiddenToUsers	<null>		0000000000000000000000000000010000
+412	ConditionalTutorialCompleted	if tutorial [comment] is completed	if tutorial [] is completed	Conditional	HiddenToUsers	<null>	Comment	0000000000000000000000000000010000
+413	ConditionalCivFilter	for [civFilter] Civilizations	for [] Civilizations	Conditional		<null>	CivFilter	0000000000000000000000000000010000
+414	ConditionalWar	when at war	when at war	Conditional		<null>		0000000000000000000000000000010000
+415	ConditionalNotWar	when not at war	when not at war	Conditional		<null>		0000000000000000000000000000010000
+416	ConditionalGoldenAge	during a Golden Age	during a Golden Age	Conditional		<null>		0000000000000000000000000000010000
+417	ConditionalNotGoldenAge	when not in a Golden Age	when not in a Golden Age	Conditional		<null>		0000000000000000000000000000010000
+418	ConditionalWLTKD	during We Love The King Day	during We Love The King Day	Conditional		<null>		0000000000000000000000000000010000
+419	ConditionalHappy	while the empire is happy	while the empire is happy	Conditional		<null>		0000000000000000000000000000010000
+420	ConditionalDuringEra	during the [era]	during the []	Conditional		<null>	Era	0000000000000000000000000000010000
+421	ConditionalBeforeEra	before the [era]	before the []	Conditional		<null>	Era	0000000000000000000000000000010000
+422	ConditionalStartingFromEra	starting from the [era]	starting from the []	Conditional		<null>	Era	0000000000000000000000000000010000
+423	ConditionalIfStartingInEra	if starting in the [era]	if starting in the []	Conditional		<null>	Era	0000000000000000000000000000010000
+424	ConditionalFirstCivToResearch	if no other Civilization has researched this	if no other Civilization has researched this	Conditional		<null>		0000000000000000000000000000010000
+425	ConditionalTech	after discovering [techFilter]	after discovering []	Conditional		<null>	TechFilter	0000000000000000000000000000010000
+426	ConditionalNoTech	before discovering [techFilter]	before discovering []	Conditional		<null>	TechFilter	0000000000000000000000000000010000
+427	ConditionalWhileResearching	while researching [techFilter]	while researching []	Conditional		This condition is fulfilled while the technology is actively being researched (it is the one research points are added to)	TechFilter	0000000000000000000000000000010000
+428	ConditionalFirstCivToAdopt	if no other Civilization has adopted this	if no other Civilization has adopted this	Conditional		<null>		0000000000000000000000000000010000
+429	ConditionalNoCivAdopted	if no Civilization has adopted [policy/belief]	if no Civilization has adopted []	Conditional		<null>	Policy/Belief	0000000000000000000000000000010000
+430	ConditionalAfterPolicyOrBelief	after adopting [policy/belief]	after adopting []	Conditional		<null>	Policy/Belief	0000000000000000000000000000010000
+431	ConditionalBeforePolicyOrBelief	before adopting [policy/belief]	before adopting []	Conditional		<null>	Policy/Belief	0000000000000000000000000000010000
+432	ConditionalBeforePantheon	before founding a Pantheon	before founding a Pantheon	Conditional		<null>		0000000000000000000000000000010000
+433	ConditionalAfterPantheon	after founding a Pantheon	after founding a Pantheon	Conditional		<null>		0000000000000000000000000000010000
+434	ConditionalBeforeReligion	before founding a religion	before founding a religion	Conditional		<null>		0000000000000000000000000000010000
+435	ConditionalAfterReligion	after founding a religion	after founding a religion	Conditional		<null>		0000000000000000000000000000010000
+436	ConditionalBeforeEnhancingReligion	before enhancing a religion	before enhancing a religion	Conditional		<null>		0000000000000000000000000000010000
+437	ConditionalAfterEnhancingReligion	after enhancing a religion	after enhancing a religion	Conditional		<null>		0000000000000000000000000000010000
+438	ConditionalAfterGeneratingGreatProphet	after generating a Great Prophet	after generating a Great Prophet	Conditional		<null>		0000000000000000000000000000010000
+439	ConditionalBuildingBuilt	if [buildingFilter] is constructed	if [] is constructed	Conditional		<null>	BuildingFilter	0000000000000000000000000000010000
+440	ConditionalBuildingNotBuilt	if [buildingFilter] is not constructed	if [] is not constructed	Conditional		<null>	BuildingFilter	0000000000000000000000000000010000
+441	ConditionalBuildingBuiltAll	if [buildingFilter] is constructed in all [cityFilter] cities	if [] is constructed in all [] cities	Conditional		<null>	BuildingFilter;CityFilter	0000000000000000000000000000010000
+442	ConditionalBuildingBuiltAmount	if [buildingFilter] is constructed in at least [positiveAmount] of [cityFilter] cities	if [] is constructed in at least [] of [] cities	Conditional		<null>	BuildingFilter;PositiveNumber;CityFilter	0000000000000000000000000000010000
+443	ConditionalBuildingBuiltByAnybody	if [buildingFilter] is constructed by anybody	if [] is constructed by anybody	Conditional		<null>	BuildingFilter	0000000000000000000000000000010000
+444	ConditionalBuildingNotBuiltByAnybody	if [buildingFilter] is not constructed by anybody	if [] is not constructed by anybody	Conditional		<null>	BuildingFilter	0000000000000000000000000000010000
+445	ConditionalWithResource	with [resource]	with []	Conditional		<null>	Resource	0000000000000000000000000000010000
+446	ConditionalWithoutResource	without [resource]	without []	Conditional		<null>	Resource	0000000000000000000000000000010000
+447	ConditionalWhenAboveAmountStatResource	when above [amount] [stat/resource]	when above [] []	Conditional	AcceptsSpeedModifier	<null>	Number;StatName/Resource	0000000000000000000000000000010000
+448	ConditionalWhenBelowAmountStatResource	when below [amount] [stat/resource]	when below [] []	Conditional	AcceptsSpeedModifier	<null>	Number;StatName/Resource	0000000000000000000000000000010000
+449	ConditionalWhenBetweenStatResource	when between [amount] and [amount] [stat/resource]	when between [] and [] []	Conditional	AcceptsSpeedModifier	'Between' is inclusive - so 'between 1 and 5' includes 1 and 5.	Number;Number;StatName/Resource	0000000000000000000000000000010000
+450	ConditionalInThisCity	in this city	in this city	Conditional		<null>		0000000000000000000000000000010000
+451	ConditionalCityFilter	in [cityFilter] cities	in [] cities	Conditional		<null>	CityFilter	0000000000000000000000000000010000
+452	ConditionalCityConnected	in cities connected to the capital	in cities connected to the capital	Conditional		<null>		0000000000000000000000000000010000
+453	ConditionalCityReligion	in cities with a [religionFilter] religion	in cities with a [] religion	Conditional		<null>	ReligionFilter	0000000000000000000000000000010000
+454	ConditionalCityNotReligion	in cities not following a [religionFilter] religion	in cities not following a [] religion	Conditional		<null>	ReligionFilter	0000000000000000000000000000010000
+455	ConditionalCityMajorReligion	in cities with a major religion	in cities with a major religion	Conditional		<null>		0000000000000000000000000000010000
+456	ConditionalCityEnhancedReligion	in cities with an enhanced religion	in cities with an enhanced religion	Conditional		<null>		0000000000000000000000000000010000
+457	ConditionalCityThisReligion	in cities following our religion	in cities following our religion	Conditional		<null>		0000000000000000000000000000010000
+458	ConditionalCityWithBuilding	in cities with a [buildingFilter]	in cities with a []	Conditional		<null>	BuildingFilter	0000000000000000000000000000010000
+459	ConditionalCityWithoutBuilding	in cities without a [buildingFilter]	in cities without a []	Conditional		<null>	BuildingFilter	0000000000000000000000000000010000
+460	ConditionalPopulationFilter	in cities with at least [positiveAmount] [populationFilter]	in cities with at least [] []	Conditional		<null>	PositiveNumber;PopulationFilter	0000000000000000000000000000010000
+461	ConditionalExactPopulationFilter	in cities with [nonNegativeAmount] [populationFilter]	in cities with [] []	Conditional		<null>	NonNegativeNumber;PopulationFilter	0000000000000000000000000000010000
+462	ConditionalBetweenPopulationFilter	in cities with between [amount] and [amount] [populationFilter]	in cities with between [] and [] []	Conditional		'Between' is inclusive - so 'between 1 and 5' includes 1 and 5.	Number;Number;PopulationFilter	0000000000000000000000000000010000
+463	ConditionalBelowPopulationFilter	in cities with less than [amount] [populationFilter]	in cities with less than [] []	Conditional		<null>	Number;PopulationFilter	0000000000000000000000000000010000
+464	ConditionalWhenGarrisoned	with a garrison	with a garrison	Conditional		<null>		0000000000000000000000000000010000
+465	ConditionalOurUnit	for [mapUnitFilter] units	for [] units	Conditional		<null>	MapUnitFilter	0000000000000000000000000000010000
+466	ConditionalOurUnitOnUnit	when [mapUnitFilter]	when []	Conditional		<null>	MapUnitFilter	0000000000000000000000000000010000
+467	ConditionalUnitWithPromotion	for units with [promotion]	for units with []	Conditional		Also applies to units with temporary status	Promotion	0000000000000000000000000000010000
+468	ConditionalUnitWithoutPromotion	for units without [promotion]	for units without []	Conditional		Also applies to units with temporary status	Promotion	0000000000000000000000000000010000
+469	ConditionalVsCity	vs cities	vs cities	Conditional		<null>		0000000000000000000000000000010000
+470	ConditionalVsUnits	vs [mapUnitFilter] units	vs [] units	Conditional		<null>	MapUnitFilter	0000000000000000000000000000010000
+471	ConditionalVsCombatant	vs [combatantFilter]	vs []	Conditional		<null>	CombatantFilter	0000000000000000000000000000010000
+472	ConditionalVsLargerCiv	when fighting units from a Civilization with more Cities than you	when fighting units from a Civilization with more Cities than you	Conditional		<null>		0000000000000000000000000000010000
+473	ConditionalAttacking	when attacking	when attacking	Conditional		<null>		0000000000000000000000000000010000
+474	ConditionalDefending	when defending	when defending	Conditional		<null>		0000000000000000000000000000010000
+475	ConditionalFightingInTiles	when fighting in [tileFilter] tiles	when fighting in [] tiles	Conditional		<null>	TileFilter	0000000000000000000000000000010000
+476	ConditionalForeignContinent	on foreign continents	on foreign continents	Conditional		<null>		0000000000000000000000000000010000
+477	ConditionalAdjacentUnit	when adjacent to a [mapUnitFilter] unit	when adjacent to a [] unit	Conditional		<null>	MapUnitFilter	0000000000000000000000000000010000
+478	ConditionalAboveHP	when above [positiveAmount] HP	when above [] HP	Conditional		<null>	PositiveNumber	0000000000000000000000000000010000
+479	ConditionalBelowHP	when below [positiveAmount] HP	when below [] HP	Conditional		<null>	PositiveNumber	0000000000000000000000000000010000
+480	ConditionalBelowMovement	when below [positiveAmount] movement	when below [] movement	Conditional		<null>	PositiveNumber	0000000000000000000000000000010000
+481	ConditionalAboveMovement	when above [nonNegativeAmount] movement	when above [] movement	Conditional		<null>	NonNegativeNumber	0000000000000000000000000000010000
+482	ConditionalHasNotUsedOtherActions	if it hasn't used other actions yet	if it hasn't used other actions yet	Conditional		<null>		0000000000000000000000000000010000
+483	ConditionalStackedWithUnit	when stacked with a [mapUnitFilter] unit	when stacked with a [] unit	Conditional		<null>	MapUnitFilter	0000000000000000000000000000010000
+484	ConditionalNotStackedWithUnit	when not stacked with a [mapUnitFilter] unit	when not stacked with a [] unit	Conditional		<null>	MapUnitFilter	0000000000000000000000000000010000
+485	ConditionalNeighborTiles	with [nonNegativeAmount] to [nonNegativeAmount] neighboring [tileFilter] tiles	with [] to [] neighboring [] tiles	Conditional		<null>	NonNegativeNumber;NonNegativeNumber;TileFilter	0000000000000000000000000000010000
+486	ConditionalInTiles	in [tileFilter] tiles	in [] tiles	Conditional		<null>	TileFilter	0000000000000000000000000000010000
+487	ConditionalInTilesNot	in tiles without [tileFilter]	in tiles without []	Conditional		<null>	TileFilter	0000000000000000000000000000010000
+488	ConditionalNearTiles	within [positiveAmount] tiles of a [tileFilter]	within [] tiles of a []	Conditional		<null>	PositiveNumber;TileFilter	0000000000000000000000000000010000
+489	ConditionalAdjacentTo	in tiles adjacent to [tileFilter] tiles	in tiles adjacent to [] tiles	Conditional		<null>	TileFilter	0000000000000000000000000000010000
+490	ConditionalNotAdjacentTo	in tiles not adjacent to [tileFilter] tiles	in tiles not adjacent to [] tiles	Conditional		<null>	TileFilter	0000000000000000000000000000010000
+491	ConditionalOnWaterMaps	on water maps	on water maps	Conditional		<null>		0000000000000000000000000000010000
+492	ConditionalInRegionOfType	in [regionType] Regions	in [] Regions	Conditional		<null>	RegionType	0000000000000000000000000000010000
+493	ConditionalInRegionExceptOfType	in all except [regionType] Regions	in all except [] Regions	Conditional		<null>	RegionType	0000000000000000000000000000010000
+494	ConditionalCountableEqualTo	when number of [countable] is equal to [countable]	when number of [] is equal to []	Conditional		<null>	Countable;Countable	0000000000000000000000000000010000
+495	ConditionalCountableDifferentThan	when number of [countable] is different than [countable]	when number of [] is different than []	Conditional		<null>	Countable;Countable	0000000000000000000000000000010000
+496	ConditionalCountableMoreThan	when number of [countable] is more than [countable]	when number of [] is more than []	Conditional		<null>	Countable;Countable	0000000000000000000000000000010000
+497	ConditionalCountableLessThan	when number of [countable] is less than [countable]	when number of [] is less than []	Conditional		<null>	Countable;Countable	0000000000000000000000000000010000
+498	ConditionalCountableBetween	when number of [countable] is between [countable] and [countable]	when number of [] is between [] and []	Conditional		'Between' is inclusive - so 'between 1 and 5' includes 1 and 5.	Countable;Countable;Countable	0000000000000000000000000000010000
+499	ConditionalWhenCarriedBy	when carried by [mapUnitFilter] units	when carried by [] units	Conditional		<null>	MapUnitFilter	0000000000000000000000000000010000
+500	OneTimeFreeUnit	Free [unit] appears	Free [] appears	Triggerable		<null>	UnitName	1111011111111111011111101001000000
+501	OneTimeAmountFreeUnits	[positiveAmount] free [unit] units appear	[] free [] units appear	Triggerable		<null>	PositiveNumber;UnitName	1111011111111111011111101001000000
+502	OneTimeRebel	A [unit] rebels	A [] rebels	Triggerable		<null>	UnitName	1111011111111111011111101001000000
+503	OneTimeAmountRebels	[positiveAmount] [unit]s rebel	[] []s rebel	Triggerable		<null>	PositiveNumber;UnitName	1111011111111111011111101001000000
+504	OneTimeFreeUnitRuins	Free [unit] found in the ruins	Free [] found in the ruins	Ruins		<null>	UnitName	0000000000000000000100000000000000
+505	OneTimeFreePolicy	Free Social Policy	Free Social Policy	Triggerable		<null>		1111011111111111011111101001000000
+506	OneTimeAmountFreePolicies	[positiveAmount] Free Social Policies	[] Free Social Policies	Triggerable		<null>	PositiveNumber	1111011111111111011111101001000000
+507	OneTimeEnterGoldenAge	Empire enters golden age	Empire enters golden age	Triggerable		<null>		1111011111111111011111101001000000
+508	OneTimeEnterGoldenAgeTurns	Empire enters a [positiveAmount]-turn Golden Age	Empire enters a []-turn Golden Age	Triggerable		<null>	PositiveNumber	1111011111111111011111101001000000
+509	OneTimeFreeGreatPerson	Free Great Person	Free Great Person	Triggerable		<null>		1111011111111111011111101001000000
+510	OneTimeGainPopulation	[amount] population [cityFilter]	[] population []	Triggerable		<null>	Number;CityFilter	1111011111111111011111101001000000
+511	OneTimeGainPopulationRandomCity	[amount] population in a random city	[] population in a random city	Triggerable		<null>	Number	1111011111111111011111101001000000
+512	OneTimeDiscoverTech	Discover [tech]	Discover []	Triggerable		<null>	Technology	1111011111111111011111101001000000
+513	OneTimeAdoptPolicyOrBelief	Adopt [policy/belief]	Adopt []	Triggerable		<null>	Policy/Belief	1111011111111111011111101001000000
+514	OneTimeRemovePolicy	Remove [policyFilter]	Remove []	Triggerable		<null>	PolicyFilter	1111011111111111011111101001000000
+515	OneTimeRemovePolicyRefund	Remove [policyFilter] and refund [amount]% of its cost	Remove [] and refund []% of its cost	Triggerable		<null>	PolicyFilter;Number	1111011111111111011111101001000000
+516	OneTimeFreeTech	Free Technology	Free Technology	Triggerable		<null>		1111011111111111011111101001000000
+517	OneTimeAmountFreeTechs	[positiveAmount] Free Technologies	[] Free Technologies	Triggerable		<null>	PositiveNumber	1111011111111111011111101001000000
+518	OneTimeFreeTechRuins	[positiveAmount] free random researchable Tech(s) from the [eraFilter]	[] free random researchable Tech(s) from the []	Triggerable		<null>	PositiveNumber;EraFilter	1111011111111111011111101001000000
+519	OneTimeRevealEntireMap	Reveals the entire map	Reveals the entire map	Triggerable		<null>		1111011111111111011111101001000000
+520	OneTimeFreeBelief	Gain a free [beliefType] belief	Gain a free [] belief	Triggerable		<null>	BeliefTypeName	1111011111111111011111101001000000
+521	OneTimeTriggerVoting	Triggers voting for the Diplomatic Victory	Triggers voting for the Diplomatic Victory	Triggerable		<null>		1111011111111111011111101001000000
+522	OneTimeConsumeResources	Instantly consumes [positiveAmount] [stockpiledResource]	Instantly consumes [] []	Triggerable		<null>	PositiveNumber;StockpiledResource	1111011111111111011111101001000000
+523	OneTimeProvideResources	Instantly provides [positiveAmount] [stockpiledResource]	Instantly provides [] []	Triggerable		<null>	PositiveNumber;StockpiledResource	1111011111111111011111101001000000
+524	OneTimeSetStockpile	Set [stockpile] to [countable]	Set [] to []	Triggerable	AcceptsSpeedModifier	<null>	Stockpile;Countable	1111011111111111011111101001000000
+525	OneTimeGainResource	Instantly gain [amount] [stockpile]	Instantly gain [] []	Triggerable	AcceptsSpeedModifier	<null>	Number;Stockpile	1111011111111111011111101001000000
+526	OneTimeGainStat	Gain [amount] [civWideStat]	Gain [] []	Triggerable	AcceptsSpeedModifier	<null>	Number;CivWideStatName	1111011111111111011111101001000000
+527	OneTimeGainStatRange	Gain [amount]-[amount] [civWideStat]	Gain []-[] []	Triggerable	AcceptsSpeedModifier	<null>	Number;Number;CivWideStatName	1111011111111111011111101001000000
+528	OneTimeGainPantheon	Gain enough Faith for a Pantheon	Gain enough Faith for a Pantheon	Triggerable		<null>		1111011111111111011111101001000000
+529	OneTimeGainProphet	Gain enough Faith for [positiveAmount]% of a Great Prophet	Gain enough Faith for []% of a Great Prophet	Triggerable		<null>	PositiveNumber	1111011111111111011111101001000000
+530	OneTimeGainTechPercent	Research [relativeAmount]% of [tech]	Research []% of []	Triggerable		<null>	RelativeNumber;Technology	1111011111111111011111101001000000
+531	OneTimeTakeOverTilesInRadius	Gain control over [tileFilter] tiles in a [nonNegativeAmount]-tile radius	Gain control over [] tiles in a []-tile radius	Triggerable		<null>	TileFilter;NonNegativeNumber	1111011111111111011111101001000000
+532	OneTimeTakeOverTilesInCity	Gain control over [positiveAmount] tiles [cityFilter]	Gain control over [] tiles []	Triggerable		<null>	PositiveNumber;CityFilter	1111011111111111011111101001000000
+533	OneTimeRevealSpecificMapTiles	Reveal up to [positiveAmount/'all'] [tileFilter] within a [positiveAmount] tile radius	Reveal up to [] [] within a [] tile radius	Triggerable		<null>	PositiveNumber/KeywordAll;TileFilter;PositiveNumber	1111011111111111011111101001000000
+534	OneTimeRevealCrudeMap	From a randomly chosen tile [positiveAmount] tiles away from the ruins, reveal tiles up to [positiveAmount] tiles away with [positiveAmount]% chance	From a randomly chosen tile [] tiles away from the ruins, reveal tiles up to [] tiles away with []% chance	Ruins		<null>	PositiveNumber;PositiveNumber;PositiveNumber	0000000000000000000100000000000000
+535	OneTimeGlobalAlert	Triggers the following global alert: [comment]	Triggers the following global alert: []	Triggerable		Supported on Policies and Technologies.\nFor other targets, the generated Notification may not read nicely, and will likely not support translation. Reason: Your [comment] gets a generated introduction, other triggers usually notify _you_, not _others_, and that difference is currently handled by mapping text.\nConditionals evaluate in the context of the civilization having the Unique, not the recipients of the alerts.	Comment	1111011111111111011111101001000000
+536	OneTimeGlobalSpiesWhenEnteringEra	Every major Civilization gains a spy once a civilization enters this era	Every major Civilization gains a spy once a civilization enters this era	Era		<null>		0000010000000000000000000000000000
+537	OneTimeSpiesLevelUp	Promotes all spies [positiveAmount] time(s)	Promotes all spies [] time(s)	Triggerable		<null>	PositiveNumber	1111011111111111011111101001000000
+538	OneTimeGainSpy	Gain an extra spy	Gain an extra spy	Triggerable		<null>		1111011111111111011111101001000000
+539	SkipPromotion	Doing so will consume this opportunity to choose a Promotion	Doing so will consume this opportunity to choose a Promotion	Promotion		<null>		0000000000000001000000000000000000
+540	FreePromotion	This Promotion is free	This Promotion is free	Promotion		<null>		0000000000000001000000000000000000
+541	OneTimeChangeTerrain	Turn this tile into a [terrainName] tile	Turn this tile into a [] tile	Triggerable		<null>	TerrainName	1111011111111111011111101001000000
+542	OneTimeAddResource	Add [resource] to this tile	Add [] to this tile	Triggerable		<null>	Resource	1111011111111111011111101001000000
+543	OneTimeRemoveResourcesFromTile	Remove [resourceFilter] resources from this tile	Remove [] resources from this tile	Triggerable		<null>	ResourceFilter	1111011111111111011111101001000000
+544	OneTimeRemoveImprovementsFromTile	Remove [improvementFilter] improvements from this tile	Remove [] improvements from this tile	Triggerable		<null>	ImprovementFilter	1111011111111111011111101001000000
+545	UnitsGainPromotion	[mapUnitFilter] units gain the [promotion] promotion	[] units gain the [] promotion	Triggerable		Works only with promotions that are valid for the unit's type - or for promotions that do not specify any.	MapUnitFilter;Promotion	1111011111111111011111101001000000
+546	FreeStatBuildings	Provides the cheapest [stat] building in your first [positiveAmount] cities for free	Provides the cheapest [] building in your first [] cities for free	Triggerable		<null>	StatName;PositiveNumber	1111011111111111011111101001000000
+547	FreeSpecificBuildings	Provides a [buildingName] in your first [positiveAmount] cities for free	Provides a [] in your first [] cities for free	Triggerable		<null>	BuildingName;PositiveNumber	1111011111111111011111101001000000
+548	TriggerEvent	Triggers a [event] event	Triggers a [] event	Triggerable		<null>	Event	1111011111111111011111101001000000
+549	MarkTutorialComplete	Mark tutorial [comment] complete	Mark tutorial [] complete	Triggerable	HiddenToUsers,NoConditionals	<null>	Comment	1111011111111111011111101001000000
+550	PlaySound	Play [comment] sound	Play [] sound	Triggerable	HiddenToUsers	See [Images and Audio](Images-and-Audio.md#sounds) for a list of available sounds.	Comment	1111011111111111011111101001000000
+551	GetLeaderTitle	Get the leader title of [leaderTitle]	Get the leader title of []	Triggerable	HiddenToUsers	<null>	LeaderTitle	1111011111111111011111101001000000
+552	ChooseMusic	Choose a music track for [param], [param], [param]	Choose a music track for [], [], []	Triggerable	HiddenToUsers	Parameters are unchecked, strings not matching existing tracks or flags are ignored.\nSee [Context-sensitive music](Images-and-Audio.md#context-sensitive-music-overview)\nThe first parameter is the track name prefix, e.g. a Civilization name or "this civ".\nThe second parameter is a list of zero or more suffixes, comma-separated, used to specify a "mood", like Peace, War, Ambient etc. First track that matches wins.\nThe third parameter is a list of zero or more flags: PrefixMustMatch, SuffixMustMatch, SlowFade, PlaySingle, PlayDefaultFile.	Unknown;Unknown;Unknown	1111011111111111011111101001000000
+553	OneTimeUnitHeal	[unitTriggerTarget] heals [positiveAmount] HP	[] heals [] HP	UnitTriggerable		<null>	UnitTriggerTarget;PositiveNumber	0100000000001111000100000001000000
+554	OneTimeUnitDamage	[unitTriggerTarget] takes [positiveAmount] damage	[] takes [] damage	UnitTriggerable		<null>	UnitTriggerTarget;PositiveNumber	0100000000001111000100000001000000
+555	OneTimeUnitGainXP	[unitTriggerTarget] gains [amount] XP	[] gains [] XP	UnitTriggerable		<null>	UnitTriggerTarget;Number	0100000000001111000100000001000000
+556	OneTimeUnitUpgrade	[unitTriggerTarget] upgrades for free	[] upgrades for free	UnitTriggerable		<null>	UnitTriggerTarget	0100000000001111000100000001000000
+557	OneTimeUnitSpecialUpgrade	[unitTriggerTarget] upgrades for free including special upgrades	[] upgrades for free including special upgrades	UnitTriggerable		<null>	UnitTriggerTarget	0100000000001111000100000001000000
+558	OneTimeUnitGainPromotion	[unitTriggerTarget] gains the [promotion] promotion	[] gains the [] promotion	UnitTriggerable		<null>	UnitTriggerTarget;Promotion	0100000000001111000100000001000000
+559	OneTimeUnitRemovePromotion	[unitTriggerTarget] loses the [promotion] promotion	[] loses the [] promotion	UnitTriggerable		<null>	UnitTriggerTarget;Promotion	0100000000001111000100000001000000
+560	OneTimeUnitGainMovement	[unitTriggerTarget] gains [positiveAmount] movement	[] gains [] movement	UnitTriggerable		<null>	UnitTriggerTarget;PositiveNumber	0100000000001111000100000001000000
+561	OneTimeUnitLoseMovement	[unitTriggerTarget] loses [positiveAmount] movement	[] loses [] movement	UnitTriggerable		<null>	UnitTriggerTarget;PositiveNumber	0100000000001111000100000001000000
+562	OneTimeUnitGainStatus	[unitTriggerTarget] gains the [promotion] status for [positiveAmount] turn(s)	[] gains the [] status for [] turn(s)	UnitTriggerable		Statuses are temporary promotions. They do not stack, and reapplying a specific status take the highest number - so reapplying a 3-turn on a 1-turn makes it 3, but doing the opposite will have no effect. Turns left on the status decrease at the *start of turn*, so bonuses applied for 1 turn are stll applied during other civ's turns.	UnitTriggerTarget;Promotion;PositiveNumber	0100000000001111000100000001000000
+563	OneTimeUnitLoseStatus	[unitTriggerTarget] loses the [promotion] status	[] loses the [] status	UnitTriggerable		<null>	UnitTriggerTarget;Promotion	0100000000001111000100000001000000
+564	OneTimeUnitDestroyed	[unitTriggerTarget] is destroyed	[] is destroyed	UnitTriggerable		<null>	UnitTriggerTarget	0100000000001111000100000001000000
+565	OneTimeUnitGetsName	[unitTriggerTarget] gets a name from the [unitNameGroup] group	[] gets a name from the [] group	UnitTriggerable		<null>	UnitTriggerTarget;UnitNameGroup	0100000000001111000100000001000000
+566	TriggerUponResearch	upon discovering [techFilter] technology	upon discovering [] technology	TriggerCondition		<null>	TechFilter	0000000000000000000000000000001000
+567	TriggerUponEnteringEra	upon entering the [era]	upon entering the []	TriggerCondition		<null>	Era	0000000000000000000000000000001000
+568	TriggerUponEnteringEraUnfiltered	upon entering a new era	upon entering a new era	TriggerCondition		<null>		0000000000000000000000000000001000
+569	TriggerUponAdoptingPolicyOrBelief	upon adopting [policy/belief]	upon adopting []	TriggerCondition		<null>	Policy/Belief	0000000000000000000000000000001000
+570	TriggerUponDeclaringWarFiltered	upon declaring war on [civFilter] Civilizations	upon declaring war on [] Civilizations	TriggerCondition		<null>	CivFilter	0000000000000000000000000000001000
+571	TriggerUponBeingDeclaredWarUpon	upon being declared war on by [civFilter] Civilizations	upon being declared war on by [] Civilizations	TriggerCondition		<null>	CivFilter	0000000000000000000000000000001000
+572	TriggerUponEnteringWar	upon entering a war with [civFilter] Civilizations	upon entering a war with [] Civilizations	TriggerCondition		<null>	CivFilter	0000000000000000000000000000001000
+573	TriggerUponSigningPeace	upon signing a peace treaty with [civFilter] Civilizations	upon signing a peace treaty with [] Civilizations	TriggerCondition		<null>	CivFilter	0000000000000000000000000000001000
+574	TriggerUponDeclaringFriendship	upon declaring friendship	upon declaring friendship	TriggerCondition		<null>		0000000000000000000000000000001000
+575	TriggerUponSigningDefensivePact	upon declaring a defensive pact	upon declaring a defensive pact	TriggerCondition		<null>		0000000000000000000000000000001000
+576	TriggerUponEnteringGoldenAge	upon entering a Golden Age	upon entering a Golden Age	TriggerCondition		<null>		0000000000000000000000000000001000
+577	TriggerUpponEndingGoldenAge	upon ending a Golden Age	upon ending a Golden Age	TriggerCondition		<null>		0000000000000000000000000000001000
+578	TriggerUponConqueringCity	upon conquering a city	upon conquering a city	TriggerCondition,UnitTriggerCondition		<null>		0000000000000000000000000000001100
+579	TriggerUponLosingCity	upon losing a city	upon losing a city	TriggerCondition		<null>		0000000000000000000000000000001000
+580	TriggerUponFoundingCity	upon founding a city	upon founding a city	TriggerCondition		<null>		0000000000000000000000000000001000
+581	TriggerUponBuildingImprovement	upon building a [improvementFilter] improvement	upon building a [] improvement	TriggerCondition,UnitTriggerCondition		<null>	ImprovementFilter	0000000000000000000000000000001100
+582	TriggerUponDiscoveringNaturalWonder	upon discovering a Natural Wonder	upon discovering a Natural Wonder	TriggerCondition		<null>		0000000000000000000000000000001000
+583	TriggerUponConstructingBuilding	upon constructing [buildingFilter]	upon constructing []	TriggerCondition		<null>	BuildingFilter	0000000000000000000000000000001000
+584	TriggerUponConstructingBuildingCityFilter	upon constructing [buildingFilter] [cityFilter]	upon constructing [] []	TriggerCondition		<null>	BuildingFilter;CityFilter	0000000000000000000000000000001000
+585	TriggerUponGainingUnit	upon gaining a [baseUnitFilter] unit	upon gaining a [] unit	TriggerCondition		<null>	BaseUnitFilter	0000000000000000000000000000001000
+586	TriggerUponLosingUnit	upon losing a [mapUnitFilter] unit	upon losing a [] unit	TriggerCondition		<null>	MapUnitFilter	0000000000000000000000000000001000
+587	TriggerUponTurnEnd	upon turn end	upon turn end	TriggerCondition,UnitTriggerCondition		<null>		0000000000000000000000000000001100
+588	TriggerUponTurnStart	upon turn start	upon turn start	TriggerCondition,UnitTriggerCondition		<null>		0000000000000000000000000000001100
+589	TriggerUponFoundingPantheon	upon founding a Pantheon	upon founding a Pantheon	TriggerCondition		<null>		0000000000000000000000000000001000
+590	TriggerUponFoundingReligion	upon founding a Religion	upon founding a Religion	TriggerCondition		<null>		0000000000000000000000000000001000
+591	TriggerUponEnhancingReligion	upon enhancing a Religion	upon enhancing a Religion	TriggerCondition		<null>		0000000000000000000000000000001000
+592	TriggerUponCombat	upon entering combat	upon entering combat	UnitTriggerCondition		<null>		0000000000000000000000000000000100
+593	TriggerUponDamagingUnit	upon damaging a [mapUnitFilter] unit	upon damaging a [] unit	UnitTriggerCondition		Can apply triggers to to damaged unit by setting the first parameter to 'Target Unit'	MapUnitFilter	0000000000000000000000000000000100
+594	TriggerUponDefeatingUnit	upon defeating a [mapUnitFilter] unit	upon defeating a [] unit	UnitTriggerCondition		<null>	MapUnitFilter	0000000000000000000000000000000100
+595	TriggerUponExpendingUnit	upon expending a [mapUnitFilter] unit	upon expending a [] unit	TriggerCondition		<null>	MapUnitFilter	0000000000000000000000000000001000
+596	TriggerUponDefeat	upon being defeated	upon being defeated	UnitTriggerCondition		<null>		0000000000000000000000000000000100
+597	TriggerUponPromotion	upon being promoted	upon being promoted	UnitTriggerCondition		<null>		0000000000000000000000000000000100
+598	TriggerUponPromotionGain	upon gaining the [promotion] promotion	upon gaining the [] promotion	UnitTriggerCondition		<null>	Promotion	0000000000000000000000000000000100
+599	TriggerUponPromotionLoss	upon losing the [promotion] promotion	upon losing the [] promotion	UnitTriggerCondition		<null>	Promotion	0000000000000000000000000000000100
+600	TriggerUponStatusGain	upon gaining the [promotion] status	upon gaining the [] status	UnitTriggerCondition		<null>	Promotion	0000000000000000000000000000000100
+601	TriggerUponStatusLoss	upon losing the [promotion] status	upon losing the [] status	UnitTriggerCondition		<null>	Promotion	0000000000000000000000000000000100
+602	TriggerUponLosingHealth	upon losing at least [positiveAmount] HP in a single attack	upon losing at least [] HP in a single attack	UnitTriggerCondition		<null>	PositiveNumber	0000000000000000000000000000000100
+603	TriggerUponEndingTurnInTile	upon ending a turn in a [tileFilter] tile	upon ending a turn in a [] tile	UnitTriggerCondition		<null>	TileFilter	0000000000000000000000000000000100
+604	TriggerUponDiscoveringTile	upon discovering a [tileFilter] tile	upon discovering a [] tile	UnitTriggerCondition		<null>	TileFilter	0000000000000000000000000000000100
+605	TriggerUponEnteringTile	upon entering a [tileFilter] tile	upon entering a [] tile	UnitTriggerCondition		<null>	TileFilter	0000000000000000000000000000000100
+606	ConditionalTimedUnique	for [nonNegativeAmount] turns	for [] turns	MetaModifier		Turns this unique into a trigger, activating this unique as a *global* unique for a number of turns	NonNegativeNumber	0000000000000000000000000000000001
+607	AiChoiceWeight	[relativeAmount]% weight to this choice for AI decisions	[]% weight to this choice for AI decisions	Tech,Policy,FounderBelief,FollowerBelief,Building,Promotion,EventChoice	HiddenToUsers	<null>	RelativeNumber	0000001111110001000000000001000000
+608	UnitActionPriority	with [amount] priority	with [] priority	UnitActionModifier,MetaModifier	HiddenToUsers	How often this action is used, a higher value means more often and that it should be on an earlier page. 100 is very frequent, 50 is somewhat frequent, less than 25 is press one time for multi-turn movement. A Rare case is > 100 if a button is something like add in capital, promote or something, we need to inform the player that taking the action is an option.	Number	0000000000000000000000000000000011
+609	HiddenFromCivilopedia	Will not be displayed in Civilopedia	Will not be displayed in Civilopedia	Nation,Tech,Policy,FounderBelief,FollowerBelief,Building,Unit,UnitType,Promotion,Terrain,Improvement,Resource,Ruins,Speed,Difficulty,EventChoice	HiddenToUsers	Supports conditionals that need only a Game as context and nothing else.\nMost conditionals require at least a Civilization and will **not** work.\nNote that when Civilopedia runs from main menu, conditionals will be ignored.		0001001111110111111101100001000000
+610	ShowsWhenUnbuilable	Shown while unbuilable	Shown while unbuilable	Building,Unit	HiddenToUsers	<null>		0000000000110111000000000000000000
+611	ModifierHiddenFromUsers	hidden from users	hidden from users	MetaModifier		<null>		0000000000000000000000000000000001
+612	WillNotBeChosenForNewGames	Will not be chosen for new games	Will not be chosen for new games	Nation,Victory		Unconditional - it is evaluated while a game is being set up, where there is nothing to evaluate conditionals against.		0001000000000000000000000000100000
+613	ForEveryCountable	for every [countable]	for every []	MetaModifier		Works for positive numbers only	Countable	0000000000000000000000000000000001
+614	ForEveryAdjacentTile	for every adjacent [tileFilter]	for every adjacent []	MetaModifier		Works for positive numbers only	TileFilter	0000000000000000000000000000000001
+615	ForEveryAmountCountable	for every [positiveAmount] [countable]	for every [] []	MetaModifier		Works for positive numbers only	PositiveNumber;Countable	0000000000000000000000000000000001
+616	ModifiedByGameSpeed	(modified by game speed)	(modified by game speed)	MetaModifier		Can only be applied to certain uniques, see details of each unique for specifics		0000000000000000000000000000000001
+617	ModifiedByGameProgress	(modified by game progress up to [relativeAmount]%)	(modified by game progress up to []%)	MetaModifier		Can only be applied to certain uniques, see details of each unique for specifics	RelativeNumber	0000000000000000000000000000000001
+618	Comment	Comment [comment]	Comment []	Nation,Tech,Policy,FounderBelief,FollowerBelief,Building,Unit,UnitType,Promotion,Terrain,Improvement,Resource,Ruins,Speed,Difficulty,EventChoice		Allows displaying arbitrary text in a Unique listing. Only the text within the '[]' brackets will be displayed, the rest serves to allow Ruleset validation to recognize the intent.	Comment	0001001111110111111101100001000000
+619	CivilopediaLink	Civilopedia link [pediaLink]	Civilopedia link []	MetaModifier	HiddenToUsers	Allows linking a unique to any Civilopedia page when it is listed in Civilopedia normally. This overrides automatic links to objects in the unique's parameters.	CivilopediaLink	0000000000000000000000000000000001
+620	DiplomaticRelationshipsCannotChange	Diplomatic relationships cannot change	Diplomatic relationships cannot change	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+621	ConvertGoldToScience	Can convert gold to science with sliders	Can convert gold to science with sliders	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+622	AllowCityStatesSpawnUnits	Allow City States to spawn with additional units	Allow City States to spawn with additional units	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+623	TradeCivIntroductions	Can trade civilization introductions for [positiveAmount] Gold	Can trade civilization introductions for [] Gold	ModOptions	NoConditionals	<null>	PositiveNumber	0000000000000000000000000100000000
+624	DisableReligion	Disable religion	Disable religion	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+625	CanOnlyStartFromStartingEra	Can only start games from the starting era	Can only start games from the starting era	ModOptions	NoConditionals	In this case, 'starting era' means the first defined Era in the entire ruleset.		0000000000000000000000000100000000
+626	AllowRazeCapital	Allow raze capital	Allow raze capital	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+627	AllowRazeHolyCity	Allow raze holy city	Allow raze holy city	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+628	CityStatesSearchForFirstCitySite	City-states search for first city location	City-states search for first city location	ModOptions	NoConditionals	By default, city-state settlers with no cities yet found on their current tile when valid (predetermined map-gen / editor start). With this unique they use the same nearby-site search as major civs.		0000000000000000000000000100000000
+629	SuppressWarnings	Suppress warning [validationWarning]	Suppress warning []	Triggerable,Terrain,Speed,ModOptions,MetaModifier	HiddenToUsers,NoConditionals	Allows suppressing specific validation warnings. Errors, deprecation warnings, or warnings about untyped and non-filtering uniques should be heeded, not suppressed, and are therefore not accepted. Note that this can be used in ModOptions, in the uniques a warning is about, or as modifier on the unique triggering a warning - but you still need to be specific. Even in the modifier case you will need to specify a sufficiently selective portion of the warning text as parameter.	ValidationWarning	1111011111111111111111101101000001
+630	ModIncompatibleWith	Mod is incompatible with [modFilter]	Mod is incompatible with []	ModOptions	NoConditionals	Specifies that your Mod is incompatible with another. Always treated symmetrically, and cannot be overridden by the Mod you are declaring as incompatible.	ModName	0000000000000000000000000100000000
+631	ModRequires	Mod requires [modFilter]	Mod requires []	ModOptions	NoConditionals	Specifies that your Extension Mod is only available if any other Mod matching the filter is active.\nMultiple copies of this Unique cannot be used to specify alternatives, they work as 'and' logic. If you need alternates and wildcards can't filter them well enough, please open an issue.	ModName	0000000000000000000000000100000000
+632	ModIsAudioVisualOnly	Should only be used as permanent audiovisual mod	Should only be used as permanent audiovisual mod	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+633	ModIsAudioVisual	Can be used as permanent audiovisual mod	Can be used as permanent audiovisual mod	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+634	ModIsNotAudioVisual	Cannot be used as permanent audiovisual mod	Cannot be used as permanent audiovisual mod	ModOptions	NoConditionals	<null>		0000000000000000000000000100000000
+635	ModMapPreselection	Mod preselects map [comment]	Mod preselects map []	ModOptions	NoConditionals	Only meaningful for Mods containing several maps. When this mod is selected on the new game screen's custom maps mod dropdown, the named map will be selected on the map dropdown. Also disables selection by recently modified. Case insensitive.	Comment	0000000000000000000000000100000000
+636	ConditionalModEnabled	if [modFilter] is enabled	if [] is enabled	Conditional		<null>	ModName	0000000000000000000000000000010000
+637	ConditionalModNotEnabled	if [modFilter] is not enabled	if [] is not enabled	Conditional		<null>	ModName	0000000000000000000000000000010000

@@ -583,7 +583,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - **Fix made by reviewer:** Kotlin's `toFloatOrNull` accepts Java hex float literals (`0x1.8p1`, `ScreenFloatValueRegEx` `HexString` branch); the port rejected them. Added hex validation + value parsing and 13 theory cases + a value test. Value is exact up to 53 significant bits (only validity is used by the engine).
     - **For downstream tickets:** (1) `UniqueParameterErrorSeverity` is declared at namespace level here, not nested in `UniqueType`; T026 must reuse it and add the `RulesetErrorSeverity` mapping (`PossibleFilteringUnique→WarningOptionsOnly`, `RulesetSpecific→Warning`, `RulesetInvariant→Error`). (2) `IRulesetObjectParameterView.HasTagUnique` and `HasGreatPersonUnique`/`HasRegionUnique` are text-matching defaults; Kotlin goes through `UniqueMap`/`hasUnique(UniqueType)` (conditionals evaluated against `GameContext.EmptyState`, timed triggerables excluded), so T027/T030 must override them. (3) `RulesetMapView` over `Dictionary` is insertion-ordered only without removals; T034's ruleset maps must preserve load order for autocomplete output. (4) `CountablesProvider` default is a stub until T028 (already TODO-marked).
 ### T026 Unique system: UniqueType enum
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T025
 - Source: core/src/com/unciv/models/ruleset/unique/UniqueType.kt
 - Fixtures: none - generate golden values (text/params/targets per entry, from Kotlin)
@@ -591,7 +591,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueTypeTests`
 - Claimed: 2026-10-24T02:32:36Z
 - Notes: ~1.2k LOC mostly data. Preserve declaration order (ordinal) and placeholder text exactly. Consider a generated-from-Kotlin consistency test over all entries.
-
+  - Implementer notes (Claude):
+    - Deliverables: `UniqueType.cs` (enum, 638 entries, ordinals = Kotlin declaration order), `UniqueTypeData.cs` (declaration-ordered table `Rows[ordinal]` = the Kotlin constructor args: text, targets, flags, docDescription), `UniqueTypeExtensions.cs` (`Text`, `PlaceholderText`, `TargetTypes`, `Flags`, `DocDescription`, `ParameterTypeMap`, `CanAcceptUniqueTarget`, `UniqueTypeMap`, `Entries`), `UniqueTypeTests.cs` + `Golden/UniqueType.golden.tsv` (csproj copies it to the output).
+    - `UniqueType.cs` and `UniqueTypeData.cs` were **generated from `UniqueType.kt`** by a throwaway Python script (tokenizes the entry list, resolves `ADDITIVE/MULTIPLICATIVE_BONUS_EXPLANATION`, the `$` template at the construction-cost entry, `Constants.freshWater`, `*UniqueTarget.Displayable/CanIncludeSuppression`, `UniqueFlag.setOf*` and `setOf(...)`); not committed. Do not hand-edit them for a Kotlin change: regenerate or edit the row.
+    - Verification: golden file dumped by a reflection harness over the **real compiled Kotlin** (`UniqueType.values()` in the installed Unciv 4.22.13 `Unciv.jar`, run with `java` in `dotnet-dev`): ordinal, name, text, placeholderText, targetTypes, flags (in iteration order), docDescription, `parameterTypeMap`, and `canAcceptUniqueTarget` for all 638 x 34 target pairs. The jar's 638 entries equal the 638 in the repo source, so the repo and the release agree. I mutated a text and a target in the data and the tests failed as expected.
+    - Deviations: `targetTypes` is a `LinkedHashSet` in declaration order (Kotlin's `HashSet<enum>` order is identity-hash arbitrary, so no code can depend on it; the golden target column is sorted by ordinal and compared as a set). `UniqueParameterErrorSeverity` stays where T025 declared it (namespace level, not nested). Not ported: `getDeprecationAnnotation` (JVM reflection; no entry has `@Deprecated`), `UniqueParameterErrorSeverity.getRulesetErrorSeverity` (needs `RulesetErrorSeverity`, T036: PossibleFilteringUnique to WarningOptionsOnly, RulesetSpecific to Warning, RulesetInvariant to Error), `toString()` (use `Text()`). `CHOOSE_MUSIC_DOCSTRING` embeds the five `MusicTrackChooserFlags` names as a constant (UI audio type, not ported); `Suppression.uniqueDocDescription` is a constant in `UniqueTypeData` until T036 ports `Suppression` (then point it there).
+    - `ParameterTypeMap` follows the Kotlin initializer (split at `/`, strip trailing ASCII digits like Java's `\d+$`, `SafeValueOf`, drop unknowns). `parameterTypeMapInitializer` is `open` in Kotlin but no entry overrides it, so there is no override hook.
+    - Ran Gate (`~UniqueTypeTests`, 9/9) and Standard checks (build -warnaserror 0 warnings, format clean, 675/675).
 ### T027 Unique system: Unique, UniqueMap, LocalUniqueCache, TemporaryUnique, IHasUniques, GameContext
 - State: Available
 - Depends: T026, T020
