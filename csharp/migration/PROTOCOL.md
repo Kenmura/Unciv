@@ -95,18 +95,16 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
    - **Multi-Agent Mode:** Find a `Needs-Review` ticket whose implementer is NOT you. If one exists, go to Review.
    - **Single-Agent Mode (Budget for only 1 agent):** If running as the sole active agent, review your own completed `Needs-Review` ticket by dispatching an isolated **Adversarial Review Subagent** (applying `.agents/skills/adversarial-review/SKILL.md` with Auditor, Adversary, and Pragmatist personas). If the subagent approves, mark `Done`, commit `migration: review T### pass [Adversarial Review]`, and push to remote.
 2. Otherwise **implement.** Pick the first `Available` ticket whose `Depends` are all `Done`. If none, report that and stop.
-3. **Claim** atomically (use `ticket.py claim T### <You>`, see Parallel subagents): edit only that ticket's `State` to `In-Progress [You]` (or `In-Review [You]`), commit with message `migration: claim T### [You] <UTC timestamp>`, and put the same timestamp in the ticket's `Claimed:` line. **Publish it immediately.** If the publish is rejected and the rebased backlog shows the ticket taken, drop your claim and pick another.
+3. **Claim** with `python3 -I tools/ticket.py claim T### <You>`: it sets `In-Progress [You]` and `Claimed:` (UTC), commits as `migration: claim T### [You] <UTC timestamp>` and publishes immediately. Exit code 2 means the ticket was taken or has unmet dependencies: pick another. For a review, use `ticket.py state T### 'In-Review <You>' --publish`.
 
 ### Context discipline
 
-- **Backlog access.** `backlog.md` holds only open tickets (Done ones are stubs; full text in `backlog-archive.md`). Use, from `csharp/migration/`:
-  `python3 -I tools/ticket.py next <You>` (what the Work Loop picks), `... show T###` (one ticket, ~1-3KB), `... list [State]` (one line each).
-  Edit only your ticket's lines in `backlog.md`; to find them use `grep -n '^### T###'`. Never `Read` the whole file.
+- **Backlog access: only through `tools/ticket.py`; never `Read`, `grep -n`, `sed` or hand-edit `backlog.md`/`backlog-archive.md`.** Run `python3 -I tools/ticket.py` from `csharp/migration/` (its docstring lists every command). Read: `ready`, `next <You>`, `show T### [Field]`, `list [State]`, `blockers T###`, `stale`, `check`. Write: `claim`, `state`, `reset`, `note`, `set`, `add`, `publish`, `archive`. Every write touches one ticket's block only and is verified before the file is written; illegal state transitions, unknown dependency ids and dependency cycles are refused. Long Notes go in with `ticket.py note T### - <<'EOF' ... EOF`. If you need something the tool cannot do, add it to the tool in your own ticket's commit rather than hand-editing the backlog.
 - **Parallel subagents.** When `python3 -I tools/ticket.py ready` lists several tickets, the orchestrator dispatches one subagent per ticket **in parallel** (one message, several Agent calls). Rules:
   - **One worktree per subagent**: `git -C /var/home/nickmarc/repos/Unciv worktree add .worktrees/<you>-T### -b agent/<you>-T### csharp-migration` (remove it after the ticket is Done and published). Never let two subagents share a working directory or branch; concurrent builds corrupt `bin/`/`obj/`.
   - Only dispatch tickets that are independent: no dependency between them (`ready` already guarantees deps are Done) and no overlap in Deliverables or in shared files (`IHasUniques.cs`, `*Seams.cs`, `Utils/*Extensions.cs`, `.csproj`). If two tickets would extend the same seam file, run them one after the other.
-  - **Claim with the tool**: `python3 -I tools/ticket.py claim T### <You>` edits only that ticket's `State` and `Claimed` lines (hand edits have clobbered neighbouring tickets). Check `git diff` shows only those two lines, commit, then publish. If the publish is rejected, `git rebase csharp-migration`, re-run `ticket.py show T###`, and re-publish; if someone else's claim now holds the ticket, drop yours.
-  - **Publishing is serialised by git**: every publish is `git rebase csharp-migration && git push . HEAD:csharp-migration`; on rejection rebase and retry (backlog.md conflicts: take `csharp-migration`'s text and re-apply only your own ticket's lines). Pushing to `origin` after Done is `git push origin csharp-migration` and is safe to repeat.
+  - **Claim with the tool**: `python3 -I tools/ticket.py claim T### <You>` sets State and Claimed on that ticket only, commits only `backlog.md`, rebases and fast-forwards `csharp-migration`, and exits 2 if you lost the race or the ticket is not claimable (pick another).
+  - **Publishing is serialised by git**: `ticket.py publish` (or `state ... --publish`) rebases onto `csharp-migration` and fast-forwards it, retrying on rejection; `--origin` also runs `git push origin csharp-migration` (use on Done; safe to repeat). A rebase conflict aborts and is reported (backlog.md: take `csharp-migration`'s text and re-apply only your own ticket's changes with the tool).
   - Several tickets in `Needs-Review` by the same implementer are reviewed in parallel too, each by its own isolated review subagent.
   - The orchestrator keeps at most **4** subagents running at once (CPU/RAM: each runs a full `dotnet build/test`), refills the slot as each returns, and after each return re-runs `ticket.py ready`.
   - A ticket's Done-publish may land while another subagent works: before its own review/Done publish each subagent rebases and re-runs the Standard checks if `csharp-migration` moved in files it touches.
@@ -124,7 +122,7 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 2. Port tests first (xUnit, same cases, same names where possible), then the implementation. Preserve behaviour exactly, including quirks, integer/float semantics (Kotlin `Int` division, `Float` vs `Double`, rounding mode) and iteration order. Do not "improve" logic.
 3. Replace libGDX/UI types with small engine-owned equivalents in `Unciv.Core` (e.g. `Vector2`) – never add UI dependencies. If a ticket needs a type owned by another ticket, stop and mark `Blocked` with a note.
 4. Run the ticket's Gate command, then the Standard checks (see Environment). Both must exit 0.
-5. Set `State` to `Needs-Review [You]`, fill `Notes` (deviations, assumptions, semantic traps), commit `migration: implement T### [You]`, and publish. (In Single-Agent Mode: Immediately proceed to Review via an isolated Adversarial Review subagent rather than waiting for an external agent).
+5. Record `Notes` (deviations, assumptions, semantic traps) with `ticket.py note T### -`, then `ticket.py state T### 'Needs-Review <You>' --all -m 'migration: implement T### [You]' --publish` (one commit with your deliverables and the backlog change, published). (In Single-Agent Mode: Immediately proceed to Review via an isolated Adversarial Review subagent rather than waiting for an external agent).
 
 ### Review (Multi-Persona Adversarial Review)
 
@@ -142,7 +140,7 @@ All reviews must apply the multi-persona adversarial review skill ([`csharp/.age
 3. Check that ported tests cover every Kotlin test case and add cases for any untested branch you find.
 4. Run the Gate and the Standard checks yourself. Do not trust the implementer's claim.
 5. Confirm the diff adds no new `#pragma warning disable`, `SuppressMessage`, `NoWarn` or `.editorconfig`/`BannedSymbols*.txt` change unless the ticket is a policy ticket; any suppression needs a `JUSTIFY: T###` comment that you agree with.
-6. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`. Publish either way. **If Pass:** immediately push to remote: `git push origin csharp-migration`.
+6. Pass → `ticket.py state T### Done -m 'migration: review T### pass [You]' --publish --origin` (publishes and pushes to `origin`). Fail → `ticket.py note T### -` with the findings under `Review notes`, then `ticket.py state T### Available -m 'migration: review T### changes-requested [You]' --publish`.
 
 ## Running until budget is exhausted
 
