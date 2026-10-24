@@ -994,7 +994,7 @@ public class CivReligionVictoryTests
     // ---- T111: review follow-ups of T057
 
     [Fact]
-    public void VictoryManager_VoteBreakdown_TiedLeadersAreListedInVoteInsertionOrderOfTheHashMap()
+    public void VictoryManager_VoteBreakdown_TiedLeadersAreListedInJavaHashMapOrder()
     {
         var (civ, info) = NewCiv();
         var civs = AddMajorCivs(info, civ, 3);

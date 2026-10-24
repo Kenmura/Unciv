@@ -35,7 +35,6 @@ namespace Unciv.Logic;
 //   throws ConcurrentModificationException when it takes effect.
 // - Github.repoNameToFolderName (Won't port: the mod downloader) is a private helper here.
 // - calculateChecksum hashes this port's JSON text, so the value differs from the Kotlin one (the Gdx Json text differs).
-// - diplomaticVictoryVotesCast is a Dictionary (the IGameInfoState seam), not a java.util.HashMap.
 // - @Synchronized on getNextUnitId and the ConcurrentHashMap are not needed: engine logic is single-threaded; the cache stays a
 //   ConcurrentDictionary because it is cheap and the client may query rejection reasons from its render thread.
 
