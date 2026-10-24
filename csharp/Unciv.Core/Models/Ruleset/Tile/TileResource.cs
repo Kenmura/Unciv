@@ -112,6 +112,16 @@ public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceP
 
     public bool IsImprovedBy(TileImprovement improvement) => GetImprovements().Contains(improvement.Name);
 
+    /// <returns>Of all the potential improvements in <see cref="GetImprovements"/>, the first this civ can actually build, if any.</returns>
+    public TileImprovement? GetImprovingImprovement(Unciv.Logic.Map.Tiles.Tile tile, GameContext gameContext)
+    {
+        if (gameContext.CivInfo == null) return null;
+        var civ = (Unciv.Logic.Civilization.Civilization)gameContext.CivInfo;
+        return GetImprovements()
+            .Select(it => civ.GameInfo.Ruleset.TileImprovements[it])
+            .FirstOrDefault(it => tile.ImprovementFunctions.CanBuildImprovement(it, gameContext));
+    }
+
     public bool MatchesFilter(string filter, GameContext? state = null)
     {
         var self = (IHasUniques)this;

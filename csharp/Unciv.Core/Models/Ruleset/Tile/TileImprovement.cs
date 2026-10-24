@@ -1,7 +1,9 @@
 using Unciv.Logic;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
+using Unciv.UI.Components.Extensions;
 using Unciv.UI.ObjectDescriptions;
 using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
@@ -9,10 +11,27 @@ using Unciv.Utils;
 namespace Unciv.Models.Ruleset.Tile;
 
 // core/src/com/unciv/models/ruleset/tile/TileImprovement.kt
-// Not ported yet: getTurnsToBuild (Civilization/MapUnit, T046/T048).
 public class TileImprovement : RulesetStatsObject, ICivilopediaText
 {
     public override string MakeLink() => $"Improvement/{Name}";
+
+    public int GetTurnsToBuild(Unciv.Logic.Civilization.Civilization civInfo, MapUnit unit)
+    {
+        var state = new GameContext(civInfo, unit: unit);
+
+        var buildSpeedUniques = unit.GetMatchingUniques(UniqueType.SpecificImprovementTime, state, checkCivInfoUniques: true)
+            .Where(it => MatchesFilter(it.Params[1], state)).ToList();
+        var buildSpeedIncreases = unit.GetMatchingUniques(UniqueType.ImprovementTimeIncrease, state, checkCivInfoUniques: true)
+            .Where(it => MatchesFilter(it.Params[0], state));
+        var increase = ((float)buildSpeedIncreases.Sum(it => double.Parse(it.Params[1], System.Globalization.CultureInfo.InvariantCulture))).ToPercent();
+        var buildTime = increase == 0f ? 0f
+            : civInfo.GameInfo.Speed.ImprovementBuildLengthModifier * TurnsToBuild / increase;
+
+        var calculated = buildSpeedUniques.Aggregate(buildTime, (calculatedTurnsToBuild, unique) =>
+            calculatedTurnsToBuild * unique.Params[0].ToPercent());
+        // In some weird cases it was possible for something to take 0 turns, leading to it instead never finishing
+        return Math.Max(KotlinMath.RoundToInt(calculated), 1);
+    }
 
     public string GetDescription(Ruleset ruleset) => ImprovementDescriptions.GetDescription(this, ruleset);
     public IEnumerable<FormattedLine> GetShortDescription(CivilopediaContext? context = null) =>

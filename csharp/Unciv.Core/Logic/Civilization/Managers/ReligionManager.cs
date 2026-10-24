@@ -224,19 +224,11 @@ public class ReligionManager : IsPartOfGameInfoSerialization
             var prophet = CivInfo.Units.AddUnit(prophetUnit, birthCity);
             if (prophet == null) return;
             if (birthCity != null) // e.g. mosque of djenne bonuses
-                AddConstructionBonuses(prophetUnit, prophet, birthCity);
+                prophetUnit.AddConstructionBonuses(prophet, birthCity.CityConstructions);
             prophet.Religion = Religion.NotNull().Name;
             StoredFaith -= prophetCost;
             CivInfo.CivConstructions.BoughtItemsWithIncreasingPrice.Add(prophetUnit.Name, 1);
         }
-    }
-
-    // TODO(T106): BaseUnit.addConstructionBonuses(unit, cityConstructions) is one of the BaseUnit members deferred by T032
-    private static void AddConstructionBonuses(BaseUnit baseUnit, IMapUnitState unit, CityObject city)
-    {
-        _ = baseUnit;
-        _ = unit;
-        _ = city;
     }
 
     private int MaxNumberOfReligions()
