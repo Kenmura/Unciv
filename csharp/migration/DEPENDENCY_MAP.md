@@ -276,9 +276,9 @@ flowchart TD
   class T011 done
   class T012 done
   class T028 done
-  class T035 ready
+  class T035 prog
   class T036 done
-  class T037 waiting
+  class T037 ondeck
   class T039 done
   class T040 done
   class T046 done
@@ -303,7 +303,7 @@ flowchart TD
   class T078 done
   class T079 waiting
   class T080 waiting
-  class T081 waiting
+  class T081 ondeck
   class T082 waiting
   class T083 waiting
   class T084 prog
@@ -329,7 +329,7 @@ flowchart TD
   class T107 done
   class T110 ready
   class T111 waiting
-  class T115 waiting
+  class T115 ondeck
   class T123 ready
   class T124 ready
   class T125 ready
@@ -346,7 +346,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T035 | **Ready to start** | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
@@ -358,11 +357,14 @@ flowchart TD
 | T130 | **Ready to start** | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
 | T137 | **Ready to start** | T046 | 0 | TranslationCache.ActiveMods from the running GameInfo |
 | T070 | **On deck** (after T068, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
+| T081 | **On deck** (after T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T086 | **On deck** (after T068) | T059, T068, T057 | 14 | TradeLogic |
+| T037 | **On deck** (after T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
+| T115 | **On deck** (after T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T068 | In-Progress [Claude] | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | In-Progress [Claude] | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
+| T035 | In-Progress [Claude] | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T052 | Available (waiting on T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
-| T081 | Available (waiting on T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T084 | In-Progress [Claude] | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
 | T085 | Available (waiting on T084, T081) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T079 | Available (waiting on T052) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
@@ -395,8 +397,6 @@ flowchart TD
 | C004 | Blocked | C002 | 0 | 3D military units |
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
-| T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
-| T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T131 | In-Progress [Antigravity] | T063 | 0 | Hardening: T063 review follow-ups (CityConstructions test gaps, Java-order freeBuildingsProvidedFromThisCity, IConstructionCity cast) |
