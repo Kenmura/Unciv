@@ -223,7 +223,7 @@ flowchart TD
   class T144 ready
   class T145 prog
   class T146 ondeck
-  class T147 prog
+  class T147 review
   class T148 waiting
   class T149 ondeck
   class T150 ondeck
@@ -244,10 +244,10 @@ Generated from the git history of `backlog.md` (UTC; the last point is the curre
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 01:32", "24 02:39", "24 03:46", "24 04:53", "24 06:00", "24 07:07", "24 08:14", "24 09:21", "24 10:28", "24 11:35", "24 12:42", "24 13:49", "24 14:56", "24 16:03", "24 17:10", "24 18:17"]
+    x-axis ["24 01:32", "24 02:39", "24 03:46", "24 04:53", "24 06:00", "24 07:07", "24 08:14", "24 09:22", "24 10:29", "24 11:36", "24 12:43", "24 13:50", "24 14:57", "24 16:04", "24 17:11", "24 18:18"]
     y-axis "Tickets" 0 --> 67
-    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 58, 58, 60, 56, 47, 35, 33]
-    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 1, 4, 0, 1, 5, 3, 4]
+    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 56, 58, 60, 56, 47, 34, 33]
+    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 3, 4, 0, 1, 5, 3, 4]
 ```
 
 ## Incomplete tickets
@@ -288,6 +288,6 @@ xychart-beta
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T145 | In-Progress [Claude] | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
-| T147 | In-Progress [Claude] | T107 | 0 | MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps |
+| T147 | Needs-Review [Claude] | T107 | 0 | MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

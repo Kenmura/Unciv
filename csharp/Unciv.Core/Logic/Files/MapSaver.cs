@@ -49,7 +49,7 @@ public static class MapSaver
 
     public static IReadOnlyList<IUncivFileHandle> GetMaps(Func<string, IUncivFileHandle> localFile) => localFile(MapsFolder).List();
 
-    private static TileMap MapFromJson(string json) => UncivJson.Deserialize<TileMap>(json).NotNull();
+    private static TileMap MapFromJson(string json) => UncivJson.Deserialize<TileMap>(LenientJson.QuoteBareKeys(json)).NotNull();
 
     public static MapParameters LoadMapParameters(IUncivFileHandle mapFile) => LoadMapPreview(mapFile).MapParameters;
 

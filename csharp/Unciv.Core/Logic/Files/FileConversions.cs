@@ -64,7 +64,7 @@ public static class FileConversions
         {
             text = Encoding.UTF8.GetString(raw);
         }
-        return UncivJson.Deserialize<T>(text);
+        return UncivJson.Deserialize<T>(LenientJson.QuoteBareKeys(text));
     }
 
     /// <summary>Writes <paramref name="obj"/> as JSON to <paramref name="file"/>, gzip-compressing and base64-encoding it first if <paramref name="zip"/> is true.</summary>

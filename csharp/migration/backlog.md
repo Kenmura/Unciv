@@ -1658,7 +1658,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T141: Battle (T083) not ported yet.
 
 ### T147 MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T107
 - Source: core/src/com/unciv/logic/files/MapSaver.kt
 - Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt (testingMap)
@@ -1666,6 +1666,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~MapSaver
 - Claimed: 2026-10-24T18:14Z
 - Notes: Found in T141: the Kotlin FreshWaterTests map string is zipped libGDX minimal JSON ({mapParameters:{type:Empty,...}} unquoted keys AND values). LenientJson.QuoteBareKeys only quotes keys, so MapSaver.MapFromSavedString throws. Old Unciv saves in that format cannot be loaded. T141 embeds an equivalent strict-JSON string instead; once this lands, switch FreshWaterFixtureTests to the original Kotlin string.
+  - Implemented in LenientJson.QuoteBareKeys: bare string values (libGDX minimal JSON) are now quoted up to the next , } ] line break or comment start; true/false/null and numbers stay literals; strict JSON is unchanged. Applied in MapSaver.MapFromJson and FileConversions.ReadJson (maps, previews, saves). Colons inside bare values are kept (as libGDX). FreshWaterFixtureTests now uses the original Kotlin base64 string. LenientStringConverter (T151) untouched.
 
 ### T148 Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail)
 - State: Available
