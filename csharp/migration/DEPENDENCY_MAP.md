@@ -309,7 +309,7 @@ flowchart TD
   class T111 waiting
   class T115 ready
   class T123 ready
-  class T124 prog
+  class T124 review
   class T125 ready
   class T127 ready
   class T128 ready
@@ -367,5 +367,5 @@ flowchart TD
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
-| T124 | In-Progress [Claude] | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
+| T124 | Needs-Review [Claude] | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
 | T130 | In-Progress [Antigravity] | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |

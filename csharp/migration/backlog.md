@@ -1340,7 +1340,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T124 Hardening: CityStats test coverage gaps from T062 review
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T062
 - Source: csharp/Unciv.Core/Logic/City/CityStats.cs, GreatPersonPointsBreakdown.cs
 - Fixtures: none
@@ -1348,6 +1348,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~CityStatsTests
 - Claimed: 2026-10-24T16:23Z
 - Notes:
+  - Added CityStatsGameTests (TestGame-based, in CityStatsTests.cs): NullifiesStat (two identical uniques do not double), trade route gold with flat+percent uniques, GetGrowthBonus + We Love The King Day (and calculateGrowthModifiers=false, non-positive food), StatPercentBonus by construction type (unit/building/wonder/stat), UpdateTileStats, GreatPersonBoostWithFriendship, GreatPersonEarnedFaster. No production code changed; coverage check has no changed source files. Note unique texts need bracketed stat: "[+50]% [Gold] from Trade Routes".
 
 ### T125 Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding)
 - State: Available

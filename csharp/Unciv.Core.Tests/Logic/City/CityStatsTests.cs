@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
+using Unciv.Core.Tests.Support;
 using Unciv.Logic.City;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
@@ -392,6 +393,189 @@ public class CityStatsTests
 
     /// <summary>A construction that is not a building or unit (a stat name such as "Gold", the perpetual constructions).</summary>
     private sealed class PerpetualStatConversion(string name) : IConstruction
+    {
+        public string Name { get; set; } = name;
+        public Counter<string> GetResourceRequirementsPerTurn(GameContext? state = null) => new();
+        public IReadOnlySet<string> RequiredResources(GameContext? state = null) => new HashSet<string>();
+        public Counter<string> GetStockpiledResourceRequirements(GameContext state) => new();
+        public bool IsBuildable(CityConstructions cityConstructions) => true;
+        public bool ShouldBeDisplayed(CityConstructions cityConstructions) => true;
+    }
+}
+
+// T124: the CityStats / GreatPersonPointsBreakdown branches that need a real map, cities and diplomacy (TestGame, as CityTest.kt does).
+[Collection("RulesetCache")]
+public class CityStatsGameTests
+{
+    private static (TestGame Game, Civilization Civ, CityObject City) Setup(string[]? nationUniques = null)
+    {
+        var game = new TestGame();
+        game.MakeHexagonalMap(6);
+        var civ = game.AddCiv(nationUniques, isPlayer: true);
+        var city = game.AddCity(civ, game.GetTile(0, 0));
+        return (game, civ, city);
+    }
+
+    private static void AddBuilding(TestGame game, CityObject city, Action<Building> configure, params string[] uniques)
+    {
+        var building = game.CreateBuilding(uniques);
+        configure(building);
+        city.CityConstructions.AddBuilding(building);
+    }
+
+    [Fact]
+    public void NullifiesStat_RemovesTheWholeStatTotal_AndTwoUniquesDoNotDoubleIt()
+    {
+        var (game, _, city) = Setup(["Nullifies [Gold] [in all cities]", "Nullifies [Gold] [in all cities]"]);
+        AddBuilding(game, city, it => it.Gold = 7f);
+        city.CityStats.Update(updateCivStats: false);
+        Assert.Equal(0f, city.CityStats.FinalStatList.Values.Sum(it => it.Gold));
+    }
+
+    [Fact]
+    public void NullifiesStat_Positive_ShowsAsANegativeEntry()
+    {
+        var (game, _, city) = Setup(["Nullifies [Gold] [in all cities]"]);
+        AddBuilding(game, city, it => it.Gold = 7f);
+        city.CityStats.Update(updateCivStats: false);
+        Assert.Contains(city.CityStats.FinalStatList.Values, it => it.Gold <= -7f);
+        Assert.Equal(0f, city.CityStats.CurrentCityStats.Gold);
+    }
+
+    [Fact]
+    public void TradeRoute_ConnectedNonCapitalCity_GetsGoldFromBothPopulations_WithFlatAndPercentUniques()
+    {
+        var (game, civ, capital) = Setup(["[+2 Gold] from each Trade Route", "[+50]% [Gold] from Trade Routes"]);
+        var city = game.AddCity(civ, game.GetTile(3, 0), initialPopulation: 2);
+        Assert.Same(capital, civ.GetCapital());
+
+        city.CityStats.Update(updateCivStats: false);
+        Assert.DoesNotContain("Trade routes", city.CityStats.BaseStatTree.Children.Keys); // not connected yet
+
+        civ.Cache.CitiesConnectedToCapitalToMediums[city] = [];
+        city.CityStats.Update(updateCivStats: false);
+        var expected = (1 * 0.15f + 2 * 1.1f - 1 + 2f) * 1.5f;
+        Assert.Equal(expected, city.CityStats.BaseStatTree.Children["Trade routes"].TotalStats.Gold, 0.0001f);
+
+        capital.CityStats.Update(updateCivStats: false); // the capital itself never has a trade route
+        Assert.DoesNotContain("Trade routes", capital.CityStats.BaseStatTree.Children.Keys);
+    }
+
+    [Fact]
+    public void GrowthBonus_AppliesOnlyToPositiveFood_AndWeLoveTheKingDayAddsAQuarter()
+    {
+        var (game, _, city) = Setup(["[+50]% growth [in all cities]"]);
+        AddBuilding(game, city, it => it.Food = 20f);
+        city.CityStats.Update(updateCivStats: false);
+        var plainFood = city.CityStats.FinalStatList.Where(it => !it.Key.Contains("Growth")).Sum(it => it.Value.Food);
+        Assert.True(plainFood > 0f);
+        var growth = Assert.Single(city.CityStats.FinalStatList, it => it.Key.EndsWith("([Growth])"));
+        Assert.Equal(plainFood * 0.5f, growth.Value.Food, 0.001f);
+        Assert.DoesNotContain("We Love The King Day", city.CityStats.FinalStatList.Keys);
+
+        city.SetFlag(CityFlags.WeLoveTheKing, 10);
+        city.CityStats.Update(updateCivStats: false);
+        Assert.Equal(plainFood / 4, city.CityStats.FinalStatList["We Love The King Day"].Food, 0.001f);
+
+        city.CityStats.Update(updateCivStats: false, calculateGrowthModifiers: false);
+        Assert.DoesNotContain("We Love The King Day", city.CityStats.FinalStatList.Keys);
+        Assert.DoesNotContain(city.CityStats.FinalStatList.Keys, it => it.EndsWith("([Growth])"));
+    }
+
+    [Fact]
+    public void GrowthBonus_IsNotAppliedWhenFoodIsNotPositive()
+    {
+        var (_, _, city) = Setup(["[+50]% growth [in all cities]"]);
+        city.SetFlag(CityFlags.WeLoveTheKing, 10);
+        city.Population.AddPopulation(30); // eats more than the tiles make
+        city.CityStats.Update(updateCivStats: false);
+        Assert.True(city.CityStats.FinalStatList.Values.Sum(it => it.Food) <= 0f);
+        Assert.DoesNotContain("We Love The King Day", city.CityStats.FinalStatList.Keys);
+        Assert.DoesNotContain(city.CityStats.FinalStatList.Keys, it => it.EndsWith("([Growth])"));
+    }
+
+    [Fact]
+    public void StatPercentBonus_DependsOnTheConstructionType()
+    {
+        var (game, _, city) = Setup([
+            "[+10]% Production when constructing [Military] units [in all cities]",
+            "[+20]% Production when constructing [All] buildings [in all cities]",
+            "[+30]% Production when constructing [All] wonders [in all cities]",
+            "[+5]% [Production] [in all cities]",
+        ]);
+        var warrior = game.Ruleset.Units["Warrior"];
+        warrior.SetRuleset(game.Ruleset);
+        var building = game.CreateBuilding();
+        var wonder = game.CreateWonder();
+
+        float Bonus(IConstruction construction)
+        {
+            city.CityStats.Update(construction, updateCivStats: false);
+            return city.CityStats.StatPercentBonusTree.TotalStats.Production;
+        }
+
+        Assert.Equal(15f, Bonus(warrior));
+        Assert.Equal(25f, Bonus(building));
+        Assert.Equal(35f, Bonus(wonder));
+        Assert.Equal(5f, Bonus(new PerpetualStatConversionForTest("Gold")));
+    }
+
+    [Fact]
+    public void UpdateTileStats_SumsTheCentreAndWorkedTiles_AndStopsWorkingBlockadedOnes()
+    {
+        var (game, civ, city) = Setup();
+        var worked = game.GetTile(1, 0);
+        game.AddTileToCity(city, worked);
+        game.SetTileTerrain(worked.Position, "Grassland");
+        city.WorkedTiles.Add(worked.Position);
+        city.CityStats.UpdateTileStats();
+        var center = city.GetCenterTile().Stats.GetTileStats(city, civ);
+        var withWorked = city.CityStats.StatsFromTiles.Food;
+        Assert.Equal(center.Food + worked.Stats.GetTileStats(city, civ).Food, withWorked);
+
+        city.WorkedTiles.Remove(worked.Position);
+        city.CityStats.UpdateTileStats();
+        Assert.Equal(center.Food, city.CityStats.StatsFromTiles.Food);
+    }
+
+    [Fact]
+    public void GreatPersonBoostWithFriendship_AddsBothCivsUniques_OnlyWithADeclarationOfFriendship()
+    {
+        const string boost = "When declaring friendship, both parties gain a [25]% boost to great person generation";
+        var game = new TestGame();
+        game.MakeHexagonalMap(6);
+        var a = game.AddCiv([boost], isPlayer: true);
+        var b = game.AddCiv([boost], isPlayer: true);
+        var city = game.AddCity(a, game.GetTile(-4, 0));
+        game.AddCity(b, game.GetTile(4, 0));
+        a.DiplomacyFunctions.MakeCivilizationsMeet(b);
+        Assert.Equal(0, city.GetGreatPersonPercentageBonus());
+
+        a.GetDiplomacyManager(b)!.SignDeclarationOfFriendship();
+        Assert.Equal(50, city.GetGreatPersonPercentageBonus()); // our own unique plus the friend's
+        var scientist = game.Ruleset.Specialists.Keys.First(it => game.Ruleset.Specialists[it].GreatPersonPoints.ContainsKey("Great Scientist"));
+        city.Population.SpecialistAllocations[scientist] = 1;
+        var breakdown = new GreatPersonPointsBreakdown(city);
+        Assert.Equal(2, breakdown.PercentBonuses.Count(it => it.Source == "Declaration of Friendship"));
+        Assert.All(breakdown.PercentBonuses, it => Assert.True(it.IsAllGP));
+        Assert.Equal(25, breakdown.PercentBonuses[0].Counter["Great Scientist"]);
+    }
+
+    [Fact]
+    public void GreatPersonEarnedFaster_OnlyAppliesToGreatPeopleWithBasePoints()
+    {
+        var (game, _, city) = Setup(["[Great Scientist] is earned [50]% faster", "[Great Artist] is earned [100]% faster"]);
+        var scientist = game.Ruleset.Specialists.Keys.First(it => game.Ruleset.Specialists[it].GreatPersonPoints.ContainsKey("Great Scientist"));
+        city.Population.SpecialistAllocations[scientist] = 1;
+        var breakdown = new GreatPersonPointsBreakdown(city);
+        var entry = Assert.Single(breakdown.PercentBonuses);
+        Assert.Equal(50, entry.Counter["Great Scientist"]);
+        Assert.False(entry.IsAllGP);
+        var points = game.Ruleset.Specialists[scientist].GreatPersonPoints["Great Scientist"];
+        Assert.Equal((points * 1000 + points * 1000 * 50 / 100 + 500) / 1000, breakdown.Sum()["Great Scientist"]);
+    }
+
+    private sealed class PerpetualStatConversionForTest(string name) : IConstruction
     {
         public string Name { get; set; } = name;
         public Counter<string> GetResourceRequirementsPerTurn(GameContext? state = null) => new();
