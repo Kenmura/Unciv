@@ -649,7 +649,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review 2 fix [Claude]: coverage ratchet (T122) failed for the three new files; added tests (mixed-type FPM operators, roads/double-movement targets, enemy-territory penalty, zone of control, escort swap/pair move, paradrop, air landing reason, A* branches through a fake IUnitPathingMapFactory). Now MovementCost 90.7%, UnitMovement 86.0%, FixedPointMovement 100%; baseline updated. Note: MapUnitCache never fills ParadropDestinationTileFilters in Kotlin either (the paradrop unit action does, T079).
 
 ### T068 Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T059, T064, T066
 - Source: core/src/com/unciv/logic/civilization/diplomacy/DiplomacyTurnManager.kt, DeclareWar.kt, CityStateFunctions.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/* remaining cases (TestGame-based: T072)
