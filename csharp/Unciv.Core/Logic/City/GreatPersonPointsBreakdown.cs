@@ -3,6 +3,7 @@ using Unciv.Logic.Civilization.Transients;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Logic.City;
@@ -47,7 +48,7 @@ public class GreatPersonPointsBreakdown
     private static string? GuessPediaLink(UniqueObject unique)
     {
         if (unique.SourceObjectName == null) return null;
-        return unique.SourceObjectType!.Value + "/" + unique.SourceObjectName;
+        return unique.SourceObjectType.NotNull() + "/" + unique.SourceObjectName;
     }
 
     /// <summary>
@@ -68,7 +69,7 @@ public class GreatPersonPointsBreakdown
         var civ = city.Civ;
         foreach (var otherCiv in civ.GetKnownCivs())
         {
-            if (!civ.GetDiplomacyManager(otherCiv)!.HasFlag(DiplomacyFlags.DeclarationOfFriendship))
+            if (!civ.GetDiplomacyManager(otherCiv).NotNull().HasFlag(DiplomacyFlags.DeclarationOfFriendship))
                 continue;
             var boostUniques = civ.GetMatchingUniques(UniqueType.GreatPersonBoostWithFriendship)
                 .Concat(otherCiv.GetMatchingUniques(UniqueType.GreatPersonBoostWithFriendship));

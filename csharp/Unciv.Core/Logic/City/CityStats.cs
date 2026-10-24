@@ -123,7 +123,7 @@ public class CityStats(City city)
     private Stats GetStatsFromTradeRoute()
     {
         var stats = new Stats();
-        var capitalForTradeRoutePurposes = City.Civ.GetCapital()!;
+        var capitalForTradeRoutePurposes = City.Civ.GetCapital().NotNull();
         if (!ReferenceEquals(City, capitalForTradeRoutePurposes) && City.IsConnectedToCapital())
         {
             stats.Gold = capitalForTradeRoutePurposes.Population.Population * 0.15f + City.Population.Population * 1.1f - 1; // Calculated by http://civilization.wikia.com/wiki/Trade_route_(Civ5)
