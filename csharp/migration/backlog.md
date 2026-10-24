@@ -1589,13 +1589,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented Fixtures/Map: FreshWaterFixtureTests (uses an equivalent strict-JSON map string; the Kotlin string is libGDX minimal JSON that MapSaver cannot read: T147), UpgradeFixtureTests, VisibilityFixtureTests (same 18 cases as TileMapTests over real TestGame), UnitFormationFixtureTests (13 of 16), TileImprovementConstructionFixtureTests (24 of 26). Kotlin runTestParcours replaced by collecting failures and one Assert. Deferred: UnitMovement/Pathfinding remainder (T145), Battle.attack escort cases (T146), startWorkingOnImprovement-dependent cases (T148). No engine bugs found by these fixtures.
 
 ### T142 Deferred TestGame fixtures: civilization directory and GameSerializationTests
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T072
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/** (QuestTests, DefensivePactTests, FreeBuildingTests, CityMovingTests, CapitalConnectionsFinderTests, GreatPersonSelectionTest, EspionageTests, diplomacy/*, managers/GoldenAgeManagerTest, ThreatManagerTests), GameSerializationTests.kt
 - Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/*.cs
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
-- Claimed:
+- Claimed: 2026-10-24T17:45Z
 - Notes: Split from T072 at claim time. ThreatManagerTests needs ThreatManager (T087) so depend on it when claiming if still not Done. Same pattern as T072 city fixtures.
 
 ### T143 Port GlobalUniquesTests + deferred TestGame fixtures (split from T103)

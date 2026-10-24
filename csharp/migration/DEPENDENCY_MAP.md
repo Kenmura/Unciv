@@ -219,7 +219,7 @@ flowchart TD
   class T139 ondeck
   class T140 prog
   class T141 done
-  class T142 ready
+  class T142 prog
   class T143 ready
   class T144 ondeck
   class T145 ready
@@ -239,7 +239,6 @@ flowchart TD
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
-| T142 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | T143 | **Ready to start** | T103 | 0 | Port GlobalUniquesTests + deferred TestGame fixtures (split from T103) |
 | T145 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
 | T147 | **Ready to start** | T107 | 0 | MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps |
@@ -270,4 +269,5 @@ flowchart TD
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T140 | In-Progress [Claude] | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
+| T142 | In-Progress [Claude] | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
