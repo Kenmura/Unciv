@@ -4,4 +4,10 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\migration\ai-spec\data\ai_defines.tsv" LogicalName="Unciv.AI.Data.ai_defines.tsv" />
+    <EmbeddedResource Include="..\migration\ai-spec\data\grand_strategy_flavors.tsv" LogicalName="Unciv.AI.Data.grand_strategy_flavors.tsv" />
+    <EmbeddedResource Include="..\migration\ai-spec\data\tactical_moves.tsv" LogicalName="Unciv.AI.Data.tactical_moves.tsv" />
+  </ItemGroup>
+
 </Project>

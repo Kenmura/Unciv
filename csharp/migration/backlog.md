@@ -852,13 +852,15 @@ Unlike Unciv's legacy per-unit automation (`automateUnitMoves` cascading individ
 All tickets start in `Blocked` until foundational engine systems (GameInfo, TileMap, Unit, Ruleset) are in place, but can be unblocked as their specific prerequisites land.
 
 ### A001 AI defines & data tables loader
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T02:43:29Z
 - Depends: T007, T021
 - Source: `csharp/migration/ai-spec/data/ai_defines.tsv`, `grand_strategy_flavors.tsv`, `tactical_moves.tsv`
 - Deliverables: `csharp/Unciv.Core/AI/Data/` data models for `GlobalAIDefines`, `GrandStrategyFlavors`, `TacticalMoveDefinition`, TSV/JSON loader, unit tests
 - Gate: `dotnet test --filter FullyQualifiedName~AIDefinesTests`
 - Notes: Provides typed access to the ~1,600 XML-derived defines, flavor vectors, and tactical move priorities.
+  - Implementer notes (Claude): `Unciv.AI.Data`: `GlobalAIDefines` (453 defines, file order; per-edition `AIEdition` Base/GK/BNW; `TryGetDouble/GetDouble/GetFloat/GetInt/GetBool/IsDefined`; an empty cell means the define does not exist in that edition, so Get throws and IsDefined is false; `GetInt` rejects values written with a decimal point), `GrandStrategyFlavors` (the 3 `AIGrandStrategy_*` tables, edition-independent, ordered; `Get` returns 0 for an absent entry), `TacticalMoveDefinition` (record per row, blank flavor weight = null, `IsInEdition`), `TsvTable` (internal reader that checks the header and column counts). The three TSVs are not copied: `Unciv.Core.csproj` embeds them straight from `migration/ai-spec/data/` (logical names `Unciv.AI.Data.*.tsv`) so there is one source of truth; `LoadEmbedded()` on each type, `Parse(string)` for tests. 17 tests (values spot-checked against the TSVs and SPEC 3.3, edition gaps, malformed-input rejection). Standard checks: build -warnaserror, format, 692/692 tests.
+  - Deviations: no JSON loader (the TSV is the shipped format and nothing needs JSON yet). Values are kept as `double` parsed from the text (the engine's own types are unknown, SPEC marks that [?]); `GetFloat` narrows. `diplomacy_ai_defines.tsv` is not loaded (not in this ticket's Source; same shape with base/bnw columns, add with the diplomacy AI ticket). Tactical rows keep file order; no sorting is applied, the queue ticket (A004) must decide tie order, since several rows share a priority (e.g. 130, 110, 100, 25, 15, 10, 1, -1).
 
 ### A002 Leader flavor system & Grand Strategy evaluation
 - State: Blocked
