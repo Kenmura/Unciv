@@ -94,7 +94,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified fidelity against Kotlin original: non-zero integer map behavior, insertion-order preservation via OrderedDictionary, zero-removal on mutating methods, super.put zero-retention on copy constructor/Clone/PutAll, Counter.ZERO Put restriction, and AbstractMap value-based equality and hashing semantics. Re-ran Gate (17/17 passed) and full test suite (106/106 passed).
 
 ### T006 HexMath
-- State: In-Review [Claude]
+- State: Available
 - Claimed: 2026-10-24T01:08:05Z
 - Depends: T003
 - Source: core/src/com/unciv/logic/map/HexMath.kt
@@ -108,6 +108,12 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - `HexCoord` implemented as a `readonly record struct` with value equality, arithmetic operators `+ - *`, `ToPrettyString`, `FromString`, and lowercase compatibility aliases.
   - Deferred members: `tilesAndNeighborUniqueIndex` (needs Tile/TileMap) and `getDistanceFromEdge` (needs MapParameters/MapShape) deferred to T015. `HexCoord.Serializer` deferred to T007.
   - Ran Gate (16 passed) and full `dotnet test` (122 passed).
+  - Review notes (Claude): **Changes requested.** Gate 16/16 and Standard checks (build -warnaserror, format, full test 137/137) pass; line-by-line port is otherwise faithful (trig/float widths, half-even `round`, `.mod`, getDistance, ring enumeration, getZeroBasedIndex order, clock maps, InlineHexCoord packing). Findings:
+    1. **Must fix:** `HexMath.RoundToInt` is `(int)Math.Floor(value + 0.5f)`. The `+ 0.5f` is a float add and rounds up for the largest float below .5: `RoundToInt(0.49999997f)` gives 1 (reproduced), Kotlin `roundToInt()` = `Math.round(float)` gives 0. Also Kotlin saturates on huge values and throws on NaN; `(int)` cast is unspecified. This is a determinism helper the whole engine will reuse (CLAUDE.md asks for a vetted rounding helper): compute exactly (e.g. `MathF.Floor(value)` then add 1 if `value - floor >= 0.5f`, which is exact for floats), saturate to int range, throw on NaN, and add tests for 0.49999997f, -0.5f (gives 0), 0.5f (gives 1), 2.5f, -2.5f, +/-large, NaN. Prefer making it a public tested helper in Unciv.Core (e.g. `Utils/KotlinMath.RoundToInt`) rather than private to HexMath.
+    2. Should fix: `GetDistance(Vector2, Vector2)` and `ToHexCoord` use `(int)float`, which for NaN/out-of-range differs from Kotlin `toInt()` (saturating, NaN to 0). Add a saturating `FloatToInt` helper (same file as 1) and use it.
+    3. Should fix: `Mod` differs from Kotlin `Int.mod` for a negative modulus (Kotlin result takes the divisor's sign). Only reachable with negative `longitudinalRadius`; make it exact (`r != 0 && (r ^ m) < 0 ? r + m : r`).
+    4. Note only: `HexCoord.FromString` uses `int.Parse` which accepts surrounding whitespace and throws OverflowException; Kotlin `toInt()` rejects whitespace and throws NumberFormatException. Use `NumberStyles.AllowLeadingSign` and map overflow to FormatException.
+    5. Note only: `TestHexCoordFormatAndParseBack` uses `System.Random(42)` (allowed in tests); once T010 is Done switch it to `GameRandom(42)` to match the Kotlin sequence. HexCoord is a value type here (Kotlin: reference data class), so nullability/identity differ; document for consumers.
 
 ### T007 JSON layer for ported data classes (Counter, Stats, ...)
 - State: Needs-Review [Antigravity]
