@@ -10,8 +10,8 @@ namespace Unciv.Core.Tests.Logic.Automation;
 
 // T092: port of tests/src/com/unciv/logic/automation/unit/WorkerAutomationTest.kt over the real TestGame.
 // The Kotlin setUp sets `useAStarPathfinding = true`; the A* PathingMap is T093, so these run on the default (non-A*) road pathing.
-// The three Kotlin cases that drive whole turns through NextTurnAutomation.automateCivMoves (should build improvements in turns / without roads /
-// should build roads in turns; the fourth, @Ignore'd) are C# adaptations here: the worker is automated with UnitAutomation.AutomateUnitMoves.
+// The Kotlin cases that drive whole turns through NextTurnAutomation.automateCivMoves (should build improvements in turns / without roads /
+// should build roads in turns; the fourth, @Ignore'd, is not ported) are C# adaptations here: the worker is automated with UnitAutomation.AutomateUnitMoves.
 // TODO(T094): port the originals with automateCivMoves once NextTurnAutomation exists.
 [Collection("RulesetCache")]
 public class WorkerAutomationTests
@@ -210,6 +210,39 @@ public class WorkerAutomationTests
     }
 
     [Fact]
+    public void ShouldBuildImprovementsInTurnsWithoutRoads()
+    {
+        Research("Farm");
+        var city1 = testGame.AddCity(civInfo, testGame.TileMap[-2, 1]);
+        var city2 = testGame.AddCity(civInfo, testGame.TileMap[2, -1]);
+        var cities = new[] { city1, city2 };
+        civInfo.AddGold(100000000);
+        foreach (var city in cities)
+            foreach (var tile in city.GetCenterTile().GetTilesInDistance(3))
+            {
+                if (tile.OwningCity == null) city.Expansion.BuyTile(tile);
+                tile.BaseTerrain = Constants.Grassland;
+            }
+        foreach (var city in cities) city.ReassignAllPopulation();
+        var worker = testGame.AddUnit("Worker", civInfo, city1.GetCenterTile());
+
+        RunTurns(worker, 38, _ =>
+        {
+            civInfo.AddGold(-civInfo.Gold);
+            civInfo.Policies.FreePolicies = 0;
+            civInfo.AddStat(Stat.Science, -100000);
+            foreach (var city in cities)
+                if (city.Population.Population != 1) city.Population.AddPopulation(1 - city.Population.Population);
+        });
+
+        var checkedTiles = cities.SelectMany(it => it.GetCenterTile().GetTilesInDistance(3)).Distinct().ToList();
+        var finishedCount = checkedTiles.Count(it => it.Improvement != null && !it.IsCityCenter());
+        var inProgressCount = checkedTiles.Count(it => it.TurnsToImprovement != 0);
+        Assert.True(inProgressCount <= 1, $"Worker improvements in progress was greater than 1, actual: {inProgressCount}");
+        Assert.True(finishedCount >= 5, $"Worker should have built at least 5 improvements but only built {finishedCount}");
+    }
+
+    [Fact]
     public void ShouldBuildRoadsInTurns()
     {
         Research(nameof(RoadStatus.Road));
@@ -303,7 +336,7 @@ public class WorkerAutomationTests
         both.Movement = 2;
         var worker = testGame.AddUnit(both.Name, civInfo, testGame.TileMap[1, 0]);
         Automate(worker);
-        Assert.False(worker.IsDestroyed);
+        Assert.NotNull(worker.GetTile()); // the boat target is out of its land reach; it did not crash on the dual-purpose path
     }
 
     [Fact]
@@ -312,8 +345,9 @@ public class WorkerAutomationTests
         var cityState = testGame.AddCiv(cityStateType: "Cultured");
         testGame.AddCity(cityState, testGame.TileMap[0, 0]);
         var worker = testGame.AddUnit("Worker", cityState, testGame.TileMap[1, 0]);
+        var start = worker.GetTile();
         new WorkerAutomation(cityState, 3).AutomateWorkerAction(new GameView(testGame.GameInfo, cityState).GetMapUnitView(worker), []);
-        Assert.False(worker.IsDestroyed);
+        Assert.True(worker.GetTile() != start || worker.CurrentTile.ImprovementInProgress != null || start.ImprovementInProgress != null);
     }
 
     [Fact]
@@ -322,11 +356,12 @@ public class WorkerAutomationTests
         Research("Farm");
         testGame.AddCity(civInfo, testGame.TileMap[-5, 0]);
         var other = testGame.AddCity(civInfo, testGame.TileMap[5, 0]);
-        foreach (var tile in other.GetCenterTile().GetTilesInDistance(2)) testGame.AddTileToCity(other, tile);
+        foreach (var tile in other.GetCenterTile().GetTilesInDistance(2)) { testGame.AddTileToCity(other, tile); tile.SetOwningCity(other); tile.BaseTerrain = Constants.Grassland; }
         var worker = testGame.AddUnit("Worker", civInfo, testGame.TileMap[-4, 0]);
         testGame.AddUnit("Worker", civInfo, testGame.TileMap[-3, 0]); // a second worker near the first city only
+        var start = worker.GetTile();
         Automate(worker);
-        Assert.False(worker.IsDestroyed);
+        Assert.True(worker.GetTile() != start || start.ImprovementInProgress != null, "it either works nearby or heads for the other city");
     }
 
     [Fact]

@@ -251,7 +251,8 @@ public class RoadAutomationTests
         var worker = new WorkerAutomation(civInfo, 1);
         var nearby = worker.RoadBetweenCitiesAutomation.GetNearbyCitiesToConnect(unit);
         Assert.Contains(middle, nearby);
-        Assert.True(worker.RoadBetweenCitiesAutomation.TilesOfRoadsMap.Count > 0);
+        var plan = worker.RoadBetweenCitiesAutomation.TilesOfRoadsMap[T(0, 0)];
+        Assert.True(plan.FromCity == middle || plan.ToCity == middle);
     }
 
     [Fact]
@@ -268,7 +269,8 @@ public class RoadAutomationTests
         var worker = new WorkerAutomation(civInfo, 1);
         Assert.NotEmpty(worker.RoadBetweenCitiesAutomation.GetNearbyCitiesToConnect(unit));
         Assert.Contains(capital, worker.RoadBetweenCitiesAutomation.GetNearbyCitiesToConnect(unit));
-        Assert.Contains(T(0, 0), worker.RoadBetweenCitiesAutomation.TilesOfRoadsMap.Keys);
+        var plan = worker.RoadBetweenCitiesAutomation.TilesOfRoadsMap[T(0, 0)];
+        Assert.True(plan.Tiles.All(it => it.RoadStatus > RoadStatus.None || it.IsCityCenter()), "the plan reuses the existing road");
     }
 
     private sealed class FakeRoadPathing : ICityRoadPathing

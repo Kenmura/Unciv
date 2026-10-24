@@ -52,7 +52,7 @@ public static partial class SpecificUnitAutomation
                 // ...also get priorities to steal the most valuable for them
                 var owner = it.GetOwner();
                 if (owner != null)
-                    return distance - KotlinMath.RoundToInt(unit.Civ.GetWorkerAutomation().GetBasePriority(it, new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).GetMapUnitView(unit)));
+                    return distance - KotlinMath.RoundToInt(((CivilizationClass)owner).GetWorkerAutomation().GetBasePriority(it, new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).GetMapUnitView(unit)));
                 return distance;
             })
             .FirstOrDefault(it => unit.Movement.CanReach(it)); // canReach is performance-heavy and always a last resort

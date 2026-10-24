@@ -38,6 +38,16 @@ public partial class WorkerAutomation
 
     private static readonly IEnumerable<TileImprovement> NoIgnoredImprovements = [];
 
+    /// <summary>Kotlin <c>Float.compareTo(other) &lt; 0</c> (total order: -0.0 &lt; 0.0, NaN above everything).</summary>
+    private static bool KotlinFloatLess(float a, float b)
+    {
+        if (float.IsNaN(a)) return false;
+        if (float.IsNaN(b)) return true;
+        if (a < b) return true;
+        if (a > b) return false;
+        return a == 0f && float.IsNegative(a) && !float.IsNegative(b);
+    }
+
     /// <summary>Kotlin <c>maxByOrNull</c>: the first element with the maximum selector value; null when empty.</summary>
     private static T? MaxByOrNull<T>(IEnumerable<T> source, Func<T, float> selector) where T : class
     {
@@ -46,7 +56,7 @@ public partial class WorkerAutomation
         foreach (var item in source)
         {
             var value = selector(item);
-            if (best == null || value > bestValue)
+            if (best == null || KotlinFloatLess(bestValue, value))
             {
                 best = item;
                 bestValue = value;
@@ -188,9 +198,8 @@ public partial class WorkerAutomation
         var currentTileStats = tile.Stats.GetTileStats(tile.GetCity(), CivInfo);
         var bestBuildableImprovement = MaxByOrNull(
             potentialTileImprovements.Values
-                .Select(it => (Improvement: it, Rank: GetImprovementRanking(tile, unitView, it, currentTileStats, ignoreWithPotential)))
-                .Where(it => it.Rank > 0f)
-                .Select(it => new RankedImprovement(it.Improvement, it.Rank)),
+                .Select(it => new RankedImprovement(it, GetImprovementRanking(tile, unitView, it, currentTileStats, ignoreWithPotential)))
+                .Where(it => it.Rank > 0f),
             it => it.Rank)?.Improvement;
 
         if (currentImprovement != null && CivInfo.IsHuman() && !clientState.AutomatedWorkersReplaceImprovements
