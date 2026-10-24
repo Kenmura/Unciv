@@ -1458,7 +1458,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - T061 (Claude): City.cs now imports Unciv.Logic.City.Managers (its 3 managers), so its CouplingRatchetBaseline entry is 14, not 13; decoupling City.cs (lowering to <= 12) covers it.
 
 ### T129 Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T096, T097
 - Source: core/src/com/unciv/ui/objectdescriptions/NationDescriptions.kt (addUniqueBuildingsText, addUniqueImprovementsText), TechnologyDescriptions.kt (buildings/wonders enabled sections of getDescription and getCivilopediaTextLines)
 - Fixtures: none - generate golden values
@@ -1466,6 +1466,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~ObjectDescriptionsC2Tests
 - Claimed: 2026-10-24T18:43Z
 - Notes: Split from T097 at claim time: those sections call Building.getShortDescription, BuildingDescriptions.addBuildingDifferences, TileImprovement.getShortDecription and ImprovementDescriptions.getDifferences, all owned by T096. T097 leaves a TODO(this ticket) at each omitted spot. Replace those TODOs, add the missing lines in Kotlin order, and extend the T097 golden tests.
+  - Implemented: NationDescriptions.AddUniqueBuildingsText/AddUniqueImprovementsText and the Wonders/Buildings enabled sections of TechnologyDescriptions.GetDescription (buildings then wonders) and GetCivilopediaTextLines (wonders then buildings, padding 15f). Golden values hand-derived from Kotlin (no Kotlin fixtures). Hidden-from-Civilopedia checks use context.GameInfo, matching the existing unit section in the C# port (Kotlin passes only the ruleset). Tests: ObjectDescriptionsC2Tests.
 
 ### T130 Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet
 - State: Done

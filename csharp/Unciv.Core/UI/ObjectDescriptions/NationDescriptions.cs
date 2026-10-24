@@ -9,7 +9,6 @@ namespace Unciv.UI.ObjectDescriptions;
 
 // core/src/com/unciv/ui/objectdescriptions/NationDescriptions.kt: Nation.getNationCivilopediaTextLines and its helpers
 // (Personality.getShortDescription is Personality.ToString, the two Personality Civilopedia members are in PersonalityDescriptions.cs).
-// Deferred to T129 (they call Building/TileImprovement descriptions owned by T096): addUniqueBuildingsText and addUniqueImprovementsText.
 
 public static class NationDescriptions
 {
@@ -57,9 +56,9 @@ public static class NationDescriptions
                 }
                 b.Space();
             }
-            // TODO(T129): addUniqueBuildingsText(ruleset) goes here (needs BuildingDescriptions, T096)
+            AddUniqueBuildingsText(b, nation, context);
             AddUniqueUnitsText(b, nation, context);
-            // TODO(T129): addUniqueImprovementsText(ruleset) goes here (needs ImprovementDescriptions, T096)
+            AddUniqueImprovementsText(b, nation, context);
         });
     }
 
@@ -105,6 +104,33 @@ public static class NationDescriptions
         b.Separator();
     }
 
+    private static void AddUniqueBuildingsText(IFormattedLineListBuilder b, NationObject nation, CivilopediaContext context)
+    {
+        var ruleset = context.Ruleset;
+        foreach (var building in ruleset.Buildings.Values)
+        {
+            if (building.UniqueTo == null) continue;
+            if (!nation.MatchesFilter(building.UniqueTo)) continue;
+            if (((IHasUniques)building).IsHiddenFromCivilopedia(context.GameInfo, ruleset)) continue;
+            b.Separator();
+            b.Add($"{{{building.Name}}} -", link: building.MakeLink());
+            if (building.Replaces != null && ruleset.Buildings.TryGetValue(building.Replaces, out var originalBuilding))
+            {
+                b.Add($"Replaces [{originalBuilding.Name}]", link: originalBuilding.MakeLink(), indent: 1);
+                b.AddBuildingDifferences(originalBuilding, building);
+                b.Space();
+            }
+            else if (building.Replaces != null)
+            {
+                b.Add($"Replaces [{building.Replaces}], which is not found in the ruleset!", indent: 1);
+            }
+            else
+            {
+                b.Add(BuildingDescriptions.GetShortDescription(building, true), indent: 1);
+            }
+        }
+    }
+
     private static void AddUniqueUnitsText(IFormattedLineListBuilder b, NationObject nation, CivilopediaContext context)
     {
         var ruleset = context.Ruleset;
@@ -131,6 +157,34 @@ public static class NationDescriptions
                 b.Add(unit.GetCivilopediaTextLines(context).Select(it => it.Copy(indent: it.Indent + 1)));
             }
             b.Space();
+        }
+    }
+
+    private static void AddUniqueImprovementsText(IFormattedLineListBuilder b, NationObject nation, CivilopediaContext context)
+    {
+        var ruleset = context.Ruleset;
+        foreach (var improvement in ruleset.TileImprovements.Values)
+        {
+            if (((IHasUniques)improvement).IsHiddenFromCivilopedia(context.GameInfo, ruleset)) continue;
+            if (improvement.UniqueTo == null || !nation.MatchesFilter(improvement.UniqueTo)) continue;
+
+            b.Separator();
+            b.Add(improvement.Name, link: $"Improvement/{improvement.Name}");
+            b.Add(improvement.CloneStats().ToString(), indent: 1); // = (improvement as Stats).toString minus import plus copy overhead
+            if (improvement.Replaces != null && ruleset.TileImprovements.TryGetValue(improvement.Replaces, out var originalImprovement))
+            {
+                b.Add($"Replaces [{originalImprovement.Name}]", link: originalImprovement.MakeLink(), indent: 1);
+                b.Add(ImprovementDescriptions.GetDifferences(ruleset, originalImprovement, improvement));
+                b.Space();
+            }
+            else if (improvement.Replaces != null)
+            {
+                b.Add($"Replaces [{improvement.Replaces}], which is not found in the ruleset!", indent: 1);
+            }
+            else
+            {
+                b.Add(ImprovementDescriptions.GetShortDescription(improvement));
+            }
         }
     }
 }

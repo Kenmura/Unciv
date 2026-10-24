@@ -13,8 +13,6 @@ namespace Unciv.UI.ObjectDescriptions;
 
 // core/src/com/unciv/ui/objectdescriptions/TechnologyDescriptions.kt
 // Not ported: getTechEnabledIcons, buildTechIconsIndex and TechIconsIndex (they build libGDX portrait Actors with ImageGetter for the TechPickerScreen: client code).
-// Deferred to T129 (they call Building.getShortDescription, owned by T096): the "Buildings enabled" and "Wonders enabled" lines of getDescription and
-// getCivilopediaTextLines. The helpers they need (getEnabledBuildings) are here.
 
 public static class TechnologyDescriptions
 {
@@ -54,7 +52,23 @@ public static class TechnologyDescriptions
                 lineList.Add($" • {unit.Name.Tr()} ({unit.GetShortDescription(technology.UniqueIsRequirementForThisTech)})\n");
         }
 
-        // TODO(T129): "{Buildings enabled}: " and "{Wonders enabled}: " lines go here (need Building.getShortDescription, T096)
+        var enabledBuildings = GetEnabledBuildings(name, ruleset, viewingCiv).ToList();
+        var wonders = enabledBuildings.Where(it => it.IsAnyWonder()).ToList();
+        var regularBuildings = enabledBuildings.Where(it => !it.IsAnyWonder()).ToList();
+
+        if (regularBuildings.Count != 0)
+        {
+            lineList.Add("{Buildings enabled}: ");
+            foreach (var building in regularBuildings)
+                lineList.Add($" • {building.Name.Tr()} ({BuildingDescriptions.GetShortDescription(building, uniqueInclusionFilter: technology.UniqueIsNotRequirementForThisTech)})\n");
+        }
+
+        if (wonders.Count != 0)
+        {
+            lineList.Add("{Wonders enabled}: ");
+            foreach (var wonder in wonders)
+                lineList.Add($" • {wonder.Name.Tr()} ({BuildingDescriptions.GetShortDescription(wonder, uniqueInclusionFilter: technology.UniqueIsNotRequirementForThisTech)})\n");
+        }
 
         foreach (var obj in GetObsoletedObjects(name, ruleset, viewingCiv))
             lineList.Add($"[{obj.Name}] obsoleted");
@@ -133,7 +147,28 @@ public static class TechnologyDescriptions
                 lineList.Add(new FormattedLine(unit.Name.Tr(hideIcons: true) + " (" + unit.GetShortDescription(technology.UniqueIsRequirementForThisTech) + ")", link: unit.MakeLink()));
         }
 
-        // TODO(T129): the "{Wonders enabled}:" and "{Buildings enabled}:" sections go here (need Building.getShortDescription, T096)
+        var enabledBuildings = GetEnabledBuildings(name, ruleset, null).ToList();
+        var wonders = enabledBuildings.Where(it => it.IsAnyWonder()).ToList();
+        var regularBuildings = enabledBuildings.Where(it => !it.IsAnyWonder()).ToList();
+
+        if (wonders.Count != 0)
+        {
+            lineList.Add(new FormattedLine());
+            lineList.Add(new FormattedLine("{Wonders enabled}:"));
+            foreach (var wonder in wonders)
+                lineList.Add(new FormattedLine(wonder.Name.Tr(hideIcons: true) + " (" + BuildingDescriptions.GetShortDescription(wonder, uniqueInclusionFilter: technology.UniqueIsNotRequirementForThisTech) + ")", link: wonder.MakeLink()));
+        }
+
+        if (regularBuildings.Count != 0)
+        {
+            lineList.Add(new FormattedLine());
+            lineList.Add(new FormattedLine("{Buildings enabled}:"));
+            foreach (var building in regularBuildings)
+            {
+                var text = building.Name.Tr(hideIcons: true) + " (" + BuildingDescriptions.GetShortDescription(building, uniqueInclusionFilter: technology.UniqueIsNotRequirementForThisTech) + ")";
+                lineList.Add(new FormattedLine(text, padding: 15f, link: building.MakeLink()));
+            }
+        }
 
         var obsoletedObjects = GetObsoletedObjects(name, ruleset, null, context).ToList();
         if (obsoletedObjects.Count != 0)
@@ -180,7 +215,6 @@ public static class TechnologyDescriptions
     /// nuclear weapons and religion settings, and without those expressly hidden from Civilopedia.
     /// </summary>
     // Used for Civilopedia, Alert and Picker, so if any of these decide to ignore the "Will not be displayed in Civilopedia" unique this needs refactoring
-    // Used by the T129 sections only
     internal static IEnumerable<Building> GetEnabledBuildings(string techName, Ruleset ruleset, Civilization? civInfo, CivilopediaContext? context = null) =>
         GetFilteredBuildings(ruleset, civInfo, context, it => ((IHasUniques)it).RequiredTechs().Contains(techName));
 

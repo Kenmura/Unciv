@@ -14,7 +14,7 @@ namespace Unciv.Core.Tests.UI.Civilopedia;
 
 /// <summary>
 /// T097: BaseUnit, Nation, Era and Technology descriptions (BaseUnitDescriptions.kt, NationDescriptions.kt, TechnologyDescriptions.kt).
-/// No Kotlin fixtures exist; the expected values are derived by hand from the Kotlin source. The Building/Improvement sections are T129.
+/// No Kotlin fixtures exist; the expected values are derived by hand from the Kotlin source.
 /// </summary>
 public class ObjectDescriptionsCTests
 {
