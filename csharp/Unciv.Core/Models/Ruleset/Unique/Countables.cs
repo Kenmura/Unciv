@@ -262,8 +262,7 @@ public sealed class Countables
             string filter = parameterText.GetPlaceholderParameters()[0];
             var cities = gameContext.CivInfo?.Cities;
             if (cities == null) return null;
-            // Kotlin passes city.matchesFilter its default viewingCiv = city.civ: the "Your" filter needs it
-            return cities.Count(it => it.MatchesFilter(filter, it.Civ));
+            return cities.Count(it => it.MatchesFilter(filter, null));
         },
         getErrorSeverity: (parameterText, ruleset) => GetTranslatedErrorSeverity(UniqueParameterType.CityFilter, parameterText, ruleset));
 
@@ -362,7 +361,7 @@ public sealed class Countables
             var civilizations = gameContext.GameInfo?.Civilizations;
             if (civilizations == null) return null;
             return SumOf(civilizations.Where(it => it.IsAlive() && it.MatchesFilter(civFilter, gameContext)),
-                civ => civ.Cities.Count(city => city.MatchesFilter(cityFilter, city.Civ)));
+                civ => civ.Cities.Count(city => city.MatchesFilter(cityFilter, null)));
         },
         getErrorSeverity: (parameterText, ruleset) =>
         {

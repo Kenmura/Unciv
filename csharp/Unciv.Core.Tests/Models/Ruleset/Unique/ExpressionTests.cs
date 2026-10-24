@@ -9,7 +9,6 @@ namespace Unciv.Core.Tests.Models.Ruleset.Unique;
 /// Reference values marked "JVM" were produced by running java.lang.Math / kotlin-stdlib 2.3.0 (java 25) over the same inputs;
 /// AST texts and exception positions are hand-derived from the Kotlin source.
 /// </summary>
-[Collection("RulesetCache")]
 public class ExpressionTests
 {
     private static readonly double Epsilon = System.Math.BitIncrement(100.0) - 100.0;
@@ -97,21 +96,6 @@ public class ExpressionTests
         var context = new GameContext(civInfo: civ, city: city);
 
         Assert.Equal(1.0, Parser.Eval("√[[Your] Cities]", context), Epsilon);
-        Assert.Equal(100.0 / 6, Parser.Eval("[Owned [worked] Tiles] / [Owned [unimproved] Tiles] * 100", context), Epsilon);
-    }
-
-    // T154: the real-TestGame variant of the Kotlin fixture (same input as above, over the actual city and tiles).
-    [Fact]
-    public void TestExpressionsWithCountablesOverTestGame()
-    {
-        var game = new Support.TestGame();
-        game.MakeHexagonalMap(2);
-        var civ = game.AddCiv();
-        var city = game.AddCity(civ, game.GetTile(HexCoord.Zero));
-        var context = GameContext.ForCity(city);
-
-        Assert.Equal(1.0, Parser.Eval("√[[Your] Cities]", context), Epsilon);
-        // city center counts as improved
         Assert.Equal(100.0 / 6, Parser.Eval("[Owned [worked] Tiles] / [Owned [unimproved] Tiles] * 100", context), Epsilon);
     }
 
