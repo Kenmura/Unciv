@@ -627,13 +627,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
 
 ### T077 MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T075
 - Source: core/src/com/unciv/logic/map/mapgenerator/resourceplacement/*.kt
 - Fixtures: tests/src/com/unciv/logic/map/ResourceDiversityTest.kt
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/ResourcePlacement/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
-- Claimed:
+- Claimed: 2026-10-24T10:42Z
 - Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
 
 ### Planned (not yet ticketed)
