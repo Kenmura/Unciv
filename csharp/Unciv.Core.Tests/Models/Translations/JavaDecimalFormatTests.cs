@@ -89,4 +89,21 @@ public class JavaDecimalFormatTests
     [InlineData("German", 1234.5678, "1.234,568")]
     public void FractionsRoundHalfEven(string language, double value, string expected) =>
         Assert.Equal(expected, value.Tr(language));
+
+    [Theory]
+    [InlineData(0.05, "0.1")]
+    [InlineData(0.95, "0.9")]
+    [InlineData(0.96, "1")]
+    [InlineData(-0.0, "-0")]
+    [InlineData(12345.67, "12345.7")]
+    public void ConfiguredFormatUsesOneFractionDigitAndNoGrouping(double value, string expected) =>
+        Assert.Equal(expected, TranslationCache.GetNumberFormatForLanguage("English").Format(value, 1, false));
+
+    [Fact]
+    public void LongFormatHonoursGroupingFlag()
+    {
+        var format = TranslationCache.GetNumberFormatForLanguage("English");
+        Assert.Equal("1,234,567", format.Format(1234567L, true));
+        Assert.Equal("1234567", format.Format(1234567L, false));
+    }
 }
