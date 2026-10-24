@@ -876,11 +876,12 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
     - **Pragmatist:** Single-source-of-truth embedding directly from `../migration/ai-spec/data/*.tsv` avoids asset duplication; clean, minimal surface area. Gate (17/17) and Standard checks (701/701) passed.
 
 ### A002 Leader flavor system & Grand Strategy evaluation
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: A001, T010, T021
 - Source: `csharp/migration/ai-spec/SPEC.md` §2, §3 (`evaluateGrandStrategy`)
 - Deliverables: `csharp/Unciv.Core/AI/GrandStrategy/` (`LeaderPersonalityFlavors`, `GrandStrategy`, `GrandStrategyEvaluator`), tests
 - Gate: `dotnet test --filter FullyQualifiedName~GrandStrategyTests`
+- Claimed: 2026-10-24T03:23:22Z
 - Notes: Evaluates 4 grand strategies (Conquest, Culture, UN, Spaceship). Preserves dot product flavor scoring, 10-turn lock (`AI_GRAND_STRATEGY_NUM_TURNS_STRATEGY_MUST_BE_ACTIVE`), hysteresis (`AI_GRAND_STRATEGY_CURRENT_STRATEGY_WEIGHT = 50`), rival-chasing penalty, and RNG noise using `GameRandom`.
 
 ### A003 Victory scorers (BNW)
