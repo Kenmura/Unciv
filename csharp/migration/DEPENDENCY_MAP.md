@@ -88,7 +88,6 @@ flowchart TD
     T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
     T131["T131<br/>Hardening: T063 review follow-ups (CityConstructions test ga..."]
     T132["T132<br/>T097 review follow-ups: game context for Technology unit/obs..."]
-    T133["T133<br/>Retype Civilization.Units to UnitManager, drop IUnitManager ..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -369,7 +368,6 @@ flowchart TD
   class T130 ready
   class T131 ready
   class T132 ready
-  class T133 review
 ```
 
 ## Incomplete tickets
@@ -432,4 +430,3 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
-| T133 | Needs-Review [Antigravity] | T066 | 0 | Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager |
