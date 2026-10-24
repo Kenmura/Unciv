@@ -146,8 +146,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ran Gate (`~Json`, 25 tests) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 217/217. Depends on T006's `KotlinMath` (published, Needs-Review).
 
 ### T010 Seeded deterministic RNG
-- State: Needs-Review [Antigravity]
-- Claimed: 2026-10-24T01:15:20Z
+- State: In-Review [Claude]
+- Claimed: 2026-10-24T01:19:47Z
 - Depends: none
 - Source: kotlin.random.Random (XorWow, as used via `Random(seed)` across core/src, 29 import sites), plus the one `java.util.Random` use (grep it)
 - Fixtures: none – generate golden sequences by running Kotlin `Random(seed)` for several seeds and calls (`nextInt`, `nextInt(bound)`, `nextInt(range)`, `nextFloat`, `nextDouble`, `nextBoolean`)
