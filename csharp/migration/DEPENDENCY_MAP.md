@@ -346,8 +346,8 @@ flowchart TD
   class T059 done
   class T060 done
   class T061 prog
-  class T062 ready
-  class T063 waiting
+  class T062 prog
+  class T063 ondeck
   class T064 waiting
   class T065 ready
   class T066 waiting
@@ -375,8 +375,8 @@ flowchart TD
   class T093 waiting
   class T094 waiting
   class T095 done
-  class T096 waiting
-  class T097 waiting
+  class T096 ondeck
+  class T097 ondeck
   class T098 done
   class T099 waiting
   class T100 waiting
@@ -397,13 +397,15 @@ flowchart TD
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T065 | **Ready to start** | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
-| T062 | **Ready to start** | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
 | T112 | **Ready to start** | T060 | 0 | Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype |
+| T063 | **On deck** (after T062) | T060, T062 | 36 | CityConstructions |
+| T097 | **On deck** (after T062) | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
+| T096 | **On deck** (after T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T066 | Available (waiting on T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T061 | In-Progress [Claude] | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
+| T062 | In-Progress [Claude] | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
-| T063 | Available (waiting on T062) | T060, T062 | 36 | CityConstructions |
 | T064 | Available (waiting on T061, T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T068 | Available (waiting on T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | Available (waiting on T065, T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
@@ -432,7 +434,6 @@ flowchart TD
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T072 | Available (waiting on T035, T052, T062, T063, T064, T067, T068, T069, T071) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | T094 | Available (waiting on T088, T090, T091, T092, T078, T083, T035) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
-| T097 | Available (waiting on T062) | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
 | T101 | Available (waiting on T099, T094, T071) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
@@ -448,7 +449,6 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
-| T096 | Available (waiting on T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |

@@ -531,13 +531,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T060: City.Population/Expansion/Religion are lateinit-style properties typed ICityPopulationManager/ICityExpansionManager/ICityReligionManager (CitySeams.cs, CivilizationSeams.cs). Implement them, retype the City properties and replace the lateinit by Kotlin's initializers, drop seam-only members (e.g. ICityPopulationManager.City/GetPopulationFilterAmount stay as real members). City.ResetSpecialistsControl takes the UncivGame settings as parameters (autoAssignSpecialistsInNewCities, localUserId); CityFounder passes them. Civilization.addCity (TODO(T061) in Civilization.cs) is yours too.
 
 ### T062 CityStats and GreatPersonPointsBreakdown
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T060, T058
 - Source: core/src/com/unciv/logic/city/CityStats.kt, GreatPersonPointsBreakdown.kt
 - Fixtures: stat-related cases in tests/src/com/unciv/logic/city/CityTest.kt (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/City/CityStats.cs, GreatPersonPointsBreakdown.cs, tests (+ retype City.ICityStats)
 - Gate: `dotnet test --filter FullyQualifiedName~CityStatsTests`
-- Claimed:
+- Claimed: 2026-10-24T12:00Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~830 LOC, Float/Int mixing everywhere: preserve exact evaluation order and rounding (half-up helper, T010-era KotlinMath). Also provides what `Countables` tests (stat-per-turn countables) deferred by T028 need.
   - From T060: City.GetGreatPersonPoints() delegates to ICityStats.GetGreatPersonPoints() (seam member); once GreatPersonPointsBreakdown exists make City.GetGreatPersonPoints call GreatPersonPointsBreakdown(this).Sum(), drop the seam member, and add City.GetGreatPersonPercentageBonus (Kotlin getGreatPersonPercentageBonus, deferred from T060). Retype City.CityStats (ICityStats) to CityStats and construct it as CityStats(this).
 
