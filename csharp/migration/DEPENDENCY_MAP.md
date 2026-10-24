@@ -87,6 +87,7 @@ flowchart TD
     T124["T124<br/>Hardening: CityStats test coverage gaps from T062 review"]
     T125["T125<br/>Policy: harden NullForgivingTests scanner (interpolation hol..."]
     T126["T126<br/>PromotionTree port (IPromotionTree seam, CityConstructions s..."]
+    T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -279,6 +280,10 @@ flowchart TD
   T035 --> T115
   T063 --> T126
   T066 --> T126
+  T061 --> T127
+  T063 --> T127
+  T065 --> T127
+  T120 --> T127
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -394,6 +399,7 @@ flowchart TD
   class T124 ready
   class T125 ready
   class T126 waiting
+  class T127 ondeck
 ```
 
 ## Incomplete tickets
@@ -410,11 +416,12 @@ flowchart TD
 | T064 | **On deck** (after T061, T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
-| T065 | In-Progress [Claude] | T055, T056, T060 | 49 | MapUnit core: MapUnit, MapUnitCache |
-| T061 | In-Progress [Claude] | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
+| T127 | **On deck** (after T061, T063, T065, T120) | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
+| T065 | In-Progress [Claude] | T055, T056, T060 | 50 | MapUnit core: MapUnit, MapUnitCache |
+| T061 | In-Progress [Claude] | T060 | 43 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
-| T063 | In-Progress [Claude] | T060, T062 | 37 | CityConstructions |
+| T063 | In-Progress [Claude] | T060, T062 | 38 | CityConstructions |
 | T068 | Available (waiting on T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | Available (waiting on T065, T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
@@ -448,6 +455,7 @@ flowchart TD
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
+| T120 | In-Review [Antigravity] | none | 1 | Policy: size ratchet - maximum file length and method length with a shrink-only baseline |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -459,6 +467,5 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
-| T120 | In-Review [Antigravity] | none | 0 | Policy: size ratchet - maximum file length and method length with a shrink-only baseline |
 | T121 | Needs-Review [Claude] | none | 0 | Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline |
 | T126 | Available (waiting on T063, T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |

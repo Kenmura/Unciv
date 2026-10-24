@@ -1281,6 +1281,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Added by T063: CityConstructions.CompleteConstruction builds PromotionTree(unit) for saved promotions; its collator/translation sort needs a headless equivalent.
 
+### T127 Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land
+- State: Available
+- Depends: T061, T063, T065, T120
+- Source:
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Policy/SizeRatchetBaseline.txt
+- Gate: dotnet test --filter FullyQualifiedName~SizeRatchetTests
+- Claimed:
+- Notes: Follow-up of T120: Tile.cs (1650) and Civilization.cs (1600) caps were deliberately generous; set them to actual size (or delete the entries if <=1500).
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
