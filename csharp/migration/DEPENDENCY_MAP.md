@@ -345,7 +345,7 @@ flowchart TD
   class T057 done
   class T059 done
   class T060 done
-  class T061 ready
+  class T061 prog
   class T062 ready
   class T063 waiting
   class T064 waiting
@@ -397,10 +397,10 @@ flowchart TD
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T065 | **Ready to start** | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
-| T061 | **Ready to start** | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T062 | **Ready to start** | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
 | T112 | **Ready to start** | T060 | 0 | Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype |
 | T066 | Available (waiting on T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
+| T061 | In-Progress [Claude] | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T063 | Available (waiting on T062) | T060, T062 | 36 | CityConstructions |

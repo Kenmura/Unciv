@@ -518,13 +518,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review round 1 fixes: [JsonInclude] on foundingCiv/cityAIFocus/flagsCountdown (+ metadata test), per-group double sums in StatPercentFromObjectToResource, unchecked Int sum in GetAvailableResourceAmount, T065 note. Trailing-default overloads of forEach*Unique left as callers pass State (seam simplification).
 
 ### T061 City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T060
 - Source: core/src/com/unciv/logic/city/managers/CityPopulationManager.kt, CityExpansionManager.kt, CityReligionManager.kt, CityFounder.kt
 - Fixtures: tests/src/com/unciv/logic/city/managers/* (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/City/Managers/*.cs, tests (+ retype City seams)
 - Gate: `dotnet test --filter FullyQualifiedName~CityManagerTests`
-- Claimed:
+- Claimed: 2026-10-24T12:00Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC. Implements the ICityPopulationManager/ICityExpansionManager/ICityReligionManager seams from T060. `CityFounder` is required by TestGame (T035). Tile-ownership and border expansion iteration order is game state.
   - Backlog audit: CityPopulationManager's Automation calls (autoAssignPopulation ranking): TODO(T087).
   - T057 defined ICityReligionManager (AddPressure, GetMajorityReligion returning Religion?, GetFollowersOf, IsProtectedByInquisitor, ReligionThisIsTheHolyCityOf): CityReligionManager implements it, then retype City.religion and delete the seam (ReligionManager/Spy use it through ICityState.Religion).
