@@ -604,13 +604,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - REVIEW FIXES [Claude]: Both Antigravity findings (T119 null-forgiving in MapUnit.cs/MapUnitCache.cs; T121 coupling 13>12 in MapUnit.cs/City.cs) were already fixed by commit 1751e8209 'fix null-forgiving and coupling ratchet' on the branch, which post-dates the review snapshot. Verified on rebased tip: grep finds no bare '!' in either file, Policy tests (62) pass incl. CouplingRatchetTests, dotnet build -warnaserror clean, format clean, 2031 tests pass. No further code changes needed. Auditor/Adversary/Pragmatist parity findings: none.
 
 ### T066 MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T065, T060
 - Source: core/src/com/unciv/logic/map/mapunit/UnitPromotions.kt, UnitTurnManager.kt, UnitUpgradeManager.kt, civilization/managers/UnitManager.kt
 - Fixtures: tests/src/com/unciv/logic/map/UpgradeTests.kt (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapUnit/*.cs, csharp/Unciv.Core/Logic/Civilization/Managers/UnitManager.cs, tests (+ retype MapUnit/Civilization seams)
 - Gate: `dotnet test --filter FullyQualifiedName~UnitManagerTests`
-- Claimed:
+- Claimed: 2026-10-24T12:33Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~870 LOC. UnitManager owns `civ.units`; its placement logic (`placeUnitNearTile`, `addUnit`) is what CityConstructions/CityFounder seams call. Unit iteration order is game state.
   - From T060: City.UnitToPromotions is JavaHashMap<string, IUnitPromotions> (marker interface in CitySeams.cs); make UnitPromotions implement/replace it. City.GetGarrison and DestroyCity reach units through the IMapUnitState / IGameContextUnit seams (cast from Tile.MilitaryUnit/AirUnits), to be retyped with MapUnit (T065).
 
