@@ -1824,6 +1824,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~GreatPersonSelectionAutomation`
 - Claimed: 2026-10-24T23:46Z
 - Notes: Split from T152.
+  - Ported both automation cases into GreatPersonSelectionAutomationFixtureTests (GameView(...).CivView wrapper via engine GameView); shared CreateScenario made internal in GreatPersonSelectionFixtureTests. No parity bug found. Also: MarkerOwnershipTests.EverySeamFileHasAnOpenOwner was failing on the tip (T094 Done left CityStateSeams/TurnManagerSeams with no open owner); named T104 (final seam sweep) as owner in both headers.
 
 ### T158 ConstructionAutomation (split from T091)
 - State: Done
