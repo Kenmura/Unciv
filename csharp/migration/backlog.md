@@ -958,7 +958,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review PASS (non-blocking, unfixed): (1) FormattedLine name->category static cache is two unsynchronised statics (same window as Kotlin, single-threaded there) and ignores GameInfo changes; (2) EngineColors.ValueOf throws FormatException for non-ASCII Unicode digits in a colour ("#٣٣٣", IsHex uses char.IsDigit like Kotlin, Java parseInt accepts them); fix when a hostile-mod hardening pass happens (catch in ParseColor or hand-parse). Also no JSON writer support for NaN ImageSize.
 
 ### T096 Civilopedia text model B: Building, Improvement, Resource, Tile descriptions
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T095, T062, T054
 - Source: core/src/com/unciv/ui/objectdescriptions/BuildingDescriptions.kt, ImprovementDescriptions.kt, ResourceDescriptions.kt, TileDescription.kt
 - Fixtures: none - generate golden values
