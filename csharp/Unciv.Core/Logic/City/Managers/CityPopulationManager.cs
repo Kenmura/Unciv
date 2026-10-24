@@ -36,7 +36,8 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
     public int Population { get; internal set; } = 1;
     public int FoodStored { get; set; }
 
-    public Counter<string> SpecialistAllocations { get; set; } = new();
+    [JsonInclude]
+    public Counter<string> SpecialistAllocations { get; private set; } = new();
 
     /// <summary>Seam for the not yet ported <c>Automation</c> (T087): tests install a stand-in. Not serialized, not cloned.</summary>
     [JsonIgnore]
@@ -221,7 +222,7 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
                 foreach (var job in maxSpecialists.Where(it => SpecialistAllocations[it.Key] < it.Value).Select(it => it.Key))
                 {
                     var rank = Automation.RankSpecialist(job, City);
-                    if (bestJob == null || rank > valueBestSpecialist)
+                    if (bestJob == null || AStar.JavaFloatCompare(valueBestSpecialist, rank) < 0)
                     {
                         bestJob = job;
                         valueBestSpecialist = rank;
@@ -280,7 +281,7 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
             {
                 var rank = Automation.RankTileForCityWork(tile, City) +
                     (tile.IsLocked() ? 10 : 0);
-                if (worstWorkedTile == null || rank < worstTileRank)
+                if (worstWorkedTile == null || AStar.JavaFloatCompare(worstTileRank, rank) > 0)
                 {
                     worstWorkedTile = tile;
                     worstTileRank = rank;
@@ -328,7 +329,7 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
         foreach (var key in SpecialistAllocations.Keys.ToList())
         {
             var rank = Automation.RankSpecialist(key, City);
-            if (worst == null || rank < worstRank)
+            if (worst == null || AStar.JavaFloatCompare(worstRank, rank) > 0)
             {
                 worst = key;
                 worstRank = rank;

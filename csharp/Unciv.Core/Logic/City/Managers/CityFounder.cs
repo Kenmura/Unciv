@@ -100,7 +100,7 @@ public class CityFounder
             new GameContext(civInfo, city, unit), _ => true, false,
             unique =>
             {
-                UniqueTriggerActivation.TriggerUnique(unique, civInfo, city, triggerNotificationText: "due to founding a city");
+                UniqueTriggerActivation.TriggerUnique(unique, civInfo, city, unit, triggerNotificationText: "due to founding a city");
             }
         );
         if (unit != null)
