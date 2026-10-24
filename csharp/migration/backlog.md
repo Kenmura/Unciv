@@ -1430,7 +1430,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From T066 review. Also: T126 must delete the virtual UnitPromotions.CreatePromotionTree and the TestUnitPromotions test subclass.
 
 ### T136 T064 review follow-up: cover uncovered CityConquestFunctions/CityTurnManager branches
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T064
 - Source: core/src/com/unciv/logic/city/managers/CityTurnManager.kt, CityConquestFunctions.kt
 - Fixtures: none
