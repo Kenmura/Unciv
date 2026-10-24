@@ -868,13 +868,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~885 LOC. See T084 for why Views exist. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T086 TradeLogic
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T059, T068, T057
 - Source: core/src/com/unciv/logic/trade/TradeLogic.kt
 - Fixtures: none - generate golden values (trade acceptance, offer filtering)
 - Deliverables: csharp/Unciv.Core/Logic/Trade/TradeLogic.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~TradeLogicTests`
-- Claimed:
+- Claimed: 2026-10-24T15:52Z
 - Notes: Created by the backlog audit (TradeLogic was 'Planned, after T068'). ~290 LOC. TradeOfferType.kt is ported by T059 together with TradeOffer. TradeEvaluation (T089) is separate because it needs the diplomacy automation (T088).
   - DiplomacyManager.MakePeaceOneSide builds a plain Trade instead of TradeLogic(...).currentTrade; switch it to TradeLogic when this lands (optional, behaviour is identical).
 
