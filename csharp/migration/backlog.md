@@ -1390,7 +1390,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From the T063 adversarial review (non-blocking findings).
 
 ### T132 T097 review follow-ups: game context for Technology unit/obsoleted filters, BaseUnit.GetDescription ruleset
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T097
 - Source: csharp/Unciv.Core/UI/ObjectDescriptions/TechnologyDescriptions.cs, BaseUnitDescriptions.cs
 - Fixtures: none
