@@ -40,6 +40,9 @@ public sealed class GameClientState
     /// <summary>The A* attack pathing of <c>City.getLandAttackPath</c> / <c>getAmphibiousAttackPath</c> (TODO(T093): set by PathingMap). Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
     public Automation.Civilization.ICityAttackPathing? AttackPathing { get; set; }
 
+    /// <summary>The unported WorkerAutomation that CivilianUnitAutomation calls (TODO(T092): set by its port). Null means "not ported": the calls are skipped.</summary>
+    public Automation.Unit.IUnitAutomationSeams? UnitAutomationSeams { get; set; }
+
     /// <summary><c>worldScreen?.autoPlay</c>: null when there is no client (headless simulation).</summary>
     public IAutoPlay? AutoPlay { get; set; }
 

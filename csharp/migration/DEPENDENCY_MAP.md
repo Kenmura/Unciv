@@ -45,6 +45,7 @@ flowchart TD
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
     T156["T156<br/>Unit automation: UnitAutomation (all but tryUpgradeUnit)"]
     T157["T157<br/>Deferred automation fixture: GreatPersonSelectionTest automa..."]
+    T159["T159<br/>UnitAutomation.cs coverage: raise line coverage back after T..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -140,7 +141,7 @@ flowchart TD
   class T088 done
   class T089 done
   class T090 done
-  class T091 prog
+  class T091 review
   class T092 ondeck
   class T093 waiting
   class T094 waiting
@@ -158,6 +159,7 @@ flowchart TD
   class T154 waiting
   class T156 done
   class T157 waiting
+  class T159 ready
 ```
 
 ## Remaining tickets over time
@@ -175,7 +177,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 19]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 20]
     line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 1]
 ```
 
@@ -183,8 +185,9 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T159 | **Ready to start** | T156 | 0 | UnitAutomation.cs coverage: raise line coverage back after T156 grew the file (baseline was T090's 100% of a stub) |
 | T092 | **On deck** (after T091) | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
-| T091 | In-Progress [Claude] | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation |
+| T091 | Needs-Review [Claude] | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | T094 | Available (waiting on T091, T092) | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |

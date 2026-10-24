@@ -13,7 +13,7 @@ using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.Logic.Automation.Unit;
 
 // Ported from core/src/com/unciv/logic/automation/unit/UnitAutomation.kt (T090/T156).
-// - Calls to CivilianUnitAutomation (T091) and NextTurnAutomation (T094) are TODO(T091)/TODO(T094) seams naming their owner.
+// - Calls to NextTurnAutomation (T094) are TODO(T094) seams naming their owner.
 // - timeThis profiling dropped (T027 policy).
 public static partial class UnitAutomation
 {
@@ -32,7 +32,7 @@ public static partial class UnitAutomation
 
         if (unitView.IsCivilian())
         {
-            CivilianUnitAutomationSeams.AutomateCivilianUnit(unitView, GetDangerousTiles(unitView), cache);
+            CivilianUnitAutomation.AutomateCivilianUnit(unitView, GetDangerousTiles(unitView), cache);
             return;
         }
 
@@ -49,7 +49,7 @@ public static partial class UnitAutomation
                     unitView.HasUnique(UniqueType.ReligiousUnit) || unitView.HasUnique(UniqueType.CreateWaterImprovements))
             && !unit.Civ.IsAtWar())
         {
-            CivilianUnitAutomationSeams.AutomateCivilianUnit(unitView, GetDangerousTiles(unitView), cache);
+            CivilianUnitAutomation.AutomateCivilianUnit(unitView, GetDangerousTiles(unitView), cache);
             return;
         }
 

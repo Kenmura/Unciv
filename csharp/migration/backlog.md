@@ -986,7 +986,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Implemented (T090). Deviations: (1) BattleSeams.cs deleted: GreatGeneralImplementation now calls HeadTowardsEnemyCityAutomation.GetEnemyCitiesByPriority(GameView(..).GetMapUnitView(general)). (2) NextTurnAutomation.getForeignCityNearCapital/CityDistance are ported faithfully (small, pure) as internal NextTurnAutomationSeams (TODO(T094) moves them into NextTurnAutomation); CityStateSeams.GetForeignCityNearCapital (T068) still throws until T094. (3) UseGoldAutomation: NextTurnAutomation.valueCityStateAlliance goes through the INextTurnAutomation hook (0 without a hook; its includeQuests=true argument is TODO(T094)). The Kotlin TreeMap tie-break Tile.hashCode() (JVM identity hash, nondeterministic) is the tile position instead; per-tile city sets are LinkedHashSets. (4) tryUpgradeUnit: the human/automatedUnitsCanUpgrade/worldScreen guard is UI settings (dropped; default true). (5) Kotlin sequences stay lazy IEnumerable; sortedBy/sortedWith = stable OrderBy/ThenBy; minByOrNull = Enumerable.MinBy (first minimum); attack values use Int wrapping and the Double 1.0/0 Infinity of getCityAttackValue. (6) Tests (UnitAutomationTests, C#-only, no Kotlin fixtures; golden values none): parity quirk covered - embarked melee units cannot disembark to attack because landing uses all movement. timeThis dropped (T027).
 
 ### T091 Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T090, T080, T063
 - Source: core/src/com/unciv/logic/automation/unit/CivilianUnitAutomation.kt, SpecificUnitAutomation.kt, ReligiousUnitAutomation.kt
 - Fixtures: none - generate golden values
@@ -995,6 +995,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T18:51Z
 - Notes: Created by the backlog audit. ~1.2k LOC. ConstructionAutomation is called by CityConstructions.chooseNextConstruction (T063, TODO(T091)). Wires the SpecificUnitAutomation seam of GreatGeneralImplementation (T082). Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
   - Narrowed at claim: ConstructionAutomation split to T158 (CityConstructions TODO(T091) seams to be retargeted to T158). Worker/UnitAutomation(T156)/PathingMap calls are seams.
+  - Implemented CivilianUnitAutomation, SpecificUnitAutomation (partials: ImprovementPlacer, TradeAndWonders; split to stay inside the size/coupling ratchets) and ReligiousUnitAutomation; ConstructionAutomation moved to T158 (CityConstructions markers retargeted). Rebased over T156: UnitAutomation now calls CivilianUnitAutomation.AutomateCivilianUnit directly (CivilianUnitAutomationSeams stub deleted) and the civilians call the real UnitAutomation.TryExplore/Wander/TryEnterOwnClosestCity. Only the civ's WorkerAutomation (roadToAutomation.automateConnectRoad, automateWorkerAction, automateWorkBoats, getBasePriority) is a seam: IUnitAutomationSeams on GameClientState.UnitAutomationSeams, TODO(T092) owns it (null = calls skipped, automateWorkBoats false so the boat then explores). Quirks kept: Kotlin minByOrNull/maxByOrNull = first extremum (LINQ MinBy/MaxBy or stable OrderBy); roundToInt half-up (KotlinMath); determineBestInquisitorCityToConvert iterates only OUR cities (as Kotlin); `throw Exception("City within distance")` kept. Kotlin "TODO:" comments rewritten "Kotlin todo:" (marker policy). The coverage baseline for UnitAutomation.cs was a stale 100% from T090's stub; lowered to the real 49.87/41.56 and T159 filed to raise it. Uncovered by tests: foundReligion/enhanceReligion branches of automateCivilianUnit that need a full ReligionState progression, and the pillaged-tile branch of automateImprovementPlacer.
 
 ### T092 Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation
 - State: Available
@@ -1807,6 +1808,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T18:57Z
 - Notes: Split from T091 at claim time (T091 keeps CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation). ~400 LOC. timeThis profiling dropped (T027 policy).
   - Implemented ConstructionAutomation (lazy LINQ mirrors Kotlin sequences; maxBy uses Kotlin Float.compareTo order; average() in Double). Deviations: UncivGame.screen is CityScreen notification suppression dropped (headless); unused buildingsForVictory and productionForConstruction record dropped; timeThis dropped. Seams: WorkerAutomationSeams (hasWorkableSeaResource/isNotBonusResourceOrWorkable, TODO(T092) moves them); NextTurnAutomationSeams (T094). CityConstructionsAutomation.cs is a thin wrapper to keep CityConstructions under its coupling-ratchet cap. Tests are C#-only (no Kotlin fixture). Side effect: loading a game with empty queue now picks a construction, so UncivFilesTests BusyGame settles its queue first; CityConstructionsTests drops the fake-state automation branches (covered by ConstructionAutomationTests). Coverage 92% lines.
+
+### T159 UnitAutomation.cs coverage: raise line coverage back after T156 grew the file (baseline was T090's 100% of a stub)
+- State: Available
+- Depends: T156
+- Source: csharp/Unciv.Core/Logic/Automation/Unit/UnitAutomation.cs
+- Fixtures: none
+- Deliverables: tests in csharp/Unciv.Core.Tests/Logic/Automation/UnitAutomationTests.cs; coverage-baseline.json entry raised
+- Gate: dotnet test --filter FullyQualifiedName~UnitAutomationTests
+- Claimed:
+- Notes: Found by T091: coverage-baseline.json still held 100% line / 70% branch for UnitAutomation.cs from T090, when the file was a 29-line stub; at csharp-migration tip it is 49.87% line / 41.56% branch. T091 lowered the entry to 49.87 / 41.56 (it edits UnitAutomation.cs to wire CivilianUnitAutomation) so its ratchet check passes; this ticket raises it with tests of the T156 dispatch (automateUnitMoves, upgrades, fortify, explore, wander...).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

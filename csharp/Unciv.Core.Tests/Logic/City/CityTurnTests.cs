@@ -33,7 +33,7 @@ public sealed class CityTurnTests
     private static CityManagerTests.World NewWorld(bool human = true, List<string>? nationUniques = null)
     {
         var w = CityManagerTests.NewWorld(human, nationUniques: nationUniques);
-        w.Constructions.ChooseNextConstructionIsNoOp = true; // an empty queue would ask the (unported, T091) construction automation
+        w.Constructions.ChooseNextConstructionIsNoOp = true; // an empty queue would ask the (T158) construction automation
         w.Stats.ResetCounters();
         return w;
     }
