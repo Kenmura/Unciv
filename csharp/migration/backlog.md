@@ -407,13 +407,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (Antigravity): Pass. Verified `LocaleCode`, `BaseRuleset`, `Player`, `PlayerType`, `GameParameters`, `ModCategory`, `Constants`, `LinkedHashSet`, and `MetadataTests` against Kotlin sources: all 54 `LocaleCode` entries and OpenJDK 17+ `in` -> `id` fastlane folder mapping, `GameParameters` JSON field order and `ShowCivilizationStatsRaw` vs `ShowCivilizationStats` setter/fallback semantics, `Clone()` godMode reset, `ToString()` 6-mod limit, `ModCategory` topic-only equality/JVM hash, and `LinkedHashSet` insertion order + set equality. Re-ran Gate (`~MetadataTests`, 15/15 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
 
 ### T045 GameSetupInfo
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T021, T022
 - Source: core/src/com/unciv/models/metadata/GameSetupInfo.kt
 - Fixtures: none - generate golden values by running the Kotlin class
 - Deliverables: csharp/Unciv.Core/Models/Metadata/GameSetupInfo.cs, tests (add to MetadataTests or a GameSetupInfoTests class)
 - Gate: `dotnet test --filter FullyQualifiedName~GameSetupInfo`
-- Claimed: 2026-10-24T01:58:26Z
+- Claimed: 2026-10-24T02:09:42Z
 - Notes: Container of `GameParameters` and `MapParameters` with the two cloning constructors (from another setup; from a `GameInfo` when that exists: leave that constructor as `TODO(T0xx)` pointing at the GameInfo ticket). `mapFile` (FileHandle, transient) and `fromSettings` (reads `UncivGame.Current.settings.lastGameSetup`, applies QuickStart defaults: `shape = rectangular`, `worldWrap = true`, `espionageEnabled = true`) are client concerns; port the default-setup branch as a plain factory taking an optional difficulty if it is useful to headless tests.
   - Implementer notes (Antigravity): Ported `GameSetupInfo` in `Unciv.Models.Metadata`:
     - Properties `GameParameters`, `MapParameters`, transient `MapFile` (marked `[JsonIgnore]`).
