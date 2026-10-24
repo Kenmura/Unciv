@@ -1594,7 +1594,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented Fixtures/Map: FreshWaterFixtureTests (uses an equivalent strict-JSON map string; the Kotlin string is libGDX minimal JSON that MapSaver cannot read: T147), UpgradeFixtureTests, VisibilityFixtureTests (same 18 cases as TileMapTests over real TestGame), UnitFormationFixtureTests (13 of 16), TileImprovementConstructionFixtureTests (24 of 26). Kotlin runTestParcours replaced by collecting failures and one Assert. Deferred: UnitMovement/Pathfinding remainder (T145), Battle.attack escort cases (T146), startWorkingOnImprovement-dependent cases (T148). No engine bugs found by these fixtures.
 
 ### T142 Deferred TestGame fixtures: civilization directory and GameSerializationTests
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T072
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/** (QuestTests, DefensivePactTests, FreeBuildingTests, CityMovingTests, CapitalConnectionsFinderTests, GreatPersonSelectionTest, EspionageTests, diplomacy/*, managers/GoldenAgeManagerTest, ThreatManagerTests), GameSerializationTests.kt
@@ -1602,6 +1602,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
 - Claimed: 2026-10-24T17:45Z
 - Notes: Split from T072 at claim time. ThreatManagerTests needs ThreatManager (T087) so depend on it when claiming if still not Done. Same pattern as T072 city fixtures.
+  - Scope narrowed at claim: ported EspionageTests, FreeBuildingTests, DefensivePactTests, GoldenAgeManagerTest, CityMovingTests, CapitalConnectionsFinderTests, DiplomacyManagerTests (18 of 21 cases), GoldGiftingTests (9 of 14). ThreatManagerTests were already ported over TestGame by T087 (AutomationCoreTests.ThreatManager.cs). All pass unchanged against the engine, no bug found. Deferred: T149 (3 DiplomacyManagerTests conquest cases, need Battle T083), T150 (5 GoldGifting trade cases, need TradeEvaluation T089), T151 (QuestTests, GameSerializationTests, need JSON wiring T140), T152 (GreatPersonSelectionTest, UI/mock bound).
 
 ### T143 Port GlobalUniquesTests + deferred TestGame fixtures (split from T103)
 - State: Available
@@ -1662,6 +1663,46 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~MapFixtures
 - Claimed:
 - Notes: Split from T141: Tile.startWorkingOnImprovement/queueImprovement, TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource are ported in T139.
+
+### T149 Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases
+- State: Available
+- Depends: T142, T083
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/DiplomacyManagerTests.kt (should change opinions when liberating city / conquering city, liberating city-state keeps third-party influence and applies Civ5 liberator formula)
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/DiplomacyManagerConquestFixtureTests.cs
+- Gate: `dotnet test --filter FullyQualifiedName~Fixtures.Civilization`
+- Claimed:
+- Notes: Split from T142: PuppetCity/LiberateCity reach CityManagerSeams.ConquestNotPorted.DestroyIfDefeated (Battle, T083). Also retarget that seam if still unported.
+
+### T150 Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases
+- State: Available
+- Depends: T142, T089
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/GoldGiftingTests.kt (Excess gold from a trade become a gift; Can ask for 90 percent...; Gold gifted impact trade acceptability; Gold gifted uses pure gold multiplier constant; Gold gifted uses gold multiplier constant)
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/GoldGiftingTradeFixtureTests.cs
+- Gate: `dotnet test --filter FullyQualifiedName~Fixtures.Civilization`
+- Claimed:
+- Notes: Split from T142: TradeLogic.AcceptTrade calls TradeEvaluation.GetTradeAcceptability, which throws until T089 lands.
+
+### T151 Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests
+- State: Available
+- Depends: T142, T140
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/civilization/QuestTests.kt, tests/src/com/unciv/logic/GameSerializationTests.kt
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/QuestFixtureTests.cs, csharp/Unciv.Core.Tests/Fixtures/GameSerializationFixtureTests.cs
+- Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
+- Claimed:
+- Notes: Split from T142: QuestTests round-trip QuestManager through json(); GameSerializationTests need the full GameInfo save/load (T140). QuestTests also uses Barbarians.createNewCamp, headTowards, buyTile (check they are ported).
+
+### T152 Deferred civilization fixture: GreatPersonSelectionTest
+- State: Available
+- Depends: T142
+- Source: none (ports tests only)
+- Fixtures: tests/src/com/unciv/logic/civilization/GreatPersonSelectionTest.kt (8 cases; uses WorldScreen/NextTurnButton/AutoPlay UI and Mockito: port only the engine-level GreatPersonManager cases, mark the UI-bound cases Won't port in Notes)
+- Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/GreatPersonSelectionFixtureTests.cs
+- Gate: `dotnet test --filter FullyQualifiedName~Fixtures.Civilization`
+- Claimed:
+- Notes: Split from T142.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
