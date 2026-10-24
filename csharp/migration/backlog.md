@@ -213,7 +213,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified `COMMANDS.md` and `Unciv.Core/Commands/*`. The design cleanly separates pure `Validate` and deterministic `Apply`, keeps actor identity out of the untrusted payload, round-trips in-process `Submit` through the wire envelope to guarantee parity, faults the processor on unexpected `Apply` exceptions, and preserves lockstep capability via ordered `Replay` with contiguous sequence checking. Re-ran Gate (10/10 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 228/228 passed).
 
 ### T017 JVM hash codes and state-based randomness helpers
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T01:22:44Z
 - Depends: T010
 - Source: core/src/com/unciv/utils/Randomness.kt (`hashOf`, `withHash`, `pseudoRandomUuid`, rest of the file); `GameContext.stateBasedRandom` in core/src/com/unciv/models/ruleset/unique/GameContext.kt (only the formula; `GameContext.hashCode` ports with GameContext)
@@ -222,6 +222,10 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~JavaHashTests`
 - Notes: `string.GetHashCode` is banned (randomized per process); anything that hashes into game state must use these. Check `HexCoord` (data class: `31 * x + y`) and `Counter`/`Stats` hash against the JVM too, since `GameContext.hashCode` mixes tile positions and `currentMovement.hashCode()`.
 
+  - Implementer notes (Claude): `Utils/JavaHash.cs` (`HashCode` overloads: String over UTF-16 units, int, bool 1231/1237, long, float via `floatToIntBits` with NaN canonicalized and -0f distinct, double likewise), `Utils/Randomness.cs` (`WithHash`, `HashOf` (starts at 0, so `HashOf(a) == a`), `StateBasedRandom(caller, seed, stateHash)` = `Random(hashOf(caller.hashCode(), seed, stateHash))`, `PseudoRandomUuid(GameRandom)` returning `JavaUuid` (two longs, Java 8-4-4-4-12 formatting; `Guid` has another layout)). `HexCoord.GetHashCode` now overrides to the Kotlin data-class value `31 * x + y` (feeds `GameContext.hashCode`; also changes `Dictionary`/`HashSet` bucket order for HexCoord, which is fine because nothing may depend on hash order).
+  - Golden values: run on the JVM from the **installed Unciv.jar** (compiled `com.unciv.utils.RandomnessKt.hashOf/withHash/pseudoRandomUuid` and `com.unciv.logic.map.HexCoord.hashCode`) plus JDK `String/Long/Float/Double/Boolean.hashCode` and kotlin-stdlib 2.3.0 `Random`. The installed jar may not be the exact repo revision; the functions involved are tiny and agree with the repo sources (`Randomness.kt`, data class `HexCoord`).
+  - Not ported / for later: `SecureRandom` overload of `pseudoRandomUuid` (not deterministic); `GameContext.hashCode()` itself (ported with `GameContext`; it needs `JavaHash.HashCode(float)` for `currentMovement` and a JVM `Rectangle.hashCode` for `Region.rect`, which is not covered here); `InlineHexCoord` hash (value-class hash is the packed int, nothing uses it). Counter/Stats hashes do not feed `stateBasedRandom`.
+  - Ran Gate (`~JavaHashTests`, 45 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 276/276.
 
 ### T013 Style & analyzer baseline
 - State: Done
