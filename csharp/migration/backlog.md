@@ -1131,7 +1131,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit; the files above were named by no ticket. Decisions (conservative): GameSettings/GameSettingsMigrations/OverviewPersistableData are client settings (Non-goals #9); AlternatingStateManager and DurationSerializer are used only by multiplayer/chat UI popups (ui/popups/options, worldscreen/chat, status) so they fall under Non-goals #1; Timers (timeThis profiling) is dropped (T027 policy) and its few engine call sites carry no behaviour; the Kotlin test runner/benchmark/dev-UI files are JVM/libGDX harness code (TestGame is T035; BasicTests/NextTurnLatencyTest are benchmarks). If a later ticket finds engine logic in one of them, add a real ticket instead.
 
 ### T106 Deferred ruleset-object members (T030-T033 leftovers)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T063, T066, T052, T057, T062
 - Source: core/src/com/unciv/models/ruleset/tile/TileResource.kt, TileImprovement.kt, ResourceSupplyList.kt, core/src/com/unciv/models/ruleset/nation/Nation.kt, Era.kt (nation/ and tech/), tech/Technology.kt, core/src/com/unciv/models/ruleset/Victory.kt (Milestone), Belief.kt, Specialist.kt, unit/BaseUnit.kt, Building.kt, PerpetualConstruction.kt (only the members still unported)
 - Fixtures: tests/src/com/unciv/models/ruleset/VictoryAvailabilityTests.kt, VictoryMilestoneTests.kt (T057 lists them; do whichever T057 did not), tests/src/com/unciv/logic/map/CityStateTypeStartBiasTests.kt, tests/src/com/unciv/uniques/ResourceTests.kt
