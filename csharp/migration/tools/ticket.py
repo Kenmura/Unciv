@@ -302,6 +302,16 @@ def publish(origin=False):
         die("publish needs a clean worktree: commit your other changes first")
     for _ in range(5):
         r = git("rebase", BRANCH, check=False)
+        while r.returncode:
+            # DEPENDENCY_MAP.md is generated: when it is the only conflict, rebuild it from the merged backlog.
+            conflicted = git("diff", "--name-only", "--diff-filter=U", check=False).stdout.split()
+            if conflicted and all(Path(c).name == DEPMAP.name for c in conflicted):
+                refresh_map()
+                git("add", "--", str(DEPMAP))
+                r = subprocess.run(["git", "-C", str(HERE), "-c", "core.editor=true", "rebase", "--continue"],
+                                   capture_output=True, text=True, env={**os.environ, "GIT_EDITOR": "true"})
+                continue
+            break
         if r.returncode:
             git("rebase", "--abort", check=False)
             die(f"rebase onto {BRANCH} conflicted; resolve by hand (backlog.md: take {BRANCH}'s text, "
