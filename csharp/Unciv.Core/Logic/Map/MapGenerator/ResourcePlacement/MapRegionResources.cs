@@ -21,6 +21,12 @@ internal static class ResourcePlacementRandom
     internal static GameRandom ForShuffling(TileMap tileMap, string caller) =>
         new GameContext(gameInfo: tileMap.GameInfo).StateBasedRandom(caller + ".shuffled");
 
+    /// <summary>A Kotlin lazy Sequence pipeline: <paramref name="build"/> runs anew on every enumeration.</summary>
+    internal static IEnumerable<T> Deferred<T>(Func<IEnumerable<T>> build)
+    {
+        foreach (var item in build()) yield return item;
+    }
+
     /// <summary>Kotlin <c>Sequence.shuffled()</c>: lazy, and every enumeration shuffles anew.</summary>
     internal static IEnumerable<T> ShuffledSequence<T>(this IEnumerable<T> source, GameRandom random)
     {

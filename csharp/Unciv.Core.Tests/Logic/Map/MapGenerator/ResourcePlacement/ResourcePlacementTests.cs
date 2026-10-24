@@ -193,4 +193,49 @@ public class ResourcePlacementTests
         StrategicBonusResourcePlacementLogic.PlaceStrategicAndBonuses(b.Map, b.Regions, b.TileData);
         Assert.Equal(a.Map.Values.Select(it => it.Resource), b.Map.Values.Select(it => it.Resource));
     }
+
+    [Fact]
+    public void GeneratesNaturallyOnHonoursTemperatureAndHumidityRangesInclusively()
+    {
+        var scenario = MakeScenario();
+        var tile = scenario.Map.Values[0];
+        var resource = new TileResource
+        {
+            Name = "Ranged",
+            TerrainsCanBeFoundOn = ["Grassland"],
+            Uniques = ["Occurs at temperature between [-0.5] and [0.5] and humidity between [0.2] and [0.8]"],
+        };
+        tile.Temperature = null;
+        tile.Humidity = null;
+        Assert.True(resource.GeneratesNaturallyOn(tile)); // only checked during map generation
+        tile.Temperature = 0.5;
+        tile.Humidity = 0.2;
+        Assert.True(resource.GeneratesNaturallyOn(tile));
+        tile.Humidity = 0.1;
+        Assert.False(resource.GeneratesNaturallyOn(tile));
+        tile.Humidity = 0.5;
+        tile.Temperature = 0.6;
+        Assert.False(resource.GeneratesNaturallyOn(tile));
+    }
+
+    [Fact]
+    public void PlaceMajorDepositsUsesFallbackWeightingsAndTerrainFrequency()
+    {
+        var scenario = MakeScenario();
+        var terrain = scenario.Ruleset.Terrains["Grassland"];
+        var tiles = scenario.Map.Values.Take(60).ToList();
+
+        var withoutFallback = MapRegionResources.PlaceMajorDeposits(scenario.TileData, scenario.Ruleset, tiles, terrain, false, 2, 2);
+        Assert.Empty(withoutFallback); // no strategic resource carries a matching rule
+        var placed = MapRegionResources.PlaceMajorDeposits(scenario.TileData, scenario.Ruleset, tiles, terrain, true, 2, 2);
+        Assert.Equal(60 / 25 + 1, placed.Values.Sum()); // default frequency 25
+    }
+
+    [Fact]
+    public void ShuffledSequenceReshufflesOnEveryEnumeration()
+    {
+        var scenario = MakeScenario();
+        var sequence = scenario.Map.Values.ShuffledSequence(new Unciv.Utils.GameRandom(7));
+        Assert.NotEqual(sequence.ToList(), sequence.ToList());
+    }
 }

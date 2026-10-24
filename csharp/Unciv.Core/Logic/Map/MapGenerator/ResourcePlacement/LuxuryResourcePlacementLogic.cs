@@ -397,8 +397,10 @@ public static class LuxuryResourcePlacementLogic
 
             if (region.Luxury == null || !ruleset.TileResources.TryGetValue(region.Luxury, out var luxuryToPlace)) continue;
             // First check 2 inner rings
-            var firstPass = tileMap[region.StartPosition!.Value].GetTilesInDistanceRange(new IntRange(1, 2))
-                .Shuffled(shuffleRng).OrderBy(it => it.GetTileFertility(false)).ToList(); // Check bad tiles first
+            // Kotlin Sequences: every enumeration shuffles and sorts anew
+            var startTile = tileMap[region.StartPosition!.Value];
+            var firstPass = ResourcePlacementRandom.Deferred(() => startTile.GetTilesInDistanceRange(new IntRange(1, 2))
+                .Shuffled(shuffleRng).OrderBy(it => it.GetTileFertility(false))); // Check bad tiles first
             targetLuxuries -= MapRegionResources.TryAddingResourceToTiles(
                 tileData,
                 luxuryToPlace,
@@ -408,8 +410,8 @@ public static class LuxuryResourcePlacementLogic
 
             if (targetLuxuries > 0)
             {
-                var secondPass = firstPass.Concat(tileMap[region.StartPosition!.Value].GetTilesAtDistance(3)
-                    .Shuffled(shuffleRng).OrderBy(it => it.GetTileFertility(false))).ToList(); // Check bad tiles first
+                var secondPass = firstPass.Concat(ResourcePlacementRandom.Deferred(() => startTile.GetTilesAtDistance(3)
+                    .Shuffled(shuffleRng).OrderBy(it => it.GetTileFertility(false)))); // Check bad tiles first
                 targetLuxuries -= MapRegionResources.TryAddingResourceToTiles(
                     tileData,
                     luxuryToPlace,

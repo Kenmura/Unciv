@@ -111,7 +111,7 @@ public static class StrategicBonusResourcePlacementLogic
                 if (possibleResources.Count == 0) continue;
                 resource = possibleResources.Random(rng);
             }
-            var candidateTiles = tileMap[region.StartPosition!.Value].GetTilesAtDistance(3).Shuffled(shuffleRng);
+            var candidateTiles = tileMap[region.StartPosition!.Value].GetTilesAtDistance(3).ShuffledSequence(shuffleRng);
             var amount = resourceUnique != null ? 2 : 1; // Place an extra if the region type requests it
             if (MapRegionResources.TryAddingResourceToTiles(tileData, resource, amount, candidateTiles) == 0)
             {
