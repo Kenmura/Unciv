@@ -829,13 +829,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented. Deviations: (1) ICombatant also is IGameContextCombatant (GetName/GetHealth inherited, MatchesFilter re-declared with `new`; Unit/City/GetCivInfo/GetTile are default explicit implementations). MapUnitCombatant declares public IsMelee/IsRanged/IsCivilian because C# default interface methods are not class members (they must not call the interface defaults: that recurses). (2) GreatGeneralImplementation.getGreatGeneralBonus was ported here (BattleDamage.getGeneralModifiers needs it and it needs nothing unported); T082 adds getBestAffectedTroopsTile to the same file. (3) Battle.getExtraRangedAttackFakeUnits is the BattleSeams seam, TODO(T083) (FakeUnitForExtraRangedAttack delegates ICombatant); BattleDamage.GetExtraRangedAttackBonusDamage is untestable until then. (4) CityStateSeams.GetCityDefendingStrength now calls CityCombatant (kept as a seam method so CityStateFunctions stays within the coupling limit). (5) Kotlin default args of calculateDamageTo* become nullable params. (6) Ported test `should retrieve defence fortification modifiers` calls UnitTurnManager.EndTurn on the unit instead of TurnManager(civ).endTurn() (T071 not ported). Semantic traps kept: maxByOrNull on the String param of StrengthForAdjacentEnemies (ordinal string order, first max wins), Random(turns*hash.toLong()) with Vector2.hashCode, Float vs Double arithmetic in getCityStrength, Float.pow via Math.Pow. Golden values: none needed (formulas checked against explicit expectations).
 
 ### T082 Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T081, T046, T067, T035
 - Source: core/src/com/unciv/logic/battle/AttackEvent.kt, AttackParticipant.kt, AttackRecorder.kt, TargetHelper.kt, BattleUnitCapture.kt, AirInterception.kt, GreatGeneralImplementation.kt
 - Fixtures: tests/src/com/unciv/logic/battle/AttackEventTest.kt, AttackRecorderTest.kt, TargetHelperTest.kt, tests/src/com/unciv/testing/AttackRecorderTestHelper.kt
 - Deliverables: csharp/Unciv.Core/Logic/Battle/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~BattleSupportTests`
-- Claimed:
+- Claimed: 2026-10-24T16:29Z
 - Notes: Created by the backlog audit. ~900 LOC. GreatGeneralImplementation calls SpecificUnitAutomation/HeadTowardsEnemyCityAutomation.getEnemyCitiesByPriority: seam, TODO(T091)/TODO(T090). AttackEvent/AttackParticipant are IsPartOfGameInfoSerialization JSON (field names). TargetHelper timeThis dropped (T027 policy). Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T083 Battle C: Battle, Nuke
