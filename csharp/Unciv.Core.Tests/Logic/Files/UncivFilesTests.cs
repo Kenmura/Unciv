@@ -157,6 +157,7 @@ public sealed class UncivFilesTests : IDisposable
             var city = new CityObject { Id = civ.CivId + "-city", Name = civ.CivId + " City", Location = land[i * 12].Position };
             civ.Cities = [city];
             city.SetTransients(civ);
+            city.CityConstructions.ChooseNextConstruction(); // loading chooses for an empty queue (T158), so start from the settled state
             civ.AddGold(100 + i);
             civ.Tech.AddTechnology("Agriculture", showNotification: false);
             civ.NaturalWonders.Add("Krakatoa");

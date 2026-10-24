@@ -22,8 +22,7 @@ namespace Unciv.Logic.City;
 // - timeThis profiling, the purity annotations and the "single read, the field may be swapped by another thread" comments are dropped; the
 //   queue is still only ever replaced as a whole, never mutated in place (see EditQueue).
 // - getProductionMarkup is the Kotlin member of the same name; FormattedLine is T095's class.
-// - chooseNextConstruction: the Kotlin `ConstructionAutomation(this).chooseNextConstruction()` is TODO(T091). Until it is ported an automated
-//   choice leaves the queue as it is (empty after an automatic removal, which getConstruction("") reads as Idle).
+// - chooseNextConstruction: calls ConstructionAutomation (T158).
 //   `Automation.getTileForConstructionImprovement(city, improvement)` is ported (T087).
 //   The client settings Kotlin reads from UncivGame.Current (settings.autoAssignCityProduction, worldScreen.autoPlay, multiplayer user id)
 //   are the IGameInfoState members IsUsersTurn / AutoAssignCityProduction / IsFullAutoPlayAI, which T046 implements.
@@ -892,7 +891,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
                     || gameInfo.IsFullAutoPlayAI))
             || City.Civ.IsAI() || City.IsPuppet)
         {
-            // TODO(T091): ConstructionAutomation(this).chooseNextConstruction(); until then an automated choice leaves the queue as it is.
+            CityConstructionsAutomation.ChooseNextConstruction(this);
         }
 
         // Support for UniqueType.CreatesOneImprovement - if an Improvement-creating Building was auto-queued, auto-choose a tile:

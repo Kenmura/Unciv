@@ -688,17 +688,7 @@ public class CityConstructionsTests
         w.Constructions.ChooseNextConstruction();
         Assert.Equal(["Nothing"], w.Constructions.ConstructionQueue);
 
-        // Automation branches: Puppet or AI civ safely execute without modifying queue
-        w.City.IsPuppet = true;
-        w.Constructions.CurrentConstructionIsUserSet = false;
-        w.Constructions.ChooseNextConstruction();
-        Assert.Equal(["Nothing"], w.Constructions.ConstructionQueue);
-
-        // Active human player with AutoAssignCityProduction
-        w.City.IsPuppet = false;
-        w.Info.AutoAssignCityProduction = true;
-        w.Constructions.ChooseNextConstruction();
-        Assert.Equal(["Nothing"], w.Constructions.ConstructionQueue);
+        // The Puppet / AI / AutoAssignCityProduction branches run ConstructionAutomation (ConstructionAutomationTests).
     }
 
     [Fact]
