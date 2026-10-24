@@ -207,8 +207,8 @@ flowchart TD
   class T085 done
   class T086 done
   class T087 done
-  class T088 ready
-  class T089 waiting
+  class T088 prog
+  class T089 ondeck
   class T090 waiting
   class T091 waiting
   class T092 waiting
@@ -244,7 +244,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T088 | **Ready to start** | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T111 | **Ready to start** | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
@@ -257,7 +256,9 @@ flowchart TD
 | T145 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
 | T083 | **On deck** (after T079) | T081, T082, T052, T064, T068, T079, T035 | 14 | Battle C: Battle, Nuke |
 | T080 | **On deck** (after T079) | T079, T061, T068 | 10 | Unit actions B: UnitActions, UnitActionsFromUniques |
+| T089 | **On deck** (after T088) | T086, T088, T085 | 1 | TradeEvaluation |
 | T079 | Needs-Review [Claude] | T052, T057, T063, T066, T067 | 17 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
+| T088 | In-Progress [Claude] | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T090 | Available (waiting on T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
@@ -267,7 +268,6 @@ flowchart TD
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T089 | Available (waiting on T088) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T141 | In-Progress [Claude] | T072 | 1 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation minus Battle cases) |

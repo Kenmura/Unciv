@@ -938,13 +938,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Checks: Gate (dotnet test --filter FullyQualifiedName~AutomationCoreTests) and Standard checks pass; coverage ratchet passes (new files 90.6 to 100 percent lines), baseline updated.
 
 ### T088 Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T087, T086, T081, T068
 - Source: core/src/com/unciv/logic/automation/civilization/MotivationToAttackAutomation.kt, DeclareWarPlanEvaluator.kt, DeclareWarTargetAutomation.kt, DiplomacyAutomation.kt, TradeAutomation.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Automation/Civilization/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~DiplomacyAiTests`
-- Claimed:
+- Claimed: 2026-10-24T17:34Z
 - Notes: Created by the backlog audit. ~1.6k LOC: split by file at claim time. DiplomacyAutomation/TradeAutomation call TradeEvaluation (T089, ported after this ticket because TradeEvaluation calls back into these): seam TODO(T089). Demand.kt (T059) calls DiplomacyAutomation: replace its TODO(T088). Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
 
 ### T089 TradeEvaluation
