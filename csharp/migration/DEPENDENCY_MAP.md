@@ -69,7 +69,6 @@ flowchart TD
     T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
-    T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -272,7 +271,6 @@ flowchart TD
   class T127 ready
   class T128 ready
   class T129 ready
-  class T130 review
 ```
 
 ## Incomplete tickets
@@ -320,4 +318,3 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T130 | Needs-Review [Antigravity] | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |

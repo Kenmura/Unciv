@@ -1411,7 +1411,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T097 at claim time: those sections call Building.getShortDescription, BuildingDescriptions.addBuildingDifferences, TileImprovement.getShortDecription and ImprovementDescriptions.getDifferences, all owned by T096. T097 leaves a TODO(this ticket) at each omitted spot. Replace those TODOs, add the missing lines in Kotlin order, and extend the T097 golden tests.
 
 ### T130 Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T122
 - Source:
 - Fixtures: none
