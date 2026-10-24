@@ -1030,7 +1030,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T092: RoadBetweenCitiesAutomation reaches City.getRoadPath/getRoadPathToAny through GameClientState.RoadPathing (ICityRoadPathing, TODO(T093)); implement it on PathingMap and set it where useAStarPathfinding is read. Also port WorkerAutomationTest's A* setUp (useAStarPathfinding=true).
 
 ### T094 NextTurnAutomation and BarbarianAutomation (automation integration)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T088, T090, T091, T092, T078, T083, T035, T156
 - Source: core/src/com/unciv/logic/automation/civilization/NextTurnAutomation.kt, BarbarianAutomation.kt
 - Fixtures: tests/src/com/unciv/logic/automation/civilization/NextTurnAutomationTest.kt
