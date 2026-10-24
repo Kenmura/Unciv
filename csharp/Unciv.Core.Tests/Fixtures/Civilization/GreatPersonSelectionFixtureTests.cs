@@ -9,16 +9,15 @@ using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.Core.Tests.Fixtures.CivilizationFixtures;
 
 // T152: engine-level cases of tests/src/com/unciv/logic/civilization/GreatPersonSelectionTest.kt over the real TestGame.
-// Not ported here (see backlog notes): "automation commits its preferred available great person" and
-// "automation retains a pick when its chosen unit cannot be placed" need NextTurnAutomation.chooseGreatPerson
-// (split to T157, depends on T094); "deferred pending choice remains the next turn action and reopens
+// The two automation cases live in GreatPersonSelectionAutomationFixtureTests (T157).
+// Not ported here (see backlog notes): "deferred pending choice remains the next turn action and reopens
 // its picker" mocks WorldScreen/NextTurnButton/AutoPlay (libGDX UI, Won't port).
 [Collection("RulesetCache")]
 public sealed class GreatPersonSelectionFixtureTests
 {
-    private sealed record Scenario(TestGame Game, CivilizationObject Civ);
+    internal sealed record Scenario(TestGame Game, CivilizationObject Civ);
 
-    private static Scenario CreateScenario(BaseRuleset baseRuleset, string nationName, bool addCity = true)
+    internal static Scenario CreateScenario(BaseRuleset baseRuleset, string nationName, bool addCity = true)
     {
         var game = new TestGame();
         game.MakeHexagonalMap(1, Constants.Grassland);
