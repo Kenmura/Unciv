@@ -797,8 +797,8 @@ Deferred until the ruleset and map tickets land (decided with the user): Civiliz
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
 
 ### C000 Headless Godot test & snapshot harness
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T02:50:09Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T03:08:00Z
 - Depends: none (infrastructure/tooling)
 - Deliverables:
   - Godot 4.x .NET CLI runtime setup in `dotnet-dev` container.
@@ -860,7 +860,7 @@ Unlike Unciv's legacy per-unit automation (`automateUnitMoves` cascading individ
 All tickets start in `Blocked` until foundational engine systems (GameInfo, TileMap, Unit, Ruleset) are in place, but can be unblocked as their specific prerequisites land.
 
 ### A001 AI defines & data tables loader
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T03:00:00Z
 - Depends: T007, T021
 - Source: `csharp/migration/ai-spec/data/ai_defines.tsv`, `grand_strategy_flavors.tsv`, `tactical_moves.tsv`
@@ -869,9 +869,13 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Notes: Provides typed access to the ~1,600 XML-derived defines, flavor vectors, and tactical move priorities.
   - Implementer notes (Claude): `Unciv.AI.Data`: `GlobalAIDefines` (453 defines, file order; per-edition `AIEdition` Base/GK/BNW; `TryGetDouble/GetDouble/GetFloat/GetInt/GetBool/IsDefined`; an empty cell means the define does not exist in that edition, so Get throws and IsDefined is false; `GetInt` rejects values written with a decimal point), `GrandStrategyFlavors` (the 3 `AIGrandStrategy_*` tables, edition-independent, ordered; `Get` returns 0 for an absent entry), `TacticalMoveDefinition` (record per row, blank flavor weight = null, `IsInEdition`), `TsvTable` (internal reader that checks the header and column counts). The three TSVs are not copied: `Unciv.Core.csproj` embeds them straight from `migration/ai-spec/data/` (logical names `Unciv.AI.Data.*.tsv`) so there is one source of truth; `LoadEmbedded()` on each type, `Parse(string)` for tests. 17 tests (values spot-checked against the TSVs and SPEC 3.3, edition gaps, malformed-input rejection). Standard checks: build -warnaserror, format, 692/692 tests.
   - Deviations: no JSON loader (the TSV is the shipped format and nothing needs JSON yet). Values are kept as `double` parsed from the text (the engine's own types are unknown, SPEC marks that [?]); `GetFloat` narrows. `diplomacy_ai_defines.tsv` is not loaded (not in this ticket's Source; same shape with base/bnw columns, add with the diplomacy AI ticket). Tactical rows keep file order; no sorting is applied, the queue ticket (A004) must decide tie order, since several rows share a priority (e.g. 130, 110, 100, 25, 15, 10, 1, -1).
+  - Review (Antigravity — Multi-Persona Adversarial Review): Pass (`APPROVED`).
+    - **Auditor:** Verified 1:1 data fidelity against `ai_defines.tsv` (453 rows), `grand_strategy_flavors.tsv` (35 rows across 3 tables), and `tactical_moves.tsv` (55 rows). File order preserved via `OrderedDictionary`. Invariant culture enforced on all numeric parses; `HashSet` in `TacticalMoveDefinition.Parse` is used strictly for duplicate detection and never iterated. No warnings, suppressions, or banned APIs.
+    - **Adversary:** Verified strict rejection of missing/mismatched headers, wrong column counts, duplicate keys, non-numeric cells, non-integer cells in `GetInt` (rejecting decimal-point floats like `2.0`), and edition gaps (`IsDefined` false / `KeyNotFoundException` on `Get*`).
+    - **Pragmatist:** Single-source-of-truth embedding directly from `../migration/ai-spec/data/*.tsv` avoids asset duplication; clean, minimal surface area. Gate (17/17) and Standard checks (701/701) passed.
 
 ### A002 Leader flavor system & Grand Strategy evaluation
-- State: Blocked
+- State: Available
 - Depends: A001, T010, T021
 - Source: `csharp/migration/ai-spec/SPEC.md` §2, §3 (`evaluateGrandStrategy`)
 - Deliverables: `csharp/Unciv.Core/AI/GrandStrategy/` (`LeaderPersonalityFlavors`, `GrandStrategy`, `GrandStrategyEvaluator`), tests
