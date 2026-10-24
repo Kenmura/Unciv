@@ -27,7 +27,6 @@ flowchart TD
     T039["T039<br/>TileMap"]
     T040["T040<br/>Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, Map..."]
     T041["T041<br/>MapGenerator pipeline (audit existing partial work first)"]
-    T045["T045<br/>GameSetupInfo"]
     T046["T046<br/>GameInfo core and the hooks waiting for it"]
     T052["T052<br/>UniqueTriggerActivation and UniqueTriggerExecutors"]
     T053["T053<br/>Tile core (part 2a): Tile"]
@@ -112,13 +111,6 @@ flowchart TD
     A006["A006<br/>Homeland AI priority move queue"]
     A007["A007<br/>Operations and armies layer"]
   end
-  T034 --> T046
-  T039 --> T046
-  T045 --> T046
-  T055 --> T046
-  T060 --> T046
-  T065 --> T046
-  T078 --> T046
   T034 --> T035
   T038 --> T035
   T039 --> T035
@@ -143,10 +135,6 @@ flowchart TD
   T066 --> T052
   T068 --> T052
   T070 --> T052
-  T055 --> T069
-  T060 --> T069
-  T065 --> T069
-  T078 --> T069
   T068 --> T070
   T064 --> T070
   T066 --> T070
@@ -327,8 +315,7 @@ flowchart TD
   class T039 done
   class T040 done
   class T041 done
-  class T045 done
-  class T046 ondeck
+  class T046 ready
   class T052 waiting
   class T053 done
   class T054 done
@@ -345,11 +332,11 @@ flowchart TD
   class T066 done
   class T067 review
   class T068 ready
-  class T069 ondeck
+  class T069 ready
   class T070 waiting
   class T071 waiting
   class T072 waiting
-  class T078 review
+  class T078 done
   class T079 waiting
   class T080 waiting
   class T081 waiting
@@ -400,7 +387,9 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T046 | **Ready to start** | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T068 | **Ready to start** | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
+| T069 | **Ready to start** | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
@@ -414,11 +403,8 @@ flowchart TD
 | T133 | **Ready to start** | T066 | 0 | Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager |
 | T135 | **Ready to start** | T066 | 0 | T066 review follow-ups: UnitPromotions JSON round-trip, tie-break and promotion-trigger tests |
 | T136 | **Ready to start** | T064 | 0 | T064 review follow-up: cover uncovered CityConquestFunctions/CityTurnManager branches |
-| T046 | **On deck** (after T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
-| T069 | **On deck** (after T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T129 | **On deck** (after T096) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T134 | **On deck** (after T067) | T067 | 0 | Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing) |
-| T078 | Needs-Review [Claude] | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T070 | Available (waiting on T068, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T067 | In-Review [Claude] | T065, T054 | 24 | Unit movement: MovementCost, UnitMovement |
 | T035 | Available (waiting on T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
@@ -434,7 +420,7 @@ flowchart TD
 | T071 | Available (waiting on T046, T070) | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
 | T083 | Available (waiting on T081, T082, T052, T068, T079, T035) | T081, T082, T052, T064, T068, T079, T035 | 12 | Battle C: Battle, Nuke |
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
-| T099 | Available (waiting on T046, T078) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
+| T099 | Available (waiting on T046) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
 | T080 | Available (waiting on T079, T068) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T100 | Available (waiting on T071) | T071, T098, T107 | 8 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
@@ -443,7 +429,7 @@ flowchart TD
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T072 | Available (waiting on T035, T052, T067, T068, T069, T071) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
-| T094 | Available (waiting on T088, T090, T091, T092, T078, T083, T035) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
+| T094 | Available (waiting on T088, T090, T091, T092, T083, T035) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | T101 | Available (waiting on T099, T094, T071) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |

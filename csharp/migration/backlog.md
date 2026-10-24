@@ -765,7 +765,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     ResourceDiversityTest.kt needs the full MapGenerator (T041); own xUnit tests exercise the logic directly on a small all-land fallback ruleset.
 
 ### T078 Barbarians: BarbarianManager, BarbarianEncampment
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T060, T065, T066
 - Source: core/src/com/unciv/logic/automation/civilization/BarbarianManager.kt, BarbarianEncampment.kt (the data/spawn logic; BarbarianAutomation.kt is T094)
 - Fixtures: none - generate golden values (seeded encampment spawning)
