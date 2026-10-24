@@ -217,26 +217,13 @@ public class Unique : IUniqueTargetView
     public string GetSourceNameForUser() => SourceObjectType switch
     {
         null => "",
-        UniqueTarget.Global => GetGlobalUniqueSourceDescription(this),
+        UniqueTarget.Global => GlobalUniques.GetUniqueSourceDescription(this),
         UniqueTarget.Wonder => "Wonders",
         UniqueTarget.Building => "Buildings",
         UniqueTarget.Policy => "Policies",
         UniqueTarget.CityState => Constants.CityStates,
         _ => SourceObjectType.Value.ToString(),
     };
-
-    // TODO(T030): GlobalUniques.getUniqueSourceDescription (a companion function; move this there)
-    private static string GetGlobalUniqueSourceDescription(Unique unique)
-    {
-        if (unique.Modifiers.Count == 0) return "Global Effect";
-        return unique.Modifiers[0].Type switch
-        {
-            UniqueType.ConditionalGoldenAge => "Golden Age",
-            UniqueType.ConditionalHappy => "Happiness",
-            UniqueType.ConditionalWLTKD => "We Love The King Day",
-            _ => "Global Effect",
-        };
-    }
 
     /// <summary>Zero-based, so n=0 returns the first</summary>
     private static int GetNthIndex(string str, IReadOnlyList<string> list, int n)

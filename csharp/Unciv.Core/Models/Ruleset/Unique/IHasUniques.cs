@@ -122,17 +122,20 @@ public interface IHasUniques : INamed, IRulesetObjectParameterView
     /// - Default implementation checks disabling by Religion, Espionage or Victory types.
     /// - Overrides need to deal with e.g. Era-specific wonder disabling, no-nukes, ruin rewards by difficulty, and so on!
     /// </summary>
-    bool IsUnavailableBySettings(IGameContextGameInfo gameInfo)
+    bool IsUnavailableBySettings(IGameContextGameInfo gameInfo) => IsUnavailableBySettingsDefault(this, gameInfo);
+
+    /// <summary>The default implementation of <see cref="IsUnavailableBySettings"/>; C# classes cannot call an overridden default interface method as `super`, so overrides call this.</summary>
+    static bool IsUnavailableBySettingsDefault(IHasUniques self, IGameContextGameInfo gameInfo)
     {
         var gameContext = new GameContext(gameInfo: gameInfo);
 
-        if (GetMatchingUniques(UniqueType.Unavailable, GameContext.IgnoreConditionalsState)
+        if (self.GetMatchingUniques(UniqueType.Unavailable, GameContext.IgnoreConditionalsState)
             .Any(unique => unique.Modifiers.Any(it =>
                 it.Type != null && GameBasedConditionals.Contains(it.Type.Value)
                 && Conditionals.ConditionalApplies(null, it, gameContext))))
             return true;
 
-        if (GetMatchingUniques(UniqueType.OnlyAvailable, GameContext.IgnoreConditionalsState)
+        if (self.GetMatchingUniques(UniqueType.OnlyAvailable, GameContext.IgnoreConditionalsState)
             .Any(unique => unique.Modifiers.Any(it =>
                 it.Type != null && GameBasedConditionals.Contains(it.Type.Value)
                 && !Conditionals.ConditionalApplies(null, it, gameContext))))

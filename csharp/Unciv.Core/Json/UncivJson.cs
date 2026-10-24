@@ -23,6 +23,7 @@ public static class UncivJson
         options.Converters.Add(new HexCoordConverter());
         options.Converters.Add(new CounterConverterFactory());
         options.Converters.Add(new StatsConverter());
+        options.Converters.Add(new StatsSubclassConverterFactory());
         options.Converters.Add(new StatMapConverter());
         options.Converters.Add(new Vector2Converter());
         options.Converters.Add(new JsonStringEnumConverter());

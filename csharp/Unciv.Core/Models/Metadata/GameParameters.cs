@@ -11,8 +11,7 @@ namespace Unciv.Models.Metadata;
 // default when writing; this writes every field, which reads back identically. Reading accepts both.
 public class GameParameters : IIsPartOfGameInfoSerialization
 {
-    // TODO(T030): Speed.DEFAULT ("Quick") belongs to Speed
-    private const string DefaultSpeed = "Quick";
+    private const string DefaultSpeed = Unciv.Models.Ruleset.Speed.Default;
 
     private bool? showCivilizationStatsField;
 

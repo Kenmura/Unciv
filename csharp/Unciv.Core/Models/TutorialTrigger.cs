@@ -3,7 +3,7 @@ namespace Unciv.Models;
 // core/src/com/unciv/models/TutorialTrigger.kt
 
 /// <summary>Each instance represents some event that can display a Tutorial. See <see cref="TutorialTriggerExtensions"/> for the value and the Civilopedia flag.</summary>
-// TODO(T030): upstream suggests implementing these as unique conditionals instead
+// Upstream suggests implementing these as unique conditionals instead
 public enum TutorialTrigger
 {
     Introduction,
