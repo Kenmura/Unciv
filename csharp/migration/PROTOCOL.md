@@ -79,7 +79,9 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 ## Work Loop
 
 0. Identify yourself by a stable name (`Claude` or `Antigravity`), ensure your worktree exists (see Worktrees), and `git rebase csharp-migration`.
-1. **Review first.** Find a `Needs-Review` ticket whose implementer is NOT you. If one exists, go to Review. Never review your own work.
+1. **Review first:**
+   - **Multi-Agent Mode:** Find a `Needs-Review` ticket whose implementer is NOT you. If one exists, go to Review.
+   - **Single-Agent Mode (Budget for only 1 agent):** If running as the sole active agent, review your own completed `Needs-Review` ticket by dispatching an isolated **Adversarial Review Subagent** (applying `.agents/skills/adversarial-review/SKILL.md` with Auditor, Adversary, and Pragmatist personas). If the subagent approves, mark `Done`, commit `migration: review T### pass [Adversarial Review]`, and push to remote.
 2. Otherwise **implement.** Pick the first `Available` ticket whose `Depends` are all `Done`. If none, report that and stop.
 3. **Claim** atomically: edit only that ticket's `State` to `In-Progress [You]` (or `In-Review [You]`), commit with message `migration: claim T### [You] <UTC timestamp>`, and put the same timestamp in the ticket's `Claimed:` line. **Publish it immediately.** If the publish is rejected and the rebased backlog shows the ticket taken, drop your claim and pick another.
 
@@ -97,7 +99,7 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 2. Port tests first (xUnit, same cases, same names where possible), then the implementation. Preserve behaviour exactly, including quirks, integer/float semantics (Kotlin `Int` division, `Float` vs `Double`, rounding mode) and iteration order. Do not "improve" logic.
 3. Replace libGDX/UI types with small engine-owned equivalents in `Unciv.Core` (e.g. `Vector2`) – never add UI dependencies. If a ticket needs a type owned by another ticket, stop and mark `Blocked` with a note.
 4. Run the ticket's Gate command, then the Standard checks (see Environment). Both must exit 0.
-5. Set `State` to `Needs-Review [You]`, fill `Notes` (deviations, assumptions, semantic traps), commit `migration: implement T### [You]`, and publish.
+5. Set `State` to `Needs-Review [You]`, fill `Notes` (deviations, assumptions, semantic traps), commit `migration: implement T### [You]`, and publish. (In Single-Agent Mode: Immediately proceed to Review via an isolated Adversarial Review subagent rather than waiting for an external agent).
 
 ### Review (Multi-Persona Adversarial Review)
 
