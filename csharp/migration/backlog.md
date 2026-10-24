@@ -363,13 +363,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Unblocks half of T015. Watch Kotlin Int/Float rounding in MapSize custom-size logic (roundToInt is half-up).
 
 ### T023 Translation core (headless)
-- State: Available
+- State: In-Progress [Antigravity]
+- Claimed: 2026-10-24T01:40:33Z
 - Depends: T018
 - Source: core/src/com/unciv/models/translations/Translations.kt, TranslationEntry.kt, TranslationCache.kt, TranslationFileReader.kt, TranslationExtensions.kt (`tr()` and its helpers)
 - Fixtures: tests/src/com/unciv/logic/TranslationTests.kt, tests/src/com/unciv/logic/TutorialTranslationTests.kt (only cases not requiring libGDX/assets); otherwise generate golden values
 - Deliverables: csharp/Unciv.Core/Models/Translations/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~TranslationTests`
-- Claimed:
 - Notes: Decided: ported headlessly now. File access behind an interface (no libGDX FileHandle). Exclude TranslationFileWriter (dev tooling; Won't port, T043). Translation templates/placeholders/conditionals `[]`/`<>` must match Kotlin exactly; culture-invariant ordering. Lookups must not depend on iteration order of hash collections.
 
 ### T024 Holiday dates
