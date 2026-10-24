@@ -95,7 +95,7 @@ public static class CityResources
     {
         if (!resource.IsCityWide) return city.Civ.GetResourceAmount(resource);
         if (resource.IsStockpiled) return city.ResourceStockpiles[resource.Name];
-        return GetCityResourcesAvailableToCity(city).Where(it => it.Resource == resource).Sum(it => it.Amount);
+        return GetCityResourcesAvailableToCity(city).Where(it => it.Resource == resource).Aggregate(0, (sum, it) => unchecked(sum + it.Amount));
     }
 
     private static ResourceSupplyList GetResourcesFromTiles(City city, IReadOnlyDictionary<string, float> modifiers)
@@ -191,20 +191,24 @@ public static class CityResources
             // Building Filter
             if (UniqueParameterType.BuildingFilter.IsKnownValue(filter, city.GetRuleset()))
             {
-                // Kotlin sumOf { Double } accumulates in Double from 0.0
+                // Kotlin sumOf { Double } accumulates in Double from 0.0, and the sum is then added to amount
+                double sum = 0.0;
                 foreach (var building in city.CityConstructions.GetBuiltBuildings()
                     .Where(it => it.IsStatRelated(stat.Value) && it.MatchesFilter(filter, city.State)))
-                    amount += (double)building.GetStats(city)[stat.Value];
+                    sum += (double)building.GetStats(city)[stat.Value];
+                amount += sum;
             }
 
             // Improvement Filter
             if (UniqueParameterType.ImprovementFilter.IsKnownValue(filter, city.GetRuleset()))
             {
+                double sum = 0.0;
                 foreach (var improvement in city.GetWorkedTiles()
                     .Select(it => it.GetUnpillagedTileImprovement())
                     .OfType<TileImprovement>()
                     .Where(it => it[stat.Value] > 0f && it.MatchesFilter(filter, city.State)))
-                    amount += (double)improvement[stat.Value];
+                    sum += (double)improvement[stat.Value];
+                amount += sum;
             }
 
             if (amount > 0.0)

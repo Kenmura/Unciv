@@ -92,6 +92,8 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     public string Id { get; set; } = NoId;
     public string Name { get; set; } = "";
     /// <summary>Serialization field for <see cref="FoundingCivObject"/>. Is equivalent to <c>foundingCivObject.civName</c></summary>
+    [JsonPropertyName("foundingCiv")]
+    [JsonInclude]
     private string foundingCiv = "";
     /// <summary>This is so that cities in resistance that are recaptured aren't in resistance anymore</summary>
     public string PreviousOwner { get; set; } = "";
@@ -193,6 +195,8 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     /// <summary>TODO(T066): retype to <c>HashMap&lt;String, UnitPromotions&gt;</c>.</summary>
     public JavaHashMap<string, IUnitPromotions> UnitToPromotions { get; set; } = new();
 
+    [JsonPropertyName("cityAIFocus")]
+    [JsonInclude]
     private string cityAIFocus = CityFocus.NoFocus.ToString();
 
     public bool AvoidGrowth { get; set; }
@@ -210,6 +214,8 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     /// <summary>For We Love the King Day</summary>
     public string DemandedResource { get; set; } = "";
 
+    [JsonPropertyName("flagsCountdown")]
+    [JsonInclude]
     internal JavaHashMap<string, int> FlagsCountdown { get; set; } = new();
 
     /// <summary>Persisted connected-to-capital (by any medium) to allow "disconnected" notifications after loading</summary>
