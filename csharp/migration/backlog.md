@@ -271,7 +271,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Deferred from T006.
 
 ### T018 Utils: collection/string extensions, exceptions, Versioning
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: T010
 - Source: core/src/com/unciv/utils/CollectionExtensions.kt, utils/StringExtensions.kt, logic/UncivExceptions.kt, logic/Versioning.kt
 - Fixtures: none - generate golden values for ordering-sensitive helpers
@@ -284,6 +284,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Semantic traps kept: `weights.sum()` adds in Float (not LINQ's double accumulation); `sum` is a Float compared to the Double draw; all-zero weights make every share NaN so the last element is returned; sets: `WithItem`/`WithoutItem` return a new `HashSet`. Mapping: NoSuchElement to InvalidOperationException, UnsupportedOperation to NotSupportedException.
   - Not ported (listed in the file header): libGDX `Array`/`IntArray`/`LongArray` helpers, Kotlin `yield*` helpers, `isRunFromJar`, `ArrayList.removeRange(start, endExclusive)` (use `List.RemoveRange(start, count)`; an extension of the same name would be shadowed), `BitSet.forEachSetBit` (used only by pathfinding; **T040 decides the BitSet type**), `Version.toNiceString`/`UncivShowableException.getLocalizedMessage` (`TODO(T023)`: need `tr()`). `Version.Current` stands in for `UncivGame.VERSION` (4.22.13 / 1275).
   - Concern raised: Kotlin `HashSet`/`HashMap` iterate in JVM hash order, C# ones do not; see **T044**.
+  - Review (Antigravity): Pass. Verified `CollectionExtensions.cs`, `StringExtensions.cs`, `UncivExceptions.cs`, `Versioning.cs`, and `UtilsTests.cs` against Kotlin sources and OpenJDK 25 `UUID.fromString`: float-accumulated `RandomWeighted` with NaN fallback to last element, `WithItem`/`WithoutItem`, sparse `GetOrPut`, lenient 5-component `ToUUIDOrNull`/`IsUUID` with `Character.digit` and 36-char bound, `MissingModsException` `joinToString(limit = 5)` truncation, and `CompatibilityVersion` ordering vs equality. Re-ran Gate (56/56 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 341/341 passed).
 
 ### T044 Iteration-order policy for java.util.HashMap / HashSet
 - State: Available
