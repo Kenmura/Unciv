@@ -31,7 +31,7 @@ public interface IRulesetTechView
 /// Ported from core/src/com/unciv/models/ruleset/unique/IHasUniques.kt.
 /// </summary>
 /// <remarks>
-/// Not ported yet, because the types are not ported: <c>getWeightForAiDecision</c> (TODO(T033): BaseUnit, Building, and with them the
+/// Not ported yet, because the types are not ported: <c>getWeightForAiDecision</c> (TODO(T087): BaseUnit, Building, and with them the
 /// Personality part). <c>requiredTechnologies</c>, <c>era</c>, <c>techColumn</c> and <c>availableInEra</c> take an <see cref="IRulesetTechView"/>
 /// instead of <c>Ruleset</c>.
 /// The <c>isHiddenFromCivilopedia(ruleset)</c> overload reads <c>UncivGame.getGameInfoOrNull()</c>, a client global: callers pass the

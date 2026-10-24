@@ -534,7 +534,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         if (unpillagedImprovement != null && resource!.GetImprovements().Contains(unpillagedImprovement.Name)
                 && (unpillagedImprovement.TechRequired == null || civInfo.IsTechResearched(unpillagedImprovement.TechRequired))
             ) return true;
-        // TODO(T054): Generic-ify to unique (upstream note)
+        // Generic-ify to unique (upstream note)
         return resource!.ResourceType == ResourceType.Strategic &&
             unpillagedImprovement != null &&
             unpillagedImprovement.IsGreatImprovement();

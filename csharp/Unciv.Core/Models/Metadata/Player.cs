@@ -7,7 +7,7 @@ namespace Unciv.Models.Metadata;
 // core/src/com/unciv/models/metadata/Player.kt
 //
 // Not ported yet: the transient chosenNation and setNationTransient(ruleset), and the Nation constructor
-// (TODO(T034): Nation is ported (T032), Ruleset is not).
+// (TODO(T104): Nation and Ruleset are ported, the Player wiring is left to the final sweep or GameStarter T099).
 public class Player : IIsPartOfGameInfoSerialization
 {
     [JsonPropertyName("chosenCiv")]

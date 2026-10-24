@@ -181,7 +181,7 @@ public class BaseUnit : RulesetObject, INonPerpetualConstruction, IRulesetUnitPa
     public bool CanBePurchasedWithStat(IConstructionCity? city, Stat stat)
     {
         if (city == null) return INonPerpetualConstruction.CanBePurchasedWithStatDefault(this, null, stat);
-        // Needs getRejectionReasons(city.cityConstructions) (T046 onwards); fail loudly instead of answering wrongly.
+        // TODO(T106): needs getRejectionReasons(city.cityConstructions); fail loudly instead of answering wrongly.
         throw new NotSupportedException("BaseUnit.CanBePurchasedWithStat(city) needs getRejectionReasons, which is not ported yet");
     }
 

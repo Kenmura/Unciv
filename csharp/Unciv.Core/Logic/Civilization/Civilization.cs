@@ -211,7 +211,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
 
     public RuinsManager RuinsManager { get; set; } = new();
 
-    /// <summary>Kotlin <c>HashMap&lt;String, DiplomacyManager&gt;</c>: java.util.HashMap iteration order. TODO(T059): retype to DiplomacyManager.</summary>
+    /// <summary>Kotlin <c>HashMap&lt;String, DiplomacyManager&gt;</c>: java.util.HashMap iteration order.</summary>
     public JavaHashMap<string, DiplomacyManager> Diplomacy { get; set; } = new();
     public JavaHashMap<string, Proximity> Proximity { get; set; } = new();
     public List<PopupAlert> PopupAlerts { get; } = [];
@@ -231,7 +231,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         public List<Notification> Notifications { get; set; } = [];
     }
 
-    /// <summary>for trades here, ourOffers is the current civ's offers, and theirOffers is what the requesting civ offers. TODO(T059): retype to TradeRequest.</summary>
+    /// <summary>for trades here, ourOffers is the current civ's offers, and theirOffers is what the requesting civ offers.</summary>
     public List<TradeRequest> TradeRequests { get; } = [];
 
     /// <summary>See DiplomacyManager.flagsCountdown for why this does not map Enums to ints</summary>

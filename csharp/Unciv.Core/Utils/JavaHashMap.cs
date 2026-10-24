@@ -199,6 +199,7 @@ public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
     private void TreeifyBin(Node?[] buckets)
     {
         if (buckets.Length < MinTreeifyCapacity) Resize();
+        // JUSTIFY: T118 JVM tree-bin iteration order is not reproduced (permanent limit)
         else throw new NotSupportedException("A bin of a JavaHashMap would be treeified (nine or more colliding keys); the JVM iteration order of tree bins is not reproduced");
     }
 
@@ -387,6 +388,7 @@ internal static class JavaHashCodes
         else if (typeof(T) == typeof(bool)) function = (Func<bool, int>)JavaHash.HashCode;
         else if (typeof(T) == typeof(HexCoord)) function = (Func<HexCoord, int>)(coord => coord.GetHashCode());
         if (function == null)
+            // JUSTIFY: T118 caller error, JVM hash code unknown (permanent)
             throw new NotSupportedException($"{typeof(T).Name} has no deterministic JVM hashCode(); pass a hash function, or use an insertion-ordered collection");
         return (Func<T, int>)function;
     }

@@ -2,6 +2,7 @@ using Unciv.Logic.Map;
 using Unciv.Models.Ruleset.Tile;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
+// Open owners: T046 (GameInfo), T065 (MapUnit); T104 lists survivors.
 // T040 (BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization): these classes talk to GameInfo, Civilization and MapUnit only
 // through the members below (seam rule, T053 notes). The tickets that port those classes implement them. Member names mirror the Kotlin members.
 

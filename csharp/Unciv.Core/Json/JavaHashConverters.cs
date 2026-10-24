@@ -55,6 +55,7 @@ public class JavaHashMapConverterFactory : JsonConverterFactory
         var args = typeToConvert.GetGenericArguments();
         // Gdx writes map keys as their toString and reads them back as raw Strings, so only String keys round-trip
         if (args[0] != typeof(string))
+            // JUSTIFY: T118 Gdx writes map keys as toString, only string keys round-trip (permanent)
             throw new NotSupportedException($"Json (de)serialization of {typeToConvert.Name}<{args[0].Name},...> is not supported; only string keys");
         return (JsonConverter)Activator.CreateInstance(typeof(JavaHashMapConverter<>).MakeGenericType(args[1]))!;
     }

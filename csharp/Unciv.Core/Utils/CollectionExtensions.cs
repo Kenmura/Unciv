@@ -16,6 +16,7 @@ public static class CollectionExtensions
     public static T RandomWeighted<T>(this IReadOnlyList<T> list, IReadOnlyList<float> weights, GameRandom random)
     {
         if (list.Count == 0) throw new InvalidOperationException("Empty list.");
+        // JUSTIFY: T118 mirrors Kotlin require() failure (permanent)
         if (list.Count != weights.Count) throw new NotSupportedException("Weights size does not match this list size.");
 
         float totalWeight = 0f; // Iterable<Float>.sum() adds in Float, LINQ Sum would add in Double

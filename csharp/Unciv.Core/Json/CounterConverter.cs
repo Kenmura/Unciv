@@ -17,6 +17,7 @@ public class CounterConverterFactory : JsonConverterFactory
         Type keyType = typeToConvert.GetGenericArguments()[0];
         // Kotlin keeps the raw String name whatever K is (unchecked cast), so only Counter<String> can round-trip
         if (keyType != typeof(string))
+            // JUSTIFY: T118 Kotlin keeps raw String names, only string keys round-trip (permanent)
             throw new NotSupportedException($"Json (de)serialization of {typeToConvert.Name}<{keyType.Name}> is not supported; only string keys");
         Type converterType = typeof(CounterConverter<>).MakeGenericType(keyType);
         return (JsonConverter)Activator.CreateInstance(converterType)!;

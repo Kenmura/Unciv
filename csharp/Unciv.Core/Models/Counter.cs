@@ -148,6 +148,7 @@ public static class Counter
     private sealed class ZeroCounter : Counter<string>
     {
         public override int? Put(string key, int value) =>
+            // JUSTIFY: T118 Kotlin ZERO counter rejects writes (permanent)
             throw new NotSupportedException("Do not modify Counter.ZERO");
     }
 

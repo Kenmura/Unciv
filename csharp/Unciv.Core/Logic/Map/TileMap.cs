@@ -21,7 +21,7 @@ namespace Unciv.Logic.Map;
 // Deviations:
 // - assignContinents flood-fills with a private helper instead of BFS (T040, which depends on this ticket). BFS only fed a set and a
 //   count, so visiting order is irrelevant; T040 may switch it to BFS.
-// - switchPlayersNation (marked "currently unreachable" in Kotlin) needs the Civilization constructor: TODO(T055).
+// - switchPlayersNation (marked "currently unreachable" in Kotlin) needs the Civilization constructor: TODO(T104).
 // - startingLocationsByNation stays a Dictionary<string, HashSet<Tile>> (Tile has identity hashing in Kotlin too, so set order was
 //   never deterministic there); continentSizes uses JavaHashMap because continentsSortedBySize is built from its iteration order.
 // - Kotlin Sequence results are IEnumerable; the pure-function overloads with a default `filter` are separate overloads.
@@ -852,7 +852,7 @@ public class TileMap : IsPartOfGameInfoSerialization
         StartingLocationsByNation.Remove(player.ChosenCiv);
     }
 
-    // switchPlayersNation(player, newNation) is not ported (Kotlin: "currently unreachable"): it constructs a Civilization. TODO(T055)
+    // switchPlayersNation(player, newNation) is not ported (Kotlin: "currently unreachable"): it constructs a Civilization. TODO(T104)
 
     /// <summary>Initialize startingLocations transients</summary>
     public void SetStartingLocationsTransients()
@@ -1149,6 +1149,7 @@ public class TileMap : IsPartOfGameInfoSerialization
         }
 
         public override void Write(Utf8JsonWriter writer, Preview value, JsonSerializerOptions options) =>
+            // JUSTIFY: T118 Preview is only ever read (permanent)
             throw new NotSupportedException("TileMap.Preview is only ever read");
     }
 

@@ -11,6 +11,7 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Logic.Civilization;
 
+// Open owners (the tickets that implement these seams): T046 (GameInfo), T061/T063 (city managers), T065/T066 (MapUnit, UnitManager); T104 lists survivors.
 // T055 (Civilization): the seams of Civilization, which is ported BEFORE its managers, City, MapUnit and GameInfo (seam rule, T053
 // notes). Each interface holds exactly the members Civilization.kt (or an already existing IGameContext* seam that Civilization
 // implements) calls on that type; the ticket that ports the type implements it, retypes the field/parameter in Civilization to the

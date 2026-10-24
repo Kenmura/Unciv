@@ -47,6 +47,7 @@ internal sealed class StatsSubclassConverter<T> : JsonConverter<T> where T : Sta
     }
 
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) =>
+        // JUSTIFY: T118 read-only converter by design (permanent)
         throw new NotSupportedException($"{typeof(T).Name} is only read from rulesets, never written");
 
     private static bool TryGetStat(string name, out Stat stat)

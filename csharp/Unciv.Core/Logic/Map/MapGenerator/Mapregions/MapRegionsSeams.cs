@@ -5,6 +5,7 @@ using Unciv.Utils;
 
 namespace Unciv.Logic.Map.MapGenerator.Mapregions;
 
+// Open owner: T104 (final seam sweep deletes what T055/T076/T077 left).
 // T075 seams. MapRegions / Region talk to Civilization (T055) and to the placement logic ported by T076 (StartNormalizer, MinorCivPlacer)
 // and T077 (LuxuryResourcePlacementLogic, StrategicBonusResourcePlacementLogic) only through the members below.
 // T055 makes Civilization implement IMapRegionsCivilization; T076 / T077 replace the matching MapRegionsSeams method with a call to their class.

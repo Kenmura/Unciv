@@ -57,6 +57,7 @@ public interface IMediaFinder
 
     /// <summary>Possible file names for the builtin folder (its children cannot be enumerated from a jar). <see cref="ListMediaFiles"/> throws unless overridden.</summary>
     IEnumerable<string> GetInternalMediaNames(IUncivFileHandle folder) =>
+        // JUSTIFY: T118 Kotlin default throws unless overridden (permanent)
         throw new NotSupportedException("Using IMediaFinder.listMediaFiles from a jar requires overriding getInternalMediaNames");
 
     /// <summary>Find a specific asset by name, looking in each candidate folder of <see cref="ListMediaFolders"/>.</summary>
@@ -200,6 +201,7 @@ public class LabeledSounds(IMediaEnvironment environment) : Sounds(environment),
     }
 
     IEnumerable<IUncivFileHandle> IMediaFinder.ListMediaFolders() =>
+        // JUSTIFY: T118 LabeledSounds deliberately lacks this API in Kotlin (permanent)
         throw new NotSupportedException("LabeledSounds does not support the normal IMediaFinder API");
 
     private static string Titlecase(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];

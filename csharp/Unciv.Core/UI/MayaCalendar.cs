@@ -4,7 +4,7 @@ namespace Unciv.UI.Components;
 
 // core/src/com/unciv/ui/components/MayaCalendar.kt
 // Stripped: openPopup (Popup/BaseScreen), startTurnForMaya and isNewCycle (need Civilization/GameInfo/NextTurnAutomation;
-// TODO(T050) follow-up on Civilization when the Maya unique is ported - MayaYear.Baktuns is exposed via YearToBaktuns for it).
+// TODO(T070) follow-up on Civilization when the Maya unique is ported - MayaYear.Baktuns is exposed via YearToBaktuns for it).
 public static class MayaCalendar
 {
     private const string IconFolder = "MayaCalendar/";
