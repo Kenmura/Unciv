@@ -193,7 +193,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Later tickets extend it: run N turns from a seed and compare hashes across runs (and against Kotlin-generated hashes where feasible).
 
 ### T012 Command layer design
-- State: In-Review [Antigravity]
+- State: Done
 - Claimed: 2026-10-24T01:20:14Z
 - Depends: none
 - Source: design ticket; study how UI actions mutate `GameInfo` (e.g. `core/src/com/unciv/logic/automation` and `UnitActions`, `CityConstructions`)
@@ -205,6 +205,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Findings that matter for later tickets (details in COMMANDS.md): Kotlin has no command layer (unit actions are closures; UI calls mutators directly); `GameInfo.nextTurn` reads wall-clock and `UncivGame.Current.worldScreen`; about 29 wall-clock reads outside `multiplayer`, 31 unseeded `.random()/.shuffled()/.shuffle()` calls, 34 `logic/` files touching `UncivGame.`/`GUI.`. **Unciv already has state-derived randomness**: `GameContext.stateBasedRandom(caller, seed) = Random(hashOf(caller.hashCode(), seed, this.hashCode()))` (used by ConditionalChance, barbarian camps, AI diplomacy rolls, city ids) which depends on JVM `String.hashCode`, data-class/`Float` hash codes and `hashOf`; `string.GetHashCode` is banned here, so this needs its own bit-exact port: new ticket **T017**.
   - Decisions a reviewer should challenge: faulted-processor instead of rollback on a throwing `Apply`; `Submit(actor, command)` round-trips through the wire form on purpose; no `GameRandom` parameter on `Apply` (state owns the RNG); events are not serializable yet (open question in COMMANDS.md).
   - Ran Gate (`~CommandTests`, 10 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 228/228.
+  - Review (Antigravity): Pass. Verified `COMMANDS.md` and `Unciv.Core/Commands/*`. The design cleanly separates pure `Validate` and deterministic `Apply`, keeps actor identity out of the untrusted payload, round-trips in-process `Submit` through the wire envelope to guarantee parity, faults the processor on unexpected `Apply` exceptions, and preserves lockstep capability via ordered `Replay` with contiguous sequence checking. Re-ran Gate (10/10 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 228/228 passed).
 
 ### T017 JVM hash codes and state-based randomness helpers
 - State: Available
