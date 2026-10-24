@@ -303,7 +303,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - The ticket's Gate names `~JavaHashTests`; the new tests are in `JavaHashMapTests`, which that filter also matches.
 
 ### T019 Event bus
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: core/src/com/unciv/logic/event/EventBus.kt, Event.kt
 - Fixtures: none - generate golden values
@@ -323,6 +323,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     2. **Must fix:** add the tests that discriminate: register `TestDerivedEvent` listener *before* the `IEvent` listener and assert the chosen order (the current supertype test registers the base first, so it passes under both orderings), a listener registered for two paths of a diamond (pin the chosen duplicate behaviour), and a handler that unregisters/registers listeners during `Send` (C# skips a listener deactivated earlier in the same dispatch; Kotlin still calls it because it works on a snapshot, so state that deviation too).
     3. Must fix (type safety): `Send<T>(T) where T : notnull` casts `(IEvent)(object)@event`, so sending a non-event compiles and throws `InvalidCastException`. Kotlin is `T : Event`. Constrain to `where T : IEvent` and drop the cast.
     4. Note only: the nested `EventBus.EventReceiver : EventReceiver` alias is fine (mirrors Kotlin's `EventBus.EventReceiver`). A receiver that is never disposed leaks its listeners (Kotlin's weak refs would collect them); acceptable for determinism, mention in the notes. The event base interface is named `IEvent` (Kotlin `Event`), fine by the naming rules.
+  - Rework notes (Claude), addressing the review above (option A): the earlier note that dispatch "matches Kotlin's Set semantics" was wrong and is superseded: **deviations from Kotlin, now documented in the `EventBus` remarks and pinned by tests**: global registration order across types (Kotlin groups by class, ancestors first: `[Event, Marker, Base, Event, Other, Derived, Derived2]` on the real EventBus; here `[Derived, Other, Base, Marker, Event, Derived2]`), each listener at most once per event (Kotlin double-notifies through a diamond), listeners deactivated during dispatch are skipped and ones registered during dispatch wait for the next event (Kotlin works on a snapshot), no weak references. `Send<T>` is now `where T : IEvent` (no cast, compile-time safe). New tests: cross-type registration order with the subtype listener first, diamond (once), changes during dispatch, filter-before-handler. Ran Gate (`~EventBusTests`, 11 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` green.
 
 ### T020 MultiFilter and IdChecker
 - State: In-Progress [Antigravity]
