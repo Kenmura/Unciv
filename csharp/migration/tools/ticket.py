@@ -159,7 +159,8 @@ def write_backlog(lines):
 
 TRACKS = {"T": "Engine track", "C": "Client track (Godot)", "A": "Game AI track"}
 STYLES = {  # kind -> (class name, mermaid style)
-    "Available": ("avail", "fill:#d4f8d4,stroke:#2a8a2a,color:#000"),
+    "Available": ("waiting", "fill:#f3faf3,stroke:#9bc49b,color:#555,stroke-dasharray:2 2"),
+    "Ready": ("ready", "fill:#7ee787,stroke:#1a7f37,stroke-width:3px,color:#000"),
     "In-Progress": ("prog", "fill:#fff3b0,stroke:#b58900,color:#000"),
     "Needs-Review": ("review", "fill:#cfe4ff,stroke:#1f6feb,color:#000"),
     "In-Review": ("review", "fill:#cfe4ff,stroke:#1f6feb,color:#000"),
@@ -182,6 +183,11 @@ def render_map():
             if d in info and d not in shown:
                 shown.append(d)
     shown.sort()
+    ready_ids = {i for k, i, _, _, _ in ready_list(ts) if k == "IMPLEMENT"}
+    counts = downstream_counts(ts)
+
+    def state_kind(i):
+        return "Ready" if i in ready_ids else kind(info[i][1])
 
     def label(i):
         t = info[i][0].replace('"', "'").replace("<", "(").replace(">", ")")
@@ -192,7 +198,8 @@ def render_map():
            "Shows every incomplete ticket and its direct dependencies (completed ones are grey and dashed). "
            "An arrow `A --> B` means B depends on A.", "",
            "| Colour | Meaning |", "|---|---|",
-           "| green | Available (workable once dependencies are done) |", "| yellow | In-Progress |",
+           "| bright green, thick border | Ready to start: Available and every dependency is Done |",
+           "| pale green, dotted border | Available but waiting on unfinished dependencies |", "| yellow | In-Progress |",
            "| blue | Needs-Review / In-Review |", "| red | Blocked |", "| grey dashed | Done (shown as a direct dependency only) |", "",
            "```mermaid", "flowchart TD"]
     for prefix, name in TRACKS.items():
@@ -207,11 +214,17 @@ def render_map():
     for cls, style in dict(STYLES.values()).items():
         out.append(f"  classDef {cls} {style}")
     for i in shown:
-        out.append(f"  class {i} {STYLES.get(kind(info[i][1]), STYLES['Blocked'])[0]}")
-    out += ["```", "", "## Incomplete tickets", "", "| Ticket | State | Depends on | Title |", "|---|---|---|---|"]
-    for i in open_ids:
+        out.append(f"  class {i} {STYLES.get(state_kind(i), STYLES['Blocked'])[0]}")
+    out += ["```", "", "## Incomplete tickets", "", "| Ticket | State | Depends on | Unblocks | Title |", "|---|---|---|---|---|"]
+    order = sorted(open_ids, key=lambda i: (i not in ready_ids, -counts.get(i, 0), i))
+    for i in order:
         t, st, d = info[i]
-        out.append(f"| {i} | {st} | {', '.join(deps_of(d)) or 'none'} | {t.replace('|', '/')} |")
+        if i in ready_ids:
+            st = "**Ready to start**"
+        elif st == "Available":
+            waiting = [x for x in deps_of(d) if not info.get(x, ("", "Done"))[1].startswith("Done")]
+            st = "Available (waiting on " + ", ".join(waiting) + ")"
+        out.append(f"| {i} | {st} | {', '.join(deps_of(d)) or 'none'} | {counts.get(i, 0)} | {t.replace('|', '/')} |")
     return "\n".join(out) + "\n"
 
 
