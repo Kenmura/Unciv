@@ -82,6 +82,9 @@ flowchart TD
     T109["T109<br/>Hardening sweep: non-blocking review findings from T033-T095"]
     T110["T110<br/>Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)"]
     T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
+    T112["T112<br/>Hardening: drop CivInfoTransientCache.IsCityConnectedToCapit..."]
+    T113["T113<br/>Hardening: JSON converters for JavaHashSet/JavaHashMap seria..."]
+    T114["T114<br/>Hardening sweep 2: non-blocking findings from T056, T059, T1..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -284,6 +287,7 @@ flowchart TD
   T052 --> T111
   T060 --> T111
   T065 --> T111
+  T060 --> T112
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -391,19 +395,25 @@ flowchart TD
   class T104 waiting
   class T106 waiting
   class T107 done
-  class T109 prog
+  class T109 review
   class T110 waiting
   class T111 waiting
+  class T112 ondeck
+  class T113 ready
+  class T114 ready
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T113 | **Ready to start** | none | 0 | Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields |
+| T114 | **Ready to start** | none | 0 | Hardening sweep 2: non-blocking findings from T056, T059, T108 reviews |
 | T065 | **On deck** (after T060) | T055, T056, T060 | 47 | MapUnit core: MapUnit, MapUnitCache |
 | T061 | **On deck** (after T060) | T060 | 41 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T062 | **On deck** (after T060) | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
-| T060 | In-Progress [Claude] | T055, T056, T057, T058 | 54 | City core: City, CityFocus, CityResources, CityEspionageManager |
+| T112 | **On deck** (after T060) | T060 | 0 | Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype |
+| T060 | In-Progress [Claude] | T055, T056, T057, T058 | 55 | City core: City, CityFocus, CityResources, CityEspionageManager |
 | T066 | Available (waiting on T065, T060) | T065, T060 | 44 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 41 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T060, T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 38 | GameInfo core and the hooks waiting for it |
@@ -454,6 +464,6 @@ flowchart TD
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T096 | Available (waiting on T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T109 | In-Progress [Claude] | none | 0 | Hardening sweep: non-blocking review findings from T033-T095 |
+| T109 | Needs-Review [Claude] | none | 0 | Hardening sweep: non-blocking review findings from T033-T095 |
 | T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T111 | Available (waiting on T052, T060, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |

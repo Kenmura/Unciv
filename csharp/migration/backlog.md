@@ -1045,7 +1045,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Quirks kept: Speed defaults use constructor-time modifier; Policy IsEnabledByPolicy's Unavailable half does not ignore conditionals (never matches "before adopting" without a civ); Tutorial.GetSortGroup throws for an empty category as Kotlin does; Difficulty prints "null" for a null aiDifficultyLevel; Unit-set-art regex is unquoted like Kotlin. Promotion.getDescription still not ported.
 
 ### T109 Hardening sweep: non-blocking review findings from T033-T095
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: C# files named in the notes (no Kotlin source: parity fixes and missing tests)
 - Fixtures: none
@@ -1069,6 +1069,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T056 review (non-blocking): CivManagerTests lacks cases for TechManager.GetBestRoadAvailable, the ocean/RoadsConnectAcrossRivers booleans in UpdateTransientBooleans, IsObsolete, LimitOverflowScience clamp, UpdateResearchProgress overflow completion, the policy-branch-unlocked / known-civ era / Mayan Long Count notifications, PolicyManager.AdoptableBranches, RemovePolicy assumeWasFree / non-adopted throw, odd refundPercentage rounding (33), negative last-8-turns sums. T052 must add tests that TriggerUniqueSeam call sites fire. If a UI port enumerates PolicyManager.BranchCompletionMap/PriorityMap it should become ordered (LinkedHashMap).
   - T059 review non-blocking: (1) untested in DiplomacyCoreTests: MakePeace/MakePeaceOneSide, UpdateHasOpenBorders teleport branch, city-state resting point/degrade/GetTurnsToRelationshipChange, IsConsideredFriendlyTerritory, SetReligionBasedModifier, embassy/research/defensive-pact can-sign checks, GetKnownCivsSorted (T072 TestGame fixtures should cover). (2) TradeOffer.GetHashCode uses randomized HashCode.Combine (Kotlin data-class hash is deterministic): make it a fixed combine before TradeOffers are ever hashed. (3) TradeOffersList.Add hides List.Add: save loading (T071/T072) must not rely on IList.Add merging. (4) DiplomacyCoreTests [Collection("TranslationState")] is redundant now that xUnit parallelism is off. (5) DeclareWar() needs the DeclareWarReason parameter when T068 lands.
   - From T108 review: Belief.GetBeliefsMatching/GetCivilopediaTextMatching pass gameInfo=null to IsHiddenFromCivilopedia (Kotlin uses UncivGame.getGameInfoOrNull()); add an optional gameInfo/CivilopediaContext parameter. Also KotlinNumberText.FloatToString differs from Java for subnormals (1.0E-45 vs 1.4E-45).
+  - Implemented by Claude. Flaky LogTests fixed and published separately (commit 80d94a311): [assembly: CollectionBehavior(DisableTestParallelization = true)] in Unciv.Core.Tests/AssemblyInfo.cs (map generation, ruleset loading etc. all log through the global Log, so per-collection serialization was not enough); 5 consecutive full runs green (suite ~8s).
+    Fixed with tests: T095 FormattedLine name->category cache is now one immutable record published via a volatile write; EngineColors.ValueOf hand-parses digits (Unicode digits like Java); ImageSize/Padding NaN round-trip through JSON. T076 StartNormalizer's private GeneratesNaturallyOn copy (had the NaN comparison bug) removed in favour of TileResource.GeneratesNaturallyOn, NaN test added; the "unused ruleset parameter" was verified not present. T073 PowSigned NaN (Math.Sign threw) fixed + test; RNG-stream coverage verified adequate (ChooseSpreadOutLocations tests + Kotlin golden maps). T054 ProductionBonusWhenRemoved and RestrictedBuildableImprovements tests ("others the review listed" were never enumerated). T053 tests for CanCivPassThrough, ProvidesYield, GetWorkingCity, IsLocked, ProvidesResources, UnitHeight/TileHeight. T033 isGreatPerson/isMilitary retry after exceptions. T041 river set is LinkedHashSet (RiverGenerator takes ICollection<Tile>), header comment corrected, TopBottom/AroundCenterTile tests, HumidFrom exact value asserted, unused gameParameters dropped. T058 TakeCities returns a copy, negative-amount throw test, snapshot test, city-local-unique isolation test.
+    Split off: T112 (drop IsCityConnectedToCapital after T060), T113 (T056 (a) JSON converters for Java collections), T114 (findings appended to T109 during this work: T056 review, T059 follow-ups/review, T108 review).
 
 ### T111 T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests
 - State: Available
@@ -1079,6 +1082,36 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~CivReligionVictoryTests
 - Claimed:
 - Notes: From T057 review (non-blocking): (1) IGameInfoState.DiplomaticVictoryVotesCast is IDictionary but Kotlin is java.util.HashMap: use JavaHashMap (vote-tie text order). (2) Enumerable.Sum throws on int overflow where Kotlin sumOf wraps (GetStartingSpyRank, Spy.GetEfficiencyModifier): unchecked loop. (3) Enum.Parse<BeliefType> accepts numeric strings, Kotlin valueOf does not. (4) Add tests for RuinsManager.SelectNextRuinsReward, GenerateProphet, FoundReligion/UseProphetForEnhancingReligion, ChooseBeliefs founding/enhancing, Spy.InitiateCoup/CanMoveTo, GetTilesVisibleViaSpies, with Kotlin-derived golden seeds (after T052/T060/T065 make them testable). (5) Share the duplicated ParseInt helper.
+
+### T112 Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype
+- State: Available
+- Depends: T060
+- Source: csharp/Unciv.Core/Logic/Civilization/Transients/CivInfoTransientCache.cs (not in Kotlin)
+- Fixtures: none
+- Deliverables: remove the non-Kotlin convenience, call CitiesConnectedToCapitalToMediums directly (Civilization.IsCapitalConnectedToCity)
+- Gate: dotnet test
+- Claimed:
+- Notes: From T058 review (split off T109).
+
+### T113 Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields
+- State: Available
+- Depends: none
+- Source: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager (T056)
+- Fixtures: none
+- Deliverables: converters in csharp/Unciv.Core/Json plus round-trip tests with Kotlin field names
+- Gate: dotnet test
+- Claimed:
+- Notes: From T056 (split off T109): serialized fields are JavaHashSet<string>/JavaHashMap<string,int>/Counter<string>/int[] (Kotlin HashSet/HashMap keep java.util order); BaseUnit.Promotions has a private converter. camelCase names to check: techsResearched, techsInProgress, techsToResearch, freeTechs, repeatingTechsResearched, scienceOfLast8Turns, scienceFromResearchAgreements, overflowScience (private), goldPercentConvertedToScience; policies: freePolicies, storedCulture, adoptedPolicies (internal), numberOfAdoptedPolicies (private), cultureOfLast8Turns (private), shouldOpenPolicyPicker; goldenAges: storedHappiness, numberOfGoldenAges (private), turnsLeftForCurrentGoldenAge; greatPeople: all public vars. Private/internal members are serialized in Kotlin (Gdx Json uses fields).
+
+### T114 Hardening sweep 2: non-blocking findings from T056, T059, T108 reviews
+- State: Available
+- Depends: none
+- Source: C# files named in the notes (no Kotlin source: parity fixes and missing tests)
+- Fixtures: none
+- Deliverables: fixes and tests in csharp/Unciv.Core and csharp/Unciv.Core.Tests
+- Gate: dotnet test
+- Claimed:
+- Notes: Moved out of T109 (appended there while it was in progress). Fix each with a test; tick off with ticket.py note. (1) T056: CivManagerTests lacks cases for TechManager.GetBestRoadAvailable, the ocean/RoadsConnectAcrossRivers booleans in UpdateTransientBooleans, IsObsolete, LimitOverflowScience clamp, UpdateResearchProgress overflow completion, the policy-branch-unlocked / known-civ era / Mayan Long Count notifications, PolicyManager.AdoptableBranches, RemovePolicy assumeWasFree / non-adopted throw, odd refundPercentage rounding (33), negative last-8-turns sums; T052 must add tests that TriggerUniqueSeam call sites fire; if a UI port enumerates PolicyManager.BranchCompletionMap/PriorityMap it should become ordered (LinkedHashMap). (2) T059: TradeOffer.getOfferText not ported (belongs with Trade UI T084 or a Translation port); DiplomacyFunctions.getKnownCivsSorted relies on IGameInfoState.GetCivsSorted being implemented by T046; DiplomacyFunctions.meetCiv skips settings.addCompletedTutorialTask (client-side). Untested in DiplomacyCoreTests: MakePeace/MakePeaceOneSide, UpdateHasOpenBorders teleport branch, city-state resting point/degrade/GetTurnsToRelationshipChange, IsConsideredFriendlyTerritory, SetReligionBasedModifier, embassy/research/defensive-pact can-sign checks, GetKnownCivsSorted. TradeOffer.GetHashCode uses randomized HashCode.Combine (Kotlin data-class hash is deterministic): make it a fixed combine. TradeOffersList.Add hides List.Add: save loading must not rely on IList.Add merging. DiplomacyCoreTests [Collection(TranslationState)] is redundant now that xUnit parallelism is off. DeclareWar() needs the DeclareWarReason parameter when T068 lands. (3) T108: Belief.GetBeliefsMatching/GetCivilopediaTextMatching pass gameInfo=null to IsHiddenFromCivilopedia (Kotlin uses UncivGame.getGameInfoOrNull()): add an optional gameInfo/CivilopediaContext parameter; KotlinNumberText.FloatToString differs from Java for subnormals (1.0E-45 vs 1.4E-45).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
