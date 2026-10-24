@@ -1420,7 +1420,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by T067: UnitMovement and MapUnit are concrete now. T040 left CarrierSlotMatcher/MapVisualization/MapPathing typed by seams (MapPathingSeams.cs: IGameContextUnit.MovementMemoryPositions/IsVisibleTo, IGameContextCivilization.HasExplored/CanBuildImprovementOn); retype them mechanically, keep the seam members only where another ticket still needs them. MapPathing.getPath(unit, ...) was not ported (no Kotlin caller); add it only if a caller exists.
 
 ### T135 T066 review follow-ups: UnitPromotions JSON round-trip, tie-break and promotion-trigger tests
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T066
 - Source:
 - Fixtures: none
@@ -1428,6 +1428,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~UnitManagerTests
 - Claimed: 2026-10-24T14:07:00Z
 - Notes: From T066 review. Also: T126 must delete the virtual UnitPromotions.CreatePromotionTree and the TestUnitPromotions test subclass.
+  - Implemented in UnitManagerTests.cs: UnitPromotions_RoundTripsThroughJson (tests XP, numberOfPromotions, promotions JavaHashSet round-trip and raw JSON parsing), EndTurn_ImprovementsDamageAdjacentEnemyUnits_EqualDamageCitadels_FirstExtremeWins (tests citadel damage tie-break where first neighbor in Neighbors iteration wins without stacking, plus higher damage override), CycleThroughDueUnits_AlternateOrder_EqualDistanceTieBreak_FirstExtremeWins (tests alternate cycle tie-break where first unit in unitList wins when distance to center is equal), and AddPromotion_AndRemovePromotion_FirePromotionTriggers (tests TriggerUponPromotion, TriggerUponPromotionGain, and TriggerUponPromotionLoss parsing, unit lookup, and trigger execution across paid, free, and remove paths).
 
 ### T136 T064 review follow-up: cover uncovered CityConquestFunctions/CityTurnManager branches
 - State: Done

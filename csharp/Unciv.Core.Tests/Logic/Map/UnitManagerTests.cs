@@ -1,9 +1,11 @@
+using Unciv.Json;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
@@ -231,6 +233,109 @@ public class UnitManagerTests
         var withUnit = unit.Promotions.Clone(other);
         Assert.Equal(["Shock"], withUnit.GetPromotions().Select(it => it.Name)); // the unit was set
         Assert.Throws<InvalidOperationException>(() => new UnitPromotions().XpForNextPromotion()); // lateinit unit
+    }
+
+    [Fact]
+    public void UnitPromotions_RoundTripsThroughJson()
+    {
+        var promotions = new UnitPromotions
+        {
+            XP = 45,
+            NumberOfPromotions = 3,
+        };
+        promotions.Promotions.Add("Shock I");
+        promotions.Promotions.Add("Drill I");
+
+        var json = UncivJson.Serialize(promotions);
+        var back = UncivJson.Deserialize<UnitPromotions>(json);
+
+        Assert.NotNull(back);
+        Assert.Equal(45, back.XP);
+        Assert.Equal(3, back.NumberOfPromotions);
+        Assert.Equal(2, back.Promotions.Count);
+        Assert.Contains("Shock I", back.Promotions);
+        Assert.Contains("Drill I", back.Promotions);
+        Assert.Equal(promotions, back);
+        Assert.Equal(promotions.GetHashCode(), back.GetHashCode());
+
+        // Default empty promotions object round-trips
+        var empty = new UnitPromotions();
+        var emptyBack = UncivJson.Deserialize<UnitPromotions>(UncivJson.Serialize(empty));
+        Assert.NotNull(emptyBack);
+        Assert.Equal(empty, emptyBack);
+        Assert.Equal(0, emptyBack.XP);
+        Assert.Equal(0, emptyBack.NumberOfPromotions);
+        Assert.Empty(emptyBack.Promotions);
+
+        // Explicit JSON string verifying expected Kotlin field names
+        var rawJson = """{"XP":20,"promotions":["Barrage I"],"numberOfPromotions":1}""";
+        var fromRaw = UncivJson.Deserialize<UnitPromotions>(rawJson);
+        Assert.NotNull(fromRaw);
+        Assert.Equal(20, fromRaw.XP);
+        Assert.Equal(1, fromRaw.NumberOfPromotions);
+        Assert.Equal(["Barrage I"], fromRaw.Promotions);
+    }
+
+    [Fact]
+    public void AddPromotion_AndRemovePromotion_FirePromotionTriggers()
+    {
+        var w = NewWorld(ruleset =>
+        {
+            AddPromotions(ruleset,
+                new Promotion
+                {
+                    Name = "Shock",
+                    Uniques = ["Gain [50] [Gold]"], // direct effect without trigger conditionals
+                },
+                new Promotion
+                {
+                    Name = "Drill",
+                    Uniques = ["Gain [10] [Gold] <upon entering a [Hill] tile>"], // trigger conditional (skipped by direct effects)
+                });
+        });
+
+        var unit = w.Unit("Hero", "Land", 2, 2, null,
+            "Gain [10] [Gold] <upon being promoted>",
+            "Gain [20] [Gold] <upon gaining the [Shock] promotion>",
+            "Gain [30] [Gold] <upon gaining the [Drill] promotion>",
+            "Gain [40] [Gold] <upon losing the [Shock] promotion>");
+
+        // Verify that unit triggered uniques are identified properly
+        var uponPromotion = unit.GetTriggeredUniques(UniqueType.TriggerUponPromotion).ToList();
+        Assert.Single(uponPromotion);
+        Assert.Equal("Gain [10] [Gold] <upon being promoted>", uponPromotion[0].Text);
+
+        var uponGainShock = unit.GetTriggeredUniques(UniqueType.TriggerUponPromotionGain, null, it => it.Params[0] == "Shock").ToList();
+        Assert.Single(uponGainShock);
+        Assert.Equal("Gain [20] [Gold] <upon gaining the [Shock] promotion>", uponGainShock[0].Text);
+
+        var uponGainDrill = unit.GetTriggeredUniques(UniqueType.TriggerUponPromotionGain, null, it => it.Params[0] == "Drill").ToList();
+        Assert.Single(uponGainDrill);
+        Assert.Equal("Gain [30] [Gold] <upon gaining the [Drill] promotion>", uponGainDrill[0].Text);
+
+        var uponLossShock = unit.GetTriggeredUniques(UniqueType.TriggerUponPromotionLoss, null, it => it.Params[0] == "Shock").ToList();
+        Assert.Single(uponLossShock);
+        Assert.Equal("Gain [40] [Gold] <upon losing the [Shock] promotion>", uponLossShock[0].Text);
+
+        // Paid promotion: increments NumberOfPromotions, spends XP, triggers TriggerUponPromotion and TriggerUponPromotionGain("Shock")
+        unit.Promotions.XP = 20;
+        unit.Promotions.AddPromotion("Shock", isFree: false);
+        Assert.Equal(10, unit.Promotions.XP);
+        Assert.Equal(1, unit.Promotions.NumberOfPromotions);
+        Assert.Contains("Shock", unit.Promotions.Promotions);
+
+        // Free promotion: does not change NumberOfPromotions or XP, does not trigger TriggerUponPromotion, triggers TriggerUponPromotionGain("Drill")
+        unit.Promotions.AddPromotion("Drill", isFree: true);
+        Assert.Equal(10, unit.Promotions.XP);
+        Assert.Equal(1, unit.Promotions.NumberOfPromotions);
+        Assert.Contains("Drill", unit.Promotions.Promotions);
+
+        // Removing promotion: triggers TriggerUponPromotionLoss("Shock")
+        unit.Promotions.RemovePromotion("Shock");
+        Assert.DoesNotContain("Shock", unit.Promotions.Promotions);
+
+        // Removing non-acquired promotion: no-op, does not throw or trigger
+        unit.Promotions.RemovePromotion("Shock");
     }
 
     // ---- UnitUpgradeManager
@@ -561,6 +666,63 @@ public class UnitManagerTests
         Assert.Contains(enemy.Notifications, it => it.Text == "Your [Fort] has destroyed an enemy [Warrior]");
     }
 
+    [Fact]
+    public void EndTurn_ImprovementsDamageAdjacentEnemyUnits_EqualDamageCitadels_FirstExtremeWins()
+    {
+        var w = NewWorld(ruleset =>
+        {
+            ruleset.TileImprovements.Put("CitadelAlpha", new TileImprovement
+            {
+                Name = "CitadelAlpha",
+                Uniques = ["Adjacent enemy units ending their turn take [15] damage"],
+            });
+            ruleset.TileImprovements.Put("CitadelBeta", new TileImprovement
+            {
+                Name = "CitadelBeta",
+                Uniques = ["Adjacent enemy units ending their turn take [15] damage"],
+            });
+            ruleset.TileImprovements.Put("CitadelGamma", new TileImprovement
+            {
+                Name = "CitadelGamma",
+                Uniques = ["Adjacent enemy units ending their turn take [25] damage"],
+            });
+        });
+
+        var enemy = MapUnitFactory.NewCiv(Constants.Barbarians, w.Info);
+        enemy.PlayerType = PlayerType.Human;
+        var city = MapUnitFactory.NewCity(enemy, "Camp", HexCoord.Of(0, 0));
+        enemy.Cities = [city];
+
+        var unit = w.Unit();
+        unit.AttacksThisTurn = 1; // prevent healing
+        var neighbors = unit.CurrentTile.Neighbors;
+        Assert.True(neighbors.Count >= 2);
+
+        var firstNeighbor = neighbors[0];
+        var secondNeighbor = neighbors[1];
+
+        firstNeighbor.SetOwningCity(city);
+        firstNeighbor.Improvement = "CitadelAlpha";
+        secondNeighbor.SetOwningCity(city);
+        secondNeighbor.Improvement = "CitadelBeta";
+
+        // Equal damage citadels (15 each): first neighbor in Neighbors iteration wins (does not stack, picks first extreme)
+        new UnitTurnManager(unit).EndTurn();
+        Assert.Equal(85, unit.Health); // 100 - 15 = 85 (not 100 - 30)
+        Assert.Contains(w.Civ.Notifications, it => it.Text == "An enemy [CitadelAlpha] has attacked our [Warrior]");
+        Assert.DoesNotContain(w.Civ.Notifications, it => it.Text == "An enemy [CitadelBeta] has attacked our [Warrior]");
+
+        // Now upgrade secondNeighbor to CitadelGamma (25 damage): higher damage overrides first extreme
+        secondNeighbor.Improvement = "CitadelGamma";
+        secondNeighbor.TileImprovement = null;
+        w.Civ.Notifications.Clear();
+        unit.AttacksThisTurn = 1;
+        new UnitTurnManager(unit).EndTurn();
+        Assert.Equal(60, unit.Health); // 85 - 25 = 60
+        Assert.Contains(w.Civ.Notifications, it => it.Text == "An enemy [CitadelGamma] has attacked our [Warrior]");
+        Assert.DoesNotContain(w.Civ.Notifications, it => it.Text == "An enemy [CitadelAlpha] has attacked our [Warrior]");
+    }
+
     // ---- UnitManager
 
     [Fact]
@@ -688,6 +850,45 @@ public class UnitManagerTests
         Assert.Same(skipped, units.CycleThroughDueUnits());
         near.Due = far.Due = skipped.Due = false;
         Assert.Null(units.CycleThroughDueUnits());
+    }
+
+    [Fact]
+    public void CycleThroughDueUnits_AlternateOrder_EqualDistanceTieBreak_FirstExtremeWins()
+    {
+        var w = NewWorld();
+        w.Info.AlternateCycleOrder = true;
+        var units = (UnitManager)w.Civ.Units;
+        w.Civ.Cities = []; // No capital: center falls back to TileMap[0, 0]
+
+        // Both units are at HexCoord distance 1 from (0, 0)
+        var unitA = w.Unit("Warrior", "Land", 1, 0);
+        var unitB = w.Unit("Warrior", "Land", 0, 1);
+        Assert.Equal(1, unitA.CurrentTile.AerialDistanceTo(w.Map[HexCoord.Of(0, 0)]));
+        Assert.Equal(1, unitB.CurrentTile.AerialDistanceTo(w.Map[HexCoord.Of(0, 0)]));
+
+        unitA.CurrentMovement = 2f;
+        unitB.CurrentMovement = 2f;
+
+        // When unitA is added first, unitA is first in unitList and wins the tie-break
+        units.AddUnit(unitA, false);
+        units.AddUnit(unitB, false);
+        Assert.Same(unitA, units.CycleThroughDueUnits());
+        // Skipping unitA chooses the remaining equal-distance unit
+        Assert.Same(unitB, units.CycleThroughDueUnits(unitA));
+
+        // When unitB is added first, unitB is first in unitList and wins the tie-break
+        var w2 = NewWorld();
+        w2.Info.AlternateCycleOrder = true;
+        var units2 = (UnitManager)w2.Civ.Units;
+        w2.Civ.Cities = [];
+        var unitA2 = w2.Unit("Warrior", "Land", 1, 0);
+        var unitB2 = w2.Unit("Warrior", "Land", 0, 1);
+        unitA2.CurrentMovement = 2f;
+        unitB2.CurrentMovement = 2f;
+        units2.AddUnit(unitB2, false);
+        units2.AddUnit(unitA2, false);
+        Assert.Same(unitB2, units2.CycleThroughDueUnits());
+        Assert.Same(unitA2, units2.CycleThroughDueUnits(unitB2));
     }
 
     [Fact]
