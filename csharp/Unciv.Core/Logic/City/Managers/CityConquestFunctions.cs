@@ -68,7 +68,7 @@ public class CityConquestFunctions(CityObject city)
     private void RemoveAutoPromotion()
     {
         city.UnitShouldUseSavedPromotion = new JavaHashMap<string, bool>();
-        city.UnitToPromotions = new JavaHashMap<string, IUnitPromotions>();
+        city.UnitToPromotions = new JavaHashMap<string, UnitPromotions>();
     }
 
     private void RemoveBuildingsOnMoveToCiv()
