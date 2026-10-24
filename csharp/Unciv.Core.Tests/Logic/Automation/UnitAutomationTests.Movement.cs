@@ -3,7 +3,6 @@ using Unciv.Logic.Civilization;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.View;
-using UnitAutomationSeamsClass = Unciv.Logic.Map.MapUnit.Actions.UnitAutomation;
 
 namespace Unciv.Core.Tests.Logic.Automation;
 
@@ -178,13 +177,13 @@ public partial class UnitAutomationTests
         var scout = testGame.AddUnit("Scout", civ, testGame.GetTile(0, 0));
         scout.Action = UnitActionType.Explore.Value();
 
-        UnitAutomationSeamsClass.AutomatedExplore(ViewOf(scout));
+        UnitAutomation.AutomatedExplore(ViewOf(scout));
 
         Assert.Null(scout.Action);
         Assert.Contains(civ.Notifications, n => n.Text.Contains("finished exploring", StringComparison.Ordinal));
 
         var warrior = testGame.AddUnit("Warrior", civ, testGame.GetTile(1, 0));
-        UnitAutomationSeamsClass.AutomateUnitMoves(ViewOf(warrior));
+        UnitAutomation.AutomateUnitMoves(ViewOf(warrior));
     }
 
     [Fact]

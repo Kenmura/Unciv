@@ -9,12 +9,12 @@ using Unciv.Utils;
 using Unciv.View;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
+using UnitAutomationClass = Unciv.Logic.Automation.Unit.UnitAutomation;
 
 namespace Unciv.Logic.Map.MapUnit.Actions;
 
 // Ported from core/src/com/unciv/logic/map/mapunit/actions/UnitActions.kt (T080).
 // Stripped: the purity annotations. UI concerns (UncivGame.settings, GUI.getWorldScreen) dropped.
-// UnitAutomation calls (automatedExplore/automateUnitMoves) go through the UnitAutomation seam (T156).
 
 /// <summary>
 /// Manages creation of <see cref="UnitAction"/> instances.
@@ -169,7 +169,7 @@ public static class UnitActions
             {
                 unit.Action = UnitActionType.Explore.Value();
                 if (unit.HasMovement())
-                    UnitAutomation.AutomatedExplore(new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).GetMapUnitView(unit));
+                    UnitAutomationClass.AutomatedExplore(new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).GetMapUnitView(unit));
             }
         );
     }
@@ -300,7 +300,7 @@ public static class UnitActions
                 ? () =>
                 {
                     unit.Automated = true;
-                    UnitAutomation.AutomateUnitMoves(new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).GetMapUnitView(unit));
+                    UnitAutomationClass.AutomateUnitMoves(new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).GetMapUnitView(unit));
                 }
         : null
         );
