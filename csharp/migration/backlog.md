@@ -94,7 +94,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - State: Done (full ticket: backlog-archive.md)
 
 ### T015 HexMath Tile/Map dependent functions
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T039, T022
 - Source: core/src/com/unciv/logic/map/HexMath.kt (`tilesAndNeighborUniqueIndex`, `getDistanceFromEdge`)
 - Fixtures: tests/src/com/unciv/logic/map/HexmathTests.kt (`testTileNeighborMappingIsNonConflicting`)

@@ -16,10 +16,8 @@ flowchart TD
     T006["T006<br/>HexMath"]
     T010["T010<br/>Seeded deterministic RNG"]
     T012["T012<br/>Command layer design"]
-    T015["T015<br/>HexMath Tile/Map dependent functions"]
     T016["T016<br/>Kotlin random extensions (IntRange.random, Collection.random..."]
     T017["T017<br/>JVM hash codes and state-based randomness helpers"]
-    T022["T022<br/>Map size and parameters: MapSize, MapParameters, NeighborDir..."]
     T028["T028<br/>Unique system: Conditionals and Countables"]
     T030["T030<br/>Ruleset base objects: RulesetObject, Specialist, Speed, Poli..."]
     T034["T034<br/>Ruleset and RulesetCache loader"]
@@ -77,8 +75,6 @@ flowchart TD
     A006["A006<br/>Homeland AI priority move queue"]
     A007["A007<br/>Operations and armies layer"]
   end
-  T039 --> T015
-  T022 --> T015
   T034 --> T046
   T039 --> T046
   T045 --> T046
@@ -209,10 +205,8 @@ flowchart TD
   class T006 done
   class T010 done
   class T012 done
-  class T015 review
   class T016 done
   class T017 done
-  class T022 done
   class T028 done
   class T030 done
   class T034 done
@@ -257,7 +251,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Title |
 |---|---|---|---|
-| T015 | Needs-Review [Claude] | T039, T022 | HexMath Tile/Map dependent functions |
 | T046 | Available | T034, T039, T045, T055, T060, T065 | GameInfo core and the hooks waiting for it |
 | T035 | Available | T034, T038, T039, T046, T053, T054, T057, T061, T065 | Test-support port: TestGame helper and deferred fixtures |
 | T037 | Available | T036, T035 | Golden test: load and validate Vanilla and bundled mod rulesets |
