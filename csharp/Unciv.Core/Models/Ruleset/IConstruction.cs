@@ -52,8 +52,6 @@ public interface IConstructionCity : IGameContextCity
     new IConstructionCivilization Civ { get; }
     /// <summary><c>city.getMatchingUniques(uniqueType, gameContext)</c>, including the civ's uniques; <c>null</c> is <see cref="State"/>.</summary>
     IEnumerable<UniqueObject> GetMatchingUniques(UniqueType uniqueType, GameContext? gameContext = null);
-    /// <summary><c>city.forEachMatchingUnique(uniqueType, gameContext, op)</c>; <c>null</c> is <see cref="State"/>.</summary>
-    void ForEachMatchingUnique(UniqueType uniqueType, GameContext? gameContext, Action<UniqueObject> op);
 }
 
 public interface IConstruction : INamed

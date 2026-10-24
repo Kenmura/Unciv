@@ -55,7 +55,7 @@ public class RulesetUnitTests
             return LocalUniques.Concat(civ.CivUniques).Where(it => it.Type == uniqueType && it.ConditionalsApply(state));
         }
 
-        public void ForEachMatchingUnique(UniqueType uniqueType, GameContext? gameContext, Action<UniqueObject> op)
+        public override void ForEachMatchingUnique(UniqueType uniqueType, GameContext? gameContext, Action<UniqueObject> op)
         {
             foreach (var unique in GetMatchingUniques(uniqueType, gameContext)) op(unique);
         }

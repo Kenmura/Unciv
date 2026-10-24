@@ -228,7 +228,7 @@ flowchart TD
   class T046 avail
   class T052 avail
   class T053 done
-  class T054 prog
+  class T054 review
   class T055 avail
   class T056 avail
   class T057 avail
@@ -264,7 +264,7 @@ flowchart TD
 | T037 | Available | T036, T035 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T041 | Available | T039, T010, T016, T017, T073, T074, T075, T076, T077 | MapGenerator pipeline (audit existing partial work first) |
 | T052 | Available | T028, T055, T056, T057, T060, T065, T066 | UniqueTriggerActivation and UniqueTriggerExecutors |
-| T054 | In-Progress [Claude] | T053 | Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions |
+| T054 | Needs-Review [Claude] | T053 | Tile core (part 2b): TileStatFunctions, TileImprovementFunctions, TileNormalizer, ImprovementFunctions |
 | T055 | Available | T034, T045, T039, T053 | Civilization core: Civilization, ExploredRegion, PopupAlert |
 | T056 | Available | T055 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
 | T057 | Available | T055 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |

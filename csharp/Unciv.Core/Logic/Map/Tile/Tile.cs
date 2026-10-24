@@ -14,10 +14,10 @@ namespace Unciv.Logic.Map.Tiles;
 //
 // Stripped: timeThis profiling wrappers, GUI.clearUndoCheckpoints (UI), the @Readonly/@Cache purity annotations, the Gdx Json
 // private constructor of ImprovementQueueEntry. Fonts.turn is inlined.
-// Deferred to T054 (they need TileImprovementFunctions / TileStatFunctions / TileNormalizer / TileImprovement.getTurnsToBuild /
-// UnitMovement, none of which are ported): the `improvementFunctions` and `stats` fields, removeImprovement, both setImprovement
-// overloads, setBaseTerrain (TileNormalizer.normalizeToRuleset), doWorkerTurn, setPillaged (+ clearAllPathfindingCaches),
-// startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit), and the convertTerrains parameter of
+// T054 added the `improvementFunctions` and `stats` fields, removeImprovement, both setImprovement overloads, setBaseTerrain and
+// setPillaged (+ clearAllPathfindingCaches).
+// Still deferred (they need TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource and the settings tutorial tasks, T046/T048):
+// doWorkerTurn, startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit); and the convertTerrains parameter of
 // setConnectedByRiver (MapGenerator.Helpers.convertTerrains).
 
 /// <summary>
@@ -91,6 +91,16 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     }
 
     public int ZeroBasedIndex { get; set; }
+
+    public Tile()
+    {
+        ImprovementFunctions = new TileImprovementFunctions(this);
+        Stats = new TileStatFunctions(this);
+    }
+
+    public TileImprovementFunctions ImprovementFunctions { get; }
+
+    public TileStatFunctions Stats { get; }
 
     private Ruleset? ruleset;
     /// <summary>A tile can be a tile with a ruleset, even without a map. Kotlin <c>lateinit var</c>.</summary>
@@ -1033,6 +1043,16 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         }
     }
 
+    /// <summary>Does not remove roads</summary>
+    public void RemoveImprovement() =>
+        ImprovementFunctions.SetImprovement((TileImprovement?)null);
+
+    public void SetImprovement(string improvementName, IGameContextCivilization? civToHandleCompletion = null, IGameContextUnit? unit = null) =>
+        ImprovementFunctions.SetImprovement(improvementName, civToHandleCompletion, unit);
+
+    public void SetImprovement(TileImprovement? improvement, IGameContextCivilization? civToHandleCompletion = null, IGameContextUnit? unit = null) =>
+        ImprovementFunctions.SetImprovement(improvement, civToHandleCompletion, unit);
+
     public void SetImprovementBasic(string improvementName)
     {
         var tileImprovement = Ruleset.TileImprovements.GetValueOrDefault(improvementName);
@@ -1085,6 +1105,68 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     /// <summary>Adds an entry to the <see cref="ImprovementQueue"/> with explicit <paramref name="turnsToImprovement"/></summary>
     public void QueueImprovement(string improvementName, int turnsToImprovement) =>
         ImprovementQueue.Add(new ImprovementQueueEntry(improvementName, turnsToImprovement));
+
+    public void SetBaseTerrain(Terrain baseTerrainObject)
+    {
+        BaseTerrain = baseTerrainObject.Name;
+        this.baseTerrainObject = baseTerrainObject;
+        TileNormalizer.NormalizeToRuleset(this, Ruleset);
+        SetTerrainFeatures(TerrainFeatures);
+        SetTerrainTransients();
+    }
+
+    /// <summary>Sets tile improvement to pillaged (without prior checks for validity)
+    /// and ensures that matching <see cref="UniqueType.CreatesOneImprovement"/> queued buildings are removed.</summary>
+    public void SetPillaged()
+    {
+        if (!CanPillageTile())
+            return;
+        // http://well-of-souls.com/civ/civ5_improvements.html says that naval improvements are destroyed upon pillage
+        //    and I can't find any other sources so I'll go with that
+        if (!IsLand)
+        {
+            RemoveImprovement();
+            OwningCity?.ReassignPopulationDeferred();
+            return;
+        }
+
+        // Setting turnsToImprovement might interfere with UniqueType.CreatesOneImprovement
+        ImprovementFunctions.RemoveCreatesOneImprovementMarker();
+        ImprovementQueue.Clear(); // remove any in progress work as well
+        // if no Repair action, destroy improvements instead
+        if (!Ruleset.TileImprovements.ContainsKey(Constants.Repair))
+        {
+            if (CanPillageTileImprovement())
+                RemoveImprovement();
+            else
+                RemoveRoad();
+        }
+        else
+        {
+            // otherwise use pillage/repair systems
+            if (CanPillageTileImprovement())
+            {
+                ImprovementIsPillaged = true;
+            }
+            else
+            {
+                RoadIsPillaged = true;
+                ClearAllPathfindingCaches();
+            }
+        }
+
+        OwningCity?.ReassignPopulationDeferred();
+        OwningCity?.Civ.UpdateCivResources();
+    }
+
+    private void ClearAllPathfindingCaches()
+    {
+        var units = TileMap.GameInfo.Civilizations
+            .Where(it => it.IsAlive())
+            .SelectMany(it => it.GetCivUnits());
+        foreach (var otherUnit in units)
+            otherUnit.ClearPathfindingCache();
+    }
 
     public void SetRepaired()
     {
