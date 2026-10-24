@@ -569,7 +569,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created because T035 (TestGame) can only exist once the whole chain is ported, and each earlier ticket deferred its TestGame-based fixtures. Port them over the real TestGame, one test class per Kotlin class; any real behavioural bug found goes back to the owning ticket as a review note. Split by Kotlin test directory at claim time if too large. Also ports the Countables/Conditionals tests T028 deferred that need real game state, if T035 did not.
 
 ### T073 MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T039, T010, T016, T017
 - Source: core/src/com/unciv/logic/map/mapgenerator/MapGenerationRandomness.kt, MapResourceSetting.kt, MapElevationGenerator.kt, MapLandmassGenerator.kt
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
@@ -577,6 +577,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
 - Claimed: 2026-10-24T10:26Z
 - Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
+  - IMPLEMENTED (T073): MapGenerationRandomness.cs, MapElevationGenerator.cs, MapLandmassGenerator.cs, MapGeneratorSeams.cs in Logic/Map/MapGenerator (namespace Unciv.Logic.Map.MapGenerator); tests in Unciv.Core.Tests/Logic/Map/MapGenerator/MapGenerationTests.cs. MapResourceSetting was already ported in MapParameters.cs (T022): no new file. KotlinMath gained DoubleToLong and Pow(float,float) (Float.pow = Math.pow rounded to float). Deviations: (1) MapGenerator.kt is T041's, so MapGeneratorSeams.cs holds `TerrainOccursRange` (internal; everything except the `(Terrain, Unique)` ctor and Terrain.getGenerationConditions, which T041 adds) and `MapGeneratorSeams.GetTileRadius` (= MapGenerator.getTileRadius); T041 moves both into MapGenerator and deletes the file. (2) MapLandmassGenerator.GetInitializationTerrain is internal here and a private copy remains in TileMap.cs (T039); T041 may point TileMap at this one. (3) getNoise's `noiseFunction` lambda is a Func delegate; Kotlin default args kept. (4) chooseSpreadOutLocations: baseTerrainsToChosenTiles is a JavaHashMap (Java iteration order matters for the stable sortedBy tie-break), suitableTilesGrouped sets are LinkedHashSet. (5) createSpiral: Float hypot is Math.Sqrt(x*x+y*y) in double then rounded to float (no Math.Hypot in .NET); Kotlin Exception -> InvalidOperationException (getInitializationTerrain water fallback catches it). (6) retryLoweringWaterLevel takes (function, predicate) as C# cannot put an optional lambda before a trailing one. Fixtures: MapGenerationTests.kt needs the full MapGenerator (T041); its all-types x shapes x wrap loop is ported against the landmass generator with a hand-built ruleset, the terrain-count and sizeForAuto tests stay with T041. Same-seed-as-Kotlin golden values were not available (Kotlin tests only check aggregates). Gate and Standard checks pass (1242 tests).
 
 ### T074 MapGenerator B: RiverGenerator, NaturalWonderGenerator
 - State: Available

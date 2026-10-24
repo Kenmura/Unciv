@@ -34,6 +34,18 @@ public static class KotlinMath
         return (int)value;
     }
 
+    // Kotlin Double.toLong(): truncates toward zero, saturates at Long.MIN/MAX, NaN becomes 0.
+    public static long DoubleToLong(double value)
+    {
+        if (double.IsNaN(value)) return 0;
+        if (value >= 9223372036854775807.0) return long.MaxValue;
+        if (value <= -9223372036854775808.0) return long.MinValue;
+        return (long)value;
+    }
+
+    // Kotlin Float.pow(Float): computed in double and rounded to float (kotlin.math.pow delegates to Math.pow).
+    public static float Pow(float value, float exponent) => (float)Math.Pow(value, exponent);
+
     // Kotlin Double.toInt(): same rules as FloatToInt.
     public static int DoubleToInt(double value)
     {
