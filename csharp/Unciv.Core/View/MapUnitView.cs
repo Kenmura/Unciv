@@ -14,7 +14,7 @@ namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/MapUnitView.kt (T085). Stripped: the purity annotations.
 // Deferred, each with the ticket that ports what it calls:
-//   TODO(T082): containsAttackableEnemy, getAttackableEnemies (TargetHelper), tryAirSweep (AirInterception)
+//   TODO(T139): containsAttackableEnemy, getAttackableEnemies (TargetHelper), tryAirSweep (AirInterception)
 //   TODO(T083): tryMovePreparingAttack, attackOrNuke (Battle), mayUseNuke, tryNuke (Nuke)
 //   TODO(T079): canPillage (UnitActionsPillage)
 //   TODO(T080): canInvokeUnitAction, tryInvokeUnitAction (UnitActions)
@@ -143,7 +143,7 @@ public class MapUnitView : ForeignMapUnitView
     public bool IsUnknownTileWeShouldAssumeToBePassable(TileView tileView) =>
         Unit.Movement.IsUnknownTileWeShouldAssumeToBePassable(tileView.Unwrap());
 
-    // TODO(T082): containsAttackableEnemy needs TargetHelper.containsAttackableEnemy
+    // TODO(T139): containsAttackableEnemy needs TargetHelper.containsAttackableEnemy
     public int MaxAttacksPerTurn() => Unit.MaxAttacksPerTurn();
 
     public bool CannotMove() => Unit.Cache.CannotMove;
@@ -172,7 +172,7 @@ public class MapUnitView : ForeignMapUnitView
     public List<TileView> GetTilesInAttackRange() =>
         Unit.GetTile().GetTilesInDistanceRange(new IntRange(1, Unit.GetRange())).Select(it => GameView.TileMapView.GetTile(it)).ToList();
 
-    // TODO(T082): getAttackableEnemies needs TargetHelper.getAttackableEnemies
+    // TODO(T139): getAttackableEnemies needs TargetHelper.getAttackableEnemies
 
     /// <summary><c>null</c> if the unit isn't currently pathing a road; otherwise the tiles still to come on that path.</summary>
     public List<TileView>? GetFutureAutomatedRoadConnectionTiles()
@@ -252,7 +252,7 @@ public class MapUnitView : ForeignMapUnitView
     }
 
     // TODO(T083): tryMovePreparingAttack, attackOrNuke need Battle.movePreparingAttack/attackOrNuke; mayUseNuke, tryNuke need Nuke
-    // TODO(T082): tryAirSweep needs AirInterception.airSweep
+    // TODO(T139): tryAirSweep needs AirInterception.airSweep
     // TODO(T080): canInvokeUnitAction, tryInvokeUnitAction need UnitActions; TODO(T079): canPillage needs UnitActionsPillage.canPillage
 
     public bool TryFortifyIfCan()
