@@ -82,11 +82,14 @@ public static class OdMapImport
         foreach (var (name, child) in children)
         {
             var nameAsInt = name != null && int.TryParse(name, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 0;
-            var id = child.ValueKind == JsonValueKind.Object && child.TryGetProperty("id", out var idValue) ? AsInt(idValue) : nameAsInt;
+            var id = child.ValueKind == JsonValueKind.Object && child.TryGetProperty("id", out var idValue) && IsPlainValue(idValue) ? AsInt(idValue) : nameAsInt;
             if (id == 0) continue;
             provinces[id] = new Province(GetString(child, "terrain"), GetBoolean(child, "is_sea"));
         }
     }
+
+    // libGDX getXxx(name, default) returns the default for a missing, null, object or array member
+    private static bool IsPlainValue(JsonElement value) => value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Object or JsonValueKind.Array);
 
     // libGDX JsonValue.asInt
     private static int AsInt(JsonElement value) => value.ValueKind switch
@@ -101,28 +104,20 @@ public static class OdMapImport
     // getString(name, null)
     private static string? GetString(JsonElement parent, string name)
     {
-        if (parent.ValueKind != JsonValueKind.Object || !parent.TryGetProperty(name, out var value)) return null;
-        return value.ValueKind switch
-        {
-            JsonValueKind.Null => null,
-            JsonValueKind.String => value.GetString(),
-            JsonValueKind.Object or JsonValueKind.Array => throw new JsonException("Value cannot be converted to string"),
-            _ => value.GetRawText(),
-        };
+        if (parent.ValueKind != JsonValueKind.Object || !parent.TryGetProperty(name, out var value) || !IsPlainValue(value)) return null;
+        return value.ValueKind == JsonValueKind.String ? value.GetString() : value.GetRawText();
     }
 
-    // getBoolean(name, false)
+    // getBoolean(name, false); asBoolean: string is equalsIgnoreCase("true"), number is != 0
     private static bool GetBoolean(JsonElement parent, string name)
     {
-        if (parent.ValueKind != JsonValueKind.Object || !parent.TryGetProperty(name, out var value)) return false;
+        if (parent.ValueKind != JsonValueKind.Object || !parent.TryGetProperty(name, out var value) || !IsPlainValue(value)) return false;
         return value.ValueKind switch
         {
             JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.Null => false,
-            JsonValueKind.String => bool.Parse(value.GetString()!.ToLowerInvariant()),
-            JsonValueKind.Number => AsInt(value) != 0,
-            _ => throw new JsonException("Value cannot be converted to boolean"),
+            JsonValueKind.String => string.Equals(value.GetString(), "true", StringComparison.OrdinalIgnoreCase),
+            JsonValueKind.Number => value.GetDouble() != 0.0,
+            _ => false,
         };
     }
 

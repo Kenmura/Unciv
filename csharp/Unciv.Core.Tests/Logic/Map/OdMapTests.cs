@@ -140,6 +140,20 @@ public sealed class OdMapTests : IDisposable
         Assert.All(map.Values, it => Assert.True(ruleset.Terrains.ContainsKey(it.BaseTerrain)));
     }
 
+    [Fact]
+    public void LenientProvinceTableValuesFollowLibGdxDefaults()
+    {
+        var pixels = new int[8 * 8];
+        Array.Fill(pixels, (1 << 8) | 0xFF);
+        // id null -> key name 1; terrain object -> null; is_sea "yes" -> false
+        var table = "{\"1\":{\"id\":null,\"terrain\":{},\"is_sea\":\"yes\"}}";
+        var map = OdMapImport.Read(Zip(("provinces.png", OdMapPng.Encode(8, 8, pixels)), ("provinces.json", Encoding.UTF8.GetBytes(table))), ruleset, 4, 4);
+        Assert.DoesNotContain(map.Values, it => it.BaseTerrain == "Ocean");
+        var sea = "{\"1\":{\"id\":1,\"is_sea\":0.5}}";
+        var seaMap = OdMapImport.Read(Zip(("provinces.png", OdMapPng.Encode(8, 8, pixels)), ("provinces.json", Encoding.UTF8.GetBytes(sea))), ruleset, 4, 4);
+        Assert.All(seaMap.Values, it => Assert.Equal("Ocean", it.BaseTerrain));
+    }
+
     // ---- OdMapExportTests.kt
 
     private TileMap SampleMap(int columns = 20, int rows = 10)
