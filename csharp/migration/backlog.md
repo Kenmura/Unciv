@@ -173,7 +173,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review 2 (Claude): Pass. The `NextInt(from, until)` branches now match Kotlin (`n > 0 || n == Int.MinValue` normal path, else rejection sampling); the 10 golden values added are the ones I generated from kotlin-stdlib 2.3.0 and the diff is exactly the requested change. Gate 11/11 and Standard checks (build -warnaserror, format, full test 228/228) re-run by reviewer; no suppressions. Follow-ups: T016 (ranges/collections), T017 (JVM hashes). `[assembly: InternalsVisibleTo]` sits in GameRandom.cs; move it to a shared assembly-info file when a second internal needs it.
 
 ### T016 Kotlin random extensions (IntRange.random, Collection.random, shuffled)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T01:20:16Z
 - Depends: T010
 - Source: kotlin.random extension functions as used in core/src: `IntRange.random(Random)`, `Random.nextInt(IntRange)`, `Collection.random(Random)`, `randomOrNull(Random)`, `shuffled(Random)`, `MutableList.shuffle(Random)` (grep `random(rng)`, `shuffled(`, `nextInt(` in core/src/com/unciv/logic)
@@ -182,6 +182,10 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~GameRandomExtensionsTests`
 - Notes: Kotlin `Collection.random` is `elementAt(random.nextInt(size))` and throws NoSuchElementException when empty; `shuffled`/`shuffle(Random)` is the Kotlin Fisher-Yates (`for i in lastIndex downTo 1: j = random.nextInt(i + 1); swap`), not `java.util.Collections.shuffle`. Check each against the stdlib source before porting. `java.util.Random` has exactly one use in core/src (grep it) and needs its own decision: port the JVM LCG or replace and note it.
 
+  - Implementer notes (Claude): `Utils/IntRange.cs` (`readonly record struct IntRange(First, Last)`, `IsEmpty`, `ToString` `"5..4"`) and `Utils/GameRandomExtensions.cs`: `GameRandom.NextInt(IntRange)` (the three-way `last < MAX` / `first > MIN` / full-range split of `Random.nextInt(IntRange)`), `IntRange.Random`/`RandomOrNull`, `IReadOnlyCollection<T>.Random`/`RandomOrNull`, `IList<T>.Shuffle`, `IEnumerable<T>.Shuffled`. Golden values come from running the real functions on kotlin-stdlib 2.3.0 (java harness in `dotnet-dev`, seeds 0 and 42, one shared generator per seed so each step also proves how many values the previous one consumed; empty and one-element cases included). Mapping: IllegalArgumentException to ArgumentException (`NextInt(range)`), NoSuchElementException to InvalidOperationException (`Random`).
+  - Kotlin quirks kept: a one-element collection/range still consumes one value (`nextInt(1)` goes through `nextBits(0)`); `shuffle` of size 0 or 1 draws nothing; `randomOrNull` on empty draws nothing; shuffle is Kotlin's own Fisher-Yates, not `java.util.Collections.shuffle`.
+  - Deliberately not ported: the unseeded overloads (`shuffled()`, `random()`; ~33 call sites in `core/src` use them and must be given a seeded `GameRandom` when ported, see COMMANDS.md audit), `RandomOrNull` for value types (needs `T?` vs default; Unciv only uses it on objects), `Sequence`/`Array` variants. `Collection.Random` indexes with `ElementAt`, so callers must pass a collection whose order matches the Kotlin one (a `HashSet` in C# is not insertion ordered). The one `java.util.Random` use in `core/src` is `multiplayer/apiv2/ApiV2.kt`, a non-goal: nothing to port.
+  - Ran Gate (`~GameRandomExtensionsTests`, 3 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 231/231.
 
 ### T011 State-hash determinism harness
 - State: Available
