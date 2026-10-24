@@ -38,6 +38,9 @@ public sealed class GameClientState
     /// <summary>The unported <c>TradeEvaluation</c> (TODO(T089): set by its port). TurnManager throws when it must validate a trade and this is null.</summary>
     public ITradeValidity? TradeEvaluation { get; set; }
 
+    /// <summary><c>worldScreen?.autoPlay</c>: null when there is no client (headless simulation).</summary>
+    public IAutoPlay? AutoPlay { get; set; }
+
     /// <summary><c>settings.multiplayer.getUserId()</c>; the GameSettings default is the empty string.</summary>
     public string UserId { get; set; } = "";
 
@@ -52,4 +55,14 @@ public sealed class GameClientState
 
     /// <summary><c>settings.addCompletedTutorialTask(task)</c> without the settings file save and the UI flag.</summary>
     public bool AddCompletedTutorialTask(string tutorialTask) => TutorialTasksCompleted.Add(tutorialTask);
+}
+
+/// <summary>What <c>nextTurn</c> calls on <c>UncivGame.Current.worldScreen.autoPlay</c> (client state, set by the client).</summary>
+public interface IAutoPlay
+{
+    /// <summary><c>autoPlay.isAutoPlaying()</c></summary>
+    bool IsAutoPlaying();
+
+    /// <summary><c>autoPlay.stopAutoPlay()</c></summary>
+    void StopAutoPlay();
 }

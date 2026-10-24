@@ -23,7 +23,7 @@ namespace Unciv.Logic.Civilization.Managers;
 //   Kotlin builds `GameView(gameInfo, civ).civView`.
 // - TradeEvaluation().isTradeValid (T089) is the ITradeValidity hook on the ClientState; startTurn throws when a trade request must
 //   be validated and there is none (TODO(T089)).
-// - GameInfo.processDiplomaticVictory is T071 (IGameInfoState.ProcessDiplomaticVictory).
+// - GameInfo.processDiplomaticVictory (T071) is IGameInfoState.ProcessDiplomaticVictory.
 
 public class TurnManager(Civilization civInfo)
 {

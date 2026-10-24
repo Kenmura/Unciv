@@ -22,8 +22,9 @@ namespace Unciv.Logic;
 
 // Ported from core/src/com/unciv/logic/GameInfo.kt (T046): fields, serialization shape, setTransients, queries, difficulty/speed accessors.
 //
-// Not here: turn handling (nextTurn, recordRankingStats, notifyOfCloseEnemyUnits, the enemy/bombard notifications, processDiplomaticVictory,
-// checkForVictory, updateMinutesBeforeForceResign) and the BackwardCompatibility calls in setTransients: T071 (TODO(T071)).
+// Turn handling (nextTurn, recordRankingStats, notifyOfCloseEnemyUnits, the enemy/bombard notifications, processDiplomaticVictory,
+// checkForVictory, updateMinutesBeforeForceResign) is in GameInfoTurn.cs (T071); the BackwardCompatibility calls in setTransients go to
+// BackwardCompatibility.cs (T071).
 //
 // Deviations from the Kotlin source:
 // - Wall clock and randomness are inputs, not defaults: currentTurnStartTime starts at 0 (Kotlin: Clock.System.now()) and gameId at ""
@@ -79,7 +80,7 @@ public class VictoryData : IsPartOfGameInfoSerialization
 }
 
 /// <summary>The virtual world the users play in</summary>
-public class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSerializationVersion, IGameInfoState
+public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSerializationVersion, IGameInfoState
 {
     private static T Lateinit<T>(T? value, string name) where T : class =>
         value ?? throw new InvalidOperationException($"lateinit property {name} has not been initialized");
@@ -553,7 +554,7 @@ public class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSerialization
         if (missingMods.Count != 0)
             throw new MissingModsException(missingMods);
 
-        // TODO(T071): removeMissingModReferences()
+        BackwardCompatibility.RemoveMissingModReferences(this);
         if (VictoryData != null) VictoryData.WinningCivObject = GetCivilization(VictoryData.WinningCiv);
 
         foreach (var baseUnit in Ruleset.Units.Values)
@@ -606,7 +607,7 @@ public class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSerialization
         foreach (var civInfo in Civilizations) civInfo.SetTransients();
         TileMap.SetNeutralTransients(); // has to happen after civInfo.setTransients() sets owningCity
 
-        // TODO(T071): convertFortify()
+        BackwardCompatibility.ConvertFortify(this);
 
         UpdateCivilizationState();
 
@@ -620,7 +621,9 @@ public class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSerialization
 
         Barbarians.SetTransients(this);
 
-        // TODO(T071): migrateToTileHistory(), migrateGreatGeneralPools(), ensureUnitIds()
+        BackwardCompatibility.MigrateToTileHistory(this);
+        BackwardCompatibility.MigrateGreatGeneralPools(this);
+        BackwardCompatibility.EnsureUnitIds(this);
     }
 
     public void SetGlobalTransients()

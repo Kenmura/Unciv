@@ -68,12 +68,14 @@ public sealed class CivTurnTests
     }
 
     [Fact]
-    public void ProcessingDiplomaticVictoryNeedsGameInfoTurnHandling()
+    public void ShowingDiplomaticVotingResultsProcessesTheDiplomaticVictory()
     {
         var civ = Major();
         civ.AddFlag(nameof(CivFlags.ShowDiplomaticVotingResults), 0);
-        // GameInfo.processDiplomaticVictory is T071: the seam default throws until it is ported
-        Assert.Throws<NotSupportedException>(() => new TurnManager(civ).StartTurn());
+        var gameInfo = (GameInfo)civ.GameInfo;
+        Assert.False(gameInfo.DiplomaticVictoryVotesProcessed); // GameInfo.processDiplomaticVictory (T071)
+        new TurnManager(civ).StartTurn();
+        Assert.True(gameInfo.DiplomaticVictoryVotesProcessed);
     }
 
     [Fact]

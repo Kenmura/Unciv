@@ -84,8 +84,7 @@ public interface IGameInfoState : IConstructionGameInfo
     /// <summary><c>gameInfo.victoryData</c></summary>
     VictoryData? VictoryData { get; set; }
     /// <summary><c>gameInfo.processDiplomaticVictory()</c> (GameInfo turn handling, T071).</summary>
-    void ProcessDiplomaticVictory() =>
-        throw new NotSupportedException("this IGameInfoState does not implement ProcessDiplomaticVictory (TODO(T071): drop the default when GameInfo implements it)");
+    void ProcessDiplomaticVictory();
     /// <summary>The client settings and hooks that stand in for <c>UncivGame.Current</c> (T046).</summary>
     GameClientState ClientState { get; }
 }

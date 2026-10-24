@@ -14,7 +14,6 @@ namespace Unciv.Logic.Civilization;
 // Kotlin extends HashMap<Int, Map<RankingType, Int>>; this wraps a JavaHashMap so iteration (and the serialized turn
 // order) is java.util.HashMap order (Int keys have a deterministic JVM hashCode). The inner maps are insertion-ordered
 // (Kotlin: associateWith / mutableMapOf / mapOf are LinkedHashMaps). Equality is content equality, like HashMap.equals.
-// Not ported: recordRankingStats(Civilization), which needs Civilization.getStatForRanking and gameInfo.turns.
 
 /// <summary>Records for each turn (key of outer map) what the score (value of inner map) was for each RankingType.</summary>
 [JsonConverter(typeof(CivRankingHistoryConverter))]
@@ -29,6 +28,10 @@ public class CivRankingHistory : IEnumerable<KeyValuePair<int, IReadOnlyDictiona
         get => map[turn];
         set => map[turn] = value;
     }
+
+    /// <summary>Kotlin <c>recordRankingStats(civilization)</c> (T071): stores each <see cref="RankingType"/>'s current value for this turn.</summary>
+    public void RecordRankingStats(Civilization civilization) =>
+        map[civilization.GameInfo.Turns] = Enum.GetValues<RankingType>().ToDictionary(it => it, civilization.GetStatForRanking);
 
     public bool ContainsKey(int turn) => map.ContainsKey(turn);
 

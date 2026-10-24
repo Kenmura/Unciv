@@ -241,7 +241,7 @@ flowchart TD
   class T067 done
   class T068 done
   class T069 done
-  class T071 prog
+  class T071 review
   class T072 ondeck
   class T078 done
   class T079 ondeck
@@ -301,7 +301,7 @@ flowchart TD
 | T082 | In-Progress [Claude] | T081, T046, T067, T035 | 14 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T083 | Available (waiting on T082, T052, T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
 | T088 | Available (waiting on T087) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
-| T071 | In-Progress [Claude] | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
+| T071 | Needs-Review [Claude] | T046, T070 | 12 | GameInfo turn handling and BackwardCompatibility |
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T080 | Available (waiting on T079) | T079, T061, T068 | 9 | Unit actions B: UnitActions, UnitActionsFromUniques |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |

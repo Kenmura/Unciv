@@ -56,6 +56,8 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
         CivsSortedCalls.Add((includeCityStates, includeDefeated, civToSortFirst));
         return Civs.Where(it => additionalFilter == null || additionalFilter(it)).ToList();
     }
+    public int DiplomaticVictoryProcessed { get; private set; }
+    void IGameInfoState.ProcessDiplomaticVictory() => DiplomaticVictoryProcessed++;
     public HashSet<string> SpaceResourceNames { get; } = [];
     IReadOnlySet<string> IGameInfoState.SpaceResources => SpaceResourceNames;
     public VictoryData? VictoryData { get; set; }
