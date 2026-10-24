@@ -1204,7 +1204,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - ~215 sites migrated mechanically: 'X!' -> 'X.NotNull()', 'X!.Value' (nullable struct) -> 'X.NotNull()' (exception type is now NRE not InvalidOperationException). Sites that were framework annotations (GetString, Activator, Deserialize) also became NotNull (fail early). Kept '!' with JUSTIFY: lateinit fields (null!), default! on unconstrained generics, out-value of TryGetValue, KotlinLazy initializer.
 
 ### T120 Policy: size ratchet - maximum file length and method length with a shrink-only baseline
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
