@@ -94,7 +94,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified fidelity against Kotlin original: non-zero integer map behavior, insertion-order preservation via OrderedDictionary, zero-removal on mutating methods, super.put zero-retention on copy constructor/Clone/PutAll, Counter.ZERO Put restriction, and AbstractMap value-based equality and hashing semantics. Re-ran Gate (17/17 passed) and full test suite (106/106 passed).
 
 ### T006 HexMath
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T01:11:46Z
 - Depends: T003
 - Source: core/src/com/unciv/logic/map/HexMath.kt
@@ -114,6 +114,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     3. Should fix: `Mod` differs from Kotlin `Int.mod` for a negative modulus (Kotlin result takes the divisor's sign). Only reachable with negative `longitudinalRadius`; make it exact (`r != 0 && (r ^ m) < 0 ? r + m : r`).
     4. Note only: `HexCoord.FromString` uses `int.Parse` which accepts surrounding whitespace and throws OverflowException; Kotlin `toInt()` rejects whitespace and throws NumberFormatException. Use `NumberStyles.AllowLeadingSign` and map overflow to FormatException.
     5. Note only: `TestHexCoordFormatAndParseBack` uses `System.Random(42)` (allowed in tests); once T010 is Done switch it to `GameRandom(42)` to match the Kotlin sequence. HexCoord is a value type here (Kotlin: reference data class), so nullability/identity differ; document for consumers.
+  - Rework notes (Claude), addressing the review above: new engine helper `csharp/Unciv.Core/Utils/KotlinMath.cs` (+ `KotlinMathTests`) with `RoundToInt(float)` (exact half-up, saturating, NaN throws; no float `+0.5f`), `FloatToInt`/`DoubleToInt` (truncate, saturate, NaN gives 0) and `Mod` (Kotlin `Int.mod`, divisor's sign). HexMath's private `RoundToInt`/`Mod` removed and replaced by these; `GetDistance(Vector2,Vector2)` and `ToHexCoord` use `FloatToInt`; `HexCoord.FromString` now parses with `NumberStyles.AllowLeadingSign` and maps overflow to `FormatException` (whitespace rejected like Kotlin `toInt()`). New tests: 0.49999997f/-0.5f/2.5f/saturation/NaN for the helpers, FromString rejects, Vector2 truncation, seam unwrap. Review note 5 not done: `GameRandom` (T010) is not published yet, so `TestHexCoordFormatAndParseBack` still uses `System.Random(42)` (test-only; switch when T010 is Done). Ran Gate (HexMath + KotlinMath tests) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 190/190.
+  - T007 and later tickets that convert float to int (JSON readers) should call `KotlinMath.FloatToInt`/`DoubleToInt` (see T007 review notes).
 
 ### T007 JSON layer for ported data classes (Counter, Stats, ...)
 - State: Available

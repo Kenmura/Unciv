@@ -249,4 +249,43 @@ public class HexMathTests
         Assert.Equal(10f, unwrapped.x);
         Assert.Equal(0f, unwrapped.y);
     }
+
+    [Fact]
+    public void FromStringFollowsKotlinToInt()
+    {
+        Assert.Equal(HexCoord.Of(-3, 4), HexCoord.FromString("(-3,4)"));
+        Assert.Equal(HexCoord.Of(3, 4), HexCoord.FromString("(+3,+4)"));
+        Assert.Throws<FormatException>(() => HexCoord.FromString("( 3,4)"));
+        Assert.Throws<FormatException>(() => HexCoord.FromString("(3, 4)"));
+        Assert.Throws<FormatException>(() => HexCoord.FromString("(3,4 )"));
+        Assert.Throws<FormatException>(() => HexCoord.FromString("(99999999999,4)"));
+        Assert.Throws<FormatException>(() => HexCoord.FromString("(3.5,4)"));
+    }
+
+    [Fact]
+    public void Vector2ConversionsTruncateLikeKotlinToInt()
+    {
+        Assert.Equal(HexCoord.Of(1, -1), new Vector2(1.9f, -1.9f).ToHexCoord());
+        Assert.Equal(HexCoord.Of(0, int.MaxValue), new Vector2(float.NaN, 3e9f).ToHexCoord());
+        Assert.Equal(3, HexMath.GetDistance(new Vector2(0.9f, 0.9f), new Vector2(-3.9f, -2.9f)));
+    }
+
+    [Fact]
+    public void EquivalentSizeUsesHalfUpRounding()
+    {
+        // 0.49999997f * 1 would round to 1 with a float add; Kotlin roundToInt gives 0 (covered directly in KotlinMathTests)
+        Assert.Equal(0, HexMath.GetEquivalentHexagonalRadius(1, 1));
+        Assert.Equal(HexCoord.Of(0, 0), HexMath.GetEquivalentRectangularSize(-1));
+        // size 1: 7 tiles, width = round(sqrt(7/0.65f)) = round(3.2817) = 3, height = round(3*0.65f=1.95f) = 2
+        Assert.Equal(HexCoord.Of(3, 2), HexMath.GetEquivalentRectangularSize(1));
+    }
+
+    [Fact]
+    public void UnwrappedNearestToWrapsAroundTheSeam()
+    {
+        // longitude 15 relative to a reference at -15 with radius 20 is 30 away, so it wraps to longitude -25 (latitude stays 15)
+        var unwrapped = HexMath.GetUnwrappedNearestTo(HexCoord.Of(15, 0), HexCoord.Of(-15, 0), 20);
+        Assert.Equal(-5f, unwrapped.x);
+        Assert.Equal(20f, unwrapped.y);
+    }
 }

@@ -1,18 +1,11 @@
 using System.Globalization;
 using Unciv.Mathematics;
+using Unciv.Utils;
 
 namespace Unciv.Logic.Map;
 
 public static class HexMath
 {
-    private static int RoundToInt(float value) => (int)Math.Floor(value + 0.5f);
-
-    private static int Mod(int value, int m)
-    {
-        int r = value % m;
-        return r < 0 ? r + m : r;
-    }
-
     public static Vector2 GetVectorForAngle(float angle)
     {
         return new Vector2((float)Math.Sin(angle), (float)Math.Cos(angle));
@@ -68,8 +61,8 @@ public static class HexMath
             return HexCoord.Of(0, 0);
 
         int nTiles = GetNumberOfTilesInHexagon(size);
-        int width = RoundToInt((float)Math.Sqrt(nTiles / ratio));
-        int height = RoundToInt(width * ratio);
+        int width = KotlinMath.RoundToInt((float)Math.Sqrt(nTiles / ratio));
+        int height = KotlinMath.RoundToInt(width * ratio);
         return HexCoord.Of(width, height);
     }
 
@@ -78,14 +71,14 @@ public static class HexMath
     /// tiles as a rectangular map of a given width/height.
     /// </summary>
     public static int GetEquivalentHexagonalRadius(int width, int height) =>
-        RoundToInt(GetHexagonalRadiusForArea(width * height));
+        KotlinMath.RoundToInt(GetHexagonalRadiusForArea(width * height));
 
     public static Vector2 GetUnwrappedNearestTo(HexCoord unwrapHexCoord, HexCoord staticHexCoord, int longitudinalRadius)
     {
         int referenceLong = GetLongitude(staticHexCoord);
         int toWrapLat = GetLatitude(unwrapHexCoord);
         int toWrapLong = GetLongitude(unwrapHexCoord);
-        int wrappedLong = Mod(toWrapLong - referenceLong + longitudinalRadius, longitudinalRadius * 2)
+        int wrappedLong = KotlinMath.Mod(toWrapLong - referenceLong + longitudinalRadius, longitudinalRadius * 2)
                           - longitudinalRadius + referenceLong;
         return HexFromLatLong(toWrapLat, wrappedLong);
     }
@@ -202,7 +195,7 @@ public static class HexMath
     }
 
     public static int GetDistance(Vector2 origin, Vector2 destination) =>
-        GetDistance((int)origin.x, (int)origin.y, (int)destination.x, (int)destination.y);
+        GetDistance(KotlinMath.FloatToInt(origin.x), KotlinMath.FloatToInt(origin.y), KotlinMath.FloatToInt(destination.x), KotlinMath.FloatToInt(destination.y));
 
     public static int GetDistance(HexCoord origin, HexCoord destination) =>
         GetDistance(origin.x, origin.y, destination.x, destination.y);
@@ -319,11 +312,18 @@ public readonly record struct HexCoord(int x = 0, int y = 0)
         int commaPos = str.IndexOf(',');
         if (commaPos < 1 || !str.StartsWith('(') || !str.EndsWith(')'))
             throw new FormatException($"\"{str}\" is not a valid HexCoord representation");
-        int x = int.Parse(str.AsSpan(1, commaPos - 1), CultureInfo.InvariantCulture);
-        int y = int.Parse(str.AsSpan(commaPos + 1, str.Length - commaPos - 2), CultureInfo.InvariantCulture);
+        int x = ParseInt(str.AsSpan(1, commaPos - 1));
+        int y = ParseInt(str.AsSpan(commaPos + 1, str.Length - commaPos - 2));
         return new HexCoord(x, y);
     }
     public static HexCoord fromString(string str) => FromString(str);
+
+    // Kotlin String.toInt(): optional sign and ASCII digits only (no whitespace); overflow is a NumberFormatException
+    private static int ParseInt(ReadOnlySpan<char> text)
+    {
+        try { return int.Parse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture); }
+        catch (OverflowException e) { throw new FormatException(e.Message, e); }
+    }
 
     public static HexCoord operator +(HexCoord a, HexCoord b) => a.Plus(b);
     public static HexCoord operator -(HexCoord a, HexCoord b) => a.Minus(b);
@@ -349,5 +349,5 @@ public readonly record struct InlineHexCoord(int coords = 0)
 
 public static class Vector2HexExtensions
 {
-    public static HexCoord ToHexCoord(this Vector2 vector) => HexCoord.Of((int)vector.x, (int)vector.y);
+    public static HexCoord ToHexCoord(this Vector2 vector) => HexCoord.Of(KotlinMath.FloatToInt(vector.x), KotlinMath.FloatToInt(vector.y));
 }
