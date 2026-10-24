@@ -26,6 +26,8 @@ public interface ILocalUniqueCacheCity
 /// </summary>
 public class LocalUniqueCache(bool cache = true)
 {
+    public bool Cache { get; } = cache;
+
     // This stores sequences *that iterate directly on a list* - that is, pre-resolved
     private readonly Dictionary<string, IEnumerable<Unique>> keyToUniques = new();
 
@@ -66,7 +68,7 @@ public class LocalUniqueCache(bool cache = true)
     /// <summary>Get cached results as a sequence</summary>
     private IEnumerable<Unique> Get(string key, IEnumerable<Unique> sequence)
     {
-        if (!cache) return sequence;
+        if (!Cache) return sequence;
         if (keyToUniques.TryGetValue(key, out var valueInMap)) return valueInMap;
         // Iterate the sequence, save actual results as a list, as return a sequence to that
         var results = sequence.ToList();

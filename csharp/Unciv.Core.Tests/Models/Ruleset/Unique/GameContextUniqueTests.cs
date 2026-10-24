@@ -222,4 +222,76 @@ public class GameContextUniqueTests
         Assert.Equal(0, GameContext.EmptyState.GetResourceAmount("Iron"));
         Assert.Equal(0, GameContext.EmptyState.GetStatAmount(Stat.Gold));
     }
+
+    private sealed class FakeRegion(int rectHashCode) : IGameContextRegion
+    {
+        public int RectHashCode { get; } = rectHashCode;
+    }
+
+    [Fact]
+    public void CopyKeepsTheStoredGameInfoInsteadOfDerivingItAgain()
+    {
+        var withoutGameInfo = new GameContext(tile: new FakeTile(new HexCoord(1, 1)));
+        Assert.Null(withoutGameInfo.GameInfo);
+        // Kotlin `copy(otherCiv = civ)` keeps gameInfo = null although civ has one (Nuke.kt / QuestManager.kt rely on this for stateBasedRandom)
+        var copy = withoutGameInfo.Copy(otherCiv: new FakeCiv("civ", G1));
+        Assert.Null(copy.GameInfo);
+        Assert.Same(withoutGameInfo.Tile, copy.Tile);
+        Assert.NotNull(copy.OtherCiv);
+        Assert.NotEqual(withoutGameInfo.GetHashCode(), copy.GetHashCode());
+        // an explicit gameInfo wins, and so does an explicit null
+        Assert.Same(G1, withoutGameInfo.Copy(gameInfo: G1).GameInfo);
+        Assert.Null(new GameContext(civInfo: C1).Copy(gameInfo: new GameContext.CopyArg<IGameContextGameInfo>(null)).GameInfo);
+    }
+
+    [Fact]
+    public void CopyReplacesOnlyTheGivenMembersAndCanSetThemToNull()
+    {
+        var tile = new FakeTile(new HexCoord(2, 3));
+        var original = new GameContext(civInfo: C1, tile: tile, combatAction: CombatAction.Attack, gameInfo: G1);
+        var moved = new FakeTile(new HexCoord(9, 9));
+        var copy = original.Copy(tile: moved, ignoreConditionals: true);
+        Assert.Same(C1, copy.CivInfo);
+        Assert.Same(moved, copy.Tile);
+        Assert.Equal(CombatAction.Attack, copy.CombatAction);
+        Assert.True(copy.IgnoreConditionals);
+        Assert.Same(G1, copy.GameInfo);
+        Assert.Null(original.Copy(tile: new GameContext.CopyArg<IGameContextTile>(null)).Tile);
+        Assert.Equal(original, original.Copy());
+    }
+
+    [Fact]
+    public void AnExplicitlyNullGameInfoOfTheFactoriesStaysNull()
+    {
+        var civWithoutGameInfo = new FakeCiv("noGame");
+        var civWithGameInfo = new FakeCiv("game", G1);
+        // Kotlin passes `gameInfo = civ.gameInfo` explicitly, so the second civ's gameInfo is not picked up
+        Assert.Null(GameContext.ForCiv(civWithoutGameInfo, civWithGameInfo).GameInfo);
+        Assert.Same(G1, GameContext.ForCiv(civWithGameInfo, civWithoutGameInfo).GameInfo);
+        var ours = new FakeCombatant(civWithoutGameInfo, new FakeTile(HexCoord.Zero), "n");
+        var theirs = new FakeCombatant(civWithGameInfo, new FakeTile(HexCoord.Zero), "m");
+        Assert.Null(GameContext.ForCombatants(ours, theirs).GameInfo);
+    }
+
+    [Fact]
+    public void RegionAndCityCombatantContributeToTheHash()
+    {
+        Assert.NotEqual(new GameContext().GetHashCode(), new GameContext(region: new FakeRegion(12345)).GetHashCode());
+        Assert.NotEqual(new GameContext(region: new FakeRegion(1)).GetHashCode(), new GameContext(region: new FakeRegion(2)).GetHashCode());
+        var city = new FakeCity("Roma", C1);
+        var cityCombatant = new FakeCombatant(C1, new FakeTile(new HexCoord(3, 3)), "Roma", city: city);
+        var otherCityCombatant = new FakeCombatant(C1, new FakeTile(new HexCoord(3, 4)), "Roma", city: city);
+        Assert.NotEqual(new GameContext(ourCombatant: cityCombatant).GetHashCode(), new GameContext(ourCombatant: otherCityCombatant).GetHashCode());
+    }
+
+    [Fact]
+    public void LazyRelevantMembersAreStableAcrossThreads()
+    {
+        var civ = new FakeCiv("c", G1);
+        var unit = new FakeUnit("u", 1f, civ, new FakeTile(new HexCoord(1, 1)));
+        var context = new GameContext(unit: unit);
+        var seen = new IGameContextTile?[64];
+        Parallel.For(0, seen.Length, i => seen[i] = context.RelevantTile);
+        Assert.All(seen, it => Assert.Same(unit.GetTile(), it));
+    }
 }

@@ -20,7 +20,8 @@ public interface IGameProgressCivilization
 /// Ported from core/src/com/unciv/models/ruleset/unique/Unique.kt.
 /// Deviations: <c>timeThis</c> profiling is dropped; <c>getReplacementText</c> takes the "does this unique validate without errors" check
 /// as a delegate instead of a <c>Ruleset</c> (TODO(T036): <c>UniqueValidator(ruleset).checkUnique(unique, null).isEmpty()</c>);
-/// <c>toFloat()</c> / <c>toInt()</c> on parameters use the strict number grammar (a Java-lenient <c>"5f"</c> or <c>" 5"</c> throws).
+/// <c>toFloat()</c> follows <c>java.lang.Float.parseFloat</c> (ASCII whitespace trimmed, an <c>f</c>/<c>F</c>/<c>d</c>/<c>D</c> suffix accepted),
+/// <c>toInt()</c> follows <c>Integer.parseInt</c> (strict).
 /// </summary>
 public class Unique : IUniqueTargetView
 {
@@ -179,7 +180,8 @@ public class Unique : IUniqueTargetView
             int multiplier = Countables.GetCountableAmount(conditional.Params[1], gameContext)
                 ?? 0; // If the countable is invalid, ignore this unique entirely
             int perEvery = ParseInt(conditional.Params[0]);
-            amount *= multiplier / perEvery;
+            // JVM `Int.MIN_VALUE / -1` wraps to `Int.MIN_VALUE`, .NET throws OverflowException
+            amount *= perEvery == -1 ? unchecked(-multiplier) : multiplier / perEvery;
         }
 
         if (gameContext.RelevantTile != null)

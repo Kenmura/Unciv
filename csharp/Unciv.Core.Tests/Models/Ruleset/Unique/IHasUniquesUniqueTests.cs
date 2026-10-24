@@ -128,4 +128,20 @@ public class IHasUniquesUniqueTests
         public bool HasBeliefs { get; } = hasBeliefs;
         public bool HasSpyNames { get; } = hasSpyNames;
     }
+
+    [Fact]
+    public void WithAKnownGameTheAvailabilityCheckRunsInsteadOfTheRulesetGuess()
+    {
+        var game = new FakeGameInfo { Turns = 3, GameId = "g" };
+        IHasUniques plain = new TestObject("Plain", "[+1 Food] from every [Farm]");
+        Assert.False(plain.IsUnavailableBySettings(game));
+        Assert.False(plain.IsHiddenFromCivilopedia(game));
+        // without game-based conditionals the Unavailable unique never consults Conditionals (T028 adds the cases with real conditionals)
+        IHasUniques unavailable = new TestObject("Unavailable", "Unavailable");
+        Assert.False(unavailable.IsUnavailableBySettings(game));
+        IHasUniques hidden = new TestObject("Hidden", "Will not be displayed in Civilopedia");
+        Assert.True(hidden.IsHiddenFromCivilopedia(game));
+        // the ruleset is ignored once the game is known
+        Assert.False(plain.IsHiddenFromCivilopedia(game, new FakeFeatures(false, false)));
+    }
 }

@@ -89,8 +89,9 @@ public interface IGameContextRegion
 /// Kotlin <c>data class</c>: <see cref="Equals(object?)"/> is memberwise, <see cref="GetHashCode"/> is the custom state hash.
 /// </summary>
 /// <remarks>
-/// Deviations: Kotlin's <c>copy()</c> is not ported (add it with the first caller); an explicitly passed <c>gameInfo = null</c>
-/// is indistinguishable from an omitted one, so it is derived from the other members (Kotlin would keep <c>null</c>).
+/// Deviations: the public constructor derives <c>gameInfo</c> when it is omitted or <c>null</c> (C# cannot tell a default argument
+/// from an explicit <c>null</c>); the factories and <see cref="Copy"/> pass <c>gameInfo</c> through explicitly like Kotlin, so a
+/// <c>null</c> there stays <c>null</c>.
 /// </remarks>
 public sealed class GameContext : IEquatable<GameContext>
 {
@@ -107,7 +108,35 @@ public sealed class GameContext : IEquatable<GameContext>
         IGameContextRegion? region = null,
         IGameContextGameInfo? gameInfo = null,
         bool ignoreConditionals = false)
+        : this(civInfo, city, unit, tile, ourCombatant, theirCombatant, attackedTile, combatAction, otherCiv, region,
+            gameInfo
+                ?? civInfo?.GameInfo ?? city?.Civ.GameInfo ?? unit?.Civ.GameInfo
+                ?? ourCombatant?.GetCivInfo().GameInfo ?? theirCombatant?.GetCivInfo().GameInfo ?? attackedTile?.GameInfo
+                ?? otherCiv?.GameInfo,
+            ignoreConditionals, gameInfoIsFinal: true)
     {
+        // tile and region do not deduce gameInfo because that field is not set during MapGeneration,
+        // and querying if its initialized is non-trivial
+    }
+
+    // The Kotlin primary constructor: every member is taken as given, including a null gameInfo.
+    // `gameInfoIsFinal` only separates the signature from the public constructor.
+    private GameContext(
+        IGameContextCivilization? civInfo,
+        IGameContextCity? city,
+        IGameContextUnit? unit,
+        IGameContextTile? tile,
+        IGameContextCombatant? ourCombatant,
+        IGameContextCombatant? theirCombatant,
+        IGameContextTile? attackedTile,
+        CombatAction? combatAction,
+        IGameContextCivilization? otherCiv,
+        IGameContextRegion? region,
+        IGameContextGameInfo? gameInfo,
+        bool ignoreConditionals,
+        bool gameInfoIsFinal)
+    {
+        _ = gameInfoIsFinal;
         CivInfo = civInfo;
         City = city;
         Unit = unit;
@@ -118,25 +147,20 @@ public sealed class GameContext : IEquatable<GameContext>
         CombatAction = combatAction;
         OtherCiv = otherCiv;
         Region = region;
-        // tile and region do not deduce gameInfo because that field is not set during MapGeneration,
-        // and querying if its initialized is non-trivial
-        GameInfo = gameInfo
-            ?? civInfo?.GameInfo ?? city?.Civ.GameInfo ?? unit?.Civ.GameInfo
-            ?? ourCombatant?.GetCivInfo().GameInfo ?? theirCombatant?.GetCivInfo().GameInfo ?? attackedTile?.GameInfo
-            ?? otherCiv?.GameInfo;
+        GameInfo = gameInfo;
         IgnoreConditionals = ignoreConditionals;
     }
 
     // The secondary constructors of the Kotlin class. C# constructors cannot share a signature, so these are factories.
 
     public static GameContext ForCity(IGameContextCity city) =>
-        new(city.Civ, city, tile: city.GetCenterTileOrNull(), gameInfo: city.Civ.GameInfo);
+        new(city.Civ, city, null, city.GetCenterTileOrNull(), null, null, null, null, null, null, city.Civ.GameInfo, false, true);
 
     public static GameContext ForUnit(IGameContextUnit unit) =>
-        new(unit.Civ, unit: unit, tile: unit.HasTile() ? unit.GetTile() : null, gameInfo: unit.Civ.GameInfo);
+        new(unit.Civ, null, unit, unit.HasTile() ? unit.GetTile() : null, null, null, null, null, null, null, unit.Civ.GameInfo, false, true);
 
     public static GameContext ForCiv(IGameContextCivilization civ, IGameContextCivilization? civ2 = null) =>
-        new(civ, otherCiv: civ2, gameInfo: civ.GameInfo);
+        new(civ, null, null, null, null, null, null, null, civ2, null, civ.GameInfo, false, true);
 
     public static GameContext ForCombatants(IGameContextCombatant ourCombatant, IGameContextCombatant? theirCombatant = null,
         IGameContextTile? attackedTile = null, CombatAction? combatAction = null) =>
@@ -150,7 +174,51 @@ public sealed class GameContext : IEquatable<GameContext>
             attackedTile,
             combatAction,
             theirCombatant?.GetCivInfo(),
-            gameInfo: ourCombatant.GetCivInfo().GameInfo);
+            null,
+            ourCombatant.GetCivInfo().GameInfo,
+            false,
+            true);
+
+    /// <summary>
+    /// A value for one <see cref="Copy"/> parameter. A parameter left out (<c>null</c>) keeps the current member; passing
+    /// <c>new CopyArg&lt;T&gt;(null)</c> sets it to <c>null</c>, as Kotlin's named <c>copy(tile = null)</c> does.
+    /// </summary>
+    public readonly record struct CopyArg<T>(T? Value) where T : class
+    {
+        public static implicit operator CopyArg<T>(T value) => new(value);
+    }
+
+    /// <summary>
+    /// Kotlin data class <c>copy()</c>. The stored <c>gameInfo</c> is copied as is and never re-derived from the new members,
+    /// unless <paramref name="gameInfo"/> is given.
+    /// </summary>
+    public GameContext Copy(
+        CopyArg<IGameContextCivilization>? civInfo = null,
+        CopyArg<IGameContextCity>? city = null,
+        CopyArg<IGameContextUnit>? unit = null,
+        CopyArg<IGameContextTile>? tile = null,
+        CopyArg<IGameContextCombatant>? ourCombatant = null,
+        CopyArg<IGameContextCombatant>? theirCombatant = null,
+        CopyArg<IGameContextTile>? attackedTile = null,
+        CombatAction? combatAction = null,
+        CopyArg<IGameContextCivilization>? otherCiv = null,
+        CopyArg<IGameContextRegion>? region = null,
+        CopyArg<IGameContextGameInfo>? gameInfo = null,
+        bool? ignoreConditionals = null) =>
+        new(
+            civInfo.HasValue ? civInfo.Value.Value : CivInfo,
+            city.HasValue ? city.Value.Value : City,
+            unit.HasValue ? unit.Value.Value : Unit,
+            tile.HasValue ? tile.Value.Value : Tile,
+            ourCombatant.HasValue ? ourCombatant.Value.Value : OurCombatant,
+            theirCombatant.HasValue ? theirCombatant.Value.Value : TheirCombatant,
+            attackedTile.HasValue ? attackedTile.Value.Value : AttackedTile,
+            combatAction ?? CombatAction,
+            otherCiv.HasValue ? otherCiv.Value.Value : OtherCiv,
+            region.HasValue ? region.Value.Value : Region,
+            gameInfo.HasValue ? gameInfo.Value.Value : GameInfo,
+            ignoreConditionals ?? IgnoreConditionals,
+            true);
 
     public IGameContextCivilization? CivInfo { get; }
     public IGameContextCity? City { get; }
@@ -169,55 +237,34 @@ public sealed class GameContext : IEquatable<GameContext>
 
     public bool IgnoreConditionals { get; }
 
-    // Kotlin `by lazy`: pure functions of the immutable constructor state, so they are computed on first use.
-    private bool relevantUnitComputed;
-    private IGameContextUnit? relevantUnit;
-    public IGameContextUnit? RelevantUnit
+    // Kotlin `by lazy` (synchronized): pure functions of the immutable constructor state, computed on first use. The result is
+    // published through one reference to an immutable box, so a reader never sees the "computed" marker before the value.
+    private sealed class LazyValue<T>(T value)
     {
-        get
-        {
-            if (!relevantUnitComputed)
-            {
-                relevantUnit = OurCombatant != null && OurCombatant.Unit != null ? OurCombatant.Unit : Unit;
-                relevantUnitComputed = true;
-            }
-            return relevantUnit;
-        }
+        public readonly T Value = value;
     }
 
-    private bool relevantTileComputed;
-    private IGameContextTile? relevantTile;
-    public IGameContextTile? RelevantTile
-    {
-        get
-        {
-            if (!relevantTileComputed)
-            {
-                relevantTile = AttackedTile
-                    ?? Tile
-                    // We need to protect against conditionals checking tiles for units pre-placement - see #10425, #10512
-                    ?? (RelevantUnit != null && RelevantUnit.HasTile() ? RelevantUnit.GetTile() : null)
-                    ?? City?.GetCenterTileOrNull();
-                relevantTileComputed = true;
-            }
-            return relevantTile;
-        }
-    }
+    private LazyValue<IGameContextUnit?>? relevantUnit;
+    public IGameContextUnit? RelevantUnit =>
+        (Volatile.Read(ref relevantUnit) ?? Interlocked.CompareExchange(ref relevantUnit,
+            new LazyValue<IGameContextUnit?>(OurCombatant != null && OurCombatant.Unit != null ? OurCombatant.Unit : Unit), null)
+            ?? relevantUnit).Value;
 
-    private bool relevantCityComputed;
-    private IGameContextCity? relevantCity;
-    public IGameContextCity? RelevantCity
-    {
-        get
-        {
-            if (!relevantCityComputed)
-            {
-                relevantCity = ComputeRelevantCity();
-                relevantCityComputed = true;
-            }
-            return relevantCity;
-        }
-    }
+    private LazyValue<IGameContextTile?>? relevantTile;
+    public IGameContextTile? RelevantTile =>
+        (Volatile.Read(ref relevantTile) ?? Interlocked.CompareExchange(ref relevantTile,
+            new LazyValue<IGameContextTile?>(AttackedTile
+                ?? Tile
+                // We need to protect against conditionals checking tiles for units pre-placement - see #10425, #10512
+                ?? (RelevantUnit != null && RelevantUnit.HasTile() ? RelevantUnit.GetTile() : null)
+                ?? City?.GetCenterTileOrNull()), null)
+            ?? relevantTile).Value;
+
+    private LazyValue<IGameContextCity?>? relevantCity;
+    public IGameContextCity? RelevantCity =>
+        (Volatile.Read(ref relevantCity) ?? Interlocked.CompareExchange(ref relevantCity,
+            new LazyValue<IGameContextCity?>(ComputeRelevantCity()), null)
+            ?? relevantCity).Value;
 
     private IGameContextCity? ComputeRelevantCity()
     {

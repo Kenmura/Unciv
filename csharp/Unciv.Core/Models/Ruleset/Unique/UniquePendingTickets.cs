@@ -30,7 +30,9 @@ public sealed record DeprecatedUniqueTypeEntry(string Text, IReadOnlySet<UniqueF
 public static class DeprecatedUniqueTypes
 {
     // TODO(T029): fill with DeprecatedUniqueType.uniqueTypeMap
-    private static readonly Dictionary<string, DeprecatedUniqueTypeEntry> UniqueTypeMap = new();
+    // Internal so the tests can register entries (under placeholder texts no real unique uses) to reach the deprecated-type paths
+    // of Unique until T029 lands. T029 makes this a read-only table again.
+    internal static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DeprecatedUniqueTypeEntry> UniqueTypeMap = new();
 
     public static DeprecatedUniqueTypeEntry? Lookup(string placeholderText) => UniqueTypeMap.GetValueOrDefault(placeholderText);
 }
