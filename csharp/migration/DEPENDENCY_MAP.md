@@ -335,7 +335,7 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T130 ready
-  class T137 ready
+  class T137 prog
   class T138 ondeck
 ```
 
@@ -351,7 +351,6 @@ flowchart TD
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T130 | **Ready to start** | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
-| T137 | **Ready to start** | T046 | 0 | TranslationCache.ActiveMods from the running GameInfo |
 | T070 | **On deck** (after T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T081 | **On deck** (after T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T037 | **On deck** (after T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
@@ -395,3 +394,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T126 | In-Progress [Claude] | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
+| T137 | In-Progress [Antigravity] | T046 | 0 | TranslationCache.ActiveMods from the running GameInfo |
