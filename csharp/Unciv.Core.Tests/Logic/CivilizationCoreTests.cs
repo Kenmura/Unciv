@@ -5,6 +5,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Screens.VictoryScreen;
+using CityStateTypeObject = Unciv.Models.Ruleset.Nation.CityStateType;
 using EraObject = Unciv.Models.Ruleset.Tech.Era;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
@@ -146,6 +147,18 @@ public class CivilizationCoreTests
         var civ = new Civilization(new NationObject { Name = name }) { GameInfo = info, PlayerType = playerType };
         info.Civs.Add(civ);
         return (civ, info);
+    }
+
+    [Fact]
+    public void CityStateType_RetriesAfterAFailedFirstRead()
+    {
+        var civ = new Civilization(new NationObject { Name = "Geneva", CityStateType = "Cultured" });
+        Assert.Throws<InvalidOperationException>(() => civ.CityStateType); // gameInfo not set yet
+        var info = new FakeGameInfoState();
+        var type = new CityStateTypeObject { Name = "Cultured" };
+        info.RulesetData.CityStateTypes.Put("Cultured", type);
+        civ.GameInfo = info;
+        Assert.Same(type, civ.CityStateType);
     }
 
     [Fact]

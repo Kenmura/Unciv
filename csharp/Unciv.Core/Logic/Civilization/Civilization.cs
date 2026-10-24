@@ -383,7 +383,8 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
 
     public Civilization()
     {
-        cityStateType = new Lazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType!]);
+        // PublicationOnly: Kotlin `by lazy` does not cache a failed initializer (e.g. gameInfo not yet set), unlike ExecutionAndPublication
+        cityStateType = new Lazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType!], LazyThreadSafetyMode.PublicationOnly);
     }
 
     public Civilization(string civName) : this()
