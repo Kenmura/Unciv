@@ -147,7 +147,7 @@ All reviews must apply the multi-persona adversarial review skill ([`csharp/.age
 Agents may be cut off at any moment by a usage limit, so the repo must always be recoverable:
 
 - Commit and publish after every state change (claim, implement, review). Never hold uncommitted work across tickets.
-- **Stale claims:** an `In-Progress` or `In-Review` ticket whose `Claimed:` timestamp is more than 3 hours old with no newer commit touching its deliverables is abandoned. Any agent may reset it to `Available` (commit `migration: reset stale T###`) and keep the partial files for the next implementer to build on or discard.
+- **Stale claims:** an `In-Progress` or `In-Review` ticket whose `Claimed:` timestamp is more than 3 hours old with no newer commit touching its deliverables is abandoned. `ticket.py stale` lists them; any agent may reset one with `ticket.py reset T### -m "stale"` (then `publish`) and keep the partial files for the next implementer to build on or discard.
 - If a usage limit is hit mid-ticket, do not mark anything `Done`. Stop; the stale-claim rule handles the rest.
 - If a rate limit reports a reset time, wait for it and resume the loop. If the harness cannot wait, stop.
 
