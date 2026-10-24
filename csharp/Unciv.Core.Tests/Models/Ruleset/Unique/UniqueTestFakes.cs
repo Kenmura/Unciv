@@ -8,7 +8,7 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 namespace Unciv.Core.Tests.Models.Ruleset.Unique;
 
 /// <summary>Minimal implementations of the game-state interfaces <see cref="GameContext"/> reads, standing in for the not yet ported classes.</summary>
-internal class FakeGameInfo : IGameContextGameInfo
+internal partial class FakeGameInfo : IGameContextGameInfo
 {
     public int Turns { get; set; }
     public string? GameId { get; init; }
@@ -101,7 +101,7 @@ internal sealed class FakeRuleset : IGameContextRuleset
         TechMap.ContainsKey(techName) ? techName == filter || filter == "all" : null;
 }
 
-internal class FakeCiv(string civId, IGameContextGameInfo? gameInfo = null) : IGameContextCivilization, ILocalUniqueCacheCivilization
+internal partial class FakeCiv(string civId, IGameContextGameInfo? gameInfo = null) : IGameContextCivilization, ILocalUniqueCacheCivilization
 {
     public IGameContextGameInfo? GameInfo { get; } = gameInfo;
     public string CivId { get; } = civId;
@@ -189,7 +189,7 @@ internal sealed class FakeTile(HexCoord position) : IGameContextTile
     public int GetContinent() => Continent;
 }
 
-internal class FakeCity(string id, FakeCiv civ, FakeTile? center = null) : IGameContextCity, ILocalUniqueCacheCity
+internal partial class FakeCity(string id, FakeCiv civ, FakeTile? center = null) : IGameContextCity, ILocalUniqueCacheCity
 {
     public string Id { get; } = id;
     public IGameContextCivilization Civ { get; } = civ;
@@ -237,7 +237,7 @@ internal class FakeCity(string id, FakeCiv civ, FakeTile? center = null) : IGame
     }
 }
 
-internal sealed class FakeUnit(string name, float currentMovement, FakeCiv civ, FakeTile? tile = null) : IGameContextUnit
+internal partial class FakeUnit(string name, float currentMovement, FakeCiv civ, FakeTile? tile = null) : IGameContextUnit
 {
     public string Name { get; } = name;
     public IGameContextCivilization Civ { get; } = civ;

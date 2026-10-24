@@ -4,9 +4,9 @@ using Unciv.Logic.Map.Tiles;
 namespace Unciv.Core.Tests.Logic.Map;
 
 /// <summary>
-/// T038 covers TileHistory only; the other Tile classes are blocked on Civilization/City/MapUnit/TileMap (see backlog).
+/// T038: TileHistory. T053: Tile itself (TileTests.Tile.cs).
 /// </summary>
-public class TileTests
+public partial class TileTests
 {
     private sealed class FakeTile(int turns, string? owner, bool center, bool capital) : ITileHistorySource
     {
