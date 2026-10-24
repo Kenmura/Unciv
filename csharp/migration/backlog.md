@@ -19,7 +19,8 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Ran: `dotnet test --filter FullyQualifiedName~LongPriorityQueueTests` and full `dotnet test` — all green.
 
 ### T002 Perlin noise
-- State: Needs-Review [Antigravity]
+- State: In-Review [Claude]
+- Claimed: 2026-10-24T00:41:14Z
 - Depends: none
 - Source: core/src/com/unciv/logic/map/mapgenerator/Perlin.kt
 - Fixtures: none – generate golden values by running the Kotlin code at fixed inputs
