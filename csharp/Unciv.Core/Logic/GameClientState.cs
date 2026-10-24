@@ -34,7 +34,7 @@ public sealed class GameClientState
     /// <summary>The unported <c>NextTurnAutomation</c> (TODO(T094): set by its port). Null means "not ported": the calls are skipped.</summary>
     public INextTurnAutomation? NextTurnAutomation { get; set; }
 
-    /// <summary>The unported <c>TradeEvaluation</c> (TODO(T089): set by its port). TurnManager throws when it must validate a trade and this is null.</summary>
+    /// <summary>Replaces the valuation <c>TradeEvaluation()</c> used by TurnManager and the diplomacy automation (tests install stand-ins). Null means <see cref="Trade.TradeEvaluation.Default"/>.</summary>
     public ITradeValidity? TradeEvaluation { get; set; }
 
     /// <summary>The A* attack pathing of <c>City.getLandAttackPath</c> / <c>getAmphibiousAttackPath</c> (TODO(T093): set by PathingMap). Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>

@@ -10,11 +10,11 @@ namespace Unciv.Logic.Trade;
 
 // core/src/com/unciv/logic/trade/TradeLogic.kt (T086)
 //
-// Seam: TradeEvaluation (T089) is not ported yet. TradeLogic reaches getTradeAcceptability and isPeaceProposalEnabled through the replaceable
-// instance property TradeLogic.Evaluation (no mutable static state), whose default throws; T089 replaces it by direct calls.
+// TradeEvaluation (T089) is reached through the replaceable instance property TradeLogic.Evaluation (no mutable static state), which defaults to
+// TradeEvaluation.Default; tests and TradeEvaluationSeam.NewLogic install a stand-in or the client state's evaluation.
 // Kotlin's `ourAvailableOffers += list` is a plusAssign (addAll): TradeOffersList.AddRange, which does not merge.
 
-/// <summary>The members of Kotlin <c>TradeEvaluation</c> (T089) that TradeLogic calls. TODO(T089)</summary>
+/// <summary>The members of Kotlin <c>TradeEvaluation</c> that TradeLogic calls.</summary>
 internal interface ITradeEvaluation
 {
     /// <summary><c>TradeEvaluation().getTradeAcceptability(trade, evaluator, tradePartner, includeDiplomaticGifts)</c></summary>
@@ -25,20 +25,8 @@ internal interface ITradeEvaluation
 
 public class TradeLogic
 {
-    private sealed class EvaluationNotPorted : ITradeEvaluation
-    {
-        // TODO(T089): TradeEvaluation.getTradeAcceptability
-        public int GetTradeAcceptability(Trade trade, CivilizationObject evaluator, CivilizationObject tradePartner, bool includeDiplomaticGifts = false) =>
-            throw new NotSupportedException("TradeEvaluation is not ported yet (TODO(T089))");
-        // TODO(T089): TradeEvaluation.isPeaceProposalEnabled
-        public bool IsPeaceProposalEnabled(CivilizationObject thirdCiv, CivilizationObject civInfo) =>
-            throw new NotSupportedException("TradeEvaluation is not ported yet (TODO(T089))");
-    }
-
-    private static readonly ITradeEvaluation UnportedEvaluation = new EvaluationNotPorted();
-
-    /// <summary>Seam for the not yet ported <c>TradeEvaluation</c> (T089): set before use, tests install a stand-in. Not serialized.</summary>
-    internal ITradeEvaluation Evaluation { get; set; } = UnportedEvaluation;
+    /// <summary>The valuation used by this logic: <see cref="TradeEvaluation.Default"/> unless a stand-in is installed. Not serialized.</summary>
+    internal ITradeEvaluation Evaluation { get; set; } = TradeEvaluation.Default;
 
     public CivilizationObject OurCivilization { get; }
     public CivilizationObject OtherCivilization { get; }
@@ -49,7 +37,7 @@ public class TradeLogic
     public Trade CurrentTrade { get; } = new();
 
     public TradeLogic(CivilizationObject ourCivilization, CivilizationObject otherCivilization)
-        : this(ourCivilization, otherCivilization, UnportedEvaluation)
+        : this(ourCivilization, otherCivilization, TradeEvaluation.Default)
     {
     }
 

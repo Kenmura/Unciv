@@ -119,13 +119,15 @@ public sealed class CivTurnTests
     }
 
     [Fact]
-    public void ValidTradeRequestStaysAndMissingTradeEvaluationThrows()
+    public void ValidTradeRequestStaysWithTheRealAndTheInstalledTradeEvaluation()
     {
         var us = Major();
         var them = Major();
         game.AddCity(them, game.GetTile(0, 0));
+        us.DiplomacyFunctions.MakeCivilizationsMeet(them); // the real TradeEvaluation reads both diplomacy managers
         us.TradeRequests.Add(new TradeRequest { RequestingCiv = them.CivName, Trade = new TradeObject() });
-        Assert.Throws<NotSupportedException>(() => new TurnManager(us).StartTurn());
+        new TurnManager(us).StartTurn(); // no hook installed: the real TradeEvaluation judges the (empty, hence valid) trade
+        Assert.Single(us.TradeRequests);
         us.GameInfo.ClientState.TradeEvaluation = new FixedTradeValidity(true);
         new TurnManager(us).StartTurn();
         Assert.Single(us.TradeRequests);

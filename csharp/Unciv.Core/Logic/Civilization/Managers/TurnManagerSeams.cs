@@ -3,7 +3,7 @@ using TradeObject = Unciv.Logic.Trade.Trade;
 
 namespace Unciv.Logic.Civilization.Managers;
 
-// T070 (TurnManager): the parts of the unported Automation (T094) and TradeEvaluation (T089) that TurnManager calls. They hang off
+// T070 (TurnManager): the parts of the unported Automation (T094) and TradeEvaluation (T089, ported: the hook is an optional override) that TurnManager calls. They hang off
 // GameClientState (the client/AI layer the game owns); the ticket that ports the class sets the hook and retires the seam.
 
 /// <summary>What <c>TurnManager</c> and <c>MayaCalendar</c> call on <c>NextTurnAutomation</c> (T094). The Kotlin parameter is <c>GameView(gameInfo, civ).civView</c>; the civ is passed instead.</summary>

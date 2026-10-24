@@ -55,7 +55,6 @@ internal static class CityManagerHooks
     {
         public void DestroyIfDefeated(CivilizationObject attackedCiv, CivilizationObject attacker, HexCoord? notificationLocation) =>
             Battle.Battle.DestroyIfDefeated(attackedCiv, attacker, notificationLocation);
-        // TradeLogic's TradeEvaluation seam (T089) still throws when it is reached.
         public void AcceptTrade(CivilizationObject ourCiv, CivilizationObject theirCiv, TradeObject trade)
         {
             var tradeLogic = new TradeLogic(ourCiv, theirCiv);

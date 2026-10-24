@@ -21,8 +21,7 @@ namespace Unciv.Logic.Civilization.Managers;
 // - NextTurnAutomation (T094) is the INextTurnAutomation hook on the ClientState; with no hook the calls are skipped
 //   (TODO(T094): automateGoldToSciencePercentage, automateCityBombardment, automateCivMoves). They get the civilization where
 //   Kotlin builds `GameView(gameInfo, civ).civView`.
-// - TradeEvaluation().isTradeValid (T089) is the ITradeValidity hook on the ClientState; startTurn throws when a trade request must
-//   be validated and there is none (TODO(T089)).
+// - TradeEvaluation().isTradeValid (T089) is TradeEvaluation.Default unless the ClientState installs an ITradeValidity.
 // - GameInfo.processDiplomaticVictory (T071) is IGameInfoState.ProcessDiplomaticVictory.
 
 public class TurnManager(Civilization civInfo)
@@ -134,8 +133,7 @@ public class TurnManager(Civilization civInfo)
     private static MapUnitAction MapUnitActionFor(MapUnit unit) => new(unit.CurrentTile.Position, unit.Id);
 
     private bool IsTradeValid(Trade.Trade trade, Civilization offeringCiv) =>
-        (civInfo.GameInfo.ClientState.TradeEvaluation
-            ?? throw new NotSupportedException("TradeEvaluation is not ported yet (TODO(T089))"))
+        (civInfo.GameInfo.ClientState.TradeEvaluation ?? Trade.TradeEvaluation.Default)
         .IsTradeValid(trade, civInfo, offeringCiv);
 
     private void StartTurnFlags()

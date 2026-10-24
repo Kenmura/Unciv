@@ -21,7 +21,7 @@ namespace Unciv.Logic.Civilization.Diplomacy;
 //   TriggerUnique() below and throws until then (only reachable for civs that have such a unique).
 // - makePeaceOneSide builds a plain Trade where Kotlin builds `TradeLogic(thirdCiv, otherCiv).currentTrade`: TradeLogic's constructor
 //   only computes the available offers and has no side effect, so the Trade is the same (TradeLogic: T086).
-// - recieveGoldGifts / getGoldInflation: TradeEvaluation().getGoldInflation is copied as GetGoldInflation below (TradeEvaluation: T089).
+// - recieveGoldGifts / getGoldInflation: TradeEvaluation().getGoldInflation is TradeEvaluation.Default.GetGoldInflation (T089).
 // - Kotlin HashMaps (flagsCountdown, diplomaticModifiers) are JavaHashMaps: opinionOfOtherCiv sums the values in HashMap order.
 
 public class DiplomacyManager : IsPartOfGameInfoSerialization
@@ -903,16 +903,6 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
         return KotlinMath.DoubleToInt(giftAmount * CivInfo.GameInfo.Speed.GoldGiftModifier * 100 / GetGoldInflation(CivInfo));
     }
 
-    /// <summary>Kotlin <c>TradeEvaluation().getGoldInflation(civInfo)</c> (T089 ports TradeEvaluation and then calls it instead).</summary>
-    private static double GetGoldInflation(Civilization civInfo)
-    {
-        const double modifier = 1000.0;
-        double goldPerTurn = civInfo.Stats.StatsForNextTurn.Gold;
-        // To visualise the function, plug this into a 2d graphing calculator \frac{1000}{x^{1.2}+1.66*1000}
-        // Goes from 1 at GPT = 0 to .923 at GPT = 100, .577 at GPT = 1000 and 0.415 at GPT = 10000
-        // The current value of gold will never go below 40%, or the .4f that it is set to (being roughly the efficiency ratio between purchasing and upgrading units)
-        // So this does not scale off to infinity
-        return modifier / (Math.Pow(Math.Max(goldPerTurn, 1.0), 1.2) + (1.66 * modifier)) + .4;
-    }
+    private static double GetGoldInflation(Civilization civInfo) => Trade.TradeEvaluation.Default.GetGoldInflation(civInfo);
     #endregion
 }

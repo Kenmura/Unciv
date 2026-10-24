@@ -227,7 +227,6 @@ public sealed class UncivFilesTests : IDisposable
         var files = NewFiles();
         UncivFiles.SaveZipped = true;
         var game = BusyGame();
-        foreach (var civ in game.Civilizations) civ.TradeRequests.Clear(); // processing a pending request needs TradeEvaluation (TODO(T089))
         for (var turn = 0; turn < 6; turn++)
         {
             game.NextTurn(2000L + turn);

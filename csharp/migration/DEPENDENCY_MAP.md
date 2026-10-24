@@ -180,7 +180,7 @@ flowchart TD
   class T081 done
   class T083 done
   class T088 done
-  class T089 prog
+  class T089 review
   class T090 prog
   class T091 ondeck
   class T092 waiting
@@ -219,7 +219,7 @@ flowchart TD
 
 ## Remaining tickets over time
 
-Generated from the git history of `backlog.md` (UTC; each point is the backlog as of that time, the last one the current backlog). Completed tickets (Done, Won't port) are not counted.
+Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). Completed tickets (Done, Won't port) are not counted.
 
 | Line | Meaning |
 |---|---|
@@ -230,10 +230,10 @@ Generated from the git history of `backlog.md` (UTC; each point is the backlog a
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
-    y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 33]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
+    x-axis ["24 01:33", "24 02:40", "24 03:48", "24 04:55", "24 06:03", "24 07:10", "24 08:18", "24 09:25", "24 10:33", "24 11:40", "24 12:48", "24 13:55", "24 15:03", "24 16:10", "24 17:18", "24 18:25"]
+    y-axis "Tickets" 0 --> 67
+    line [31, 32, 29, 24, 21, 21, 21, 21, 37, 57, 58, 59, 55, 45, 35, 33]
+    line [3, 5, 2, 1, 0, 0, 0, 0, 3, 2, 4, 1, 1, 5, 4, 4]
 ```
 
 ## Incomplete tickets
@@ -261,7 +261,7 @@ xychart-beta
 | T094 | Available (waiting on T090, T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| T089 | In-Progress [Claude] | T086, T088, T085 | 2 | TradeEvaluation |
+| T089 | Needs-Review [Claude] | T086, T088, T085 | 2 | TradeEvaluation |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T090, T092, T156) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |

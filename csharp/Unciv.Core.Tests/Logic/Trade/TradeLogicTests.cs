@@ -342,10 +342,11 @@ public class TradeLogicTests
     }
 
     [Fact]
-    public void Evaluation_DefaultThrowsUntilTradeEvaluationIsPorted()
+    public void Evaluation_DefaultIsTheRealTradeEvaluation()
     {
         var (_, a, b) = TwoCivs();
         var logic = new TradeLogic(a, b);
-        Assert.Throws<NotSupportedException>(() => logic.AcceptTrade());
+        Assert.Same(TradeEvaluation.Default, logic.Evaluation);
+        logic.AcceptTrade(); // an empty trade evaluates to 0 on both sides: nothing is gifted
     }
 }

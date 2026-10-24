@@ -9,7 +9,7 @@ namespace Unciv.Core.Tests.Logic.Automation;
 
 public static partial class DiplomacyAiTests
 {
-    // TradeAutomation over the stand-in TradeEvaluation (T089 is not ported yet).
+    // TradeAutomation over the stand-in TradeEvaluation (the real one is covered by TradeEvaluationTests).
     [Collection("RulesetCache")]
     public class TradeAutomationTests
     {

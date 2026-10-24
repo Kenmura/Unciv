@@ -960,7 +960,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Kotlin TODO comments were reworded to "Kotlin note:" (SourcePolicyTests).
 
 ### T089 TradeEvaluation
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T086, T088, T085
 - Source: core/src/com/unciv/logic/trade/TradeEvaluation.kt
 - Fixtures: none - generate golden values (offer valuation per TradeOfferType)
@@ -969,6 +969,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T18:13Z
 - Notes: Created by the backlog audit (was 'Planned, after T068'). ~580 LOC; uses DiplomacyAutomation, MotivationToAttackAutomation, DeclareWarPlanEvaluator (T088) through GameView. Wires the TODO(T089) seams in T088. Float/Int valuation arithmetic must match Kotlin.
   - DiplomacyManager.GetGoldInflation (private) is a copy of TradeEvaluation.getGoldInflation; replace it with the TradeEvaluation call.
+  -   - Implemented TradeEvaluation.cs (public class, stateless; TradeEvaluation.Default is the shared instance standing in for Kotlin's `TradeEvaluation()`), implementing ITradeAutomationEvaluation (so ITradeEvaluation + ITradeValidity). Seams removed: TradeLogic.Evaluation defaults to TradeEvaluation.Default (EvaluationNotPorted gone), TurnManager.IsTradeValid and TradeEvaluationSeam.Of fall back to TradeEvaluation.Default instead of throwing; GameClientState.TradeEvaluation stays as an optional override (tests install stand-ins). DiplomacyManager.GetGoldInflation now calls TradeEvaluation.Default.GetGoldInflation (copy deleted). Stale T089 markers retargeted/removed in comments and tests.
+      - Traps kept: getTradeAcceptability sums in Long, clamps to Int; `(sum*1.5).toLong()` via DoubleToLong; Int.MAX_VALUE sell costs are still divided by inflation (non-gold); Gold_Per_Turn `amount*duration*4/5` left-to-right Int; Float happiness sum + Int; Kotlin Float/Int comparisons in evaluatePeaceCostForThem. getNeighbouringCivs uses a HashSet of owners only for Contains. Kotlin Exception -> InvalidOperationException. EvaluateBuyCost/SellCost were split into per-offer-type helpers only to satisfy SizeRatchet.
+      - Tests: TradeEvaluationTests (hand-derived from Kotlin; no Kotlin fixture), plus CivTurnTests/TradeLogicTests updated to the real default. AiWillBuyAt/SellAt resource uniques, the joint/join war motivation sell paths and surroundedByOurCities=3 are not exercised (coverage 80%).
 
 ### T090 Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit
 - State: In-Progress [Claude]
