@@ -132,7 +132,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - State: Done (full ticket: backlog-archive.md)
 
 ### T046 GameInfo core and the hooks waiting for it
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T034, T039, T045, T055, T060, T065, T078
 - Source: core/src/com/unciv/logic/GameInfo.kt (fields, setTransients, queries; turn handling is T071)
 - Fixtures: tests/src/com/unciv/logic/SerializationTests.kt GameInfo parts, LoadGameTest.kt (TestGame-based: T072)
