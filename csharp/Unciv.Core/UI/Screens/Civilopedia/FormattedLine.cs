@@ -13,8 +13,12 @@ namespace Unciv.UI.Screens.Civilopedia;
 // RulesetValidator.uncachedImageExists) are the IFormattedLineImageCheck argument of UnsupportedReasons.
 // Kotlin `data class` equals/hashCode throw, and so do these. `copy()` is a record `with`-less copy: use the constructor.
 
-/// <summary>What <see cref="FormattedLine"/> needs from "the current game": the ruleset for automatic links, and the game when one is loaded.</summary>
-public sealed record CivilopediaContext(Ruleset Ruleset, IGameContextGameInfo? GameInfo = null);
+/// <summary>
+/// What <see cref="FormattedLine"/> needs from "the current game": the ruleset for automatic links, and the game when one is loaded.
+/// <see cref="Collator"/> and <see cref="Language"/> stand in for <c>UncivGame.Current.settings.getCollatorFromLocale()</c> and <c>locale.language</c>
+/// (sorting names for display, Wikipedia links). A null <see cref="Collator"/> sorts with the invariant culture's comparer.
+/// </summary>
+public sealed record CivilopediaContext(Ruleset Ruleset, IGameContextGameInfo? GameInfo = null, IComparer<string>? Collator = null, string Language = "en");
 
 /// <summary>Image existence checks <see cref="FormattedLine.UnsupportedReasons"/> delegates to the client (atlas, ExtraImages folder, mod atlases).</summary>
 public interface IFormattedLineImageCheck

@@ -1,17 +1,21 @@
 using System.Text.Json.Serialization;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 
 namespace Unciv.Models.Ruleset.Nation;
 
 // core/src/com/unciv/models/ruleset/nation/Personality.kt
-// Not ported yet: makeLink, getIconName, getCivilopediaTextHeader/Lines (Civilopedia text types, T034).
 /// <summary>
 /// A Leader Personality as defined in Personalities.json. Biases can be indexed with a <see cref="PersonalityValue"/> as key.
 /// </summary>
-public class Personality : RulesetObject
+public class Personality : RulesetObject, ICivilopediaText
 {
     public override string MakeLink() => $"Personality/{Name}";
+    public string GetIconName() => "";
+    public FormattedLine? GetCivilopediaTextHeader() => this.GetCivilopediaTextHeaderImpl();
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) => this.GetPersonalityCivilopediaTextLines(context);
 
     private static readonly Lazy<Personality> NeutralPersonalityLazy = new(() => new Personality { IsNeutralPersonality = true });
 

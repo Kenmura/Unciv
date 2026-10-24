@@ -1,12 +1,13 @@
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Models.Translations;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/Belief.kt
-// Not ported yet: the Civilopedia members (getCivilopediaTextLines, getBeliefsMatching, getCivilopediaBeliefsEntry...), they need Ruleset (T034)
-// and the Civilopedia text types.
-public class Belief : RulesetObject
+public class Belief : RulesetObject, ICivilopediaText
 {
     public Belief()
     {
@@ -46,6 +47,71 @@ public class Belief : RulesetObject
     }
 
     public override string MakeLink() => $"Belief/{Name}";
+
+    public FormattedLine? GetCivilopediaTextHeader() =>
+        new(Name, icon: MakeLink(), header: 2, color: Type == BeliefType.None ? "#e34a2b" : "");
+
+    public int GetSortGroup(Ruleset ruleset) => (int)Type;
+
+    public string? GetSubCategory(Ruleset ruleset) => Type.GetSubCategory();
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) => GetCivilopediaTextLines(context, false);
+
+    /// <summary>This special overload is called from Religion overview and Religion picker</summary>
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context, bool withHeader) =>
+        FormattedLineListBuilder.BuildCivilopediaText(context, b =>
+        {
+            if (withHeader)
+            {
+                b.Add(Name, size: Constants.HeadingFontSize, centered: true, link: MakeLink());
+                b.Space();
+            }
+            if (Type != BeliefType.None)
+                b.Add($"{{Type}}: {{{Type}}}", color: Type.GetColor(), centered: withHeader);
+            b.AddUniques(this, SeparatorType.None);
+        });
+
+    public static IEnumerable<Belief> GetBeliefsMatching(string name, Ruleset ruleset) =>
+        ruleset.Beliefs.Values
+            .Where(it => !((IHasUniques)it).IsHiddenFromCivilopedia(null, ruleset))
+            .Where(it => ((IHasUniques)it).HasUniquesMentioning(name));
+
+    /// <summary>
+    /// Get CivilopediaText lines for all Beliefs referencing a given name in an unique parameter,
+    /// With optional spacing and "See Also:" header.
+    /// </summary>
+    public static IEnumerable<FormattedLine> GetCivilopediaTextMatching(string name, Ruleset ruleset, bool withSeeAlso = true)
+    {
+        var matchingBeliefs = GetBeliefsMatching(name, ruleset).ToList();
+        if (matchingBeliefs.Count == 0) yield break;
+        if (withSeeAlso)
+        {
+            yield return new FormattedLine();
+            yield return new FormattedLine("{See also}:");
+        }
+        foreach (var belief in matchingBeliefs)
+            yield return new FormattedLine(belief.Name, link: belief.MakeLink(), indent: 1);
+    }
+
+    public static Belief GetCivilopediaBeliefsEntry(CivilopediaContext context) => new()
+    {
+        Name = "Beliefs",
+        CivilopediaText = FormattedLineListBuilder.BuildCivilopediaText(context, b =>
+        {
+            b.Add("There are four types of beliefs: Pantheon, Founder, Follower and Enhancer beliefs.");
+            b.Add("Pantheon and Follower beliefs apply to each city following your religion, while Founder and Enhancer beliefs only apply to the founder of a religion.");
+        }),
+    };
+
+    public static Belief GetCivilopediaReligionEntry(CivilopediaContext context) => new()
+    {
+        Name = "Religions",
+        CivilopediaText = FormattedLineListBuilder.BuildCivilopediaText(context, b =>
+        {
+            foreach (var religion in context.Ruleset.Religions.OrderBy(it => it.Tr(hideIcons: true), context.GetCollator()))
+                b.Add(religion, icon: $"Belief/{religion}");
+        }),
+    };
 }
 
 /// <summary>

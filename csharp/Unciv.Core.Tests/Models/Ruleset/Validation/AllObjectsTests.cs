@@ -4,8 +4,7 @@ using Unciv.Models.Ruleset;
 namespace Unciv.Core.Tests.Models.Ruleset.Validation;
 
 /// <summary>
-/// Ported from <c>tests/src/com/unciv/uniques/AllObjectsTests.kt</c>. Not ported: the <c>allICivilopediaText</c> test (the Civilopedia text types have no
-/// ticket yet). Kotlin's <c>runTestParcours</c> over the base rulesets becomes a loop that reports the offending names.
+/// Ported from <c>tests/src/com/unciv/uniques/AllObjectsTests.kt</c>. Kotlin's <c>runTestParcours</c> over the base rulesets becomes a loop that reports the offending names.
 /// </summary>
 [Collection("RulesetCache")]
 public sealed class AllObjectsTests : IDisposable
@@ -36,6 +35,13 @@ public sealed class AllObjectsTests : IDisposable
     {
         foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
             Assert.Empty(FindDuplicateReferences(RulesetCache.Get(baseRuleset.FullName())!.AllRulesetObjects()).Select(it => $"{baseRuleset.FullName()}: {it.Name}"));
+    }
+
+    [Fact]
+    public void AllICivilopediaTextShouldNotReturnDuplicateReferences()
+    {
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
+            Assert.Empty(FindDuplicateReferences(RulesetCache.Get(baseRuleset.FullName())!.AllICivilopediaText()).Select(it => $"{baseRuleset.FullName()}: {it.MakeLink()}"));
     }
 
     [Fact]

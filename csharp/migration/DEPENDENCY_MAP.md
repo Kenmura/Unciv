@@ -401,7 +401,7 @@ flowchart TD
   class T104 waiting
   class T106 waiting
   class T107 done
-  class T108 prog
+  class T108 review
   class T109 prog
   class T110 waiting
   class T111 waiting
@@ -466,7 +466,7 @@ flowchart TD
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T096 | Available (waiting on T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T108 | In-Progress [Claude] | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
+| T108 | Needs-Review [Claude] | T095 | 0 | Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText |
 | T109 | In-Progress [Claude] | none | 0 | Hardening sweep: non-blocking review findings from T033-T095 |
 | T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T111 | Available (waiting on T052, T060, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |

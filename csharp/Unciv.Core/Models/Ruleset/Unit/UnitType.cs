@@ -1,9 +1,10 @@
 using Unciv.Models.Ruleset.Unique;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 
 namespace Unciv.Models.Ruleset.Unit;
 
 // core/src/com/unciv/models/ruleset/unit/UnitType.kt
-// Not ported yet, they need the Civilopedia text types (T034): makeLink, getCivilopediaTextLines, getSortGroup, getSubCategory.
 
 /// <summary>The types of tiles the unit can by default enter</summary>
 public enum UnitMovementType
@@ -16,9 +17,17 @@ public enum UnitMovementType
     Air,
 }
 
-public class UnitType : RulesetObject
+public class UnitType : RulesetObject, ICivilopediaText
 {
     public override string MakeLink() => $"UnitType/{Name}";
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) => this.GetUnitTypeCivilopediaTextLines(context);
+
+    /// <summary>Sort by the Domain, while keeping the Domain at the top of the sub-category.</summary>
+    public int GetSortGroup(Ruleset ruleset) =>
+        (unitMovementType.Value is { } movementType ? (int)movementType : 100) * 2 + (Name.StartsWith("Domain: ", StringComparison.Ordinal) ? 0 : 1);
+
+    public string? GetSubCategory(Ruleset ruleset) => unitMovementType.Value?.ToString() ?? "Other";
 
     private readonly Lazy<UnitMovementType?> unitMovementType;
 

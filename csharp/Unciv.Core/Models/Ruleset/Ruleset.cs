@@ -7,6 +7,7 @@ using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Models.Translations;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
@@ -330,6 +331,8 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
     }
 
     public IEnumerable<IRulesetObject> AllRulesetObjects() => RulesetFile.Values.SelectMany(it => it.GetRulesetObjects(this));
+
+    public IEnumerable<ICivilopediaText> AllICivilopediaText() => AllRulesetObjects();
 
     public IEnumerable<UniqueObject> AllUniques() => RulesetFile.Values.SelectMany(it => it.GetUniques(this));
 

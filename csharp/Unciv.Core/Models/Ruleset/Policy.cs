@@ -2,12 +2,13 @@ using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Translations;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/Policy.kt
-// Not ported yet: getSortGroup, getSubCategory and the Civilopedia text lines, they need Ruleset (T034) and the Civilopedia text types.
-public class Policy : RulesetObject
+public class Policy : RulesetObject, ICivilopediaText
 {
     /// <summary>Indicates whether a <see cref="Policy"/> is a <see cref="PolicyBranch"/> starting policy, a normal one, or the branch completion</summary>
     public enum PolicyBranchTypes { BranchStart, Member, BranchComplete }
@@ -82,4 +83,108 @@ public class Policy : RulesetObject
     }
 
     public override string MakeLink() => $"Policy/{Name}";
+
+    public int GetSortGroup(Ruleset ruleset) =>
+        (ruleset.Eras.TryGetValue(Branch.Era, out var branchEra) ? branchEra.EraNumber : 0) * 10000 +
+        ruleset.PolicyBranches.Keys.ToList().IndexOf(Branch.Name) * 100 +
+        (int)PolicyBranchType;
+
+    public string? GetSubCategory(Ruleset ruleset) => Branch.Name;
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context)
+    {
+        var ruleset = context.Ruleset;
+        var lineList = new List<FormattedLine>();
+
+        if (this is PolicyBranch policyBranch)
+        {
+            ruleset.Eras.TryGetValue(policyBranch.Era, out var era);
+            var eraColor = era?.GetHexColor() ?? "";
+            var eraLink = era?.MakeLink() ?? "";
+            lineList.Add(new FormattedLine($"{{Unlocked at}} {{{Branch.Era}}}", header: 4, color: eraColor, link: eraLink));
+        }
+        else
+        {
+            lineList.Add(new FormattedLine($"Policy branch: [{Branch.Name}]", link: Branch.MakeLink()));
+        }
+
+        if (PolicyBranchType != PolicyBranchTypes.BranchComplete && Requires != null && Requires.Count != 0)
+        {
+            lineList.Add(new FormattedLine());
+            if (Requires.Count == 1)
+            {
+                var first = Requires[0];
+                lineList.Add(new FormattedLine($"Requires [{first}]", link: $"Policy/{first}"));
+            }
+            else
+            {
+                lineList.Add(new FormattedLine("Requires all of the following:"));
+                foreach (var it in Requires)
+                    lineList.Add(new FormattedLine(it, link: $"Policy/{it}"));
+            }
+        }
+
+        var leadsTo = ruleset.Policies.Values.Where(it =>
+            it.Requires != null && it.Requires.Contains(Name)
+            && it.PolicyBranchType != PolicyBranchTypes.BranchComplete).ToList();
+        if (leadsTo.Count != 0)
+        {
+            lineList.Add(new FormattedLine());
+            if (leadsTo.Count == 1)
+                lineList.Add(new FormattedLine($"Leads to [{leadsTo[0].Name}]", link: leadsTo[0].MakeLink()));
+            else
+            {
+                lineList.Add(new FormattedLine("Leads to:"));
+                foreach (var it in leadsTo)
+                    lineList.Add(new FormattedLine(it.Name, link: it.MakeLink(), indent: 1));
+            }
+        }
+
+        bool IsEnabledByPolicy(IRulesetObject rulesetObject) =>
+            rulesetObject.GetMatchingUniques(UniqueType.OnlyAvailable, GameContext.IgnoreConditionalsState).Any(unique =>
+                unique.GetModifiers(UniqueType.ConditionalAfterPolicyOrBelief).Any(modifier => modifier.Params[0] == Name))
+            || rulesetObject.GetMatchingUniques(UniqueType.Unavailable).Any(unique =>
+                unique.GetModifiers(UniqueType.ConditionalBeforePolicyOrBelief).Any(modifier => modifier.Params[0] == Name));
+
+        var enabledBuildings = ruleset.Buildings.Values.Where(it => IsEnabledByPolicy(it)).ToList();
+        var enabledUnits = ruleset.Units.Values.Where(it => IsEnabledByPolicy(it)).ToList();
+
+        if (enabledBuildings.Count != 0 || enabledUnits.Count != 0)
+        {
+            lineList.Add(new FormattedLine("Enables:"));
+            foreach (var building in enabledBuildings)
+                lineList.Add(new FormattedLine(building.Name, link: building.MakeLink(), indent: 1));
+            foreach (var unit in enabledUnits)
+                lineList.Add(new FormattedLine(unit.Name, link: unit.MakeLink(), indent: 1));
+        }
+
+        bool IsDisabledByPolicy(IRulesetObject rulesetObject)
+        {
+            if (rulesetObject.GetMatchingUniques(UniqueType.OnlyAvailable, GameContext.IgnoreConditionalsState).Any(unique =>
+                    unique.GetModifiers(UniqueType.ConditionalBeforePolicyOrBelief).Any(modifier => modifier.Params[0] == Name)))
+                return true;
+
+            if (rulesetObject.GetMatchingUniques(UniqueType.Unavailable, GameContext.IgnoreConditionalsState).Any(unique =>
+                    unique.GetModifiers(UniqueType.ConditionalAfterPolicyOrBelief).Any(modifier => modifier.Params[0] == Name)))
+                return true;
+
+            return false;
+        }
+
+        var disabledBuildings = ruleset.Buildings.Values.Where(it => IsDisabledByPolicy(it)).ToList();
+        var disabledUnits = ruleset.Units.Values.Where(it => IsDisabledByPolicy(it)).ToList();
+
+        if (disabledBuildings.Count != 0 || disabledUnits.Count != 0)
+        {
+            lineList.Add(new FormattedLine("Disables:"));
+            foreach (var building in disabledBuildings)
+                lineList.Add(new FormattedLine(building.Name, link: building.MakeLink(), indent: 1));
+            foreach (var unit in disabledUnits)
+                lineList.Add(new FormattedLine(unit.Name, link: unit.MakeLink(), indent: 1));
+        }
+
+        this.UniquesToCivilopediaTextLines(lineList, context);
+
+        return lineList;
+    }
 }

@@ -3,12 +3,13 @@ using Unciv.Logic.Civilization;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.Models.Translations;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/Victory.kt
-// Not ported (UI types, T095 and later): Victory.getCivilopediaTextLines, Milestone.getVictoryScreenButtons / getMilestoneButton
-// (libGDX TextButtons) and Milestone.getFormattedLine (FormattedLine).
+// Not ported (UI types): Milestone.getVictoryScreenButtons / getMilestoneButton (libGDX TextButtons).
 // The members that read live game state (hasBeenCompletedBy, getFocus, the countable getters and the victory screen header text) were
 // finished by T057 against the concrete Civilization; GameInfo is still its IGameInfoState seam.
 
@@ -48,7 +49,7 @@ public static class MilestoneTypeExtensions
     };
 }
 
-public class Victory : RulesetObject
+public class Victory : RulesetObject, ICivilopediaText
 {
     public enum CompletionStatus
     {
@@ -105,6 +106,19 @@ public class Victory : RulesetObject
 
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Victory;
     public override string MakeLink() => $"Victory/{Name}";
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context)
+    {
+        var lines = new List<FormattedLine>
+        {
+            new(VictoryScreenHeader),
+            new(extraImage: $"VictoryIllustrations/{Name}/Won", centered: true),
+            new(),
+        };
+        lines.AddRange(MilestoneObjects.Select(it => it.GetFormattedLine()));
+        this.UniquesToCivilopediaTextLines(lines, context);
+        return lines;
+    }
 }
 
 public class Milestone
@@ -383,4 +397,14 @@ public class Milestone
                 throw new ArgumentOutOfRangeException();
         }
     }
+
+    public FormattedLine GetFormattedLine() => Type!.Value switch
+    {
+        // Kotlin note: links should be `Building/params[0]`, but then the Wonder links don't resolve correctly
+        MilestoneType.BuiltBuilding => new FormattedLine(UniqueDescription, link: $"Wonder/{Params[0]}"),
+        MilestoneType.BuildingBuiltGlobally => new FormattedLine(UniqueDescription, link: $"Wonder/{Params[0]}"),
+        MilestoneType.WorldReligion => new FormattedLine(UniqueDescription, link: "Tutorials/Religion"),
+        MilestoneType.CompletePolicyBranches => new FormattedLine(UniqueDescription, link: "Policies"),
+        _ => new FormattedLine(UniqueDescription, starred: true),
+    };
 }

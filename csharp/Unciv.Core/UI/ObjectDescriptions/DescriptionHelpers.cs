@@ -12,6 +12,9 @@ namespace Unciv.UI.ObjectDescriptions;
 
 public static class DescriptionHelpers
 {
+    /// <summary>Stand-in for <c>UncivGame.Current.settings.getCollatorFromLocale()</c>: the context's collator, else the invariant culture's comparer.</summary>
+    public static IComparer<string> GetCollator(this CivilopediaContext context) => context.Collator ?? StringComparer.InvariantCulture;
+
     /// <summary>
     /// Appends user-visible Uniques as translated text to a line collection. Follows json order.
     /// </summary>

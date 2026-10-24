@@ -84,10 +84,9 @@ public static class CivilopediaCategoriesExtensions
     };
 
     /// <summary>
-    /// The entries of the category. Not ported: for <see cref="CivilopediaCategories.Belief"/> the two virtual entries
-    /// <c>Belief.getCivilopediaBeliefsEntry/getCivilopediaReligionEntry</c> that Kotlin appends after the beliefs.
+    /// The entries of the category. <paramref name="context"/> (collator for the virtual Religions entry) defaults to one made from <paramref name="ruleset"/> and <paramref name="gameInfo"/>.
     /// </summary>
-    public static IReadOnlyCollection<ICivilopediaText> GetCategoryIterator(this CivilopediaCategories category, Ruleset ruleset, IGameContextGameInfo? gameInfo) => category switch
+    public static IReadOnlyCollection<ICivilopediaText> GetCategoryIterator(this CivilopediaCategories category, Ruleset ruleset, IGameContextGameInfo? gameInfo, CivilopediaContext? context = null) => category switch
     {
         CivilopediaCategories.Building => ruleset.Buildings.Values.Where(it => !it.IsAnyWonder()).ToList(),
         CivilopediaCategories.Wonder => ruleset.Buildings.Values.Where(it => it.IsAnyWonder()).ToList(),
@@ -103,7 +102,9 @@ public static class CivilopediaCategoriesExtensions
         CivilopediaCategories.Technology => ruleset.Technologies.Values.ToList(),
         CivilopediaCategories.Promotion => ruleset.UnitPromotions.Values.ToList(),
         CivilopediaCategories.Policy => ruleset.Policies.Values.ToList(),
-        CivilopediaCategories.Belief => ruleset.Beliefs.Values.ToList(),
+        CivilopediaCategories.Belief => ruleset.Beliefs.Values.Cast<ICivilopediaText>()
+            .Append(Belief.GetCivilopediaBeliefsEntry(context ?? new CivilopediaContext(ruleset, gameInfo)))
+            .Append(Belief.GetCivilopediaReligionEntry(context ?? new CivilopediaContext(ruleset, gameInfo))).ToList(),
         CivilopediaCategories.Tutorial => GetCivilopediaTutorials(ruleset),
         CivilopediaCategories.Victory => ruleset.Victories.Values
             // Only display active victory types

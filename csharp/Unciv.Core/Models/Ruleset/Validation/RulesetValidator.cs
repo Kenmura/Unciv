@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset.Unique;
@@ -6,6 +7,7 @@ using Unciv.Models.Ruleset.Unit;
 using Unciv.Models.StatTypes;
 using Unciv.Models.Translations;
 using Unciv.UI.Components.Extensions;
+using Unciv.UI.Screens.Civilopedia;
 using Unciv.Utils;
 using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
@@ -15,8 +17,9 @@ namespace Unciv.Models.Ruleset.Validation;
 // Ported from core/src/com/unciv/models/ruleset/validation/RulesetValidator.kt
 // Not ported (graphics/UI-bound, and the types they need have no engine equivalent yet):
 // - the texture checks: AtlasPreview (initTextureNamesCache, uncachedImageExists), checkTilesetSanity (TileSetConfig, TileSetCache, Gdx.files, isRunFromJar)
-//   and the unit-set-art check in checkUnit; checkCivilopediaText and the civilopediaText check in checkUnit (ICivilopediaText has no ticket yet).
-//   They only ever add OK/WarningOptionsOnly/Warning lines about images.
+//   and the unit-set-art check in checkUnit. They only ever add OK/WarningOptionsOnly/Warning lines about images.
+// - checkCivilopediaText asks the IFormattedLineImageCheck in ImageCheck whether an extraImage exists (Kotlin: textureNamesCache.imageExists via uncachedImageExists);
+//   until a client supplies one, every image is assumed to exist so only the other FormattedLine problems are reported.
 // Deviations:
 // - FileHandle becomes IRulesetFolder; messages that print a FileHandle path print the folder name instead.
 // - The map preselection check reads UncivGame.Current.files.getModFolder(name): the ruleset's own FolderLocation is that folder for a mod.
@@ -56,6 +59,14 @@ public class RulesetValidator
     }
 
     public bool TryFixUnknownUniques => tryFixUnknownUniques;
+
+    private sealed class AssumeAllImagesExist : IFormattedLineImageCheck
+    {
+        public bool ExtraImageExists(string extraImage) => true;
+    }
+
+    /// <summary>Stands in for <c>uncachedImageExists</c>, which <c>FormattedLine</c> uses for its own checking</summary>
+    public IFormattedLineImageCheck ImageCheck { get; set; } = new AssumeAllImagesExist();
 
     public static RulesetValidator Create(Ruleset ruleset, bool tryFixUnknownUniques = false) =>
         ruleset.ModOptions.IsBaseRuleset
@@ -112,7 +123,8 @@ public class RulesetValidator
         AddTranslationNameCollisionWarnings(lines);
         AddEmptyNamesErrors(lines);
 
-        // Not ported: initTextureNamesCache, checkTilesetSanity, checkCivilopediaText (see the file header)
+        // Not ported: initTextureNamesCache, checkTilesetSanity (see the file header)
+        CheckCivilopediaText(lines);
         CheckFileNames(lines);
 
         return lines;
@@ -530,7 +542,28 @@ public class RulesetValidator
         if (unit.IsMilitary && unit.Strength == 0) // Should only match ranged units with 0 strength
             lines.Add($"{unit.Name} is a military unit but has no assigned strength!", sourceObject: unit);
 
-        // Not ported: the check that civilopediaText does not include the unit's UnitSet art (ICivilopediaText has no ticket yet)
+        // Kotlin Regex("TileSets/[^/]+/Units/${unit.name}") is not quoted, so the unit name is a pattern
+        var pixelUnitTexturePattern = new Regex($"\\A(?:TileSets/[^/]+/Units/{unit.Name})\\z", RegexOptions.CultureInvariant);
+        if (unit.CivilopediaText.Any(it => pixelUnitTexturePattern.IsMatch(it.ExtraImage)))
+            lines.Add($"Unit {unit.Name} includes the unit's UnitSet art in civilopediaText, which is superseded by the \"Size of Unitset art in Civilopedia\" option", RulesetErrorSeverity.WarningOptionsOnly, unit);
+    }
+
+    private void CheckCivilopediaText(RulesetErrorList lines)
+    {
+        foreach (var sourceObject in ruleset.AllICivilopediaText())
+        {
+            var index = 0;
+            foreach (var line in sourceObject.CivilopediaText)
+            {
+                index++;
+                foreach (var error in line.UnsupportedReasons(ImageCheck))
+                {
+                    var nameText = sourceObject is INamed named ? named.Name + "'s " : "";
+                    var text = $"({sourceObject.GetType().Name}) {nameText}civilopediaText line {index}: {error}";
+                    lines.Add(text, RulesetErrorSeverity.WarningOptionsOnly, sourceObject as IRulesetObject, null);
+                }
+            }
+        }
     }
 
     protected virtual void AddUnitTypeErrors(RulesetErrorList lines)

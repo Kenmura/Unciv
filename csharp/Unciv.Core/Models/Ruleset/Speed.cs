@@ -1,12 +1,15 @@
 using System.Text.Json.Serialization;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
+using Unciv.Models.Translations;
+using Unciv.UI.Components;
+using Unciv.UI.ObjectDescriptions;
+using Unciv.UI.Screens.Civilopedia;
 
 namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/Speed.kt
-// Not ported yet: the Civilopedia members (getCivilopediaTextLines, getSortGroup...), they need Ruleset (T034) and the Civilopedia text types.
-public class Speed : RulesetObject, IGameContextSpeed
+public class Speed : RulesetObject, IGameContextSpeed, ICivilopediaText
 {
     public const string Default = "Quick";
     public const string DefaultForSimulation = "Standard";
@@ -110,4 +113,30 @@ public class Speed : RulesetObject, IGameContextSpeed
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Speed;
 
     public override string MakeLink() => $"Speed/{Name}";
+
+    public FormattedLine? GetCivilopediaTextHeader() => new(Name, header: 2);
+
+    public List<FormattedLine> GetCivilopediaTextLines(CivilopediaContext context) =>
+        FormattedLineListBuilder.BuildCivilopediaText(context, b =>
+        {
+            static string F(float value) => KotlinNumberText.FloatToString(value);
+            b.Add($"General speed modifier: [{F(Modifier * 100)}]%{Fonts.Turn}");
+            b.Add($"Production cost modifier: [{F(ProductionCostModifier * 100)}]%{Fonts.Production}");
+            b.Add($"Gold cost modifier: [{F(GoldCostModifier * 100)}]%{Fonts.Gold}");
+            b.Add($"Science cost modifier: [{F(ScienceCostModifier * 100)}]%{Fonts.Science}");
+            b.Add($"Culture cost modifier: [{F(CultureCostModifier * 100)}]%{Fonts.Culture}");
+            b.Add($"Faith cost modifier: [{F(FaithCostModifier * 100)}]%{Fonts.Faith}");
+            b.Add($"Improvement build length modifier: [{F(ImprovementBuildLengthModifier * 100)}]%{Fonts.Turn}");
+            b.Add($"Diplomatic deal duration: [{KotlinNumberText.Int(DealDuration)}] turns{Fonts.Turn}");
+            b.Add($"Gold gift influence gain modifier: [{F(GoldGiftModifier * 100)}]%{Fonts.Gold}");
+            b.Add($"City-state tribute scaling interval: [{F(CityStateTributeScalingInterval)}] turns{Fonts.Turn}");
+            b.Add($"Barbarian spawn modifier: [{F(BarbarianModifier * 100)}]%{Fonts.Strength}");
+            b.Add($"Golden age length modifier: [{F(GoldenAgeLengthModifier * 100)}]%{Fonts.Happiness}");
+            b.Add($"Adjacent city religious pressure: [{KotlinNumberText.Int(ReligiousPressureAdjacentCity)}]{Fonts.Faith}");
+            b.Add($"Peace deal duration: [{KotlinNumberText.Int(PeaceDealDuration)}] turns{Fonts.Turn}");
+            b.Add("Start year: [" + $"{{[{KotlinNumberText.Int(KotlinNumberText.FloatToInt(Math.Abs(StartYear)))}] {(StartYear < 0 ? "BC" : "AD")}}}]".Tr());
+            b.AddUniques(this);
+        });
+
+    public int GetSortGroup(Ruleset ruleset) => KotlinNumberText.FloatToInt(Modifier * 1000);
 }
