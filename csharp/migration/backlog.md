@@ -290,13 +290,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 
 
 ### T019 Event bus
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: none
 - Source: core/src/com/unciv/logic/event/EventBus.kt, Event.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Event/EventBus.cs, Event.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~EventBusTests`
-- Claimed:
+- Claimed: 2026-10-24T01:28:10Z
 - Notes: Listener invocation order must be deterministic (registration order). Replace Kotlin weak/threading specifics with deterministic single-threaded equivalents; note deviations.
 
 ### T020 MultiFilter and IdChecker
