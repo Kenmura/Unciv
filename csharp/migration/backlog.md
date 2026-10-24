@@ -922,7 +922,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review notes: adversarial review (Auditor/Adversary/Pragmatist) found no parity deviations; requested WarType (TeamWar/JoinWar), resource-offer filtering and mod-option tests, added. Gate widened to ~TradeLogic to include TradeLogicGameTests. Known limitation: major-civ liberation path can hit the T089 seam via peace-proposal offers.
 
 ### T087 Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T085, T057
 - Source: core/src/com/unciv/logic/automation/Automation.kt, Timers.kt (profiling: drop, keep nothing), civilization/AutomationCache.kt, civilization/ThreatManager.kt, unit/CityLocationTileRanker.kt, civilization/ReligionAutomation.kt, unit/EspionageAutomation.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/managers/ThreatManagerTests.kt (TestGame: T035 via T085)
