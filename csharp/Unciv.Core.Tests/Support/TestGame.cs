@@ -1,4 +1,3 @@
-using Unciv.Core.Tests.Logic;
 using Unciv.Logic;
 using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization;
@@ -26,8 +25,7 @@ namespace Unciv.Core.Tests.Support;
 //   constructor's `forUITesting` parameter and the ImageGetter.ruleset assignment are dropped.
 // - RulesetCache is process-wide shared state: the Civ_V_GnK ruleset is loaded once from android/assets/jsons (noMods) and then cloned,
 //   exactly like Kotlin's `if (RulesetCache.isEmpty()) loadRulesets(noMods = true)`.
-// - QuestManager (T069) and CityStateFunctions (T068) are not ported: each new Civilization gets no-op stand-ins until they are.
-//   addCiv with a city state type therefore needs CityStateFunctions.InitCityState and throws NotSupportedException until T068.
+// - QuestManager (T069) is not ported: each new Civilization gets a no-op stand-in while its lateinit is unset.
 // - Kotlin's `Random.Default` for initCityState is a fixed-seed GameRandom (determinism; the value is ignored by the stand-in anyway).
 /// <summary>
 /// A testing game using a fresh clone of the Civ_V_GnK ruleset so it can be modded in-place.
@@ -196,7 +194,6 @@ public sealed class TestGame
     private static void WireUnportedManagers(Civilization civ)
     {
         try { _ = civ.QuestManager; } catch (InvalidOperationException) { civ.QuestManager = new NoopQuestManager(); }
-        try { _ = civ.CityStateFunctions; } catch (InvalidOperationException) { civ.CityStateFunctions = new FakeCityStateFunctions(); }
     }
 
     public CityObject AddCity(Civilization civInfo, TileClass tile, bool replacePalace = false, int initialPopulation = 1)

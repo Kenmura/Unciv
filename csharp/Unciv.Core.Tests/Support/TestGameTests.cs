@@ -210,11 +210,14 @@ public class TestGameTests
     }
 
     [Fact]
-    public void CityStateCivsNeedTheUnportedCityStateFunctions()
+    public void AddCivWithACityStateTypeInitializesTheCityState()
     {
-        // TODO(T068): CityStateFunctions.InitCityState is not ported yet; once it is, drop this test and cover addCiv(cityStateType = ...).
         var game = new TestGame();
-        Assert.Throws<NotSupportedException>(() => game.AddCiv(cityStateType: game.Ruleset.CityStateTypes.Keys.First()));
+        var cityStateType = game.Ruleset.CityStateTypes.Keys.First();
+        var cityState = game.AddCiv(cityStateType: cityStateType);
+        Assert.True(cityState.IsCityState);
+        Assert.Equal(cityStateType, cityState.Nation.CityStateType);
+        Assert.False(game.AddCiv().IsCityState);
     }
 
     [Fact]

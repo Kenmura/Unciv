@@ -7,8 +7,8 @@ namespace Unciv.Core.Tests.Support;
 
 // T035: the CountableTests cases deferred by T028 that only need TestGame (tests/src/com/unciv/uniques/CountableTests.kt).
 // Still deferred, with the owning ticket: testPerCountableForGlobalAndLocalResources, testOwnedTilesCountable, testFilteredCitiesCountable
-// and the second half of countableCanUseContext (UniqueTriggerActivation, T052); testForEveryWithInvalidCountable and testKnownCivsCountable
-// (city states, T068); testRulesetValidation (RulesetValidator over a modded game, T036/T037 owners);
+// and the second half of countableCanUseContext (UniqueTriggerActivation, T052);
+// private testRulesetValidation(RulesetValidator over a modded game, T036/T037 owners);
 // countableCanUseContext's unit part (placeUnitNearTile with triggered uniques, T052).
 [Collection("RulesetCache")]
 public class CountableGameTests
@@ -149,6 +149,51 @@ public class CountableGameTests
             (("Quick", "Production"), (int?)67),
             (("Standard", "Gold"), 100),
             (("Marathon", "Faith"), 300));
+    }
+
+    [Fact]
+    public void TestForEveryWithInvalidCountable()
+    {
+        game = new TestGame(
+            "[+42 Faith] <when number of [turns] is less than [42]>",
+            "[+1 Happiness] <for every [City-States]>",
+            "[+1 Happiness] <for every [[42] Monkeys]>");
+        game.MakeHexagonalMap(3);
+        civ = game.AddCiv();
+        city = game.AddCity(civ, game.TileMap[2, 0]);
+
+        var cityState = game.AddCiv(cityStateType: game.Ruleset.CityStateTypes.Keys.First());
+        game.AddCity(cityState, game.TileMap[-2, 0], true);
+        civ.UpdateStatsForNextTurn();
+
+        var happiness = Countables.GetCountableAmount("Happiness", new GameContext(civ, city));
+        // Base 9, -1 city, -3 population +1 deprecated countable should still work, but the bogus one should not
+        Assert.Equal(6, happiness);
+    }
+
+    [Fact]
+    public void TestKnownCivsCountable()
+    {
+        // A big map with distant cities: civilizations must not meet by seeing each other
+        game = new TestGame();
+        game.MakeHexagonalMap(12);
+        var ourCiv = game.AddCiv();
+        var otherMajorCiv = game.AddCiv();
+        var cityState = game.AddCiv(cityStateType: game.Ruleset.CityStateTypes.Keys.First());
+        game.AddCity(ourCiv, game.TileMap[0, 0]);
+        game.AddCity(otherMajorCiv, game.TileMap[10, 0]);
+        game.AddCity(cityState, game.TileMap[-10, 0]);
+        var context = new GameContext(ourCiv);
+        int? Known(string filter) => Countables.GetCountableAmount($"Known [{filter}] Civilizations", context);
+
+        Assert.Equal(0, Known("Major"));
+        ourCiv.DiplomacyFunctions.MakeCivilizationsMeet(cityState);
+        Assert.Equal(0, Known("Major")); // A City-State is not a major civ
+        Assert.Equal(1, Known("City-State"));
+        ourCiv.DiplomacyFunctions.MakeCivilizationsMeet(otherMajorCiv);
+        Assert.Equal(1, Known("Major"));
+        // "all" includes neither ourselves nor civilizations we have not met
+        Assert.Equal(2, Known("all"));
     }
 
     [Fact]
