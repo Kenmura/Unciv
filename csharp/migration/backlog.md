@@ -1765,7 +1765,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T143 at claim time. Remaining deferred cases: CountableTests TestGame cases (testRulesetValidation, testForEveryWithInvalidCountable, testPerCountableForGlobalAndLocalResources, testStatOrResourcePerTurn, testStatsCountables, testKnownCivsCountable, testOwnedTilesCountable, testFilteredCitiesCountable, testFilteredBuildingsCountable, testPoliciesCountables, testEraNumberCountable, testSpeedModifierCountable, countableCanUseContext) and ExpressionTests state cases; UniqueErrorTests.testEducatedEliteGreatPersonGifting (a ported draft fails with NotImplementedException from CityStateSeams.GetForeignCityNearCapital: needs T094 NextTurnAutomation; the UncivGame settings tutorial workaround is not needed); VictoryAvailabilityTests/VictoryMilestoneTests (check DeferredRulesetMembersTests/RulesetObjectTests for what is already covered). Many CountableTests cases may already be covered over fakes in Models/Ruleset/Unique/CountableTests.cs: port the real-game variant only where the Kotlin case differs.
 
 ### T155 Air unit automation: AirUnitAutomation
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T090
 - Source: core/src/com/unciv/logic/automation/unit/AirUnitAutomation.kt
 - Fixtures: none - generate golden values
@@ -1773,6 +1773,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~AirUnitAutomationTests`
 - Claimed: 2026-10-24T18:53Z
 - Notes: Split from T090 at claim time (T090 ported BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation and UnitAutomation.tryUpgradeUnit). ~300 LOC. Calls into UnitAutomation/SpecificUnitAutomation members not yet ported are TODO(T###) seams naming their owner (UnitAutomation rest: next ticket; SpecificUnitAutomation: T091).
+  - Implemented AirUnitAutomation (automateFighter/Bomber/Nukes/Missile + private helpers) on the view layer; 18 C#-only tests (no Kotlin fixture), hand-derived expectations. Deviations: Kotlin HashMap<TileView,..> (tilesReached/pathsToCities) -> LinkedHashMap (insertion order; JVM identity-hash order is not reproducible and only affects minBy/maxBy ties). maxByOrNull/minByOrNull = first extreme, as LINQ MaxBy/MinBy. Nuke value sums wrap (unchecked). The 'outnumbered, no bonus -> return' branch in automateFighter is unreachable in Kotlin too (needs used+unused < enemyFighters <= unused). No seams: all callees (BattleHelper, HeadTowardsEnemyCityAutomation, ThreatManager, Nuke, TargetHelper, view layer) already ported. Coverage 90.6% line.
 
 ### T156 Unit automation: UnitAutomation (all but tryUpgradeUnit)
 - State: Available
