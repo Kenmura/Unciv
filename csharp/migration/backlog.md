@@ -868,13 +868,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (isolated adversarial, Auditor/Adversary/Pragmatist): PASS. Correction: ViewTests has 27 tests. Non-blocking: TileMap.StartingLocationsByNation is a Dictionary (Kotlin insertion-ordered); T085 must keep the TODO markers.
 
 ### T085 Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T084, T081, T062, T063, T066, T067
 - Source: core/src/com/unciv/view/CityView.kt, ForeignCityView.kt, CityConstructionsView.kt, MapUnitView.kt, ForeignMapUnitView.kt, CombatantView.kt, AttackableTileView.kt
 - Fixtures: tests/src/com/unciv/view/ViewPurityTest.kt (shared with T084)
 - Deliverables: csharp/Unciv.Core/View/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~ViewCityUnitTests`
-- Claimed:
+- Claimed: 2026-10-24T16:29Z
 - Notes: Created by the backlog audit. ~885 LOC. See T084 for why Views exist. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T086 TradeLogic
