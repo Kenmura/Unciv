@@ -1658,7 +1658,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented (Claude). Fixtures/Map/UnitMovementFixtureTests (all 25 Kotlin cases) and PathfindingFixtureTests (54 of 58) over the real TestGame, ClassicPathfinding parameter set only. Not ported: the AStarPathfinding parameter set and the 3 A*-only cases (shortestPathEvenWhenItsWayMoreTiles, canPauseBeforeMountainsToCrossWithoutDamage, getMovementToTilesAtPosition_withNegativeMovement_ReturnsOrigin): noted on T093. connectRoadAction needs RoadToAutomation: noted on T092. Kotlin quirk kept: getShortestPath_avoidsUnfriendly/DoesNotAvoidAllies assert path1.size twice (typo for path2). No engine bugs found; all pass first run.
 
 ### T146 UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T083, T141
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/UnitFormationTests.kt (test escort attack and move civilian unit, test escort attack with ranged unit)
