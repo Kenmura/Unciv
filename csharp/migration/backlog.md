@@ -788,6 +788,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Rework notes (Claude): all five review items applied to the Non-goals section (entries 4, 5, 7 and the new 9): the `ui/` carve-out list with a disposition per type, `DebugUtils` split (new ticket **T048**), `Log` facade policy (new ticket **T047**, `TODO(T047)` at call sites meanwhile), `Concurrency` replacement, multiplayer/settings residue, `DiacriticSupport` and the `Gdx.files` lookup. Docs only; no code changed.
   - Review 2 (Antigravity): Pass. Verified all 5 review items in `## Non-goals (Won't port)` (entries 4, 5, 7, and 9): explicit `ui/` carve-out list with disposition per type, `DebugUtils` split pointing to `T048`, `Log` facade policy pointing to `T047`, synchronous `Concurrency` replacement, client settings/multiplayer residue handling, and `DiacriticSupport`/`Gdx.files` translation lookup notes. Standard checks clean (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 701/701 passed).
 
+### T050 Engine UI-package leaf types and EngineColor
+- State: In-Progress [Antigravity]
+- Depends: T007, T021, T022, T023
+- Source: core/src/com/unciv/ui/screens/victoryscreen/RankingType.kt, core/src/com/unciv/ui/components/MayaCalendar.kt, core/src/com/unciv/ui/components/MapArrowType.kt (`UnitMovementMemoryType`), core/src/com/unciv/ui/screens/overviewscreen/EmpireOverviewCategories.kt, core/src/com/unciv/ui/screens/mapeditorscreen/MapGeneratorSteps.kt, core/src/com/unciv/ui/components/extensions/FormattingExtensions.kt, core/src/com/unciv/ui/components/extensions/Scene2dExtensions.kt (`colorFromRGB`), core/src/com/unciv/ui/components/extensions/TimeExtensions.kt (`isLargerThan`), core/src/com/unciv/models/ModConstants.kt (`ImmutableColor`)
+- Fixtures: none - generate golden values by running the Kotlin classes on the JVM
+- Deliverables: csharp/Unciv.Core/UI/RankingType.cs, MayaCalendar.cs, UnitMovementMemoryType.cs, EmpireOverviewCategories.cs, MapGeneratorSteps.cs, FormattingExtensions.cs, EngineColor.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UiLeafTypesTests`
+- Claimed: 2026-10-24T03:30:35Z
+- Notes: Implements the UI-package leaf types carved out for the engine in T043 (#7) and the engine-owned color type (`EngineColor` / `ImmutableColor` / `ColorFromRGB`) needed by `Specialist` (T030), `Terrain` (T031), `Nation`/`CityStateType`/`Era` (T032), `Promotion` (T033), and `ModConstants` (T049). Strip libGDX `Image`/`Actor`/`Popup`/`BaseScreen` UI methods; keep `MayaCalendar.startTurnForMaya` deferred (`TODO` on Civilization).
+
+### T051 Serialization leaf models: LastSeenImprovement, CivRankingHistory, Notification
+- State: Available
+- Depends: T006, T007, T050
+- Source: core/src/com/unciv/json/LastSeenImprovement.kt, core/src/com/unciv/logic/civilization/CivRankingHistory.kt, core/src/com/unciv/logic/civilization/Notification.kt, core/src/com/unciv/logic/civilization/NotificationActions.kt, core/src/com/unciv/logic/civilization/NotificationIcon.kt
+- Fixtures: tests/src/com/unciv/logic/SerializationTests.kt (`test LastSeenImprovement serialization roundtrip`, `test CivRankingHistory serialization roundtrip`, `test Notification serialization roundtrip`)
+- Deliverables: csharp/Unciv.Core/Json/LastSeenImprovement.cs, csharp/Unciv.Core/Logic/Civilization/CivRankingHistory.cs, Notification.cs, NotificationActions.cs, NotificationIcon.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~SerializationLeafTests`
+- Claimed:
+- Notes: Notification actions are ported as pure serializable data (`LocationAction`, `TechAction`, `PolicyAction`, `CityAction`, `DiplomacyAction`, `MayaLongCountAction`, `CivilopediaAction`, `PromoteUnitAction`, `MapUnitAction`, `OverviewAction`, `EspionageAction`, `ReligionAction`); `execute(WorldScreen)` is UI and omitted per T043 (#7). `CivRankingHistory.recordRankingStats(Civilization)` is deferred (`TODO` on Civilization).
+
 ### Planned (not yet ticketed)
 Deferred until the ruleset and map tickets land (decided with the user): Civilization (split ~5: core, diplomacy, policy/tech managers, notifications/quests, vision/stats), Trade, City + CityStats + production, UnitManager/MapUnit (movement, actions), UniqueTriggerActivation, Battle, GameInfo, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
 
