@@ -1217,7 +1217,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Roslyn (Microsoft.CodeAnalysis.CSharp 4.14.0, test-only) scan. Limits: file 1500 lines, method 120 lines (declaration span, ctors/operators included, local funcs counted in parent; overloads: largest). Baseline: Unciv.Core.Tests/Policy/SizeRatchetBaseline.txt; test fails on new offender, on growth, and on stale entry. SIZE_RATCHET_DUMP=<path> writes a fresh candidate list. Baseline exact for UniqueTypeData.cs, ConditionalApplies, Ruleset.Load, AssignRegions, GetKnownValuesForAutocomplete (122). Tile.cs (1496) and Civilization.cs (1443) deliberately generous (1650/1600) because T061/T063/T065 are growing them: lower after they land. Split candidates listed in the baseline header.
 
 ### T121 Policy: coupling ratchet - cap distinct Unciv namespaces imported per file, shrink-only baseline
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
@@ -1227,6 +1227,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: Civilization.cs imports 18 distinct Unciv namespaces, TechManager 12, Ruleset/City 11, TileMap/MapGenerator 10: god-class risk. Same ratchet idea as the size ratchet: count distinct 'using Unciv...' namespaces plus fully qualified Unciv references per file (and optionally per-namespace cross-references), fail when a file not in the baseline exceeds 12 or a baselined file grows. Also add a layering test: Unciv.Core/Models and Logic must not reference Unciv.UI.* types other than the engine-owned leaf packages listed in backlog Non-goals #7 (Fonts stat chars, RankingType, etc.), and nothing in Unciv.Core may reference Godot/harness assemblies. Do not refactor existing offenders.
+  - Implemented CouplingRatchetTests (Roslyn syntax scan of Unciv.Core: using directives + fully qualified refs, minus own namespace; heuristic, no binding) with CouplingRatchetBaseline.txt (path|count, same format family as T120). Limit 12. Baseline: Civilization.cs 24 (today 22, +2 headroom because T061/T063/T065 are growing it), TechManager.cs 14 (exact). Layering tests: Core must not reference Godot, Unciv.Harness, Unciv.Godot; Unciv.UI.* only from AllowedUiNamespaces (the 7 engine-owned leaf namespaces present today). Backlog Non-goals #7 was not readable (tool-only access), so the list is the observed current set; a new UI namespace needs a policy ticket. City/MapUnit/Ruleset are under 12 so unlisted. Per-namespace cross-reference counting left out (optional in ticket).
 
 ### T122 Policy: coverage reporting and ratchet for changed files (coverlet)
 - State: Available
