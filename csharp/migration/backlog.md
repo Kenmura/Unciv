@@ -259,13 +259,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: May need partial Tile/Civ stubs; if so mark Blocked and split: extend it again after T039 and the Civilization tickets. **From T027:** port `TimedUniquesTests.testConditionalTimedUniqueStrength` and `...Expires` (only `...IsTriggerable` is ported, in `TimedUniqueTests`). **BLOCKED (Claude, 2026-10-24):** TestGame.kt constructs GameInfo, TileMap, Tile, Civilization, City, MapUnit, CityFounder, Religion; none exist in C# yet (GameInfo core is T046, Tile T038, TileMap T039, Civilization/City/MapUnit not yet ticketed). A stub would invent API the Kotlin does not have. Re-open once T046, T039 and the Civilization/City/MapUnit tickets are Done; then port TestGame plus the deferred T028/T030/T033 cases.
 
 ### T036 RulesetValidator
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T034
 - Source: core/src/com/unciv/models/ruleset/validation/*.kt
 - Fixtures: tests/src/com/unciv/uniques/RulesetValidatorTests.kt, tests/src/com/unciv/uniques/UniqueErrorTests.kt, tests/src/com/unciv/uniques/AllObjectsTests.kt
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Validation/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetValidatorTests`
-- Claimed:
+- Claimed: 2026-10-24T05:30Z
 - Notes: Error ordering and text must be identical to Kotlin. TextSimilarity: exact algorithm port. `Suppression.IsValidFilter` and doc constants are already ported on `UniqueParameterTypeExtensions` in T025; reuse or delegate to them in `Suppression`. **From T027:** `Unique.GetReplacementText(Func<Unique,bool> hasNoErrors)` takes the validator as a delegate (TODO(T036)); pass `u => new UniqueValidator(ruleset).CheckUnique(u, null).Count == 0` or change the signature to take the ruleset. **From T029:** port `UniqueAutoUpdater` and the deferred `DeprecatedUniquesTest` cases 3, 5, 6, 7 (validator reports `ErrorOptionsOnly` for a `DeprecatedUniqueType` unique; auto-updater replacement, two-hop chain `DecreasedBuildingMaintenanceDeprecated` -> `BuildingMaintenanceOld` -> `BuildingMaintenance`, mixed ruleset; TestGame from T035). Pass the validator in as `Unique.GetReplacementText(hasNoErrors)` and add the 10 multi-alternative entries to the golden by running Kotlin with a real ruleset.
 
 
