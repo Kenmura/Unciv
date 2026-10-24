@@ -395,7 +395,7 @@ flowchart TD
   class T110 ondeck
   class T111 waiting
   class T115 waiting
-  class T116 ready
+  class T116 prog
   class T117 ready
   class T118 ready
   class T119 ready
@@ -408,7 +408,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T116 | **Ready to start** | none | 0 | Policy: ban System.Lazy, add KotlinLazy (Kotlin lazy never caches exceptions) |
 | T117 | **Ready to start** | none | 0 | Policy: reflection test forbidding mutable static state in Unciv.Core |
 | T118 | **Ready to start** | none | 0 | Policy: marker check - every TODO(T###) names an open ticket, every NotSupported/NotImplemented seam has an owner |
 | T119 | **Ready to start** | none | 0 | Policy: forbid unchecked null-forgiving '!' (Kotlin !! throws, C# ! hides the null) |
@@ -471,3 +470,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
+| T116 | In-Progress [Claude] | none | 0 | Policy: ban System.Lazy, add KotlinLazy (Kotlin lazy never caches exceptions) |
