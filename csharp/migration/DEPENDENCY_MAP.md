@@ -26,13 +26,9 @@ flowchart TD
     T071["T071<br/>GameInfo turn handling and BackwardCompatibility"]
     T072["T072<br/>Deferred TestGame-based fixtures sweep (Tile, Civilization, ..."]
     T078["T078<br/>Barbarians: BarbarianManager, BarbarianEncampment"]
-    T079["T079<br/>UnitAction model and unit actions A: UnitAction, UnitActionM..."]
     T080["T080<br/>Unit actions B: UnitActions, UnitActionsFromUniques"]
     T081["T081<br/>Battle A: ICombatant, MapUnitCombatant, CityCombatant, Battl..."]
-    T082["T082<br/>Battle B: attack recording, TargetHelper, BattleUnitCapture,..."]
     T083["T083<br/>Battle C: Battle, Nuke"]
-    T085["T085<br/>Views B: CityView, ForeignCityView, CityConstructionsView, M..."]
-    T087["T087<br/>Automation core: Automation, AutomationCache, ThreatManager,..."]
     T088["T088<br/>Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEv..."]
     T089["T089<br/>TradeEvaluation"]
     T090["T090<br/>Unit automation core: UnitAutomation, BattleHelper, HeadTowa..."]
@@ -85,10 +81,6 @@ flowchart TD
     A006["A006<br/>Homeland AI priority move queue"]
     A007["A007<br/>Operations and armies layer"]
   end
-  T087 --> T090
-  T088 --> T090
-  T082 --> T090
-  T083 --> T090
   T090 --> T091
   T080 --> T091
   T063 --> T091
@@ -123,17 +115,8 @@ flowchart TD
   T089 --> T104
   T094 --> T104
   T100 --> T104
-  T085 --> T139
-  T082 --> T139
-  T083 --> T139
-  T079 --> T139
-  T080 --> T139
-  T083 --> T146
-  T141 --> T146
   T139 --> T148
   T141 --> T148
-  T142 --> T149
-  T083 --> T149
   T142 --> T150
   T089 --> T150
   T143 --> T154
@@ -187,16 +170,12 @@ flowchart TD
   class T071 done
   class T072 done
   class T078 done
-  class T079 done
   class T080 done
   class T081 done
-  class T082 done
-  class T083 review
-  class T085 done
-  class T087 done
+  class T083 done
   class T088 done
   class T089 prog
-  class T090 ondeck
+  class T090 ready
   class T091 waiting
   class T092 waiting
   class T093 waiting
@@ -216,16 +195,16 @@ flowchart TD
   class T127 ready
   class T128 ready
   class T129 ready
-  class T139 ondeck
+  class T139 ready
   class T141 done
   class T142 done
   class T143 done
   class T144 ready
   class T145 review
-  class T146 ondeck
+  class T146 ready
   class T147 review
   class T148 waiting
-  class T149 ondeck
+  class T149 ready
   class T150 ondeck
   class T152 ready
   class T154 waiting
@@ -244,16 +223,18 @@ Generated from the git history of `backlog.md` (UTC; the last point is the curre
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 01:32", "24 02:40", "24 03:47", "24 04:54", "24 06:01", "24 07:08", "24 08:15", "24 09:22", "24 10:29", "24 11:36", "24 12:44", "24 13:51", "24 14:58", "24 16:05", "24 17:12", "24 18:19"]
+    x-axis ["24 01:33", "24 02:40", "24 03:47", "24 04:54", "24 06:02", "24 07:09", "24 08:16", "24 09:23", "24 10:31", "24 11:38", "24 12:45", "24 13:52", "24 15:00", "24 16:07", "24 17:14", "24 18:21"]
     y-axis "Tickets" 0 --> 67
-    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 56, 58, 59, 56, 46, 34, 33]
-    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 3, 4, 1, 1, 5, 3, 4]
+    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 56, 58, 59, 56, 46, 33, 33]
+    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 3, 4, 1, 1, 5, 4, 3]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T090 | **Ready to start** | T087, T088, T082, T083 | 12 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
+| T139 | **Ready to start** | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
@@ -261,17 +242,14 @@ xychart-beta
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T144 | **Ready to start** | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
+| T146 | **Ready to start** | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
+| T149 | **Ready to start** | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
-| T090 | **On deck** (after T083) | T087, T088, T082, T083 | 12 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
-| T139 | **On deck** (after T083) | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
-| T146 | **On deck** (after T083) | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
-| T149 | **On deck** (after T083) | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
-| T083 | In-Review [Antigravity] | T081, T082, T052, T064, T068, T079, T035 | 17 | Battle C: Battle, Nuke |
 | T091 | Available (waiting on T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 7 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
-| T094 | Available (waiting on T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
+| T094 | Available (waiting on T090, T091, T092) | T088, T090, T091, T092, T078, T083, T035 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T089 | In-Progress [Claude] | T086, T088, T085 | 2 | TradeEvaluation |

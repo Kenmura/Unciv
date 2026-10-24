@@ -863,7 +863,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review notes (adversarial review, Opus subagent): parity clean; requested tests for prize-ship seed (int-wrapping), barbarian recapture popup, uncapturable civilian, no-worker settler, moveThroughTile capture, embark checks: all added. Not covered, accepted: melee escort check in TargetHelper (needs escort fixtures), nuke branch (T083 seam), SpawnCapturedUnit relocation capture, AirInterception tails (T083).
 
 ### T083 Battle C: Battle, Nuke
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: T081, T082, T052, T064, T068, T079, T035
 - Source: core/src/com/unciv/logic/battle/Battle.kt, Nuke.kt
 - Fixtures: tests/src/com/unciv/logic/battle/BattleTest.kt
