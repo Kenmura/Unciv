@@ -1187,13 +1187,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Why: the backlog audit found stale/unowned markers (TODO(T050) after T050 was Done, TODO(T034) in Player.cs/Translations.cs, TODO(T033) in IHasUniques.cs, ReligionState.cs naming the wrong ticket) and a throwing seam (MapRegionResourcesSeams.cs) that stayed after its owner was Done and would have crashed the pipeline. Rules (tests, parsing the ticket ids and States from csharp/migration/backlog.md and backlog-archive.md; do NOT shell out to ticket.py): (1) every TODO(T###) in Unciv.Core and Unciv.Core.Tests must name a ticket that exists and is NOT Done (a Done ticket's markers are stale); (2) every throw new NotSupportedException/NotImplementedException in Unciv.Core must have a TODO(T###) on the same or previous 3 lines naming an open ticket, or a JUSTIFY comment; (3) a *Seams*.cs file whose owner tickets are all Done (named in its header comment) fails. Fix all current violations (about 58 TODO markers and 20 throws exist now).
 
 ### T119 Policy: forbid unchecked null-forgiving '!' (Kotlin !! throws, C# ! hides the null)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Utils/NullExtensions.cs (NotNull helper that throws NullReferenceException like Kotlin !!), source-scanning policy test, migrate existing uses
 - Gate: dotnet test --filter FullyQualifiedName~NullForgivingTests
-- Claimed:
+- Claimed: 2026-10-24T12:06Z
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: about 90 uses of the null-forgiving operator in Unciv.Core. Kotlin's !! throws NullPointerException immediately; C# '!' only silences the compiler and the failure appears later or not at all, a parity difference. Rule: a source scan test (SourcePolicyTests style, ignore strings/comments) that fails on postfix '!' unless the line carries // JUSTIFY: T### (e.g. definite assignment after a guard), plus a NotNull()/Required() helper that throws NullReferenceException with the expression text for ported !! sites. Migrate the existing uses; check each against the Kotlin source to decide NotNull() vs a real null-safe rewrite.
