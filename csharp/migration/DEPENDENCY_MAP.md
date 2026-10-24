@@ -175,8 +175,8 @@ flowchart TD
   class T083 done
   class T088 done
   class T089 prog
-  class T090 ready
-  class T091 waiting
+  class T090 prog
+  class T091 ondeck
   class T092 waiting
   class T093 waiting
   class T094 waiting
@@ -212,7 +212,7 @@ flowchart TD
 
 ## Remaining tickets over time
 
-Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). Completed tickets (Done, Won't port) are not counted.
+Generated from the git history of `backlog.md` (UTC; each point is the backlog as of that time, the last one the current backlog). Completed tickets (Done, Won't port) are not counted.
 
 | Line | Meaning |
 |---|---|
@@ -223,17 +223,16 @@ Generated from the git history of `backlog.md` (UTC; the last point is the curre
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 01:33", "24 02:40", "24 03:47", "24 04:54", "24 06:02", "24 07:09", "24 08:16", "24 09:24", "24 10:31", "24 11:38", "24 12:45", "24 13:53", "24 15:00", "24 16:07", "24 17:15", "24 18:22"]
-    y-axis "Tickets" 0 --> 67
-    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 56, 58, 59, 56, 46, 33, 33]
-    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 3, 4, 1, 1, 5, 4, 3]
+    x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
+    y-axis "Tickets" 0 --> 65
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 32]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T090 | **Ready to start** | T087, T088, T082, T083 | 12 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T139 | **Ready to start** | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
@@ -245,8 +244,9 @@ xychart-beta
 | T146 | **Ready to start** | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
 | T149 | **Ready to start** | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
+| T091 | **On deck** (after T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
-| T091 | Available (waiting on T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
+| T090 | In-Progress [Claude] | T087, T088, T082, T083 | 12 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 7 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | T094 | Available (waiting on T090, T091, T092) | T088, T090, T091, T092, T078, T083, T035 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |

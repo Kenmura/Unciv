@@ -971,13 +971,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - DiplomacyManager.GetGoldInflation (private) is a copy of TradeEvaluation.getGoldInflation; replace it with the TradeEvaluation call.
 
 ### T090 Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T087, T088, T082, T083
 - Source: core/src/com/unciv/logic/automation/unit/UnitAutomation.kt, BattleHelper.kt, HeadTowardsEnemyCityAutomation.kt, AirUnitAutomation.kt, civilization/UseGoldAutomation.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UnitAutomationTests`
-- Claimed:
+- Claimed: 2026-10-24T18:22Z
 - Notes: Created by the backlog audit. ~1.5k LOC: split by file at claim time. Wires MapUnit.doAction (T065), UnitActions (T080) and GreatGeneralImplementation (T082) call sites left as TODO(T090). Calls to later automation tickets (CivilianUnitAutomation, SpecificUnitAutomation, WorkerAutomation T091/T092, NextTurnAutomation T094) are TODO seams. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
 
 ### T091 Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation
