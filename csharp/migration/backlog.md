@@ -1410,13 +1410,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Follow-up of T066: UnitManager implements the IUnitManager seam; Civilization tests (CivilizationTestFakes.FakeUnitManager { Count = n }, ~35 sites) count units without MapUnits, so the retype was left out of T066. Kotlin shape: units is a val initialised in the Civilization constructor.
 
 ### T134 Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing)
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T067
 - Source: csharp/Unciv.Core/Logic/Map/CarrierSlotMatcher.cs, MapVisualization.cs, MapPathing.cs, MapPathingSeams.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Logic/Map/*.cs (retype IGameContextUnit/IGameContextCivilization seam parameters to MapUnit/Civilization, add MapPathing.getPath(unit, ...) if a caller exists), tests
 - Gate: dotnet test --filter FullyQualifiedName~Pathfinding
-- Claimed:
+- Claimed: 2026-10-24T14:14Z
 - Notes: Created by T067: UnitMovement and MapUnit are concrete now. T040 left CarrierSlotMatcher/MapVisualization/MapPathing typed by seams (MapPathingSeams.cs: IGameContextUnit.MovementMemoryPositions/IsVisibleTo, IGameContextCivilization.HasExplored/CanBuildImprovementOn); retype them mechanically, keep the seam members only where another ticket still needs them. MapPathing.getPath(unit, ...) was not ported (no Kotlin caller); add it only if a caller exists.
 
 ### T135 T066 review follow-ups: UnitPromotions JSON round-trip, tie-break and promotion-trigger tests
