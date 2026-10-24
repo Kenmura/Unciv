@@ -458,6 +458,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: These flags change game results (extra yields, whole-map vision, turn simulation), so a hidden mutable static breaks the "log + initial state reproduces the game" rule. Decide: an options object that is part of the game state/setup (hashed by StateHasher) and changed only through a command, or a per-process object that must be identical on all peers and is stamped into the game's start record. The UI-only flags are not ported.
   - Implementer notes (Claude): `Unciv.Logic.EngineOptions` (`VisibleMap`, `Supercharged`, `SimulateUntilTurn` + `IsSimulation(turns)`, `CivIdsInExperimentGroup` as a `LinkedHashSet`, diagnostics `ShowSettlerScores`/`SettlerScores`), `Clone()`, `IStateHashable` over the four rule-affecting values (experiment group as an unordered set; diagnostics excluded). Decision: an instance owned by the game (the GameInfo port holds it, `TODO(T046)`), in the state hash, changed through a command only; recorded as DETERMINISM.md 2.6 with the porting rule "wherever Kotlin reads `DebugUtils.X`, take the `EngineOptions` of the game". The command that sets it is not written here because it needs the GameInfo type (COMMANDS.md shape applies); `TODO(T046)` covers it. Users listed in the class remark (GameInfo, CityStats, CivInfoTransientCache, Tile.isVisible, Simulation, CityLocationTileRanker). 5 tests; Standard checks pass (build -warnaserror, format, full tests).
 
+### T049 Model leaves: ModConstants, UncivSound, TutorialTrigger
+- State: In-Progress [Claude]
+- Depends: none
+- Source: core/src/com/unciv/models/{ModConstants,UncivSound,TutorialTrigger}.kt
+- Fixtures: tests/src/com/unciv/logic/ModConstantsTests.kt (4 tests); otherwise generate golden values for the reflective equals/hashCode/toString/merge
+- Deliverables: csharp/Unciv.Core/Models/ModConstants.cs, UncivSound.cs, TutorialTrigger.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~ModConstantsTests`
+- Claimed: 2026-10-24T02:17:59Z
+- Notes: Found missing while expanding the backlog; they are needed by T030 (`ModOptions.constants`, `Tutorial`/`TutorialTrigger`) and `Stat.purchaseSound`. ModConstants uses Java reflection for `merge/equals/hashCode/toString` over `declaredFields` in declaration order, with `hashCode` chaining `withHash(field.hashCode())` and `equals` being Java boxed `equals` (Double/Float compare bits: `NaN == NaN`, `0.0 != -0.0`); use C# reflection over the properties in declaration order and `JavaHash`/`Randomness.WithHash`, and the Java `toString` of floats/doubles (`JavaFormat.ToJavaString`, T047). Nested data class `UnitUpgradeCost` needs Kotlin data-class `equals/hashCode/toString`. `ImmutableColor` is NOT ported here (no engine Color type yet): decide with Nation (T032).
+
 ### T046 GameInfo core and the hooks waiting for it
 - State: Available
 - Depends: T034, T039, T045
@@ -583,7 +593,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 ### T028 Unique system: Conditionals and Countables
 - State: Available
 - Depends: T027
-- Source: core/src/com/unciv/models/ruleset/unique/Conditionals.kt, Countables.kt
+- Source: core/src/com/unciv/models/ruleset/unique/Conditionals.kt, Countables.kt, expressions/{Expressions,Node,Operator,Parser,Tokenizer}.kt (the expression parser behind `ExpressionTests`)
 - Fixtures: tests/src/com/unciv/uniques/CountableTests.kt, tests/src/com/unciv/uniques/ExpressionTests.kt
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/Conditionals.cs, Countables.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~CountableTests|FullyQualifiedName~ExpressionTests`
@@ -602,7 +612,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T030 Ruleset base objects: RulesetObject, Specialist, Speed, Policy, PolicyBranch, Belief, Event, Quest, RuinReward, GlobalUniques, ModOptions, Victory, Tutorial
 - State: Available
-- Depends: T027, T021
+- Depends: T027, T021, T049
 - Source: core/src/com/unciv/models/ruleset/{RulesetObject,Specialist,Speed,Policy,PolicyBranch,Belief,Event,Quest,RuinReward,GlobalUniques,ModOptions,Victory,Tutorial,RulesetName}.kt
 - Fixtures: tests/src/com/unciv/models/ruleset/VictoryAvailabilityTests.kt, VictoryMilestoneTests.kt (state-dependent parts after T035)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/*.cs, tests
@@ -674,7 +684,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - State: Available
 - Depends: T036, T035
 - Source: none (integration test)
-- Fixtures: tests/src/com/unciv/logic/LoadGameTest.kt (ruleset portion), tests/src/com/unciv/logic/ModConstantsTests.kt
+- Fixtures: tests/src/com/unciv/logic/LoadGameTest.kt (ruleset portion); ModConstantsTests moved to T049
 - Deliverables: csharp/Unciv.Core.Tests/Models/Ruleset/VanillaRulesetTests.cs
 - Gate: `dotnet test --filter FullyQualifiedName~VanillaRulesetTests`
 - Claimed:
