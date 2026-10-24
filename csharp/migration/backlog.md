@@ -337,13 +337,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Pure string logic; keep Kotlin Regex/string semantics exact (culture-invariant).
 
 ### T021 Metadata models: LocaleCode, GameParameters, GameSetupInfo, Player, BaseRuleset, ModCategories
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T007
 - Source: core/src/com/unciv/models/metadata/LocaleCode.kt, GameParameters.kt, GameSetupInfo.kt, Player.kt, BaseRuleset.kt, ModCategories.kt
 - Fixtures: none - generate golden JSON by serializing from Kotlin
 - Deliverables: csharp/Unciv.Core/Models/Metadata/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MetadataTests`
-- Claimed:
+- Claimed: 2026-10-24T01:38:09Z
 - Notes: Serialized field names must match Kotlin JSON. GameSettings/Migrations/OverviewPersistableData are client settings: out of scope unless a later ticket needs them.
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
