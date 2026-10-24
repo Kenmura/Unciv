@@ -7,6 +7,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
+using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 using MapGeneratorClass = Unciv.Logic.Map.MapGenerator.MapGenerator;
 using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 
@@ -20,8 +21,7 @@ namespace Unciv.Logic.Map.Tiles;
 // private constructor of ImprovementQueueEntry. Fonts.turn is inlined.
 // T054 added the `improvementFunctions` and `stats` fields, removeImprovement, both setImprovement overloads, setBaseTerrain and
 // setPillaged (+ clearAllPathfindingCaches).
-// T066 added doWorkerTurn. Still deferred (they need TileImprovement.getTurnsToBuild and Civilization.gainStockpiledResource, T046/T048):
-// startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit).
+// T066 added doWorkerTurn; T139 added startWorkingOnImprovement and queueImprovement(TileImprovement, civ, unit).
 // T107 added the Gdx-compatible JSON (TileJsonConverter at the end of the class); T110 wired the unit fields (MapUnit.MapUnitJsonConverter).
 
 /// <summary>
@@ -1120,11 +1120,36 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         roadOwnerObject = null;
     }
 
+    public void StartWorkingOnImprovement(TileImprovement improvement, CivilizationClass civInfo, MapUnitClass unit)
+    {
+        if (IsMarkedForCreatesOneImprovement()) return;
+
+        var gameContext = new GameContext(civInfo, unit: unit, tile: this);
+        var stockpiledResourceRequirements = improvement.GetStockpiledResourceRequirements(gameContext);
+        if (stockpiledResourceRequirements.Any(it => civInfo.GetResourceAmount(it.Key) < it.Value))
+            return;
+        foreach (var (resourceName, amount) in stockpiledResourceRequirements)
+        {
+            if (!Ruleset.TileResources.TryGetValue(resourceName, out var resource)) continue;
+            civInfo.GainStockpiledResource(resource, -amount);
+        }
+
+        ImprovementQueue.Clear();
+        QueueImprovement(improvement, civInfo, unit);
+    }
+
     /// <summary>Clears <see cref="ImprovementQueue"/></summary>
     public void StopWorkingOnImprovement()
     {
         if (IsMarkedForCreatesOneImprovement()) return;
         ImprovementQueue.Clear();
+    }
+
+    /// <summary>Adds an entry to the <see cref="ImprovementQueue"/>, by looking up the time it takes using <paramref name="civInfo"/> and <paramref name="unit"/></summary>
+    public void QueueImprovement(TileImprovement improvement, CivilizationClass civInfo, MapUnitClass unit)
+    {
+        int turns = civInfo.GameInfo.GameParameters.GodMode ? 1 : improvement.GetTurnsToBuild(civInfo, unit);
+        QueueImprovement(improvement.Name, turns);
     }
 
     /// <summary>Adds an entry to the <see cref="ImprovementQueue"/> with explicit <paramref name="turnsToImprovement"/></summary>

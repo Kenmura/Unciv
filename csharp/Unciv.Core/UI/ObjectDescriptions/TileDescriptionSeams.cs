@@ -6,7 +6,7 @@ using Unciv.UI.Screens.Civilopedia;
 
 namespace Unciv.UI.ObjectDescriptions;
 
-// Open owners: T104 (final seam sweep; T084/T085 ported the views but left these interfaces; T139 holds deferred Views B members)
+// Open owners: T104 (final seam sweep; T084/T085 ported the views but left these interfaces)
 // The parts of TileView, CivView, CityView, and MapUnitView that TileDescription reads.
 // Retyped to the concrete view classes by the T104 sweep.
 

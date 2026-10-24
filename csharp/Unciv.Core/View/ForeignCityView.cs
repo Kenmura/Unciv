@@ -11,7 +11,6 @@ namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/ForeignCityView.kt (T085). Stripped: the purity annotations.
 // DebugUtils.VISIBLE_MAP is the viewer game's EngineOptions.VisibleMap (T048).
-// Deferred: getBombardableTiles (TargetHelper, TODO(T139)).
 
 /// <summary>Should contain information that should be knowable to us about foreign cities. Superclass of <see cref="CityView"/>.</summary>
 public class ForeignCityView(CityClass city, CivilizationClass viewer, bool spectatorMode, GameView gameView)
@@ -50,7 +49,8 @@ public class ForeignCityView(CityClass city, CivilizationClass viewer, bool spec
 
     public int GetAttackingStrength() => new CityCombatant(City).GetAttackingStrength();
 
-    // TODO(T139): getBombardableTiles needs TargetHelper.getBombardableTiles
+    public List<TileView> GetBombardableTiles() =>
+        TargetHelper.GetBombardableTiles(City).Select(it => GameView.TileMapView.GetTile(it)).ToList();
 
     public TileView GetCenterTile()
     {

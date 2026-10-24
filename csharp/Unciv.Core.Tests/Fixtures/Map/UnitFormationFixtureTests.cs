@@ -6,7 +6,7 @@ namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
 // T141: port of tests/src/com/unciv/logic/map/UnitFormationTests.kt over the real TestGame.
 // Deferred (see the follow-up tickets named in T141 Notes): the two Battle.attack cases (T083) and the Tile.startWorkingOnImprovement
-// tail of `formation idle units` (T139).
+// tail of `formation idle units` (T148).
 [Collection("RulesetCache")]
 public sealed class UnitFormationFixtureTests
 {

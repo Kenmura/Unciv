@@ -809,4 +809,63 @@ public sealed class ViewCityUnitTests
         Assert.True(defender.Health < 100);
         Assert.True(city.AttackedThisTurn);
     }
+
+    [Fact]
+    public void MapUnitView_MovementString_FormatsWithOneFractionDigitAndNoGrouping()
+    {
+        var uv = OwnUnit("Warrior", 0, 0);
+        uv.Unwrap().CurrentMovement = 1f;
+        Assert.Equal("1/2", uv.GetMovementString());
+        uv.Unwrap().CurrentMovement = 1.25f; // HALF_EVEN on the exactly representable tie
+        Assert.Equal("1.2/2", uv.GetMovementString());
+        uv.Unwrap().CurrentMovement = 0.35f; // 0.3499999940395355 as a double
+        Assert.Equal("0.3/2", uv.GetMovementString());
+        uv.Unwrap().CurrentMovement = 0f;
+        Assert.Equal("0/2", uv.GetMovementString());
+    }
+
+    [Fact]
+    public void MapUnitView_TurnsToBuild_AndStartWorkingOnImprovement()
+    {
+        var worker = OwnUnit("Worker", 1, 1);
+        var farm = game.Ruleset.TileImprovements["Farm"];
+        var road = game.Ruleset.TileImprovements["Road"];
+        Assert.Equal(farm.GetTurnsToBuild(player, worker.Unwrap()), worker.GetTurnsToBuild(farm));
+        Assert.True(worker.GetTurnsToBuild(farm) >= 1);
+
+        var tile = worker.GetTile().Unwrap();
+        tile.QueueImprovement("Fort", 9); // replaced by starting new work
+        Assert.True(worker.TryStartWorkingOnImprovement(farm, road));
+        Assert.Equal(["Farm", "Road"], tile.ImprovementQueue.Select(it => it.Improvement));
+        Assert.Equal(worker.GetTurnsToBuild(farm), tile.ImprovementQueue[0].TurnsToImprovement);
+
+        game.GameInfo.GameParameters.GodMode = true;
+        Assert.True(worker.TryStartWorkingOnImprovement(road));
+        Assert.Equal(1, tile.ImprovementQueue.Single().TurnsToImprovement);
+    }
+
+    [Fact]
+    public void MapUnitView_AttackableEnemies_AndAirSweep()
+    {
+        var uv = OwnUnit("Warrior", 0, 0);
+        var defender = AddUnit("Warrior", foreign, 2, 0);
+        player.GetDiplomacyManager(foreign)!.DeclareWar();
+        Assert.True(uv.ContainsAttackableEnemy(view.GetTile(defender.GetTile())));
+        Assert.False(uv.ContainsAttackableEnemy(view.GetTile(game.GetTile(new HexCoord(0, 1)))));
+        var attackable = uv.GetAttackableEnemies();
+        Assert.Contains(attackable, it => it.GetTileToAttack().Unwrap() == defender.GetTile());
+
+        var fighter = OwnUnit("Fighter", 0, 0);
+        Assert.True(fighter.TryAirSweep(view.GetTile(defender.GetTile())));
+    }
+
+    [Fact]
+    public void ForeignCityView_BombardableTiles_ListTilesWithEnemiesInRange()
+    {
+        var own = view.GetForeignCityView(city);
+        Assert.Empty(own.GetBombardableTiles());
+        var defender = AddUnit("Warrior", foreign, 2, 0);
+        player.GetDiplomacyManager(foreign)!.DeclareWar();
+        Assert.Contains(own.GetBombardableTiles(), it => it.Unwrap() == defender.GetTile());
+    }
 }

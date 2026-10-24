@@ -36,15 +36,24 @@ public sealed class JavaDecimalFormat
 
     public string NegativeSuffix => "";
 
-    public string Format(long value)
+    public string Format(long value) => Format(value, true);
+
+    /// <summary>Like <see cref="Format(long)"/>, with <c>isGroupingUsed</c> set as given (a configured clone of the formatter in Kotlin).</summary>
+    public string Format(long value, bool groupingUsed)
     {
         bool negative = value < 0;
         BigInteger magnitude = BigInteger.Abs(value);
         string digits = magnitude.ToString(CultureInfo.InvariantCulture);
-        return Assemble(negative, digits, digits.Length, true);
+        return Assemble(negative, digits, digits.Length, true, MaxFractionDigits, groupingUsed);
     }
 
-    public string Format(double value)
+    public string Format(double value) => Format(value, MaxFractionDigits, true);
+
+    /// <summary>
+    /// Like <see cref="Format(double)"/>, with <c>maximumFractionDigits</c> and <c>isGroupingUsed</c> set as given
+    /// (a configured clone of the formatter in Kotlin, <c>minimumFractionDigits</c> is the default 0).
+    /// </summary>
+    public string Format(double value, int maximumFractionDigits, bool groupingUsed)
     {
         if (double.IsNaN(value))
         {
@@ -57,8 +66,8 @@ public sealed class JavaDecimalFormat
             return (negative ? symbols.NegativePrefix : "") + "∞";
         }
 
-        (string digits, int decimalAt) = RoundedDigits(Math.Abs(value));
-        return Assemble(negative, digits, decimalAt, false);
+        (string digits, int decimalAt) = RoundedDigits(Math.Abs(value), maximumFractionDigits);
+        return Assemble(negative, digits, decimalAt, false, maximumFractionDigits, groupingUsed);
     }
 
     /// <summary>
@@ -194,7 +203,7 @@ public sealed class JavaDecimalFormat
     };
 
     // DecimalFormat's subformat for a non-negative digit list with `decimalAt` digits before the point
-    private string Assemble(bool negative, string digits, int decimalAt, bool isInteger)
+    private string Assemble(bool negative, string digits, int decimalAt, bool isInteger, int maxFractionDigits, bool groupingUsed)
     {
         var sb = new StringBuilder();
         if (negative)
@@ -221,7 +230,7 @@ public sealed class JavaDecimalFormat
                 sb.Append(symbols.ZeroDigit);
             }
 
-            if (i > 0 && symbols.GroupingSize != 0 && i % symbols.GroupingSize == 0)
+            if (groupingUsed && i > 0 && symbols.GroupingSize != 0 && i % symbols.GroupingSize == 0)
             {
                 sb.Append(symbols.GroupingSeparator);
             }
@@ -231,7 +240,7 @@ public sealed class JavaDecimalFormat
         if (fractionPresent)
         {
             sb.Append(symbols.DecimalSeparator);
-            for (int i = 0; i < MaxFractionDigits; i++)
+            for (int i = 0; i < maxFractionDigits; i++)
             {
                 if (digitIndex >= digitCount)
                 {
@@ -253,7 +262,7 @@ public sealed class JavaDecimalFormat
 
     // DigitList.set(isNegative, double, maximumDigits = 3, fixedPoint = true) with HALF_EVEN:
     // the significant digits (no trailing zeros, empty for zero) and the position of the decimal point relative to them
-    private static (string Digits, int DecimalAt) RoundedDigits(double value)
+    private static (string Digits, int DecimalAt) RoundedDigits(double value, int maxFractionDigits)
     {
         if (value == 0.0)
         {
@@ -268,12 +277,12 @@ public sealed class JavaDecimalFormat
         bool roundedUp = comparison > 0;
         bool exact = comparison == 0;
 
-        if (-decimalAt > MaxFractionDigits)
+        if (-decimalAt > maxFractionDigits)
         {
             return ("", 0);
         }
 
-        if (-decimalAt == MaxFractionDigits)
+        if (-decimalAt == maxFractionDigits)
         {
             return ShouldRoundUp(digits, 0, roundedUp, exact) ? ("1", decimalAt + 1) : ("", 0);
         }
@@ -284,7 +293,7 @@ public sealed class JavaDecimalFormat
             return ("", 0);
         }
 
-        int maximumDigits = MaxFractionDigits + decimalAt;
+        int maximumDigits = maxFractionDigits + decimalAt;
         if (maximumDigits >= 0 && maximumDigits < digits.Length)
         {
             if (ShouldRoundUp(digits, maximumDigits, roundedUp, exact))

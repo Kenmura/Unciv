@@ -14,7 +14,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
 // T141: port of tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt over the real TestGame.
-// Deferred to the follow-up ticket named in T141 Notes (needs Tile.startWorkingOnImprovement, T139): stockpiledImprovementCostIsChargedOnlyWhenAffordable
+// Deferred to the follow-up ticket named in T141 Notes (needs Tile.startWorkingOnImprovement, ported in T139, tests in T148): stockpiledImprovementCostIsChargedOnlyWhenAffordable
 // and nonStockpileImprovementCostsDoNotChargeTheStockpile.
 [Collection("RulesetCache")]
 public sealed class TileImprovementConstructionFixtureTests

@@ -14,9 +14,8 @@ using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/MapUnitView.kt (T085). Stripped: the purity annotations.
-// Deferred, each with the ticket that ports what it calls:
-//   TODO(T139): containsAttackableEnemy, getAttackableEnemies (TargetHelper), tryAirSweep (AirInterception)
-//   TODO(T139): getMovementString, getTurnsToBuild, tryStartWorkingOnImprovement (engine members not ported yet)
+// T139 added the members that had to wait for the engine: getMovementString, getTurnsToBuild, containsAttackableEnemy,
+// getAttackableEnemies, tryStartWorkingOnImprovement and tryAirSweep.
 // The Kotlin file's `/** How many tiles away ... */` doc comment dangling above containsAttackableEnemy belongs to getAirUnitMovementRange.
 
 /// <summary>View of a <see cref="MapUnit"/> from the perspective of the viewer via the <see cref="GameView"/>.</summary>
@@ -88,7 +87,8 @@ public class MapUnitView : ForeignMapUnitView
         return other == null ? null : GameView.GetMapUnitView(other);
     }
 
-    // TODO(T139): getMovementString needs MapUnit.getMovementString (UncivGame settings number format); getTurnsToBuild needs TileImprovement.getTurnsToBuild
+    public string GetMovementString() => Unit.GetMovementString();
+
     public TileView GetMovementDestination() => GameView.TileMapView.GetTile(Unit.GetMovementDestination());
 
     public string? Action => Unit.Action;
@@ -98,6 +98,8 @@ public class MapUnitView : ForeignMapUnitView
     public bool IsAutomated() => Unit.IsAutomated();
 
     public bool CanBuildImprovement(TileImprovement improvement) => Unit.CanBuildImprovement(improvement);
+
+    public int GetTurnsToBuild(TileImprovement improvement) => improvement.GetTurnsToBuild(Unit.Civ, Unit);
 
     public Counter<string> GetStockpiledResourceRequirements(TileImprovement improvement) =>
         improvement.GetStockpiledResourceRequirements(Unit.Cache.State);
@@ -141,7 +143,10 @@ public class MapUnitView : ForeignMapUnitView
     public bool IsUnknownTileWeShouldAssumeToBePassable(TileView tileView) =>
         Unit.Movement.IsUnknownTileWeShouldAssumeToBePassable(tileView.Unwrap());
 
-    // TODO(T139): containsAttackableEnemy needs TargetHelper.containsAttackableEnemy
+    /// <summary><c>true</c> if <paramref name="tileView"/> holds something this unit could attack</summary>
+    public bool ContainsAttackableEnemy(TileView tileView) =>
+        TargetHelper.ContainsAttackableEnemy(tileView.Unwrap(), new MapUnitCombatant(Unit));
+
     public int MaxAttacksPerTurn() => Unit.MaxAttacksPerTurn();
 
     public bool CannotMove() => Unit.Cache.CannotMove;
@@ -170,7 +175,9 @@ public class MapUnitView : ForeignMapUnitView
     public List<TileView> GetTilesInAttackRange() =>
         Unit.GetTile().GetTilesInDistanceRange(new IntRange(1, Unit.GetRange())).Select(it => GameView.TileMapView.GetTile(it)).ToList();
 
-    // TODO(T139): getAttackableEnemies needs TargetHelper.getAttackableEnemies
+    public List<AttackableTileView> GetAttackableEnemies() =>
+        TargetHelper.GetAttackableEnemies(Unit, Unit.Movement.GetDistanceToTiles())
+            .Select(it => new AttackableTileView(it, Viewer, SpectatorMode, GameView)).ToList();
 
     /// <summary><c>null</c> if the unit isn't currently pathing a road; otherwise the tiles still to come on that path.</summary>
     public List<TileView>? GetFutureAutomatedRoadConnectionTiles()
@@ -200,7 +207,15 @@ public class MapUnitView : ForeignMapUnitView
         return true;
     }
 
-    // TODO(T139): tryStartWorkingOnImprovement needs Tile.startWorkingOnImprovement/queueImprovement(TileImprovement, civ, unit)
+    /// <summary>Starts working on <paramref name="improvement"/> on the tile this unit stands on, and queues <paramref name="queuedImprovement"/> after it if given.</summary>
+    public bool TryStartWorkingOnImprovement(TileImprovement improvement, TileImprovement? queuedImprovement = null)
+    {
+        var tile = Unit.GetTile();
+        tile.StartWorkingOnImprovement(improvement, Unit.Civ, Unit);
+        if (queuedImprovement != null)
+            tile.QueueImprovement(queuedImprovement, Unit.Civ, Unit);
+        return true;
+    }
 
     public bool TrySetInstanceName(string? name)
     {
@@ -265,7 +280,11 @@ public class MapUnitView : ForeignMapUnitView
         return true;
     }
 
-    // TODO(T139): tryAirSweep needs AirInterception.airSweep
+    public bool TryAirSweep(TileView targetTileView)
+    {
+        AirInterception.AirSweep(new MapUnitCombatant(Unit), targetTileView.Unwrap());
+        return true;
+    }
 
     /// <summary><c>true</c> if <see cref="TryInvokeUnitAction"/> would currently find an enabled action of type <paramref name="unitActionType"/></summary>
     public bool CanInvokeUnitAction(UnitActionType unitActionType) =>

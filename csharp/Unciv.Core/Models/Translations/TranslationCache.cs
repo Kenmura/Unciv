@@ -106,6 +106,9 @@ public static class TranslationCache
             NumberRegex = BuildNumberRegex(formatter);
         }
 
+        /// <summary>The (stateless) number formatter of the language, Kotlin's <c>getMutableFormatter</c>; configure per call via the <see cref="JavaDecimalFormat"/> overloads.</summary>
+        public JavaDecimalFormat NumberFormatter => formatter;
+
         public string Format(int value) => formatter.Format((long)value);
 
         public string Format(long value) => formatter.Format(value);

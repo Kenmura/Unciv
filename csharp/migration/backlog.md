@@ -1572,7 +1572,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented TradeView (explicit fields instead of primary ctor: CS9107) and CivView.GetTradeView. TradeOffer.getOfferText stays unported (UI-side translation/Fonts text, see TradeOffer.cs). TradeLogic still uses the T089 evaluation seam; TradeView does not call it. Tests in ViewTests: stage/propose/retract/load-pending, live lists.
 
 ### T139 Views B leftovers: members blocked on unported engine code (battle, unit actions, build time)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T085, T082, T083, T079, T080
 - Source: core/src/com/unciv/view/MapUnitView.kt, CityView.kt, ForeignCityView.kt, core/src/com/unciv/models/ruleset/tile/TileImprovement.kt (getTurnsToBuild), core/src/com/unciv/logic/map/tile/Tile.kt (startWorkingOnImprovement, queueImprovement), core/src/com/unciv/logic/map/mapunit/MapUnit.kt (getMovementString)
 - Fixtures: none
@@ -1580,6 +1580,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~ViewCityUnitTests
 - Claimed: 2026-10-24T18:23Z
 - Notes: Created by T085. Members T085 had to defer: ForeignCityView.getBombardableTiles (TargetHelper, T082); CityView.tryBombard (Battle.attackOrNuke, T083); MapUnitView.containsAttackableEnemy/getAttackableEnemies (TargetHelper, T082), tryAirSweep (AirInterception, T082), tryMovePreparingAttack/attackOrNuke/mayUseNuke/tryNuke (Battle/Nuke, T083), canPillage (UnitActionsPillage, T079), canInvokeUnitAction/tryInvokeUnitAction (UnitActions, T080); getTurnsToBuild, tryStartWorkingOnImprovement (need TileImprovement.getTurnsToBuild, Tile.startWorkingOnImprovement/queueImprovement(improvement, civ, unit) and Civilization.gainStockpiledResource) and getMovementString (UncivGame settings number format). Port them here and move the TODO(T139) markers. CityView.tryBombard/MapUnitView.attackOrNuke return Battle.DamageDealt, so keep them in the ViewTests KnownNonBooleanTryMembers list (Kotlin ViewPurityTest is @Ignore'd for the same reason).
+  - Implemented: ForeignCityView.GetBombardableTiles; MapUnitView.ContainsAttackableEnemy/GetAttackableEnemies/TryAirSweep/GetMovementString/GetTurnsToBuild/TryStartWorkingOnImprovement; Tile.StartWorkingOnImprovement + QueueImprovement(TileImprovement, civ, unit) (godMode => 1 turn); MapUnit.GetMovementString (own partial file MapUnit.Movement.cs to stay under the coupling limit). Other listed members (tryBombard, attackOrNuke, nuke, canPillage, UnitActions) were already ported by T083/T079/T080. TileImprovement.GetTurnsToBuild and Civilization.GainStockpiledResource already existed.
+    Number format: JavaDecimalFormat gained Format(double, maxFractionDigits, groupingUsed) / Format(long, groupingUsed) (HALF_EVEN, immutable instead of Kotlin's mutable clone); TranslationCache.LanguageCache.NumberFormatter exposes it. getMovementString = 0..1 fraction digits, no grouping.
+    Housekeeping: BattleSeams.cs header retargeted to T090 (T081-T083 are Done, MarkerOwnershipTests failed otherwise); T141 deferred-test comments retargeted to T148; TileDescriptionSeams header no longer names T139.
 
 ### T140 Civilization and manager JSON wiring (full GameInfo save/load round trip)
 - State: Done
