@@ -3,6 +3,7 @@ using Unciv.Core.Tests.Logic;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
+using Unciv.Logic.Trade;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Nation;
@@ -552,6 +553,58 @@ public sealed class ViewTests : IDisposable
             view.CivView.GetImprovementBuildingProblems(farm, tileView).ToList());
     }
 
+    // ---- TradeView (T138) ----
+
+    private TradeView TradeViewOf(Civilization civ, Civilization other) =>
+        ViewAs(civ) is var gv ? gv.GetCivView(civ).GetTradeView(gv.GetForeignCivView(other)) : throw new InvalidOperationException();
+
+    [Fact]
+    public void TradeView_StagesProposesAndRetractsOffers()
+    {
+        var view = TradeViewOf(babylon, greece);
+        Assert.True(view.IsOwnedByViewer());
+        Assert.False(view.HasPendingOfferFromUs());
+        Assert.False(view.TryProposeStagedTrade()); // nothing staged
+        Assert.False(view.TryLoadOurPendingOffer());
+        Assert.False(view.TryRetractOffer());
+
+        var staged = new Trade();
+        staged.OurOffers.Add(new TradeOffer(Constants.PeaceTreaty, TradeOfferType.Treaty, 1));
+        Assert.True(view.SetStagedTrade(staged));
+        Assert.Single(view.OurStagedOffers());
+        Assert.Empty(view.TheirStagedOffers());
+
+        Assert.True(view.TryProposeStagedTrade());
+        Assert.True(view.HasPendingOfferFromUs());
+        var request = Assert.Single(greece.TradeRequests);
+        Assert.Equal(babylon.CivId, request.RequestingCiv);
+        Assert.Empty(request.Trade.OurOffers); // reversed for the receiver
+        Assert.Single(request.Trade.TheirOffers);
+
+        // A fresh view restores the pending offer, in our orientation
+        var fresh = TradeViewOf(babylon, greece);
+        Assert.Empty(fresh.OurStagedOffers());
+        Assert.True(fresh.TryLoadOurPendingOffer());
+        Assert.Single(fresh.OurStagedOffers());
+        Assert.Empty(fresh.TheirStagedOffers());
+
+        Assert.True(fresh.TryRetractOffer());
+        Assert.Empty(greece.TradeRequests);
+        Assert.False(fresh.HasPendingOfferFromUs());
+        Assert.False(fresh.TryRetractOffer());
+    }
+
+    [Fact]
+    public void TradeView_AvailableOffersAreLiveListsOfTheLogic()
+    {
+        var view = TradeViewOf(babylon, greece);
+        Assert.Same(view.OurAvailableOffers(), view.OurAvailableOffers());
+        Assert.Same(view.TheirAvailableOffers(), view.TheirAvailableOffers());
+        Assert.NotSame(view.OurAvailableOffers(), view.TheirAvailableOffers());
+        view.OurStagedOffers().Add(new TradeOffer("x", TradeOfferType.Gold, 5));
+        Assert.Single(view.OurStagedOffers()); // the same live instance
+    }
+
     // ---- Structural purity (ViewPurityTest) ----
 
     private static IEnumerable<Type> ViewTypes() =>
@@ -581,7 +634,7 @@ public sealed class ViewTests : IDisposable
     public void ViewTypes_AreDiscovered()
     {
         var names = ViewTypes().Select(it => it.Name).ToHashSet();
-        foreach (var expected in new[] { "GameView", "CivView", "ForeignCivView", "TileView", "TileMapView", "DiplomacyManagerView", "SpyView" })
+        foreach (var expected in new[] { "GameView", "CivView", "ForeignCivView", "TileView", "TileMapView", "DiplomacyManagerView", "SpyView", "TradeView" })
             Assert.Contains(expected, names);
     }
 

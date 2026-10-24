@@ -299,7 +299,7 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T130 prog
-  class T138 prog
+  class T138 review
 ```
 
 ## Incomplete tickets
@@ -349,4 +349,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T130 | In-Progress [Antigravity] | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
-| T138 | In-Progress [Claude] | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
+| T138 | Needs-Review [Claude] | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |

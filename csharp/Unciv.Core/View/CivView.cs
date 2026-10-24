@@ -14,13 +14,16 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 namespace Unciv.View;
 
 // Ported from core/src/com/unciv/view/CivView.kt (T084). Stripped: the purity annotations.
-// Deferred (TODO(T085): needs CityView/MapUnitView; TODO(T086): needs TradeLogic for TradeView): cities(), getTradeView, getUnits,
+// Deferred (TODO(T085): needs CityView/MapUnitView): cities(), getUnits,
 // and the helpers idleUnitsCount, dueUnitsCount, getCapital, isHolyCityBlocked.
 
 /// <summary>View of a <see cref="CivilizationClass"/> from the perspective of the viewer via the <see cref="GameView"/>.</summary>
 public class CivView(CivilizationClass civ, CivilizationClass viewer, bool spectatorMode, GameView gameView)
     : ForeignCivView(civ, viewer, spectatorMode, gameView)
 {
+    // Navigation
+    public TradeView GetTradeView(ForeignCivView otherCiv) => new(Civ, otherCiv.Unwrap(), GameView);
+
     // Data retrieval
     public bool HasStatToBuy(Stat stat, int price) => Civ.HasStatToBuy(stat, price);
 
