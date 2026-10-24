@@ -814,7 +814,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Traps kept: spawnedUnits++ happens before resetCountdown (reduction min(spawnedUnits,3) uses the incremented value); wasDestroyed sets countdown 15 and the same updateEncampments call then decrements it to 14; fogTilesPerCamp = Float.pow(0.4f).toInt (Math.Pow on widened floats); countdown * barbarianModifier uses Kotlin Float.toInt. Only human civs keep notifications (AddNotification skips AI).
 
 ### T079 UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T052, T057, T063, T066, T067
 - Source: core/src/com/unciv/models/UnitAction.kt, core/src/com/unciv/logic/map/mapunit/actions/UnitActionModifiers.kt, UnitActionsPillage.kt, UnitActionsUpgrade.kt, UnitActionsGreatPerson.kt, UnitActionsReligion.kt
 - Fixtures: none directly (UpgradeTests are T072)
@@ -827,6 +827,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Seam retyping (listed per the seam rule): MapUnitSeams.cs (UnitActionNames) deleted, MapUnit/UnitMovement/MapUnitView now use UnitActionType.X.Value(); UnitActionModifiers.GetUsableUnitActionUniques is the real implementation and takes MapUnit; ReligionManager.MaySpreadReligionAtAll/Now retyped IMapUnitState -> MapUnit (Kotlin type); MapUnitView.CanPillage added (T079 TODO resolved); Fonts.Death added.
     Deviations/traps: UnitAction.action is an Action delegate (Equals compares the delegate by reference, like Kotlin lambdas); enum hashCode uses the ordinal. UnitActionsPillage: Kotlin quirk kept - DestroyedWhenPillaged is looked up via getImprovementToPillage() AFTER setPillaged(), so it only ever matches a road. Random loot uses GameRandom(turns * position.hashCode().toLong()) (XorWow, same as Kotlin Random(Long)); tested by invariants (0..2X, deterministic), no Kotlin golden was generated. Kotlin string templates of null print "null" (closestCity?.name) - kept. RemoveHeresy offers the action whenever the city has any pressure key other than the unit's religion, which includes the never-removed Atheism pressure (Kotlin behaviour). getPillageActions/getHurry*/getFoundReligion etc. are internal as in Kotlin; UnitActions.actionTypeToFunctions wiring is T080. Tile.GetOwner()/GetCity() seam casts follow the UnitMovement convention.
     Not covered by tests (excused by threshold only where below 80%): none; all new files >= 85% lines. Standard checks and coverage check pass.
+  - Review notes (Adversarial Review, PASS): no parity defects. Non-blocking follow-ups: pillage loot routed to a city / closest-city selection and game-progress modifier branches untested (needs city fixtures); stats/stockpile cost activation paths partly uncovered.
 
 ### T080 Unit actions B: UnitActions, UnitActionsFromUniques
 - State: Available
