@@ -624,7 +624,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Traps kept: Kotlin kept the lines `[[Warrior]] has fully healed` (shortDisplayName already has brackets); maxByOrNull/minByOrNull pick the FIRST extreme (citadel, alternate cycle); `list.remove(unit)` is by reference; Float.pow via (float)Math.Pow; xp cost is (n*10*modifier).toInt() via KotlinMath.FloatToInt; unit order of civ.units is game state (rotated to nextPotentiallyDueAt on every add/remove).
 
 ### T067 Unit movement: MovementCost, UnitMovement
-- State: In-Review [Claude]
+- State: Done
 - Depends: T065, T054
 - Source: core/src/com/unciv/logic/map/mapunit/movement/MovementCost.kt, UnitMovement.kt (and PathsToTilesWithinTurn if present), core/src/com/unciv/logic/map/pathingmap/FixedPointMovement.kt
 - Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, FixedPointMovementTest.kt (TestGame-based: T072)
