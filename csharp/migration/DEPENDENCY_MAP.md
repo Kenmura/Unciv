@@ -397,7 +397,7 @@ flowchart TD
   class T110 waiting
   class T111 waiting
   class T112 ondeck
-  class T113 ready
+  class T113 prog
   class T114 ready
 ```
 
@@ -405,7 +405,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T113 | **Ready to start** | none | 0 | Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields |
 | T114 | **Ready to start** | none | 0 | Hardening sweep 2: non-blocking findings from T056, T059, T108 reviews |
 | T065 | **On deck** (after T060) | T055, T056, T060 | 47 | MapUnit core: MapUnit, MapUnitCache |
 | T061 | **On deck** (after T060) | T060 | 41 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
@@ -464,3 +463,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T111 | Available (waiting on T052, T060, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
+| T113 | In-Progress [Claude] | none | 0 | Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields |

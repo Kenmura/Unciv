@@ -1094,13 +1094,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From T058 review (split off T109).
 
 ### T113 Hardening: JSON converters for JavaHashSet/JavaHashMap serialized manager fields
-- State: Available
+- State: In-Progress [Claude]
 - Depends: none
 - Source: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager (T056)
 - Fixtures: none
 - Deliverables: converters in csharp/Unciv.Core/Json plus round-trip tests with Kotlin field names
 - Gate: dotnet test
-- Claimed:
+- Claimed: 2026-10-24T11:35Z
 - Notes: From T056 (split off T109): serialized fields are JavaHashSet<string>/JavaHashMap<string,int>/Counter<string>/int[] (Kotlin HashSet/HashMap keep java.util order); BaseUnit.Promotions has a private converter. camelCase names to check: techsResearched, techsInProgress, techsToResearch, freeTechs, repeatingTechsResearched, scienceOfLast8Turns, scienceFromResearchAgreements, overflowScience (private), goldPercentConvertedToScience; policies: freePolicies, storedCulture, adoptedPolicies (internal), numberOfAdoptedPolicies (private), cultureOfLast8Turns (private), shouldOpenPolicyPicker; goldenAges: storedHappiness, numberOfGoldenAges (private), turnsLeftForCurrentGoldenAge; greatPeople: all public vars. Private/internal members are serialized in Kotlin (Gdx Json uses fields).
 
 ### T114 Hardening sweep 2: non-blocking findings from T056, T059, T108 reviews
