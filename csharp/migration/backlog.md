@@ -834,13 +834,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~1.2k LOC (Battle.kt 883): delegate the brief. Uses UnitActionsPillage (T079), CityConquestFunctions (T064), DeclareWar (T068), UniqueTriggerActivation (T052); NextTurnAutomation.valueCityStateAlliance is a TODO(T094) seam; UncivGame/worldScreen/tutorial-task lines are UI and dropped. Attack order and RNG draw order are game state. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T084 Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T046, T057, T059
 - Source: core/src/com/unciv/view/View.kt, GameBasedView.kt, OwnedView.kt, GameView.kt, CivView.kt, ForeignCivView.kt, TileView.kt, TileMapView.kt, DiplomacyManagerView.kt, TradeView.kt, SpyView.kt
 - Fixtures: tests/src/com/unciv/view/ViewPurityTest.kt (Kotlin purity annotations: port only the structural checks that make sense), GameViewMovementHistoryTest.kt (TestGame: T103)
 - Deliverables: csharp/Unciv.Core/View/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~ViewTests`
-- Claimed:
+- Claimed: 2026-10-24T15:32Z
 - Notes: Created by the backlog audit: core/src/com/unciv/view/* (1.6k LOC) is the read-only API that every Automation file, Battle, MapUnit, TurnManager, UniqueTriggerActivation and TradeEvaluation call (GameView(gameInfo, civ).civView / getMapUnitView) and no ticket covered it. ~730 LOC here. Drop the yairm210.purity annotations (record them as comments). Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
   - From T114 (T059 review): TradeOffer.getOfferText is not ported (translation + Fonts + UncivGame.Current.gameInfo); port it with the Trade view/UI text (or a Translation port) and test it.
 
