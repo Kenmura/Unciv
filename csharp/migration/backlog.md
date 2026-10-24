@@ -583,13 +583,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - **Fix made by reviewer:** Kotlin's `toFloatOrNull` accepts Java hex float literals (`0x1.8p1`, `ScreenFloatValueRegEx` `HexString` branch); the port rejected them. Added hex validation + value parsing and 13 theory cases + a value test. Value is exact up to 53 significant bits (only validity is used by the engine).
     - **For downstream tickets:** (1) `UniqueParameterErrorSeverity` is declared at namespace level here, not nested in `UniqueType`; T026 must reuse it and add the `RulesetErrorSeverity` mapping (`PossibleFilteringUnique→WarningOptionsOnly`, `RulesetSpecific→Warning`, `RulesetInvariant→Error`). (2) `IRulesetObjectParameterView.HasTagUnique` and `HasGreatPersonUnique`/`HasRegionUnique` are text-matching defaults; Kotlin goes through `UniqueMap`/`hasUnique(UniqueType)` (conditionals evaluated against `GameContext.EmptyState`, timed triggerables excluded), so T027/T030 must override them. (3) `RulesetMapView` over `Dictionary` is insertion-ordered only without removals; T034's ruleset maps must preserve load order for autocomplete output. (4) `CountablesProvider` default is a stub until T028 (already TODO-marked).
 ### T026 Unique system: UniqueType enum
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T025
 - Source: core/src/com/unciv/models/ruleset/unique/UniqueType.kt
 - Fixtures: none - generate golden values (text/params/targets per entry, from Kotlin)
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/UniqueType.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueTypeTests`
-- Claimed:
+- Claimed: 2026-10-24T02:32:36Z
 - Notes: ~1.2k LOC mostly data. Preserve declaration order (ordinal) and placeholder text exactly. Consider a generated-from-Kotlin consistency test over all entries.
 
 ### T027 Unique system: Unique, UniqueMap, LocalUniqueCache, TemporaryUnique, IHasUniques, GameContext
