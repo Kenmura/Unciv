@@ -243,12 +243,276 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 
 ### T015 HexMath Tile/Map dependent functions
 - State: Blocked
-- Depends: Tile/TileMap ticket, MapParameters ticket
+- Depends: T039, T022
 - Source: core/src/com/unciv/logic/map/HexMath.kt (`tilesAndNeighborUniqueIndex`, `getDistanceFromEdge`)
 - Fixtures: tests/src/com/unciv/logic/map/HexmathTests.kt (`testTileNeighborMappingIsNonConflicting`)
 - Deliverables: additions to csharp/Unciv.Core/Logic/Map/HexMath.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~HexMathTests`
 - Notes: Deferred from T006.
+
+### T018 Utils: collection/string extensions, exceptions, Versioning
+- State: Available
+- Depends: T010
+- Source: core/src/com/unciv/utils/CollectionExtensions.kt, utils/StringExtensions.kt, logic/UncivExceptions.kt, logic/Versioning.kt
+- Fixtures: none - generate golden values for ordering-sensitive helpers
+- Deliverables: csharp/Unciv.Core/Utils/CollectionExtensions.cs, StringExtensions.cs, Logic/UncivExceptions.cs, Logic/Versioning.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UtilsTests`
+- Claimed:
+- Notes: Randomness.kt is covered by T016/T017; do not duplicate. Skip Log/Concurrency/Display/DebugUtils/PlatformSpecific (platform code; Won't port, see T043).
+
+### T019 Event bus
+- State: Available
+- Depends: none
+- Source: core/src/com/unciv/logic/event/EventBus.kt, Event.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/Logic/Event/EventBus.cs, Event.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~EventBusTests`
+- Claimed:
+- Notes: Listener invocation order must be deterministic (registration order). Replace Kotlin weak/threading specifics with deterministic single-threaded equivalents; note deviations.
+
+### T020 MultiFilter and IdChecker
+- State: Available
+- Depends: none
+- Source: core/src/com/unciv/logic/MultiFilter.kt, logic/IdChecker.kt
+- Fixtures: tests/src/com/unciv/logic/MultiFilterTests.kt, tests/src/com/unciv/logic/IdHelperTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/MultiFilter.cs, IdChecker.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MultiFilterTests|FullyQualifiedName~IdCheckerTests`
+- Claimed:
+- Notes: Pure string logic; keep Kotlin Regex/string semantics exact (culture-invariant).
+
+### T021 Metadata models: LocaleCode, GameParameters, GameSetupInfo, Player, BaseRuleset, ModCategories
+- State: Available
+- Depends: T007
+- Source: core/src/com/unciv/models/metadata/LocaleCode.kt, GameParameters.kt, GameSetupInfo.kt, Player.kt, BaseRuleset.kt, ModCategories.kt
+- Fixtures: none - generate golden JSON by serializing from Kotlin
+- Deliverables: csharp/Unciv.Core/Models/Metadata/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MetadataTests`
+- Claimed:
+- Notes: Serialized field names must match Kotlin JSON. GameSettings/Migrations/OverviewPersistableData are client settings: out of scope unless a later ticket needs them.
+
+### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
+- State: Available
+- Depends: T006, T007, T010
+- Source: core/src/com/unciv/logic/map/MapSize.kt, MapParameters.kt, NeighborDirection.kt, logic/map/tile/RoadStatus.kt
+- Fixtures: none - generate golden values (incl. MapSize radius/size math, MapParameters JSON)
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapSize.cs, MapParameters.cs, NeighborDirection.cs, Tile/RoadStatus.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MapParametersTests`
+- Claimed:
+- Notes: Unblocks half of T015. Watch Kotlin Int/Float rounding in MapSize custom-size logic (roundToInt is half-up).
+
+### T023 Translation core (headless)
+- State: Available
+- Depends: T018
+- Source: core/src/com/unciv/models/translations/Translations.kt, TranslationEntry.kt, TranslationCache.kt, TranslationFileReader.kt, TranslationExtensions.kt (`tr()` and its helpers)
+- Fixtures: tests/src/com/unciv/logic/TranslationTests.kt, tests/src/com/unciv/logic/TutorialTranslationTests.kt (only cases not requiring libGDX/assets); otherwise generate golden values
+- Deliverables: csharp/Unciv.Core/Models/Translations/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~TranslationTests`
+- Claimed:
+- Notes: Decided: ported headlessly now. File access behind an interface (no libGDX FileHandle). Exclude TranslationFileWriter (dev tooling; Won't port, T043). Translation templates/placeholders/conditionals `[]`/`<>` must match Kotlin exactly; culture-invariant ordering. Lookups must not depend on iteration order of hash collections.
+
+### T024 Holiday dates
+- State: Available
+- Depends: none
+- Source: core/src/com/unciv/logic/HolidayDates.kt
+- Fixtures: tests/src/com/unciv/logic/HolidayDatesTest.kt
+- Deliverables: csharp/Unciv.Core/Logic/HolidayDates.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~HolidayDatesTests`
+- Claimed:
+- Notes: Time is an explicit input (DateOnly/ints), never DateTime.Now. Use vetted rounding/calendar helpers.
+
+### T025 Unique system: UniqueTarget, UniqueFlag, UniqueParameterType
+- State: Available
+- Depends: T018
+- Source: core/src/com/unciv/models/ruleset/unique/UniqueTarget.kt, UniqueFlag.kt, UniqueParameterType.kt
+- Fixtures: none - generate golden values (parameter matching/validation results)
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/UniqueTarget.cs, UniqueFlag.cs, UniqueParameterType.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UniqueParameterTypeTests`
+- Claimed:
+- Notes: UniqueParameterType (797 LOC) references Ruleset for validation; introduce minimal interfaces (e.g. IRulesetView) and note them for T034 to implement. Enum ordinals/names must match Kotlin (serialized).
+
+### T026 Unique system: UniqueType enum
+- State: Available
+- Depends: T025
+- Source: core/src/com/unciv/models/ruleset/unique/UniqueType.kt
+- Fixtures: none - generate golden values (text/params/targets per entry, from Kotlin)
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/UniqueType.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UniqueTypeTests`
+- Claimed:
+- Notes: ~1.2k LOC mostly data. Preserve declaration order (ordinal) and placeholder text exactly. Consider a generated-from-Kotlin consistency test over all entries.
+
+### T027 Unique system: Unique, UniqueMap, LocalUniqueCache, TemporaryUnique, IHasUniques, GameContext
+- State: Available
+- Depends: T026, T020
+- Source: core/src/com/unciv/models/ruleset/unique/Unique.kt, UniqueMap.kt, LocalUniqueCache.kt, TemporaryUnique.kt, IHasUniques.kt, GameContext.kt, UniqueTriggerExecutors.kt
+- Fixtures: tests/src/com/unciv/uniques/TimedUniquesTests.kt (where state-independent)
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UniqueTests`
+- Claimed:
+- Notes: UniqueMap must preserve insertion order. GameContext depends on Civilization/City/Tile: use state interfaces, owned by this ticket, implemented later. `stateBasedRandom` formula comes from T017. UniqueTriggerActivation (1.5k LOC) is deferred to land with Civ/City/Unit.
+
+### T028 Unique system: Conditionals and Countables
+- State: Available
+- Depends: T027
+- Source: core/src/com/unciv/models/ruleset/unique/Conditionals.kt, Countables.kt
+- Fixtures: tests/src/com/unciv/uniques/CountableTests.kt, tests/src/com/unciv/uniques/ExpressionTests.kt
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/Conditionals.cs, Countables.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~CountableTests|FullyQualifiedName~ExpressionTests`
+- Claimed:
+- Notes: Fixtures that need TestGame are deferred to T035; port the rest now and list the deferred cases in Notes. Expression evaluation: Double vs Int semantics exact.
+
+### T029 Deprecated uniques and BackwardCompatibility
+- State: Available
+- Depends: T027
+- Source: core/src/com/unciv/models/ruleset/unique/DeprecatedUniques.kt, logic/BackwardCompatibility.kt
+- Fixtures: tests/src/com/unciv/uniques/DeprecatedUniquesTest.kt
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/DeprecatedUniques.cs, Logic/BackwardCompatibility.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~DeprecatedUniquesTests`
+- Claimed:
+- Notes: BackwardCompatibility touches GameInfo/Civ/City; port only parts whose types exist, record the rest as TODO(T###) with a real ticket.
+
+### T030 Ruleset base objects: RulesetObject, Specialist, Speed, Policy, PolicyBranch, Belief, Event, Quest, RuinReward, GlobalUniques, ModOptions, Victory, Tutorial
+- State: Available
+- Depends: T027, T021
+- Source: core/src/com/unciv/models/ruleset/{RulesetObject,Specialist,Speed,Policy,PolicyBranch,Belief,Event,Quest,RuinReward,GlobalUniques,ModOptions,Victory,Tutorial,RulesetName}.kt
+- Fixtures: tests/src/com/unciv/models/ruleset/VictoryAvailabilityTests.kt, VictoryMilestoneTests.kt (state-dependent parts after T035)
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~RulesetObjectTests`
+- Claimed:
+- Notes: Json field names/defaults must match Kotlin (rulesets load from JSON). Victory.kt is 454 LOC; split off if it exceeds scope and note it.
+
+### T031 Ruleset tile objects: Terrain, TerrainType, TileImprovement, TileResource, ResourceType, ResourceSupplyList
+- State: Available
+- Depends: T030
+- Source: core/src/com/unciv/models/ruleset/tile/*.kt
+- Fixtures: none - generate golden values; tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt later with T038
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Tile/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~RulesetTileTests`
+- Claimed:
+- Notes: Ordered collections stay ordered (ResourceSupplyList).
+
+### T032 Ruleset nation and tech objects: Nation, CityStateType, Difficulty, Personality(Value), Era, TechColumn, Technology
+- State: Available
+- Depends: T030
+- Source: core/src/com/unciv/models/ruleset/nation/*.kt, models/ruleset/tech/*.kt
+- Fixtures: tests/src/com/unciv/logic/map/CityStateTypeStartBiasTests.kt (if type-only)
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Nation/*.cs, Tech/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~RulesetNationTechTests`
+- Claimed:
+- Notes: Colors: engine-owned color type, no libGDX Color.
+
+### T033 Ruleset unit and construction objects: BaseUnit, BaseUnitCost, Promotion, UnitType, UnitNameGroup, Building, IConstruction, PerpetualConstruction
+- State: Available
+- Depends: T031, T032
+- Source: core/src/com/unciv/models/ruleset/unit/*.kt, models/ruleset/Building.kt, IConstruction.kt, PerpetualConstruction.kt
+- Fixtures: tests/src/com/unciv/uniques/UnitUniquesTests.kt (state-dependent parts after T035)
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Unit/*.cs, Building.cs, IConstruction.cs, PerpetualConstruction.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~RulesetUnitTests`
+- Claimed:
+- Notes: Cost/production math: Int vs Float and roundToInt (half-up helper) are the main traps. Methods needing City/Civilization go behind state interfaces from T027.
+
+### T034 Ruleset and RulesetCache loader
+- State: Available
+- Depends: T031, T032, T033
+- Source: core/src/com/unciv/models/ruleset/Ruleset.kt, RulesetCache.kt
+- Fixtures: tests/src/com/unciv/uniques/ResourceTests.kt (static parts)
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Ruleset.cs, RulesetCache.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~RulesetLoadTests`
+- Claimed:
+- Notes: File access behind an interface (no libGDX FileHandle). Load order of files/mods must be deterministic and equal to Kotlin's. Implements the interfaces left by T025/T027.
+
+### T035 Test-support port: TestGame helper and deferred fixtures
+- State: Available
+- Depends: T034
+- Source: tests/src/com/unciv/testing/TestGame.kt
+- Fixtures: tests/src/com/unciv/testing/TestGame.kt; deferred cases from T028, T030, T033
+- Deliverables: csharp/Unciv.Core.Tests/Support/TestGame.cs, ported deferred tests
+- Gate: `dotnet test --filter FullyQualifiedName~TestGameTests`
+- Claimed:
+- Notes: May need partial Tile/Civ stubs; if so mark Blocked and split: extend it again after T039 and the Civilization tickets.
+
+### T036 RulesetValidator
+- State: Available
+- Depends: T034
+- Source: core/src/com/unciv/models/ruleset/validation/*.kt
+- Fixtures: tests/src/com/unciv/uniques/RulesetValidatorTests.kt, tests/src/com/unciv/uniques/UniqueErrorTests.kt, tests/src/com/unciv/uniques/AllObjectsTests.kt
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/Validation/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~RulesetValidatorTests`
+- Claimed:
+- Notes: Error ordering and text must be identical to Kotlin. TextSimilarity: exact algorithm port.
+
+### T037 Golden test: load and validate Vanilla and bundled mod rulesets
+- State: Available
+- Depends: T036, T035
+- Source: none (integration test)
+- Fixtures: tests/src/com/unciv/logic/LoadGameTest.kt (ruleset portion), tests/src/com/unciv/logic/ModConstantsTests.kt
+- Deliverables: csharp/Unciv.Core.Tests/Models/Ruleset/VanillaRulesetTests.cs
+- Gate: `dotnet test --filter FullyQualifiedName~VanillaRulesetTests`
+- Claimed:
+- Notes: Asset JSON is read from the Kotlin repo's android/assets/jsons (read-only). Compare object counts/ids/uniques against Kotlin-generated dump (record how generated).
+
+### T038 Tile core: Tile, TileHistory, TileNormalizer, TileStatFunctions, TileImprovementFunctions
+- State: Available
+- Depends: T022, T034
+- Source: core/src/com/unciv/logic/map/tile/*.kt
+- Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/Tile/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~TileTests`
+- Claimed:
+- Notes: Tile.kt is 1.3k LOC; split off Tile stats/improvements if needed. Civ/City/Unit references go behind interfaces from T027. Kotlin lazy/cached fields must not change observable behaviour.
+
+### T039 TileMap
+- State: Available
+- Depends: T038
+- Source: core/src/com/unciv/logic/map/TileMap.kt
+- Fixtures: tests/src/com/unciv/logic/map/VisibilityTests.kt, tests/src/com/unciv/logic/map/UpgradeTests.kt (map-only parts)
+- Deliverables: csharp/Unciv.Core/Logic/Map/TileMap.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~TileMapTests`
+- Claimed:
+- Notes: Tile iteration order is game state: keep Kotlin's ordering. Completing it unblocks T015 (update that ticket's Depends).
+
+### T040 Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization
+- State: Available
+- Depends: T039
+- Source: core/src/com/unciv/logic/map/BFS.kt, AStar.kt, MapPathing.kt, CarrierSlotMatcher.kt, MapVisualization.kt
+- Fixtures: tests/src/com/unciv/logic/map/PathfindingTests.kt, tests/src/com/unciv/logic/map/pathingmap/*
+- Deliverables: csharp/Unciv.Core/Logic/Map/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~PathfindingTests`
+- Claimed:
+- Notes: Priority-queue tie-breaking must match Kotlin exactly (uses T001). CarrierSlotMatcher may need Unit types: use interfaces or defer part with a real ticket.
+
+### T041 MapGenerator pipeline (audit existing partial work first)
+- State: Available
+- Depends: T039, T010, T016, T017
+- Source: core/src/com/unciv/logic/map/mapgenerator/**
+- Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt, ResourceDiversityTest.kt, mapgenerator/NaturalWonderGeneratorTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
+- Claimed:
+- Notes: Large (mapregions, resourceplacement, rivers, elevation, landmass). Split into sub-tickets at claim time if >1.5k LOC. Same seed must reproduce Kotlin maps: add golden maps generated from Kotlin.
+
+### T042 OdMap import/export
+- State: Available
+- Depends: T039
+- Source: core/src/com/unciv/logic/map/OdMapExport.kt, OdMapImport.kt, OdTerrain.kt
+- Fixtures: tests/src/com/unciv/logic/OdMapExportTests.kt, tests/src/com/unciv/logic/OdMapImportTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Map/OdMap*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~OdMap`
+- Claimed:
+- Notes: Platform file IO behind an interface.
+
+### T043 Record Won't-port scope
+- State: Available
+- Depends: none
+- Source: logic/multiplayer, logic/github, logic/UncivKtor.kt, logic/files/{FileChooser,PlatformSaverLoader}.kt, utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt, models/translations/TranslationFileWriter.kt, models/skins, models/tilesets, ui tests
+- Fixtures: none
+- Deliverables: csharp/migration/backlog.md (Won't-port list), PROTOCOL.md pointer
+- Gate: `n/a (docs only)`
+- Claimed:
+- Notes: Docs-only ticket. Review each entry before listing: logic/files/UncivFiles and MapSaver, FileConversions, IMediaFinder may still be needed for save/load and are NOT on this list; handle them in the Phase E tickets.
+
+### Planned (not yet ticketed)
+Deferred until the ruleset and map tickets land (decided with the user): Civilization (split ~5: core, diplomacy, policy/tech managers, notifications/quests, vision/stats), Trade, City + CityStats + production, UnitManager/MapUnit (movement, actions), UniqueTriggerActivation, Battle, GameInfo, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
+
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
