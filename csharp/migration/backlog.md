@@ -1447,7 +1447,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - T121 (coupling ratchet): Civilization.cs coupling baseline is 24 against a measured 22, deliberate headroom for T061/T063/T065; lower it to the measured value once they land.
 
 ### T128 Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T065
 - Source: none (policy follow-up of T065/T121)
 - Fixtures: none
