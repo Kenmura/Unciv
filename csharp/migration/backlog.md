@@ -926,13 +926,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~740 LOC. Takes the Building/TileImprovement/TileResource/Terrain getCivilopediaTextLines, getShortDescription, makeLink, getSortGroup, displayAs members deferred by T030/T031/T033. Seam rule as T053.
 
 ### T097 Civilopedia text model C: BaseUnit, Nation, Technology descriptions
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T095, T062, T057
 - Source: core/src/com/unciv/ui/objectdescriptions/BaseUnitDescriptions.kt, NationDescriptions.kt, TechnologyDescriptions.kt
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/UI/ObjectDescriptions/*.cs, tests (+ the deferred BaseUnit/Nation/Technology/Era civilopedia members)
 - Gate: `dotnet test --filter FullyQualifiedName~ObjectDescriptionsCTests`
-- Claimed:
+- Claimed: 2026-10-24T12:22Z
 - Notes: Created by the backlog audit. ~1.0k LOC. Takes the Nation/Era/Technology/BaseUnit members deferred by T032/T033/T034 (makeLink, getSortGroup/getSubCategory, civilopedia text, Nation.getStartBias, Era.getStartingUnits/getEraGatedObjects/matchesFilter, Technology.matchesFilter/getDescription, Difficulty/...) - recheck T032's Notes for the exact list. Seam rule as T053.
 
 ### T098 Save/load A: FileConversions, MapSaver, IMediaFinder
