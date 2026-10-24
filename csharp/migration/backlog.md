@@ -910,13 +910,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review notes: adversarial review (Auditor/Adversary/Pragmatist) found no parity deviations; requested WarType (TeamWar/JoinWar), resource-offer filtering and mod-option tests, added. Gate widened to ~TradeLogic to include TradeLogicGameTests. Known limitation: major-civ liberation path can hit the T089 seam via peace-proposal offers.
 
 ### T087 Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T085, T057
 - Source: core/src/com/unciv/logic/automation/Automation.kt, Timers.kt (profiling: drop, keep nothing), civilization/AutomationCache.kt, civilization/ThreatManager.kt, unit/CityLocationTileRanker.kt, civilization/ReligionAutomation.kt, unit/EspionageAutomation.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/managers/ThreatManagerTests.kt (TestGame: T035 via T085)
 - Deliverables: csharp/Unciv.Core/Logic/Automation/**/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~AutomationCoreTests`
-- Claimed:
+- Claimed: 2026-10-24T16:58Z
 - Notes: Created by the backlog audit (Automation was only 'Planned, last'). ~1.9k LOC: split by file at claim time. Also owns IHasUniques.getWeightForAiDecision plus the Personality weighting deferred by T027/T032 (marker TODO(T033) in IHasUniques.cs is stale: fix it here) and the Automation.* call sites left as TODO in CityFocus (T060), CityPopulationManager (T061), CityConstructions (T063). DebugUtils flags come from the T048 engine options (SETTLER_SCORES in CityLocationTileRanker). Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
 
 ### T088 Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation
