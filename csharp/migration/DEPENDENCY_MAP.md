@@ -17,15 +17,9 @@ flowchart TD
   subgraph TTRACK["Engine track"]
     T011["T011<br/>State-hash determinism harness"]
     T012["T012<br/>Command layer design"]
-    T035["T035<br/>Test-support port: TestGame helper and deferred fixtures"]
-    T067["T067<br/>Unit movement: MovementCost, UnitMovement"]
     T071["T071<br/>GameInfo turn handling and BackwardCompatibility"]
     T072["T072<br/>Deferred TestGame-based fixtures sweep (Tile, Civilization, ..."]
-    T078["T078<br/>Barbarians: BarbarianManager, BarbarianEncampment"]
-    T083["T083<br/>Battle C: Battle, Nuke"]
-    T088["T088<br/>Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEv..."]
     T089["T089<br/>TradeEvaluation"]
-    T090["T090<br/>Unit automation core A: BattleHelper, HeadTowardsEnemyCityAu..."]
     T091["T091<br/>Civilian automation: CivilianUnitAutomation, SpecificUnitAut..."]
     T092["T092<br/>Worker and road automation: WorkerAutomation, RoadBetweenCit..."]
     T093["T093<br/>PathingMap: PathingMap, PathingMapCache, PathingMapAStarPath..."]
@@ -42,7 +36,6 @@ flowchart TD
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
-    T156["T156<br/>Unit automation: UnitAutomation (all but tryUpgradeUnit)"]
     T157["T157<br/>Deferred automation fixture: GreatPersonSelectionTest automa..."]
   end
   subgraph CTRACK["Client track (Godot)"]
@@ -60,19 +53,6 @@ flowchart TD
     A006["A006<br/>Homeland AI priority move queue"]
     A007["A007<br/>Operations and armies layer"]
   end
-  T067 --> T093
-  T088 --> T093
-  T090 --> T093
-  T092 --> T093
-  T156 --> T093
-  T088 --> T094
-  T090 --> T094
-  T091 --> T094
-  T092 --> T094
-  T078 --> T094
-  T083 --> T094
-  T035 --> T094
-  T156 --> T094
   T099 --> T101
   T094 --> T101
   T071 --> T101
@@ -126,19 +106,13 @@ flowchart TD
   class C006 blocked
   class T011 done
   class T012 done
-  class T035 done
-  class T067 done
   class T071 done
   class T072 done
-  class T078 done
-  class T083 done
-  class T088 done
   class T089 done
-  class T090 done
   class T091 done
-  class T092 review
-  class T093 ondeck
-  class T094 ondeck
+  class T092 done
+  class T093 ready
+  class T094 ready
   class T097 done
   class T099 done
   class T100 done
@@ -151,7 +125,6 @@ flowchart TD
   class T143 done
   class T152 done
   class T154 waiting
-  class T156 done
   class T157 waiting
 ```
 
@@ -171,16 +144,15 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 18]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 1]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 0]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T094 | **On deck** (after T092) | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
-| T093 | **On deck** (after T092) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
-| T092 | Needs-Review [Claude] | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
+| T094 | **Ready to start** | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
+| T093 | **Ready to start** | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
