@@ -19,7 +19,6 @@ flowchart TD
     T011["T011<br/>State-hash determinism harness"]
     T012["T012<br/>Command layer design"]
     T028["T028<br/>Unique system: Conditionals and Countables"]
-    T030["T030<br/>Ruleset base objects: RulesetObject, Specialist, Speed, Poli..."]
     T034["T034<br/>Ruleset and RulesetCache loader"]
     T035["T035<br/>Test-support port: TestGame helper and deferred fixtures"]
     T036["T036<br/>RulesetValidator"]
@@ -96,7 +95,6 @@ flowchart TD
   end
   subgraph ATRACK["Game AI track"]
     A001["A001<br/>AI defines & data tables loader"]
-    A002["A002<br/>Leader flavor system & Grand Strategy evaluation"]
     A003["A003<br/>Victory scorers (BNW)"]
     A004["A004<br/>Target-centric Tactical AI: TacticalMoveQueue & recruitment"]
     A005["A005<br/>Tactical overkill assignment & coordinated multi-unit attack..."]
@@ -297,11 +295,6 @@ flowchart TD
   C002 --> C005
   T012 --> C006
   C001 --> C006
-  A002 --> A003
-  T030 --> A003
-  T055 --> A003
-  T057 --> A003
-  T059 --> A003
   A001 --> A004
   T039 --> A004
   T040 --> A004
@@ -323,7 +316,6 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class A001 done
-  class A002 done
   class A003 blocked
   class A004 blocked
   class A005 blocked
@@ -340,7 +332,6 @@ flowchart TD
   class T011 done
   class T012 done
   class T028 done
-  class T030 done
   class T034 done
   class T035 waiting
   class T036 done
@@ -358,7 +349,7 @@ flowchart TD
   class T056 done
   class T057 done
   class T058 done
-  class T059 review
+  class T059 done
   class T060 prog
   class T061 ondeck
   class T062 ondeck
@@ -418,20 +409,19 @@ flowchart TD
 | T066 | Available (waiting on T065, T060) | T065, T060 | 44 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 41 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T060, T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 38 | GameInfo core and the hooks waiting for it |
-| T059 | Needs-Review [Claude] | T055 | 37 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
 | T063 | Available (waiting on T060, T062) | T060, T062 | 36 | CityConstructions |
 | T064 | Available (waiting on T060, T061, T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
-| T068 | Available (waiting on T059, T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
+| T068 | Available (waiting on T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | Available (waiting on T060, T065, T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T067 | Available (waiting on T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T035 | Available (waiting on T046, T061, T065) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 22 | Test-support port: TestGame helper and deferred fixtures |
 | T052 | Available (waiting on T046, T060, T061, T063, T064, T065, T066, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T060, T065, T067, T062, T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
-| T084 | Available (waiting on T046, T059) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
+| T084 | Available (waiting on T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
 | T085 | Available (waiting on T084, T081, T062, T063, T066, T067) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T079 | Available (waiting on T052, T063, T066, T067) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
-| T086 | Available (waiting on T059, T068) | T059, T068, T057 | 14 | TradeLogic |
+| T086 | Available (waiting on T068) | T059, T068, T057 | 14 | TradeLogic |
 | T087 | Available (waiting on T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T082 | Available (waiting on T081, T046, T067, T035) | T081, T046, T067, T035 | 13 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T088 | Available (waiting on T087, T086, T081, T068) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
