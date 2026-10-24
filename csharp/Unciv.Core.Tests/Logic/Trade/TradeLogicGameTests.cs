@@ -3,6 +3,8 @@ using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Trade;
+using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using TradeObject = Unciv.Logic.Trade.Trade;
 
@@ -179,6 +181,90 @@ public class TradeLogicGameTests
 
         Assert.Equal(6, a.ResourceStockpiles[resource.Name]);
         Assert.Equal(4, b.ResourceStockpiles[resource.Name]);
+    }
+
+    [Fact]
+    public void Constructor_ResourceOffers_ExcludeBonusAndMapLuxuryAndStrategicTypes()
+    {
+        var (game, a, b) = Setup();
+        var lux = game.CreateResource();
+        lux.ResourceType = ResourceType.Luxury;
+        var strategic = game.CreateResource();
+        strategic.ResourceType = ResourceType.Strategic;
+        var bonus = game.CreateResource();
+        bonus.ResourceType = ResourceType.Bonus;
+        var received = game.CreateResource();
+        received.ResourceType = ResourceType.Luxury;
+        a.DetailedCivResources.Add(lux, "Cities", 2);
+        a.DetailedCivResources.Add(strategic, "Cities", 5);
+        a.DetailedCivResources.Add(bonus, "Cities", 3);
+        a.DetailedCivResources.Add(received, "Trade", 1); // keeps its origin and adds an empty tradable entry
+
+        var offers = NewLogic(a, b).OurAvailableOffers;
+
+        Assert.Equal(TradeOfferType.Luxury_Resource, offers.Single(it => it.Name == lux.Name).Type);
+        Assert.Equal(2, offers.Single(it => it.Name == lux.Name).Amount);
+        Assert.Equal(TradeOfferType.Strategic_Resource, offers.Single(it => it.Name == strategic.Name).Type);
+        Assert.Equal(5, offers.Single(it => it.Name == strategic.Name).Amount);
+        Assert.DoesNotContain(offers, it => it.Name == bonus.Name);
+        Assert.Equal(0, offers.Single(it => it.Name == received.Name).Amount);
+        Assert.DoesNotContain(NewLogic(b, a).OurAvailableOffers, it => it.Name == lux.Name);
+    }
+
+    [Fact]
+    public void Constructor_IntroductionsAndWarDeclarations_FollowTheModOptions()
+    {
+        var (game, a, b) = Setup();
+        var c = game.AddCiv();
+        game.AddCity(c, game.GetTile(0, -4)); // so it is not defeated
+        a.DiplomacyFunctions.MakeCivilizationsMeet(c); // a knows c, b does not
+        Assert.DoesNotContain(NewLogic(a, b).OurAvailableOffers, it => it.Type == TradeOfferType.Introduction);
+
+        game.Ruleset.ModOptions = new ModOptions { Uniques = [UniqueType.TradeCivIntroductions.Text()] };
+        var logic = NewLogic(a, b);
+        Assert.Contains(logic.OurAvailableOffers, it => it.Type == TradeOfferType.Introduction && it.Name == c.CivId);
+
+        b.DiplomacyFunctions.MakeCivilizationsMeet(c);
+        Assert.Contains(NewLogic(a, b).OurAvailableOffers, it => it.Type == TradeOfferType.WarDeclaration && it.Name == c.CivId);
+        game.Ruleset.ModOptions = new ModOptions { Uniques = [UniqueType.DiplomaticRelationshipsCannotChange.Text()] };
+        Assert.DoesNotContain(NewLogic(a, b).OurAvailableOffers, it => it.Type == TradeOfferType.WarDeclaration);
+    }
+
+    private static (TestGame Game, Civilization A, Civilization B, Civilization C) SetupWar()
+    {
+        var (game, a, b) = Setup(humanB: false);
+        var c = game.AddCiv();
+        game.AddCity(c, game.GetTile(0, -4));
+        a.DiplomacyFunctions.MakeCivilizationsMeet(c);
+        b.DiplomacyFunctions.MakeCivilizationsMeet(c);
+        return (game, a, b, c);
+    }
+
+    [Fact]
+    public void AcceptTrade_WarDeclaration_BothSidesOfferingTheSameTargetIsATeamWar()
+    {
+        var (_, a, b, c) = SetupWar();
+        var logic = NewLogic(a, b);
+        logic.CurrentTrade.OurOffers.Add(new TradeOffer(c.CivId, TradeOfferType.WarDeclaration));
+        logic.CurrentTrade.TheirOffers.Add(new TradeOffer(c.CivId, TradeOfferType.WarDeclaration));
+
+        logic.AcceptTrade(false);
+
+        Assert.Equal(DiplomaticStatus.War, a.GetDiplomacyManager(c)!.DiplomaticStatus);
+        Assert.Equal(DiplomaticStatus.War, b.GetDiplomacyManager(c)!.DiplomaticStatus);
+    }
+
+    [Fact]
+    public void AcceptTrade_WarDeclaration_GiverJoiningAnExistingWarIsAJoinWar()
+    {
+        var (_, a, b, c) = SetupWar();
+        a.GetDiplomacyManager(c)!.DeclareWar();
+        var logic = NewLogic(a, b);
+        logic.CurrentTrade.TheirOffers.Add(new TradeOffer(c.CivId, TradeOfferType.WarDeclaration));
+
+        logic.AcceptTrade(false);
+
+        Assert.Equal(DiplomaticStatus.War, b.GetDiplomacyManager(c)!.DiplomaticStatus);
     }
 
     [Fact]
