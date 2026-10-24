@@ -144,7 +144,6 @@ flowchart TD
   T083 --> T139
   T079 --> T139
   T080 --> T139
-  T103 --> T143
   T080 --> T144
   T103 --> T144
   C001 --> C002
@@ -220,7 +219,7 @@ flowchart TD
   class T100 done
   class T101 waiting
   class T102 waiting
-  class T103 review
+  class T103 done
   class T104 waiting
   class T106 done
   class T107 done
@@ -235,7 +234,7 @@ flowchart TD
   class T140 prog
   class T141 ready
   class T142 ready
-  class T143 ondeck
+  class T143 ready
   class T144 waiting
 ```
 
@@ -252,10 +251,10 @@ flowchart TD
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T141 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder) |
 | T142 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
+| T143 | **Ready to start** | T103 | 0 | Port GlobalUniquesTests + deferred TestGame fixtures (split from T103) |
 | T083 | **On deck** (after T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
 | T088 | **On deck** (after T087) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T080 | **On deck** (after T079) | T079, T061, T068 | 10 | Unit actions B: UnitActions, UnitActionsFromUniques |
-| T143 | **On deck** (after T103) | T103 | 0 | Port GlobalUniquesTests + deferred TestGame fixtures (split from T103) |
 | T079 | Needs-Review [Claude] | T052, T057, T063, T066, T067 | 16 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T087 | Needs-Review [Claude] | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T090 | Available (waiting on T087, T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
@@ -265,7 +264,6 @@ flowchart TD
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
-| T103 | Needs-Review [Claude] | T072, T052, T098, T097 | 3 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T088) | T086, T088, T085 | 1 | TradeEvaluation |
@@ -278,7 +276,7 @@ flowchart TD
 | C004 | Blocked | C002 | 0 | 3D military units |
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
-| T104 | Available (waiting on T102, T103, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T139 | Available (waiting on T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T140 | In-Progress [Claude] | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
-| T144 | Available (waiting on T080, T103) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
+| T144 | Available (waiting on T080) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
