@@ -81,7 +81,6 @@ flowchart TD
     T111["T111<br/>T057 review follow-ups: vote map order, unchecked sums, Beli..."]
     T115["T115<br/>Retype Tile city seams to City and move the Tile/Pathfinding..."]
     T120["T120<br/>Policy: size ratchet - maximum file length and method length..."]
-    T122["T122<br/>Policy: coverage reporting and ratchet for changed files (co..."]
     T123["T123<br/>Policy follow-up: eliminate allowlisted mutable statics (Eve..."]
     T124["T124<br/>Hardening: CityStats test coverage gaps from T062 review"]
     T125["T125<br/>Policy: harden NullForgivingTests scanner (interpolation hol..."]
@@ -282,7 +281,6 @@ flowchart TD
   T120 --> T127
   T096 --> T129
   T097 --> T129
-  T122 --> T130
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -392,7 +390,6 @@ flowchart TD
   class T111 waiting
   class T115 waiting
   class T120 done
-  class T122 review
   class T123 ready
   class T124 ready
   class T125 ready
@@ -400,7 +397,7 @@ flowchart TD
   class T127 ondeck
   class T128 ready
   class T129 waiting
-  class T130 ondeck
+  class T130 ready
 ```
 
 ## Incomplete tickets
@@ -413,11 +410,11 @@ flowchart TD
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
+| T130 | **Ready to start** | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
 | T078 | **On deck** (after T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T064 | **On deck** (after T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T126 | **On deck** (after T063, T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T127 | **On deck** (after T063) | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
-| T130 | **On deck** (after T122) | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
 | T066 | In-Progress [Claude] | T065, T060 | 46 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T046 | Available (waiting on T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T063 | Needs-Review [Claude] | T060, T062 | 38 | CityConstructions |
@@ -456,7 +453,6 @@ flowchart TD
 | T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
-| T122 | In-Review [Claude] | none | 1 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |

@@ -1256,7 +1256,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review PASS (code). Standard checks were green on b2caf80b2+T121 (1911 tests) before T063 WIP seams landed on csharp-migration; the current tip fails to build in CivilizationSeams.cs/City.cs (ICityConstructions, IUnitPromotions), unrelated to T121. Civilization.cs baseline 24 is deliberate headroom (measured 22): lower to 22 after T061/T063/T065 land.
 
 ### T122 Policy: coverage reporting and ratchet for changed files (coverlet)
-- State: In-Review [Claude]
+- State: Done
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
