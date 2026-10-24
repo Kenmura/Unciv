@@ -2,7 +2,6 @@ using Unciv.Core.Tests.Support;
 using Unciv.Logic.Battle;
 using Unciv.Logic.Map;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
-using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 
 namespace Unciv.Core.Tests.Logic.Battle;
 
@@ -382,15 +381,6 @@ public static partial class BattleSupportTests
         }
 
         [Fact]
-        public void BestAffectedTroopsTileNeedsTheEnemyCityPriorityOfT090()
-        {
-            MapUnitClass general = testGame.AddUnit("Great General", civ, testGame.GetTile(0, 0));
-
-            // TODO(T090): HeadTowardsEnemyCityAutomation.getEnemyCitiesByPriority is a seam
-            Assert.Throws<NotImplementedException>(() => GreatGeneralImplementation.GetBestAffectedTroopsTile(general));
-        }
-
-        [Fact]
         public void BestAffectedTroopsTilePrefersTheTileWithTheMostFriendlyMilitaryUnitsAround()
         {
             var general = testGame.AddUnit("Great General", civ, testGame.GetTile(0, 0));
@@ -428,10 +418,17 @@ public static partial class BattleSupportTests
         }
 
         [Fact]
-        public void TheEnemyCityPriorityStillWaitsForT090()
+        public void BestAffectedTroopsTileUsesTheEnemyCityPriorityOfTheGeneralsCiv()
         {
-            var warrior = testGame.AddUnit("Warrior", civ, testGame.GetTile(0, 0));
-            Assert.Throws<NotImplementedException>(() => BattleSeams.GetEnemyCitiesByPriority(warrior));
+            var general = testGame.AddUnit("Great General", civ, testGame.GetTile(0, 0));
+            testGame.AddCity(civ, testGame.GetTile(-4, 0));
+            testGame.AddUnit("Warrior", civ, testGame.GetTile(-1, 0));
+            testGame.AddUnit("Warrior", civ, testGame.GetTile(1, 0));
+            var city = testGame.AddCity(enemy, testGame.GetTile(4, 0));
+            civ.GetDiplomacyManager(enemy)!.DeclareWar();
+
+            Assert.Equal(GreatGeneralImplementation.GetBestAffectedTroopsTile(general, [city]), GreatGeneralImplementation.GetBestAffectedTroopsTile(general));
+            Assert.Equal(testGame.GetTile(1, 0), GreatGeneralImplementation.GetBestAffectedTroopsTile(general));
         }
 
         [Fact]

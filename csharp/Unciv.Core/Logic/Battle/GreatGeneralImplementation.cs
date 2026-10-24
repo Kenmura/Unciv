@@ -1,4 +1,6 @@
+using Unciv.Logic.Automation.Unit;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.View;
 using CityObject = Unciv.Logic.City.City;
 using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
@@ -6,7 +8,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Logic.Battle;
 
 // Ported from core/src/com/unciv/logic/battle/GreatGeneralImplementation.kt: getGreatGeneralBonus (T081: BattleDamage.getGeneralModifiers
-// calls it) and getBestAffectedTroopsTile (T082). HeadTowardsEnemyCityAutomation.getEnemyCitiesByPriority is the BattleSeams seam (TODO(T090)).
+// calls it) and getBestAffectedTroopsTile (T082). getEnemyCitiesByPriority(GameView(gameInfo, civ).getMapUnitView(general)) is HeadTowardsEnemyCityAutomation (T090).
 public static class GreatGeneralImplementation
 {
     private sealed record GeneralBonusData(MapUnitClass General, int Radius, string Filter, int Bonus)
@@ -62,10 +64,11 @@ public static class GreatGeneralImplementation
     /// Used by SpecificUnitAutomation.automateGreatGeneral.
     /// </summary>
     public static TileClass? GetBestAffectedTroopsTile(MapUnitClass general) =>
-        GetBestAffectedTroopsTile(general, BattleSeams.GetEnemyCitiesByPriority(general));
+        GetBestAffectedTroopsTile(general, HeadTowardsEnemyCityAutomation.GetEnemyCitiesByPriority(
+            new GameView((GameInfo)general.Civ.GameInfo, general.Civ).GetMapUnitView(general)));
 
     /// <param name="general"></param>
-    /// <param name="enemyCitiesByPriority">Kotlin <c>getEnemyCitiesByPriority(GameView(..).getMapUnitView(general))</c>, which is a seam (TODO(T090)): injectable so the scoring is testable</param>
+    /// <param name="enemyCitiesByPriority">Kotlin <c>getEnemyCitiesByPriority(GameView(..).getMapUnitView(general))</c>, injectable so the scoring is testable</param>
     internal static TileClass? GetBestAffectedTroopsTile(MapUnitClass general, IEnumerable<CityObject> enemyCitiesByPriority)
     {
         // Normally we have only one Unique here. But a mix is not forbidden,

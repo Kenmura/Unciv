@@ -14,7 +14,7 @@ namespace Unciv.Logic.Map.MapUnit.Actions;
 
 // Ported from core/src/com/unciv/logic/map/mapunit/actions/UnitActions.kt (T080).
 // Stripped: the purity annotations. UI concerns (UncivGame.settings, GUI.getWorldScreen) dropped.
-// UnitAutomation calls (automatedExplore/automateUnitMoves) go through the UnitAutomation seam (T090).
+// UnitAutomation calls (automatedExplore/automateUnitMoves) go through the UnitAutomation seam (T156).
 
 /// <summary>
 /// Manages creation of <see cref="UnitAction"/> instances.
