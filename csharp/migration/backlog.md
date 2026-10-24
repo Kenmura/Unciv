@@ -213,7 +213,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified `COMMANDS.md` and `Unciv.Core/Commands/*`. The design cleanly separates pure `Validate` and deterministic `Apply`, keeps actor identity out of the untrusted payload, round-trips in-process `Submit` through the wire envelope to guarantee parity, faults the processor on unexpected `Apply` exceptions, and preserves lockstep capability via ordered `Replay` with contiguous sequence checking. Re-ran Gate (10/10 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 228/228 passed).
 
 ### T017 JVM hash codes and state-based randomness helpers
-- State: Available
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T01:22:44Z
 - Depends: T010
 - Source: core/src/com/unciv/utils/Randomness.kt (`hashOf`, `withHash`, `pseudoRandomUuid`, rest of the file); `GameContext.stateBasedRandom` in core/src/com/unciv/models/ruleset/unique/GameContext.kt (only the formula; `GameContext.hashCode` ports with GameContext)
 - Fixtures: none - generate golden values by running the JVM: `String.hashCode`, `Integer/Long/Float/Double/Boolean.hashCode`, `hashOf(...)`, `Random(hashOf(..)).nextInt()` for several inputs (java in `dotnet-dev`, kotlin-stdlib jar on the classpath)
