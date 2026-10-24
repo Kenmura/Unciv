@@ -863,13 +863,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review notes (adversarial review, Opus subagent): parity clean; requested tests for prize-ship seed (int-wrapping), barbarian recapture popup, uncapturable civilian, no-worker settler, moveThroughTile capture, embark checks: all added. Not covered, accepted: melee escort check in TargetHelper (needs escort fixtures), nuke branch (T083 seam), SpawnCapturedUnit relocation capture, AirInterception tails (T083).
 
 ### T083 Battle C: Battle, Nuke
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T081, T082, T052, T064, T068, T079, T035
 - Source: core/src/com/unciv/logic/battle/Battle.kt, Nuke.kt
 - Fixtures: tests/src/com/unciv/logic/battle/BattleTest.kt
 - Deliverables: csharp/Unciv.Core/Logic/Battle/Battle.cs, Nuke.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~BattleTests`
-- Claimed:
+- Claimed: 2026-10-24T17:35Z
 - Notes: Created by the backlog audit. ~1.2k LOC (Battle.kt 883): delegate the brief. Uses UnitActionsPillage (T079), CityConquestFunctions (T064), DeclareWar (T068), UniqueTriggerActivation (T052); NextTurnAutomation.valueCityStateAlliance is a TODO(T094) seam; UncivGame/worldScreen/tutorial-task lines are UI and dropped. Attack order and RNG draw order are game state. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
   - T082: MapUnit.moveThroughTile now calls BattleUnitCapture.CaptureCivilianUnit, which reaches BattleSeams (triggerDefeatUniques, destroyIfDefeated of a defeated civ) that throw until T083: replace the seams and re-verify ordinary movement onto enemy civilians. Also move getMapCombatantOfTile and DamageDealt into Battle.
 
