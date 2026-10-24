@@ -1,6 +1,6 @@
 # T121 coupling ratchet baseline (shrink-only). See CouplingRatchetTests.cs. Humans LOWER numbers or delete lines; never raise.
 # Format: path|distinct Unciv namespaces depended on. Limit for unlisted files: 12.
-# Civilization.cs is actively growing (T061/T063/T065 ports): cap is 2 above today's 22 so those rebases do not collide; lower it afterwards.
+# T127: Civilization.cs set to the measured value (24) after T061/T063/T065 landed; no headroom.
 Unciv.Core/Logic/Civilization/Civilization.cs|24
 Unciv.Core/Logic/Civilization/Managers/TechManager.cs|14
 Unciv.Core/Logic/City/CityConstructions.cs|14

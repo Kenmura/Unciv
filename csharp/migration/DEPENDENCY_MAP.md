@@ -164,7 +164,7 @@ flowchart TD
   class T115 prog
   class T123 ready
   class T125 ready
-  class T127 prog
+  class T127 review
   class T143 done
   class T152 done
   class T154 waiting
@@ -220,7 +220,7 @@ xychart-beta
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
-| T127 | In-Progress [Claude] | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
+| T127 | Needs-Review [Claude] | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | Available (waiting on T094) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
 | T158 | In-Progress [Claude] | T085, T063 | 0 | ConstructionAutomation (split from T091) |
