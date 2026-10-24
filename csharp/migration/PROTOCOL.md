@@ -96,7 +96,12 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 4. Run the ticket's Gate command, then the Standard checks (see Environment). Both must exit 0.
 5. Set `State` to `Needs-Review [You]`, fill `Notes` (deviations, assumptions, semantic traps), commit `migration: implement T### [You]`, and publish.
 
-### Review
+### Review (Multi-Persona Adversarial Review)
+
+All reviews must apply the multi-persona adversarial review skill ([`csharp/.agents/skills/adversarial-review/SKILL.md`](../.agents/skills/adversarial-review/SKILL.md)). A reviewer (or an isolated reviewer subagent) evaluates the changes through three distinct lenses:
+- **The Auditor (Parity & Rules):** Diff C# against Kotlin line by line for exact behavioral parity (numeric wrapping, half-up rounding, nullability, collections). Run Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test`). Enforce `BannedSymbols.txt` and determinism (seeded RNG, invariant culture, no unordered map iteration feeding state).
+- **The Adversary (Hostile Edge Cases):** Actively attempt to break the implementation with boundary inputs (`NaN`, extreme coordinates, empty maps, invalid states). Demand or write unit tests covering failure modes.
+- **The Pragmatist (Simplicity & Maintainability):** Eliminate premature abstractions and unnecessary architectural bloat (YAGNI). Ensure clean integration and maintainable tests.
 
 1. Diff the C# against the Kotlin line by line for behavioural fidelity: numeric types, rounding, null handling, ordering, equality/hash semantics, mutability, serialization names.
 2. **Determinism checklist** – confirm each of these, or reject:

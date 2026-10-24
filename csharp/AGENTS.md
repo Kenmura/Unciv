@@ -9,6 +9,7 @@ Run all three, inside `dotnet-dev`, from your own worktree's `csharp/`:
     dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test
 
 If `dotnet format` complains, run `dotnet format` (no flag) and review the diff. It must touch only your files.
+Review tickets using the multi-persona adversarial review skill (`.agents/skills/adversarial-review/SKILL.md`): apply **The Auditor**, **The Adversary**, and **The Pragmatist** lenses before passing.
 When marking a ticket `Done` on passing review, publish and push progress to remote:
 
     git push origin csharp-migration
