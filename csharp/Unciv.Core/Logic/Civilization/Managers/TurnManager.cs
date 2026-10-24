@@ -244,10 +244,13 @@ public class TurnManager(Civilization civInfo)
 
         var random = civInfo.State.StateBasedRandom("TurnManager.doRevoltSpawn");
         int rebelCount = 1 + (random.NextInt(100 + (20 * (civInfo.Cities.Count - 1))) / 100);
+        // Kotlin maxByOrNull: the first maximum wins; a single element is returned without calling the selector (no random draw)
         CityObject? spawnCity = null;
         int bestCityValue = 0;
-        foreach (var city in civInfo.Cities) // maxByOrNull: the first maximum wins, the selector runs once per element
+        bool onlyOneCity = civInfo.Cities.Count == 1;
+        foreach (var city in civInfo.Cities)
         {
+            if (onlyOneCity) { spawnCity = city; break; }
             int value = random.NextInt(city.Population.Population + 10);
             if (spawnCity == null || value > bestCityValue) { spawnCity = city; bestCityValue = value; }
         }

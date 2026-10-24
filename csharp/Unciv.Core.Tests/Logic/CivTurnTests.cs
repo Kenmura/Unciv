@@ -3,6 +3,7 @@ using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Trade;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.UI.Components;
 using TradeObject = Unciv.Logic.Trade.Trade;
 
@@ -304,6 +305,13 @@ public sealed class CivTurnTests
         civ.AddFlag(nameof(CivFlags.RevoltSpawning), 1);
         new TurnManager(civ).StartTurn();
         Assert.True(barbarians.Units.GetCivUnits().Any());
+        // single city: Kotlin's maxByOrNull draws nothing for it, so the first draw is the rebel count, then the unit choice
+        var replay = civ.State.StateBasedRandom("TurnManager.doRevoltSpawn");
+        replay.NextInt(100);
+        var expected = game.Ruleset.Units.Values.Where(it => it.UniqueTo == null && it.IsMelee() && it.IsLandUnit
+            && !((IHasUniques)it).HasUnique(UniqueType.CannotAttack) && it.IsBuildable(civ))
+            .Select(it => (Unit: it, Roll: replay.NextInt(1000))).MaxBy(it => it.Roll).Unit;
+        Assert.Contains(barbarians.Units.GetCivUnits(), it => it.Name == expected.Name);
         Assert.Contains(civ.Notifications, it => it.Text == "Your citizens are revolting due to very high unhappiness!");
         // StartTurn runs updateRevolts after the flags: the flag is rescheduled for a later turn
         Assert.True(civ.FlagsCountdown[nameof(CivFlags.RevoltSpawning)] >= 1);
