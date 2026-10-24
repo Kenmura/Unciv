@@ -638,13 +638,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Platform file IO behind an interface.
 
 ### T043 Record Won't-port scope
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: none
 - Source: logic/multiplayer, logic/github, logic/UncivKtor.kt, logic/files/{FileChooser,PlatformSaverLoader}.kt, utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt, models/translations/TranslationFileWriter.kt, models/skins, models/tilesets, ui tests
 - Fixtures: none
 - Deliverables: csharp/migration/backlog.md (Won't-port list), PROTOCOL.md pointer
 - Gate: `n/a (docs only)`
-- Claimed:
+- Claimed: 2026-10-24T02:01:45Z
 - Notes: Docs-only ticket. Review each entry before listing: logic/files/UncivFiles and MapSaver, FileConversions, IMediaFinder may still be needed for save/load and are NOT on this list; handle them in the Phase E tickets.
 
 ### Planned (not yet ticketed)
