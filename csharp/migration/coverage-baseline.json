@@ -23,13 +23,20 @@
     "Unciv.Core/Json/UncivJson.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Json/Vector2Converter.cs": {"branch": 75.0, "line": 88.89},
     "Unciv.Core/Logic/BackwardCompatibility.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Logic/Battle/AirInterception.cs": {"branch": 50.0, "line": 51.8},
+    "Unciv.Core/Logic/Battle/AttackEvent.cs": {"branch": 83.33, "line": 100.0},
+    "Unciv.Core/Logic/Battle/AttackParticipant.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Logic/Battle/AttackRecorder.cs": {"branch": 93.33, "line": 100.0},
     "Unciv.Core/Logic/Battle/AttackableTile.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/Battle/BattleDamage.cs": {"branch": 77.44, "line": 88.57},
     "Unciv.Core/Logic/Battle/BattleSeams.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Logic/Battle/BattleUnitCapture.cs": {"branch": 72.86, "line": 85.27},
     "Unciv.Core/Logic/Battle/CityCombatant.cs": {"branch": 94.44, "line": 90.74},
-    "Unciv.Core/Logic/Battle/GreatGeneralImplementation.cs": {"branch": 88.89, "line": 96.97},
+    "Unciv.Core/Logic/Battle/DamageDealt.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Logic/Battle/GreatGeneralImplementation.cs": {"branch": 92.5, "line": 98.33},
     "Unciv.Core/Logic/Battle/ICombatant.cs": {"branch": 85.71, "line": 95.83},
     "Unciv.Core/Logic/Battle/MapUnitCombatant.cs": {"branch": 66.67, "line": 87.5},
+    "Unciv.Core/Logic/Battle/TargetHelper.cs": {"branch": 75.93, "line": 84.0},
     "Unciv.Core/Logic/City/City.cs": {"branch": 83.01, "line": 89.7},
     "Unciv.Core/Logic/City/CityConstructions.cs": {"branch": 74.06, "line": 82.93},
     "Unciv.Core/Logic/City/CityEspionageManager.cs": {"branch": 100.0, "line": 95.24},
@@ -119,7 +126,7 @@
     "Unciv.Core/Logic/Map/MapSize.cs": {"branch": 92.05, "line": 95.27},
     "Unciv.Core/Logic/Map/MapUnit/Actions/UnitActionModifiers.cs": {"branch": 100.0, "line": 0.0},
     "Unciv.Core/Logic/Map/MapUnit/MapUnit.Json.cs": {"branch": 94.72, "line": 99.57},
-    "Unciv.Core/Logic/Map/MapUnit/MapUnit.cs": {"branch": 81.89, "line": 89.95},
+    "Unciv.Core/Logic/Map/MapUnit/MapUnit.cs": {"branch": 83.07, "line": 90.82},
     "Unciv.Core/Logic/Map/MapUnit/MapUnitCache.cs": {"branch": 92.86, "line": 100.0},
     "Unciv.Core/Logic/Map/MapUnit/Movement/MovementCost.cs": {"branch": 79.17, "line": 90.74},
     "Unciv.Core/Logic/Map/MapUnit/Movement/PathsToTilesWithinTurn.cs": {"branch": 100.0, "line": 92.0},
@@ -302,6 +309,7 @@
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0}
   },
   "excused": {
+    "Unciv.Core/Logic/Battle/AirInterception.cs": "the interception damage/XP and notification tails sit behind Battle.takeDamage/addXp (BattleSeams, T083); T083 wires them and tests the rest",
     "Unciv.Core/Logic/Civilization/Diplomacy/CityStateFunctions.cs": "election rigging, diplomatic marriage, worker tribute, the military part of tribute willingness and the in-border unit checks need a TileMap, spies and units: TestGame fixtures (T072); the great-person/military-gift paths are blocked on NextTurnAutomation (T094) and CityCombatant (T081)",
     "Unciv.Core/Logic/Civilization/Managers/UnitManager.cs": "T099 only retargets a TODO marker comment; the file keeps T066 coverage (T104 final sweep owns it)"
   }

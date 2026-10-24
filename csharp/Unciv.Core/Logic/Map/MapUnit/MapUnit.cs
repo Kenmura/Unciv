@@ -24,7 +24,6 @@ namespace Unciv.Logic.Map.MapUnits;
 // - getMovementString (needs UncivGame.Current.settings number format: UI), Timers.timeThis profiling, the @Readonly/@Cache/@LocalState
 //   purity annotations, VisibleForTesting.
 // - doAction's UnitAutomation calls (GameView(..).getMapUnitView): TODO(T090).
-// - moveThroughTile's BattleUnitCapture.captureCivilianUnit(MapUnitCombatant, MapUnitCombatant): TODO(T082).
 // - UniqueTriggerActivation.triggerUnique is the T052 stub (returns false).
 // - UnitActionType.value strings are UnitActionNames (TODO(T079)).
 
@@ -1100,7 +1099,7 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         // Capture Enemy Civilian Unit if you move on top of it
         if (IsMilitary() && unguardedCivilian != null && Civ.IsAtWarWith(unguardedCivilian.Civ))
         {
-            // TODO(T082): BattleUnitCapture.captureCivilianUnit(MapUnitCombatant(this), MapUnitCombatant(tile.civilianUnit!!))
+            Battle.BattleUnitCapture.CaptureCivilianUnit(new Battle.MapUnitCombatant(this), new Battle.MapUnitCombatant(tile.CivilianUnit.NotNull()));
         }
 
         var promotionUniques = tile.Neighbors
