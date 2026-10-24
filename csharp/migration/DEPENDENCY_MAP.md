@@ -357,7 +357,7 @@ flowchart TD
   class T060 done
   class T061 done
   class T062 done
-  class T063 prog
+  class T063 review
   class T064 ondeck
   class T065 review
   class T066 ondeck
@@ -428,7 +428,7 @@ flowchart TD
 | T065 | Needs-Review [Claude] | T055, T056, T060 | 51 | MapUnit core: MapUnit, MapUnitCache |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
-| T063 | In-Progress [Claude] | T060, T062 | 38 | CityConstructions |
+| T063 | Needs-Review [Claude] | T060, T062 | 38 | CityConstructions |
 | T068 | Available (waiting on T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T069 | Available (waiting on T065, T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
