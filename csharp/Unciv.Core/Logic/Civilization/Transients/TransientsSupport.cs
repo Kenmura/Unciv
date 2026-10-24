@@ -5,7 +5,7 @@ namespace Unciv.Logic.Civilization.Transients;
 /// <summary>Kotlin <c>String.toInt()/toFloat()/toDouble()</c> and the wrapping <c>sumOf</c> the transients use (T058).</summary>
 internal static class TransientsSupport
 {
-    public static int ToInt(this string text) => int.Parse(text, NumberStyles.Integer, CultureInfo.InvariantCulture);
+    public static int ToInt(this string text) => int.Parse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
 
     public static float ToFloat(this string text) => float.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture);
 

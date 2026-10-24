@@ -137,9 +137,13 @@ public class CivConstructions : IsPartOfGameInfoSerialization
             AddFreeStatBuildings(stat, amount);
     }
 
+    /// <summary>Kotlin <c>cities.take(n)</c>, which throws for a negative count.</summary>
+    private IEnumerable<ICityState> TakeCities(int amount) =>
+        amount < 0 ? throw new ArgumentException($"Requested element count {amount} is less than zero.") : CivInfo.Cities.Take(amount);
+
     public void AddFreeStatBuildings(Stat stat, int amount)
     {
-        foreach (var city in CivInfo.Cities.Take(amount))
+        foreach (var city in TakeCities(amount))
         {
             if (freeStatBuildingsProvided.Contains(stat.ToString(), city.Id)) continue;
             var building = city.CheapestStatBuilding(stat);
@@ -169,7 +173,7 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     public void AddFreeBuildings(Building building, int amount)
     {
         var equivalentBuilding = CivInfo.GetEquivalentBuilding(building);
-        foreach (var city in CivInfo.Cities.Take(amount))
+        foreach (var city in TakeCities(amount))
         {
             if (freeSpecificBuildingsProvided.Contains(equivalentBuilding.Name, city.Id)
                 || city.ContainsBuildingOrEquivalent(building.Name)) continue;
@@ -187,7 +191,7 @@ public class CivConstructions : IsPartOfGameInfoSerialization
             .ToList();
 
         // "Gain a free [buildingName] [cityFilter]"
-        var freeBuildingsFromCiv = CivInfo.GetMatchingUniques(UniqueType.GainFreeBuildings, GameContext.IgnoreConditionalsState).ToList();
+        var freeBuildingsFromCiv = CivInfo.GetMatchingUniques(UniqueType.GainFreeBuildings, GameContext.IgnoreConditionalsState); // lazy like the Kotlin Sequence: re-evaluated per city
         foreach (var city in CivInfo.Cities)
         {
             var freeBuildingsFromCity = city.GetLocalMatchingUniques(UniqueType.GainFreeBuildings, GameContext.IgnoreConditionalsState);
