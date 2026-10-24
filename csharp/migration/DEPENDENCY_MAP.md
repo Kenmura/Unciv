@@ -88,6 +88,7 @@ flowchart TD
     T126["T126<br/>PromotionTree port (IPromotionTree seam, CityConstructions s..."]
     T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
+    T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -285,6 +286,8 @@ flowchart TD
   T065 --> T127
   T120 --> T127
   T065 --> T128
+  T096 --> T129
+  T097 --> T129
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -401,13 +404,14 @@ flowchart TD
   class T126 waiting
   class T127 ondeck
   class T128 ondeck
+  class T129 waiting
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T096 | **Ready to start** | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
+| T096 | **Ready to start** | T095, T062, T054 | 1 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
@@ -448,7 +452,7 @@ flowchart TD
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T072 | Available (waiting on T035, T052, T063, T064, T067, T068, T069, T071) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | T094 | Available (waiting on T088, T090, T091, T092, T078, T083, T035) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
-| T097 | In-Progress [Claude] | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
+| T097 | In-Progress [Claude] | T095, T062, T057 | 3 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
 | T101 | Available (waiting on T099, T094, T071) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
@@ -469,3 +473,4 @@ flowchart TD
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T122 | In-Progress [Claude] | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | T126 | Available (waiting on T063, T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
+| T129 | Available (waiting on T096, T097) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |

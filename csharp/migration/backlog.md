@@ -1315,6 +1315,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: T065 had to add City.cs|13 to CouplingRatchetBaseline.txt because City now depends on the MapUnits namespace. Remove the dependency by going through a seam (or whatever Kotlin structure allows), then lower the baseline entry to the limit (12) and delete it if it no longer exceeds.
   - T061 (Claude): City.cs now imports Unciv.Logic.City.Managers (its 3 managers), so its CouplingRatchetBaseline entry is 14, not 13; decoupling City.cs (lowering to <= 12) covers it.
 
+### T129 Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions
+- State: Available
+- Depends: T096, T097
+- Source: core/src/com/unciv/ui/objectdescriptions/NationDescriptions.kt (addUniqueBuildingsText, addUniqueImprovementsText), TechnologyDescriptions.kt (buildings/wonders enabled sections of getDescription and getCivilopediaTextLines)
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/UI/ObjectDescriptions/NationDescriptions.cs, TechnologyDescriptions.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~ObjectDescriptionsC2Tests
+- Claimed:
+- Notes: Split from T097 at claim time: those sections call Building.getShortDescription, BuildingDescriptions.addBuildingDifferences, TileImprovement.getShortDecription and ImprovementDescriptions.getDifferences, all owned by T096. T097 leaves a TODO(this ticket) at each omitted spot. Replace those TODOs, add the missing lines in Kotlin order, and extend the T097 golden tests.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
