@@ -566,7 +566,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     TestGame-based fixtures (FreeBuildingTests, production cases) remain T072.
 
 ### T064 City turn and conquest: CityTurnManager, CityConquestFunctions
-- State: Needs-Review [Claude]
+- State: In-Review [Claude]
 - Depends: T060, T061, T063
 - Source: core/src/com/unciv/logic/city/managers/CityTurnManager.kt, CityConquestFunctions.kt
 - Fixtures: tests/src/com/unciv/logic/city/CityConquestFunctionsTest.kt (TestGame-based: T072)
