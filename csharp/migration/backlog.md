@@ -617,7 +617,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Trap: HexMath.getRow truncates toward zero (faithful), so adjacent regions can share a row of tiles at negative rows; Region.Tiles overlap is Kotlin behaviour, not a bug. No Kotlin tests cover these classes; tests in Unciv.Core.Tests/Logic/Map/MapGenerator/Mapregions/MapRegionsTests.cs.
 
 ### T076 MapGenerator D: mapregions StartNormalizer, MinorCivPlacer
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T075
 - Source: core/src/com/unciv/logic/map/mapgenerator/mapregions/StartNormalizer.kt, MinorCivPlacer.kt
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
