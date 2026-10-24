@@ -221,7 +221,7 @@ flowchart TD
   class T142 done
   class T143 done
   class T144 ready
-  class T145 prog
+  class T145 review
   class T146 ondeck
   class T147 review
   class T148 waiting
@@ -233,7 +233,7 @@ flowchart TD
 
 ## Remaining tickets over time
 
-Generated from the git history of `backlog.md` (UTC; each point is the backlog as of that time, the last one the current backlog). Completed tickets (Done, Won't port) are not counted.
+Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). Completed tickets (Done, Won't port) are not counted.
 
 | Line | Meaning |
 |---|---|
@@ -244,10 +244,10 @@ Generated from the git history of `backlog.md` (UTC; each point is the backlog a
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
-    y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 33]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
+    x-axis ["24 01:32", "24 02:40", "24 03:47", "24 04:54", "24 06:01", "24 07:08", "24 08:15", "24 09:22", "24 10:29", "24 11:36", "24 12:44", "24 13:51", "24 14:58", "24 16:05", "24 17:12", "24 18:19"]
+    y-axis "Tickets" 0 --> 67
+    line [31, 32, 29, 24, 21, 21, 21, 21, 39, 56, 58, 59, 56, 46, 34, 33]
+    line [3, 5, 2, 1, 0, 0, 0, 0, 4, 3, 4, 1, 1, 5, 3, 4]
 ```
 
 ## Incomplete tickets
@@ -287,7 +287,7 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T145 | In-Progress [Claude] | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
+| T145 | Needs-Review [Claude] | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
 | T147 | Needs-Review [Claude] | T107 | 0 | MapSaver: read libGDX minimal-JSON (unquoted string values) saved maps |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

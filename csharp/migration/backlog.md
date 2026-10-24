@@ -998,6 +998,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~WorkerAutomationTests`
 - Claimed:
 - Notes: Created by the backlog audit. ~1.2k LOC. Civilization.workerAutomation (T055 seam) is TODO(T092). Tile/improvement choice order is game state. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+  - T145: port Kotlin PathfindingTests.connectRoadAction (RoadToAutomation.automateConnectRoad; asserts queued Road and non-empty automatedRoadConnectionPath) into Fixtures/Map/PathfindingFixtureTests.
 
 ### T093 PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode
 - State: Available
@@ -1010,6 +1011,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit (T040 deferred these to 'T067/T072' but neither listed them). ~1.5k LOC. Retype the seams left by City.getLandAttackPath/getAmphibiousAttackPath/getRoadPath (T060) and UnitMovement's path-cache hooks (T067) to the concrete classes. Priority queue / path tie-breaking must match Kotlin (T001); Float movement costs stay float. ALWAYS_LOG/VERBOSE_PATHFINDING_LOGS flags come from engine options (T048) or are dropped. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
   - From T060: City.getLandAttackPath/getAmphibiousAttackPath/getRoadPath/getRoadPathToAny, the three PathingMap caches (landAttackPathing, amphibiousAttackPathing, potentialRoadPathing) and City.clearCaches were NOT ported with City (PathingMap does not exist yet); add them to Logic/City/City.cs here (and TODO-free).
   - T082: TargetHelperTests (BattleSupportTests) dropped the Kotlin setUp `useAStarPathfinding = true`; re-run them with A* on when T093 lands.
+  - T145: re-run the Kotlin UnitMovementTests/PathfindingTests with A* on (Fixtures/Map/UnitMovementFixtureTests, PathfindingFixtureTests are Classic only) and port the 3 A*-only PathfindingTests cases (shortestPathEvenWhenItsWayMoreTiles, canPauseBeforeMountainsToCrossWithoutDamage, getMovementToTilesAtPosition_withNegativeMovement_ReturnsOrigin).
 
 ### T094 NextTurnAutomation and BarbarianAutomation (automation integration)
 - State: Available
@@ -1638,7 +1640,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Needs UnitActions.invokeUnitAction (T080).
 
 ### T145 Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T072
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, PathfindingTests.kt
@@ -1646,6 +1648,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~Fixtures
 - Claimed: 2026-10-24T18:15Z
 - Notes: Split from T141 at claim time (scope). Same pattern as T072: namespace Unciv.Core.Tests.Fixtures.*, [Collection("RulesetCache")], real TestGame.
+  - Implemented (Claude). Fixtures/Map/UnitMovementFixtureTests (all 25 Kotlin cases) and PathfindingFixtureTests (54 of 58) over the real TestGame, ClassicPathfinding parameter set only. Not ported: the AStarPathfinding parameter set and the 3 A*-only cases (shortestPathEvenWhenItsWayMoreTiles, canPauseBeforeMountainsToCrossWithoutDamage, getMovementToTilesAtPosition_withNegativeMovement_ReturnsOrigin): noted on T093. connectRoadAction needs RoadToAutomation: noted on T092. Kotlin quirk kept: getShortestPath_avoidsUnfriendly/DoesNotAvoidAllies assert path1.size twice (typo for path2). No engine bugs found; all pass first run.
 
 ### T146 UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack)
 - State: Available
