@@ -1,3 +1,4 @@
+using Unciv.Logic.City.Managers;
 using Unciv.Utils;
 
 namespace Unciv.Logic;
@@ -29,6 +30,9 @@ public sealed class GameClientState
 
     /// <summary><c>settings.getCollatorFromLocale()</c>: the culture-sensitive name ordering. Defaults to the invariant culture.</summary>
     public IComparer<string> Collator { get; set; } = StringComparer.InvariantCulture;
+
+    /// <summary>Test-harness hook for the unported Automation (T087), see <c>CityPopulationManager.Automation</c>. Null (the default) means "not ported".</summary>
+    internal ICityWorkAutomation? CityWorkAutomation { get; set; }
 
     /// <summary><c>settings.addCompletedTutorialTask(task)</c> without the settings file save and the UI flag.</summary>
     public bool AddCompletedTutorialTask(string tutorialTask) => TutorialTasksCompleted.Add(tutorialTask);

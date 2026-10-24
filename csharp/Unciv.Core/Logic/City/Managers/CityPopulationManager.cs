@@ -41,7 +41,14 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
 
     /// <summary>Seam for the not yet ported <c>Automation</c> (T087): tests install a stand-in. Not serialized, not cloned.</summary>
     [JsonIgnore]
-    internal ICityWorkAutomation Automation { get; set; } = CityManagerSeams.Unported;
+    internal ICityWorkAutomation Automation
+    {
+        // Kotlin CityFounder.foundCity auto-assigns population while it creates the city, so a harness (TestGame, T035) cannot install a stand-in
+        // on the instance in time: it sets GameClientState.CityWorkAutomation instead. TODO(T087): remove both with the seam.
+        get => automation ?? (city?.Civ.GameInfo as GameInfo)?.ClientState.CityWorkAutomation ?? CityManagerSeams.Unported;
+        set => automation = value;
+    }
+    private ICityWorkAutomation? automation;
 
     public Counter<string> GetNewSpecialists() => SpecialistAllocations;
 

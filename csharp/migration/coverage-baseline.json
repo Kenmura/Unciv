@@ -33,7 +33,7 @@
     "Unciv.Core/Logic/City/Managers/CityExpansionManager.cs": {"branch": 60.42, "line": 82.91},
     "Unciv.Core/Logic/City/Managers/CityFounder.cs": {"branch": 37.5, "line": 30.28},
     "Unciv.Core/Logic/City/Managers/CityManagerSeams.cs": {"branch": 100.0, "line": 66.67},
-    "Unciv.Core/Logic/City/Managers/CityPopulationManager.cs": {"branch": 90.0, "line": 94.74},
+    "Unciv.Core/Logic/City/Managers/CityPopulationManager.cs": {"branch": 89.06, "line": 95.2},
     "Unciv.Core/Logic/City/Managers/CityReligionManager.cs": {"branch": 67.42, "line": 70.9},
     "Unciv.Core/Logic/City/Managers/CityTurnManager.cs": {"branch": 83.33, "line": 92.52},
     "Unciv.Core/Logic/Civilization/CivConstructions.cs": {"branch": 54.55, "line": 64.46},
