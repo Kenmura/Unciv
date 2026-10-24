@@ -254,7 +254,7 @@ flowchart TD
   class T072 avail
   class T073 review
   class T074 avail
-  class T075 avail
+  class T075 prog
   class T076 avail
   class T077 avail
 ```
@@ -291,7 +291,7 @@ flowchart TD
 | T072 | Available | T035, T062, T063, T064, T067, T068, T069, T071 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | T073 | Needs-Review [Claude] | T039, T010, T016, T017 | MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator |
 | T074 | Available | T039, T010, T016, T017 | MapGenerator B: RiverGenerator, NaturalWonderGenerator |
-| T075 | Available | T039, T010, T016, T017 | MapGenerator C: mapregions Region, MapGenTileData, MapRegions, RegionStartFinder |
+| T075 | In-Progress [Claude] | T039, T010, T016, T017 | MapGenerator C: mapregions Region, MapGenTileData, MapRegions, RegionStartFinder |
 | T076 | Available | T075 | MapGenerator D: mapregions StartNormalizer, MinorCivPlacer |
 | T077 | Available | T075 | MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources) |
 | C001 | Blocked | C000, T006 | Godot project skeleton |

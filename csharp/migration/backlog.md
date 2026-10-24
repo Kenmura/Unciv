@@ -591,13 +591,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
 
 ### T075 MapGenerator C: mapregions Region, MapGenTileData, MapRegions, RegionStartFinder
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T039, T010, T016, T017
 - Source: core/src/com/unciv/logic/map/mapgenerator/mapregions/Region.kt, MapGenTileData.kt, MapRegions.kt, RegionStartFinder.kt
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/MapRegions/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
-- Claimed:
+- Claimed: 2026-10-24T10:32Z
 - Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
 
 ### T076 MapGenerator D: mapregions StartNormalizer, MinorCivPlacer
