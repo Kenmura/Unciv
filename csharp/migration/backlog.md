@@ -37,8 +37,8 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Review (Claude): Pass. Permutation/grad tables identical to Kotlin; algorithm line-by-line equal. Golden values independently reproduced with a Python port of the Kotlin source (5 spot-checks bit-exact). Gate 27/27 and full `dotnet test` 54/54 re-run by reviewer. Minor non-issue: `(int)Math.Floor` on NaN/huge inputs is unspecified vs Kotlin saturation; irrelevant for map-gen inputs.
 
 ### T003 Vector2 / Vector3 shims
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T00:41:41Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T00:45:16Z
 - Depends: none
 - Source: libGDX `com.badlogic.gdx.math.Vector2/Vector3` (only members used by Unciv logic code; grep `core/src/com/unciv/logic`)
 - Fixtures: none – port the used members with float semantics; test against hand-checked values
