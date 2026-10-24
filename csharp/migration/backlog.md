@@ -1572,7 +1572,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented TradeView (explicit fields instead of primary ctor: CS9107) and CivView.GetTradeView. TradeOffer.getOfferText stays unported (UI-side translation/Fonts text, see TradeOffer.cs). TradeLogic still uses the T089 evaluation seam; TradeView does not call it. Tests in ViewTests: stage/propose/retract/load-pending, live lists.
 
 ### T139 Views B leftovers: members blocked on unported engine code (battle, unit actions, build time)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T085, T082, T083, T079, T080
 - Source: core/src/com/unciv/view/MapUnitView.kt, CityView.kt, ForeignCityView.kt, core/src/com/unciv/models/ruleset/tile/TileImprovement.kt (getTurnsToBuild), core/src/com/unciv/logic/map/tile/Tile.kt (startWorkingOnImprovement, queueImprovement), core/src/com/unciv/logic/map/mapunit/MapUnit.kt (getMovementString)
 - Fixtures: none
