@@ -307,6 +307,9 @@ public readonly record struct HexCoord(int x = 0, int y = 0)
 
     public override string ToString() => $"HexCoord(x={x}, y={y})";
 
+    // Kotlin data class hashCode (31 * x + y): it feeds GameContext.hashCode, which seeds stateBasedRandom
+    public override int GetHashCode() => 31 * x + y;
+
     public static HexCoord FromString(string str)
     {
         int commaPos = str.IndexOf(',');
