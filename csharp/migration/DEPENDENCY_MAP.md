@@ -70,7 +70,6 @@ flowchart TD
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
-    T138["T138<br/>Views A leftovers: TradeView and CivView.getTradeView"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -274,7 +273,6 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T130 prog
-  class T138 review
 ```
 
 ## Incomplete tickets
@@ -323,4 +321,3 @@ flowchart TD
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T130 | In-Progress [Antigravity] | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
-| T138 | Needs-Review [Claude] | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |

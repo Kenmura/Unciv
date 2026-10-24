@@ -1507,7 +1507,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T138 Views A leftovers: TradeView and CivView.getTradeView
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T084, T086
 - Source: core/src/com/unciv/view/TradeView.kt, CivView.kt (getTradeView)
 - Fixtures: none
