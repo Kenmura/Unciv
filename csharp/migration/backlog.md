@@ -328,13 +328,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review 2 (Antigravity): Pass. Verified rework: type safety on `Send<T> where T : IEvent`, doc comments on `EventBus` specifying deviations from Kotlin hierarchy dispatch, and new discriminative tests covering cross-type registration ordering, diamond single-notification, active listener deactivation during dispatch, and filter-before-handler execution. Re-ran Gate (`~EventBusTests`, 11/11 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 391/391 passed).
 
 ### T020 MultiFilter and IdChecker
-- State: Needs-Review [Antigravity]
+- State: In-Review [Claude]
 - Depends: none
 - Source: core/src/com/unciv/logic/MultiFilter.kt, logic/IdChecker.kt
 - Fixtures: tests/src/com/unciv/logic/MultiFilterTests.kt, tests/src/com/unciv/logic/IdHelperTests.kt
 - Deliverables: csharp/Unciv.Core/Logic/MultiFilter.cs, IdChecker.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MultiFilterTests|FullyQualifiedName~IdCheckerTests`
-- Claimed: 2026-10-24T01:34:12Z
+- Claimed: 2026-10-24T01:43:44Z
 - Notes: Pure string logic; keep Kotlin Regex/string semantics exact (culture-invariant).
   - Implementer notes (Antigravity):
     - Ported `MultiFilter` (`Filter` corresponding to `multiFilter`, `GetAllSingleFilters`, `IsAnd`, `GetAndFilters`, `IsNot`, `GetNotFilter` with exact `removeSurrounding` semantics) under `Unciv.Logic`.
