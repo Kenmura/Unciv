@@ -1232,6 +1232,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: adversarial reviews keep reporting untested ported branches (T053: CanCivPassThrough/ProvidesYield/GetWorkingCity/IsLocked/ProvidesResources/UnitHeight; T054: ProductionBonusWhenRemoved/RestrictedBuildableImprovements; T073 thin RNG-stream coverage; T107, T114). Add coverlet (collector), a script that runs dotnet test with coverage in dotnet-dev and writes per-file line and branch coverage, a baseline of current coverage, and a --check mode that fails when a file's coverage drops below its baseline (ratchet; new files must reach 80% line coverage unless excused with a reason). Report the files a ticket touched in the Review step. Keep the run time reasonable (collect once per ticket, not per test run); document in PROTOCOL.md under Standard checks.
 
+### T123 Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core
+- State: Available
+- Depends: T117
+- Source: none (follow-up of T117)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Policy/MutableStaticStateAllowlist.cs entries tagged (T123) removed by converting to instance/injected state or frozen collections; non-parallel xUnit collection for Log/EventBus tests
+- Gate: dotnet test --filter FullyQualifiedName~MutableStaticStateTests
+- Claimed:
+- Notes:
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
