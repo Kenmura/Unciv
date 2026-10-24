@@ -110,7 +110,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ran Gate (16 passed) and full `dotnet test` (122 passed).
 
 ### T007 JSON layer for ported data classes (Counter, Stats, ...)
-- State: Available
+- State: In-Progress [Antigravity]
+- Claimed: 2026-10-24T00:56:07Z
 - Depends: T004, T005
 - Source: core/src/com/unciv/models/Counter.kt (`write`/`read`), libGDX Json behaviour as used by Unciv; core/src/com/unciv/json/*; core/src/com/unciv/logic/map/HexMath.kt (`HexCoord.Serializer`)
 - Fixtures: tests/src/com/unciv/logic/SerializationTests.kt (Counter round-trip); tests/src/com/unciv/logic/map/HexmathTests.kt (HexCoord JSON ser/deser); generate golden JSON by running the Kotlin code
