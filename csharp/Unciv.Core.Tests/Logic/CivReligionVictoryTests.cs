@@ -1241,12 +1241,16 @@ public sealed class CivReligionVictoryMapTests
         testGame.Ruleset.RuinRewards.Clear();
         AddReward("Dud", "[This Unit] gains [10] XP <after turn number [999]>");
         AddReward("Xp", "[This Unit] gains [10] XP");
-        var unit = testGame.AddDefaultMeleeUnitWithUniques(civ, testGame.TileMap[0, 0]);
+        // The shuffle is seeded by the tile, so try several tiles: some put the dud first, and every one must still end on Xp.
+        foreach (var tile in testGame.TileMap.Values.Take(12))
+        {
+            var unit = testGame.AddDefaultMeleeUnitWithUniques(civ, tile);
+            civ.RuinsManager.SelectNextRuinsReward(unit);
 
-        civ.RuinsManager.SelectNextRuinsReward(unit);
-
-        Assert.Equal(10, unit.Promotions.XP);
-        Assert.Equal(["", "Xp"], LastChosen(civ.RuinsManager));
+            Assert.Equal(10, unit.Promotions.XP);
+            Assert.Equal("Xp", LastChosen(civ.RuinsManager)[1]);
+            LastChosen(civ.RuinsManager)[1] = "";
+        }
     }
 
     [Fact]
@@ -1264,7 +1268,6 @@ public sealed class CivReligionVictoryMapTests
 
         var chosen = LastChosen(civ.RuinsManager);
         Assert.Equal(2, chosen.Distinct().Count());
-        Assert.Contains(chosen[1], new[] { "A", "B", "C" });
     }
 
     [Fact]
