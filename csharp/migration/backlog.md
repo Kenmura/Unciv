@@ -405,7 +405,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Post-review fix (multiplier hoisted out of loop, matches Kotlin repeat() evaluating count once) re-reviewed: pass.
 
 ### T055 Civilization core: Civilization, ExploredRegion, PopupAlert
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T034, T045, T039, T053
 - Source: core/src/com/unciv/logic/civilization/Civilization.kt, ExploredRegion.kt, PopupAlert.kt
 - Fixtures: none directly (TestGame-based: T072)
