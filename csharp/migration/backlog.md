@@ -1390,13 +1390,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From the T063 adversarial review (non-blocking findings).
 
 ### T132 T097 review follow-ups: game context for Technology unit/obsoleted filters, BaseUnit.GetDescription ruleset
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T097
 - Source: csharp/Unciv.Core/UI/ObjectDescriptions/TechnologyDescriptions.cs, BaseUnitDescriptions.cs
 - Fixtures: none
 - Deliverables: TechnologyDescriptions.cs, BaseUnitDescriptions.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~ObjectDescriptionsCTests
-- Claimed:
+- Claimed: 2026-10-24T15:02Z
 - Notes: From T097 review. (1) GetEnabledUnits and GetObsoletedObjects must take the CivilopediaContext and pass context?.GameInfo ?? civInfo?.GameInfo to IsHiddenFromCivilopedia (as GetFilteredBuildings does), pass context from GetCivilopediaTextLines; add a test with a game that disables nukes. (2) BaseUnitDescriptions.GetDescription should use the unit's own ruleset for tileResources if exposed; add a City-based test once T072/TestGame exists.
 
 ### T133 Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager
