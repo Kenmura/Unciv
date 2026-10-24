@@ -1,5 +1,6 @@
 using Unciv.Core.Tests.Support;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.View;
@@ -106,7 +107,7 @@ public class GameViewMovementHistoryTests
 
         player.ViewableTiles = new HashSet<Tile>();
         Assert.Empty(playerView.GetVisibleAttacks());
-        Assert.Equal([liveAttack, storedAttack], spectatorView.GetVisibleAttacks().ToHashSet());
+        Assert.True(new HashSet<(HexCoord, HexCoord)> { liveAttack, storedAttack }.SetEquals(spectatorView.GetVisibleAttacks()));
 
         foreach (var visibleTile in new[] { unitSource, unitTarget })
         {
@@ -132,8 +133,7 @@ public class GameViewMovementHistoryTests
         player.AttacksSinceTurnStart.Add(new Civilization.HistoricalAttackMemory("Archer", storedSource.Position, storedTarget.Position));
         player.ViewableTiles = new HashSet<Tile>();
 
-        Assert.Equal(
-            [(unitSource.Position, unitTarget.Position), (storedSource.Position, storedTarget.Position)],
-            playerView.GetVisibleAttacks().ToHashSet());
+        Assert.True(new HashSet<(HexCoord, HexCoord)> { (unitSource.Position, unitTarget.Position), (storedSource.Position, storedTarget.Position) }
+            .SetEquals(playerView.GetVisibleAttacks()));
     }
 }
