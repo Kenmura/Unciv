@@ -450,13 +450,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (Antigravity): Pass. Verified fidelity of Log facade and JavaFormat against Kotlin Log.kt and JVM String.format: correct lazy lambda evaluation, fallback raw message on mismatched format args, caller class tag extraction with Outer$Inner nested class handling, thread-N stringification, NullLogBackend and ConsoleLogBackend defaults, and restored call sites in IdChecker and Translations. Determinism verified (no wall-clock, invariant culture). Re-ran Gate (~LogTests, 8/8 passed) and Standard checks (dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test — 666/666 passed).
 
 ### T048 Engine options replacing the DebugUtils flags the rules read
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: none
 - Source: core/src/com/unciv/utils/DebugUtils.kt, and its engine users: logic/GameInfo.kt (`SIMULATE_UNTIL_TURN`), logic/city/CityStats.kt (`SUPERCHARGED`), logic/civilization/transients/CivInfoTransientCache.kt (`VISIBLE_MAP`), logic/automation/unit/CityLocationTileRanker.kt (`SETTLER_SCORES`, `SHOW_SETTLER_SCORES`), anything using `CIV_IDS_IN_EXPERIMENT_GROUP`
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Utils/EngineOptions.cs (name open), a design note in DETERMINISM.md, tests
 - Gate: `dotnet test --filter FullyQualifiedName~EngineOptionsTests`
-- Claimed: 2026-10-24T02:15:57Z
+- Claimed: 2026-10-24T02:39:00Z
 - Notes: These flags change game results (extra yields, whole-map vision, turn simulation), so a hidden mutable static breaks the "log + initial state reproduces the game" rule. Decide: an options object that is part of the game state/setup (hashed by StateHasher) and changed only through a command, or a per-process object that must be identical on all peers and is stamped into the game's start record. The UI-only flags are not ported.
   - Implementer notes (Claude): `Unciv.Logic.EngineOptions` (`VisibleMap`, `Supercharged`, `SimulateUntilTurn` + `IsSimulation(turns)`, `CivIdsInExperimentGroup` as a `LinkedHashSet`, diagnostics `ShowSettlerScores`/`SettlerScores`), `Clone()`, `IStateHashable` over the four rule-affecting values (experiment group as an unordered set; diagnostics excluded). Decision: an instance owned by the game (the GameInfo port holds it, `TODO(T046)`), in the state hash, changed through a command only; recorded as DETERMINISM.md 2.6 with the porting rule "wherever Kotlin reads `DebugUtils.X`, take the `EngineOptions` of the game". The command that sets it is not written here because it needs the GameInfo type (COMMANDS.md shape applies); `TODO(T046)` covers it. Users listed in the class remark (GameInfo, CityStats, CivInfoTransientCache, Tile.isVisible, Simulation, CityLocationTileRanker). 5 tests; Standard checks pass (build -warnaserror, format, full tests).
 
