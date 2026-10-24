@@ -512,8 +512,8 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Re-review (Claude): **Pass.** All four findings fixed: `Mods` is now a `LinkedHashSet` (test removes/re-adds and checks order, also through `Clone`), `NiceToString` uses HALF_UP over the shortest double digits with negative zero preserved (tie cases `0.125f`, `-2.625f`, `0.3125f`, `-14.625f`, `-0.001f` asserted), the namespace is `Unciv.Logic.Map.Tiles`, the base ruleset default comes from `BaseRuleset.Civ_V_GnK`. Gate 6/6, Standard checks 481/481. Non-blocking follow-up for whoever touches `MapParameters` next: `NiceToString` throws `OverflowException` for |x| >= ~7.9e28 and `FormatException` for NaN/Infinity (decimal), where Java prints the full digits / `NaN` / `Infinity`. It is only `ToString` (debug output) on absurd JSON input, so it does not block. Remember for T038: `Tile` is now free as a class name in `Unciv.Logic.Map`.
 
 ### T023 Translation core (headless)
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T01:57:25Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T02:53:00Z
 - Depends: T018
 - Source: core/src/com/unciv/models/translations/Translations.kt, TranslationEntry.kt, TranslationCache.kt, TranslationFileReader.kt, TranslationExtensions.kt (`tr()` and its helpers)
 - Fixtures: tests/src/com/unciv/logic/TranslationTests.kt, tests/src/com/unciv/logic/TutorialTranslationTests.kt (only cases not requiring libGDX/assets); otherwise generate golden values
