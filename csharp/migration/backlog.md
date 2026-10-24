@@ -1409,6 +1409,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Created by T067: UnitMovement and MapUnit are concrete now. T040 left CarrierSlotMatcher/MapVisualization/MapPathing typed by seams (MapPathingSeams.cs: IGameContextUnit.MovementMemoryPositions/IsVisibleTo, IGameContextCivilization.HasExplored/CanBuildImprovementOn); retype them mechanically, keep the seam members only where another ticket still needs them. MapPathing.getPath(unit, ...) was not ported (no Kotlin caller); add it only if a caller exists.
 
+### T135 T066 review follow-ups: UnitPromotions JSON round-trip, tie-break and promotion-trigger tests
+- State: Available
+- Depends: T066
+- Source:
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Logic/Map/UnitManagerTests.cs: JSON round-trip of UnitPromotions (XP/promotions/numberOfPromotions), equal-damage citadel and equal-distance alternate-cycle tie-break cases (first extreme wins), TriggerUponPromotion/Gain/Loss tests
+- Gate: dotnet test --filter FullyQualifiedName~UnitManagerTests
+- Claimed:
+- Notes: From T066 review. Also: T126 must delete the virtual UnitPromotions.CreatePromotionTree and the TestUnitPromotions test subclass.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
