@@ -145,40 +145,40 @@ internal static class OdMapPng
         switch (colorType)
         {
             case 2: // RGB
-            {
-                var step = depth / 8;
-                var o = x * 3 * step;
-                return row[o] << 16 | row[o + step] << 8 | row[o + 2 * step];
-            }
+                {
+                    var step = depth / 8;
+                    var o = x * 3 * step;
+                    return row[o] << 16 | row[o + step] << 8 | row[o + 2 * step];
+                }
             case 6: // RGBA
-            {
-                var step = depth / 8;
-                var o = x * 4 * step;
-                return row[o] << 16 | row[o + step] << 8 | row[o + 2 * step];
-            }
+                {
+                    var step = depth / 8;
+                    var o = x * 4 * step;
+                    return row[o] << 16 | row[o + step] << 8 | row[o + 2 * step];
+                }
             case 4: // gray + alpha
-            {
-                var v = row[x * 2 * (depth / 8)];
-                return v << 16 | v << 8 | v;
-            }
+                {
+                    var v = row[x * 2 * (depth / 8)];
+                    return v << 16 | v << 8 | v;
+                }
             default: // 0 gray, 3 palette: one sample of 1..16 bits
-            {
-                int sample;
-                if (depth == 16) sample = row[x * 2];
-                else if (depth == 8) sample = row[x];
-                else
                 {
-                    var bit = x * depth;
-                    sample = (row[bit / 8] >> (8 - depth - bit % 8)) & ((1 << depth) - 1);
+                    int sample;
+                    if (depth == 16) sample = row[x * 2];
+                    else if (depth == 8) sample = row[x];
+                    else
+                    {
+                        var bit = x * depth;
+                        sample = (row[bit / 8] >> (8 - depth - bit % 8)) & ((1 << depth) - 1);
+                    }
+                    if (colorType == 3)
+                    {
+                        var o = sample * 3;
+                        return o + 2 < palette.Length ? palette[o] << 16 | palette[o + 1] << 8 | palette[o + 2] : 0;
+                    }
+                    var v = depth >= 8 ? sample : sample * 255 / ((1 << depth) - 1);
+                    return v << 16 | v << 8 | v;
                 }
-                if (colorType == 3)
-                {
-                    var o = sample * 3;
-                    return o + 2 < palette.Length ? palette[o] << 16 | palette[o + 1] << 8 | palette[o + 2] : 0;
-                }
-                var v = depth >= 8 ? sample : sample * 255 / ((1 << depth) - 1);
-                return v << 16 | v << 8 | v;
-            }
         }
     }
 

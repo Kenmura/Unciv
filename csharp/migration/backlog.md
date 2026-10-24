@@ -334,7 +334,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Reset (split into sub-tickets; re-dispatch after subs Done); was 'In-Progress [Claude]'.
 
 ### T042 OdMap import/export
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T039
 - Source: core/src/com/unciv/logic/map/OdMapExport.kt, OdMapImport.kt, OdTerrain.kt
 - Fixtures: tests/src/com/unciv/logic/OdMapExportTests.kt, tests/src/com/unciv/logic/OdMapImportTests.kt
@@ -342,6 +342,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~OdMap`
 - Claimed: 2026-10-24T10:24Z
 - Notes: Platform file IO behind an interface.
+  - Seam: file IO behind IOdMapFile (OpenRead/OpenWrite) + OdMapPathFile; Kotlin FileHandle replaced. libGDX Pixmap/PixmapIO replaced by internal OdMapPng (RGBA8 encode, decode of all non-interlaced PNG types; Adam7 rejected with UncivShowableException). Exported PNG/zip bytes differ from libGDX output but decode to identical pixels. OdTerrain enum is a sealed class with Entries. provinces.json read via System.Text.Json + LenientJson (stands in for libGDX JsonReader). Tests: 4 import + 5 export Kotlin cases ported against the real GnK ruleset, plus extras (corrupt png, missing png, is_sea, JSON well-formedness, PNG codec). Metadata JSON string in Kotlin (raw-string quirk) yields valid JSON with map_date key; reproduced.
 
 ### T043 Record Won't-port scope
 - State: Done (full ticket: backlog-archive.md)
