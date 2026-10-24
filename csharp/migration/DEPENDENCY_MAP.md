@@ -242,6 +242,25 @@ flowchart TD
   class T154 waiting
 ```
 
+## Remaining tickets over time
+
+Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). Completed tickets (Done, Won't port) are not counted.
+
+| Line | Meaning |
+|---|---|
+| green | New: Available or Blocked, not started yet |
+| yellow | Active: In-Progress, Needs-Review or In-Review |
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
+xychart-beta
+    title "Remaining tickets"
+    x-axis ["24 01:32", "24 02:38", "24 03:44", "24 04:51", "24 05:57", "24 07:03", "24 08:10", "24 09:16", "24 10:22", "24 11:29", "24 12:35", "24 13:41", "24 14:47", "24 15:54", "24 17:00", "24 18:06"]
+    y-axis "Tickets" 0 --> 66
+    line [31, 25, 29, 24, 21, 21, 21, 21, 38, 55, 57, 60, 56, 49, 35, 36]
+    line [3, 6, 2, 2, 0, 0, 0, 0, 1, 4, 4, 0, 1, 4, 4, 5]
+```
+
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |

@@ -32,7 +32,7 @@ WRITE (each touches only the named ticket's block, verified before the file is w
   planned-clear TEXT        delete the heading-delimited non-ticket chunk whose heading line contains TEXT
   drop T###                 delete a mistakenly added ticket: only if it is Available, unclaimed, depended on by nobody
                             and the newest ticket of its prefix (ids stay dense)
-  graph                     regenerate DEPENDENCY_MAP.md (also done automatically by every write command)
+  graph                     regenerate DEPENDENCY_MAP.md, with its remaining-tickets-over-time chart (also done automatically by every write command)
   renumber OLD NEW TITLE_SUBSTR [--refs T1,T2]
                             fix a duplicate id (parallel `add` calls): rename that block, update the id in --refs tickets
   publish [--origin]        git rebase csharp-migration && git push . HEAD:csharp-migration (clean tree only)
@@ -178,6 +178,90 @@ STYLES = {  # kind -> (class name, mermaid style)
 }
 
 
+STATE_LINE = re.compile(r"^(?:### ([A-Z]\d+)\b|- State:[ \t]*(\S*))", re.M)
+CHART_POINTS = 16
+NEW_COLOUR, ACTIVE_COLOUR = "#1a7f37", "#b58900"
+
+
+def count_remaining(text):
+    """(new, active) ticket counts in one version of backlog.md. Done and Won't are not counted.
+
+    new = Available or Blocked (not started); active = In-Progress, Needs-Review or In-Review.
+    """
+    new = active = 0
+    seen = None
+    for m in STATE_LINE.finditer(text):
+        if m.group(1):
+            seen = m.group(1)
+        elif seen:
+            seen = None
+            k = kind(m.group(2))
+            if k in ("Available", "Blocked"):
+                new += 1
+            elif k in ("In-Progress", "Needs-Review", "In-Review"):
+                active += 1
+    return new, active
+
+
+def backlog_history():
+    """[(unix time, new, active)] oldest first: backlog.md at every commit that touched it, plus the live file if it differs."""
+    log = git("log", "--format=%H %at", "--", BACKLOG.name, check=False)
+    commits = [l.split() for l in log.stdout.splitlines() if l.strip()][::-1]
+    if log.returncode or not commits:
+        return []
+    r = subprocess.run(["git", "-C", str(HERE), "cat-file", "--batch"], capture_output=True,
+                       input="".join(f"{h}:./{BACKLOG.name}\n" for h, _ in commits).encode())
+    if r.returncode:
+        return []
+    out, pos, points = r.stdout, 0, []
+    for _, at in commits:
+        nl = out.index(b"\n", pos)
+        head = out[pos:nl].split()
+        if len(head) != 3:  # "<spec> missing": the file did not exist at that commit
+            pos = nl + 1
+            continue
+        size = int(head[2])
+        points.append((max(int(at), points[-1][0] if points else 0),
+                       *count_remaining(out[nl + 1:nl + 1 + size].decode("utf-8", "replace"))))
+        pos = nl + 1 + size + 1
+    live = count_remaining(BACKLOG.read_text(encoding="utf-8")) if BACKLOG.exists() else None
+    if points and live and live != points[-1][1:]:
+        points.append((max(int(datetime.now(timezone.utc).timestamp()), points[-1][0]), *live))
+    return points
+
+
+def render_chart():
+    """Mermaid xychart of remaining (not Done) tickets over time: new vs active, built from git history of backlog.md."""
+    pts = backlog_history()
+    if len(pts) < 2:
+        return []
+    t0, t1 = pts[0][0], pts[-1][0]
+    width = max((t1 - t0) / CHART_POINTS, 1)
+    bins = []  # last known value in each time bin, carried forward over empty bins
+    for b in range(CHART_POINTS):
+        edge = t0 + (b + 1) * width
+        inside = [p for p in pts if p[0] <= edge + (1 if b == CHART_POINTS - 1 else 0)]
+        bins.append((int(edge), *inside[-1][1:]))
+    fmt = "%d %H:%M" if width < 86400 else "%m-%d"
+    labels = [datetime.fromtimestamp(t, timezone.utc).strftime(fmt) for t, _, _ in bins]
+    top = max(n + a for _, n, a in bins)
+    return ["## Remaining tickets over time", "",
+            "Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). "
+            "Completed tickets (Done, Won't port) are not counted.", "",
+            "| Line | Meaning |", "|---|---|",
+            f"| green | New: Available or Blocked, not started yet |",
+            f"| yellow | Active: In-Progress, Needs-Review or In-Review |", "",
+            "```mermaid",
+            '%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "' + f"{NEW_COLOUR}, {ACTIVE_COLOUR}" + '"}}}}%%',
+            "xychart-beta",
+            '    title "Remaining tickets"',
+            "    x-axis [" + ", ".join(f'"{l}"' for l in labels) + "]",
+            f'    y-axis "Tickets" 0 --> {top + 5}',
+            "    line [" + ", ".join(str(n) for _, n, _ in bins) + "]",
+            "    line [" + ", ".join(str(a) for _, _, a in bins) + "]",
+            "```", ""]
+
+
 def render_map():
     """GitHub-renderable mermaid map: every incomplete ticket plus its direct dependencies (done or not)."""
     ts = tickets()
@@ -241,7 +325,8 @@ def render_map():
         out.append(f"  classDef {cls} {style}")
     for i in shown:
         out.append(f"  class {i} {STYLES.get(state_kind(i), STYLES['Blocked'])[0]}")
-    out += ["```", "", "## Incomplete tickets", "", "| Ticket | State | Depends on | Unblocks | Title |", "|---|---|---|---|---|"]
+    out += ["```", ""] + render_chart()
+    out += ["## Incomplete tickets", "", "| Ticket | State | Depends on | Unblocks | Title |", "|---|---|---|---|---|"]
     order = sorted(open_ids, key=lambda i: (i not in ready_ids, i not in ondeck, -counts.get(i, 0), i))
     for i in order:
         t, st, d = info[i]
