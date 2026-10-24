@@ -307,8 +307,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     IGameContextCity? IGameContextTile.GetCity() => GetCity();
 
     internal Terrain GetNaturalWonder() =>
-        NaturalWonder == null ? throw new InvalidOperationException("No natural wonder exists for this tile!")
-        : Ruleset.Terrains[NaturalWonder];
+        NaturalWonder == null ? throw new InvalidOperationException("No natural wonder exists for this tile!") : Ruleset.Terrains[NaturalWonder];
 
     /// <summary>Actively observed tiles (no fog of war)</summary>
     public bool IsVisible(IGameContextCivilization player)
