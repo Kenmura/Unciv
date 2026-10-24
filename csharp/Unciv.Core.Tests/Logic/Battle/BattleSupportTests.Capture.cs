@@ -160,6 +160,86 @@ public static partial class BattleSupportTests
         }
 
         [Fact]
+        public void PrizeShipChanceUsesTheTurnAndPositionSeedWithIntWrapping()
+        {
+            foreach (int turns in new[] { 3, 2_000_000_000 }) // the second product overflows Int
+            {
+                var game = new TestGame();
+                game.MakeHexagonalMap(4);
+                var us = game.AddCiv(isPlayer: true);
+                var them = game.AddCiv(isPlayer: true);
+                us.DiplomacyFunctions.MakeCivilizationsMeet(them);
+                us.GetDiplomacyManager(them)!.DeclareWar();
+                var attacker = game.AddDefaultMeleeUnitWithUniques(us, game.GetTile(0, 0), "May capture killed [Military] units");
+                var defender = game.AddUnit("Warrior", them, game.GetTile(1, 0));
+                defender.Health = 0;
+                game.GameInfo.Turns = turns;
+                var a = new MapUnitCombatant(attacker);
+                var d = new MapUnitCombatant(defender);
+                float chance = MathF.Min(0.8f, 0.1f + (float)a.GetAttackingStrength(d) / (float)d.GetDefendingStrength(a) * 0.4f);
+                int hash = new HexCoord(1, 0).ToVector2().GetHashCode();
+                bool expected = new Unciv.Utils.GameRandom((long)unchecked(turns * hash)).NextFloat() <= chance;
+
+                Assert.Equal(expected, BattleUnitCapture.TryCaptureMilitaryUnit(a, d, defender.GetTile()));
+            }
+        }
+
+        [Fact]
+        public void BarbarianCapturedCivilianOfAKnownLivingNonEnemyOwnerGoesBackWithAPopupForHumans()
+        {
+            var barbarians = testGame.AddBarbarianCiv();
+            var owner = testGame.AddCiv();
+            attackerCiv.DiplomacyFunctions.MakeCivilizationsMeet(owner);
+            var warrior = testGame.AddUnit("Warrior", attackerCiv, testGame.GetTile(0, 0));
+            var worker = testGame.AddUnit("Worker", barbarians, testGame.GetTile(1, 0));
+            worker.OriginalOwner = owner.CivId;
+            testGame.AddCity(owner, testGame.GetTile(-3, 0));
+
+            BattleUnitCapture.CaptureCivilianUnit(new MapUnitCombatant(warrior), new MapUnitCombatant(worker), checkDefeat: false);
+
+            Assert.Equal(attackerCiv, worker.Civ);
+            var alert = Assert.Single(attackerCiv.PopupAlerts, it => it.Type == Unciv.Logic.Civilization.AlertType.RecapturedCivilian);
+            Assert.Equal(Unciv.Logic.Civilization.AlertType.RecapturedCivilian, alert.Type);
+            Assert.Equal("(1,0)", alert.Value);
+        }
+
+        [Fact]
+        public void UncapturableCivilianIsDestroyedInsteadOfCaptured()
+        {
+            var warrior = testGame.AddUnit("Warrior", attackerCiv, testGame.GetTile(0, 0));
+            var worker = testGame.AddUnit(testGame.CreateBaseUnit("Civilian", "Uncapturable").Name, defenderCiv, testGame.GetTile(1, 0));
+
+            Assert.Throws<NotImplementedException>(() =>
+                BattleUnitCapture.CaptureCivilianUnit(new MapUnitCombatant(warrior), new MapUnitCombatant(worker), checkDefeat: false));
+            Assert.True(worker.IsDestroyed);
+        }
+
+        [Fact]
+        public void CapturedSettlerWithoutAnyLandWorkerInTheRulesetIsDestroyed()
+        {
+            foreach (var name in testGame.Ruleset.Units.Values.Where(it => it.IsCivilian() && it.Name != "Settler").Select(it => it.Name).ToList())
+                testGame.Ruleset.Units.Remove(name);
+            var warrior = testGame.AddUnit("Warrior", attackerCiv, testGame.GetTile(0, 0));
+            var settler = testGame.AddUnit("Settler", defenderCiv, testGame.GetTile(1, 0));
+
+            Assert.Null(BattleUnitCapture.CaptureOrConvertToWorker(settler, attackerCiv));
+            Assert.True(settler.IsDestroyed);
+            _ = warrior;
+        }
+
+        [Fact]
+        public void MilitaryUnitMovingOntoAnUnguardedEnemyCivilianCapturesIt()
+        {
+            var warrior = testGame.AddUnit("Warrior", attackerCiv, testGame.GetTile(0, 0));
+            var worker = testGame.AddUnit("Worker", defenderCiv, testGame.GetTile(1, 0));
+            testGame.AddCity(defenderCiv, testGame.GetTile(-3, 0));
+
+            warrior.Movement.MoveToTile(testGame.GetTile(1, 0));
+
+            Assert.Equal(attackerCiv, worker.Civ);
+        }
+
+        [Fact]
         public void UncapturableDefendersAreNeverCaptured()
         {
             var capturer = testGame.AddCiv(isPlayer: true, uniques: ["When defeating a [Military] unit, earn [30] Gold and recruit it"]);
@@ -369,6 +449,53 @@ public static partial class BattleSupportTests
             Assert.Equal(new DamageDealt(4, 6), new DamageDealt(1, 2) + new DamageDealt(3, 4));
             Assert.Equal(new DamageDealt(1, 2), new DamageDealt(1, 2) + DamageDealt.None);
             Assert.Equal(new DamageDealt(int.MinValue, 0), new DamageDealt(int.MaxValue, 0) + new DamageDealt(1, 0)); // Kotlin Int overflow wraps
+        }
+    }
+
+    [Collection("RulesetCache")]
+    public class TargetHelperEmbarkTests
+    {
+        private readonly TestGame testGame = new();
+        private readonly CivilizationObject us;
+        private readonly CivilizationObject them;
+
+        public TargetHelperEmbarkTests()
+        {
+            testGame.MakeHexagonalMap(4);
+            us = testGame.AddCiv();
+            them = testGame.AddCiv();
+            us.DiplomacyFunctions.MakeCivilizationsMeet(them);
+            us.GetDiplomacyManager(them)!.DeclareWar();
+        }
+
+        [Fact]
+        public void MeleeLandUnitCannotAttackWaterTilesBeforeEmbarkingIsResearched()
+        {
+            var warrior = testGame.AddUnit("Warrior", us, testGame.GetTile(0, 0));
+            var coast = testGame.SetTileTerrain(new HexCoord(1, 0), Constants.Coast);
+            testGame.AddUnit("Trireme", them, coast);
+            us.ViewableTiles = new HashSet<Unciv.Logic.Map.Tiles.Tile> { coast };
+
+            Assert.False(TargetHelper.ContainsAttackableEnemy(coast, new MapUnitCombatant(warrior)));
+            us.Tech.UnitsCanEmbark = true;
+            Assert.True(TargetHelper.ContainsAttackableEnemy(coast, new MapUnitCombatant(warrior)));
+        }
+
+        [Fact]
+        public void EmbarkedUnitsCannotAttackWaterOrAsRanged()
+        {
+            us.Tech.UnitsCanEmbark = true;
+            var coast = testGame.SetTileTerrain(new HexCoord(0, 0), Constants.Coast);
+            var warrior = testGame.AddUnit("Warrior", us, coast);
+            Assert.True(warrior.IsEmbarked());
+            var waterTile = testGame.SetTileTerrain(new HexCoord(1, 0), Constants.Coast);
+            testGame.AddUnit("Trireme", them, waterTile);
+            testGame.AddUnit("Warrior", them, testGame.GetTile(0, 1));
+            us.ViewableTiles = new HashSet<Unciv.Logic.Map.Tiles.Tile> { waterTile, testGame.GetTile(0, 1) };
+            var combatant = new MapUnitCombatant(warrior);
+
+            Assert.False(TargetHelper.ContainsAttackableEnemy(waterTile, combatant));
+            Assert.True(TargetHelper.ContainsAttackableEnemy(testGame.GetTile(0, 1), combatant));
         }
     }
 }
