@@ -394,7 +394,7 @@ flowchart TD
   class T103 waiting
   class T104 waiting
   class T106 waiting
-  class T107 review
+  class T107 done
   class T108 ready
   class T108 ready
 ```
@@ -437,9 +437,8 @@ flowchart TD
 | T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T041 | In-Progress [Claude] | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 10 | MapGenerator pipeline (audit existing partial work first) |
 | T099 | Available (waiting on T041, T046, T061, T066, T078) | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
-| T107 | Needs-Review [Claude] | T098, T039, T053, T054 | 9 | TileMap and Tile JSON wiring, MapSaver round trips |
 | T080 | Available (waiting on T079, T061, T068) | T079, T061, T068 | 8 | Unit actions B: UnitActions, UnitActionsFromUniques |
-| T100 | Available (waiting on T071, T107) | T071, T098, T107 | 8 | Save/load B: UncivFiles |
+| T100 | Available (waiting on T071) | T071, T098, T107 | 8 | Save/load B: UncivFiles |
 | T091 | Available (waiting on T090, T080, T063) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080, T035) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
@@ -452,7 +451,7 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T067, T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
-| T102 | Available (waiting on T101, T100, T072, T107) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
+| T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T103 | Available (waiting on T072, T052, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T106 | Available (waiting on T063, T066, T052, T057, T062) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
