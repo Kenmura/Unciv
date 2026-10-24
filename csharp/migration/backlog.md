@@ -1393,13 +1393,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review round 1 fixes: baseline regenerated on rebased tree (--update-baseline --all now regenerates incl. lowering); added --since REV for reviewers; skip run when no changed .cs; nonexistent file arg errors. Lost coverage tracked by the follow-up ticket just added.
 
 ### T123 Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T117
 - Source: none (follow-up of T117)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Policy/MutableStaticStateAllowlist.cs entries tagged (T123) removed by converting to instance/injected state or frozen collections; non-parallel xUnit collection for Log/EventBus tests
 - Gate: dotnet test --filter FullyQualifiedName~MutableStaticStateTests
-- Claimed:
+- Claimed: 2026-10-24T20:11Z
 - Notes:
 
 ### T124 Hardening: CityStats test coverage gaps from T062 review
