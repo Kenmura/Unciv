@@ -164,8 +164,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Target is an authoritative-server model: clients send commands, server validates/applies, broadcasts commands or diffs. Must not depend on Unciv's multiplayer code. Reviewer must check it keeps lockstep as a possible future option (pure, deterministic apply).
 
 ### T013 Style & analyzer baseline
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T00:55:38Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T01:10:12Z
 - Depends: none
 - Source: design ticket (no Kotlin). Config only: `csharp/Directory.Build.props`, `Directory.Packages.props`, `BannedSymbols.txt`, `[*.cs]` in `.editorconfig`
 - Fixtures: none
