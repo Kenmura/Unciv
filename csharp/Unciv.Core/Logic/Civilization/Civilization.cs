@@ -191,13 +191,8 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     /// <summary>Kotlin <c>var civConstructions = CivConstructions()</c>.</summary>
     public CivConstructions CivConstructions { get; set; } = new();
 
-    private IQuestManager? questManager;
-    /// <summary>TODO(T069): becomes <c>var questManager = QuestManager()</c>.</summary>
-    public IQuestManager QuestManager
-    {
-        get => Lateinit(questManager, "questManager");
-        set => questManager = value;
-    }
+    /// <summary>Kotlin <c>var questManager = QuestManager()</c>.</summary>
+    public QuestManager QuestManager { get; set; } = new();
 
     public ReligionManager ReligionManager { get; set; } = new();
 

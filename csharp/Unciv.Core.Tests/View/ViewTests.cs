@@ -43,7 +43,6 @@ public sealed class ViewTests : IDisposable
         game.TileMap.GameInfo = game;
         foreach (var civ in game.Civilizations)
         {
-            civ.QuestManager = new NoopQuestManager();
             civ.CityStateFunctions = new FakeCityStateFunctions();
         }
         game.SetTransients();
@@ -66,23 +65,6 @@ public sealed class ViewTests : IDisposable
             if (Directory.Exists(candidate)) return candidate;
         }
         throw new DirectoryNotFoundException("android/assets/jsons not found above " + AppContext.BaseDirectory);
-    }
-
-    private sealed class NoopQuestManager : Unciv.Logic.Civilization.IQuestManager
-    {
-        public Unciv.Logic.Civilization.IQuestManager Clone() => new NoopQuestManager();
-        public void SetTransients(Civilization civInfo)
-        {
-        }
-        public void JustMet(Civilization otherCiv)
-        {
-        }
-        public void BarbarianCampCleared(Civilization civ, HexCoord position)
-        {
-        }
-        public void HandleIndividualQuests()
-        {
-        }
     }
 
     private GameView ViewAs(Civilization civ, bool spectatorMode = false) => new(game, civ, spectatorMode);

@@ -3,7 +3,7 @@ using CityObject = Unciv.Logic.City.City;
 namespace Unciv.Logic.Civilization.Diplomacy;
 
 // T068: the two calls CityStateFunctions makes into classes ported later. Each is the single place that call is made; the owning ticket
-// replaces the body.
+// replaces the body (owners: T094, T081).
 internal static class CityStateSeams
 {
     /// <summary>Kotlin <c>NextTurnAutomation.getForeignCityNearCapital(capital, receivingCiv)?.city</c>.</summary>

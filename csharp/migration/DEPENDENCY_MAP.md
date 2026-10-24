@@ -282,7 +282,7 @@ flowchart TD
   class T066 done
   class T067 done
   class T068 done
-  class T069 prog
+  class T069 review
   class T070 ondeck
   class T071 waiting
   class T072 waiting
@@ -346,7 +346,7 @@ flowchart TD
 | T085 | **On deck** (after T081) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T082 | **On deck** (after T081) | T081, T046, T067, T035 | 13 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T138 | **On deck** (after T086) | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
-| T069 | In-Progress [Claude] | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
+| T069 | Needs-Review [Claude] | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T052 | Available (waiting on T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | In-Progress [Claude] | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T086 | In-Progress [Claude] | T059, T068, T057 | 15 | TradeLogic |

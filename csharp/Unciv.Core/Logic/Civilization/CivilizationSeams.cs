@@ -1,4 +1,3 @@
-using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -40,6 +39,8 @@ public interface IGameInfoState : IConstructionGameInfo
     JavaHashMap<string, Religion> Religions { get; }
     /// <summary><c>gameInfo.getCivilization(civID)</c>; throws when there is no such civilization (Kotlin <c>first</c>).</summary>
     new Civilization GetCivilization(string civId);
+    /// <summary><c>gameInfo.getCivilizationOrNull(civID)</c> (T069: QuestImplementation)</summary>
+    Civilization? GetCivilizationOrNull(string civId);
     /// <summary><c>gameInfo.getCities()</c>, in civilization then city order.</summary>
     new IEnumerable<CityObject> GetCities();
     /// <summary><c>gameInfo.getAliveCityStates()</c> (T060: City.destroyCity)</summary>
@@ -76,34 +77,6 @@ public interface IGameInfoState : IConstructionGameInfo
     void AddCompletedTutorialTask(string task);
 }
 
-/// <summary>What Civilization reads from <c>QuestManager</c>.</summary>
-public interface IQuestManager
-{
-    IQuestManager Clone();
-    void SetTransients(Civilization civInfo);
-    /// <summary><c>questManager.justMet(otherCiv)</c> (T059: DiplomacyFunctions.meetCiv)</summary>
-    void JustMet(Civilization otherCiv);
-    /// <summary><c>questManager.barbarianCampCleared(civ, position)</c> (T065: MapUnit.clearEncampment)</summary>
-    void BarbarianCampCleared(Civilization civ, HexCoord position);
-    /// <summary><c>questManager.handleIndividualQuests()</c> (T066: UnitManager.addUnit)</summary>
-    void HandleIndividualQuests();
-    /// <summary><c>questManager.handleObsoleteGlobalQuests()</c> (T046: GameInfo, via IGameContextGameInfo.HandleObsoleteGlobalQuestsOfAliveCityStates)</summary>
-    void HandleObsoleteGlobalQuests() => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
-    // T068 (CityStateFunctions)
-    /// <summary><c>questManager.getInvestmentMultiplier(donorCiv)</c></summary>
-    float GetInvestmentMultiplier(Civilization donorCiv) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
-    /// <summary><c>questManager.receivedGoldGift(donorCiv)</c></summary>
-    void ReceivedGoldGift(Civilization donorCiv) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
-    /// <summary><c>questManager.cityStateBullied(cityState, bully)</c></summary>
-    void CityStateBullied(Civilization cityState, Civilization bully) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
-    /// <summary><c>questManager.cityStateConquered(cityState, attacker)</c></summary>
-    void CityStateConquered(Civilization cityState, Civilization attacker) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
-    /// <summary><c>questManager.wasAttackedBy(attacker)</c></summary>
-    void WasAttackedBy(Civilization attacker) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
-    /// <summary><c>questManager.wantsDead(civId)</c></summary>
-    bool WantsDead(string civId) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
-}
-
 /// <summary>What Civilization reads from <c>CityStateFunctions</c>.</summary>
 public interface ICityStateFunctions
 {
@@ -136,6 +109,8 @@ public interface ICityStateFunctions
     void GiveMilitaryUnitToPatron(Civilization receivingCiv);
     /// <summary><c>cityStateFunctions.askForUnitGifts(attacker)</c></summary>
     void AskForUnitGifts(Civilization attacker);
+    /// <summary><c>cityStateFunctions.getNumThreateningBarbarians()</c> (T069: QuestManager.tryBarbarianInvasion)</summary>
+    int GetNumThreateningBarbarians();
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>

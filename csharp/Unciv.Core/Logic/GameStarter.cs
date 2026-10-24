@@ -56,7 +56,7 @@ public sealed class GameStarter
     /// <param name="currentTimeMillis">The clock reading for <c>currentTurnStartTime</c> and for a map seed of 0.</param>
     /// <param name="openMapFile">Opens <see cref="GameSetupInfo.MapFile"/> when the setup names a saved map.</param>
     /// <param name="onCivilizationCreated">Called on every new civilization before it is used: wires the managers that are not ported yet
-    /// (CityStateFunctions T068, QuestManager T069), which Kotlin's Civilization constructs itself. TODO(T068): removed when both exist.</param>
+    /// (CityStateFunctions T068, QuestManager T069, both ported), which Kotlin's Civilization constructs itself. Both managers exist now; TODO(T104): remove this hook and let the tests use the real ones.</param>
     public static GameInfo StartNewGame(GameSetupInfo gameSetupInfo, long seed, long currentTimeMillis,
         Func<string, IUncivFileHandle>? openMapFile = null, Action<CivilizationObject>? onCivilizationCreated = null) =>
         new GameStarter(gameSetupInfo, seed, currentTimeMillis, openMapFile, onCivilizationCreated).gameInfo;

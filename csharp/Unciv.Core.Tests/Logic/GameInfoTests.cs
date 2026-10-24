@@ -58,30 +58,12 @@ public sealed class GameInfoTests : IDisposable
         return game;
     }
 
-    /// <summary>QuestManager (T069) and CityStateFunctions are not ported yet: their seams get no-op stand-ins.</summary>
+    /// <summary>CityStateFunctions is not ported yet: its seam gets a no-op stand-in.</summary>
     private static void WireUnportedManagers(GameInfo game)
     {
         foreach (var civ in game.Civilizations)
         {
-            civ.QuestManager = new NoopQuestManager();
             civ.CityStateFunctions = new FakeCityStateFunctions();
-        }
-    }
-
-    private sealed class NoopQuestManager : IQuestManager
-    {
-        public IQuestManager Clone() => new NoopQuestManager();
-        public void SetTransients(Civilization civInfo)
-        {
-        }
-        public void JustMet(Civilization otherCiv)
-        {
-        }
-        public void BarbarianCampCleared(Civilization civ, HexCoord position)
-        {
-        }
-        public void HandleIndividualQuests()
-        {
         }
     }
 
@@ -272,7 +254,6 @@ public sealed class GameInfoTests : IDisposable
     {
         var game = StartedGame();
         var spectator = new Civilization(Constants.Spectator) { PlayerType = PlayerType.Human };
-        spectator.QuestManager = new NoopQuestManager();
         spectator.CityStateFunctions = new FakeCityStateFunctions();
         game.Civilizations.Add(spectator);
         spectator.GameInfo = game;
@@ -587,16 +568,10 @@ public sealed class GameInfoTests : IDisposable
     }
 
     [Fact]
-    public void QuestManagerSeam_ObsoleteQuestsAreNotPortedYet()
-    {
-        Assert.Throws<NotSupportedException>(() => ((IQuestManager)new FakeQuestManager()).HandleObsoleteGlobalQuests());
-    }
-
-    [Fact]
     public void HandleObsoleteGlobalQuestsOfAliveCityStates_ForwardsToTheCityStatesQuestManagers()
     {
         var game = StartedGame();
-        Assert.Throws<NotSupportedException>(() => ((IGameContextGameInfo)game).HandleObsoleteGlobalQuestsOfAliveCityStates());
+        ((IGameContextGameInfo)game).HandleObsoleteGlobalQuestsOfAliveCityStates(); // real QuestManagers without quests: nothing to do
     }
 
     [Fact]

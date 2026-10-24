@@ -678,26 +678,4 @@ public class CityStateFunctionsDiplomacyTurnTests
         Assert.Throws<NotImplementedException>(() => CityStateSeams.GetForeignCityNearCapital(city, a)); // TODO(T094)
         Assert.Throws<NotImplementedException>(() => CityStateSeams.GetCityDefendingStrength(city)); // TODO(T081)
     }
-
-    [Fact]
-    public void QuestManagerSeamMembersAddedForCityStates_AreNotSupportedUntilTheQuestManagerIsPorted()
-    {
-        IQuestManager bare = new BareQuestManager();
-        var (_, cs, a) = CityStateAndMajor();
-        Assert.Throws<NotSupportedException>(() => bare.GetInvestmentMultiplier(a));
-        Assert.Throws<NotSupportedException>(() => bare.ReceivedGoldGift(a));
-        Assert.Throws<NotSupportedException>(() => bare.CityStateBullied(cs, a));
-        Assert.Throws<NotSupportedException>(() => bare.CityStateConquered(cs, a));
-        Assert.Throws<NotSupportedException>(() => bare.WasAttackedBy(a));
-        Assert.Throws<NotSupportedException>(() => bare.WantsDead("A"));
-    }
-
-    private sealed class BareQuestManager : IQuestManager
-    {
-        public IQuestManager Clone() => new BareQuestManager();
-        public void SetTransients(Civilization civInfo) { }
-        public void JustMet(Civilization otherCiv) { }
-        public void BarbarianCampCleared(Civilization civ, Unciv.Logic.Map.HexCoord position) { }
-        public void HandleIndividualQuests() { }
-    }
 }

@@ -77,6 +77,7 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     public override TileMap TileMap => Map ?? throw new NotSupportedException();
     public override IGameContextCivilization GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
     Civilization IGameInfoState.GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
+    Civilization? IGameInfoState.GetCivilizationOrNull(string civId) => Civs.FirstOrDefault(it => it.CivId == civId);
     IEnumerable<CityObject> IGameInfoState.GetCities() => Civs.SelectMany(it => it.Cities);
     List<Civilization> IGameInfoState.GetAliveCityStates() => Civs.Where(it => it.IsAlive() && it.IsCityState).ToList();
     List<Civilization> IGameInfoState.GetAliveMajorCivs() => Civs.Where(it => it.IsAlive() && it.IsMajorCiv()).ToList();
@@ -140,30 +141,28 @@ internal class TestUnitManager(Civilization civInfo) : UnitManager(civInfo)
     }
 }
 
-internal sealed class FakeQuestManager : IQuestManager
+internal sealed class FakeQuestManager : QuestManager
 {
     public List<string> Met { get; } = [];
-    public void JustMet(Civilization otherCiv) => Met.Add(otherCiv.CivId);
-    public IQuestManager Clone() => throw new NotSupportedException();
-    public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
+    public override void JustMet(Civilization otherCiv) => Met.Add(otherCiv.CivId);
     public List<(string Civ, HexCoord Position)> ClearedCamps { get; } = [];
-    public void BarbarianCampCleared(Civilization civ, HexCoord position) => ClearedCamps.Add((civ.CivId, position));
+    public override void BarbarianCampCleared(Civilization civ, HexCoord position) => ClearedCamps.Add((civ.CivId, position));
     public int IndividualQuestsHandled { get; private set; }
-    public void HandleIndividualQuests() => IndividualQuestsHandled++;
+    public override void HandleIndividualQuests() => IndividualQuestsHandled++;
 
     // T068 (CityStateFunctions)
     public float InvestmentMultiplier { get; set; } = 1f;
-    public float GetInvestmentMultiplier(Civilization donorCiv) => InvestmentMultiplier;
+    public override float GetInvestmentMultiplier(Civilization donorCiv) => InvestmentMultiplier;
     public List<string> GoldGifts { get; } = [];
-    public void ReceivedGoldGift(Civilization donorCiv) => GoldGifts.Add(donorCiv.CivId);
+    public override void ReceivedGoldGift(Civilization donorCiv) => GoldGifts.Add(donorCiv.CivId);
     public List<(string CityState, string Bully)> Bullied { get; } = [];
-    public void CityStateBullied(Civilization cityState, Civilization bully) => Bullied.Add((cityState.CivId, bully.CivId));
+    public override void CityStateBullied(Civilization cityState, Civilization bully) => Bullied.Add((cityState.CivId, bully.CivId));
     public List<(string CityState, string Attacker)> Conquered { get; } = [];
-    public void CityStateConquered(Civilization cityState, Civilization attacker) => Conquered.Add((cityState.CivId, attacker.CivId));
+    public override void CityStateConquered(Civilization cityState, Civilization attacker) => Conquered.Add((cityState.CivId, attacker.CivId));
     public List<string> AttackedBy { get; } = [];
-    public void WasAttackedBy(Civilization attacker) => AttackedBy.Add(attacker.CivId);
+    public override void WasAttackedBy(Civilization attacker) => AttackedBy.Add(attacker.CivId);
     public HashSet<string> WantsDeadCivs { get; } = [];
-    public bool WantsDead(string civId) => WantsDeadCivs.Contains(civId);
+    public override bool WantsDead(string civId) => WantsDeadCivs.Contains(civId);
 }
 
 internal class FakeCityStateFunctions : ICityStateFunctions
@@ -192,6 +191,7 @@ internal class FakeCityStateFunctions : ICityStateFunctions
     public void GiveMilitaryUnitToPatron(Civilization receivingCiv) => MilitaryUnitsGiven.Add(receivingCiv.CivId);
     public List<string> UnitGiftRequests { get; } = [];
     public void AskForUnitGifts(Civilization attacker) => UnitGiftRequests.Add(attacker.CivId);
+    public int GetNumThreateningBarbarians() => 0;
 }
 
 /// <summary>

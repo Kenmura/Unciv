@@ -10,7 +10,7 @@ using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 namespace Unciv.Core.Tests.Logic;
 
 // T099: GameStarter.kt on the vanilla ruleset. The Kotlin fixtures (LoadGameTest, CityStateTypeStartBiasTests) need TestGame / the
-// unported CityStateFunctions and QuestManager (T068/T069/T072); here those two managers are stand-ins wired through onCivilizationCreated.
+// unported CityStateFunctions (T068/T072); here that manager is a stand-in wired through onCivilizationCreated.
 [Collection("RulesetCache")]
 public sealed class GameStarterTests : IDisposable
 {
@@ -41,26 +41,8 @@ public sealed class GameStarterTests : IDisposable
         public bool InitCityState(RulesetClass rulesetArg, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng) => succeed;
     }
 
-    private sealed class StubQuests : IQuestManager
-    {
-        public IQuestManager Clone() => new StubQuests();
-        public void SetTransients(Civilization civInfo)
-        {
-        }
-        public void JustMet(Civilization otherCiv)
-        {
-        }
-        public void BarbarianCampCleared(Civilization civ, HexCoord position)
-        {
-        }
-        public void HandleIndividualQuests()
-        {
-        }
-    }
-
     private static Action<Civilization> Wire(bool cityStatesSucceed = true) => civ =>
     {
-        civ.QuestManager = new StubQuests();
         civ.CityStateFunctions = new StubCityStates(cityStatesSucceed);
     };
 

@@ -795,7 +795,6 @@ public class CivilizationCoreTests
         civ.Policies.AdoptedPolicies.Add("Liberty");
         civ.Tech.FreeTechs = 2;
         civ.Tech.TechsResearched.Add("Writing");
-        civ.QuestManager = new CloneableQuests();
         civ.GoldenAges.StoredHappiness = 9;
         civ.GreatPeople.FreeGreatPeople = 3;
 
@@ -836,14 +835,6 @@ public class CivilizationCoreTests
 
     private const Unciv.Logic.Civilization.Diplomacy.CityStatePersonality CityStatePersonalityHostile = Unciv.Logic.Civilization.Diplomacy.CityStatePersonality.Hostile;
 
-    private sealed class CloneableQuests : IQuestManager
-    {
-        public IQuestManager Clone() => new CloneableQuests();
-        public void BarbarianCampCleared(Civilization civ, HexCoord position) => throw new NotSupportedException();
-        public void JustMet(Civilization otherCiv) { }
-        public void SetTransients(Civilization civInfo) { }
-        public void HandleIndividualQuests() { }
-    }
 
 }
 
