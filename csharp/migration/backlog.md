@@ -726,7 +726,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (adversarial, isolated subagent): first pass CHANGES-REQUESTED for missing tests only (diplomatic-vote win branch, "near territory" notifications, autoplay-stop branch, CheckForVictory loop). Fixed in the follow-up commit with tests for each; no parity/determinism/policy findings. Standard checks + coverage re-run after the fix and rebase: pass.
 
 ### T072 Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T035, T052, T062, T063, T064, T067, T068, T069, T071
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/city/CityTest.kt, city/managers/CityFounderTest.kt, CityExpansionManagerTest.kt, CityPopulationManagerTest.kt, CityTurnManagerWltkTest.kt, city/CityConquestFunctionsTest.kt (SPLIT at claim: city slice only; map and civilization slices are the follow-up tickets)

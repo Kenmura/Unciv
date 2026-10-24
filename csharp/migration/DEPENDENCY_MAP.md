@@ -46,7 +46,6 @@ flowchart TD
     T093["T093<br/>PathingMap: PathingMap, PathingMapCache, PathingMapAStarPath..."]
     T094["T094<br/>NextTurnAutomation and BarbarianAutomation (automation integ..."]
     T097["T097<br/>Civilopedia text model C: BaseUnit, Nation, Technology descr..."]
-    T098["T098<br/>Save/load A: FileConversions, MapSaver, IMediaFinder"]
     T099["T099<br/>GameStarter"]
     T100["T100<br/>Save/load B: UncivFiles"]
     T101["T101<br/>Simulation: Simulation, SimulationStep, MutableInt"]
@@ -130,10 +129,6 @@ flowchart TD
   T072 --> T102
   T011 --> T102
   T107 --> T102
-  T072 --> T103
-  T052 --> T103
-  T098 --> T103
-  T097 --> T103
   T102 --> T104
   T103 --> T104
   T106 --> T104
@@ -147,8 +142,6 @@ flowchart TD
   T083 --> T139
   T079 --> T139
   T080 --> T139
-  T072 --> T141
-  T072 --> T142
   C001 --> C002
   C002 --> C003
   C002 --> C004
@@ -200,7 +193,7 @@ flowchart TD
   class T067 done
   class T068 done
   class T071 done
-  class T072 review
+  class T072 done
   class T078 done
   class T079 prog
   class T080 ondeck
@@ -218,12 +211,11 @@ flowchart TD
   class T093 waiting
   class T094 waiting
   class T097 done
-  class T098 done
   class T099 done
   class T100 done
   class T101 waiting
   class T102 waiting
-  class T103 ondeck
+  class T103 ready
   class T104 waiting
   class T106 prog
   class T107 done
@@ -236,14 +228,15 @@ flowchart TD
   class T129 ready
   class T139 waiting
   class T140 ready
-  class T141 ondeck
-  class T142 ondeck
+  class T141 ready
+  class T142 ready
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T103 | **Ready to start** | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
 | T111 | **Ready to start** | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
@@ -252,19 +245,17 @@ flowchart TD
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T140 | **Ready to start** | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
+| T141 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder) |
+| T142 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | T083 | **On deck** (after T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
 | T088 | **On deck** (after T087) | T087, T086, T081, T068 | 13 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
 | T080 | **On deck** (after T079) | T079, T061, T068 | 9 | Unit actions B: UnitActions, UnitActionsFromUniques |
-| T103 | **On deck** (after T072) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
-| T141 | **On deck** (after T072) | T072 | 0 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder) |
-| T142 | **On deck** (after T072) | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | T079 | In-Progress [Claude] | T052, T057, T063, T066, T067 | 15 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T087 | In-Progress [Claude] | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
 | T090 | Available (waiting on T087, T088, T083) | T087, T088, T082, T083 | 11 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
 | T091 | Available (waiting on T090, T080) | T090, T080, T063 | 7 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T092 | Available (waiting on T091, T080) | T091, T080, T035 | 6 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
-| T072 | Needs-Review [Claude] | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 5 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
@@ -272,7 +263,7 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T089 | Available (waiting on T088) | T086, T088, T085 | 1 | TradeEvaluation |
 | T093 | Available (waiting on T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
-| T102 | Available (waiting on T101, T072) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
+| T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T106 | In-Progress [Claude] | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
