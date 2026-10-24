@@ -1,4 +1,7 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Unciv.Core.Tests")]
 
 namespace Unciv.Utils;
 
@@ -25,12 +28,12 @@ public class GameRandom
     {
     }
 
-    public GameRandom(int seed1, int seed2)
+    internal GameRandom(int seed1, int seed2)
         : this(seed1, seed2, 0, 0, ~seed1, (seed1 << 10) ^ (int)((uint)seed2 >> 4))
     {
     }
 
-    public GameRandom(int x, int y, int z, int w, int v, int addend)
+    internal GameRandom(int x, int y, int z, int w, int v, int addend)
     {
         this.x = x;
         this.y = y;
@@ -81,7 +84,7 @@ public class GameRandom
             throw new ArgumentException($"Random range is empty: [{from}, {until}).");
 
         int n = until - from;
-        if (n > 0)
+        if (n > 0 || n == int.MinValue)
         {
             int rnd;
             if ((n & -n) == n)
@@ -101,19 +104,15 @@ public class GameRandom
             }
             return from + rnd;
         }
-        else if (n == int.MinValue)
+        else
         {
-            // Range spans full 32-bit int space
+            // Range spans more than Int.MAX_VALUE
             int val;
             do
             {
                 val = NextInt();
             } while (val < from || val >= until);
             return val;
-        }
-        else
-        {
-            throw new ArgumentException($"Random range is empty: [{from}, {until}).");
         }
     }
 

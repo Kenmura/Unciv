@@ -38,6 +38,24 @@ public class GameRandomTests
     }
 
     [Fact]
+    public void NextInt_LargeRangeOverflow_MatchesKotlinGoldenValues()
+    {
+        var r0 = new GameRandom(0);
+        Assert.Equal(106586390, r0.NextInt(-1073741824, 1073741824));
+        Assert.Equal(-369141976, r0.NextInt(-1073741824, 1073741824));
+        Assert.Equal(-649160781, r0.NextInt(-2000000000, 2000000000));
+        Assert.Equal(-1454478562, r0.NextInt(int.MinValue, int.MaxValue));
+        Assert.Equal(-1464141532, r0.NextInt(int.MinValue + 1, int.MaxValue));
+
+        var r42 = new GameRandom(42);
+        Assert.Equal(-587733491, r42.NextInt(-1073741824, 1073741824));
+        Assert.Equal(-203452384, r42.NextInt(-1073741824, 1073741824));
+        Assert.Equal(-408207414, r42.NextInt(-2000000000, 2000000000));
+        Assert.Equal(-112774692, r42.NextInt(int.MinValue, int.MaxValue));
+        Assert.Equal(1162768683, r42.NextInt(int.MinValue + 1, int.MaxValue));
+    }
+
+    [Fact]
     public void Seed42_NextFloat_MatchesKotlinGoldenValues()
     {
         var r = new GameRandom(42);

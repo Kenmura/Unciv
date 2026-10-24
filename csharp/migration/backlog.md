@@ -146,8 +146,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ran Gate (`~Json`, 25 tests) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 217/217. Depends on T006's `KotlinMath` (published, Needs-Review).
 
 ### T010 Seeded deterministic RNG
-- State: In-Progress [Antigravity]
-- Claimed: 2026-10-24T01:15:39Z
+- State: Needs-Review [Antigravity]
+- Claimed: 2026-10-24T01:15:20Z
 - Depends: none
 - Source: kotlin.random.Random (XorWow, as used via `Random(seed)` across core/src, 29 import sites), plus the one `java.util.Random` use (grep it)
 - Fixtures: none – generate golden sequences by running Kotlin `Random(seed)` for several seeds and calls (`nextInt`, `nextInt(bound)`, `nextInt(range)`, `nextFloat`, `nextDouble`, `nextBoolean`)
@@ -164,6 +164,11 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     1. **Must fix:** `NextInt(from, until)` mishandles the `until - from` int overflow cases. Kotlin: `if (n > 0 || n == Int.MIN_VALUE)` uses the normal path (for `n == Int.MIN_VALUE`, `n and -n == n` is true, so `nextBits(fastLog2(n)) = nextBits(31)`, then `from + rnd`); otherwise (n < 0, i.e. span > Int.MAX_VALUE) it rejection-samples `nextInt()` until `r in from until until`. The C# does the opposite: `n == int.MinValue` takes the rejection loop (wrong value) and every other negative `n` throws "Random range is empty" (Kotlin returns a value). Reproduced (temporary test, not committed). Golden values from Kotlin, each call on a fresh `Random(seed)` consumed in this order, seed 0: `nextInt(-1073741824, 1073741824)=106586390` then `nextInt(-1073741824, 1073741824)=-369141976` then `nextInt(-2000000000, 2000000000)=-649160781` then `nextInt(Int.MIN_VALUE, Int.MAX_VALUE)=-1454478562` then `nextInt(Int.MIN_VALUE+1, Int.MAX_VALUE)=-1464141532`. Seed 42 same calls: `-587733491, -203452384, -408207414, -112774692, 1162768683`. Add these as tests (sequence order matters), fix the branch (`n > 0 || n == int.MinValue` first, the empty-range check stays `until <= from`, else rejection loop), and keep `NextLong` as is (verified correct).
     2. The ticket's Fixtures list `nextInt(range)` and Unciv uses it heavily (`(1..10).random(rng)`, `Collection.random(rng)`, `shuffled(rng)`), but none of it is ported; the Notes claim "Kotlin lowercase aliases", which do not exist in the file (fine under the naming rules; just correct the note). Range/collection helpers are split out to **T016** so this ticket stays small.
     3. Note only: `GameRandom(int, int, int, int, int, int)` and `(int, int)` are public, the Kotlin equivalents are `internal`; make them `internal` (tests use `InternalsVisibleTo` or go through the public seeds) unless a test needs them.
+  - Rework notes (Antigravity):
+    1. Fixed `NextInt(from, until)` branch to `if (n > 0 || n == int.MinValue)` for power-of-two/modulo path and `else` for rejection sampling on spans > `Int.MAX_VALUE`, matching Kotlin stdlib exactly. Added `NextInt_LargeRangeOverflow_MatchesKotlinGoldenValues` verifying all 10 golden sequence values across seeds 0 and 42.
+    2. Removed mention of lowercase aliases from implementer notes.
+    3. Made `GameRandom(int, int)` and `GameRandom(int, int, int, int, int, int)` `internal` with `[assembly: InternalsVisibleTo("Unciv.Core.Tests")]`.
+    4. Ran Gate (11/11 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test`).
 
 ### T016 Kotlin random extensions (IntRange.random, Collection.random, shuffled)
 - State: Available
