@@ -249,17 +249,17 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: File access behind an interface (no libGDX FileHandle). Load order of files/mods must be deterministic and equal to Kotlin's. Implements the interfaces left by T025 (`IRulesetParameterView` via `RulesetMapView<T>`) and T027. **Implemented (Claude):** Ruleset, RulesetFile (the enum; `RulesetFile.Values` = `entries`), RulesetCache (static; JavaHashMap so Values order = Kotlin HashMap), RulesetFiles.cs (`IRulesetFolder`/`IRulesetFileSource` + Directory implementations, replacing FileHandle/Gdx.files; console mode = no global jsons folder), Utils/LinkedHashMap (ordered map for the ruleset maps), Json/LenientJson (quotes libGDX-style unquoted keys, needed by the shipped global Tutorials.json). Ruleset implements IRulesetParameterView (explicit, via covariant adapter over the ordered maps), IRulesetConstructionView, IRulesetFeatureView, IRulesetTechView, IGameContextRuleset. Also ported what the ticket needed: TileResource.GetImprovements/IsImprovedBy/SetTransients, Era.MatchesFilter, Technology.MatchesFilter, RoadStatus.Improvement, RulesetName helpers (ToRulesetName/RulesetName). **Deviations:** loading is sequential, mods in ordinal folder-name order (Kotlin: parallel, listFiles order); the load-time println dropped (no wall clock). Era.matchesSingleFilter has no UncivGame.Current.gameInfo fallback (false without a state). Fallback CityStateTypes filtering by UniqueValidator.checkUnique is the hook `Ruleset.IsUniqueValid` (default accepts all) - TODO(T036): install the validator. Not ported: getErrorList, checkCombinedModLinks (T036), allICivilopediaText/Civilopedia text types. ModOptions.updateDeprecations is empty upstream. Kotlin quirks kept: Policies.json loads before VictoryTypes.json (branch priorities only know earlier victories); removing a policy branch leaves the branch's own entry in `policies`; a policy at the same row/column as the branch (0,0 default) evicts it. No Kotlin unit test exists for the loader (ResourceTests needs TestGame, T035): tests derived by hand + a smoke load/combine of the shipped Vanilla and G&K rulesets from android/assets/jsons (RulesetLoadTests, 46 tests; they use [Collection("RulesetCache")] since the cache is static). Gate + Standard checks pass (1072 tests).
 
 ### T035 Test-support port: TestGame helper and deferred fixtures
-- State: In-Progress [Claude]
-- Depends: T034
+- State: Blocked
+- Depends: T034, T046, T038, T039
 - Source: tests/src/com/unciv/testing/TestGame.kt
 - Fixtures: tests/src/com/unciv/testing/TestGame.kt; deferred cases from T028, T030, T033
 - Deliverables: csharp/Unciv.Core.Tests/Support/TestGame.cs, ported deferred tests
 - Gate: `dotnet test --filter FullyQualifiedName~TestGameTests`
 - Claimed: 2026-10-24T05:30Z
-- Notes: May need partial Tile/Civ stubs; if so mark Blocked and split: extend it again after T039 and the Civilization tickets. **From T027:** port `TimedUniquesTests.testConditionalTimedUniqueStrength` and `...Expires` (only `...IsTriggerable` is ported, in `TimedUniqueTests`).
+- Notes: May need partial Tile/Civ stubs; if so mark Blocked and split: extend it again after T039 and the Civilization tickets. **From T027:** port `TimedUniquesTests.testConditionalTimedUniqueStrength` and `...Expires` (only `...IsTriggerable` is ported, in `TimedUniqueTests`). **BLOCKED (Claude, 2026-10-24):** TestGame.kt constructs GameInfo, TileMap, Tile, Civilization, City, MapUnit, CityFounder, Religion; none exist in C# yet (GameInfo core is T046, Tile T038, TileMap T039, Civilization/City/MapUnit not yet ticketed). A stub would invent API the Kotlin does not have. Re-open once T046, T039 and the Civilization/City/MapUnit tickets are Done; then port TestGame plus the deferred T028/T030/T033 cases.
 
 ### T036 RulesetValidator
-- State: In-Progress [Claude]
+- State: Available
 - Depends: T034
 - Source: core/src/com/unciv/models/ruleset/validation/*.kt
 - Fixtures: tests/src/com/unciv/uniques/RulesetValidatorTests.kt, tests/src/com/unciv/uniques/UniqueErrorTests.kt, tests/src/com/unciv/uniques/AllObjectsTests.kt
