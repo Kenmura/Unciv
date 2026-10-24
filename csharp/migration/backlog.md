@@ -118,8 +118,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - T007 and later tickets that convert float to int (JSON readers) should call `KotlinMath.FloatToInt`/`DoubleToInt` (see T007 review notes).
 
 ### T007 JSON layer for ported data classes (Counter, Stats, ...)
-- State: Available
-- Claimed: 2026-10-24T01:09:05Z
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T01:14:48Z
 - Depends: T004, T005
 - Source: core/src/com/unciv/models/Counter.kt (`write`/`read`), libGDX Json behaviour as used by Unciv; core/src/com/unciv/json/*; core/src/com/unciv/logic/map/HexMath.kt (`HexCoord.Serializer`)
 - Fixtures: tests/src/com/unciv/logic/SerializationTests.kt (Counter round-trip); tests/src/com/unciv/logic/map/HexmathTests.kt (HexCoord JSON ser/deser); generate golden JSON by running the Kotlin code
