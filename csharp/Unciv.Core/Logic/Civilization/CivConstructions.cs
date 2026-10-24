@@ -51,7 +51,7 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     /// </summary>
     [JsonPropertyName("freeBuildings")]
     [JsonInclude]
-    private readonly Dictionary<string, HashSet<string>> freeBuildings = [];
+    private Dictionary<string, HashSet<string>> freeBuildings = [];
 
     /// <summary>
     /// Maps stat names to a set of cities by id that have received a building of that stat.
@@ -60,7 +60,7 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     /// </summary>
     [JsonPropertyName("freeStatBuildingsProvided")]
     [JsonInclude]
-    private readonly Dictionary<string, HashSet<string>> freeStatBuildingsProvided = [];
+    private Dictionary<string, HashSet<string>> freeStatBuildingsProvided = [];
 
     /// <summary>
     /// Maps buildings by name to a set of cities by id that have received that building.
@@ -70,7 +70,7 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     /// </summary>
     [JsonPropertyName("freeSpecificBuildingsProvided")]
     [JsonInclude]
-    private readonly Dictionary<string, HashSet<string>> freeSpecificBuildingsProvided = [];
+    private Dictionary<string, HashSet<string>> freeSpecificBuildingsProvided = [];
 
     public CivConstructions Clone()
     {

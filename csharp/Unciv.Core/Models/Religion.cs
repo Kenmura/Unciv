@@ -34,10 +34,10 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
 
     [JsonPropertyName("founderBeliefs")]
     [JsonInclude]
-    private readonly JavaHashSet<string> founderBeliefs = new();
+    private JavaHashSet<string> founderBeliefs = new();
     [JsonPropertyName("followerBeliefs")]
     [JsonInclude]
-    private readonly JavaHashSet<string> followerBeliefs = new();
+    private JavaHashSet<string> followerBeliefs = new();
 
     /// <summary>Transient.</summary>
     [JsonIgnore]

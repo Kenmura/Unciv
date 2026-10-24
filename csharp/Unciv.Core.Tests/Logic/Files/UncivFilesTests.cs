@@ -4,6 +4,7 @@ using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Logic.Trade;
@@ -237,6 +238,24 @@ public sealed class UncivFilesTests : IDisposable
             // the loaded game carries on exactly like the original
             game = loaded;
         }
+    }
+
+    [Fact]
+    public void ReligionBeliefsAndCivFreeBuildingsSurviveAJsonRoundTrip()
+    {
+        var religion = UncivJson.Deserialize<Religion>("""{"name":"R","foundingCivName":"X","founderBeliefs":["z","a"],"followerBeliefs":["q"]}""")!;
+        Assert.Contains("\"founderBeliefs\":[\"a\",\"z\"]", UncivJson.Serialize(religion), StringComparison.Ordinal);
+        Assert.Contains("\"followerBeliefs\":[\"q\"]", UncivJson.Serialize(religion), StringComparison.Ordinal);
+
+        var json = """{"freeBuildings":{"c1":["B1"]},"freeStatBuildingsProvided":{"Food":["c2"]},"freeSpecificBuildingsProvided":{"B2":["c3"]},"boughtItemsWithIncreasingPrice":{"Bank":2}}""";
+        var back = UncivJson.Serialize(UncivJson.Deserialize<CivConstructions>(json));
+        Assert.Contains("\"freeBuildings\":{\"c1\":[\"B1\"]}", back, StringComparison.Ordinal);
+        Assert.Contains("\"freeStatBuildingsProvided\":{\"Food\":[\"c2\"]}", back, StringComparison.Ordinal);
+        Assert.Contains("\"freeSpecificBuildingsProvided\":{\"B2\":[\"c3\"]}", back, StringComparison.Ordinal);
+        Assert.Contains("\"boughtItemsWithIncreasingPrice\":{\"Bank\":2}", back, StringComparison.Ordinal);
+
+        var ruins = UncivJson.Serialize(UncivJson.Deserialize<RuinsManager>("""{"lastChosenRewards":["a","b"]}"""));
+        Assert.Contains("\"lastChosenRewards\":[\"a\",\"b\"]", ruins, StringComparison.Ordinal);
     }
 
     [Theory]

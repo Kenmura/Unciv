@@ -13,7 +13,7 @@ public class RuinsManager : IsPartOfGameInfoSerialization
 {
     [JsonPropertyName("lastChosenRewards")]
     [JsonInclude]
-    private readonly List<string> lastChosenRewards;
+    private List<string> lastChosenRewards;
 
     public RuinsManager(List<string>? lastChosenRewards = null)
     {
