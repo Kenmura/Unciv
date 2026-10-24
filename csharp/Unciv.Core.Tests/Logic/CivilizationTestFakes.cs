@@ -149,6 +149,20 @@ internal sealed class FakeQuestManager : IQuestManager
     public void BarbarianCampCleared(Civilization civ, HexCoord position) => ClearedCamps.Add((civ.CivId, position));
     public int IndividualQuestsHandled { get; private set; }
     public void HandleIndividualQuests() => IndividualQuestsHandled++;
+
+    // T068 (CityStateFunctions)
+    public float InvestmentMultiplier { get; set; } = 1f;
+    public float GetInvestmentMultiplier(Civilization donorCiv) => InvestmentMultiplier;
+    public List<string> GoldGifts { get; } = [];
+    public void ReceivedGoldGift(Civilization donorCiv) => GoldGifts.Add(donorCiv.CivId);
+    public List<(string CityState, string Bully)> Bullied { get; } = [];
+    public void CityStateBullied(Civilization cityState, Civilization bully) => Bullied.Add((cityState.CivId, bully.CivId));
+    public List<(string CityState, string Attacker)> Conquered { get; } = [];
+    public void CityStateConquered(Civilization cityState, Civilization attacker) => Conquered.Add((cityState.CivId, attacker.CivId));
+    public List<string> AttackedBy { get; } = [];
+    public void WasAttackedBy(Civilization attacker) => AttackedBy.Add(attacker.CivId);
+    public HashSet<string> WantsDeadCivs { get; } = [];
+    public bool WantsDead(string civId) => WantsDeadCivs.Contains(civId);
 }
 
 internal class FakeCityStateFunctions : ICityStateFunctions
@@ -156,7 +170,8 @@ internal class FakeCityStateFunctions : ICityStateFunctions
     public int TributeWillingness { get; set; }
     public int GetTributeWillingness(Civilization demandingCiv, bool demandingWorker = false) => TributeWillingness;
     public int AllyUpdates { get; private set; }
-    public void UpdateAllyCivForCityState() => AllyUpdates++;
+    public Action? OnAllyUpdate { get; set; }
+    public void UpdateAllyCivForCityState() { AllyUpdates++; OnAllyUpdate?.Invoke(); }
     public bool CanProvideStat(Stat statType) => false;
     public List<UniqueObject> Provided { get; } = [];
     public IEnumerable<UniqueObject> GetUniquesProvidedByCityStates(UniqueType uniqueType, GameContext gameContext) => Provided.Where(it => it.Type == uniqueType);
@@ -165,6 +180,17 @@ internal class FakeCityStateFunctions : ICityStateFunctions
         foreach (var unique in GetUniquesProvidedByCityStates(uniqueType, gameContext)) op(unique);
     }
     public ResourceSupplyList GetCityStateResourcesForAlly() => new();
+    public IEnumerable<NotificationAction> GetNotificationActions() => [];
+    public List<string> Attacked { get; } = [];
+    public void CityStateAttacked(Civilization attacker) => Attacked.Add(attacker.CivId);
+    public List<Civilization> Protectors { get; } = [];
+    public List<Civilization> GetProtectorCivs() => Protectors;
+    public List<(string Civ, bool Forced)> RemovedProtectors { get; } = [];
+    public void RemoveProtectorCiv(Civilization otherCiv, bool forced = false) => RemovedProtectors.Add((otherCiv.CivId, forced));
+    public List<string> MilitaryUnitsGiven { get; } = [];
+    public void GiveMilitaryUnitToPatron(Civilization receivingCiv) => MilitaryUnitsGiven.Add(receivingCiv.CivId);
+    public List<string> UnitGiftRequests { get; } = [];
+    public void AskForUnitGifts(Civilization attacker) => UnitGiftRequests.Add(attacker.CivId);
 }
 
 /// <summary>

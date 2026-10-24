@@ -567,11 +567,12 @@ public class DiplomacyCoreTests
     }
 
     [Fact]
-    public void DeclareWar_AndTriggeredUniques_AreExplicitlyDeferred()
+    public void DeclareWar_DeclaresAPlainDirectWar()
     {
         var (_, a, b, _, _) = FourCivs();
         Meet(a, b);
-        Assert.Throws<NotImplementedException>(() => a.GetDiplomacyManager(b)!.DeclareWar()); // TODO(T068)
+        a.GetDiplomacyManager(b)!.DeclareWar(); // the war itself is covered by DiplomacyTurnTests (T068)
+        Assert.True(a.IsAtWarWith(b));
     }
 
     // ---- Demand

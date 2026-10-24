@@ -89,6 +89,19 @@ public interface IQuestManager
     void HandleIndividualQuests();
     /// <summary><c>questManager.handleObsoleteGlobalQuests()</c> (T046: GameInfo, via IGameContextGameInfo.HandleObsoleteGlobalQuestsOfAliveCityStates)</summary>
     void HandleObsoleteGlobalQuests() => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
+    // T068 (CityStateFunctions)
+    /// <summary><c>questManager.getInvestmentMultiplier(donorCiv)</c></summary>
+    float GetInvestmentMultiplier(Civilization donorCiv) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
+    /// <summary><c>questManager.receivedGoldGift(donorCiv)</c></summary>
+    void ReceivedGoldGift(Civilization donorCiv) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
+    /// <summary><c>questManager.cityStateBullied(cityState, bully)</c></summary>
+    void CityStateBullied(Civilization cityState, Civilization bully) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
+    /// <summary><c>questManager.cityStateConquered(cityState, attacker)</c></summary>
+    void CityStateConquered(Civilization cityState, Civilization attacker) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
+    /// <summary><c>questManager.wasAttackedBy(attacker)</c></summary>
+    void WasAttackedBy(Civilization attacker) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
+    /// <summary><c>questManager.wantsDead(civId)</c></summary>
+    bool WantsDead(string civId) => throw new NotSupportedException("QuestManager is not ported yet (TODO(T069))");
 }
 
 /// <summary>What Civilization reads from <c>CityStateFunctions</c>.</summary>
@@ -106,10 +119,23 @@ public interface ICityStateFunctions
     ResourceSupplyList GetCityStateResourcesForAlly();
     /// <summary>
     /// <c>cityStateFunctions.initCityState(ruleset, startingEra, usedMajorCivs, rng)</c> (T099: GameStarter.addCivilizations). Returns true if successful.
-    /// TODO(T068): CityStateFunctions implements it; the throwing default lets the existing fakes compile.
+    /// The real CityStateFunctions (T068) implements it; the throwing default lets the test fakes compile.
     /// </summary>
     bool InitCityState(Ruleset ruleset, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng) =>
-        throw new NotSupportedException("CityStateFunctions is not ported yet (TODO(T068))");
+        throw new NotSupportedException("this ICityStateFunctions does not implement InitCityState");
+    // T068 (DeclareWar, DiplomacyTurnManager); the concrete CityStateFunctions implements all of these
+    /// <summary><c>cityStateFunctions.getNotificationActions()</c></summary>
+    IEnumerable<NotificationAction> GetNotificationActions();
+    /// <summary><c>cityStateFunctions.cityStateAttacked(attacker)</c></summary>
+    void CityStateAttacked(Civilization attacker);
+    /// <summary><c>cityStateFunctions.getProtectorCivs()</c></summary>
+    List<Civilization> GetProtectorCivs();
+    /// <summary><c>cityStateFunctions.removeProtectorCiv(otherCiv, forced)</c></summary>
+    void RemoveProtectorCiv(Civilization otherCiv, bool forced = false);
+    /// <summary><c>cityStateFunctions.giveMilitaryUnitToPatron(receivingCiv)</c></summary>
+    void GiveMilitaryUnitToPatron(Civilization receivingCiv);
+    /// <summary><c>cityStateFunctions.askForUnitGifts(attacker)</c></summary>
+    void AskForUnitGifts(Civilization attacker);
 }
 
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>

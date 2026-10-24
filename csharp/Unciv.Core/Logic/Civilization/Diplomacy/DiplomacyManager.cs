@@ -16,7 +16,6 @@ namespace Unciv.Logic.Civilization.Diplomacy;
 // core/src/com/unciv/logic/civilization/diplomacy/DiplomacyManager.kt (the enums are in their own files)
 //
 // Deviations / deferred (each names its ticket):
-// - declareWar: DeclareWar, DeclareWarReason and WarType are ported with T068; DeclareWar() below throws until then.
 // - UniqueTriggerActivation.triggerUnique (TriggerUponSigningPeace / DeclaringFriendship / SigningDefensivePact): T052; the call site is
 //   TriggerUnique() below and throws until then (only reachable for civs that have such a unique).
 // - makePeaceOneSide builds a plain Trade where Kotlin builds `TradeLogic(thirdCiv, otherCiv).currentTrade`: TradeLogic's constructor
@@ -404,10 +403,9 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     public bool CanDeclareWar() => !CivInfo.IsDefeated() && !OtherCiv.IsDefeated()
         && TurnsToPeaceTreaty() == 0 && DiplomaticStatus != DiplomaticStatus.War;
 
-    /// <summary>Kotlin <c>declareWar(declareWarReason = DeclareWarReason(WarType.DirectWar))</c> = <c>DeclareWar.declareWar(this, reason)</c>.</summary>
-    public void DeclareWar() =>
-        // TODO(T068): DeclareWar.declareWar(this, declareWarReason); DeclareWarReason and WarType arrive with DeclareWar.kt.
-        throw new NotImplementedException("DiplomacyManager.DeclareWar needs DeclareWar (T068)");
+    /// <summary>Kotlin <c>declareWar(declareWarReason = DeclareWarReason(WarType.DirectWar))</c> = <c>DeclareWar.declareWar(this, reason)</c> (T068).</summary>
+    public void DeclareWar(DeclareWarReason? declareWarReason = null) =>
+        Diplomacy.DeclareWar.Declare(this, declareWarReason ?? new DeclareWarReason(WarType.DirectWar));
 
     //Used for nuke
     public bool CanAttack() => TurnsToPeaceTreaty() == 0;

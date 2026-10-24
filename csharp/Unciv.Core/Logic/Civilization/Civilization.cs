@@ -125,10 +125,13 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     public UniqueMap CivResourcesUniqueMap { get; set; } = new();
 
     private ICityStateFunctions? cityStateFunctions;
-    /// <summary>Transient. TODO(T068): becomes <c>val cityStateFunctions = CityStateFunctions(this)</c>.</summary>
+    /// <summary>
+    /// Transient. Kotlin <c>val cityStateFunctions = CityStateFunctions(this)</c>: the real <see cref="Diplomacy.CityStateFunctions"/> unless a test
+    /// (or a later seam owner) assigns another <see cref="ICityStateFunctions"/>.
+    /// </summary>
     public ICityStateFunctions CityStateFunctions
     {
-        get => Lateinit(cityStateFunctions, "cityStateFunctions");
+        get => cityStateFunctions ??= new Diplomacy.CityStateFunctions(this);
         set => cityStateFunctions = value;
     }
 
