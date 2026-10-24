@@ -265,7 +265,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Deferred from T006.
 
 ### T018 Utils: collection/string extensions, exceptions, Versioning
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T010
 - Source: core/src/com/unciv/utils/CollectionExtensions.kt, utils/StringExtensions.kt, logic/UncivExceptions.kt, logic/Versioning.kt
 - Fixtures: none - generate golden values for ordering-sensitive helpers
@@ -273,6 +273,21 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `dotnet test --filter FullyQualifiedName~UtilsTests`
 - Claimed: 2026-10-24T01:24:47Z
 - Notes: Randomness.kt is covered by T016/T017; do not duplicate. Skip Log/Concurrency/Display/DebugUtils/PlatformSpecific (platform code; Won't port, see T043).
+  - Implementer notes (Claude): `Utils/CollectionExtensions.cs` (`RandomWeighted` x2, `WithItem`/`WithoutItem` for lists and sets, `AddToMapOfSets`/`Contains` for sparse maps of sets, `GetOrPut` for sparse lists), `Utils/StringExtensions.cs` (`ToUUIDOrNull`, `IsUUID`), `Logic/UncivExceptions.cs` (`UncivShowableException`, `MissingModsException` incl. the `joinToString(limit = 5)` message, `MissingNationException`), `Logic/Versioning.cs` (`Version`, `CompatibilityVersion`, `IHasGameInfoSerializationVersion`, `GameInfoSerializationVersion`; JSON names stay Kotlin-lowercase via `JsonPropertyName`, ordering by number only, equality by all fields). 56 `UtilsTests` (Gate), full suite 341/341, build -warnaserror and format clean.
+  - Goldens: `randomWeighted` and `MissingModsException` messages from the compiled classes in the installed Unciv.jar (kotlin-stdlib 2.3.0 Random); UUID accept/reject and parsed bits from OpenJDK 25 `UUID.fromString` over 42 probe inputs. **`UUID.fromString` is lenient** and `IdChecker` (T020) relies on it via `isUUID()`: five dash-separated hex numbers of any length (`1-1-1-1-1` is a UUID), optional `+`, Unicode decimal digits (`Character.digit`), at most 36 chars, each component must fit a signed Long (`7fffffffffffffff` ok, `8000000000000000` rejected), 35-char strings with a short last component parse. Ported exactly, including the bit masks. Note it differs from `System.Guid.TryParse`; do not "simplify" to that.
+  - Semantic traps kept: `weights.sum()` adds in Float (not LINQ's double accumulation); `sum` is a Float compared to the Double draw; all-zero weights make every share NaN so the last element is returned; sets: `WithItem`/`WithoutItem` return a new `HashSet`. Mapping: NoSuchElement to InvalidOperationException, UnsupportedOperation to NotSupportedException.
+  - Not ported (listed in the file header): libGDX `Array`/`IntArray`/`LongArray` helpers, Kotlin `yield*` helpers, `isRunFromJar`, `ArrayList.removeRange(start, endExclusive)` (use `List.RemoveRange(start, count)`; an extension of the same name would be shadowed), `BitSet.forEachSetBit` (used only by pathfinding; **T040 decides the BitSet type**), `Version.toNiceString`/`UncivShowableException.getLocalizedMessage` (`TODO(T023)`: need `tr()`). `Version.Current` stands in for `UncivGame.VERSION` (4.22.13 / 1275).
+  - Concern raised: Kotlin `HashSet`/`HashMap` iterate in JVM hash order, C# ones do not; see **T044**.
+
+### T044 Iteration-order policy for java.util.HashMap / HashSet
+- State: Available
+- Depends: T017
+- Source: audit `hashSetOf(`, `HashSet<`, `hashMapOf(`, `HashMap<`, `mutableMapOf`/`mutableSetOf` are Linked in Kotlin and fine; only the explicit Hash* forms and `.toSet()`/`.groupBy` results iterated in `core/src/com/unciv/logic` matter
+- Fixtures: none - golden iteration orders from the JVM (String and Int keys, growth through several resizes, removals)
+- Deliverables: csharp/migration/DETERMINISM.md section (or T011's file) listing every Kotlin Hash* collection whose iteration order can reach state, plus, if any exist, `Utils/JavaHashSet.cs` / `JavaHashMap.cs` reproducing java.util.HashMap bucket order (spread `h ^ (h >>> 16)`, power-of-two table, resize at 0.75 load, treeification irrelevant for order), tests
+- Gate: `dotnet test --filter FullyQualifiedName~JavaHashTests`
+- Notes: Needed for bit-exact parity with Kotlin saves/map generation. Anything keyed by objects with identity hashCode is already non-deterministic in Kotlin and must be fixed (given a stable order) rather than emulated. Uses `JavaHash` (T017) for key hashes.
+
 
 ### T019 Event bus
 - State: Available
