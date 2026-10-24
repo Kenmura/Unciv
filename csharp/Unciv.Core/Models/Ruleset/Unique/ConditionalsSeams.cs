@@ -15,6 +15,8 @@ public interface IGameContextRuleset : IRulesetParameterView
 {
     /// <summary><c>ruleset.eras[eraName]?.eraNumber</c></summary>
     int? GetEraNumber(string eraName);
+    /// <summary><c>ruleset.eras[eraName]</c></summary>
+    Tech.Era? GetEra(string eraName);
     /// <summary><c>ruleset.difficulties.keys</c>, in declaration order.</summary>
     IReadOnlyList<string> DifficultyNames { get; }
     /// <summary><c>ruleset.buildings.values.filter { it.matchesFilter(filter) }.map { it.name }</c>, in ruleset order.</summary>

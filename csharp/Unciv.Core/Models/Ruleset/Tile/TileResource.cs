@@ -8,7 +8,7 @@ namespace Unciv.Models.Ruleset.Tile;
 // core/src/com/unciv/models/ruleset/tile/TileResource.kt
 // Not ported yet: getImprovements/isImprovedBy/setTransients (cache over Ruleset.tileImprovements, T034), getImprovingImprovement (Civilization/Tile, T046/T047),
 // generatesNaturallyOn (Tile/TileMap), makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034).
-public class TileResource : RulesetStatsObject, IGameResource
+public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceParameterView
 {
     private readonly Lazy<bool> isCityWide;
     private readonly Lazy<bool> isStockpiled;

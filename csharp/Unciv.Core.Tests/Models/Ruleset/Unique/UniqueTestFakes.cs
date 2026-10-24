@@ -8,7 +8,7 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 namespace Unciv.Core.Tests.Models.Ruleset.Unique;
 
 /// <summary>Minimal implementations of the game-state interfaces <see cref="GameContext"/> reads, standing in for the not yet ported classes.</summary>
-internal sealed class FakeGameInfo : IGameContextGameInfo
+internal class FakeGameInfo : IGameContextGameInfo
 {
     public int Turns { get; set; }
     public string? GameId { get; init; }
@@ -90,6 +90,7 @@ internal sealed class FakeRuleset : IGameContextRuleset
     public IRulesetMapView<object> Victories => empty.Victories;
     public IReadOnlyCollection<string> Religions => empty.Religions;
 
+    public Unciv.Models.Ruleset.Tech.Era? GetEra(string eraName) => null;
     public int? GetEraNumber(string eraName) => EraNumbers.TryGetValue(eraName, out int n) ? n : null;
     public IReadOnlyList<string> DifficultyNames => DifficultyList;
     public IEnumerable<string> GetBuildingNamesMatchingFilter(string filter) =>
@@ -100,7 +101,7 @@ internal sealed class FakeRuleset : IGameContextRuleset
         TechMap.ContainsKey(techName) ? techName == filter || filter == "all" : null;
 }
 
-internal sealed class FakeCiv(string civId, IGameContextGameInfo? gameInfo = null) : IGameContextCivilization, ILocalUniqueCacheCivilization
+internal class FakeCiv(string civId, IGameContextGameInfo? gameInfo = null) : IGameContextCivilization, ILocalUniqueCacheCivilization
 {
     public IGameContextGameInfo? GameInfo { get; } = gameInfo;
     public string CivId { get; } = civId;
@@ -188,7 +189,7 @@ internal sealed class FakeTile(HexCoord position) : IGameContextTile
     public int GetContinent() => Continent;
 }
 
-internal sealed class FakeCity(string id, FakeCiv civ, FakeTile? center = null) : IGameContextCity, ILocalUniqueCacheCity
+internal class FakeCity(string id, FakeCiv civ, FakeTile? center = null) : IGameContextCity, ILocalUniqueCacheCity
 {
     public string Id { get; } = id;
     public IGameContextCivilization Civ { get; } = civ;

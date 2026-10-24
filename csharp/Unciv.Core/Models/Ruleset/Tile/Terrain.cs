@@ -7,7 +7,7 @@ namespace Unciv.Models.Ruleset.Tile;
 
 // core/src/com/unciv/models/ruleset/tile/Terrain.kt
 // Not ported yet: displayAs (needs Ruleset, T034), getColor (engine colour type, T050), makeLink/getCivilopediaTextLines/getSortGroup/getSubCategory (Civilopedia text types, T034).
-public class Terrain : RulesetStatsObject
+public class Terrain : RulesetStatsObject, IRulesetTerrainParameterView
 {
     private readonly Lazy<bool> isRough;
     private readonly Lazy<bool> isMountain;
@@ -98,6 +98,15 @@ public class Terrain : RulesetStatsObject
     public bool IsIce => isIce.Value;
 
     public override UniqueTarget GetUniqueTarget() => UniqueTarget.Terrain;
+
+    bool IRulesetTerrainParameterView.IsBaseTerrain => Type.IsBaseTerrain();
+
+    bool IRulesetTerrainParameterView.IsTerrainFeature => Type == TerrainType.TerrainFeature;
+
+    /// <summary>Kotlin goes through the unique map (conditionals against <c>EmptyState</c>), not the unique texts.</summary>
+    bool IRulesetTerrainParameterView.HasRegionUnique =>
+        ((IHasUniques)this).HasUnique(UniqueType.RegionRequirePercentSingleType)
+        || ((IHasUniques)this).HasUnique(UniqueType.RegionRequirePercentTwoTypes);
 
     public bool MatchesFilter(string filter, GameContext? state = null, bool multiFilter = true)
     {
