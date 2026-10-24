@@ -31,7 +31,8 @@ public static partial class SpecificUnitAutomation
         var civView = new GameView((GameInfo)unit.Civ.GameInfo, unit.Civ).CivView;
         var averageTerrainStatsValue = unit.Civ.GameInfo.Ruleset.Terrains.Values
             .Where(it => it.Type == TerrainType.Land)
-            .Select(it => Automation.RankStatsValue(it, civView))
+            .Select(it => (double)Automation.RankStatsValue(it, civView))
+            .DefaultIfEmpty(double.NaN) // Kotlin Sequence<Float>.average() is a Double, NaN when empty
             .Average();
 
         foreach (var city in citiesByStatBoost)
