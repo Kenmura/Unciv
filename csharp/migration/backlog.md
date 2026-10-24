@@ -352,13 +352,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Serialized field names must match Kotlin JSON. GameSettings/Migrations/OverviewPersistableData are client settings: out of scope unless a later ticket needs them.
 
 ### T022 Map size and parameters: MapSize, MapParameters, NeighborDirection, RoadStatus
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T006, T007, T010
 - Source: core/src/com/unciv/logic/map/MapSize.kt, MapParameters.kt, NeighborDirection.kt, logic/map/tile/RoadStatus.kt
 - Fixtures: none - generate golden values (incl. MapSize radius/size math, MapParameters JSON)
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapSize.cs, MapParameters.cs, NeighborDirection.cs, Tile/RoadStatus.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~MapParametersTests`
-- Claimed:
+- Claimed: 2026-10-24T01:39:11Z
 - Notes: Unblocks half of T015. Watch Kotlin Int/Float rounding in MapSize custom-size logic (roundToInt is half-up).
 
 ### T023 Translation core (headless)
