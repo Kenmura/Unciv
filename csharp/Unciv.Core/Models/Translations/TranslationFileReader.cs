@@ -1,12 +1,12 @@
 using System.Globalization;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
 
 namespace Unciv.Models.Translations;
 
 public static class TranslationFileReader
 {
-    // TODO(T026): this is UniqueType.Comment.text; use the enum member once UniqueType exists
-    public const string CommentUniqueText = "Comment [comment]";
+    public static string CommentUniqueText => UniqueType.Comment.Text();
 
     public static OrderedDictionary<string, string> Read(TextReader reader)
     {
