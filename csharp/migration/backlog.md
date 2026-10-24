@@ -1810,13 +1810,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented ConstructionAutomation (lazy LINQ mirrors Kotlin sequences; maxBy uses Kotlin Float.compareTo order; average() in Double). Deviations: UncivGame.screen is CityScreen notification suppression dropped (headless); unused buildingsForVictory and productionForConstruction record dropped; timeThis dropped. Seams: WorkerAutomationSeams (hasWorkableSeaResource/isNotBonusResourceOrWorkable, TODO(T092) moves them); NextTurnAutomationSeams (T094). CityConstructionsAutomation.cs is a thin wrapper to keep CityConstructions under its coupling-ratchet cap. Tests are C#-only (no Kotlin fixture). Side effect: loading a game with empty queue now picks a construction, so UncivFilesTests BusyGame settles its queue first; CityConstructionsTests drops the fake-state automation branches (covered by ConstructionAutomationTests). Coverage 92% lines.
 
 ### T159 UnitAutomation.cs coverage: raise line coverage back after T156 grew the file (baseline was T090's 100% of a stub)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T156
 - Source: csharp/Unciv.Core/Logic/Automation/Unit/UnitAutomation.cs
 - Fixtures: none
 - Deliverables: tests in csharp/Unciv.Core.Tests/Logic/Automation/UnitAutomationTests.cs; coverage-baseline.json entry raised
 - Gate: dotnet test --filter FullyQualifiedName~UnitAutomationTests
-- Claimed:
+- Claimed: 2026-10-24T22:31Z
 - Notes: Found by T091: coverage-baseline.json still held 100% line / 70% branch for UnitAutomation.cs from T090, when the file was a 29-line stub; at csharp-migration tip it is 49.87% line / 41.56% branch. T091 lowered the entry to 49.87 / 41.56 (it edits UnitAutomation.cs to wire CivilianUnitAutomation) so its ratchet check passes; this ticket raises it with tests of the T156 dispatch (automateUnitMoves, upgrades, fortify, explore, wander...).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core

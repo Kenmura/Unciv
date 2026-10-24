@@ -154,7 +154,7 @@ flowchart TD
   class T154 waiting
   class T156 done
   class T157 waiting
-  class T159 ready
+  class T159 prog
 ```
 
 ## Remaining tickets over time
@@ -172,15 +172,14 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 19]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 1]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 18]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 2]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T159 | **Ready to start** | T156 | 0 | UnitAutomation.cs coverage: raise line coverage back after T156 grew the file (baseline was T090's 100% of a stub) |
 | T094 | **On deck** (after T092) | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | T093 | **On deck** (after T092) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T092 | In-Progress [Claude] | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
@@ -200,3 +199,4 @@ xychart-beta
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
 | T157 | Available (waiting on T094) | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
+| T159 | In-Progress [Claude] | T156 | 0 | UnitAutomation.cs coverage: raise line coverage back after T156 grew the file (baseline was T090's 100% of a stub) |
