@@ -17,6 +17,7 @@
     "Unciv.Core/Json/JsonValueReader.cs": {"branch": 94.74, "line": 96.55},
     "Unciv.Core/Json/LastSeenImprovement.cs": {"branch": 66.67, "line": 80.95},
     "Unciv.Core/Json/LenientJson.cs": {"branch": 89.29, "line": 100.0},
+    "Unciv.Core/Json/LenientStringConverter.cs": {"branch": 75.0, "line": 90.0},
     "Unciv.Core/Json/StatMapConverter.cs": {"branch": 66.67, "line": 89.29},
     "Unciv.Core/Json/StatsConverter.cs": {"branch": 80.0, "line": 93.18},
     "Unciv.Core/Json/StatsSubclassConverter.cs": {"branch": 100.0, "line": 100.0},

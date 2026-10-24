@@ -236,29 +236,10 @@ flowchart TD
   class T148 waiting
   class T149 ondeck
   class T150 waiting
-  class T151 prog
+  class T151 review
   class T152 ready
   class T153 prog
   class T154 waiting
-```
-
-## Remaining tickets over time
-
-Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). Completed tickets (Done, Won't port) are not counted.
-
-| Line | Meaning |
-|---|---|
-| green | New: Available or Blocked, not started yet |
-| yellow | Active: In-Progress, Needs-Review or In-Review |
-
-```mermaid
-%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
-xychart-beta
-    title "Remaining tickets"
-    x-axis ["24 01:32", "24 02:38", "24 03:44", "24 04:51", "24 05:57", "24 07:03", "24 08:10", "24 09:16", "24 10:22", "24 11:29", "24 12:35", "24 13:41", "24 14:47", "24 15:54", "24 17:00", "24 18:06"]
-    y-axis "Tickets" 0 --> 66
-    line [31, 25, 29, 24, 21, 21, 21, 21, 38, 55, 57, 60, 56, 49, 35, 36]
-    line [3, 6, 2, 2, 0, 0, 0, 0, 1, 4, 4, 0, 1, 4, 4, 5]
 ```
 
 ## Incomplete tickets
@@ -303,6 +284,6 @@ xychart-beta
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T150 | Available (waiting on T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
-| T151 | In-Progress [Claude] | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
+| T151 | Needs-Review [Claude] | T142, T140 | 0 | Deferred civilization fixtures needing JSON wiring: QuestTests, GameSerializationTests |
 | T153 | In-Progress [Claude] | T111 | 0 | T111 leftovers: map-backed tests for RuinsManager.SelectNextRuinsReward, FoundReligion/UseProphetForEnhancingReligion, Spy.CanMoveTo exploration, GetTilesVisibleViaSpies |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

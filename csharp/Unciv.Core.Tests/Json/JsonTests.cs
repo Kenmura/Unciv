@@ -43,6 +43,26 @@ public class JsonTests
         Assert.Equal(7, deserialized["Nested"]);
     }
 
+    private sealed class StringHolder
+    {
+        public string? A { get; set; }
+    }
+
+    // T151: libGDX reads any primitive into a String field (JsonValue.asString)
+    [Theory]
+    [InlineData("""{"A":0}""", "0")]
+    [InlineData("""{"A":1.50}""", "1.50")]
+    [InlineData("""{"A":true}""", "true")]
+    [InlineData("""{"A":false}""", "false")]
+    [InlineData("""{"A":"x"}""", "x")]
+    [InlineData("""{"A":null}""", null)]
+    public void TestStringFieldReadsPrimitivesLikeGdx(string json, string? expected) =>
+        Assert.Equal(expected, UncivJson.Deserialize<StringHolder>(json)!.A);
+
+    [Fact]
+    public void TestStringFieldRejectsObjects() =>
+        Assert.Throws<System.Text.Json.JsonException>(() => UncivJson.Deserialize<StringHolder>("""{"A":{"b":1}}"""));
+
     // Port of tests/src/com/unciv/logic/map/HexmathTests.kt: testSerializedHexCoordIsCompact
     [Fact]
     public void TestSerializedHexCoordIsCompact()

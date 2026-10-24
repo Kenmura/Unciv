@@ -20,6 +20,7 @@ public static class UncivJson
             WriteIndented = false
         };
 
+        options.Converters.Add(new LenientStringConverter());
         options.Converters.Add(new HexCoordConverter());
         options.Converters.Add(new CounterConverterFactory());
         options.Converters.Add(new JavaHashSetConverterFactory());
