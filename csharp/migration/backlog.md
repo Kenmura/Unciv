@@ -840,7 +840,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~1.2k LOC (Battle.kt 883): delegate the brief. Uses UnitActionsPillage (T079), CityConquestFunctions (T064), DeclareWar (T068), UniqueTriggerActivation (T052); NextTurnAutomation.valueCityStateAlliance is a TODO(T094) seam; UncivGame/worldScreen/tutorial-task lines are UI and dropped. Attack order and RNG draw order are game state. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
 
 ### T084 Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T046, T057, T059
 - Source: core/src/com/unciv/view/View.kt, GameBasedView.kt, OwnedView.kt, GameView.kt, CivView.kt, ForeignCivView.kt, TileView.kt, TileMapView.kt, DiplomacyManagerView.kt, TradeView.kt, SpyView.kt
 - Fixtures: tests/src/com/unciv/view/ViewPurityTest.kt (Kotlin purity annotations: port only the structural checks that make sense), GameViewMovementHistoryTest.kt (TestGame: T103)
@@ -849,6 +849,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T15:32Z
 - Notes: Created by the backlog audit: core/src/com/unciv/view/* (1.6k LOC) is the read-only API that every Automation file, Battle, MapUnit, TurnManager, UniqueTriggerActivation and TradeEvaluation call (GameView(gameInfo, civ).civView / getMapUnitView) and no ticket covered it. ~730 LOC here. Drop the yairm210.purity annotations (record them as comments). Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
   - From T114 (T059 review): TradeOffer.getOfferText is not ported (translation + Fonts + UncivGame.Current.gameInfo); port it with the Trade view/UI text (or a Translation port) and test it.
+  - Implemented in csharp/Unciv.Core/View (namespace Unciv.View): View/GameBasedView/OwnedView (View.cs), GameView, ForeignCivView, CivView, TileView, TileMapView, DiplomacyManagerView, SpyView. Tests: Unciv.Core.Tests/View/ViewTests.cs (28).
+    - Purity annotations stripped (@Readonly/@Cache/@LocalState). Kotlin `protected View<U>.unwrap()` is the assembly-internal extension ViewExtensions.Unwrap (View<T>.Wrapped is internal). View equality = wrapped-object equality across any view type, as in Kotlin.
+    - DebugUtils.VISIBLE_MAP = viewer.GameInfo.EngineOptions.VisibleMap. Kotlin Sequence returns are IEnumerable; HashMap returns are JavaHashMap; getGoldPerTurn uses KotlinMath.FloatToInt.
+    - DEFERRED TO T085 (types ported there; retype/add then): GameView.getCityView/getForeignCityView/getMapUnitView/getForeignMapUnitView/getUnitsWithVisibleMovementHistory; ForeignCivView.cities; CivView.cities/getUnits and helpers idleUnitsCount/dueUnitsCount/getCapital/isHolyCityBlocked; TileView.owningCity/getCity/getWorkingCity/civilianUnit/militaryUnit/getVisibleUnits/getCombatant, getTileStats/getTileStatsBreakdown `cityView` parameter, getImprovementBuildingProblems(unitView); SpyView.getCityViewOrNull/canMoveTo/tryMoveTo. T085 should also retype the ITileView/ICivView/ICityView/IMapUnitView seams (TileDescriptionSeams.cs) and have the views implement them.
+    - DEFERRED to the new follow-up ticket (needs T086 TradeLogic): TradeView, CivView.getTradeView. Carries the T114 note about TradeOffer.getOfferText (it also belongs with the Trade UI text; unchanged here).
+    - GameViewMovementHistoryTest: needs TestGame (T035/T103) and ForeignMapUnitView (T085); its attack cases are ported against a real small game (GetVisibleAttacks); the movement-history cases move to T085. ViewPurityTest relies on the stripped annotations: replaced by structural reflection tests (no Try* on non-owned/Foreign views, Try* return bool on owned views, no public setters).
+    - Also fixed the tip's three red policy tests (T046 Done): UnitManager.cs TODO(T046)->TODO(T104), MapPathingSeams.cs and ConditionalsSeams.cs now name T104 as open owner; UnitManager.cs excused in coverage-baseline.json.
 
 ### T085 Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView
 - State: Available
@@ -1475,6 +1482,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~TranslationTests
 - Claimed:
 - Notes:
+
+### T138 Views A leftovers: TradeView and CivView.getTradeView
+- State: Available
+- Depends: T084, T086
+- Source: core/src/com/unciv/view/TradeView.kt, CivView.kt (getTradeView)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/View/TradeView.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~ViewTests
+- Claimed:
+- Notes: From T084: TradeView needs TradeLogic (T086), which T084 does not depend on. Port TradeView and CivView.GetTradeView, plus TradeOffer.getOfferText if still open.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
