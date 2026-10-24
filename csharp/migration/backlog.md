@@ -798,7 +798,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C000 Headless Godot test & snapshot harness
 - State: In-Review [Antigravity]
-- Claimed: 2026-10-24T03:08:00Z
+- Claimed: 2026-10-24T03:08:33Z
 - Depends: none (infrastructure/tooling)
 - Deliverables:
   - Godot 4.x .NET CLI runtime setup in `dotnet-dev` container.
