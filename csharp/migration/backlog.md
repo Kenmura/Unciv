@@ -813,13 +813,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Traps kept: spawnedUnits++ happens before resetCountdown (reduction min(spawnedUnits,3) uses the incremented value); wasDestroyed sets countdown 15 and the same updateEncampments call then decrements it to 14; fogTilesPerCamp = Float.pow(0.4f).toInt (Math.Pow on widened floats); countdown * barbarianModifier uses Kotlin Float.toInt. Only human civs keep notifications (AddNotification skips AI).
 
 ### T079 UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T052, T057, T063, T066, T067
 - Source: core/src/com/unciv/models/UnitAction.kt, core/src/com/unciv/logic/map/mapunit/actions/UnitActionModifiers.kt, UnitActionsPillage.kt, UnitActionsUpgrade.kt, UnitActionsGreatPerson.kt, UnitActionsReligion.kt
 - Fixtures: none directly (UpgradeTests are T072)
 - Deliverables: csharp/Unciv.Core/Models/UnitAction.cs, csharp/Unciv.Core/Logic/Map/MapUnit/Actions/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UnitActionsATests`
-- Claimed:
+- Claimed: 2026-10-24T17:08Z
 - Notes: Created by the backlog audit: no ticket covered mapunit/actions/* or models/UnitAction.kt. ~830 LOC. UnitAction keeps only data (type, title key, action lambda becomes a command/delegate; UI icon/confirmation fields are data). UnitActionsPillage is called by Battle (T083). UI hooks (UncivGame.settings, GUI) are cut per Non-goals #7. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
   - T057 left Logic/Map/MapUnit/Actions/UnitActionModifiers.cs with only `GetUsableUnitActionUniques(IMapUnitState, UniqueType)` as a stub (TODO(T079)) returning an empty sequence; ReligionManager.MaySpreadReligionAtAll calls it. Implement the real class in this file and retype the parameter to MapUnit.
 
