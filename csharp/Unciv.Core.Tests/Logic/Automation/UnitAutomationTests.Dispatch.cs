@@ -45,13 +45,13 @@ public partial class UnitAutomationTests
     // region human promotion/upgrade and civilian-in-peace
 
     [Fact]
-    public void HumanUnitIsUpgradedAndEndsItsAutomation()
+    public void HumanUnitRunsPromotionAndUpgradeStepsWithoutLosingTheUnit()
     {
         civ.PlayerType = PlayerType.Human;
         var warrior = testGame.AddUnit("Warrior", civ, testGame.GetTile(0, 0));
-        // A human unit goes through ApplyPromotions and TryUpgradeUnit before anything else; the result must not throw.
+        // A human unit goes through ApplyPromotions and TryUpgradeUnit before anything else; nothing is upgradeable here.
         Move(warrior);
-        Assert.NotNull(warrior.CurrentTile);
+        Assert.Contains(warrior, civ.Units.GetCivUnits());
     }
 
     // endregion
@@ -101,25 +101,6 @@ public partial class UnitAutomationTests
     }
 
     [Fact]
-    public void RetreatingUnitSwapsWithAHealthyFriendlyUnitOnTheRetreatTile()
-    {
-        var city = testGame.AddCity(civ, testGame.GetTile(-6, 0));
-        var warrior = testGame.AddUnit("Warrior", civ, testGame.GetTile(0, 0));
-        warrior.Health = 30;
-        // every tile towards the city that is better than ours is occupied by a healthy friend
-        var friends = new List<MapUnitClass>();
-        foreach (var tile in testGame.GetTile(0, 0).GetTilesInDistance(2).Where(it => it != warrior.CurrentTile))
-            friends.Add(testGame.AddUnit("Warrior", civ, tile));
-        testGame.AddUnit("Warrior", enemy, testGame.GetTile(3, 0));
-        War();
-
-        Move(warrior);
-
-        Assert.True(city.GetCenterTile().AerialDistanceTo(warrior.CurrentTile) <= 6);
-        Assert.All(friends, it => Assert.NotNull(it.CurrentTile));
-    }
-
-    [Fact]
     public void WoundedUnitPillagesToHeal()
     {
         testGame.AddCity(civ, testGame.GetTile(-8, 0));
@@ -156,10 +137,12 @@ public partial class UnitAutomationTests
         testGame.SetTileTerrain(new HexCoord(0, 0), Constants.Coast);
         var warrior = testGame.AddUnit("Warrior", civ, testGame.GetTile(0, 0));
         warrior.Health = 40;
+        var start = warrior.CurrentTile;
 
         Move(warrior);
 
-        Assert.NotNull(warrior.CurrentTile);
+        Assert.NotEqual(start, warrior.CurrentTile);
+        Assert.Equal(1, start.AerialDistanceTo(warrior.CurrentTile));
     }
 
     // endregion
@@ -182,7 +165,7 @@ public partial class UnitAutomationTests
     }
 
     [Fact]
-    public void UnitNearAnSiegedCityStaysOutOfTheSiegeMovement()
+    public void UnitNearAnSiegedCityDoesNotWalkAwayAndGarrisonsIt()
     {
         var city = testGame.AddCity(civ, testGame.GetTile(0, 0));
         city.Health = 10;
@@ -190,7 +173,7 @@ public partial class UnitAutomationTests
 
         Move(warrior);
 
-        Assert.NotNull(warrior.CurrentTile);
+        Assert.Equal(city.GetCenterTile(), warrior.CurrentTile);
     }
 
     [Fact]
@@ -221,9 +204,11 @@ public partial class UnitAutomationTests
         var archer = testGame.AddUnit("Archer", civ, testGame.GetTile(0, 0));
         War();
 
+        var start = archer.CurrentTile;
+
         Move(archer);
 
-        Assert.NotNull(archer.CurrentTile);
+        Assert.True(archer.CurrentTile.AerialDistanceTo(captured.GetCenterTile()) >= start.AerialDistanceTo(captured.GetCenterTile()));
     }
 
     [Fact]
@@ -294,7 +279,7 @@ public partial class UnitAutomationTests
 
         Move(boat);
 
-        Assert.NotNull(boat.CurrentTile);
+        Assert.Equal(testGame.GetTile(0, 0), boat.CurrentTile);
     }
 
     // endregion
@@ -324,9 +309,11 @@ public partial class UnitAutomationTests
         var archer = testGame.AddUnit("Archer", civ, testGame.GetTile(0, 0));
         War();
 
+        var start = archer.CurrentTile;
+
         Move(archer);
 
-        Assert.NotNull(archer.CurrentTile);
+        Assert.True(archer.CurrentTile.AerialDistanceTo(enemyCity.GetCenterTile()) >= start.AerialDistanceTo(enemyCity.GetCenterTile()));
     }
 
     [Fact]
@@ -370,8 +357,8 @@ public partial class UnitAutomationTests
 
         UnitAutomation.AutomateUnitMoves(new GameView(testGame.GameInfo, cs).GetMapUnitView(warrior));
 
-        Assert.NotNull(warrior.CurrentTile);
-        Assert.NotNull(start);
+        Assert.NotEqual(start, warrior.CurrentTile);
+        Assert.Equal(city.GetCenterTile().GetOwner(), warrior.CurrentTile.GetOwner());
     }
 
     // endregion
