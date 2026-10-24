@@ -539,7 +539,7 @@ public class RulesetValidator
         foreach (var unitType in ruleset.UnitTypes.Values)
         {
             if (unitType.MovementType == null || !unitMovementTypes.Contains(unitType.MovementType))
-                lines.Add($"Unit type {unitType.Name} has an invalid movement type {unitType.MovementType}", sourceObject: unitType);
+                lines.Add($"Unit type {unitType.Name} has an invalid movement type {unitType.MovementType ?? "null"}", sourceObject: unitType);
             uniqueValidator.CheckUniques(unitType, lines, reportRulesetSpecificErrors);
         }
     }
