@@ -649,6 +649,296 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Quirks kept: totalPlaced += map is putAll (replaces); regionTargetNumber = min(civCount-3, ...); fallbackStrategic precedence (A&&B)||C; region priority sort puts null first, stable; float sums are sequential Float adds.
     ResourceDiversityTest.kt needs the full MapGenerator (T041); own xUnit tests exercise the logic directly on a small all-land fallback ruleset.
 
+### T078 Barbarians: BarbarianManager, BarbarianEncampment
+- State: Available
+- Depends: T060, T065, T066
+- Source: core/src/com/unciv/logic/automation/civilization/BarbarianManager.kt, BarbarianEncampment.kt (the data/spawn logic; BarbarianAutomation.kt is T094)
+- Fixtures: none - generate golden values (seeded encampment spawning)
+- Deliverables: csharp/Unciv.Core/Logic/Civilization/BarbarianManager.cs, BarbarianEncampment.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~BarbarianManagerTests`
+- Claimed:
+- Notes: Created by the backlog audit: GameInfo.barbarians is a serialized GameInfo field (T046 depends on this ticket), and no ticket covered it. ~330 LOC. Random draws via the engine RNG in Kotlin order; encampment/unit iteration order is game state. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+
+### T079 UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion
+- State: Available
+- Depends: T052, T057, T063, T066, T067
+- Source: core/src/com/unciv/models/UnitAction.kt, core/src/com/unciv/logic/map/mapunit/actions/UnitActionModifiers.kt, UnitActionsPillage.kt, UnitActionsUpgrade.kt, UnitActionsGreatPerson.kt, UnitActionsReligion.kt
+- Fixtures: none directly (UpgradeTests are T072)
+- Deliverables: csharp/Unciv.Core/Models/UnitAction.cs, csharp/Unciv.Core/Logic/Map/MapUnit/Actions/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UnitActionsATests`
+- Claimed:
+- Notes: Created by the backlog audit: no ticket covered mapunit/actions/* or models/UnitAction.kt. ~830 LOC. UnitAction keeps only data (type, title key, action lambda becomes a command/delegate; UI icon/confirmation fields are data). UnitActionsPillage is called by Battle (T083). UI hooks (UncivGame.settings, GUI) are cut per Non-goals #7. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+
+### T080 Unit actions B: UnitActions, UnitActionsFromUniques
+- State: Available
+- Depends: T079, T061, T068
+- Source: core/src/com/unciv/logic/map/mapunit/actions/UnitActions.kt, UnitActionsFromUniques.kt
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Logic/Map/MapUnit/Actions/UnitActions.cs, UnitActionsFromUniques.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UnitActionsBTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~755 LOC. UnitActions calls UnitAutomation (automatedExplore/automateUnitMoves via GameView): leave a TODO(T090) seam. GUI.getWorldScreen/UncivGame.settings.* are UI and dropped; UnitActionsFromUniques.getFoundCityAction uses CityFounder (T061). Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+
+### T081 Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage
+- State: Available
+- Depends: T060, T065, T067, T062, T035
+- Source: core/src/com/unciv/logic/battle/ICombatant.kt, MapUnitCombatant.kt, CityCombatant.kt, BattleConstants.kt, AttackableTile.kt, BattleDamage.kt
+- Fixtures: tests/src/com/unciv/logic/battle/BattleDamageTest.kt
+- Deliverables: csharp/Unciv.Core/Logic/Battle/*.cs (CombatAction.cs already exists from T027), tests
+- Gate: `dotnet test --filter FullyQualifiedName~BattleDamageTests`
+- Claimed:
+- Notes: Created by the backlog audit (Battle was only in the stale Planned paragraph). ~650 LOC. BattleDamage.kt keeps the CombatAction enum already in Logic/Battle/CombatAction.cs. UncivSound fields stay as the T049 enum. Float vs Int damage arithmetic and rounding must match Kotlin exactly. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+
+### T082 Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation
+- State: Available
+- Depends: T081, T046, T067, T035
+- Source: core/src/com/unciv/logic/battle/AttackEvent.kt, AttackParticipant.kt, AttackRecorder.kt, TargetHelper.kt, BattleUnitCapture.kt, AirInterception.kt, GreatGeneralImplementation.kt
+- Fixtures: tests/src/com/unciv/logic/battle/AttackEventTest.kt, AttackRecorderTest.kt, TargetHelperTest.kt, tests/src/com/unciv/testing/AttackRecorderTestHelper.kt
+- Deliverables: csharp/Unciv.Core/Logic/Battle/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~BattleSupportTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~900 LOC. GreatGeneralImplementation calls SpecificUnitAutomation/HeadTowardsEnemyCityAutomation.getEnemyCitiesByPriority: seam, TODO(T091)/TODO(T090). AttackEvent/AttackParticipant are IsPartOfGameInfoSerialization JSON (field names). TargetHelper timeThis dropped (T027 policy). Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+
+### T083 Battle C: Battle, Nuke
+- State: Available
+- Depends: T081, T082, T052, T064, T068, T079, T035
+- Source: core/src/com/unciv/logic/battle/Battle.kt, Nuke.kt
+- Fixtures: tests/src/com/unciv/logic/battle/BattleTest.kt
+- Deliverables: csharp/Unciv.Core/Logic/Battle/Battle.cs, Nuke.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~BattleTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~1.2k LOC (Battle.kt 883): delegate the brief. Uses UnitActionsPillage (T079), CityConquestFunctions (T064), DeclareWar (T068), UniqueTriggerActivation (T052); NextTurnAutomation.valueCityStateAlliance is a TODO(T094) seam; UncivGame/worldScreen/tutorial-task lines are UI and dropped. Attack order and RNG draw order are game state. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+
+### T084 Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView
+- State: Available
+- Depends: T046, T057, T059
+- Source: core/src/com/unciv/view/View.kt, GameBasedView.kt, OwnedView.kt, GameView.kt, CivView.kt, ForeignCivView.kt, TileView.kt, TileMapView.kt, DiplomacyManagerView.kt, TradeView.kt, SpyView.kt
+- Fixtures: tests/src/com/unciv/view/ViewPurityTest.kt (Kotlin purity annotations: port only the structural checks that make sense), GameViewMovementHistoryTest.kt (TestGame: T103)
+- Deliverables: csharp/Unciv.Core/View/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~ViewTests`
+- Claimed:
+- Notes: Created by the backlog audit: core/src/com/unciv/view/* (1.6k LOC) is the read-only API that every Automation file, Battle, MapUnit, TurnManager, UniqueTriggerActivation and TradeEvaluation call (GameView(gameInfo, civ).civView / getMapUnitView) and no ticket covered it. ~730 LOC here. Drop the yairm210.purity annotations (record them as comments). Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+
+### T085 Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView
+- State: Available
+- Depends: T084, T081, T062, T063, T066, T067
+- Source: core/src/com/unciv/view/CityView.kt, ForeignCityView.kt, CityConstructionsView.kt, MapUnitView.kt, ForeignMapUnitView.kt, CombatantView.kt, AttackableTileView.kt
+- Fixtures: tests/src/com/unciv/view/ViewPurityTest.kt (shared with T084)
+- Deliverables: csharp/Unciv.Core/View/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~ViewCityUnitTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~885 LOC. See T084 for why Views exist. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+
+### T086 TradeLogic
+- State: Available
+- Depends: T059, T068, T057
+- Source: core/src/com/unciv/logic/trade/TradeLogic.kt
+- Fixtures: none - generate golden values (trade acceptance, offer filtering)
+- Deliverables: csharp/Unciv.Core/Logic/Trade/TradeLogic.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~TradeLogicTests`
+- Claimed:
+- Notes: Created by the backlog audit (TradeLogic was 'Planned, after T068'). ~290 LOC. TradeOfferType.kt is ported by T059 together with TradeOffer. TradeEvaluation (T089) is separate because it needs the diplomacy automation (T088).
+
+### T087 Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation
+- State: Available
+- Depends: T085, T057
+- Source: core/src/com/unciv/logic/automation/Automation.kt, Timers.kt (profiling: drop, keep nothing), civilization/AutomationCache.kt, civilization/ThreatManager.kt, unit/CityLocationTileRanker.kt, civilization/ReligionAutomation.kt, unit/EspionageAutomation.kt
+- Fixtures: tests/src/com/unciv/logic/civilization/managers/ThreatManagerTests.kt (TestGame: T035 via T085)
+- Deliverables: csharp/Unciv.Core/Logic/Automation/**/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~AutomationCoreTests`
+- Claimed:
+- Notes: Created by the backlog audit (Automation was only 'Planned, last'). ~1.9k LOC: split by file at claim time. Also owns IHasUniques.getWeightForAiDecision plus the Personality weighting deferred by T027/T032 (marker TODO(T033) in IHasUniques.cs is stale: fix it here) and the Automation.* call sites left as TODO in CityFocus (T060), CityPopulationManager (T061), CityConstructions (T063). DebugUtils flags come from the T048 engine options (SETTLER_SCORES in CityLocationTileRanker). Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+
+### T088 Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation
+- State: Available
+- Depends: T087, T086, T081, T068
+- Source: core/src/com/unciv/logic/automation/civilization/MotivationToAttackAutomation.kt, DeclareWarPlanEvaluator.kt, DeclareWarTargetAutomation.kt, DiplomacyAutomation.kt, TradeAutomation.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/Logic/Automation/Civilization/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~DiplomacyAiTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~1.6k LOC: split by file at claim time. DiplomacyAutomation/TradeAutomation call TradeEvaluation (T089, ported after this ticket because TradeEvaluation calls back into these): seam TODO(T089). Demand.kt (T059) calls DiplomacyAutomation: replace its TODO(T088). Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+
+### T089 TradeEvaluation
+- State: Available
+- Depends: T086, T088, T085
+- Source: core/src/com/unciv/logic/trade/TradeEvaluation.kt
+- Fixtures: none - generate golden values (offer valuation per TradeOfferType)
+- Deliverables: csharp/Unciv.Core/Logic/Trade/TradeEvaluation.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~TradeEvaluationTests`
+- Claimed:
+- Notes: Created by the backlog audit (was 'Planned, after T068'). ~580 LOC; uses DiplomacyAutomation, MotivationToAttackAutomation, DeclareWarPlanEvaluator (T088) through GameView. Wires the TODO(T089) seams in T088. Float/Int valuation arithmetic must match Kotlin.
+
+### T090 Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation
+- State: Available
+- Depends: T087, T088, T082, T083
+- Source: core/src/com/unciv/logic/automation/unit/UnitAutomation.kt, BattleHelper.kt, HeadTowardsEnemyCityAutomation.kt, AirUnitAutomation.kt, civilization/UseGoldAutomation.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UnitAutomationTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~1.5k LOC: split by file at claim time. Wires MapUnit.doAction (T065), UnitActions (T080) and GreatGeneralImplementation (T082) call sites left as TODO(T090). Calls to later automation tickets (CivilianUnitAutomation, SpecificUnitAutomation, WorkerAutomation T091/T092, NextTurnAutomation T094) are TODO seams. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+
+### T091 Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation
+- State: Available
+- Depends: T090, T080, T063
+- Source: core/src/com/unciv/logic/automation/unit/CivilianUnitAutomation.kt, SpecificUnitAutomation.kt, ReligiousUnitAutomation.kt, city/ConstructionAutomation.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/*.cs, csharp/Unciv.Core/Logic/Automation/City/ConstructionAutomation.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~CivilianAutomationTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~1.2k LOC. ConstructionAutomation is called by CityConstructions.chooseNextConstruction (T063, TODO(T091)). Wires the SpecificUnitAutomation seam of GreatGeneralImplementation (T082). Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+
+### T092 Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation
+- State: Available
+- Depends: T091, T080, T035
+- Source: core/src/com/unciv/logic/automation/unit/WorkerAutomation.kt, RoadBetweenCitiesAutomation.kt, RoadToAutomation.kt
+- Fixtures: tests/src/com/unciv/logic/automation/unit/WorkerAutomationTest.kt
+- Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~WorkerAutomationTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~1.2k LOC. Civilization.workerAutomation (T055 seam) is TODO(T092). Tile/improvement choice order is game state. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+
+### T093 PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode
+- State: Available
+- Depends: T067, T088, T090, T092
+- Source: core/src/com/unciv/logic/map/pathingmap/PathingMap.kt, PathingMapCache.kt, PathingMapAStarPathfinder.kt, RouteNode.kt, PrioritizedNode.kt (FixedPointMovement.kt is ported by T067)
+- Fixtures: tests/src/com/unciv/logic/map/pathingmap/PathingMapTest.kt, RouteNodeTest.kt (TestGame: T035 via T092)
+- Deliverables: csharp/Unciv.Core/Logic/Map/PathingMap/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~PathingMapTests`
+- Claimed:
+- Notes: Created by the backlog audit (T040 deferred these to 'T067/T072' but neither listed them). ~1.5k LOC. Retype the seams left by City.getLandAttackPath/getAmphibiousAttackPath/getRoadPath (T060) and UnitMovement's path-cache hooks (T067) to the concrete classes. Priority queue / path tie-breaking must match Kotlin (T001); Float movement costs stay float. ALWAYS_LOG/VERBOSE_PATHFINDING_LOGS flags come from engine options (T048) or are dropped. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+
+### T094 NextTurnAutomation and BarbarianAutomation (automation integration)
+- State: Available
+- Depends: T088, T090, T091, T092, T078, T083, T035
+- Source: core/src/com/unciv/logic/automation/civilization/NextTurnAutomation.kt, BarbarianAutomation.kt
+- Fixtures: tests/src/com/unciv/logic/automation/civilization/NextTurnAutomationTest.kt
+- Deliverables: csharp/Unciv.Core/Logic/Automation/Civilization/NextTurnAutomation.cs, BarbarianAutomation.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~NextTurnAutomationTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~855 LOC. Final automation ticket: replaces every TODO(T094) seam (TurnManager.automate and cityBombardment/goldToScience T070, CityStateFunctions T068, Battle.valueCityStateAlliance T083, UniqueTriggerActivation.chooseGreatPerson T052, Civilization.automateTurn) and runs one full AI turn through all automation tickets. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
+
+### T095 Civilopedia text model A: FormattedLine, ICivilopediaText, CivilopediaCategories, FormattedLineListBuilder, DescriptionHelpers
+- State: Available
+- Depends: T034
+- Source: core/src/com/unciv/ui/screens/civilopediascreen/FormattedLine.kt, ICivilopediaText.kt, CivilopediaCategories.kt, core/src/com/unciv/ui/objectdescriptions/FormattedLineListBuilder.kt, DescriptionHelpers.kt
+- Fixtures: none - generate golden values (line text/link/format data)
+- Deliverables: csharp/Unciv.Core/UI/Screens/Civilopedia/*.cs, csharp/Unciv.Core/UI/ObjectDescriptions/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~CivilopediaTextTests`
+- Claimed:
+- Notes: Created by the backlog audit: Non-goals #7 says to decide the Civilopedia/FormattedLine engine text model once, and T030/T031/T032/T033 deferred their getCivilopediaTextLines/makeLink/getSortGroup/getSubCategory/getShortDescription members to 'the Civilopedia text types, which have no ticket yet'. Decision: the engine owns the data model (FormattedLine as plain data: text, link, icon NAME strings, colour as EngineColor/hex, size/format flags; no Image/Actor/Table rendering, no ImageGetter, no KeyboardBinding), the Godot client renders it. ~1.1k LOC. Port ICivilopediaText as an interface with default methods like IHasUniques. T095-T097 also finish the deferred members on the ruleset objects (list the ones taken in Notes). Seam rule as T053.
+
+### T096 Civilopedia text model B: Building, Improvement, Resource, Tile descriptions
+- State: Available
+- Depends: T095, T062, T054
+- Source: core/src/com/unciv/ui/objectdescriptions/BuildingDescriptions.kt, ImprovementDescriptions.kt, ResourceDescriptions.kt, TileDescription.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/UI/ObjectDescriptions/*.cs, tests (+ the deferred Building/TileImprovement/TileResource/Terrain civilopedia members)
+- Gate: `dotnet test --filter FullyQualifiedName~ObjectDescriptionsBTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~740 LOC. Takes the Building/TileImprovement/TileResource/Terrain getCivilopediaTextLines, getShortDescription, makeLink, getSortGroup, displayAs members deferred by T030/T031/T033. Seam rule as T053.
+
+### T097 Civilopedia text model C: BaseUnit, Nation, Technology descriptions
+- State: Available
+- Depends: T095, T062, T057
+- Source: core/src/com/unciv/ui/objectdescriptions/BaseUnitDescriptions.kt, NationDescriptions.kt, TechnologyDescriptions.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/UI/ObjectDescriptions/*.cs, tests (+ the deferred BaseUnit/Nation/Technology/Era civilopedia members)
+- Gate: `dotnet test --filter FullyQualifiedName~ObjectDescriptionsCTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~1.0k LOC. Takes the Nation/Era/Technology/BaseUnit members deferred by T032/T033/T034 (makeLink, getSortGroup/getSubCategory, civilopedia text, Nation.getStartBias, Era.getStartingUnits/getEraGatedObjects/matchesFilter, Technology.matchesFilter/getDescription, Difficulty/...) - recheck T032's Notes for the exact list. Seam rule as T053.
+
+### T098 Save/load A: FileConversions, MapSaver, IMediaFinder
+- State: Available
+- Depends: T034, T039, T042, T049
+- Source: core/src/com/unciv/logic/files/FileConversions.kt, MapSaver.kt, IMediaFinder.kt
+- Fixtures: tests/src/com/unciv/logic/MediaFinderTests.kt, MapSaver parts of tests/src/com/unciv/logic/SerializationTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/Files/FileConversions.cs, MapSaver.cs, IMediaFinder.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~FilesATests`
+- Claimed:
+- Notes: Created by the backlog audit: Non-goals #3 keeps these engine save/load abstractions 'deferred to the engine save/load ticket' that did not exist. ~370 LOC. Use the engine's IRulesetFolder/ITranslationFileHandle style file abstraction (no FileHandle/Gdx.files), gzip+base64 via System.IO.Compression with byte-identical output where Kotlin is deterministic. UncivGame.Current references become explicit parameters.
+
+### T099 GameStarter
+- State: Available
+- Depends: T041, T046, T061, T066, T078, T098
+- Source: core/src/com/unciv/logic/GameStarter.kt
+- Fixtures: tests/src/com/unciv/logic/LoadGameTest.kt (new-game parts; TestGame-free), tests/src/com/unciv/logic/map/CityStateTypeStartBiasTests.kt
+- Deliverables: csharp/Unciv.Core/Logic/GameStarter.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~GameStarterTests`
+- Claimed:
+- Notes: Created by the backlog audit (GameStarter was 'Planned'). ~675 LOC. Same seed must produce the same GameInfo hash (T011 harness) - golden hashes generated by the Kotlin code. startingLocationsByNation must be a JavaHashMap (T039 review note: Kotlin HashMap<String> iteration order). Uses T039's placeUnitNearTile/stripPlayer (untested until T072; add cases) and the Player.ChosenNation/SetNationTransient members left in Player.cs (T104 list). UncivGame.Current/AlertType/PopupAlert multiplayer bits: UI/Won't port, note what was cut. Seam rule as T053.
+
+### T100 Save/load B: UncivFiles
+- State: Available
+- Depends: T071, T098
+- Source: core/src/com/unciv/logic/files/UncivFiles.kt (engine part: save/load GameInfo and GameInfoPreview, gzip, autosave naming, compat version checks)
+- Fixtures: tests/src/com/unciv/logic/SerializationTests.kt, GameSerializationTests.kt (TestGame: T072)
+- Deliverables: csharp/Unciv.Core/Logic/Files/UncivFiles.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~UncivFilesTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~585 LOC, minus platform saver/loader (PlatformSaverLoader/FileChooser are Won't port) and GameSettings (client, Non-goals #9). Round trip GameInfo -> file -> GameInfo must preserve the T011 state hash. Save format stays Kotlin-compatible (gzip+base64 JSON) so existing saves load; GameInfoSerializationVersion / compatibility migrations run through T071's BackwardCompatibility.
+
+### T101 Simulation: Simulation, SimulationStep, MutableInt
+- State: Available
+- Depends: T099, T094, T071, T011
+- Source: core/src/com/unciv/logic/simulation/Simulation.kt, SimulationStep.kt, MutableInt.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/Logic/Simulation/*.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~SimulationTests`
+- Claimed:
+- Notes: Created by the backlog audit. ~390 LOC. Headless multi-game AI simulation runner; threads/Concurrency become a sequential loop (Non-goals #4), UncivGame.Current/settings replaced by parameters, Timers dropped. Used by T102.
+
+### T102 End-to-end determinism over N turns
+- State: Available
+- Depends: T101, T100, T072, T011
+- Source: (new) uses core/src/com/unciv/logic/GameStarter.kt, GameInfo.nextTurn and the AI automation via the C# ports
+- Fixtures: none - golden state hashes per turn generated by the Kotlin game for fixed seeds
+- Deliverables: csharp/Unciv.Core.Tests/Determinism/*.cs (N-turn AI-only games, same seed twice and vs Kotlin goldens), tests
+- Gate: `dotnet test --filter FullyQualifiedName~EndToEndDeterminism`
+- Claimed:
+- Notes: Created by the backlog audit: the stale Planned paragraph listed 'end-to-end determinism over N turns (uses T011)'. Runs AI-only games (several seeds, map sizes, vanilla + one mod) for N turns through GameStarter, TurnManager and NextTurnAutomation, compares the T011 state hash every turn with goldens exported from the Kotlin game, then save -> load -> continue and checks hash equality. Any divergence goes back to the owning ticket as a review note. Also run with DETERMINISM.md / HASH_ORDER_AUDIT.md checks.
+
+### T103 Remaining Kotlin tests sweep: uniques, filters, tutorials
+- State: Available
+- Depends: T072, T052, T098, T097
+- Source: tests/src/com/unciv/uniques/CarrierTests.kt, EventCircularTriggersTest.kt, GlobalUniquesTests.kt, TileUniquesTests.kt, logic/filter/CityCivFilterTests.kt, PolicyFilterTests.kt, TechFilterTests.kt, TileFilterTests.kt, UnitFilterTests.kt, logic/TutorialTranslationTests.kt, view/GameViewMovementHistoryTest.kt
+- Fixtures: (the test files above)
+- Deliverables: csharp/Unciv.Core.Tests/**, ported tests
+- Gate: `dotnet test`
+- Claimed:
+- Notes: Created by the backlog audit: these Kotlin tests were named by no ticket (they all need TestGame, Civilization/City/MapUnit, filters or the Civilopedia/tutorial data). One test class per Kotlin class; also ports any remaining T027/T028/T030/T033/T034/T036/T057 cases still deferred (check their Notes) and the TimedUniquesTests cases listed in T035 if T035 did not. Real bugs go back to the owning ticket as review notes.
+
+### T104 Marker, seam and stale-comment sweep (final)
+- State: Available
+- Depends: T102, T103, T106, T097, T093, T089, T094, T100
+- Source: (new) csharp/Unciv.Core, csharp/Unciv.Core.Tests
+- Fixtures: none
+- Deliverables: edits in the files below, no new API
+- Gate: `dotnet test --filter FullyQualifiedName~SourcePolicyTests`
+- Claimed:
+- Notes: Created by the backlog audit. Final hygiene ticket, run when every porting ticket is Done. (1) grep -rn 'TODO(T' csharp/Unciv.Core csharp/Unciv.Core.Tests: every marker must name a ticket that is not Done (fix or delete the stale ones). Known stale at audit time: IHasUniques.cs (TODO(T033), owner T087 for getWeightForAiDecision), Player.cs (TODO(T034)/Nation transients: port Player.chosenNation/setNationTransient(ruleset) and the Nation constructor here if GameStarter T099 did not), Translations.cs TryReadTranslationForLanguage (TODO(T034): RulesetCache should be the caller), MayaCalendar.cs (TODO(T050): owner T070), Tile.cs:533 (upstream note 'Generic-ify', leave as plain comment), ReligionState.cs (TODO(T052) should be T057). (2) Delete every *Seams.cs / PendingTickets file and 'NotSupportedException(... not ported ...)' stub whose owner ticket is Done, e.g. MapGeneratorSeams.cs, NaturalWonderSeams.cs, MapRegionsSeams.cs (T041/T076/T077), BaseUnit.CanBePurchasedWithStat (T063), CityStats/TileMap/Tile seams. (3) grep -rn 'NotSupportedException\|NotImplementedException' csharp/Unciv.Core: only intentional guards (Counter.ZERO, EngineColor, JavaHashMap treeify) may remain. (4) Re-run python3 -I tools/ticket.py section Planned: it must be empty/removed.
+
+### T105 Won't-port record from the coverage audit
+- State: Won't port
+- Depends: none
+- Source: core/src/com/unciv/models/metadata/GameSettings.kt, GameSettingsMigrations.kt, OverviewPersistableData.kt, core/src/com/unciv/logic/AlternatingStateManager.kt, core/src/com/unciv/json/DurationSerializer.kt, core/src/com/unciv/logic/automation/Timers.kt, tests/src/com/unciv/testing/{BaseTestRunner,GdxTestRunner,TestRunnerFactory,BasicTests,TestParcours,GitInfo,MeasureDuration,MeasureMemory,MemorySnaphots,RedirectOutput}.kt, tests/src/com/unciv/dev/*.kt
+- Fixtures: none
+- Deliverables: none
+- Gate: none
+- Claimed:
+- Notes: Created by the backlog audit; the files above were named by no ticket. Decisions (conservative): GameSettings/GameSettingsMigrations/OverviewPersistableData are client settings (Non-goals #9); AlternatingStateManager and DurationSerializer are used only by multiplayer/chat UI popups (ui/popups/options, worldscreen/chat, status) so they fall under Non-goals #1; Timers (timeThis profiling) is dropped (T027 policy) and its few engine call sites carry no behaviour; the Kotlin test runner/benchmark/dev-UI files are JVM/libGDX harness code (TestGame is T035; BasicTests/NextTurnLatencyTest are benchmarks). If a later ticket finds engine logic in one of them, add a real ticket instead.
+
+### T106 Deferred ruleset-object members (T030-T033 leftovers)
+- State: Available
+- Depends: T063, T066, T052, T057, T062
+- Source: core/src/com/unciv/models/ruleset/tile/TileResource.kt, TileImprovement.kt, ResourceSupplyList.kt, core/src/com/unciv/models/ruleset/nation/Nation.kt, Era.kt (nation/ and tech/), tech/Technology.kt, core/src/com/unciv/models/ruleset/Victory.kt (Milestone), Belief.kt, Specialist.kt, unit/BaseUnit.kt, Building.kt, PerpetualConstruction.kt (only the members still unported)
+- Fixtures: tests/src/com/unciv/models/ruleset/VictoryAvailabilityTests.kt, VictoryMilestoneTests.kt (T057 lists them; do whichever T057 did not), tests/src/com/unciv/logic/map/CityStateTypeStartBiasTests.kt, tests/src/com/unciv/uniques/ResourceTests.kt
+- Deliverables: csharp/Unciv.Core/Models/Ruleset/**/*.cs (members on the existing classes), tests
+- Gate: `dotnet test --filter FullyQualifiedName~DeferredRulesetMembersTests`
+- Claimed:
+- Notes: Created by the backlog audit: the Notes of T030/T031/T032/T033 list members deferred to 'T034/T046/T052' that no ticket took (confirmed absent in csharp/Unciv.Core). To port: TileResource.getImprovements/isImprovedBy/setTransients(ruleset)/getImprovingImprovement/generatesNaturallyOn; TileImprovement.getTurnsToBuild/getConstructorUnits/getCreatingUnits; ResourceSupplyList.subtractResourceRequirements; Nation.getStartBias; Era.getStartingUnits/getEraGatedObjects/matchesFilter; Technology.matchesFilter; Milestone.hasBeenCompletedBy/getFocus/getVictoryScreen*/getMoreCountable*/getCountableDo...; Belief.getBeliefsMatching; Specialist.colorObject (EngineColor); BaseUnit/Building/PerpetualConstruction getRejectionReasons-family members (isBuildable, shouldBeDisplayed, construct, newMapUnit, addConstructionBonuses, isPurchasable, tooltips) that T063 did NOT take (check T063's Notes first; no overlap), the Building/BaseUnit.matchesFilter 'is Building' part and the conditional-filter pieces named in T033's Notes. Civilopedia text members (getCivilopediaTextLines, makeLink, getSortGroup, getShortDescription, getDescription) are T095-T097, not here. Seam rule as T053.
+
 ### Planned (not yet ticketed)
 Deferred until the ruleset and map tickets land (decided with the user). Civilization, City, MapUnit, diplomacy core, quests and GameInfo are now ticketed (T046, T053-T072, acyclic via seam interfaces, see the SEAM RULE in T053). Still unticketed: TradeLogic/TradeEvaluation, Battle, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
 

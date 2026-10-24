@@ -16,6 +16,7 @@ flowchart TD
   subgraph TTRACK["Engine track"]
     T006["T006<br/>HexMath"]
     T010["T010<br/>Seeded deterministic RNG"]
+    T011["T011<br/>State-hash determinism harness"]
     T012["T012<br/>Command layer design"]
     T016["T016<br/>Kotlin random extensions (IntRange.random, Collection.random..."]
     T017["T017<br/>JVM hash codes and state-based randomness helpers"]
@@ -29,8 +30,10 @@ flowchart TD
     T039["T039<br/>TileMap"]
     T040["T040<br/>Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, Map..."]
     T041["T041<br/>MapGenerator pipeline (audit existing partial work first)"]
+    T042["T042<br/>OdMap import/export"]
     T045["T045<br/>GameSetupInfo"]
     T046["T046<br/>GameInfo core and the hooks waiting for it"]
+    T049["T049<br/>Model leaves: ModConstants, UncivSound, TutorialTrigger"]
     T052["T052<br/>UniqueTriggerActivation and UniqueTriggerExecutors"]
     T053["T053<br/>Tile core (part 2a): Tile"]
     T054["T054<br/>Tile core (part 2b): TileStatFunctions, TileImprovementFunct..."]
@@ -57,6 +60,34 @@ flowchart TD
     T075["T075<br/>MapGenerator C: mapregions Region, MapGenTileData, MapRegion..."]
     T076["T076<br/>MapGenerator D: mapregions StartNormalizer, MinorCivPlacer"]
     T077["T077<br/>MapGenerator E: resourceplacement (Luxury, StrategicBonus, M..."]
+    T078["T078<br/>Barbarians: BarbarianManager, BarbarianEncampment"]
+    T079["T079<br/>UnitAction model and unit actions A: UnitAction, UnitActionM..."]
+    T080["T080<br/>Unit actions B: UnitActions, UnitActionsFromUniques"]
+    T081["T081<br/>Battle A: ICombatant, MapUnitCombatant, CityCombatant, Battl..."]
+    T082["T082<br/>Battle B: attack recording, TargetHelper, BattleUnitCapture,..."]
+    T083["T083<br/>Battle C: Battle, Nuke"]
+    T084["T084<br/>Views A: View, GameView, OwnedView, CivView, ForeignCivView,..."]
+    T085["T085<br/>Views B: CityView, ForeignCityView, CityConstructionsView, M..."]
+    T086["T086<br/>TradeLogic"]
+    T087["T087<br/>Automation core: Automation, AutomationCache, ThreatManager,..."]
+    T088["T088<br/>Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEv..."]
+    T089["T089<br/>TradeEvaluation"]
+    T090["T090<br/>Unit automation core: UnitAutomation, BattleHelper, HeadTowa..."]
+    T091["T091<br/>Civilian automation: CivilianUnitAutomation, SpecificUnitAut..."]
+    T092["T092<br/>Worker and road automation: WorkerAutomation, RoadBetweenCit..."]
+    T093["T093<br/>PathingMap: PathingMap, PathingMapCache, PathingMapAStarPath..."]
+    T094["T094<br/>NextTurnAutomation and BarbarianAutomation (automation integ..."]
+    T095["T095<br/>Civilopedia text model A: FormattedLine, ICivilopediaText, C..."]
+    T096["T096<br/>Civilopedia text model B: Building, Improvement, Resource, T..."]
+    T097["T097<br/>Civilopedia text model C: BaseUnit, Nation, Technology descr..."]
+    T098["T098<br/>Save/load A: FileConversions, MapSaver, IMediaFinder"]
+    T099["T099<br/>GameStarter"]
+    T100["T100<br/>Save/load B: UncivFiles"]
+    T101["T101<br/>Simulation: Simulation, SimulationStep, MutableInt"]
+    T102["T102<br/>End-to-end determinism over N turns"]
+    T103["T103<br/>Remaining Kotlin tests sweep: uniques, filters, tutorials"]
+    T104["T104<br/>Marker, seam and stale-comment sweep (final)"]
+    T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -157,6 +188,119 @@ flowchart TD
   T068 --> T072
   T069 --> T072
   T071 --> T072
+  T060 --> T078
+  T065 --> T078
+  T066 --> T078
+  T052 --> T079
+  T057 --> T079
+  T063 --> T079
+  T066 --> T079
+  T067 --> T079
+  T079 --> T080
+  T061 --> T080
+  T068 --> T080
+  T060 --> T081
+  T065 --> T081
+  T067 --> T081
+  T062 --> T081
+  T035 --> T081
+  T081 --> T082
+  T046 --> T082
+  T067 --> T082
+  T035 --> T082
+  T081 --> T083
+  T082 --> T083
+  T052 --> T083
+  T064 --> T083
+  T068 --> T083
+  T079 --> T083
+  T035 --> T083
+  T046 --> T084
+  T057 --> T084
+  T059 --> T084
+  T084 --> T085
+  T081 --> T085
+  T062 --> T085
+  T063 --> T085
+  T066 --> T085
+  T067 --> T085
+  T059 --> T086
+  T068 --> T086
+  T057 --> T086
+  T085 --> T087
+  T057 --> T087
+  T087 --> T088
+  T086 --> T088
+  T081 --> T088
+  T068 --> T088
+  T086 --> T089
+  T088 --> T089
+  T085 --> T089
+  T087 --> T090
+  T088 --> T090
+  T082 --> T090
+  T083 --> T090
+  T090 --> T091
+  T080 --> T091
+  T063 --> T091
+  T091 --> T092
+  T080 --> T092
+  T035 --> T092
+  T067 --> T093
+  T088 --> T093
+  T090 --> T093
+  T092 --> T093
+  T088 --> T094
+  T090 --> T094
+  T091 --> T094
+  T092 --> T094
+  T078 --> T094
+  T083 --> T094
+  T035 --> T094
+  T034 --> T095
+  T095 --> T096
+  T062 --> T096
+  T054 --> T096
+  T095 --> T097
+  T062 --> T097
+  T057 --> T097
+  T034 --> T098
+  T039 --> T098
+  T042 --> T098
+  T049 --> T098
+  T041 --> T099
+  T046 --> T099
+  T061 --> T099
+  T066 --> T099
+  T078 --> T099
+  T098 --> T099
+  T071 --> T100
+  T098 --> T100
+  T099 --> T101
+  T094 --> T101
+  T071 --> T101
+  T011 --> T101
+  T101 --> T102
+  T100 --> T102
+  T072 --> T102
+  T011 --> T102
+  T072 --> T103
+  T052 --> T103
+  T098 --> T103
+  T097 --> T103
+  T102 --> T104
+  T103 --> T104
+  T106 --> T104
+  T097 --> T104
+  T093 --> T104
+  T089 --> T104
+  T094 --> T104
+  T100 --> T104
+  T063 --> T106
+  T066 --> T106
+  T052 --> T106
+  T057 --> T106
+  T062 --> T106
   C000 --> C001
   T006 --> C001
   C001 --> C002
@@ -196,6 +340,7 @@ flowchart TD
   class C006 blocked
   class T006 done
   class T010 done
+  class T011 done
   class T012 done
   class T016 done
   class T017 done
@@ -209,8 +354,10 @@ flowchart TD
   class T039 done
   class T040 done
   class T041 ready
+  class T042 done
   class T045 done
   class T046 waiting
+  class T049 done
   class T052 waiting
   class T053 done
   class T054 done
@@ -237,36 +384,92 @@ flowchart TD
   class T075 done
   class T076 done
   class T077 done
+  class T078 waiting
+  class T079 waiting
+  class T080 waiting
+  class T081 waiting
+  class T082 waiting
+  class T083 waiting
+  class T084 waiting
+  class T085 waiting
+  class T086 waiting
+  class T087 waiting
+  class T088 waiting
+  class T089 waiting
+  class T090 waiting
+  class T091 waiting
+  class T092 waiting
+  class T093 waiting
+  class T094 waiting
+  class T095 ready
+  class T096 waiting
+  class T097 waiting
+  class T098 ready
+  class T099 waiting
+  class T100 waiting
+  class T101 waiting
+  class T102 waiting
+  class T103 waiting
+  class T104 waiting
+  class T106 waiting
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T041 | **Ready to start** | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 0 | MapGenerator pipeline (audit existing partial work first) |
-| T055 | Needs-Review [Claude] | T034, T045, T039, T053 | 21 | Civilization core: Civilization, ExploredRegion, PopupAlert |
-| T056 | Available (waiting on T055) | T055 | 17 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
-| T057 | Available (waiting on T055) | T055 | 17 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
-| T058 | Available (waiting on T055) | T055, T054 | 17 | Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions |
-| T060 | Available (waiting on T055, T056, T057, T058) | T055, T056, T057, T058 | 16 | City core: City, CityFocus, CityResources, CityEspionageManager |
-| T065 | Available (waiting on T055, T056, T060) | T055, T056, T060 | 11 | MapUnit core: MapUnit, MapUnitCache |
-| T061 | Available (waiting on T060) | T060 | 7 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
-| T062 | Available (waiting on T060, T058) | T060, T058 | 6 | CityStats and GreatPersonPointsBreakdown |
+| T098 | **Ready to start** | T034, T039, T042, T049 | 6 | Save/load A: FileConversions, MapSaver, IMediaFinder |
+| T041 | **Ready to start** | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 4 | MapGenerator pipeline (audit existing partial work first) |
+| T095 | **Ready to start** | T034 | 4 | Civilopedia text model A: FormattedLine, ICivilopediaText, CivilopediaCategories, FormattedLineListBuilder, DescriptionHelpers |
+| T055 | Needs-Review [Claude] | T034, T045, T039, T053 | 47 | Civilization core: Civilization, ExploredRegion, PopupAlert |
+| T056 | Available (waiting on T055) | T055 | 43 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
+| T057 | Available (waiting on T055) | T055 | 43 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
+| T058 | Available (waiting on T055) | T055, T054 | 43 | Civilization transients: CivInfoTransientCache, CivInfoStatsForNextTurn, CapitalConnectionsFinder, CivConstructions |
+| T060 | Available (waiting on T055, T056, T057, T058) | T055, T056, T057, T058 | 42 | City core: City, CityFocus, CityResources, CityEspionageManager |
+| T065 | Available (waiting on T055, T056, T060) | T055, T056, T060 | 35 | MapUnit core: MapUnit, MapUnitCache |
+| T062 | Available (waiting on T060, T058) | T060, T058 | 29 | CityStats and GreatPersonPointsBreakdown |
+| T061 | Available (waiting on T060) | T060 | 27 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
+| T066 | Available (waiting on T065, T060) | T065, T060 | 26 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
+| T063 | Available (waiting on T060, T062) | T060, T062 | 24 | CityConstructions |
+| T046 | Available (waiting on T055, T060, T065) | T034, T039, T045, T055, T060, T065 | 23 | GameInfo core and the hooks waiting for it |
+| T059 | Available (waiting on T055) | T055 | 22 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
+| T064 | Available (waiting on T060, T061, T063) | T060, T061, T063 | 19 | City turn and conquest: CityTurnManager, CityConquestFunctions |
+| T067 | Available (waiting on T065) | T065, T054 | 19 | Unit movement: MovementCost, UnitMovement |
+| T035 | Available (waiting on T046, T057, T061, T065) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 18 | Test-support port: TestGame helper and deferred fixtures |
+| T068 | Available (waiting on T059, T064, T066) | T059, T064, T066 | 18 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
+| T081 | Available (waiting on T060, T065, T067, T062, T035) | T060, T065, T067, T062, T035 | 14 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
+| T052 | Available (waiting on T055, T056, T057, T060, T065, T066) | T028, T055, T056, T057, T060, T065, T066 | 13 | UniqueTriggerActivation and UniqueTriggerExecutors |
+| T084 | Available (waiting on T046, T057, T059) | T046, T057, T059 | 12 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
+| T085 | Available (waiting on T084, T081, T062, T063, T066, T067) | T084, T081, T062, T063, T066, T067 | 11 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
+| T079 | Available (waiting on T052, T057, T063, T066, T067) | T052, T057, T063, T066, T067 | 10 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
+| T086 | Available (waiting on T059, T068, T057) | T059, T068, T057 | 10 | TradeLogic |
+| T087 | Available (waiting on T085, T057) | T085, T057 | 10 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
+| T082 | Available (waiting on T081, T046, T067, T035) | T081, T046, T067, T035 | 9 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
+| T088 | Available (waiting on T087, T086, T081, T068) | T087, T086, T081, T068 | 9 | Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEvaluator, DeclareWarTargetAutomation, DiplomacyAutomation, TradeAutomation |
+| T069 | Available (waiting on T055, T060, T065) | T055, T060, T065 | 8 | QuestManager and quest helpers |
+| T083 | Available (waiting on T081, T082, T052, T064, T068, T079, T035) | T081, T082, T052, T064, T068, T079, T035 | 8 | Battle C: Battle, Nuke |
+| T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 7 | Civilization TurnManager |
+| T080 | Available (waiting on T079, T061, T068) | T079, T061, T068 | 7 | Unit actions B: UnitActions, UnitActionsFromUniques |
+| T090 | Available (waiting on T087, T088, T082, T083) | T087, T088, T082, T083 | 7 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
+| T071 | Available (waiting on T046, T070) | T046, T070 | 6 | GameInfo turn handling and BackwardCompatibility |
+| T091 | Available (waiting on T090, T080, T063) | T090, T080, T063 | 6 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | C001 | Blocked | C000, T006 | 5 | Godot project skeleton |
-| T063 | Available (waiting on T060, T062) | T060, T062 | 5 | CityConstructions |
-| T066 | Available (waiting on T065, T060) | T065, T060 | 5 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
-| T046 | Available (waiting on T055, T060, T065) | T034, T039, T045, T055, T060, T065 | 4 | GameInfo core and the hooks waiting for it |
-| T059 | Available (waiting on T055) | T055 | 4 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
-| T064 | Available (waiting on T060, T061, T063) | T060, T061, T063 | 4 | City turn and conquest: CityTurnManager, CityConquestFunctions |
+| T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 5 | Barbarians: BarbarianManager, BarbarianEncampment |
+| T092 | Available (waiting on T091, T080, T035) | T091, T080, T035 | 5 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | A004 | Blocked | A001, T039, T040 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| T068 | Available (waiting on T059, T064, T066) | T059, T064, T066 | 3 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
-| T069 | Available (waiting on T055, T060, T065) | T055, T060, T065 | 3 | QuestManager and quest helpers |
-| T035 | Available (waiting on T046, T057, T061, T065) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 2 | Test-support port: TestGame helper and deferred fixtures |
-| T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 2 | Civilization TurnManager |
+| T072 | Available (waiting on T035, T062, T063, T064, T067, T068, T069, T071) | T035, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
+| T094 | Available (waiting on T088, T090, T091, T092, T078, T083, T035) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
+| T099 | Available (waiting on T041, T046, T061, T066, T078, T098) | T041, T046, T061, T066, T078, T098 | 3 | GameStarter |
+| T097 | Available (waiting on T095, T062, T057) | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
+| T100 | Available (waiting on T071, T098) | T071, T098 | 2 | Save/load B: UncivFiles |
+| T101 | Available (waiting on T099, T094, T071) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T067 | Available (waiting on T065) | T065, T054 | 1 | Unit movement: MovementCost, UnitMovement |
-| T071 | Available (waiting on T046, T070) | T046, T070 | 1 | GameInfo turn handling and BackwardCompatibility |
+| T089 | Available (waiting on T086, T088, T085) | T086, T088, T085 | 1 | TradeEvaluation |
+| T093 | Available (waiting on T067, T088, T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
+| T102 | Available (waiting on T101, T100, T072) | T101, T100, T072, T011 | 1 | End-to-end determinism over N turns |
+| T103 | Available (waiting on T072, T052, T098, T097) | T072, T052, T098, T097 | 1 | Remaining Kotlin tests sweep: uniques, filters, tutorials |
+| T106 | Available (waiting on T063, T066, T052, T057, T062) | T063, T066, T052, T057, T062 | 1 | Deferred ruleset-object members (T030-T033 leftovers) |
 | A003 | Blocked | A002, T030 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -275,5 +478,5 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
-| T052 | Available (waiting on T055, T056, T057, T060, T065, T066) | T028, T055, T056, T057, T060, T065, T066 | 0 | UniqueTriggerActivation and UniqueTriggerExecutors |
-| T072 | Available (waiting on T035, T062, T063, T064, T067, T068, T069, T071) | T035, T062, T063, T064, T067, T068, T069, T071 | 0 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
+| T096 | Available (waiting on T095, T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
+| T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
