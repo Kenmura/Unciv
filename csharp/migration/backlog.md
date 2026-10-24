@@ -169,8 +169,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ran Gate (6 passed) and full `dotnet test` (153 passed).
 
 ### T013 Style & analyzer baseline
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T00:55:38Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T01:11:26Z
 - Depends: none
 - Source: design ticket (no Kotlin). Config only: `csharp/Directory.Build.props`, `Directory.Packages.props`, `BannedSymbols.txt`, `[*.cs]` in `.editorconfig`
 - Fixtures: none
