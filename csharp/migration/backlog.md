@@ -946,7 +946,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit. ~740 LOC. Takes the Building/TileImprovement/TileResource/Terrain getCivilopediaTextLines, getShortDescription, makeLink, getSortGroup, displayAs members deferred by T030/T031/T033. Seam rule as T053.
 
 ### T097 Civilopedia text model C: BaseUnit, Nation, Technology descriptions
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T095, T062, T057
 - Source: core/src/com/unciv/ui/objectdescriptions/BaseUnitDescriptions.kt, NationDescriptions.kt, TechnologyDescriptions.kt
 - Fixtures: none - generate golden values
