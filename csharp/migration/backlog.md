@@ -189,8 +189,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified `IntRange.cs`, `GameRandomExtensions.cs`, and `GameRandomExtensionsTests.cs` against Kotlin stdlib 2.3.0: `NextInt(IntRange)` 3-way overflow split (`Last < MAX` / `First > MIN` / full range), `Random`/`RandomOrNull` RNG consumption parity (including 1-element consuming a draw and empty consuming nothing), and Kotlin's reverse Fisher-Yates `Shuffle` (`for i in lastIndex downTo 1: j = nextInt(i + 1)`). Re-ran Gate (3/3 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 231/231 passed).
 
 ### T011 State-hash determinism harness
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T01:30:03Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T01:31:14Z
 - Depends: T010
 - Source: design ticket (no Kotlin source); reference tests/src/com/unciv/logic/GameSerializationTests.kt for what constitutes game state
 - Fixtures: none
