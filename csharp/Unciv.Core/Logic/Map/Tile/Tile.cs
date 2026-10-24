@@ -82,9 +82,9 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     #endregion
 
     #region Transient fields
-    private ITileMapState? tileMap;
-    /// <summary>Kotlin <c>lateinit var</c>: reading before assignment throws. T039 retypes it to <c>TileMap</c>.</summary>
-    public ITileMapState TileMap
+    private TileMap? tileMap;
+    /// <summary>Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    public TileMap TileMap
     {
         get => tileMap ?? throw new InvalidOperationException("lateinit property tileMap has not been initialized");
         set => tileMap = value;
@@ -135,7 +135,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         private set => lastTerrain = value;
     }
 
-    public TerrainListData CachedTerrainData { get; private set; } = TerrainListData.Empty;
+    public Unciv.Logic.Map.TileMap.TerrainListData CachedTerrainData { get; private set; } = Unciv.Logic.Map.TileMap.TerrainListData.Empty;
 
     /// <summary>Between 0.0 and 1.0 - For map generation use only</summary>
     public double? Humidity { get; set; }
@@ -972,7 +972,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         var terrainNameList = AllTerrains.Select(it => it.Name).ToList();
 
         // List hash is function of all its items, so the same items in the same order will always give the same hash
-        CachedTerrainData = TileMap.GetOrPutTileUniqueMap(terrainNameList, () => new TerrainListData(
+        CachedTerrainData = TileMap.TileUniqueMapCache.GetOrAdd(terrainNameList, _ => new TileMap.TerrainListData(
             new UniqueMap(AllTerrains.SelectMany(it => ((IHasUniques)it).UniqueObjects)),
             new HashSet<string>(terrainNameList)));
     }

@@ -9,74 +9,10 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Logic.Map;
 
-// Tile (T053), against a fake ITileMapState. The Kotlin fixtures FreshWaterTests and TileImprovementConstructionTests need TestGame
+// Tile (T053), against a real TileMap. The Kotlin fixtures FreshWaterTests and TileImprovementConstructionTests need TestGame
 // (T035/T072) and are ported there.
 public partial class TileTests
 {
-    private sealed class FakeMap : ITileMapState
-    {
-        public Dictionary<HexCoord, TileClass> Tiles { get; } = [];
-        public MapParameters MapParameters { get; } = new();
-        public int Width { get; set; } = 10;
-        public IGameContextGameInfo GameInfo { get; set; } = new FakeGameInfo();
-        public bool GameInfoSet { get; set; } = true;
-        public bool HasGameInfo() => GameInfoSet;
-        private readonly Dictionary<string, TerrainListData> uniqueCache = [];
-        public int CacheMisses { get; private set; }
-
-        public HexCoord GetUnwrappedPosition(HexCoord position) => position;
-
-        public int GetNeighborTileClockPosition(TileClass tile, TileClass otherTile)
-        {
-            var xDifference = tile.Position.x - otherTile.Position.x;
-            var yDifference = tile.Position.y - otherTile.Position.y;
-            if (xDifference == 1 && yDifference == 1) return 6;
-            if (xDifference == -1 && yDifference == -1) return 12;
-            if (xDifference == 1) return 4;
-            if (yDifference == 1) return 8;
-            if (xDifference == -1) return 10;
-            if (yDifference == -1) return 2;
-            return -1;
-        }
-
-        public List<TileClass> GetViewableTiles(HexCoord position, int sightDistance) => GetTilesInDistance(position, sightDistance).ToList();
-
-        public IEnumerable<TileClass> GetTilesInDistance(HexCoord origin, int distance) => GetTilesInDistanceRange(origin, new IntRange(0, distance));
-
-        public IEnumerable<TileClass> GetTilesInDistanceRange(HexCoord origin, IntRange range)
-        {
-            for (var i = range.First; i <= range.Last; i++)
-            {
-                foreach (var tile in GetTilesAtDistance(origin, i)) yield return tile;
-            }
-        }
-
-        public IEnumerable<TileClass> GetTilesAtDistance(HexCoord origin, int distance) =>
-            HexMath.GetHexCoordsAtDistance(origin, System.Math.Max(distance, 0), distance, false)
-                .Select(it => Tiles.GetValueOrDefault(it)).OfType<TileClass>();
-
-        public void ForEachTileInDistance(HexCoord origin, int distance, Func<TileClass, bool> filter, Action<TileClass> op) =>
-            ForEachTileInDistanceRange(origin, new IntRange(0, distance), filter, op);
-
-        public void ForEachTileInDistanceRange(HexCoord origin, IntRange range, Func<TileClass, bool> filter, Action<TileClass> op)
-        {
-            for (var i = range.First; i <= range.Last; i++) ForEachTileAtDistance(origin, i, filter, op);
-        }
-
-        public void ForEachTileAtDistance(HexCoord origin, int distance, Func<TileClass, bool> filter, Action<TileClass> op)
-        {
-            foreach (var tile in GetTilesAtDistance(origin, distance).Where(filter)) op(tile);
-        }
-
-        public TerrainListData GetOrPutTileUniqueMap(IReadOnlyList<string> terrainNameList, Func<TerrainListData> create)
-        {
-            var key = string.Join("|", terrainNameList);
-            if (uniqueCache.TryGetValue(key, out var found)) return found;
-            CacheMisses++;
-            return uniqueCache[key] = create();
-        }
-    }
-
     private static Ruleset TileRuleset()
     {
         var ruleset = new Ruleset();
@@ -100,18 +36,15 @@ public partial class TileTests
     }
 
     /// <summary>A square patch of tiles, (0,0) to (width-1,height-1), all on <paramref name="baseTerrain"/>.</summary>
-    private static FakeMap TileMapOf(Ruleset ruleset, int width = 5, int height = 5, string baseTerrain = "Grassland")
+    private static TileMap TileMapOf(Ruleset ruleset, int width = 5, int height = 5, string baseTerrain = "Grassland")
     {
-        var map = new FakeMap();
+        var map = new TileMap(width * height) { GameInfo = new FakeGameInfo() };
         for (var x = 0; x < width; x++)
         {
             for (var y = 0; y < height; y++)
-            {
-                var tile = new TileClass { Ruleset = ruleset, TileMap = map, Position = HexCoord.Of(x, y), BaseTerrain = baseTerrain };
-                map.Tiles[tile.Position] = tile;
-            }
+                map.TileList.Add(new TileClass { Position = HexCoord.Of(x, y), BaseTerrain = baseTerrain });
         }
-        foreach (var tile in map.Tiles.Values) tile.SetTransients();
+        map.SetTransients(ruleset);
         return map;
     }
 
@@ -158,7 +91,7 @@ public partial class TileTests
     public void SetTerrainTransients_SetsLandWaterOceanAndLastTerrain()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         Assert.True(tile.IsLand);
         Assert.False(tile.IsWater);
         Assert.Equal("Grassland", tile.LastTerrain.Name);
@@ -175,7 +108,7 @@ public partial class TileTests
     public void SetTerrainTransients_MissingTerrainThrows()
     {
         var map = TileMapOf(TileRuleset(), 1, 1);
-        var tile = map.Tiles[HexCoord.Zero];
+        var tile = map[HexCoord.Zero];
         tile.BaseTerrain = "Nope";
         var ex = Assert.Throws<InvalidOperationException>(tile.SetTerrainTransients);
         Assert.Equal("Terrain Nope does not exist in ruleset!", ex.Message);
@@ -185,12 +118,12 @@ public partial class TileTests
     public void Neighbors_AreCachedOnceAndExcludeSelf()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         Assert.Equal(6, tile.Neighbors.Count);
         Assert.DoesNotContain(tile, tile.Neighbors);
         Assert.Same(tile.Neighbors, tile.Neighbors);
         // Edge tiles only have the neighbors the map has
-        Assert.Equal(3, map.Tiles[HexCoord.Zero].Neighbors.Count);
+        Assert.Equal(3, map[HexCoord.Zero].Neighbors.Count);
     }
 
     [Fact]
@@ -207,11 +140,11 @@ public partial class TileTests
     public void IsAdjacentToCoast_NeedsLandAndCoastNeighbor()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         Assert.False(tile.IsAdjacentToCoast());
         // the laziness is per tile and not reset: use a fresh map
         map = TileMapOf(TileRuleset());
-        tile = map.Tiles[HexCoord.Of(2, 2)];
+        tile = map[HexCoord.Of(2, 2)];
         SetBase(tile.Neighbors[0], "Coast");
         Assert.True(tile.IsAdjacentToCoast());
         SetBase(tile, "Coast");
@@ -222,8 +155,8 @@ public partial class TileTests
     public void River_EdgesAreSharedBetweenNeighborsAndResetTheCache()
     {
         var map = TileMapOf(TileRuleset());
-        var a = map.Tiles[HexCoord.Of(2, 2)];
-        var b = map.Tiles[HexCoord.Of(3, 3)]; // directly below a (clock position 12 seen from a)
+        var a = map[HexCoord.Of(2, 2)];
+        var b = map[HexCoord.Of(3, 3)]; // directly below a (clock position 12 seen from a)
         Assert.False(a.IsAdjacentToRiver());
         Assert.True(a.SetConnectedByRiver(b, true));
         Assert.False(a.SetConnectedByRiver(b, true)); // already set
@@ -235,23 +168,23 @@ public partial class TileTests
         Assert.True(a.SetConnectedByRiver(b, false));
         Assert.False(a.IsConnectedByRiver(b));
         Assert.False(a.IsAdjacentToRiver());
-        Assert.False(a.SetConnectedByRiver(map.Tiles[HexCoord.Of(0, 4)], true)); // not a neighbor: nothing happens
+        Assert.False(a.SetConnectedByRiver(map[HexCoord.Of(0, 4)], true)); // not a neighbor: nothing happens
     }
 
     [Fact]
     public void IsConnectedByRiver_ThrowsForSelfAndNonNeighbor()
     {
         var map = TileMapOf(TileRuleset());
-        var a = map.Tiles[HexCoord.Of(2, 2)];
+        var a = map[HexCoord.Of(2, 2)];
         Assert.Throws<InvalidOperationException>(() => a.IsConnectedByRiver(a));
-        Assert.Throws<InvalidOperationException>(() => a.IsConnectedByRiver(map.Tiles[HexCoord.Zero]));
+        Assert.Throws<InvalidOperationException>(() => a.IsConnectedByRiver(map[HexCoord.Zero]));
     }
 
     [Fact]
     public void IsAdjacentToRiver_BottomEdgeCountsWithoutNeighbor()
     {
         var map = TileMapOf(TileRuleset(), 2, 2);
-        var corner = map.Tiles[HexCoord.Zero];
+        var corner = map[HexCoord.Zero];
         corner.HasBottomRiver = true;
         Assert.True(corner.IsAdjacentToRiver());
         Assert.True(corner.MatchesFilter(Constants.River));
@@ -262,8 +195,8 @@ public partial class TileTests
     public void AerialDistanceTo_IsHexDistanceAndWrapsWhenWorldWrapIsOn()
     {
         var map = TileMapOf(TileRuleset(), 8, 8);
-        var a = map.Tiles[HexCoord.Of(1, 1)];
-        var b = map.Tiles[HexCoord.Of(4, 2)];
+        var a = map[HexCoord.Of(1, 1)];
+        var b = map[HexCoord.Of(4, 2)];
         Assert.Equal(3, a.AerialDistanceTo(b));
         Assert.Equal(0, a.AerialDistanceTo(a));
         map.MapParameters.WorldWrap = true;
@@ -275,7 +208,7 @@ public partial class TileTests
     public void RoadStatus_PillagedRoadCountsAsNone()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var civ = new TileCiv("A");
         Assert.False(tile.HasConnection(civ));
         tile.SetRoadStatus(RoadStatus.Road, null);
@@ -299,7 +232,7 @@ public partial class TileTests
     public void ForestAndJungleAreRoads_NeedsNationFlagFeatureAndFriendlyTerritory()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         tile.AddTerrainFeature("Forest");
         var civ = new TileCiv("A") { Forests = true };
         Assert.False(tile.HasConnection(civ)); // not owned: not friendly
@@ -320,8 +253,8 @@ public partial class TileTests
         var civ = new TileCiv("A");
         ((FakeGameInfo)map.GameInfo).Turns = 7;
         var city = new TileCity("c", civ, HexCoord.Of(2, 2));
-        var center = map.Tiles[HexCoord.Of(2, 2)];
-        var other = map.Tiles[HexCoord.Of(2, 3)];
+        var center = map[HexCoord.Of(2, 2)];
+        var other = map[HexCoord.Of(2, 3)];
         center.SetOwningCity(city);
         other.SetOwningCity(city);
         Assert.True(center.IsCityCenter());
@@ -348,7 +281,7 @@ public partial class TileTests
     {
         var map = TileMapOf(TileRuleset());
         var civ = new TileCiv("A");
-        var tile = map.Tiles[HexCoord.Of(1, 1)];
+        var tile = map[HexCoord.Of(1, 1)];
         tile.SetRoadStatus(RoadStatus.Road, civ);
         Assert.Contains(tile.Position, civ.NeutralRoads);
         Assert.Same(civ, tile.GetRoadOwner());
@@ -364,7 +297,7 @@ public partial class TileTests
     public void Units_AreListedMilitaryCivilianThenAir_AndRemoved()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var civ = new TileCiv("A");
         Assert.Empty(tile.GetUnits());
         Assert.Null(tile.GetFirstUnit());
@@ -389,7 +322,7 @@ public partial class TileTests
     public void IsBlockaded_EnemyShipAdjacentToOwnedWaterTile()
     {
         var map = TileMapOf(TileRuleset(), baseTerrain: "Coast");
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var owner = new TileCiv("A");
         var enemy = new TileCiv("B");
         enemy.AtWarWith.Add(owner);
@@ -409,7 +342,7 @@ public partial class TileTests
     public void Explored_VisibleMapAndSpectatorsSeeEverything()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var info = (FakeGameInfo)map.GameInfo;
         var civ = new TileCiv("A", info);
         Assert.False(tile.IsExplored(civ));
@@ -430,7 +363,7 @@ public partial class TileTests
     public void Clone_CopiesStateButSharesNothingMutable()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var civ = new TileCiv("A");
         tile.AddTerrainFeature("Forest");
         tile.SetTileResource(tile.Ruleset.TileResources["Wheat"]);
@@ -458,7 +391,7 @@ public partial class TileTests
     public void ImprovementQueue_CountsDownAndMarksCreatesOneImprovement()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         Assert.False(tile.HasImprovementInProgress());
         Assert.Equal(0, tile.TurnsToImprovement);
         tile.QueueImprovement("Farm", 2);
@@ -493,7 +426,7 @@ public partial class TileTests
     public void Pillaging_ChecksUniquesAndPicksImprovementBeforeRoad()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         Assert.False(tile.CanPillageTile());
         Assert.Null(tile.GetImprovementToPillage());
         tile.SetImprovementBasic("Farm");
@@ -517,7 +450,7 @@ public partial class TileTests
     public void GetShownImprovement_UsesLastSeenForHumans()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         tile.SetImprovementBasic("Farm");
         Assert.Equal("Farm", tile.GetShownImprovement(null));
         Assert.Equal("Farm", tile.GetShownImprovement(new TileCiv("AI")));
@@ -527,7 +460,7 @@ public partial class TileTests
     public void SetTileResource_StrategicAmountFollowsMapResourcesAndDeposit()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var iron = tile.Ruleset.TileResources["Iron"];
         iron.MajorDepositAmount = new TileResource.DepositAmount { Sparse = 4, Default = 6, Abundant = 8 };
         iron.MinorDepositAmount = new TileResource.DepositAmount { Sparse = 1, Default = 2, Abundant = 3 };
@@ -548,7 +481,7 @@ public partial class TileTests
     public void SetTileResource_RandomChoiceNeedsARandomSource_AndUsesTheDefaultFrequency()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var iron = tile.Ruleset.TileResources["Iron"];
         iron.MajorDepositAmount = new TileResource.DepositAmount { Default = 6 };
         iron.MinorDepositAmount = new TileResource.DepositAmount { Default = 2 };
@@ -563,7 +496,7 @@ public partial class TileTests
     public void SetTerrainTransients_FixesMissingStrategicAmountAsSmallDeposit()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var iron = tile.Ruleset.TileResources["Iron"];
         iron.MinorDepositAmount = new TileResource.DepositAmount { Default = 2 };
         tile.SetTileResource("Iron", false);
@@ -576,7 +509,7 @@ public partial class TileTests
     public void MatchesFilter_TerrainResourceAndSpecialFilters()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var civ = new TileCiv("A");
         tile.AddTerrainFeature("Forest");
         tile.SetTileResource(tile.Ruleset.TileResources["Wheat"]);
@@ -612,7 +545,7 @@ public partial class TileTests
     public void MatchesFilter_OwnershipFilters()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         var owner = new TileCiv("A");
         var visitor = new TileCiv("B");
         tile.SetOwningCity(new TileCity("c", owner, HexCoord.Zero));
@@ -635,7 +568,7 @@ public partial class TileTests
     public void DefensiveBonus_UsesBestFeatureAndNaturalWonder()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         Assert.Equal(0f, tile.GetDefensiveBonus());
         tile.AddTerrainFeature("Forest");
         Assert.Equal(0.25f, tile.GetDefensiveBonus());
@@ -650,7 +583,7 @@ public partial class TileTests
     public void Impassable_ComesFromTheLastTerrain()
     {
         var map = TileMapOf(TileRuleset());
-        var tile = map.Tiles[HexCoord.Of(2, 2)];
+        var tile = map[HexCoord.Of(2, 2)];
         Assert.False(tile.IsImpassible());
         SetBase(tile, "Mountain");
         Assert.True(tile.IsImpassible());
@@ -663,7 +596,7 @@ public partial class TileTests
         var map = TileMapOf(TileRuleset(), 9, 9);
         var info = new SettleGameInfo();
         map.GameInfo = info;
-        var tile = map.Tiles[HexCoord.Of(4, 4)];
+        var tile = map[HexCoord.Of(4, 4)];
         var civ = new TileCiv("A");
         Assert.True(tile.CanBeSettled(civ));
         SetBase(tile, "Coast");
@@ -673,11 +606,11 @@ public partial class TileTests
         SetBase(tile, "Grassland");
         Assert.True(tile.CanBeSettled(civ));
         // a city centre within minimalCityDistance (3) on the same continent
-        var near = map.Tiles[HexCoord.Of(5, 5)];
+        var near = map[HexCoord.Of(5, 5)];
         near.SetOwningCity(new TileCity("c", civ, near.Position));
         Assert.False(tile.CanBeSettled(civ));
         // foreign territory: city further away, but its borders cover the tile
-        var far = map.Tiles[HexCoord.Of(0, 0)];
+        var far = map[HexCoord.Of(0, 0)];
         var other = new TileCiv("B");
         far.SetOwningCity(new TileCity("d", other, far.Position));
         near.SetOwningCity(null);
@@ -696,7 +629,7 @@ public partial class TileTests
     public void Continent_CanOnlyBeAssignedOnce()
     {
         var map = TileMapOf(TileRuleset(), 1, 1);
-        var tile = map.Tiles[HexCoord.Zero];
+        var tile = map[HexCoord.Zero];
         Assert.Equal(-1, tile.GetContinent());
         tile.SetContinent(2);
         Assert.Equal(2, tile.GetContinent());
@@ -712,7 +645,7 @@ public partial class TileTests
     {
         var ruleset = TileRuleset();
         var map = TileMapOf(ruleset, 1, 1);
-        var tile = map.Tiles[HexCoord.Zero];
+        var tile = map[HexCoord.Zero];
         tile.AddTerrainFeature("Forest");
         tile.AddTerrainFeature("Forest");
         Assert.Equal(["Forest"], tile.TerrainFeatures);
@@ -740,7 +673,7 @@ public partial class TileTests
     {
         var ruleset = TileRuleset();
         var map = TileMapOf(ruleset, 1, 1);
-        var tile = map.Tiles[HexCoord.Zero];
+        var tile = map[HexCoord.Zero];
         tile.SetTerrainFeatures(["Forest", "Missing"]);
         tile.SetTileResource("Gone", false);
         tile.SetImprovementBasic("Farm");
@@ -759,11 +692,11 @@ public partial class TileTests
     public void TerrainUniqueMap_IsCachedPerTerrainList()
     {
         var map = TileMapOf(TileRuleset(), 3, 3);
-        var before = map.CacheMisses;
+        var before = map.TileUniqueMapCache.Count;
         Assert.Equal(1, before); // one list ("Grassland") for all nine tiles
-        var tile = map.Tiles[HexCoord.Of(1, 1)];
+        var tile = map[HexCoord.Of(1, 1)];
         tile.AddTerrainFeature("Forest");
-        Assert.Equal(2, map.CacheMisses);
+        Assert.Equal(2, map.TileUniqueMapCache.Count);
         Assert.True(tile.TerrainHasUnique(UniqueType.RoughTerrain));
         Assert.Single(tile.GetTerrainMatchingUniques(UniqueType.RoughTerrain));
         Assert.Single(tile.GetMatchingUniques(UniqueType.RoughTerrain));
@@ -774,7 +707,7 @@ public partial class TileTests
     public void ToString_ListsTheImportantProperties()
     {
         var map = TileMapOf(TileRuleset(), 3, 3);
-        var tile = map.Tiles[HexCoord.Of(1, 2)];
+        var tile = map[HexCoord.Of(1, 2)];
         Assert.Equal("Tile @HexCoord(x=1, y=2), Grassland", tile.ToString());
         tile.AddTerrainFeature("Forest");
         var iron = tile.Ruleset.TileResources["Iron"];
@@ -802,7 +735,7 @@ public partial class TileTests
     public void LatitudeLongitudeRowColumn_MirrorHexMath()
     {
         var map = TileMapOf(TileRuleset(), 5, 5);
-        var tile = map.Tiles[HexCoord.Of(3, 1)];
+        var tile = map[HexCoord.Of(3, 1)];
         Assert.Equal(4, tile.Latitude);
         Assert.Equal(2, tile.Longitude);
         Assert.Equal(2, tile.GetRow());
