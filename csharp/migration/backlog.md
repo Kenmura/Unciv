@@ -1575,13 +1575,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Found by T100: Civilization (and everything reachable from it, e.g. Civilization.GameInfo -> Ruleset -> Building) has no JSON wiring, so UncivJson.Serialize(game with civs) throws NotSupportedException; GameInfo.SetTransients also refuses a game without a human civ. Wire the serialized fields (and JsonIgnore the transients), then extend UncivFilesTests with GameSerializationTests' full round trips (canSaveAndLoadUncompressedGame/CompressedGame: gameId, turns, version, cities) and assert the T011 StateHasher hash survives GameInfo -> file -> GameInfo, plus Autosaves.LoadLatestAutosave on real games.
 
 ### T141 Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T072
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt, VisibilityTests.kt, UpgradeTests.kt, UnitFormationTests.kt, UnitMovementTests.kt and PathfindingTests.kt (cases not yet in Logic/Map/*Tests.cs)
 - Deliverables: csharp/Unciv.Core.Tests/Fixtures/Map/*.cs
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
-- Claimed:
+- Claimed: 2026-10-24T17:32Z
 - Notes: Split from T072 at claim time (T072 ported the city slice). Same pattern: namespace Unciv.Core.Tests.Fixtures.*, [Collection("RulesetCache")], real TestGame; behavioural bugs go back to the owning ticket as review notes.
 
 ### T142 Deferred TestGame fixtures: civilization directory and GameSerializationTests

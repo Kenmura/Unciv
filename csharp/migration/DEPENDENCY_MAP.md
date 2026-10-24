@@ -232,7 +232,7 @@ flowchart TD
   class T129 ready
   class T139 waiting
   class T140 prog
-  class T141 ready
+  class T141 prog
   class T142 ready
   class T143 ready
   class T144 waiting
@@ -249,7 +249,6 @@ flowchart TD
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
-| T141 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder) |
 | T142 | **Ready to start** | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | T143 | **Ready to start** | T103 | 0 | Port GlobalUniquesTests + deferred TestGame fixtures (split from T103) |
 | T083 | **On deck** (after T079) | T081, T082, T052, T064, T068, T079, T035 | 13 | Battle C: Battle, Nuke |
@@ -279,4 +278,5 @@ flowchart TD
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T139 | Available (waiting on T083, T079, T080) | T085, T082, T083, T079, T080 | 0 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | T140 | In-Progress [Claude] | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
+| T141 | In-Progress [Claude] | T072 | 0 | Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation, UnitMovement and Pathfinding remainder) |
 | T144 | Available (waiting on T080) | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
