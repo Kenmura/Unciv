@@ -237,7 +237,7 @@ flowchart TD
   class T073 done
   class T074 done
   class T075 done
-  class T076 ready
+  class T076 prog
   class T077 prog
 ```
 
@@ -245,7 +245,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T076 | **Ready to start** | T075 | 1 | MapGenerator D: mapregions StartNormalizer, MinorCivPlacer |
 | T055 | In-Progress [Claude] | T034, T045, T039, T053 | 21 | Civilization core: Civilization, ExploredRegion, PopupAlert |
 | T056 | Available (waiting on T055) | T055 | 17 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
 | T057 | Available (waiting on T055) | T055 | 17 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
@@ -269,6 +268,7 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T067 | Available (waiting on T065) | T065, T054 | 1 | Unit movement: MovementCost, UnitMovement |
 | T071 | Available (waiting on T046, T070) | T046, T070 | 1 | GameInfo turn handling and BackwardCompatibility |
+| T076 | In-Progress [Claude] | T075 | 1 | MapGenerator D: mapregions StartNormalizer, MinorCivPlacer |
 | T077 | In-Progress [Claude] | T075 | 1 | MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources) |
 | A003 | Blocked | A002, T030 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004 | 0 | Homeland AI priority move queue |
