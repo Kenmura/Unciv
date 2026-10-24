@@ -349,9 +349,9 @@ flowchart TD
   class T062 prog
   class T063 ondeck
   class T064 waiting
-  class T065 ready
-  class T066 waiting
-  class T067 waiting
+  class T065 prog
+  class T066 ondeck
+  class T067 ondeck
   class T068 waiting
   class T069 waiting
   class T070 waiting
@@ -386,7 +386,7 @@ flowchart TD
   class T104 waiting
   class T106 waiting
   class T107 done
-  class T110 waiting
+  class T110 ondeck
   class T111 waiting
   class T112 ready
   class T115 waiting
@@ -396,12 +396,14 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T065 | **Ready to start** | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
 | T112 | **Ready to start** | T060 | 0 | Hardening: drop CivInfoTransientCache.IsCityConnectedToCapital convenience at the City retype |
+| T066 | **On deck** (after T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T063 | **On deck** (after T062) | T060, T062 | 36 | CityConstructions |
+| T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T097 | **On deck** (after T062) | T095, T062, T057 | 2 | Civilopedia text model C: BaseUnit, Nation, Technology descriptions |
 | T096 | **On deck** (after T062) | T095, T062, T054 | 0 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
-| T066 | Available (waiting on T065) | T065, T060 | 45 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
+| T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
+| T065 | In-Progress [Claude] | T055, T056, T060 | 48 | MapUnit core: MapUnit, MapUnitCache |
 | T061 | In-Progress [Claude] | T060 | 42 | City managers: CityPopulationManager, CityExpansionManager, CityReligionManager, CityFounder |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T062 | In-Progress [Claude] | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
@@ -411,7 +413,6 @@ flowchart TD
 | T069 | Available (waiting on T065, T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T035 | Available (waiting on T046, T061, T065) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
-| T067 | Available (waiting on T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T052 | Available (waiting on T046, T061, T063, T064, T065, T066, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T065, T067, T062, T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T084 | Available (waiting on T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
@@ -450,6 +451,5 @@ flowchart TD
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
