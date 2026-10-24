@@ -112,10 +112,6 @@ flowchart TD
   T066 --> T052
   T068 --> T052
   T070 --> T052
-  T068 --> T070
-  T064 --> T070
-  T066 --> T070
-  T069 --> T070
   T046 --> T071
   T070 --> T071
   T035 --> T072
@@ -282,8 +278,8 @@ flowchart TD
   class T066 done
   class T067 done
   class T068 done
-  class T069 review
-  class T070 ondeck
+  class T069 done
+  class T070 ready
   class T071 waiting
   class T072 waiting
   class T078 done
@@ -332,6 +328,7 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T070 | **Ready to start** | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T037 | **Ready to start** | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
@@ -342,11 +339,9 @@ flowchart TD
 | T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T130 | **Ready to start** | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
-| T070 | **On deck** (after T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T085 | **On deck** (after T081) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T082 | **On deck** (after T081) | T081, T046, T067, T035 | 13 | Battle B: attack recording, TargetHelper, BattleUnitCapture, AirInterception, GreatGeneralImplementation |
 | T138 | **On deck** (after T086) | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
-| T069 | Needs-Review [Claude] | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T052 | Available (waiting on T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | In-Progress [Claude] | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T086 | In-Progress [Claude] | T059, T068, T057 | 15 | TradeLogic |
@@ -363,7 +358,7 @@ flowchart TD
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| T072 | Available (waiting on T052, T069, T071) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
+| T072 | Available (waiting on T052, T071) | T035, T052, T062, T063, T064, T067, T068, T069, T071 | 3 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |
 | T094 | Available (waiting on T088, T090, T091, T092, T083) | T088, T090, T091, T092, T078, T083, T035 | 3 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | T101 | Available (waiting on T094, T071) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |

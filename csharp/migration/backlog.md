@@ -670,7 +670,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Also fixed tip leftovers of T046 that made the Standard checks red: TODO(T046) marker in UnitManager.cs and the open-owner headers of MapPathingSeams.cs / ConditionalsSeams.cs (now name T104).
 
 ### T069 QuestManager and quest helpers
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T055, T060, T065, T078
 - Source: core/src/com/unciv/logic/civilization/managers/quests/QuestManager.kt, QuestTargetHelpers.kt, AssignedQuest.kt, IQuestImplementation.kt, QuestImplementation.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/QuestTests.kt (TestGame-based: T072)
