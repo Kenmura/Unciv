@@ -617,7 +617,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Trap: HexMath.getRow truncates toward zero (faithful), so adjacent regions can share a row of tiles at negative rows; Region.Tiles overlap is Kotlin behaviour, not a bug. No Kotlin tests cover these classes; tests in Unciv.Core.Tests/Logic/Map/MapGenerator/Mapregions/MapRegionsTests.cs.
 
 ### T076 MapGenerator D: mapregions StartNormalizer, MinorCivPlacer
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T075
 - Source: core/src/com/unciv/logic/map/mapgenerator/mapregions/StartNormalizer.kt, MinorCivPlacer.kt
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
@@ -625,6 +625,8 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~MapGenerat`
 - Claimed: 2026-10-24T10:42Z
 - Notes: Sub-ticket of T041 (split at claim time, source ~5k LOC). Perlin.cs already exists. Same seed must reproduce Kotlin; compile against seam members for anything owned by unported tickets (SEAM RULE in T053).
+  - T076 implemented: StartNormalizer.cs, MinorCivPlacer.cs (Mapregions/), MapRegionsSeams NormalizeStart/PlaceMinorCivs now call them; tests in MinorCivPlacerTests.cs.
+    Deviations: (1) Kotlin unseeded shuffled()/random() (Random.Default) draw from a state-based GameRandom per call site (StartNormalizer.<fn>.unseeded; MinorCivPlacer uses civs[0].StateBasedRandom), so those exact draws cannot match Kotlin by construction. (2) Civilization is IMapRegionsCivilization. (3) TileResource.generatesNaturallyOn is not ported on TileResource: private GeneratesNaturallyOn copy in StartNormalizer.cs; T077 (or whoever ports it onto TileResource) should switch StartNormalizer to it and delete the copy. (4) NEW SEAM for T077: Mapregions/MapRegionResourcesSeams.cs (TryAddingResourceToTiles, PlaceResourcesInTiles) throws NotSupportedException until T077 replaces the bodies with MapRegionResources calls; until then StartNormalizer with strategic balance / major civ low production is unusable. Tile.SetTileResource gets rng explicitly (no Random.Default).
 
 ### T077 MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources)
 - State: In-Progress [Claude]

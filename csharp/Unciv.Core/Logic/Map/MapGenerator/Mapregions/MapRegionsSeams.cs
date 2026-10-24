@@ -28,7 +28,7 @@ internal static class MapRegionsSeams
 {
     /// <summary><c>StartNormalizer.normalizeStart(startTile, tileMap, tileData, ruleset, isMinorCiv)</c> (T076)</summary>
     internal static void NormalizeStart(Tile startTile, TileMap tileMap, TileDataMap tileData, Ruleset ruleset, bool isMinorCiv) =>
-        throw new NotSupportedException("StartNormalizer.normalizeStart is ported by T076");
+        StartNormalizer.NormalizeStart(startTile, tileMap, tileData, ruleset, isMinorCiv);
 
     /// <summary><c>LuxuryResourcePlacementLogic.assignLuxuries(regions, tileData, ruleset)</c> (T077)</summary>
     internal static (List<string> CityStateLuxuries, List<string> RandomLuxuries) AssignLuxuries(
@@ -38,7 +38,7 @@ internal static class MapRegionsSeams
     /// <summary><c>MinorCivPlacer.placeMinorCivs(regions, tileMap, minorCivs, tileData, ruleset)</c> (T076)</summary>
     internal static void PlaceMinorCivs(
         List<Region> regions, TileMap tileMap, IReadOnlyList<IMapRegionsCivilization> minorCivs, TileDataMap tileData, Ruleset ruleset) =>
-        throw new NotSupportedException("MinorCivPlacer.placeMinorCivs is ported by T076");
+        MinorCivPlacer.PlaceMinorCivs(regions, tileMap, minorCivs, tileData, ruleset);
 
     /// <summary><c>LuxuryResourcePlacementLogic.placeLuxuries(regions, tileMap, tileData, ruleset, cityStateLuxuries, randomLuxuries)</c> (T077)</summary>
     internal static void PlaceLuxuries(
