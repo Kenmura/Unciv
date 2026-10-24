@@ -90,6 +90,7 @@ flowchart TD
     T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
     T131["T131<br/>Hardening: T063 review follow-ups (CityConstructions test ga..."]
     T132["T132<br/>T097 review follow-ups: game context for Technology unit/obs..."]
+    T133["T133<br/>Retype Civilization.Units to UnitManager, drop IUnitManager ..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -275,6 +276,7 @@ flowchart TD
   T066 --> T126
   T096 --> T129
   T097 --> T129
+  T066 --> T133
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -393,6 +395,7 @@ flowchart TD
   class T130 ready
   class T131 ready
   class T132 ready
+  class T133 ondeck
 ```
 
 ## Incomplete tickets
@@ -412,7 +415,8 @@ flowchart TD
 | T068 | **On deck** (after T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
 | T126 | **On deck** (after T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T129 | **On deck** (after T096) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
-| T066 | In-Progress [Claude] | T065, T060 | 46 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
+| T133 | **On deck** (after T066) | T066 | 0 | Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager |
+| T066 | In-Progress [Claude] | T065, T060 | 47 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T046 | Available (waiting on T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T064 | In-Progress [Claude] | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T069 | Available (waiting on T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
