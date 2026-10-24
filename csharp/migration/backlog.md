@@ -498,7 +498,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Deviations: DeclareWar() throws NotImplementedException (TODO(T068)); UniqueTriggerActivation.triggerUnique calls (peace/friendship/defensive-pact triggers) go through a private TriggerUnique() that throws (TODO(T052)); makePeaceOneSide builds `new Trade()` instead of TradeLogic(...).currentTrade (TradeLogic's constructor is side-effect free; T086); recieveGoldGifts/getGoldInflation copy TradeEvaluation.getGoldInflation (T089 should switch to TradeEvaluation); TradeOffer.getOfferText not ported (translation/Fonts/UncivGame); meetCiv skips the settings tutorial task; RelationshipLevel.color is Color() extension, operator plus is Plus(); Demand is a class with static instances (per-entry show override), not an enum. TradeOffersList derives List<TradeOffer> and hides Add (Kotlin overrides add only; AddRange/addAll stays non-merging as in Kotlin). TradeOffer.Equals(TradeOffer) is the Kotlin overload (ignores duration); Equals(object) is the data-class equality. Quirk kept: signDefensivePact returns (not continues) on a spectator third civ. DiplomacyCoreTests is in the TranslationState collection because Denounce logs through the global Log.Backend.
 
 ### T060 City core: City, CityFocus, CityResources, CityEspionageManager
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T055, T056, T057, T058
 - Source: core/src/com/unciv/logic/city/City.kt, CityFocus.kt, CityResources.kt, managers/CityEspionageManager.kt
 - Fixtures: tests/src/com/unciv/logic/city/CityTest.kt (TestGame-based: T072)
