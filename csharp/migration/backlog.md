@@ -263,13 +263,13 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Deferred from T006.
 
 ### T018 Utils: collection/string extensions, exceptions, Versioning
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T010
 - Source: core/src/com/unciv/utils/CollectionExtensions.kt, utils/StringExtensions.kt, logic/UncivExceptions.kt, logic/Versioning.kt
 - Fixtures: none - generate golden values for ordering-sensitive helpers
 - Deliverables: csharp/Unciv.Core/Utils/CollectionExtensions.cs, StringExtensions.cs, Logic/UncivExceptions.cs, Logic/Versioning.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UtilsTests`
-- Claimed:
+- Claimed: 2026-10-24T01:24:47Z
 - Notes: Randomness.kt is covered by T016/T017; do not duplicate. Skip Log/Concurrency/Display/DebugUtils/PlatformSpecific (platform code; Won't port, see T043).
 
 ### T019 Event bus
