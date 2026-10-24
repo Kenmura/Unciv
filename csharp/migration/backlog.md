@@ -566,13 +566,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T060: City.AnnexCity/PuppetCity/LiberateCity/MoveToCiv throw InvalidOperationException (TODO(T064)); replace the bodies by CityConquestFunctions(this).annexCity() etc. City.DestroyCity is ported, but only exercised against fake sub-objects.
 
 ### T065 MapUnit core: MapUnit, MapUnitCache
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: T055, T056, T060
 - Source: core/src/com/unciv/logic/map/mapunit/MapUnit.kt, MapUnitCache.kt
 - Fixtures: tests/src/com/unciv/logic/map/UnitFormationTests.kt (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapUnit/MapUnit.cs, MapUnitCache.cs, MapUnitSeams.cs, tests (+ retype Tile/Civilization/City unit seams to MapUnit)
 - Gate: `dotnet test --filter FullyQualifiedName~MapUnitCoreTests`
-- Claimed: 2026-10-24T12:00Z
+- Claimed: 2026-10-24T12:20:25Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.4k LOC; delegate the brief. Concrete Civilization, City, Tile. Sub-objects are seams: `IUnitMovement` (T067), `IUnitPromotions`/`IUnitTurnManager`/`IUnitUpgradeManager` (T066). Implements `IGameContextUnit` (T027) and `IMapUnitState`. Deferred: UniqueTriggerActivation calls (T052), Battle/Automation calls (Planned; `TODO` must name a real ticket).
   - Backlog audit: MapUnit.doAction -> UnitAutomation.automateUnitMoves/automatedExplore via GameView: TODO(T090). Battle/combatant calls: BattleDamage/MapUnitCombatant = T081, Battle = T083. UnitActions = T079/T080.
   - T057 added to the IMapUnitState seam: Civ, GetTile (both `new` Civilization/Tile), Religion (get/set string?), HasUnique(UniqueType, GameContext?). MapUnit implements them; ReligionManager/RuinsManager use IMapUnitState (unit.cache.state comes from IGameContextUnit.CacheState).
