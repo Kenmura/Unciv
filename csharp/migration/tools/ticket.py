@@ -27,6 +27,11 @@ WRITE (each touches only the named ticket's block, verified before the file is w
   add --title T [--depends "T1, T2"] [--source S] [--fixtures F] [--deliverables D] [--gate G]
       [--notes N] [--prefix T|C|A]
                             new Available ticket with the next free id, appended to its track; prints the id
+  section [TEXT]            print non-ticket prose: every heading-delimited chunk (no ticket header) whose heading
+                            contains TEXT (case-insens.), e.g. section Planned / section Non-goals; no TEXT lists headings
+  planned-clear TEXT        delete the heading-delimited non-ticket chunk whose heading line contains TEXT
+  drop T###                 delete a mistakenly added ticket: only if it is Available, unclaimed, depended on by nobody
+                            and the newest ticket of its prefix (ids stay dense)
   graph                     regenerate DEPENDENCY_MAP.md (also done automatically by every write command)
   publish [--origin]        git rebase csharp-migration && git push . HEAD:csharp-migration (clean tree only)
   archive                   move Done ticket bodies to backlog-archive.md, leaving a stub
@@ -475,6 +480,62 @@ def cmd_add(argv):
     print(tid)
 
 
+def prose_chunks():
+    """(start, end, heading) of each '#'-heading chunk that is not a ticket block."""
+    lines = BACKLOG.read_text(encoding="utf-8").split("\n")
+    heads = [n for n, l in enumerate(lines) if l.startswith("#") or re.match(r"^\*\*.*Planned", l)]
+    out = []
+    for k, n in enumerate(heads):
+        if HEADER.match(lines[n]):
+            continue
+        out.append((n, heads[k + 1] if k + 1 < len(heads) else len(lines), lines[n]))
+    return lines, out
+
+
+def cmd_section(args):
+    lines, chunks = prose_chunks()
+    if not args:
+        for n, e, h in chunks:
+            print(f"{n + 1}\t{h}")
+        return
+    hit = [(n, e) for n, e, h in chunks if args[0].lower() in h.lower()]
+    if not hit:
+        die("no such section")
+    for n, e in hit:
+        print("\n".join(lines[n:e]))
+
+
+def cmd_planned_clear(args):
+    lines, chunks = prose_chunks()
+    hit = [(n, e) for n, e, h in chunks if args[0].lower() in h.lower()]
+    if len(hit) != 1:
+        die(f"{len(hit)} sections match '{args[0]}' (need exactly 1)")
+    n, e = hit[0]
+    del lines[n:e]
+    write_backlog(lines)
+    print("section removed")
+
+
+def cmd_drop(args):
+    tid = args[0]
+    ts = tickets()
+    row = next((t for t in ts if t[0] == tid), None)
+    if row is None:
+        die(f"{tid} not found in backlog.md")
+    if row[2] != "Available" or field(row[4], "Claimed"):
+        die(f"{tid} is not an unclaimed Available ticket")
+    if any(tid in deps_of(d) for i, _, _, d, _ in ts if i != tid):
+        die(f"{tid} is a dependency of another ticket")
+    if max(all_states(), key=lambda i: (i[0] == tid[0], int(i[1:]))) != tid:
+        die(f"{tid} is not the newest {tid[0]}-ticket")
+    lines = BACKLOG.read_text(encoding="utf-8").split("\n")
+    start, end = locate(lines, tid)
+    while start > 0 and not lines[start - 1].strip():
+        start -= 1
+    write_backlog(lines[:start] + lines[end:])
+    print(f"{tid}: dropped")
+
+
 def cmd_check():
     errs = []
     seen = set()
@@ -585,6 +646,12 @@ def main():
         cmd_set(args)
     elif cmd == "add":
         cmd_add(args)
+    elif cmd == "section":
+        cmd_section(args)
+    elif cmd == "planned-clear":
+        cmd_planned_clear(args)
+    elif cmd == "drop":
+        cmd_drop(args)
     elif cmd == "publish":
         publish(origin="--origin" in args)
         print("published")
