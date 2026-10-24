@@ -18,16 +18,11 @@ flowchart TD
     T011["T011<br/>State-hash determinism harness"]
     T012["T012<br/>Command layer design"]
     T035["T035<br/>Test-support port: TestGame helper and deferred fixtures"]
-    T039["T039<br/>TileMap"]
-    T040["T040<br/>Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, Map..."]
-    T063["T063<br/>CityConstructions"]
-    T065["T065<br/>MapUnit core: MapUnit, MapUnitCache"]
     T067["T067<br/>Unit movement: MovementCost, UnitMovement"]
     T071["T071<br/>GameInfo turn handling and BackwardCompatibility"]
     T072["T072<br/>Deferred TestGame-based fixtures sweep (Tile, Civilization, ..."]
     T078["T078<br/>Barbarians: BarbarianManager, BarbarianEncampment"]
     T080["T080<br/>Unit actions B: UnitActions, UnitActionsFromUniques"]
-    T081["T081<br/>Battle A: ICombatant, MapUnitCombatant, CityCombatant, Battl..."]
     T083["T083<br/>Battle C: Battle, Nuke"]
     T088["T088<br/>Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEv..."]
     T089["T089<br/>TradeEvaluation"]
@@ -67,16 +62,12 @@ flowchart TD
     C006["C006<br/>Networked play client"]
   end
   subgraph ATRACK["Game AI track"]
-    A001["A001<br/>AI defines & data tables loader"]
     A003["A003<br/>Victory scorers (BNW)"]
     A004["A004<br/>Target-centric Tactical AI: TacticalMoveQueue & recruitment"]
     A005["A005<br/>Tactical overkill assignment & coordinated multi-unit attack..."]
     A006["A006<br/>Homeland AI priority move queue"]
     A007["A007<br/>Operations and armies layer"]
   end
-  T090 --> T091
-  T080 --> T091
-  T063 --> T091
   T091 --> T092
   T080 --> T092
   T035 --> T092
@@ -112,7 +103,6 @@ flowchart TD
   T100 --> T104
   T143 --> T154
   T094 --> T154
-  T090 --> T155
   T090 --> T156
   T155 --> T156
   T094 --> T157
@@ -123,13 +113,6 @@ flowchart TD
   C002 --> C005
   T012 --> C006
   C001 --> C006
-  A001 --> A004
-  T039 --> A004
-  T040 --> A004
-  T065 --> A004
-  T067 --> A004
-  T081 --> A004
-  T090 --> A004
   A004 --> A005
   A004 --> A006
   T091 --> A006
@@ -143,7 +126,6 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class A001 done
   class A003 blocked
   class A004 blocked
   class A005 blocked
@@ -158,21 +140,16 @@ flowchart TD
   class T011 done
   class T012 done
   class T035 done
-  class T039 done
-  class T040 done
-  class T063 done
-  class T065 done
   class T067 done
   class T071 done
   class T072 done
   class T078 done
   class T080 done
-  class T081 done
   class T083 done
   class T088 done
   class T089 done
-  class T090 review
-  class T091 ondeck
+  class T090 done
+  class T091 ready
   class T092 waiting
   class T093 waiting
   class T094 waiting
@@ -194,7 +171,7 @@ flowchart TD
   class T143 done
   class T152 review
   class T154 waiting
-  class T155 ondeck
+  class T155 ready
   class T156 waiting
   class T157 waiting
 ```
@@ -215,28 +192,27 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 25]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T091 | **Ready to start** | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
+| T155 | **Ready to start** | T090 | 8 | Air unit automation: AirUnitAutomation |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
-| T091 | **On deck** (after T090) | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
-| T155 | **On deck** (after T090) | T090 | 8 | Air unit automation: AirUnitAutomation |
-| T090 | In-Review [Claude] | T087, T088, T082, T083 | 15 | Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
-| T156 | Available (waiting on T090, T155) | T090, T155 | 7 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
+| T156 | Available (waiting on T155) | T090, T155 | 7 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
-| T094 | Available (waiting on T090, T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
+| T094 | Available (waiting on T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T093 | Available (waiting on T090, T092, T156) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
+| T093 | Available (waiting on T092, T156) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T152 | Needs-Review [Claude] | T142 | 1 | Deferred civilization fixture: GreatPersonSelectionTest |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |

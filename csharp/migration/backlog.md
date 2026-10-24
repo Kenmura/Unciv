@@ -974,7 +974,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Tests: TradeEvaluationTests (hand-derived from Kotlin; no Kotlin fixture), plus CivTurnTests/TradeLogicTests updated to the real default. AiWillBuyAt/SellAt resource uniques, the joint/join war motivation sell paths and surroundedByOurCities=3 are not exercised (coverage 80%).
 
 ### T090 Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit
-- State: In-Review [Claude]
+- State: Done
 - Depends: T087, T088, T082, T083
 - Source: core/src/com/unciv/logic/automation/unit/BattleHelper.kt, HeadTowardsEnemyCityAutomation.kt, civilization/UseGoldAutomation.kt, UnitAutomation.kt (tryUpgradeUnit only)
 - Fixtures: none - generate golden values
