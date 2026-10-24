@@ -201,7 +201,7 @@ xychart-beta
 | T092 | **On deck** (after T091) | T091, T080, T035 | 8 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | T156 | **On deck** (after T155) | T090, T155 | 7 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
 | T091 | In-Progress [Claude] | T090, T080, T063 | 9 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation |
-| T155 | Needs-Review [Claude] | T090 | 8 | Air unit automation: AirUnitAutomation |
+| T155 | In-Review [Antigravity] | T090 | 8 | Air unit automation: AirUnitAutomation |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | T094 | Available (waiting on T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 5 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
