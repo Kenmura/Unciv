@@ -8,7 +8,7 @@ using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.Logic.Automation.Civilization;
 
 // Ported from core/src/com/unciv/logic/automation/civilization/TradeAutomation.kt (T088).
-// - TradeEvaluation (T089) is reached through TradeEvaluationSeam (TradeAutomationSeams.cs).
+// - TradeEvaluation (T089) is reached through TradeEvaluationSeam (TradeAutomationEvaluation.cs).
 // - Kotlin HashMap<TradeOffer, Int> potentialAsks/counterofferAsks: TradeOffer.hashCode includes the identity hash of the enum, so there is no
 //   reproducible JVM order; LinkedHashMap, insertion order (the tie-breaker of minBy/maxBy). The key hash includes the mutable amount, as in Kotlin.
 // - `civInfo.tradeRequests` replaced wholesale by Kotlin `clear()`; the notifications keep Kotlin's argument order (the denial one swaps icon and name).

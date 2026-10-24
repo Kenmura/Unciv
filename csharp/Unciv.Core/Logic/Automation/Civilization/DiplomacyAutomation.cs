@@ -12,7 +12,7 @@ using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.Logic.Automation.Civilization;
 
 // Ported from core/src/com/unciv/logic/automation/civilization/DiplomacyAutomation.kt (T088). Purity annotations dropped (T027 policy).
-// - TradeEvaluation (T089) is reached through TradeEvaluationSeam (TradeAutomationSeams.cs).
+// - TradeEvaluation (T089) is reached through TradeEvaluationSeam (TradeAutomationEvaluation.cs).
 // - Kotlin Float.pow is a Double pow narrowed to Float: KotlinMath.Pow. Int sums are unchecked loops (LINQ Sum(int) throws on overflow).
 // - Kotlin `sortedByDescending` is stable, like OrderByDescending. `toSet()` keeps insertion order: LinkedHashSet.
 // - Demand.cs (T059) uses the military-presence flag set by checkMilitaryPresenceNearBorder.

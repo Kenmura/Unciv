@@ -13,7 +13,7 @@ namespace Unciv.Core.Tests.Logic.Automation;
 // Kotlin source (every case names the Kotlin line/branch it pins). Neutral personality (all 5): scaledFocus == inverseScaledFocus == 1.
 public static partial class DiplomacyAiTests
 {
-    /// <summary>A hand-written <c>TradeEvaluation</c> replacing the real T089 class through GameClientState.TradeEvaluation (see TradeAutomationSeams.cs).</summary>
+    /// <summary>A hand-written <c>TradeEvaluation</c> replacing the real T089 class through GameClientState.TradeEvaluation (see TradeAutomationEvaluation.cs).</summary>
     internal sealed class StandInEvaluation : ITradeAutomationEvaluation
     {
         public bool TradeValid { get; set; } = true;
