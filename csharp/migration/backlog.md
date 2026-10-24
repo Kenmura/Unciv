@@ -662,13 +662,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T114 (T059 review): DiplomacyManager.DeclareWar() must gain the DeclareWarReason parameter (Kotlin declareWar(declareWarReason = DeclareWarReason(WarType.DirectWar))) when DeclareWar is ported.
 
 ### T069 QuestManager and quest helpers
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T055, T060, T065, T078
 - Source: core/src/com/unciv/logic/civilization/managers/quests/QuestManager.kt, QuestTargetHelpers.kt, AssignedQuest.kt, IQuestImplementation.kt, QuestImplementation.kt
 - Fixtures: tests/src/com/unciv/logic/civilization/QuestTests.kt (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/Civilization/Managers/Quests/*.cs, tests (+ retype Civilization.IQuestManager)
 - Gate: `dotnet test --filter FullyQualifiedName~QuestManagerTests`
-- Claimed:
+- Claimed: 2026-10-24T15:32Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~840 LOC. Also implements `QuestName -> IQuestImplementation` delegation deferred by T030.
   - Backlog audit: AssignedQuest.kt, IQuestImplementation.kt and QuestImplementation.kt (the QuestName -> IQuestImplementation delegation, ~385 LOC) added to Source; ~1.2k LOC total, split at claim time (QuestManager vs AssignedQuest/QuestImplementation) if needed. QuestImplementation calls CityStateFunctions (T068) and BarbarianManager.getBarbarianEncampmentForQuest (T078 already covered via T065/T066? no: T069 uses it through the seam, T078 supplies it). Add T078 to Depends if the concrete class is needed.
   - Correction to the previous audit bullet: T069 now Depends on T078 (BarbarianManager.getBarbarianEncampmentForQuest is called by QuestImplementation); CityStateFunctions (T068) stays a seam here.

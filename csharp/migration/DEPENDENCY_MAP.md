@@ -296,8 +296,8 @@ flowchart TD
   class T066 done
   class T067 done
   class T068 prog
-  class T069 ready
-  class T070 waiting
+  class T069 prog
+  class T070 ondeck
   class T071 waiting
   class T072 waiting
   class T078 done
@@ -346,7 +346,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T069 | **Ready to start** | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T035 | **Ready to start** | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T084 | **Ready to start** | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
 | T099 | **Ready to start** | T041, T046, T061, T066, T078, T098 | 9 | GameStarter |
@@ -360,9 +359,10 @@ flowchart TD
 | T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T130 | **Ready to start** | T122 | 0 | Tests: restore coverage on BaseUnit, Building, PerpetualConstruction, CityConstructions, CityFounder, CityReligionManager, ReadOnlyJavaHashSet |
 | T137 | **Ready to start** | T046 | 0 | TranslationCache.ActiveMods from the running GameInfo |
+| T070 | **On deck** (after T068, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T086 | **On deck** (after T068) | T059, T068, T057 | 14 | TradeLogic |
 | T068 | In-Progress [Claude] | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
-| T070 | Available (waiting on T068, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
+| T069 | In-Progress [Claude] | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T052 | Available (waiting on T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T085 | Available (waiting on T084, T081) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
