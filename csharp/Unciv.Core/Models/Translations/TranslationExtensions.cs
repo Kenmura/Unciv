@@ -417,7 +417,7 @@ public static class TranslationExtensions
         return result;
     }
 
-    // TODO(T027): String.getModifiers() (the same scan, producing Unique objects) once Unique exists
+    // String.getModifiers() (the same scan, producing Unique objects) is UniqueStringExtensions.GetModifiers
     public static IEnumerable<string> GetModifierTexts(this string text)
     {
         var result = new List<string>();

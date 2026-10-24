@@ -99,6 +99,21 @@ public static class StringExtensions
         return text[start..];
     }
 
+    /// <summary>Kotlin <c>String.trimEnd()</c>.</summary>
+    public static string KotlinTrimEnd(this string text)
+    {
+        int end = text.Length;
+        while (end > 0 && text[end - 1].IsKotlinWhitespace())
+        {
+            end--;
+        }
+
+        return text[..end];
+    }
+
+    /// <summary>Kotlin <c>String.trim()</c>.</summary>
+    public static string KotlinTrim(this string text) => text.KotlinTrimStart().KotlinTrimEnd();
+
     /// <summary>Kotlin <c>CharSequence.isBlank()</c>.</summary>
     public static bool IsKotlinBlank(this string text) => text.All(IsKotlinWhitespace);
 }

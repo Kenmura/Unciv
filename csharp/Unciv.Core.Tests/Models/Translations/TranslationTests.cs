@@ -458,6 +458,9 @@ public class TranslationTests : IDisposable
         Assert.True('\u001F'.IsKotlinWhitespace());
         Assert.False('\u0085'.IsKotlinWhitespace());
         Assert.Equal("a\u0085 ", "\u001F \u00A0a\u0085 ".KotlinTrimStart());
+        Assert.Equal("\u001F \u00A0a\u0085", "\u001F \u00A0a\u0085 \u2003".KotlinTrimEnd());
+        Assert.Equal("a\u0085", "\u001F \u00A0a\u0085 \u2003".KotlinTrim());
+        Assert.Equal("", " \t ".KotlinTrim());
         Assert.True(" \t\u2003".IsKotlinBlank());
     }
 }

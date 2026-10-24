@@ -604,7 +604,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - Ran Gate (`~UniqueTypeTests`, 9/9) and Standard checks (build -warnaserror 0 warnings, format clean, 675/675).
   - Review (Antigravity): Pass. Verified `UniqueType.cs` (all 638 entries in declaration order), `UniqueTypeData.cs`, `UniqueTypeExtensions.cs`, and `UniqueTypeTests.cs` against `UniqueType.kt` and the JVM golden dump (`UniqueType.golden.tsv`): text, placeholder text, target sets, flag order, doc descriptions, parameter type maps (`/` split, ASCII trailing digits stripped, `SafeValueOf`), `CanAcceptUniqueTarget` across all 638 x 34 pairs, and `UniqueTypeMap`. Also wired `UniqueType.Comment.Text()` into `TranslationFileReader.CommentUniqueText` (resolving `TODO(T026)`). Re-ran Gate (`~UniqueTypeTests`, 9/9 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 692/692 passed).
 ### T027 Unique system: Unique, UniqueMap, LocalUniqueCache, TemporaryUnique, IHasUniques, GameContext
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T026, T020
 - Source: core/src/com/unciv/models/ruleset/unique/Unique.kt, UniqueMap.kt, LocalUniqueCache.kt, TemporaryUnique.kt, IHasUniques.kt, GameContext.kt, UniqueTriggerExecutors.kt
 - Fixtures: tests/src/com/unciv/uniques/TimedUniquesTests.kt (where state-independent)
@@ -612,6 +612,17 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueTests`
 - Claimed: 2026-10-24T03:21:29Z
 - Notes: UniqueMap must preserve insertion order. GameContext depends on Civilization/City/Tile: use state interfaces, owned by this ticket, implemented later. `stateBasedRandom` formula comes from T017. UniqueTriggerActivation (1.5k LOC) is deferred to land with Civ/City/Unit. Have `Unique` implement `IUniqueTargetView` and `IHasUniques` implement `IRulesetObjectParameterView` (from T025).
+  - Implementer notes (Claude):
+    - Deliverables (all `Models/Ruleset/Unique/`): `Unique.cs`, `UniqueMap.cs`, `LocalUniqueCache.cs`, `TemporaryUnique.cs`, `IHasUniques.cs`, `GameContext.cs`, `UniquePendingTickets.cs`; plus `Logic/Battle/CombatAction.cs` (the 3-value enum from the bottom of `BattleDamage.kt`, the battle ticket keeps it) and `KotlinTrim`/`KotlinTrimEnd` in `Utils/StringExtensions.cs`. Tests: `UniqueTests`, `GameContextUniqueTests`, `UniqueMapUniqueTests`, `LocalUniqueCacheUniqueTests`, `IHasUniquesUniqueTests`, `TimedUniqueTests`, fakes in `UniqueTestFakes.cs`, goldens in `Golden/{Unique,GameContext,UniqueMap}.golden.tsv`.
+    - **State interfaces** (as the ticket asked): `GameContext` reads `Civilization`, `City`, `MapUnit`, `Tile`, `Region`, `ICombatant`, `GameInfo` only through `IGameContext{Civilization,City,Unit,Tile,Combatant,Region,GameInfo}`; `Unique.GetGameProgressModifier` through `IGameProgressCivilization`; `LocalUniqueCache` through `ILocalUniqueCache{Civilization,City}`; `IHasUniques.IsHiddenFromCivilopedia` through `IRulesetFeatureView` (Ruleset implements it, T034). The classes that own those types implement the interfaces when ported; nothing in T027 changes. `IGameContextCombatant.Unit`/`.City` are non-null exactly for `MapUnitCombatant`/`CityCombatant` (Kotlin's `is` tests).
+    - **Seams for other tickets** in `UniquePendingTickets.cs`: `Conditionals.ConditionalApplies` and `Countables.GetCountableAmount` (throw `NotImplementedException`, T028 deletes these two classes and adds the real ones with the same names/signatures), `DeprecatedUniqueTypes.Lookup` + `DeprecatedUniqueTypeEntry(Text, Flags, ReplaceWith)` (returns null, T029 fills it from its table). A unique with a real conditional therefore throws in `ConditionalsApply` until T028; uniques with no modifiers, timed uniques and `ignoreConditionals` contexts work now.
+    - **Deviations:** `timeThis` profiling dropped. `GameContext.IgnoreConditionals` (static) is `GameContext.IgnoreConditionalsState` (the instance property has the same PascalCase name); `copy()` not ported (add with the first caller); an explicitly passed `gameInfo = null` is derived from the other members instead of staying null. `TemporaryUnique.unique` is `UniqueText` (a member cannot share the name of the type `Unique`; JSON name unchanged). `Unique.getReplacementText(ruleset)` takes a `Func<Unique,bool> hasNoErrors` instead of a `Ruleset` (TODO(T036): `UniqueValidator`). `getDeprecationAnnotation()` returns the deprecated-type entry (no `UniqueType` entry is `@Deprecated`). `toFloat()`/`toInt()` of parameters use the strict number grammar (Java-lenient `"5f"`/`" 5"` throw; they would not pass validation anyway). `UniqueMap.getUniques/getTagUniques` return live views of the lists like Kotlin's `asSequence()`.
+    - **Orders reproduced:** `UniqueMap.tagUniqueMap` is a `JavaHashMap` (T044), so `getAllUniques()` follows `java.util.HashMap` bucket order; `typedUniqueMap` is a `SortedDictionary<UniqueType,...>` = `EnumMap` ordinal order (matters for `getTriggeredUniques`); lists keep insertion order and duplicates. The typed map shares the tag map's list instance, as in Kotlin.
+    - **Quirks kept:** `GameContext` equality is memberwise (a data class), so `IgnoreMultiplicationForCaching` equals `IgnoreConditionals` and every `ignoreConditionals`-only context gets multiplier 1. `getUniqueMultiplier` multiplies the (possibly 0) multipliers and clamps at 0 only at the end. `hasUnique` excludes timed uniques but `hasMatchingUnique`/`hasMatchingTagUnique` do not. `List<TemporaryUnique>.endTurn` decrements `turnsLeft == 0` to `-1` (never expires) and only removes uniques that reach 0 from 1. `GameContext.GetHashCode` relies on `HexCoord.GetHashCode` (31x+y), `JavaHash` for strings/floats/bool/long.
+    - **Verification (goldens from the real Kotlin, Unciv 4.22.13 jar, `java` single-file harnesses in `dotnet-dev`):** 2009 uniques (645 uniques of the bundled rulesets that load as plain JSON, the `UniqueType` texts not among them (564, so every type text is covered), and 800 variants of the first 400 with 1-2 modifiers appended): placeholderText, params, type, modifiers (+types), isTimedTriggerable, isTriggerable, allParams, isLocalEffect, isOtherModifierType, hasFlag x4, isHiddenToUsers, hasTriggerConditional, isModifiedBy*, getDisplayText, toString, stats bits. `GameContext.hashCode()` and the first ints of `stateBasedRandom("caller")`/`("Chance", 7)` for 19 scenarios built from real `Civilization`/`Tile`/`MapUnit`/`MapUnitCombatant`/`GameInfo` objects (NaN movement, unplaced units, negative turns, empty game id...), and the data-class equality of the companion states. A `UniqueMap` filled from 1220 uniques: `getAllUniques` order, `getUniques`/`getMatchingUniques`/`hasUnique`/`hasMatchingUnique` for every type, tag lookups, `getTriggeredUniques` for 5 triggers, after `removeUnique` and `clear`. The harness sources are not committed (throwaway, like T026).
+    - **Not covered by Kotlin comparison:** `LocalUniqueCache`, `IHasUniques` defaults, `TemporaryUnique`, the game-progress arithmetic, the adjacent-tile multiplier and `GameContext`'s relevant*/resource/stat members are covered by hand-written tests derived from reading the Kotlin (no Kotlin objects exist for them yet).
+    - **Deferred (not ported, with owner):** `IHasUniques.requiredTechnologies/era/techColumn/availableInEra` (T032: Technology, Era, TechColumn) and `getWeightForAiDecision` (T033: BaseUnit, Building; T032: Personality); `isHiddenFromCivilopedia(ruleset)` overload (reads `UncivGame.getGameInfoOrNull()`, a client global: callers use the `gameInfo` overload); `UniqueTriggerExecutors.triggerGlobalAlerts` (needs `Civilization.addNotification`, ports with `UniqueTriggerActivation`, planned, not ticketed); `TimedUniquesTests.testConditionalTimedUniqueStrength`/`...Expires` (TestGame + policy adoption + BattleDamage + TurnManager: T035 and later). `testConditionalTimedUniqueIsTriggerable` is ported.
+    - Ran Gate (`~UniqueTests`, 47/47) and Standard checks (build -warnaserror 0 warnings, format clean, 748/748).
 
 ### T028 Unique system: Conditionals and Countables
 - State: Available
@@ -621,7 +632,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/Conditionals.cs, Countables.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~CountableTests|FullyQualifiedName~ExpressionTests`
 - Claimed:
-- Notes: Fixtures that need TestGame are deferred to T035; port the rest now and list the deferred cases in Notes. Expression evaluation: Double vs Int semantics exact. Wire `Countables` into `UniqueParameterTypeExtensions.CountablesProvider` (or replace `TODO(T028)` in `UniqueParameterType.cs`).
+- Notes: Fixtures that need TestGame are deferred to T035; port the rest now and list the deferred cases in Notes. Expression evaluation: Double vs Int semantics exact. Wire `Countables` into `UniqueParameterTypeExtensions.CountablesProvider` (or replace `TODO(T028)` in `UniqueParameterType.cs`). **From T027:** delete the stub classes `Conditionals` and `Countables` in `Unique/UniquePendingTickets.cs` and add the real ones (same names and signatures: `Conditionals.ConditionalApplies(Unique?, Unique, GameContext)`, `Countables.GetCountableAmount(string, GameContext) : int?`). `Unique.ConditionalsApply`/`GetUniqueMultiplier` already call them; add tests for a real conditional and for `ForEveryCountable`/`ForEveryAmountCountable`. `GameContext` is a class with state interfaces (`IGameContext*`), use its `Relevant*` members and `StateBasedRandom`.
 
 ### T029 Deprecated uniques and BackwardCompatibility
 - State: Available
@@ -631,7 +642,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/DeprecatedUniques.cs, Logic/BackwardCompatibility.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~DeprecatedUniquesTests`
 - Claimed:
-- Notes: BackwardCompatibility touches GameInfo/Civ/City; port only parts whose types exist, record the rest as TODO(T###) with a real ticket.
+- Notes: BackwardCompatibility touches GameInfo/Civ/City; port only parts whose types exist, record the rest as TODO(T###) with a real ticket. **From T027:** fill `DeprecatedUniqueTypes.Lookup` (stub in `Unique/UniquePendingTickets.cs`, returns `DeprecatedUniqueTypeEntry(Text, Flags, ReplaceWith)`) from your `DeprecatedUniqueType` table. `Unique.GetReplacementText` is ported but untested against Kotlin because no deprecated entry resolves yet: add a golden over every `DeprecatedUniqueType` entry (replacement text for unique texts with signed/unsigned and repeated parameters).
 
 ### T030 Ruleset base objects: RulesetObject, Specialist, Speed, Policy, PolicyBranch, Belief, Event, Quest, RuinReward, GlobalUniques, ModOptions, Victory, Tutorial
 - State: Available
@@ -641,7 +652,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetObjectTests`
 - Claimed:
-- Notes: Json field names/defaults must match Kotlin (rulesets load from JSON). Victory.kt is 454 LOC; split off if it exceeds scope and note it.
+- Notes: Json field names/defaults must match Kotlin (rulesets load from JSON). Victory.kt is 454 LOC; split off if it exceeds scope and note it. **From T027:** `Unique.GetSourceNameForUser` has a private copy of `GlobalUniques.getUniqueSourceDescription` (marked TODO(T030)); move it to `GlobalUniques` and call that. `RulesetObject` implements `IHasUniques` (see `IHasUniquesUniqueTests.TestObject` for the minimal shape: cached `UniqueObjects`/`UniqueMap` via `UniqueObjectsProvider()`/`UniqueMapProvider()`, `Name` with a setter, `Uniques` as `List<string>`).
 
 ### T031 Ruleset tile objects: Terrain, TerrainType, TileImprovement, TileResource, ResourceType, ResourceSupplyList
 - State: Available
@@ -661,7 +672,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Nation/*.cs, Tech/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetNationTechTests`
 - Claimed:
-- Notes: Colors: engine-owned color type, no libGDX Color.
+- Notes: Colors: engine-owned color type, no libGDX Color. **From T027:** `IHasUniques` still lacks `requiredTechnologies`, `era`, `techColumn`, `availableInEra` (need Technology/Era/TechColumn) and the Personality half of `getWeightForAiDecision`; add them to `IHasUniques.cs` (see its class remarks).
 
 ### T033 Ruleset unit and construction objects: BaseUnit, BaseUnitCost, Promotion, UnitType, UnitNameGroup, Building, IConstruction, PerpetualConstruction
 - State: Available
@@ -671,7 +682,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unit/*.cs, Building.cs, IConstruction.cs, PerpetualConstruction.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetUnitTests`
 - Claimed:
-- Notes: Cost/production math: Int vs Float and roundToInt (half-up helper) are the main traps. Methods needing City/Civilization go behind state interfaces from T027.
+- Notes: Cost/production math: Int vs Float and roundToInt (half-up helper) are the main traps. Methods needing City/Civilization go behind state interfaces from T027. **From T027:** `IHasUniques.getWeightForAiDecision` (the `is BaseUnit`/`is Building` part with `matchesFilter(unique.params[1], gameContext)`) is not ported; add it with BaseUnit/Building. `IRulesetUnitParameterView.HasGreatPersonUnique` must be overridden to `HasUnique(UniqueType.GreatPerson)` (Kotlin goes through the unique map, conditionals against `EmptyState`), as must `IRulesetTerrainParameterView.HasRegionUnique` (T025 note).
 
 ### T034 Ruleset and RulesetCache loader
 - State: Available
@@ -691,7 +702,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core.Tests/Support/TestGame.cs, ported deferred tests
 - Gate: `dotnet test --filter FullyQualifiedName~TestGameTests`
 - Claimed:
-- Notes: May need partial Tile/Civ stubs; if so mark Blocked and split: extend it again after T039 and the Civilization tickets.
+- Notes: May need partial Tile/Civ stubs; if so mark Blocked and split: extend it again after T039 and the Civilization tickets. **From T027:** port `TimedUniquesTests.testConditionalTimedUniqueStrength` and `...Expires` (only `...IsTriggerable` is ported, in `TimedUniqueTests`).
 
 ### T036 RulesetValidator
 - State: Available
@@ -701,7 +712,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Validation/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetValidatorTests`
 - Claimed:
-- Notes: Error ordering and text must be identical to Kotlin. TextSimilarity: exact algorithm port. `Suppression.IsValidFilter` and doc constants are already ported on `UniqueParameterTypeExtensions` in T025; reuse or delegate to them in `Suppression`.
+- Notes: Error ordering and text must be identical to Kotlin. TextSimilarity: exact algorithm port. `Suppression.IsValidFilter` and doc constants are already ported on `UniqueParameterTypeExtensions` in T025; reuse or delegate to them in `Suppression`. **From T027:** `Unique.GetReplacementText(Func<Unique,bool> hasNoErrors)` takes the validator as a delegate (TODO(T036)); pass `u => new UniqueValidator(ruleset).CheckUnique(u, null).Count == 0` or change the signature to take the ruleset.
 
 ### T037 Golden test: load and validate Vanilla and bundled mod rulesets
 - State: Available
