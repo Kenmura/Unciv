@@ -19,7 +19,7 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Ran: `dotnet test --filter FullyQualifiedName~LongPriorityQueueTests` and full `dotnet test` — all green.
 
 ### T002 Perlin noise
-- State: In-Review [Claude]
+- State: Done
 - Claimed: 2026-10-24T00:41:14Z
 - Depends: none
 - Source: core/src/com/unciv/logic/map/mapgenerator/Perlin.kt
@@ -32,6 +32,7 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Preserved `(int)Math.Floor(x) & 255` semantics for both positive and negative values matching Kotlin's `floor(x).toInt() and 255`.
   - Preserved `Fade`, `Lerp`, and 3D gradient lookups with exact double-precision arithmetic.
   - Ran Gate `dotnet test --filter FullyQualifiedName~PerlinTests` (27/27 passed) and full `dotnet test` (54/54 passed).
+  - Review (Claude): Pass. Permutation/grad tables identical to Kotlin; algorithm line-by-line equal. Golden values independently reproduced with a Python port of the Kotlin source (5 spot-checks bit-exact). Gate 27/27 and full `dotnet test` 54/54 re-run by reviewer. Minor non-issue: `(int)Math.Floor` on NaN/huge inputs is unspecified vs Kotlin saturation; irrelevant for map-gen inputs.
 
 ### T003 Vector2 / Vector3 shims
 - State: Available
