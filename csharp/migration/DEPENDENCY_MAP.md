@@ -157,7 +157,6 @@ flowchart TD
   T068 --> T072
   T069 --> T072
   T071 --> T072
-  T075 --> T077
   C000 --> C001
   T006 --> C001
   C001 --> C002
@@ -209,7 +208,7 @@ flowchart TD
   class T038 done
   class T039 done
   class T040 done
-  class T041 waiting
+  class T041 ready
   class T045 done
   class T046 waiting
   class T052 waiting
@@ -237,13 +236,14 @@ flowchart TD
   class T074 done
   class T075 done
   class T076 done
-  class T077 review
+  class T077 done
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T041 | **Ready to start** | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 0 | MapGenerator pipeline (audit existing partial work first) |
 | T055 | Needs-Review [Claude] | T034, T045, T039, T053 | 21 | Civilization core: Civilization, ExploredRegion, PopupAlert |
 | T056 | Available (waiting on T055) | T055 | 17 | Civilization managers: TechManager, PolicyManager, GoldenAgeManager, GreatPersonManager |
 | T057 | Available (waiting on T055) | T055 | 17 | Civilization managers: ReligionManager (+Religion), RuinsManager, VictoryManager, EspionageManager (+Spy) |
@@ -267,7 +267,6 @@ flowchart TD
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T067 | Available (waiting on T065) | T065, T054 | 1 | Unit movement: MovementCost, UnitMovement |
 | T071 | Available (waiting on T046, T070) | T046, T070 | 1 | GameInfo turn handling and BackwardCompatibility |
-| T077 | Needs-Review [Claude] | T075 | 1 | MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources) |
 | A003 | Blocked | A002, T030 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -276,6 +275,5 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
-| T041 | Available (waiting on T077) | T039, T010, T016, T017, T073, T074, T075, T076, T077 | 0 | MapGenerator pipeline (audit existing partial work first) |
 | T052 | Available (waiting on T055, T056, T057, T060, T065, T066) | T028, T055, T056, T057, T060, T065, T066 | 0 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T072 | Available (waiting on T035, T062, T063, T064, T067, T068, T069, T071) | T035, T062, T063, T064, T067, T068, T069, T071 | 0 | Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest) |

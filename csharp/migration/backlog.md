@@ -635,7 +635,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Deviations: (1) Kotlin unseeded shuffled()/random() (Random.Default) draw from a state-based GameRandom per call site (StartNormalizer.<fn>.unseeded; MinorCivPlacer uses civs[0].StateBasedRandom), so those exact draws cannot match Kotlin by construction. (2) Civilization is IMapRegionsCivilization. (3) TileResource.generatesNaturallyOn is not ported on TileResource: private GeneratesNaturallyOn copy in StartNormalizer.cs; T077 (or whoever ports it onto TileResource) should switch StartNormalizer to it and delete the copy. (4) NEW SEAM for T077: Mapregions/MapRegionResourcesSeams.cs (TryAddingResourceToTiles, PlaceResourcesInTiles) throws NotSupportedException until T077 replaces the bodies with MapRegionResources calls; until then StartNormalizer with strategic balance / major civ low production is unusable. Tile.SetTileResource gets rng explicitly (no Random.Default).
 
 ### T077 MapGenerator E: resourceplacement (Luxury, StrategicBonus, MapRegionResources)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T075
 - Source: core/src/com/unciv/logic/map/mapgenerator/resourceplacement/*.kt
 - Fixtures: tests/src/com/unciv/logic/map/ResourceDiversityTest.kt
