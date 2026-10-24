@@ -1064,7 +1064,7 @@ public class CityCoreTests
     [Fact]
     public void Json_IncludesThePrivateAndInternalSerializedFields()
     {
-        var info = Unciv.Json.UncivJson.DefaultOptions.TypeInfoResolver!.GetTypeInfo(typeof(CityObject), Unciv.Json.UncivJson.DefaultOptions)!;
+        var info = new System.Text.Json.JsonSerializerOptions { TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver() }.GetTypeInfo(typeof(CityObject));
         var names = info.Properties.Select(it => it.Name).ToList();
         Assert.Contains("foundingCiv", names);
         Assert.Contains("cityAIFocus", names);
