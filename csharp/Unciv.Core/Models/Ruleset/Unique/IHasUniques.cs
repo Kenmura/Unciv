@@ -15,12 +15,25 @@ public interface IRulesetFeatureView
 }
 
 /// <summary>
+/// The parts of <c>Ruleset</c> that <see cref="IHasUniques.RequiredTechnologies"/>, <see cref="IHasUniques.Era"/>, <see cref="IHasUniques.TechColumn"/>
+/// and <see cref="IHasUniques.AvailableInEra"/> read. T034's <c>Ruleset</c> implements this.
+/// </summary>
+public interface IRulesetTechView
+{
+    /// <summary><c>ruleset.technologies[name]</c></summary>
+    Tech.Technology? GetTechnology(string name);
+    /// <summary><c>ruleset.eras[name]</c></summary>
+    Tech.Era? GetEra(string? name);
+}
+
+/// <summary>
 /// Common interface for all 'ruleset objects' that have Uniques, like BaseUnit, Nation, etc.
 /// Ported from core/src/com/unciv/models/ruleset/unique/IHasUniques.kt.
 /// </summary>
 /// <remarks>
-/// Not ported yet, because the types are not ported: <c>requiredTechnologies</c>, <c>era</c>, <c>techColumn</c>, <c>availableInEra</c>
-/// (TODO(T032): Technology, Era, TechColumn) and <c>getWeightForAiDecision</c> (TODO(T033): BaseUnit, Building; the Personality part: T032).
+/// Not ported yet, because the types are not ported: <c>getWeightForAiDecision</c> (TODO(T033): BaseUnit, Building, and with them the
+/// Personality part). <c>requiredTechnologies</c>, <c>era</c>, <c>techColumn</c> and <c>availableInEra</c> take an <see cref="IRulesetTechView"/>
+/// instead of <c>Ruleset</c>.
 /// The <c>isHiddenFromCivilopedia(ruleset)</c> overload reads <c>UncivGame.getGameInfoOrNull()</c>, a client global: callers pass the
 /// <c>gameInfo</c> explicitly to the other overload.
 /// </remarks>
@@ -109,6 +122,41 @@ public interface IHasUniques : INamed, IRulesetObjectParameterView
     IEnumerable<string> LegacyRequiredTechs() => Enumerable.Empty<string>();
 
     IEnumerable<string> RequiredTechs() => LegacyRequiredTechs().Concat(TechsRequiredByUniques());
+
+    IEnumerable<Tech.Technology?> RequiredTechnologies(IRulesetTechView ruleset) =>
+        RequiredTechs().Select(ruleset.GetTechnology);
+
+    /// <summary>This will return null only if requiredTechnologies() is empty or all required techs have no eraNumber</summary>
+    Tech.Era? Era(IRulesetTechView ruleset)
+    {
+        // Kotlin maxByOrNull: the first element with the maximum key wins
+        Tech.Era? best = null;
+        var bestKey = 0;
+        var first = true;
+        foreach (var tech in RequiredTechnologies(ruleset))
+        {
+            var era = ruleset.GetEra(tech?.Era());
+            var key = era?.EraNumber ?? 0;
+            if (first || key > bestKey) { best = era; bestKey = key; first = false; }
+        }
+        return best;
+    }
+
+    /// <summary>This will return null only if *all* required techs have null TechColumn.</summary>
+    Tech.TechColumn? TechColumn(IRulesetTechView ruleset)
+    {
+        Tech.TechColumn? best = null;
+        foreach (var column in RequiredTechnologies(ruleset).Select(it => it?.Column).OfType<Tech.TechColumn>())
+            if (best == null || column.ColumnNumber > best.ColumnNumber) best = column;
+        return best;
+    }
+
+    bool AvailableInEra(IRulesetTechView ruleset, string requestedEra)
+    {
+        var eraAvailable = Era(ruleset);
+        if (eraAvailable == null) return true; // No technologies are required, so available in the starting era.
+        return eraAvailable.EraNumber <= ruleset.GetEra(requestedEra)!.EraNumber;
+    }
 
     /// <summary>Do this object's <see cref="UniqueType.OnlyAvailable"/> and <see cref="UniqueType.Unavailable"/> uniques all pass for <paramref name="gameContext"/>?</summary>
     bool IsAvailable(GameContext gameContext) =>
