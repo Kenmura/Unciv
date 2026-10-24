@@ -147,7 +147,7 @@ public static class TechnologyDescriptions
                 lineList.Add(new FormattedLine(unit.Name.Tr(hideIcons: true) + " (" + unit.GetShortDescription(technology.UniqueIsRequirementForThisTech) + ")", link: unit.MakeLink()));
         }
 
-        var enabledBuildings = GetEnabledBuildings(name, ruleset, null).ToList();
+        var enabledBuildings = GetEnabledBuildings(name, ruleset, null, context).ToList();
         var wonders = enabledBuildings.Where(it => it.IsAnyWonder()).ToList();
         var regularBuildings = enabledBuildings.Where(it => !it.IsAnyWonder()).ToList();
 
