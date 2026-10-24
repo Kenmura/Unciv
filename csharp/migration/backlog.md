@@ -19,13 +19,18 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Ran: `dotnet test --filter FullyQualifiedName~LongPriorityQueueTests` and full `dotnet test` — all green.
 
 ### T002 Perlin noise
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: none
 - Source: core/src/com/unciv/logic/map/mapgenerator/Perlin.kt
 - Fixtures: none – generate golden values by running the Kotlin code at fixed inputs
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapGenerator/Perlin.cs, csharp/Unciv.Core.Tests/Logic/Map/MapGenerator/PerlinTests.cs
 - Gate: `dotnet test --filter FullyQualifiedName~PerlinTests`
 - Notes: Watch Float/Double and floor semantics.
+  - Implementer notes (Antigravity): Ported Perlin noise generator to `Unciv.Logic.Map.MapGenerator.Perlin`.
+  - Golden test values were generated directly by running the Kotlin code in the Unciv repo via `./gradlew :tests:test` against OpenJDK 25 and Kotlin 2.3.0 across a range of coordinates (origin, integer, negative, fractional, permutation-wrapping at 256/512, and large values).
+  - Preserved `(int)Math.Floor(x) & 255` semantics for both positive and negative values matching Kotlin's `floor(x).toInt() and 255`.
+  - Preserved `Fade`, `Lerp`, and 3D gradient lookups with exact double-precision arithmetic.
+  - Ran Gate `dotnet test --filter FullyQualifiedName~PerlinTests` (27/27 passed) and full `dotnet test` (54/54 passed).
 
 ### T003 Vector2 / Vector3 shims
 - State: Available
