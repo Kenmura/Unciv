@@ -31,7 +31,7 @@ flowchart TD
     T083["T083<br/>Battle C: Battle, Nuke"]
     T088["T088<br/>Diplomacy AI: MotivationToAttackAutomation, DeclareWarPlanEv..."]
     T089["T089<br/>TradeEvaluation"]
-    T090["T090<br/>Unit automation core: UnitAutomation, BattleHelper, HeadTowa..."]
+    T090["T090<br/>Unit automation core A: BattleHelper, HeadTowardsEnemyCityAu..."]
     T091["T091<br/>Civilian automation: CivilianUnitAutomation, SpecificUnitAut..."]
     T092["T092<br/>Worker and road automation: WorkerAutomation, RoadBetweenCit..."]
     T093["T093<br/>PathingMap: PathingMap, PathingMapCache, PathingMapAStarPath..."]
@@ -63,6 +63,8 @@ flowchart TD
     T150["T150<br/>Deferred civilization fixtures needing TradeEvaluation: Gold..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
+    T155["T155<br/>Air unit automation: AirUnitAutomation"]
+    T156["T156<br/>Unit automation: UnitAutomation (all but tryUpgradeUnit)"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -90,6 +92,7 @@ flowchart TD
   T088 --> T093
   T090 --> T093
   T092 --> T093
+  T156 --> T093
   T088 --> T094
   T090 --> T094
   T091 --> T094
@@ -97,6 +100,7 @@ flowchart TD
   T078 --> T094
   T083 --> T094
   T035 --> T094
+  T156 --> T094
   T099 --> T101
   T094 --> T101
   T071 --> T101
@@ -120,6 +124,9 @@ flowchart TD
   T089 --> T150
   T143 --> T154
   T094 --> T154
+  T090 --> T155
+  T090 --> T156
+  T155 --> T156
   C001 --> C002
   C002 --> C003
   C002 --> C004
@@ -206,6 +213,8 @@ flowchart TD
   class T150 ondeck
   class T152 ready
   class T154 waiting
+  class T155 ondeck
+  class T156 waiting
 ```
 
 ## Remaining tickets over time
@@ -223,7 +232,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 31]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 33]
     line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
@@ -242,18 +251,20 @@ xychart-beta
 | T149 | **Ready to start** | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T091 | **On deck** (after T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
+| T155 | **On deck** (after T090) | T090 | 7 | Air unit automation: AirUnitAutomation |
 | T148 | **On deck** (after T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
-| T090 | In-Progress [Claude] | T087, T088, T082, T083 | 12 | Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation |
+| T090 | In-Progress [Claude] | T087, T088, T082, T083 | 14 | Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 7 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
+| T156 | Available (waiting on T090, T155) | T090, T155 | 6 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
-| T094 | Available (waiting on T090, T091, T092) | T088, T090, T091, T092, T078, T083, T035 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
+| T094 | Available (waiting on T090, T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T089 | In-Progress [Claude] | T086, T088, T085 | 2 | TradeEvaluation |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T093 | Available (waiting on T090, T092) | T067, T088, T090, T092 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
+| T093 | Available (waiting on T090, T092, T156) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | T139 | In-Progress [Claude] | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |

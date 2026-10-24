@@ -970,10 +970,10 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by the backlog audit (was 'Planned, after T068'). ~580 LOC; uses DiplomacyAutomation, MotivationToAttackAutomation, DeclareWarPlanEvaluator (T088) through GameView. Wires the TODO(T089) seams in T088. Float/Int valuation arithmetic must match Kotlin.
   - DiplomacyManager.GetGoldInflation (private) is a copy of TradeEvaluation.getGoldInflation; replace it with the TradeEvaluation call.
 
-### T090 Unit automation core: UnitAutomation, BattleHelper, HeadTowardsEnemyCityAutomation, AirUnitAutomation, UseGoldAutomation
+### T090 Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit
 - State: In-Progress [Claude]
 - Depends: T087, T088, T082, T083
-- Source: core/src/com/unciv/logic/automation/unit/UnitAutomation.kt, BattleHelper.kt, HeadTowardsEnemyCityAutomation.kt, AirUnitAutomation.kt, civilization/UseGoldAutomation.kt
+- Source: core/src/com/unciv/logic/automation/unit/BattleHelper.kt, HeadTowardsEnemyCityAutomation.kt, civilization/UseGoldAutomation.kt, UnitAutomation.kt (tryUpgradeUnit only)
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UnitAutomationTests`
@@ -1003,7 +1003,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T093 PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode
 - State: Available
-- Depends: T067, T088, T090, T092
+- Depends: T067, T088, T090, T092, T156
 - Source: core/src/com/unciv/logic/map/pathingmap/PathingMap.kt, PathingMapCache.kt, PathingMapAStarPathfinder.kt, RouteNode.kt, PrioritizedNode.kt (FixedPointMovement.kt is ported by T067)
 - Fixtures: tests/src/com/unciv/logic/map/pathingmap/PathingMapTest.kt, RouteNodeTest.kt (TestGame: T035 via T092)
 - Deliverables: csharp/Unciv.Core/Logic/Map/PathingMap/*.cs, tests
@@ -1016,7 +1016,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T094 NextTurnAutomation and BarbarianAutomation (automation integration)
 - State: Available
-- Depends: T088, T090, T091, T092, T078, T083, T035
+- Depends: T088, T090, T091, T092, T078, T083, T035, T156
 - Source: core/src/com/unciv/logic/automation/civilization/NextTurnAutomation.kt, BarbarianAutomation.kt
 - Fixtures: tests/src/com/unciv/logic/automation/civilization/NextTurnAutomationTest.kt
 - Deliverables: csharp/Unciv.Core/Logic/Automation/Civilization/NextTurnAutomation.cs, BarbarianAutomation.cs, tests
@@ -1744,6 +1744,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test
 - Claimed:
 - Notes: Split from T143 at claim time. Remaining deferred cases: CountableTests TestGame cases (testRulesetValidation, testForEveryWithInvalidCountable, testPerCountableForGlobalAndLocalResources, testStatOrResourcePerTurn, testStatsCountables, testKnownCivsCountable, testOwnedTilesCountable, testFilteredCitiesCountable, testFilteredBuildingsCountable, testPoliciesCountables, testEraNumberCountable, testSpeedModifierCountable, countableCanUseContext) and ExpressionTests state cases; UniqueErrorTests.testEducatedEliteGreatPersonGifting (a ported draft fails with NotImplementedException from CityStateSeams.GetForeignCityNearCapital: needs T094 NextTurnAutomation; the UncivGame settings tutorial workaround is not needed); VictoryAvailabilityTests/VictoryMilestoneTests (check DeferredRulesetMembersTests/RulesetObjectTests for what is already covered). Many CountableTests cases may already be covered over fakes in Models/Ruleset/Unique/CountableTests.cs: port the real-game variant only where the Kotlin case differs.
+
+### T155 Air unit automation: AirUnitAutomation
+- State: Available
+- Depends: T090
+- Source: core/src/com/unciv/logic/automation/unit/AirUnitAutomation.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/AirUnitAutomation.cs, tests
+- Gate: `dotnet test --filter FullyQualifiedName~AirUnitAutomationTests`
+- Claimed:
+- Notes: Split from T090 at claim time (T090 ported BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation and UnitAutomation.tryUpgradeUnit). ~300 LOC. Calls into UnitAutomation/SpecificUnitAutomation members not yet ported are TODO(T###) seams naming their owner (UnitAutomation rest: next ticket; SpecificUnitAutomation: T091).
+
+### T156 Unit automation: UnitAutomation (all but tryUpgradeUnit)
+- State: Available
+- Depends: T090, T155
+- Source: core/src/com/unciv/logic/automation/unit/UnitAutomation.kt
+- Fixtures: none - generate golden values
+- Deliverables: csharp/Unciv.Core/Logic/Automation/Unit/UnitAutomation*.cs (partial class started in T090), tests; wires MapUnit.doAction and UnitActionsSeams (TODO(T090) call sites)
+- Gate: `dotnet test --filter FullyQualifiedName~UnitAutomationTests`
+- Claimed:
+- Notes: Split from T090 at claim time. ~620 LOC (UnitAutomation.kt is 677 lines; tryUpgradeUnit already ported in T090 as a partial class member). Retype the MapUnit.doAction and UnitActionsSeams (automatedExplore/automateUnitMoves via GameView) call sites. Calls to CivilianUnitAutomation/SpecificUnitAutomation/WorkerAutomation (T091/T092), NextTurnAutomation (T094) are TODO(T###) seams naming the owner. timeThis dropped (T027 policy).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
