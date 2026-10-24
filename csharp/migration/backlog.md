@@ -1362,6 +1362,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: From the T063 adversarial review (non-blocking findings).
 
+### T132 T097 review follow-ups: game context for Technology unit/obsoleted filters, BaseUnit.GetDescription ruleset
+- State: Available
+- Depends: T097
+- Source: csharp/Unciv.Core/UI/ObjectDescriptions/TechnologyDescriptions.cs, BaseUnitDescriptions.cs
+- Fixtures: none
+- Deliverables: TechnologyDescriptions.cs, BaseUnitDescriptions.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~ObjectDescriptionsCTests
+- Claimed:
+- Notes: From T097 review. (1) GetEnabledUnits and GetObsoletedObjects must take the CivilopediaContext and pass context?.GameInfo ?? civInfo?.GameInfo to IsHiddenFromCivilopedia (as GetFilteredBuildings does), pass context from GetCivilopediaTextLines; add a test with a game that disables nukes. (2) BaseUnitDescriptions.GetDescription should use the unit's own ruleset for tileResources if exposed; add a City-based test once T072/TestGame exists.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
