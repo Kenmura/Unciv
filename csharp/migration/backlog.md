@@ -1002,7 +1002,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Follow-up ticket T107 created for the TileMap/Tile JSON wiring gap.
 
 ### T099 GameStarter
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T041, T046, T061, T066, T078, T098
 - Source: core/src/com/unciv/logic/GameStarter.kt
 - Fixtures: tests/src/com/unciv/logic/LoadGameTest.kt (new-game parts; TestGame-free), tests/src/com/unciv/logic/map/CityStateTypeStartBiasTests.kt
