@@ -459,7 +459,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implementer notes (Claude): `Unciv.Logic.EngineOptions` (`VisibleMap`, `Supercharged`, `SimulateUntilTurn` + `IsSimulation(turns)`, `CivIdsInExperimentGroup` as a `LinkedHashSet`, diagnostics `ShowSettlerScores`/`SettlerScores`), `Clone()`, `IStateHashable` over the four rule-affecting values (experiment group as an unordered set; diagnostics excluded). Decision: an instance owned by the game (the GameInfo port holds it, `TODO(T046)`), in the state hash, changed through a command only; recorded as DETERMINISM.md 2.6 with the porting rule "wherever Kotlin reads `DebugUtils.X`, take the `EngineOptions` of the game". The command that sets it is not written here because it needs the GameInfo type (COMMANDS.md shape applies); `TODO(T046)` covers it. Users listed in the class remark (GameInfo, CityStats, CivInfoTransientCache, Tile.isVisible, Simulation, CityLocationTileRanker). 5 tests; Standard checks pass (build -warnaserror, format, full tests).
 
 ### T049 Model leaves: ModConstants, UncivSound, TutorialTrigger
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: none
 - Source: core/src/com/unciv/models/{ModConstants,UncivSound,TutorialTrigger}.kt
 - Fixtures: tests/src/com/unciv/logic/ModConstantsTests.kt (4 tests); otherwise generate golden values for the reflective equals/hashCode/toString/merge
@@ -467,6 +467,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~ModConstantsTests`
 - Claimed: 2026-10-24T02:17:59Z
 - Notes: Found missing while expanding the backlog; they are needed by T030 (`ModOptions.constants`, `Tutorial`/`TutorialTrigger`) and `Stat.purchaseSound`. ModConstants uses Java reflection for `merge/equals/hashCode/toString` over `declaredFields` in declaration order, with `hashCode` chaining `withHash(field.hashCode())` and `equals` being Java boxed `equals` (Double/Float compare bits: `NaN == NaN`, `0.0 != -0.0`); use C# reflection over the properties in declaration order and `JavaHash`/`Randomness.WithHash`, and the Java `toString` of floats/doubles (`JavaFormat.ToJavaString`, T047). Nested data class `UnitUpgradeCost` needs Kotlin data-class `equals/hashCode/toString`. `ImmutableColor` is NOT ported here (no engine Color type yet): decide with Nation (T032).
+- Implementer notes: Properties are PascalCase with `[JsonPropertyName]` equal to the Kotlin names (generated from the Kotlin source, 44 constants), reflected in `MetadataToken` (declaration) order. The nested data class is `ModConstants.UpgradeCostConstants` (a nested type cannot share the name of the `UnitUpgradeCost` property); its `ToString` still prints `UnitUpgradeCost(...)`. Hash codes of `Defaults` (670061036) and of the `{99, 6.0}` instance (1000388743) and the `toString` forms are golden values from the real JVM class. `TutorialTrigger` keeps the Kotlin entry names; `Value()`/`IsCivilopedia()` are extension methods. `UncivSound` is a record with the static instances. `TODO(T030)` marks the upstream "implement as unique conditionals" note.
 
 ### T046 GameInfo core and the hooks waiting for it
 - State: Available
