@@ -350,7 +350,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Minor: nested `IdChecker.Friend` stands in for `multiplayer.FriendList.Friend` (multiplayer is a non-goal); fine, note it. `Log.error` calls are dropped (no logging in the engine), also fine.
 
 ### T021 Metadata models: LocaleCode, GameParameters, GameSetupInfo, Player, BaseRuleset, ModCategories
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: T007
 - Source: core/src/com/unciv/models/metadata/LocaleCode.kt, GameParameters.kt, GameSetupInfo.kt, Player.kt, BaseRuleset.kt, ModCategories.kt
 - Fixtures: none - generate golden JSON by serializing from Kotlin
@@ -364,6 +364,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Not ported / deferred: `LocaleCode.locale()`, `find(Locale)`, `getSystemLanguage`, `getLocale` (java.util.Locale/UncivGame, client); `Player.chosenNation`/`setNationTransient`/Nation constructor (`TODO(T032)`); `Speed.DEFAULT` is a private constant `"Quick"` until Speed exists (`TODO(T030)`); the `ModCategories` list, `mergeOnline`, `save`, `fromSelectBox` (client/network: Won't port), only `Category` as `ModCategory`; **`GameSetupInfo` is moved to T045** (needs `MapParameters` (T022); its `fromSettings` reads client settings). The deprecated `showVictoryStats` is kept as a plain property (no `[Obsolete]`, which would fail the build at its own use).
   - Upstream `TODO` comments in Constants.kt were reworded to "Upstream note" (bare TODO fails `SourcePolicyTests`).
   - Ran Gate (`~MetadataTests`, 15 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 430/430.
+  - Review (Antigravity): Pass. Verified `LocaleCode`, `BaseRuleset`, `Player`, `PlayerType`, `GameParameters`, `ModCategory`, `Constants`, `LinkedHashSet`, and `MetadataTests` against Kotlin sources: all 54 `LocaleCode` entries and OpenJDK 17+ `in` -> `id` fastlane folder mapping, `GameParameters` JSON field order and `ShowCivilizationStatsRaw` vs `ShowCivilizationStats` setter/fallback semantics, `Clone()` godMode reset, `ToString()` 6-mod limit, `ModCategory` topic-only equality/JVM hash, and `LinkedHashSet` insertion order + set equality. Re-ran Gate (`~MetadataTests`, 15/15 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
 
 ### T045 GameSetupInfo
 - State: Available
