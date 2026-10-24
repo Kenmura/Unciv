@@ -1415,7 +1415,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review pass. Optional findings left: NullifiesStat test does not discriminate the distinct() dedupe; UpdateTileStats test name mentions blockade but has no blockade case; negative-happiness We Love The King branch untested.
 
 ### T125 Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding)
-- State: Needs-Review [Antigravity]
+- State: Done
 - Depends: T119
 - Source: none
 - Fixtures: none
