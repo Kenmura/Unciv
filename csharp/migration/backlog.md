@@ -603,7 +603,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Update after rebase onto T054: Tile.SetBaseTerrain/RemoveImprovement now real (T054); NaturalWonderSeams.cs only keeps the SetConnectedByRiver(convertTerrains) seam (T041).
 
 ### T075 MapGenerator C: mapregions Region, MapGenTileData, MapRegions, RegionStartFinder
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T039, T010, T016, T017
 - Source: core/src/com/unciv/logic/map/mapgenerator/mapregions/Region.kt, MapGenTileData.kt, MapRegions.kt, RegionStartFinder.kt
 - Fixtures: tests/src/com/unciv/logic/map/MapGenerationTests.kt
