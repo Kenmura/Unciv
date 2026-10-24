@@ -1,0 +1,23 @@
+; Engine configuration file. Minimal headless-test project for the C000 harness (csharp/migration/GODOT.md).
+config_version=5
+
+[application]
+
+config/name="Unciv Godot Harness"
+run/main_scene="res://SmokeTest.tscn"
+config/features=PackedStringArray("4.7", "C#")
+
+[display]
+
+window/size/viewport_width=640
+window/size/viewport_height=480
+
+[dotnet]
+
+project/assembly_name="Unciv.Godot.Harness"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/msaa_3d=0

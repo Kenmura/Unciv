@@ -1,0 +1,49 @@
+# Godot headless test harness (C000)
+
+Lets an agent render Godot scenes, look at the result and click on them with no display, no GPU and no editor.
+
+## One-time setup (inside `dotnet-dev`)
+
+```
+sudo dnf install xorg-x11-server-Xvfb mesa-dri-drivers mesa-libGL mesa-vulkan-drivers libXcursor libXinerama libXi libXrandr fontconfig alsa-lib
+Unciv.Godot.Harness/tools/setup-godot.sh
+```
+
+`setup-godot.sh` installs the pinned Godot (4.7.2 .NET) under `~/.local/opt`, outside the repository, after checking the
+SHA-512 published with the official release. Override the location with `GODOT_HOME`, or point `GODOT` at your own binary.
+
+## Running
+
+```
+distrobox enter dotnet-dev -- bash -c 'cd <your-worktree>/csharp/Unciv.Godot.Harness && tools/run-smoke.sh'
+```
+
+Exit 0 means: the project builds with `-warnaserror`, Godot booted, the scene rendered, the captured frame is not blank and
+shows the expected geometry, simulated clicks picked the expected ground points, and the frame matches `golden/smoke.png`.
+The captured frame is left in `out/smoke.png` (git-ignored); **open it** when a visual ticket needs judging, not just the exit code.
+After an intended visual change run `tools/run-smoke.sh --update-golden` and review the new PNG before committing it.
+
+How it renders: Xvfb provides a virtual 24-bit screen and Godot's Compatibility renderer (`--rendering-driver opengl3`) runs on
+Mesa llvmpipe, a CPU rasterizer. No GPU is used, so results are machine-independent apart from rasterizer rounding.
+Pure `--headless` is not used because it installs a dummy renderer that produces no pixels.
+
+## Pieces
+
+| Piece | Where | Notes |
+|---|---|---|
+| Image comparison, perceptual hash, blank-frame checks | `Unciv.Harness` (plain net10.0, in `Unciv.sln`, tested by `Unciv.Core.Tests/Harness`) | No Godot dependency, runs in the normal Standard checks |
+| `ViewportCapture.CaptureViewportPng` | `Unciv.Godot.Harness` | viewport -> PNG file and `RgbaImage` |
+| `InputSimulator.SimulateMouseClick/MouseMove/Key` | `Unciv.Godot.Harness` | goes through `Viewport.PushInput`, like device input |
+| `HexPicking.PickGroundPoint` | `Unciv.Godot.Harness` | screen position -> point on a horizontal plane |
+| `SmokeTest` scene | `Unciv.Godot.Harness` | the gate; copy it as the template for a new visual test |
+
+`GoldenComparer` combines three measures with tolerances (`GoldenTolerance`): perceptual-hash Hamming distance (layout moves),
+mean per-channel difference (overall colour drift) and the fraction of pixels differing by more than a per-pixel tolerance.
+The hash alone is weak on small images with a flat background, which is why all three must pass.
+
+## Limits
+
+- `Unciv.Godot.Harness` is not in `Unciv.sln`: it needs the Godot SDK and runtime, which the Standard checks must not require.
+  Its gate is `tools/run-smoke.sh`. Ticket C001 decides how the real client project is built in CI.
+- Linux x86-64 only (the install script and the Xvfb path). Windows/macOS are not covered.
+- llvmpipe is slow; keep test scenes small and the resolution at 640x480 unless a ticket needs more.

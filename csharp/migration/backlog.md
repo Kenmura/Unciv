@@ -795,7 +795,7 @@ Deferred until the ruleset and map tickets land (decided with the user): Civiliz
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
 
 ### C000 Headless Godot test & snapshot harness
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Claimed: 2026-10-24T02:50:09Z
 - Depends: none (infrastructure/tooling)
 - Deliverables:
@@ -806,6 +806,9 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Synthetic input simulator (`SimulateMouseClick`, `SimulateKey`) for headless interaction and hex-picking verification.
 - Gate: A minimal headless test scene that boots Godot headlessly, renders a test 3D mesh, captures a viewport snapshot to PNG, verifies non-empty/expected pixel output, and exits 0.
 - Notes: Prerequisite tooling for the client track so agents can autonomously validate rendering, materials, shaders, and UI interactions without an active display server or editor.
+  - Implementer notes (Claude): Usage and design in `csharp/migration/GODOT.md`. Godot 4.7.2 .NET (pinned, SHA-512 verified by `tools/setup-godot.sh`, installed under `~/.local/opt`, not in the repo) renders under Xvfb with the Compatibility renderer on Mesa llvmpipe (`--rendering-driver opengl3`); pure `--headless` is not used because its dummy renderer produces no pixels. Needed container packages (installed once with dnf): Xvfb, mesa-dri/libGL/vulkan drivers, libXcursor/Xinerama/Xi/Xrandr, fontconfig, alsa-lib. Deliverables: `Unciv.Harness` (plain net10.0, in the sln: `RgbaImage`, `PerceptualHash` 64-bit dHash, `ImageStats`, `GoldenComparer` with hash + mean-diff + differing-pixel tolerances; 9 tests in `Unciv.Core.Tests/Harness`) and `Unciv.Godot.Harness` (Godot project, NOT in the sln: `ViewportCapture.CaptureViewportPng`, `InputSimulator.SimulateMouseClick/MouseMove/Key`, `HexPicking.PickGroundPoint`, `SmokeTest` scene, `tools/run-smoke.sh`, `golden/smoke.png`).
+  - Gate run (this session): `Unciv.Godot.Harness/tools/run-smoke.sh` exit 0 (hex prism rendered, 2.7% coverage, 23 colours, two simulated clicks picked the projected ground points within 0.01, horizontal ray misses, golden match with hash distance 0, mean 0.0000); `--golden` with a wrong image and with a missing file each exit 1. Standard checks: build -warnaserror, format (also run in the Godot project), 701/701 tests. The golden PNG was reviewed by eye (green shaded hex prism on a navy background).
+  - Deviations / limits: the Godot project is outside `Unciv.sln` so the Standard checks do not need the Godot SDK or runtime; its gate is the script. Linux x86-64 only. The namespace is `Unciv.GodotHarness` because `Unciv.Godot` would shadow Godot's own `Godot` namespace in every file. Reviewer: run the setup script on a clean container if you can, and open `out/smoke.png` yourself.
 
 ### C001 Godot project skeleton
 - State: Blocked

@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Unciv.Core\Unciv.Core.csproj" />
+    <ProjectReference Include="..\Unciv.Harness\Unciv.Harness.csproj" />
   </ItemGroup>
 
 </Project>
