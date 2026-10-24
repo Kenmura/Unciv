@@ -16,7 +16,7 @@ next one, until a Stop Condition is met. Do not pause to ask the user.
 
 Long-term goal: a headless, **deterministic** C# engine driving a Godot client with a Civ 5-style UI (see `backlog.md`, Client track), playable online with friends over our **own** networking. The port exists to serve that goal.
 
-Non-goals (mark such tickets `Won't port`, do not port them):
+Non-goals (mark such tickets `Won't port`, do not port them; see the exhaustive file-by-file inventory and rationale in `backlog.md` under `## Non-goals (Won't port)`):
 - Unciv's multiplayer stack (`logic/multiplayer`, apiv2, Dropbox sync, `server/`) and any dependency on the original implementers' servers.
 - libGDX UI/screens, Android/desktop launchers, platform-specific code.
 

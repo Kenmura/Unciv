@@ -3,8 +3,46 @@
 Rules: see `PROTOCOL.md`. Tell an agent **"Begin Conversion work"** to start.
 Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX math/JVM stdlib). Expand as needed.
 
-## Non-goals
-See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for these are `Won't port`.
+## Non-goals (Won't port)
+
+See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine driving a Godot client. The following subsystems and files from the upstream Kotlin codebase are permanently out of scope and marked **Won't port** (formalized under **T043**):
+
+1. **Multiplayer & Server Stack (`core/src/com/unciv/logic/multiplayer/`, `server/`)**:
+   - `ApiVersion.kt`, `FriendList.kt`, `Multiplayer.kt`, `MultiplayerFiles.kt`, `MultiplayerGamePreview.kt`, `OnlineMultiplayerEvents.kt`, `ServerFeatureSet.kt`, `apiv2/`, `chat/`, `storage/`, and all code under `server/`.
+   - *Reason:* The project will implement its own multiplayer networking for Godot; there is no dependency on the upstream Unciv custom multiplayer servers, Dropbox sync, or original server infrastructure.
+
+2. **GitHub & Online Mod / Update Integration (`core/src/com/unciv/logic/github/`, `core/src/com/unciv/logic/UncivKtor.kt`)**:
+   - `Github.kt`, `GithubAPI.kt`, `Zip.kt`, `UncivKtor.kt`.
+   - *Reason:* Online mod downloading from GitHub repositories, release checking, and Ktor HTTP client infrastructure are client/tooling concerns that do not belong in the headless engine.
+
+3. **Platform-Specific File Pickers & Storage Wrappers (`core/src/com/unciv/logic/files/{FileChooser,PlatformSaverLoader}.kt`)**:
+   - `FileChooser.kt`, `PlatformSaverLoader.kt`.
+   - *Reason:* Native Android/desktop file chooser dialogs and OS-specific storage wrappers. *(Note: Pure engine save/load abstractions in `UncivFiles.kt`, `MapSaver.kt`, `FileConversions.kt`, and `IMediaFinder.kt` remain deferred to the engine save/load ticket and are NOT ruled out).*
+
+4. **Platform & Host Utilities (`core/src/com/unciv/utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt`)**:
+   - `Display.kt`: libGDX display queries, DPI scaling, and screen sizing.
+   - `PlatformSpecific.kt`: Native platform hooks (Android clipboard, vibration, external browser launch).
+   - `Concurrency.kt`: libGDX main/GL thread dispatchers (`launchOnGLThread`, etc.).
+   - `Log.kt`: libGDX `Gdx.app.log` logging wrapper.
+   - `DebugUtils.kt`: libGDX debug FPS rendering and memory counter tooling.
+
+5. **Translation Authoring Dev Tooling (`core/src/com/unciv/models/translations/TranslationFileWriter.kt`)**:
+   - `TranslationFileWriter.kt`.
+   - *Reason:* Developer tooling for updating `.properties` files, generating template diffs, and formatting translation sources. The engine only needs headless read-only translation runtime support.
+
+6. **2D Scene2D Skins & Sprite Sheet Models (`core/src/com/unciv/models/skins/`, `core/src/com/unciv/models/tilesets/`)**:
+   - `SkinCache.kt`, `SkinConfig.kt`, `SkinStrings.kt`: libGDX Scene2D UI skins and bitmap font configurations.
+   - `TileSetCache.kt`, `TileSetConfig.kt`, `TileSet.kt`: 2D hex sprite sheets and libGDX texture atlas packing.
+   - *Reason:* Superseded entirely by the Godot 2D/3D client rendering architecture.
+
+7. **libGDX UI and Launchers (`core/src/com/unciv/ui/`, `android/`, `desktop/`)**:
+   - All libGDX screens, Scene2D actors, stage wrappers, sound/music playback hooks, and desktop/android launcher harnesses.
+   - *Reason:* Client concerns handled exclusively by the Godot client track.
+
+8. **libGDX UI Unit Tests (`tests/src/com/unciv/ui/`)**:
+   - `KeyBindingTests.kt`, `LineChartTests.kt`, `ModFontsTests.kt`, `NativeBitmapFontDataTest.kt`, `EditorMapHolderMemoryTest.kt`, `DevConsoleTests.kt`, `RankingTypeTests.kt`, `WorldMapMovementOverlayTest.kt`.
+   - *Reason:* Tests verifying libGDX UI widgets, fonts, key shortcuts, and Scene2D layouts.
+
 
 ## Engine track
 
@@ -638,7 +676,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Platform file IO behind an interface.
 
 ### T043 Record Won't-port scope
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: none
 - Source: logic/multiplayer, logic/github, logic/UncivKtor.kt, logic/files/{FileChooser,PlatformSaverLoader}.kt, utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt, models/translations/TranslationFileWriter.kt, models/skins, models/tilesets, ui tests
 - Fixtures: none
@@ -646,6 +684,12 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Gate: `n/a (docs only)`
 - Claimed: 2026-10-24T02:01:45Z
 - Notes: Docs-only ticket. Review each entry before listing: logic/files/UncivFiles and MapSaver, FileConversions, IMediaFinder may still be needed for save/load and are NOT on this list; handle them in the Phase E tickets.
+  - Implementer notes (Antigravity):
+    - Documented the exhaustive, categorized Won't-port inventory in `backlog.md` under `## Non-goals (Won't port)`.
+    - Enumerated files and detailed technical rationale across 8 categories: Multiplayer/Server stack, GitHub/mod downloading, Platform-specific file pickers (`FileChooser`, `PlatformSaverLoader`), Platform host utilities (`Display`, `PlatformSpecific`, `Concurrency`, `Log`, `DebugUtils`), Translation file writer dev tooling (`TranslationFileWriter`), 2D Scene2D skins & sprite sheets (`models/skins/`, `models/tilesets/`), libGDX UI screens and desktop/android launchers, and libGDX UI tests (`tests/src/com/unciv/ui/`).
+    - Verified engine save/load abstractions (`UncivFiles.kt`, `MapSaver.kt`, `FileConversions.kt`, `IMediaFinder.kt`) remain designated for deferred engine tickets and are excluded from Won't-port.
+    - Added explicit pointer in `PROTOCOL.md` to `backlog.md`'s Won't-port catalog.
+    - Standard checks verified clean (build -warnaserror, format, 548/548 tests pass).
 
 ### Planned (not yet ticketed)
 Deferred until the ruleset and map tickets land (decided with the user): Civilization (split ~5: core, diplomacy, policy/tech managers, notifications/quests, vision/stats), Trade, City + CityStats + production, UnitManager/MapUnit (movement, actions), UniqueTriggerActivation, Battle, GameInfo, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
