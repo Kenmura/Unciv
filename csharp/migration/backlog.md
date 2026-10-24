@@ -405,7 +405,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
     5. Ran Gate (`~MapParametersTests`, 6/6 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
 
 ### T023 Translation core (headless)
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Claimed: 2026-10-24T01:40:33Z
 - Depends: T018
 - Source: core/src/com/unciv/models/translations/Translations.kt, TranslationEntry.kt, TranslationCache.kt, TranslationFileReader.kt, TranslationExtensions.kt (`tr()` and its helpers)
@@ -413,6 +413,16 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: csharp/Unciv.Core/Models/Translations/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~TranslationTests`
 - Notes: Decided: ported headlessly now. File access behind an interface (no libGDX FileHandle). Exclude TranslationFileWriter (dev tooling; Won't port, T043). Translation templates/placeholders/conditionals `[]`/`<>` must match Kotlin exactly; culture-invariant ordering. Lookups must not depend on iteration order of hash collections.
+
+  - Implementer notes (Antigravity): Headless translation core in `Unciv.Models.Translations`:
+    - `Translations.cs`, `TranslationEntry.cs`, `ITranslationFileHandle.cs`, `TranslationFileReader.cs`, `TranslationCache.cs`, `TranslationExtensions.cs`, and `FontRulesetIcons.cs`.
+    - `StatExtensions.Character` provides Unicode icon characters for all 7 Stats (`⚙`, `⁂`, `¤`, `⍾`, `♪`, `⌣`, `☮`).
+    - Decoupled file I/O behind `ITranslationFileHandle` (`StringTranslationFileHandle`, etc.) and `TextReader` overloads on `TranslationFileReader`.
+    - Exact bracket scanning and nesting: ported `FindNextTopLevel`, `FindMatchingAnyKind`, `FindMatchingSameKind`, and `ParsePairs` matching Kotlin's 3-bracket-type stack logic (`[]`, `{}`, `<>`) and unmatched bracket preservation.
+    - Number formatting: `LanguageCache` implements native digit substitution (e.g. Bangla `০` -> `১,২৩৪`) and invariant culture compatibility for `InvariantGlobalization: true`.
+    - Conditionals and modifiers: stable sorting matching `ConditionalsOrder`, before/after placement matching `ConditionalsPlacement`, and first character casing matching `StartWithCapitalLetter`.
+    - Deliberately excluded: `TranslationFileWriter` (dev tooling; non-goal per T043) and libGDX fake private-use-area font glyph remapping (Godot client has native text shaping).
+    - Ran Gate (59 passed) and Standard checks (build -warnaserror clean, format clean, full `dotnet test` 474/474 passed).
 
 ### T024 Holiday dates
 - State: Needs-Review [Claude]
