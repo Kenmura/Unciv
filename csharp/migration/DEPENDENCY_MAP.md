@@ -51,16 +51,7 @@ flowchart TD
     T127["T127<br/>Lower size-ratchet baseline for Tile.cs and Civilization.cs ..."]
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
-    T139["T139<br/>Views B leftovers: members blocked on unported engine code (..."]
-    T141["T141<br/>Deferred TestGame fixtures: map directory (FreshWater, TileI..."]
-    T142["T142<br/>Deferred TestGame fixtures: civilization directory and GameS..."]
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
-    T144["T144<br/>Port TileUniquesTests.pillageYieldTest (split from T103)"]
-    T145["T145<br/>Deferred TestGame fixtures: map directory remainder (UnitMov..."]
-    T146["T146<br/>UnitFormationTests Battle-dependent escort attack cases (nee..."]
-    T148["T148<br/>Deferred TestGame fixtures needing Tile.startWorkingOnImprov..."]
-    T149["T149<br/>Deferred civilization fixtures needing Battle: DiplomacyMana..."]
-    T150["T150<br/>Deferred civilization fixtures needing TradeEvaluation: Gold..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
     T155["T155<br/>Air unit automation: AirUnitAutomation"]
@@ -118,10 +109,6 @@ flowchart TD
   T089 --> T104
   T094 --> T104
   T100 --> T104
-  T139 --> T148
-  T141 --> T148
-  T142 --> T150
-  T089 --> T150
   T143 --> T154
   T094 --> T154
   T090 --> T155
@@ -180,7 +167,7 @@ flowchart TD
   class T081 done
   class T083 done
   class T088 done
-  class T089 prog
+  class T089 done
   class T090 review
   class T091 ondeck
   class T092 waiting
@@ -195,23 +182,14 @@ flowchart TD
   class T104 waiting
   class T106 done
   class T107 done
-  class T115 ready
+  class T115 prog
   class T123 ready
   class T125 ready
   class T127 ready
-  class T128 ready
-  class T129 ready
-  class T139 prog
-  class T141 done
-  class T142 done
+  class T128 prog
+  class T129 prog
   class T143 done
-  class T144 ready
-  class T145 review
-  class T146 ready
-  class T148 ondeck
-  class T149 ready
-  class T150 ondeck
-  class T152 ready
+  class T152 prog
   class T154 waiting
   class T155 ondeck
   class T156 waiting
@@ -232,28 +210,19 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 33]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 24]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T115 | **Ready to start** | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
 | T127 | **Ready to start** | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
-| T128 | **Ready to start** | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
-| T129 | **Ready to start** | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
-| T144 | **Ready to start** | T080, T103 | 0 | Port TileUniquesTests.pillageYieldTest (split from T103) |
-| T146 | **Ready to start** | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
-| T149 | **Ready to start** | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
-| T152 | **Ready to start** | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T091 | **On deck** (after T090) | T090, T080, T063 | 8 | Civilian automation: CivilianUnitAutomation, SpecificUnitAutomation, ReligiousUnitAutomation, ConstructionAutomation |
 | T155 | **On deck** (after T090) | T090 | 7 | Air unit automation: AirUnitAutomation |
-| T148 | **On deck** (after T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
-| T150 | **On deck** (after T089) | T142, T089 | 0 | Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases |
 | T090 | Needs-Review [Claude] | T087, T088, T082, T083 | 14 | Unit automation core A: BattleHelper, HeadTowardsEnemyCityAutomation, UseGoldAutomation, UnitAutomation.tryUpgradeUnit |
 | T092 | Available (waiting on T091) | T091, T080, T035 | 7 | Worker and road automation: WorkerAutomation, RoadBetweenCitiesAutomation, RoadToAutomation |
 | T156 | Available (waiting on T090, T155) | T090, T155 | 6 | Unit automation: UnitAutomation (all but tryUpgradeUnit) |
@@ -261,12 +230,10 @@ xychart-beta
 | T094 | Available (waiting on T090, T091, T092, T156) | T088, T090, T091, T092, T078, T083, T035, T156 | 4 | NextTurnAutomation and BarbarianAutomation (automation integration) |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| T089 | In-Progress [Claude] | T086, T088, T085 | 2 | TradeEvaluation |
 | T101 | Available (waiting on T094) | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T093 | Available (waiting on T090, T092, T156) | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | T102 | Available (waiting on T101) | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
-| T139 | In-Progress [Claude] | T085, T082, T083, T079, T080 | 1 | Views B leftovers: members blocked on unported engine code (battle, unit actions, build time) |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -274,6 +241,9 @@ xychart-beta
 | C004 | Blocked | C002 | 0 | 3D military units |
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
-| T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T145 | In-Review [Antigravity] | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
+| T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
+| T128 | In-Progress [Claude] | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
+| T129 | In-Progress [Claude] | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
+| T152 | In-Progress [Claude] | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
