@@ -10,7 +10,7 @@ using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.Logic.Map.MapUnits;
 
 // Ported from core/src/com/unciv/logic/map/mapunit/movement/UnitMovement.kt (T067). Stripped: the purity annotations, the timeThis profiling.
-// - The A* branches (`UncivGame.Current.settings.useAStarPathfinding`) go through PathingMaps (UnitMovementSeams.cs): null = setting off.
+// - The A* branches (`UncivGame.Current.settings.useAStarPathfinding`) go through PathingMaps (UnitPathingMaps.cs): null = setting off.
 // - Tile.GetOwner()/GetCity() are typed by their seams (T053 rule); the owner is always a Civilization / City, hence the casts.
 // - Kotlin BitSet is a BitArray over the tile list; ArrayList<Boolean?> is a List<bool?> (see GetOrPut).
 // - The cost caches keep Kotlin's Float values; sorting keeps Kotlin's stable order.

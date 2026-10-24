@@ -7,16 +7,16 @@ using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 namespace Unciv.Core.Tests.Logic.Automation;
 
 // T094: port of tests/src/com/unciv/logic/automation/civilization/NextTurnAutomationTest.kt. The Kotlin class is parameterized over the
-// pathfinding algorithm; the A* PathingMap is T093, so only the default (non-A*) pathfinding runs here. The Mockito spy of onFirstAutomation is
+// pathfinding algorithm: NextTurnAutomationTests runs the Classic set, NextTurnAutomationAStarTests the AStarPathfinding set (T093). The Mockito spy of onFirstAutomation is
 // GameClientState.BeforeUnitMoves (the first thing automateUnitMoves asks of a unit). Further cases are C#-only, derived by hand from the Kotlin.
-[Collection("RulesetCache")]
-public class NextTurnAutomationTests
+public abstract class NextTurnAutomationTestsBase
 {
     private readonly TestGame testGame = new();
     private readonly CivilizationObject civInfo;
 
-    public NextTurnAutomationTests()
+    protected NextTurnAutomationTestsBase(bool useAStar)
     {
+        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(7);
         civInfo = testGame.AddCiv();
         var capital = testGame.AddCity(civInfo, testGame.TileMap[0, 0]);
@@ -172,3 +172,9 @@ public class NextTurnAutomationTests
         Assert.True(bystander.CurrentTile != bystanderStart || bystander.CurrentMovement < 2f, "unaffected unit was still automated");
     }
 }
+
+[Collection("RulesetCache")]
+public sealed class NextTurnAutomationTests() : NextTurnAutomationTestsBase(false);
+
+[Collection("RulesetCache")]
+public sealed class NextTurnAutomationAStarTests() : NextTurnAutomationTestsBase(true);

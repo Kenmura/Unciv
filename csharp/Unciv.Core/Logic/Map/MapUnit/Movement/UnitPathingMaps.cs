@@ -3,9 +3,9 @@ using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 
 namespace Unciv.Logic.Map.MapUnits;
 
-// T067 (UnitMovement): UnitMovement reaches the A* pathfinding (PathingMap, T093) only through the members below. Kotlin reads
-// <c>UncivGame.Current.settings.useAStarPathfinding</c> (default false) in four places: a headless engine has no client settings, so the
-// flag is "GameClientState.UnitPathing is set" (T093: PathingMap implements IUnitPathingMap, AStarPathing is the factory).
+// UnitMovement reaches the A* pathfinding (PathingMap, T093) only through the interfaces below. Kotlin reads
+// `UncivGame.Current.settings.useAStarPathfinding` (default false) in four places: a headless engine has no client settings, so the
+// flag is "GameClientState.UnitPathing is set" (PathingMap implements IUnitPathingMap, AStarPathing is the factory).
 
 /// <summary>What UnitMovement calls on <c>PathingMap</c> (<c>aStarPathing</c>, <c>aStarPathingWithoutZoneControl</c>, <c>aStarPathingWithoutEscort</c>, <c>roadPathing</c>).</summary>
 public interface IUnitPathingMap
