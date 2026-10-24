@@ -764,7 +764,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Platform file IO behind an interface.
 
 ### T043 Record Won't-port scope
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: none
 - Source: logic/multiplayer, logic/github, logic/UncivKtor.kt, logic/files/{FileChooser,PlatformSaverLoader}.kt, utils/{Display,PlatformSpecific,Concurrency,Log,DebugUtils}.kt, models/translations/TranslationFileWriter.kt, models/skins, models/tilesets, ui tests
 - Fixtures: none
@@ -786,6 +786,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     5. Add the entries I put into the ticket's Notes after the implementer finished: `ui/components/fonts/DiacriticSupport` (and the libGDX font glyph remapping) and the `Gdx.files`-based translation lookup (replaced by `ITranslationFileHandle`); list #5 only names `TranslationFileWriter`.
     - Good: the categorization and rationale text for #1-#6 and #8 is accurate, the engine save/load exclusion note for `UncivFiles`/`MapSaver`/`FileConversions`/`IMediaFinder` is right, and the `PROTOCOL.md` pointer is in place. Standard checks (build, format, tests) pass; nothing else changed.
   - Rework notes (Claude): all five review items applied to the Non-goals section (entries 4, 5, 7 and the new 9): the `ui/` carve-out list with a disposition per type, `DebugUtils` split (new ticket **T048**), `Log` facade policy (new ticket **T047**, `TODO(T047)` at call sites meanwhile), `Concurrency` replacement, multiplayer/settings residue, `DiacriticSupport` and the `Gdx.files` lookup. Docs only; no code changed.
+  - Review 2 (Antigravity): Pass. Verified all 5 review items in `## Non-goals (Won't port)` (entries 4, 5, 7, and 9): explicit `ui/` carve-out list with disposition per type, `DebugUtils` split pointing to `T048`, `Log` facade policy pointing to `T047`, synchronous `Concurrency` replacement, client settings/multiplayer residue handling, and `DiacriticSupport`/`Gdx.files` translation lookup notes. Standard checks clean (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 701/701 passed).
 
 ### Planned (not yet ticketed)
 Deferred until the ruleset and map tickets land (decided with the user): Civilization (split ~5: core, diplomacy, policy/tech managers, notifications/quests, vision/stats), Trade, City + CityStats + production, UnitManager/MapUnit (movement, actions), UniqueTriggerActivation, Battle, GameInfo, GameStarter, UncivFiles/MapSaver/IMediaFinder (save/load), end-to-end determinism over N turns (uses T011), then Automation (AI) last.
@@ -859,8 +860,8 @@ Unlike Unciv's legacy per-unit automation (`automateUnitMoves` cascading individ
 All tickets start in `Blocked` until foundational engine systems (GameInfo, TileMap, Unit, Ruleset) are in place, but can be unblocked as their specific prerequisites land.
 
 ### A001 AI defines & data tables loader
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T02:43:29Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T03:00:00Z
 - Depends: T007, T021
 - Source: `csharp/migration/ai-spec/data/ai_defines.tsv`, `grand_strategy_flavors.tsv`, `tactical_moves.tsv`
 - Deliverables: `csharp/Unciv.Core/AI/Data/` data models for `GlobalAIDefines`, `GrandStrategyFlavors`, `TacticalMoveDefinition`, TSV/JSON loader, unit tests
