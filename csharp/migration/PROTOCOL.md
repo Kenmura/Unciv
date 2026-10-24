@@ -8,9 +8,21 @@ must follow this file exactly. No live agent-to-agent channel exists: git and
 
 > **Begin Conversion work**
 
-On seeing it, read this file, then `csharp/migration/backlog.md`, then run the
-Work Loop below **continuously**: finish a ticket, then immediately start the
-next one, until a Stop Condition is met. Do not pause to ask the user.
+On seeing it, read this file, then run the Work Loop below **continuously**: finish a
+ticket, then immediately start the next one, until a Stop Condition is met.
+
+**Read the protocol and backlog from the `csharp-migration` branch, not from whatever
+is checked out**: after your worktree exists, everything below refers to your worktree's copy.
+**Never read `backlog.md` whole** (see Context discipline). Use `tools/ticket.py`.
+
+### No-prompt rule
+
+Never ask the user a question and never stop for a confirmation. Where this file or
+the situation is ambiguous, pick the conservative reading, note it in the ticket's `Notes`, and
+continue. Concretely: do not use AskUserQuestion; keep file writes inside your worktree
+(temporary files go in your harness scratchpad); resolve rebase conflicts yourself (in `backlog.md`
+take `csharp-migration`'s text and re-apply only your own ticket's lines); a dirty worktree you own is
+yours to commit or discard, one you do not own is left alone. Only the Stop Conditions below end the loop.
 
 ## Goals and non-goals
 
@@ -87,7 +99,12 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 
 ### Context discipline
 
-- The loop is continuous, so keep context small by treating each ticket as a fresh start: after finishing one, re-read only `PROTOCOL.md` and the backlog, not your earlier work. If your harness supports it, run each ticket in a fresh subagent or context; otherwise rely on auto-compaction.
+- **Backlog access.** `backlog.md` holds only open tickets (Done ones are stubs; full text in `backlog-archive.md`). Use, from `csharp/migration/`:
+  `python3 -I tools/ticket.py next <You>` (what the Work Loop picks), `... show T###` (one ticket, ~1-3KB), `... list [State]` (one line each).
+  Edit only your ticket's lines in `backlog.md`; to find them use `grep -n '^### T###'`. Never `Read` the whole file.
+- **One ticket = one fresh subagent** when the harness has subagents: the orchestrator runs `ticket.py next`, then dispatches a subagent with the ticket ID, agent name and this file's path; the subagent does claim → implement/review → Gate → publish and returns a **3-line report** (ticket, outcome, commit). The orchestrator then loops. The orchestrator itself never reads Kotlin or C# sources, so its context stays flat. Without subagents, rely on auto-compaction.
+- Run the Standard checks with output trimmed: `... 2>&1 | tail -40`, and read the full log only on failure.
+- Periodically run `python3 -I tools/ticket.py archive` (and commit) when many tickets are Done.
 - Read only the files listed in the ticket. For anything else, `grep` instead of opening whole files.
 - **Optional delegation:** if the ticket's Source is over ~500 lines or touches more than 3 files, and your harness supports subagents, delegate the *read-and-brief* step. The brief returns: files involved, semantic traps (numeric types, rounding, ordering, null handling), stripped or deferred members, and fixture cases to port.
 - Never delegate the port itself, the claim/state commits, or the final Gate run. Run the Gate yourself.
