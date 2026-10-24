@@ -17,7 +17,7 @@ namespace Unciv.Logic.Civilization.Diplomacy;
 // core/src/com/unciv/logic/civilization/diplomacy/CityStateFunctions.kt (T068). Class containing city-state-specific functions.
 //
 // Deviations / deferred (each names its ticket):
-// - NextTurnAutomation.getForeignCityNearCapital (giveGreatPersonToPatron, giveMilitaryUnitToPatron): CityStateSeams.GetForeignCityNearCapital, TODO(T094).
+// - NextTurnAutomation.getForeignCityNearCapital (giveGreatPersonToPatron, giveMilitaryUnitToPatron): CityStateSeams.GetForeignCityNearCapital (T094).
 // - CityCombatant(capital).getDefendingStrength() (getTributeModifiers): CityStateSeams.GetCityDefendingStrength (CityCombatant, T081).
 // - The QuestManager calls (influenceGainedByGift, receiveGoldGift, getTributeModifiers' callers, cityStateBullied, cityStateAttacked,
 //   makeOtherCityStatesWaryOfAttacker, cityStateDestroyed) go through the QuestManager members (T069).

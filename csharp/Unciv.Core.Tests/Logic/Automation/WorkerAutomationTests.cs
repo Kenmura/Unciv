@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Support;
+using Unciv.Logic.Automation.Civilization;
 using Unciv.Logic.Automation.Unit;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map.Tiles;
@@ -11,8 +12,7 @@ namespace Unciv.Core.Tests.Logic.Automation;
 // T092: port of tests/src/com/unciv/logic/automation/unit/WorkerAutomationTest.kt over the real TestGame.
 // The Kotlin setUp sets `useAStarPathfinding = true`; the A* PathingMap is T093, so these run on the default (non-A*) road pathing.
 // The Kotlin cases that drive whole turns through NextTurnAutomation.automateCivMoves (should build improvements in turns / without roads /
-// should build roads in turns; the fourth, @Ignore'd, is not ported) are C# adaptations here: the worker is automated with UnitAutomation.AutomateUnitMoves.
-// TODO(T094): port the originals with automateCivMoves once NextTurnAutomation exists.
+// should build roads in turns; the fourth, @Ignore'd, is not ported) run the original loop (T094; T092 had adapted them to automate only the worker).
 [Collection("RulesetCache")]
 public class WorkerAutomationTests
 {
@@ -166,18 +166,19 @@ public class WorkerAutomationTests
         Assert.Equal(-1, markedTile.TurnsToImprovement);
     }
 
-    // C# adaptation of the NextTurnAutomation-driven Kotlin cases: only the worker is automated each turn.
-    private void RunTurns(Unciv.Logic.Map.MapUnits.MapUnit worker, int turns, Action<int>? beforeTurn = null)
+    // The Kotlin loop of the NextTurnAutomation-driven cases: whole civ turns through NextTurnAutomation.AutomateCivMoves.
+    private void RunTurns(Unciv.Logic.Map.MapUnits.MapUnit worker, int turns, Action beforeAutomation, Action? afterTurn = null)
     {
         for (var i = 0; i < turns; i++)
         {
             worker.CurrentMovement = 2f;
             foreach (var unit in civInfo.Units.GetCivUnits().ToList())
                 if (unit != worker && unit.IsCivilian()) unit.Disband(); // Disband any workers that may have been built in this time period
-            beforeTurn?.Invoke(i);
-            UnitAutomation.AutomateUnitMoves(ViewOf(worker));
+            beforeAutomation();
+            NextTurnAutomation.AutomateCivMoves(civInfo);
             new TurnManager(civInfo).EndTurn();
             testGame.GameInfo.Turns++; // Invalidate WorkerAutomationCache
+            afterTurn?.Invoke();
         }
     }
 
@@ -195,12 +196,14 @@ public class WorkerAutomationTests
         city.ReassignAllPopulation();
         var worker = testGame.AddUnit("Worker", civInfo, centerTile);
 
-        RunTurns(worker, 38, _ =>
+        RunTurns(worker, 38, () =>
         {
             civInfo.AddGold(-civInfo.Gold); // Prevent any sort of worker spawning
             civInfo.Policies.FreePolicies = 0;
             civInfo.AddStat(Stat.Science, -100000);
-            if (city.Population.Population != 1) city.Population.AddPopulation(1 - city.Population.Population);
+        }, () =>
+        {
+            if (city.Population.Population != 1) city.Population.AddPopulation(1 - city.Population.Population); // Set the population back to 1
         });
 
         var finishedCount = centerTile.GetTilesInDistance(3).Count(it => it.Improvement != null && !it.IsCityCenter());
@@ -226,11 +229,13 @@ public class WorkerAutomationTests
         foreach (var city in cities) city.ReassignAllPopulation();
         var worker = testGame.AddUnit("Worker", civInfo, city1.GetCenterTile());
 
-        RunTurns(worker, 38, _ =>
+        RunTurns(worker, 38, () =>
         {
             civInfo.AddGold(-civInfo.Gold);
             civInfo.Policies.FreePolicies = 0;
             civInfo.AddStat(Stat.Science, -100000);
+        }, () =>
+        {
             foreach (var city in cities)
                 if (city.Population.Population != 1) city.Population.AddPopulation(1 - city.Population.Population);
         });
@@ -264,12 +269,11 @@ public class WorkerAutomationTests
         }
         var worker = testGame.AddUnit("Worker", civInfo, city1.GetCenterTile());
 
-        RunTurns(worker, 25, _ =>
+        RunTurns(worker, 25, () =>
         {
             civInfo.AddGold(-civInfo.Gold);
             civInfo.Policies.FreePolicies = 0;
-            civInfo.Tech.TechsResearched.Remove(testGame.Ruleset.TileImprovements["Farm"].TechRequired!); // the civ will annoyingly try to research it again
-        });
+        }, () => civInfo.Tech.TechsResearched.Remove(testGame.Ruleset.TileImprovements["Farm"].TechRequired!)); // the civ will annoyingly try to research it again
 
         var finishedCount = testGame.TileMap[0, 0].GetTilesInDistance(5).Count(it => it.RoadStatus != RoadStatus.None && !it.IsCityCenter());
         var inProgressCount = testGame.TileMap[0, 0].GetTilesInDistance(5).Count(it => it.TurnsToImprovement != 0);

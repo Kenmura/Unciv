@@ -11,7 +11,7 @@ namespace Unciv.Logic.Automation.Unit;
 
 // Ported from core/src/com/unciv/logic/automation/unit/HeadTowardsEnemyCityAutomation.kt (T090). Purity annotations and timeThis dropped (T027 policy).
 // - Kotlin Sequences stay lazy (IEnumerable); sortedBy/sortedWith are stable (OrderBy/ThenBy).
-// - NextTurnAutomation.getForeignCityNearCapital is NextTurnAutomationSeams.GetForeignCityNearCapital (TODO(T094)).
+// - NextTurnAutomation.getForeignCityNearCapital is NextTurnAutomation.GetForeignCityNearCapital (T094).
 public static class HeadTowardsEnemyCityAutomation
 {
     /// <returns>whether the unit has taken this action</returns>
@@ -40,8 +40,8 @@ public static class HeadTowardsEnemyCityAutomation
             .Where(it => unit.Civ.IsAtWarWith(it) && it.Cities.Count != 0);
 
         var closestEnemyCity = enemies
-            .Select(it => NextTurnAutomationSeams.GetForeignCityNearCapital(unit.Civ.GetCapital(), it))
-            .OfType<NextTurnAutomationSeams.CityDistance>()
+            .Select(it => NextTurnAutomation.GetForeignCityNearCapital(unit.Civ.GetCapital(), it))
+            .OfType<NextTurnAutomation.CityDistance>()
             .MinBy(it => it.AerialDistance)?.City;
         if (closestEnemyCity == null) return []; // no attackable cities found
 

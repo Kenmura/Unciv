@@ -1030,7 +1030,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T092: RoadBetweenCitiesAutomation reaches City.getRoadPath/getRoadPathToAny through GameClientState.RoadPathing (ICityRoadPathing, TODO(T093)); implement it on PathingMap and set it where useAStarPathfinding is read. Also port WorkerAutomationTest's A* setUp (useAStarPathfinding=true).
 
 ### T094 NextTurnAutomation and BarbarianAutomation (automation integration)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T088, T090, T091, T092, T078, T083, T035, T156
 - Source: core/src/com/unciv/logic/automation/civilization/NextTurnAutomation.kt, BarbarianAutomation.kt
 - Fixtures: tests/src/com/unciv/logic/automation/civilization/NextTurnAutomationTest.kt
@@ -1039,6 +1039,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T23:22Z
 - Notes: Created by the backlog audit. ~855 LOC. Final automation ticket: replaces every TODO(T094) seam (TurnManager.automate and cityBombardment/goldToScience T070, CityStateFunctions T068, Battle.valueCityStateAlliance T083, UniqueTriggerActivation.chooseGreatPerson T052, Civilization.automateTurn) and runs one full AI turn through all automation tickets. Seam rule as T053: not-yet-ported callees/callers in other automation tickets are TODO(T###) seams that name the owning ticket below; the owning ticket implements the seam and retypes the callers. Automation uses GameView (T084/T085). timeThis profiling is dropped (T027 policy).
   - From T092: port the NextTurnAutomation.automateCivMoves versions of WorkerAutomationTest 'should build improvements in turns', '... without roads' and 'should build roads in turns' (WorkerAutomationTests.cs holds C# adaptations that automate only the worker; see its TODO(T094) header).
+  - Implemented by Claude. NextTurnAutomation (partial: .cs, .Economy.cs, .Units.cs; split for the 12-namespace coupling limit), BarbarianAutomation, NextTurnAutomationHook; NextTurnAutomationSeams.cs deleted (CityDistance/GetForeignCityNearCapital/ApplyPromotions are NextTurnAutomation members; CityStateSeams.GetForeignCityNearCapital delegates).
+    - Default hook: GameClientState.NextTurnAutomation is now NextTurnAutomationHook.Instance (real automation); tests may still install stand-ins, null skips. INextTurnAutomation.ValueCityStateAlliance gained Kotlin's includeQuests parameter (UseGoldAutomation passes true). GameInfoTurnTests.AtWar sets the hook null (those cases test NextTurn's notifications, not the AI's reaction).
+    - New client setting GameClientState.AutomatedUnitsChoosePromotions (default false, as GameSettings). GameClientState.BeforeUnitMoves (internal) replaces the Mockito spy of NextTurnAutomationTest.onFirstAutomation (the transfer/gift cases run with it).
+    - Ported: all 4 NextTurnAutomationTest cases (non-A* pathfinding only until T093) and the 3 WorkerAutomationTests originals with automateCivMoves (T092 adaptations replaced). C#-only cases in NextTurnAutomationTurnTests.
+    - Quirks kept: PolicyManager.branchCompletionMap is a Kotlin HashMap (Dictionary insertion order here, T044); timeThis dropped; Kotlin TODO comments reworded (marker policy).
+    - Coverage: new files all >= 80% (check passes). `coverage.py --update-baseline` was denied by the permission classifier (CI Bypass), so coverage-baseline.json is NOT updated: someone with permission must run it for the 5 new files + raised ones.
+    - Unblocks T157 and T154 (EducatedElite gifting no longer throws NotImplementedException).
 
 ### T095 Civilopedia text model A: FormattedLine, ICivilopediaText, CivilopediaCategories, FormattedLineListBuilder, DescriptionHelpers
 - State: Done

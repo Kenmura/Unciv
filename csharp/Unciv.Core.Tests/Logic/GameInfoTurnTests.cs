@@ -215,6 +215,7 @@ public sealed class GameInfoTurnTests
         human.DiplomacyFunctions.MakeCivilizationsMeet(ai);
         human.GetDiplomacyManager(ai)!.DeclareWar();
         Assert.True(human.IsAtWarWith(ai));
+        Info.ClientState.NextTurnAutomation = null; // these cases test NextTurn's notifications, not how the AI reacts to the units placed here
         return (human, ai, human.Cities[0]);
     }
 

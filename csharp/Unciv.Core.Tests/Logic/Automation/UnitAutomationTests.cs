@@ -167,15 +167,15 @@ public partial class UnitAutomationTests
     public void ForeignCityNearCapitalIsTheClosestCityAndTheFirstOnTies()
     {
         var capital = testGame.AddCity(civ, testGame.GetTile(0, 0));
-        Assert.Null(NextTurnAutomationSeams.GetForeignCityNearCapital(capital, enemy)); // no cities
-        Assert.Null(NextTurnAutomationSeams.GetForeignCityNearCapital(null, enemy));
+        Assert.Null(NextTurnAutomation.GetForeignCityNearCapital(capital, enemy)); // no cities
+        Assert.Null(NextTurnAutomation.GetForeignCityNearCapital(null, enemy));
         var first = testGame.AddCity(enemy, testGame.GetTile(3, 0));
         testGame.AddCity(enemy, testGame.GetTile(-3, 0)); // same distance: the first one stays
         testGame.AddCity(enemy, testGame.GetTile(0, 6));
 
-        var result = NextTurnAutomationSeams.GetForeignCityNearCapital(capital, enemy);
+        var result = NextTurnAutomation.GetForeignCityNearCapital(capital, enemy);
 
-        Assert.Equal(new NextTurnAutomationSeams.CityDistance(first, 3), result);
+        Assert.Equal(new NextTurnAutomation.CityDistance(first, 3), result);
     }
 
     // endregion
@@ -544,7 +544,7 @@ public partial class UnitAutomationTests
         public void AutomateCityBombardment(CivilizationObject civInfo) { }
         public void ChooseGreatPerson(CivilizationObject civInfo) { }
         public void AutomateCivMoves(CivilizationObject civInfo) { }
-        public int ValueCityStateAlliance(CivilizationObject civInfo, CivilizationObject cityState) => value;
+        public int ValueCityStateAlliance(CivilizationObject civInfo, CivilizationObject cityState, bool includeQuests = false) => value;
     }
 
     private CivilizationObject CityStateWithInfluence(float influence, int allianceValue = 10)

@@ -6,7 +6,7 @@ namespace Unciv.UI.Components;
 
 // core/src/com/unciv/ui/components/MayaCalendar.kt
 // Stripped: openPopup (Popup/BaseScreen). startTurnForMaya (T070): NextTurnAutomation.chooseGreatPerson is the INextTurnAutomation hook
-// on the ClientState (TODO(T094)), skipped when none is set.
+// on the ClientState, skipped when none is set.
 public static class MayaCalendar
 {
     private const string IconFolder = "MayaCalendar/";
@@ -98,6 +98,6 @@ public static class MayaCalendar
         if (!IsNewCycle(year, game.GetYear(-1))) return;
         civInfo.GreatPeople.TriggerMayanGreatPerson();
         if (civInfo.IsAI() || game.IsFullAutoPlayAI)
-            game.ClientState.NextTurnAutomation?.ChooseGreatPerson(civInfo); // TODO(T094)
+            game.ClientState.NextTurnAutomation?.ChooseGreatPerson(civInfo);
     }
 }

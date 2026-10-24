@@ -497,7 +497,7 @@ public static class UniqueTriggerActivation
                     if (notification != null)
                         civInfo.AddNotification(notification, NotificationCategory.General);
 
-                    // TODO(T094): NextTurnAutomation.chooseGreatPerson is reached through GameClientState.NextTurnAutomation until it is ported
+                    // NextTurnAutomation.chooseGreatPerson is reached through GameClientState.NextTurnAutomation
                     if (civInfo.IsAI() || civInfo.GameInfo.ClientState.IsFullAutoPlayAI)
                         civInfo.GameInfo.ClientState.NextTurnAutomation?.ChooseGreatPerson(civInfo);
                     return true;

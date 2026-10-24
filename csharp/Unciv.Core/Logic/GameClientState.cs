@@ -31,8 +31,15 @@ public sealed class GameClientState
     /// <summary><c>settings.notificationsLogMaxTurns</c></summary>
     public int NotificationsLogMaxTurns { get; set; } = 5;
 
-    /// <summary>The unported <c>NextTurnAutomation</c> (TODO(T094): set by its port). Null means "not ported": the calls are skipped.</summary>
-    public INextTurnAutomation? NextTurnAutomation { get; set; }
+    /// <summary>Test seam standing in for the Mockito spy of NextTurnAutomationTest, which runs an action the first time automation reaches a unit
+    /// (Kotlin spies <c>getDamageFromTerrain</c>, the first thing <c>automateUnitMoves</c> asks of a unit). Always null in the game.</summary>
+    internal Action<View.MapUnitView>? BeforeUnitMoves { get; set; }
+
+    /// <summary><c>settings.automatedUnitsChoosePromotions</c></summary>
+    public bool AutomatedUnitsChoosePromotions { get; set; }
+
+    /// <summary><c>NextTurnAutomation</c>: the real automation by default. Tests (and clients) may replace it; null skips the calls.</summary>
+    public INextTurnAutomation? NextTurnAutomation { get; set; } = Automation.Civilization.NextTurnAutomationHook.Instance;
 
     /// <summary>Replaces the valuation <c>TradeEvaluation()</c> used by TurnManager and the diplomacy automation (tests install stand-ins). Null means <see cref="Trade.TradeEvaluation.Default"/>.</summary>
     public ITradeValidity? TradeEvaluation { get; set; }

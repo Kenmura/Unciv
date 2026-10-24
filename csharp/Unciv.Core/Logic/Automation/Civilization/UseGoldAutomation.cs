@@ -85,7 +85,7 @@ public static class UseGoldAutomation
 
     /// <summary>Kotlin <c>NextTurnAutomation.valueCityStateAlliance(GameView(..).civView, cityState, true)</c> (T094): the INextTurnAutomation hook, 0 without one.</summary>
     private static int ValueCityStateAlliance(CivilizationClass civ, CivilizationClass cityState) =>
-        civ.GameInfo.ClientState.NextTurnAutomation?.ValueCityStateAlliance(civ, cityState) ?? 0; // TODO(T094): valueCityStateAlliance's third parameter (true)
+        civ.GameInfo.ClientState.NextTurnAutomation?.ValueCityStateAlliance(civ, cityState, includeQuests: true) ?? 0;
 
     private static void MaybeBuyCityTiles(CivilizationClass civInfo)
     {

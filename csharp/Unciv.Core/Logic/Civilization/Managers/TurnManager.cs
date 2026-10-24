@@ -18,8 +18,8 @@ namespace Unciv.Logic.Civilization.Managers;
 // Deviations:
 // - NextTurnProgress (a UI progress bar) is an optional `Action` that is called where Kotlin calls `progressBar?.increment()`.
 // - UncivGame.Current.settings / VERSION are GameClientState (via IGameInfoState.ClientState) and Version.Current.
-// - NextTurnAutomation (T094) is the INextTurnAutomation hook on the ClientState; with no hook the calls are skipped
-//   (TODO(T094): automateGoldToSciencePercentage, automateCityBombardment, automateCivMoves). They get the civilization where
+// - NextTurnAutomation (T094) is the INextTurnAutomation hook on the ClientState (the real automation by default); with no hook the calls are skipped
+//   (automateGoldToSciencePercentage, automateCityBombardment, automateCivMoves). They get the civilization where
 //   Kotlin builds `GameView(gameInfo, civ).civView`.
 // - TradeEvaluation().isTradeValid (T089) is TradeEvaluation.Default unless the ClientState installs an ITradeValidity.
 // - GameInfo.processDiplomaticVictory (T071) is IGameInfoState.ProcessDiplomaticVictory.
@@ -47,7 +47,7 @@ public class TurnManager(Civilization civInfo)
 
         // Do this after updateStatsForNextTurn but before cities.startTurn
         if (civInfo.PlayerType == PlayerType.AI && ((IHasUniques)civInfo.GameInfo.Ruleset.ModOptions).HasUnique(UniqueType.ConvertGoldToScience))
-            civInfo.GameInfo.ClientState.NextTurnAutomation?.AutomateGoldToSciencePercentage(civInfo); // TODO(T094)
+            civInfo.GameInfo.ClientState.NextTurnAutomation?.AutomateGoldToSciencePercentage(civInfo);
 
         // Generate great people at the start of the turn,
         // so they won't be generated out in the open and vulnerable to enemy attacks before you can control them
@@ -313,7 +313,7 @@ public class TurnManager(Civilization civInfo)
     {
         var clientState = civInfo.GameInfo.ClientState;
         if (clientState.CitiesAutoBombardAtEndOfTurn)
-            clientState.NextTurnAutomation?.AutomateCityBombardment(civInfo); // Bombard with all cities that haven't, maybe you missed one. TODO(T094)
+            clientState.NextTurnAutomation?.AutomateCityBombardment(civInfo); // Bombard with all cities that haven't, maybe you missed one.
 
         civInfo.ForEachTriggeredUnique(UniqueType.TriggerUponTurnEnd, civInfo.State, _ => true, true, unique =>
         {
@@ -443,7 +443,7 @@ public class TurnManager(Civilization civInfo)
         if (civInfo.IsDefeated())
             return;
         // Do stuff
-        civInfo.GameInfo.ClientState.NextTurnAutomation?.AutomateCivMoves(civInfo); // TODO(T094)
+        civInfo.GameInfo.ClientState.NextTurnAutomation?.AutomateCivMoves(civInfo);
 
         // Update barbarian camps
         if (civInfo.IsBarbarian && !civInfo.GameInfo.GameParameters.NoBarbarians)

@@ -21,7 +21,7 @@ public sealed class CivTurnTests
         public void AutomateCityBombardment(Civilization civInfo) => Calls.Add("bombard:" + civInfo.CivName);
         public void ChooseGreatPerson(Civilization civInfo) => Calls.Add("great:" + civInfo.CivName);
         public void AutomateCivMoves(Civilization civInfo) => Calls.Add("moves:" + civInfo.CivName);
-        public int ValueCityStateAlliance(Civilization civInfo, Civilization cityState) => 0;
+        public int ValueCityStateAlliance(Civilization civInfo, Civilization cityState, bool includeQuests = false) => 0;
     }
 
     private sealed class FixedTradeValidity(bool valid) : ITradeValidity

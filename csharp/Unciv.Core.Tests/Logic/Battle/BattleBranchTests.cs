@@ -433,7 +433,7 @@ public class BattleBranchTests
         public void AutomateCityBombardment(CivilizationObject civInfo) { }
         public void ChooseGreatPerson(CivilizationObject civInfo) { }
         public void AutomateCivMoves(CivilizationObject civInfo) { }
-        public int ValueCityStateAlliance(CivilizationObject civInfo, CivilizationObject cityState) => value;
+        public int ValueCityStateAlliance(CivilizationObject civInfo, CivilizationObject cityState, bool includeQuests = false) => value;
     }
 
     [Fact]

@@ -649,15 +649,15 @@ public class CityStateFunctionsDiplomacyTurnTests
     }
 
     [Fact]
-    public void GivingUnitsToAPatron_NeedsTheNextTurnAutomationPort()
+    public void GivingUnitsToAPatron_NeedsAForeignCity()
     {
         var (info, cs, a) = CityStateAndMajor();
         var functions = (CityStateFunctions)cs.CityStateFunctions;
-        Assert.Throws<NotImplementedException>(() => functions.GiveMilitaryUnitToPatron(a)); // TODO(T094): getForeignCityNearCapital
+        functions.GiveMilitaryUnitToPatron(a); // the patron has no city: no foreign city near the capital, nothing is given
         functions.GiveGreatPersonToPatron(a); // no great person units in the ruleset: returns before it needs the foreign city
         info.RulesetData.Units["Great Engineer"] = new Unciv.Models.Ruleset.Unit.BaseUnit { Name = "Great Engineer", Uniques = ["Great Person - [Industrial]"] };
         info.RulesetData.Units["Great Prophet"] = new Unciv.Models.Ruleset.Unit.BaseUnit { Name = "Great Prophet", Uniques = ["Great Person - [Faith]", "May found a religion"] };
-        Assert.Throws<NotImplementedException>(() => functions.GiveGreatPersonToPatron(a));
+        functions.GiveGreatPersonToPatron(a); // still no foreign city near the capital
     }
 
     [Fact]
@@ -671,10 +671,10 @@ public class CityStateFunctionsDiplomacyTurnTests
     }
 
     [Fact]
-    public void CityStateSeams_AreSingleCallSitesForLaterTickets()
+    public void CityStateSeams_GetForeignCityNearCapital_IsNextTurnAutomations()
     {
         var (_, cs, a) = CityStateAndMajor();
         var city = AddCity(cs).City;
-        Assert.Throws<NotImplementedException>(() => CityStateSeams.GetForeignCityNearCapital(city, a)); // TODO(T094)
+        Assert.Null(CityStateSeams.GetForeignCityNearCapital(city, a)); // a has no cities (the candidate search itself is covered by UnitAutomationTests)
     }
 }

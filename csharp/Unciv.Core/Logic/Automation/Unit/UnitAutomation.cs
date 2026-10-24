@@ -13,7 +13,6 @@ using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 namespace Unciv.Logic.Automation.Unit;
 
 // Ported from core/src/com/unciv/logic/automation/unit/UnitAutomation.kt (T090/T156).
-// - Calls to NextTurnAutomation (T094) are TODO(T094) seams naming their owner.
 // - timeThis profiling dropped (T027 policy).
 public static partial class UnitAutomation
 {
@@ -39,7 +38,7 @@ public static partial class UnitAutomation
         var isHumanAndNotAutoplaying =
             unit.Civ.IsHuman() && unit.Civ.GameInfo.ClientState.AutoPlay?.IsAutoPlaying() != true;
         // AI promotes units via NextTurnAutomation.automateUnits
-        if (isHumanAndNotAutoplaying) NextTurnAutomationSeams.ApplyPromotions(unitView);
+        if (isHumanAndNotAutoplaying) NextTurnAutomation.ApplyPromotions(unitView);
         // AI upgrades units via UseGoldAutomation in NextTurnAutomation
         if (isHumanAndNotAutoplaying && TryUpgradeUnit(unitView)) return;
 

@@ -23,7 +23,7 @@ namespace Unciv.Logic.Automation.City;
 //   is a client-UI query the headless engine cannot make; it is treated as false.
 // - The unused Kotlin field `buildingsForVictory` (computed, never read) is dropped.
 // - WorkerAutomation.hasWorkableSeaResource / isNotBonusResourceOrWorkable are WorkerAutomation statics (T092).
-// - NextTurnAutomation.getForeignCityNearCapital is NextTurnAutomationSeams (owner T094).
+// - NextTurnAutomation.getForeignCityNearCapital is NextTurnAutomation (T094).
 // - Kotlin Sequence pipelines stay lazy LINQ pipelines (the buildable caches are filled during iteration, as in Kotlin).
 // - `maxBy` on Float keys uses Kotlin's Float.compareTo total order (NaN greatest), not LINQ's.
 // - Kotlin Iterable<Float>.average() accumulates in Double; an empty list gives NaN.
@@ -400,8 +400,8 @@ public class ConstructionAutomation
         var warModifier = isAtWar ? 1f : .5f;
         // If this city is the closest city to another civ, that makes it a likely candidate for attack
         if (civInfo.GetKnownCivs()
-                .Select(it => NextTurnAutomationSeams.GetForeignCityNearCapital(it.GetCapital(), civInfo))
-                .OfType<NextTurnAutomationSeams.CityDistance>()
+                .Select(it => NextTurnAutomation.GetForeignCityNearCapital(it.GetCapital(), civInfo))
+                .OfType<NextTurnAutomation.CityDistance>()
                 .Any(it => ReferenceEquals(it.City, city)))
             warModifier *= 2f;
         value += warModifier * building.CityHealth / city.GetMaxHealth() * personality.InverseModifierFocus(PersonalityValue.Aggressive, .3f);
