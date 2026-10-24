@@ -50,7 +50,8 @@ Seed tickets were chosen as leaf files (no engine dependencies beyond libGDX mat
   - Ran Gate (11 passed) and full `dotnet test`.
 
 ### T004 Stat enum and Stats
-- State: Available
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T00:42:53Z
 - Depends: none
 - Source: core/src/com/unciv/models/stats/Stat.kt, Stats.kt, INamed.kt, NamedStats.kt, SubStat.kt, GameResource.kt
 - Fixtures: grep tests/ for `Stats`; otherwise generate golden values
