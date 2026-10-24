@@ -1176,13 +1176,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Reflection test MutableStaticStateTests (+ MutableStaticStateAllowlist.cs, every entry must start with JUSTIFY: and be still a violation, else a second test fails as stale). Flags non-readonly/non-const static fields, public static setters, static readonly fields of mutable collection/array types. 58 existing violations allowlisted: constant lookup tables (mutable type only by convenience) and true globals (EventBus, Log, RulesetCache, Translations.Current, host hooks, memo caches). Cleanup of the true globals is follow-up T123 (depends T117). Compiler-generated types skipped. Non-parallel collection for Log/EventBus tests left to T123.
 
 ### T118 Policy: marker check - every TODO(T###) names an open ticket, every NotSupported/NotImplemented seam has an owner
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Policy/ MarkerOwnershipTests (reads backlog.md/backlog-archive.md ticket headers and states), fixes for existing violations
 - Gate: dotnet test --filter FullyQualifiedName~MarkerOwnershipTests
-- Claimed: 2026-10-24T12:08Z
+- Claimed: 2026-10-24T12:12:08Z
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: the backlog audit found stale/unowned markers (TODO(T050) after T050 was Done, TODO(T034) in Player.cs/Translations.cs, TODO(T033) in IHasUniques.cs, ReligionState.cs naming the wrong ticket) and a throwing seam (MapRegionResourcesSeams.cs) that stayed after its owner was Done and would have crashed the pipeline. Rules (tests, parsing the ticket ids and States from csharp/migration/backlog.md and backlog-archive.md; do NOT shell out to ticket.py): (1) every TODO(T###) in Unciv.Core and Unciv.Core.Tests must name a ticket that exists and is NOT Done (a Done ticket's markers are stale); (2) every throw new NotSupportedException/NotImplementedException in Unciv.Core must have a TODO(T###) on the same or previous 3 lines naming an open ticket, or a JUSTIFY comment; (3) a *Seams*.cs file whose owner tickets are all Done (named in its header comment) fails. Fix all current violations (about 58 TODO markers and 20 throws exist now).
