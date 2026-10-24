@@ -1149,7 +1149,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - The marker above is TODO(T115).
 
 ### T116 Policy: ban System.Lazy, add KotlinLazy (Kotlin lazy never caches exceptions)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
