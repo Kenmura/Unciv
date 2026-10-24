@@ -4,7 +4,6 @@ using Unciv.Utils;
 namespace Unciv.Models.Ruleset.Tile;
 
 // core/src/com/unciv/models/ruleset/tile/ResourceSupplyList.kt
-// Not ported yet: SubtractResourceRequirements (needs Ruleset.tileResources, T034).
 /// <summary>
 /// Container helps aggregating supply and demand of resources, categorized by origin.
 /// Kotlin extends ArrayList; this wraps a List so that <see cref="Add(ResourceSupply)"/> keeps its merging semantics.
@@ -112,6 +111,16 @@ public class ResourceSupplyList : IEnumerable<ResourceSupplyList.ResourceSupply>
             Add(resourceSupply);
     }
 
+    /// <summary>Add entries from a requirements list (as produced by <c>IConstruction.getResourceRequirementsPerTurn</c>), expressing requirement as negative supply.</summary>
+    public void SubtractResourceRequirements(Counter<string> resourceRequirements, Ruleset ruleset, string origin)
+    {
+        foreach (var (resourceName, amount) in resourceRequirements)
+        {
+            if (!ruleset.TileResources.TryGetValue(resourceName, out var resource)) continue;
+            Add(resource, origin, unchecked(-amount));
+        }
+    }
+
     /// <summary>Aggregate <paramref name="fromList"/> by resource into this (replacing their origin with <paramref name="newOrigin"/>)</summary>
     /// <returns><c>this</c>, allowing chaining</returns>
     public ResourceSupplyList AddByResource(ResourceSupplyList fromList, string newOrigin)
@@ -140,6 +149,9 @@ public class ResourceSupplyList : IEnumerable<ResourceSupplyList.ResourceSupply>
             items.Remove(it);
         return this;
     }
+
+    /// <summary>Kotlin <c>MutableList.removeAll(predicate)</c>: remove all entries matching <paramref name="predicate"/></summary>
+    public void RemoveAll(Func<ResourceSupply, bool> predicate) => items.RemoveAll(it => predicate(it));
 
     /// <summary>Multiply each entry's amount by its resource's modifier, if one exists.</summary>
     public void ApplyModifiers(IReadOnlyDictionary<string, float> modifiers)

@@ -23,9 +23,6 @@ public class CivReligionVictoryTests
     {
         var info = new FakeGameInfoState { ReligionEnabled = true };
         var civ = new Civilization(new NationObject { Name = name }) { GameInfo = info, PlayerType = playerType };
-        civ.Stats = new FakeCivStats();
-        civ.Cache = new FakeCivCache();
-        civ.CivConstructions = new FakeCivConstructions();
         Wire(civ);
         civ.Policies = new FakePolicies();
         civ.Tech = new FakeTech();
@@ -225,7 +222,7 @@ public class CivReligionVictoryTests
         info.RulesetData.Units["Great Prophet"] = prophet;
         Assert.Same(prophet, civ.ReligionManager.GetGreatProphetEquivalent());
         Assert.Equal(200, civ.ReligionManager.FaithForNextGreatProphet());
-        ((FakeCivConstructions)civ.CivConstructions).Bought["Great Prophet"] = 2;
+        civ.CivConstructions.BoughtItemsWithIncreasingPrice["Great Prophet"] = 2;
         Assert.Equal(2, civ.ReligionManager.GreatProphetsEarned());
         Assert.Equal(500, civ.ReligionManager.FaithForNextGreatProphet()); // 200 + 100 * 2 * 3 / 2
         SetNationUniques(civ, "[50]% Faith cost of generating Great Prophet equivalents");

@@ -7,6 +7,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
+using Unciv.Models.StatTypes;
 using Unciv.Utils;
 using DifficultyObject = Unciv.Models.Ruleset.Nation.Difficulty;
 using EraObject = Unciv.Models.Ruleset.Tech.Era;
@@ -25,7 +26,7 @@ namespace Unciv.Core.Tests.Logic;
 internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
 {
     public Ruleset RulesetData { get; set; } = new();
-    public SpeedObject SpeedData { get; set; } = new();
+    public SpeedObject SpeedData { get; set; } = new() { Turns = [new Dictionary<string, float> { ["yearsPerTurn"] = 1f, ["untilTurn"] = 500f }] };
     public List<Civilization> Civs { get; } = [];
     public Civilization? CurrentPlayer { get; set; }
     public bool Simulation { get; set; }
@@ -110,28 +111,6 @@ internal sealed class FakeGoldenAges : IGoldenAgeManager
     public IGoldenAgeManager Clone() => throw new NotSupportedException();
 }
 
-internal sealed class FakeCivStats : ICivInfoStats
-{
-    public int Happiness { get; set; }
-    public List<float> Breakdown { get; } = [];
-    public List<StatsObject> StatMap { get; } = [];
-    public StatsObject StatsForNextTurn { get; set; } = new();
-    public IEnumerable<float> GetHappinessBreakdownValues() => Breakdown;
-    public IEnumerable<StatsObject> GetStatMapForNextTurnValues() => StatMap;
-}
-
-internal sealed class FakeCivCache : ICivInfoTransientCache
-{
-    public List<Building> UniqueBuildingsData { get; } = [];
-    public IEnumerable<Building> UniqueBuildings => UniqueBuildingsData;
-    public IEnumerable<TileImprovement> UniqueImprovements => [];
-    public IEnumerable<BaseUnit> UniqueUnits => [];
-    public void SetTransients() => throw new NotSupportedException();
-    public Proximity UpdateProximity(Civilization otherCiv, Proximity? preCalculated) => throw new NotSupportedException();
-    public bool IsCityConnectedToCapital(ICityState city) => throw new NotSupportedException();
-    public void UpdateCivResources() => throw new NotSupportedException();
-}
-
 internal sealed class FakeUnitManager : IUnitManager
 {
     public int Count { get; set; }
@@ -152,6 +131,7 @@ internal sealed class FakeCityStateFunctions : ICityStateFunctions
     }
     public int AllyUpdates { get; private set; }
     public void UpdateAllyCivForCityState() => AllyUpdates++;
+    public ResourceSupplyList GetCityStateResourcesForAlly() => new();
 }
 
 internal sealed class FakeDiplomacyFunctions : IDiplomacyFunctions
@@ -177,6 +157,9 @@ internal sealed class FakeDiplomacyManager(Civilization otherCiv) : IDiplomacyMa
     public bool IsConsideredFriendlyTerritory() => Friend;
     public void ClearTrades() => TradesCleared++;
     public IDiplomacyManager OtherCivDiplomacy() => otherCiv.Diplomacy[CivInfo.CivId];
+    public ResourceSupplyList ResourcesFromTrade() => new();
+    public int GoldPerTurn() => 0;
+    public bool IsRelationshipIgnoreAfraidAlly() => false;
     public void UpdateHasOpenBorders() => throw new NotSupportedException();
     public IDiplomacyManager Clone() => throw new NotSupportedException();
     public List<float> SpiedOnUsModifiers { get; } = [];
@@ -247,6 +230,24 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     public void AddBuilding(Building building) => BuiltBuildingObjects.Add(building);
     public void RemoveBuilding(Building building) => BuiltBuildingObjects.Remove(building);
     public void ChooseNextConstruction() => throw new NotSupportedException();
+    public bool ConnectedToCapitalStatus { get; set; }
+    public bool ContainsBuildingUnique(UniqueType uniqueType) => false;
+    public bool IsBlockaded() => false;
+    public ResourceSupplyList GetResourcesGeneratedByCity() => new();
+    public IEnumerable<KeyValuePair<string, StatsObject>> FinalStatList => [];
+    public IEnumerable<KeyValuePair<string, float>> HappinessList => [];
+    IEnumerable<UniqueObject> ICityState.GetLocalMatchingUniques(UniqueType uniqueType, GameContext? gameContext) =>
+        GetLocalMatchingUniques(uniqueType, gameContext ?? GameContext.EmptyState);
+    public Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; } = [];
+    public Building? CheapestStatBuilding(Stat stat) => null;
+    public List<Building> Completed { get; } = [];
+    public void CompleteConstruction(Building building)
+    {
+        Completed.Add(building);
+        Buildings.Add(building.Name);
+    }
+    public bool IsBeingConstructedOrEnqueued(string constructionName) => false;
+    public bool IsBuildable(Building building) => false;
     public IEnumerable<UniqueObject> GetMatchingUniquesWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext) =>
         NonLocalUniques.Where(it => it.Type == uniqueType);
     public void ForEachMatchingUniqueWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op)
@@ -268,12 +269,3 @@ internal sealed class FakeCityReligion : ICityReligionManager
     public bool IsProtectedByInquisitor(string? fromReligion = null) => false;
 }
 
-internal sealed class FakeCivConstructions : ICivConstructions
-{
-    public Counter<string> Bought { get; } = new();
-    public ICivConstructions Clone() => throw new NotSupportedException();
-    public void SetTransients(Civilization civInfo) { }
-    public int GetBuiltItemsWithIncreasingCost(string name) => 0;
-    public int GetBoughtItemsWithIncreasingPrice(string name) => Bought[name];
-    public void AddBoughtItemsWithIncreasingPrice(string name, int amount) => Bought.Add(name, amount);
-}

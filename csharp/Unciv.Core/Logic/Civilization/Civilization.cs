@@ -1,6 +1,7 @@
 using Unciv.Json;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Managers;
+using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapGenerator.Mapregions;
 using Unciv.Logic.Map.Tiles;
@@ -146,21 +147,11 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
 
     public bool HasLongCountDisplayUnique { get; set; }
 
-    private ICivInfoStats? stats;
-    /// <summary>Transient. TODO(T058): becomes <c>val stats = CivInfoStatsForNextTurn(this)</c>.</summary>
-    public ICivInfoStats Stats
-    {
-        get => Lateinit(stats, "stats");
-        set => stats = value;
-    }
+    /// <summary>Transient. Kotlin <c>val stats = CivInfoStatsForNextTurn(this)</c> (assigned in the constructor).</summary>
+    public CivInfoStatsForNextTurn Stats { get; }
 
-    private ICivInfoTransientCache? cache;
-    /// <summary>Transient. TODO(T058): becomes <c>val cache = CivInfoTransientCache(this)</c>.</summary>
-    public ICivInfoTransientCache Cache
-    {
-        get => Lateinit(cache, "cache");
-        set => cache = value;
-    }
+    /// <summary>Transient. Kotlin <c>val cache = CivInfoTransientCache(this)</c> (assigned in the constructor).</summary>
+    public CivInfoTransientCache Cache { get; }
 
     private int cachedMilitaryMight = -1;
     #endregion
@@ -212,13 +203,8 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         set => policies = value;
     }
 
-    private ICivConstructions? civConstructions;
-    /// <summary>TODO(T058): becomes <c>var civConstructions = CivConstructions()</c>.</summary>
-    public ICivConstructions CivConstructions
-    {
-        get => Lateinit(civConstructions, "civConstructions");
-        set => civConstructions = value;
-    }
+    /// <summary>Kotlin <c>var civConstructions = CivConstructions()</c>.</summary>
+    public CivConstructions CivConstructions { get; set; } = new();
 
     private IQuestManager? questManager;
     /// <summary>TODO(T069): becomes <c>var questManager = QuestManager()</c>.</summary>
@@ -367,6 +353,8 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
 
     public Civilization()
     {
+        Stats = new CivInfoStatsForNextTurn(this);
+        Cache = new CivInfoTransientCache(this);
         // PublicationOnly: Kotlin `by lazy` does not cache a failed initializer (e.g. gameInfo not yet set), unlike ExecutionAndPublication
         cityStateType = new Lazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType!], LazyThreadSafetyMode.PublicationOnly);
     }
@@ -569,14 +557,14 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         int previousHappiness = Stats.Happiness;
         // Kotlin Iterable<Float>.sum() accumulates in Float
         float happinessSum = 0f;
-        foreach (var value in Stats.GetHappinessBreakdownValues()) happinessSum += value;
+        foreach (var (_, value) in Stats.GetHappinessBreakdown()) happinessSum += value;
         Stats.Happiness = KotlinMath.RoundToInt(happinessSum);
         if (Stats.Happiness != previousHappiness && GameInfo.Ruleset.AllHappinessLevelsThatAffectUniques.Any(it =>
                 Stats.Happiness < it != previousHappiness < it)) // If move from being below them to not, or vice versa
             foreach (var city in Cities) city.UpdateCityStats(false);
 
         var newStats = new Models.StatTypes.Stats();
-        foreach (var statsForTurn in Stats.GetStatMapForNextTurnValues()) newStats.Add(statsForTurn);
+        foreach (var statsForTurn in Stats.GetStatMapForNextTurn().Values) newStats.Add(statsForTurn);
         Stats.StatsForNextTurn = newStats;
     }
 
@@ -1425,7 +1413,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     bool IGameContextCivilization.IsGoldenAge() => GoldenAges.IsGoldenAge();
     int IGameContextCivilization.GetCivUnitsSize() => Units.GetCivUnitsSize();
     IEnumerable<IGameContextUnit> IGameContextCivilization.GetCivUnits() => Units.GetCivUnits();
-    IEnumerable<float> IGameContextCivilization.GetStatMapForNextTurnValues(Stat stat) => Stats.GetStatMapForNextTurnValues().Select(it => it[stat]);
+    IEnumerable<float> IGameContextCivilization.GetStatMapForNextTurnValues(Stat stat) => Stats.GetStatMapForNextTurn().Values.Select(it => it[stat]);
     int IGameContextCivilization.GetCivResourceSupplyAmount(string resourceName) => GetCivResourceSupply().SumBy(resourceName);
     IEnumerable<TileImprovement> IGameContextCivilization.UniqueImprovements => Cache.UniqueImprovements;
     float IGameContextCivilization.GetGameProgressModifier(UniqueObject unique) => unique.GetGameProgressModifier(this);

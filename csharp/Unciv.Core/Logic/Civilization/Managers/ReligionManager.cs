@@ -226,7 +226,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
                 AddConstructionBonuses(prophetUnit, prophet, birthCity);
             prophet.Religion = Religion!.Name;
             StoredFaith -= prophetCost;
-            CivInfo.CivConstructions.AddBoughtItemsWithIncreasingPrice(prophetUnit.Name, 1);
+            CivInfo.CivConstructions.BoughtItemsWithIncreasingPrice.Add(prophetUnit.Name, 1);
         }
     }
 

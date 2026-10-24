@@ -116,19 +116,6 @@ public interface IQuestManager
     void SetTransients(Civilization civInfo);
 }
 
-/// <summary>What Civilization reads from <c>CivConstructions</c>.</summary>
-public interface ICivConstructions
-{
-    ICivConstructions Clone();
-    void SetTransients(Civilization civInfo);
-    /// <summary><c>civConstructions.builtItemsWithIncreasingCost[name]</c></summary>
-    int GetBuiltItemsWithIncreasingCost(string name);
-    /// <summary><c>civConstructions.boughtItemsWithIncreasingPrice[name]</c></summary>
-    int GetBoughtItemsWithIncreasingPrice(string name);
-    /// <summary><c>civConstructions.boughtItemsWithIncreasingPrice.add(name, amount)</c></summary>
-    void AddBoughtItemsWithIncreasingPrice(string name, int amount);
-}
-
 /// <summary>What Civilization reads from <c>DiplomacyManager</c>.</summary>
 public interface IDiplomacyManager
 {
@@ -158,6 +145,12 @@ public interface IDiplomacyManager
     void SetInfluence(float amount);
     void AddInfluence(float amount);
     void ReduceInfluence(float amount);
+    /// <summary><c>diplomacyManager.resourcesFromTrade()</c> (T058).</summary>
+    ResourceSupplyList ResourcesFromTrade();
+    /// <summary><c>diplomacyManager.goldPerTurn()</c> (T058).</summary>
+    int GoldPerTurn();
+    /// <summary><c>diplomacyManager.relationshipIgnoreAfraid() == RelationshipLevel.Ally</c> (T058).</summary>
+    bool IsRelationshipIgnoreAfraidAlly();
 }
 
 /// <summary>What Civilization reads from <c>DiplomacyFunctions</c>.</summary>
@@ -181,30 +174,8 @@ public interface ICityStateFunctions
     IEnumerable<UniqueObject> GetUniquesProvidedByCityStates(UniqueType uniqueType, GameContext gameContext);
     void ForEachUniqueProvidedByCityStates(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
     void UpdateAllyCivForCityState();
-}
-
-/// <summary>What Civilization reads from <c>CivInfoTransientCache</c>.</summary>
-public interface ICivInfoTransientCache
-{
-    void SetTransients();
-    Proximity UpdateProximity(Civilization otherCiv, Proximity? preCalculated);
-    /// <summary><c>cache.citiesConnectedToCapitalToMediums.keys.contains(city)</c></summary>
-    bool IsCityConnectedToCapital(ICityState city);
-    IEnumerable<Building> UniqueBuildings { get; }
-    IEnumerable<TileImprovement> UniqueImprovements { get; }
-    IEnumerable<BaseUnit> UniqueUnits { get; }
-    void UpdateCivResources();
-}
-
-/// <summary>What Civilization reads from <c>CivInfoStatsForNextTurn</c>.</summary>
-public interface ICivInfoStats
-{
-    int Happiness { get; set; }
-    /// <summary><c>stats.getHappinessBreakdown().values</c>, in map order (the float sum depends on the order).</summary>
-    IEnumerable<float> GetHappinessBreakdownValues();
-    /// <summary><c>stats.getStatMapForNextTurn().values</c>, in map order.</summary>
-    IEnumerable<Stats> GetStatMapForNextTurnValues();
-    Stats StatsForNextTurn { get; set; }
+    /// <summary><c>cityStateFunctions.getCityStateResourcesForAlly()</c> (T058).</summary>
+    ResourceSupplyList GetCityStateResourcesForAlly();
 }
 
 /// <summary>What Civilization reads from <c>UnitManager</c>.</summary>
@@ -233,6 +204,14 @@ public interface IMapUnitState : IGameContextUnit
     string? Religion { get; set; }
     /// <summary><c>unit.hasUnique(uniqueType, gameContext)</c></summary>
     bool HasUnique(UniqueType uniqueType, GameContext? gameContext = null);
+    // T058
+    /// <summary><c>unit.getMatchingUniques(uniqueType, gameContext)</c></summary>
+    IEnumerable<UniqueObject> GetMatchingUniques(UniqueType uniqueType, GameContext? gameContext = null);
+    /// <summary><c>unit.viewableTiles</c></summary>
+    IEnumerable<Tile> ViewableTiles { get; }
+    bool CanGarrison();
+    /// <summary><c>unit.getResourceRequirementsPerTurn()</c></summary>
+    Counter<string> GetResourceRequirementsPerTurn();
 }
 
 /// <summary>What the religion managers read from <c>CityReligionManager</c> (<c>city.religion</c>).</summary>
@@ -291,4 +270,26 @@ public interface ICityState : IGameContextCity
     void ChooseNextConstruction();
     IEnumerable<UniqueObject> GetMatchingUniquesWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext);
     void ForEachMatchingUniqueWithNonLocalEffects(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
+    // T058
+    /// <summary><c>city.connectedToCapitalStatus</c></summary>
+    bool ConnectedToCapitalStatus { get; set; }
+    /// <summary><c>city.containsBuildingUnique(uniqueType)</c></summary>
+    bool ContainsBuildingUnique(UniqueType uniqueType);
+    bool IsBlockaded();
+    ResourceSupplyList GetResourcesGeneratedByCity();
+    /// <summary><c>city.cityStats.finalStatList</c> (a <c>LinkedHashMap</c>), in map order.</summary>
+    IEnumerable<KeyValuePair<string, Stats>> FinalStatList { get; }
+    /// <summary><c>city.cityStats.happinessList</c> (a <c>LinkedHashMap</c>), in map order.</summary>
+    IEnumerable<KeyValuePair<string, float>> HappinessList { get; }
+    IEnumerable<UniqueObject> GetLocalMatchingUniques(UniqueType uniqueType, GameContext? gameContext = null);
+    /// <summary><c>city.cityConstructions.freeBuildingsProvidedFromThisCity</c> (a <c>HashMap&lt;String, HashSet&lt;String&gt;&gt;</c>).</summary>
+    Dictionary<string, HashSet<string>> FreeBuildingsProvidedFromThisCity { get; }
+    /// <summary><c>city.cityConstructions.cheapestStatBuilding(stat)</c></summary>
+    Building? CheapestStatBuilding(Stat stat);
+    /// <summary><c>city.cityConstructions.completeConstruction(building)</c></summary>
+    void CompleteConstruction(Building building);
+    /// <summary><c>city.cityConstructions.isBeingConstructedOrEnqueued(name)</c></summary>
+    bool IsBeingConstructedOrEnqueued(string constructionName);
+    /// <summary><c>building.isBuildable(city.cityConstructions)</c></summary>
+    bool IsBuildable(Building building);
 }

@@ -380,7 +380,7 @@ public class CivilizationCoreTests
         civ.Policies = policies;
         civ.Tech = tech;
         civ.ReligionManager = religion;
-        civ.Stats = new FakeCivStats { Happiness = 9 };
+        civ.Stats.Happiness = 9;
 
         civ.AddStat(Stat.Culture, 5);
         civ.AddStat(Stat.Culture, -2);
@@ -587,8 +587,8 @@ public class CivilizationCoreTests
     {
         var (civ, info) = NewCiv();
         civ.Units = new FakeUnitManager { Count = 1 };
-        var stats = new FakeCivStats { Happiness = 12, StatsForNextTurn = new StatsObject(food: 2.5f, production: 3.4f) };
-        civ.Stats = stats;
+        civ.Stats.Happiness = 12;
+        civ.Stats.StatsForNextTurn = new StatsObject(food: 2.5f, production: 3.4f);
         civ.AddGold(77);
         var tech = new FakeTech { ResearchedTechnologies = [new TechnologyObject { Name = "a" }, new TechnologyObject { Name = "b" }] };
         civ.Tech = tech;
@@ -768,7 +768,7 @@ public class CivilizationCoreTests
         var policies = new FakePolicies();
         policies.Adopted.Add("Liberty");
         civ.Policies = policies;
-        civ.Stats = new FakeCivStats { Happiness = 4 };
+        civ.Stats.Happiness = 4;
 
         var progress = (IGameProgressCivilization)civ;
         Assert.Equal(0, progress.ResearchedTechnologiesCount); // the technologies list is empty in the fake
@@ -809,7 +809,6 @@ public class CivilizationCoreTests
         civ.LastSeenImprovement[HexCoord.Of(0, 0)] = "Farm";
         civ.Policies = new CloneablePolicies();
         civ.Tech = new CloneableTech();
-        civ.CivConstructions = new CloneableConstructions();
         civ.QuestManager = new CloneableQuests();
         civ.GoldenAges = new CloneableGoldenAges();
         civ.GreatPeople = new CloneableGreatPeople();
@@ -840,7 +839,7 @@ public class CivilizationCoreTests
         Assert.Equal(3, temporary.TurnsLeft);
         Assert.IsType<CloneablePolicies>(clone.Policies);
         Assert.NotSame(civ.Policies, clone.Policies);
-        Assert.Same(clone, ((CloneableConstructions)clone.CivConstructions).Owner); // setTransients(clone)
+        Assert.Same(clone, clone.CivConstructions.CivInfo); // setTransients(clone)
     }
 
     private const Unciv.Logic.Civilization.Diplomacy.CityStatePersonality CityStatePersonalityHostile = Unciv.Logic.Civilization.Diplomacy.CityStatePersonality.Hostile;
@@ -879,16 +878,6 @@ public class CivilizationCoreTests
         public void SetTransients(Civilization civInfo) { }
     }
 
-    private sealed class CloneableConstructions : ICivConstructions
-    {
-        public Civilization? Owner { get; private set; }
-        public ICivConstructions Clone() => new CloneableConstructions();
-        public void SetTransients(Civilization civInfo) => Owner = civInfo;
-        public int GetBuiltItemsWithIncreasingCost(string name) => 0;
-        public int GetBoughtItemsWithIncreasingPrice(string name) => 0;
-        public void AddBoughtItemsWithIncreasingPrice(string name, int amount) { }
-    }
-
     private sealed class CloneableQuests : IQuestManager
     {
         public IQuestManager Clone() => new CloneableQuests();
@@ -909,7 +898,6 @@ public class CivilizationCoreTests
         public Civilization CivInfo { get; set; } = null!;
         public IGreatPersonManager Clone() => new CloneableGreatPeople();
     }
-
 }
 
 internal static class CivilizationTestExtensions
