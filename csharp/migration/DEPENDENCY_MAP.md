@@ -357,9 +357,9 @@ flowchart TD
   class T062 done
   class T063 prog
   class T064 ondeck
-  class T065 ready
-  class T066 waiting
-  class T067 waiting
+  class T065 prog
+  class T066 ondeck
+  class T067 ondeck
   class T068 waiting
   class T069 waiting
   class T070 waiting
@@ -393,7 +393,7 @@ flowchart TD
   class T104 waiting
   class T106 waiting
   class T107 done
-  class T110 waiting
+  class T110 ondeck
   class T111 waiting
   class T115 waiting
   class T120 done
@@ -402,8 +402,8 @@ flowchart TD
   class T124 ready
   class T125 ready
   class T126 waiting
-  class T127 waiting
-  class T128 waiting
+  class T127 ondeck
+  class T128 ondeck
   class T129 waiting
 ```
 
@@ -411,13 +411,17 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T065 | **Ready to start** | T055, T056, T060 | 51 | MapUnit core: MapUnit, MapUnitCache |
 | T096 | **Ready to start** | T095, T062, T054 | 1 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
 | T125 | **Ready to start** | T119 | 0 | Policy: harden NullForgivingTests scanner (interpolation holes, cast false positive, JUSTIFY binding) |
+| T066 | **On deck** (after T065) | T065, T060 | 46 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T064 | **On deck** (after T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
-| T066 | Available (waiting on T065) | T065, T060 | 46 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
+| T067 | **On deck** (after T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
+| T110 | **On deck** (after T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
+| T127 | **On deck** (after T063, T065) | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
+| T128 | **On deck** (after T065) | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
+| T065 | In-Progress [Claude] | T055, T056, T060 | 51 | MapUnit core: MapUnit, MapUnitCache |
 | T078 | Available (waiting on T065, T066) | T060, T065, T066 | 42 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T063 | In-Progress [Claude] | T060, T062 | 38 | CityConstructions |
@@ -425,7 +429,6 @@ flowchart TD
 | T069 | Available (waiting on T065, T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T035 | Available (waiting on T046, T065) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
-| T067 | Available (waiting on T065) | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T052 | Available (waiting on T046, T063, T064, T065, T066, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T065, T067, T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T084 | Available (waiting on T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
@@ -465,11 +468,8 @@ flowchart TD
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T037 | Available (waiting on T035) | T036, T035 | 0 | Golden test: load and validate Vanilla and bundled mod rulesets |
 | T104 | Available (waiting on T102, T103, T106, T097, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T110 | Available (waiting on T065) | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T111 | Available (waiting on T052, T065) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T115 | Available (waiting on T035) | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T122 | Needs-Review [Claude] | none | 0 | Policy: coverage reporting and ratchet for changed files (coverlet) |
 | T126 | Available (waiting on T063, T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
-| T127 | Available (waiting on T063, T065) | T061, T063, T065, T120 | 0 | Lower size-ratchet baseline for Tile.cs and Civilization.cs after T061/T063/T065 land |
-| T128 | Available (waiting on T065) | T065 | 0 | Decouple City.cs from the MapUnits namespace and lower its coupling baseline (13 -> 12) |
 | T129 | Available (waiting on T096, T097) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
