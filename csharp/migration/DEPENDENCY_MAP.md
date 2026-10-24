@@ -109,7 +109,7 @@ flowchart TD
   class T106 done
   class T107 done
   class T154 ready
-  class T157 ready
+  class T157 prog
 ```
 
 ## Remaining tickets over time
@@ -127,8 +127,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 16]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 1]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 15]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 2]
 ```
 
 ## Incomplete tickets
@@ -137,7 +137,6 @@ xychart-beta
 |---|---|---|---|---|
 | T101 | **Ready to start** | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | T154 | **Ready to start** | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
-| T157 | **Ready to start** | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
@@ -152,3 +151,4 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T157 | In-Progress [Claude] | T094, T152 | 0 | Deferred automation fixture: GreatPersonSelectionTest automation cases |

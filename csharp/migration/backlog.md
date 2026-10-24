@@ -1805,13 +1805,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T090 at claim time. ~620 LOC (UnitAutomation.kt is 677 lines; tryUpgradeUnit already ported in T090 as a partial class member). Retype the MapUnit.doAction and UnitActionsSeams (automatedExplore/automateUnitMoves via GameView) call sites. Calls to CivilianUnitAutomation/SpecificUnitAutomation/WorkerAutomation (T091/T092), NextTurnAutomation (T094) are TODO(T###) seams naming the owner. timeThis dropped (T027 policy).
 
 ### T157 Deferred automation fixture: GreatPersonSelectionTest automation cases
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T094,T152
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/GreatPersonSelectionTest.kt (2 cases: 'automation commits its preferred available great person', 'automation retains a pick when its chosen unit cannot be placed'; need NextTurnAutomation.chooseGreatPerson from T094; GameView(...).civView wrapper replaced by passing the Civilization to ChooseGreatPerson)
 - Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/GreatPersonSelectionAutomationFixtureTests.cs
 - Gate: `dotnet test --filter FullyQualifiedName~GreatPersonSelectionAutomation`
-- Claimed:
+- Claimed: 2026-10-24T23:46Z
 - Notes: Split from T152.
 
 ### T158 ConstructionAutomation (split from T091)
