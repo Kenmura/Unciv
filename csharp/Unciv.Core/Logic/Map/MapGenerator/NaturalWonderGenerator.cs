@@ -7,7 +7,7 @@ using Unciv.Utils;
 namespace Unciv.Logic.Map.MapGenerator;
 
 // core/src/com/unciv/logic/map/mapgenerator/NaturalWonderGenerator.kt
-// Deviations: Tile.setBaseTerrain / removeImprovement are T054 members, called through the extensions in NaturalWonderSeams.cs.
+// Deviation: Tile.setConnectedByRiver(convertTerrains) is a T041 seam (NaturalWonderSeams.cs).
 public class NaturalWonderGenerator(Ruleset ruleset, MapGenerationRandomness randomness)
 {
     private readonly HashSet<Tile> blockedTiles = [];
