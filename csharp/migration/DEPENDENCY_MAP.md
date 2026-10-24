@@ -56,7 +56,6 @@ flowchart TD
     T142["T142<br/>Deferred TestGame fixtures: civilization directory and GameS..."]
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
     T144["T144<br/>Port TileUniquesTests.pillageYieldTest (split from T103)"]
-    T145["T145<br/>Deferred TestGame fixtures: map directory remainder (UnitMov..."]
     T146["T146<br/>UnitFormationTests Battle-dependent escort attack cases (nee..."]
     T148["T148<br/>Deferred TestGame fixtures needing Tile.startWorkingOnImprov..."]
     T149["T149<br/>Deferred civilization fixtures needing Battle: DiplomacyMana..."]
@@ -206,7 +205,6 @@ flowchart TD
   class T142 done
   class T143 done
   class T144 ready
-  class T145 review
   class T146 ready
   class T148 ondeck
   class T149 ready
@@ -219,7 +217,7 @@ flowchart TD
 
 ## Remaining tickets over time
 
-Generated from the git history of `backlog.md` (UTC; the last point is the current backlog). Completed tickets (Done, Won't port) are not counted.
+Generated from the git history of `backlog.md` (UTC; each point is the backlog as of that time, the last one the current backlog). Completed tickets (Done, Won't port) are not counted.
 
 | Line | Meaning |
 |---|---|
@@ -230,10 +228,10 @@ Generated from the git history of `backlog.md` (UTC; the last point is the curre
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 01:33", "24 02:40", "24 03:48", "24 04:55", "24 06:03", "24 07:10", "24 08:18", "24 09:25", "24 10:33", "24 11:40", "24 12:48", "24 13:55", "24 15:03", "24 16:10", "24 17:18", "24 18:25"]
-    y-axis "Tickets" 0 --> 67
-    line [31, 32, 29, 24, 21, 21, 21, 21, 37, 57, 58, 59, 55, 45, 35, 33]
-    line [3, 5, 2, 1, 0, 0, 0, 0, 3, 2, 4, 1, 1, 5, 4, 4]
+    x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
+    y-axis "Tickets" 0 --> 65
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 33]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3]
 ```
 
 ## Incomplete tickets
@@ -275,5 +273,4 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T145 | In-Review [Antigravity] | T072 | 0 | Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs) |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
