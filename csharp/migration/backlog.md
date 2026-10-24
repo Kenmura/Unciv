@@ -726,13 +726,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (adversarial, isolated subagent): first pass CHANGES-REQUESTED for missing tests only (diplomatic-vote win branch, "near territory" notifications, autoplay-stop branch, CheckForVictory loop). Fixed in the follow-up commit with tests for each; no parity/determinism/policy findings. Standard checks + coverage re-run after the fix and rebase: pass.
 
 ### T072 Deferred TestGame-based fixtures sweep (Tile, Civilization, City, MapUnit, Quest)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T035, T052, T062, T063, T064, T067, T068, T069, T071
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/FreshWaterTests.kt, TileImprovementConstructionTests.kt, VisibilityTests.kt, UpgradeTests.kt, UnitMovementTests.kt, FixedPointMovementTest.kt, UnitFormationTests.kt, tests/src/com/unciv/logic/city/*, tests/src/com/unciv/logic/civilization/** (incl. diplomacy), GameSerializationTests.kt, PathfindingTests.kt and the deferred cases listed by T055-T071
 - Deliverables: csharp/Unciv.Core.Tests/** ported tests
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures`
-- Claimed:
+- Claimed: 2026-10-24T17:10Z
 - Notes: Created because T035 (TestGame) can only exist once the whole chain is ported, and each earlier ticket deferred its TestGame-based fixtures. Port them over the real TestGame, one test class per Kotlin class; any real behavioural bug found goes back to the owning ticket as a review note. Split by Kotlin test directory at claim time if too large. Also ports the Countables/Conditionals tests T028 deferred that need real game state, if T035 did not.
 
 ### T073 MapGenerator A: MapGenerationRandomness, MapResourceSetting, MapElevationGenerator, MapLandmassGenerator
