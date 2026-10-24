@@ -354,7 +354,7 @@ flowchart TD
   class T064 ondeck
   class T065 done
   class T066 prog
-  class T067 ready
+  class T067 prog
   class T068 waiting
   class T069 waiting
   class T070 waiting
@@ -407,7 +407,6 @@ flowchart TD
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T067 | **Ready to start** | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T096 | **Ready to start** | T095, T062, T054 | 1 | Civilopedia text model B: Building, Improvement, Resource, Tile descriptions |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
@@ -426,6 +425,7 @@ flowchart TD
 | T069 | Available (waiting on T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
 | T035 | Available (waiting on T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
+| T067 | In-Progress [Claude] | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T052 | Available (waiting on T046, T063, T064, T066, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T067, T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T084 | Available (waiting on T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |

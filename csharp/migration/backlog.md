@@ -615,13 +615,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T060: City.UnitToPromotions is JavaHashMap<string, IUnitPromotions> (marker interface in CitySeams.cs); make UnitPromotions implement/replace it. City.GetGarrison and DestroyCity reach units through the IMapUnitState / IGameContextUnit seams (cast from Tile.MilitaryUnit/AirUnits), to be retyped with MapUnit (T065).
 
 ### T067 Unit movement: MovementCost, UnitMovement
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T065, T054
 - Source: core/src/com/unciv/logic/map/mapunit/movement/MovementCost.kt, UnitMovement.kt (and PathsToTilesWithinTurn if present), core/src/com/unciv/logic/map/pathingmap/FixedPointMovement.kt
 - Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, FixedPointMovementTest.kt (TestGame-based: T072)
 - Deliverables: csharp/Unciv.Core/Logic/Map/MapUnit/Movement/*.cs, tests (+ retype MapUnit.IUnitMovement)
 - Gate: `dotnet test --filter FullyQualifiedName~UnitMovementTests`
-- Claimed:
+- Claimed: 2026-10-24T12:33Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC; delegate the brief. Priority-queue/path tie-breaking must match Kotlin exactly (T001). Float movement costs: do not widen to double. Also lets T040 (MapPathing, CarrierSlotMatcher) replace its seam members with concrete UnitMovement calls: record that follow-up here.
   - Backlog audit: FixedPointMovement.kt (88 LOC, no dependencies; FixedPointMovementTest is in Fixtures) added to Source. The rest of the pathingmap package (PathingMap, PathingMapCache, A* pathfinder, RouteNode) is T093: UnitMovement's path-cache hooks and City.getLandAttackPath/getRoadPath stay seams marked TODO(T093). Timers/timeThis calls are dropped.
 
