@@ -188,7 +188,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ran Gate (`~GameRandomExtensionsTests`, 3 passed) and Standard checks: build -warnaserror clean, format clean, full `dotnet test` 231/231.
 
 ### T011 State-hash determinism harness
-- State: In-Progress [Antigravity]
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T01:22:21Z
 - Claimed: 2026-10-24T01:21:57Z
 - Depends: T010
 - Source: design ticket (no Kotlin source); reference tests/src/com/unciv/logic/GameSerializationTests.kt for what constitutes game state
