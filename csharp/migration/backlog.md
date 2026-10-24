@@ -1686,13 +1686,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T141: Tile.startWorkingOnImprovement/queueImprovement, TileImprovement.getTurnsToBuild, Civilization.gainStockpiledResource are ported in T139.
 
 ### T149 Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T142, T083
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/civilization/diplomacy/DiplomacyManagerTests.kt (should change opinions when liberating city / conquering city, liberating city-state keeps third-party influence and applies Civ5 liberator formula)
 - Deliverables: csharp/Unciv.Core.Tests/Fixtures/Civilization/DiplomacyManagerConquestFixtureTests.cs
 - Gate: `dotnet test --filter FullyQualifiedName~Fixtures.Civilization`
-- Claimed:
+- Claimed: 2026-10-24T18:33Z
 - Notes: Split from T142: PuppetCity/LiberateCity reach CityManagerSeams.ConquestNotPorted.DestroyIfDefeated (Battle, T083). Also retarget that seam if still unported.
 
 ### T150 Deferred civilization fixtures needing TradeEvaluation: GoldGiftingTests trade cases
