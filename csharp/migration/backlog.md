@@ -287,7 +287,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Verified `CollectionExtensions.cs`, `StringExtensions.cs`, `UncivExceptions.cs`, `Versioning.cs`, and `UtilsTests.cs` against Kotlin sources and OpenJDK 25 `UUID.fromString`: float-accumulated `RandomWeighted` with NaN fallback to last element, `WithItem`/`WithoutItem`, sparse `GetOrPut`, lenient 5-component `ToUUIDOrNull`/`IsUUID` with `Character.digit` and 36-char bound, `MissingModsException` `joinToString(limit = 5)` truncation, and `CompatibilityVersion` ordering vs equality. Re-ran Gate (56/56 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 341/341 passed).
 
 ### T044 Iteration-order policy for java.util.HashMap / HashSet
-- State: Available
+- State: In-Progress [Claude]
+- Claimed: 2026-10-24T01:31:07Z
 - Depends: T017
 - Source: audit `hashSetOf(`, `HashSet<`, `hashMapOf(`, `HashMap<`, `mutableMapOf`/`mutableSetOf` are Linked in Kotlin and fine; only the explicit Hash* forms and `.toSet()`/`.groupBy` results iterated in `core/src/com/unciv/logic` matter
 - Fixtures: none - golden iteration orders from the JVM (String and Int keys, growth through several resizes, removals)
