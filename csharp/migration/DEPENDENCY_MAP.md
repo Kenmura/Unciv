@@ -82,6 +82,7 @@ flowchart TD
     T130["T130<br/>Tests: restore coverage on BaseUnit, Building, PerpetualCons..."]
     T131["T131<br/>Hardening: T063 review follow-ups (CityConstructions test ga..."]
     T137["T137<br/>TranslationCache.ActiveMods from the running GameInfo"]
+    T138["T138<br/>Views A leftovers: TradeView and CivView.getTradeView"]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -225,6 +226,8 @@ flowchart TD
   T065 --> T111
   T060 --> T115
   T035 --> T115
+  T084 --> T138
+  T086 --> T138
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -301,7 +304,7 @@ flowchart TD
   class T081 ondeck
   class T082 waiting
   class T083 waiting
-  class T084 prog
+  class T084 review
   class T085 waiting
   class T086 ready
   class T087 waiting
@@ -335,13 +338,14 @@ flowchart TD
   class T130 ready
   class T131 prog
   class T137 ready
+  class T138 waiting
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T086 | **Ready to start** | T059, T068, T057 | 14 | TradeLogic |
+| T086 | **Ready to start** | T059, T068, T057 | 15 | TradeLogic |
 | T110 | **Ready to start** | T107, T065 | 0 | Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits) |
 | T123 | **Ready to start** | T117 | 0 | Policy follow-up: eliminate allowlisted mutable statics (EventBus, Log, RulesetCache, Translations.Current, host hooks) in Unciv.Core |
 | T124 | **Ready to start** | T062 | 0 | Hardening: CityStats test coverage gaps from T062 review |
@@ -359,7 +363,7 @@ flowchart TD
 | T069 | In-Progress [Claude] | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T035 | In-Progress [Claude] | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
 | T052 | Available (waiting on T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
-| T084 | In-Progress [Claude] | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
+| T084 | Needs-Review [Claude] | T046, T057, T059 | 17 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |
 | T085 | Available (waiting on T084, T081) | T084, T081, T062, T063, T066, T067 | 15 | Views B: CityView, ForeignCityView, CityConstructionsView, MapUnitView, ForeignMapUnitView, CombatantView, AttackableTileView |
 | T079 | Available (waiting on T052) | T052, T057, T063, T066, T067 | 14 | UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion |
 | T087 | Available (waiting on T085) | T085, T057 | 14 | Automation core: Automation, AutomationCache, ThreatManager, CityLocationTileRanker, ReligionAutomation, EspionageAutomation |
@@ -394,3 +398,4 @@ flowchart TD
 | T104 | Available (waiting on T102, T103, T106, T093, T089, T094, T100) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T111 | Available (waiting on T052) | T057, T052, T060, T065 | 0 | T057 review follow-ups: vote map order, unchecked sums, BeliefType parsing, seeded-path tests |
 | T131 | In-Progress [Antigravity] | T063 | 0 | Hardening: T063 review follow-ups (CityConstructions test gaps, Java-order freeBuildingsProvidedFromThisCity, IConstructionCity cast) |
+| T138 | Available (waiting on T084, T086) | T084, T086 | 0 | Views A leftovers: TradeView and CivView.getTradeView |
