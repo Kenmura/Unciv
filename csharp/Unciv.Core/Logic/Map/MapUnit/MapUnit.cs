@@ -16,8 +16,8 @@ using UnitTypeObject = Unciv.Models.Ruleset.Unit.UnitType;
 
 namespace Unciv.Logic.Map.MapUnits;
 
-// Ported from core/src/com/unciv/logic/map/mapunit/MapUnit.kt (T065), against the seams in MapUnitSeams.cs: UnitMovement (T067)
-// and the barbarian manager (T078) are typed by their seam (UnitPromotions/UnitUpgradeManager are concrete since T066). Tile, Civilization and City are
+// Ported from core/src/com/unciv/logic/map/mapunit/MapUnit.kt (T065), against the seams in MapUnitSeams.cs: UnitMovement (T067, concrete)
+// and the barbarian manager (T078) are concrete (UnitPromotions/UnitUpgradeManager are concrete since T066). Tile, Civilization and City are
 // concrete. Namespace Unciv.Logic.Map.MapUnits (not ...MapUnit: the namespace of the unit actions would clash with the class name).
 //
 // Stripped / deferred:

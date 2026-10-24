@@ -47,8 +47,10 @@ public interface IGameInfoState : IConstructionGameInfo
     List<Civilization> GetAliveCityStates();
     /// <summary><c>gameInfo.getAliveMajorCivs()</c></summary>
     List<Civilization> GetAliveMajorCivs();
-    /// <summary><c>gameInfo.barbarians</c> (T065: MapUnit.clearEncampment). TODO(T078): becomes the BarbarianManager field.</summary>
-    IBarbarianManager Barbarians { get; }
+    /// <summary><c>gameInfo.barbarians</c> (T065: MapUnit.clearEncampment)</summary>
+    BarbarianManager Barbarians { get; }
+    /// <summary><c>gameInfo.getBarbarianCivilization()</c> (T078); throws when there is no barbarian civilization (Kotlin <c>first</c>).</summary>
+    Civilization GetBarbarianCivilization();
     /// <summary><c>gameInfo.notifyExploredResources(civInfo, resource, maxDistance)</c></summary>
     void NotifyExploredResources(Civilization civInfo, TileResource resource, int maxDistance);
     /// <summary>

@@ -1,4 +1,3 @@
-using Unciv.Logic.Map.Tiles;
 
 namespace Unciv.Logic.Map.MapUnits;
 
@@ -14,13 +13,6 @@ public interface IPromotionTree
     IEnumerable<string> PossiblePromotionNames { get; }
     /// <summary><c>promotionTree.allNodes()</c> (the node promotion names, in order).</summary>
     IEnumerable<string> AllNodePromotionNames();
-}
-
-/// <summary>What MapUnit reads from <c>BarbarianManager</c> (<c>gameInfo.barbarians</c>). T078 implements it.</summary>
-public interface IBarbarianManager
-{
-    /// <summary><c>barbarians.spawnBarbarian(tile, civ)</c>; <c>null</c> when no unit could be placed.</summary>
-    MapUnit? SpawnBarbarian(Tile tile, Civilization.Civilization civ);
 }
 
 /// <summary>The <c>UnitActionType.value</c> strings MapUnit compares its <c>action</c> against. TODO(T079): replaced by UnitActionType.</summary>

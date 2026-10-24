@@ -3,7 +3,6 @@ using Unciv.Logic.City;
 using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
-using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -69,7 +68,10 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     void IGameInfoState.AddCompletedTutorialTask(string task) => TutorialTasks.Add(task);
     bool IGameInfoState.IsUnavailableBySettingsCached(IHasUniques construction) => construction.IsUnavailableBySettings(this);
     public FakeBarbarianManager BarbarianFake { get; } = new();
-    IBarbarianManager IGameInfoState.Barbarians => BarbarianFake;
+    /// <summary>When set, <see cref="IGameInfoState.Barbarians"/> is this real manager instead of <see cref="BarbarianFake"/>.</summary>
+    public BarbarianManager? RealBarbarians { get; set; }
+    BarbarianManager IGameInfoState.Barbarians => RealBarbarians ?? BarbarianFake;
+    Civilization IGameInfoState.GetBarbarianCivilization() => Civs.First(it => it.CivId == Constants.Barbarians);
     public override TileMap TileMap => Map ?? throw new NotSupportedException();
     public override IGameContextCivilization GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
     Civilization IGameInfoState.GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
@@ -81,11 +83,11 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
         ExploredResourceNotifications.Add((civInfo, resource, maxDistance));
 }
 
-internal sealed class FakeBarbarianManager : IBarbarianManager
+internal sealed class FakeBarbarianManager : BarbarianManager
 {
     public List<MapUnit> Spawned { get; } = [];
     public MapUnit? SpawnResult { get; set; }
-    public MapUnit? SpawnBarbarian(TileClass tile, Civilization civ)
+    public override MapUnit? SpawnBarbarian(TileClass tile, Civilization? allegiance = null)
     {
         if (SpawnResult != null) Spawned.Add(SpawnResult);
         return SpawnResult;

@@ -765,7 +765,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     ResourceDiversityTest.kt needs the full MapGenerator (T041); own xUnit tests exercise the logic directly on a small all-land fallback ruleset.
 
 ### T078 Barbarians: BarbarianManager, BarbarianEncampment
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T060, T065, T066
 - Source: core/src/com/unciv/logic/automation/civilization/BarbarianManager.kt, BarbarianEncampment.kt (the data/spawn logic; BarbarianAutomation.kt is T094)
 - Fixtures: none - generate golden values (seeded encampment spawning)
@@ -773,6 +773,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~BarbarianManagerTests`
 - Claimed: 2026-10-24T12:49Z
 - Notes: Created by the backlog audit: GameInfo.barbarians is a serialized GameInfo field (T046 depends on this ticket), and no ticket covered it. ~330 LOC. Random draws via the engine RNG in Kotlin order; encampment/unit iteration order is game state. Seam rule as T053: earlier tickets' call sites are TODO(T###) or seam-typed; this ticket implements the seam and retypes the callers (list them in Deliverables when claiming). Standard format; ~LOC given in title where known. TestGame-based Kotlin tests need T035.
+  - Implemented (Unciv.Logic.Civilization namespace, per Deliverables): BarbarianManager, BarbarianEncampment, BarbarianManagerTests (30 tests; no Kotlin tests exist, expected values derived from the Kotlin source; the RNG itself is covered by the GameRandom tests). Seam retyped: IGameInfoState.Barbarians is now the concrete BarbarianManager (IBarbarianManager removed from MapUnitSeams.cs; MapUnit calls the concrete class); added IGameInfoState.GetBarbarianCivilization() (T046 implements it as getCivilization(Constants.barbarians)). The BarbarianManager holds its game as the IGameInfoState seam (T046 retypes). SpawnBarbarian is virtual only so FakeBarbarianManager (a subclass) can stand in for it in MapUnit tests; Kotlin default params (allegiance, rng) are nullable params.
+    Deviation: placeBarbarianEncampment seeds with encampments.hashCode(); Kotlin BarbarianEncampment has no hashCode so the JVM uses identity hashes (non-reproducible). Here: ArrayList.hashCode shape with each element hashing its position (empty list = 1 as in Kotlin).
+    Traps kept: spawnedUnits++ happens before resetCountdown (reduction min(spawnedUnits,3) uses the incremented value); wasDestroyed sets countdown 15 and the same updateEncampments call then decrements it to 14; fogTilesPerCamp = Float.pow(0.4f).toInt (Math.Pow on widened floats); countdown * barbarianModifier uses Kotlin Float.toInt. Only human civs keep notifications (AddNotification skips AI).
 
 ### T079 UnitAction model and unit actions A: UnitAction, UnitActionModifiers, UnitActionsPillage, UnitActionsUpgrade, UnitActionsGreatPerson, UnitActionsReligion
 - State: Available
