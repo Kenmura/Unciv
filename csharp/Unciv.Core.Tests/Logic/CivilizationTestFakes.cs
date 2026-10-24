@@ -42,6 +42,8 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     DifficultyObject IConstructionGameInfo.GetDifficulty() => Difficulty;
     public JavaHashMap<string, Religion> ReligionMap { get; } = new();
     JavaHashMap<string, Religion> IGameInfoState.Religions => ReligionMap;
+    IEnumerable<Civilization> IGameInfoState.GetCivsSorted(bool includeCityStates, bool includeDefeated, Civilization? civToSortFirst, Func<Civilization, bool>? additionalFilter) =>
+        throw new NotSupportedException();
     public override TileMap TileMap => Map ?? throw new NotSupportedException();
     public override IGameContextCivilization GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
     Civilization IGameInfoState.GetCivilization(string civId) => Civs.First(it => it.CivId == civId);
@@ -68,63 +70,27 @@ internal sealed class FakeUnitManager : IUnitManager
     }
 }
 
+internal sealed class FakeQuestManager : IQuestManager
+{
+    public List<string> Met { get; } = [];
+    public void JustMet(Civilization otherCiv) => Met.Add(otherCiv.CivId);
+    public IQuestManager Clone() => throw new NotSupportedException();
+    public void SetTransients(Civilization civInfo) => throw new NotSupportedException();
+}
+
 internal sealed class FakeCityStateFunctions : ICityStateFunctions
 {
+    public int GetTributeWillingness(Civilization demandingCiv, bool demandingWorker = false) => throw new NotSupportedException();
+    public int AllyUpdates { get; private set; }
+    public void UpdateAllyCivForCityState() => AllyUpdates++;
+    public bool CanProvideStat(Stat statType) => false;
     public List<UniqueObject> Provided { get; } = [];
     public IEnumerable<UniqueObject> GetUniquesProvidedByCityStates(UniqueType uniqueType, GameContext gameContext) => Provided.Where(it => it.Type == uniqueType);
     public void ForEachUniqueProvidedByCityStates(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op)
     {
         foreach (var unique in GetUniquesProvidedByCityStates(uniqueType, gameContext)) op(unique);
     }
-    public int AllyUpdates { get; private set; }
-    public void UpdateAllyCivForCityState() => AllyUpdates++;
     public ResourceSupplyList GetCityStateResourcesForAlly() => new();
-}
-
-internal sealed class FakeDiplomacyFunctions : IDiplomacyFunctions
-{
-    public HashSet<string> AtWarWith { get; } = [];
-    public List<string> Met { get; } = [];
-    public void MakeCivilizationsMeet(Civilization otherCiv) => Met.Add(otherCiv.CivId);
-    public bool IsAtWarWith(Civilization otherCiv) => AtWarWith.Contains(otherCiv.CivId);
-    public bool CanPassThroughTiles(Civilization otherCiv) => throw new NotSupportedException();
-}
-
-internal sealed class FakeDiplomacyManager(Civilization otherCiv) : IDiplomacyManager
-{
-    public string OtherCivName => otherCiv.CivId;
-    public Civilization OtherCiv => otherCiv;
-    public Civilization CivInfo { get; set; } = null!;
-    public bool HasOpenBorders { get; set; }
-    public bool Friend { get; set; }
-    public bool AtWar { get; set; }
-    public int TradesCleared { get; private set; }
-    public bool IsRelationshipLevelGEFriend() => Friend;
-    public bool IsAtWarStatus => AtWar;
-    public bool IsConsideredFriendlyTerritory() => Friend;
-    public void ClearTrades() => TradesCleared++;
-    public IDiplomacyManager OtherCivDiplomacy() => otherCiv.Diplomacy[CivInfo.CivId];
-    public ResourceSupplyList ResourcesFromTrade() => new();
-    public int GoldPerTurn() => 0;
-    public bool IsRelationshipIgnoreAfraidAlly() => false;
-    public void UpdateHasOpenBorders() => throw new NotSupportedException();
-    public IDiplomacyManager Clone() => throw new NotSupportedException();
-    public List<float> SpiedOnUsModifiers { get; } = [];
-    public void AddSpiedOnUsModifier(float amount) => SpiedOnUsModifiers.Add(amount);
-    public List<(int Amount, bool Adjust)> DiscoveredSpiesFlags { get; } = [];
-    public void SetDiscoveredSpiesInOurCitiesFlag(int amount, bool adjustWithGameSpeed) => DiscoveredSpiesFlags.Add((amount, adjustWithGameSpeed));
-    public bool AgreedToNotSendSpies { get; set; }
-    public bool HasAgreedToNotSendSpiesFlag() => AgreedToNotSendSpies;
-    public float Influence { get; set; }
-    public float GetInfluence() => Influence;
-    public void SetInfluence(float amount) => Influence = amount;
-    public void AddInfluence(float amount) => Influence += amount;
-    public void ReduceInfluence(float amount) => Influence -= amount;
-}
-
-internal sealed class FakeTradeRequest(string requestingCiv) : ITradeRequest
-{
-    public string RequestingCiv { get; } = requestingCiv;
 }
 
 /// <summary>A city of a <see cref="Civilization"/>: the seam members Civilization calls, over data the tests fill.</summary>
@@ -167,6 +133,7 @@ internal sealed class FakeCityState(string id, FakeCiv civ) : FakeCity(id, civ),
     public bool IsBeingRazed { get; set; }
     public void AnnexCity() => throw new NotSupportedException();
     public int Population => PopulationData;
+    Tile ICityState.GetCenterTile() => throw new NotSupportedException();
     public IReadOnlyCollection<HexCoord> Tiles => TileLocations;
     IEnumerable<Tile> ICityState.GetTiles() => TileObjects;
     IEnumerable<Tile> ICityState.GetWorkedTiles() => [];
@@ -226,6 +193,7 @@ internal sealed class FakeCityReligion : ICityReligionManager
     public void AddPressure(string religionName, int amount, bool shouldUpdateFollowers = true) =>
         Pressure[religionName] = Pressure.GetValueOrDefault(religionName) + amount;
     public Religion? GetMajorityReligion() => Majority;
+    public string? GetMajorityReligionName() => Majority?.Name;
     public Dictionary<string, int> Followers { get; } = [];
     public int GetFollowersOf(string religion) => Followers.GetValueOrDefault(religion);
     public bool IsProtectedByInquisitor(string? fromReligion = null) => false;

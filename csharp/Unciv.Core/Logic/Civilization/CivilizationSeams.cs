@@ -44,6 +44,11 @@ public interface IGameInfoState : IConstructionGameInfo
     List<Civilization> GetAliveMajorCivs();
     /// <summary><c>gameInfo.notifyExploredResources(civInfo, resource, maxDistance)</c></summary>
     void NotifyExploredResources(Civilization civInfo, TileResource resource, int maxDistance);
+    /// <summary>
+    /// <c>gameInfo.getCivsSorted(includeCityStates, includeDefeated, civToSortFirst, additionalFilter)</c> (T059: DiplomacyFunctions.getKnownCivsSorted).
+    /// Barbarians and spectators are always excluded; the sort (the player's civ first, then majors, then by translated name) belongs to GameInfo.
+    /// </summary>
+    IEnumerable<Civilization> GetCivsSorted(bool includeCityStates = true, bool includeDefeated = false, Civilization? civToSortFirst = null, Func<Civilization, bool>? additionalFilter = null);
 }
 
 /// <summary>What Civilization reads from <c>QuestManager</c>.</summary>
@@ -51,66 +56,21 @@ public interface IQuestManager
 {
     IQuestManager Clone();
     void SetTransients(Civilization civInfo);
-}
-
-/// <summary>What Civilization reads from <c>DiplomacyManager</c>.</summary>
-public interface IDiplomacyManager
-{
-    IDiplomacyManager Clone();
-    string OtherCivName { get; }
-    Civilization OtherCiv { get; }
-    /// <summary><c>diplomacyManager.civInfo</c>, a <c>lateinit var</c> set by <c>Civilization.setTransients</c>.</summary>
-    Civilization CivInfo { get; set; }
-    void UpdateHasOpenBorders();
-    bool HasOpenBorders { get; }
-    /// <summary><c>isRelationshipLevelGE(RelationshipLevel.Friend)</c></summary>
-    bool IsRelationshipLevelGEFriend();
-    /// <summary><c>diplomaticStatus == DiplomaticStatus.War</c></summary>
-    bool IsAtWarStatus { get; }
-    bool IsConsideredFriendlyTerritory();
-    /// <summary><c>diplomacyManager.trades.clear()</c></summary>
-    void ClearTrades();
-    /// <summary><c>diplomacyManager.otherCivDiplomacy()</c></summary>
-    IDiplomacyManager OtherCivDiplomacy();
-    /// <summary><c>diplomacyManager.addModifier(DiplomaticModifiers.SpiedOnUs, amount)</c></summary>
-    void AddSpiedOnUsModifier(float amount);
-    /// <summary><c>diplomacyManager.setFlag(DiplomacyFlags.DiscoveredSpiesInOurCities, amount, adjustWithGameSpeed)</c></summary>
-    void SetDiscoveredSpiesInOurCitiesFlag(int amount, bool adjustWithGameSpeed);
-    /// <summary><c>diplomacyManager.hasFlag(DiplomacyFlags.AgreedToNotSendSpies)</c></summary>
-    bool HasAgreedToNotSendSpiesFlag();
-    float GetInfluence();
-    void SetInfluence(float amount);
-    void AddInfluence(float amount);
-    void ReduceInfluence(float amount);
-    /// <summary><c>diplomacyManager.resourcesFromTrade()</c> (T058).</summary>
-    ResourceSupplyList ResourcesFromTrade();
-    /// <summary><c>diplomacyManager.goldPerTurn()</c> (T058).</summary>
-    int GoldPerTurn();
-    /// <summary><c>diplomacyManager.relationshipIgnoreAfraid() == RelationshipLevel.Ally</c> (T058).</summary>
-    bool IsRelationshipIgnoreAfraidAlly();
-}
-
-/// <summary>What Civilization reads from <c>DiplomacyFunctions</c>.</summary>
-public interface IDiplomacyFunctions
-{
-    void MakeCivilizationsMeet(Civilization otherCiv);
-    bool IsAtWarWith(Civilization otherCiv);
-    bool CanPassThroughTiles(Civilization otherCiv);
-}
-
-/// <summary>What Civilization reads from <c>TradeRequest</c>.</summary>
-public interface ITradeRequest
-{
-    /// <summary><c>tradeRequest.requestingCiv</c> (the civ's id)</summary>
-    string RequestingCiv { get; }
+    /// <summary><c>questManager.justMet(otherCiv)</c> (T059: DiplomacyFunctions.meetCiv)</summary>
+    void JustMet(Civilization otherCiv);
 }
 
 /// <summary>What Civilization reads from <c>CityStateFunctions</c>.</summary>
 public interface ICityStateFunctions
 {
+    /// <summary><c>cityStateFunctions.getTributeWillingness(demandingCiv, demandingWorker)</c> (T059: DiplomacyManager.relationshipLevel)</summary>
+    int GetTributeWillingness(Civilization demandingCiv, bool demandingWorker = false);
+    /// <summary><c>cityStateFunctions.updateAllyCivForCityState()</c> (T059: DiplomacyManager.setInfluence)</summary>
+    void UpdateAllyCivForCityState();
+    /// <summary><c>cityStateFunctions.canProvideStat(statType)</c> (T059: DiplomacyFunctions.meetCiv)</summary>
+    bool CanProvideStat(Stat statType);
     IEnumerable<UniqueObject> GetUniquesProvidedByCityStates(UniqueType uniqueType, GameContext gameContext);
     void ForEachUniqueProvidedByCityStates(UniqueType uniqueType, GameContext gameContext, Action<UniqueObject> op);
-    void UpdateAllyCivForCityState();
     /// <summary><c>cityStateFunctions.getCityStateResourcesForAlly()</c> (T058).</summary>
     ResourceSupplyList GetCityStateResourcesForAlly();
 }
@@ -131,6 +91,10 @@ public interface IUnitManager
 /// <summary>What Civilization reads from <c>MapUnit</c>.</summary>
 public interface IMapUnitState : IGameContextUnit
 {
+    /// <summary><c>unit.currentTile</c> (T059: getOwner() of the tile the unit stands on)</summary>
+    Tile CurrentTile { get; }
+    /// <summary><c>unit.movement.teleportToClosestMoveableTile()</c> (T059: DiplomacyManager.updateHasOpenBorders / makePeaceOneSide)</summary>
+    void TeleportToClosestMoveableTile();
     void Destroy();
     int GetForceEvaluation();
     /// <summary><c>unit.civ</c></summary>
@@ -157,6 +121,8 @@ public interface ICityReligionManager
     string? ReligionThisIsTheHolyCityOf { get; set; }
     void AddPressure(string religionName, int amount, bool shouldUpdateFollowers = true);
     Religion? GetMajorityReligion();
+    /// <summary><c>city.religion.getMajorityReligionName()</c> (T059: DiplomacyManager)</summary>
+    string? GetMajorityReligionName();
     int GetFollowersOf(string religion);
     bool IsProtectedByInquisitor(string? fromReligion = null);
 }
@@ -190,6 +156,8 @@ public interface ICityState : IGameContextCity
     void AnnexCity();
     /// <summary><c>city.population.population</c></summary>
     int Population { get; }
+    /// <summary><c>city.getCenterTile()</c> (T059: DiplomacyFunctions.meetCiv)</summary>
+    new Tile GetCenterTile();
     /// <summary><c>city.tiles</c> (a set of positions).</summary>
     IReadOnlyCollection<HexCoord> Tiles { get; }
     new IEnumerable<Tile> GetTiles();

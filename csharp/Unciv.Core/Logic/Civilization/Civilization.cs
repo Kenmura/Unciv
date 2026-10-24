@@ -5,6 +5,7 @@ using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapGenerator.Mapregions;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.Trade;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
@@ -101,13 +102,8 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         set => units = value;
     }
 
-    private IDiplomacyFunctions? diplomacyFunctions;
-    /// <summary>Transient. TODO(T059): becomes <c>var diplomacyFunctions = DiplomacyFunctions(this)</c>.</summary>
-    public IDiplomacyFunctions DiplomacyFunctions
-    {
-        get => Lateinit(diplomacyFunctions, "diplomacyFunctions");
-        set => diplomacyFunctions = value;
-    }
+    /// <summary>Transient. Kotlin <c>var diplomacyFunctions = DiplomacyFunctions(this)</c> (assigned in the constructor).</summary>
+    public DiplomacyFunctions DiplomacyFunctions { get; set; }
 
     public IReadOnlySet<Tile> ViewableTiles { get; set; } = new HashSet<Tile>();
 
@@ -215,7 +211,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     public RuinsManager RuinsManager { get; set; } = new();
 
     /// <summary>Kotlin <c>HashMap&lt;String, DiplomacyManager&gt;</c>: java.util.HashMap iteration order. TODO(T059): retype to DiplomacyManager.</summary>
-    public JavaHashMap<string, IDiplomacyManager> Diplomacy { get; set; } = new();
+    public JavaHashMap<string, DiplomacyManager> Diplomacy { get; set; } = new();
     public JavaHashMap<string, Proximity> Proximity { get; set; } = new();
     public List<PopupAlert> PopupAlerts { get; } = [];
     /// <summary>Serialization field for <see cref="AllyCiv"/>. Is equivalent to <c>allyCiv.civName</c></summary>
@@ -235,7 +231,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     }
 
     /// <summary>for trades here, ourOffers is the current civ's offers, and theirOffers is what the requesting civ offers. TODO(T059): retype to TradeRequest.</summary>
-    public List<ITradeRequest> TradeRequests { get; } = [];
+    public List<TradeRequest> TradeRequests { get; } = [];
 
     /// <summary>See DiplomacyManager.flagsCountdown for why this does not map Enums to ints</summary>
     public JavaHashMap<string, int> FlagsCountdown { get; set; } = new();
@@ -331,6 +327,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     {
         Stats = new CivInfoStatsForNextTurn(this);
         Cache = new CivInfoTransientCache(this);
+        DiplomacyFunctions = new DiplomacyFunctions(this);
         // PublicationOnly: Kotlin `by lazy` does not cache a failed initializer (e.g. gameInfo not yet set), unlike ExecutionAndPublication
         cityStateType = new Lazy<CityStateTypeObject>(() => GameInfo.Ruleset.CityStateTypes[Nation.CityStateType!], LazyThreadSafetyMode.PublicationOnly);
     }
@@ -432,13 +429,13 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     }
 
     /// <summary>Makes this civilization meet <paramref name="civInfo"/> and returns the DiplomacyManager</summary>
-    public IDiplomacyManager GetDiplomacyManagerOrMeet(Civilization civInfo)
+    public DiplomacyManager GetDiplomacyManagerOrMeet(Civilization civInfo)
     {
         if (!Knows(civInfo)) DiplomacyFunctions.MakeCivilizationsMeet(civInfo);
         return GetDiplomacyManager(civInfo.CivId)!;
     }
-    public IDiplomacyManager? GetDiplomacyManager(Civilization civInfo) => GetDiplomacyManager(civInfo.CivId);
-    public IDiplomacyManager? GetDiplomacyManager(string civId) => Diplomacy.TryGetValue(civId, out var manager) ? manager : null;
+    public DiplomacyManager? GetDiplomacyManager(Civilization civInfo) => GetDiplomacyManager(civInfo.CivId);
+    public DiplomacyManager? GetDiplomacyManager(string civId) => Diplomacy.TryGetValue(civId, out var manager) ? manager : null;
 
     public Proximity GetProximity(Civilization civInfo) => GetProximity(civInfo.CivId);
     public Proximity GetProximity(string civId) => Proximity.TryGetValue(civId, out var proximity) ? proximity : ProximityLevel.None;
@@ -772,7 +769,7 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
                 return otherCiv != null && otherCiv.Diplomacy.TryGetValue(CivId, out var borders) && borders.HasOpenBorders;
             case "Friendly":
                 return otherCiv != null && (otherCiv.CivId == CivId
-                    || (otherCiv.Diplomacy.TryGetValue(CivId, out var friend) && friend.IsRelationshipLevelGEFriend()));
+                    || (otherCiv.Diplomacy.TryGetValue(CivId, out var friend) && friend.IsRelationshipLevelGE(RelationshipLevel.Friend)));
             case "Hostile": return otherCiv != null && IsAtWarWith(otherCiv);
             case "Known": return otherCiv != null && (ReferenceEquals(otherCiv, this) || Knows(otherCiv));
             default: return Nation.MatchesFilter(filter, state, false);
@@ -873,9 +870,9 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
     public EraObject GetEra() => Tech.Era;
     public int GetEraNumber() => GetEra().EraNumber;
     public bool IsAtWarWith(Civilization otherCiv) => DiplomacyFunctions.IsAtWarWith(otherCiv);
-    public bool IsAtWar() => Diplomacy.Values.Any(it => it.IsAtWarStatus && !it.OtherCiv.IsDefeated());
+    public bool IsAtWar() => Diplomacy.Values.Any(it => it.DiplomaticStatus == DiplomaticStatus.War && !it.OtherCiv.IsDefeated());
     public List<Civilization> GetCivsAtWarWith() =>
-        Diplomacy.Values.Where(it => it.IsAtWarStatus && !it.OtherCiv.IsDefeated()).Select(it => it.OtherCiv).ToList();
+        Diplomacy.Values.Where(it => it.DiplomaticStatus == DiplomaticStatus.War && !it.OtherCiv.IsDefeated()).Select(it => it.OtherCiv).ToList();
 
     /// <summary>
     /// Returns a civilization caption suitable for greetings including player type info:
@@ -1217,8 +1214,8 @@ public class Civilization : IsPartOfGameInfoSerialization, IConstructionCiviliza
         TradeRequests.Clear(); // if we don't do this then there could be resources taken by "pending" trades forever
         foreach (var diplomacyManager in Diplomacy.Values)
         {
-            diplomacyManager.ClearTrades();
-            diplomacyManager.OtherCivDiplomacy().ClearTrades();
+            diplomacyManager.Trades.Clear();
+            diplomacyManager.OtherCivDiplomacy().Trades.Clear();
             foreach (var tradeRequest in diplomacyManager.OtherCiv.TradeRequests.Where(it => it.RequestingCiv == CivId).ToList())
                 diplomacyManager.OtherCiv.TradeRequests.Remove(tradeRequest); // it  would be really weird to get a trade request from a dead civ
         }

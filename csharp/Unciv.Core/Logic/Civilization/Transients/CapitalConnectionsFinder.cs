@@ -1,3 +1,4 @@
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset.Unique;
@@ -181,7 +182,7 @@ public class CapitalConnectionsFinder
         if (otherCiv.IsBarbarian || civInfo.IsBarbarian) return false; // barbarians blocks the routes
         var diplomacyManager = civInfo.GetDiplomacyManager(otherCiv);
         if (diplomacyManager == null) return false; // not encountered yet
-        if (otherCiv.IsCityState && !diplomacyManager.IsAtWarStatus) return true;
+        if (otherCiv.IsCityState && diplomacyManager.DiplomaticStatus != DiplomaticStatus.War) return true;
         return diplomacyManager.HasOpenBorders;
     }
 }

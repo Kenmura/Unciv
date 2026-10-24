@@ -1,5 +1,6 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
 using Unciv.Models;
@@ -151,13 +152,12 @@ public class CivReligionVictoryTests
         var (civ, info) = NewCiv();
         var (other, _) = NewCiv("Egypt");
         info.Civs.Add(other);
-        civ.DiplomacyFunctions = new FakeDiplomacyFunctions();
-        other.DiplomacyFunctions = new FakeDiplomacyFunctions();
         var religion = new Religion("Faith", info, civ, 1);
         Assert.False(religion.MatchesFilter("enemy", civ: other)); // does not know the founder
-        other.Diplomacy["Rome"] = new FakeDiplomacyManager(civ) { CivInfo = other };
+        var otherSeesRome = new DiplomacyManager(other, civ) { DiplomaticStatus = DiplomaticStatus.Peace };
+        other.Diplomacy["Rome"] = otherSeesRome;
         Assert.False(religion.MatchesFilter("enemy", civ: other)); // known, but at peace
-        ((FakeDiplomacyFunctions)other.DiplomacyFunctions).AtWarWith.Add("Rome");
+        otherSeesRome.DiplomaticStatus = DiplomaticStatus.War;
         Assert.True(religion.MatchesFilter("enemy", civ: other));
     }
 
@@ -877,7 +877,7 @@ public class CivReligionVictoryTests
         var (civ, info, tech) = NewSpyCiv();
         var (other, _) = NewCiv("Egypt");
         other.Tech.TechsResearched.Add("Writing");
-        other.Diplomacy["Rome"] = new FakeDiplomacyManager(civ) { CivInfo = other };
+        other.Diplomacy["Rome"] = new DiplomacyManager(other, civ);
         other.EspionageManager.SetTransients(other);
         info.Civs.Add(other);
         AddTech(info, "Writing");
@@ -921,7 +921,7 @@ public class CivReligionVictoryTests
         var (civ, info, _) = NewSpyCiv();
         var cityState = new Civilization(new NationObject { Name = "Geneva", CityStateType = "Cultured" }) { GameInfo = info };
         info.Civs.Add(cityState);
-        var influence = new FakeDiplomacyManager(civ) { CivInfo = cityState, Influence = 0f };
+        var influence = new DiplomacyManager(cityState, civ) { DiplomaticStatus = DiplomaticStatus.Peace };
         cityState.Diplomacy["Rome"] = influence;
         var city = new FakeCityState("g", new FakeCiv("Geneva")) { CivData = cityState, LocationData = HexCoord.Of(1, 1) };
         var spy = civ.EspionageManager.AddSpy();
@@ -933,9 +933,9 @@ public class CivReligionVictoryTests
 
         // no ally: base 50 - (60 - 0) / 2 + 30 / 2 = 35 percent
         Assert.Equal(0.35f, spy.GetCoupChanceOfSuccess(true));
-        influence.Influence = -200f;
+        influence.SetInfluenceWithoutSideEffects(-200f);
         Assert.Equal(0f, spy.GetCoupChanceOfSuccess(false)); // clamped to 0
-        influence.Influence = 300f;
+        influence.SetInfluenceWithoutSideEffects(300f);
         Assert.Equal(0.85f, spy.GetCoupChanceOfSuccess(false)); // clamped to 85
     }
 

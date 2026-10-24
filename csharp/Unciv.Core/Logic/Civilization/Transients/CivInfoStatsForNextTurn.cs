@@ -1,3 +1,4 @@
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
@@ -194,7 +195,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
         foreach (var otherCiv in CivInfo.GetKnownCivs())
         {
             if (!otherCiv.IsCityState) continue;
-            if (!otherCiv.GetDiplomacyManager(CivInfo)!.IsRelationshipIgnoreAfraidAlly())
+            if (otherCiv.GetDiplomacyManager(CivInfo)!.RelationshipIgnoreAfraid() != RelationshipLevel.Ally)
                 continue;
             CivInfo.ForEachMatchingUnique(UniqueType.CityStateStatPercent, unique =>
             {

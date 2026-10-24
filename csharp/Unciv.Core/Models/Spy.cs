@@ -1,6 +1,7 @@
 using System.Globalization;
 using Unciv.Json;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
 using Unciv.Models.Ruleset.Unique;
@@ -326,8 +327,8 @@ public class Spy : IsPartOfGameInfoSerialization
     private void DemandToNotBeSpiedOn(Civilization otherCiv)
     {
         var otherCivDiplomacyManager = otherCiv.GetDiplomacyManager(CivInfo)!;
-        otherCivDiplomacyManager.AddSpiedOnUsModifier(-15f);
-        otherCivDiplomacyManager.SetDiscoveredSpiesInOurCitiesFlag(30, true);
+        otherCivDiplomacyManager.AddModifier(DiplomaticModifiers.SpiedOnUs, -15f);
+        otherCivDiplomacyManager.SetFlag(DiplomacyFlags.DiscoveredSpiesInOurCities, 30, true);
     }
 
     public bool CanDoCoup() => GetCityOrNull() != null && GetCity().Civ.IsCityState && IsSetUp()
@@ -365,7 +366,7 @@ public class Spy : IsPartOfGameInfoSerialization
                 cityState.GetDiplomacyManagerOrMeet(allyCiv).ReduceInfluence(20f);
                 allyCiv.AddNotification($"A spy from [{CivInfo.CivName}] successfully staged a coup in our former ally [{cityState.CivName}]!", GetCity().Location,
                     Notification.NotificationCategory.Espionage, CivInfo.CivName, NotificationIcon.Spy, cityState.CivName);
-                allyCiv.GetDiplomacyManagerOrMeet(CivInfo).AddSpiedOnUsModifier(-15f);
+                allyCiv.GetDiplomacyManagerOrMeet(CivInfo).AddModifier(DiplomaticModifiers.SpiedOnUs, -15f);
             }
             foreach (var civ in cityState.GetKnownCivsWithSpectators())
             {
@@ -385,7 +386,7 @@ public class Spy : IsPartOfGameInfoSerialization
             cityState.GetDiplomacyManager(CivInfo)!.AddInfluence(-20f);
             allyCiv?.AddNotification($"A spy from [{CivInfo.CivName}] failed to stage a coup in our ally [{cityState.CivName}] and was killed!", GetCity().Location,
                 Notification.NotificationCategory.Espionage, CivInfo.CivName, NotificationIcon.Spy, cityState.CivName);
-            allyCiv?.GetDiplomacyManagerOrMeet(CivInfo).AddSpiedOnUsModifier(-10f);
+            allyCiv?.GetDiplomacyManagerOrMeet(CivInfo).AddModifier(DiplomaticModifiers.SpiedOnUs, -10f);
 
             CivInfo.AddNotification($"Our spy [{Name}] failed to stage a coup in [{cityState.CivName}] and was killed!", GetCity().Location,
                 Notification.NotificationCategory.Espionage, CivInfo.CivName, NotificationIcon.Spy, cityState.CivName);
@@ -447,7 +448,7 @@ public class Spy : IsPartOfGameInfoSerialization
 
         float ourTechResearchLevel = ourResearchTechSize / techSize * 100f;
         float otherCivTechResearchLevel = otherCivResearchTechSize / techSize * 100f;
-        return otherCivDiplomacyManager.HasAgreedToNotSendSpiesFlag() &&
+        return otherCivDiplomacyManager.HasFlag(DiplomacyFlags.AgreedToNotSendSpies) &&
                /*
                * if there is equal or more than 10% difference in tech,
                * compare to the other civ in tech we the Ai will bypass the agreement

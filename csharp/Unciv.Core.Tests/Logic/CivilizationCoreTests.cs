@@ -1,7 +1,9 @@
 using Unciv.Core.Tests.Models.Ruleset.Unique;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map;
+using Unciv.Logic.Trade;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
@@ -278,7 +280,7 @@ public class CivilizationCoreTests
         var dead = new Civilization(new NationObject { Name = "Greece" }) { GameInfo = info, Units = new FakeUnitManager { Count = 0 } };
         rome.Units = new FakeUnitManager { Count = 1 };
         foreach (var other in new[] { egypt, spectator, dead })
-            rome.Diplomacy[other.CivId] = new FakeDiplomacyManager(other);
+            rome.Diplomacy[other.CivId] = new DiplomacyManager(rome, other);
 
         Assert.True(rome.Knows(egypt));
         Assert.True(rome.Knows("Greece"));
@@ -302,27 +304,15 @@ public class CivilizationCoreTests
     {
         var (rome, info) = NewCiv("Rome");
         var egypt = new Civilization(new NationObject { Name = "Egypt" }) { GameInfo = info };
-        var functions = new FakeDiplomacyFunctions();
-        rome.DiplomacyFunctions = functions;
-        var manager = new FakeDiplomacyManager(egypt);
-        // the fake "meeting" creates the manager, as DiplomacyFunctions.makeCivilizationsMeet does
-        rome.DiplomacyFunctions = new MeetingFunctions(rome, manager);
+        Assert.Null(rome.GetDiplomacyManager(egypt));
+        var manager = rome.GetDiplomacyManagerOrMeet(egypt);
         Assert.Same(manager, rome.GetDiplomacyManagerOrMeet(egypt));
-        Assert.Same(manager, rome.GetDiplomacyManagerOrMeet(egypt));
-        Assert.Equal(1, ((MeetingFunctions)rome.DiplomacyFunctions).Meetings);
-        Assert.Empty(functions.Met);
-    }
-
-    private sealed class MeetingFunctions(Civilization civ, FakeDiplomacyManager manager) : IDiplomacyFunctions
-    {
-        public int Meetings { get; private set; }
-        public void MakeCivilizationsMeet(Civilization otherCiv)
-        {
-            Meetings++;
-            civ.Diplomacy[otherCiv.CivId] = manager;
-        }
-        public bool IsAtWarWith(Civilization otherCiv) => false;
-        public bool CanPassThroughTiles(Civilization otherCiv) => false;
+        Assert.Equal(DiplomaticStatus.Peace, manager.DiplomaticStatus);
+        Assert.Equal(DiplomaticStatus.Peace, egypt.GetDiplomacyManager(rome)!.DiplomaticStatus);
+        // meeting happened once, from both sides
+        Assert.Equal(AlertType.FirstContact, Assert.Single(egypt.PopupAlerts).Type);
+        Assert.Equal("Rome", egypt.PopupAlerts[0].Value);
+        Assert.Equal("Egypt", Assert.Single(rome.PopupAlerts).Value);
     }
 
     [Fact]
@@ -330,9 +320,6 @@ public class CivilizationCoreTests
     {
         var (rome, info) = NewCiv("Rome", PlayerType.Human);
         var egypt = new Civilization(new NationObject { Name = "Egypt" }) { GameInfo = info, PlayerType = PlayerType.AI };
-        var functions = new FakeDiplomacyFunctions();
-        rome.DiplomacyFunctions = functions;
-        egypt.DiplomacyFunctions = functions;
 
         Assert.True(rome.MatchesSingleFilter(Constants.HumanPlayer, null));
         Assert.False(rome.MatchesSingleFilter(Constants.AiPlayer, null));
@@ -346,19 +333,21 @@ public class CivilizationCoreTests
         Assert.False(rome.MatchesSingleFilter("Known", null));
 
         Assert.False(rome.MatchesSingleFilter("Open Borders", stateOfEgypt));
-        var egyptSeesRome = new FakeDiplomacyManager(rome) { HasOpenBorders = true, Friend = true };
+        var egyptSeesRome = new DiplomacyManager(egypt, rome) { HasOpenBorders = true, DiplomaticStatus = DiplomaticStatus.Peace };
+        egyptSeesRome.SetModifier(DiplomaticModifiers.DeclarationOfFriendship, 40f); // opinion 40 of a human: Friend
         egypt.Diplomacy["Rome"] = egyptSeesRome;
         Assert.True(rome.MatchesSingleFilter("Open Borders", stateOfEgypt));
         Assert.True(rome.MatchesSingleFilter("Friendly", stateOfEgypt));
-        egyptSeesRome.Friend = false;
+        egyptSeesRome.SetModifier(DiplomaticModifiers.DeclarationOfFriendship, 39f);
         Assert.False(rome.MatchesSingleFilter("Friendly", stateOfEgypt));
         Assert.True(rome.MatchesSingleFilter("Friendly", GameContext.ForCiv(rome))); // a civ is friendly to itself
         Assert.True(rome.MatchesSingleFilter("Known", GameContext.ForCiv(rome)));
         Assert.False(rome.MatchesSingleFilter("Known", stateOfEgypt));
-        rome.Diplomacy["Egypt"] = new FakeDiplomacyManager(egypt);
+        var romeSeesEgypt = new DiplomacyManager(rome, egypt) { DiplomaticStatus = DiplomaticStatus.Peace };
+        rome.Diplomacy["Egypt"] = romeSeesEgypt;
         Assert.True(rome.MatchesSingleFilter("Known", stateOfEgypt));
         Assert.False(rome.MatchesSingleFilter("Hostile", stateOfEgypt));
-        functions.AtWarWith.Add("Egypt");
+        romeSeesEgypt.DiplomaticStatus = DiplomaticStatus.War;
         Assert.True(rome.MatchesSingleFilter("Hostile", stateOfEgypt));
     }
 
@@ -709,13 +698,15 @@ public class CivilizationCoreTests
         info.Civs.Add(egypt);
         rome.Units = new FakeUnitManager { Count = 0 };
         info.GameParameters.IsOnlineMultiplayer = true; // no map reveal
-        var romeSeesEgypt = new FakeDiplomacyManager(egypt) { CivInfo = rome };
-        var egyptSeesRome = new FakeDiplomacyManager(rome) { CivInfo = egypt };
+        var romeSeesEgypt = new DiplomacyManager(rome, egypt);
+        var egyptSeesRome = new DiplomacyManager(egypt, rome);
+        romeSeesEgypt.Trades.Add(new Trade());
+        egyptSeesRome.Trades.Add(new Trade());
         rome.Diplomacy["Egypt"] = romeSeesEgypt;
         egypt.Diplomacy["Rome"] = egyptSeesRome;
-        rome.TradeRequests.Add(new FakeTradeRequest("Egypt"));
-        egypt.TradeRequests.Add(new FakeTradeRequest("Rome"));
-        egypt.TradeRequests.Add(new FakeTradeRequest("Persia"));
+        rome.TradeRequests.Add(new TradeRequest("Egypt", new Trade()));
+        egypt.TradeRequests.Add(new TradeRequest("Rome", new Trade()));
+        egypt.TradeRequests.Add(new TradeRequest("Persia", new Trade()));
 
         rome.Destroy();
 
@@ -726,8 +717,8 @@ public class CivilizationCoreTests
         Assert.Empty(notification.Actions); // no location was given
         Assert.Empty(rome.TradeRequests);
         Assert.Equal("Persia", Assert.Single(egypt.TradeRequests).RequestingCiv);
-        Assert.Equal(1, romeSeesEgypt.TradesCleared);
-        Assert.Equal(1, egyptSeesRome.TradesCleared);
+        Assert.Empty(romeSeesEgypt.Trades);
+        Assert.Empty(egyptSeesRome.Trades);
     }
 
     [Fact]
@@ -843,6 +834,7 @@ public class CivilizationCoreTests
     private sealed class CloneableQuests : IQuestManager
     {
         public IQuestManager Clone() => new CloneableQuests();
+        public void JustMet(Civilization otherCiv) { }
         public void SetTransients(Civilization civInfo) { }
     }
 
