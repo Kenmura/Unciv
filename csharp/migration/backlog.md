@@ -1640,7 +1640,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Needs UnitActions.invokeUnitAction (T080).
 
 ### T145 Deferred TestGame fixtures: map directory remainder (UnitMovement and Pathfinding TestGame cases not yet in Logic/Map/*Tests.cs)
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: T072
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, PathfindingTests.kt
