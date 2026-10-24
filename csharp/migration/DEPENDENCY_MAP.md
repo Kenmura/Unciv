@@ -362,7 +362,7 @@ flowchart TD
   class T056 review
   class T057 done
   class T058 done
-  class T059 prog
+  class T059 review
   class T060 ondeck
   class T061 waiting
   class T062 waiting
@@ -423,7 +423,7 @@ flowchart TD
 | T062 | Available (waiting on T060) | T060, T058 | 41 | CityStats and GreatPersonPointsBreakdown |
 | T078 | Available (waiting on T060, T065, T066) | T060, T065, T066 | 41 | Barbarians: BarbarianManager, BarbarianEncampment |
 | T046 | Available (waiting on T060, T065, T078) | T034, T039, T045, T055, T060, T065, T078 | 38 | GameInfo core and the hooks waiting for it |
-| T059 | In-Progress [Claude] | T055 | 37 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
+| T059 | Needs-Review [Claude] | T055 | 37 | Diplomacy core: DiplomacyManager, DiplomacyFunctions, Demand, Trade, TradeOffer, TradeOffersList |
 | T063 | Available (waiting on T060, T062) | T060, T062 | 36 | CityConstructions |
 | T064 | Available (waiting on T060, T061, T063) | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T068 | Available (waiting on T059, T064, T066) | T059, T064, T066 | 32 | Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions |
