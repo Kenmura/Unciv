@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
@@ -19,25 +20,35 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
 {
     private string? name;
     /// <summary>Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonPropertyName("name")]
     public string Name
     {
         get => name ?? throw new InvalidOperationException("lateinit property name has not been initialized");
         set => name = value;
     }
 
+    [JsonPropertyName("displayName")]
     public string? DisplayName { get; set; }
+    [JsonPropertyName("foundingTurn")]
     public int FoundingTurn { get; set; }
 
+    [JsonPropertyName("founderBeliefs")]
+    [JsonInclude]
     private readonly JavaHashSet<string> founderBeliefs = new();
+    [JsonPropertyName("followerBeliefs")]
+    [JsonInclude]
     private readonly JavaHashSet<string> followerBeliefs = new();
 
     /// <summary>Transient.</summary>
+    [JsonIgnore]
     public UniqueMap FounderBeliefUniqueMap { get; private set; } = new();
     /// <summary>Transient.</summary>
+    [JsonIgnore]
     public UniqueMap FollowerBeliefUniqueMap { get; private set; } = new();
 
     private IGameInfoState? gameInfo;
     /// <summary>Transient. Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonIgnore]
     public IGameInfoState GameInfo
     {
         get => gameInfo ?? throw new InvalidOperationException("lateinit property gameInfo has not been initialized");
@@ -46,6 +57,8 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
 
     private string? foundingCivName;
     /// <summary>Kotlin <c>lateinit var</c> with a private setter: reading before assignment throws.</summary>
+    [JsonPropertyName("foundingCivName")]
+    [JsonInclude]
     public string FoundingCivName
     {
         get => foundingCivName ?? throw new InvalidOperationException("lateinit property foundingCivName has not been initialized");
@@ -54,6 +67,7 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
 
     private Civilization? foundingCivCache;
     /// <summary>Transient cache of <see cref="FoundingCiv"/>.</summary>
+    [JsonIgnore]
     public Civilization FoundingCiv
     {
         get
@@ -64,6 +78,7 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
     }
 
     private readonly KotlinLazy<List<string>> buildingsPurchasableByBeliefs;
+    [JsonIgnore]
     public List<string> BuildingsPurchasableByBeliefs => buildingsPurchasableByBeliefs.Value;
 
     public Religion()

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
@@ -13,14 +14,19 @@ namespace Unciv.Logic.Trade;
 
 public class TradeOffer : IsPartOfGameInfoSerialization
 {
+    [JsonPropertyName("name")]
     public string Name { get; init; }
 
+    [JsonPropertyName("type")]
     public TradeOfferType Type { get; init; }
 
+    [JsonPropertyName("amount")]
     public int Amount { get; set; }
 
+    [JsonPropertyName("duration")]
     public int Duration { get; set; }
 
+    [JsonConstructor]
     public TradeOffer(string name, TradeOfferType type, int amount = 1, int duration = -1)
     {
         Name = name;

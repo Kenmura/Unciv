@@ -88,24 +88,34 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     #endregion
 
     #region Serialized fields
+    [JsonPropertyName("location")]
     public HexCoord Location { get; set; } = new();
+    [JsonPropertyName("id")]
     public string Id { get; set; } = NoId;
+    [JsonPropertyName("name")]
     public string Name { get; set; } = "";
     /// <summary>Serialization field for <see cref="FoundingCivObject"/>. Is equivalent to <c>foundingCivObject.civName</c></summary>
     [JsonPropertyName("foundingCiv")]
     [JsonInclude]
     private string foundingCiv = "";
     /// <summary>This is so that cities in resistance that are recaptured aren't in resistance anymore</summary>
+    [JsonPropertyName("previousOwner")]
     public string PreviousOwner { get; set; } = "";
+    [JsonPropertyName("turnAcquired")]
     public int TurnAcquired { get; set; }
+    [JsonPropertyName("health")]
     public int Health { get; set; } = 200;
 
+    [JsonPropertyName("population")]
     public CityPopulationManager Population { get; set; } = new();
 
+    [JsonPropertyName("cityConstructions")]
     public CityConstructions CityConstructions { get; set; } = new();
 
+    [JsonPropertyName("expansion")]
     public CityExpansionManager Expansion { get; set; } = new();
 
+    [JsonPropertyName("religion")]
     public CityReligionManager Religion { get; set; } = new();
 
     /// <summary>Transient: class carries no persisted fields.</summary>
@@ -113,6 +123,8 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     public CityEspionageManager Espionage { get; set; } = new();
 
     /// <summary>Effect: moved to disabled section in construction list, and not built during automation</summary>
+    [JsonPropertyName("disabledConstructions")]
+    [JsonInclude]
     public JavaHashSet<string> DisabledConstructions { get; private set; } = new();
 
     public void ResetDisabledConstructions()
@@ -131,17 +143,22 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
         set => cityStats = value;
     }
 
+    [JsonPropertyName("resourceStockpiles")]
     public Counter<string> ResourceStockpiles { get; set; } = new();
 
     /// <summary>All tiles that this city controls</summary>
+    [JsonPropertyName("tiles")]
     public JavaHashSet<HexCoord> Tiles { get; set; } = new();
 
     /// <summary>Tiles that have population assigned to them</summary>
+    [JsonPropertyName("workedTiles")]
     public JavaHashSet<HexCoord> WorkedTiles { get; set; } = new();
 
     /// <summary>Tiles that the population in them won't be reassigned</summary>
+    [JsonPropertyName("lockedTiles")]
     public JavaHashSet<HexCoord> LockedTiles { get; set; } = new();
 
+    [JsonPropertyName("manualSpecialists")]
     public bool ManualSpecialists { get; set; }
 
     /// <summary>
@@ -159,21 +176,29 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
             : false; // default
     }
 
+    [JsonPropertyName("isBeingRazed")]
     public bool IsBeingRazed { get; set; }
+    [JsonPropertyName("attackedThisTurn")]
     public bool AttackedThisTurn { get; set; }
+    [JsonPropertyName("hasSoldBuildingThisTurn")]
     public bool HasSoldBuildingThisTurn { get; set; }
+    [JsonPropertyName("isPuppet")]
     public bool IsPuppet { get; set; }
     /// <summary>flag so that on startTurn() we reassign population</summary>
+    [JsonPropertyName("shouldReassignPopulation")]
     public bool ShouldReassignPopulation { get; set; }
 
+    [JsonPropertyName("unitShouldUseSavedPromotion")]
     public JavaHashMap<string, bool> UnitShouldUseSavedPromotion { get; set; } = new();
 
+    [JsonPropertyName("unitToPromotions")]
     public JavaHashMap<string, Unciv.Logic.Map.MapUnits.UnitPromotions> UnitToPromotions { get; set; } = new();
 
     [JsonPropertyName("cityAIFocus")]
     [JsonInclude]
     private string cityAIFocus = CityFocus.NoFocus.ToString();
 
+    [JsonPropertyName("avoidGrowth")]
     public bool AvoidGrowth { get; set; }
     /// <summary>Transient. temporary variable saved for rankSpecialist()</summary>
     [JsonIgnore]
@@ -184,9 +209,11 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     /// while the _current_ capital can be any other city after the original one is captured.
     /// It is important to distinguish them since the original cannot be razed and defines the Domination Victory.
     /// </summary>
+    [JsonPropertyName("isOriginalCapital")]
     public bool IsOriginalCapital { get; set; }
 
     /// <summary>For We Love the King Day</summary>
+    [JsonPropertyName("demandedResource")]
     public string DemandedResource { get; set; } = "";
 
     [JsonPropertyName("flagsCountdown")]
@@ -194,6 +221,7 @@ public class City : IsPartOfGameInfoSerialization, INamed, IConstructionCity, IL
     internal JavaHashMap<string, int> FlagsCountdown { get; set; } = new();
 
     /// <summary>Persisted connected-to-capital (by any medium) to allow "disconnected" notifications after loading</summary>
+    [JsonPropertyName("connectedToCapitalStatus")]
     public bool ConnectedToCapitalStatus { get; set; }
     #endregion
 

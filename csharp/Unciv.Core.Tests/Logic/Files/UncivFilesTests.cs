@@ -3,16 +3,21 @@ using System.Text.Json;
 using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
+using Unciv.Logic.Trade;
+using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
-using GeneratorClass = Unciv.Logic.Map.MapGenerator.MapGenerator;
+using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
+using CityObject = Unciv.Logic.City.City;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Core.Tests.Logic.Files;
 
-// T100: UncivFiles.kt, with GameSerializationTests' save/load cases (canSaveAndLoad*, successfulSaveReportsCompletion, failedSaveReportsException)
+// T100/T140: UncivFiles.kt, with GameSerializationTests' save/load cases (canSaveAndLoad*, successfulSaveReportsCompletion, failedSaveReportsException)
 // on an in-memory file tree. The Kotlin tests' serializedLaziesTest and writer-only handle are Gdx/JVM specific.
 [Collection("RulesetCache")]
 public sealed class UncivFilesTests : IDisposable
@@ -105,26 +110,156 @@ public sealed class UncivFilesTests : IDisposable
     private long tick;
     private UncivFiles NewFiles() => new(new MemFile(null, "", () => ++tick));
 
-    // Civilization has no JSON wiring yet (TODO(T140)): a game with civs cannot be serialized, and GameInfo.SetTransients refuses a game
-    // without a human civ. So these games have no civs and a load that parsed the JSON and passed the version check ends in that
-    // InvalidOperationException (see LoadsUpToSetTransients); full round trips and the T011 state hash check belong to T140.
     private GameInfo NewGame(int turns = 123)
     {
-        var mapParameters = new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Tiny };
-        var game = new GameInfo
-        {
-            GameParameters = new GameParameters { BaseRuleset = ruleset.Name },
-            TileMap = new GeneratorClass(ruleset).GenerateMap(mapParameters),
-            Difficulty = "Prince",
-            GameId = "test-game",
-            Turns = turns,
-            CurrentPlayer = "Rome",
-        };
-        game.TileMap.GameInfo = game;
+        var game = StartedGame();
+        game.GameId = "test-game";
+        game.Turns = turns;
         return game;
     }
 
-    private static void LoadsUpToSetTransients(Action load) => Assert.Throws<InvalidOperationException>(load);
+    private GameInfo StartedGame(long seed = 7)
+    {
+        var parameters = new GameParameters
+        {
+            BaseRuleset = ruleset.Name,
+            NumberOfCityStates = 2,
+            Players = [new Player("Babylon", PlayerType.Human), new Player("Greece"), new Player("Rome")],
+        };
+        var setup = new GameSetupInfo(parameters, new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Small });
+        return GameStarter.StartNewGame(setup, seed, 1000L);
+    }
+
+    private static ulong HashOf(GameInfo game) => StateHasher.ComputeHash(h =>
+    {
+        h.Add(game.GameId).Add(game.Turns).Add(game.CurrentPlayer).Add(game.Difficulty);
+        foreach (var civ in game.Civilizations)
+        {
+            h.Add(civ.CivId).Add(civ.Gold).Add((int)civ.PlayerType).Add(civ.Cities.Count);
+            foreach (var city in civ.Cities) h.Add(city.Id).Add(city.Name).Add(city.Population.Population);
+            foreach (var key in civ.Diplomacy.Keys) h.Add(key);
+            // the unit order is the creation order in a fresh game, but the tile order once loaded (UnitManager.setTransients)
+            foreach (var unit in civ.Units.GetCivUnits().Select(it => $"{it.Name}@{it.CurrentTile.Position}").Order(StringComparer.Ordinal)) h.Add(unit);
+        }
+        foreach (var tile in game.TileMap.Values) h.Add(tile.Position).Add(tile.BaseTerrain);
+    });
+
+    /// <summary>A started game whose civs own cities (wired by hand: Civilization.AddCity needs the city automation, T087), know each other and carry state in most managers.</summary>
+    private GameInfo BusyGame()
+    {
+        var game = StartedGame();
+        var land = game.TileMap.Values.Where(it => it.IsLand && !it.IsImpassible()).ToList();
+        var majors = game.Civilizations.Where(it => it.IsMajorCiv()).ToList();
+        for (var i = 0; i < majors.Count; i++)
+        {
+            var civ = majors[i];
+            var city = new CityObject { Id = civ.CivId + "-city", Name = civ.CivId + " City", Location = land[i * 12].Position };
+            civ.Cities = [city];
+            city.SetTransients(civ);
+            civ.AddGold(100 + i);
+            civ.Tech.AddTechnology("Agriculture", showNotification: false);
+            civ.NaturalWonders.Add("Krakatoa");
+            civ.AddFlag("someFlag", 5 + i);
+            civ.ResourceStockpiles.Add("Iron", 3);
+            civ.LeaderTitle = "King [leaderName]";
+            civ.AttacksSinceTurnStart.Add(new Civilization.HistoricalAttackMemory("Warrior", land[0].Position, land[1].Position));
+            civ.LastSeenImprovement[land[2].Position] = "Farm";
+            civ.AddNotification("Hello [Rome]", land[3].Position, Notification.NotificationCategory.General, "NotificationIcons/Test");
+            civ.PopupAlerts.Add(new PopupAlert(AlertType.FirstContact, "Rome"));
+            civ.StatsHistory.RecordRankingStats(civ);
+        }
+        var religion = new Religion("Test Faith", game, majors[0], 3);
+        game.Religions["Test Faith"] = religion;
+        majors[0].EspionageManager.SpyList.Add(new Spy("Alice", 2));
+        majors[0].EspionageManager.ErasSpyEarnedFor.Add("Medieval era");
+        majors[0].TemporaryUniques.Add(new TemporaryUnique(new Unique("[+10]% Strength <for [5] turns>"), 5));
+        majors[0].Policies.FreePolicies = 2;
+        majors[0].GoldenAges.AddHappiness(50);
+        majors[0].ReligionManager.StoredFaith = 12;
+        majors[0].DiplomacyFunctions.MakeCivilizationsMeet(majors[1]);
+        var diplomacy = majors[0].GetDiplomacyManager(majors[1])!;
+        diplomacy.AddModifier(DiplomaticModifiers.DeclaredFriendshipWithOurEnemies, 15f);
+        diplomacy.SetFlag(DiplomacyFlags.DeclinedLuxExchange, 4);
+        var trade = new Trade();
+        trade.OurOffers.Add(new TradeOffer("Iron", TradeOfferType.Strategic_Resource, 2, 30));
+        trade.TheirOffers.Add(new TradeOffer("Gold", TradeOfferType.Gold, 50));
+        majors[1].TradeRequests.Add(new TradeRequest(majors[0].CivId, trade));
+        diplomacy.Trades.Add(trade.Clone());
+        foreach (var civ in majors) civ.Cache.UpdateCitiesConnectedToCapital(); // derived state that loading recomputes too
+        return game;
+    }
+
+    [Fact]
+    public void BusyGameRoundTripsThroughAFileAndKeepsItsStateHash()
+    {
+        var files = NewFiles();
+        UncivFiles.SaveZipped = true;
+        var game = BusyGame();
+        var before = HashOf(game);
+
+        var loaded = files.LoadGameFromFile(files.SaveGame(game, "busy"));
+
+        var babylon = loaded.GetCivilization("Babylon");
+        Assert.Equal(before, HashOf(loaded));
+        Assert.Single(babylon.Cities);
+        Assert.Equal(game.GetCivilization("Babylon").Gold, babylon.Gold);
+        Assert.Contains("Agriculture", babylon.Tech.TechsResearched);
+        Assert.Contains(babylon.PopupAlerts, it => it.Type == AlertType.FirstContact && it.Value == "Rome");
+        Assert.Contains(babylon.Notifications, it => it.Text == "Hello [Rome]" && it.Actions.Count == 1);
+        Assert.Equal(15f, babylon.GetDiplomacyManager("Greece")!.DiplomaticModifiers[DiplomaticModifiers.DeclaredFriendshipWithOurEnemies.ToString()]);
+        var request = Assert.Single(loaded.GetCivilization("Greece").TradeRequests);
+        Assert.Equal("Babylon", request.RequestingCiv);
+        Assert.Equal(2, request.Trade.OurOffers.Single().Amount);
+        Assert.Equal("Test Faith", loaded.Religions["Test Faith"].Name);
+        Assert.Equal("Alice", babylon.EspionageManager.SpyList.Single().Name);
+        Assert.Equal(["Medieval era"], babylon.EspionageManager.ErasSpyEarnedFor);
+        Assert.Single(babylon.TemporaryUniques);
+        Assert.Equal(2, babylon.Policies.FreePolicies);
+        Assert.Equal(12, babylon.ReligionManager.StoredFaith);
+        Assert.Equal(UncivJson.Serialize(game), UncivJson.Serialize(loaded));
+        Assert.Equal(before, HashOf(UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(loaded))));
+    }
+
+    [Fact]
+    public void GameRoundTripsAfterEveryOfSeveralTurns()
+    {
+        var files = NewFiles();
+        UncivFiles.SaveZipped = true;
+        var game = BusyGame();
+        foreach (var civ in game.Civilizations) civ.TradeRequests.Clear(); // processing a pending request needs TradeEvaluation (TODO(T089))
+        for (var turn = 0; turn < 6; turn++)
+        {
+            game.NextTurn(2000L + turn);
+            var loaded = files.LoadGameFromFile(files.SaveGame(game, "turn"));
+            Assert.Equal(UncivJson.Serialize(game), UncivJson.Serialize(loaded));
+            Assert.Equal(HashOf(game), HashOf(loaded));
+            Assert.Equal(game.Turns, loaded.Turns);
+            // the loaded game carries on exactly like the original
+            game = loaded;
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SavedGameWithCivsRoundTripsThroughAFile(bool zipped)
+    {
+        var files = NewFiles();
+        UncivFiles.SaveZipped = zipped;
+        var game = StartedGame();
+        var before = HashOf(game);
+
+        var file = files.SaveGame(game, "slot");
+        var json = UncivJson.Serialize(game);
+        var loaded = files.LoadGameFromFile(file);
+
+        Assert.Equal(game.GameId, loaded.GameId);
+        Assert.Equal(game.Turns, loaded.Turns);
+        Assert.Equal(game.Civilizations.Select(it => it.CivId), loaded.Civilizations.Select(it => it.CivId));
+        Assert.Equal(CompatibilityVersion.CurrentCompatibilityVersion, loaded.Version);
+        Assert.Equal(before, HashOf(loaded));
+        Assert.Equal(json, UncivJson.Serialize(loaded));
+    }
 
     [Fact]
     public void SaveUncompressedWritesPlainJson_WithTheCurrentVersion()
@@ -142,7 +277,7 @@ public sealed class UncivFilesTests : IDisposable
         Assert.Equal(game.Turns, UncivJson.Deserialize<GameInfo>(text)!.Turns);
         Assert.Equal(CompatibilityVersion.CurrentCompatibilityVersion, UncivJson.Deserialize<GameInfo>(text)!.Version);
         Assert.Same(file, files.GetSave("slot"));
-        LoadsUpToSetTransients(() => files.LoadGameFromFile(file));
+        Assert.Equal(game.Turns, files.LoadGameFromFile(file).Turns);
     }
 
     [Fact]
@@ -157,7 +292,7 @@ public sealed class UncivFilesTests : IDisposable
 
         Assert.DoesNotContain("{", text, StringComparison.Ordinal);
         Assert.Equal(123, UncivJson.Deserialize<GameInfo>(FileConversions.Unzip(text))!.Turns);
-        LoadsUpToSetTransients(() => files.LoadGameByName("slot"));
+        Assert.Equal(123, files.LoadGameByName("slot").Turns);
     }
 
     [Fact]
@@ -254,11 +389,11 @@ public sealed class UncivFilesTests : IDisposable
         var zipped = UncivFiles.GameInfoToString(game, forceZip: true, updateChecksum: true);
         Assert.NotEqual("", game.Checksum);
         Assert.Equal(game.Checksum, UncivJson.Deserialize<GameInfo>(FileConversions.Unzip(zipped))!.Checksum);
-        LoadsUpToSetTransients(() => UncivFiles.GameInfoFromString("  " + zipped.Insert(10, "\r\n") + "\n"));
+        Assert.Equal(game.GameId, UncivFiles.GameInfoFromString("  " + zipped.Insert(10, "\r\n") + "\n").GameId);
         UncivFiles.SaveZipped = false;
         var plain = UncivFiles.GameInfoToString(game);
         Assert.StartsWith("{", plain, StringComparison.Ordinal);
-        LoadsUpToSetTransients(() => UncivFiles.GameInfoFromString(plain));
+        Assert.Equal(game.GameId, UncivFiles.GameInfoFromString(plain).GameId);
         UncivFiles.SaveZipped = true;
         Assert.DoesNotContain("{", UncivFiles.GameInfoToString(game), StringComparison.Ordinal);
         Assert.StartsWith("{", UncivFiles.GameInfoToString(game, forceZip: false), StringComparison.Ordinal);
@@ -270,6 +405,7 @@ public sealed class UncivFilesTests : IDisposable
         var files = NewFiles();
         var preview = new GameInfoPreview(NewGame());
         Assert.Equal("test-game", preview.GameId);
+        preview.Civilizations.Clear();
         preview.Civilizations.Add(new CivilizationInfoPreview { CivName = "Rome", CivId = "" });
         var file = files.SaveMultiplayerGamePreview(preview, "mp");
         Assert.Equal("MultiplayerGames", file.Parent.Name);
@@ -308,7 +444,7 @@ public sealed class UncivFilesTests : IDisposable
         files.Autosaves.AutoSave(NewGame(), 3);
         Assert.True(files.Autosaves.AutosaveExists());
         Assert.Equal(["Autosave"], files.GetSaves().Select(it => it.Name));
-        LoadsUpToSetTransients(() => files.Autosaves.LoadLatestAutosave());
+        Assert.Equal("test-game", files.Autosaves.LoadLatestAutosave().GameId);
     }
 
     [Fact]
@@ -318,7 +454,7 @@ public sealed class UncivFilesTests : IDisposable
         UncivFiles.SaveZipped = false;
         for (var turn = 1; turn <= 5; turn++)
             files.Autosaves.AutoSave(NewGame(turn), 2, nextTurn: true);
-        Assert.Equal(["Autosave", "Autosave-Rome-4", "Autosave-Rome-5"], files.GetSaves().Select(it => it.Name));
+        Assert.Equal(["Autosave", "Autosave-Babylon-4", "Autosave-Babylon-5"], files.GetSaves().Select(it => it.Name));
     }
 
     [Fact]

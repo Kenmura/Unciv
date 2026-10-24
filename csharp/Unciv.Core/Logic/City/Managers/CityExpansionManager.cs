@@ -30,6 +30,7 @@ public class CityExpansionManager : IsPartOfGameInfoSerialization
         set => city = value;
     }
 
+    [JsonPropertyName("cultureStored")]
     public int CultureStored { get; set; }
 
     public CityExpansionManager Clone()

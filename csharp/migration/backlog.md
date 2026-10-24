@@ -1565,7 +1565,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Created by T085. Members T085 had to defer: ForeignCityView.getBombardableTiles (TargetHelper, T082); CityView.tryBombard (Battle.attackOrNuke, T083); MapUnitView.containsAttackableEnemy/getAttackableEnemies (TargetHelper, T082), tryAirSweep (AirInterception, T082), tryMovePreparingAttack/attackOrNuke/mayUseNuke/tryNuke (Battle/Nuke, T083), canPillage (UnitActionsPillage, T079), canInvokeUnitAction/tryInvokeUnitAction (UnitActions, T080); getTurnsToBuild, tryStartWorkingOnImprovement (need TileImprovement.getTurnsToBuild, Tile.startWorkingOnImprovement/queueImprovement(improvement, civ, unit) and Civilization.gainStockpiledResource) and getMovementString (UncivGame settings number format). Port them here and move the TODO(T139) markers. CityView.tryBombard/MapUnitView.attackOrNuke return Battle.DamageDealt, so keep them in the ViewTests KnownNonBooleanTryMembers list (Kotlin ViewPurityTest is @Ignore'd for the same reason).
 
 ### T140 Civilization and manager JSON wiring (full GameInfo save/load round trip)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T100
 - Source: core/src/com/unciv/logic/civilization/Civilization.kt and manager classes (serialization attributes only)
 - Fixtures: tests/src/com/unciv/logic/GameSerializationTests.kt
@@ -1574,6 +1574,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T17:26Z
 - Notes:
   - Found by T100: Civilization (and everything reachable from it, e.g. Civilization.GameInfo -> Ruleset -> Building) has no JSON wiring, so UncivJson.Serialize(game with civs) throws NotSupportedException; GameInfo.SetTransients also refuses a game without a human civ. Wire the serialized fields (and JsonIgnore the transients), then extend UncivFilesTests with GameSerializationTests' full round trips (canSaveAndLoadUncompressedGame/CompressedGame: gameId, turns, version, cities) and assert the T011 StateHasher hash survives GameInfo -> file -> GameInfo, plus Autosaves.LoadLatestAutosave on real games.
+  -   - T140 implemented. Wired (Kotlin field names via JsonPropertyName; transients JsonIgnore; private/internal/private-set members JsonInclude): Civilization (+HistoricalAttackMemory, NotificationsLog), Espionage/Religion/Ruins/Victory managers, Spy, Religion, CivConstructions, DiplomacyManager, PopupAlert, Trade/TradeRequest/TradeOffer, ExploredRegion, City, CityConstructions, City{Expansion,Population,Religion}Manager. Tech/Policy/GoldenAge/GreatPerson/Quest managers, Notification, CivRankingHistory, LastSeenImprovement were already wired.
+      - Trap: System.Text.Json never fills get-only collection/object properties on read, so Civilization.PopupAlerts/TradeRequests/TemporaryUniques/LastSeenImprovement/PassableImpassables, Trade offer lists and EspionageManager.ErasSpyEarnedFor are now `{ get; private set; }` + JsonInclude.
+      - Tests (UncivFilesTests): GameStarter games with civs/city-states round trip through files (plain and zipped), a hand-built busy game (cities, diplomacy, trades, spies, religion, temp uniques...) and 6 played turns re-serialize byte-identically and keep a StateHasher hash; the old civ-less NewGame/LoadsUpToSetTransients workaround is gone; LoadLatestAutosave loads a real game.
+      - Not changed: MapUnit.UnitMovementMemory/UnitStatus, Tile.ImprovementQueueEntry and TileHistory.TileHistoryState still serialize PascalCase names (earlier tickets; they round-trip, reads are case-insensitive). A pending TradeRequest cannot be processed by NextTurn until TradeEvaluation (T089) lands, so the multi-turn test clears them.
+      - Loading re-runs UnitManager.SetTransients, so civ unit list order after load is tile order, not creation order (same as Kotlin); the hash test sorts units.
 
 ### T141 Deferred TestGame fixtures: map directory (FreshWater, TileImprovementConstruction, Visibility, Upgrade, UnitFormation minus Battle cases)
 - State: Done

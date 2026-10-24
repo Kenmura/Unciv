@@ -90,19 +90,25 @@ public class CityConstructions : IsPartOfGameInfoSerialization
     #endregion
 
     #region Serialized Fields
+    [JsonPropertyName("builtBuildings")]
     public JavaHashSet<string> BuiltBuildings { get; set; } = new();
+    [JsonPropertyName("inProgressConstructions")]
     [JsonInclude]
     public JavaHashMap<string, int> InProgressConstructions { get; private set; } = new();
+    [JsonPropertyName("currentConstructionIsUserSet")]
     public bool CurrentConstructionIsUserSet { get; set; }
 
+    [JsonPropertyName("constructionQueue")]
     [JsonInclude]
     public IReadOnlyList<string> ConstructionQueue { get; private set; } = new List<string>(QueueMaxSize);
+    [JsonPropertyName("productionOverflow")]
     public int ProductionOverflow { get; set; }
 
     /// <summary>
     /// Maps cities by id to a set of the buildings they received (by nation equivalent name)
     /// Source: <see cref="UniqueType.GainFreeBuildings"/>
     /// </summary>
+    [JsonPropertyName("freeBuildingsProvidedFromThisCity")]
     [JsonInclude]
     public JavaHashMap<string, JavaHashSet<string>> FreeBuildingsProvidedFromThisCity { get; private set; } = new();
     #endregion

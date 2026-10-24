@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Map.MapUnit.Actions;
 using Unciv.Logic.Map.Tiles;
@@ -22,12 +23,14 @@ public class ReligionManager : IsPartOfGameInfoSerialization
 {
     private Civilization? civInfo;
     /// <summary>Transient. Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonIgnore]
     public Civilization CivInfo
     {
         get => civInfo ?? throw new InvalidOperationException("lateinit property civInfo has not been initialized");
         set => civInfo = value;
     }
 
+    [JsonPropertyName("storedFaith")]
     public int StoredFaith { get; set; }
 
     /// <summary>
@@ -42,21 +45,29 @@ public class ReligionManager : IsPartOfGameInfoSerialization
     /// But the other one should still be _somewhere_. So our only option is to have the GameInfo
     /// contain the master list, and the ReligionManagers retrieve it from there every time the game loads.
     /// </summary>
+    [JsonIgnore]
     public Religion? Religion { get; set; }
 
+    [JsonPropertyName("religionState")]
+    [JsonInclude]
     public ReligionState ReligionState { get; private set; } = ReligionState.None;
 
     /// <summary>
     /// Counter containing the number of free beliefs types that this civ can add to its religion this turn.
     /// Uses String instead of BeliefType enum for serialization reasons
     /// </summary>
+    [JsonPropertyName("freeBeliefs")]
     public Counter<string> FreeBeliefs { get; set; } = new();
 
     // These cannot be transient, as saving and loading after using a great prophet but before
     // founding a religion would break :(
     // Only used for keeping track of the city a prophet was used when founding a religion
+    [JsonPropertyName("foundingCityId")]
+    [JsonInclude]
     private string? foundingCityId;
 
+    [JsonPropertyName("shouldChoosePantheonBelief")]
+    [JsonInclude]
     private bool shouldChoosePantheonBelief;
 
     public ReligionManager Clone()

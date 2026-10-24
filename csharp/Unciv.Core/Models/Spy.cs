@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
@@ -71,24 +72,37 @@ public class Spy : IsPartOfGameInfoSerialization
 {
     private string? name;
     /// <summary>Kotlin <c>lateinit var</c> with a private setter: reading before assignment throws.</summary>
+    [JsonPropertyName("name")]
+    [JsonInclude]
     public string Name
     {
         get => name ?? throw new InvalidOperationException("lateinit property name has not been initialized");
         private set => name = value;
     }
 
+    [JsonPropertyName("rank")]
+    [JsonInclude]
     public int Rank { get; private set; } = 1;
 
     /// <summary><c>location == null</c> means that the spy is in its hideout</summary>
+    [JsonPropertyName("location")]
+    [JsonInclude]
     private HexCoord? location;
 
+    [JsonPropertyName("action")]
+    [JsonInclude]
     public SpyAction Action { get; private set; } = SpyAction.None;
 
+    [JsonPropertyName("turnsRemainingForAction")]
+    [JsonInclude]
     public int TurnsRemainingForAction { get; private set; }
+    [JsonPropertyName("progressTowardsStealingTech")]
+    [JsonInclude]
     private int progressTowardsStealingTech;
 
     private Civilization? civInfo;
     /// <summary>Transient. Kotlin <c>lateinit var</c> with a private setter: reading before assignment throws.</summary>
+    [JsonIgnore]
     public Civilization CivInfo
     {
         get => civInfo ?? throw new InvalidOperationException("lateinit property civInfo has not been initialized");
@@ -102,6 +116,7 @@ public class Spy : IsPartOfGameInfoSerialization
     private CityObject? city;
 
     /// <summary>Kotlin <c>private constructor()</c>, used by the deserializer.</summary>
+    [JsonConstructor]
     private Spy()
     {
     }

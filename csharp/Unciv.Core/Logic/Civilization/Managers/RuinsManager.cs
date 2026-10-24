@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset;
@@ -10,6 +11,8 @@ namespace Unciv.Logic.Civilization.Managers;
 // The triggering unit is typed by the MapUnit seam, which is the MapUnit.
 public class RuinsManager : IsPartOfGameInfoSerialization
 {
+    [JsonPropertyName("lastChosenRewards")]
+    [JsonInclude]
     private readonly List<string> lastChosenRewards;
 
     public RuinsManager(List<string>? lastChosenRewards = null)
@@ -19,6 +22,7 @@ public class RuinsManager : IsPartOfGameInfoSerialization
 
     private Civilization? civInfo;
     /// <summary>Transient. Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonIgnore]
     public Civilization CivInfo
     {
         get => civInfo ?? throw new InvalidOperationException("lateinit property civInfo has not been initialized");
@@ -27,6 +31,7 @@ public class RuinsManager : IsPartOfGameInfoSerialization
 
     private IEnumerable<RuinReward>? validRewards;
     /// <summary>Transient. Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonIgnore]
     public IEnumerable<RuinReward> ValidRewards
     {
         get => validRewards ?? throw new InvalidOperationException("lateinit property validRewards has not been initialized");

@@ -48,7 +48,9 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
     private int? pressureFromAdjacentCitiesCache; // Kotlin `by lazy`
     private int PressureFromAdjacentCities => pressureFromAdjacentCitiesCache ??= City.Civ.GameInfo.Speed.ReligiousPressureAdjacentCity;
 
+    [JsonPropertyName("religionThisIsTheHolyCityOf")]
     public string? ReligionThisIsTheHolyCityOf { get; set; }
+    [JsonPropertyName("isBlockedHolyCity")]
     public bool IsBlockedHolyCity { get; set; }
 
     public CityReligionManager()

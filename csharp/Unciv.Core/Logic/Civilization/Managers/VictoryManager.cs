@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -12,6 +13,7 @@ public class VictoryManager : IsPartOfGameInfoSerialization
 {
     private Civilization? civInfo;
     /// <summary>Transient. Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonIgnore]
     public Civilization CivInfo
     {
         get => civInfo ?? throw new InvalidOperationException("lateinit property civInfo has not been initialized");
@@ -20,7 +22,9 @@ public class VictoryManager : IsPartOfGameInfoSerialization
 
     // There is very likely a typo in this name (currents), but as its saved in save files,
     // fixing it is non-trivial
+    [JsonPropertyName("currentsSpaceshipParts")]
     public Counter<string> CurrentsSpaceshipParts { get; set; } = new();
+    [JsonPropertyName("hasEverWonDiplomaticVote")]
     public bool HasEverWonDiplomaticVote { get; set; }
 
     public VictoryManager Clone()

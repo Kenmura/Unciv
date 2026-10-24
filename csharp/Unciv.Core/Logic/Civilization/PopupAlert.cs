@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 
 namespace Unciv.Logic.Civilization;
@@ -49,6 +50,7 @@ public enum AlertType
 public class PopupAlert : IsPartOfGameInfoSerialization
 {
     /// <summary>Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonPropertyName("type")]
     public AlertType Type
     {
         get => type ?? throw new InvalidOperationException("lateinit property type has not been initialized");
@@ -57,6 +59,7 @@ public class PopupAlert : IsPartOfGameInfoSerialization
     private AlertType? type;
 
     /// <summary>Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonPropertyName("value")]
     public string Value
     {
         get => value ?? throw new InvalidOperationException("lateinit property value has not been initialized");
@@ -71,6 +74,7 @@ public class PopupAlert : IsPartOfGameInfoSerialization
     }
 
     /// <summary>For json serialization.</summary>
+    [JsonConstructor]
     public PopupAlert()
     {
     }

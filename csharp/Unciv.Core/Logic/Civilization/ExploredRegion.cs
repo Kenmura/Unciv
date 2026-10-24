@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Map;
 using Unciv.Mathematics;
@@ -33,8 +34,12 @@ public class ExploredRegion : IsPartOfGameInfoSerialization
     private Vector2 bottomRightStage = new();
 
     // Top left point of the explored region in hex (long;lat) from the center of the map
+    [JsonPropertyName("topLeft")]
+    [JsonInclude]
     private Vector2 topLeft = new();
     // Bottom right point of the explored region in hex (long;lat) from the center of the map
+    [JsonPropertyName("bottomRight")]
+    [JsonInclude]
     private Vector2 bottomRight = new();
 
     // Getters

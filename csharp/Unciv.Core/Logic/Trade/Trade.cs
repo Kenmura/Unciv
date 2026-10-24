@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Models.Ruleset.Nation;
@@ -10,9 +11,13 @@ namespace Unciv.Logic.Trade;
 
 public class Trade : IsPartOfGameInfoSerialization
 {
-    public TradeOffersList TheirOffers { get; } = new();
+    [JsonPropertyName("theirOffers")]
+    [JsonInclude]
+    public TradeOffersList TheirOffers { get; private set; } = new();
 
-    public TradeOffersList OurOffers { get; } = new();
+    [JsonPropertyName("ourOffers")]
+    [JsonInclude]
+    public TradeOffersList OurOffers { get; private set; } = new();
 
     public Trade Reverse()
     {
@@ -59,6 +64,7 @@ public class Trade : IsPartOfGameInfoSerialization
 public class TradeRequest : IsPartOfGameInfoSerialization
 {
     /// <summary>Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonPropertyName("requestingCiv")]
     public string RequestingCiv
     {
         get => requestingCiv ?? throw new InvalidOperationException("lateinit property requestingCiv has not been initialized");
@@ -67,6 +73,7 @@ public class TradeRequest : IsPartOfGameInfoSerialization
     private string? requestingCiv;
 
     /// <summary>Their offers are what they offer us, and our offers are what they want in return. Kotlin <c>lateinit var</c>.</summary>
+    [JsonPropertyName("trade")]
     public Trade Trade
     {
         get => trade ?? throw new InvalidOperationException("lateinit property trade has not been initialized");
@@ -75,6 +82,7 @@ public class TradeRequest : IsPartOfGameInfoSerialization
     private Trade? trade;
 
     /// <summary>For json serialization.</summary>
+    [JsonConstructor]
     public TradeRequest()
     {
     }

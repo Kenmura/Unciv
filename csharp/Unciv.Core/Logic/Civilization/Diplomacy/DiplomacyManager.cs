@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Trade;
 using Unciv.Models.Ruleset.Tile;
@@ -42,6 +43,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
 
     private Civilization? civInfo;
     /// <summary>Transient. Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonIgnore]
     public Civilization CivInfo
     {
         get => civInfo ?? throw new InvalidOperationException("lateinit property civInfo has not been initialized");
@@ -50,6 +52,8 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
 
     private string? otherCivName;
     /// <summary>Kotlin <c>lateinit var</c> with a private setter: reading before assignment throws.</summary>
+    [JsonPropertyName("otherCivName")]
+    [JsonInclude]
     public string OtherCivName
     {
         get => otherCivName ?? throw new InvalidOperationException("lateinit property otherCivName has not been initialized");
@@ -57,17 +61,22 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     }
 
     private Civilization? otherCivCache;
+    [JsonIgnore]
     public Civilization OtherCiv => otherCivCache ??= (Civilization)CivInfo.GameInfo.GetCivilization(OtherCivName);
 
     private GameContext? context;
+    [JsonIgnore]
     public GameContext State => context ??= GameContext.ForCiv(CivInfo, OtherCiv);
 
     // since this needs to be checked a lot during travel, putting it in a transient is a good performance booster
     /// <summary>Transient. Can civInfo enter otherCivInfo's tiles?</summary>
+    [JsonIgnore]
     public bool HasOpenBorders { get; set; }
 
+    [JsonPropertyName("trades")]
     public List<TradeObject> Trades { get; set; } = [];
 
+    [JsonPropertyName("diplomaticStatus")]
     public DiplomaticStatus DiplomaticStatus { get; set; } = DiplomaticStatus.War;
 
     /// <summary>
@@ -75,6 +84,8 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     /// The JSON serialize/deserialize REFUSES to deserialize hashmap keys as Enums, so I'm forced to use strings instead =(
     /// This is so sad Alexa play Despacito
     /// </summary>
+    [JsonPropertyName("flagsCountdown")]
+    [JsonInclude]
     internal JavaHashMap<string, int> FlagsCountdown { get; set; } = new();
 
     /// <summary>
@@ -82,6 +93,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     /// Baseline is 1 point for each turn of peace - so declaring a war upends 40 years of peace, and e.g. capturing a city can be another 30 or 40.
     /// As for why it's String and not DiplomaticModifier see FlagsCountdown comment
     /// </summary>
+    [JsonPropertyName("diplomaticModifiers")]
     public JavaHashMap<string, float> DiplomaticModifiers { get; set; } = new();
 
     /// <summary>
@@ -90,9 +102,13 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     /// Note that not using the setter skips recalculating the ally and bounds checks,
     /// and skipping the getter bypasses the modified value when at war
     /// </summary>
+    [JsonPropertyName("influence")]
+    [JsonInclude]
     internal float Influence { get; set; }
 
     /// <summary>Total of each turn Science during Research Agreement</summary>
+    [JsonPropertyName("totalOfScienceDuringRA")]
+    [JsonInclude]
     internal int TotalOfScienceDuringRA { get; set; }
 
     /// <summary>
@@ -111,9 +127,13 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     private float SmoothedOpinionEmaPeriod() => EmaPeriod * CivInfo.GameInfo.Speed.Modifier; // setting all this to 1 is useful for debugging
 
     /// <summary>The smoothed opinion perpetually converges with the actual opinion, updated each turn</summary>
+    [JsonPropertyName("smoothedOpinionOfOtherCiv")]
+    [JsonInclude]
     public float SmoothedOpinionOfOtherCiv { get; private set; } = OldSavefileInitialSmoothedOpinion;
 
     /// <summary>Needed as a cache because the opinion value is saved right before the automation logic runs - but we want to use the one from the previous turn</summary>
+    [JsonPropertyName("cachedSmoothedOpinionOfOtherCiv")]
+    [JsonInclude]
     private float cachedSmoothedOpinionOfOtherCiv = OldSavefileInitialSmoothedOpinion;
 
     /// <summary>Smoothing formula = (newValue + oldAverage * (period - 1)) / period</summary>

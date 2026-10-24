@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
@@ -10,11 +11,15 @@ namespace Unciv.Logic.Civilization.Managers;
 // Ported from core/src/com/unciv/logic/civilization/managers/EspionageManager.kt (T057).
 public class EspionageManager : IsPartOfGameInfoSerialization
 {
+    [JsonPropertyName("spyList")]
     public List<Spy> SpyList { get; set; } = [];
-    public LinkedHashSet<string> ErasSpyEarnedFor { get; } = new();
+    [JsonPropertyName("erasSpyEarnedFor")]
+    [JsonInclude]
+    public LinkedHashSet<string> ErasSpyEarnedFor { get; private set; } = new();
 
     private Civilization? civInfo;
     /// <summary>Transient. Kotlin <c>lateinit var</c>: reading before assignment throws.</summary>
+    [JsonIgnore]
     public Civilization CivInfo
     {
         get => civInfo ?? throw new InvalidOperationException("lateinit property civInfo has not been initialized");
@@ -25,6 +30,7 @@ public class EspionageManager : IsPartOfGameInfoSerialization
     /// Transient. Part of the nextTurnAction of MoveSpies.
     /// We need to store if the player has clicked the button already
     /// </summary>
+    [JsonIgnore]
     public bool DismissedShouldMoveSpies { get; set; }
 
     public EspionageManager Clone()

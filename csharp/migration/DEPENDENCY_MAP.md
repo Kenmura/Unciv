@@ -217,7 +217,7 @@ flowchart TD
   class T128 ready
   class T129 ready
   class T139 ondeck
-  class T140 prog
+  class T140 review
   class T141 done
   class T142 prog
   class T143 ready
@@ -268,6 +268,6 @@ flowchart TD
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093, T089, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T140 | In-Progress [Claude] | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
+| T140 | Needs-Review [Claude] | T100 | 0 | Civilization and manager JSON wiring (full GameInfo save/load round trip) |
 | T142 | In-Progress [Claude] | T072 | 0 | Deferred TestGame fixtures: civilization directory and GameSerializationTests |
 | T148 | Available (waiting on T139) | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |

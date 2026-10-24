@@ -32,10 +32,13 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
     }
 
     /// <summary>Kotlin <c>var population = 1; private set</c>. Internal setter: engine tests set it without running addPopulation.</summary>
+    [JsonPropertyName("population")]
     [JsonInclude]
     public int Population { get; internal set; } = 1;
+    [JsonPropertyName("foodStored")]
     public int FoodStored { get; set; }
 
+    [JsonPropertyName("specialistAllocations")]
     [JsonInclude]
     public Counter<string> SpecialistAllocations { get; private set; } = new();
 

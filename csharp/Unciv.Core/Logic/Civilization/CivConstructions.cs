@@ -19,7 +19,7 @@ namespace Unciv.Logic.Civilization;
 //   iteration order of getFreeBuildingNames' result is insertion order, not java.util.HashSet order; nothing in the rules iterates it.
 // - The Kotlin lazy `sequence { ... }` of free building names is a C# iterator; `hasFreeBuildingByName` stops at the first match like the
 //   Kotlin sequence does.
-// - @Readonly purity annotations are dropped. No serialization attributes yet: GameInfo serialization (T046) owns the field mapping.
+// - @Readonly purity annotations are dropped. The Kotlin field names are the JSON names (T140).
 
 public class CivConstructions : IsPartOfGameInfoSerialization
 {
@@ -34,9 +34,13 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     }
 
     /// <summary>Maps construction names to the amount of times bought</summary>
+    [JsonPropertyName("boughtItemsWithIncreasingPrice")]
+    [JsonInclude]
     public Counter<string> BoughtItemsWithIncreasingPrice { get; private set; } = new();
 
     /// <summary>Maps construction names to the amount of times built</summary>
+    [JsonPropertyName("builtItemsWithIncreasingCost")]
+    [JsonInclude]
     public Counter<string> BuiltItemsWithIncreasingCost { get; private set; } = new();
 
     /// <summary>
@@ -45,6 +49,8 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     /// Sources: <see cref="UniqueType.FreeStatBuildings"/> **and** <see cref="UniqueType.FreeSpecificBuildings"/>
     /// This is persisted and _never_ cleared or elements removed (per civ and game).
     /// </summary>
+    [JsonPropertyName("freeBuildings")]
+    [JsonInclude]
     private readonly Dictionary<string, HashSet<string>> freeBuildings = [];
 
     /// <summary>
@@ -52,6 +58,8 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     /// Source: <see cref="UniqueType.FreeStatBuildings"/>
     /// This is persisted and _never_ cleared or elements removed (per civ and game).
     /// </summary>
+    [JsonPropertyName("freeStatBuildingsProvided")]
+    [JsonInclude]
     private readonly Dictionary<string, HashSet<string>> freeStatBuildingsProvided = [];
 
     /// <summary>
@@ -60,6 +68,8 @@ public class CivConstructions : IsPartOfGameInfoSerialization
     /// Source: <see cref="UniqueType.FreeSpecificBuildings"/>
     /// This is persisted and _never_ cleared or elements removed (per civ and game).
     /// </summary>
+    [JsonPropertyName("freeSpecificBuildingsProvided")]
+    [JsonInclude]
     private readonly Dictionary<string, HashSet<string>> freeSpecificBuildingsProvided = [];
 
     public CivConstructions Clone()
