@@ -415,7 +415,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (Antigravity): Pass. Verified `LocaleCode`, `BaseRuleset`, `Player`, `PlayerType`, `GameParameters`, `ModCategory`, `Constants`, `LinkedHashSet`, and `MetadataTests` against Kotlin sources: all 54 `LocaleCode` entries and OpenJDK 17+ `in` -> `id` fastlane folder mapping, `GameParameters` JSON field order and `ShowCivilizationStatsRaw` vs `ShowCivilizationStats` setter/fallback semantics, `Clone()` godMode reset, `ToString()` 6-mod limit, `ModCategory` topic-only equality/JVM hash, and `LinkedHashSet` insertion order + set equality. Re-ran Gate (`~MetadataTests`, 15/15 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 436/436 passed).
 
 ### T045 GameSetupInfo
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: T021, T022
 - Source: core/src/com/unciv/models/metadata/GameSetupInfo.kt
 - Fixtures: none - generate golden values by running the Kotlin class
@@ -435,6 +435,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     2. The note for the `GameInfo` constructor is prose ("Planned: GameInfo"); the protocol wants a marker. I created **T046** (GameInfo core) as the target: write `// TODO(T046): constructor(GameInfo) = this(gameInfo.gameParameters.clone(), gameInfo.tileMap.mapParameters.clone())`.
     - Optional, no change required: the saved-settings branch of `fromSettings` (`GameSetupInfo(lastGameSetup).apply { mapParameters.reseed() }`) is a client/settings concern; if a headless caller needs it, it is `new GameSetupInfo(last)` followed by `MapParameters.Reseed(...)` with an explicit seed source, never the clock.
   - Rework notes (Claude): the copy constructor (and `Clone()`) no longer copies `MapFile` (verified upstream behaviour on the JVM: null), test now asserts null; the GameInfo constructor note became `TODO(T046)`. Gate 8/8, Standard checks pass (build clean, format clean, full test green).
+  - Review 2 (Antigravity): Pass. Verified rework in `GameSetupInfo.cs` and `GameSetupInfoTests.cs`: cloning constructor and `Clone()` leave transient `MapFile` null (verified by `CopyConstructor_PerformsDeepClone`), and `TODO(T046)` marker is in place for the `GameInfo` constructor. Re-ran Gate (`~GameSetupInfo`, 8/8 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 653/653 passed).
 
 ### T047 Log facade
 - State: Needs-Review [Claude]
