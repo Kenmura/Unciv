@@ -312,7 +312,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   Review notes (adversarial review PASS, non-blocking): startingLocationsByNation outer map is insertion-ordered Dictionary while Kotlin HashMap<String> iterates in string-hash order (GameStarter reads keys/values): use JavaHashMap in the GameStarter ticket; placeUnitNearTile/stripPlayer untested until T072; T040 may replace the flood-fill with BFS.
 
 ### T040 Pathfinding: BFS, AStar, MapPathing, CarrierSlotMatcher, MapVisualization
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T039
 - Source: core/src/com/unciv/logic/map/BFS.kt, AStar.kt, MapPathing.kt, CarrierSlotMatcher.kt, MapVisualization.kt
 - Fixtures: tests/src/com/unciv/logic/map/PathfindingTests.kt, tests/src/com/unciv/logic/map/pathingmap/*
