@@ -1204,13 +1204,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     - ~215 sites migrated mechanically: 'X!' -> 'X.NotNull()', 'X!.Value' (nullable struct) -> 'X.NotNull()' (exception type is now NRE not InvalidOperationException). Sites that were framework annotations (GetString, Activator, Deserialize) also became NotNull (fail early). Kept '!' with JUSTIFY: lateinit fields (null!), default! on unconstrained generics, out-value of TryGetValue, KotlinLazy initializer.
 
 ### T120 Policy: size ratchet - maximum file length and method length with a shrink-only baseline
-- State: Needs-Review [Claude]
+- State: In-Review [Antigravity]
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Policy/SizeRatchetTests.cs, baseline file (allowlist of current offenders with their current line counts), tests
 - Gate: dotnet test --filter FullyQualifiedName~SizeRatchetTests
-- Claimed: 2026-10-24T12:12Z
+- Claimed: 2026-10-24T12:16:10Z
 - Notes:
   - POLICY TICKET: this ticket may edit BannedSymbols.txt, .editorconfig, Directory.Build.props and SourcePolicyTests (PROTOCOL: only policy tickets may). Found by a codebase pattern scan (numbers approximate, regex based). Adding the rule must leave the build green: fix or allowlist (with // JUSTIFY: T### comment) every existing violation in the same ticket. Many other tickets run in parallel, so rebase often, keep both sides, and keep the diff to the rule plus its violations.
     Why: files over 1000 lines: UniqueTypeData.cs 2592 (a data table), Tile.cs 1496, Civilization.cs 1443, UniqueParameterType.cs 1286, TileMap.cs 1156, plus City.cs 945 and others near it. Methods over 100 lines: Conditionals.ConditionalApplies 305, Ruleset.Load 185, MapRegions.AssignRegions 168, JavaDecimalFormat.Parse 119, TileImprovementFunctions.CanImprovementBeBuiltHere 102. Many mirror giant Kotlin functions, so a hard limit would fight faithful ports: use a RATCHET. Test fails if (a) a file exceeds 1500 lines or a method exceeds 120 lines and is not in the baseline, or (b) a baselined file/method GROWS beyond its recorded size (the baseline may only shrink; the test rewrites nothing, humans lower the numbers). Method length via a Roslyn syntax scan (Microsoft.CodeAnalysis.CSharp as a test-only package; Directory.Packages.props is editable in this policy ticket) or a documented brace-matching scan. Do not refactor existing offenders here; note candidates for splitting.
