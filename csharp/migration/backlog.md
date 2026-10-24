@@ -1137,13 +1137,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Not compared: mapParameters output (MapParameters' own wiring writes defaults that Kotlin omits; only read/values are asserted).
 
 ### T110 Tile unit JSON wiring (militaryUnit, civilianUnit, airUnits)
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T107, T065
 - Source: core/src/com/unciv/logic/map/tile/Tile.kt (serialized unit fields)
 - Fixtures: none - generate golden JSON by running the Kotlin Json on a map with units
 - Deliverables: csharp/Unciv.Core/Logic/Map/Tile/Tile.cs (TileJsonConverter), tests
 - Gate: dotnet test --filter FullyQualifiedName~TileUnitJson
-- Claimed:
+- Claimed: 2026-10-24T16:46Z
 - Notes: Found by T107: Tile's JSON converter throws NotSupportedException when a tile holds units (MapUnit not ported, units typed by the IGameContextUnit seam) and when the JSON has militaryUnit/civilianUnit/airUnits. After T065, retype and wire them (MapUnit JSON too), replace the throws, and add round-trip tests with units.
 
 ### T108 Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText
