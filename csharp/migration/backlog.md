@@ -155,14 +155,18 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Notes: Later tickets extend it: run N turns from a seed and compare hashes across runs (and against Kotlin-generated hashes where feasible).
 
 ### T012 Command layer design
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Claimed: 2026-10-24T01:07:54Z
 - Depends: none
 - Source: design ticket; study how UI actions mutate `GameInfo` (e.g. `core/src/com/unciv/logic/automation` and `UnitActions`, `CityConstructions`)
 - Fixtures: none
 - Deliverables: `csharp/migration/COMMANDS.md` proposing a serializable command/event model (player action → validate → apply → event), plus a minimal `ICommand` skeleton in Unciv.Core with tests
 - Gate: `dotnet test --filter FullyQualifiedName~CommandTests`
-- Notes: Target is an authoritative-server model: clients send commands, server validates/applies, broadcasts commands or diffs. Must not depend on Unciv's multiplayer code. Reviewer must check it keeps lockstep as a possible future option (pure, deterministic apply).
+- Notes: Target is an authoritative-server model: clients send commands, server validates/apply, broadcasts commands or diffs. Must not depend on Unciv's multiplayer code. Reviewer must check it keeps lockstep as a possible future option (pure, deterministic apply).
+  - Implementer notes (Antigravity): Documented complete command/event model, authoritative-server data flow, lockstep/replay capabilities, and core command/event catalog in `csharp/migration/COMMANDS.md`.
+  - Implemented `ICommand`, `CommandResult`, `IGameEvent`, `IGameContext`, `CommandProcessor`, sample commands (`MoveUnitCommand`, `SetCityConstructionCommand`, `EndTurnCommand`), and events (`UnitMovedEvent`, `CityConstructionSetEvent`, `TurnEndedEvent`) under `Unciv.Commands`.
+  - Replay determinism verified across parallel command processor executions.
+  - Ran Gate (6 passed) and full `dotnet test` (153 passed).
 
 ### T013 Style & analyzer baseline
 - State: Needs-Review [Claude]
