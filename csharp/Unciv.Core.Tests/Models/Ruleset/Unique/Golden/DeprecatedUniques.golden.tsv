@@ -1,0 +1,600 @@
+FoodConsumptionBySpecialists		[10]% Food consumption by specialists [20]	[10]% Food consumption by [Specialists] [20]
+FoodConsumptionBySpecialists	-	[-10]% Food consumption by specialists [-20]	[-10]% Food consumption by [Specialists] [-20]
+FoodConsumptionBySpecialists	+	[+10]% Food consumption by specialists [+20]	[10]% Food consumption by [Specialists] [20]
+TripleGoldFromEncampmentsAndCities		Receive triple Gold from Barbarian encampments and pillaging Cities	Receive [+200]% Gold from Barbarian encampments and pillaging Cities
+TripleGoldFromEncampmentsAndCities	-	Receive triple Gold from Barbarian encampments and pillaging Cities	Receive [+200]% Gold from Barbarian encampments and pillaging Cities
+TripleGoldFromEncampmentsAndCities	+	Receive triple Gold from Barbarian encampments and pillaging Cities	Receive [+200]% Gold from Barbarian encampments and pillaging Cities
+DoublesGoldFromCapturingCity		Doubles Gold given to enemy if city is captured	[+100]% Gold given to enemy if city is captured <in this city>
+DoublesGoldFromCapturingCity	-	Doubles Gold given to enemy if city is captured	[+100]% Gold given to enemy if city is captured <in this city>
+DoublesGoldFromCapturingCity	+	Doubles Gold given to enemy if city is captured	[+100]% Gold given to enemy if city is captured <in this city>
+TriggerUponDeclaringWar		upon declaring war with a major Civilization	upon declaring war on [Major] Civilizations
+TriggerUponDeclaringWar	-	upon declaring war with a major Civilization	upon declaring war on [Major] Civilizations
+TriggerUponDeclaringWar	+	upon declaring war with a major Civilization	upon declaring war on [Major] Civilizations
+MayParadropOld		May Paradrop up to [10] tiles from inside friendly territory	May Paradrop to [Land] tiles up to [10] tiles away <in [{Friendly} {Land}] tiles>
+MayParadropOld	-	May Paradrop up to [-10] tiles from inside friendly territory	May Paradrop to [Land] tiles up to [-10] tiles away <in [{Friendly} {Land}] tiles>
+MayParadropOld	+	May Paradrop up to [+10] tiles from inside friendly territory	May Paradrop to [Land] tiles up to [10] tiles away <in [{Friendly} {Land}] tiles>
+StrategicResourcesIncrease		Quantity of strategic resources produced by the empire +[10]%	[+10]% [Strategic] resource production
+StrategicResourcesIncrease	-	Quantity of strategic resources produced by the empire +[-10]%	[-10]% [Strategic] resource production
+StrategicResourcesIncrease	+	Quantity of strategic resources produced by the empire +[+10]%	[+10]% [Strategic] resource production
+DoubleResourceProduced		Double quantity of [10] produced	[+100]% [10] resource production
+DoubleResourceProduced	-	Double quantity of [-10] produced	[+100]% [-10] resource production
+DoubleResourceProduced	+	Double quantity of [+10] produced	[+100]% [10] resource production
+BuildingMaintenanceOld		[10]% maintenance cost for buildings [20]	[10]% maintenance cost for [all] buildings [20]
+BuildingMaintenanceOld	-	[-10]% maintenance cost for buildings [-20]	[-10]% maintenance cost for [all] buildings [-20]
+BuildingMaintenanceOld	+	[+10]% maintenance cost for buildings [+20]	[10]% maintenance cost for [all] buildings [20]
+RemoveAnnexUnhappiness		Remove extra unhappiness from annexed cities	Removes extra unhappiness from annexed cities
+RemoveAnnexUnhappiness	-	Remove extra unhappiness from annexed cities	Removes extra unhappiness from annexed cities
+RemoveAnnexUnhappiness	+	Remove extra unhappiness from annexed cities	Removes extra unhappiness from annexed cities
+StrengthWhenStacked		[10]% Strength when stacked with [20]	[10]% Strength <when stacked with a [20] unit>
+StrengthWhenStacked	-	[-10]% Strength when stacked with [-20]	[-10]% Strength <when stacked with a [-20] unit>
+StrengthWhenStacked	+	[+10]% Strength when stacked with [+20]	[10]% Strength <when stacked with a [20] unit>
+ConditionalBetweenHappiness		when between [10] and [20] Happiness	when between [10] and [20] [Happiness]
+ConditionalBetweenHappiness	-	when between [-10] and [-20] Happiness	when between [-10] and [-20] [Happiness]
+ConditionalBetweenHappiness	+	when between [+10] and [+20] Happiness	when between [10] and [20] [Happiness]
+ConditionalAboveHappiness		when above [10] Happiness	when above [10] [Happiness]
+ConditionalAboveHappiness	-	when above [-10] Happiness	when above [-10] [Happiness]
+ConditionalAboveHappiness	+	when above [+10] Happiness	when above [10] [Happiness]
+ConditionalBelowHappiness		when below [10] Happiness	when below [10] [Happiness]
+ConditionalBelowHappiness	-	when below [-10] Happiness	when below [-10] [Happiness]
+ConditionalBelowHappiness	+	when below [+10] Happiness	when below [10] [Happiness]
+HiddenBeforeAmountPolicies		Hidden until [10] social policy branches have been completed	Unavailable <when number of [Completed Policy branches] is less than [10]>
+HiddenBeforeAmountPolicies	-	Hidden until [-10] social policy branches have been completed	Unavailable <when number of [Completed Policy branches] is less than [-10]>
+HiddenBeforeAmountPolicies	+	Hidden until [+10] social policy branches have been completed	Unavailable <when number of [Completed Policy branches] is less than [10]>
+UnitStartingExperienceOld		New [10] units start with [20] Experience [30]	New [10] units start with [20] XP [30]
+UnitStartingExperienceOld	-	New [-10] units start with [-20] Experience [-30]	New [-10] units start with [-20] XP [-30]
+UnitStartingExperienceOld	+	New [+10] units start with [+20] Experience [+30]	New [10] units start with [20] XP [30]
+CityStateCanBeBoughtForGoldOld		Can spend Gold to annex or puppet a City-State that has been your ally for [10] turns.	Can spend Gold to annex or puppet a City-State that has been your Ally for [10] turns
+CityStateCanBeBoughtForGoldOld	-	Can spend Gold to annex or puppet a City-State that has been your ally for [-10] turns.	Can spend Gold to annex or puppet a City-State that has been your Ally for [-10] turns
+CityStateCanBeBoughtForGoldOld	+	Can spend Gold to annex or puppet a City-State that has been your ally for [+10] turns.	Can spend Gold to annex or puppet a City-State that has been your Ally for [10] turns
+DefenceBonusWhenEmbarked		Defense bonus when embarked	[+100]% Strength <when defending> <when [Embarked]>
+DefenceBonusWhenEmbarked	-	Defense bonus when embarked	[+100]% Strength <when defending> <when [Embarked]>
+DefenceBonusWhenEmbarked	+	Defense bonus when embarked	[+100]% Strength <when defending> <when [Embarked]>
+HiddenWithoutVictoryType		Hidden when [10] Victory is disabled	Only available <when [10] Victory is enabled>
+HiddenWithoutVictoryType	-	Hidden when [-10] Victory is disabled	Only available <when [-10] Victory is enabled>
+HiddenWithoutVictoryType	+	Hidden when [+10] Victory is disabled	Only available <when [10] Victory is enabled>
+HiddenWithoutReligion		Hidden when religion is disabled	Only available <when religion is enabled>
+HiddenWithoutReligion	-	Hidden when religion is disabled	Only available <when religion is enabled>
+HiddenWithoutReligion	+	Hidden when religion is disabled	Only available <when religion is enabled>
+HiddenWithoutEspionage		Hidden when espionage is disabled	Only available <when espionage is enabled>
+HiddenWithoutEspionage	-	Hidden when espionage is disabled	Only available <when espionage is enabled>
+HiddenWithoutEspionage	+	Hidden when espionage is disabled	Only available <when espionage is enabled>
+ConditionalCivFilterOld		for [10]	for [10] Civilizations
+ConditionalCivFilterOld	-	for [-10]	for [-10] Civilizations
+ConditionalCivFilterOld	+	for [+10]	for [10] Civilizations
+OneTimeUnitGainMovementOld		This Unit gains [10] movement	[This Unit] gains [10] movement
+OneTimeUnitGainMovementOld	-	This Unit gains [-10] movement	[This Unit] gains [-10] movement
+OneTimeUnitGainMovementOld	+	This Unit gains [+10] movement	[This Unit] gains [10] movement
+OneTimeUnitRemovePromotionOld		This Unit loses the [10] promotion	[This Unit] loses the [10] promotion
+OneTimeUnitRemovePromotionOld	-	This Unit loses the [-10] promotion	[This Unit] loses the [-10] promotion
+OneTimeUnitRemovePromotionOld	+	This Unit loses the [+10] promotion	[This Unit] loses the [10] promotion
+OneTimeUnitGainPromotionOld		This Unit gains the [10] promotion	[This Unit] gains the [10] promotion
+OneTimeUnitGainPromotionOld	-	This Unit gains the [-10] promotion	[This Unit] gains the [-10] promotion
+OneTimeUnitGainPromotionOld	+	This Unit gains the [+10] promotion	[This Unit] gains the [10] promotion
+OneTimeUnitSpecialUpgradeOld		This Unit upgrades for free including special upgrades	[This Unit] upgrades for free including special upgrades
+OneTimeUnitSpecialUpgradeOld	-	This Unit upgrades for free including special upgrades	[This Unit] upgrades for free including special upgrades
+OneTimeUnitSpecialUpgradeOld	+	This Unit upgrades for free including special upgrades	[This Unit] upgrades for free including special upgrades
+OneTimeUnitHealOld		Heal this unit by [10] HP	[This Unit] heals [10] HP
+OneTimeUnitHealOld	-	Heal this unit by [-10] HP	[This Unit] heals [-10] HP
+OneTimeUnitHealOld	+	Heal this unit by [+10] HP	[This Unit] heals [10] HP
+OneTimeUnitDamageOld		This Unit takes [10] damage	[This Unit] takes [10] damage
+OneTimeUnitDamageOld	-	This Unit takes [-10] damage	[This Unit] takes [-10] damage
+OneTimeUnitDamageOld	+	This Unit takes [+10] damage	[This Unit] takes [10] damage
+OneTimeUnitGainXPOld		This Unit gains [10] XP	[This Unit] gains [10] XP
+OneTimeUnitGainXPOld	-	This Unit gains [-10] XP	[This Unit] gains [-10] XP
+OneTimeUnitGainXPOld	+	This Unit gains [+10] XP	[This Unit] gains [10] XP
+OneTimeUnitUpgradeOld		This Unit upgrades for free	[This Unit] upgrades for free
+OneTimeUnitUpgradeOld	-	This Unit upgrades for free	[This Unit] upgrades for free
+OneTimeUnitUpgradeOld	+	This Unit upgrades for free	[This Unit] upgrades for free
+OneTimeUnitLoseMovementOld		This Unit loses [10] movement	[This Unit] loses [10] movement
+OneTimeUnitLoseMovementOld	-	This Unit loses [-10] movement	[This Unit] loses [-10] movement
+OneTimeUnitLoseMovementOld	+	This Unit loses [+10] movement	[This Unit] loses [10] movement
+NaturalWonderConvertNeighborsExcept		Neighboring tiles except [10] will convert to [20]	Neighboring tiles will convert to [20] <in tiles without [10]>
+NaturalWonderConvertNeighborsExcept	-	Neighboring tiles except [-10] will convert to [-20]	Neighboring tiles will convert to [-20] <in tiles without [-10]>
+NaturalWonderConvertNeighborsExcept	+	Neighboring tiles except [+10] will convert to [+20]	Neighboring tiles will convert to [20] <in tiles without [10]>
+ConditionalAdjacentToOld		in tiles adjacent to [10]	in tiles adjacent to [10] tiles
+ConditionalAdjacentToOld	-	in tiles adjacent to [-10]	in tiles adjacent to [-10] tiles
+ConditionalAdjacentToOld	+	in tiles adjacent to [+10]	in tiles adjacent to [10] tiles
+ConditionalNotAdjacentToOld		in tiles not adjacent to [10]	in tiles not adjacent to [10] tiles
+ConditionalNotAdjacentToOld	-	in tiles not adjacent to [-10]	in tiles not adjacent to [-10] tiles
+ConditionalNotAdjacentToOld	+	in tiles not adjacent to [+10]	in tiles not adjacent to [10] tiles
+TakesOverAdjacentTiles		Constructing it will take over the tiles around it and assign them to your closest city	Gain control over [all] tiles in a [1]-tile radius
+TakesOverAdjacentTiles	-	Constructing it will take over the tiles around it and assign them to your closest city	Gain control over [all] tiles in a [1]-tile radius
+TakesOverAdjacentTiles	+	Constructing it will take over the tiles around it and assign them to your closest city	Gain control over [all] tiles in a [1]-tile radius
+NoDamagePenalty		Damage is ignored when determining unit Strength	No damage penalty for wounded units
+NoDamagePenalty	-	Damage is ignored when determining unit Strength	No damage penalty for wounded units
+NoDamagePenalty	+	Damage is ignored when determining unit Strength	No damage penalty for wounded units
+MayWithdraw		May withdraw before melee ([10]%)	Withdraws before melee combat <with [10]% chance>
+MayWithdraw	-	May withdraw before melee ([-10]%)	Withdraws before melee combat <with [-10]% chance>
+MayWithdraw	+	May withdraw before melee ([+10]%)	Withdraws before melee combat <with [10]% chance>
+ConditionalCountableGreaterThan		when number of [10] is greater than [20]	when number of [10] is more than [20]
+ConditionalCountableGreaterThan	-	when number of [-10] is greater than [-20]	when number of [-10] is more than [-20]
+ConditionalCountableGreaterThan	+	when number of [+10] is greater than [+20]	when number of [10] is more than [20]
+ConditionalBeforeTurnsOld		before [10] turns	before turn number [10]
+ConditionalBeforeTurnsOld	-	before [-10] turns	before turn number [-10]
+ConditionalBeforeTurnsOld	+	before [+10] turns	before turn number [10]
+ConditionalAfterTurnsOld		after [10] turns	after turn number [10]
+ConditionalAfterTurnsOld	-	after [-10] turns	after turn number [-10]
+ConditionalAfterTurnsOld	+	after [+10] turns	after turn number [10]
+ProvidesGoldWheneverGreatPersonExpended		Provides a sum of gold each time you spend a Great Person	Gain [100] [Gold] <upon expending a [Great Person] unit> <(modified by game speed)>
+ProvidesGoldWheneverGreatPersonExpended	-	Provides a sum of gold each time you spend a Great Person	Gain [100] [Gold] <upon expending a [Great Person] unit> <(modified by game speed)>
+ProvidesGoldWheneverGreatPersonExpended	+	Provides a sum of gold each time you spend a Great Person	Gain [100] [Gold] <upon expending a [Great Person] unit> <(modified by game speed)>
+ProvidesStatsWheneverGreatPersonExpended		[10] whenever a Great Person is expended	Gain [amount] [stat] <upon expending a [Great Person] unit> <(modified by game speed)>
+ProvidesStatsWheneverGreatPersonExpended	-	[-10] whenever a Great Person is expended	Gain [amount] [stat] <upon expending a [Great Person] unit> <(modified by game speed)>
+ProvidesStatsWheneverGreatPersonExpended	+	[+10] whenever a Great Person is expended	Gain [amount] [stat] <upon expending a [Great Person] unit> <(modified by game speed)>
+OneTimeGainStatSpeed		Gain [10] [20] (modified by game speed)	Gain [10] [20] <(modified by game speed)>
+OneTimeGainStatSpeed	-	Gain [-10] [-20] (modified by game speed)	Gain [-10] [-20] <(modified by game speed)>
+OneTimeGainStatSpeed	+	Gain [+10] [+20] (modified by game speed)	Gain [10] [20] <(modified by game speed)>
+ConditionalWhenAboveAmountStatResourceSpeed		when above [10] [20] (modified by game speed)	when above [10] [20] <(modified by game speed)>
+ConditionalWhenAboveAmountStatResourceSpeed	-	when above [-10] [-20] (modified by game speed)	when above [-10] [-20] <(modified by game speed)>
+ConditionalWhenAboveAmountStatResourceSpeed	+	when above [+10] [+20] (modified by game speed)	when above [10] [20] <(modified by game speed)>
+ConditionalWhenBelowAmountStatResourceSpeed		when below [10] [20] (modified by game speed)	when below [10] [20] <(modified by game speed)>
+ConditionalWhenBelowAmountStatResourceSpeed	-	when below [-10] [-20] (modified by game speed)	when below [-10] [-20] <(modified by game speed)>
+ConditionalWhenBelowAmountStatResourceSpeed	+	when below [+10] [+20] (modified by game speed)	when below [10] [20] <(modified by game speed)>
+ConditionalWhenBetweenStatResourceSpeed		when between [10] and [20] [30] (modified by game speed)	when between [10] and [20] [30] <(modified by game speed)>
+ConditionalWhenBetweenStatResourceSpeed	-	when between [-10] and [-20] [-30] (modified by game speed)	when between [-10] and [-20] [-30] <(modified by game speed)>
+ConditionalWhenBetweenStatResourceSpeed	+	when between [+10] and [+20] [+30] (modified by game speed)	when between [10] and [20] [30] <(modified by game speed)>
+StatsWhenAdoptingReligionSpeed		[10] when a city adopts this religion for the first time (modified by game speed)	[10] when a city adopts this religion for the first time <(modified by game speed)>
+StatsWhenAdoptingReligionSpeed	-	[-10] when a city adopts this religion for the first time (modified by game speed)	[-10] when a city adopts this religion for the first time <(modified by game speed)>
+StatsWhenAdoptingReligionSpeed	+	[+10] when a city adopts this religion for the first time (modified by game speed)	[10] when a city adopts this religion for the first time <(modified by game speed)>
+GrantsGoldToFirstToDiscover		Grants 500 Gold to the first civilization to discover it	Grants [+500 Gold] to the first civilization to discover it
+GrantsGoldToFirstToDiscover	-	Grants 500 Gold to the first civilization to discover it	Grants [+500 Gold] to the first civilization to discover it
+GrantsGoldToFirstToDiscover	+	Grants 500 Gold to the first civilization to discover it	Grants [+500 Gold] to the first civilization to discover it
+GoldWhenDiscoveringNaturalWonder		100 Gold for discovering a Natural Wonder (bonus enhanced to 500 Gold if first to discover it)	[+100 Gold] for discovering a Natural Wonder (bonus enhanced to [+500 Gold] if first to discover it)
+GoldWhenDiscoveringNaturalWonder	-	100 Gold for discovering a Natural Wonder (bonus enhanced to 500 Gold if first to discover it)	[+100 Gold] for discovering a Natural Wonder (bonus enhanced to [+500 Gold] if first to discover it)
+GoldWhenDiscoveringNaturalWonder	+	100 Gold for discovering a Natural Wonder (bonus enhanced to 500 Gold if first to discover it)	[+100 Gold] for discovering a Natural Wonder (bonus enhanced to [+500 Gold] if first to discover it)
+RequiresBuildingInAllCities		Requires a [10] in all cities	Only available <if [10] is constructed in all [non-[Puppeted]] cities>
+RequiresBuildingInAllCities	-	Requires a [-10] in all cities	Only available <if [-10] is constructed in all [non-[Puppeted]] cities>
+RequiresBuildingInAllCities	+	Requires a [+10] in all cities	Only available <if [10] is constructed in all [non-[Puppeted]] cities>
+RequiresBuildingInSomeCities		Requires a [10] in at least [20] cities	Only available <if [10] is constructed in at least [20] of [All] cities>
+RequiresBuildingInSomeCities	-	Requires a [-10] in at least [-20] cities	Only available <if [-10] is constructed in at least [-20] of [All] cities>
+RequiresBuildingInSomeCities	+	Requires a [+10] in at least [+20] cities	Only available <if [10] is constructed in at least [20] of [All] cities>
+CanOnlyBeBuiltInCertainCities		Can only be built [10]	Can only be built <in [10] cities>
+CanOnlyBeBuiltInCertainCities	-	Can only be built [-10]	Can only be built <in [-10] cities>
+CanOnlyBeBuiltInCertainCities	+	Can only be built [+10]	Can only be built <in [10] cities>
+TriggerUponResearchOld		upon discovering [10]	upon discovering [10] technology
+TriggerUponResearchOld	-	upon discovering [-10]	upon discovering [-10] technology
+TriggerUponResearchOld	+	upon discovering [+10]	upon discovering [10] technology
+StrengthBonusVsCityStates		+30% Strength when fighting City-State units and cities	[+30]% Strength <vs [City-States]>
+StrengthBonusVsCityStates	-	+30% Strength when fighting City-State units and cities	[+30]% Strength <vs [City-States]>
+StrengthBonusVsCityStates	+	+30% Strength when fighting City-State units and cities	[+30]% Strength <vs [City-States]>
+ConditionalNeighborTilesAnd		with [10] to [20] neighboring [30] [40] tiles	with [10] to [20] neighboring [{tileFilter} {tileFilter}] tiles
+ConditionalNeighborTilesAnd	-	with [-10] to [-20] neighboring [-30] [-40] tiles	with [-10] to [-20] neighboring [{tileFilter} {tileFilter}] tiles
+ConditionalNeighborTilesAnd	+	with [+10] to [+20] neighboring [+30] [+40] tiles	with [10] to [20] neighboring [{tileFilter} {tileFilter}] tiles
+ConditionalInTilesAnd		in [10] [20] tiles	in [{tileFilter} {tileFilter}] tiles
+ConditionalInTilesAnd	-	in [-10] [-20] tiles	in [{tileFilter} {tileFilter}] tiles
+ConditionalInTilesAnd	+	in [+10] [+20] tiles	in [{tileFilter} {tileFilter}] tiles
+HiddenAfterGreatProphet		Hidden after generating a Great Prophet	Unavailable <after generating a Great Prophet>
+HiddenAfterGreatProphet	-	Hidden after generating a Great Prophet	Unavailable <after generating a Great Prophet>
+HiddenAfterGreatProphet	+	Hidden after generating a Great Prophet	Unavailable <after generating a Great Prophet>
+TileImprovementTime		[10]% tile improvement construction time	[10]% construction time for [All] improvements
+TileImprovementTime	-	[-10]% tile improvement construction time	[-10]% construction time for [All] improvements
+TileImprovementTime	+	[+10]% tile improvement construction time	[10]% construction time for [All] improvements
+UnitStartingActions		[10] units built [20] can [30] [40] extra times	All newly-trained [10] units [20] receive the [Devout] promotion
+UnitStartingActions	-	[-10] units built [-20] can [-30] [-40] extra times	All newly-trained [-10] units [-20] receive the [Devout] promotion
+UnitStartingActions	+	[+10] units built [+20] can [+30] [+40] extra times	All newly-trained [10] units [20] receive the [Devout] promotion
+ReceiveFreeUnitWhenDiscoveringTech		Receive free [10] when you discover [20]	Free [10] appears <upon discovering [20]>
+ReceiveFreeUnitWhenDiscoveringTech	-	Receive free [-10] when you discover [-20]	Free [-10] appears <upon discovering [-20]>
+ReceiveFreeUnitWhenDiscoveringTech	+	Receive free [+10] when you discover [+20]	Free [10] appears <upon discovering [20]>
+UnhappinessFromCitiesDoubled		Unhappiness from number of Cities doubled	[+100]% unhappiness from the number of cities
+UnhappinessFromCitiesDoubled	-	Unhappiness from number of Cities doubled	[+100]% unhappiness from the number of cities
+UnhappinessFromCitiesDoubled	+	Unhappiness from number of Cities doubled	[+100]% unhappiness from the number of cities
+StartGoldenAge		Can start an [10]-turn golden age	Empire enters a [10]-turn Golden Age <by consuming this unit>
+StartGoldenAge	-	Can start an [-10]-turn golden age	Empire enters a [-10]-turn Golden Age <by consuming this unit>
+StartGoldenAge	+	Can start an [+10]-turn golden age	Empire enters a [10]-turn Golden Age <by consuming this unit>
+ConstructImprovementConsumingUnit		Can construct [10]	Can instantly construct a [10] improvement <by consuming this unit>
+ConstructImprovementConsumingUnit	-	Can construct [-10]	Can instantly construct a [-10] improvement <by consuming this unit>
+ConstructImprovementConsumingUnit	+	Can construct [+10]	Can instantly construct a [10] improvement <by consuming this unit>
+OldImprovementMaintenance		Costs [10] gold per turn when in your territory	Costs [10] [stats] per turn when in your territory
+OldImprovementMaintenance	-	Costs [-10] gold per turn when in your territory	Costs [-10] [stats] per turn when in your territory
+OldImprovementMaintenance	+	Costs [+10] gold per turn when in your territory	Costs [10] [stats] per turn when in your territory
+HappinessPer2Policies		Provides 1 happiness per 2 additional social policies adopted	[+1 Happiness] per [2] social policies adopted
+HappinessPer2Policies	-	Provides 1 happiness per 2 additional social policies adopted	[+1 Happiness] per [2] social policies adopted
+HappinessPer2Policies	+	Provides 1 happiness per 2 additional social policies adopted	[+1 Happiness] per [2] social policies adopted
+DoubleHappinessFromNaturalWonders		Double Happiness from Natural Wonders	[+1 Happiness] for every known Natural Wonder
+DoubleHappinessFromNaturalWonders	-	Double Happiness from Natural Wonders	[+1 Happiness] for every known Natural Wonder
+DoubleHappinessFromNaturalWonders	+	Double Happiness from Natural Wonders	[+1 Happiness] for every known Natural Wonder
+AvailableAfterCertainTurns		Only available after [10] turns	Only available <after [10] turns>
+AvailableAfterCertainTurns	-	Only available after [-10] turns	Only available <after [-10] turns>
+AvailableAfterCertainTurns	+	Only available after [+10] turns	Only available <after [10] turns>
+HiddenBeforePantheon		Hidden before founding a Pantheon	Only available <before founding a Pantheon>
+HiddenBeforePantheon	-	Hidden before founding a Pantheon	Only available <before founding a Pantheon>
+HiddenBeforePantheon	+	Hidden before founding a Pantheon	Only available <before founding a Pantheon>
+HiddenAfterPantheon		Hidden after founding a Pantheon	Only available <before founding a Pantheon>
+HiddenAfterPantheon	-	Hidden after founding a Pantheon	Only available <before founding a Pantheon>
+HiddenAfterPantheon	+	Hidden after founding a Pantheon	Only available <before founding a Pantheon>
+CityStateStatsPerTurn		Provides [10] per turn	[10]
+CityStateStatsPerTurn	-	Provides [-10] per turn	[-10]
+CityStateStatsPerTurn	+	Provides [+10] per turn	[10]
+CityStateStatsPerCity		Provides [10] [20] per turn	[10] [20]
+CityStateStatsPerCity	-	Provides [-10] [-20] per turn	[-10] [-20]
+CityStateStatsPerCity	+	Provides [+10] [+20] per turn	[10] [20]
+CityStateHappiness		Provides [10] Happiness	[+amount Happiness]
+CityStateHappiness	-	Provides [-10] Happiness	[+amount Happiness]
+CityStateHappiness	+	Provides [+10] Happiness	[+amount Happiness]
+EnemyLandUnitsSpendExtraMovementDepreciated		Enemy land units must spend 1 extra movement point when inside your territory (obsolete upon Dynamite)	Enemy [Land] units must spend [1] extra movement points when inside your territory <before discovering [Dynamite]>
+EnemyLandUnitsSpendExtraMovementDepreciated	-	Enemy land units must spend 1 extra movement point when inside your territory (obsolete upon Dynamite)	Enemy [Land] units must spend [1] extra movement points when inside your territory <before discovering [Dynamite]>
+EnemyLandUnitsSpendExtraMovementDepreciated	+	Enemy land units must spend 1 extra movement point when inside your territory (obsolete upon Dynamite)	Enemy [Land] units must spend [1] extra movement points when inside your territory <before discovering [Dynamite]>
+CanConstructIfNoOtherActions		Can construct [10] if it hasn't used other actions yet	Can construct [10] <if it hasn't used other actions yet>
+CanConstructIfNoOtherActions	-	Can construct [-10] if it hasn't used other actions yet	Can construct [-10] <if it hasn't used other actions yet>
+CanConstructIfNoOtherActions	+	Can construct [+10] if it hasn't used other actions yet	Can construct [10] <if it hasn't used other actions yet>
+ProductionToScienceConversionBonus		Production to science conversion in cities increased by 33%	Production to [Science] conversion in cities changed by [33]%
+ProductionToScienceConversionBonus	-	Production to science conversion in cities increased by 33%	Production to [Science] conversion in cities changed by [33]%
+ProductionToScienceConversionBonus	+	Production to science conversion in cities increased by 33%	Production to [Science] conversion in cities changed by [33]%
+DoubleStatsFromNaturalWonders		Tile yields from Natural Wonders doubled	[+100]% Yield from every [Natural Wonder]
+DoubleStatsFromNaturalWonders	-	Tile yields from Natural Wonders doubled	[+100]% Yield from every [Natural Wonder]
+DoubleStatsFromNaturalWonders	+	Tile yields from Natural Wonders doubled	[+100]% Yield from every [Natural Wonder]
+EnablesGoldProduction		Enables conversion of city production to gold	Enables conversion of city production to [Gold]
+EnablesGoldProduction	-	Enables conversion of city production to gold	Enables conversion of city production to [Gold]
+EnablesGoldProduction	+	Enables conversion of city production to gold	Enables conversion of city production to [Gold]
+EnablesScienceProduction		Enables conversion of city production to science	Enables conversion of city production to [Science]
+EnablesScienceProduction	-	Enables conversion of city production to science	Enables conversion of city production to [Science]
+EnablesScienceProduction	+	Enables conversion of city production to science	Enables conversion of city production to [Science]
+UnitsFightFullStrengthWhenDamaged		Units fight as though they were at full strength even when damaged	Damage is ignored when determining unit Strength <for [All] units>
+UnitsFightFullStrengthWhenDamaged	-	Units fight as though they were at full strength even when damaged	Damage is ignored when determining unit Strength <for [All] units>
+UnitsFightFullStrengthWhenDamaged	+	Units fight as though they were at full strength even when damaged	Damage is ignored when determining unit Strength <for [All] units>
+StrengthWithinTilesOfTile		+[10]% Strength if within [20] tiles of a [30]	[+10]% Strength <within [20] tiles of a [30]>
+StrengthWithinTilesOfTile	-	+[-10]% Strength if within [-20] tiles of a [-30]	[-10]% Strength <within [-20] tiles of a [-30]>
+StrengthWithinTilesOfTile	+	+[+10]% Strength if within [+20] tiles of a [+30]	[+10]% Strength <within [20] tiles of a [30]>
+StatsWithResource		[10] with [20]	[10] <with [20]>
+StatsWithResource	-	[-10] with [-20]	[-10] <with [-20]>
+StatsWithResource	+	[+10] with [+20]	[10] <with [20]>
+CanOnlyBeBuiltInAnnexedCities		Can only be built in annexed cities	Can only be built <in [Annexed] cities>
+CanOnlyBeBuiltInAnnexedCities	-	Can only be built in annexed cities	Can only be built <in [Annexed] cities>
+CanOnlyBeBuiltInAnnexedCities	+	Can only be built in annexed cities	Can only be built <in [Annexed] cities>
+DefenceBonusWhenEmbarkedCivwide		Embarked units can defend themselves	Defense bonus when embarked <for [All] units>
+DefenceBonusWhenEmbarkedCivwide	-	Embarked units can defend themselves	Defense bonus when embarked <for [All] units>
+DefenceBonusWhenEmbarkedCivwide	+	Embarked units can defend themselves	Defense bonus when embarked <for [All] units>
+DisembarkCostDeprecated		Units pay only 1 movement point to disembark	[1] Movement point cost to disembark <for [All] units>
+DisembarkCostDeprecated	-	Units pay only 1 movement point to disembark	[1] Movement point cost to disembark <for [All] units>
+DisembarkCostDeprecated	+	Units pay only 1 movement point to disembark	[1] Movement point cost to disembark <for [All] units>
+ChanceToRecruitBarbarianFromEncampment		67% chance to earn 25 Gold and recruit a Barbarian unit from a conquered encampment	When conquering an encampment, earn [25] Gold and recruit a Barbarian unit <with [67]% chance>
+ChanceToRecruitBarbarianFromEncampment	-	67% chance to earn 25 Gold and recruit a Barbarian unit from a conquered encampment	When conquering an encampment, earn [25] Gold and recruit a Barbarian unit <with [67]% chance>
+ChanceToRecruitBarbarianFromEncampment	+	67% chance to earn 25 Gold and recruit a Barbarian unit from a conquered encampment	When conquering an encampment, earn [25] Gold and recruit a Barbarian unit <with [67]% chance>
+ChanceToRecruitNavalBarbarian		50% chance of capturing defeated Barbarian naval units and earning 25 Gold	When defeating a [{Barbarian} {Water}] unit, earn [25] Gold and recruit it <with [50]% chance>
+ChanceToRecruitNavalBarbarian	-	50% chance of capturing defeated Barbarian naval units and earning 25 Gold	When defeating a [{Barbarian} {Water}] unit, earn [25] Gold and recruit it <with [50]% chance>
+ChanceToRecruitNavalBarbarian	+	50% chance of capturing defeated Barbarian naval units and earning 25 Gold	When defeating a [{Barbarian} {Water}] unit, earn [25] Gold and recruit it <with [50]% chance>
+AttackFromSea		Eliminates combat penalty for attacking from the sea	Eliminates combat penalty for attacking across a coast
+AttackFromSea	-	Eliminates combat penalty for attacking from the sea	Eliminates combat penalty for attacking across a coast
+AttackFromSea	+	Eliminates combat penalty for attacking from the sea	Eliminates combat penalty for attacking across a coast
+SixTilesAlwaysVisible		6 tiles in every direction always visible	[+4] Sight", "Can see over obstacles
+SixTilesAlwaysVisible	-	6 tiles in every direction always visible	[+4] Sight", "Can see over obstacles
+SixTilesAlwaysVisible	+	6 tiles in every direction always visible	[+4] Sight", "Can see over obstacles
+ResistsNukes		Resistant to nukes	[25]% Chance to be destroyed by nukes
+ResistsNukes	-	Resistant to nukes	[25]% Chance to be destroyed by nukes
+ResistsNukes	+	Resistant to nukes	[25]% Chance to be destroyed by nukes
+DestroyableByNukes		Can be destroyed by nukes	[50]% Chance to be destroyed by nukes
+DestroyableByNukes	-	Can be destroyed by nukes	[50]% Chance to be destroyed by nukes
+DestroyableByNukes	+	Can be destroyed by nukes	[50]% Chance to be destroyed by nukes
+ConditionalSpecialistCount		if this city has at least [10] specialists	in cities with at least [10] [Specialists]
+ConditionalSpecialistCount	-	if this city has at least [-10] specialists	in cities with at least [-10] [Specialists]
+ConditionalSpecialistCount	+	if this city has at least [+10] specialists	in cities with at least [10] [Specialists]
+ConditionalFollowerCount		in cities where this religion has at least [10] followers	in cities with at least [10] [Followers of the Majority Religion]
+ConditionalFollowerCount	-	in cities where this religion has at least [-10] followers	in cities with at least [-10] [Followers of the Majority Religion]
+ConditionalFollowerCount	+	in cities where this religion has at least [+10] followers	in cities with at least [10] [Followers of the Majority Religion]
+TimedAttackStrength		+[10]% attack strength to all [20] units for [30] turns	[+10]% Strength <when attacking> <for [20] units> <for [30] turns>
+TimedAttackStrength	-	+[-10]% attack strength to all [-20] units for [-30] turns	[-10]% Strength <when attacking> <for [-20] units> <for [-30] turns>
+TimedAttackStrength	+	+[+10]% attack strength to all [+20] units for [+30] turns	[+10]% Strength <when attacking> <for [20] units> <for [30] turns>
+EmbarkedUnitsMayEnterOcean		Enables embarked units to enter ocean tiles	Enables [Embarked] units to enter ocean tiles <starting from the [Ancient era]>
+EmbarkedUnitsMayEnterOcean	-	Enables embarked units to enter ocean tiles	Enables [Embarked] units to enter ocean tiles <starting from the [Ancient era]>
+EmbarkedUnitsMayEnterOcean	+	Enables embarked units to enter ocean tiles	Enables [Embarked] units to enter ocean tiles <starting from the [Ancient era]>
+EmbarkAndEnterOcean		Can embark and move over Coasts and Oceans immediately	Enables embarkation for land units <starting from the [Ancient era]>", "Enables [All] units to enter ocean tiles <starting from the [Ancient era]>
+EmbarkAndEnterOcean	-	Can embark and move over Coasts and Oceans immediately	Enables embarkation for land units <starting from the [Ancient era]>", "Enables [All] units to enter ocean tiles <starting from the [Ancient era]>
+EmbarkAndEnterOcean	+	Can embark and move over Coasts and Oceans immediately	Enables embarkation for land units <starting from the [Ancient era]>", "Enables [All] units to enter ocean tiles <starting from the [Ancient era]>
+UnhappinessFromPopulationPercentageChange		[10]% unhappiness from population [20]	[10]% Unhappiness from [Population] [20]
+UnhappinessFromPopulationPercentageChange	-	[-10]% unhappiness from population [-20]	[-10]% Unhappiness from [Population] [-20]
+UnhappinessFromPopulationPercentageChange	+	[+10]% unhappiness from population [+20]	[10]% Unhappiness from [Population] [20]
+UnhappinessFromSpecialistsPercentageChange		[10]% unhappiness from specialists [20]	[10]% Unhappiness from [Specialists] [20]
+UnhappinessFromSpecialistsPercentageChange	-	[-10]% unhappiness from specialists [-20]	[-10]% Unhappiness from [Specialists] [-20]
+UnhappinessFromSpecialistsPercentageChange	+	[+10]% unhappiness from specialists [+20]	[10]% Unhappiness from [Specialists] [20]
+GreatPersonPointPercentageDeprecated		[10]% great person generation [20]	[10]% Great Person generation [20]
+GreatPersonPointPercentageDeprecated	-	[-10]% great person generation [-20]	[-10]% Great Person generation [-20]
+GreatPersonPointPercentageDeprecated	+	[+10]% great person generation [+20]	[10]% Great Person generation [20]
+GoldBonusFromTradeRoutesDeprecated		Gold from all trade routes +25%	[+25]% [Gold] from Trade Routes
+GoldBonusFromTradeRoutesDeprecated	-	Gold from all trade routes +25%	[+25]% [Gold] from Trade Routes
+GoldBonusFromTradeRoutesDeprecated	+	Gold from all trade routes +25%	[+25]% [Gold] from Trade Routes
+StatsFromXPopulation		[10] in cities with [20] or more population	[10] <in cities with at least [20] [Population]>
+StatsFromXPopulation	-	[-10] in cities with [-20] or more population	[-10] <in cities with at least [-20] [Population]>
+StatsFromXPopulation	+	[+10] in cities with [+20] or more population	[10] <in cities with at least [20] [Population]>
+CannotBeBuiltWith		Cannot be built with [10]	Only available <in cities without a [10]>
+CannotBeBuiltWith	-	Cannot be built with [-10]	Only available <in cities without a [-10]>
+CannotBeBuiltWith	+	Cannot be built with [+10]	Only available <in cities without a [10]>
+RequiresAnotherBuilding		Requires a [10] in this city	Only available <in cities with a [10]>
+RequiresAnotherBuilding	-	Requires a [-10] in this city	Only available <in cities with a [-10]>
+RequiresAnotherBuilding	+	Requires a [+10] in this city	Only available <in cities with a [10]>
+BonusForUnitsInRadius		Bonus for units in 2 tile radius 15%	[+15]% Strength bonus for [Military] units within [2] tiles
+BonusForUnitsInRadius	-	Bonus for units in 2 tile radius 15%	[+15]% Strength bonus for [Military] units within [2] tiles
+BonusForUnitsInRadius	+	Bonus for units in 2 tile radius 15%	[+15]% Strength bonus for [Military] units within [2] tiles
+Indestructible		Indestructible	Irremovable
+Indestructible	-	Indestructible	Irremovable
+Indestructible	+	Indestructible	Irremovable
+StatsFromWondersDeprecated		[10] from every Wonder	[10] from every [Wonder]
+StatsFromWondersDeprecated	-	[-10] from every Wonder	[-10] from every [Wonder]
+StatsFromWondersDeprecated	+	[+10] from every Wonder	[10] from every [Wonder]
+StatsForBuildingsWithFollowers		[10] from every [20] in cities where this religion has at least [30] followers	[10] from every [20] <in cities where this religion has at least [30] followers>
+StatsForBuildingsWithFollowers	-	[-10] from every [-20] in cities where this religion has at least [-30] followers	[-10] from every [-20] <in cities where this religion has at least [-30] followers>
+StatsForBuildingsWithFollowers	+	[+10] from every [+20] in cities where this religion has at least [+30] followers	[10] from every [20] <in cities where this religion has at least [30] followers>
+PercentProductionBuildingsInCapitalDeprecated		+25% Production towards any buildings that already exist in the Capital	[+25]% Production towards any buildings that already exist in the Capital
+PercentProductionBuildingsInCapitalDeprecated	-	+25% Production towards any buildings that already exist in the Capital	[+25]% Production towards any buildings that already exist in the Capital
+PercentProductionBuildingsInCapitalDeprecated	+	+25% Production towards any buildings that already exist in the Capital	[+25]% Production towards any buildings that already exist in the Capital
+CarryOverFoodDeprecated		[10]% of food is carried over after population increases	[10]% Food is carried over after population increases [in this city]
+CarryOverFoodDeprecated	-	[-10]% of food is carried over after population increases	[-10]% Food is carried over after population increases [in this city]
+CarryOverFoodDeprecated	+	[+10]% of food is carried over after population increases	[10]% Food is carried over after population increases [in this city]
+CarryOverFoodAlsoDeprecated		[10]% of food is carried over [20] after population increases	[10]% Food is carried over after population increases [20]
+CarryOverFoodAlsoDeprecated	-	[-10]% of food is carried over [-20] after population increases	[-10]% Food is carried over after population increases [-20]
+CarryOverFoodAlsoDeprecated	+	[+10]% of food is carried over [+20] after population increases	[10]% Food is carried over after population increases [20]
+BorderGrowthPercentageWithoutPercentageSign		[10] Culture cost of natural border growth [20]	[10]% Culture cost of natural border growth [20]
+BorderGrowthPercentageWithoutPercentageSign	-	[-10] Culture cost of natural border growth [-20]	[-10]% Culture cost of natural border growth [-20]
+BorderGrowthPercentageWithoutPercentageSign	+	[+10] Culture cost of natural border growth [+20]	[10]% Culture cost of natural border growth [20]
+DecreasedAcquiringTilesCost		-[10]% Culture cost of acquiring tiles [20]	[-10]% Culture cost of natural border growth [20]
+DecreasedAcquiringTilesCost	-	-[-10]% Culture cost of acquiring tiles [-20]	[+10]% Culture cost of natural border growth [-20]
+DecreasedAcquiringTilesCost	+	-[+10]% Culture cost of acquiring tiles [+20]	[-10]% Culture cost of natural border growth [20]
+CostOfNaturalBorderGrowth		[10]% cost of natural border growth	[10]% Culture cost of natural border growth [in all cities]
+CostOfNaturalBorderGrowth	-	[-10]% cost of natural border growth	[-10]% Culture cost of natural border growth [in all cities]
+CostOfNaturalBorderGrowth	+	[+10]% cost of natural border growth	[10]% Culture cost of natural border growth [in all cities]
+TileCostPercentageDiscount		-[10]% Gold cost of acquiring tiles [20]	[-10]% Gold cost of acquiring tiles [20]
+TileCostPercentageDiscount	-	-[-10]% Gold cost of acquiring tiles [-20]	[+10]% Gold cost of acquiring tiles [-20]
+TileCostPercentageDiscount	+	-[+10]% Gold cost of acquiring tiles [+20]	[-10]% Gold cost of acquiring tiles [20]
+BuyUnitsDiscountDeprecated		[10] cost of purchasing [20] units in cities [30]%	[10] cost of purchasing [20] units [30]%
+BuyUnitsDiscountDeprecated	-	[-10] cost of purchasing [-20] units in cities [-30]%	[-10] cost of purchasing [-20] units [-30]%
+BuyUnitsDiscountDeprecated	+	[+10] cost of purchasing [+20] units in cities [+30]%	[10] cost of purchasing [20] units [30]%
+StrengthForGarrisonedCitiesAttacking		+[10]% attacking strength for cities with garrisoned units	[+10]% Strength for cities <with a garrison> <when attacking>
+StrengthForGarrisonedCitiesAttacking	-	+[-10]% attacking strength for cities with garrisoned units	[-10]% Strength for cities <with a garrison> <when attacking>
+StrengthForGarrisonedCitiesAttacking	+	+[+10]% attacking strength for cities with garrisoned units	[+10]% Strength for cities <with a garrison> <when attacking>
+PopulationLossFromNukesDeprecated		Population loss from nuclear attacks -[10]%	Population loss from nuclear attacks [-10]% [in this city]
+PopulationLossFromNukesDeprecated	-	Population loss from nuclear attacks -[-10]%	Population loss from nuclear attacks [+10]% [in this city]
+PopulationLossFromNukesDeprecated	+	Population loss from nuclear attacks -[+10]%	Population loss from nuclear attacks [-10]% [in this city]
+HealInTiles		[10] HP when healing in [20] tiles	[10] HP when healing <in [20] tiles>
+HealInTiles	-	[-10] HP when healing in [-20] tiles	[-10] HP when healing <in [-20] tiles>
+HealInTiles	+	[+10] HP when healing in [+20] tiles	[10] HP when healing <in [20] tiles>
+NoMovementToPillageMelee		Melee units pay no movement cost to pillage	No movement cost to pillage <for [Melee] units>
+NoMovementToPillageMelee	-	Melee units pay no movement cost to pillage	No movement cost to pillage <for [Melee] units>
+NoMovementToPillageMelee	+	Melee units pay no movement cost to pillage	No movement cost to pillage <for [Melee] units>
+HealAdjacentUnitsDeprecated		Heal adjacent units for an additional 15 HP per turn	All adjacent units heal [+15] HP when healing
+HealAdjacentUnitsDeprecated	-	Heal adjacent units for an additional 15 HP per turn	All adjacent units heal [+15] HP when healing
+HealAdjacentUnitsDeprecated	+	Heal adjacent units for an additional 15 HP per turn	All adjacent units heal [+15] HP when healing
+DamagesAdjacentEnemyUnitsOld		Deal [10] damage to adjacent enemy units	Adjacent enemy units ending their turn take [10] damage
+DamagesAdjacentEnemyUnitsOld	-	Deal [-10] damage to adjacent enemy units	Adjacent enemy units ending their turn take [-10] damage
+DamagesAdjacentEnemyUnitsOld	+	Deal [+10] damage to adjacent enemy units	Adjacent enemy units ending their turn take [10] damage
+GoldenAgeLengthIncreased		Golden Age length increased by [10]%	[10]% Golden Age length
+GoldenAgeLengthIncreased	-	Golden Age length increased by [-10]%	[-10]% Golden Age length
+GoldenAgeLengthIncreased	+	Golden Age length increased by [+10]%	[+10]% Golden Age length
+StrengthForCitiesDefending		+[10]% Defensive Strength for cities	[+10]% Strength for cities <when defending>
+StrengthForCitiesDefending	-	+[-10]% Defensive Strength for cities	[-10]% Strength for cities <when defending>
+StrengthForCitiesDefending	+	+[+10]% Defensive Strength for cities	[+10]% Strength for cities <when defending>
+StrengthForCitiesAttacking		[10]% Attacking Strength for cities	[10]% Strength for cities <when attacking>
+StrengthForCitiesAttacking	-	[-10]% Attacking Strength for cities	[-10]% Strength for cities <when attacking>
+StrengthForCitiesAttacking	+	[+10]% Attacking Strength for cities	[+10]% Strength for cities <when attacking>
+StrengthFromAdjacentUnits		[10]% Strength for [20] units which have another [30] unit in an adjacent tile	[10]% Strength <for [20] units> <when adjacent to a [30] unit>
+StrengthFromAdjacentUnits	-	[-10]% Strength for [-20] units which have another [-30] unit in an adjacent tile	[-10]% Strength <for [-20] units> <when adjacent to a [-30] unit>
+StrengthFromAdjacentUnits	+	[+10]% Strength for [+20] units which have another [+30] unit in an adjacent tile	[10]% Strength <for [20] units> <when adjacent to a [30] unit>
+ReducedUpgradingGoldCost		Gold cost of upgrading [10] units reduced by [20]%	[20]% Gold cost of upgrading <for [10] units>
+ReducedUpgradingGoldCost	-	Gold cost of upgrading [-10] units reduced by [-20]%	[-20]% Gold cost of upgrading <for [-10] units>
+ReducedUpgradingGoldCost	+	Gold cost of upgrading [+10] units reduced by [+20]%	[+20]% Gold cost of upgrading <for [10] units>
+DoubleGoldFromTradeMissions		Double gold from Great Merchant trade missions	[+100]% Gold from Great Merchant trade missions
+DoubleGoldFromTradeMissions	-	Double gold from Great Merchant trade missions	[+100]% Gold from Great Merchant trade missions
+DoubleGoldFromTradeMissions	+	Double gold from Great Merchant trade missions	[+100]% Gold from Great Merchant trade missions
+DefensiveBuilding25		Defensive buildings in all cities are 25% more effective	[+25]% City Strength from defensive buildings
+DefensiveBuilding25	-	Defensive buildings in all cities are 25% more effective	[+25]% City Strength from defensive buildings
+DefensiveBuilding25	+	Defensive buildings in all cities are 25% more effective	[+25]% City Strength from defensive buildings
+DecreasedRoadMaintenanceDeprecated		Maintenance on roads & railroads reduced by [10]%	[10]% maintenance on road & railroads
+DecreasedRoadMaintenanceDeprecated	-	Maintenance on roads & railroads reduced by [-10]%	[-10]% maintenance on road & railroads
+DecreasedRoadMaintenanceDeprecated	+	Maintenance on roads & railroads reduced by [+10]%	[+10]% maintenance on road & railroads
+DecreasedBuildingMaintenanceDeprecated		-[10]% maintenance cost for buildings [20]	[-10]% maintenance cost for buildings [20]
+DecreasedBuildingMaintenanceDeprecated	-	-[-10]% maintenance cost for buildings [-20]	[+10]% maintenance cost for buildings [-20]
+DecreasedBuildingMaintenanceDeprecated	+	-[+10]% maintenance cost for buildings [+20]	[-10]% maintenance cost for buildings [20]
+BonusHappinessFromLuxuryDeprecated		+[10] happiness from each type of luxury resource	[+10] Happiness from each type of luxury resource
+BonusHappinessFromLuxuryDeprecated	-	+[-10] happiness from each type of luxury resource	[-10] Happiness from each type of luxury resource
+BonusHappinessFromLuxuryDeprecated	+	+[+10] happiness from each type of luxury resource	[+10] Happiness from each type of luxury resource
+LessPolicyCostDeprecated		Culture cost of adopting new Policies reduced by [10]%	[10]% Culture cost of adopting new Policies
+LessPolicyCostDeprecated	-	Culture cost of adopting new Policies reduced by [-10]%	[-10]% Culture cost of adopting new Policies
+LessPolicyCostDeprecated	+	Culture cost of adopting new Policies reduced by [+10]%	[+10]% Culture cost of adopting new Policies
+LessPolicyCostDeprecated2		[10]% Culture cost of adopting new policies	[10]% Culture cost of adopting new Policies
+LessPolicyCostDeprecated2	-	[-10]% Culture cost of adopting new policies	[-10]% Culture cost of adopting new Policies
+LessPolicyCostDeprecated2	+	[+10]% Culture cost of adopting new policies	[10]% Culture cost of adopting new Policies
+CityStateResourcesDeprecated		Quantity of Resources gifted by City-States increased by [10]%	[10]% resources gifted by City-States
+CityStateResourcesDeprecated	-	Quantity of Resources gifted by City-States increased by [-10]%	[-10]% resources gifted by City-States
+CityStateResourcesDeprecated	+	Quantity of Resources gifted by City-States increased by [+10]%	[+10]% resources gifted by City-States
+CityStateInfluenceDegradationDeprecated		City-State Influence degrades [10]% slower	[10]% City-State Influence degradation
+CityStateInfluenceDegradationDeprecated	-	City-State Influence degrades [-10]% slower	[-10]% City-State Influence degradation
+CityStateInfluenceDegradationDeprecated	+	City-State Influence degrades [+10]% slower	[+10]% City-State Influence degradation
+CityStateLuxuryHappinessDeprecated		Happiness from Luxury Resources gifted by City-States increased by [10]%	[10]% Happiness from luxury resources gifted by City-States
+CityStateLuxuryHappinessDeprecated	-	Happiness from Luxury Resources gifted by City-States increased by [-10]%	[-10]% Happiness from luxury resources gifted by City-States
+CityStateLuxuryHappinessDeprecated	+	Happiness from Luxury Resources gifted by City-States increased by [+10]%	[+10]% Happiness from luxury resources gifted by City-States
+StatPercentSignedFromObject		+[10]% [20] from every [30]	[+10]% [20] from every [30]
+StatPercentSignedFromObject	-	+[-10]% [-20] from every [-30]	[-10]% [-20] from every [-30]
+StatPercentSignedFromObject	+	+[+10]% [+20] from every [+30]	[+10]% [20] from every [30]
+AllStatsSignedPercentFromObject		+[10]% yield from every [20]	[+10]% Yield from every [20]
+AllStatsSignedPercentFromObject	-	+[-10]% yield from every [-20]	[-10]% Yield from every [-20]
+AllStatsSignedPercentFromObject	+	+[+10]% yield from every [+20]	[+10]% Yield from every [20]
+ExcessHappinessToCultureDeprecated		50% of excess happiness added to culture towards policies	[50]% of excess happiness converted to [Culture]
+ExcessHappinessToCultureDeprecated	-	50% of excess happiness added to culture towards policies	[50]% of excess happiness converted to [Culture]
+ExcessHappinessToCultureDeprecated	+	50% of excess happiness added to culture towards policies	[50]% of excess happiness converted to [Culture]
+NotDisplayedUnlessOtherBuildingBuilt		Not displayed as an available construction unless [10] is built	Not displayed as an available construction without [10]
+NotDisplayedUnlessOtherBuildingBuilt	-	Not displayed as an available construction unless [-10] is built	Not displayed as an available construction without [-10]
+NotDisplayedUnlessOtherBuildingBuilt	+	Not displayed as an available construction unless [+10] is built	Not displayed as an available construction without [10]
+FoodConsumptionBySpecialistsDeprecated		-[10]% food consumption by specialists [20]	[-10]% Food consumption by specialists [20]
+FoodConsumptionBySpecialistsDeprecated	-	-[-10]% food consumption by specialists [-20]	[+10]% Food consumption by specialists [-20]
+FoodConsumptionBySpecialistsDeprecated	+	-[+10]% food consumption by specialists [+20]	[-10]% Food consumption by specialists [20]
+CannotEnterOceanUntilAstronomy		Cannot enter ocean tiles until Astronomy	Cannot enter ocean tiles <before discovering [Astronomy]>
+CannotEnterOceanUntilAstronomy	-	Cannot enter ocean tiles until Astronomy	Cannot enter ocean tiles <before discovering [Astronomy]>
+CannotEnterOceanUntilAstronomy	+	Cannot enter ocean tiles until Astronomy	Cannot enter ocean tiles <before discovering [Astronomy]>
+RequiresTechToBuildOnTile		Cannot be built on [10] tiles until [20] is discovered	Cannot be built on [10] tiles <before discovering [20]>
+RequiresTechToBuildOnTile	-	Cannot be built on [-10] tiles until [-20] is discovered	Cannot be built on [-10] tiles <before discovering [-20]>
+RequiresTechToBuildOnTile	+	Cannot be built on [+10] tiles until [+20] is discovered	Cannot be built on [10] tiles <before discovering [20]>
+BuyUnitsIncreasingCostEra		May buy [10] units for [20] [30] [40] starting from the [50] at an increasing price ([60])	May buy [10] units for [20] [30] [40] at an increasing price ([60]) <starting from the [50]>
+BuyUnitsIncreasingCostEra	-	May buy [-10] units for [-20] [-30] [-40] starting from the [-50] at an increasing price ([-60])	May buy [-10] units for [-20] [-30] [-40] at an increasing price ([-60]) <starting from the [-50]>
+BuyUnitsIncreasingCostEra	+	May buy [+10] units for [+20] [+30] [+40] starting from the [+50] at an increasing price ([+60])	May buy [10] units for [20] [30] [40] at an increasing price ([60]) <starting from the [50]>
+StatsOnTileWithTech		[10] on [20] tiles once [30] is discovered	[10] from [20] tiles <after discovering [30]>
+StatsOnTileWithTech	-	[-10] on [-20] tiles once [-30] is discovered	[-10] from [-20] tiles <after discovering [-30]>
+StatsOnTileWithTech	+	[+10] on [+20] tiles once [+30] is discovered	[10] from [20] tiles <after discovering [30]>
+StatsWithTech		[10] once [20] is discovered	[10] <after discovering [20]>
+StatsWithTech	-	[-10] once [-20] is discovered	[-10] <after discovering [-20]>
+StatsWithTech	+	[+10] once [+20] is discovered	[10] <after discovering [20]>
+DamagesAdjacentEnemyUnitsForExactlyThirtyDamage		Deal 30 damage to adjacent enemy units	Adjacent enemy units ending their turn take [30] damage
+DamagesAdjacentEnemyUnitsForExactlyThirtyDamage	-	Deal 30 damage to adjacent enemy units	Adjacent enemy units ending their turn take [30] damage
+DamagesAdjacentEnemyUnitsForExactlyThirtyDamage	+	Deal 30 damage to adjacent enemy units	Adjacent enemy units ending their turn take [30] damage
+ProvidesFreeBuildings		Provides a free [10] [20]	Gain a free [10] [20]
+ProvidesFreeBuildings	-	Provides a free [-10] [-20]	Gain a free [-10] [-20]
+ProvidesFreeBuildings	+	Provides a free [+10] [+20]	Gain a free [10] [20]
+StatPercentBonusCitiesDeprecated		+[10]% [20] [30]	[+10]% [20] [30]
+StatPercentBonusCitiesDeprecated	-	+[-10]% [-20] [-30]	[-10]% [-20] [-30]
+StatPercentBonusCitiesDeprecated	+	+[+10]% [+20] [+30]	[+10]% [20] [30]
+StatPercentBonusCitiesDeprecated2		+[10]% [20] in all cities	[+10]% [20] [in all cities]
+StatPercentBonusCitiesDeprecated2	-	+[-10]% [-20] in all cities	[-10]% [-20] [in all cities]
+StatPercentBonusCitiesDeprecated2	+	+[+10]% [+20] in all cities	[+10]% [20] [in all cities]
+StatPercentBonusCitiesDeprecatedWhileEmpireHappy		[10]% [20] while the empire is happy	[10]% [20] [in all cities] <while the empire is happy>
+StatPercentBonusCitiesDeprecatedWhileEmpireHappy	-	[-10]% [-20] while the empire is happy	[-10]% [-20] [in all cities] <while the empire is happy>
+StatPercentBonusCitiesDeprecatedWhileEmpireHappy	+	[+10]% [+20] while the empire is happy	[10]% [20] [in all cities] <while the empire is happy>
+FreeStatBuildingsDeprecated		Immediately creates the cheapest available cultural building in each of your first [10] cities for free	Provides the cheapest [stat] building in your first [10] cities for free
+FreeStatBuildingsDeprecated	-	Immediately creates the cheapest available cultural building in each of your first [-10] cities for free	Provides the cheapest [stat] building in your first [-10] cities for free
+FreeStatBuildingsDeprecated	+	Immediately creates the cheapest available cultural building in each of your first [+10] cities for free	Provides the cheapest [stat] building in your first [10] cities for free
+FreeSpecificBuildingsDeprecated		Immediately creates a [10] in each of your first [20] cities for free	Provides a [10] in your first [20] cities for free
+FreeSpecificBuildingsDeprecated	-	Immediately creates a [-10] in each of your first [-20] cities for free	Provides a [-10] in your first [-20] cities for free
+FreeSpecificBuildingsDeprecated	+	Immediately creates a [+10] in each of your first [+20] cities for free	Provides a [10] in your first [20] cities for free
+StrengthAttacking		+[10]% Strength when attacking	[+10]% Strength <when attacking>
+StrengthAttacking	-	+[-10]% Strength when attacking	[-10]% Strength <when attacking>
+StrengthAttacking	+	+[+10]% Strength when attacking	[+10]% Strength <when attacking>
+StrengthDefending		+[10]% Strength when defending	[+10]% Strength <when defending>
+StrengthDefending	-	+[-10]% Strength when defending	[-10]% Strength <when defending>
+StrengthDefending	+	+[+10]% Strength when defending	[+10]% Strength <when defending>
+StrengthDefendingUnitFilter		[10]% Strength when defending vs [20] units	[10]% Strength <when defending> <vs [20] units>
+StrengthDefendingUnitFilter	-	[-10]% Strength when defending vs [-20] units	[-10]% Strength <when defending> <vs [-20] units>
+StrengthDefendingUnitFilter	+	[+10]% Strength when defending vs [+20] units	[10]% Strength <when defending> <vs [20] units>
+DamageForUnits		[10] units deal +[20]% damage	[+20]% Strength <for [10] units>
+DamageForUnits	-	[-10] units deal +[-20]% damage	[-20]% Strength <for [-10] units>
+DamageForUnits	+	[+10] units deal +[+20]% damage	[+20]% Strength <for [10] units>
+StrengthGoldenAge		+10% Strength for all units during Golden Age	[+10]% Strength <for [All] units> <during a Golden Age>
+StrengthGoldenAge	-	+10% Strength for all units during Golden Age	[+10]% Strength <for [All] units> <during a Golden Age>
+StrengthGoldenAge	+	+10% Strength for all units during Golden Age	[+10]% Strength <for [All] units> <during a Golden Age>
+StrengthDefenseTiles		+[10]% defence in [20] tiles	[+10]% Strength <when fighting in [20] tiles> <when defending>
+StrengthDefenseTiles	-	+[-10]% defence in [-20] tiles	[-10]% Strength <when fighting in [-20] tiles> <when defending>
+StrengthDefenseTiles	+	+[+10]% defence in [+20] tiles	[+10]% Strength <when fighting in [20] tiles> <when defending>
+StrengthIn		+[10]% Strength in [20]	[+10]% Strength <when fighting in [20] tiles>
+StrengthIn	-	+[-10]% Strength in [-20]	[-10]% Strength <when fighting in [-20] tiles>
+StrengthIn	+	+[+10]% Strength in [+20]	[+10]% Strength <when fighting in [20] tiles>
+StrengthUnitsTiles		[10]% Strength for [20] units in [30]	[10]% Strength <for [20] units> <when fighting in [30] tiles>
+StrengthUnitsTiles	-	[-10]% Strength for [-20] units in [-30]	[-10]% Strength <for [-20] units> <when fighting in [-30] tiles>
+StrengthUnitsTiles	+	[+10]% Strength for [+20] units in [+30]	[10]% Strength <for [20] units> <when fighting in [30] tiles>
+StrengthVsCities		+15% Combat Strength for all units when attacking Cities	[+15]% Strength <for [All] units> <vs cities> <when attacking>
+StrengthVsCities	-	+15% Combat Strength for all units when attacking Cities	[+15]% Strength <for [All] units> <vs cities> <when attacking>
+StrengthVsCities	+	+15% Combat Strength for all units when attacking Cities	[+15]% Strength <for [All] units> <vs cities> <when attacking>
+MovementUnits		+[10] Movement for all [20] units	[+10] Movement <for [20] units>
+MovementUnits	-	+[-10] Movement for all [-20] units	[-10] Movement <for [-20] units>
+MovementUnits	+	+[+10] Movement for all [+20] units	[+10] Movement <for [20] units>
+MovementGoldenAge		+1 Movement for all units during Golden Age	[+1] Movement <for [All] units> <during a Golden Age>
+MovementGoldenAge	-	+1 Movement for all units during Golden Age	[+1] Movement <for [All] units> <during a Golden Age>
+MovementGoldenAge	+	+1 Movement for all units during Golden Age	[+1] Movement <for [All] units> <during a Golden Age>
+SightUnits		[10] Sight for all [20] units	[10] Sight <for [20] units>
+SightUnits	-	[-10] Sight for all [-20] units	[-10] Sight <for [-20] units>
+SightUnits	+	[+10] Sight for all [+20] units	[10] Sight <for [20] units>
+VisibilityRange		[10] Visibility Range	[10] Sight
+VisibilityRange	-	[-10] Visibility Range	[-10] Sight
+VisibilityRange	+	[+10] Visibility Range	[10] Sight
+LimitedVisibility		Limited Visibility	[-1] Sight
+LimitedVisibility	-	Limited Visibility	[-1] Sight
+LimitedVisibility	+	Limited Visibility	[-1] Sight
+SpreadReligionStrengthUnits		[10]% Spread Religion Strength for [20] units	[10]% Spread Religion Strength <for [20] units>
+SpreadReligionStrengthUnits	-	[-10]% Spread Religion Strength for [-20] units	[-10]% Spread Religion Strength <for [-20] units>
+SpreadReligionStrengthUnits	+	[+10]% Spread Religion Strength for [+20] units	[10]% Spread Religion Strength <for [20] units>
+PercentProductionUnitsDeprecated		+[10]% Production when constructing [20] units [30]	[+10]% Production when constructing [20] units [30]
+PercentProductionUnitsDeprecated	-	+[-10]% Production when constructing [-20] units [-30]	[-10]% Production when constructing [-20] units [-30]
+PercentProductionUnitsDeprecated	+	+[+10]% Production when constructing [+20] units [+30]	[+10]% Production when constructing [20] units [30]
+PercentProductionStatBuildings		+[10]% Production when constructing [20] buildings	[+10]% Production when constructing [20] buildings [in all cities]
+PercentProductionStatBuildings	-	+[-10]% Production when constructing [-20] buildings	[-10]% Production when constructing [-20] buildings [in all cities]
+PercentProductionStatBuildings	+	+[+10]% Production when constructing [+20] buildings	[+10]% Production when constructing [20] buildings [in all cities]
+PercentProductionConstructions		+[10]% Production when constructing [20]	[+10]% Production when constructing [20] buildings [in all cities]
+PercentProductionConstructions	-	+[-10]% Production when constructing [-20]	[-10]% Production when constructing [-20] buildings [in all cities]
+PercentProductionConstructions	+	+[+10]% Production when constructing [+20]	[+10]% Production when constructing [20] buildings [in all cities]
+PercentProductionBuildingName		+[10]% Production when constructing a [20]	[+10]% Production when constructing [20] buildings [in all cities]
+PercentProductionBuildingName	-	+[-10]% Production when constructing a [-20]	[-10]% Production when constructing [-20] buildings [in all cities]
+PercentProductionBuildingName	+	+[+10]% Production when constructing a [+20]	[+10]% Production when constructing [20] buildings [in all cities]
+PercentProductionConstructionsCities		+[10]% Production when constructing [20] [30]	[+10]% Production when constructing [20] buildings [30]
+PercentProductionConstructionsCities	-	+[-10]% Production when constructing [-20] [-30]	[-10]% Production when constructing [-20] buildings [-30]
+PercentProductionConstructionsCities	+	+[+10]% Production when constructing [+20] [+30]	[+10]% Production when constructing [20] buildings [30]
+DoubleMovementCoast		Double movement in coast	Double movement in [Coast]
+DoubleMovementCoast	-	Double movement in coast	Double movement in [Coast]
+DoubleMovementCoast	+	Double movement in coast	Double movement in [Coast]
+DoubleMovementForestJungle		Double movement rate through Forest and Jungle	Double movement in [terrainFilter]
+DoubleMovementForestJungle	-	Double movement rate through Forest and Jungle	Double movement in [terrainFilter]
+DoubleMovementForestJungle	+	Double movement rate through Forest and Jungle	Double movement in [terrainFilter]
+DoubleMovementSnowTundraHill		Double movement in Snow, Tundra and Hills	Double movement in [terrainFilter]
+DoubleMovementSnowTundraHill	-	Double movement in Snow, Tundra and Hills	Double movement in [terrainFilter]
+DoubleMovementSnowTundraHill	+	Double movement in Snow, Tundra and Hills	Double movement in [terrainFilter]
+StrengthPlus		+[10]% Strength	[+10]% Strength
+StrengthPlus	-	+[-10]% Strength	[-10]% Strength
+StrengthPlus	+	+[+10]% Strength	[+10]% Strength
+StrengthMin		-[10]% Strength	[-10]% Strength
+StrengthMin	-	-[-10]% Strength	[+10]% Strength
+StrengthMin	+	-[+10]% Strength	[-10]% Strength
+CombatBonus		+[10]% Combat Strength	[+10]% Strength
+CombatBonus	-	+[-10]% Combat Strength	[-10]% Strength
+CombatBonus	+	+[+10]% Combat Strength	[+10]% Strength
+EmbarkedUnitMovement1		Increases embarked movement +1	[+1] Movement <for [Embarked] units>
+EmbarkedUnitMovement1	-	Increases embarked movement +1	[+1] Movement <for [Embarked] units>
+EmbarkedUnitMovement1	+	Increases embarked movement +1	[+1] Movement <for [Embarked] units>
+EmbarkedUnitMovement2		+1 Movement for all embarked units	[+1] Movement <for [Embarked] units>
+EmbarkedUnitMovement2	-	+1 Movement for all embarked units	[+1] Movement <for [Embarked] units>
+EmbarkedUnitMovement2	+	+1 Movement for all embarked units	[+1] Movement <for [Embarked] units>
+UnhappinessFromPopulationPercentageChangeOld1		Unhappiness from population decreased by [10]%	[10]% unhappiness from population [in all cities]
+UnhappinessFromPopulationPercentageChangeOld1	-	Unhappiness from population decreased by [-10]%	[-10]% unhappiness from population [in all cities]
+UnhappinessFromPopulationPercentageChangeOld1	+	Unhappiness from population decreased by [+10]%	[+10]% unhappiness from population [in all cities]
+UnhappinessFromPopulationPercentageChangeOld2		Unhappiness from population decreased by [10]% [20]	[10]% unhappiness from population [20]
+UnhappinessFromPopulationPercentageChangeOld2	-	Unhappiness from population decreased by [-10]% [-20]	[-10]% unhappiness from population [-20]
+UnhappinessFromPopulationPercentageChangeOld2	+	Unhappiness from population decreased by [+10]% [+20]	[+10]% unhappiness from population [20]
+GrowthPercentBonusPositive		+[10]% growth [20]	[+10]% growth [20]
+GrowthPercentBonusPositive	-	+[-10]% growth [-20]	[-10]% growth [-20]
+GrowthPercentBonusPositive	+	+[+10]% growth [+20]	[+10]% growth [20]
+GrowthPercentBonusWhenNotAtWar		+[10]% growth [20] when not at war	[+10]% growth [20] <when not at war>
+GrowthPercentBonusWhenNotAtWar	-	+[-10]% growth [-20] when not at war	[-10]% growth [-20] <when not at war>
+GrowthPercentBonusWhenNotAtWar	+	+[+10]% growth [+20] when not at war	[+10]% growth [20] <when not at war>
+DecreasedUnitMaintenanceCostsByFilter		-[10]% [20] unit maintenance costs	[-10]% maintenance costs <for [20] units>
+DecreasedUnitMaintenanceCostsByFilter	-	-[-10]% [-20] unit maintenance costs	[+10]% maintenance costs <for [-20] units>
+DecreasedUnitMaintenanceCostsByFilter	+	-[+10]% [+20] unit maintenance costs	[-10]% maintenance costs <for [20] units>
+DecreasedUnitMaintenanceCostsGlobally		-[10]% unit upkeep costs	[-10]% maintenance costs <for [All] units>
+DecreasedUnitMaintenanceCostsGlobally	-	-[-10]% unit upkeep costs	[+10]% maintenance costs <for [All] units>
+DecreasedUnitMaintenanceCostsGlobally	+	-[+10]% unit upkeep costs	[-10]% maintenance costs <for [All] units>
+StatsFromSpecialistDeprecated		[10] from every specialist	[10] from every specialist [in all cities]
+StatsFromSpecialistDeprecated	-	[-10] from every specialist	[-10] from every specialist [in all cities]
+StatsFromSpecialistDeprecated	+	[+10] from every specialist	[10] from every specialist [in all cities]
+StatBonusForNumberOfSpecialists		[10] if this city has at least [20] specialists	[10] <if this city has at least [20] specialists>
+StatBonusForNumberOfSpecialists	-	[-10] if this city has at least [-20] specialists	[-10] <if this city has at least [-20] specialists>
+StatBonusForNumberOfSpecialists	+	[+10] if this city has at least [+20] specialists	[10] <if this city has at least [20] specialists>
+BonuxXPGain		[10]% Bonus XP gain	[10]% XP gained from combat
+BonuxXPGain	-	[-10]% Bonus XP gain	[-10]% XP gained from combat
+BonuxXPGain	+	[+10]% Bonus XP gain	[10]% XP gained from combat
+BonusXPGainForUnits		[10] units gain [20]% more Experience from combat	[20]% XP gained from combat <for [10] units>
+BonusXPGainForUnits	-	[-10] units gain [-20]% more Experience from combat	[-20]% XP gained from combat <for [-10] units>
+BonusXPGainForUnits	+	[+10] units gain [+20]% more Experience from combat	[20]% XP gained from combat <for [10] units>
+UnitMaintenanceDiscountGlobal		[10]% maintenance costs for [20] units	[10]% maintenance costs <for [20] units>
+UnitMaintenanceDiscountGlobal	-	[-10]% maintenance costs for [-20] units	[-10]% maintenance costs <for [-20] units>
+UnitMaintenanceDiscountGlobal	+	[+10]% maintenance costs for [+20] units	[10]% maintenance costs <for [20] units>
+Plus1SightForAutoupdates		+1 Visibility Range	[+1] Sight
+Plus1SightForAutoupdates	-	+1 Visibility Range	[+1] Sight
+Plus1SightForAutoupdates	+	+1 Visibility Range	[+1] Sight
+PlusSightForAutoupdates		+[10] Visibility Range	[+10] Sight
+PlusSightForAutoupdates	-	+[-10] Visibility Range	[-10] Sight
+PlusSightForAutoupdates	+	+[+10] Visibility Range	[+10] Sight
+PlusSightForAutoupdates2		+[10] Sight for all [20] units	[+10] Sight <for [20] units>
+PlusSightForAutoupdates2	-	+[-10] Sight for all [-20] units	[-10] Sight <for [-20] units>
+PlusSightForAutoupdates2	+	+[+10] Sight for all [+20] units	[+10] Sight <for [20] units>
+Plus2SightForAutoupdates		+2 Visibility Range	[+2] Sight
+Plus2SightForAutoupdates	-	+2 Visibility Range	[+2] Sight
+Plus2SightForAutoupdates	+	+2 Visibility Range	[+2] Sight
+CanBuildImprovementsOnTiles		Can build improvements on tiles	Can build [Land] improvements on tiles
+CanBuildImprovementsOnTiles	-	Can build improvements on tiles	Can build [Land] improvements on tiles
+CanBuildImprovementsOnTiles	+	Can build improvements on tiles	Can build [Land] improvements on tiles
+BonusHappinessFromLuxuryDeprecated2		+1 happiness from each type of luxury resource	[+1] Happiness from each type of luxury resource
+BonusHappinessFromLuxuryDeprecated2	-	+1 happiness from each type of luxury resource	[+1] Happiness from each type of luxury resource
+BonusHappinessFromLuxuryDeprecated2	+	+1 happiness from each type of luxury resource	[+1] Happiness from each type of luxury resource
+ScienceGainedResearchAgreementsDeprecated		Science gained from research agreements +50%	Science gained from research agreements [+50]%
+ScienceGainedResearchAgreementsDeprecated	-	Science gained from research agreements +50%	Science gained from research agreements [+50]%
+ScienceGainedResearchAgreementsDeprecated	+	Science gained from research agreements +50%	Science gained from research agreements [+50]%
+DecreasedUnitMaintenanceCostsGlobally2		-33% unit upkeep costs	[-33]% maintenance costs <for [All] units>
+DecreasedUnitMaintenanceCostsGlobally2	-	-33% unit upkeep costs	[-33]% maintenance costs <for [All] units>
+DecreasedUnitMaintenanceCostsGlobally2	+	-33% unit upkeep costs	[-33]% maintenance costs <for [All] units>
+FoodConsumptionBySpecialistsDeprecated2		-50% food consumption by specialists	[-50]% Food consumption by specialists [in all cities]
+FoodConsumptionBySpecialistsDeprecated2	-	-50% food consumption by specialists	[-50]% Food consumption by specialists [in all cities]
+FoodConsumptionBySpecialistsDeprecated2	+	-50% food consumption by specialists	[-50]% Food consumption by specialists [in all cities]
+StrengthForGarrisonedCitiesAttackingDeprecated		+50% attacking strength for cities with garrisoned units	[+50]% Strength for cities <with a garrison> <when attacking>
+StrengthForGarrisonedCitiesAttackingDeprecated	-	+50% attacking strength for cities with garrisoned units	[+50]% Strength for cities <with a garrison> <when attacking>
+StrengthForGarrisonedCitiesAttackingDeprecated	+	+50% attacking strength for cities with garrisoned units	[+50]% Strength for cities <with a garrison> <when attacking>
