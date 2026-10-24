@@ -77,8 +77,8 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Review (Antigravity): Pass. Line-by-line verification confirms exact fidelity to Kotlin semantics: float math precision, lazy non-zero iteration reflecting in-place mutations, CoerceAtMost/CoerceAtLeast NaN behavior on aggregates, stringification and regex parsing parity, StatMap OrderedDictionary behavior, and proper namespace isolation. Re-ran Gate (24/24 passed) and full test suite (106/106 passed).
 
 ### T005 Counter
-- State: Needs-Review [Claude]
-- Claimed: 2026-10-24T00:45:17Z
+- State: In-Review [Antigravity]
+- Claimed: 2026-10-24T00:49:57Z
 - Depends: none
 - Source: core/src/com/unciv/models/Counter.kt
 - Fixtures: grep tests/ for `Counter`; otherwise generate golden values
