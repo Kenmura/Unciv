@@ -181,14 +181,9 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     /// <summary>Temp map excluding unit uniques</summary>
     private UniqueMap nonUnitUniquesMap = new();
 
-    private IUnitMovement? movement;
-    /// <summary>Transient. TODO(T067): becomes <c>val movement = UnitMovement(this)</c>.</summary>
+    /// <summary>Transient. Kotlin <c>val movement = UnitMovement(this)</c>.</summary>
     [JsonIgnore]
-    public IUnitMovement Movement
-    {
-        get => Lateinit(movement, "movement");
-        set => movement = value;
-    }
+    public UnitMovement Movement { get; set; }
 
     [JsonIgnore]
     public UnitUpgradeManager Upgrade { get; set; }
@@ -233,6 +228,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     {
         Cache = new MapUnitCache(this);
         Upgrade = new UnitUpgradeManager(this);
+        Movement = new UnitMovement(this);
     }
 
     /// <summary>
@@ -963,7 +959,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         if (!HasMovement()) return; // We've already done stuff this turn, and can't do any more stuff
         if (IsEscorting() && !GetOtherEscortUnit().NotNull().HasMovement()) return;
 
-        var enemyUnitsInWalkingDistance = Movement.GetDistanceToTilesKeys()
+        var enemyUnitsInWalkingDistance = Movement.GetDistanceToTiles().Keys
             .Where(it => it.MilitaryUnit != null && Civ.IsAtWarWith(it.MilitaryUnit.Civ))
             .ToList();
         if (enemyUnitsInWalkingDistance.Count > 0)
@@ -1125,7 +1121,7 @@ public class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         if (!Movement.CanMoveTo(tile))
         {
             var tileNow = HasTile() ? CurrentTile : null;
-            throw new InvalidOperationException($"Unit {Name} of {Civ.CivId} at {tileNow} can't be put in tile {tile}, reason: {Movement.GetCannotMoveToReason(tile)}");
+            throw new InvalidOperationException($"Unit {Name} of {Civ.CivId} at {tileNow} can't be put in tile {tile}, reason: {Movement.GetCannotMoveToReason(tile)?.ToString() ?? "null"}");
         }
         if (BaseUnit.IsAirUnit()) tile.AirUnits.Add(this);
         else if (IsCivilian()) tile.CivilianUnit = this;

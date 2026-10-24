@@ -624,7 +624,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Traps kept: Kotlin kept the lines `[[Warrior]] has fully healed` (shortDisplayName already has brackets); maxByOrNull/minByOrNull pick the FIRST extreme (citadel, alternate cycle); `list.remove(unit)` is by reference; Float.pow via (float)Math.Pow; xp cost is (n*10*modifier).toInt() via KotlinMath.FloatToInt; unit order of civ.units is game state (rotated to nextPotentiallyDueAt on every add/remove).
 
 ### T067 Unit movement: MovementCost, UnitMovement
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T065, T054
 - Source: core/src/com/unciv/logic/map/mapunit/movement/MovementCost.kt, UnitMovement.kt (and PathsToTilesWithinTurn if present), core/src/com/unciv/logic/map/pathingmap/FixedPointMovement.kt
 - Fixtures: tests/src/com/unciv/logic/map/UnitMovementTests.kt, FixedPointMovementTest.kt (TestGame-based: T072)
@@ -633,6 +633,14 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-24T12:33Z
 - Notes: SEAM RULE (set by T053, applies to T053-T072): the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo port order is acyclic because each ticket compiles only against classes that are already Done plus small engine-owned interfaces (`partial` extensions of the `IGameContext*` interfaces in `Models/Ruleset/Unique/GameContext.cs` / `ConditionalsSeams.cs`, or a new `I<Thing>` for types with no IGameContext seam, e.g. managers), in a file named `<Area>Seams.cs`, containing exactly the members the ticket calls. A field/parameter whose Kotlin type is a not-yet-ported class is typed by its seam. The ticket that later ports that class implements the seam, then retypes the earlier tickets' seam-typed fields/params to the concrete class (a mechanical edit of those files, listed in its Deliverables), keeping reference-identity Equals/GetHashCode (Kotlin Civilization/City/MapUnit/Tile have none). Do not add public API Kotlin lacks beyond the seams. TestGame-based fixtures are deferred to T035/T072. ~1.2k LOC; delegate the brief. Priority-queue/path tie-breaking must match Kotlin exactly (T001). Float movement costs: do not widen to double. Also lets T040 (MapPathing, CarrierSlotMatcher) replace its seam members with concrete UnitMovement calls: record that follow-up here.
   - Backlog audit: FixedPointMovement.kt (88 LOC, no dependencies; FixedPointMovementTest is in Fixtures) added to Source. The rest of the pathingmap package (PathingMap, PathingMapCache, A* pathfinder, RouteNode) is T093: UnitMovement's path-cache hooks and City.getLandAttackPath/getRoadPath stay seams marked TODO(T093). Timers/timeThis calls are dropped.
+  - T067 implemented [Claude]. Files: Logic/Map/MapUnit/Movement/{MovementCost,UnitMovement,PathsToTilesWithinTurn,UnitMovementSeams}.cs, Logic/Map/PathingMap/FixedPointMovement.cs (readonly struct; Int ops wrap, Float->Int via KotlinMath.FloatToInt, toString uses .NET float formatting). MapUnit.Movement is now the concrete `UnitMovement` created in the MapUnit constructor (IUnitMovement and its seam removed; MapUnit.GetDistanceToTilesKeys became GetDistanceToTiles().Keys).
+      - A* branches (`UncivGame.Current.settings.useAStarPathfinding`, default false): UnitMovement.PathingMaps (internal IUnitPathingMapFactory?, UnitMovementSeams.cs) null = setting off. T093 implements IUnitPathingMap/IUnitPathingMapFactory (retype to PathingMap) and sets it where the setting is read. ClearPathfindingCache skips the 4 lazy maps when it is null (Kotlin builds and clears them with no other effect). PathsToTilesWithinTurn wraps LinkedHashMap (sealed here), replacing a key keeps its order.
+      - Tile.GetOwner()/GetCity() are still seam-typed: cast to Civilization/City in MovementCost/UnitMovement (as Civilization.cs does). Drop the casts when Tile is retyped.
+      - Only the members MapUnit calls are `virtual` on UnitMovement, so MapUnit tests keep a FakeUnitMovement (now `: UnitMovement`, MapUnitTestSupport.cs) instead of rewriting ~15 MapUnitCoreTests; remove with T072 if real-movement tests replace them.
+      - Float order kept: terrainCost * 0.5f + extraCost, tileToCheckMovement + movementCost, the enemy-penalty sum is Int then toFloat. Insertion order of getMovementToTilesAtPosition kept (LinkedHashMap); shortest-path tile preference uses stable OrderBy.ThenBy (= sortedWith(compareBy(...))). takeWhile on a List is eager in Kotlin: ToList kept.
+      - Size ratchet: GetShortestPath/MoveToTile split via private helpers (BuildPathFromParents, IsUnfriendlyCityState, MoveAirUnitToTile, ParadropToTile, BringAlongPayloads); behaviour unchanged.
+      - Tests: FixedPointMovementTests (all 12 Kotlin tests), UnitMovementTests (canPassThrough/embark/ocean/enemy-unit cases, MovementCost, GetDistanceToTiles, MoveToTile, GetShortestPath, teleport, swap, PathfindingCache) over a real Civilization/TileMap/MapUnit. The TestGame-based remainder of UnitMovementTests.kt (cities, diplomacy, carriers, barbarian camps, A* parameter set) is T072/T093.
+      - Follow-up for T040's seams: T134.
 
 ### T068 Diplomacy turn and city states: DiplomacyTurnManager, DeclareWar, CityStateFunctions
 - State: Available
@@ -1390,6 +1398,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test
 - Claimed:
 - Notes: Follow-up of T066: UnitManager implements the IUnitManager seam; Civilization tests (CivilizationTestFakes.FakeUnitManager { Count = n }, ~35 sites) count units without MapUnits, so the retype was left out of T066. Kotlin shape: units is a val initialised in the Civilization constructor.
+
+### T134 Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing)
+- State: Available
+- Depends: T067
+- Source: csharp/Unciv.Core/Logic/Map/CarrierSlotMatcher.cs, MapVisualization.cs, MapPathing.cs, MapPathingSeams.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Logic/Map/*.cs (retype IGameContextUnit/IGameContextCivilization seam parameters to MapUnit/Civilization, add MapPathing.getPath(unit, ...) if a caller exists), tests
+- Gate: dotnet test --filter FullyQualifiedName~Pathfinding
+- Claimed:
+- Notes: Created by T067: UnitMovement and MapUnit are concrete now. T040 left CarrierSlotMatcher/MapVisualization/MapPathing typed by seams (MapPathingSeams.cs: IGameContextUnit.MovementMemoryPositions/IsVisibleTo, IGameContextCivilization.HasExplored/CanBuildImprovementOn); retype them mechanically, keep the seam members only where another ticket still needs them. MapPathing.getPath(unit, ...) was not ported (no Kotlin caller); add it only if a caller exists.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

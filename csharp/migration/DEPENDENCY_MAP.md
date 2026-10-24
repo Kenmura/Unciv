@@ -91,6 +91,7 @@ flowchart TD
     T131["T131<br/>Hardening: T063 review follow-ups (CityConstructions test ga..."]
     T132["T132<br/>T097 review follow-ups: game context for Technology unit/obs..."]
     T133["T133<br/>Retype Civilization.Units to UnitManager, drop IUnitManager ..."]
+    T134["T134<br/>Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatche..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C000["C000<br/>Headless Godot test & snapshot harness"]
@@ -277,6 +278,7 @@ flowchart TD
   T096 --> T129
   T097 --> T129
   T066 --> T133
+  T067 --> T134
   C000 --> C001
   T006 --> C001
   T099 --> C001
@@ -348,7 +350,7 @@ flowchart TD
   class T064 review
   class T065 done
   class T066 review
-  class T067 prog
+  class T067 review
   class T068 ondeck
   class T069 waiting
   class T070 waiting
@@ -396,6 +398,7 @@ flowchart TD
   class T131 ready
   class T132 ready
   class T133 ondeck
+  class T134 ondeck
 ```
 
 ## Incomplete tickets
@@ -416,13 +419,14 @@ flowchart TD
 | T126 | **On deck** (after T066) | T063, T066 | 0 | PromotionTree port (IPromotionTree seam, CityConstructions saved promotions) |
 | T129 | **On deck** (after T096) | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
 | T133 | **On deck** (after T066) | T066 | 0 | Retype Civilization.Units to UnitManager, drop IUnitManager seam and FakeUnitManager |
+| T134 | **On deck** (after T067) | T067 | 0 | Retype T040 seams to MapUnit/UnitMovement (CarrierSlotMatcher, MapVisualization, MapPathing) |
 | T066 | Needs-Review [Claude] | T065, T060 | 47 | MapUnit sub-objects and UnitManager: UnitPromotions, UnitTurnManager, UnitUpgradeManager, UnitManager |
 | T046 | Available (waiting on T078) | T034, T039, T045, T055, T060, T065, T078 | 39 | GameInfo core and the hooks waiting for it |
 | T064 | Needs-Review [Claude] | T060, T061, T063 | 33 | City turn and conquest: CityTurnManager, CityConquestFunctions |
 | T069 | Available (waiting on T078) | T055, T060, T065, T078 | 29 | QuestManager and quest helpers |
 | T070 | Available (waiting on T068, T064, T066, T069) | T068, T064, T066, T069 | 28 | Civilization TurnManager |
+| T067 | Needs-Review [Claude] | T065, T054 | 24 | Unit movement: MovementCost, UnitMovement |
 | T035 | Available (waiting on T046) | T034, T038, T039, T046, T053, T054, T057, T061, T065 | 23 | Test-support port: TestGame helper and deferred fixtures |
-| T067 | In-Progress [Claude] | T065, T054 | 23 | Unit movement: MovementCost, UnitMovement |
 | T052 | Available (waiting on T046, T064, T066, T068, T070) | T028, T046, T055, T056, T057, T060, T061, T063, T064, T065, T066, T068, T070 | 19 | UniqueTriggerActivation and UniqueTriggerExecutors |
 | T081 | Available (waiting on T067, T035) | T060, T065, T067, T062, T035 | 18 | Battle A: ICombatant, MapUnitCombatant, CityCombatant, BattleConstants, AttackableTile, BattleDamage |
 | T084 | Available (waiting on T046) | T046, T057, T059 | 16 | Views A: View, GameView, OwnedView, CivView, ForeignCivView, TileView, TileMapView, DiplomacyManagerView, TradeView, SpyView |

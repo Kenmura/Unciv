@@ -12,7 +12,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Logic.Map;
 
-// T065: stand-ins for the sub-objects of MapUnit (UnitMovement T067) and a factory for real
+// T065: stand-ins for the sub-objects of MapUnit (UnitMovement T067: an override of the real class) and a factory for real
 // MapUnits over real Civilizations. The fakes hold data for what the tests read.
 
 /// <summary>The real UnitPromotions, whose PromotionTree (a UI class, T126) is a data-holding fake.</summary>
@@ -30,11 +30,11 @@ internal sealed class FakePromotionTree : IPromotionTree
     public IEnumerable<string> AllNodePromotionNames() => Nodes;
 }
 
-internal sealed class FakeUnitMovement : IUnitMovement
+internal sealed class FakeUnitMovement(MapUnitClass unit) : UnitMovement(unit)
 {
     public bool CanMoveToResult { get; set; } = true;
     public bool CanPassThroughResult { get; set; } = true;
-    public string CannotMoveReason { get; set; } = "";
+    public CannotMoveToReason? CannotMoveReason { get; set; }
     public int PathfindingCacheCleared { get; private set; }
     public int Teleports { get; private set; }
     public List<TileClass> Reachable { get; } = [];
@@ -42,16 +42,24 @@ internal sealed class FakeUnitMovement : IUnitMovement
     public TileClass? HeadTowardsResult { get; set; }
     public List<TileClass> MovedTo { get; } = [];
     public Func<TileClass, bool>? CanMoveToFunc { get; set; }
-    public bool CanMoveTo(TileClass tile) => CanMoveToFunc?.Invoke(tile) ?? CanMoveToResult;
-    public bool CanPassThrough(TileClass tile) => CanPassThroughResult;
-    public string GetCannotMoveToReason(TileClass tile) => CannotMoveReason;
-    public void TeleportToClosestMoveableTile() => Teleports++;
-    public void ClearPathfindingCache() => PathfindingCacheCleared++;
-    public IEnumerable<TileClass> GetDistanceToTilesKeys() => Reachable;
-    public bool CanReach(TileClass destination) => CanReachResult;
-    public TileClass HeadTowards(TileClass destination) => HeadTowardsResult ?? destination;
+    public override bool CanMoveTo(TileClass tile, bool assumeCanPassThrough = false, bool allowSwap = false, bool includeOtherEscortUnit = true) =>
+        CanMoveToFunc?.Invoke(tile) ?? CanMoveToResult;
+    public override bool CanPassThrough(TileClass tile, bool includeOtherEscortUnit = true) => CanPassThroughResult;
+    public override CannotMoveToReason? GetCannotMoveToReason(TileClass tile, bool assumeCanPassThrough = false, bool allowSwap = false, bool includeOtherEscortUnit = true) =>
+        CannotMoveReason;
+    public override void TeleportToClosestMoveableTile() => Teleports++;
+    public override void ClearPathfindingCache() => PathfindingCacheCleared++;
+    public override PathsToTilesWithinTurn GetDistanceToTiles(bool considerZoneOfControl = true, List<bool?>? passThroughCacheNew = null,
+        Dictionary<int, float>? movementCostCache = null, bool includeOtherEscortUnit = true)
+    {
+        var paths = new PathsToTilesWithinTurn();
+        foreach (var tile in Reachable) paths[tile] = new ParentTileAndTotalMovement(tile, tile, 0f);
+        return paths;
+    }
+    public override bool CanReach(TileClass destination) => CanReachResult;
+    public override TileClass HeadTowards(TileClass destination) => HeadTowardsResult ?? destination;
     public Action<TileClass>? OnMoveTo { get; set; }
-    public void MoveToTile(TileClass destination)
+    public override void MoveToTile(TileClass destination, bool considerZoneOfControl = true)
     {
         MovedTo.Add(destination);
         OnMoveTo?.Invoke(destination);
@@ -103,9 +111,9 @@ internal static class MapUnitFactory
             Civ = civ,
             BaseUnit = baseUnit,
             Promotions = new TestUnitPromotions(),
-            Movement = new FakeUnitMovement(),
         };
         unit.Promotions.SetTransients(unit);
+        unit.Movement = new FakeUnitMovement(unit);
         if (tile != null) unit.CurrentTile = tile;
         unit.UpdateUniques();
         return unit;

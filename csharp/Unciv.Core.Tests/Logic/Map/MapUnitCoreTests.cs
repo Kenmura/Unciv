@@ -187,7 +187,6 @@ public class MapUnitCoreTests
         Assert.Throws<InvalidOperationException>(() => unit.Civ);
         Assert.Throws<InvalidOperationException>(() => unit.BaseUnit);
         Assert.Throws<InvalidOperationException>(() => unit.CurrentTile);
-        Assert.Throws<InvalidOperationException>(() => unit.Movement);
         Assert.False(unit.HasTile());
         Assert.Null(unit.GetOtherEscortUnit());
         Assert.Equal(100, unit.Health);
@@ -841,10 +840,10 @@ public class MapUnitCoreTests
         var w = NewWorld();
         var unit = MapUnitFactory.NewUnit(w.Civ, "Warrior");
         unit.Move().CanMoveToResult = false;
-        unit.Move().CannotMoveReason = "Impassable";
+        unit.Move().CannotMoveReason = UnitMovement.CannotMoveToReason.TerrainImpassable;
         var ex = Assert.Throws<InvalidOperationException>(() => unit.PutInTile(w.TileAt(1, 1)));
         Assert.StartsWith("Unit Warrior of Rome at  can't be put in tile Tile @HexCoord(x=1, y=1)", ex.Message);
-        Assert.EndsWith("reason: Impassable", ex.Message);
+        Assert.EndsWith("reason: TerrainImpassable", ex.Message);
         Assert.Null(w.TileAt(1, 1).MilitaryUnit);
     }
 
@@ -1195,8 +1194,8 @@ public class MapUnitCoreTests
             Civ = w.Civ,
             Owner = "Rome",
             Action = "Automate",
-            Movement = new FakeUnitMovement(),
         };
+        unit.Movement = new FakeUnitMovement(unit);
         unit.StatusMap["Shock"] = new MapUnitClass.UnitStatus("Shock", 1);
         unit.CurrentTile = w.TileAt(2, 2);
         unit.SetTransients(w.Ruleset);
