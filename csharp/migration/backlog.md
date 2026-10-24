@@ -209,17 +209,17 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Json field names/defaults must match Kotlin (rulesets load from JSON). Victory.kt is 454 LOC; split off if it exceeds scope and note it. **From T027:** `Unique.GetSourceNameForUser` has a private copy of `GlobalUniques.getUniqueSourceDescription` (marked TODO(T030)); move it to `GlobalUniques` and call that. `RulesetObject` implements `IHasUniques`; its default interface methods are callable only through an `IHasUniques`-typed reference, so use `((IHasUniques)this)` inside the class or re-expose the ones Kotlin callers use (see `IHasUniquesUniqueTests.TestObject` for the minimal shape: cached `UniqueObjects`/`UniqueMap` via `UniqueObjectsProvider()`/`UniqueMapProvider()`, `Name` with a setter, `Uniques` as `List<string>`). **Implemented (Claude):** ported the data model, JSON defaults and the logic that needs no game state. Deferred (need Ruleset/T034, Civilization/GameInfo/T046, T052, or the Civilopedia text types, which have no ticket yet): `ICivilopediaText` (civilopediaText, getCivilopediaTextLines/Header, getSortGroup, getSubCategory, makeLink-as-interface), `Specialist.colorObject` (T050 EngineColor), `Event/EventChoice.triggerChoice` (T052), `QuestName` -> `IQuestImplementation` delegation, `Belief.getBeliefsMatching/getCivilopedia*Entry`, `Milestone.hasBeenCompletedBy/getFocus/getVictoryScreen*/getMoreCountable*/getCountableDone/getFormattedLine`, `RulesetName` extension helpers, `GlobalUniques.civilopediaText` combining. Fixtures VictoryAvailabilityTests/VictoryMilestoneTests need TestGame (T035) and are not ported; tests in `RulesetObjectTests` cover defaults, JSON reading and the pure logic. Traps: (1) `Stats` is `IEnumerable`, so System.Text.Json treated any subclass (NamedStats/Specialist/RulesetStatsObject, later Building etc.) as a collection; added `StatsSubclassConverterFactory` (Json/, read-only, flat object with stat keys plus own properties). (2) C# cannot call `super` on a default interface method: `IHasUniques.IsUnavailableBySettings` body moved to static `IsUnavailableBySettingsDefault`; `RulesetObject`/`RulesetStatsObject` expose a virtual that `RuinReward` overrides. (3) Kotlin `val` fields (RuinReward.weight, Victory.milestones...) are set by json, so they are settable properties. (4) `Speed` per-stat modifiers default to `modifier` at construction only (a json `modifier` does not propagate). (5) `Unique.GetSourceNameForUser` now calls `GlobalUniques.GetUniqueSourceDescription`; `GameParameters` uses `Speed.Default`. (6) Enums renamed to avoid member clashes: `Event.PresentationType`, `Victory.FocusType`, `Policy.PolicyBranchTypes`; `BeliefType.color/isFollower/isFounder` and `MilestoneType.text`, `QuestName.value` are extension methods. Gate and Standard checks pass (882 tests).
 
 ### T031 Ruleset tile objects: Terrain, TerrainType, TileImprovement, TileResource, ResourceType, ResourceSupplyList
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T030
 - Source: core/src/com/unciv/models/ruleset/tile/*.kt
 - Fixtures: none - generate golden values; tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt later with T038
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Tile/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetTileTests`
-- Claimed:
+- Claimed: 2026-10-24T04:39Z
 - Notes: Ordered collections stay ordered (ResourceSupplyList).
 
 ### T032 Ruleset nation and tech objects: Nation, CityStateType, Difficulty, Personality(Value), Era, TechColumn, Technology
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T030
 - Source: core/src/com/unciv/models/ruleset/nation/*.kt, models/ruleset/tech/*.kt
 - Fixtures: tests/src/com/unciv/logic/map/CityStateTypeStartBiasTests.kt (if type-only)
