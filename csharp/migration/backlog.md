@@ -1681,7 +1681,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented in LenientJson.QuoteBareKeys: bare string values (libGDX minimal JSON) are now quoted up to the next , } ] line break or comment start; true/false/null and numbers stay literals; strict JSON is unchanged. Applied in MapSaver.MapFromJson and FileConversions.ReadJson (maps, previews, saves). Colons inside bare values are kept (as libGDX). FreshWaterFixtureTests now uses the original Kotlin base64 string. LenientStringConverter (T151) untouched.
 
 ### T148 Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T139, T141
 - Source: none (ports tests only)
 - Fixtures: tests/src/com/unciv/logic/map/TileImprovementConstructionTests.kt (stockpiledImprovementCostIsChargedOnlyWhenAffordable, nonStockpileImprovementCostsDoNotChargeTheStockpile), UnitFormationTests.kt (tail of formation idle units: Farm startWorkingOnImprovement)

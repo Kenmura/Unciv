@@ -52,7 +52,6 @@ flowchart TD
     T128["T128<br/>Decouple City.cs from the MapUnits namespace and lower its c..."]
     T129["T129<br/>Civilopedia text model C2: Building/Improvement sections of ..."]
     T143["T143<br/>Port GlobalUniquesTests + deferred TestGame fixtures (split ..."]
-    T148["T148<br/>Deferred TestGame fixtures needing Tile.startWorkingOnImprov..."]
     T152["T152<br/>Deferred civilization fixture: GreatPersonSelectionTest"]
     T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
     T155["T155<br/>Air unit automation: AirUnitAutomation"]
@@ -190,7 +189,6 @@ flowchart TD
   class T128 ready
   class T129 prog
   class T143 done
-  class T148 review
   class T152 prog
   class T154 waiting
   class T155 ondeck
@@ -213,7 +211,7 @@ xychart-beta
     x-axis ["02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 25]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 5]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 4]
 ```
 
 ## Incomplete tickets
@@ -247,6 +245,5 @@ xychart-beta
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T129 | In-Progress [Claude] | T096, T097 | 0 | Civilopedia text model C2: Building/Improvement sections of Nation and Technology descriptions |
-| T148 | Needs-Review [Claude] | T139, T141 | 0 | Deferred TestGame fixtures needing Tile.startWorkingOnImprovement (stockpiled improvement costs, formation idle tail) |
 | T152 | In-Progress [Claude] | T142 | 0 | Deferred civilization fixture: GreatPersonSelectionTest |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
