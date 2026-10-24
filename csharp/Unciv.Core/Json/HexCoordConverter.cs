@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unciv.Logic.Map;
@@ -41,9 +42,9 @@ public class HexCoordConverter : JsonConverter<HexCoord>
         switch (reader.TokenType)
         {
             case JsonTokenType.Number:
-                return reader.TryGetInt32(out int i) ? i : (int)Math.Round(reader.GetDouble());
+                return reader.TryGetInt32(out int i) ? i : (int)Math.Round(reader.GetDouble(), MidpointRounding.ToEven);
             case JsonTokenType.String:
-                return int.Parse(reader.GetString()!);
+                return int.Parse(reader.GetString()!, CultureInfo.InvariantCulture);
             case JsonTokenType.StartObject:
                 int result = 0;
                 while (reader.Read())

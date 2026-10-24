@@ -24,7 +24,7 @@ public static class StatExtensions
     public static readonly IReadOnlySet<Stat> StatsWithCivWideField =
         new HashSet<Stat> { Stat.Gold, Stat.Science, Stat.Culture, Stat.Faith, Stat.Happiness };
 
-    private static readonly Dictionary<string, Stat> valuesAsMap = BuildValuesAsMap();
+    private static readonly Dictionary<string, Stat> ValuesAsMap = BuildValuesAsMap();
 
     private static Dictionary<string, Stat> BuildValuesAsMap()
     {
@@ -39,15 +39,15 @@ public static class StatExtensions
     public static IReadOnlyList<Stat> Entries { get; } = Enum.GetValues<Stat>();
 
     /// <summary>Kotlin `Stat.safeValueOf`: exact, case-sensitive name match or null.</summary>
-    public static Stat? SafeValueOf(string name) => valuesAsMap.TryGetValue(name, out var stat) ? stat : null;
+    public static Stat? SafeValueOf(string name) => ValuesAsMap.TryGetValue(name, out var stat) ? stat : null;
 
-    public static bool IsStat(string name) => valuesAsMap.ContainsKey(name);
+    public static bool IsStat(string name) => ValuesAsMap.ContainsKey(name);
 
-    public static IReadOnlyCollection<string> Names() => valuesAsMap.Keys;
+    public static IReadOnlyCollection<string> Names() => ValuesAsMap.Keys;
 
     /// <summary>Kotlin `Stat.valueOf`: throws for unknown names.</summary>
     public static Stat ValueOf(string name) =>
-        valuesAsMap.TryGetValue(name, out var stat)
+        ValuesAsMap.TryGetValue(name, out var stat)
             ? stat
             : throw new ArgumentException($"No enum constant Stat.{name}");
 }

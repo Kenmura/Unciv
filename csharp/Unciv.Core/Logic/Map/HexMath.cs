@@ -129,9 +129,9 @@ public static class HexMath
     {
         static Vector3 RoundCubicCoords(Vector3 cubicCoords)
         {
-            float rx = MathF.Round(cubicCoords.x);
-            float ry = MathF.Round(cubicCoords.y);
-            float rz = MathF.Round(cubicCoords.z);
+            float rx = MathF.Round(cubicCoords.x, MidpointRounding.ToEven);
+            float ry = MathF.Round(cubicCoords.y, MidpointRounding.ToEven);
+            float rz = MathF.Round(cubicCoords.z, MidpointRounding.ToEven);
 
             float deltaX = Math.Abs(rx - cubicCoords.x);
             float deltaY = Math.Abs(ry - cubicCoords.y);

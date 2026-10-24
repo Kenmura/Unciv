@@ -35,7 +35,15 @@ All dotnet commands run in the distrobox container `dotnet-dev`, from **your own
 distrobox enter dotnet-dev -- bash -c 'cd <your-worktree>/csharp && <command>'
 ```
 
-Gate commands in the backlog are written as the inner `<command>` only. Home is shared with the container, so worktree paths are identical inside it.
+Gate commands in the backlog are written as the inner `<command>` only.
+
+**Standard checks (T013).** In addition to a ticket's own Gate, *every* implementation and review must run, and pass, the full set from the `csharp/` directory before a ticket leaves `In-Progress`/`In-Review`:
+
+```
+dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test
+```
+
+The build enforces `Directory.Build.props`, `.editorconfig` and `BannedSymbols.txt`. See `csharp/AGENTS.md` for the rules agents should follow and how to handle a blocking rule. Home is shared with the container, so worktree paths are identical inside it.
 
 ## Worktrees and the shared branch
 
@@ -79,7 +87,7 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 1. Read every Source file listed in the ticket and its test fixtures (or use the subagent brief above, spot-checked).
 2. Port tests first (xUnit, same cases, same names where possible), then the implementation. Preserve behaviour exactly, including quirks, integer/float semantics (Kotlin `Int` division, `Float` vs `Double`, rounding mode) and iteration order. Do not "improve" logic.
 3. Replace libGDX/UI types with small engine-owned equivalents in `Unciv.Core` (e.g. `Vector2`) – never add UI dependencies. If a ticket needs a type owned by another ticket, stop and mark `Blocked` with a note.
-4. Run the ticket's Gate command. It must exit 0, and the whole solution must still pass `dotnet test`.
+4. Run the ticket's Gate command, then the Standard checks (see Environment). Both must exit 0.
 5. Set `State` to `Needs-Review [You]`, fill `Notes` (deviations, assumptions, semantic traps), commit `migration: implement T### [You]`, and publish.
 
 ### Review
@@ -91,8 +99,9 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
    - Float/Double/Int widths and rounding match Kotlin; no silent `float`→`double` promotion; Kotlin `Int` overflow and division semantics preserved.
    - No wall-clock, culture-sensitive formatting/parsing, or threading nondeterminism in engine logic.
 3. Check that ported tests cover every Kotlin test case and add cases for any untested branch you find.
-4. Run the Gate and full `dotnet test` yourself. Do not trust the implementer's claim.
-5. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`. Publish either way.
+4. Run the Gate and the Standard checks yourself. Do not trust the implementer's claim.
+5. Confirm the diff adds no new `#pragma warning disable`, `SuppressMessage`, `NoWarn` or `.editorconfig`/`BannedSymbols*.txt` change unless the ticket is a policy ticket; any suppression needs a `JUSTIFY: T###` comment that you agree with.
+6. Pass → `Done`, commit `migration: review T### pass [You]`. Fail → set `Available`, append findings under `Review notes`, commit `migration: review T### changes-requested [You]`. Publish either way.
 
 ## Running until budget is exhausted
 
@@ -119,6 +128,7 @@ When the backlog runs low, an agent that finds nothing `Available` should first 
 - Never mark `Done` without a passing Gate you ran in this session.
 - New tickets discovered along the way are appended to the backlog as `Available` with correct `Depends`.
 - Do not touch Gradle/Android build files.
+- Do not edit `Directory.Build.props`, `Directory.Packages.props`, `BannedSymbols*.txt` or `csharp/.editorconfig` except in a ticket whose purpose is policy.
 - **Assets:** never copy Firaxis/Civ 5 art, icons, sounds, fonts or music. Record the source and license of every asset in `csharp/migration/ASSETS.md`. Unciv's own assets keep their original license; check before reuse.
 - Ported files keep the original MPL-2.0 license notice (see repo `LICENSE`).
 - Generated golden values (for code without Kotlin tests) must come from running the Kotlin code; record how in `Notes`.

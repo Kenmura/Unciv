@@ -1,0 +1,118 @@
+# C# style for the Kotlin -> C# migration. Inherits the repo-root .editorconfig (charset, LF, 4 spaces).
+# Rule of thumb: correctness and determinism rules are `error`; pure taste stays `suggestion` so agents
+# do not burn time on it. See AGENTS.md and migration/backlog.md T013.
+
+[*.cs]
+# ---- Structure ----
+csharp_style_namespace_declarations = file_scoped:error
+csharp_prefer_braces = true:suggestion
+csharp_using_directive_placement = outside_namespace:error
+dotnet_sort_system_directives_first = true
+csharp_new_line_before_open_brace = all
+csharp_indent_case_contents = true
+csharp_preserve_single_line_statements = true
+csharp_preserve_single_line_blocks = true
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
+
+# ---- Types and var ----
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+dotnet_style_predefined_type_for_locals_parameters_members = true:error
+dotnet_style_predefined_type_for_member_access = true:error
+csharp_style_prefer_primary_constructors = false:none
+
+# ---- Naming ----
+dotnet_naming_rule.interfaces_prefixed_i.symbols = interfaces
+dotnet_naming_rule.interfaces_prefixed_i.style = prefixed_i
+dotnet_naming_rule.interfaces_prefixed_i.severity = error
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_style.prefixed_i.required_prefix = I
+dotnet_naming_style.prefixed_i.capitalization = pascal_case
+
+dotnet_naming_rule.types_pascal.symbols = types
+dotnet_naming_rule.types_pascal.style = pascal
+dotnet_naming_rule.types_pascal.severity = error
+dotnet_naming_symbols.types.applicable_kinds = class, struct, enum, delegate
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+# Private fields stay camelCase without a prefix so they read like the Kotlin properties they port.
+dotnet_naming_rule.constants_pascal.symbols = constants
+dotnet_naming_rule.constants_pascal.style = pascal
+dotnet_naming_rule.constants_pascal.severity = error
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_rule.static_fields_pascal.symbols = static_fields
+dotnet_naming_rule.static_fields_pascal.style = pascal
+dotnet_naming_rule.static_fields_pascal.severity = error
+dotnet_naming_symbols.static_fields.applicable_kinds = field
+dotnet_naming_symbols.static_fields.required_modifiers = static
+
+dotnet_naming_rule.private_fields_camel.symbols = private_fields
+dotnet_naming_rule.private_fields_camel.style = camel
+dotnet_naming_rule.private_fields_camel.severity = error
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, private_protected
+dotnet_naming_style.camel.capitalization = camel_case
+
+dotnet_naming_rule.members_pascal.symbols = pascal_members
+dotnet_naming_rule.members_pascal.style = pascal
+dotnet_naming_rule.members_pascal.severity = error
+dotnet_naming_symbols.pascal_members.applicable_kinds = method, property, event
+dotnet_naming_symbols.pascal_members.applicable_accessibilities = public, internal, protected, protected_internal, private_protected
+
+# ---- Dead code: ports must not accumulate unused members ----
+dotnet_diagnostic.IDE0005.severity = error
+dotnet_diagnostic.IDE0051.severity = error
+dotnet_diagnostic.IDE0052.severity = error
+dotnet_diagnostic.IDE0060.severity = error
+dotnet_diagnostic.CS8509.severity = error
+
+# ---- Culture / string correctness (determinism) ----
+dotnet_diagnostic.CA1304.severity = error
+dotnet_diagnostic.CA1305.severity = error
+dotnet_diagnostic.CA1307.severity = error
+dotnet_diagnostic.CA1309.severity = error
+dotnet_diagnostic.CA1310.severity = error
+dotnet_diagnostic.CA1311.severity = error
+
+# ---- Banned APIs (BannedSymbols.txt) ----
+dotnet_diagnostic.RS0030.severity = error
+
+# ---- Taste rules that must not fail a build; Kotlin fidelity beats idiom ----
+dotnet_diagnostic.IDE0022.severity = suggestion
+dotnet_diagnostic.IDE0011.severity = suggestion
+dotnet_diagnostic.CA1707.severity = suggestion
+dotnet_diagnostic.CA1716.severity = suggestion
+dotnet_diagnostic.CA1720.severity = suggestion
+dotnet_diagnostic.CA1000.severity = suggestion
+dotnet_diagnostic.CA1822.severity = suggestion
+
+[Unciv.Core.Tests/**.cs]
+# Test names often use underscores; xunit tests need no accessibility fuss.
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.IDE0060.severity = suggestion
+
+# libGDX/Kotlin-faithful lowercase public fields on the vector shims. Narrow, by file, on purpose.
+[Unciv.Core/Math/Vector{2,3}.cs]
+dotnet_diagnostic.IDE1006.severity = none
+
+# The `Stats` alias only resolves inside the namespace because the test namespace Unciv.Core.Tests.Models.Stats
+# would otherwise shadow the type (T004). Narrow, by file, on purpose.
+[Unciv.Core.Tests/Models/Stats/StatsTests.cs]
+dotnet_diagnostic.IDE0065.severity = none
+
+# Kotlin-faithful names: nested `Comparator` interface and public `comparator` property mirror the Kotlin API (T001).
+[Unciv.Core/Utils/LongPriorityQueue.cs]
+dotnet_diagnostic.IDE1006.severity = none
+
+# Kotlin-faithful API surface: HexCoord exposes both PascalCase and the original lowercase members (T006).
+[Unciv.Core/Logic/Map/HexMath.cs]
+dotnet_diagnostic.IDE1006.severity = none
+
+# Kotlin marker interface keeps its original name `IsPartOfGameInfoSerialization` (T007).
+[Unciv.Core/Json/IsPartOfGameInfoSerialization.cs]
+dotnet_diagnostic.IDE1006.severity = none

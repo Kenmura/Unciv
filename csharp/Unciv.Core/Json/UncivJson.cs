@@ -1,17 +1,13 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Unciv.Logic.Map;
-using Unciv.Mathematics;
-using Unciv.Models;
-using Unciv.Models.StatTypes;
 
 namespace Unciv.Json;
 
 public static class UncivJson
 {
-    private static readonly JsonSerializerOptions defaultOptions = CreateDefaultOptions();
+    private static readonly JsonSerializerOptions SharedOptions = CreateDefaultOptions();
 
-    public static JsonSerializerOptions DefaultOptions => defaultOptions;
+    public static JsonSerializerOptions DefaultOptions => SharedOptions;
 
     public static JsonSerializerOptions CreateDefaultOptions()
     {
@@ -35,8 +31,8 @@ public static class UncivJson
     }
 
     public static string Serialize<T>(T value, JsonSerializerOptions? options = null) =>
-        JsonSerializer.Serialize(value, options ?? defaultOptions);
+        JsonSerializer.Serialize(value, options ?? SharedOptions);
 
     public static T? Deserialize<T>(string json, JsonSerializerOptions? options = null) =>
-        JsonSerializer.Deserialize<T>(json, options ?? defaultOptions);
+        JsonSerializer.Deserialize<T>(json, options ?? SharedOptions);
 }

@@ -1,5 +1,3 @@
-using System;
-
 namespace Unciv.Logic.Map.MapGenerator;
 
 // version 1.1.3
