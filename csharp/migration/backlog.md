@@ -1016,7 +1016,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (isolated adversarial, Claude): fixed the SpecificUnitAutomation citadel placer to use the tile owner's WorkerAutomation (Kotlin `owner.getWorkerAutomation()`), MaxByOrNull now uses Kotlin Float total order, ported the missing 'improvements in turns without roads' case, tightened several tests. Not done (accepted, residual): dedicated tests for Moai adjacency stats, remove-improvement ranking, negative-yield terrain removal, some road-priority branches (see coverage report); tracked by coverage floors.
 
 ### T093 PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T067, T088, T090, T092, T156
 - Source: core/src/com/unciv/logic/map/pathingmap/PathingMap.kt, PathingMapCache.kt, PathingMapAStarPathfinder.kt, RouteNode.kt, PrioritizedNode.kt (FixedPointMovement.kt is ported by T067)
 - Fixtures: tests/src/com/unciv/logic/map/pathingmap/PathingMapTest.kt, RouteNodeTest.kt (TestGame: T035 via T092)
@@ -1034,6 +1034,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Kotlin quirks kept and pinned by tests: a second bfsAllMatchingTiles/bfsUntilMatchingTile over fully cached nodes offers nothing to the predicate (only newly reached tiles are offered), so the Kotlin test's 'affirm cache' re-reads the same list; getRoadPathToAny must run before getRoadPath on the same city cache. RouteNode require() failures are ArgumentException.
       - Tests: PathingMapTests (all 14 Kotlin cases, debug maps verbatim), RouteNodeTests, CityPathingTests; PathfindingFixtureTests/UnitMovementFixtureTests now run both parameter sets (abstract base + Classic/AStar classes) incl. the 3 A*-only cases (58/58); BattleTests, TargetHelperTests, WorkerAutomationTests run with A* on (TargetHelper/Worker/Battle keep a Classic run too, which keeps City.cs coverage). NextTurnAutomationTest's A* set belongs to T094.
       - Coverage: City.cs was already below its baseline on the untouched csharp-migration tip (94.56 < 94.96, measured in a clean worktree); CityPathingTests.CityFiltersRelativeToAViewingCiv covers MatchesSingleFilter branches to bring it to 95.36. `coverage.py --update-baseline` was DENIED by the permission classifier (CI Bypass): baseline NOT updated; new files are all >= 87% line so --check passes without entries.
+  -   - Review (Claude, isolated adversarial, Auditor/Adversary/Pragmatist): PASS, no blocking findings. Non-blocking: damage-aware A* branches (PathingMap.GetShortestPath with-damage 'last non-damaging tile', AStar re-queue and FindDamageFreeAnchor root) lack dedicated tests. Renamed T094's stale CityStateSeams.cs/TurnManagerSeams.cs to *Hooks.cs (MarkerOwnershipTests was red on the tip); coverage-baseline.json still lists the old CityStateSeams.cs path (--update-baseline was denied by the permission classifier; needs a human or a later ticket).
 
 ### T094 NextTurnAutomation and BarbarianAutomation (automation integration)
 - State: Done

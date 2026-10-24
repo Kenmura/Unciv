@@ -96,7 +96,7 @@ flowchart TD
   class T089 done
   class T091 done
   class T092 done
-  class T093 review
+  class T093 done
   class T094 done
   class T097 done
   class T100 done
@@ -124,7 +124,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 13]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 2]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 1]
 ```
 
 ## Incomplete tickets
@@ -137,7 +137,6 @@ xychart-beta
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T101 | Needs-Review [Claude] | T099, T094, T071, T011 | 2 | Simulation: Simulation, SimulationStep, MutableInt |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T093 | Needs-Review [Claude] | T067, T088, T090, T092, T156 | 1 | PathingMap: PathingMap, PathingMapCache, PathingMapAStarPathfinder, RouteNode, PrioritizedNode |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -145,4 +144,4 @@ xychart-beta
 | C004 | Blocked | C002 | 0 | 3D military units |
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
-| T104 | Available (waiting on T102, T093) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T104 | Available (waiting on T102) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
