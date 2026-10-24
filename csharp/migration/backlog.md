@@ -1607,7 +1607,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Scope narrowed at claim: ported EspionageTests, FreeBuildingTests, DefensivePactTests, GoldenAgeManagerTest, CityMovingTests, CapitalConnectionsFinderTests, DiplomacyManagerTests (18 of 21 cases), GoldGiftingTests (9 of 14). ThreatManagerTests were already ported over TestGame by T087 (AutomationCoreTests.ThreatManager.cs). All pass unchanged against the engine, no bug found. Deferred: T149 (3 DiplomacyManagerTests conquest cases, need Battle T083), T150 (5 GoldGifting trade cases, need TradeEvaluation T089), T151 (QuestTests, GameSerializationTests, need JSON wiring T140), T152 (GreatPersonSelectionTest, UI/mock bound).
 
 ### T143 Port GlobalUniquesTests + deferred TestGame fixtures (split from T103)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T103
 - Source: tests/src/com/unciv/uniques/GlobalUniquesTests.kt (50 tests), ResourceTests.kt
 - Fixtures: (the test files above)
@@ -1615,6 +1615,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test`
 - Claimed: 2026-10-24T17:55Z
 - Notes: Split from T103 at claim time (scope >100 cases). Also ports deferred T028 CountableTests/ExpressionTests state cases, T036 UniqueErrorTests.testEducatedEliteGreatPersonGifting and deferred T036/T057 validator cases, TimedUniquesTests from T035, and ResourceTests once T106 is Done (add that dependency if needed).
+  - Implemented (Claude, tests only): Uniques/GlobalUniquesTests.cs (50 cases, all of GlobalUniquesTests.kt), Uniques/ResourceTests.cs (23 cases, all of ResourceTests.kt), Uniques/TimedUniquesTests.cs (3 cases; adds testConditionalTimedUniqueStrength/Expires). All passed first run, no engine bugs found. Narrowed at claim: the remaining deferred TestGame cases (CountableTests/ExpressionTests state cases, UniqueErrorTests.testEducatedEliteGreatPersonGifting which needs T094, Victory fixtures) split to T154.
 
 ### T144 Port TileUniquesTests.pillageYieldTest (split from T103)
 - State: Available
@@ -1715,6 +1716,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~CivReligionVictoryTests
 - Claimed:
 - Notes:
+
+### T154 Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143)
+- State: Available
+- Depends: T143, T094
+- Source: tests/src/com/unciv/uniques/CountableTests.kt, ExpressionTests.kt, UniqueErrorTests.kt (testEducatedEliteGreatPersonGifting), models/ruleset/VictoryAvailabilityTests.kt, VictoryMilestoneTests.kt
+- Fixtures: (the test files above)
+- Deliverables: csharp/Unciv.Core.Tests/**, ported tests
+- Gate: dotnet test
+- Claimed:
+- Notes: Split from T143 at claim time. Remaining deferred cases: CountableTests TestGame cases (testRulesetValidation, testForEveryWithInvalidCountable, testPerCountableForGlobalAndLocalResources, testStatOrResourcePerTurn, testStatsCountables, testKnownCivsCountable, testOwnedTilesCountable, testFilteredCitiesCountable, testFilteredBuildingsCountable, testPoliciesCountables, testEraNumberCountable, testSpeedModifierCountable, countableCanUseContext) and ExpressionTests state cases; UniqueErrorTests.testEducatedEliteGreatPersonGifting (a ported draft fails with NotImplementedException from CityStateSeams.GetForeignCityNearCapital: needs T094 NextTurnAutomation; the UncivGame settings tutorial workaround is not needed); VictoryAvailabilityTests/VictoryMilestoneTests (check DeferredRulesetMembersTests/RulesetObjectTests for what is already covered). Many CountableTests cases may already be covered over fakes in Models/Ruleset/Unique/CountableTests.cs: port the real-game variant only where the Kotlin case differs.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
