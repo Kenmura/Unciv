@@ -1176,7 +1176,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Reflection test MutableStaticStateTests (+ MutableStaticStateAllowlist.cs, every entry must start with JUSTIFY: and be still a violation, else a second test fails as stale). Flags non-readonly/non-const static fields, public static setters, static readonly fields of mutable collection/array types. 58 existing violations allowlisted: constant lookup tables (mutable type only by convenience) and true globals (EventBus, Log, RulesetCache, Translations.Current, host hooks, memo caches). Cleanup of the true globals is follow-up T123 (depends T117). Compiler-generated types skipped. Non-parallel collection for Log/EventBus tests left to T123.
 
 ### T118 Policy: marker check - every TODO(T###) names an open ticket, every NotSupported/NotImplemented seam has an owner
-- State: In-Review [Antigravity]
+- State: Done
 - Depends: none
 - Source: none (policy ticket: new build-time rule, no Kotlin source)
 - Fixtures: none
