@@ -1380,13 +1380,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Found by T122 review: coverage dropped when T063 and others landed with tests to follow. Review step lists uncovered ranges with coverage.py --report.
 
 ### T131 Hardening: T063 review follow-ups (CityConstructions test gaps, Java-order freeBuildingsProvidedFromThisCity, IConstructionCity cast)
-- State: Available
+- State: In-Progress [Antigravity]
 - Depends: T063
 - Source: csharp/Unciv.Core/Logic/City/CityConstructions.cs
 - Fixtures: none
 - Deliverables: tests for ChooseNextConstruction, CreatesOneImprovement paths (marker place/remove/validate), TriggerNewBuildingUniques, Korean tech boost, stockpile branch of ValidateConstructionQueue, ConstructionBegun and TriggersAlertOnCompletion notifications, Building/BaseUnit NotMetRejections and MaxNumberBuildable, CanUnitEnterTile; FreeBuildingsProvidedFromThisCity as JavaHashMap<string,JavaHashSet<string>> (with CivConstructions); replace the (City) cast in BaseUnit.CanBePurchasedWithStat by a City-typed parameter
 - Gate: dotnet test --filter FullyQualifiedName~CityConstructionsTests
-- Claimed:
+- Claimed: 2026-10-24T15:10Z
 - Notes: From the T063 adversarial review (non-blocking findings).
 
 ### T132 T097 review follow-ups: game context for Technology unit/obsoleted filters, BaseUnit.GetDescription ruleset
