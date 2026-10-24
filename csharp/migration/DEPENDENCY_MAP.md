@@ -203,7 +203,7 @@ flowchart TD
   class T144 ready
   class T146 prog
   class T148 ondeck
-  class T149 prog
+  class T149 review
   class T150 ready
   class T152 ready
   class T154 waiting
@@ -267,5 +267,5 @@ xychart-beta
 | T104 | Available (waiting on T102, T093, T094) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | T115 | In-Progress [Antigravity] | T060, T035 | 0 | Retype Tile city seams to City and move the Tile/Pathfinding test fakes onto real City objects |
 | T146 | In-Progress [Claude] | T083, T141 | 0 | UnitFormationTests Battle-dependent escort attack cases (needs Battle.attack) |
-| T149 | In-Progress [Claude] | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
+| T149 | Needs-Review [Claude] | T142, T083 | 0 | Deferred civilization fixtures needing Battle: DiplomacyManagerTests city-conquest cases |
 | T154 | Available (waiting on T094) | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |

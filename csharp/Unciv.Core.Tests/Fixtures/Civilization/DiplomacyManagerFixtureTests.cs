@@ -8,7 +8,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Core.Tests.Fixtures.CivilizationFixtures;
 
 // T142: port of tests/src/com/unciv/logic/civilization/diplomacy/DiplomacyManagerTests.kt over the real TestGame.
-// The three city-conquest cases (puppetCity/liberateCity reach Battle) are deferred to T149.
+// The three city-conquest cases live in DiplomacyManagerConquestFixtureTests (T149).
 [Collection("RulesetCache")]
 public sealed class DiplomacyManagerFixtureTests
 {
