@@ -1129,6 +1129,9 @@ public static class UniqueParameterTypeExtensions
         if (span[^1] is 'f' or 'F' or 'd' or 'D')
             span = span[..^1];
 
+        if (IsHexFloatBody(StripSign(span)))
+            return ParseHexFloat(span);
+
         if (float.TryParse(
                 span,
                 NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent,
@@ -1155,6 +1158,9 @@ public static class UniqueParameterTypeExtensions
             span = span[..^1];
         if (span.IsEmpty) return false;
 
+        if (IsHexFloatBody(span))
+            return IsValidHexFloat(span[2..]);
+
         int expIdx = span.IndexOfAny('e', 'E');
         ReadOnlySpan<char> mantissa = expIdx >= 0 ? span[..expIdx] : span;
         if (expIdx >= 0)
@@ -1178,6 +1184,88 @@ public static class UniqueParameterTypeExtensions
             hasDigit = true;
         }
         return hasDigit;
+    }
+
+    private static ReadOnlySpan<char> StripSign(ReadOnlySpan<char> span) =>
+        !span.IsEmpty && span[0] is '+' or '-' ? span[1..] : span;
+
+    /// <summary>Java's hex float literal prefix: <c>0x</c> / <c>0X</c> (sign and f/d suffix already removed).</summary>
+    private static bool IsHexFloatBody(ReadOnlySpan<char> span) =>
+        span.Length > 2 && span[0] == '0' && span[1] is 'x' or 'X';
+
+    /// <summary>
+    /// Kotlin's <c>ScreenFloatValueRegEx</c> hex branch: <c>HexDigits [.]</c> or <c>[HexDigits] . HexDigits</c>,
+    /// then a mandatory <c>p</c>/<c>P</c> binary exponent with optional sign and decimal digits.
+    /// </summary>
+    private static bool IsValidHexFloat(ReadOnlySpan<char> body)
+    {
+        int pIdx = body.IndexOfAny('p', 'P');
+        if (pIdx < 0) return false;
+
+        ReadOnlySpan<char> exponent = StripSign(body[(pIdx + 1)..]);
+        if (exponent.IsEmpty) return false;
+        foreach (char c in exponent)
+        {
+            if (c is < '0' or > '9') return false;
+        }
+
+        bool hasDot = false;
+        bool hasDigit = false;
+        foreach (char c in body[..pIdx])
+        {
+            if (c == '.')
+            {
+                if (hasDot) return false;
+                hasDot = true;
+            }
+            else if (char.IsAsciiHexDigit(c))
+            {
+                hasDigit = true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        return hasDigit;
+    }
+
+    /// <summary>
+    /// Value of an already validated hex float (optional sign, <c>0x</c>, no suffix).
+    /// Exact for mantissas up to 53 significant bits; only validity matters to the engine.
+    /// </summary>
+    private static float ParseHexFloat(ReadOnlySpan<char> span)
+    {
+        bool isNegative = !span.IsEmpty && span[0] == '-';
+        ReadOnlySpan<char> body = StripSign(span)[2..];
+        int pIdx = body.IndexOfAny('p', 'P');
+
+        double mantissa = 0;
+        int fractionDigits = 0;
+        bool afterDot = false;
+        foreach (char c in body[..pIdx])
+        {
+            if (c == '.')
+            {
+                afterDot = true;
+                continue;
+            }
+            mantissa = mantissa * 16 + Convert.ToInt32(c.ToString(), 16);
+            if (afterDot) fractionDigits++;
+        }
+
+        ReadOnlySpan<char> exponentText = body[(pIdx + 1)..];
+        bool exponentNegative = exponentText[0] == '-';
+        long exponent = 0;
+        foreach (char c in StripSign(exponentText))
+        {
+            exponent = System.Math.Min(exponent * 10 + (c - '0'), 100_000);
+        }
+        if (exponentNegative) exponent = -exponent;
+
+        int binaryExponent = (int)(exponent - 4L * fractionDigits);
+        float result = (float)System.Math.ScaleB(mantissa, binaryExponent);
+        return isNegative ? -result : result;
     }
 
     private static IReadOnlySet<string> SetOf(params string[] items) =>

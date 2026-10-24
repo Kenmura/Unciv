@@ -373,11 +373,32 @@ public class UniqueParameterTypeTests
     [InlineData("", false)]
     [InlineData(".", false)]
     [InlineData("+.", false)]
+    [InlineData("0x1p3", true)]
+    [InlineData("-0x1.8p1", true)]
+    [InlineData("0x.8p1", true)]
+    [InlineData("0x1.p1", true)]
+    [InlineData("0X1P-2", true)]
+    [InlineData("0x1p3f", true)]
+    [InlineData("0x1", false)]
+    [InlineData("0x1p", false)]
+    [InlineData("0xp1", false)]
+    [InlineData("0x.p1", false)]
+    [InlineData("0x1.2.3p1", false)]
+    [InlineData("0xgp1", false)]
     public void Fraction_MatchesJvmToFloatOrNull(string input, bool expectedValid)
     {
         var ruleset = EmptyRulesetParameterView.Instance;
         var expected = expectedValid ? (UniqueParameterErrorSeverity?)null : UniqueParameterErrorSeverity.RulesetInvariant;
         Assert.Equal(expected, UniqueParameterType.Fraction.GetErrorSeverity(input, ruleset));
+    }
+
+    [Fact]
+    public void ToFloatOrNull_HexFloatValues_MatchJava()
+    {
+        Assert.Equal(8f, UniqueParameterTypeExtensions.ToFloatOrNull("0x1p3"));
+        Assert.Equal(3f, UniqueParameterTypeExtensions.ToFloatOrNull("0x1.8p1"));
+        Assert.Equal(-0.25f, UniqueParameterTypeExtensions.ToFloatOrNull("-0X1P-2"));
+        Assert.Equal(0.25f, UniqueParameterTypeExtensions.ToFloatOrNull("0x.8p-1f"));
     }
 
     [Fact]
