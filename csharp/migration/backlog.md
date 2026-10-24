@@ -281,13 +281,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 
 ### T037 Golden test: load and validate Vanilla and bundled mod rulesets
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T036, T035
 - Source: none (integration test)
 - Fixtures: tests/src/com/unciv/logic/LoadGameTest.kt (ruleset portion); ModConstantsTests moved to T049
 - Deliverables: csharp/Unciv.Core.Tests/Models/Ruleset/VanillaRulesetTests.cs
 - Gate: `dotnet test --filter FullyQualifiedName~VanillaRulesetTests`
-- Claimed:
+- Claimed: 2026-10-24T16:19Z
 - Notes: Asset JSON is read from the Kotlin repo's android/assets/jsons (read-only). Compare object counts/ids/uniques against Kotlin-generated dump (record how generated).
 
 ### T038 Tile core (part 1): TileHistory
