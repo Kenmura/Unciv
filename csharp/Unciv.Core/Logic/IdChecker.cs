@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Unciv.Utils;
 
 namespace Unciv.Logic;
@@ -43,28 +44,51 @@ public static class IdChecker
         return uuid != null ? new Friend("", uuid) : null;
     }
 
+    // Upstream parses with Ktor's Url(). Only URLs that start with the fixed prefix get here, so scheme and host
+    // are already known to be fine and what is left is Ktor's path/query/fragment handling, ported by hand:
+    // dot segments and empty segments are kept (System.Uri would normalize them away), a single trailing empty
+    // segment is dropped, query values decode '+' as a space, and the fragment is ignored.
+    // Upstream note: malformed percent escapes make Ktor throw URLDecodeException out of IdChecker;
+    // here they are treated as an invalid id (null), a deliberate hardening.
     private static Friend? CheckAndReturnIdFromUrl(string id, string prefix)
     {
-        if (!Uri.TryCreate(id, UriKind.Absolute, out Uri? uri))
+        const string PathStartMarker = "/Unciv/";
+        string rest = id[(UncivUrlPrefix.Length - PathStartMarker.Length)..];
+
+        int fragmentStart = rest.IndexOf('#', StringComparison.Ordinal);
+        if (fragmentStart >= 0)
+        {
+            rest = rest[..fragmentStart];
+        }
+
+        string query = "";
+        int queryStart = rest.IndexOf('?', StringComparison.Ordinal);
+        if (queryStart >= 0)
+        {
+            query = rest[(queryStart + 1)..];
+            rest = rest[..queryStart];
+        }
+
+        List<string> rawSegments = [.. rest.Split('/')];
+        rawSegments.RemoveAt(0); // the empty part before the leading '/'
+        if (rawSegments.Count > 1 && rawSegments[^1].Length == 0)
+        {
+            rawSegments.RemoveAt(rawSegments.Count - 1);
+        }
+
+        if (rawSegments.Count != 3)
         {
             return null;
         }
 
-        string[] rawSegments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (rawSegments.Length != 3)
-        {
-            return null;
-        }
-
-        string[] segments = new string[3];
+        string[] segments;
+        string name;
         try
         {
-            for (int i = 0; i < 3; i++)
-            {
-                segments[i] = Uri.UnescapeDataString(rawSegments[i]);
-            }
+            segments = [.. rawSegments.Select(segment => PercentDecode(segment, plusAsSpace: false))];
+            name = ExtractQueryParameter(query, "name") ?? "";
         }
-        catch (UriFormatException)
+        catch (FormatException)
         {
             return null;
         }
@@ -80,22 +104,7 @@ public static class IdChecker
         }
 
         string? gameId = CheckAndReturnUuiId(segments[2], prefix);
-        if (gameId == null)
-        {
-            return null;
-        }
-
-        string name;
-        try
-        {
-            name = ExtractQueryParameter(uri.Query, "name") ?? "";
-        }
-        catch (UriFormatException)
-        {
-            return null;
-        }
-
-        return new Friend(name, gameId);
+        return gameId == null ? null : new Friend(name, gameId);
     }
 
     private static string? CheckAndReturnUuiId(string id, string prefix)
@@ -165,33 +174,73 @@ public static class IdChecker
         return (10 - (sum % 10)) % 10;
     }
 
+    // Ktor decodes the whole query eagerly, so a malformed escape in any parameter invalidates the url
     private static string? ExtractQueryParameter(string query, string parameterName)
     {
-        if (string.IsNullOrEmpty(query))
+        string? result = null;
+        foreach (string pair in query.Split('&'))
         {
-            return null;
-        }
+            if (pair.Length == 0)
+            {
+                continue;
+            }
 
-        ReadOnlySpan<char> span = query.AsSpan();
-        if (span[0] == '?')
-        {
-            span = span[1..];
-        }
-
-        string[] pairs = span.ToString().Split('&', StringSplitOptions.RemoveEmptyEntries);
-        foreach (string pair in pairs)
-        {
             int eqIndex = pair.IndexOf('=', StringComparison.Ordinal);
-            string rawKey = eqIndex >= 0 ? pair[..eqIndex] : pair;
-            string key = Uri.UnescapeDataString(rawKey);
+            string key = PercentDecode(eqIndex >= 0 ? pair[..eqIndex] : pair, plusAsSpace: true);
+            string value = eqIndex >= 0 ? PercentDecode(pair[(eqIndex + 1)..], plusAsSpace: true) : "";
             if (key == parameterName)
             {
-                return eqIndex >= 0 ? Uri.UnescapeDataString(pair[(eqIndex + 1)..]) : "";
+                result ??= value;
             }
         }
 
-        return null;
+        return result;
     }
+
+    /// <summary>UTF-8 percent decoding as Ktor does it; throws <see cref="FormatException"/> on a malformed escape.</summary>
+    private static string PercentDecode(string text, bool plusAsSpace)
+    {
+        var bytes = new List<byte>(text.Length);
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c == '%')
+            {
+                if (i + 2 >= text.Length)
+                {
+                    throw new FormatException("Incomplete percent escape");
+                }
+
+                int hi = HexValue(text[i + 1]);
+                int lo = HexValue(text[i + 2]);
+                bytes.Add((byte)((hi << 4) | lo));
+                i += 2;
+            }
+            else if (c == '+' && plusAsSpace)
+            {
+                bytes.Add((byte)' ');
+            }
+            else if (char.IsHighSurrogate(c) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+            {
+                bytes.AddRange(Encoding.UTF8.GetBytes(text.Substring(i, 2)));
+                i++;
+            }
+            else
+            {
+                bytes.AddRange(Encoding.UTF8.GetBytes(c.ToString()));
+            }
+        }
+
+        return Encoding.UTF8.GetString(bytes.ToArray());
+    }
+
+    private static int HexValue(char c) => c switch
+    {
+        >= '0' and <= '9' => c - '0',
+        >= 'a' and <= 'f' => c - 'a' + 10,
+        >= 'A' and <= 'F' => c - 'A' + 10,
+        _ => throw new FormatException("Invalid percent escape"),
+    };
 
     private static string TrimSpaceOrWrapper(string input)
     {
