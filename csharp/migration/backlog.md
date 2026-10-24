@@ -562,7 +562,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review notes (Antigravity): **Pass.** Gate (5/5) and Standard checks (build -warnaserror, format, 540/540 tests) pass cleanly. Line-by-line verification against `HolidayDates.kt` confirms enum values/ordering, chance weights, and lazy PRNG evaluation matching upstream. Verified determinism with explicit `DateOnly` inputs and UTC-anchored equinox date table. Verified `LocalDate.hashCode` and `DateRange.GetHashCode` reproduction. 15 holidays x 83 years (2019..2101) and daily sweep (2023..2030) verified against JVM golden dataset. No warning suppressions.
 
 ### T025 Unique system: UniqueTarget, UniqueFlag, UniqueParameterType
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Depends: T018
 - Source: core/src/com/unciv/models/ruleset/unique/UniqueTarget.kt, UniqueFlag.kt, UniqueParameterType.kt
 - Fixtures: none - generate golden values (parameter matching/validation results)
@@ -570,6 +570,14 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueParameterTypeTests`
 - Claimed: 2026-10-24T01:52:57Z
 - Notes: UniqueParameterType (797 LOC) references Ruleset for validation; introduce minimal interfaces (e.g. IRulesetView) and note them for T034 to implement. Enum ordinals/names must match Kotlin (serialized).
+  - Implementer notes (Antigravity):
+    - Ported `UniqueTarget` (all 34 enum values in declaration order, `UniqueTargetModifierType`, `DocumentationString`, `InheritsFrom`, `ModifierType`, `CanAcceptUniqueTarget`, `IsAcceptableModifierFor(IUniqueTargetView)`, `Displayable`, `CanIncludeSuppression`) under `Unciv.Models.Ruleset.Unique`.
+    - Ported `UniqueFlag` (all 4 enum values in declaration order + `UniqueFlagSets.SetOfHiddenToUsers`, `SetOfNoConditionals`, `SetOfHiddenNoConditionals`) under `Unciv.Models.Ruleset.Unique`.
+    - Ported `UniqueParameterType` (all 62 enum values in declaration order, `UniqueParameterErrorSeverity`, `UniqueComplianceError`, `ParameterName`, `DocExample`, `DocDescription`, `DisplayName`, `SeverityDefault`, `StaticKnownValues`, `GetErrorSeverity`, `IsKnownValue`, `GetKnownValuesForAutocomplete`, `SafeValueOf`, `ToIntOrNull`, `ToFloatOrNull`, and `IsValidSuppressionFilter`) under `Unciv.Models.Ruleset.Unique`.
+    - Introduced minimal covariant interfaces for downstream tickets: `IUniqueTargetView` (for `Unique` in T027), `ICountablesParameterProvider` (`CountablesProvider` hook for `Countables` in T028), and `IRulesetParameterView` / `IRulesetMapView<out TValue>` / `IRulesetObjectParameterView` / `IRulesetUnitParameterView` / `IRulesetTerrainParameterView` / `IRulesetResourceParameterView` (for `RulesetObject` / `Ruleset` in T030-T034).
+    - Deliberately excluded `TranslationFileWriter` guessing helpers (`isTranslationWriterGuess`, `getTranslationWriterStringsForOutput`, `guessTypeForTranslationWriter` — dev tooling, Won't port per T043).
+    - Verified golden tables and probe inputs generated on the JVM from compiled Kotlin `UniqueTarget`, `UniqueFlag`, and `UniqueParameterType`, plus the 3 `MultiFilterTests.kt` tests (`TestParameterTypeSplits`, `TestParameterNonFilters`, `TestParameterTypeSplitsWorkWithMultipleLevels`) deferred from T020.
+    - Ran Gate (`~UniqueParameterTypeTests`, 46/46 passed) and Standard checks (`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` — 586/586 passed).
 
 ### T026 Unique system: UniqueType enum
 - State: Available
@@ -589,7 +597,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~UniqueTests`
 - Claimed:
-- Notes: UniqueMap must preserve insertion order. GameContext depends on Civilization/City/Tile: use state interfaces, owned by this ticket, implemented later. `stateBasedRandom` formula comes from T017. UniqueTriggerActivation (1.5k LOC) is deferred to land with Civ/City/Unit.
+- Notes: UniqueMap must preserve insertion order. GameContext depends on Civilization/City/Tile: use state interfaces, owned by this ticket, implemented later. `stateBasedRandom` formula comes from T017. UniqueTriggerActivation (1.5k LOC) is deferred to land with Civ/City/Unit. Have `Unique` implement `IUniqueTargetView` and `IHasUniques` implement `IRulesetObjectParameterView` (from T025).
 
 ### T028 Unique system: Conditionals and Countables
 - State: Available
@@ -599,7 +607,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Unique/Conditionals.cs, Countables.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~CountableTests|FullyQualifiedName~ExpressionTests`
 - Claimed:
-- Notes: Fixtures that need TestGame are deferred to T035; port the rest now and list the deferred cases in Notes. Expression evaluation: Double vs Int semantics exact.
+- Notes: Fixtures that need TestGame are deferred to T035; port the rest now and list the deferred cases in Notes. Expression evaluation: Double vs Int semantics exact. Wire `Countables` into `UniqueParameterTypeExtensions.CountablesProvider` (or replace `TODO(T028)` in `UniqueParameterType.cs`).
 
 ### T029 Deprecated uniques and BackwardCompatibility
 - State: Available
@@ -659,7 +667,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Ruleset.cs, RulesetCache.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetLoadTests`
 - Claimed:
-- Notes: File access behind an interface (no libGDX FileHandle). Load order of files/mods must be deterministic and equal to Kotlin's. Implements the interfaces left by T025/T027.
+- Notes: File access behind an interface (no libGDX FileHandle). Load order of files/mods must be deterministic and equal to Kotlin's. Implements the interfaces left by T025 (`IRulesetParameterView` via `RulesetMapView<T>`) and T027.
 
 ### T035 Test-support port: TestGame helper and deferred fixtures
 - State: Available
@@ -679,7 +687,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/Validation/*.cs, tests
 - Gate: `dotnet test --filter FullyQualifiedName~RulesetValidatorTests`
 - Claimed:
-- Notes: Error ordering and text must be identical to Kotlin. TextSimilarity: exact algorithm port.
+- Notes: Error ordering and text must be identical to Kotlin. TextSimilarity: exact algorithm port. `Suppression.IsValidFilter` and doc constants are already ported on `UniqueParameterTypeExtensions` in T025; reuse or delegate to them in `Suppression`.
 
 ### T037 Golden test: load and validate Vanilla and bundled mod rulesets
 - State: Available
