@@ -110,7 +110,7 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
   - Ran Gate (16 passed) and full `dotnet test` (122 passed).
 
 ### T007 JSON layer for ported data classes (Counter, Stats, ...)
-- State: In-Progress [Antigravity]
+- State: Needs-Review [Antigravity]
 - Claimed: 2026-10-24T00:56:07Z
 - Depends: T004, T005
 - Source: core/src/com/unciv/models/Counter.kt (`write`/`read`), libGDX Json behaviour as used by Unciv; core/src/com/unciv/json/*; core/src/com/unciv/logic/map/HexMath.kt (`HexCoord.Serializer`)
@@ -118,6 +118,16 @@ See `PROTOCOL.md`: Unciv multiplayer/servers, libGDX UI, Android. Tickets for th
 - Deliverables: to be designed (System.Text.Json converters under csharp/Unciv.Core/Json/), tests
 - Gate: `dotnet test --filter FullyQualifiedName~Json`
 - Notes: Needs a design pass first (brainstorm): libGDX Json is lenient (unquoted keys, float-valued ints, class-name tags). Counter's compact `{name: value}` format, reading `value` objects, and Stats/StatMap/Stat enum serialization all need converters. Also `IsPartOfGameInfoSerialization` marker interface and `HexCoord` converter.
+  - Implementer notes (Antigravity): Implemented `UncivJson` and System.Text.Json custom converters under namespace `Unciv.Json`:
+    - `HexCoordConverter`: compact output `{}` / `{"x":5}` / `{"x":-42,"y":42}`, and lenient reading supporting primitive numbers, strings, and verbose objects `{"class": "...", "value": 23}`.
+    - `CounterConverterFactory` & `CounterConverter<K>`: serializes non-zero entries as `{ key: value }`, and lenient reading supporting ints, floats, strings, and object wrappers.
+    - `StatsConverter`: serializes non-zero stats (`production`, `food`, `gold`, etc.), lenient reading supporting camelCase, PascalCase, numbers, and strings.
+    - `StatMapConverter`: serializes dictionary of `{ source: stats }`.
+    - `Vector2Converter`: field serialization `{ "x": x, "y": y }` matching libGDX Vector2 format and enabling seamless cross-deserialization with HexCoord.
+    - `JsonStringEnumConverter`: serializes enums (`Stat`, `SubStat`) as string constants.
+    - `IIsPartOfGameInfoSerialization` / `IsPartOfGameInfoSerialization`: marker interfaces.
+  - Ported tests from `SerializationTests.kt` (`test Counter(String) serialization roundtrip`) and `HexmathTests.kt` (`testSerializedHexCoordIsCompact`, `testCanDeserializeVerboseVector2Format`, `testHexCoordVector2SerDeser`).
+  - Ran Gate (9 passed) and full `dotnet test` (131 passed).
 
 ### T010 Seeded deterministic RNG
 - State: Available
