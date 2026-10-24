@@ -1020,13 +1020,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Found by T107: Tile's JSON converter throws NotSupportedException when a tile holds units (MapUnit not ported, units typed by the IGameContextUnit seam) and when the JSON has militaryUnit/civilianUnit/airUnits. After T065, retype and wire them (MapUnit JSON too), replace the throws, and add round-trip tests with units.
 
 ### T108 Civilopedia text model D: remaining ruleset objects' civilopedia members, Ruleset.allICivilopediaText, validator checkCivilopediaText
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T095
 - Source: core/src/com/unciv/models/ruleset/{Policy,Speed,Victory,Belief,Tutorial}.kt, unit/{UnitType,UnitNameGroup,Promotion}.kt, nation/{CityStateType,Personality,Difficulty}.kt (Civilopedia members only), Ruleset.kt (allICivilopediaText), validation/RulesetValidator.kt (checkCivilopediaText, civilopediaText check in checkUnit)
 - Fixtures: none - generate golden values
 - Deliverables: csharp/Unciv.Core/Models/Ruleset/**, UI/ObjectDescriptions/*.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~CivilopediaTextDTests
-- Claimed:
+- Claimed: 2026-10-24T11:20Z
 - Notes: Created by T095: the Civilopedia members of the ruleset objects that T096/T097 do not list. T095 already added MakeLink to every IRulesetObject (abstract on RulesetObject/RulesetStatsObject), GlobalUniques.getCivilopediaTextLines and civilopediaText in Combine. Remaining: getCivilopediaTextLines/Header/getSortGroup/getSubCategory/getIconName for Policy, Speed, Victory, Belief (+ getCivilopediaBeliefsEntry/getCivilopediaReligionEntry, getBeliefsMatching, then add the two virtual entries to CivilopediaCategories.Belief in GetCategoryIterator), Tutorial, UnitType, UnitNameGroup, Promotion, CityStateType, Personality, Difficulty (Era/Nation/Technology/BaseUnit are T097; Building/Improvement/Resource/Terrain are T096); Ruleset.allICivilopediaText; RulesetValidator.checkCivilopediaText using FormattedLine.UnsupportedReasons with an IFormattedLineImageCheck. Override pattern (see GlobalUniques): list ICivilopediaText in the class base list and declare a public GetCivilopediaTextLines(CivilopediaContext).
 
 ### T109 Hardening sweep: non-blocking review findings from T033-T095
