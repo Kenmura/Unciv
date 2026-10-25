@@ -206,7 +206,7 @@ flowchart TD
   class C013 ready
   class C015 done
   class C016 done
-  class C019 prog
+  class C019 review
   class C020 prog
   class C022 ready
   class C023 ready
@@ -333,7 +333,7 @@ xychart-beta
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
-| C019 | In-Progress [Claude] | C005, C010, T164, T056, T192, T197, C037 | 0 | Tech screen |
+| C019 | Needs-Review [Claude] | C005, C010, T164, T056, T192, T197, C037 | 0 | Tech screen |
 | C020 | In-Progress [Claude] | C005, C010, T164, T056, T192, T197, C037 | 0 | Policy screen |
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C039 | Available (waiting on C022) | C005, C037, C022, T193 | 0 | Incoming proposal popups: trade, peace and friendship requests from AI (and other humans), proposer's pending/declined/withdrawn state |
