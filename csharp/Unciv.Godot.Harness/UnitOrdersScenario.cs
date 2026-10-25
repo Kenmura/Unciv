@@ -93,45 +93,45 @@ public sealed class UnitOrdersScenario : Scenario
             return steps;
         }
 
-        private List<UnitActionInfo> QueryActions(int unitId) => [.. queries.Actions(unitId).GetAwaiter().GetResult().NotNull().Actions];
+            private List<UnitActionInfo> QueryActions(int unitId) => [.. queries.Actions(unitId).GetAwaiter().GetResult().NotNull().Actions];
 
-        // The menu is the query: the engine entries are exactly the query's actions, in its order, with its enabled flag.
-        private bool MenuEqualsQuery(int unitId)
-        {
-            var expected = QueryActions(unitId);
-            var shown = screen.Panel.Entries.Where(it => it.Kind == MenuEntryKind.Engine).ToList();
-            return screen.SelectedUnitId == unitId && shown.Count == expected.Count
-                && shown.Zip(expected).All(pair => pair.First.Action.NotNull().Descriptor == pair.Second.Descriptor && pair.First.Enabled == pair.Second.IsEnabled
-                    && pair.First.Label == UnitOrdersModel.Clean(pair.Second.Title));
-        }
+            // The menu is the query: the engine entries are exactly the query's actions, in its order, with its enabled flag.
+            private bool MenuEqualsQuery(int unitId)
+            {
+                var expected = QueryActions(unitId);
+                var shown = screen.Panel.Entries.Where(it => it.Kind == MenuEntryKind.Engine).ToList();
+                return screen.SelectedUnitId == unitId && shown.Count == expected.Count
+                    && shown.Zip(expected).All(pair => pair.First.Action.NotNull().Descriptor == pair.Second.Descriptor && pair.First.Enabled == pair.Second.IsEnabled
+                        && pair.First.Label == UnitOrdersModel.Clean(pair.Second.Title));
+            }
 
-        private bool OverlaysEqualQueries(int unitId)
-        {
-            var reach = UnitOrdersModel.ReachableTiles(queries.Reachable(unitId).GetAwaiter().GetResult().NotNull()).Select(it => new HexCoord(it.X, it.Y)).ToHashSet();
-            var attack = UnitOrdersModel.AttackTiles(queries.AttackTargets(unitId).GetAwaiter().GetResult().NotNull()).Select(it => new HexCoord(it.X, it.Y)).ToHashSet();
-            return reach.SetEquals(screen.ReachableOverlay.Tiles) && attack.SetEquals(screen.AttackOverlay.Tiles);
-        }
+            private bool OverlaysEqualQueries(int unitId)
+            {
+                var reach = UnitOrdersModel.ReachableTiles(queries.Reachable(unitId).GetAwaiter().GetResult().NotNull()).Select(it => new HexCoord(it.X, it.Y)).ToHashSet();
+                var attack = UnitOrdersModel.AttackTiles(queries.AttackTargets(unitId).GetAwaiter().GetResult().NotNull()).Select(it => new HexCoord(it.X, it.Y)).ToHashSet();
+                return reach.SetEquals(screen.ReachableOverlay.Tiles) && attack.SetEquals(screen.AttackOverlay.Tiles);
+            }
 
-        // A click on a tile selects the next own unit there; the number of clicks that makes `target` the selection.
-        private int ClicksTo(MapUnitRef target)
-        {
-            var here = human.Units.GetCivUnits().Where(it => it.CurrentTile.Position == target.Tile).OrderBy(it => it.Id).Select(it => it.Id).ToList();
-            int at = screen.SelectedUnitId is { } current ? here.IndexOf(current) : -1;
-            int goal = here.IndexOf(target.Id);
-            return at < 0 ? goal + 1 : (goal - at + here.Count) % here.Count;
-        }
+            // A click on a tile selects the next own unit there; the number of clicks that makes `target` the selection.
+            private int ClicksTo(MapUnitRef target)
+            {
+                var here = human.Units.GetCivUnits().Where(it => it.CurrentTile.Position == target.Tile).OrderBy(it => it.Id).Select(it => it.Id).ToList();
+                int at = screen.SelectedUnitId is { } current ? here.IndexOf(current) : -1;
+                int goal = here.IndexOf(target.Id);
+                return at < 0 ? goal + 1 : (goal - at + here.Count) % here.Count;
+            }
 
-        private void ChooseMenu(string label) =>
-            (screen.Panel.ButtonFor(label) ?? throw new InvalidOperationException($"no menu entry {label}; shown: {string.Join(" | ", screen.Panel.Entries.Select(it => it.Label))}")).EmitSignal(BaseButton.SignalName.Pressed);
+            private void ChooseMenu(string label) =>
+                (screen.Panel.ButtonFor(label) ?? throw new InvalidOperationException($"no menu entry {label}; shown: {string.Join(" | ", screen.Panel.Entries.Select(it => it.Label))}")).EmitSignal(BaseButton.SignalName.Pressed);
 
-        private ScenarioStep[] Select(MapUnitRef target)
-        {
-            int clicks = Math.Max(1, ClicksTo(target));
-            return [.. Enumerable.Range(0, clicks).Select(_ => (ScenarioStep)new Click(() => screen.Map.ScreenPositionOf(target.Tile)))];
-        }
+            private ScenarioStep[] Select(MapUnitRef target)
+            {
+                int clicks = Math.Max(1, ClicksTo(target));
+                return [.. Enumerable.Range(0, clicks).Select(_ => (ScenarioStep)new Click(() => screen.Map.ScreenPositionOf(target.Tile)))];
+            }
 
-        private string FortifyLabel() => UnitOrdersModel.Clean(QueryActions(warrior.Id).First(it => it.Descriptor.ActionType == UnitActionType.Fortify).Title);
-        private string FoundCityLabel() => UnitOrdersModel.Clean(QueryActions(settler.Id).First(it => it.Descriptor.ActionType == UnitActionType.FoundCity).Title);
+            private string FortifyLabel() => UnitOrdersModel.Clean(QueryActions(warrior.Id).First(it => it.Descriptor.ActionType == UnitActionType.Fortify).Title);
+            private string FoundCityLabel() => UnitOrdersModel.Clean(QueryActions(settler.Id).First(it => it.Descriptor.ActionType == UnitActionType.FoundCity).Title);
 
         private List<ScenarioStep> SelectWarriorSteps()
         {

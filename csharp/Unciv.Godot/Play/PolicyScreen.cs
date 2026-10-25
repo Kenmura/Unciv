@@ -2,7 +2,9 @@ using Godot;
 using Unciv.Assets;
 using Unciv.Commands;
 using Unciv.Commands.Turn;
+using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
+using Unciv.Models.Translations;
 using Unciv.Queries.Empire;
 
 namespace Unciv.GodotClient.Play;
@@ -23,7 +25,7 @@ public partial class PolicyScreen : PanelContainer
     private readonly Label goldenAge = new() { Name = "GoldenAge" };
     private readonly HBoxContainer branchRow = new() { Name = "Branches" };
     private readonly Label detail = new() { Name = "Detail", AutowrapMode = TextServer.AutowrapMode.WordSmart };
-    private readonly Button adopt = new() { Name = "AdoptButton", Text = "Adopt", Disabled = true };
+    private readonly Button adopt = new() { Name = "AdoptButton", Text = "Adopt".Tr(), Disabled = true };
     private readonly Dictionary<string, Button> policyButtons = [];
     private PolicyCell? selected;
     private int generation;
@@ -42,14 +44,14 @@ public partial class PolicyScreen : PanelContainer
         AddChild(column);
         var head = new HBoxContainer();
         column.AddChild(head);
-        var heading = new Label { Text = "Policies", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var heading = new Label { Text = "Policies".Tr(), SizeFlagsHorizontal = SizeFlags.ExpandFill };
         heading.AddThemeFontSizeOverride("font_size", theme.Px(20));
         head.AddChild(heading);
         message.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         message.ClipText = true;
         message.HorizontalAlignment = HorizontalAlignment.Right;
         head.AddChild(message);
-        var close = new Button { Name = "PolicyClose", Text = "Close policies" };
+        var close = new Button { Name = "PolicyClose", Text = "Close policies".Tr() };
         close.Pressed += Close;
         head.AddChild(close);
         header.AutowrapMode = TextServer.AutowrapMode.WordSmart;
@@ -149,8 +151,8 @@ public partial class PolicyScreen : PanelContainer
         }
         Tree = tree;
         Branches = PolicyScreenModel.Branches(tree);
-        header.Text = string.Join("\n", PolicyScreenModel.HeaderLines(tree));
-        goldenAge.Text = bar == null ? "" : PolicyScreenModel.GoldenAgeLine(bar);
+        header.Text = string.Join("\n", PolicyScreenModel.HeaderLines(tree)).TrText();
+        goldenAge.Text = bar == null ? "" : PolicyScreenModel.GoldenAgeLine(bar).TrText();
         string? keep = selected?.Name;
         Build();
         Select(keep);
@@ -168,10 +170,10 @@ public partial class PolicyScreen : PanelContainer
         {
             var box = new VBoxContainer { Name = "Branch_" + view.Name };
             box.AddThemeConstantOverride("separation", 4);
-            var title = new Label { Text = view.Title };
+            var title = new Label { Text = view.Title.TrText() };
             title.AddThemeFontSizeOverride("font_size", uiTheme.Px(18));
             box.AddChild(title);
-            box.AddChild(new Label { Text = view.Progress });
+            box.AddChild(new Label { Text = view.Progress.TrText() });
             box.AddChild(MakeButton(view.Start));
             if (view.Columns > 0)
             {
@@ -193,7 +195,7 @@ public partial class PolicyScreen : PanelContainer
 
     private Button MakeButton(PolicyCell cell)
     {
-        var button = new Button { Name = cell.Id, Text = cell.Name, TooltipText = cell.Hint, ToggleMode = true, CustomMinimumSize = new Vector2(uiTheme.Px(120), 0f) };
+        var button = new Button { Name = cell.Id, Text = cell.Name.TrText(), TooltipText = cell.Hint.TrText(), ToggleMode = true, CustomMinimumSize = new Vector2(uiTheme.Px(120), 0f) };
         var godotColour = ToColour(PlaceholderPalette.ForPolicyState(cell.State));
         foreach (string slot in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color" })
             button.AddThemeColorOverride(slot, godotColour);
@@ -208,16 +210,16 @@ public partial class PolicyScreen : PanelContainer
         foreach (var (id, button) in policyButtons) button.SetPressedNoSignal(selected != null && id == selected.Id);
         if (selected == null)
         {
-            detail.Text = "Choose a policy to see what it does.";
-            adopt.Text = "Adopt";
+            detail.Text = "Choose a policy to see what it does.".Tr();
+            adopt.Text = "Adopt".Tr();
             adopt.Disabled = true;
             return;
         }
         var ruleset = session.Ruleset;
         string text = ruleset.Policies.TryGetValue(selected.Name, out var policy) ? policy.GetDescription()
             : ruleset.PolicyBranches.TryGetValue(selected.Name, out var branch) ? branch.GetDescription() : "";
-        detail.Text = PolicyScreenModel.Detail(selected, text);
-        adopt.Text = PolicyScreenModel.AdoptLabel(selected);
+        detail.Text = PolicyScreenModel.Detail(selected, text).TrText();
+        adopt.Text = PolicyScreenModel.AdoptLabel(selected).TrText();
         adopt.Disabled = PolicyScreenModel.AdoptCommand(selected) == null;
     }
 

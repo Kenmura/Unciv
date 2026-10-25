@@ -3,10 +3,10 @@ using Unciv.Commands;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
 using Unciv.Harness;
+using CityObject = Unciv.Logic.City.City;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Cities;
 using Unciv.Utils;
-using CityObject = Unciv.Logic.City.City;
 
 namespace Unciv.GodotHarness;
 

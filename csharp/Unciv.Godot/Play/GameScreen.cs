@@ -85,7 +85,7 @@ public partial class GameScreen : Control
 
     public bool IsPolicyScreenVisible => Policies.Visible;
 
-    public Button PolicyButton { get; } = new() { Name = "PolicyButton", Text = "Policies" };
+    public Button PolicyButton { get; } = new() { Name = "PolicyButton", Text = "Policies".Tr() };
 
     /// <summary>Opens the policy screen, closing the city and diplomacy screens.</summary>
     public void OpenPolicyScreen()

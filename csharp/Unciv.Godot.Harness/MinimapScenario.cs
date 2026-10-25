@@ -4,8 +4,8 @@ using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Map;
 using Unciv.GodotClient.Play;
 using Unciv.Harness;
-using Unciv.Logic.Map;
 using Unciv.Utils;
+using Unciv.Logic.Map;
 
 namespace Unciv.GodotHarness;
 

@@ -1,5 +1,4 @@
 using Godot;
-using Unciv.Assets;
 using Unciv.Commands;
 using Unciv.Commands.Turn;
 using Unciv.Commands.Units;
@@ -7,6 +6,7 @@ using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
 using Unciv.Harness;
 using Unciv.Logic.Civilization;
+using Unciv.Assets;
 
 namespace Unciv.GodotHarness;
 

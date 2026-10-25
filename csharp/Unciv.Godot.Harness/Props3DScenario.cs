@@ -99,15 +99,8 @@ public sealed class Props3DScenario : Scenario
     {
         TileDto Tile(int x, int y, string terrain, string[]? features = null, string? resource = null, bool visible = true) => new()
         {
-            X = x,
-            Y = y,
-            Visible = visible,
-            BaseTerrain = terrain,
-            Features = [.. features ?? []],
-            Resource = resource,
-            RiverBottom = false,
-            RiverBottomLeft = false,
-            RiverBottomRight = false,
+            X = x, Y = y, Visible = visible, BaseTerrain = terrain, Features = [.. features ?? []], Resource = resource,
+            RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false,
         };
         var list = new List<TileDto>
         {
