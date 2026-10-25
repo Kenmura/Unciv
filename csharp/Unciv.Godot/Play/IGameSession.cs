@@ -5,19 +5,11 @@ using Unciv.Queries;
 
 namespace Unciv.GodotClient.Play;
 
-/// <summary>What one submitted command did, as the client needs it: whether the host took it and, if not, why, plus the events it produced.</summary>
-public sealed record SubmitResult(bool Accepted, string Message, IReadOnlyList<GameEvent> Events);
-
 /// <summary>
 /// One batch of events the viewer may see (already filtered for the viewer). <see cref="Seq"/> is the sequence number of the command that produced them;
 /// a consumer that sees a gap in the sequence it has been given has missed events and must call <see cref="IGameSession.ResyncAsync"/>.
 /// </summary>
 public sealed record EventBatch(long Seq, IReadOnlyList<GameEvent> Events);
-
-/// <summary>
-/// What one End turn did. <see cref="AiTurnsRun"/> and <see cref="NextTurnBegun"/> are informational: a remote session that cannot tell reports 0 / false.
-/// </summary>
-public sealed record TurnOutcome(bool Accepted, string Message, int AiTurnsRun, bool NextTurnBegun, IReadOnlyList<GameEvent> Events);
 
 /// <summary>
 /// C037: the only door between the client and the game (design/CLIENT-SLICES.md principle 2). Client code reads the world from <see cref="Snapshot"/>

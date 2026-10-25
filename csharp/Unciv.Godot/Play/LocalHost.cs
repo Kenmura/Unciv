@@ -1,6 +1,5 @@
 using Unciv.Commands;
 using Unciv.Commands.Turn;
-using Unciv.Logic;
 using Unciv.Models.Ruleset;
 using Unciv.Net.Visibility;
 using Unciv.Queries;
@@ -18,15 +17,13 @@ namespace Unciv.GodotClient.Play;
 public sealed class LocalHost : IGameSession
 {
     private readonly GameSession session;
-    private readonly Func<long> clock;
-    private readonly ViewerEventFilter eventFilter;
+    private readonly ViewerSessionFlow flow;
 
     public LocalHost(GameSession session, string humanCivId, Func<long> clock)
     {
         this.session = session;
-        this.clock = clock;
         ViewerCivId = humanCivId;
-        eventFilter = new ViewerEventFilter(session.Game, humanCivId);
+        flow = new ViewerSessionFlow(session, humanCivId, clock, Publish);
         Snapshot = BuildSnapshot();
     }
 
@@ -68,9 +65,9 @@ public sealed class LocalHost : IGameSession
         }
     }
 
-    public Task<SubmitResult> SubmitAsync(GameCommand command) => Task.FromResult(Submit(command));
+    public Task<SubmitResult> SubmitAsync(GameCommand command) => Task.FromResult(flow.Submit(command));
 
-    public Task<TurnOutcome> EndTurnAsync() => Task.FromResult(EndTurn());
+    public Task<TurnOutcome> EndTurnAsync() => Task.FromResult(flow.EndTurn());
 
     private ClientSnapshot BuildSnapshot()
     {
@@ -80,56 +77,10 @@ public sealed class LocalHost : IGameSession
     }
 
     // TODO(T180): a full snapshot is rebuilt after every accepted command; the network session applies ViewDeltas to its mirror instead.
-    private IReadOnlyList<GameEvent> Publish(CommandResult result, ViewDeltaBuilder.ViewMark before)
+    private void Publish(long seq, IReadOnlyList<GameEvent> visible)
     {
-        var visible = eventFilter.Filter(before, result.Events);
         Snapshot = BuildSnapshot();
         SnapshotChanged?.Invoke(Snapshot);
-        EventsReceived?.Invoke(new EventBatch(result.Seq, visible));
-        return visible;
-    }
-
-    private SubmitResult Submit(GameCommand command)
-    {
-        var before = eventFilter.Mark();
-        var result = session.Submit(ViewerCivId, command);
-        var visible = result.Accepted ? Publish(result, before) : [];
-        return new SubmitResult(result.Accepted, result.Validation.Message, visible);
-    }
-
-    /// <summary>Ends the human's turn and plays everything up to the human's next turn (or the end of the game).</summary>
-    private TurnOutcome EndTurn()
-    {
-        var events = new List<GameEvent>();
-        var ended = Submit(new EndTurn { Now = clock() });
-        if (!ended.Accepted) return new TurnOutcome(false, ended.Message, 0, false, events);
-        events.AddRange(ended.Events);
-
-        int aiTurns = 0;
-        while (session.Game.TurnPhase is TurnPhase.AutoPlayers(var next))
-        {
-            var ran = ServerCommand(new RunAiTurn { CivId = next.CivId });
-            if (!ran.Accepted) return new TurnOutcome(false, ran.Message, aiTurns, false, events);
-            events.AddRange(ran.Events);
-            aiTurns++;
-        }
-
-        bool begun = false;
-        if (session.Game.TurnPhase is TurnPhase.AwaitingInput(var human) && human.CivId == ViewerCivId && !session.Game.IsTurnStarted(human))
-        {
-            var began = ServerCommand(new BeginTurn { CivId = ViewerCivId, Now = clock() });
-            if (!began.Accepted) return new TurnOutcome(false, began.Message, aiTurns, false, events);
-            events.AddRange(began.Events);
-            begun = true;
-        }
-        return new TurnOutcome(true, "", aiTurns, begun, events);
-    }
-
-    private SubmitResult ServerCommand(GameCommand command)
-    {
-        var before = eventFilter.Mark();
-        var result = session.SubmitAsServer(command);
-        var visible = result.Accepted ? Publish(result, before) : [];
-        return new SubmitResult(result.Accepted, result.Validation.Message, visible);
+        EventsReceived?.Invoke(new EventBatch(seq, visible));
     }
 }
