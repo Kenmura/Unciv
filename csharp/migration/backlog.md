@@ -2052,7 +2052,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review pass 2 (adversarial subagent): fixes verified (mutations of improvement, city Own gating, tile-owner civs killed). Two guards (visible-tile check before GetVisibleUnits, IsOwnedByViewer in BuildUnit) are redundant with the Views and kept as commented defense in depth. PASS.
 
 ### T175 Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T172, T174, T164, T186
 - Source: csharp/migration/design/SERVER.md sections 2.4, 2.5
 - Fixtures: none
@@ -2066,6 +2066,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Rules: Located events to non-participants need EVERY position visible (conservative; UnitAttacked also checks unit hiddenness of both sides); UnitMoved partial visibility => UnitDisappeared at visible start and/or UnitAppeared at visible end, never a path; NotificationAdded owner-only with unseen Locations stripped; War/Peace widened to civs knowing both parties; trades, alerts, research, policy participants only.
     Gaps: stats diff covers gold and happiness only; reveals diff explored tiles only (visible->fogged flips and newly met civs' CivDto are not sent); a destroyed unit is judged by tile visibility only.
   - Review pass 1 (CHANGES-REQUESTED) addressed: ViewMark now captures units hidden from the viewer before the command and GameViewVisibility denies them (death or move of an invisible unit stays silent); UnitMoved guard simplified; tests added for peace, territory, city events, city-vs-city attack, fogged-middle moves, hidden-before units. Decisions: sighting a civ's unit or tile owner implies the civ id may reach the client (same as the snapshot's tile Owner); a CivDto introduction event, fog-to-visible tile refresh and wider StatsChanged are in a follow-up ticket. Notification locations are judged on post-command visibility (creation-time capture not available).
+  - Review pass 2: PASS (adversarial subagent). Minor leftovers for T214: real-state test of Capture.HiddenUnits; hidden-before unit that becomes detectable mid-command is suppressed (conservative); a hidden unit created and destroyed within one command is treated as visible.
 
 ### T176 Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot)
 - State: Available
