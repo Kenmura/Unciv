@@ -7,6 +7,7 @@ using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
@@ -71,12 +72,59 @@ public sealed class GameCommandTests : IDisposable
     private static int OwnUnitId(GameInfo game, string civ) => game.GetCivilization(civ).Units.GetCivUnits().First().Id;
 
     // One sample per command class: every [CommandType] class must appear here (a new domain ticket adds its own line).
-    private static GameCommand Sample(string type, GameInfo game, string cityId) => type switch
+    private static GameCommand Sample(string type, GameInfo game, string cityId, Scenario s) => type switch
     {
         "rename-city" => new RenameCity { CityId = cityId, Name = "Ur" },
         "set-unit-due" => new SetUnitDue { UnitId = OwnUnitId(game, "Babylon"), Due = false },
+        "move-unit" => new MoveUnit { UnitId = s.MoverId, To = s.MoveTo },
+        "set-move-order" => new SetMoveOrder { UnitId = s.MoverId, To = s.FarTo },
+        "swap-units" => new SwapUnits { UnitId = s.SwapId, To = s.SwapTo },
+        "attack-with-unit" => new AttackWithUnit { UnitId = s.AttackerId, Target = s.DefenderTile },
+        "bombard-with-city" => new BombardWithCity { CityId = cityId, Target = s.BombardTo },
+        "nuke" => new Nuke { UnitId = s.NukeId, Target = s.NukeTo },
+        "air-sweep" => new AirSweep { UnitId = s.FighterId, Target = s.SweepTo },
+        "disband-unit" => new DisbandUnit { UnitId = s.MoverId },
         _ => throw new InvalidOperationException($"No sample for command type \"{type}\"; add one to GameCommandTests.Sample"),
     };
+
+    // Units and targets that make every movement and combat sample valid on the started game (T188).
+    private sealed record Scenario(
+        int MoverId, HexCoord MoveTo, HexCoord FarTo, int SwapId, HexCoord SwapTo, int AttackerId, HexCoord DefenderTile,
+        HexCoord BombardTo, int NukeId, HexCoord NukeTo, int FighterId, HexCoord SweepTo);
+
+    private static Scenario Arrange(GameInfo game, CityObject city)
+    {
+        var babylon = game.GetCivilization("Babylon");
+        var rome = game.GetCivilization("Rome");
+        babylon.DiplomacyFunctions.MakeCivilizationsMeet(rome);
+        babylon.GetDiplomacyManager(rome)!.DeclareWar();
+        var center = city.GetCenterTile();
+
+        MapUnit Place(Unciv.Logic.Civilization.Civilization civ, string name, HexCoord near)
+        {
+            var unit = civ.Units.PlaceUnitNearTile(near, name)!;
+            unit.CurrentMovement = unit.GetMaxMovement();
+            return unit;
+        }
+
+        var mover = Place(babylon, "Warrior", center.Position);
+        var swapA = Place(babylon, "Warrior", center.Position);
+        var swapB = Place(babylon, "Warrior", swapA.CurrentTile.Position);
+        var attacker = Place(babylon, "Warrior", center.Position);
+        var defender = Place(rome, "Warrior", attacker.CurrentTile.Position);
+        var bombarded = Place(rome, "Warrior", center.Position);
+        var nuke = Place(babylon, "Atomic Bomb", center.Position);
+        var fighter = Place(babylon, "Fighter", center.Position);
+        fighter.Action = "Air Sweep";
+        babylon.ViewableTiles = game.TileMap.TileList.ToHashSet();
+
+        var moveTo = mover.CurrentTile.Neighbors.First(it => mover.Movement.CanMoveTo(it) && mover.Movement.CanReachInCurrentTurn(it));
+        var farTo = game.TileMap.TileList.First(it => !it.IsWater && it.AerialDistanceTo(mover.CurrentTile) is >= 2 and <= 3 && mover.Movement.CanReach(it));
+        var nukeTo = game.TileMap.TileList.First(it => Unciv.Logic.Battle.Nuke.MayUseNuke(new Unciv.Logic.Battle.MapUnitCombatant(nuke), it));
+        var sweepTo = fighter.GetTile().GetTilesInDistanceRange(new IntRange(1, fighter.GetRange())).First();
+        return new Scenario(mover.Id, moveTo.Position, farTo.Position, swapA.Id, swapB.CurrentTile.Position, attacker.Id,
+            defender.CurrentTile.Position, bombarded.CurrentTile.Position, nuke.Id, nukeTo.Position, fighter.Id, sweepTo.Position);
+    }
 
     [Fact]
     public void EveryScannedCommandHasAUniqueKebabCaseNameAndIsRegistered()
@@ -95,9 +143,10 @@ public sealed class GameCommandTests : IDisposable
     public void EveryCommandRoundTripsThroughItsEnvelopeAndIsPureToValidate()
     {
         var (session, babylonCity, _) = NewSession();
+        var scenario = Arrange(session.Game, babylonCity);
         foreach (var (name, _) in GameCommandRegistry.Scan())
         {
-            var command = Sample(name, session.Game, babylonCity.Id);
+            var command = Sample(name, session.Game, babylonCity.Id, scenario);
             Assert.Equal(name, command.Type);
 
             var envelope = session.Registry.ToEnvelope(5, "Babylon", command);
