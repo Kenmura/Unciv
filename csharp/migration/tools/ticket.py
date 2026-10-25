@@ -6,7 +6,7 @@ READ
   list [STATE]              one line per open ticket: id, state, deps, title
   show T027 [Field]         whole ticket (backlog.md, then backlog-archive.md) or one field
   ready                     everything workable now: Needs-Review first, then Available with deps all Done
-                            from the lowest delivery phase that has any (phases.txt: 1 CLI, 2 single player, 3 multiplayer),
+                            ordered by delivery phase first (phases.txt: 1 CLI, 2 single player, 3 multiplayer),
                             most downstream-unblocking first (direct + transitive incomplete dependents)
   next [AGENT]              the single pick of the Work Loop (review, else the ready ticket that unblocks most)
   blockers T033             for each dependency not Done: its id, state and title
@@ -161,8 +161,8 @@ def phase_of(tid):
 
 
 def ready_list(ts):
-    """Reviews first, then workable tickets from the lowest delivery phase that has any (phases.txt), ordered by
-    how many incomplete tickets they unblock (direct and downstream), ties by id.
+    """Reviews first, then workable tickets ordered by delivery phase (phases.txt: earlier phases first, later phases
+    only fill the gaps), then by how many incomplete tickets they unblock (direct and downstream), ties by id.
     Rows: (kind, id, title, state, downstream_count)."""
     done = {i for i, s in all_states().items() if s.startswith("Done")}
     counts = downstream_counts(ts)
@@ -172,10 +172,7 @@ def ready_list(ts):
         deps = deps_of(d)
         if s == "Available" and set(deps) <= done and (deps or d.lower().startswith("none")):
             impl.append(("IMPLEMENT", i, t, s, counts.get(i, 0)))
-    if impl:
-        lowest = min(phase_of(r[1]) for r in impl)
-        impl = [r for r in impl if phase_of(r[1]) == lowest]
-    return out + sorted(impl, key=lambda r: (-r[4], r[1]))
+    return out + sorted(impl, key=lambda r: (phase_of(r[1]), -r[4], r[1]))
 
 
 # ---------------------------------------------------------------- mutation core
@@ -389,7 +386,7 @@ def phase_overview(info, open_ids, ready_ids, inflight):
     with what is left before each milestone. Work proceeds phase by phase (see ready_list)."""
     states = all_states()
     out = ["## Delivery phases", "",
-           "Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` offer only the lowest phase with ready work).", "",
+           "Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list earlier phases first; later phases fill idle capacity).", "",
            "| Phase | Done | Remaining | Ready | In flight | Remaining tickets |", "|---|---|---|---|---|---|"]
     for ph, name in PHASE_NAMES.items():
         mine = [i for i, s in states.items() if phase_of(i) == ph and not s.startswith("Won't")]

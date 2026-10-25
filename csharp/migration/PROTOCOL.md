@@ -96,7 +96,7 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 1. **Review first:**
    - **Multi-Agent Mode:** Find a `Needs-Review` ticket whose implementer is NOT you. If one exists, go to Review.
    - **Single-Agent Mode (Budget for only 1 agent):** If running as the sole active agent, review your own completed `Needs-Review` ticket by dispatching an isolated **Adversarial Review Subagent** (applying `.agents/skills/adversarial-review/SKILL.md` with Auditor, Adversary, and Pragmatist personas). If the subagent approves, mark `Done`, commit `migration: review T### pass [Adversarial Review]`, and push to remote.
-2. Otherwise **implement.** Pick what `python3 -I tools/ticket.py next` / `ready` offers (never hand-pick): it enforces delivery phases from `phases.txt` (1 CLI/engine, then 2 single player, then 3 multiplayer) and offers only the lowest phase that has a ready ticket. If none, report that and stop.
+2. Otherwise **implement.** Pick what `python3 -I tools/ticket.py next` / `ready` offers (never hand-pick): it orders by delivery phase from `phases.txt` (1 CLI/engine, then 2 single player, then 3 multiplayer): take the first entry; later phases are reached only when earlier ones have nothing ready, so you may work on phase 2/3 items while phase 1 is unfinished. If none, report that and stop.
 3. **Claim** with `python3 -I tools/ticket.py claim T### <You>`: it sets `In-Progress [You]` and `Claimed:` (UTC), commits as `migration: claim T### [You] <UTC timestamp>` and publishes immediately. Exit code 2 means the ticket was taken or has unmet dependencies: pick another. For a review, use `ticket.py state T### 'In-Review <You>' --publish`.
 
 ### Context discipline
