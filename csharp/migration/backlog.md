@@ -1956,6 +1956,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
           - Real findings filed: T200 (running game != reload of its own save; stale lazily-refreshed caches: open-borders flags, cached vision/exploration, barbarian reads them; JavaHashSet order differs after reload at turn 300). Also documented, not bugs: loading runs BackwardCompatibility.MigrateGreatGeneralPools which rewrites legacy pointsForNextGreatGeneral (200 -> 350), matches upstream.
           - No nondeterminism found run-to-run (same seed twice, sampled hashes equal over 300 turns on Small).
   - Correction: the follow-up ticket mentioned above as T200 (an id collision with another agent's concurrent add) was renumbered T208.
+  - Review (Claude, isolated adversarial subagent): PASS, no blockers. Applied non-blocking: soak worker thread is now a background thread (a timeout cannot keep the test host alive). Slowest-turn figures are run-dependent (a rerun saw 1.19 s on Small turn 289); the 60 s cap is the assertion.
 
 ### T168 Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs
 - State: Done
