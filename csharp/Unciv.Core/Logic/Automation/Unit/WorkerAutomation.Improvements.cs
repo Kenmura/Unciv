@@ -173,6 +173,7 @@ public partial class WorkerAutomation
         if (tile.ImprovementInProgress != null) return ruleSet.TileImprovements.GetValueOrDefault(tile.ImprovementInProgress);
 
         var clientState = CivInfo.GameInfo.ClientState;
+        var settings = CivInfo.GameInfo.GetPlayerSettings(CivInfo.CivId);
         var gameContext = new GameContext(civInfo: unit.Civ, unit: unit, tile: tile);
         var currentImprovement = tile.TileImprovement;
         // A LinkedHashMap filter: insertion order is kept
@@ -184,7 +185,7 @@ public partial class WorkerAutomation
                 && unit.CanBuildImprovement(value, tile)
                 && tile.ImprovementFunctions.CanBuildImprovement(value, gameContext)
                 // Properly exclude removing forest and jungle tiles from potentialTileImprovements.
-                && !(clientState.StopAutomatedWorkersRemoveVegetation
+                && !(settings.StopAutomatedWorkersRemoveVegetation
                      && tile.TerrainHasUnique(UniqueType.Vegetation)
                      && value.Name.StartsWith(Constants.Remove, StringComparison.Ordinal)
                      && CivInfo.IsHuman())) // Make sure to only apply this to player automated workers.
@@ -202,8 +203,8 @@ public partial class WorkerAutomation
                 .Where(it => it.Rank > 0f),
             it => it.Rank)?.Improvement;
 
-        if (currentImprovement != null && CivInfo.IsHuman() && !clientState.AutomatedWorkersReplaceImprovements
-            && clientState.AutoPlay != null && !clientState.IsFullAutoPlayAI)
+        if (currentImprovement != null && CivInfo.IsHuman() && !settings.AutomatedWorkersReplaceImprovements
+            && settings.HumanConquestPrompt && !clientState.IsFullAutoPlayAI)
         {
             // Note that we might still want to build roads or remove fallout, so we can't exit the function immedietly
             bestBuildableImprovement = null;

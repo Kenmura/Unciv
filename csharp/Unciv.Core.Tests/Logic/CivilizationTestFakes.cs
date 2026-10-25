@@ -63,10 +63,9 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     public VictoryData? VictoryData { get; set; }
     public GameClientState ClientStateData { get; } = new();
     GameClientState IGameInfoState.ClientState => ClientStateData;
-    public bool UsersTurn { get; set; } = true;
-    bool IGameInfoState.IsUsersTurn() => UsersTurn;
-    public bool AutoAssignCityProduction { get; set; }
-    bool IGameInfoState.AutoAssignCityProduction => AutoAssignCityProduction;
+    public Dictionary<string, Unciv.Logic.PlayerSettings> PlayerSettingsByCiv { get; } = [];
+    Unciv.Logic.PlayerSettings IGameInfoState.GetPlayerSettings(string civId) =>
+        PlayerSettingsByCiv.GetValueOrDefault(civId) ?? Unciv.Logic.PlayerSettings.Default;
     IComparer<string> IGameInfoState.Collator => StringComparer.InvariantCulture;
     bool IGameInfoState.IsFullAutoPlayAI => false;
     public int LastUnitId { get; set; }

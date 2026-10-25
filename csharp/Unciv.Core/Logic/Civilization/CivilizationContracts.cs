@@ -64,10 +64,8 @@ public interface IGameInfoState : IConstructionGameInfo
     bool IsUnavailableBySettingsCached(IHasUniques construction);
     /// <summary><c>gameInfo.spaceResources</c></summary>
     IReadOnlySet<string> SpaceResources { get; }
-    /// <summary><c>gameInfo.isUsersTurn()</c> (multiplayer extension reading the local user id from the client settings).</summary>
-    bool IsUsersTurn();
-    /// <summary><c>UncivGame.Current.settings.autoAssignCityProduction</c> (client setting).</summary>
-    bool AutoAssignCityProduction { get; }
+    /// <summary>T183: the per-civ state-affecting settings that Kotlin reads from <c>UncivGame.Current.settings</c>.</summary>
+    Unciv.Logic.PlayerSettings GetPlayerSettings(string civId);
     /// <summary><c>UncivGame.Current.worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c> (client state).</summary>
     bool IsFullAutoPlayAI { get; }
     /// <summary><c>UncivGame.Current.settings.getCollatorFromLocale()</c> (client setting; T126 PromotionTree).</summary>

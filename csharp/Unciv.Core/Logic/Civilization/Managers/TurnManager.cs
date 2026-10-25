@@ -17,7 +17,7 @@ namespace Unciv.Logic.Civilization.Managers;
 // Stripped: the timeThis profiling wrappers and the purity annotations.
 // Deviations:
 // - NextTurnProgress (a UI progress bar) is an optional `Action` that is called where Kotlin calls `progressBar?.increment()`.
-// - UncivGame.Current.settings / VERSION are GameClientState (via IGameInfoState.ClientState) and Version.Current.
+// - UncivGame.Current.settings are the per-civ PlayerSettings (T183), VERSION is GameClientState (via IGameInfoState.ClientState) and Version.Current.
 // - NextTurnAutomation (T094) is the INextTurnAutomation hook on the ClientState (the real automation by default); with no hook the calls are skipped
 //   (automateGoldToSciencePercentage, automateCityBombardment, automateCivMoves). They get the civilization where
 //   Kotlin builds `GameView(gameInfo, civ).civView`.
@@ -84,7 +84,7 @@ public class TurnManager(Civilization civInfo)
 
         foreach (var unit in civInfo.Units.GetCivUnits().ToList()) new UnitTurnManager(unit).StartTurn();
 
-        if (civInfo.PlayerType == PlayerType.Human && civInfo.GameInfo.ClientState.AutomatedUnitsMoveOnTurnStart)
+        if (civInfo.PlayerType == PlayerType.Human && civInfo.GameInfo.GetPlayerSettings(civInfo.CivId).AutomatedUnitsMoveOnTurnStart)
         {
             civInfo.HasMovedAutomatedUnits = true;
             foreach (var unit in civInfo.Units.GetCivUnits().ToList())
@@ -320,7 +320,8 @@ public class TurnManager(Civilization civInfo)
     private void EndTurnCore(Action? progressBar)
     {
         var clientState = civInfo.GameInfo.ClientState;
-        if (clientState.CitiesAutoBombardAtEndOfTurn)
+        var settings = civInfo.GameInfo.GetPlayerSettings(civInfo.CivId);
+        if (settings.CitiesAutoBombardAtEndOfTurn)
             clientState.NextTurnAutomation?.AutomateCityBombardment(civInfo); // Bombard with all cities that haven't, maybe you missed one.
 
         civInfo.ForEachTriggeredUnique(UniqueType.TriggerUponTurnEnd, civInfo.State, _ => true, true, unique =>
@@ -332,7 +333,7 @@ public class TurnManager(Civilization civInfo)
         var notificationsThisTurn = new Civilization.NotificationsLog(civInfo.GameInfo.Turns);
         notificationsThisTurn.Notifications.AddRange(civInfo.Notifications);
 
-        while (notificationsLog.Count >= clientState.NotificationsLogMaxTurns)
+        while (notificationsLog.Count >= settings.NotificationsLogMaxTurns)
         {
             notificationsLog.RemoveAt(0);
         }

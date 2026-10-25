@@ -13,14 +13,13 @@ namespace Unciv.Logic.City.Managers;
 // Ported from core/src/com/unciv/logic/city/managers/CityFounder.kt (T061).
 //
 // Stripped: the purity annotations.
-// - foundCity ends in city.resetSpecialistsControl(), which reads UncivGame.Current.settings (client state): its two inputs are explicit
-//   parameters here (see City.ResetSpecialistsControl). The default of autoAssignSpecialistsInNewCities is the GameSettings default (true).
+// - foundCity ends in city.resetSpecialistsControl(), which reads UncivGame.Current.settings (client state): its input is the civ's
+//   PlayerSettings.AutoAssignSpecialistsInNewCities (T183; default true, the GameSettings default).
 // - Kotlin Sets of Civilizations / names that are iterated are insertion-ordered (LinkedHashSet from Sequence.toSet()): lists here.
 
 public class CityFounder
 {
-    public CityObject FoundCity(CivilizationObject civInfo, HexCoord cityLocation, MapUnit? unit = null,
-        bool autoAssignSpecialistsInNewCities = true, string? localUserId = null)
+    public CityObject FoundCity(CivilizationObject civInfo, HexCoord cityLocation, MapUnit? unit = null)
     {
         var city = new CityObject();
 
@@ -94,7 +93,7 @@ public class CityFounder
         AddStartingBuildings(city, civInfo, startingEra);
 
         city.ResetDisabledConstructions();
-        city.ResetSpecialistsControl(autoAssignSpecialistsInNewCities, localUserId);
+        city.ResetSpecialistsControl(civInfo.GameInfo.GetPlayerSettings(civInfo.CivId).AutoAssignSpecialistsInNewCities);
 
         GameEventHooks.CityFounded(civInfo, city);
         civInfo.ForEachTriggeredUnique(UniqueType.TriggerUponFoundingCity,

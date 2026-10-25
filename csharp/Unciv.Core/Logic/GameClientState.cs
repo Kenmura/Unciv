@@ -10,33 +10,15 @@ namespace Unciv.Logic;
 /// <summary>Client settings and UI state that the game rules read. Not saved, not synchronised between peers.</summary>
 public sealed class GameClientState
 {
-    /// <summary><c>settings.autoAssignCityProduction</c></summary>
-    public bool AutoAssignCityProduction { get; set; }
-
-    /// <summary><c>settings.autoAssignSpecialistsInNewCities</c></summary>
-    public bool AutoAssignSpecialistsInNewCities { get; set; } = true;
-
     /// <summary><c>settings.alternateUnitCycleOrder</c></summary>
     public bool AlternateUnitCycleOrder { get; set; }
 
     /// <summary><c>worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c></summary>
     public bool IsFullAutoPlayAI { get; set; }
 
-    /// <summary><c>settings.automatedUnitsMoveOnTurnStart</c></summary>
-    public bool AutomatedUnitsMoveOnTurnStart { get; set; }
-
-    /// <summary><c>settings.citiesAutoBombardAtEndOfTurn</c></summary>
-    public bool CitiesAutoBombardAtEndOfTurn { get; set; }
-
-    /// <summary><c>settings.notificationsLogMaxTurns</c></summary>
-    public int NotificationsLogMaxTurns { get; set; } = 5;
-
     /// <summary>Test seam standing in for the Mockito spy of NextTurnAutomationTest, which runs an action the first time automation reaches a unit
     /// (Kotlin spies <c>getDamageFromTerrain</c>, the first thing <c>automateUnitMoves</c> asks of a unit). Always null in the game.</summary>
     internal Action<View.MapUnitView>? BeforeUnitMoves { get; set; }
-
-    /// <summary><c>settings.automatedUnitsChoosePromotions</c></summary>
-    public bool AutomatedUnitsChoosePromotions { get; set; }
 
     /// <summary><c>NextTurnAutomation</c>: the real automation by default. Tests (and clients) may replace it; null skips the calls.</summary>
     public INextTurnAutomation? NextTurnAutomation { get; set; } = Automation.Civilization.NextTurnAutomationHook.Instance;
@@ -44,44 +26,11 @@ public sealed class GameClientState
     /// <summary>Replaces the valuation <c>TradeEvaluation()</c> used by TurnManager and the diplomacy automation (tests install stand-ins). Null means <see cref="Trade.TradeEvaluation.Default"/>.</summary>
     public ITradeValidity? TradeEvaluation { get; set; }
 
-    /// <summary>
-    /// <c>settings.useAStarPathfinding</c> (default false): installs the A* <see cref="Map.PathingMap.AStarPathing"/> into <see cref="UnitPathing"/>,
-    /// <see cref="AttackPathing"/> and <see cref="RoadPathing"/>, or removes it. Those three can also be set separately (tests install stand-ins).
-    /// </summary>
-    public bool UseAStarPathfinding
-    {
-        get => UnitPathing != null || AttackPathing != null || RoadPathing != null;
-        set
-        {
-            UnitPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
-            AttackPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
-            RoadPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
-        }
-    }
-
-    /// <summary>The A* unit pathing of <c>UnitMovement</c>. Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
-    public Map.MapUnits.IUnitPathingMapFactory? UnitPathing { get; set; }
-
-    /// <summary>The A* attack pathing of <c>City.getLandAttackPath</c> / <c>getAmphibiousAttackPath</c>. Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
-    public Automation.Civilization.ICityAttackPathing? AttackPathing { get; set; }
-
-    /// <summary>The A* road pathing of <c>City.getRoadPath</c> / <c>getRoadPathToAny</c> Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
-    public Automation.Unit.ICityRoadPathing? RoadPathing { get; set; }
-
-    /// <summary><c>settings.autoBuildingRoads</c></summary>
-    public bool AutoBuildingRoads { get; set; } = true;
-
-    /// <summary><c>settings.automatedWorkersReplaceImprovements</c></summary>
-    public bool AutomatedWorkersReplaceImprovements { get; set; } = true;
-
-    /// <summary><c>settings.stopAutomatedWorkersRemoveVegetation</c></summary>
-    public bool StopAutomatedWorkersRemoveVegetation { get; set; }
+    /// <summary><c>settings.multiplayer.getUserId()</c>: only <c>GameInfo.GetPlayerToViewAs</c> (a client view choice) reads it; no game rule may (T183).</summary>
+    public string UserId { get; set; } = "";
 
     /// <summary><c>worldScreen?.autoPlay</c>: null when there is no client (headless simulation).</summary>
     public IAutoPlay? AutoPlay { get; set; }
-
-    /// <summary><c>settings.multiplayer.getUserId()</c>; the GameSettings default is the empty string.</summary>
-    public string UserId { get; set; } = "";
 
     /// <summary><c>settings.tutorialTasksCompleted</c></summary>
     public LinkedHashSet<string> TutorialTasksCompleted { get; } = [];

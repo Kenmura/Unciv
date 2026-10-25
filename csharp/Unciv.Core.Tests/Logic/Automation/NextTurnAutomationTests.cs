@@ -16,7 +16,7 @@ public abstract class NextTurnAutomationTestsBase
 
     protected NextTurnAutomationTestsBase(bool useAStar)
     {
-        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
+        testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(7);
         civInfo = testGame.AddCiv();
         var capital = testGame.AddCity(civInfo, testGame.TileMap[0, 0]);

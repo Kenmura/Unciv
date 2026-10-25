@@ -256,19 +256,19 @@ public static partial class DiplomacyAiTests
             var long16 = Enumerable.Range(0, 16).Select(_ => w.CityA.GetCenterTile()).ToList();
 
             var landOnly = new StandInPathing(short16, null);
-            w.Game.GameInfo.ClientState.AttackPathing = landOnly;
+            w.Game.GameInfo.EngineOptions.AttackPathing = landOnly;
             Assert.Equal(baseline, Baseline(w));
             Assert.Equal(1, landOnly.LandCalls);
             Assert.Equal(0, landOnly.AmphibiousCalls);
 
             // a land path of 16 tiles is too long; the amphibious one of 15 counts for 1
             var seaOnly = new StandInPathing(long16, short16);
-            w.Game.GameInfo.ClientState.AttackPathing = seaOnly;
+            w.Game.GameInfo.EngineOptions.AttackPathing = seaOnly;
             Assert.Equal(baseline - 2f, Baseline(w));
             Assert.Equal(1, seaOnly.AmphibiousCalls);
 
             // no path at all: the BFS fallback (open desert, 8 tiles away): minAttackDistance - 10 is below 0 -> coerced to 0
-            w.Game.GameInfo.ClientState.AttackPathing = new StandInPathing(null, long16);
+            w.Game.GameInfo.EngineOptions.AttackPathing = new StandInPathing(null, long16);
             Assert.Equal(baseline - 3f, Baseline(w));
         }
     }

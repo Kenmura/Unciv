@@ -356,7 +356,7 @@ public class BattleBranchTests
         var garrison = Unit("Warrior", defenderCiv, 0, 1);
         var worker = testGame.AddUnit("Worker", defenderCiv, testGame.GetTile(0, 1));
         var air = Unit("Fighter", defenderCiv, 0, 1);
-        testGame.GameInfo.ClientState.AutoPlay = new StandInAutoPlay();
+        testGame.GameInfo.SetPlayerSettings(attackerCiv.CivId, new PlayerSettings { HumanConquestPrompt = true });
         var attacker = Melee(attackerCiv, 0, 2);
 
         BattleObject.Attack(C(attacker), new CityCombatant(city));
@@ -367,12 +367,6 @@ public class BattleBranchTests
         Assert.Equal(attackerCiv, worker.Civ); // captured, not destroyed
         Assert.Contains(attackerCiv.PopupAlerts, it => it.Type == AlertType.CityConquered && it.Value == city.Id);
         Assert.Contains(attackerCiv.Notifications, it => it.Text == $"We have conquered the city of [{city.Name}]!");
-    }
-
-    private sealed class StandInAutoPlay : IAutoPlay
-    {
-        public bool IsAutoPlaying() => false;
-        public void StopAutoPlay() { }
     }
 
     [Fact]

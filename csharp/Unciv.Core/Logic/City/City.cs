@@ -162,17 +162,12 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
 
     /// <summary>
     /// Kotlin <c>resetSpecialistsControl()</c> reads <c>UncivGame.Current.settings</c>, which is client state a headless engine does not have:
-    /// <paramref name="autoAssignSpecialistsInNewCities"/> is <c>settings.autoAssignSpecialistsInNewCities</c> and
-    /// <paramref name="localUserId"/> is <c>settings.multiplayer.getUserId()</c>.
+    /// <paramref name="autoAssignSpecialistsInNewCities"/> is the civ's own <c>autoAssignSpecialistsInNewCities</c> (T183: the UserId check of
+    /// "if we skip a player's turn in multiplayer, let's not apply our settings" is gone, each civ has its own settings).
     /// </summary>
-    public void ResetSpecialistsControl(bool autoAssignSpecialistsInNewCities, string? localUserId = null)
+    public void ResetSpecialistsControl(bool autoAssignSpecialistsInNewCities)
     {
-        // if we skip a player's turn in multiplayer, let's not apply our settings
-        var isOfflineOrOurTurn = !Civ.GameInfo.GameParameters.IsOnlineMultiplayer
-            || Civ.PlayerId == localUserId;
-        ManualSpecialists =
-            Civ.IsHuman() && isOfflineOrOurTurn ? !autoAssignSpecialistsInNewCities
-            : false; // default
+        ManualSpecialists = Civ.IsHuman() && !autoAssignSpecialistsInNewCities;
     }
 
     [JsonPropertyName("isBeingRazed")]

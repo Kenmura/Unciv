@@ -2133,7 +2133,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Revised acceptance: 3 humans act simultaneously with interleaved commands for 20+ turns plus AI; timer forces one civ's end; one client dropped and resumed (UndoEndTurn after return); host killed mid-Resolving and restarted (NextResolveStep continues); late join into an AI slot; tampered command rejected; wrong password refused; fingerprint mismatch hard-fails.
 
 ### T183 Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T071, T046
 - Source: core/src/com/unciv/logic/GameInfo.kt; logic/city/CityConstructions.kt chooseNextConstruction; logic/battle/Battle.kt conquerCity; logic/civilization/managers/TurnManager.kt; logic/multiplayer/Multiplayer.kt isUsersTurn; design/COMMANDS-IMPLEMENTATION.md section 3 'ClientState audit'
 - Fixtures: none
@@ -2147,6 +2147,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Changing a setting mid-game is the SetPlayerSettings command (domain ticket 'turn and decision commands'). Not UI-only settings: AlternateUnitCycleOrder, Collator (GetCivsSorted ordering; read-only display), tutorials stay in GameClientState.
       - Tests: two human civs with different settings diverge as expected; same seed twice gives equal hash; T102 hashes unchanged with default settings.
   - Simultaneous turns: every human civ has its own PlayerSettings (several humans active at once); IsUsersTurn/UserId must not remain in any rule. Remaining current-player readers are T201.
+  -   - Implementation (Claude): PlayerSettings sealed record (Logic/PlayerSettings.cs) stored as optional "playerSettings" map in GameInfo (null/omitted until set, so Kotlin saves load and default games serialise unchanged); GameInfo.GetPlayerSettings/SetPlayerSettings; IGameInfoState.GetPlayerSettings replaces IsUsersTurn/AutoAssignCityProduction. Readers (TurnManager, CityConstructions, CityConquestFunctions, CityFounder, Battle, NextTurnAutomation.Units, Worker/RoadBetweenCities automation) read the acting civ's settings. UserId removed from all rules (City.ResetSpecialistsControl/AddCity/FoundCity lost the localUserId/auto-assign parameters; CityConstructions no longer gates on IsOnlineMultiplayer); only GetPlayerToViewAs (client view) still reads ClientState.UserId.
+      - HumanConquestPrompt replaces "AutoPlay != null" in Battle conquer, WorkerAutomation (replace improvements) and RoadBetweenCities; default false = Kotlin's no-worldScreen behaviour. UnitAutomation's AutoPlay.IsAutoPlaying() and IsFullAutoPlayAI stay client state (UI autoplay, TODO: T201/command ticket for SetPlayerSettings). UseAStarPathfinding and the Unit/Attack/RoadPathing seams moved to EngineOptions (per game, hashed only when on so default hash is unchanged).
+      - The SetPlayerSettings command itself is the domain commands ticket's job. Test fakes: FakeGameInfoState.PlayerSettingsByCiv.
 
 ### T184 Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases
 - State: Available

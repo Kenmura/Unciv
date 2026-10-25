@@ -39,6 +39,30 @@ public sealed class EngineOptions : IStateHashable
     /// <summary>Diagnostics only (output of <c>CityLocationTileRanker</c> when <see cref="ShowSettlerScores"/> is on), not part of the state hash.</summary>
     public IReadOnlyDictionary<HexCoord, float> SettlerScores { get; set; } = new Dictionary<HexCoord, float>();
 
+    /// <summary>
+    /// <c>settings.useAStarPathfinding</c> (default false; T183: a per-game rule fixed at game start, since it changes path results): installs the A* <see cref="Map.PathingMap.AStarPathing"/> into <see cref="UnitPathing"/>,
+    /// <see cref="AttackPathing"/> and <see cref="RoadPathing"/>, or removes it. Those three can also be set separately (tests install stand-ins).
+    /// </summary>
+    public bool UseAStarPathfinding
+    {
+        get => UnitPathing != null || AttackPathing != null || RoadPathing != null;
+        set
+        {
+            UnitPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
+            AttackPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
+            RoadPathing = value ? Map.PathingMap.AStarPathing.Instance : null;
+        }
+    }
+
+    /// <summary>The A* unit pathing of <c>UnitMovement</c>. Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
+    public Map.MapUnits.IUnitPathingMapFactory? UnitPathing { get; set; }
+
+    /// <summary>The A* attack pathing of <c>City.getLandAttackPath</c> / <c>getAmphibiousAttackPath</c>. Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
+    public Automation.Civilization.ICityAttackPathing? AttackPathing { get; set; }
+
+    /// <summary>The A* road pathing of <c>City.getRoadPath</c> / <c>getRoadPathToAny</c> Null is Kotlin's <c>settings.useAStarPathfinding = false</c> (the default).</summary>
+    public Automation.Unit.ICityRoadPathing? RoadPathing { get; set; }
+
     /// <summary>Upstream <c>GameInfo.isSimulation()</c>.</summary>
     public bool IsSimulation(int turns) => turns < SimulateUntilTurn;
 
@@ -50,6 +74,9 @@ public sealed class EngineOptions : IStateHashable
         CivIdsInExperimentGroup = new LinkedHashSet<string>(CivIdsInExperimentGroup),
         ShowSettlerScores = ShowSettlerScores,
         SettlerScores = SettlerScores,
+        UnitPathing = UnitPathing,
+        AttackPathing = AttackPathing,
+        RoadPathing = RoadPathing,
     };
 
     /// <summary>Hashes the rule-affecting flags only (the experiment group as an unordered set).</summary>
@@ -60,5 +87,6 @@ public sealed class EngineOptions : IStateHashable
         hasher.Add(Supercharged);
         hasher.Add(SimulateUntilTurn);
         hasher.AddUnorderedSet(CivIdsInExperimentGroup, civId => civId);
+        if (UseAStarPathfinding) hasher.Add("UseAStarPathfinding"); // only when on, so the default hash is unchanged
     }
 }

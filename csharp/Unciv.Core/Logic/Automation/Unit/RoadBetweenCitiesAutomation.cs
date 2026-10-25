@@ -11,7 +11,7 @@ namespace Unciv.Logic.Automation.Unit;
 // Ported from core/src/com/unciv/logic/automation/unit/RoadBetweenCitiesAutomation.kt (T092). Purity annotations and the debug logging dropped (T027 policy).
 // - Kotlin HashMaps keyed by Tile/City (identity) are only ever looked up, never iterated: Dictionary.
 // - Kotlin MutableList.sortBy is stable: re-sorted with OrderBy; minByOrNull/minOf are first-extremum / plain minimum.
-// - `settings.useAStarPathfinding` is "GameClientState.RoadPathing is set" (A* is PathingMap, see AStarPathing); `settings.autoBuildingRoads` is GameClientState.AutoBuildingRoads.
+// - `settings.useAStarPathfinding` is "GameEngineOptions.RoadPathing is set" (A* is PathingMap, see AStarPathing); `settings.autoBuildingRoads` is PlayerSettings.AutoBuildingRoads (T183).
 
 /// <summary>What <c>RoadBetweenCitiesAutomation</c> calls on <c>City</c> when <c>settings.useAStarPathfinding</c> is on.</summary>
 public interface ICityRoadPathing
@@ -63,9 +63,10 @@ public class RoadBetweenCitiesAutomation
         _ = cachedForTurn; // only used by the dropped debug logging
         this.civInfo = civInfo;
         var clientState = civInfo.GameInfo.ClientState;
+        var settings = civInfo.GameInfo.GetPlayerSettings(civInfo.CivId);
         // Player can choose not to auto-build roads & railroads. (`autoPlay?.isAutoPlayingAndFullAutoPlayAI() == false`: no autoPlay is not false)
         BestRoadAvailable = cloningSource?.BestRoadAvailable
-            ?? (civInfo.IsHuman() && !clientState.AutoBuildingRoads && clientState.AutoPlay != null && !clientState.IsFullAutoPlayAI
+            ?? (civInfo.IsHuman() && !settings.AutoBuildingRoads && settings.HumanConquestPrompt && !clientState.IsFullAutoPlayAI
                 ? RoadStatus.None
                 : civInfo.Tech.GetBestRoadAvailable());
         tilesOfConnectedCities = new KotlinLazy<List<TileClass>>(() => civInfo.Cities
@@ -124,7 +125,7 @@ public class RoadBetweenCitiesAutomation
             return cached;
 
         var roadToCapitalStatus = city.CityStats.GetRoadTypeOfConnectionToCapital();
-        var roadPathing = civInfo.GameInfo.ClientState.RoadPathing;
+        var roadPathing = civInfo.GameInfo.EngineOptions.RoadPathing;
 
         var basePriority = RankRoadCapitalPriority(roadToCapitalStatus);
         var roadPlans = new List<RoadPlan>();
@@ -276,7 +277,7 @@ public class RoadBetweenCitiesAutomation
         bool IsCandidateTilePredicate(TileClass it) => it.IsLand && MapPathing.IsValidRoadPathTile(city.Civ, it);
         var toConnectTile = city.GetCenterTile();
         var cityTilesToSeek = new HashSet<TileClass>(connectedCityTiles);
-        var roadPathing = civInfo.GameInfo.ClientState.RoadPathing;
+        var roadPathing = civInfo.GameInfo.EngineOptions.RoadPathing;
         if (roadPathing != null)
         {
             var pathToCity = roadPathing.GetRoadPathToAny(city, cityTilesToSeek, WorkerAutomationConst.MaxBfsReachPadding);

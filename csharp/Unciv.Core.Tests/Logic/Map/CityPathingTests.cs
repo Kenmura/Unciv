@@ -78,7 +78,7 @@ public sealed class CityPathingTests
     [Fact]
     public void UseAStarPathfindingInstallsTheAStarSeamsAndRemovesThem()
     {
-        var clientState = testGame.GameInfo.ClientState;
+        var clientState = testGame.GameInfo.EngineOptions;
         Assert.False(clientState.UseAStarPathfinding);
 
         clientState.UseAStarPathfinding = true;

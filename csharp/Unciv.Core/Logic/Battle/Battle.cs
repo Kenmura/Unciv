@@ -773,7 +773,7 @@ public static class Battle
             //Although in Civ5 Venice is unable to re-annex their capital, that seems a bit silly. No check for May not annex cities here.
             city.AnnexCity();
         }
-        else if (attackerCiv.IsHuman() && clientState.AutoPlay != null && !clientState.IsFullAutoPlayAI)
+        else if (attackerCiv.IsHuman() && attackerCiv.GameInfo.GetPlayerSettings(attackerCiv.CivId).HumanConquestPrompt && !clientState.IsFullAutoPlayAI)
         {
             // we're not taking our former capital
             attackerCiv.AddPopupAlert(new PopupAlert(AlertType.CityConquered, city.Id));

@@ -139,6 +139,25 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
     [JsonPropertyName("diplomaticVictoryVotesCast")]
     public JavaHashMap<string, string?> DiplomaticVictoryVotesCast { get; set; } = new();
 
+    /// <summary>
+    /// T183: the state-affecting settings per civ id, see <see cref="PlayerSettings"/>. Null until a civ's settings are first set, so a save
+    /// without them (every Kotlin save) loads and a game with default settings serialises exactly as before.
+    /// </summary>
+    [JsonPropertyName("playerSettings")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, PlayerSettings>? PlayerSettingsByCiv { get; set; }
+
+    /// <summary>The settings of <paramref name="civId"/>, <see cref="PlayerSettings.Default"/> when none were set.</summary>
+    public PlayerSettings GetPlayerSettings(string civId) =>
+        PlayerSettingsByCiv != null && PlayerSettingsByCiv.TryGetValue(civId, out var settings) ? settings : PlayerSettings.Default;
+
+    /// <summary>Replaces the settings of <paramref name="civId"/> (the effect of the SetPlayerSettings command).</summary>
+    public void SetPlayerSettings(string civId, PlayerSettings settings)
+    {
+        PlayerSettingsByCiv ??= new Dictionary<string, PlayerSettings>();
+        PlayerSettingsByCiv[civId] = settings;
+    }
+
     /// <summary>Set to false whenever the results still need te be processed</summary>
     [JsonPropertyName("diplomaticVictoryVotesProcessed")]
     public bool DiplomaticVictoryVotesProcessed { get; set; }
@@ -269,6 +288,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         toReturn.lastUnitId = lastUnitId;
         toReturn.UnitNamesTaken.AddRange(UnitNamesTaken);
         toReturn.EngineOptions = EngineOptions.Clone();
+        if (PlayerSettingsByCiv != null) toReturn.PlayerSettingsByCiv = new Dictionary<string, PlayerSettings>(PlayerSettingsByCiv);
         toReturn.ClientState = ClientState;
 
         return toReturn;
@@ -752,9 +772,6 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
     void IGameInfoState.NotifyExploredResources(Civilization.Civilization civInfo, TileResourceObject resource, int maxDistance) =>
         NotifyExploredResources(civInfo, resource, maxDistance);
 
-    /// <summary>The multiplayer extension <c>GameInfo.isUsersTurn()</c>.</summary>
-    public bool IsUsersTurn() => CurrentPlayer.Length != 0 && GetCivilization(CurrentPlayer).PlayerId == ClientState.UserId;
-    bool IGameInfoState.AutoAssignCityProduction => ClientState.AutoAssignCityProduction;
     IComparer<string> IGameInfoState.Collator => ClientState.Collator;
     bool IGameInfoState.IsFullAutoPlayAI => ClientState.IsFullAutoPlayAI;
     bool IGameInfoState.AlternateUnitCycleOrder => ClientState.AlternateUnitCycleOrder;

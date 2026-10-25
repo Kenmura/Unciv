@@ -9,7 +9,7 @@ namespace Unciv.Logic.Automation.Civilization;
 // Ported from core/src/com/unciv/logic/automation/civilization/MotivationToAttackAutomation.kt (T088), part 2: getAttackPathsModifier.
 // - Kotlin `groupBy { it.first }` keeps first-occurrence order of the (reference-identity) City keys: LinkedHashMap.
 // - useAStarPathfinding (default false, client setting): the A* branches call City.getLandAttackPath / getAmphibiousAttackPath, which
-//   are PathingMap users. They are reached through GameClientState.AttackPathing; null is the setting off (MapPathing).
+//   are PathingMap users. They are reached through GameEngineOptions.AttackPathing; null is the setting off (MapPathing).
 
 /// <summary>What <c>MotivationToAttackAutomation</c> calls on <c>City</c> when <c>settings.useAStarPathfinding</c> is on.</summary>
 public interface ICityAttackPathing
@@ -43,7 +43,7 @@ public static partial class MotivationToAttackAutomation
 
         var attackPaths = new List<List<TileClass>>();
         var attackPathModifiers = -3f;
-        var attackPathing = civInfo.GameInfo.ClientState.AttackPathing;
+        var attackPathing = civInfo.GameInfo.EngineOptions.AttackPathing;
 
         // groupBy { it.first }: keys in first-occurrence order
         var attacksGroupedByCity = new LinkedHashMap<CityObject, List<CityObject>>();

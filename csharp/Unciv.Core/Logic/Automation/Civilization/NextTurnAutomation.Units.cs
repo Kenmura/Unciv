@@ -75,7 +75,7 @@ public static partial class NextTurnAutomation
     {
         var unit = unitView.Unwrap();
         // Restrict Human automated units from promotions via setting
-        if (!unit.Civ.IsAI() && !unit.Civ.GameInfo.ClientState.AutomatedUnitsChoosePromotions) return;
+        if (!unit.Civ.IsAI() && !unit.Civ.GameInfo.GetPlayerSettings(unit.Civ.CivId).AutomatedUnitsChoosePromotions) return;
         var rng = unit.Cache.State.StateBasedRandom("NextTurnAutomation.automateUnits");
         var stateForConditionals = unit.Cache.State;
         while (unitView.CanBePromoted())

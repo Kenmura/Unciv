@@ -357,7 +357,7 @@ public sealed class PathingMapTests
     [Fact]
     public void ManyWarriorsConvergingOnRoad_doNotQueueSingleFile()
     {
-        testGame.GameInfo.ClientState.UseAStarPathfinding = true; // the Kotlin test relies on the process-wide A* setting of earlier tests
+        testGame.GameInfo.EngineOptions.UseAStarPathfinding = true; // the Kotlin test relies on the process-wide A* setting of earlier tests
         for (var x = -8; x <= 8; x++)
             testGame.GetTile(new HexCoord(x, 0)).SetRoadStatus(RoadStatus.Road, civInfo);
         foreach (var tile in testGame.TileMap.TileList)

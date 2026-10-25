@@ -21,7 +21,7 @@ public static partial class BattleSupportTests
 
         protected TargetHelperTestsBase(bool useAStar)
         {
-            testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
+            testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
             testGame.MakeHexagonalMap(6);
             attackerCiv = testGame.AddCiv();
             defenderCiv = testGame.AddCiv();

@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Support;
+using Unciv.Logic;
 using Unciv.Logic.Automation.Civilization;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
@@ -351,7 +352,7 @@ public class NextTurnAutomationTurnTests
         humanWarrior.Promotions.XP = 30;
         NextTurnAutomation.ApplyPromotions(UnitView(humanWarrior));
         Assert.Equal(0, humanWarrior.Promotions.NumberOfPromotions); // automatedUnitsChoosePromotions is off
-        testGame.GameInfo.ClientState.AutomatedUnitsChoosePromotions = true;
+        testGame.GameInfo.SetPlayerSettings(humanWarrior.Civ.CivId, new PlayerSettings { AutomatedUnitsChoosePromotions = true });
         NextTurnAutomation.ApplyPromotions(UnitView(humanWarrior));
         Assert.True(humanWarrior.Promotions.NumberOfPromotions >= 1);
     }

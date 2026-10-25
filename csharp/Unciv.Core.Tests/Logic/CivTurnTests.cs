@@ -146,7 +146,7 @@ public sealed class CivTurnTests
     public void EndTurnArchivesNotificationsAndTrimsTheLog()
     {
         var civ = Major(human: true);
-        game.GameInfo.ClientState.NotificationsLogMaxTurns = 2;
+        game.GameInfo.SetPlayerSettings(civ.CivId, new PlayerSettings { NotificationsLogMaxTurns = 2 });
         for (int turn = 0; turn < 3; turn++)
         {
             game.GameInfo.Turns = turn;
@@ -194,7 +194,7 @@ public sealed class CivTurnTests
         game.AddCity(civ, game.GetTile(0, 0));
         var automation = new RecordingAutomation();
         game.GameInfo.ClientState.NextTurnAutomation = automation;
-        game.GameInfo.ClientState.CitiesAutoBombardAtEndOfTurn = true;
+        game.GameInfo.SetPlayerSettings(civ.CivId, new PlayerSettings { CitiesAutoBombardAtEndOfTurn = true });
         new TurnManager(civ).EndTurn();
         new TurnManager(civ).AutomateTurn();
         Assert.Equal(["bombard:" + civ.CivName, "moves:" + civ.CivName], automation.Calls);
@@ -278,14 +278,14 @@ public sealed class CivTurnTests
         city.HasSoldBuildingThisTurn = true;
         var first = game.AddUnit("Warrior", civ, game.GetTile(1, 0));
         first.Promotions.XP = 1000;
-        civ.GameInfo.ClientState.AutomatedUnitsMoveOnTurnStart = true;
+        game.GameInfo.SetPlayerSettings(civ.CivId, new PlayerSettings { AutomatedUnitsMoveOnTurnStart = true });
 
         new TurnManager(civ).StartTurn();
         Assert.False(city.HasSoldBuildingThisTurn);
         Assert.True(civ.HasMovedAutomatedUnits);
         Assert.Contains(civ.Notifications, it => it.Text == "[[Warrior]] can be promoted!");
 
-        civ.GameInfo.ClientState.AutomatedUnitsMoveOnTurnStart = false;
+        game.GameInfo.SetPlayerSettings(civ.CivId, PlayerSettings.Default);
         foreach (var (x, y) in new[] { (0, 1), (1, 1), (-1, 0) })
             game.AddUnit("Warrior", civ, game.GetTile(x, y)).Promotions.XP = 1000;
         civ.Notifications.Clear();

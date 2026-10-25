@@ -886,9 +886,10 @@ public class CityConstructions : IsPartOfGameInfoSerialization
         }
 
         var gameInfo = City.Civ.GameInfo;
-        var isCurrentPlayersTurn = gameInfo.IsUsersTurn() || !gameInfo.GameParameters.IsOnlineMultiplayer;
-        if ((isCurrentPlayersTurn && (gameInfo.AutoAssignCityProduction // only automate if the active human player has the setting to automate production
-                    || gameInfo.IsFullAutoPlayAI))
+        // T183: the civ's own setting applies whenever it acts (Kotlin: only if the local user is the current player, UserId gating)
+        var autoAssignProduction = City.Civ.IsHuman() && gameInfo.GetPlayerSettings(City.Civ.CivId).AutoAssignCityProduction;
+        if ((autoAssignProduction // only automate if the human player has the setting to automate production
+                    || gameInfo.IsFullAutoPlayAI)
             || City.Civ.IsAI() || City.IsPuppet)
         {
             CityConstructionsAutomation.ChooseNextConstruction(this);

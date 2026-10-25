@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Support;
+using Unciv.Logic;
 using Unciv.Logic.Automation.Unit;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.Tiles;
@@ -215,19 +216,12 @@ public class RoadAutomationTests
     public void AHumanWhoSwitchedAutoRoadsOffOnAClientBuildsNone()
     {
         KnowRoads();
-        testGame.GameInfo.ClientState.AutoBuildingRoads = false;
-        testGame.GameInfo.ClientState.AutoPlay = new NoAutoPlay();
+        testGame.GameInfo.SetPlayerSettings(civInfo.CivId, new PlayerSettings { AutoBuildingRoads = false, HumanConquestPrompt = true });
         var automation = new RoadBetweenCitiesAutomation(civInfo, 1);
         Assert.Equal(RoadStatus.None, automation.BestRoadAvailable);
         testGame.GameInfo.ClientState.IsFullAutoPlayAI = true; // full AI autoplay ignores the setting
         Assert.Equal(RoadStatus.Road, new RoadBetweenCitiesAutomation(civInfo, 1).BestRoadAvailable);
         Assert.Equal(RoadStatus.Road, new RoadBetweenCitiesAutomation(civInfo, 2, new RoadBetweenCitiesAutomation(civInfo, 1)).BestRoadAvailable);
-    }
-
-    private sealed class NoAutoPlay : Unciv.Logic.IAutoPlay
-    {
-        public bool IsAutoPlaying() => false;
-        public void StopAutoPlay() { }
     }
 
     [Fact]
@@ -294,7 +288,7 @@ public class RoadAutomationTests
     public void AStarRoadPathingIsUsedWhenAPathingIsInstalled()
     {
         var pathing = new FakeRoadPathing();
-        testGame.GameInfo.ClientState.RoadPathing = pathing;
+        testGame.GameInfo.EngineOptions.RoadPathing = pathing;
         var (worker, unit, _, _) = TwoCities();
         Assert.NotEmpty(worker.RoadBetweenCitiesAutomation.GetNearbyCitiesToConnect(unit));
         Assert.True(pathing.Calls > 0);
@@ -317,7 +311,7 @@ public class RoadAutomationTests
     public void ACityWithoutNeighbourPlansIsConnectedToTheCapitalByAStarWhenInstalled()
     {
         var pathing = new FakeRoadPathing();
-        testGame.GameInfo.ClientState.RoadPathing = pathing;
+        testGame.GameInfo.EngineOptions.RoadPathing = pathing;
         KnowRoads();
         testGame.AddCity(civInfo, T(-7, 0));
         var far = testGame.AddCity(civInfo, T(3, 0));

@@ -19,8 +19,8 @@ namespace Unciv.Logic.Automation.Unit;
 // - Kotlin Sequence/Map operations keep their semantics: filter/groupBy/sortedBy are lazy-or-eager but order-preserving and stable (LINQ Where/GroupBy/OrderBy),
 //   maxByOrNull is the FIRST maximum (MaxByOrNull below), ruleset.tileImprovements is the insertion-ordered LinkedHashMap.
 // - Kotlin HashMap<Tile,...> / Counter<City> are only looked up (never iterated): Dictionary / Counter.
-// - `settings.stopAutomatedWorkersRemoveVegetation` / `automatedWorkersReplaceImprovements` are GameClientState properties;
-//   `worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == false` is "AutoPlay != null && !IsFullAutoPlayAI".
+// - `settings.stopAutomatedWorkersRemoveVegetation` / `automatedWorkersReplaceImprovements` are PlayerSettings properties (T183, per civ);
+//   `worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == false` is "PlayerSettings.HumanConquestPrompt && !IsFullAutoPlayAI".
 // - `synchronized(workersPerCity)` dropped: the engine is single-threaded.
 
 /// <summary>

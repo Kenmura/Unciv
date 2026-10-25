@@ -570,20 +570,13 @@ public class CityCoreTests
     }
 
     [Fact]
-    public void ResetSpecialistsControl_OnlyHumansWhoseTurnItIsApplyTheSetting()
+    public void ResetSpecialistsControl_OnlyHumansApplyTheSetting()
     {
         var w = NewWorld();
         w.City.ResetSpecialistsControl(autoAssignSpecialistsInNewCities: false);
         Assert.True(w.City.ManualSpecialists);
         w.City.ResetSpecialistsControl(autoAssignSpecialistsInNewCities: true);
         Assert.False(w.City.ManualSpecialists);
-
-        w.Info.GameParameters.IsOnlineMultiplayer = true;
-        w.Civ.PlayerId = "me";
-        w.City.ResetSpecialistsControl(false, localUserId: "someone else");
-        Assert.False(w.City.ManualSpecialists); // not our turn: default
-        w.City.ResetSpecialistsControl(false, localUserId: "me");
-        Assert.True(w.City.ManualSpecialists);
 
         var ai = NewWorld(human: false);
         ai.City.ResetSpecialistsControl(false);

@@ -5,7 +5,7 @@ namespace Unciv.Logic.Map.MapUnits;
 
 // UnitMovement reaches the A* pathfinding (PathingMap, T093) only through the interfaces below. Kotlin reads
 // `UncivGame.Current.settings.useAStarPathfinding` (default false) in four places: a headless engine has no client settings, so the
-// flag is "GameClientState.UnitPathing is set" (PathingMap implements IUnitPathingMap, AStarPathing is the factory).
+// flag is "GameEngineOptions.UnitPathing is set" (PathingMap implements IUnitPathingMap, AStarPathing is the factory).
 
 /// <summary>What UnitMovement calls on <c>PathingMap</c> (<c>aStarPathing</c>, <c>aStarPathingWithoutZoneControl</c>, <c>aStarPathingWithoutEscort</c>, <c>roadPathing</c>).</summary>
 public interface IUnitPathingMap

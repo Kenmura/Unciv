@@ -1266,12 +1266,11 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
     #endregion
 
     /// <summary>
-    /// Kotlin <c>addCity(location, unit)</c>. <paramref name="autoAssignSpecialistsInNewCities"/> and <paramref name="localUserId"/> are the
-    /// client settings <c>CityFounder</c> passes to <c>City.resetSpecialistsControl</c> (see there).
+    /// Kotlin <c>addCity(location, unit)</c>. <c>CityFounder</c> reads this civ's <see cref="Unciv.Logic.PlayerSettings"/> for <c>City.resetSpecialistsControl</c>.
     /// </summary>
-    public CityObject AddCity(HexCoord location, MapUnit? unit = null, bool autoAssignSpecialistsInNewCities = true, string? localUserId = null)
+    public CityObject AddCity(HexCoord location, MapUnit? unit = null)
     {
-        var newCity = new CityFounder().FoundCity(this, location, unit, autoAssignSpecialistsInNewCities, localUserId);
+        var newCity = new CityFounder().FoundCity(this, location, unit);
         newCity.CityConstructions.ChooseNextConstruction();
         return newCity;
     }

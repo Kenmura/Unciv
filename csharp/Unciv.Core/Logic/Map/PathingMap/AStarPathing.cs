@@ -9,8 +9,8 @@ using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 namespace Unciv.Logic.Map.PathingMap;
 
 // T093: Kotlin reads `UncivGame.Current.settings.useAStarPathfinding` at the call sites of PathingMap. The headless engine has no settings object:
-// the call sites go through the small interfaces below (GameClientState.UnitPathing / AttackPathing / RoadPathing, null = setting off), and
-// this class is the PathingMap-backed implementation of all of them (GameClientState.UseAStarPathfinding installs it).
+// the call sites go through the small interfaces below (GameEngineOptions.UnitPathing / AttackPathing / RoadPathing, null = setting off), and
+// this class is the PathingMap-backed implementation of all of them (GameEngineOptions.UseAStarPathfinding installs it).
 
 /// <summary>The A* implementation of the pathing seams: <see cref="PathingMap"/> for units, <c>City.getLandAttackPath</c> and friends for cities.</summary>
 public sealed class AStarPathing : IUnitPathingMapFactory, ICityAttackPathing, ICityRoadPathing

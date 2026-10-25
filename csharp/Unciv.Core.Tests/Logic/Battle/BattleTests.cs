@@ -21,7 +21,7 @@ public abstract class BattleTestsBase
 
     protected BattleTestsBase(bool useAStar)
     {
-        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
+        testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(4);
         attackerCiv = testGame.AddCiv();
         defenderCiv = testGame.AddCiv();

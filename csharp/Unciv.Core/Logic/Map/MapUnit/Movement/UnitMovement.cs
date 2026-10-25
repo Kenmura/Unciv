@@ -34,10 +34,10 @@ public class UnitMovement
 
     private IUnitPathingMapFactory? pathingMapsOverride;
 
-    /// <summary>The A* pathfinding: this unit's override, else <c>GameClientState.UnitPathing</c>. <c>null</c> is Kotlin's <c>useAStarPathfinding = false</c> (the default).</summary>
+    /// <summary>The A* pathfinding: this unit's override, else <c>GameEngineOptions.UnitPathing</c>. <c>null</c> is Kotlin's <c>useAStarPathfinding = false</c> (the default).</summary>
     internal IUnitPathingMapFactory? PathingMaps
     {
-        get => pathingMapsOverride ?? Unit.Civ.GameInfo.ClientState.UnitPathing;
+        get => pathingMapsOverride ?? Unit.Civ.GameInfo.EngineOptions.UnitPathing;
         set => pathingMapsOverride = value;
     }
 

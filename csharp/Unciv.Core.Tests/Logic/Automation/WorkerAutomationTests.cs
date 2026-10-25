@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Support;
+using Unciv.Logic;
 using Unciv.Logic.Automation.Civilization;
 using Unciv.Logic.Automation.Unit;
 using Unciv.Logic.Civilization.Managers;
@@ -21,7 +22,7 @@ public abstract class WorkerAutomationTestsBase
 
     protected WorkerAutomationTestsBase(bool useAStar)
     {
-        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
+        testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(7);
         civInfo = testGame.AddCiv();
         workerAutomation = new WorkerAutomation(civInfo, 3);
@@ -372,10 +373,12 @@ public abstract class WorkerAutomationTestsBase
     public void HumanWorkersMayBeToldNotToReplaceImprovementsOrRemoveVegetation()
     {
         var human = testGame.AddCiv(isPlayer: true);
-        var clientState = testGame.GameInfo.ClientState;
-        clientState.AutomatedWorkersReplaceImprovements = false;
-        clientState.StopAutomatedWorkersRemoveVegetation = true;
-        clientState.AutoPlay = new NoAutoPlay();
+        testGame.GameInfo.SetPlayerSettings(human.CivId, new PlayerSettings
+        {
+            AutomatedWorkersReplaceImprovements = false,
+            StopAutomatedWorkersRemoveVegetation = true,
+            HumanConquestPrompt = true,
+        });
         human.Tech.TechsResearched.Add(testGame.Ruleset.TileImprovements["Farm"].TechRequired!);
         testGame.AddCity(human, testGame.TileMap[0, 0]);
         var tile = testGame.TileMap[1, 1];
@@ -385,12 +388,6 @@ public abstract class WorkerAutomationTestsBase
         var worker = testGame.AddUnit("Worker", human, tile);
         new WorkerAutomation(human, 3).AutomateWorkerAction(new GameView(testGame.GameInfo, human).GetMapUnitView(worker), []);
         Assert.NotEqual("Remove Forest", tile.ImprovementInProgress);
-    }
-
-    private sealed class NoAutoPlay : Unciv.Logic.IAutoPlay
-    {
-        public bool IsAutoPlaying() => false;
-        public void StopAutoPlay() { }
     }
 
     [Fact]

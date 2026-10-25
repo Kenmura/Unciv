@@ -10,7 +10,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
 // T145 / T093: port of tests/src/com/unciv/logic/map/PathfindingTests.kt over the real TestGame, all 58 Kotlin cases, for both parameter sets:
-// PathfindingFixtureTests (ClassicPathfinding) and PathfindingAStarFixtureTests (AStarPathfinding, GameClientState.UseAStarPathfinding).
+// PathfindingFixtureTests (ClassicPathfinding) and PathfindingAStarFixtureTests (AStarPathfinding, GameEngineOptions.UseAStarPathfinding).
 // Kotlin `assumeTrue(...)` / `assumeThat(...)` skips a case for the other parameter set; xUnit 2 has no dynamic skip, so the case returns at once.
 public abstract class PathfindingFixtureTestsBase
 {
@@ -25,7 +25,7 @@ public abstract class PathfindingFixtureTestsBase
     protected PathfindingFixtureTestsBase(bool useAStar)
     {
         this.useAStar = useAStar;
-        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
+        testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(8);
         originTile = testGame.TileMap[0, 0];
         civInfo = testGame.AddCiv();

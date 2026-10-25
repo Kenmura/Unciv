@@ -13,7 +13,7 @@ using TileClass = Unciv.Logic.Map.Tiles.Tile;
 namespace Unciv.Core.Tests.Fixtures.MapFixtures;
 
 // T145 / T093: port of tests/src/com/unciv/logic/map/UnitMovementTests.kt over the real TestGame, all 25 Kotlin cases, for both parameter sets:
-// UnitMovementFixtureTests (ClassicPathfinding) and UnitMovementAStarFixtureTests (AStarPathfinding, GameClientState.UseAStarPathfinding).
+// UnitMovementFixtureTests (ClassicPathfinding) and UnitMovementAStarFixtureTests (AStarPathfinding, GameEngineOptions.UseAStarPathfinding).
 public abstract class UnitMovementFixtureTestsBase
 {
     private readonly TestGame testGame = new();
@@ -22,7 +22,7 @@ public abstract class UnitMovementFixtureTestsBase
 
     protected UnitMovementFixtureTestsBase(bool useAStar)
     {
-        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
+        testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(2);
         tile = testGame.TileMap[0, 0];
         civInfo = testGame.AddCiv();

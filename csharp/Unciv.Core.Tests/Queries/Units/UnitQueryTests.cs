@@ -139,7 +139,7 @@ public class UnitQueryTests
     [InlineData(true)]
     public void PathPreviewTurnsEqualTheTurnsAMoveTakes(bool useAStar)
     {
-        testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
+        testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
         testGame.SetTileTerrain(new HexCoord(0, 2), "Hill");
         testGame.SetTileTerrain(new HexCoord(0, 3), "Hill");
         var unit = testGame.AddUnit("Warrior", player, testGame.GetTile(0, 0));
@@ -519,7 +519,7 @@ public class UnitQueryTests
         ];
         foreach (var useAStar in new[] { false, true })
         {
-            testGame.GameInfo.ClientState.UseAStarPathfinding = useAStar;
+            testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
             foreach (var query in queries)
             {
                 var before = Hash(testGame.GameInfo);

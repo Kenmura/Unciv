@@ -398,7 +398,7 @@ public class CityConquestFunctions(CityObject city)
         }
 
         city.ResetDisabledConstructions();
-        city.ResetSpecialistsControl(city.Civ.GameInfo.ClientState.AutoAssignSpecialistsInNewCities, city.Civ.GameInfo.ClientState.UserId);
+        city.ResetSpecialistsControl(city.Civ.GameInfo.GetPlayerSettings(city.Civ.CivId).AutoAssignSpecialistsInNewCities);
 
         newCiv.Cache.UpdateOurTiles();
         oldCiv.Cache.UpdateOurTiles();

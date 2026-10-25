@@ -238,18 +238,6 @@ public sealed class GameInfoTests : IDisposable
     }
 
     [Fact]
-    public void IsUsersTurn_NeedsACurrentPlayerAndMatchingUserId()
-    {
-        var game = StartedGame();
-        game.ClientState.UserId = "u";
-        Assert.False(game.IsUsersTurn()); // playerId is ""
-        game.CurrentPlayerCiv.PlayerId = "u";
-        Assert.True(game.IsUsersTurn());
-        game.CurrentPlayer = "";
-        Assert.False(game.IsUsersTurn());
-    }
-
-    [Fact]
     public void GetCivsSorted_ExcludesBarbariansAndSpectators_PutsMajorsFirstThenSortsByName()
     {
         var game = StartedGame();
@@ -599,14 +587,10 @@ public sealed class GameInfoTests : IDisposable
     {
         var game = new GameInfo();
         IGameInfoState state = game;
-        Assert.False(state.AutoAssignCityProduction);
         Assert.False(state.IsFullAutoPlayAI);
         Assert.False(state.AlternateUnitCycleOrder);
-        Assert.True(game.ClientState.AutoAssignSpecialistsInNewCities);
         state.AddCompletedTutorialTask("t");
         Assert.Contains("t", game.ClientState.TutorialTasksCompleted);
-        game.ClientState.AutoAssignCityProduction = true;
-        Assert.True(state.AutoAssignCityProduction);
         Assert.Equal(6, ((IGameContextGameInfo)new GameInfo { Turns = 6 }).Turns);
     }
 
