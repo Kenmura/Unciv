@@ -40,7 +40,6 @@ flowchart TD
     T102["T102<br/>End-to-end determinism over N turns"]
     T140["T140<br/>Civilization and manager JSON wiring (full GameInfo save/loa..."]
     T160["T160<br/>Kotlin golden state hashes and mod ruleset for the end-to-en..."]
-    T161["T161<br/>Close known coverage gaps: UnitAutomation TryRetreat swap an..."]
     T162["T162<br/>Coverage baselines for Era.cs, Terrain.cs, CollectionExtensi..."]
     T163["T163<br/>ticket.py: refuse Done unless the tip builds, tests pass and..."]
     T164["T164<br/>Command infrastructure over GameInfo: GameCommand base, asse..."]
@@ -430,7 +429,6 @@ flowchart TD
   class T102 done
   class T140 done
   class T160 ready
-  class T161 review
   class T162 ready
   class T163 ready
   class T164 done
@@ -495,7 +493,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00", "25 06:00"]
     y-axis "Tickets" 0 --> 83
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 63, 61]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -561,7 +559,6 @@ xychart-beta
 | C032 | Available (waiting on C003, C010) | C003, C010 | 0 | Improvements, roads, cities, borders and in-world yield icons |
 | C033 | Available (waiting on C004) | C004 | 0 | Unit animation and combat presentation |
 | C034 | Available (waiting on C005, C010, C015, T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
-| T161 | Needs-Review [Claude] | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
 | T181 | Available (waiting on T174, T175, T193) | T174, T175, T164, T193 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T201 | Available (waiting on T200) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |

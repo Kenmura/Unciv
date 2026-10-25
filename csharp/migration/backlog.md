@@ -1867,7 +1867,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Split from T102 (Claude): T102 proves same-seed/save-load/clone/culture determinism inside C#. Still open: compare the C# per-turn state hash against hashes exported from the Kotlin game for fixed seeds (needs a canonical state-hash export on the JVM side, the C# hash is currently FNV over the save JSON whose property order T128 changed), and a run with one mod ruleset.
 
 ### T161 Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T093, T159
 - Source:
 - Fixtures: none
