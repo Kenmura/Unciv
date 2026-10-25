@@ -1896,16 +1896,19 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Implements PROTOCOL.md 'Green before Done': ticket.py state T### Done runs (or verifies a recent stamp of) build, format, test, coverage --check on the rebased tree and refuses on failure; also checks for stale TODO(T###) markers naming the ticket.
 
-### T164 Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log
-- State: Blocked
-- Depends: T012, T071, T083, T080, T100
-- Source: csharp/migration/COMMANDS.md; Unciv.Core/Commands skeleton
+### T164 Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command
+- State: Available
+- Depends: T012, T071, T100, T140, T011
+- Source: csharp/migration/COMMANDS.md; design/COMMANDS-IMPLEMENTATION.md sections 2 and 3; Unciv.Core/Commands skeleton
 - Fixtures: none
-- Deliverables: Unciv.Core/Commands/* concrete commands over real GameInfo, validation by actor/turn, serializable log, replay test
+- Deliverables: csharp/Unciv.Core/Commands/{GameCommand.cs,GameCommandRegistry.cs,CommandContext.cs,CommandErrors.cs,GameSession.cs,CommandTypeAttribute.cs}, Commands/City/RenameCity.cs, Commands/Units/SetUnitDue.cs, tests (every [CommandType] class: unique name, JSON round trip, rejected-command leaves state hash unchanged, actor spoofing impossible)
 - Gate: dotnet test --filter FullyQualifiedName~Commands
 - Claimed:
 - Notes: T012 only delivered the skeleton against a toy state. The client (C004/C005), a server (C006) and AI all need real commands. Replaying a command log from a seed must reproduce the T102 state hashes.
   - Held (Blocked) while the design/splitting agents run: this ticket is too coarse to implement as written (gap review). It will be split into domain tickets and re-pointed by the design agent; do not claim it until it is Available again.
+  - Narrowed by the design agent (design/COMMANDS-IMPLEMENTATION.md). This ticket is ONLY the infrastructure; the domain commands are separate tickets (turn/decision, movement+combat, unit actions A/B, city, research/policy/religion, diplomacy/trade) and the replayable log is its own ticket. The old Notes (replay from a seed must reproduce the T102 hashes) are carried by the log/replay ticket.
+      - Build: GameCommand : ICommand<GameInfo> with helper CommandContext (resolve civ/unit/city/tile by id with stable error codes: unknown-civ, unknown-unit, not-your-unit, not-your-turn, game-over, ...); [CommandType("name")] attribute and reflection scan so domain tickets add commands without editing a shared registry file (the overlap rule in PROTOCOL.md); GameSession = GameInfo + CommandProcessor + registry + the engine inputs a log needs (see section 6 of the design).
+      - Traps: (1) Validate must be pure, but many engine predicates mutate caches (UpdateViewableTiles, lazy transients): tests compare the full state hash before/after Validate for every command. (2) Submit round-trips through the envelope (existing rule), so command records must be JSON-stable: ruleset objects by name, ids not references, no float paths. (3) Turn check: a command is valid only if ActorId is the CurrentPlayer civ, a human, and the game has no VictoryData unless the command is allowed after victory; server actor 'server' is a reserved id for server commands. (4) Faulting keeps its semantics; add a rebuild-from-snapshot helper later in the log ticket.
 
 ### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
 - State: Won't port
@@ -1960,7 +1963,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Gap review: there is no csharp CI workflow; gates run manually in distrobox. Unciv.Godot is outside Unciv.sln, so CI must build it separately. Do not touch the Kotlin/Gradle workflows.
 
 ### T170 Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods)
-- State: Done
+- State: Needs-Review [Claude]
 - Depends: T104
 - Source:
 - Fixtures: none
@@ -2012,33 +2015,36 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T175 Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery
 - State: Available
-- Depends: T172, T174, T164
+- Depends: T172, T174, T164, T186
 - Source: csharp/migration/design/SERVER.md sections 2.4, 2.5
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Visibility/EventFilter*.cs, ViewDelta builder, reflection test that every GameEvent type has a classifier, tests (UnitMoved partly visible => appear/disappear, notification action on unexplored tile stripped)
 - Gate: dotnet test --filter FullyQualifiedName~NetEvents
 - Claimed:
 - Notes: Depends T164 (command layer split) for the concrete GameEvent types: when tickets from design/COMMANDS-IMPLEMENTATION.md appear, re-point Depends to the event-definition ticket(s) and add them. Until real events exist, build and test against the toy events in CommandTests plus Notification/PopupAlert.
+  - Design agent: Depends re-pointed to T186 (event model and sink; domain tickets add their own [EventType]s). Per design/COMMANDS-IMPLEMENTATION.md section 7 events are derived through the sink, not by diffing; TilesRevealed/StatsChanged stay server-side here.
 
 ### T176 Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot)
 - State: Available
-- Depends: T172, T164, T140
+- Depends: T172, T164, T140, T194
 - Source: csharp/migration/design/SERVER.md section 5; Unciv.Core/Logic/Files/UncivFiles.cs; Unciv.Core/Utils/StateHasher.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Persistence/* (IGameStore, FileGameStore, recovery, retention), tests: kill mid-write, corrupt tail, replay tail reproduces checkpoint hash, save opens via UncivFiles
 - Gate: dotnet test --filter FullyQualifiedName~NetPersistence
 - Claimed:
 - Notes: Needs real replayable commands from T164 (split tickets in design/COMMANDS-IMPLEMENTATION.md: re-point). Log append+fsync before ack; snapshots via UncivFiles (gzip+base64 JSON, Kotlin-compatible). Server-side fullHash = hash of the serialized full GameInfo as in EndToEndDeterminismTests. Open point: replay-per-reconnect cost; start with head state in RAM plus recent filtered-delta ring.
+  - Design agent: Depends re-pointed to T194 (engine-level CommandLogWriter/Reader, header, checkpoint entries and ReplayVerifier). This ticket adds only store concerns: fsync ordering, rotation, snapshot cadence, crash recovery, retention.
 
 ### T177 Turn policy: sequential phase machine, injected clock, turn timer, AFK skip, drop and AI replacement
 - State: Available
-- Depends: T172, T164
+- Depends: T172, T164, T184, T187
 - Source: csharp/migration/design/SERVER.md section 4; COMMANDS.md open questions (simultaneous turns)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Turns/* (TurnPolicy, IClock, TurnTimer, ForceEndTurn/SetController server commands), tests with a fake clock: timeout skip, K timeouts => AI, reclaim, disconnect grace, no wall-clock reads in engine
 - Gate: dotnet test --filter FullyQualifiedName~NetTurnPolicy
 - Claimed:
 - Notes: Sequential only for v1 (decision D3 default); keep phase in a server-layer state object so simultaneous mode can be added without reworking the processor. Timer expiry becomes a logged server command (actor 'server'), so replay needs no clock. Depends on T164 turn-flow tickets: re-point to the human-turn-flow ticket from design/COMMANDS-IMPLEMENTATION.md when it exists.
+  - Design agent: Depends re-pointed to T184 (phased turn API: EndPlayerTurn / RunAutoPlayers / BeginPlayerTurn, TurnPhase) and T187 (EndTurn, ForceEndTurn, RunAiTurn, BeginTurn commands; actor 'server' is reserved). The AI round is logged per AI civ (RunAiTurn), see design section 5.4: this deliberately refines design/SERVER.md section 1 ('AI as commands issued by the AI civ'), because AI code mutates GameInfo directly in ~100 files and cannot be re-expressed as per-action commands; replay re-runs the engine's AI per civ and the checkpoint hash catches any divergence.
 
 ### T178 Headless host and lobby: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (rate, size, dedup, existence-oracle-safe errors)
 - State: Available
@@ -2072,13 +2078,14 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T181 Private-channel filtering: trade offers, diplomacy and espionage visibility (server side)
 - State: Available
-- Depends: T174, T175, T164
+- Depends: T174, T175, T164, T193
 - Source: csharp/migration/design/SERVER.md section 3 (trade, espionage rows); View/TradeView.cs, SpyView.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Visibility/Private*.cs, tests with 3-civ fixture: third party never sees A-B offers or A's spies, AI willingness numbers never serialized
 - Gate: dotnet test --filter FullyQualifiedName~NetPrivacy
 - Claimed:
 - Notes: Needs trade/diplomacy/espionage commands from the T164 split (design/COMMANDS-IMPLEMENTATION.md): re-point Depends to those tickets once they exist.
+  - Design agent: Depends gained T193 (diplomacy/trade commands) - private-channel rules need the concrete trade/diplomacy commands and events.
 
 ### T182 Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement
 - State: Available
@@ -2089,6 +2096,246 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~ServerEndToEnd
 - Claimed:
 - Notes: Acceptance for the server track: 20+ turns, forced timeout and AI replacement, one client dropped and resumed, tampered client command rejected, no client mirror contains an unexplored tile. Server fullHash equals the replayed-from-log hash; every client viewHash matches its filtered snapshot.
+
+### T183 Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules
+- State: Available
+- Depends: T071, T046
+- Source: core/src/com/unciv/logic/GameInfo.kt; logic/city/CityConstructions.kt chooseNextConstruction; logic/battle/Battle.kt conquerCity; logic/civilization/managers/TurnManager.kt; logic/multiplayer/Multiplayer.kt isUsersTurn; design/COMMANDS-IMPLEMENTATION.md section 3 'ClientState audit'
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Logic/PlayerSettings.cs (new), edits to GameClientState.cs, GameInfo.cs, Battle.cs, CityConstructions.cs, TurnManager.cs, UnitAutomation/WorkerAutomation/RoadBetweenCitiesAutomation readers; tests
+- Gate: dotnet test --filter FullyQualifiedName~PlayerSettings
+- Claimed:
+- Notes:
+  - Problem (verified): rules read client preferences from GameClientState (Kotlin UncivGame.Current.settings): AutomatedUnitsMoveOnTurnStart (TurnManager.StartTurn), CitiesAutoBombardAtEndOfTurn (EndTurn), AutoAssignCityProduction (CityConstructions.ChooseNextConstruction, gated by IsUsersTurn() = CurrentPlayer's PlayerId == ClientState.UserId, or not online), AutoAssignSpecialistsInNewCities, AutomatedUnitsChoosePromotions (AI always promotes, humans only with the setting), AutoBuildingRoads, AutomatedWorkersReplaceImprovements, StopAutomatedWorkersRemoveVegetation, UseAStarPathfinding (changes path results, so it is a game rule, not a preference), NotificationsLogMaxTurns. These change GameInfo state, so a replayable/authoritative game cannot read them from whoever runs the process.
+      - Trap (verified, Battle.cs ~774): a human conquest raises the CityConquered alert only if ClientState.AutoPlay != null && !IsFullAutoPlayAI. Headless/server has AutoPlay == null, so a human civ silently auto-conquers (AutomateCityConquer). Kotlin behaves the same without a worldScreen, so the port is faithful, but a server must give human civs the alert. Same null-AutoPlay pattern in UnitAutomation, WorkerAutomation, RoadBetweenCitiesAutomation, MayaCalendar.
+      - Design: a PlayerSettings record per civ id (default = Kotlin GameSettings defaults), stored in GameInfo as an optional serialised field (check UncivJson ignores unknown fields so Kotlin-compatible saves still load) so snapshot + log is self-contained; readers take civ.GameInfo.SettingsOf(civ). UseAStarPathfinding and the automation flags move to a per-game EngineOptions-style record fixed at game start. IsUsersTurn/UserId no longer affect rules: replace by 'civ is human-controlled'. 'AutoPlay present' becomes an explicit PlayerSettings.HumanConquestPrompt (true for human civs on a server and in the client).
+      - Changing a setting mid-game is the SetPlayerSettings command (domain ticket 'turn and decision commands'). Not UI-only settings: AlternateUnitCycleOrder, Collator (GetCivsSorted ordering; read-only display), tutorials stay in GameClientState.
+      - Tests: two human civs with different settings diverge as expected; same seed twice gives equal hash; T102 hashes unchanged with default settings.
+
+### T184 Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases
+- State: Available
+- Depends: T183, T102, T084
+- Source: core/src/com/unciv/logic/GameInfo.kt nextTurn/setNextPlayer; ui/screens/worldscreen/status/NextTurnAction.kt; ui/screens/worldscreen/AlertPopup.kt; logic/civilization/managers/TurnManager.kt; csharp Logic/GameInfoTurn.cs, View/CivView.cs; design/COMMANDS-IMPLEMENTATION.md section 5
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Logic/GameInfoTurnPhases.cs, TurnPhase.cs, PendingDecisions.cs (DecisionKind, Decision records), edits to GameInfoTurn.cs (NextTurn composed of the phases); tests incl. T102 hash equality and hotseat/defeated/spectator cases
+- Gate: dotnet test --filter "FullyQualifiedName~TurnPhase|FullyQualifiedName~PendingDecisions|FullyQualifiedName~EndToEndDeterminism"
+- Claimed:
+- Notes:
+  - Verified facts about human civs (Kotlin GameInfo.nextTurn and C# GameInfoTurn.NextTurn are identical in structure): one call = (1) if the current civ is human: TurnManager.EndTurn, advance index; (2) loop while IsSimulation || civ.IsAI() || defeated hotseat human || online spectator: StartTurn, AutomateTurn, EndTurn, advance (Turns++ and RecordRankingStats when the index wraps to 0); (3) the first non-auto civ becomes CurrentPlayer, its StartTurn runs, NotifyOfCloseEnemyUnits, NotificationCountAtStartTurn. Human civs are never AutomateTurn'd (NextTurnAutomation.AutomateCivMoves is only reached through the loop; the autoplay menu calls TurnManager.AutomateTurn for a human on demand).
+      - Quirk to preserve: StartTurn is NOT called for the first human on turn 1 (GameStarter never calls TurnManager); a game's first human turn begins 'started' by convention. The phase state therefore needs 'started' = true after GameStarter.
+      - Human order execution is not part of EndTurn: queued orders (moveTo, explore, automate) run in MapUnit.DoAction, which fires (a) at StartTurn only if AutomatedUnitsMoveOnTurnStart, else (b) when the player presses 'Move automated units' (CivView.TryAutomateAllUnits, sets HasMovedAutomatedUnits, which NextTurnAction.MoveAutomatedUnits makes a required step before NextTurn). So the engine API needs MoveAutomatedUnits as a distinct, logged step.
+      - Time: NextTurn(nowMillis) uses the clock for TotalTurnTimeSeconds/CurrentTurnStartTime/MinutesBeforeForceResign; keep nowMillis as an explicit input of EndPlayerTurn/BeginPlayerTurn, supplied by the authority and logged.
+      - API: EndPlayerTurn(now) -> runs EndTurn of the current human and advances; RunAutoPlayers(now, civLimit?) -> processes the following auto civs one at a time (returns after each so a host can log/checkpoint per civ); BeginPlayerTurn(now) -> sets CurrentPlayer, StartTurn, notify. NextTurn(now) == EndPlayerTurn + RunAutoPlayers + BeginPlayerTurn, byte-identical state hashes to today (T102 tests are the regression). TurnPhase { AwaitingInput(civ) | AutoPlayers(next civ) | GameOver } is derived from CurrentPlayerCiv + a non-serialised 'started' flag, with save/load re-deriving it.
+      - PendingDecisions.For(civ) is a pure query ordered like NextTurnAction: free great person, city with empty queue (not puppet), tech picker (CivView.ShouldOpenTechPicker), policy picker, move spies, found/expand pantheon, found/enhance/reform religion, world congress vote, then the soft ones (move automated units, due units) and popup alerts split into decision alerts (CityConquered, DiplomaticMarriage, demands, Event, RecapturedCivilian, DeclarationOfFriendship offer, WarDeclaration-style choices) vs informational ones. Each Decision names the command that resolves it. Blocking set = the NextTurnAction choices above NextUnit plus MoveAutomatedUnits.
+      - Hotseat/spectator/defeated cases: keep ShouldAutoProcessHotseatPlayer / OnlinePlayer semantics exactly. Do not read UI state.
+
+### T185 Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test
+- State: Available
+- Depends: T084, T085, T138, T139, T012
+- Source: csharp/Unciv.Core/View/*; csharp/Unciv.Core/Commands/CommandRegistry.cs; design/COMMANDS-IMPLEMENTATION.md section 8
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Queries/{IQuery.cs,QueryRegistry.cs,QueryEnvelope.cs,QueryContext.cs}, tests (round trip, unknown type rejected, state hash unchanged after every registered query, viewer cannot see fogged data)
+- Gate: dotnet test --filter FullyQualifiedName~Queries
+- Claimed:
+- Notes:
+  - Why: the server design (design/SERVER.md 2.1, 7) gives a networked Godot client a filtered mirror, not a GameInfo, so UI questions that Kotlin answers by calling engine code (reachable tiles, path, attack odds, buy cost, ...) must be serializable request/response pairs computed where the GameInfo lives (loopback GameHost in single player, server online). One mechanism, not one ad-hoc DTO per screen.
+      - Shape: IQuery<TResult> { Type } with Run(GameView view) -> TResult (TResult a plain JSON-able record, no engine objects, ruleset objects by name); QueryRegistry like CommandRegistry (attribute scanning, no shared file); a QueryEnvelope {Type, ViewerId, Payload}. ViewerId comes from the session, as ActorId does for commands. Queries never mutate: test every registered query by hashing state before/after (the same StateHasher as T102) and by running with a view whose civ has not explored the tiles.
+      - Queries run against the live state, not the last snapshot; they must be cheap enough for hover (path preview) but are rate-limited by the host, not the engine.
+      - The View classes (T084/T085) already provide the fog-correct read API; queries wrap them, they do not re-implement visibility. Anything a View method returns as an engine object (Tile, MapUnit, Ruleset objects) is converted to a record here.
+      - Leak risk to review in each query ticket: movement/pathing over tiles the viewer has not explored (UnitMovement treats unknown tiles via IsUnknownTileWeShouldAssumeToBePassable; verify the DTO does not expose the real terrain).
+
+### T186 Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts)
+- State: Available
+- Depends: T164
+- Source: design/COMMANDS-IMPLEMENTATION.md section 7; design/SERVER.md 2.4/2.5; Logic/Battle/AttackRecorder.cs, Logic/Civilization/Notification.cs, PopupAlert.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/Events/{GameEventRegistry.cs,CommonEvents.cs}, Logic/GameInfoEventSink.cs (null by default, no behaviour change when absent), tests
+- Gate: dotnet test --filter FullyQualifiedName~GameEvents
+- Claimed:
+- Notes:
+  - Events are facts for presentation/sync; per design/SERVER.md every event type needs a visibility classifier (T175) so events are defined in code with an [EventType] attribute scanned like commands. The engine mutates state directly and has no event emission, so add a small sink: GameInfo.EventSink (null in tests/AI-only runs, set by the session for the duration of one command) with calls at the few choke points that already exist: MapUnit position set (movementMemories), Battle/AttackRecorder (damage, kill, capture), CityFounder, CityConquestFunctions, Tile ownership changes, Civilization.AddNotification and PopupAlerts.Add, Tech/Policy/Religion adoption, Diplomacy status changes. Add only the call sites needed by the event list below; each domain ticket may add its own events through the same registry.
+      - Initial event set: TurnEnded, TurnStarted, AutoPlayerTurnProcessed(civ), UnitMoved(path of positions, with start/end), UnitAttacked(attacker, defender, damage both sides, killed), UnitCreated, UnitDestroyed, CityFounded, CityCaptured, CityGrew, TileOwnerChanged, NotificationAdded (per civ), AlertAdded (per civ), ResearchCompleted, PolicyAdopted, WarDeclared, PeaceMade, TradeAccepted.
+      - Trap: the AI round and StartTurn generate hundreds of events; the sink must be allocation-free when null and bounded when set (coalesce per civ), and events must be produced in deterministic order (never from a hash-ordered iteration). Events never feed back into state. Unit moves inside Apply with fog changes are NOT events: TilesRevealed/StatsChanged are server-computed diffs (T175).
+
+### T187 Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign
+- State: Available
+- Depends: T164, T186, T184, T183
+- Source: design/COMMANDS-IMPLEMENTATION.md sections 3.1 and 5; ui/screens/worldscreen/AlertPopup.kt; status/NextTurnAction.kt; view/CivView.kt (tryDismiss*, tryMarkMovedAutomatedUnits, tryAutomateAllUnits)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/Turn/*.cs (EndTurn, RunAiTurn, BeginTurn, ForceEndTurn, MoveAutomatedUnits, SetPlayerSettings, AckAlert, RespondToAlert, DismissPolicyPicker, DismissMoveSpies, Resign), tests
+- Gate: dotnet test --filter FullyQualifiedName~Commands.Turn
+- Claimed:
+- Notes:
+  - Commands (see design section 3.1 for payloads and validation): EndTurn (actor = current human; Validate rejects with code pending-decisions while PendingDecisions has a blocking item; Apply = GameInfo.EndPlayerTurn(now)), RunAiTurn(civ) and BeginTurn (actor 'server' only; Apply = RunAutoPlayers one civ / BeginPlayerTurn), ForceEndTurn (actor 'server': skips the pending-decision check; clears nothing else), MoveAutomatedUnits (CivView.TryAutomateAllUnits plus the HasMovedAutomatedUnits mark; rejects when AutomatedUnitsMoveOnTurnStart or already done), AckAlert(index/alert id) for informational alerts, RespondToAlert for decision alerts (CityConquered: annex/puppet/raze/liberate/keep; DiplomaticMarriage; demands accept/refuse; WarDeclaration-style 'THIS MEANS WAR' = DeclareWar; RecapturedCivilian return/keep; Event option choice; DeclarationOfFriendship offer), Dismiss* for the UI-state flags that live in saved state (PolicyManager.ShouldOpenPolicyPicker, EspionageManager dismissedShouldMoveSpies), Resign.
+      - Trap: the UI removes popup alerts on open (AlertPopup.kt lines ~135 and ~679). PopupAlerts is serialised and therefore part of the state hash, so a client that merely 'looks' at an alert must still send AckAlert or the authority and the client diverge. Identify an alert by its index in civ.PopupAlerts plus (type,value) so a stale reference is rejected.
+      - Trap: AI turns are server commands. RunAiTurn must call exactly the loop body of NextTurn (StartTurn, AutomateTurn, EndTurn, advance) and must set the same nowMillis the original NextTurn received; with NextTurn(now) == EndTurn + RunAiTurn* + BeginTurn the T102 hash equality is the acceptance test.
+      - Trap: EndTurn must NOT accept a client-supplied time. The envelope's server-assigned field 'Now' (epoch ms) is logged; ClientCommandId idempotency stays a server concern.
+      - After victory (GameInfo.VictoryData set) only AckAlert, Resign and OneMoreTurn-type commands are valid; check what Kotlin allows (OneMoreTurnMode, GameInfo.OneMoreTurnMode).
+
+### T188 Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue
+- State: Available
+- Depends: T164, T186, T083
+- Source: design/COMMANDS-IMPLEMENTATION.md section 3.2; logic/map/mapunit/movement/UnitMovement.kt (moveToTile, headTowards, getShortestPath); logic/battle/Battle.kt (moveAndAttack, attackOrNuke, nuke); view/MapUnitView.kt tryMoveToTile/tryHeadTowards/trySetMoveToAction/tryMovePreparingAttack/tryNuke/tryAirSweep/trySwapMoveToTile/tryDisband
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/Units/{MoveUnit,SetMoveOrder,SwapUnits,Attack,Bombard,Nuke,AirSweep,DisbandUnit}.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~Commands.Units
+- Claimed:
+- Notes:
+  - Validation = the predicate the UI used to offer the action, never the View Try* methods (they return bool only, and MapUnitView.TryMoveToTile does not even check ownership): unit belongs to actor, civ is current player, unit has movement, target reachable (UnitMovement.CanReach / CanMoveTo / ContainsAttackableEnemy / GetAttackableEnemies for Attack).
+      - Payload carries ids and the target tile only; the authority recomputes the path and cost (COMMANDS.md identifiers rule). MoveUnit = one-turn move (moveToTile: fails if the destination is not reachable this turn); SetMoveOrder = multi-turn 'moveTo' action (UnitMovement.headTowards now plus unit.Action = moveTo x,y so DoAction continues it).
+      - Traps: (1) moveToTile may stop early (enemy revealed, ZoC, hidden unit found) - Apply returns events for the portion done; it is not an error. (2) Attack on a tile with several defenders: the target is chosen by Battle/TargetHelper from the tile, the payload only names the tile (+ attacker); if the AttackableTile list changes between client preview and apply, the command attacks what the authority computes. (3) Attack against a city that can be conquered: with a human attacker the engine raises PopupAlert CityConquered (needs ticket 'Engine player settings'), the follow-up is RespondToAlert in the turn ticket. (4) Nuke / air sweep require extra confirmations in the UI only; the command carries just the target. (5) Great General / promotion triggers consume the seeded RNG during Apply, never Validate. (6) Attack uses randomness through the state-owned RNG in Battle.DamageToAttacker; do not pre-roll in the command. (7) Disband: gold refund when in own territory (UnitActionsPillage not involved); Validate = MapUnit.CanBeDisbanded-equivalent.
+      - SetUnitDue(unit,bool) replaces CivView/MapUnitView.SetDue; the 'cycle to next due unit' cursor (UnitManager.nextPotentiallyDueAt, AlternateUnitCycleOrder) is client-local presentation and is not a command (it is not serialised).
+
+### T189 Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop)
+- State: Available
+- Depends: T164, T186, T080, T185
+- Source: design/COMMANDS-IMPLEMENTATION.md section 4; logic/map/mapunit/actions/UnitActions.kt (getUnitActions, invokeUnitAction), models/UnitAction.kt; csharp Models/UnitAction.cs, Logic/Map/MapUnit/UnitActions*.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/Units/{UnitActionDescriptor.cs,ExecuteUnitAction.cs,SetWorkerOrder.cs,PromoteUnit.cs}, Queries/UnitActionsQuery.cs, edit Models/UnitAction.cs (stable Key), tests: for every UnitActionType in a scripted scenario descriptor -> command -> same state as invoking the closure
+- Gate: dotnet test --filter FullyQualifiedName~UnitActionDescriptor
+- Claimed:
+- Notes:
+  - Design (section 4): UnitAction closures cannot be serialized. A descriptor is {Type: UnitActionType, Key: string?, Index: int}: Key is a stable parameter (target unit name for Upgrade/Transform, improvement name for CreateImprovement, unique text for TriggerUnique and the Hurry*/ConductTradeMission/Paradrop family, recipient civ for GiftUnit, religion name, etc.), Index disambiguates equal keys. Add a read-only UnitAction.Key set by the factories (UnitActionsUpgrade, UnitActionsFromUniques, ...) - this is an engine addition the Kotlin lacks, justify in the file header.
+      - GetUnitActionDescriptors(unit) lists getUnitActions(unit) with IsEnabled = (action.Action != null), title, confirmation text, the UnitActionType priority data the UI needs (UnitActionPriority modifiers from AssociatedUnique), never the closure.
+      - ExecuteUnitAction(unitId, descriptor, confirmed): Validate regenerates GetUnitActions(unit, type), finds the entry by (Key, Index), requires Action != null, and requires confirmed==true if the regenerated action has a Confirmation; Apply calls the closure. This mirrors UnitActions.invokeUnitAction (first enabled of the type) when Key is null.
+      - Traps: (1) the action list depends on state and so the same descriptor can mean a different action after another command; the command is validated against the CURRENT list, not a cached one. (2) Several actions mutate lists while enumerating (Upgrade, FoundCity removes the unit): closures are invoked once, outside the sequence. (3) Title is a translation template and may contain Fonts icons: do not use it as the key. (4) Explore/Automate set unit.Action and nothing moves until DoAction (turn ticket MoveAutomatedUnits), except Explore which also runs once immediately - check UnitActions.addExplorationActions. (5) Worker orders (StartWorkingOnImprovement with queuedImprovement, StopWorking, Repair, connect-road via Constants.ConnectRoadAction, automation) go through MapUnitView.TryStartWorkingOnImprovement-style engine calls with a SetWorkerOrder command; promotions via PromoteUnit(unit, promotionName) (MapUnit.Promotions.AddPromotion with CanAffordPromotions check) and SaveDefaultPromotions. (6) The great-person, religion, hurry and gift families are ticket 'Unit actions B'; this ticket must make the descriptor mechanism generic so B only adds tests.
+
+### T190 Unit actions B: unique-driven actions through descriptors (great person improvements and hurry, religion, trade mission, paradrop, transform, gift unit, trigger unique, add in capital, air/set-up, stockpile)
+- State: Available
+- Depends: T189
+- Source: design/COMMANDS-IMPLEMENTATION.md section 4; logic/map/mapunit/actions/UnitActionsFromUniques.kt, UnitActionsGreatPerson.kt, UnitActionsReligion.kt, UnitActionsUpgrade.kt, UnitActionsPillage.kt
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Commands/UnitActionFamiliesTests.cs; edits only where a family needs a Key, plus any required confirmation/target parameter fields on ExecuteUnitAction
+- Gate: dotnet test --filter FullyQualifiedName~UnitActionFamilies
+- Claimed:
+- Notes:
+  - Same mechanism as Unit actions A; this ticket proves every family: HurryResearch/Policy/Wonder/Building, ConductTradeMission, FoundReligion (needs religion name + display name: extra ExecuteUnitAction.Params map<string,string> validated against the action), EnhanceReligion, SpreadReligion, RemoveHeresy, GiftUnit (recipient), Paradrop and AirSweep (need a target tile: Params), Transform, CreateImprovement from uniques, TriggerUnique, AddInCapital, StopEscortFormation/EscortFormation.
+      - Trap: actions that take a target tile or name from the player afterwards (Paradrop, religion founding, Great Prophet name) are two-step in the UI (action then a map click or picker). The descriptor says 'needs target' with a parameter schema; the command carries the parameters and Validate checks them against the regenerated action. If an action cannot be expressed that way (verify each), file a follow-up instead of special-casing.
+      - Great person unique triggers consume the unit and may start Golden Ages or create improvements: run Apply through the closure, never re-implement.
+
+### T191 City commands: production queue, purchase, buy tile, worked tiles and specialists, focus, annex/puppet/raze, sell building, rename
+- State: Available
+- Depends: T164, T186
+- Source: design/COMMANDS-IMPLEMENTATION.md section 3.4; logic/city/CityConstructions.kt (addToQueue, removeFromQueue, moveEntryToEnd/Top, purchaseConstruction), CityExpansionManager.kt buyTile, CityPopulationManager.kt, City.kt workTile/lockedTiles; view/CityView.kt try* methods; ui/screens/cityscreen/*
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/City/*.cs (QueueConstruction, RemoveFromQueue, ReorderQueue, PurchaseConstruction, BuyTile, WorkTile, LockTile, AssignSpecialist, SetCityFocus, ReassignPopulation, ToggleAvoidGrowth, SellBuilding, AnnexCity, SetRazing, SetUnitSavedPromotion, DisableConstruction, SetCreatesOneImprovementTile), tests
+- Gate: dotnet test --filter FullyQualifiedName~Commands.City
+- Claimed:
+- Notes:
+  - Validate = the UI predicate: CityConstructions.CanAddToQueue(construction) (IsBuildable and not already queued/IsQueueFull), IsConstructionPurchaseAllowed + GetStatBuyCost + civ.HasStatToBuy, Expansion.CanBuyTile(tile) + GetGoldCostOfTile, specialist limits (GetMaxSpecialists), CanChangeState-equivalent (city.Civ == actor and actor is current player). Puppet cities reject production commands (UI hides them); verify per command.
+      - Traps: (1) CityView.TryAddToQueue does not check CanAddToQueue - do not copy it. (2) PurchaseConstruction: cost depends on the construction's inflation/'increasing price' counters and happens in the same Apply as the gold deduction; the payload carries no price. Purchasing a unit with a blocked tile (IsConstructionPurchaseBlockedByUnit) is a rejected command with a specific code. (3) Queue index arguments (RemoveFromQueue(index, automatic)) are positional: reject out-of-range, and the 'automatic' flag must be false for player commands. (4) Adding a Building with CreatesOneImprovement needs a tile: QueueConstruction has an optional Tile (TryAddToQueueWithTile). (5) AnnexCity/SetRazing on a city the actor has just conquered are resolved through the alert response in the turn ticket - the same Apply helpers. (6) ReassignPopulation, ToggleAvoidGrowth and manual-specialist switches mutate flags that CityTurnManager reads next turn: they are state changes, hence commands, even though the UI treats them as 'view' toggles. (7) Hurry production from Great People is a unit action (B), not here.
+      - Bombard is a combat command (Movement and combat ticket).
+
+### T192 Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode)
+- State: Available
+- Depends: T164, T186
+- Source: design/COMMANDS-IMPLEMENTATION.md section 3.5; models/TechManager (techsToResearch, getFreeTechnology, updateResearchProgress), PolicyManager.adopt/removePolicy, ReligionManager (foundPantheon/foundReligion/chooseBeliefs), GreatPersonManager.getFreeGreatPersonOptions, EspionageManager spy.moveTo, Civilization.diplomaticVoteForCiv; ui/screens/pickerscreens/*; view/CivView.kt tryDisable/TrySetGoldPercentConvertedToScience
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/Empire/*.cs (SetResearchQueue, PickFreeTechnology, AdoptPolicy, FoundPantheon, ChooseBeliefs, FoundReligion, ChooseFreeGreatPerson, MoveSpy, VoteDiplomatic, SetGoldToScience, SetCivConstructionDisabled), tests
+- Gate: dotnet test --filter FullyQualifiedName~Commands.Empire
+- Claimed:
+- Notes:
+  - Verified UI behaviour to port: TechPickerScreen edits a temporary copy of techsToResearch and commits it on exit (SetResearchQueue(list): validate each tech is researchable given the previous ones in the queue, at most what the UI allows) and a free tech pick calls TechManager.getFreeTechnology after checking the tech is in researchableTechs ('fast-clicking cheat' guard #4977); both then call updateResearchProgress (keep it inside Apply). GodMode addTechnology is a debug command that must be rejected unless GameParameters.GodMode (verify other godMode UI paths in DebugTab and list them as separate Debug* commands or leave them out).
+      - AdoptPolicy: PolicyManager.CanAdoptPolicy + IsAdoptable(policy); free policies vs culture cost decided by the engine. Branch completion bonuses trigger uniques: Apply only.
+      - Religion: FoundPantheon/ChooseBeliefs/FoundReligion use ReligionState and the counters from CivView.GetBeliefsToChooseAtFounding/Enhancing/FreeBeliefsAsEnums; the payload is belief names + religion name + display name; Validate checks the belief is allowed (Pantheon: GetReligionWithBelief(belief) == null and BeliefIsAllowed) and unused.
+      - ChooseFreeGreatPerson(unitName) must be in GreatPeople.GetFreeGreatPersonOptions.
+      - VoteDiplomatic(civId|null) requires Civilization.MayVoteForDiplomaticVictory.
+      - MoveSpy(spyId, cityId|null): SpyView.TryMoveTo / Spy.MoveTo; Validate = espionage enabled, spy idle or movable, city explored.
+      - SetGoldToScience(percent): only when the ruleset has ConvertGoldToScience; float -> quantise to the Kotlin step (0..100, step 10?) check TechManager, because a float in a payload is a determinism hazard (must round-trip exactly; use int percent).
+      - Trap: these are all 'picker' choices that clear PendingDecisions; after each Apply the pending list must shrink (test per decision kind).
+
+### T193 Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage
+- State: Available
+- Depends: T164, T186, T086, T089
+- Source: design/COMMANDS-IMPLEMENTATION.md section 3.6; logic/civilization/diplomacy/DiplomacyManager.kt, DeclareWar.kt, CityStateFunctions.kt; logic/trade/TradeLogic.kt; ui/screens/diplomacyscreen/*; ui/screens/worldscreen/TradePopup.kt; view/TradeView.kt
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/Diplomacy/*.cs (DeclareWar, Denounce, ProposeTrade, RetractTrade, RespondToTradeRequest, MakeDemand, GiftGold, TributeGold/TributeWorker, PledgeProtection, WithdrawProtection, DiplomaticMarriage, ...), tests incl. a human-proposes -> AI answers in its RunAiTurn scenario
+- Gate: dotnet test --filter FullyQualifiedName~Commands.Diplomacy
+- Claimed:
+- Notes:
+  - Verified flow: human -> AI trades are ASYNCHRONOUS. TradeView.TryProposeStagedTrade only adds a TradeRequest to the other civ's TradeRequests; the AI answers inside its own turn (TradeAutomation.RespondToTradeRequests: accept -> TradeLogic.AcceptTrade, else counteroffer or decline with notification). So 'ProposeTrade' returns no verdict; the verdict arrives as a notification/TradeRequest in a later RunAiTurn. A human receiving a request responds with RespondToTradeRequest(requestId, accept) = TradeLogic(...).AcceptTrade after IsTradeValid; TradePopup.kt is the reference. Peace treaties and declarations of friendship are trade offer types (TradeOfferType) or DiplomacyManager calls: verify each in MajorCivDiplomacyTable before choosing the command, and keep one command per UI button.
+      - Validate = what the diplomacy screen enabled: DiplomacyManager.CanDeclareWar (DiplomacyManagerView), IsAtWarWith, flags (DiplomacyFlags like DeclaredWar cooldown), civ knows the other civ, not both AI-only restrictions, TradeLogic.IsValid offers (Our/TheirAvailableOffers), trade value inflation uses TradeEvaluation (T089): only the AI's answer uses it; a human-human trade has no evaluation.
+      - Traps: (1) Trade offers contain cities, units' resources and gold: re-validate everything at Apply time against current state (TurnManager.StartTurn drops requests that are no longer valid). (2) DeclareWar has a WarType and may cascade to allies/defensive pacts and trigger popup alerts for humans; it runs in Apply. (3) The AI 'would accept' hint (Civ 5 style) is NOT in Kotlin; it is a query in the empire-panels ticket, and leaks AI valuation, so it is optional per game setting. (4) City-state bully/tribute have random outcomes via the state RNG in Apply. (5) Demands (MajorCivDiplomacyTable) add a PopupAlert to the other civ: for an AI target the answer is computed in its RunAiTurn (NextTurnAutomation.respondToPopupAlerts).
+
+### T194 Command log format, replay verifier and scripted-human replay test against the T102 state hashes
+- State: Available
+- Depends: T187, T188, T189, T191, T192, T102, T011
+- Source: design/COMMANDS-IMPLEMENTATION.md section 6; Unciv.Core/Commands/CommandProcessor.cs; Unciv.Core.Tests/Determinism/EndToEndDeterminismTests.cs; Utils/StateHasher.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/Log/{CommandLogHeader.cs,CommandLogWriter.cs,CommandLogReader.cs,ReplayVerifier.cs,ScriptedHuman.cs}, Unciv.Core.Tests/Commands/ReplayDeterminismTests.cs
+- Gate: dotnet test --filter FullyQualifiedName~ReplayDeterminism
+- Claimed:
+- Notes:
+  - Deliverable is the ENGINE-level log; the server store (fsync, rotation, snapshot cadence, crash recovery) is T176 and builds on this. Format (section 6): JSON Lines; line 1 = header {formatVersion, engineVersion, rulesetHash, gameSetup (GameSetupInfo), gameSeed, playerSettings per civ, startClockMillis}; then entries {seq, type, actor, now, payload} for commands and {checkpoint: seq, turn, fullHash} after every turn change. 'now' is the authority clock for commands that need it (EndTurn, BeginTurn, RunAiTurn). Replay = GameStarter.StartNewGame(header) then Replay each envelope; the verifier compares fullHash at each checkpoint (StateHasher over UncivFiles.GameInfoToString, as in T102) and reports the first diverging seq, never continuing past it.
+      - Acceptance (the old T164 note): a ScriptedHuman policy (found city with the starting settler, choose production and research when PendingDecisions asks, move/explore a few units, end turn) plays N>=60 turns against AI civs through CommandProcessor.Submit; replaying the log from the header gives identical per-turn hashes; also save->load->continue and snapshot at turn k + log tail reproduces the final hash; a tampered payload is a CommandDesyncException; same seed twice gives the same log byte for byte.
+      - Traps: (1) Replay must not run any UI/AutoPlay code: the header's PlayerSettings are authoritative. (2) The CultureInfo of the host must not change the JSON (the T102 hostile-culture test again, now for payload numbers). (3) A log is only valid for the engineVersion that wrote it; a different version must refuse to replay rather than diverge silently. (4) Log entries of rejected commands do not exist (existing processor rule) - the server may keep a separate audit stream.
+
+### T195 Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets)
+- State: Available
+- Depends: T185, T139
+- Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/MapUnitView.kt (getDistanceToTiles, getShortestPath, getReachableTilesInCurrentTurn, getAttackableEnemies), CombatantView.kt, AttackableTileView.kt; logic/battle/BattleDamage.kt, ui/screens/worldscreen/unit/*, ui/screens/worldscreen/BattleTableHelpers
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Queries/Units/{ReachableTilesQuery,PathPreviewQuery,AttackPreviewQuery,AttackableTargetsQuery}.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~Queries.Units
+- Claimed:
+- Notes:
+  - Already in C# (do not duplicate, wrap): MapUnitView.GetDistanceToTiles / GetReachableTilesInCurrentTurn / GetPathToTile / GetShortestPath / CanReach / GetAttackableEnemies / GetTilesInAttackRange, CombatantView.GetFinalAttackingStrength / GetFinalDefendingStrength / CalculateDamageToDefender / CalculateDamageToAttacker / GetAttackModifiers / GetDefenceModifiers, AttackableTileView.GetTileToAttackFrom / GetMovementLeftAfterMovingToAttackTile. Missing: the serializable shapes and the multi-turn aspects.
+      - ReachableTiles(unitId): tile -> movement left after arriving (float), whether it needs more than one turn is a PathPreview concern. PathPreview(unitId, target): list of legs {tiles, turn index} plus total turns; derive the turn split by replaying the cost (UnitMovement.GetShortestPath + MovementCost) without moving the unit; if the A* option (PlayerSettings) is on, use the same pathing the command will use or the preview and the move disagree.
+      - AttackPreview(attackerUnitId|cityId, targetTile): for the tile's chosen defender (TargetHelper) attacker/defender strengths, modifier lists (translation keys + amounts), expected damage to each side (BattleDamage min/max or the deterministic estimate Kotlin shows - read BattleTableHelpers to see which numbers the UI really displays), whether the attack would capture/destroy, ranged/air/nuke variants.
+      - Trap: never expose a modifier or unit that the viewer cannot see (CombatantView over ForeignMapUnitView already reduces foreign units; test with a hidden submarine and an unexplored tile). Estimating damage must not draw from the state RNG (pure).
+
+### T196 Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields)
+- State: Available
+- Depends: T185, T139
+- Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/CityView.kt, CityConstructionsView.kt, TileView.kt; ui/screens/cityscreen/*, ui/screens/worldscreen/tilemap tile info
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Queries/Cities/{CityPanelQuery,ConstructionListQuery,BuyableTilesQuery}.cs, Queries/Tiles/TileInfoQuery.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~Queries.Cities
+- Claimed:
+- Notes:
+  - Already in C#: CityView (GetGoldCostOfTile, CanBuyTile, IsWorked, GetMaxSpecialists, GetNewSpecialists, GetFinalStatList, GetHappinessList, GetFoodToNextPopulation, GetNumTurnsToNewPopulation, GetGreatPersonPointsBreakdown, GetResourceStockpiles...), CityConstructionsView (GetRejectionReasons, IsBuildable, GetStatBuyCost, TurnsToConstruction, IsConstructionPurchaseAllowed), TileView (GetTileStats, GetImprovementBuildingProblems, GetStatDiffForImprovement), Civilopedia text models (T095-T097, T108, T129) for descriptions. Missing: serialisable aggregates.
+      - CityPanel(cityId): everything CityScreen shows in one record (stats breakdown, queue with turns/costs, worked/locked tiles, specialists, growth, religion pressure, buildings with sell price, garrison). ConstructionList(cityId): all constructions with state {buildable, enqueued, built, rejected + reasons}, turns, buy cost per stat, by category (what ConstructionsTable/CityScreen filters shows); reuse ShouldBeDisplayed and RejectionReasons verbatim.
+      - BuyableTiles(cityId): tiles in CityView.GetExpandRange with price; TileInfo(tile): owner, yields, resource, improvements, unit stack summary, work status; improvements list per worker unit with problems (TileView.GetImprovementBuildingProblems).
+      - Trap: GetGoldCostOfTile/CanBuyTile read Expansion state that has lazy caches; the purity test must run with a cold cache and a warm cache and compare. All numbers that Kotlin computes as Float for display (stats, percents) stay float in the DTO; round only where Kotlin rounds.
+
+### T197 Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview)
+- State: Available
+- Depends: T185, T138
+- Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/CivView.kt, ForeignCivView.kt, TradeView.kt, DiplomacyManagerView.kt; ui/screens/pickerscreens/*, diplomacyscreen/*, overviewscreen/*; csharp UI/EmpireOverviewCategories.cs, UI/RankingType.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Queries/Empire/{TechTreeQuery,PolicyTreeQuery,ReligionQuery,GreatPeopleQuery,DiplomacyPanelQuery,TradeOptionsQuery,NotificationsQuery,EmpireOverviewQuery}.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~Queries.Empire
+- Claimed:
+- Notes:
+  - Already in C#: CivView.ShouldOpenTechPicker / TurnsToTech / IsResearched / CanAdoptPolicy / GetBeliefsToChoose* / GetGreatPersonPoints* / GetHappinessBreakdown / CalculateScoreBreakdown, TradeView offers lists, ForeignCivView.GetResearchAgreementCost / GetStatForRanking. Missing: tech/policy tree states (researched, researchable, queued, locked; turns; unlocks via Civilopedia text), policy branch states (adoptable via PolicyManager.IsAdoptable, adopted, locked with the reason), available beliefs per type, free great person options, per-civ diplomacy panel (relationship level, modifiers, flags, what can be offered), trade options (TradeLogic Our/TheirAvailableOffers filtered by what is valid), notifications with serialisable actions.
+      - Trade evaluation for a human: Kotlin has NONE (verified: diplomacyscreen never calls TradeEvaluation; the AI answers on its turn). A Civ 5-style 'would they accept' hint is a NEW feature: expose it as TradeHintQuery using TradeEvaluation.GetTradeAcceptability(trade, them, us) mapped to {accept, counter-needed, refuse} buckets (never the raw number), behind a game option, because it lets a player probe the AI valuation.
+      - Trap: PendingDecisions (turn-flow ticket) is the source for 'what do I still have to decide' - do not re-derive it here. Notification actions (LocationAction, MapUnitAction, PromoteUnitAction...) must be serialisable as they are in saves; strip actions pointing at tiles the viewer has not explored (design/SERVER.md 2.5).
+
+### T198 Query API: victory progress, scores, rankings and demographics
+- State: Available
+- Depends: T185, T166, A003
+- Source: design/COMMANDS-IMPLEMENTATION.md section 8; ui/screens/victoryscreen/*, logic/civilization/managers/VictoryManager.kt, Civilization.calculateScoreBreakdown, CivRankingHistory; csharp AI/GrandStrategy/Scorers/VictoryScorerInputs.cs, UI/RankingType.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Queries/Victory/{VictoryProgressQuery,ScoresQuery,RankingsQuery,DemographicsQuery,HistoryQuery}.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~Queries.Victory
+- Claimed:
+- Notes:
+  - Already in C#: VictoryManager (GetNextMilestone, AmountMilestonesCompleted, GetAvailableVictories, GetVictoriesShownInVictoryScreen, HasWon), Civilization.CalculateScoreBreakdown/CalculateTotalScore, ForeignCivView.GetStatForRanking, RankingType, CivRankingHistory/StatsHistory. A003 scorers (ConquestScorer, CultureScorer, DiplomaticScorer, SpaceshipScorer) answer 'how attractive is victory V for this AI', not 'how close is civ X': they are inputs to Grand Strategy, so DO NOT show their scores to players. T166 (the adapter that fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from a Civilization) is reused only for its raw input records (capitals held, policy branches completed, spaceship parts, votes) as the numeric progress of the matching Victory milestones.
+      - VictoryProgress(viewer): for each enabled Victory the milestone list with {completed, progress numbers} for the viewer and for rivals only as far as VictoryScreenGlobalVictory shows (it shows other civs' status: verify which fields are public knowledge: e.g. spaceship parts are, gold is not). Scores/Rankings(viewer): per RankingType value for civs the viewer knows; Demographics = the VictoryScreenDemographics table (rank per stat, best/avg/worst); History = CivRankingHistory series for the replay chart.
+      - Trap: ranking values of unmet civs must be hidden (Kotlin shows them only for known civs, check VictoryScreenCivRankings). Scores use Double in Kotlin; keep the type.
+
+### T199 Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point
+- State: Available
+- Depends: T185, T099, T045, T170
+- Source: design/COMMANDS-IMPLEMENTATION.md section 8; ui/screens/newgamescreen/*, models/metadata/GameSetupInfo.kt, GameParameters.kt, logic/map/MapParameters.kt, logic/GameStarter.kt; csharp Models/Metadata/*, Logic/GameStarter.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Queries/Setup/{NewGameOptionsQuery,ValidateSetupQuery}.cs, Logic/NewGame.cs (thin, takes seed and clock explicitly), tests
+- Gate: dotnet test --filter FullyQualifiedName~Queries.Setup
+- Claimed:
+- Notes:
+  - Pre-game, so no GameInfo and no viewer: the query context is a set of ruleset names (base + mods, T170 mod folder loading). NewGameOptions(rulesets): choosable nations (PlayerPickerTable.isChoosable = (nation.isMajorCiv || nation.isSpectator) && !WillNotBeChosenForNewGames), city-state nations, difficulties, game speeds, victory types (Ruleset.Victories), eras, map parameters domain (shapes, types, sizes, resource settings, MapGeneratorSteps), mod compatibility (BaseRuleset vs mods, ModOptions), default GameParameters; ValidateSetup(setup): the checks NewGameScreen does before enabling Start (player count vs map size, at most one nation per player, RulesetValidator errors of the combined ruleset, spectator rules, GameSetupInfo.reload fix-ups).
+      - NewGame(setup, seed, clockMillis) wraps GameStarter.StartNewGame; note Kotlin defaults MapParameters.seed to currentTimeMillis and picks civs with unseeded random: the C# GameStarter already takes both explicitly (T099), keep it that way and record seed + clock in the log header.
+      - Trap: the 'random' nation and 'random number of players' options must be resolved by the seeded RNG in GameStarter, not by the query. The query returns static lists in ruleset file order (LinkedHashMap order, not alphabetical: sorting is the client's job with its collator).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
@@ -2137,11 +2384,12 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C006 Networked play client
 - State: Available
-- Depends: T012, C001, T164, T172, T173, T180, T179, C010, C016
+- Depends: T012, C001, T164, T172, T173, T180, T179, C010, C016, T194
 - Scope: Godot side of networked play only (the protocol, session, mirror state and transport live in Unciv.Client.Net, T180/T179): lobby and join screens (invite code entry), identity key storage under user://, 'your turn' notification list and toast, turn timer display, reconnect overlay, marshalling network events onto the Godot main thread, feeding ClientEvents to the C004/C005 presentation. Server is our own (design/SERVER.md); no upstream Unciv servers.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
   - Narrowed by the server design (design/SERVER.md section 7). Server tickets T172-T182; C006 owns only Godot scenes and the main-thread pump. Single-player should use the same ClientSession over a loopback host (T178).
   - Per design/CLIENT-SLICES.md: also depends on V1 vertical (C010) and save/load (C016); the client codes against an IGameSession interface implemented locally and by T180 ClientSession.
+  - Design agent: Depends gained T194 (engine command log) for reconnect/resume.
 
 ### C007 Asset registry and procedural placeholder generator
 - State: Available
@@ -2165,7 +2413,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C009 Map view v1: flat hex map from queries, camera, tile picking, fog tint
 - State: Available
-- Depends: C007, C008, T164, T099
+- Depends: C007, C008, T164, T099, T174, T185
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): MapView from map query, flat hex per tile via registry, fog tint (unexplored/explored), pan/zoom camera, HexPicking to tile coordinate, tile highlight. Slice detail in design/CLIENT-SLICES.md
@@ -2175,17 +2423,18 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C010 V1 vertical slice: unit blocks, select, move, end turn, AI turns
 - State: Available
-- Depends: C009, T164
+- Depends: C009, T164, T184, T187, T188, T174, T175
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): QuickStart.tscn (seeded Tiny game via GameStarter), UnitView blocks, click select, move command with path dots, plain Next turn button, AI turns run, repeat. Slice detail in design/CLIENT-SLICES.md
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario v1-vertical: select, move (assert tile+movement spent), 5x end turn (turn==6, state hash equals headless replay), captures. Human: is it playable, are AI moves visible. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - Design agent (commands): T164 is now only the command infrastructure. Depends re-pointed: T184 (phased turn API, PendingDecisions), T187 (EndTurn and friends), T188 (move/attack), T174/T175 (snapshot and events). Note C009/C011/C014 read world state from the T174 ClientSnapshot and T175 deltas, NOT from the T185 query API, which serves previews and panels (design/COMMANDS-IMPLEMENTATION.md section 8).
 
 ### C011 HUD: top bar yields, turn banner, next-action button
 - State: Available
-- Depends: C005, C010, T164, T062
+- Depends: C005, C010, T164, T062, T174, T184
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Top bar (gold, science, culture, happiness, faith, golden age, resources, turn/year), turn banner on turn start, next-action button (next unit / choose research / end turn) from the engine's turn-over query. Slice detail in design/CLIENT-SLICES.md
@@ -2195,7 +2444,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C012 Unit panel and orders: attack, fortify, found city, workers, automate
 - State: Available
-- Depends: C005, C010, T164, T080, T083, T040
+- Depends: C005, C010, T164, T080, T083, T040, T188, T189, T190, T195
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Unit panel (strength, moves, health, promotions), action menu from unit-actions query (found city, improve, road, fortify, sleep, explore, automate, pillage, upgrade, disband, promote, great person), attack with combat preview and attack-range overlay, path preview and reachable overlay. Slice detail in design/CLIENT-SLICES.md
@@ -2205,7 +2454,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C013 Notifications and popup alerts
 - State: Available
-- Depends: C005, C010, T164, T051, T055, T171
+- Depends: C005, C010, T164, T051, T055, T171, T187, T175
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Clickable notification list (jump to tile/screen), turn-start summary, PopupAlert popups (ruin reward, great person, religion founding, city captured, quest, event choice). Slice detail in design/CLIENT-SLICES.md
@@ -2215,7 +2464,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C014 Minimap
 - State: Available
-- Depends: C010, T164
+- Depends: C010, T164, T174
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): ImageTexture minimap from map query with borders, viewport rectangle, click to jump. Slice detail in design/CLIENT-SLICES.md
@@ -2225,7 +2474,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C015 Main menu and game setup screen: nations, difficulty, speed, map options
 - State: Available
-- Depends: C005, C010, T099, T045, T021, T034, T170
+- Depends: C005, C010, T099, T045, T021, T034, T170, T199
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Main menu; setup (nations grid, human/AI, player and city-state count, difficulty, speed, era, map type/shape/size/wrap/resources, seed, victory types, base ruleset and mods, advanced) building GameSetupInfo and calling GameStarter. Slice detail in design/CLIENT-SLICES.md
@@ -2245,7 +2494,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C017 City screen A: info, tiles, specialists, focus
 - State: Available
-- Depends: C005, C010, T164, T060, T062
+- Depends: C005, C010, T164, T060, T062, T191, T196
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): City screen shell, header, worked/available/locked tile grid with assign/lock commands, specialists, focus, stat breakdown. Slice detail in design/CLIENT-SLICES.md
@@ -2255,7 +2504,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C018 City screen B: production queue, purchase, buildings
 - State: Available
-- Depends: C017, T063
+- Depends: C017, T063, T191, T196
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Production queue (add, reorder, remove, perpetual), buildable list with costs/turns, buy with gold/faith with disabled reasons, buildings/wonders list, sell, raze/puppet/annex states. Slice detail in design/CLIENT-SLICES.md
@@ -2265,7 +2514,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C019 Tech screen
 - State: Available
-- Depends: C005, C010, T164, T056
+- Depends: C005, C010, T164, T056, T192, T197
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Tech tree by TechColumn, state colours, choose/queue research, unlocks list. Slice detail in design/CLIENT-SLICES.md
@@ -2275,7 +2524,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C020 Policy screen
 - State: Available
-- Depends: C005, C010, T164, T056
+- Depends: C005, C010, T164, T056, T192, T197
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Policy branches, adopt command, cost, ideology/tenets, golden age info. Slice detail in design/CLIENT-SLICES.md
@@ -2285,7 +2534,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C021 Diplomacy screen
 - State: Available
-- Depends: C005, C010, T164, T059, T068
+- Depends: C005, C010, T164, T059, T068, T193, T197
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Met-civ list, status, relationship text, declare war/peace/denounce, city-state screen (influence, quests, gifts, bully, protect). Slice detail in design/CLIENT-SLICES.md
@@ -2295,7 +2544,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C022 Trade screen
 - State: Available
-- Depends: C021, T164, T059
+- Depends: C021, T164, T059, T193, T197
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Offer builder both sides (gold, gold/turn, luxuries, strategics, cities, techs, treaties, open borders), AI response, AI demands popups. Slice detail in design/CLIENT-SLICES.md
@@ -2305,7 +2554,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C023 Overview screens: empire, cities, units, resources, ranking, religion, espionage
 - State: Available
-- Depends: C005, C010, T164, T057
+- Depends: C005, C010, T164, T057, T197, T198
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Overview tabs with tables: stats, cities, units (select/jump), resources, ranking, religion beliefs, espionage spies, global politics. Slice detail in design/CLIENT-SLICES.md
@@ -2315,7 +2564,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C024 Victory and defeat screen, game over
 - State: Available
-- Depends: C005, C010, T166
+- Depends: C005, C010, T166, T198, T187
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Victory screen (type, ranking, history graph from CivRankingHistory), continue playing / main menu, defeat screen, spectator after defeat. Slice detail in design/CLIENT-SLICES.md
@@ -2365,7 +2614,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C029 Hotseat player switch screen
 - State: Available
-- Depends: C010, T164
+- Depends: C010, T164, T184
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Pass-the-device screen hiding the map between human players (per human turn flow ticket). Slice detail in design/CLIENT-SLICES.md
