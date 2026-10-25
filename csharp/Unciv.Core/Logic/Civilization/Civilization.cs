@@ -34,7 +34,7 @@ namespace Unciv.Logic.Civilization;
 // Ported from core/src/com/unciv/logic/civilization/Civilization.kt (T055).
 //
 // Civilization is ported BEFORE its managers, City, MapUnit and GameInfo (seam rule, T053 notes): every field of those types is typed by
-// its seam in CivilizationSeams.cs, and the manager fields are lateinit-style properties (reading before assignment throws) because
+// its contract in CivilizationContracts.cs, and the manager fields are lateinit-style properties (reading before assignment throws) because
 // the Kotlin initializer (`var tech = TechManager()`) has nothing to construct yet. The ticket porting a manager replaces its property
 // by `= new XManager()` (and wires the constructor), then retypes the field to the concrete class.
 //

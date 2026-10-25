@@ -1,5 +1,4 @@
 using System.Globalization;
-using Unciv.Core.Tests.Logic;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Files;
@@ -8,7 +7,6 @@ using Unciv.Logic.Simulation;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
-using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Core.Tests.Determinism;
@@ -41,13 +39,6 @@ public sealed class EndToEndDeterminismTests : IDisposable
         throw new DirectoryNotFoundException("android/assets/jsons not found above " + AppContext.BaseDirectory);
     }
 
-    private sealed class StubCityStates : FakeCityStateFunctions, ICityStateFunctions
-    {
-        public bool InitCityState(RulesetClass rulesetArg, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng) => true;
-    }
-
-    private static void Wire(Civilization civ) => civ.CityStateFunctions = new StubCityStates();
-
     private GameInfo NewGame(long gameSeed, int mapSeed, MapSize? size = null, params string[] nations)
     {
         if (nations.Length == 0) nations = ["Babylon", "Greece", "Rome"];
@@ -55,7 +46,7 @@ public sealed class EndToEndDeterminismTests : IDisposable
             new GameSetupInfo(
                 new GameParameters { BaseRuleset = ruleset.Name, NumberOfCityStates = 0, VictoryTypes = ruleset.Victories.Keys.ToList(), Players = nations.Select((it, i) => new Player(it, i == 0 ? PlayerType.Human : PlayerType.AI)).ToList() },
                 new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = mapSeed, MapSize = size ?? MapSize.Tiny }),
-            gameSeed, 1000L, onCivilizationCreated: Wire);
+            gameSeed, 1000L);
     }
 
     private static ulong Hash(GameInfo game) => StateHasher.ComputeHash(h => h.Add(UncivFiles.GameInfoToString(game, forceZip: false)));
@@ -115,7 +106,6 @@ public sealed class EndToEndDeterminismTests : IDisposable
         Play(original, 5);
         var saved = UncivFiles.GameInfoToString(original, forceZip: false);
         var loaded = UncivFiles.GameInfoFromString(saved);
-        foreach (var civ in loaded.Civilizations) Wire(civ);
         Assert.Equal(Hash(original), Hash(loaded));
         Assert.Equal(Play(original, 6), Play(loaded, 6));
     }
@@ -127,7 +117,6 @@ public sealed class EndToEndDeterminismTests : IDisposable
         Play(original, 3);
         var clone = original.Clone();
         clone.SetTransients();
-        foreach (var civ in clone.Civilizations) Wire(civ);
         Assert.Equal(Hash(original), Hash(clone));
         Assert.Equal(Play(original, 4), Play(clone, 4));
     }
@@ -165,7 +154,7 @@ public sealed class EndToEndDeterminismTests : IDisposable
         string Run()
         {
             var lines = new List<string>();
-            new Simulation(NewGame(1L, 1), simulationsPerThread: 2, maxTurns: 6, statTurns: [2], output: lines.Add, onCivilizationCreated: Wire, seed: 21).Start();
+            new Simulation(NewGame(1L, 1), simulationsPerThread: 2, maxTurns: 6, statTurns: [2], output: lines.Add, seed: 21).Start();
             return string.Join('\n', lines);
         }
 
@@ -187,7 +176,7 @@ public sealed class EndToEndDeterminismTests : IDisposable
     {
         // A single civ has nobody left to conquer: the first game ends at once with that civ as the winner (Start's victory branch).
         var lines = new List<string>();
-        var sim = new Simulation(NewGame(1L, 1, MapSize.Tiny, "Babylon"), maxTurns: 6, output: lines.Add, onCivilizationCreated: Wire, seed: 4);
+        var sim = new Simulation(NewGame(1L, 1, MapSize.Tiny, "Babylon"), maxTurns: 6, output: lines.Add, seed: 4);
         sim.Start();
         Assert.Contains(lines, it => it.StartsWith("Babylon won ", StringComparison.Ordinal) && it.Contains(" victory on turn ", StringComparison.Ordinal));
         Assert.Equal(1, sim.NumWins["Babylon"].Value);
@@ -199,7 +188,7 @@ public sealed class EndToEndDeterminismTests : IDisposable
     {
         // Kotlin Simulation(game, simulationsPerThread, threadsNumber): the seed must not take a positional slot.
         var lines = new List<string>();
-        new Simulation(NewGame(1L, 1), 1, 2, 1, output: lines.Add, onCivilizationCreated: Wire).Start();
+        new Simulation(NewGame(1L, 1), 1, 2, 1, output: lines.Add).Start();
         Assert.Contains("Simulation step (2/2)", lines);
     }
 

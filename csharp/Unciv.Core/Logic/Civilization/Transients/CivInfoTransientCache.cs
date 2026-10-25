@@ -13,13 +13,12 @@ namespace Unciv.Logic.Civilization.Transients;
 // Ported from core/src/com/unciv/logic/civilization/transients/CivInfoTransientCache.kt (T058).
 //
 // Deviations:
-// - MapUnit is reached through the IMapUnitState seam (implemented by MapUnit, T065); the managers are the seams of CivilizationSeams.cs until T059 retypes them.
+// - MapUnit is reached through the IMapUnitState seam (implemented by MapUnit, T065); the managers are the contracts of CivilizationContracts.cs.
 // - Kotlin keeps the unique buildings/improvements/units, the viewable tiles and the "viewed civs" in java.util.HashSet/HashMap keyed by
 //   identity-hashed objects, i.e. in an arbitrary order that reaches the order of notifications and natural-wonder discovery. They are
 //   insertion-ordered here (LinkedHashSet, OrderedDictionary), which is one of the legal Kotlin orders and deterministic.
 //   citiesConnectedToCapitalToMediums keeps the order CapitalConnectionsFinder found the cities in.
 // - DebugUtils.VISIBLE_MAP is the game's EngineOptions.VisibleMap (T048).
-// - UniqueTriggerActivation.triggerUnique is not ported yet (T052): TriggerUnique below is its seam and does nothing until T052 wires it.
 // - The timeThis profiling wrappers are dropped.
 
 /// <summary>CivInfo class was getting too crowded</summary>

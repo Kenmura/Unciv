@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
@@ -9,7 +10,6 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 namespace Unciv.Models.Ruleset.Validation;
 
 // Ported from core/src/com/unciv/models/ruleset/validation/BaseRulesetValidator.kt
-// Deviation: CityStatePersonality (not ported yet, needs the diplomacy package) is replaced by its four names below; keep in sync.
 
 /// <summary>This implementation of <see cref="RulesetValidator"/> can rely on the ruleset being complete.</summary>
 internal sealed class BaseRulesetValidator : RulesetValidator
@@ -24,7 +24,7 @@ internal sealed class BaseRulesetValidator : RulesetValidator
     private readonly KotlinLazy<bool> anyAncientRuins;
 
     // CityStatePersonality.entries names
-    private static readonly ImmutableArray<string> CityStatePersonalities = ["Friendly", "Neutral", "Hostile", "Irrational"];
+    private static readonly ImmutableArray<string> CityStatePersonalities = [.. Enum.GetNames<CityStatePersonality>()];
 
     public BaseRulesetValidator(Ruleset ruleset, bool tryFixUnknownUniques) : base(ruleset, tryFixUnknownUniques)
     {

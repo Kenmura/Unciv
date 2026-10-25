@@ -6,7 +6,7 @@ namespace Unciv.Models.Ruleset.Unique;
 
 // The members of GameInfo, Civilization, City, MapUnit, Tile, Region, the combatants and Ruleset that Conditionals.kt, Countables.kt and
 // the expression Nodes read, as partial extensions of the interfaces GameContext.cs declares (see the comment there).
-// The classes are ported from T046 onwards (open owner: T104, final seam sweep) and implement these; nothing in Conditionals or Countables changes then.
+// GameInfo, Civilization, City, MapUnit, Tile and Ruleset implement these, so Conditionals and Countables never see the concrete classes.
 // Member names mirror the Kotlin members; a Kotlin lambda over a collection that is only iterated is kept as an enumerable so
 // the iteration (and its order) stays where Kotlin has it.
 

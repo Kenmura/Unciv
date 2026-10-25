@@ -8,7 +8,7 @@ using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationC
 namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/GoldenAgeManager.kt (T056).
-// Stripped: the purity annotations. Deferred: the UniqueTriggerActivation.triggerUnique calls (TriggerUniqueSeam, T052).
+// Stripped: the purity annotations.
 
 public class GoldenAgeManager : IsPartOfGameInfoSerialization
 {
@@ -76,7 +76,7 @@ public class GoldenAgeManager : IsPartOfGameInfoSerialization
 
         CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUponEnteringGoldenAge, CivInfo.State, _ => true, false, unique =>
         {
-            TriggerUniqueSeam.TriggerUnique(unique, CivInfo);
+            UniqueTriggerActivation.TriggerUnique(unique, CivInfo);
         });
         //Golden Age can happen mid turn with Great Artist effects
         foreach (var city in CivInfo.Cities)
@@ -94,7 +94,7 @@ public class GoldenAgeManager : IsPartOfGameInfoSerialization
             if (TurnsLeftForCurrentGoldenAge <= 0)
                 CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUpponEndingGoldenAge, CivInfo.State, _ => true, false, unique =>
                 {
-                    TriggerUniqueSeam.TriggerUnique(unique, CivInfo);
+                    UniqueTriggerActivation.TriggerUnique(unique, CivInfo);
                 });
         }
         else if (StoredHappiness >= HappinessRequiredForNextGoldenAge())

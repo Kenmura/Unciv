@@ -3,11 +3,8 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Models.Ruleset.Tile;
 
-// Open owners: T065 (MapUnit), T046 (GameInfo); T104 lists survivors.
-// T053 (Tile) is the bottom of the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo cycle: it compiles against the
-// interfaces below instead of the classes that are not ported yet. The seam rule (backlog, T053 notes): the ticket that ports a class
-// implements its seam and then retypes the seam-typed members of Tile to the concrete class. Member names mirror the Kotlin members.
-// T039 ported TileMap, so ITileMapState is gone and TerrainListData moved into TileMap.
+// T053 (Tile) is the bottom of the Tile -> TileMap -> Civilization -> City -> MapUnit -> GameInfo cycle: Tile compiles against the
+// GameContext interfaces extended below, which GameInfo, Civilization, City and MapUnit implement. Member names mirror the Kotlin members.
 
 namespace Unciv.Models.Ruleset.Unique;
 

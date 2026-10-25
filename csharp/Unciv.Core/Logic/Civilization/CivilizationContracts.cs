@@ -12,11 +12,9 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Logic.Civilization;
 
-// Open owners (the tickets that implement these seams): T046 (GameInfo), T061/T063 (city managers), T065/T066 (MapUnit, UnitManager); T104 lists survivors.
-// T055 (Civilization): the seams of Civilization, which is ported BEFORE its managers, City, MapUnit and GameInfo (seam rule, T053
-// notes). Each interface holds exactly the members Civilization.kt (or an already existing IGameContext* seam that Civilization
-// implements) calls on that type; the ticket that ports the type implements it, retypes the field/parameter in Civilization to the
-// concrete class and, for the manager fields, replaces the lateinit-style property by Kotlin's initializer (`= new TechManager()`).
+// T055 (Civilization): the contracts Civilization has with GameInfo, its managers, City and MapUnit. Each interface holds exactly the
+// members Civilization.kt (or an existing IGameContext* interface that Civilization implements) calls on that type; the class implements
+// it, and tests fake it.
 // Member names mirror the Kotlin members. Where a Kotlin member is a Sequence that is only iterated, an IEnumerable is returned.
 
 /// <summary>What Civilization reads from <c>GameInfo</c>, on top of <see cref="IConstructionGameInfo"/> (GameInfo implements both).</summary>
@@ -106,10 +104,8 @@ public interface ICityStateFunctions
     ResourceSupplyList GetCityStateResourcesForAlly();
     /// <summary>
     /// <c>cityStateFunctions.initCityState(ruleset, startingEra, usedMajorCivs, rng)</c> (T099: GameStarter.addCivilizations). Returns true if successful.
-    /// The real CityStateFunctions (T068) implements it; the throwing default lets the test fakes compile.
     /// </summary>
-    bool InitCityState(Ruleset ruleset, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng) =>
-        throw new NotSupportedException("this ICityStateFunctions does not implement InitCityState (TODO(T104): drop the default once the test fakes implement it)");
+    bool InitCityState(Ruleset ruleset, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng);
     // T068 (DeclareWar, DiplomacyTurnManager); the concrete CityStateFunctions implements all of these
     /// <summary><c>cityStateFunctions.getNotificationActions()</c></summary>
     IEnumerable<NotificationAction> GetNotificationActions();

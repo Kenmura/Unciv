@@ -20,7 +20,7 @@ public interface IConditionalsSettings
 /// Deviations: <c>timeThis</c> profiling is dropped. <c>ConditionalChance</c> hashes the Unique by its text and source instead of the JVM
 /// identity hash (<c>Unique</c> has no <c>hashCode</c> in Kotlin, so the original result varies per run): see <see cref="UniqueHash"/>.
 /// <c>UncivGame.Current.settings</c> is <see cref="Settings"/>; with none set, tutorials count as disabled.
-/// The game classes are the seam interfaces of <c>ConditionalsSeams.cs</c>.
+/// The game classes are the seam interfaces of <c>GameContextConditionals.cs</c>.
 /// </remarks>
 public static class Conditionals
 {

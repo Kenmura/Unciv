@@ -1,9 +1,8 @@
 using Unciv.Models.Ruleset.Unit;
 
 namespace Unciv.Models.Ruleset.Unique;
-// Open owners: T046 (GameInfo), T065 (MapUnit); T104 lists survivors.
-// T039 (TileMap): TileMap talks to GameInfo, Civilization and MapUnit only through the members below (seam rule, T053 notes).
-// The tickets that port those classes implement them. Member names mirror the Kotlin members.
+// T039 (TileMap): TileMap talks to GameInfo, Civilization and MapUnit only through the members below, which extend the GameContext
+// interfaces (GameContext.cs); GameInfo, Civilization and MapUnit implement them. Member names mirror the Kotlin members.
 
 public partial interface IGameContextGameInfo
 {

@@ -1,4 +1,3 @@
-using Unciv.Logic.Civilization.Managers;
 using Unciv.Models.Ruleset.Nation;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
@@ -8,7 +7,6 @@ namespace Unciv.Logic.Civilization.Diplomacy;
 
 // core/src/com/unciv/logic/civilization/diplomacy/DeclareWar.kt (T068)
 //
-// UniqueTriggerActivation.triggerUnique is reached through TriggerUniqueSeam until T052 ports it.
 
 public static class DeclareWar
 {
@@ -44,16 +42,16 @@ public static class DeclareWar
     private static void TriggerUniques(Civilization otherCiv, Civilization warDeclarerCiv)
     {
         foreach (var unique in warDeclarerCiv.GetTriggeredUniques(UniqueType.TriggerUponDeclaringWarFiltered, warDeclarerCiv.State, it => otherCiv.MatchesFilter(it.Params[0])))
-            TriggerUniqueSeam.TriggerUnique(unique, warDeclarerCiv);
+            UniqueTriggerActivation.TriggerUnique(unique, warDeclarerCiv);
 
         foreach (var unique in otherCiv.GetTriggeredUniques(UniqueType.TriggerUponBeingDeclaredWarUpon, otherCiv.State, it => warDeclarerCiv.MatchesFilter(it.Params[0])))
-            TriggerUniqueSeam.TriggerUnique(unique, otherCiv);
+            UniqueTriggerActivation.TriggerUnique(unique, otherCiv);
 
         foreach (var unique in warDeclarerCiv.GetTriggeredUniques(UniqueType.TriggerUponEnteringWar, warDeclarerCiv.State, it => otherCiv.MatchesFilter(it.Params[0])))
-            TriggerUniqueSeam.TriggerUnique(unique, warDeclarerCiv);
+            UniqueTriggerActivation.TriggerUnique(unique, warDeclarerCiv);
 
         foreach (var unique in otherCiv.GetTriggeredUniques(UniqueType.TriggerUponEnteringWar, otherCiv.State, it => warDeclarerCiv.MatchesFilter(it.Params[0])))
-            TriggerUniqueSeam.TriggerUnique(unique, otherCiv);
+            UniqueTriggerActivation.TriggerUnique(unique, otherCiv);
     }
 
     private static void HandleCityStateDirectAttack(DiplomacyManager diplomacyManager)

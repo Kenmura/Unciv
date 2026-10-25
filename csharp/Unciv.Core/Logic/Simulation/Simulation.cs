@@ -1,7 +1,6 @@
 using System.Globalization;
 using Unciv.Models.Metadata;
 using Unciv.Utils;
-using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 
 namespace Unciv.Logic.Simulation;
 
@@ -33,7 +32,6 @@ public sealed class Simulation
     private readonly ISet<string> civIdsInExperimentGroup;
     private readonly long seed;
     private readonly Action<string>? output;
-    private readonly Action<CivilizationObject>? onCivilizationCreated;
     private readonly int maxSimulations;
     private readonly List<string> majorCivs;
     private readonly int numMajorCivs;
@@ -69,11 +67,10 @@ public sealed class Simulation
     /// <param name="statTurns">The turns whose statistics are sampled (besides the end of the game).</param>
     /// <param name="civIdsInExperimentGroup">The civs that run the experimental AI code, for A/B reporting.</param>
     /// <param name="output">Receives each line Kotlin printed.</param>
-    /// <param name="onCivilizationCreated">Passed on to <see cref="GameStarter.StartNewGame"/>.</param>
     /// <param name="seed">Seeds every game (see the file header). Last, so that a positional Kotlin-style call <c>Simulation(game, 500, 8)</c> keeps the Kotlin meaning (simulationsPerThread, threadsNumber).</param>
     public Simulation(GameInfo newGameInfo, int simulationsPerThread = 1, int threadsNumber = 1, int maxTurns = 500,
         IReadOnlyList<int>? statTurns = null, ISet<string>? civIdsInExperimentGroup = null,
-        Action<string>? output = null, Action<CivilizationObject>? onCivilizationCreated = null, long seed = 0)
+        Action<string>? output = null, long seed = 0)
     {
         this.newGameInfo = newGameInfo;
         this.seed = seed;
@@ -83,7 +80,6 @@ public sealed class Simulation
         this.statTurns = statTurns ?? [];
         this.civIdsInExperimentGroup = civIdsInExperimentGroup ?? new HashSet<string>();
         this.output = output;
-        this.onCivilizationCreated = onCivilizationCreated;
         maxSimulations = threadsNumber * simulationsPerThread;
         majorCivs = newGameInfo.Civilizations.Where(it => !it.IsSpectator() && it.IsMajorCiv()).Select(it => it.CivId).ToList();
         numMajorCivs = newGameInfo.Civilizations.Count(it => !it.IsSpectator() && it.IsMajorCiv());
@@ -150,7 +146,7 @@ public sealed class Simulation
                 var step = new SimulationStep(newGameInfo, statTurns);
                 var gameSetupInfo = new GameSetupInfo(newGameInfo);
                 gameSetupInfo.MapParameters.Seed = 0;
-                var gameInfo = GameStarter.StartNewGame(gameSetupInfo, gameSeed, clockMillis, onCivilizationCreated: onCivilizationCreated);
+                var gameInfo = GameStarter.StartNewGame(gameSetupInfo, gameSeed, clockMillis);
                 gameInfo.EngineOptions.CivIdsInExperimentGroup = new LinkedHashSet<string>(civIdsInExperimentGroup);
 
                 gameInfo.SimulateUntilWin = true;

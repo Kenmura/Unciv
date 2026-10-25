@@ -4,13 +4,12 @@ using Unciv.Logic.Map;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
-using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Core.Tests.Logic;
 
-// T099: GameStarter.kt on the vanilla ruleset. The Kotlin fixtures (LoadGameTest, CityStateTypeStartBiasTests) need TestGame / the
-// unported CityStateFunctions (T068/T072); here that manager is a stand-in wired through onCivilizationCreated.
+// T099: GameStarter.kt on the vanilla ruleset. The Kotlin fixtures (LoadGameTest, CityStateTypeStartBiasTests) need TestGame;
+// here the real CityStateFunctions (T068) runs.
 [Collection("RulesetCache")]
 public sealed class GameStarterTests : IDisposable
 {
@@ -36,16 +35,6 @@ public sealed class GameStarterTests : IDisposable
         throw new DirectoryNotFoundException("android/assets/jsons not found above " + AppContext.BaseDirectory);
     }
 
-    private sealed class StubCityStates(bool succeed) : FakeCityStateFunctions, ICityStateFunctions
-    {
-        public bool InitCityState(RulesetClass rulesetArg, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng) => succeed;
-    }
-
-    private static Action<Civilization> Wire(bool cityStatesSucceed = true) => civ =>
-    {
-        civ.CityStateFunctions = new StubCityStates(cityStatesSucceed);
-    };
-
     private GameSetupInfo Setup(Action<GameParameters>? tweak = null, params Player[] players)
     {
         var parameters = new GameParameters
@@ -60,8 +49,8 @@ public sealed class GameStarterTests : IDisposable
         return new GameSetupInfo(parameters, new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Small });
     }
 
-    private static GameInfo Start(GameSetupInfo setup, long seed = 7, bool cityStatesSucceed = true) =>
-        GameStarter.StartNewGame(setup, seed, 1000L, onCivilizationCreated: Wire(cityStatesSucceed));
+    private static GameInfo Start(GameSetupInfo setup, long seed = 7) =>
+        GameStarter.StartNewGame(setup, seed, 1000L);
 
     private static string Dump(GameInfo game) =>
         game.GameId + "|" + string.Join(';', game.Civilizations.Select(civ => civ.CivId + ":" + civ.PlayerType + ":" + civ.GetCivUnitsDump()));
@@ -122,13 +111,6 @@ public sealed class GameStarterTests : IDisposable
     {
         var game = Start(Setup(it => it.NoBarbarians = true));
         Assert.DoesNotContain(game.Civilizations, it => it.IsBarbarian);
-    }
-
-    [Fact]
-    public void CityStatesThatFailToInitialiseAreDropped()
-    {
-        var game = Start(Setup(), cityStatesSucceed: false);
-        Assert.DoesNotContain(game.Civilizations, it => it.IsCityState);
     }
 
     [Fact]
@@ -223,13 +205,6 @@ public sealed class GameStarterTests : IDisposable
     {
         var setup = Setup(it => it.NumberOfCityStates = -1);
         Assert.Throws<ArgumentException>(() => Start(setup));
-    }
-
-    [Fact]
-    public void CityStateFunctionsSeamHasNoDefaultInitialiser()
-    {
-        ICityStateFunctions seam = new FakeCityStateFunctions();
-        Assert.Throws<NotSupportedException>(() => seam.InitCityState(ruleset, "Ancient era", [], new GameRandom(1)));
     }
 
     [Fact]

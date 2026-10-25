@@ -11,7 +11,7 @@ using TileImprovementObject = Unciv.Models.Ruleset.Tile.TileImprovement;
 namespace Unciv.Logic.Map.Tiles;
 
 // Ported from core/src/com/unciv/logic/map/tile/TileImprovementFunctions.kt (T054).
-// Stripped: the purity annotations. Civilization, City and MapUnit are the seams of TileFunctionsSeams.cs.
+// Stripped: the purity annotations. Civilization, City and MapUnit are the seams of GameContextTileFunctions.cs.
 
 /// <summary>Reason why an Improvement cannot be built by a given civ</summary>
 public enum ImprovementBuildingProblem

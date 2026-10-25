@@ -16,7 +16,7 @@ namespace Unciv.Logic.City;
 // Stripped: the timeThis profiling wrappers and the purity annotations. DebugUtils.SUPERCHARGED is the game's EngineOptions.Supercharged (T048).
 // Float/Double/Int arithmetic keeps the Kotlin evaluation order exactly (Float sums accumulate sequentially from 0f, sumOf { toDouble() }
 // accumulates in Double). The members of CityPopulationManager / CityConstructions / CityReligionManager that this class calls are seam members
-// (CivilizationSeams.cs) until the managers are ported.
+// (CivilizationContracts.cs) until the managers are ported.
 
 public class StatTreeNode
 {

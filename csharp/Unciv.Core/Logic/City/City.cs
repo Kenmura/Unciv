@@ -19,7 +19,7 @@ namespace Unciv.Logic.City;
 // Ported from core/src/com/unciv/logic/city/City.kt (T060).
 //
 // City is ported BEFORE its sub-objects (seam rule, T053 notes): population, cityConstructions, expansion, religion and cityStats are typed
-// by their seams in CivilizationSeams.cs, as lateinit-style properties (reading before assignment throws) because the Kotlin
+// by their seams in CivilizationContracts.cs, as lateinit-style properties (reading before assignment throws) because the Kotlin
 // initializers (`var population = CityPopulationManager()`) have nothing to construct yet. The ticket porting a sub-object replaces its
 // property by `= new XManager()` and retypes it (T061 did population, expansion, religion; T062: cityStats; T063: cityConstructions).
 // Kotlin City has no equals/hashCode: this class keeps reference identity.
@@ -874,7 +874,7 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
     #endregion
 
     #region seam implementations
-    // IGameContextCity and friends: the members the ported GameContext / Conditionals / Tile code reads (see the *Seams.cs files).
+    // IGameContextCity and friends: the members the ported GameContext / Conditionals / Tile code reads (see the GameContext*.cs files).
     // They are explicit because Kotlin City has no such members: the Kotlin callers go through the sub-objects.
     IGameContextCivilization IGameContextCity.Civ => Civ;
     IConstructionCivilization IConstructionCity.Civ => Civ;

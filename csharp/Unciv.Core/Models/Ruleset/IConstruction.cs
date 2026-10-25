@@ -14,8 +14,8 @@ namespace Unciv.Models.Ruleset;
 
 // core/src/com/unciv/models/ruleset/IConstruction.kt
 //
-// City, Civilization and CityConstructions are not ported yet (T046 onwards). The members the ported cost and buy-cost math reads are the
-// interfaces below; the classes implement them when they are ported. Member names mirror the Kotlin members.
+// The members the cost and buy-cost math reads from City, Civilization and CityConstructions are the
+// interfaces below; the classes implement them. Member names mirror the Kotlin members.
 //
 
 /// <summary>What the construction cost math reads from <c>GameInfo</c> beyond <see cref="IGameContextGameInfo"/>.</summary>

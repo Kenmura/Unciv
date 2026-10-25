@@ -14,7 +14,6 @@ namespace Unciv.Logic.Civilization.Managers;
 // - Kotlin HashSet/HashMap of PolicyBranch (identity hash, arbitrary order) are insertion ordered here (ruleset order); the AI-only
 //   priorityMap is a Dictionary because its order never reaches anything (getMaxPriority takes a max).
 // - priorityMap uses IHasUniques.GetWeightForAiDecision (T087); a PolicyBranch is neither BaseUnit nor Building, so it is the AiChoiceWeight product.
-// - Deferred: the UniqueTriggerActivation.triggerUnique calls (TriggerUniqueSeam, T052).
 
 public class PolicyManager : IsPartOfGameInfoSerialization
 {
@@ -333,12 +332,12 @@ public class PolicyManager : IsPartOfGameInfoSerialization
                 continue;
             var multiplier = unique.GetUniqueMultiplier(CivInfo.State); // evaluated once, like repeat()
             for (var i = 0; i < multiplier; i++)
-                TriggerUniqueSeam.TriggerUnique(unique, CivInfo, triggerNotificationText);
+                UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: triggerNotificationText);
         }
 
         CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUponAdoptingPolicyOrBelief, CivInfo.State, it => it.Params[0] == policy.Name, unique =>
         {
-            TriggerUniqueSeam.TriggerUnique(unique, CivInfo, triggerNotificationText);
+            UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: triggerNotificationText);
         });
 
         CivInfo.Cache.UpdateCivResources();

@@ -1,4 +1,5 @@
 using Unciv.Logic;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unique.Expressions;
 using Unciv.Models.Translations;
@@ -11,7 +12,6 @@ namespace Unciv.Models.Ruleset.Validation;
 // Deviations:
 // - UniqueType.getDeprecationAnnotation is not needed: no UniqueType entry is deprecated (T029), only DeprecatedUniqueType entries are, and all of those are
 //   DeprecationLevel.ERROR, so they report ErrorOptionsOnly.
-// - MapUnitCache.UnitMovementUniques is copied here (MapUnitCache needs MapUnit and Civilization, which are not ported yet); keep in sync.
 // - Kotlin's `UniqueValidator.getUniqueContainerPrefix` is internal; so is this one.
 
 public class UniqueValidator(Ruleset ruleset, bool tryFixUnknownUniques = false)
@@ -157,7 +157,7 @@ public class UniqueValidator(Ruleset ruleset, bool tryFixUnknownUniques = false)
             }
         }
 
-        if (UnitMovementUniques.Contains(uniqueType)
+        if (MapUnitCache.UnitMovementUniques.Contains(uniqueType)
             && unique.Modifiers.Any(it => it.Type != UniqueType.ConditionalOurUnit || !Constants.All.Contains(it.Params[0])))
             // (Stay silent if the only conditional is `<for [All] units>` - as in G&K Denmark)
             // Not necessarily even a problem, but yes something mod maker should be aware of
@@ -493,30 +493,6 @@ public class UniqueValidator(Ruleset ruleset, bool tryFixUnknownUniques = false)
     /// <summary>Only RulesetInvariant - used when a unique is disabled in this ruleset via a mod-enabled conditional.</summary>
     public static readonly IReadOnlySet<UniqueParameterErrorSeverity> DisabledUniqueParameterSeverities =
         new HashSet<UniqueParameterErrorSeverity> { UniqueParameterErrorSeverity.RulesetInvariant };
-
-    // Copy of MapUnitCache.UnitMovementUniques, see the deviations above.
-    private static readonly IReadOnlySet<UniqueType> UnitMovementUniques = new HashSet<UniqueType>
-    {
-        UniqueType.AllTilesCost1Move,
-        UniqueType.CanPassImpassable,
-        UniqueType.IgnoresTerrainCost,
-        UniqueType.IgnoresZOC,
-        UniqueType.RoughTerrainPenalty,
-        UniqueType.CannotMove,
-        UniqueType.CanMoveOnWater,
-        UniqueType.DoubleMovementOnTerrain,
-        UniqueType.ReducedDisembarkCost,
-        UniqueType.ReducedEmbarkCost,
-        UniqueType.CanEnterIceTiles,
-        UniqueType.CanEnterForeignTiles,
-        UniqueType.CanEnterForeignTilesButLosesReligiousStrength,
-        UniqueType.ForestsAndJunglesAreRoads,
-        UniqueType.IgnoreHillMovementCost,
-        UniqueType.DamagesContainingUnits,
-        UniqueType.LandUnitEmbarkation,
-        UniqueType.LandUnitsCrossTerrainAfterUnitGained,
-        UniqueType.EnemyUnitsSpendExtraMovement,
-    };
 
     internal static string GetUniqueContainerPrefix(IHasUniques? uniqueContainer) =>
         (uniqueContainer is IRulesetObject rulesetObject ? $"{rulesetObject.OriginRuleset}: " : "") +

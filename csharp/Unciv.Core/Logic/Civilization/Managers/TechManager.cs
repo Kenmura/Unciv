@@ -26,7 +26,6 @@ namespace Unciv.Logic.Civilization.Managers;
 //   allTechsAreResearched read by AllTechsAreResearched(); the private function is GetScienceFromResearchAgreements().
 // - Kotlin HashSet/HashMap fields keep java.util iteration order (JavaHashSet/JavaHashMap).
 // - Fonts.infinity (a UI class) is inlined as the constant InfinityChar.
-// - Deferred: the UniqueTriggerActivation.triggerUnique calls (TriggerUniqueSeam, T052).
 
 public class TechManager : IsPartOfGameInfoSerialization
 {
@@ -374,12 +373,12 @@ public class TechManager : IsPartOfGameInfoSerialization
                 continue;
             var multiplier = unique.GetUniqueMultiplier(CivInfo.State); // evaluated once, like repeat()
             for (var i = 0; i < multiplier; i++)
-                TriggerUniqueSeam.TriggerUnique(unique, CivInfo, triggerNotificationText);
+                UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: triggerNotificationText);
         }
 
         CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUponResearch, CivInfo.State, it => newTech.MatchesFilter(it.Params[0], CivInfo.State), unique =>
         {
-            TriggerUniqueSeam.TriggerUnique(unique, CivInfo, triggerNotificationText);
+            UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: triggerNotificationText);
         });
 
         var revealedResources = GetRuleset().TileResources.Values.Where(it => techName == it.RevealedBy).ToList();
@@ -538,19 +537,19 @@ public class TechManager : IsPartOfGameInfoSerialization
                 if (unique.HasTriggerConditional() || !unique.ConditionalsApply(CivInfo.State)) continue;
                 var multiplier = unique.GetUniqueMultiplier(CivInfo.State); // evaluated once, like repeat()
                 for (var i = 0; i < multiplier; i++)
-                    TriggerUniqueSeam.TriggerUnique(unique, CivInfo, $"due to entering the [{era.Name}]");
+                    UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: $"due to entering the [{era.Name}]");
             }
 
             CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUponEnteringEra, CivInfo.State, it => it.Params[0] == era.Name, unique =>
             {
-                TriggerUniqueSeam.TriggerUnique(unique, CivInfo, $"due to entering the [{era.Name}]");
+                UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: $"due to entering the [{era.Name}]");
             });
         }
 
         // The unfiltered version
         CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUponEnteringEraUnfiltered, CivInfo.State, _ => true, false, unique =>
         {
-            TriggerUniqueSeam.TriggerUnique(unique, CivInfo, $"due to entering the [{currentEra.Name}]");
+            UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: $"due to entering the [{currentEra.Name}]");
         });
     }
 

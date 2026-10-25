@@ -13,7 +13,7 @@ namespace Unciv.Logic.Civilization.Transients;
 // Ported from core/src/com/unciv/logic/civilization/transients/CivInfoStatsForNextTurn.kt (T058).
 //
 // Deviations:
-// - MapUnit is reached through the IMapUnitState seam (implemented by MapUnit, T065); the managers are the seams of CivilizationSeams.cs until T059 retypes them.
+// - MapUnit is reached through the IMapUnitState seam (implemented by MapUnit, T065); the managers are the contracts of CivilizationContracts.cs.
 // - getHappinessBreakdown returns a JavaHashMap: the Kotlin HashMap<String, Float> is iterated in java.util.HashMap order (String keys
 //   have a deterministic JVM hash) and Civilization.updateStatsForNextTurn sums its values as Float, so the order is observable.
 // - Kotlin Float/Double/Int arithmetic is kept (no widening); sumOf over Int wraps.

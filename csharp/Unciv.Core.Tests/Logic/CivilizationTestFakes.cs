@@ -24,7 +24,7 @@ using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Core.Tests.Logic;
 
-// T055: stand-ins for the manager/city/unit/game-info seams of Civilization (CivilizationSeams.cs). Each fake holds data for what the
+// T055: stand-ins for the manager/city/unit/game-info seams of Civilization (CivilizationContracts.cs). Each fake holds data for what the
 // tests read and throws for the rest.
 
 internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
@@ -188,6 +188,7 @@ internal class FakeCityStateFunctions : ICityStateFunctions
         foreach (var unique in GetUniquesProvidedByCityStates(uniqueType, gameContext)) op(unique);
     }
     public ResourceSupplyList GetCityStateResourcesForAlly() => new();
+    public bool InitCityState(Unciv.Models.Ruleset.Ruleset ruleset, string startingEra, IEnumerable<Unciv.Models.Ruleset.Nation.Nation> usedMajorCivs, GameRandom rng) => true;
     public IEnumerable<NotificationAction> GetNotificationActions() => [];
     public List<string> Attacked { get; } = [];
     public void CityStateAttacked(Civilization attacker) => Attacked.Add(attacker.CivId);

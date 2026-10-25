@@ -5,7 +5,7 @@ namespace Unciv.Models.Ruleset;
 
 /// <summary>
 /// The parts of <c>Ruleset</c> that <see cref="Unit.BaseUnit"/>, <see cref="Unit.UnitType"/>, <see cref="Unit.UnitNameGroup"/> and <see cref="Building"/> read.
-/// T034's <c>Ruleset</c> implements this; open owner: T104 (final seam sweep). Methods rather than maps, so the ruleset can also implement <see cref="IRulesetParameterView"/>.
+/// T034's <c>Ruleset</c> implements this. Methods rather than maps, so the ruleset can also implement <see cref="IRulesetParameterView"/>.
 /// </summary>
 public interface IRulesetConstructionView
 {

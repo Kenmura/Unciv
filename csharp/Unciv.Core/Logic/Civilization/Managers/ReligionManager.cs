@@ -15,7 +15,7 @@ using MapUnitObject = Unciv.Logic.Map.MapUnits.MapUnit;
 namespace Unciv.Logic.Civilization.Managers;
 
 // Ported from core/src/com/unciv/logic/civilization/managers/ReligionManager.kt (T057).
-// - City, MapUnit and GameInfo are not ported yet: they are used through their seams (CivilizationSeams.cs).
+// - City, MapUnit and GameInfo are used through their contracts (CivilizationContracts.cs).
 // - Kotlin's `Random(seed)` is a GameRandom.
 // - The 'remainingFoundableReligionsBreakdown' Sequence of Pair is an iterator of tuples.
 public class ReligionManager : IsPartOfGameInfoSerialization

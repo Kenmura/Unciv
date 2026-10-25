@@ -14,14 +14,15 @@ using Unciv.Utils;
 
 namespace Unciv.Logic.Map;
 
-// Ported from core/src/com/unciv/logic/map/TileMap.kt (T039), against the seams in TileMapSeams.cs / TileSeams.cs.
+// Ported from core/src/com/unciv/logic/map/TileMap.kt (T039), against the seams in GameContextTileMap.cs / GameContextTile.cs.
 //
 // Stripped: the @Readonly purity annotations.
 // T107 wired the Gdx-compatible JSON: TileMapJsonConverter, StartingLocationJsonConverter and PreviewJsonConverter at the end of the class.
 // Deviations:
 // - assignContinents flood-fills with a private helper instead of BFS (T040, which depends on this ticket). BFS only fed a set and a
 //   count, so visiting order is irrelevant; T040 may switch it to BFS.
-// - switchPlayersNation (marked "currently unreachable" in Kotlin) needs the Civilization constructor: TODO(T104).
+// - switchPlayersNation is not ported: Kotlin marks it "currently unreachable" (@Suppress("unused"), no caller), and it would read the
+//   lateinit gameInfo of a freshly constructed Civilization.
 // - startingLocationsByNation stays a Dictionary<string, HashSet<Tile>> (Tile has identity hashing in Kotlin too, so set order was
 //   never deterministic there); continentSizes uses JavaHashMap because continentsSortedBySize is built from its iteration order.
 // - Kotlin Sequence results are IEnumerable; the pure-function overloads with a default `filter` are separate overloads.
@@ -852,7 +853,7 @@ public class TileMap : IsPartOfGameInfoSerialization
         StartingLocationsByNation.Remove(player.ChosenCiv);
     }
 
-    // switchPlayersNation(player, newNation) is not ported (Kotlin: "currently unreachable"): it constructs a Civilization. TODO(T104)
+    // switchPlayersNation(player, newNation) is deliberately not ported: dead code upstream (see the file header).
 
     /// <summary>Initialize startingLocations transients</summary>
     public void SetStartingLocationsTransients()

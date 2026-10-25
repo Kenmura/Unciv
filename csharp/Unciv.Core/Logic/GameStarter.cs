@@ -31,7 +31,6 @@ namespace Unciv.Logic;
 // - Stripped as UI/client concerns: the consoleTimings/runAndMeasure debugging instrumentation, and `UncivGame.Current.settings.lastGameSetup = ...; save()`
 //   (the client stores its own last setup). The StartIntro popup alert is kept; there are no multiplayer alerts in this class.
 // - MapSaver.loadMap(gameSetupInfo.mapFile!!): GameSetupInfo.MapFile is a path string, opened with the openMapFile argument.
-// - ICityStateFunctions.InitCityState is a seam member until T068 ports CityStateFunctions.
 
 /// <summary>
 /// Starts a new game.
@@ -44,7 +43,6 @@ public sealed class GameStarter
     private readonly GameInfo gameInfo = new();
     private readonly GameRandom rng;
     private readonly RulesetObject ruleset;
-    private readonly Action<CivilizationObject>? onCivilizationCreated;
     // JUSTIFY: T099 Kotlin `lateinit var tileMap`, assigned in the constructor before any use
     private TileMap tileMap = null!;
 
@@ -55,17 +53,13 @@ public sealed class GameStarter
     /// <param name="seed">Seeds the gameId (Kotlin: a random UUID), and with it everything drawn from <c>stateBasedRandom</c>.</param>
     /// <param name="currentTimeMillis">The clock reading for <c>currentTurnStartTime</c> and for a map seed of 0.</param>
     /// <param name="openMapFile">Opens <see cref="GameSetupInfo.MapFile"/> when the setup names a saved map.</param>
-    /// <param name="onCivilizationCreated">Called on every new civilization before it is used: wires the managers that are not ported yet
-    /// (CityStateFunctions T068, QuestManager T069, both ported), which Kotlin's Civilization constructs itself. Both managers exist now; TODO(T104): remove this hook and let the tests use the real ones.</param>
     public static GameInfo StartNewGame(GameSetupInfo gameSetupInfo, long seed, long currentTimeMillis,
-        Func<string, IUncivFileHandle>? openMapFile = null, Action<CivilizationObject>? onCivilizationCreated = null) =>
-        new GameStarter(gameSetupInfo, seed, currentTimeMillis, openMapFile, onCivilizationCreated).gameInfo;
+        Func<string, IUncivFileHandle>? openMapFile = null) =>
+        new GameStarter(gameSetupInfo, seed, currentTimeMillis, openMapFile).gameInfo;
 
-    private GameStarter(GameSetupInfo gameSetupInfo, long seed, long currentTimeMillis, Func<string, IUncivFileHandle>? openMapFile,
-        Action<CivilizationObject>? onCivilizationCreated)
+    private GameStarter(GameSetupInfo gameSetupInfo, long seed, long currentTimeMillis, Func<string, IUncivFileHandle>? openMapFile)
     {
         this.gameSetupInfo = gameSetupInfo;
-        this.onCivilizationCreated = onCivilizationCreated;
         gameInfo.GameId = GameInfoPreview.RandomGameId(new GameRandom(seed));
         gameInfo.CurrentTurnStartTime = currentTimeMillis;
         rng = new GameContext(gameInfo: gameInfo).StateBasedRandom("GameStarter");
@@ -358,7 +352,6 @@ public sealed class GameStarter
             if (ruleset.Nations.TryGetValue(Constants.Barbarians, out var barbs))
             {
                 var barbarianCivilization = new CivilizationObject(barbs);
-                onCivilizationCreated?.Invoke(barbarianCivilization);
                 gameInfo.Civilizations.Add(barbarianCivilization);
             }
         }
@@ -369,7 +362,6 @@ public sealed class GameStarter
         foreach (var player in chosenPlayers)
         {
             var civ = new CivilizationObject(player.ChosenNation);
-            onCivilizationCreated?.Invoke(civ);
             if (civ.IsMajorCiv() || civ.IsSpectator())
             {
                 civ.PlayerType = player.PlayerType;

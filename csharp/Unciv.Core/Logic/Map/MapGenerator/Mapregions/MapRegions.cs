@@ -1,3 +1,4 @@
+using Unciv.Logic.Map.MapGenerator.ResourcePlacement;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Mathematics;
 using Unciv.Models.Metadata;
@@ -10,8 +11,7 @@ using Unciv.Utils;
 namespace Unciv.Logic.Map.MapGenerator.Mapregions;
 
 // core/src/com/unciv/logic/map/mapgenerator/mapregions/MapRegions.kt (TileDataMap, MapRegions, and the file-level functions)
-// Deviations: Civilization is the seam IMapRegionsCivilization (T055); the StartNormalizer / MinorCivPlacer / resource placement calls
-// go through MapRegionsSeams (T076 / T077). Kotlin HashMap<Int,Int> whose iteration order feeds the result is a JavaHashMap.
+// Deviations: Civilization is the interface IMapRegionsCivilization (T055). Kotlin HashMap<Int,Int> whose iteration order feeds the result is a JavaHashMap.
 
 public class TileDataMap(int size)
 {
@@ -297,7 +297,7 @@ public class MapRegions(Ruleset ruleset)
         foreach (var region in sortedRegions) RegionStartFinder.FindStart(region, tileData);
         foreach (var region in regions)
         {
-            MapRegionsSeams.NormalizeStart(tileMap[region.StartPosition.NotNull()], tileMap, tileData, Ruleset, isMinorCiv: false);
+            StartNormalizer.NormalizeStart(tileMap[region.StartPosition.NotNull()], tileMap, tileData, Ruleset, isMinorCiv: false);
         }
 
         var civBiases = new Dictionary<IMapRegionsCivilization, List<string>>();
@@ -528,10 +528,10 @@ public class MapRegions(Ruleset ruleset)
     {
         PlaceNaturalWonderImpacts(tileMap);
 
-        var (cityStateLuxuries, randomLuxuries) = MapRegionsSeams.AssignLuxuries(regions, tileData, Ruleset);
-        MapRegionsSeams.PlaceMinorCivs(regions, tileMap, minorCivs, tileData, Ruleset);
-        MapRegionsSeams.PlaceLuxuries(regions, tileMap, tileData, Ruleset, cityStateLuxuries, randomLuxuries);
-        MapRegionsSeams.PlaceStrategicAndBonuses(tileMap, regions, tileData);
+        var (cityStateLuxuries, randomLuxuries) = LuxuryResourcePlacementLogic.AssignLuxuries(regions, tileData, Ruleset);
+        MinorCivPlacer.PlaceMinorCivs(regions, tileMap, minorCivs, tileData, Ruleset);
+        LuxuryResourcePlacementLogic.PlaceLuxuries(regions, tileMap, tileData, Ruleset, cityStateLuxuries, randomLuxuries);
+        StrategicBonusResourcePlacementLogic.PlaceStrategicAndBonuses(tileMap, regions, tileData);
     }
 
     /// <summary>Places impacts from NWs that have been generated just prior to this step.</summary>

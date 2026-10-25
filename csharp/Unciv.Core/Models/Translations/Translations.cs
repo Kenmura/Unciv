@@ -99,7 +99,7 @@ public sealed class Translations : IEnumerable<KeyValuePair<string, TranslationE
     /// </summary>
     /// <param name="language">The language name as used in <c>LocaleCode</c>.</param>
     /// <param name="languageFile">The <c>jsons/translations/$language.properties</c> of the game; nothing happens if it does not exist.</param>
-    /// <param name="modFiles">Per mod folder name, its <c>jsons/translations/$language.properties</c> (TODO(T104): the caller will be RulesetCache, which knows the mod folders).</param>
+    /// <param name="modFiles">Per mod folder name, its <c>jsons/translations/$language.properties</c> (the caller, which knows the mod folders, supplies them).</param>
     public void TryReadTranslationForLanguage(
         string language,
         ITranslationFileHandle languageFile,

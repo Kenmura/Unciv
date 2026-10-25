@@ -5,7 +5,7 @@ using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 namespace Unciv.Logic.Map;
 
 // Ported from core/src/com/unciv/logic/map/MapVisualization.kt (T040). Stripped: the purity annotations.
-// Civilization and MapUnit retyped in T134; GameInfo remains IGameContextGameInfo until T046.
+// Civilization and MapUnit retyped in T134; GameInfo is reached through IGameContextGameInfo.
 
 /// <summary>
 /// Helper class for making decisions about more abstract information that may be displayed on the world map (or fair to use in AI),

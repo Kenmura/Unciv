@@ -4,8 +4,6 @@ using Unciv.Logic.Map;
 using Unciv.Logic.Simulation;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
-using Unciv.Utils;
-using NationObject = Unciv.Models.Ruleset.Nation.Nation;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Core.Tests.Logic.Simulation;
@@ -36,13 +34,6 @@ public sealed class SimulationTests : IDisposable
         throw new DirectoryNotFoundException("android/assets/jsons not found above " + AppContext.BaseDirectory);
     }
 
-    private sealed class StubCityStates : FakeCityStateFunctions, ICityStateFunctions
-    {
-        public bool InitCityState(RulesetClass rulesetArg, string startingEra, IEnumerable<NationObject> usedMajorCivs, GameRandom rng) => true;
-    }
-
-    private static void Wire(Civilization civ) => civ.CityStateFunctions = new StubCityStates();
-
     private GameInfo NewGame() =>
         GameStarter.StartNewGame(
             new GameSetupInfo(
@@ -53,7 +44,7 @@ public sealed class SimulationTests : IDisposable
                     Players = [new Player("Babylon", PlayerType.Human), new Player("Greece"), new Player("Rome")],
                 },
                 new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Tiny }),
-            5, 1000L, onCivilizationCreated: Wire);
+            5, 1000L);
 
     [Fact]
     public void MutableIntCountsAndWraps()
@@ -170,7 +161,7 @@ public sealed class SimulationTests : IDisposable
             var lines = new List<string>();
             var game = NewGame();
             new Unciv.Logic.Simulation.Simulation(game, simulationsPerThread: 2, threadsNumber: 1, maxTurns: 3,
-                statTurns: [1], output: lines.Add, onCivilizationCreated: Wire, seed: seed).Start();
+                statTurns: [1], output: lines.Add, seed: seed).Start();
             return string.Join('\n', lines);
         }
 

@@ -4,9 +4,8 @@ using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.StatTypes;
 using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
-// Open owners: T046 (GameInfo), T065 (MapUnit); T104 lists survivors.
 // T054 (TileStatFunctions, TileImprovementFunctions, ImprovementFunctions): the members they call on Civilization, City, MapUnit and
-// GameInfo (seam rule, T053 notes). The tickets that port those classes implement them. Member names mirror the Kotlin members.
+// GameInfo, as extensions of the GameContext interfaces (GameContext.cs), which those classes implement. Member names mirror the Kotlin members.
 
 namespace Unciv.Models.Ruleset.Unique;
 

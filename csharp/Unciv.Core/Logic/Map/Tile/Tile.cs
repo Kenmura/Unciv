@@ -14,9 +14,8 @@ using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
 
 namespace Unciv.Logic.Map.Tiles;
 
-// Ported from core/src/com/unciv/logic/map/tile/Tile.kt (T053), against the seams in TileSeams.cs: TileMap, Civilization, City and MapUnit
-// are not ported yet, so those fields and parameters are typed by their IGameContext*/ITileMapState seam (Tile -> TileMap -> Civilization
-// -> City -> MapUnit order; the ticket porting each class retypes them).
+// Ported from core/src/com/unciv/logic/map/tile/Tile.kt (T053), against the seams in GameContextTile.cs: TileMap, Civilization, City and MapUnit
+// are reached through the IGameContext* interfaces, so Tile does not depend on the concrete classes.
 //
 // Stripped: timeThis profiling wrappers, GUI.clearUndoCheckpoints (UI), the @Readonly/@Cache purity annotations, the Gdx Json
 // private constructor of ImprovementQueueEntry. Fonts.turn is inlined.
