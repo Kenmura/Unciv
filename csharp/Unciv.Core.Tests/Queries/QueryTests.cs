@@ -64,7 +64,6 @@ public class QueryTests
         public ViewerResult Run(GameView view) => new("", false, 0);
     }
 
-    [QueryType("test.Abstract")]
     public abstract record AbstractQuery;
 
     private readonly TestGame testGame = new();
@@ -83,7 +82,7 @@ public class QueryTests
     {
         var registry = new QueryRegistry(UncivJson.DefaultOptions);
         foreach (var type in typeof(QueryTests).Assembly.GetTypes().Where(it => it.IsDefined(typeof(QueryTypeAttribute), false)))
-            if (type != typeof(AbstractQuery) && type != typeof(MismatchQuery))
+            if (type != typeof(MismatchQuery))
                 registry.Register(type, type.GetCustomAttributes(typeof(QueryTypeAttribute), false).Cast<QueryTypeAttribute>().Single().Name);
         return registry;
     }
@@ -197,8 +196,13 @@ public class QueryTests
     public void RegistrationGuardsCatchWrongClasses()
     {
         var fresh = new QueryRegistry(UncivJson.DefaultOptions);
+        fresh.RegisterFromAssembly(typeof(QueryTests).Assembly);
+        Assert.Contains("test.Terrain", fresh.RegisteredTypes);
+        var count = fresh.RegisteredTypes.Count;
         Assert.Throws<InvalidOperationException>(() => fresh.RegisterFromAssembly(typeof(QueryTests).Assembly));
-        Assert.Empty(fresh.RegisteredTypes);
+        Assert.Equal(count, fresh.RegisteredTypes.Count);
+        Assert.Throws<InvalidOperationException>(() => fresh.Register(typeof(AbstractQuery), "test.Abstract"));
+        fresh = new QueryRegistry(UncivJson.DefaultOptions);
         Assert.Throws<InvalidOperationException>(() => fresh.Register(typeof(string), "test.NotAQuery"));
         Assert.Throws<InvalidOperationException>(() => fresh.Register(typeof(ViewerQuery), ""));
 

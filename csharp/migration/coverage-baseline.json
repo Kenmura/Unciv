@@ -339,7 +339,7 @@
     "Unciv.Core/Queries/IQuery.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Queries/QueryContext.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Queries/QueryEnvelope.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Core/Queries/QueryRegistry.cs": {"branch": 87.5, "line": 92.65},
+    "Unciv.Core/Queries/QueryRegistry.cs": {"branch": 95.24, "line": 98.73},
     "Unciv.Core/UI/ColorExtensions.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/UI/EmpireOverviewCategories.cs": {"branch": 61.54, "line": 69.7},
     "Unciv.Core/UI/EngineColor.cs": {"branch": 50.0, "line": 89.83},

@@ -13,8 +13,6 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
 
     public IReadOnlyCollection<string> RegisteredTypes => typeByName.Keys;
 
-    public Type GetQueryClass(string type) => typeByName[type];
-
     public void Register<TQuery>(string type) where TQuery : IQuery => Register(typeof(TQuery), type);
 
     public void Register(Type queryClass, string type)
@@ -82,12 +80,8 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
             failure = QueryResponse.Fail(QueryCodes.MalformedQuery, $"Payload of \"{envelope.Type}\" is invalid: {e.Message}");
             return false;
         }
-        if (query == null)
-        {
-            failure = QueryResponse.Fail(QueryCodes.MalformedQuery, $"Payload of \"{envelope.Type}\" is empty");
-            return false;
-        }
-        if (query.Type != envelope.Type)
+        // An object payload never deserializes to null.
+        if (query.NotNull().Type != envelope.Type)
         {
             query = null;
             failure = QueryResponse.Fail(QueryCodes.MalformedQuery, $"Class registered as \"{envelope.Type}\" reports another type");
