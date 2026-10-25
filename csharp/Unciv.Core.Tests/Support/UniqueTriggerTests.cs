@@ -340,8 +340,51 @@ public class UniqueTriggerTests
         var empty = new Event { Name = "Empty", Presentation = Event.PresentationType.None };
         game.Ruleset.Events[empty.Name] = empty;
         Assert.False(Trigger("Triggers a [Empty] event"));
+    }
+
+    [Fact]
+    public void FloatingEventIsQueuedAsAnEventAlertInsteadOfThrowing()
+    {
         var floating = AddEvent(Event.PresentationType.Floating, "Free Technology");
-        Assert.Throws<NotImplementedException>(() => Trigger($"Triggers a [{floating.Name}] event"));
+        Assert.True(Trigger($"Triggers a [{floating.Name}] event"));
+        var alert = Assert.Single(civ.PopupAlerts, it => it.Type == AlertType.Event);
+        Assert.Equal(floating.Name, alert.Value);
+        Assert.Equal(0, civ.Tech.FreeTechs);
+    }
+
+    [Fact]
+    public void EventPresentationExposesTextsAndChoicesAndChooseTriggersTheChoice()
+    {
+        var eventObj = AddEvent(Event.PresentationType.Alert, "Free Technology");
+        eventObj.Text = "A thing happens";
+        var second = new EventChoice { Name = "Second", Text = "nope", KeyShortcut = "n" };
+        eventObj.Choices.Add(second);
+        var unit = game.AddUnit("Warrior", civ, game.TileMap[1, 0]);
+        Assert.True(UniqueTriggerActivation.TriggerUnique(new Unique($"Triggers a [{eventObj.Name}] event"), unit));
+
+        var pending = Assert.Single(EventPresentation.GetPending(civ));
+        Assert.Equal("A thing happens", pending.Text);
+        Assert.Same(unit, pending.Unit);
+        Assert.Equal([new EventChoicePresentation(0, "Choice", "go", ""), new EventChoicePresentation(1, "Second", "nope", "n")], pending.Choices);
+
+        Assert.False(pending.Choose(civ, 2));
+        Assert.False(pending.Choose(civ, -1));
+        Assert.Single(civ.PopupAlerts, it => it.Type == AlertType.Event);
+        Assert.True(pending.Choose(civ, 0));
+        Assert.DoesNotContain(civ.PopupAlerts, it => it.Type == AlertType.Event);
+        Assert.Equal(1, civ.Tech.FreeTechs);
+        Assert.Empty(EventPresentation.GetPending(civ));
+    }
+
+    [Fact]
+    public void EventPresentationIsNullForNonEventUnknownOrNoLongerMatchingAlerts()
+    {
+        Assert.Null(EventPresentation.Resolve(civ, new PopupAlert(AlertType.GoldenAge, "")));
+        Assert.Null(EventPresentation.Resolve(civ, new PopupAlert(AlertType.Event, "No Such Event")));
+        var eventObj = AddEvent(Event.PresentationType.Alert, "Free Technology");
+        eventObj.Uniques.Add("Only available <if [1000] turns have passed>"); // hypothetical condition, never true
+        eventObj.Choices[0].Uniques.Add("Only available <when number of [Cities] is greater than [99]>");
+        Assert.Null(EventPresentation.Resolve(civ, new PopupAlert(AlertType.Event, eventObj.Name)));
     }
 
     [Fact]

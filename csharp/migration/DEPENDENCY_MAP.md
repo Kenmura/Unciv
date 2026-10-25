@@ -447,7 +447,7 @@ flowchart TD
   class T168 review
   class T169 ready
   class T170 done
-  class T171 prog
+  class T171 review
   class T172 ready
   class T173 waiting
   class T174 waiting
@@ -549,7 +549,7 @@ xychart-beta
 | C017 | Available (waiting on C005, C010, T164, T191, T196) | C005, C010, T164, T060, T062, T191, T196 | 1 | City screen A: info, tiles, specialists, focus |
 | C021 | Available (waiting on C005, C010, T164, T193, T197) | C005, C010, T164, T059, T068, T193, T197 | 1 | Diplomacy screen |
 | C025 | Available (waiting on C005) | C005, T023, T170 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
-| T171 | In-Progress [Claude] | T104 | 1 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
+| T171 | Needs-Review [Claude] | T104 | 1 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
 | T179 | Blocked | T178 | 1 | Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes |
 | T199 | Available (waiting on T185) | T185, T099, T045, T170 | 1 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
 | C006 | Available (waiting on T164, T172, T173, T180, T179, C010, C016, T194) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194 | 0 | Networked play client |

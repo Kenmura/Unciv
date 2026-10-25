@@ -93,7 +93,7 @@ public static class UniqueTriggerActivation
                             var choice = choices.ToList().RandomWeighted(rng, it => ((IHasUniques)it).GetWeightForAiDecision(gameContext));
                             return choice.TriggerChoice(civInfo, unit);
                         };
-                    if (eventObj.Presentation == Event.PresentationType.Alert)
+                    if (eventObj.Presentation is Event.PresentationType.Alert or Event.PresentationType.Floating)
                         return () =>
                         {
                             // See AlertPopup.addEvent for the deserializing of this string to the context
@@ -102,9 +102,10 @@ public static class UniqueTriggerActivation
                             civInfo.PopupAlerts.Add(new PopupAlert(AlertType.Event, eventText));
                             return true;
                         };
-                    // if (event.presentation == Event.Presentation.Floating) return { //todo: Park them in a Queue in GameInfo???
-                    // JUSTIFY: T052 Kotlin throws NotImplementedError for an Event presentation that is not implemented (Floating)
-                    throw new NotImplementedException($"Event {eventObj.Name} has presentation type {eventObj.Presentation} which is not implemented for use via TriggerEvent");
+                    // Deviation (T171): Kotlin throws NotImplementedError for Floating (todo: park them in a queue in GameInfo).
+                    // Engine: Floating is queued as an Event PopupAlert like Alert; the client decides how to show it (see EventPresentation).
+                    // Only Presentation None/Alert/Floating exist, so everything is handled above.
+                    return null;
                 }
 
             case UniqueType.MarkTutorialComplete:

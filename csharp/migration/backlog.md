@@ -1975,7 +1975,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented: Translations.TryReadTranslationForLanguage(language, IRulesetFolder gameFolder) (the Kotlin Gdx.files.internal lookup plus the mod loop over RulesetCache.Values' FolderLocation, keyed by mod folder name; resolves the former TODO), Translations.LoadPercentageCompleteOfLanguages(IRulesetFolder), RulesetFolderTranslationFileHandle adapter. RulesetCache mod folder loading (LoadRulesets/ReloadSingleRuleset/LoadSingleRuleset) already existed from T104; this ticket adds tests with bundled mods (Models/Ruleset/ModLoading/Mods: TestMod, LateMod, BrokenMod, .hidden), own content, no third-party art. TranslationCache.ActiveMods itself is untouched (T137); mod-order lookup is tested via Translations.Get with an ordered active-mod set. Left for T160: loading real third-party mods from a user mods folder, and wiring Translations.Current/ActiveMods at game start (the test uses fresh Translations instances to stay out of the TranslationState collection).
 
 ### T171 Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T104
 - Source:
 - Fixtures: none
@@ -1983,6 +1983,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~UniqueTrigger
 - Claimed: 2026-10-25T00:48Z
 - Notes: Gap review: UniqueTriggerActivation.cs throws NotImplementedException for an event presentation type: a real runtime path for rulesets with events. Present as data (choices, texts), no UI types.
+  - Implemented. Deviation from Kotlin (deliberate, per ticket): Presentation.Floating no longer throws NotImplementedError; it is queued as an AlertType.Event PopupAlert exactly like Alert (Kotlin's own todo: park in a queue in GameInfo). The client decides how to show it. New engine data type EventPresentation (Models/Ruleset/EventPresentation.cs): Resolve(civ, alert) mirrors AlertPopup.addEvent + RenderEvent.isValid (name + unitId= parsing, matching choices; null if unknown/none match); GetPending(civ); Choice list = index/name/text/keyShortcut; Choose(civ, index) removes the alert then triggers the choice (AlertPopup.close + RenderEvent.addChoice), false on bad index. Choices use the unit looked up from the alert. No UI types, no RNG. Tests in UniqueTriggerTests (Floating queued, presentation data + Choose, null cases). Coverage run: first instrumented run crashed the test host once (not reproducible, --run passed).
 
 ### T172 Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net)
 - State: Available
