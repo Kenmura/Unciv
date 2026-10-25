@@ -2155,7 +2155,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Simultaneous turns (design/SIMULTANEOUS-TURNS.md): make EndPlayerTurn(civ, now) and BeginPlayerTurn(civ, now) take the civ explicitly (default CurrentPlayerCiv), and make 'started' a per-civ fact, so T200 composes the simultaneous sequence without rewriting this API. No behaviour change in Sequential; PendingDecisions.For(civ) already per civ.
 
 ### T185 Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T084, T085, T138, T139, T012
 - Source: csharp/Unciv.Core/View/*; csharp/Unciv.Core/Commands/CommandRegistry.cs; design/COMMANDS-IMPLEMENTATION.md section 8
 - Fixtures: none
@@ -2168,6 +2168,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Queries run against the live state, not the last snapshot; they must be cheap enough for hover (path preview) but are rate-limited by the host, not the engine.
       - The View classes (T084/T085) already provide the fog-correct read API; queries wrap them, they do not re-implement visibility. Anything a View method returns as an engine object (Tile, MapUnit, Ruleset objects) is converted to a record here.
       - Leak risk to review in each query ticket: movement/pathing over tiles the viewer has not explored (UnitMovement treats unknown tiles via IsUnknownTileWeShouldAssumeToBePassable; verify the DTO does not expose the real terrain).
+  - Implemented Unciv.Queries: IQuery/IQuery<TResult> (+[QueryType] scan attribute), QueryEnvelope/QueryResponse/QueryCodes/QueryException, QueryContext (viewer id = civ name -> GameView, spectatorMode for spectator civs), QueryRegistry (explicit Register + RegisterFromAssembly, Execute never throws on bad input). No query reads a current player. Purity test hashes GameInfo before/after every registered query (Core registry must have a sample in QueryTests.CoreSamples; query tickets add theirs) and a mutating query proves the check bites. Fog test uses TileMapView.GetTile(HexCoord) (null if unexplored); NOTE TileMapView.GetTile(Tile) leaks unexplored tiles by design (see its doc comment): query tickets must not use it for terrain.
 
 ### T186 Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts)
 - State: Available

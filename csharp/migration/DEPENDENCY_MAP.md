@@ -519,7 +519,7 @@ flowchart TD
   class T182 waiting
   class T183 ready
   class T184 waiting
-  class T185 prog
+  class T185 review
   class T186 ondeck
   class T187 waiting
   class T188 waiting
@@ -585,7 +585,7 @@ xychart-beta
 | T196 | **On deck** (after T185) | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
 | T208 | **On deck** (after T167) | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
 | T164 | In-Progress [Claude] | T012, T071, T100, T140, T011 | 55 | Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command |
-| T185 | In-Progress [Claude] | T084, T085, T138, T139, T012 | 50 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
+| T185 | Needs-Review [Claude] | T084, T085, T138, T139, T012 | 50 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T187 | Available (waiting on T164, T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
