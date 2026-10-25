@@ -111,6 +111,16 @@ public sealed class GameStarter
         tileMap.GameInfo = gameInfo; // need to set this transient before placing units in the map
         AddCivilizations(phaseOneChosenCivs); // this is before gameInfo.setTransients, so gameInfo doesn't yet have the gameBasics
 
+        // Kotlin quirk (verified by running GameStarter.kt on a map saved from a started game, T232): any pre-placed unit makes the start
+        // die with a UninitializedPropertyAccessException. The "Remove units" loop below calls unit.setTransients before unit.civ is
+        // assigned (lateinit civ, for units of civs not in the game), and tileMap.setTransients later reads civ.gameInfo, assigned only
+        // by gameInfo.setTransients (lateinit gameInfo, for units of civs in the game). Unit state cannot be initialised earlier without
+        // changing behaviour, so keep the outcome for every such map, but fail with a message that says what is wrong.
+        if (tileMap.Values.Any(tile => tile.GetUnits().Any()))
+            throw new InvalidOperationException(
+                "The saved map has pre-placed units; Unciv itself fails to start such a map ('lateinit property ... has not been initialized'). " +
+                "Remove the units from the map first.");
+
         // Remove units for civs that aren't in this game
         foreach (var tile in tileMap.Values)
         {

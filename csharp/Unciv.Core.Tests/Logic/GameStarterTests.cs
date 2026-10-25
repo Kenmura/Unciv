@@ -1,5 +1,6 @@
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
@@ -198,6 +199,45 @@ public sealed class GameStarterTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => Start(setup));
         setup.MapFile = "x.map";
         Assert.Throws<InvalidOperationException>(() => Start(setup));
+    }
+
+    // T232: Kotlin GameStarter dies with 'lateinit property gameInfo' on a saved map holding units (verified by
+    // running GameStarter.kt on a map saved from a started game); C# reports it clearly, whichever civ owns the units.
+    private sealed class MapBytes(byte[] content) : IUncivFileHandle
+    {
+        public string Name => "saved.map";
+        public string NameWithoutExtension => "saved";
+        public bool IsInternal => false;
+        public bool Exists => true;
+        public bool IsDirectory => false;
+        public long Length => content.Length;
+        public long LastModified => 0;
+        public IUncivFileHandle Parent => throw new NotSupportedException();
+        public IUncivFileHandle Child(string name) => throw new NotSupportedException();
+        public IReadOnlyList<IUncivFileHandle> List() => [];
+        public void MakeDirs() => throw new NotSupportedException();
+        public bool Delete() => throw new NotSupportedException();
+        public Stream Read() => new MemoryStream(content);
+        public Stream Write(bool append) => throw new NotSupportedException();
+    }
+
+    private GameInfo StartOnMapSavedFrom(GameInfo source, params string[] nations)
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(MapSaver.MapToSavedString(source.TileMap));
+        var setup = Setup(it => it.NumberOfCityStates = 0, [.. nations.Select((n, i) => new Player(n, i == 0 ? PlayerType.Human : PlayerType.AI))]);
+        setup.MapParameters.Name = "saved";
+        setup.MapFile = "saved.map";
+        return GameStarter.StartNewGame(setup, 7, 1000L, _ => new MapBytes(bytes));
+    }
+
+    [Fact]
+    public void SavedMapWithPreplacedUnitsFailsWithAClearMessage()
+    {
+        var source = Start(Setup());
+        var inGame = Assert.Throws<InvalidOperationException>(() => StartOnMapSavedFrom(source, "Babylon", "Greece", "Rome"));
+        Assert.Contains("pre-placed units", inGame.Message);
+        var foreign = Assert.Throws<InvalidOperationException>(() => StartOnMapSavedFrom(source, "Egypt", "Persia"));
+        Assert.Contains("pre-placed units", foreign.Message);
     }
 
     [Fact]
