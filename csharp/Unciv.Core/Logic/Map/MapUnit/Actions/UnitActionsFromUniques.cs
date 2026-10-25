@@ -355,6 +355,7 @@ public static class UnitActionsFromUniques
             UnitActionType.CreateImprovement,
             $"Create [{improvement.Name}]",
             associatedUnique: unique,
+            key: improvement.Name,
             action: unit.HasMovement()
                 ? () =>
                 {
@@ -396,6 +397,7 @@ public static class UnitActionsFromUniques
                         unit
                     ),
                     associatedUnique: unique,
+                    key: improvement.Name,
                     action: resourcesAvailable
                         && unit.HasMovement()
                         && tile.ImprovementFunctions.CanBuildImprovement(improvement, unit.Cache.State)

@@ -9,6 +9,7 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
+using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
@@ -86,6 +87,9 @@ public sealed class GameCommandTests : IDisposable
         "nuke" => new Nuke { UnitId = s.NukeId, Target = s.NukeTo },
         "air-sweep" => new AirSweep { UnitId = s.FighterId, Target = s.SweepTo },
         "disband-unit" => new DisbandUnit { UnitId = s.MoverId },
+        "execute-unit-action" => new ExecuteUnitAction { UnitId = s.MoverId, Descriptor = new UnitActionDescriptor(UnitActionType.Skip) },
+        "set-worker-order" => new SetWorkerOrder { UnitId = s.MoverId, Order = WorkerOrderKind.Cancel },
+        "promote-unit" => PromotionSample(game, s.MoverId),
         "queue-construction" => new QueueConstruction { CityId = cityId, Name = "Warrior" },
         "remove-from-queue" => new RemoveFromQueue { CityId = cityId, Index = 0 },
         "reorder-queue" => new ReorderQueue { CityId = cityId, Index = 0, Move = QueueMove.Down },
@@ -110,6 +114,14 @@ public sealed class GameCommandTests : IDisposable
         "set-civ-construction-disabled" => new SetCivConstructionDisabled { CityId = cityId, Name = "Warrior", Disabled = true },
         _ => throw new InvalidOperationException($"No sample for command type \"{type}\"; add one to GameCommandTests.Sample"),
     };
+
+    // A unit with experience to spare picks the first promotion it is offered (T189).
+    private static PromoteUnit PromotionSample(GameInfo game, int unitId)
+    {
+        var unit = game.GetCivilization("Babylon").Units.GetCivUnits().First(it => it.Id == unitId);
+        unit.Promotions.XP = 1000;
+        return new PromoteUnit { UnitId = unitId, Promotion = unit.Promotions.GetAvailablePromotions().First().Name };
+    }
 
     // Units and targets that make every movement and combat sample valid on the started game (T188).
     private sealed record Scenario(

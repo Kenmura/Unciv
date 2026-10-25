@@ -30,6 +30,7 @@ public class UnitActionConfirmation(string question, string confirmText)
 /// <param name="isCurrentAction"></param>
 /// <param name="associatedUnique">The unique this action stems from, if any - the UI takes its <c>UnitActionPriority</c> modifiers from here</param>
 /// <param name="confirmation">If not null, the UI asks for confirmation before invoking <see cref="Action"/></param>
+/// <param name="key">Stable parameter that tells apart several actions of the same type (T189), see <see cref="Key"/></param>
 /// <param name="action"><c>null</c> if this unit *can* execute the action but *not right now* - it's embarked, out of moves, etc</param>
 public class UnitAction(
     UnitActionType type,
@@ -37,7 +38,8 @@ public class UnitAction(
     bool isCurrentAction = false,
     UniqueObject? associatedUnique = null,
     UnitActionConfirmation? confirmation = null,
-    Action? action = null)
+    Action? action = null,
+    string? key = null)
 {
     public UnitActionType Type { get; } = type;
     public string Title { get; } = title ?? type.Value();
@@ -45,6 +47,14 @@ public class UnitAction(
     public UniqueObject? AssociatedUnique { get; } = associatedUnique;
     public UnitActionConfirmation? Confirmation { get; } = confirmation;
     public Action? Action { get; } = action;
+
+    /// <summary>
+    /// Engine addition (T189, the Kotlin has nothing like it): closures cannot be sent over the wire, so a client names an action by
+    /// (<see cref="Type"/>, Key, index among equal ones). The key is the parameter that is stable across state changes:
+    /// the improvement for <c>CreateImprovement</c>, the target unit for <c>Upgrade</c>, else the text of the associated unique.
+    /// Never the title, which is a translation template with icons. <c>null</c> when the type has only one action per unit.
+    /// </summary>
+    public virtual string? Key => key ?? AssociatedUnique?.Text;
 
     // Kotlin compares the lambdas by reference
     public override bool Equals(object? other)
@@ -72,6 +82,8 @@ public class UnitAction(
 public class UpgradeUnitAction(string title, PossibleUpgrade upgrade, Action? action)
     : UnitAction(UnitActionType.Upgrade, title, associatedUnique: upgrade.Unique, action: action)
 {
+    public override string? Key => UnitToUpgradeTo.Name;
+
     public PossibleUpgrade Upgrade { get; } = upgrade;
     public BaseUnit UnitToUpgradeTo => Upgrade.UpgradedUnit;
 }

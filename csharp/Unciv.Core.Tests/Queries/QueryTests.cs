@@ -272,6 +272,7 @@ public class QueryTests
         ["units.ReachableTiles"] = () => new Unciv.Queries.Units.ReachableTilesQuery(1),
         ["units.PathPreview"] = () => new Unciv.Queries.Units.PathPreviewQuery(1, 0, 0),
         ["units.AttackableTargets"] = () => new Unciv.Queries.Units.AttackableTargetsQuery(UnitId: 1),
+        ["units.UnitActions"] = () => new Unciv.Queries.Units.UnitActionsQuery(1),
         ["empire.TechTree"] = () => new Unciv.Queries.Empire.TechTreeQuery(),
         ["empire.PolicyTree"] = () => new Unciv.Queries.Empire.PolicyTreeQuery(),
         ["empire.Religion"] = () => new Unciv.Queries.Empire.ReligionQuery(),
