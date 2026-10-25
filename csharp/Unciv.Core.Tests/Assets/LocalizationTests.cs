@@ -83,6 +83,28 @@ public class LocalizationTests : IDisposable
         Assert.Contains(0xDF, l.RequiredCodePoints("German"));
     }
 
+    [Fact]
+    public void ArabicIsRightToLeftToo()
+    {
+        File.WriteAllText(Path.Combine(dir, "Arabic.properties"), "Cancel = إلغاء\n");
+        Assert.True(new ClientLocalization(dir, new Translations()).IsRightToLeft("Arabic"));
+    }
+
+    [Fact]
+    public void SwitchingLanguageDropsTheTranslationsCachedForTheOldOne()
+    {
+        var l = Make();
+        l.SetLanguage("German");
+        Assert.Equal("Abbrechen", "Cancel".Tr());
+        l.SetLanguage("Japanese");
+        Assert.Equal("キャンセル", "Cancel".Tr());
+        l.SetLanguage("English");
+        Assert.Equal("Cancel", "Cancel".Tr());
+    }
+
+    [Fact]
+    public void RequiredCodePointsKeepSpacingVowelSigns() => Assert.Contains(0x093E, ScriptClassifier.RequiredCodePoints("\u0915\u093e").ToArray());
+
     [Theory]
     [InlineData('A', TextScript.Latin)]
     [InlineData('ß', TextScript.Latin)]

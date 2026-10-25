@@ -13,7 +13,7 @@ public static class FontChain
     private static readonly FontVariation Chain = new() { BaseFont = ThemeDB.FallbackFont };
     private static readonly Dictionary<string, FontFile> Files = [];
     private static readonly List<string> MissingFiles = [];
-    private static string? folder;
+    private static string? FontFolder;
 
     /// <summary>Files of <see cref="FontChainSpec"/> that were wanted but could not be loaded.</summary>
     public static IReadOnlyList<string> Missing => MissingFiles;
@@ -54,8 +54,8 @@ public static class FontChain
     private static FontFile? Load(FontChainEntry entry)
     {
         if (Files.TryGetValue(entry.File, out var cached)) return cached;
-        folder ??= FindFolder();
-        var data = folder == null ? null : ReadAll(System.IO.Path.Combine(folder, entry.File));
+        FontFolder ??= FindFolder();
+        var data = FontFolder == null ? null : ReadAll(System.IO.Path.Combine(FontFolder, entry.File));
         if (data == null)
         {
             if (!MissingFiles.Contains(entry.File)) MissingFiles.Add(entry.File);

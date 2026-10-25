@@ -392,9 +392,9 @@ Scenario `l10n-sheet`.
 
 *Thai: tone marks above and below the line.* (`l10n-sheet/thai.png`)
 
-![Arabic and Hebrew sample lines laid out right to left with digits and a Latin word inside.](../Unciv.Godot.Harness/golden/l10n-sheet/rtl.png)
+![Arabic and Hebrew sample lines shaped and run right to left from their Noto fonts, each with a Latin word and digits inside (the settings page on the left is not mirrored here: the harness has no window to flip).](../Unciv.Godot.Harness/golden/l10n-sheet/rtl.png)
 
-*Arabic and Hebrew sample lines laid out right to left with digits and a Latin word inside.* (`l10n-sheet/rtl.png`)
+*Arabic and Hebrew sample lines shaped and run right to left from their Noto fonts, each with a Latin word and digits inside (the settings page on the left is not mirrored here: the harness has no window to flip).* (`l10n-sheet/rtl.png`)
 
 ## C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
 

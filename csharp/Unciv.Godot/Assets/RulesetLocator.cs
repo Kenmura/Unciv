@@ -23,16 +23,14 @@ public static class RulesetLocator
     }
 }
 
-/// <summary>C025: finds the game's translation files (<c>android/assets/jsons/translations</c>) above the Godot project, like <see cref="RulesetLocator"/> does for the rulesets.</summary>
+/// <summary>C025: finds the game's translation files (<c>jsons/translations</c>) in the same place <see cref="RulesetLocator"/> finds the jsons: bundled next to an exported build, else the checkout's <c>android/assets/jsons</c>.</summary>
 public static class TranslationLocator
 {
     public static string Directory()
     {
-        for (var d = ProjectSettings.GlobalizePath("res://"); !string.IsNullOrEmpty(d); d = System.IO.Path.GetDirectoryName(d.TrimEnd('/')) ?? "")
-        {
-            var candidate = System.IO.Path.Combine(d, "android", "assets", "jsons", "translations");
-            if (System.IO.Directory.Exists(candidate)) return candidate;
-        }
-        throw new System.IO.DirectoryNotFoundException("android/assets/jsons/translations not found above the project");
+        var exeDir = System.IO.Path.GetDirectoryName(OS.GetExecutablePath()) ?? "";
+        var jsons = ContentLocator.FindJsons(exeDir, ProjectSettings.GlobalizePath("res://"), System.IO.Directory.Exists)
+            ?? throw new System.IO.DirectoryNotFoundException($"No translation files: expected {ContentLocator.BundledJsons(exeDir)}/translations or android/assets/jsons/translations above the project");
+        return System.IO.Path.Combine(jsons, "translations");
     }
 }

@@ -56,8 +56,15 @@ public sealed class UnitVisualsScenario : Scenario
 
         var tiles = Slots.Select((slot, i) => new TileDto
         {
-            X = Coord(i).X, Y = Coord(i).Y, Visible = true, BaseTerrain = slot.Terrain, Features = [], Resource = null,
-            RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false,
+            X = Coord(i).X,
+            Y = Coord(i).Y,
+            Visible = true,
+            BaseTerrain = slot.Terrain,
+            Features = [],
+            Resource = null,
+            RiverBottom = false,
+            RiverBottomLeft = false,
+            RiverBottomRight = false,
         }).ToList();
         var view = new MapView();
         host.AddChild(view);
@@ -69,8 +76,14 @@ public sealed class UnitVisualsScenario : Scenario
             var slot = Slots[i];
             var dto = new UnitDto
             {
-                Id = i + 1, Name = slot.Unit, Owner = slot.Owner, X = Coord(i).X, Y = Coord(i).Y,
-                HealthBucket = Math.Clamp((slot.Health + 24) / 25, 1, 4), IsEmbarked = false, IsFortified = slot.Fortified,
+                Id = i + 1,
+                Name = slot.Unit,
+                Owner = slot.Owner,
+                X = Coord(i).X,
+                Y = Coord(i).Y,
+                HealthBucket = Math.Clamp((slot.Health + 24) / 25, 1, 4),
+                IsEmbarked = false,
+                IsFortified = slot.Fortified,
                 Own = slot.Own ? new OwnUnitDto { Health = slot.Health, CurrentMovement = 2, Xp = 0, Action = slot.Action, Promotions = [], Automated = slot.Automated, CanBePromoted = slot.Promotable } : null,
             };
             var node = new UnitNode { Name = "Unit_" + dto.Id, Unit = dto };

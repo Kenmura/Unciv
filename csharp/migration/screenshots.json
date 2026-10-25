@@ -373,7 +373,7 @@
       },
       {
         "golden": "l10n-sheet/rtl.png",
-        "caption": "Arabic and Hebrew sample lines laid out right to left with digits and a Latin word inside."
+        "caption": "Arabic and Hebrew sample lines shaped and run right to left from their Noto fonts, each with a Latin word and digits inside (the settings page on the left is not mirrored here: the harness has no window to flip)."
       }
     ]
   },
