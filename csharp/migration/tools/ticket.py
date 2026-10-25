@@ -5,7 +5,8 @@ clobbered neighbouring tickets). Run from anywhere: python3 -I tools/ticket.py <
 READ
   list [STATE]              one line per open ticket: id, state, deps, title
   show T027 [Field]         whole ticket (backlog.md, then backlog-archive.md) or one field
-  ready                     everything workable now: Needs-Review first, then Available with deps all Done,
+  ready                     everything workable now: Needs-Review first, then Available with deps all Done
+                            from the lowest delivery phase that has any (phases.txt: 1 CLI, 2 single player, 3 multiplayer),
                             most downstream-unblocking first (direct + transitive incomplete dependents)
   next [AGENT]              the single pick of the Work Loop (review, else the ready ticket that unblocks most)
   blockers T033             for each dependency not Done: its id, state and title
@@ -142,9 +143,27 @@ def downstream_counts(ts):
     return counts
 
 
+def phase_of(tid):
+    """Delivery phase from phases.txt (1 CLI/engine, 2 single player, 3 multiplayer); default by track."""
+    explicit = {}
+    path = HERE / "phases.txt"
+    for line in path.read_text(encoding="utf-8").splitlines() if path.exists() else []:
+        line = line.split("#")[0].strip()
+        if ":" not in line:
+            continue
+        ph, ids = line.split(":", 1)
+        for tok in ids.split():
+            lo, _, hi = tok.partition("-")
+            hi = hi or lo
+            if lo[0] == hi[0] == tid[0] and int(lo[1:]) <= int(tid[1:]) <= int(hi[1:]):
+                explicit[tid] = int(ph)
+    return explicit.get(tid, 2 if tid[0] == "C" else 1)
+
+
 def ready_list(ts):
-    """Reviews first, then workable tickets ordered by how many incomplete tickets they unblock
-    (direct and downstream), ties by id. Rows: (kind, id, title, state, downstream_count)."""
+    """Reviews first, then workable tickets from the lowest delivery phase that has any (phases.txt), ordered by
+    how many incomplete tickets they unblock (direct and downstream), ties by id.
+    Rows: (kind, id, title, state, downstream_count)."""
     done = {i for i, s in all_states().items() if s.startswith("Done")}
     counts = downstream_counts(ts)
     out = [("REVIEW", i, t, s, counts.get(i, 0)) for i, t, s, _, _ in ts if s.startswith("Needs-Review")]
@@ -153,6 +172,9 @@ def ready_list(ts):
         deps = deps_of(d)
         if s == "Available" and set(deps) <= done and (deps or d.lower().startswith("none")):
             impl.append(("IMPLEMENT", i, t, s, counts.get(i, 0)))
+    if impl:
+        lowest = min(phase_of(r[1]) for r in impl)
+        impl = [r for r in impl if phase_of(r[1]) == lowest]
     return out + sorted(impl, key=lambda r: (-r[4], r[1]))
 
 
@@ -845,7 +867,7 @@ def main():
         die(f"{args[0]} not found")
     elif cmd == "ready":
         for k, i, t, s, n in ready_list(ts):
-            print(f"{k} {i} [unblocks {n}] {t}" + (f" ({s})" if k == "REVIEW" else ""))
+            print(f"{k} {i} [P{phase_of(i)}, unblocks {n}] {t}" + (f" ({s})" if k == "REVIEW" else ""))
     elif cmd == "next":
         me = args[0].lower() if args else ""
         for i, t, s, _, _ in ts:
