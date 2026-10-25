@@ -1982,7 +1982,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Notes: Solves the "one unit attacking at a time" weakness. Groups sufficient attackers to guarantee destruction without over-allocating, freeing remaining units for other tactical goals.
 
 ### A006 Homeland AI priority move queue
-- State: Blocked
+- State: Available
 - Depends: A004, T091, T092
 - Source: `csharp/migration/ai-spec/SPEC.md` §7
 - Deliverables: `csharp/Unciv.Core/AI/Homeland/` (`HomelandMoveQueue`, `HomelandMovePriority`), tests
