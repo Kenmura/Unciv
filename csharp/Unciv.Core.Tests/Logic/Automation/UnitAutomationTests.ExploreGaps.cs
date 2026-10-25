@@ -69,9 +69,12 @@ public partial class UnitAutomationTests
     public void FogBustLooksFurtherWhenNothingIsReachableThisTurn()
     {
         SetUpFogBustScout(_ => true).Destroy();
-        var warrior = testGame.AddUnit("Warrior", civ, testGame.GetTile(0, 3));
-        warrior.CurrentMovement = 0.5f; // can't move far; candidates exist only at distance
+        var warrior = testGame.AddUnit("Warrior", civ, testGame.GetTile(0, 8)); // candidate tiles are in sight but more than a turn away
+        var start = warrior.CurrentTile;
+
         Assert.True(TryFogBust(ViewOf(warrior)));
+
+        Assert.NotEqual(start, warrior.CurrentTile);
     }
 
     [Fact]

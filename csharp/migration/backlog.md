@@ -2607,7 +2607,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review pass [Adversarial Review]: SetSpyCoup matches EspionageScreen.CoupButton toggle (Coup,1 / CounterIntelligence,10) and Spy.CanDoCoup (city-state, set up, not ally); MoveSpy from T192 covers move. Validation (espionage enabled, spy exists, active civ) sound. Build/format/test green (5083 pass).
 
 ### T211 Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T161
 - Source: csharp/Unciv.Core/Logic/Automation/Unit/SpecificUnitAutomation*.cs, UnitAutomation.Explore.cs
 - Fixtures: none
@@ -2615,6 +2615,8 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: python3 -I tools/coverage.py --check
 - Claimed: 2026-10-25T12:50Z
 - Notes: Follow-up named in T161 Notes.
+  - Added SpecificUnitAutomationGapTests (city-state fall-through, far best tile via 1-MP settler: ShortestPath.Count is turns not tiles, no-movement settler, add-in-capital swap) and made the FogBust "look further" test use a unit 8 tiles out. Baselines raised: SpecificUnitAutomation.cs 85.16 -> ~91, UnitAutomation.Explore.cs 96.52 -> 99.13.
+    Still uncovered, not coverable: SpecificUnitAutomation.cs 122-130 (multi-settler filter: needs another same-type settler on a tile this one can move to, which civilian stacking forbids), 181 (throw "City within distance": ranker and CanBeSettled agree), 155 (Select lambda, needs a near tile within 5 rank of a >3-turn best tile); Explore.cs 41 (bestTile null after non-empty MaxBy). Air-unit TryHealUnit remainder was already covered; the non-air embarked branch UnitAutomation.cs 249-256 remains (not in this ticket).
 
 ### T212 Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174)
 - State: Needs-Review [Claude]
