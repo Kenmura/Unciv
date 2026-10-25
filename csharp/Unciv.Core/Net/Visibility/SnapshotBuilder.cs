@@ -41,6 +41,7 @@ public static class SnapshotBuilder
             var tileDto = BuildTile(tileView, gameView);
             tiles.Add(tileDto);
             if (tileDto.Owner != null) referencedCivs.Add(tileDto.Owner);
+            // Defense in depth: GetVisibleUnits already filters per unit, but fog must never depend on that alone.
             if (!tileView.IsVisible()) continue;
             foreach (var unit in tileView.GetVisibleUnits())
             {
@@ -179,6 +180,7 @@ public static class SnapshotBuilder
             HealthBucket = Math.Clamp((unit.UnitHealth + 24) / 25, 1, 4),
             IsEmbarked = unit.IsEmbarked(),
             IsFortified = unit.IsFortified(),
+            // IsOwnedByViewer is defense in depth: TryGetMapUnitView also yields a view for spectator viewers, who never receive Own detail.
             Own = ownView == null || !unit.IsOwnedByViewer() ? null : new OwnUnitDto
             {
                 Health = unit.UnitHealth,

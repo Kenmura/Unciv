@@ -2047,6 +2047,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Notification actions: only location/city/unit (dropped unless the tile is currently visible) and tech survive; every other kind is dropped (default deny).
       - Simultaneous turns: TurnStatusDto {ended, deadline, phase} is a Build parameter supplied by the host turn controller (T184/T203); delta pushes are a separate ticket.
   -   - Review pass 1 (adversarial subagent) CHANGES-REQUESTED, fixed: added tests for fogged last-seen improvement, Own* gating under VisibleMap, third-party war/peace pairs; visible tile owners now join Civs (no dangling CivId). Acknowledged, deferred to the follow-up ticket: fogged tiles serialize live terrain/features/rivers and fogged explored cities live population/health (needs a View-level last-seen snapshot); notification Text/Icons are engine-generated per-civ and trusted.
+  -   - Review pass 2 (adversarial subagent): fixes verified (mutations of improvement, city Own gating, tile-owner civs killed). Two guards (visible-tile check before GetVisibleUnits, IsOwnedByViewer in BuildUnit) are redundant with the Views and kept as commented defense in depth. PASS.
 
 ### T175 Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery
 - State: Available
