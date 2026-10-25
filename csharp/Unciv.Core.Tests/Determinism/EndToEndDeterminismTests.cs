@@ -39,12 +39,14 @@ public sealed class EndToEndDeterminismTests : IDisposable
         throw new DirectoryNotFoundException("android/assets/jsons not found above " + AppContext.BaseDirectory);
     }
 
-    private GameInfo NewGame(long gameSeed, int mapSeed, MapSize? size = null, params string[] nations)
+    private GameInfo NewGame(long gameSeed, int mapSeed, MapSize? size = null, params string[] nations) => NewGame(false, gameSeed, mapSeed, size, nations);
+
+    private GameInfo NewGame(bool civ5Ai, long gameSeed, int mapSeed, MapSize? size = null, params string[] nations)
     {
         if (nations.Length == 0) nations = ["Babylon", "Greece", "Rome"];
         return GameStarter.StartNewGame(
             new GameSetupInfo(
-                new GameParameters { BaseRuleset = ruleset.Name, NumberOfCityStates = 0, VictoryTypes = ruleset.Victories.Keys.ToList(), Players = nations.Select((it, i) => new Player(it, i == 0 ? PlayerType.Human : PlayerType.AI)).ToList() },
+                new GameParameters { UseCiv5Ai = civ5Ai, BaseRuleset = ruleset.Name, NumberOfCityStates = 0, VictoryTypes = ruleset.Victories.Keys.ToList(), Players = nations.Select((it, i) => new Player(it, i == 0 ? PlayerType.Human : PlayerType.AI)).ToList() },
                 new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = mapSeed, MapSize = size ?? MapSize.Tiny }),
             gameSeed, 1000L);
     }
@@ -170,6 +172,29 @@ public sealed class EndToEndDeterminismTests : IDisposable
         var loaded = UncivFiles.GameInfoFromString(saved);
         Assert.Equal(Hash(original), Hash(loaded));
         Assert.Equal(Play(original, 6), Play(loaded, 6));
+    }
+
+    // T227: with the Civ 5 AI wired into the unit pass the game is just as deterministic, and the option (saved in the game parameters) survives a reload.
+    [Theory]
+    [InlineData(1L, 3)]
+    [InlineData(77L, 11)]
+    public void Civ5AiGameGivesTheSameHashEveryTurn(long gameSeed, int mapSeed)
+    {
+        var first = Play(NewGame(true, gameSeed, mapSeed), 40);
+        Assert.Equal(first, Play(NewGame(true, gameSeed, mapSeed), 40));
+        Assert.Equal(40, first.Distinct().Count());
+        Assert.NotEqual(Play(NewGame(false, gameSeed, mapSeed), 40), first);   // the option really changes the AI
+    }
+
+    [Fact]
+    public void Civ5AiGameSaveLoadContinueMatchesTheOriginal()
+    {
+        var original = NewGame(true, 9L, 5);
+        Play(original, 20);
+        var loaded = UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(original, forceZip: false));
+        Assert.True(loaded.GameParameters.UseCiv5Ai);
+        Assert.Equal(Hash(original), Hash(loaded));
+        Assert.Equal(Play(original, 20), Play(loaded, 20));
     }
 
     [Fact]

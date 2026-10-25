@@ -124,14 +124,21 @@ public static class TacticalAdapter
     /// <summary>One tactical turn for the attack moves: scan, recruit by move priority, then attack.</summary>
     public static int DoTurn(Civilization civ, TacticalRecruiter recruiter, TacticalMoveQueue queue, TacticalFlavors flavors)
     {
+        ArgumentNullException.ThrowIfNull(queue);
+        return DoTurn(civ, recruiter, queue.Build(flavors));
+    }
+
+    /// <summary><see cref="DoTurn(Civilization, TacticalRecruiter, TacticalMoveQueue, TacticalFlavors)"/> with a queue built by the caller (e.g. with jitter).</summary>
+    public static int DoTurn(Civilization civ, TacticalRecruiter recruiter, IReadOnlyList<TacticalQueueEntry> entries)
+    {
         ArgumentNullException.ThrowIfNull(civ);
         ArgumentNullException.ThrowIfNull(recruiter);
-        ArgumentNullException.ThrowIfNull(queue);
+        ArgumentNullException.ThrowIfNull(entries);
         var targets = ScanTargets(civ);
         var assigner = new OverkillAssigner(recruiter, new DamageEstimator(civ));
         var free = GetAttackers(civ);
         int attacks = 0;
-        TacticalMoveQueue.Run(queue.Build(flavors), targets, (move, list) =>
+        TacticalMoveQueue.Run(entries, targets, (move, list) =>
         {
             if (!IsAttackMove(move) || list.Count == 0 || free.Count == 0) return;
             var plan = assigner.Assign(list, free);

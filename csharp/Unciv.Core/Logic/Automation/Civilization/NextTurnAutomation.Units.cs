@@ -1,3 +1,4 @@
+using Unciv.AI;
 using Unciv.Logic.Automation.Unit;
 using Unciv.Logic.Battle;
 using Unciv.Models.Ruleset.Unique;
@@ -43,6 +44,11 @@ public static partial class NextTurnAutomation
             if (!IsStillOurUnit(unit, civView)) continue;
             ApplyPromotions(unit);
         }
+        if (Civ5AiDriver.IsActive(civInfo))
+        {
+            AutomateUnitsWithCiv5Ai(civView, cache, UnitsInPriorityOrder);
+            return;
+        }
         foreach (var unit in UnitsInPriorityOrder())
         {
             // settlers need to move before automateSettlerEscorting(),
@@ -64,6 +70,33 @@ public static partial class NextTurnAutomation
             if (!IsStillOurUnit(unit, civView)) continue;
             civInfo.GameInfo.ClientState.BeforeUnitMoves?.Invoke(unit);
             UnitAutomation.AutomateUnitMoves(unit, cache);
+        }
+    }
+
+    /// <summary>
+    /// T227: the unit pass of an AI civ under <c>GameParameters.UseCiv5Ai</c>. The tactical queue (attacks and city capture, ranked by the grand strategy's
+    /// flavors) replaces <see cref="AutomateCityConquer"/>; the homeland queue sets the order in which settlers, spaceship parts, workers, garrisons and
+    /// hurt units act; every unit then acts through <see cref="UnitAutomation.AutomateUnitMoves"/> as before, those not claimed by a homeland move last.
+    /// </summary>
+    private static void AutomateUnitsWithCiv5Ai(CivView civView, AutomationCache cache, Func<List<MapUnitView>> unitsInPriorityOrder)
+    {
+        var civInfo = civView.GetCiv();
+        Civ5AiDriver.RunTactical(civInfo);
+
+        void Automate(MapUnitView unit)
+        {
+            if (!IsStillOurUnit(unit, civView)) return;
+            civInfo.GameInfo.ClientState.BeforeUnitMoves?.Invoke(unit);
+            UnitAutomation.AutomateUnitMoves(unit, cache);
+        }
+
+        var ordered = unitsInPriorityOrder();
+        var byUnit = ordered.ToDictionary(it => it.Unwrap());   // lookup only, never iterated
+        var handled = Civ5AiDriver.RunHomeland(civInfo, ordered.Select(it => it.Unwrap()).ToList(), unit => Automate(byUnit[unit]));
+        if (civView.Cities().Count != 0) AutomateSettlerEscorting(civView);
+        foreach (var unit in ordered)
+        {
+            if (!handled.Contains(unit.Unwrap())) Automate(unit);
         }
     }
 

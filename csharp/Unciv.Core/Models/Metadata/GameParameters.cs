@@ -170,6 +170,14 @@ public class GameParameters : IIsPartOfGameInfoSerialization
     [JsonPropertyName("maxTurns")]
     public int MaxTurns { get; set; } = 500;
 
+    /// <summary>
+    /// C#-only (T227): AI civs take their military, tactical and homeland decisions from the Civ 5 AI of <c>Unciv.AI</c> (grand strategy, tactical
+    /// and homeland move queues) instead of only the ported Kotlin unit automation. Saved with the game, so a reload plays on the same way; false (the
+    /// default) keeps the Kotlin AI, which the Kotlin golden tests are written against.
+    /// </summary>
+    [JsonPropertyName("useCiv5Ai")]
+    public bool UseCiv5Ai { get; set; }
+
     [JsonPropertyName("acceptedModCheckErrors")]
     public string AcceptedModCheckErrors { get; set; } = "";
 
@@ -217,6 +225,7 @@ public class GameParameters : IIsPartOfGameInfoSerialization
         parameters.BaseRuleset = BaseRuleset;
         parameters.Mods = new LinkedHashSet<string>(Mods);
         parameters.MaxTurns = MaxTurns;
+        parameters.UseCiv5Ai = UseCiv5Ai;
         parameters.AcceptedModCheckErrors = AcceptedModCheckErrors;
         return parameters;
     }

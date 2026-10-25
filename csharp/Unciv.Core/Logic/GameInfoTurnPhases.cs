@@ -184,6 +184,8 @@ public partial class GameInfo
             foreach (var unit in civInfo.Units.GetCivUnits()) unit.Promotions.Promotions.Canonicalize();
         }
         foreach (var civInfo in Civilizations) civInfo.Tech.RebuildTransients();
+        // Military might is cached until the next turn start; a reload recomputes it on first use (T227: the Civ 5 AI reads force mid-turn).
+        foreach (var civInfo in Civilizations) civInfo.ResetMilitaryMightCache();
         foreach (var civInfo in Civilizations)
             foreach (var diplomacyManager in civInfo.Diplomacy.Values.ToList()) // T218: a refresh between steps may find a civ whose manager is still missing
                 diplomacyManager.UpdateHasOpenBorders();

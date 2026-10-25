@@ -68,6 +68,7 @@ public sealed class SoakTests : IDisposable
         var parameters = new GameParameters
         {
             BaseRuleset = ruleset.Name,
+            UseCiv5Ai = true,   // T227: the soak plays the A-track AI
             NumberOfCityStates = cityStates,
             EspionageEnabled = true,
             NoBarbarians = false,
