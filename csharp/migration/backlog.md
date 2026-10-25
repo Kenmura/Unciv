@@ -2059,7 +2059,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Supersedes the host part of T165. Uses InMemoryTransport only; real sockets are the transport ticket. Creates a new project: coordinate .csproj/solution edits and stay out of Directory.Build.props. Actor id injected from session, never payload. AI civs act through Submit with the AI civ as actor.
 
 ### T179 Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes
-- State: Blocked
+- State: Available
 - Depends: T178
 - Source: csharp/migration/design/SERVER.md sections 6.3-6.5
 - Fixtures: none
@@ -2338,6 +2338,86 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Pre-game, so no GameInfo and no viewer: the query context is a set of ruleset names (base + mods, T170 mod folder loading). NewGameOptions(rulesets): choosable nations (PlayerPickerTable.isChoosable = (nation.isMajorCiv || nation.isSpectator) && !WillNotBeChosenForNewGames), city-state nations, difficulties, game speeds, victory types (Ruleset.Victories), eras, map parameters domain (shapes, types, sizes, resource settings, MapGeneratorSteps), mod compatibility (BaseRuleset vs mods, ModOptions), default GameParameters; ValidateSetup(setup): the checks NewGameScreen does before enabling Start (player count vs map size, at most one nation per player, RulesetValidator errors of the combined ruleset, spectator rules, GameSetupInfo.reload fix-ups).
       - NewGame(setup, seed, clockMillis) wraps GameStarter.StartNewGame; note Kotlin defaults MapParameters.seed to currentTimeMillis and picks civs with unseeded random: the C# GameStarter already takes both explicitly (T099), keep it that way and record seed + clock in the log header.
       - Trap: the 'random' nation and 'random number of players' options must be resolved by the seeded RNG in GameStarter, not by the query. The query returns static lists in ruleset file order (LinkedHashMap order, not alphabetical: sorting is the client's job with its collator).
+
+### T200 Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep
+- State: Available
+- Depends: T184
+- Source: design/SIMULTANEOUS-TURNS.md sections 2-3; Unciv.Core/Logic/GameInfoTurn.cs; Managers/TurnManager.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Logic/TurnState.cs, GameInfoSimultaneousTurn.cs (ProcessEndTurn, RunAiTurn, StartNextTurn, BeginTurn steps, NextResolveStep), JSON wiring (optional field), tests
+- Gate: dotnet test --filter "FullyQualifiedName~SimultaneousTurn|FullyQualifiedName~EndToEndDeterminism"
+- Claimed:
+- Notes: Engine only, no commands. Model: all living humans active in Playing; Resolving = ProcessEndTurn(h) civ-index order, RunAiTurn(c) auto civs in civ-index order, StartNextTurn (RecordRankingStats, Turns++), BeginTurn(h) civ-index order. Acceptance: (1) a Simultaneous game with exactly one human at civ index 0 gives the same per-turn state hashes as Sequential/NextTurn over 60 turns (T102 regression); (2) TurnState round trips and an older reader ignores it; Sequential games never write it; (3) NextResolveStep is a pure function of state, so a half-resolved turn resumes from a loaded save; (4) first turn: all humans start Started (GameStarter never calls TurnManager). Defeated humans and spectators are auto civs. Sequential NextTurn stays byte-identical.
+
+### T201 Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks)
+- State: Available
+- Depends: T183, T200
+- Source: design/SIMULTANEOUS-TURNS.md section 2 table; City.cs:549, UnitActions.cs:234, Tile.cs:1073, Battle.cs:781, View/CityView.cs:187, View/CivView.cs:69,73
+- Fixtures: none
+- Deliverables: edits to those files, Civilization.IsActive(civ) helper over TurnState, tests (two active humans both reassign immediately; gift action hidden only in own territory; sequential results unchanged)
+- Gate: dotnet test --filter "FullyQualifiedName~CurrentPlayer|FullyQualifiedName~EndToEndDeterminism"
+- Claimed:
+- Notes: Behaviour in Sequential must not change (T102 hashes). The Kotlin quirks are preserved there; the Simultaneous branch uses IsActive. HasSpectatorVision/RevealMapWhenDefeated stay single-player-only.
+
+### T202 Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes
+- State: Available
+- Depends: T200, T187
+- Source: design/SIMULTANEOUS-TURNS.md section 3.3; design/COMMANDS-IMPLEMENTATION.md 3.1
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Commands/Turn/{UndoEndTurn,ProcessEndTurn,StartNextTurn,SetController}.cs, CommandContext.RequireActive, edits to EndTurn/ForceEndTurn/RunAiTurn/BeginTurn, tests
+- Gate: dotnet test --filter FullyQualifiedName~Commands.Turn
+- Claimed:
+- Notes: Codes: turn-resolving, already-ended, out-of-sequence. Ended humans may still answer incoming requests (RespondToTradeRequest, AckAlert). SetController flips PlayerType/PlayerId (join, leave, AI takeover, reclaim) and is logged. Server commands are valid only for the step NextResolveStep names. Purity test for every new command.
+
+### T203 Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility
+- State: Available
+- Depends: T202, T188, T191, T192, T193, T194, T174
+- Source: design/SIMULTANEOUS-TURNS.md sections 4, 5, 7
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Commands/SimultaneousTurnTests.cs (+ fixtures)
+- Gate: dotnet test --filter FullyQualifiedName~SimultaneousTurn
+- Claimed:
+- Notes: Proves: replay equals live for a seeded shuffle of two humans' per-turn scripts over 60 turns; same log twice => same hash; independent commands of different civs commute on a canonicalised hash (ids/notification order normalised), conflicting ones give a deterministic stable rejection for the second; each row of the conflict table in section 5; trade/peace across two humans while both active and while one has ended; snapshot at turn k + tail reproduces the final hash; human B's filtered snapshot never contains what only A sees. Any predicate that mutates or wrongly accepts a stale second command becomes a ticket.
+
+### T204 Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game
+- State: Available
+- Depends: T172, T173, T178, T199
+- Source: design/SERVER.md section 6.5
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Lobby/* (LobbySettings, Slot, LobbyState machine), host-side handlers in Unciv.Server, tests over InMemoryTransport
+- Gate: dotnet test --filter FullyQualifiedName~NetLobby
+- Claimed:
+- Notes: Settings: map, speed, difficulty, era, victories, civ/city-state counts, aiFill, barbarians, ruleset+mods with rulesetHash (mismatch refused with host's list), turn timer, onDisconnect, password, maxPlayers, allowJoinInProgress. Start: nation uniqueness and Random resolved by host, human slots bound to player key ids, NewGame(setup, seed, clock), game.json, first snapshot. Host kick/close slot/chat; late join into Open or AI slot between turns via SetController.
+
+### T205 In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game
+- State: Available
+- Depends: T178, T179, T204, T176
+- Source: design/SERVER.md sections 5.3, 6.5, 7
+- Fixtures: none
+- Deliverables: csharp/Unciv.Server (library part) hosting API: HostSession.Start/Stop/ResumeFromDirectory, tests
+- Gate: dotnet test --filter FullyQualifiedName~InProcessHost
+- Claimed:
+- Notes: Same GameHost as the dedicated server. Host player connects through the in-memory transport. Stop = finish current command, snapshot incl. TurnState.Ended, clean marker, HostClosing to clients. Resume reloads bindings; clients reconnect with Resume. Crash recovery test: kill mid-resolve, restart, NextResolveStep continues.
+
+### T206 Optional: LAN discovery (UDP broadcast beacon, 'Games on your network')
+- State: Available
+- Depends: T179
+- Source: design/SERVER.md section 6.5
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Discovery/* beacon sender/listener, tests with loopback UDP
+- Gate: dotnet test --filter FullyQualifiedName~NetDiscovery
+- Claimed:
+- Notes: Optional, lowest priority. Beacon (default UDP 47822): lobby name, protocol version, free slots, TCP port; no secrets, no password hash. Must be off by default on dedicated servers.
+
+### T207 Optional: UPnP/NAT-PMP automatic port mapping for the host
+- State: Available
+- Depends: T179
+- Source: design/SERVER.md section 6.5
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Nat/* (BCL-only SSDP+SOAP/NAT-PMP client), tests with a fake gateway
+- Gate: dotnet test --filter FullyQualifiedName~NetNat
+- Claimed:
+- Notes: Optional, lowest priority. Failure is non-fatal and reported in the Host screen; mapping removed on shutdown; no third-party dependency (ask via a ticket note if one is judged necessary). Manual forward and overlay VPN docs are the MVP path (T179).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
@@ -2663,6 +2743,36 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario combat-presentation: queue drains, dead node freed, numbers equal BattleResult. Human: timing and feel. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C034 Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game
+- State: Available
+- Depends: C005, C010, C015, T204, T205
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Host screen reusing the C015 setup widgets for LobbySettings (map, speed, difficulty, civs, AI fill, mods, timer, password), local address list, Copy invite (unciv://host:port/fingerprint), Start hosting, Host saved game list. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Flat hex MVP; placeholder art only. Scenario host-screen: settings map to LobbySettings, invite string parses back to the same host/port/fingerprint, hosting starts and the lobby shows the host in slot 1. Human: clarity of the port-forward hint.
+
+### C035 Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views)
+- State: Available
+- Depends: C005, T180, T204
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): slot list (human/AI/open/closed, colour, nation picker, ready), read-only settings for joiners, host controls (kick, close slot, start), chat. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Scenario lobby: three scripted clients over the in-memory transport; assert slot table equals LobbyState, ready flow enables Start, mismatched ruleset hash shows the refusal reason. Human: layout only.
+
+### C036 Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers
+- State: Available
+- Depends: C010, C011, T180, T202, T175
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): player list with ended/connected marks, countdown from TurnStatus.deadline, End turn and Undo end turn, 'processing turn' overlay while Resolving, live toasts for other humans' visible actions. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Scenario mp-turn: two scripted humans; assert ended marks follow TurnStatus, Undo restores, commands during Resolving show turn-resolving. Human: is it clear whom the game is waiting for.
 
 ## Game AI track (Civ 5 behavioral spec)
 
