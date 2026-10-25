@@ -2860,7 +2860,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Multiplayer: notifications and alerts also arrive unsolicited between the player's own commands (other humans act live); decision alerts stay per civ.
 
 ### C014 Minimap
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: C010, T164, T174
 - Source:
 - Fixtures: none
@@ -2868,6 +2868,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed: 2026-10-25T13:55Z
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario minimap: golden + click moves camera to matching tile. Human: readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - Implemented. MinimapRaster (Unciv.Assets, unit-tested) builds the RGBA picture and pixel<->tile mapping via HexMath; MinimapView (Godot Control, top right of GameScreen) shows it with the camera rectangle, click/drag jumps the camera. Borders come only from visible tiles (fogged TileDto has no Owner). Scenario `minimap` (golden start/jumped; asserts tile count, rectangle inside picture, click on farthest pixel centres camera on its tile, no command submitted, click on unexplored does nothing); --expect-golden-failure self-test ok. Standard checks + coverage pass. Human: readability (picture is small on the tiny explored area).
 
 ### C015 Main menu and game setup screen: nations, difficulty, speed, map options
 - State: Available

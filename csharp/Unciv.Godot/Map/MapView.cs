@@ -212,6 +212,9 @@ public partial class MapView : Node3D
         return new Plane(Vector3.Up, planeY).IntersectsRay(origin, direction);
     }
 
+    /// <summary>The engine world position (x, y; north up) of the ground under a screen position, or null when the ray misses the ground (C014 minimap viewport rectangle).</summary>
+    public Vector2? WorldAt(Vector2 screenPosition) => PickGround(screenPosition, 0f) is { } ground ? new Vector2(ground.X, -ground.Z) : null;
+
     /// <summary>Screen position of a tile's top-face centre (for tests and for later overlays).</summary>
     public Vector2 ScreenPositionOf(HexCoord coord)
     {

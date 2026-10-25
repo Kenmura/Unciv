@@ -39,6 +39,8 @@ public partial class GameScreen : Control
 
     public MapView Map { get; private set; } = null!; // JUSTIFY: C010 assigned in _Ready before any use
 
+    public MinimapView Minimap { get; private set; } = null!; // JUSTIFY: C014 assigned in _Ready before any use
+
     public int? SelectedUnitId { get; private set; }
 
     public IReadOnlyDictionary<int, UnitNode> Units => unitNodes;
@@ -69,6 +71,9 @@ public partial class GameScreen : Control
         nextTurnButton = new Button { Name = "NextTurn", Text = "Next turn", CustomMinimumSize = new Vector2(140f, 40f) };
         nextTurnButton.Pressed += OnNextTurn;
         AddChild(nextTurnButton);
+        Minimap = new MinimapView { Name = "Minimap" };
+        AddChild(Minimap);
+        Minimap.Attach(Map);
         GetViewport().SizeChanged += Layout;
         Layout();
 
@@ -82,6 +87,7 @@ public partial class GameScreen : Control
         Size = GetViewportRect().Size;
         nextTurnButton.Position = Size - nextTurnButton.CustomMinimumSize - new Vector2(HudMargin, HudMargin);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
+        Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin);
     }
 
     public override void _ExitTree() => GetViewport().SizeChanged -= Layout;
@@ -105,6 +111,9 @@ public partial class GameScreen : Control
         snapshot = SnapshotBuilder.Build(game, civ, host.Session.LastSeq, new TurnStatusDto { Ended = [], Phase = "Playing" });
         Map.Load(assets, snapshot.Tiles, keepCamera: mapLoaded);
         mapLoaded = true;
+        var nations = game.Ruleset.Nations;
+        Minimap.Update(snapshot.Tiles, owner => nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetOuterColor()) : null);
+        Layout();
         RebuildUnits();
         ClearPreview();
         turnLabel.Text = $"Turn {snapshot.Turn.ToString(CultureInfo.InvariantCulture)}   {host.HumanCivId}";
@@ -113,6 +122,9 @@ public partial class GameScreen : Control
         else SelectedUnitId = null;
         ApplySelectionScale();
     }
+
+    private static Rgb ToRgb(Unciv.Models.EngineColor colour) =>
+        new((byte)Math.Round(colour.R * 255f, MidpointRounding.AwayFromZero), (byte)Math.Round(colour.G * 255f, MidpointRounding.AwayFromZero), (byte)Math.Round(colour.B * 255f, MidpointRounding.AwayFromZero));
 
     private void RebuildUnits()
     {
