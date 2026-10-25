@@ -278,6 +278,7 @@ public class QueryTests
         ["empire.Religion"] = () => new Unciv.Queries.Empire.ReligionQuery(),
         ["empire.GreatPeople"] = () => new Unciv.Queries.Empire.GreatPeopleQuery(),
         ["empire.Notifications"] = () => new Unciv.Queries.Empire.NotificationsQuery(),
+        ["empire.TopBar"] = () => new Unciv.Queries.Empire.EmpireTopBarQuery(),
         ["empire.Overview"] = () => new Unciv.Queries.Empire.EmpireOverviewQuery(),
         ["empire.DiplomacyPanel"] = () => new Unciv.Queries.Empire.DiplomacyPanelQuery("Egypt"),
         ["empire.TradeOptions"] = () => new Unciv.Queries.Empire.TradeOptionsQuery("Egypt"),

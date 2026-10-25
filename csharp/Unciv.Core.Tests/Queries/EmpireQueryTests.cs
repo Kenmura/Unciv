@@ -302,6 +302,26 @@ public class EmpireQueryTests
     }
 
     [Fact]
+    public void TopBarReportsStatsGoldenAgeAndResources()
+    {
+        player.AddGold(40);
+        var bar = Ask(new EmpireTopBarQuery());
+        var stats = player.Stats.StatsForNextTurn;
+        Assert.Equal(player.Gold, bar.Gold);
+        Assert.Equal(stats.Gold, bar.GoldPerTurn);
+        Assert.Equal(stats.Science, bar.SciencePerTurn);
+        Assert.Equal(stats.Culture, bar.CulturePerTurn);
+        Assert.Equal(stats.Faith, bar.FaithPerTurn);
+        Assert.Equal(player.GetHappiness(), bar.Happiness);
+        Assert.Equal(testGame.GameInfo.GetYear(0), bar.Year);
+        Assert.Equal(0, bar.GoldenAgeTurnsLeft);
+        Assert.Equal(player.GoldenAges.HappinessRequiredForNextGoldenAge(), bar.GoldenAgeNeeded);
+        player.GoldenAges.EnterGoldenAge();
+        Assert.Equal(player.GoldenAges.TurnsLeftForCurrentGoldenAge, Ask(new EmpireTopBarQuery()).GoldenAgeTurnsLeft);
+        Assert.All(bar.Resources, it => Assert.NotEqual(0, it.Amount));
+    }
+
+    [Fact]
     public void NoEmpireQueryChangesTheState()
     {
         testGame.GameInfo.GameParameters.TradeHintsEnabled = true;
@@ -309,7 +329,7 @@ public class EmpireQueryTests
         player.AddNotification("Hello", [new LocationAction(new HexCoord(0, 0))], Notification.NotificationCategory.General);
         var before = Hash(testGame.GameInfo);
         IQuery[] queries = [new TechTreeQuery(), new PolicyTreeQuery(), new ReligionQuery(), new GreatPeopleQuery(), new NotificationsQuery(),
-            new EmpireOverviewQuery(), new DiplomacyPanelQuery(enemy.CivName), new TradeOptionsQuery(enemy.CivName),
+            new EmpireOverviewQuery(), new EmpireTopBarQuery(), new DiplomacyPanelQuery(enemy.CivName), new TradeOptionsQuery(enemy.CivName),
             new TradeHintQuery(enemy.CivName, [new(Constants.FlatGold, "Gold", 1)], [])];
         foreach (var query in queries)
         {

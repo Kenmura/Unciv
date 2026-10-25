@@ -1,3 +1,4 @@
+using Unciv.Queries.Empire;
 using Unciv.Queries.Units;
 
 namespace Unciv.GodotClient.Play;
@@ -8,6 +9,10 @@ namespace Unciv.GodotClient.Play;
 /// </summary>
 public sealed class GameQueries(IGameSession session)
 {
+    public Task<EmpireTopBarResult?> TopBar() => session.QueryAsync(new EmpireTopBarQuery());
+
+    public Task<PendingDecisionsResult?> Pending() => session.QueryAsync(new PendingDecisionsQuery());
+
     public Task<ReachableTilesResult?> Reachable(int unitId) => session.QueryAsync(new ReachableTilesQuery(unitId));
 
     public Task<PathPreviewResult?> Path(int unitId, int x, int y) => session.QueryAsync(new PathPreviewQuery(unitId, x, y));

@@ -6,3 +6,4 @@ ui-kit
 terrain-3d
 settings
 props-3d
+hud

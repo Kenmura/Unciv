@@ -4,6 +4,7 @@ using Unciv.Assets;
 using Unciv.Commands.Units;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Map;
+using Unciv.GodotClient.Ui;
 using Unciv.Logic.Map;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Units;
@@ -30,15 +31,16 @@ public partial class GameScreen : Control
     private GameQueries queries = null!; // JUSTIFY: C010 assigned by Start before the screen is used
     private Node3D unitLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Node3D dotLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
-    private Label turnLabel = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Label statusLabel = null!; // JUSTIFY: C010 assigned in _Ready before any use
-    private Button nextTurnButton = null!; // JUSTIFY: C010 assigned in _Ready before any use
+    private int bannerTurn = -1;
     private ClientSnapshot snapshot = null!; // JUSTIFY: C010 assigned by Refresh in Start
     private int previewRequest;
     private PathPreviewResult? preview;
     private bool mapLoaded;
 
     public MapView Map { get; private set; } = null!; // JUSTIFY: C010 assigned in _Ready before any use
+
+    public HudView Hud { get; private set; } = null!; // JUSTIFY: C011 assigned in _Ready before any use
 
     public MinimapView Minimap { get; private set; } = null!; // JUSTIFY: C014 assigned in _Ready before any use
 
@@ -65,13 +67,12 @@ public partial class GameScreen : Control
         dotLayer = new Node3D { Name = "PathDots" };
         AddChild(dotLayer);
 
-        turnLabel = new Label { Name = "TurnLabel", Position = new Vector2(12f, 8f) };
-        AddChild(turnLabel);
         statusLabel = new Label { Name = "StatusLabel" };
         AddChild(statusLabel);
-        nextTurnButton = new Button { Name = "NextTurn", Text = "Next turn", CustomMinimumSize = new Vector2(140f, 40f) };
-        nextTurnButton.Pressed += OnNextTurn;
-        AddChild(nextTurnButton);
+        Hud = new HudView { Name = "Hud" };
+        AddChild(Hud);
+        Hud.ActionRequested += OnHudAction;
+        Hud.EndTurnRequested += OnNextTurn;
         Minimap = new MinimapView { Name = "Minimap" };
         AddChild(Minimap);
         Minimap.Attach(Map);
@@ -86,12 +87,16 @@ public partial class GameScreen : Control
     private void Layout()
     {
         Size = GetViewportRect().Size;
-        nextTurnButton.Position = Size - nextTurnButton.CustomMinimumSize - new Vector2(HudMargin, HudMargin);
+        Hud.LayoutIn(Size);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
-        Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin);
+        Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
     }
 
-    public override void _ExitTree() => GetViewport().SizeChanged -= Layout;
+    public override void _ExitTree()
+    {
+        GetViewport().SizeChanged -= Layout;
+        if (session != null) session.SnapshotChanged -= OnSnapshotChanged;
+    }
 
     /// <summary>Connects the screen to a game and draws it, centred on the human's first unit. Call once, after the screen entered the tree.</summary>
     public void Start(IGameSession gameSession, AssetRegistry registry)
@@ -99,6 +104,8 @@ public partial class GameScreen : Control
         session = gameSession;
         assets = registry;
         queries = new GameQueries(session);
+        Hud.Init(new UiTheme(registry));
+        session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
         Refresh();
         var first = snapshot.Units.FirstOrDefault(it => it.Own != null);
         if (first != null) Map.FocusOn(MapLayout.TileTop(first.X, first.Y));
@@ -115,7 +122,7 @@ public partial class GameScreen : Control
         Layout();
         RebuildUnits();
         ClearPreview();
-        turnLabel.Text = $"Turn {snapshot.Turn.ToString(CultureInfo.InvariantCulture)}   {session.ViewerCivId}";
+        Run(RefreshHud());
         if (SelectedUnitId is { } id && unitNodes.TryGetValue(id, out var selected) && selected.IsOwn)
             Map.Select(new HexCoord(selected.Unit.X, selected.Unit.Y));
         else SelectedUnitId = null;
@@ -284,6 +291,60 @@ public partial class GameScreen : Control
         }
         Refresh();
         SetStatus(DescribeSelected());
+    }
+
+    /// <summary>Asks the engine for the bar's numbers and for what is still pending, and shows them; announces a turn the first time it is seen.</summary>
+    private async Task RefreshHud()
+    {
+        var bar = await queries.TopBar();
+        var pending = await queries.Pending();
+        if (bar == null) return; // a refused query leaves the old bar
+        var action = HudModel.NextAction(pending, snapshot.TurnStatus, session.ViewerCivId);
+        Hud.Update(bar, action, HudModel.CanEndTurn(pending));
+        Layout();
+        if (bar.Turn != bannerTurn)
+        {
+            bannerTurn = bar.Turn;
+            Hud.ShowBanner(HudModel.Banner(bar.Turn, bar.Year, session.ViewerCivId));
+        }
+    }
+
+    private void OnSnapshotChanged(ClientSnapshot changed)
+    {
+        snapshot = changed;
+        Run(RefreshHud());
+    }
+
+    private void OnHudAction(HudAction action)
+    {
+        switch (action.Kind)
+        {
+            case HudActionKind.EndTurn:
+                OnNextTurn();
+                break;
+            case HudActionKind.NextUnit:
+                SelectNextUnit();
+                break;
+            default:
+                SetStatus($"{action.Label}: this screen is not built yet.");
+                break;
+        }
+    }
+
+    /// <summary>The snapshot does not say which unit is "due" (the engine decides that), so the cycle visits the viewer's units that could still act: movement left, no standing order, not fortified.</summary>
+    private void SelectNextUnit()
+    {
+        var waiting = unitNodes.Values
+            .Where(it => it.IsOwn && it.Unit.Own is { CurrentMovement: > 0f, Action: null } && !it.Unit.IsFortified)
+            .Select(it => it.Unit.Id).ToList();
+        if (HudModel.NextDueUnit(waiting, SelectedUnitId) is not { } id)
+        {
+            SetStatus("No unit is waiting for orders.");
+            return;
+        }
+        var node = unitNodes[id];
+        SelectUnit(node);
+        Map.FocusOn(UnitPosition(new HexCoord(node.Unit.X, node.Unit.Y), 0));
     }
 
     private void OnNextTurn() => Run(EndTurn());
