@@ -33,5 +33,8 @@ public abstract class Scenario
     /// <summary>Every human civ starts with <see cref="Unciv.Harness.ScenarioGame.RichGold"/> gold (C018: real purchases without God mode).</summary>
     public virtual bool Rich => false;
 
+    /// <summary>C020: Babylon has a capital and <see cref="Unciv.Harness.ScenarioGame.PolicyCulture"/> stored culture, so policies can be adopted.</summary>
+    public virtual bool Policies => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

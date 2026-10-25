@@ -233,6 +233,28 @@
       }
     ]
   },
+  "C020": {
+    "scenario": "policy",
+    "about": "Policy screen: branch columns, adopt with confirmation step, culture and golden-age lines, why a policy is locked or unaffordable.",
+    "shots": [
+      {
+        "golden": "policy/open.png",
+        "caption": "The policy screen as opened by the Pick a policy button: branch columns (Tradition first, more to scroll to), culture 50 / 15 and golden-age lines, nothing chosen."
+      },
+      {
+        "golden": "policy/selected.png",
+        "caption": "Tradition chosen: its effects on the right and an Adopt button; nothing is adopted until it is pressed."
+      },
+      {
+        "golden": "policy/adopted.png",
+        "caption": "Tradition and Legalism adopted (gold); Landed Elite and Monarchy are now open."
+      },
+      {
+        "golden": "policy/short.png",
+        "caption": "Not enough culture: Landed Elite is open but Adopt is disabled and the hint gives the price."
+      }
+    ]
+  },
   "C021": {
     "scenario": "diplomacy",
     "about": "Diplomacy screen: civ list, status and attitude, treaty and city-state actions.",

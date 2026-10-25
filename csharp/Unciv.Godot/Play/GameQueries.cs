@@ -11,6 +11,9 @@ namespace Unciv.GodotClient.Play;
 /// </summary>
 public sealed class GameQueries(IGameSession session)
 {
+    /// <summary>The policy screen's tree: branches, states with reasons, culture and free policies (the viewer's own).</summary>
+    public Task<PolicyTreeResult?> PolicyTree() => session.QueryAsync(new PolicyTreeQuery());
+
     public Task<EmpireTopBarResult?> TopBar() => session.QueryAsync(new EmpireTopBarQuery());
 
     public Task<PendingDecisionsResult?> Pending() => session.QueryAsync(new PendingDecisionsQuery());

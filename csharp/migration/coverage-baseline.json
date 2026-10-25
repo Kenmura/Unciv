@@ -13,6 +13,7 @@
     "Unciv.Assets/ModelSpecs.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Packaging/ContentLocator.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PlaceholderPalette.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/PolicyScreenModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/ProceduralImages.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Rgb.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/RulesetAssetKeys.cs": {"branch": 100.0, "line": 100.0},
@@ -602,7 +603,7 @@
     "Unciv.Harness/PerceptualHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ReviewIndex.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Harness/ScenarioGame.cs": {"branch": 91.67, "line": 97.5},
+    "Unciv.Harness/ScenarioGame.cs": {"branch": 92.86, "line": 98.77},
     "Unciv.Harness/ScenarioReplay.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0}
   },

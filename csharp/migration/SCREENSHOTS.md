@@ -66,7 +66,7 @@ Scenario `props-3d`.
 
 *Low close view of the herds and their neighbours.* (`props-3d/herd-close.png`)
 
-## C004 (ticket not Done or unknown)
+## C004 Unit visuals: per-type models, formations, status icons
 
 Unit visuals: per-type models, 1 to 4 figures by strength tier, civ colour, health bar, status marks.
 
@@ -287,6 +287,28 @@ Scenario `tech`.
 ![Pottery researched instead: the queue is replaced and Pottery is the current research.](../Unciv.Godot.Harness/golden/tech/replaced.png)
 
 *Pottery researched instead: the queue is replaced and Pottery is the current research.* (`tech/replaced.png`)
+
+## C020 (ticket not Done or unknown)
+
+Policy screen: branch columns, adopt with confirmation step, culture and golden-age lines, why a policy is locked or unaffordable.
+
+Scenario `policy`.
+
+![The policy screen as opened by the Pick a policy button: branch columns (Tradition first, more to scroll to), culture 50 / 15 and golden-age lines, nothing chosen.](../Unciv.Godot.Harness/golden/policy/open.png)
+
+*The policy screen as opened by the Pick a policy button: branch columns (Tradition first, more to scroll to), culture 50 / 15 and golden-age lines, nothing chosen.* (`policy/open.png`)
+
+![Tradition chosen: its effects on the right and an Adopt button; nothing is adopted until it is pressed.](../Unciv.Godot.Harness/golden/policy/selected.png)
+
+*Tradition chosen: its effects on the right and an Adopt button; nothing is adopted until it is pressed.* (`policy/selected.png`)
+
+![Tradition and Legalism adopted (gold); Landed Elite and Monarchy are now open.](../Unciv.Godot.Harness/golden/policy/adopted.png)
+
+*Tradition and Legalism adopted (gold); Landed Elite and Monarchy are now open.* (`policy/adopted.png`)
+
+![Not enough culture: Landed Elite is open but Adopt is disabled and the hint gives the price.](../Unciv.Godot.Harness/golden/policy/short.png)
+
+*Not enough culture: Landed Elite is open but Adopt is disabled and the hint gives the price.* (`policy/short.png`)
 
 ## C021 Diplomacy screen
 

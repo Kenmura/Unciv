@@ -170,4 +170,22 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.True(ScenarioResult.FromJson(new ScenarioResult("r", 1, 2, "h", [], [], [], [], Rich: true).ToJson()).Rich);
         Assert.False(ScenarioResult.FromJson(new ScenarioResult("r", 1, 2, "h", [], [], [], []).ToJson()).Rich);
     }
+
+    [Fact]
+    public void PolicyGameHasACapitalStoredCultureAndAPendingPolicyPickAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(policies: true);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        Assert.Single(human.Cities);
+        Assert.Equal(ScenarioGame.PolicyCulture, human.Policies.StoredCulture);
+        Assert.True(human.Policies.ShouldShowPolicyPicker());
+        Assert.False(human.ShouldOpenTechPicker());
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(policies: true)));
+        Assert.NotEqual(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(solo: true)));
+        var result = session.Submit(ScenarioGame.HumanA, new Unciv.Commands.Empire.AdoptPolicy { Policy = "Tradition" });
+        Assert.True(result.Accepted);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, policies: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("p", 1, 2, "h", [], [], [], [], Policies: true).ToJson()).Policies);
+        Assert.False(ScenarioResult.FromJson(new ScenarioResult("p", 1, 2, "h", [], [], [], []).ToJson()).Policies);
+    }
 }

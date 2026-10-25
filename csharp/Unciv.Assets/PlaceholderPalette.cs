@@ -65,6 +65,14 @@ public static class PlaceholderPalette
     /// <summary>Fill of a tech tree node by its state (C019); an unknown state reads as locked.</summary>
     public static Rgb ForTechState(string state) => TechStateColours.TryGetValue(state, out var c) ? c : TechStateColours["Locked"];
 
+    /// <summary>Text colour of a policy by its engine state (C020): adopted in the accent colour, adoptable in plain text, locked dimmed.</summary>
+    public static Rgb ForPolicyState(string state) => state switch
+    {
+        "Adopted" => Accent,
+        "Adoptable" => Text,
+        _ => TextDisabled,
+    };
+
     /// <summary>Outline of a locked tile on the city screen.</summary>
     public static Rgb LockedOutline { get; } = new(240, 200, 90);
 

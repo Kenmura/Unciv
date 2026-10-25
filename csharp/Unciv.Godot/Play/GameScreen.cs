@@ -6,6 +6,7 @@ using Unciv.Commands.Units;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Map;
 using Unciv.GodotClient.Ui;
+using Unciv.Logic;
 using Unciv.Logic.Map;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Units;
@@ -77,10 +78,29 @@ public partial class GameScreen : Control
 
     public Button DiplomacyButton { get; } = new() { Name = "DiplomacyButton", Text = "Diplomacy" };
 
+    /// <summary>C020: the policy screen, opened by the Policies button or the "Pick a policy" decision.</summary>
+    public PolicyScreen Policies { get; private set; } = null!; // JUSTIFY: C020 assigned in Start before any use
+
+    public bool IsPolicyScreenVisible => Policies.Visible;
+
+    public Button PolicyButton { get; } = new() { Name = "PolicyButton", Text = "Policies" };
+
+    /// <summary>Opens the policy screen, closing the city and diplomacy screens.</summary>
+    public void OpenPolicyScreen()
+    {
+        ShowCity(null);
+        if (Diplomacy.Visible) Diplomacy.Close();
+        if (Tech.Visible) Tech.Close();
+        Deselect();
+        SetStatus("Policies");
+        Run(Policies.OpenAsync());
+    }
+
     /// <summary>Opens the diplomacy screen on the civ with this id (the first met civ when null), closing the city screen.</summary>
     public void OpenDiplomacyScreen(string? civId = null)
     {
         ShowCity(null);
+        if (Policies.Visible) Policies.Close();
         Deselect();
         SetStatus("Diplomacy");
         if (Tech.Visible) Tech.Close();
@@ -99,6 +119,7 @@ public partial class GameScreen : Control
     {
         ShowCity(null);
         if (Diplomacy.Visible) Diplomacy.Close();
+        if (Policies.Visible) Policies.Close();
         Deselect();
         SetStatus("Technology");
         Run(Tech.OpenAsync(tech));
@@ -142,6 +163,8 @@ public partial class GameScreen : Control
         DiplomacyButton.Pressed += () => OpenDiplomacyScreen();
         AddChild(TechButton);
         TechButton.Pressed += () => OpenTechScreen();
+        AddChild(PolicyButton);
+        PolicyButton.Pressed += OpenPolicyScreen;
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
         Panel = new UnitPanelView();
@@ -184,6 +207,12 @@ public partial class GameScreen : Control
         }
         DiplomacyButton.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight);
         TechButton.Position = new Vector2(HudMargin + DiplomacyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
+        PolicyButton.Position = new Vector2(TechButton.Position.X + TechButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
+        if (Policies != null)
+        {
+            Policies.Position = new Vector2(0f, Hud.TopBarHeight);
+            Policies.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
+        }
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
         Panel.LayoutIn(Size);
@@ -233,6 +262,15 @@ public partial class GameScreen : Control
         AddChild(Tech);
         Tech.CommandAccepted += Refresh;
         TechButton.Theme = theme.Theme;
+        if (Policies != null)
+        {
+            RemoveChild(Policies);
+            Policies.QueueFree();
+        }
+        Policies = new PolicyScreen(session, theme);
+        AddChild(Policies);
+        Policies.CommandAccepted += Refresh;
+        PolicyButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
         ReachableOverlay.Setup(registry);
@@ -362,6 +400,7 @@ public partial class GameScreen : Control
     {
         if (city != null && Diplomacy.Visible) Diplomacy.Close();
         if (city != null && Tech.Visible) Tech.Close();
+        if (city != null && Policies.Visible) Policies.Close();
         if (city != null) Deselect(); // C012: the unit panel gives way to the city screen
         OpenCity = city;
         if (city == null)
@@ -600,6 +639,9 @@ public partial class GameScreen : Control
                 break;
             case HudActionKind.NextUnit:
                 SelectNextUnit();
+                break;
+            case HudActionKind.Decision when action.Decision == DecisionKind.Policy:
+                OpenPolicyScreen();
                 break;
             default:
                 SetStatus($"{action.Label}: this screen is not built yet.");
