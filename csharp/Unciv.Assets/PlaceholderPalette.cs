@@ -52,6 +52,9 @@ public static class PlaceholderPalette
     public static Rgb TextDisabled { get; } = new(130, 134, 142);
     public static Rgb IconOutline { get; } = new(16, 18, 24);
     public static Rgb IconGlyph { get; } = new(250, 250, 250);
+    public static Rgb RoadBrown { get; } = new(158, 115, 71);
+    public static Rgb RailGrey { get; } = new(64, 64, 71);
+    public static Rgb CityWall { get; } = new(158, 153, 143);
     public static Rgb Light { get; } = new(255, 250, 240);
     public static Rgb SheetLabel { get; } = new(230, 230, 230);
 

@@ -29,6 +29,8 @@ public partial class GameScreen : Control
     private IGameSession session = null!; // JUSTIFY: C010 assigned by Start before the screen is used
     private AssetRegistry assets = null!; // JUSTIFY: C010 assigned by Start before the screen is used
     private GameQueries queries = null!; // JUSTIFY: C010 assigned by Start before the screen is used
+    private Control cityPanel = null!; // JUSTIFY: C041 assigned in _Ready before any use
+    private Label cityPanelText = null!; // JUSTIFY: C041 assigned in _Ready before any use
     private Node3D unitLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Node3D dotLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Label statusLabel = null!; // JUSTIFY: C010 assigned in _Ready before any use
@@ -44,7 +46,15 @@ public partial class GameScreen : Control
 
     public MinimapView Minimap { get; private set; } = null!; // JUSTIFY: C014 assigned in _Ready before any use
 
+    /// <summary>Cities, borders, roads and improvements drawn on the map (C041).</summary>
+    public MapOverlayLayer Overlays { get; private set; } = null!; // JUSTIFY: C041 assigned in _Ready before any use
+
     public int? SelectedUnitId { get; private set; }
+
+    /// <summary>The city whose (placeholder) screen is open; C017's city screen replaces the panel, this stays the hook that tells which city.</summary>
+    public CityDto? OpenCity { get; private set; }
+
+    public bool IsCityPanelVisible => cityPanel.Visible;
 
     public IReadOnlyDictionary<int, UnitNode> Units => unitNodes;
 
@@ -62,6 +72,8 @@ public partial class GameScreen : Control
         MouseFilter = MouseFilterEnum.Ignore; // the map reads unhandled input; only the HUD widgets take the mouse
         Map = new MapView { Name = "Map" };
         AddChild(Map);
+        Overlays = new MapOverlayLayer { Name = "Overlays" };
+        AddChild(Overlays);
         unitLayer = new Node3D { Name = "Units" };
         AddChild(unitLayer);
         dotLayer = new Node3D { Name = "PathDots" };
@@ -73,6 +85,7 @@ public partial class GameScreen : Control
         AddChild(Hud);
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
+        BuildCityPanel();
         Minimap = new MinimapView { Name = "Minimap" };
         AddChild(Minimap);
         Minimap.Attach(Map);
@@ -112,14 +125,16 @@ public partial class GameScreen : Control
         SetStatus("Click one of your units.");
     }
 
-    private void Refresh()
+    /// <summary>Redraws everything from the session's current snapshot (the screen does this itself after its own commands; a caller that changed the game another way calls it).</summary>
+    public void Refresh()
     {
         snapshot = session.Snapshot;
         Map.Load(assets, snapshot.Tiles, keepCamera: mapLoaded);
         mapLoaded = true;
-        var nations = session.Ruleset.Nations;
-        Minimap.Update(snapshot.Tiles, owner => nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetOuterColor()) : null);
+        Minimap.Update(snapshot.Tiles, OwnerColour);
         Layout();
+        Overlays.Rebuild(Map, snapshot.Tiles, snapshot.Cities, OwnerColour);
+        if (OpenCity != null) ShowCity(snapshot.Cities.FirstOrDefault(it => it.X == OpenCity.X && it.Y == OpenCity.Y));
         RebuildUnits();
         ClearPreview();
         Run(RefreshHud());
@@ -128,6 +143,8 @@ public partial class GameScreen : Control
         else SelectedUnitId = null;
         ApplySelectionScale();
     }
+
+    private Rgb? OwnerColour(string owner) => session.Ruleset.Nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetOuterColor()) : null;
 
     private static Rgb ToRgb(Unciv.Models.EngineColor colour) =>
         new((byte)Math.Round(colour.R * 255f, MidpointRounding.AwayFromZero), (byte)Math.Round(colour.G * 255f, MidpointRounding.AwayFromZero), (byte)Math.Round(colour.B * 255f, MidpointRounding.AwayFromZero));
@@ -174,6 +191,12 @@ public partial class GameScreen : Control
             return;
         }
         var own = OwnUnitsAt(tile);
+        var city = snapshot.Cities.FirstOrDefault(it => it.X == tile.X && it.Y == tile.Y);
+        if (city != null && (own.Count == 0 ? SelectedUnitId == null : SelectedUnitId is { } selected && own.Any(it => it.Unit.Id == selected)))
+        {
+            ShowCity(city); // a click on a city opens it, unless a unit elsewhere is selected (then the click is a move target) or a unit there is still to be selected
+            return;
+        }
         if (own.Count > 0)
         {
             int at = SelectedUnitId is { } current ? own.FindIndex(it => it.Unit.Id == current) : -1;
@@ -207,6 +230,35 @@ public partial class GameScreen : Control
         Map.Select(new HexCoord(node.Unit.X, node.Unit.Y));
         ApplySelectionScale();
         SetStatus(DescribeSelected());
+    }
+
+    private void BuildCityPanel()
+    {
+        cityPanel = new PanelContainer { Name = "CityPanel", Visible = false, CustomMinimumSize = new Vector2(260f, 0f) };
+        var box = new VBoxContainer();
+        cityPanelText = new Label { Name = "CityPanelText" };
+        var close = new Button { Name = "CityPanelClose", Text = "Close city" };
+        close.Pressed += () => ShowCity(null);
+        box.AddChild(cityPanelText);
+        box.AddChild(close);
+        cityPanel.AddChild(box);
+        AddChild(cityPanel);
+        cityPanel.Position = new Vector2(HudMargin, 40f);
+    }
+
+    /// <summary>Opens (or, with null, closes) the placeholder city screen for a city of the snapshot.</summary>
+    private void ShowCity(CityDto? city)
+    {
+        OpenCity = city;
+        cityPanel.Visible = city != null;
+        if (city == null) return;
+        var banner = MapOverlays.Banner(city);
+        var lines = new List<string> { banner.Title, "Owner: " + city.Owner };
+        lines.AddRange(banner.Details);
+        if (city.Own is { } own) lines.Add("Buildings: " + (own.Buildings.Count == 0 ? "none" : string.Join(", ", own.Buildings)));
+        else if (city.VisibleBuildings.Count > 0) lines.Add("Wonders: " + string.Join(", ", city.VisibleBuildings));
+        cityPanelText.Text = string.Join("\n", lines);
+        SetStatus("City: " + city.Name);
     }
 
     private void Deselect()

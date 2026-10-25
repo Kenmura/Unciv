@@ -46,8 +46,9 @@ public static class ScenarioGame
 
     /// <summary>
     /// <paramref name="solo"/> (C010): one human (Babylon) and the AI, no city founded: the game the client's QuickStart builds; otherwise the two-human game above.
+    /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false)
     {
         var ruleset = LoadVanilla();
         var game = GameStarter.StartNewGame(
@@ -56,6 +57,7 @@ public static class ScenarioGame
                 {
                     BaseRuleset = ruleset.Name,
                     NumberOfCityStates = 0,
+                    GodMode = godMode,
                     VictoryTypes = ruleset.Victories.Keys.ToList(),
                     Players = solo
                         ? [new Player(HumanA, PlayerType.Human), new Player(Ai)]

@@ -21,5 +21,8 @@ public abstract class Scenario
     /// <summary>The scenario plays the single-human game (<see cref="Unciv.Harness.ScenarioGame.Create"/> with solo) instead of the two-human one.</summary>
     public virtual bool Solo => false;
 
+    /// <summary>The game is created with God mode on (debug commands allowed); recorded in the result so the headless replay creates it the same way.</summary>
+    public virtual bool GodMode => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }
