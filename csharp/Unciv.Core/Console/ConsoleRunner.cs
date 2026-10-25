@@ -1,0 +1,34 @@
+using Unciv.Logic;
+
+namespace Unciv.DevConsole;
+
+/// <summary>
+/// Entry point of the engine side of the dev console: turns a line of text into a <see cref="ConsolePlan"/> and offers autocomplete.
+/// Applying goes through the <c>run-console-command</c> game command, never directly, so every console edit is logged and replayable.
+/// </summary>
+public static class ConsoleRunner
+{
+    public const int MaxLineLength = 1000;
+
+    private static readonly ConsoleCommandRoot Root = new();
+
+    /// <summary>Plans (does not run) <paramref name="line"/>. Pure: the game is not changed.</summary>
+    public static ConsolePlan Plan(GameInfo game, string actorId, string line, ConsoleSelection? selection = null)
+    {
+        var console = new ConsoleContext(game, actorId, selection ?? new ConsoleSelection());
+        return Root.Handle(console, CliInput.SplitToCliInput(line.Trim()));
+    }
+
+    /// <summary>The text replacing the last word of <paramref name="line"/>, and the number of characters it replaces (Kotlin <c>getAutocomplete</c>).</summary>
+    public static (int ReplaceLength, AutocompleteResult Result)? Autocomplete(GameInfo game, string actorId, string line, ConsoleSelection? selection = null)
+    {
+        var console = new ConsoleContext(game, actorId, selection ?? new ConsoleSelection());
+        var raw = CliInput.SplitToCliInput(line);
+        var parameters = raw.Count == 1 && Root.Subcommands.ContainsKey(raw[0].ToString()) ? [.. raw, CliInput.Empty] : raw;
+        var result = Root.Autocomplete(console, parameters);
+        if (result?.Text == null) return null;
+        return (parameters.Count > 0 ? parameters[^1].OriginalLength() : 0, result);
+    }
+
+    public static IEnumerable<(IReadOnlyList<string> Nodes, string Format)> EnumerateCommands() => Root.EnumerateCommands();
+}

@@ -239,6 +239,13 @@ public sealed class GameCommandTests : IDisposable
                 game = fresh.Game;
                 command = EmpireSamples.Sample(name, game);
             }
+            else if (name == "run-console-command")
+            {
+                var (fresh, _, _) = NewSession();
+                game = fresh.Game;
+                game.GameParameters.GodMode = true;
+                command = new Unciv.Commands.DevConsole.RunConsoleCommand { Line = "civ addstat gold 5" };
+            }
             else if (TurnSamples.Types.Contains(name))
             {
                 var (fresh, _, _) = NewSession();
