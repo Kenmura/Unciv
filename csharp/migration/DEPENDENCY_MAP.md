@@ -456,7 +456,7 @@ flowchart TD
   class T168 prog
   class T169 ready
   class T170 review
-  class T171 ready
+  class T171 prog
   class T172 ready
   class T173 waiting
   class T174 waiting
@@ -502,8 +502,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 81
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 72]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 71]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 5]
 ```
 
 ## Incomplete tickets
@@ -515,7 +515,6 @@ xychart-beta
 | T172 | **Ready to start** | T012 | 39 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
 | T183 | **Ready to start** | T071, T046 | 33 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
 | T166 | **Ready to start** | A003 | 3 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
-| T171 | **Ready to start** | T104 | 1 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
@@ -561,6 +560,7 @@ xychart-beta
 | C017 | Available (waiting on C005, C010, T164, T191, T196) | C005, C010, T164, T060, T062, T191, T196 | 1 | City screen A: info, tiles, specialists, focus |
 | C021 | Available (waiting on C005, C010, T164, T193, T197) | C005, C010, T164, T059, T068, T193, T197 | 1 | Diplomacy screen |
 | C025 | Available (waiting on C005, T170) | C005, T023, T170 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
+| T171 | In-Progress [Claude] | T104 | 1 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
 | T179 | Blocked | T178 | 1 | Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes |
 | T199 | Available (waiting on T185, T170) | T185, T099, T045, T170 | 1 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
 | C006 | Available (waiting on T164, T172, T173, T180, T179, C010, C016, T194) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194 | 0 | Networked play client |
