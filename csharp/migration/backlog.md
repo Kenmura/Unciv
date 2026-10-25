@@ -1908,7 +1908,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Held (Blocked) while the design/splitting agents run: this ticket is too coarse to implement as written (gap review). It will be split into domain tickets and re-pointed by the design agent; do not claim it until it is Available again.
 
 ### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
-- State: Blocked
+- State: Won't port
 - Depends: T012, T100
 - Source: csharp/migration/PROTOCOL.md goals; COMMANDS.md
 - Fixtures: none
@@ -1917,6 +1917,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: C006 says 'separate server ticket needed'. Designs on the command log (replay-verifiable). Must not depend on the Won't-port Kotlin multiplayer stack. Split design and implementation if large.
   - Held (Blocked) while the design/splitting agents run: this ticket is too coarse to implement as written (gap review). It will be split into domain tickets and re-pointed by the design agent; do not claim it until it is Available again.
+  - Superseded by the server design (design/SERVER.md) and split into T172 (protocol/transport interface), T173 (identity), T174 (visibility filter), T175 (event stream), T176 (persistence/resync), T177 (turn policy), T178 (host+lobby), T179 (real transport, owner decision), T180 (client library), T181 (private channels), T182 (e2e). Original notes preserved above: designs on the command log; must not depend on the Won't-port Kotlin multiplayer stack.
 
 ### T166 Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization)
 - State: Available
@@ -2058,6 +2059,36 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: OWNER DECISION D1 (transport) and D2 (hosting) before claiming. Recommendation: A, WebSocket+TLS, Kestrel confined to Unciv.Server; B raw TCP and C ENet considered (see SERVER.md 6.3). Question for the owner: confirm WebSocket+TLS, and VPS vs friend-hosted+overlay.
 
+### T180 Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types)
+- State: Available
+- Depends: T172, T173, T174, T175
+- Source: csharp/migration/design/SERVER.md sections 2.3, 7
+- Fixtures: none
+- Deliverables: csharp/Unciv.Client.Net/* (ClientSession, ClientGameState, ClientEvent stream), tests over InMemoryTransport: gap => resync, viewHash mismatch => snapshot, duplicate command ids
+- Gate: dotnet test --filter FullyQualifiedName~ClientNet
+- Claimed:
+- Notes: Split out of C006 so the networking logic is testable headless. C004/C005 should consume ClientEvent; re-point after review.
+
+### T181 Private-channel filtering: trade offers, diplomacy and espionage visibility (server side)
+- State: Available
+- Depends: T174, T175, T164
+- Source: csharp/migration/design/SERVER.md section 3 (trade, espionage rows); View/TradeView.cs, SpyView.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Visibility/Private*.cs, tests with 3-civ fixture: third party never sees A-B offers or A's spies, AI willingness numbers never serialized
+- Gate: dotnet test --filter FullyQualifiedName~NetPrivacy
+- Claimed:
+- Notes: Needs trade/diplomacy/espionage commands from the T164 split (design/COMMANDS-IMPLEMENTATION.md): re-point Depends to those tickets once they exist.
+
+### T182 Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement
+- State: Available
+- Depends: T178, T180
+- Source: csharp/migration/design/SERVER.md sections 5, 10
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core.Tests/Server/EndToEnd*.cs (or Unciv.Server.Tests)
+- Gate: dotnet test --filter FullyQualifiedName~ServerEndToEnd
+- Claimed:
+- Notes: Acceptance for the server track: 20+ turns, forced timeout and AI replacement, one client dropped and resumed, tampered client command rejected, no client mirror contains an unexplored tile. Server fullHash equals the replayed-from-log hash; every client viewHash matches its filtered snapshot.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
@@ -2101,9 +2132,10 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C006 Networked play client
 - State: Available
-- Depends: T012, C001, T164, T165
-- Scope: client for our own authoritative server (to be designed; separate server ticket needed), lobby, turn notifications, reconnect/resume.
+- Depends: T012, C001, T164, T172, T173, T180, T179
+- Scope: Godot side of networked play only (the protocol, session, mirror state and transport live in Unciv.Client.Net, T180/T179): lobby and join screens (invite code entry), identity key storage under user://, 'your turn' notification list and toast, turn timer display, reconnect overlay, marshalling network events onto the Godot main thread, feeding ClientEvents to the C004/C005 presentation. Server is our own (design/SERVER.md); no upstream Unciv servers.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
+  - Narrowed by the server design (design/SERVER.md section 7). Server tickets T172-T182; C006 owns only Godot scenes and the main-thread pump. Single-player should use the same ClientSession over a loopback host (T178).
 
 ## Game AI track (Civ 5 behavioral spec)
 

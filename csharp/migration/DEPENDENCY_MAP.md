@@ -27,7 +27,6 @@ flowchart TD
     T162["T162<br/>Coverage baselines for Era.cs, Terrain.cs, CollectionExtensi..."]
     T163["T163<br/>ticket.py: refuse Done unless the tip builds, tests pass and..."]
     T164["T164<br/>Command layer implementation over GameInfo (move, attack, fo..."]
-    T165["T165<br/>Authoritative game server: protocol, lobby, turn notificatio..."]
     T166["T166<br/>Victory scorer game adapter (fills ConquestInputs/CultureInp..."]
     T167["T167<br/>L1 acceptance soak: 300+ turn headless games on Small and St..."]
     T168["T168<br/>Headless runner Unciv.Cli: new game, play N turns, save and ..."]
@@ -42,6 +41,9 @@ flowchart TD
     T177["T177<br/>Turn policy: sequential phase machine, injected clock, turn ..."]
     T178["T178<br/>Headless host and lobby: Unciv.Server project, GameHost acto..."]
     T179["T179<br/>Server transport: WebSocket over TLS (Kestrel) behind ITrans..."]
+    T180["T180<br/>Client network library Unciv.Client.Net: ClientSession state..."]
+    T181["T181<br/>Private-channel filtering: trade offers, diplomacy and espio..."]
+    T182["T182<br/>Multi-client end-to-end: scripted 3-human + AI game over in-..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -79,6 +81,15 @@ flowchart TD
   T176 --> T178
   T177 --> T178
   T178 --> T179
+  T172 --> T180
+  T173 --> T180
+  T174 --> T180
+  T175 --> T180
+  T174 --> T181
+  T175 --> T181
+  T164 --> T181
+  T178 --> T182
+  T180 --> T182
   C001 --> C002
   A003 --> C002
   A004 --> C002
@@ -93,7 +104,10 @@ flowchart TD
   T012 --> C006
   C001 --> C006
   T164 --> C006
-  T165 --> C006
+  T172 --> C006
+  T173 --> C006
+  T180 --> C006
+  T179 --> C006
   A004 --> A005
   A004 --> A006
   T091 --> A006
@@ -130,7 +144,6 @@ flowchart TD
   class T162 ready
   class T163 ready
   class T164 blocked
-  class T165 blocked
   class T166 ready
   class T167 ready
   class T168 ready
@@ -145,6 +158,9 @@ flowchart TD
   class T177 waiting
   class T178 waiting
   class T179 blocked
+  class T180 waiting
+  class T181 waiting
+  class T182 waiting
 ```
 
 ## Remaining tickets over time
@@ -162,7 +178,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 28]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 30]
     line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 1]
 ```
 
@@ -170,7 +186,7 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T172 | **Ready to start** | T012 | 7 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
+| T172 | **Ready to start** | T012 | 11 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
@@ -183,19 +199,21 @@ xychart-beta
 | T171 | **Ready to start** | T104 | 0 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
 | A005 | **On deck** (after A004) | A004 | 5 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | **On deck** (after A004) | A004, T091, T092 | 4 | Homeland AI priority move queue |
-| T164 | Blocked | T012, T071, T083, T080, T100 | 8 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
+| T164 | Blocked | T012, T071, T083, T080, T100 | 11 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
 | A004 | In-Progress [Claude] | A001, T039, T040, T065, T067, T081, T090 | 7 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
+| T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 7 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
+| T175 | Available (waiting on T172, T174, T164) | T172, T174, T164 | 6 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
+| T173 | Available (waiting on T172) | T172 | 5 | Server identity and auth: ECDSA P-256 keypair, invite tokens, challenge-response, allow-list (friends-only) |
 | A007 | Available (waiting on A004, A005) | A004, A005 | 4 | Operations and armies layer |
+| T176 | Available (waiting on T172, T164) | T172, T164, T140 | 4 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
+| T177 | Available (waiting on T172, T164) | T172, T164 | 4 | Turn policy: sequential phase machine, injected clock, turn timer, AFK skip, drop and AI replacement |
 | C002 | Available (waiting on A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
-| T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 3 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
-| T173 | Available (waiting on T172) | T172 | 2 | Server identity and auth: ECDSA P-256 keypair, invite tokens, challenge-response, allow-list (friends-only) |
-| T175 | Available (waiting on T172, T174, T164) | T172, T174, T164 | 2 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
-| T176 | Available (waiting on T172, T164) | T172, T164, T140 | 2 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
-| T177 | Available (waiting on T172, T164) | T172, T164 | 2 | Turn policy: sequential phase machine, injected clock, turn timer, AFK skip, drop and AI replacement |
-| T165 | Blocked | T012, T100 | 1 | Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers) |
-| T178 | Available (waiting on T172, T173, T174, T175, T176, T177) | T172, T173, T174, T175, T176, T177 | 1 | Headless host and lobby: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (rate, size, dedup, existence-oracle-safe errors) |
+| T178 | Available (waiting on T172, T173, T174, T175, T176, T177) | T172, T173, T174, T175, T176, T177 | 3 | Headless host and lobby: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (rate, size, dedup, existence-oracle-safe errors) |
+| T180 | Available (waiting on T172, T173, T174, T175) | T172, T173, T174, T175 | 2 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
+| T179 | Blocked | T178 | 1 | Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes |
 | C003 | Available (waiting on C002) | C002 | 0 | Resource and improvement props |
 | C004 | Available (waiting on C002, T164) | C002, T164 | 0 | 3D military units |
 | C005 | Available (waiting on C002, T164) | C002, T164 | 0 | Civ 5-style UI shell |
-| C006 | Available (waiting on T164, T165) | T012, C001, T164, T165 | 0 | Networked play client |
-| T179 | Blocked | T178 | 0 | Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes |
+| C006 | Available (waiting on T164, T172, T173, T180, T179) | T012, C001, T164, T172, T173, T180, T179 | 0 | Networked play client |
+| T181 | Available (waiting on T174, T175, T164) | T174, T175, T164 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
+| T182 | Available (waiting on T178, T180) | T178, T180 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
