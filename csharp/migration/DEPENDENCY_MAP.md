@@ -52,7 +52,6 @@ flowchart TD
     T164["T164<br/>Command infrastructure over GameInfo: GameCommand base, asse..."]
     T166["T166<br/>Victory scorer game adapter (fills ConquestInputs/CultureInp..."]
     T167["T167<br/>L1 acceptance soak: 300+ turn headless games on Small and St..."]
-    T168["T168<br/>Headless runner Unciv.Cli: new game, play N turns, save and ..."]
     T169["T169<br/>CI for the C# solution and Unciv.Godot (headless build, form..."]
     T170["T170<br/>Ruleset/mod folder loading and real translation file loading..."]
     T171["T171<br/>Event presentation types in UniqueTriggerActivation (replace..."]
@@ -504,7 +503,6 @@ flowchart TD
   class T164 prog
   class T166 ready
   class T167 prog
-  class T168 review
   class T169 ready
   class T170 done
   class T171 done
@@ -560,9 +558,9 @@ Generated from the git history of `backlog.md` (UTC; each point is the backlog a
 xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
-    y-axis "Tickets" 0 --> 89
+    y-axis "Tickets" 0 --> 88
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 80]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -647,7 +645,6 @@ xychart-beta
 | C033 | Available (waiting on C004) | C004 | 0 | Unit animation and combat presentation |
 | C034 | Available (waiting on C005, C010, C015, T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | T167 | In-Progress [Claude] | T102 | 0 | L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage |
-| T168 | Needs-Review [Claude] | T099, T100, T102 | 0 | Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs |
 | T181 | Available (waiting on T174, T175, T164, T193) | T174, T175, T164, T193 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T201 | Available (waiting on T183, T200) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |

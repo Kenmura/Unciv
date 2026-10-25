@@ -49,7 +49,7 @@ public static class CliRunner
     {
         try
         {
-            if (args.Count(it => it is "help" or "--help" or "-h") != 0)
+            if (args.Length != 0 && args[0] is "help" or "--help" or "-h")
             {
                 output.WriteLine(Usage);
                 return ExitOk;
@@ -73,9 +73,10 @@ public static class CliRunner
             error.WriteLine(Usage);
             return ExitUsage;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or FormatException
-                                      or System.Text.Json.JsonException or UncivShowableException or KeyNotFoundException or ArgumentException)
+        catch (Exception e)
         {
+            // JUSTIFY: T168 a CLI must turn any failure of the engine on a hostile save into exit code 1 and a message, not a stack trace
+            if (e is OutOfMemoryException or StackOverflowException) throw;
             error.WriteLine("error: " + e.Message);
             return ExitFailure;
         }
@@ -90,6 +91,7 @@ public static class CliRunner
     private static RulesetClass LoadRulesets(CliArgs cli)
     {
         var jsons = cli.Get("jsons") ?? FindJsons();
+        if (!File.Exists(Path.Combine(jsons, "ModCategories.json"))) throw new UsageException($"'{jsons}' is not a rulesets folder (no ModCategories.json); pass --jsons DIR");
         RulesetCache.Clear();
         RulesetCache.LoadRulesets(new DirectoryRulesetFileSource(jsons, Path.Combine(jsons, "no mods here")), noMods: true);
         return RulesetCache.GetVanillaRuleset();
@@ -114,11 +116,17 @@ public static class CliRunner
             ?? throw new UsageException($"--{option} '{wanted}' is not one of: {string.Join(", ", all.Select(name))}");
     }
 
-    private static void WriteSave(GameInfo game, string path, bool zip) =>
-        File.WriteAllText(path, UncivFiles.GameInfoToString(game, forceZip: zip));
+    private static void WriteSave(GameInfo game, string path, bool zip)
+    {
+        // Write beside the target and move over it, so a failure while writing (also with --out equal to --in) keeps the old file.
+        var temp = path + ".tmp";
+        File.WriteAllText(temp, UncivFiles.GameInfoToString(game, forceZip: zip));
+        File.Move(temp, path, overwrite: true);
+    }
 
     private static GameInfo ReadSave(string path)
     {
+        if (Directory.Exists(path)) throw new IOException($"'{path}' is a folder, not a save file");
         if (!File.Exists(path)) throw new IOException($"save file '{path}' does not exist");
         return UncivFiles.GameInfoFromString(File.ReadAllText(path));
     }
@@ -197,9 +205,21 @@ public static class CliRunner
                 output.WriteLine($"no major civilization is left on turn {Inv(game.Turns)}; stopping");
                 break;
             }
+            if (game.Civilizations.Any(it => it.IsAlive() && it.IsMajorCiv() && it.VictoryManager.HasWon()))
+            {
+                output.WriteLine($"the game is won on turn {Inv(game.Turns)}; stopping");
+                break;
+            }
+            var before = game.Turns;
             game.SimulateUntilWin = true;
-            game.SimulateMaxTurns = game.Turns + 1;
+            game.SimulateMaxTurns = before + 1;
             game.NextTurn(game.CurrentTurnStartTime + TurnMillis);
+            if (game.Turns == before)
+            {
+                // NextTurn stops short when a civ wins or nobody is left to play: the turn counter does not move.
+                output.WriteLine($"the game ended on turn {Inv(game.Turns)}; stopping");
+                break;
+            }
             if (hashes) output.WriteLine($"turn {Inv(game.Turns)} {HashOf(game)}");
         }
         if (outPath != null) WriteSave(game, outPath, zip);

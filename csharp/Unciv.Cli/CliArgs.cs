@@ -32,6 +32,7 @@ public sealed class CliArgs
                 continue;
             }
             if (i + 1 >= args.Count) throw new UsageException($"option --{name} needs a value");
+            if (args[i + 1].StartsWith("--", StringComparison.Ordinal)) throw new UsageException($"option --{name} needs a value, got '{args[i + 1]}'");
             options[name] = args[++i];
         }
     }

@@ -172,6 +172,43 @@ public sealed class CliTests : IDisposable
     }
 
     [Fact]
+    public void OptionValuesCannotLookLikeOptionsOrHelp()
+    {
+        Assert.Throws<UsageException>(() => new CliArgs(["new", "--out", "--zip"], Flags));
+        var result = Run("new", "--out", "help");
+        try
+        {
+            Assert.Equal(CliRunner.ExitOk, result.Code);
+            Assert.DoesNotContain("usage:", result.Out, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete("help");
+        }
+    }
+
+    [Fact]
+    public void PlayStopsWhenTheGameHasEnded()
+    {
+        Run("new", "--out", Path("g.json"), "--nations", "Babylon", "--city-states", "0");
+        var first = Run("play", "--in", Path("g.json"), "--turns", "3", "--hashes", "--out", Path("g.json"));
+        Assert.Equal(CliRunner.ExitOk, first.Code);
+        Assert.Contains("stopping", first.Out, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path("g.json")) && !File.Exists(Path("g.json.tmp")));
+        var again = Run("play", "--in", Path("g.json"), "--turns", "3", "--hashes");
+        Assert.Contains("stopping", again.Out, StringComparison.Ordinal);
+        Assert.Single(Lines(again.Out), it => it.StartsWith("turn ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void BadFoldersGiveClearErrors()
+    {
+        Run("new", "--out", Path("g.json"), "--city-states", "0");
+        Assert.Contains("folder", Run("hash", "--in", dir).Err, StringComparison.Ordinal);
+        Assert.Equal(CliRunner.ExitUsage, Run("hash", "--in", Path("g.json"), "--jsons", dir).Code);
+    }
+
+    [Fact]
     public void ProgramMainDelegatesToTheRunner()
     {
         var saved = Console.Out;

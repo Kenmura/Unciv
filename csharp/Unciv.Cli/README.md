@@ -25,6 +25,8 @@ from the working directory; pass `--jsons DIR` to name the folder. The project i
 | `hash --in FILE` | Print the state hash. |
 | `info --in FILE` | Print the turn, the map and one line per civilization. |
 
+`play` stops early (with a message, exit 0) when the game is won or ended. Option values may not start with `--`. Saves are written to `FILE.tmp` and moved over `FILE`.
+
 Exit codes: 0 ok, 1 a failure while running (missing or corrupt save), 2 a bad command line (usage text on stderr).
 
 Example:
