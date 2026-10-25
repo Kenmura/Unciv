@@ -229,8 +229,8 @@ public sealed class NetVisibilityTests
 
         var forB = Text(SnapshotFor(b));
         Assert.Empty(SnapshotFor(b).PendingTrades);
-        Assert.DoesNotContain("55", forB);
-        Assert.DoesNotContain("31337", forB);
+        Assert.DoesNotContain(":55", forB); // a JSON number; city ids (C017) are random text that may contain "55"
+        Assert.DoesNotContain(":31337", forB);
     }
 
     [Fact]
@@ -367,7 +367,7 @@ public sealed class NetVisibilityTests
         [nameof(SpyDto)] = "Name Rank Location Action",
         [nameof(TileDto)] = "X Y Visible BaseTerrain Features NaturalWonder Resource Improvement RiverBottom RiverBottomLeft RiverBottomRight Owner Road RoadPillaged ImprovementPillaged",
         [nameof(CityDto)] = "Name Owner X Y Population IsCapital IsPuppet IsBeingRazed Health MaxHealth VisibleBuildings Own",
-        [nameof(OwnCityDto)] = "FoodStored CultureStored Buildings ConstructionQueue",
+        [nameof(OwnCityDto)] = "Id FoodStored CultureStored Buildings ConstructionQueue",
         [nameof(UnitDto)] = "Id Name Owner X Y HealthBucket IsEmbarked IsFortified Own",
         [nameof(OwnUnitDto)] = "Health CurrentMovement Xp Action Promotions",
         [nameof(DiplomacyDto)] = "A B AtWar Status",

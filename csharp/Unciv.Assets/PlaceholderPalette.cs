@@ -39,6 +39,23 @@ public static class PlaceholderPalette
         ["Faith"] = new Rgb(230, 230, 240),
     };
 
+    private static readonly Dictionary<string, Rgb> CityTileColours = new(StringComparer.Ordinal)
+    {
+        ["Center"] = new Rgb(150, 120, 60),
+        ["Worked"] = new Rgb(60, 130, 70),
+        ["Taken"] = new Rgb(80, 90, 110),
+        ["Available"] = new Rgb(70, 100, 150),
+        ["Unavailable"] = new Rgb(60, 60, 66),
+        ["Foreign"] = new Rgb(120, 60, 60),
+        ["Unowned"] = new Rgb(40, 44, 52),
+    };
+
+    /// <summary>Fill of a city-screen tile cell by its state (C017); an unknown state reads as unowned.</summary>
+    public static Rgb ForCityTile(string state) => CityTileColours.TryGetValue(state, out var c) ? c : CityTileColours["Unowned"];
+
+    /// <summary>Outline of a locked tile on the city screen.</summary>
+    public static Rgb LockedOutline { get; } = new(240, 200, 90);
+
     public static Rgb HorseBrown { get; } = new(120, 80, 45);
     public static Rgb Background { get; } = new(24, 28, 36);
     public static Rgb PanelFill { get; } = new(36, 42, 54);

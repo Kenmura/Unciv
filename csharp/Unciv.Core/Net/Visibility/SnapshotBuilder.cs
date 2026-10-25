@@ -200,6 +200,7 @@ public static class SnapshotBuilder
         {
             own = new OwnCityDto
             {
+                Id = cityView.Unwrap().Id,
                 FoodStored = cityView.GetFoodStored(),
                 CultureStored = cityView.GetCultureStored(),
                 Buildings = cityView.GetBuiltBuildings().Select(it => it.Name).ToList(),

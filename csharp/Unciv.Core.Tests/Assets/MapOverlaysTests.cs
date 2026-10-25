@@ -39,7 +39,7 @@ public class MapOverlaysTests
         Own = own,
     };
 
-    private static OwnCityDto Own(params string[] queue) => new() { FoodStored = 0, CultureStored = 0, Buildings = [], ConstructionQueue = [.. queue] };
+    private static OwnCityDto Own(params string[] queue) => new() { Id = "c", FoodStored = 0, CultureStored = 0, Buildings = [], ConstructionQueue = [.. queue] };
 
     [Fact]
     public void ASingleOwnedTileHasSixBorderEdges()

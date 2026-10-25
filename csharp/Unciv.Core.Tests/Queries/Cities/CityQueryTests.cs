@@ -121,7 +121,7 @@ public class CityQueryTests
     public void CityQueriesRejectUnknownAndForeignCities()
     {
         var foreign = testGame.AddCity(enemy, testGame.GetTile(4, 0));
-        foreach (var query in new IQuery[] { new CityPanelQuery("nope"), new CityPanelQuery(foreign.Id), new ConstructionListQuery(foreign.Id), new BuyableTilesQuery("x") })
+        foreach (var query in new IQuery[] { new CityPanelQuery("nope"), new CityPanelQuery(foreign.Id), new ConstructionListQuery(foreign.Id), new BuyableTilesQuery("x"), new CityTilesQuery(foreign.Id) })
         {
             var response = Execute(player, query);
             Assert.False(response.Ok);
@@ -185,6 +185,40 @@ public class CityQueryTests
         player.AddGold(-player.Gold);
         var entry = AskPure(new ConstructionListQuery(city.Id)).Entries.Single(it => it.Name == "Warrior");
         Assert.Contains(entry.BuyCosts, it => it.Stat == "Gold" && !it.Allowed);
+    }
+
+    // ---- city tiles
+
+    [Fact]
+    public void CityTilesClassifyTheWorkRangeAsTheCommandsJudgeIt()
+    {
+        var result = AskPure(new CityTilesQuery(city.Id));
+        Assert.Equal(city.GetWorkRange(), result.WorkRange);
+        Assert.Equal(city.Population.GetFreePopulation(), result.FreePopulation);
+        Assert.Equal(city.TilesInRange.Count, result.Tiles.Count);
+        Assert.Single(result.Tiles, it => it.State == "Center");
+        var worked = result.Tiles.Where(it => it.State == "Worked").Select(it => (it.Position.X, it.Position.Y)).Order().ToList();
+        Assert.Equal(city.WorkedTiles.Select(it => (it.X, it.Y)).Order().ToList(), worked);
+        foreach (var tile in result.Tiles.Where(it => it.State == "Available"))
+        {
+            var engineTile = testGame.GetTile(tile.Position.X, tile.Position.Y);
+            Assert.Contains(engineTile, city.GetWorkableTiles());
+            Assert.False(engineTile.ProvidesYield());
+            Assert.NotEmpty(tile.Stats);
+        }
+    }
+
+    [Fact]
+    public void CityTilesShowLockedForeignAndUnownedTiles()
+    {
+        var workedPosition = city.WorkedTiles.First();
+        city.LockTile(testGame.GetTile(workedPosition.X, workedPosition.Y));
+        var foreignTile = testGame.GetTile(2, 0);
+        testGame.AddCity(enemy, foreignTile);
+        var result = Ask(player, new CityTilesQuery(city.Id));
+        Assert.Contains(result.Tiles, it => it.Position.X == workedPosition.X && it.Position.Y == workedPosition.Y && it.State == "Worked" && it.Locked);
+        Assert.Equal(1, result.Tiles.Count(it => it.Locked));
+        Assert.Contains(result.Tiles, it => it.Position.X == 2 && it.Position.Y == 0 && it.State == "Foreign");
     }
 
     // ---- buyable tiles
@@ -337,6 +371,7 @@ public class CityQueryTests
         Assert.Contains("cities.CityPanel", registry.RegisteredTypes);
         Assert.Contains("cities.ConstructionList", registry.RegisteredTypes);
         Assert.Contains("cities.BuyableTiles", registry.RegisteredTypes);
+        Assert.Contains("cities.CityTiles", registry.RegisteredTypes);
         Assert.Contains("tiles.TileInfo", registry.RegisteredTypes);
     }
 }

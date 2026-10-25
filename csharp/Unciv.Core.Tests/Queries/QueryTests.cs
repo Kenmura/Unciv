@@ -292,6 +292,7 @@ public class QueryTests
         ["units.AttackPreview"] = () => new Unciv.Queries.Units.AttackPreviewQuery(0, 0, UnitId: 1),
         ["cities.CityPanel"] = () => new Unciv.Queries.Cities.CityPanelQuery("c"),
         ["cities.ConstructionList"] = () => new Unciv.Queries.Cities.ConstructionListQuery("c"),
+        ["cities.CityTiles"] = () => new Unciv.Queries.Cities.CityTilesQuery("c"),
         ["cities.BuyableTiles"] = () => new Unciv.Queries.Cities.BuyableTilesQuery("c"),
         ["tiles.TileInfo"] = () => new Unciv.Queries.Tiles.TileInfoQuery(0, 0),
         ["victory.Progress"] = () => new Unciv.Queries.Victory.VictoryProgressQuery(),

@@ -29,8 +29,6 @@ public partial class GameScreen : Control
     private IGameSession session = null!; // JUSTIFY: C010 assigned by Start before the screen is used
     private AssetRegistry assets = null!; // JUSTIFY: C010 assigned by Start before the screen is used
     private GameQueries queries = null!; // JUSTIFY: C010 assigned by Start before the screen is used
-    private Control cityPanel = null!; // JUSTIFY: C041 assigned in _Ready before any use
-    private Label cityPanelText = null!; // JUSTIFY: C041 assigned in _Ready before any use
     private Node3D unitLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Node3D dotLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Label statusLabel = null!; // JUSTIFY: C010 assigned in _Ready before any use
@@ -51,10 +49,16 @@ public partial class GameScreen : Control
 
     public int? SelectedUnitId { get; private set; }
 
-    /// <summary>The city whose (placeholder) screen is open; C017's city screen replaces the panel, this stays the hook that tells which city.</summary>
+    /// <summary>The city whose screen (<see cref="City"/>) is open: the hook that tells which city.</summary>
     public CityDto? OpenCity { get; private set; }
 
-    public bool IsCityPanelVisible => cityPanel.Visible;
+    /// <summary>The city screen (C017); created by <see cref="Start"/>.</summary>
+    public CityScreen City { get; private set; } = null!; // JUSTIFY: C017 assigned in Start before any use
+
+    public bool IsCityPanelVisible => City.Visible;
+
+    /// <summary>Opens the city screen for a city of the snapshot (the viewer's own in full, any other from its snapshot entry), or closes it with null.</summary>
+    public void OpenCityScreen(CityDto? city) => ShowCity(city);
 
     public IReadOnlyDictionary<int, UnitNode> Units => unitNodes;
 
@@ -85,7 +89,6 @@ public partial class GameScreen : Control
         AddChild(Hud);
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
-        BuildCityPanel();
         Minimap = new MinimapView { Name = "Minimap" };
         AddChild(Minimap);
         Minimap.Attach(Map);
@@ -101,6 +104,11 @@ public partial class GameScreen : Control
     {
         Size = GetViewportRect().Size;
         Hud.LayoutIn(Size);
+        if (City != null)
+        {
+            City.Position = new Vector2(0f, Hud.TopBarHeight);
+            City.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
+        }
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
     }
@@ -124,7 +132,12 @@ public partial class GameScreen : Control
         session = gameSession;
         assets = registry;
         queries = new GameQueries(session);
-        Hud.Init(new UiTheme(registry));
+        var theme = new UiTheme(registry);
+        Hud.Init(theme);
+        City = new CityScreen(session, theme);
+        AddChild(City);
+        City.CommandAccepted += Refresh;
+        City.Closed += () => ShowCity(null);
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
         Refresh();
         var first = snapshot.Units.FirstOrDefault(it => it.Own != null);
@@ -239,33 +252,17 @@ public partial class GameScreen : Control
         SetStatus(DescribeSelected());
     }
 
-    private void BuildCityPanel()
-    {
-        cityPanel = new PanelContainer { Name = "CityPanel", Visible = false, CustomMinimumSize = new Vector2(260f, 0f) };
-        var box = new VBoxContainer();
-        cityPanelText = new Label { Name = "CityPanelText" };
-        var close = new Button { Name = "CityPanelClose", Text = "Close city" };
-        close.Pressed += () => ShowCity(null);
-        box.AddChild(cityPanelText);
-        box.AddChild(close);
-        cityPanel.AddChild(box);
-        AddChild(cityPanel);
-        cityPanel.Position = new Vector2(HudMargin, 40f);
-    }
-
-    /// <summary>Opens (or, with null, closes) the placeholder city screen for a city of the snapshot.</summary>
+    /// <summary>Opens (or, with null, closes) the city screen for a city of the snapshot.</summary>
     private void ShowCity(CityDto? city)
     {
         OpenCity = city;
-        cityPanel.Visible = city != null;
-        if (city == null) return;
-        var banner = MapOverlays.Banner(city);
-        var lines = new List<string> { banner.Title, "Owner: " + city.Owner };
-        lines.AddRange(banner.Details);
-        if (city.Own is { } own) lines.Add("Buildings: " + (own.Buildings.Count == 0 ? "none" : string.Join(", ", own.Buildings)));
-        else if (city.VisibleBuildings.Count > 0) lines.Add("Wonders: " + string.Join(", ", city.VisibleBuildings));
-        cityPanelText.Text = string.Join("\n", lines);
+        if (city == null)
+        {
+            if (City.Visible) City.Close();
+            return;
+        }
         SetStatus("City: " + city.Name);
+        Run(City.OpenAsync(city));
     }
 
     private void Deselect()

@@ -120,7 +120,7 @@ public sealed class FlatCityScenario : Scenario
             new Click(() => screen.Map.ScreenPositionOf(cityTile)),
             new AssertQuery("the next click on the city opens its panel with the right city", () =>
                 screen.OpenCity?.Name == human.Cities[0].Name && screen.IsCityPanelVisible),
-            new Capture("city-open", "A click on the city opened the placeholder city panel (name, owner, production)"),
+            new Capture("city-open", "A click on the city opened the city screen"),
             new Press("Close city"),
             new AssertQuery("the close button closes the panel", () => screen.OpenCity == null && !screen.IsCityPanelVisible),
             new AssertQuery("the whole scenario stayed on the command path: nothing was refused", () => refusals.Count == 0),

@@ -104,6 +104,9 @@ public sealed record CityDto
 
 public sealed record OwnCityDto
 {
+    /// <summary>The id the city commands and city queries take (C017); private to the owner like the rest of this record.</summary>
+    public required string Id { get; init; }
+
     public required int FoodStored { get; init; }
     public required int CultureStored { get; init; }
     public required List<string> Buildings { get; init; }
