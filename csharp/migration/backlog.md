@@ -2180,7 +2180,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review 2 (CHANGES-REQUESTED, low items only) fixed: Register(Type,string) validates IQuery/non-empty name, RegisterFromAssembly atomic, view creation inside the try, hostile-payload test asserts malformed-query, dead branches removed. Also committed a whitespace-only dotnet format fix to T167's SoakTests.cs (tip failed format verify). Not independently re-reviewed beyond round 2.
 
 ### T186 Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T164
 - Source: design/COMMANDS-IMPLEMENTATION.md section 7; design/SERVER.md 2.4/2.5; Logic/Battle/AttackRecorder.cs, Logic/Civilization/Notification.cs, PopupAlert.cs
 - Fixtures: none

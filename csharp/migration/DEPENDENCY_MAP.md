@@ -37,8 +37,6 @@ flowchart TD
     T083["T083<br/>Battle C: Battle, Nuke"]
     T084["T084<br/>Views A: View, GameView, OwnedView, CivView, ForeignCivView,..."]
     T085["T085<br/>Views B: CityView, ForeignCityView, CityConstructionsView, M..."]
-    T086["T086<br/>TradeLogic"]
-    T089["T089<br/>TradeEvaluation"]
     T099["T099<br/>GameStarter"]
     T100["T100<br/>Save/load B: UncivFiles"]
     T102["T102<br/>End-to-end determinism over N turns"]
@@ -189,22 +187,7 @@ flowchart TD
   T186 --> T187
   T184 --> T187
   T183 --> T187
-  T164 --> T188
-  T186 --> T188
-  T083 --> T188
-  T164 --> T189
-  T186 --> T189
-  T080 --> T189
-  T185 --> T189
   T189 --> T190
-  T164 --> T191
-  T186 --> T191
-  T164 --> T192
-  T186 --> T192
-  T164 --> T193
-  T186 --> T193
-  T086 --> T193
-  T089 --> T193
   T187 --> T194
   T188 --> T194
   T189 --> T194
@@ -237,7 +220,6 @@ flowchart TD
   T176 --> T205
   T179 --> T206
   T179 --> T207
-  T186 --> T209
   C001 --> C002
   A003 --> C002
   A004 --> C002
@@ -464,8 +446,6 @@ flowchart TD
   class T083 done
   class T084 done
   class T085 done
-  class T086 done
-  class T089 done
   class T099 done
   class T100 done
   class T102 done
@@ -494,14 +474,14 @@ flowchart TD
   class T183 ready
   class T184 waiting
   class T185 done
-  class T186 review
+  class T186 done
   class T187 waiting
-  class T188 ondeck
-  class T189 ondeck
+  class T188 ready
+  class T189 ready
   class T190 waiting
-  class T191 ondeck
-  class T192 ondeck
-  class T193 ondeck
+  class T191 ready
+  class T192 ready
+  class T193 ready
   class T194 waiting
   class T195 done
   class T196 ready
@@ -517,7 +497,7 @@ flowchart TD
   class T206 waiting
   class T207 waiting
   class T208 ready
-  class T209 ondeck
+  class T209 ready
 ```
 
 ## Remaining tickets over time
@@ -536,7 +516,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00"]
     y-axis "Tickets" 0 --> 83
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 75]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 2]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 1]
 ```
 
 ## Incomplete tickets
@@ -545,7 +525,12 @@ xychart-beta
 |---|---|---|---|---|
 | T172 | **Ready to start** | T012 | 47 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
 | T183 | **Ready to start** | T071, T046 | 45 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
+| T188 | **Ready to start** | T164, T186, T083 | 39 | Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue |
+| T189 | **Ready to start** | T164, T186, T080, T185 | 19 | Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop) |
+| T191 | **Ready to start** | T164, T186 | 17 | City commands: production queue, purchase, buy tile, worked tiles and specialists, focus, annex/puppet/raze, sell building, rename |
+| T192 | **Ready to start** | T164, T186 | 17 | Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode) |
 | T199 | **Ready to start** | T185, T099, T045, T170 | 9 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
+| T193 | **Ready to start** | T164, T186, T086, T089 | 5 | Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage |
 | T197 | **Ready to start** | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
 | T166 | **Ready to start** | A003 | 3 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
 | T196 | **Ready to start** | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
@@ -556,18 +541,12 @@ xychart-beta
 | T163 | **Ready to start** | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T208 | **Ready to start** | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
-| T188 | **On deck** (after T186) | T164, T186, T083 | 39 | Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue |
-| T189 | **On deck** (after T186) | T164, T186, T080, T185 | 19 | Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop) |
-| T191 | **On deck** (after T186) | T164, T186 | 17 | City commands: production queue, purchase, buy tile, worked tiles and specialists, focus, annex/puppet/raze, sell building, rename |
-| T192 | **On deck** (after T186) | T164, T186 | 17 | Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode) |
-| T193 | **On deck** (after T186) | T164, T186, T086, T089 | 5 | Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage |
+| T209 | **Ready to start** | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
 | C030 | **On deck** (after C007) | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
-| T209 | **On deck** (after T186) | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
-| T186 | Needs-Review [Claude] | T164 | 51 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
-| T187 | Available (waiting on T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
-| T175 | Available (waiting on T172, T174, T186) | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
+| T187 | Available (waiting on T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
+| T175 | Available (waiting on T172, T174) | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
 | C007 | Needs-Review [Claude] | C001, A003, A004, A005, A006, A007 | 33 | Asset registry and procedural placeholder generator |
 | C009 | Available (waiting on C007, T174) | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C010 | Available (waiting on C009, T184, T187, T188, T174, T175) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
