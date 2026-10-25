@@ -1943,7 +1943,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From the playability gap review: T102 only proves 60 turns on Tiny/Small, 3-5 civs, no city states, no run to a real victory. Assert no exception, record turn-time and memory budgets, run to a victory or the turn limit. Real bugs found go to the engine with regression tests.
 
 ### T168 Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T099, T100, T102
 - Source:
 - Fixtures: none
@@ -1951,6 +1951,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet build Unciv.Cli -warnaserror
 - Claimed: 2026-10-25T00:39Z
 - Notes: Gap review: the Harness projects are image tools, not a game runner. The CLI is also the entry point for the soak ticket and for demos.
+  - Implemented csharp/Unciv.Cli (CliArgs, CliRunner, Program), Unciv.Cli/README.md (build/run docs), tests Unciv.Core.Tests/Cli/CliTests.cs (parsing + end-to-end new/play/save/load/hash/info, ~2 s). Added to Unciv.sln (dotnet sln add; builds in ~4 s) and referenced from Core.Tests; Directory.Build.props/BannedSymbols/.editorconfig untouched. Commands: new, play --turns N [--hashes], save, load, hash, info. Hash = StateHasher over the plain JSON save (same definition as EndToEndDeterminismTests). Clock: new game at 1000000 ms, +1000 ms per turn, so output is a pure function of args+files. First nation is Human, played by SimulateUntilWin as in the T102 tests. Vanilla ruleset only (mods: T170 follow-up). Coverage baseline: 3 new entries (CliArgs/CliRunner/Program).
 
 ### T169 CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes
 - State: Available

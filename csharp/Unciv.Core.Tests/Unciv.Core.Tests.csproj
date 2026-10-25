@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Unciv.Core\Unciv.Core.csproj" />
     <ProjectReference Include="..\Unciv.Harness\Unciv.Harness.csproj" />
+    <ProjectReference Include="..\Unciv.Cli\Unciv.Cli.csproj" />
   </ItemGroup>
 
 </Project>

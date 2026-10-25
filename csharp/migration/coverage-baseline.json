@@ -1,5 +1,8 @@
 {
   "files": {
+    "Unciv.Cli/CliArgs.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Cli/CliRunner.cs": {"branch": 93.94, "line": 97.4},
+    "Unciv.Cli/Program.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Data/GlobalAIDefines.cs": {"branch": 95.83, "line": 100.0},
     "Unciv.Core/AI/Data/GrandStrategyFlavors.cs": {"branch": 96.43, "line": 100.0},
     "Unciv.Core/AI/Data/TacticalMoveDefinition.cs": {"branch": 95.83, "line": 97.56},
