@@ -144,6 +144,32 @@ Scenario `hud`.
 
 *After Next turn: new turn banner, updated top bar, units due again.* (`hud/next-turn.png`)
 
+## C012 Unit panel and orders: attack, fortify, found city, workers, automate
+
+Unit orders panel: selecting units, order buttons, attack preview, disband confirmation.
+
+Scenario `unit-orders`.
+
+![Warrior selected: stats and order buttons (fortify, automate, explore).](../Unciv.Godot.Harness/golden/unit-orders/warrior-selected.png)
+
+*Warrior selected: stats and order buttons (fortify, automate, explore).* (`unit-orders/warrior-selected.png`)
+
+![Worker selected: worker-specific orders list.](../Unciv.Godot.Harness/golden/unit-orders/worker-selected.png)
+
+*Worker selected: worker-specific orders list.* (`unit-orders/worker-selected.png`)
+
+![Attack preview dialog with strength, health and damage ranges.](../Unciv.Godot.Harness/golden/unit-orders/attack-preview.png)
+
+*Attack preview dialog with strength, health and damage ranges.* (`unit-orders/attack-preview.png`)
+
+![Result after confirming the attack.](../Unciv.Godot.Harness/golden/unit-orders/after-attack.png)
+
+*Result after confirming the attack.* (`unit-orders/after-attack.png`)
+
+![Disband confirmation prompt.](../Unciv.Godot.Harness/golden/unit-orders/disband-confirm.png)
+
+*Disband confirmation prompt.* (`unit-orders/disband-confirm.png`)
+
 ## C014 Minimap
 
 Minimap in the top right corner with a camera rectangle; click to jump.
