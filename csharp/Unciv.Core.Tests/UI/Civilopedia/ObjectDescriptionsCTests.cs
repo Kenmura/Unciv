@@ -5,6 +5,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Nation;
 using Unciv.Models.Ruleset.Tech;
 using Unciv.Models.Ruleset.Tile;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.UI.ObjectDescriptions;
 using Unciv.UI.Screens.Civilopedia;
@@ -248,6 +249,21 @@ public class ObjectDescriptionsCTests
             + "{See also}:\n"
             + "  Tradition ->Policy/Tradition",
             Dump(pedia.GetCivilopediaTextLines(new CivilopediaContext(ruleset))));
+    }
+
+    [Fact]
+    public void EraSeeAlsoListsObjectsWithEraConditionalOnlyAvailable()
+    {
+        var ruleset = new Ruleset();
+        var era = new Era { Name = "Ancient era", EraNumber = 1 };
+        ruleset.Eras.Put(era.Name, era);
+        ruleset.Technologies.Put("Gated", new Technology { Name = "Gated", Column = new TechColumn { Era = "Classical era" }, Uniques = [UniqueType.OnlyAvailable.Text() + " <starting from the [Ancient era]>"] });
+        ruleset.Technologies.Put("Plain", new Technology { Name = "Plain", Column = new TechColumn { Era = "Classical era" }, Uniques = [UniqueType.OnlyAvailable.Text() + " <after adopting [Liberty]>"] });
+
+        var text = Dump(((ICivilopediaText)era).GetCivilopediaTextLines(new CivilopediaContext(ruleset)));
+
+        Assert.Contains("Gated ->Technology/Gated", text);
+        Assert.DoesNotContain("Plain ->Technology/Plain", text);
     }
 
     [Fact]

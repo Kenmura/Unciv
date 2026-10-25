@@ -1878,7 +1878,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Tests only (UnitAutomationTests.ExploreGaps.cs). Covered: TryFogBust (reflection call; private and only reachable late in AutomateUnitMoves), MapUnit.Automation AutomateUnitMoves via DoAction, UnitActions Explore/Automate delegates, TryRetreat swap (healthy melee swaps, <=80 HP and ranged-too-close skipped), TryHealUnit air-unit branch (reaches nearest own-city tile; an air unit's own city tile always counts as an empty city, so the "emptyCities.Count==0" and "nextTile==null" lines stay uncovered). MaxByScore (ConstructionAutomation) and damage-aware A* were already fully covered by later tickets. Remaining gaps, not closed: SpecificUnitAutomation 92, 122-130 (multi-settler frontier filter), 152-162, 179-182, 212 (AddInCapital swap) and UnitAutomation.Explore 41, 91-93; needs a follow-up ticket. Pre-existing --all failures unrelated to this ticket: Era.cs, Terrain.cs, CollectionExtensions.cs (baseline 100% but now <100%) and the generated RegexGenerator.g.cs under obj/.
 
 ### T162 Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T159
 - Source:
 - Fixtures: none
@@ -1886,6 +1886,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate:
 - Claimed: 2026-10-25T04:40Z
 - Notes: Pre-existing: plain --check only looks at changed files, so --all exposes these. Add tests to meet the baseline (do not lower it).
+  - Implemented: tests restoring 100% on Era.cs (era-gated See also), Terrain.cs (single-resource inline link, unknown-type subcategory), CollectionExtensions.cs (JavaHashMap-of-sets Contains). tools/coverage.py: parse() now skips generated files (*.g.cs and anything under /obj/, e.g. RegexGenerator.g.cs): compiler output has no baseline/80% floor; hand-written code declaring [GeneratedRegex] is still measured. No baseline lowered; baseline unchanged. Gate: build -warnaserror, format, test (0 failed), coverage --check and --check --all all exit 0.
 
 ### T163 ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule)
 - State: Available

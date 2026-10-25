@@ -66,6 +66,18 @@ public class UtilsTests
     }
 
     [Fact]
+    public void JavaMapOfSetsHelpers()
+    {
+        var map = new JavaHashMap<string, JavaHashSet<int>>();
+        Assert.False(map.Contains("x", 1));
+        Assert.True(map.AddToMapOfSets("x", 1));
+        Assert.False(map.AddToMapOfSets("x", 1));
+        Assert.True(map.Contains("x", 1));
+        Assert.False(map.Contains("x", 2));
+        Assert.False(map.Contains("y", 1));
+    }
+
+    [Fact]
     public void MapOfSetsHelpers()
     {
         var map = new Dictionary<string, HashSet<int>>();

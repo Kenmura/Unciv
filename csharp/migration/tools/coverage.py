@@ -70,12 +70,18 @@ def shlex_quote(s):
     return "'" + s.replace("'", "'\\''") + "'"
 
 
+def is_generated(fn):
+    """Compiler/source-generator output (RegexGenerator.g.cs under obj/, *.g.cs): not our source, so it has no
+    baseline and no 80% floor. The hand-written code that declares a [GeneratedRegex] is still measured."""
+    return "/obj/" in fn or fn.endswith(".g.cs")
+
+
 def parse(path):
     """-> {file: {"lines": {n: hits}, "branches": {n: (covered, total)}}} merged across classes/methods."""
     out = {}
     for cls in ET.parse(path).getroot().iter("class"):
         fn = cls.get("filename").replace("\\", "/")
-        if ".Tests/" in fn or fn.startswith("/"):
+        if ".Tests/" in fn or fn.startswith("/") or is_generated(fn):
             continue
         f = out.setdefault(fn, {"lines": {}, "branches": {}})
         for line in cls.find("lines"):

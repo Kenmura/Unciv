@@ -632,6 +632,23 @@ public class ObjectDescriptionsBTests
     }
 
     [Fact]
+    public void Terrain_GetCivilopediaTextLines_SingleResourceUsesInlineLink()
+    {
+        var ruleset = MakeRuleset();
+        var lines = ruleset.Terrains["Plains"].GetCivilopediaTextLines(Ctx(ruleset)).ToList();
+
+        Assert.Contains(lines, l => l.Text == "May contain [Wheat]" && l.Link == "Resource/Wheat");
+        Assert.DoesNotContain(lines, l => l.Text == "May contain:");
+    }
+
+    [Fact]
+    public void Terrain_GetSubCategory_UnknownTypeIsNull()
+    {
+        var odd = new Terrain { Name = "Odd", Type = (TerrainType)99 };
+        Assert.Null(((ICivilopediaText)odd).GetSubCategory(MakeRuleset()));
+    }
+
+    [Fact]
     public void Terrain_GetCivilopediaTextLines_NaturalWonder()
     {
         var ruleset = MakeRuleset();
