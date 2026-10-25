@@ -2249,13 +2249,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (adversarial subagent): PASS. Fixed MINOR 1 (Bombard rejects enemy city tiles, as BattleTable) and MINOR 2 (SetMoveOrder is a no-op when the unit cannot move, as the UI; supersedes the earlier note). Open minors: no tests for escort pairs, embarked/transported units, air units in MoveUnit/SetMoveOrder.
 
 ### T189 Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T164, T186, T080, T185
 - Source: design/COMMANDS-IMPLEMENTATION.md section 4; logic/map/mapunit/actions/UnitActions.kt (getUnitActions, invokeUnitAction), models/UnitAction.kt; csharp Models/UnitAction.cs, Logic/Map/MapUnit/UnitActions*.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/Units/{UnitActionDescriptor.cs,ExecuteUnitAction.cs,SetWorkerOrder.cs,PromoteUnit.cs}, Queries/UnitActionsQuery.cs, edit Models/UnitAction.cs (stable Key), tests: for every UnitActionType in a scripted scenario descriptor -> command -> same state as invoking the closure
 - Gate: dotnet test --filter FullyQualifiedName~UnitActionDescriptor
-- Claimed:
+- Claimed: 2026-10-25T03:35Z
 - Notes:
   - Design (section 4): UnitAction closures cannot be serialized. A descriptor is {Type: UnitActionType, Key: string?, Index: int}: Key is a stable parameter (target unit name for Upgrade/Transform, improvement name for CreateImprovement, unique text for TriggerUnique and the Hurry*/ConductTradeMission/Paradrop family, recipient civ for GiftUnit, religion name, etc.), Index disambiguates equal keys. Add a read-only UnitAction.Key set by the factories (UnitActionsUpgrade, UnitActionsFromUniques, ...) - this is an engine addition the Kotlin lacks, justify in the file header.
       - GetUnitActionDescriptors(unit) lists getUnitActions(unit) with IsEnabled = (action.Action != null), title, confirmation text, the UnitActionType priority data the UI needs (UnitActionPriority modifiers from AssociatedUnique), never the closure.
