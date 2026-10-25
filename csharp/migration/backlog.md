@@ -2624,13 +2624,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Audit of AlertPopup.kt: Denounced "THIS MEANS WAR!" is already RespondToAlert (choice "war", T193); "Very well." / "You'll pay for this!" (RejectingDemand) / AcceptingDemand / the three DemandViolationNoticed alerts only close the popup, so they are already dismissed by AckAlert (ResolverOf = ack-alert, defeated civ is just a no-op show). No new command needed; added tests (AlertCommandTests: DiplomacyNoticesAreDismissedWithAck, DenouncementFromADefeatedCivCanOnlyBeAcknowledged) pinning that behaviour.
 
 ### T214 Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T175
 - Source: csharp/migration/design/SERVER.md sections 2.4, 3
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Visibility/ViewDeltaBuilder.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~NetEvents
-- Claimed:
+- Claimed: 2026-10-25T12:59Z
 - Notes:
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
