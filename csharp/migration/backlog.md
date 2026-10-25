@@ -1916,6 +1916,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: C006 says 'separate server ticket needed'. Designs on the command log (replay-verifiable). Must not depend on the Won't-port Kotlin multiplayer stack. Split design and implementation if large.
 
+### T166 Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization)
+- State: Available
+- Depends: A003
+- Source: csharp/migration/ai-spec/SPEC.md §4
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/AI/GrandStrategy/Scorers/VictoryScorerInputsFactory.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~VictoryScorerInputsTests
+- Claimed:
+- Notes:
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
@@ -1993,6 +2003,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Claimed: 2026-10-25T00:21Z
 - Notes: Uses Brave New World formulas (Tourism/Influence ahead comparisons, World Congress voting power, stat ratios). Returns -100 if victory condition disabled.
   - Backlog audit: Depends extended with T055/T057/T059 (Civilization, victory/culture/religion managers, diplomacy state the scorers read).
+  - Scorers are pure functions of input records (VictoryScorerInputs.cs), not of Civilization: SPEC section 4 leaves many operands unrecovered ([?]: BNW conquest base term and -50 tail predicate, culture/diplomatic X, diplomatic c1..c3, spaceship progress count), so the caller supplies them. Game adapter split to a follow-up ticket (see backlog). Assumptions: int division truncates as in C; diplomatic with a League but VotesNeeded<=0 skips the vote terms; clamp5 = Clamp(5x,-limit,limit) with limits 40/20/40 as public consts; spaceship ProgressWeight 5 and conquest tail 50 are literals. Edition param kept but only BNW formulas implemented. 15 tests, 100% line/branch coverage.
 
 ### A004 Target-centric Tactical AI: TacticalMoveQueue & recruitment
 - State: In-Progress [Claude]

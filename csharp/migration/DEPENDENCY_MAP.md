@@ -29,6 +29,7 @@ flowchart TD
     T163["T163<br/>ticket.py: refuse Done unless the tip builds, tests pass and..."]
     T164["T164<br/>Command layer implementation over GameInfo (move, attack, fo..."]
     T165["T165<br/>Authoritative game server: protocol, lobby, turn notificatio..."]
+    T166["T166<br/>Victory scorer game adapter (fills ConquestInputs/CultureInp..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -63,6 +64,7 @@ flowchart TD
   A005 --> T165
   A006 --> T165
   A007 --> T165
+  A003 --> T166
   C001 --> C002
   A003 --> C002
   A004 --> C002
@@ -116,6 +118,7 @@ flowchart TD
   class T163 ondeck
   class T164 waiting
   class T165 waiting
+  class T166 ondeck
 ```
 
 ## Remaining tickets over time
@@ -133,7 +136,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 14]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 15]
     line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
 ```
 
@@ -147,8 +150,9 @@ xychart-beta
 | A005 | **On deck** (after A004) | A004 | 8 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | **On deck** (after A004) | A004, T091, T092 | 7 | Homeland AI priority move queue |
 | T163 | **On deck** (after T104) | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
+| T166 | **On deck** (after A003) | A003 | 0 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
 | A004 | In-Progress [Claude] | A001, T039, T040, T065, T067, T081, T090 | 10 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
-| A003 | In-Progress [Claude] | A002, T030, T055, T057, T059 | 7 | Victory scorers (BNW) |
+| A003 | In-Progress [Claude] | A002, T030, T055, T057, T059 | 8 | Victory scorers (BNW) |
 | A007 | Available (waiting on A004, A005) | A004, A005 | 7 | Operations and armies layer |
 | C002 | Available (waiting on A003, A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
 | T164 | Available (waiting on A003, A004, A005, A006, A007) | T012, T071, T083, T080, T100, A003, A004, A005, A006, A007 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
