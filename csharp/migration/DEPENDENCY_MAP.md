@@ -458,7 +458,7 @@ flowchart TD
   class T169 ready
   class T170 done
   class T171 done
-  class T172 prog
+  class T172 review
   class T173 ondeck
   class T174 ondeck
   class T175 waiting
@@ -540,7 +540,7 @@ xychart-beta
 | T184 | **On deck** (after T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | **On deck** (after T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T173 | **On deck** (after T172) | T172 | 12 | Host identity and join auth: client ECDSA P-256 key bound to a slot (TOFU), lobby password / single-use invite token for admission, host key fingerprint |
-| T172 | In-Progress [Claude] | T012 | 47 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
+| T172 | Needs-Review [Claude] | T012 | 47 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
 | T183 | In-Progress [Claude] | T071, T046 | 45 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
 | T187 | Available (waiting on T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T188 | In-Progress [Claude] | T164, T186, T083 | 39 | Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue |
