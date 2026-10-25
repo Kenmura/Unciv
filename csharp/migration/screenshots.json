@@ -346,5 +346,35 @@
   },
   "C042": {
     "none": "Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015."
+  },
+  "C025": {
+    "scenario": "l10n-sheet",
+    "about": "Translations in the client: language picker, OFL fallback fonts for non-Latin scripts, right-to-left text.",
+    "shots": [
+      {
+        "golden": "l10n-sheet/latin.png",
+        "caption": "German chosen in the picker: the settings page and the sample keys translated, umlauts and sharp s drawn."
+      },
+      {
+        "golden": "l10n-sheet/cyrillic.png",
+        "caption": "Russian: Cyrillic text throughout."
+      },
+      {
+        "golden": "l10n-sheet/japanese.png",
+        "caption": "Japanese: kanji and kana from the CJK fallback font; untranslated strings stay English."
+      },
+      {
+        "golden": "l10n-sheet/devanagari.png",
+        "caption": "Hindi (36% translated): Devanagari with conjuncts, the rest falling back to English."
+      },
+      {
+        "golden": "l10n-sheet/thai.png",
+        "caption": "Thai: tone marks above and below the line."
+      },
+      {
+        "golden": "l10n-sheet/rtl.png",
+        "caption": "Arabic and Hebrew sample lines laid out right to left with digits and a Latin word inside."
+      }
+    ]
   }
 }

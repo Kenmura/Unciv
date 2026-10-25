@@ -340,6 +340,36 @@ Scenario `diplomacy`.
 
 *City-state under the player's protection.* (`diplomacy/protected.png`)
 
+## C025 (ticket not Done or unknown)
+
+Translations in the client: language picker, OFL fallback fonts for non-Latin scripts, right-to-left text.
+
+Scenario `l10n-sheet`.
+
+![German chosen in the picker: the settings page and the sample keys translated, umlauts and sharp s drawn.](../Unciv.Godot.Harness/golden/l10n-sheet/latin.png)
+
+*German chosen in the picker: the settings page and the sample keys translated, umlauts and sharp s drawn.* (`l10n-sheet/latin.png`)
+
+![Russian: Cyrillic text throughout.](../Unciv.Godot.Harness/golden/l10n-sheet/cyrillic.png)
+
+*Russian: Cyrillic text throughout.* (`l10n-sheet/cyrillic.png`)
+
+![Japanese: kanji and kana from the CJK fallback font; untranslated strings stay English.](../Unciv.Godot.Harness/golden/l10n-sheet/japanese.png)
+
+*Japanese: kanji and kana from the CJK fallback font; untranslated strings stay English.* (`l10n-sheet/japanese.png`)
+
+![Hindi (36% translated): Devanagari with conjuncts, the rest falling back to English.](../Unciv.Godot.Harness/golden/l10n-sheet/devanagari.png)
+
+*Hindi (36% translated): Devanagari with conjuncts, the rest falling back to English.* (`l10n-sheet/devanagari.png`)
+
+![Thai: tone marks above and below the line.](../Unciv.Godot.Harness/golden/l10n-sheet/thai.png)
+
+*Thai: tone marks above and below the line.* (`l10n-sheet/thai.png`)
+
+![Arabic and Hebrew sample lines laid out right to left with digits and a Latin word inside.](../Unciv.Godot.Harness/golden/l10n-sheet/rtl.png)
+
+*Arabic and Hebrew sample lines laid out right to left with digits and a Latin word inside.* (`l10n-sheet/rtl.png`)
+
 ## C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
 
 Flat-map cities, borders, roads and improvements.
@@ -371,4 +401,4 @@ Done tickets with nothing meaningful to show.
 - **C001 Godot project skeleton**: Empty Main.tscn skeleton; there is nothing to look at.
 - **C007 Asset registry and procedural placeholder generator**: Asset registry and procedural generator. Its gate (Unciv.Godot/tools/run-asset-sheet.sh) writes out/asset-sheet.png, but no golden is committed (C008 was to wrap it). Candidate for a follow-up: an asset-sheet scenario with a golden.
 - **C037 IGameSession: client reads and writes only through a session interface; LocalHost implements it**: IGameSession is an engine/client interface with no UI of its own; it is exercised by every scenario above.
-- **C042 (ticket not Done or unknown)**: Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015.
+- **C042 Client packaging: bundle rulesets and translations, user mods folder, export presets, third-party notices**: Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015.

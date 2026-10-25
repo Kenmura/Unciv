@@ -4,6 +4,8 @@ using Unciv.GodotClient.Play;
 using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Ui;
 using Unciv.Net.Visibility;
+using Unciv.Models.Translations;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Saves;
 
@@ -25,7 +27,7 @@ public partial class SaveController : Control
     private readonly Func<string, IGameSession> loader;
     private readonly Action<IGameSession> onLoaded;
     private readonly Label messageLabel = new() { Name = "SaveMessage" };
-    private readonly Button openButton = new() { Text = "Saves", Name = "SavesButton" };
+    private readonly Button openButton = new() { Text = "Saves".Tr(), Name = "SavesButton" };
     private IGameSession? session;
     private int lastTurn = -1;
     private string? pendingDelete;
@@ -225,7 +227,7 @@ public partial class SaveController : Control
         dialog = new PanelContainer { Name = "SaveDialog", CustomMinimumSize = DialogSize, Size = DialogSize };
         var column = new VBoxContainer();
         dialog.AddChild(column);
-        NameField = new LineEdit { PlaceholderText = "Save name", Text = $"Game-{(session?.Snapshot.Turn ?? 0).ToString(CultureInfo.InvariantCulture)}" };
+        NameField = new LineEdit { PlaceholderText = "Save name".Tr(), Text = $"Game-{(session?.Snapshot.Turn ?? 0).ToString(CultureInfo.InvariantCulture)}" };
         column.AddChild(NameField);
         var buttons = new HBoxContainer();
         column.AddChild(buttons);
@@ -256,7 +258,7 @@ public partial class SaveController : Control
 
     private Button AddButton(Container parent, string text, Action pressed)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text.TrText() };
         button.Pressed += pressed;
         parent.AddChild(button);
         return button;
@@ -308,7 +310,7 @@ public partial class SaveController : Control
         return $"{entry.Name}   turn {info.Turn.ToString(CultureInfo.InvariantCulture)}   {info.Civ}   {info.Ruleset}{mods}   {when}";
     }
 
-    private void Say(string text) => messageLabel.Text = text;
+    private void Say(string text) => messageLabel.Text = text.TrText();
 
     private async void Run(Task task)
     {

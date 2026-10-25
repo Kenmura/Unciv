@@ -18,6 +18,9 @@ public class LiteralLintTests
     [InlineData("var p = \"uid://abc\";", "res:// literal")]
     [InlineData("var p = \"user://save\";", "res:// literal")]
     [InlineData("var p = \"res\" + \"://\" + x;", "res:// literal")]
+    [InlineData("var b = new Button { Text = \"Cancel\" };", "untranslated text literal")]
+    [InlineData("x.TooltipText = \"Not available yet\";", "untranslated text literal")]
+    [InlineData("new LineEdit { PlaceholderText = \"random\" };", "untranslated text literal")]
     public void DetectsViolations(string line, string rule) => Assert.Equal(rule, Assert.Single(LiteralLint.Scan("X.cs", line)).Rule);
 
     [Theory]
@@ -26,6 +29,11 @@ public class LiteralLintTests
     [InlineData("var s = \"issue #12\";")]
     [InlineData("var c = registry.Get<Material>(key);")]
     [InlineData("var c = MyColors.Red;")]
+    [InlineData("var b = new Button { Text = \"Cancel\".Tr() };")]
+    [InlineData("label.Text = \"\";")]
+    [InlineData("label.Text = \"+\";")]
+    [InlineData("label.Text = $\"{x} units\";")]
+    [InlineData("var b = new Button { Name = \"Cancel\" };")]
     public void IgnoresCommentsAndLookalikes(string line) => Assert.Empty(LiteralLint.Scan("X.cs", line));
 
     [Fact]

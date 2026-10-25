@@ -1,6 +1,8 @@
 using Godot;
 using Unciv.Assets;
 using Unciv.GodotClient.Ui;
+using Unciv.Models.Translations;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
 
@@ -23,7 +25,7 @@ public partial class UnitPanelView : PanelContainer
     private readonly VBoxContainer confirmBox = new() { Name = "Confirm", Visible = false };
     private readonly Label question = new() { Name = "Question", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Button yes = new() { Name = "ConfirmYes" };
-    private readonly Button no = new() { Name = "ConfirmNo", Text = "Cancel" };
+    private readonly Button no = new() { Name = "ConfirmNo", Text = "Cancel".Tr() };
     private readonly List<(MenuEntry Entry, Button Button)> buttons = [];
     private UiTheme? theme;
     private MenuEntry? asking;
@@ -81,11 +83,11 @@ public partial class UnitPanelView : PanelContainer
     public void Show(UnitPanelInfo info, IReadOnlyList<MenuEntry> menu)
     {
         EndConfirmation();
-        title.Text = info.Title;
+        title.Text = info.Title.TrText();
         var lines = new List<string> { info.Strength, info.Moves, info.Health, info.Xp };
         if (info.Order.Length > 0) lines.Add("Order: " + info.Order);
         if (info.Promotions.Count > 0) lines.Add("Promotions: " + string.Join(", ", info.Promotions));
-        stats.Text = string.Join("\n", lines.Where(it => it.Length > 0));
+        stats.Text = string.Join("\n", lines.Where(it => it.Length > 0).Select(it => it.TrText()));
         foreach (var child in menuBox.GetChildren())
         {
             menuBox.RemoveChild(child); // at once: the tests and the layout read the box in the same frame
@@ -94,7 +96,7 @@ public partial class UnitPanelView : PanelContainer
         buttons.Clear();
         foreach (var entry in menu)
         {
-            var button = new Button { Text = entry.Label, Disabled = !entry.Enabled, Alignment = HorizontalAlignment.Left, TooltipText = entry.Reason ?? "" };
+            var button = new Button { Text = entry.Label.TrText(), Disabled = !entry.Enabled, Alignment = HorizontalAlignment.Left, TooltipText = (entry.Reason ?? "").TrText() };
             button.Pressed += () => EntryChosen?.Invoke(entry);
             menuBox.AddChild(button);
             buttons.Add((entry, button));
@@ -113,8 +115,8 @@ public partial class UnitPanelView : PanelContainer
     public void AskConfirmation(MenuEntry entry, string questionText, string confirmText)
     {
         asking = entry;
-        question.Text = questionText;
-        yes.Text = confirmText.Length > 0 ? confirmText : "Yes";
+        question.Text = questionText.TrText();
+        yes.Text = (confirmText.Length > 0 ? confirmText : "Yes").TrText();
         scroll.Visible = false;
         confirmBox.Visible = true;
         LayoutIn(GetViewportRect().Size);

@@ -5,6 +5,8 @@ using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
 using Unciv.GodotClient.Ui;
 using TabBar = Unciv.GodotClient.Ui.TabBar;
+using Unciv.Models.Translations;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Setup;
 
@@ -52,9 +54,9 @@ public partial class NewGameScreen : Control
         column.AddChild(Tabs);
         column.AddChild(messageLabel);
         var bottom = new HBoxContainer();
-        StartButton = new Button { Text = "Start game", Name = "StartButton" };
+        StartButton = new Button { Text = "Start game".Tr(), Name = "StartButton" };
         StartButton.Pressed += () => _ = StartAsync();
-        BackButton = new Button { Text = "Back", Name = "BackButton" };
+        BackButton = new Button { Text = "Back".Tr(), Name = "BackButton" };
         BackButton.Pressed += () => BackRequested?.Invoke();
         bottom.AddChild(StartButton);
         bottom.AddChild(BackButton);
@@ -105,7 +107,7 @@ public partial class NewGameScreen : Control
 
     private void SetMessage(string text, bool isError)
     {
-        messageLabel.Text = text;
+        messageLabel.Text = text.TrText();
         messageLabel.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(isError ? PlaceholderPalette.ErrorText : PlaceholderPalette.Text));
     }
 
@@ -172,14 +174,14 @@ public partial class NewGameScreen : Control
 
     private Button AddButton(Container parent, string text, Action pressed, string? name = null)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text.TrText() };
         if (name != null) button.Name = name;
         button.Pressed += pressed;
         parent.AddChild(button);
         return button;
     }
 
-    private static void AddHeading(Container page, string text) => page.AddChild(new Label { Text = text });
+    private static void AddHeading(Container page, string text) => page.AddChild(new Label { Text = text.TrText() });
 
     private void AddChoice(Container page, string field, string heading, IEnumerable<string> options, string selected, Action<string> chosen) =>
         AddCheckedChoice(page, field, heading, options, selected, value =>
@@ -207,7 +209,7 @@ public partial class NewGameScreen : Control
 
     private void AddCheckedCheck(Container page, string text, bool on, Func<bool, string?> changed)
     {
-        var box = new CheckBox { Text = text, ButtonPressed = on };
+        var box = new CheckBox { Text = text.TrText(), ButtonPressed = on };
         box.Toggled += value => Change(changed(value));
         page.AddChild(box);
     }
@@ -222,11 +224,11 @@ public partial class NewGameScreen : Control
 
         var counts = new HFlowContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         AddButton(counts, "Fewer players", () => Change(Form.SetPlayerCount(Form.Slots.Count - 1)));
-        counts.AddChild(new Label { Text = $" {Form.Slots.Count.ToString(CultureInfo.InvariantCulture)} players " });
+        counts.AddChild(new Label { Text = $" {Form.Slots.Count.ToString(CultureInfo.InvariantCulture)} {"players".Tr()} " });
         AddButton(counts, "More players", () => Change(Form.SetPlayerCount(Form.Slots.Count + 1)));
         counts.AddChild(new Label { Text = "   " });
         AddButton(counts, "Fewer city-states", () => Change(Form.SetCityStates(Form.CityStates - 1)));
-        counts.AddChild(new Label { Text = $" {Form.CityStates.ToString(CultureInfo.InvariantCulture)} city-states " });
+        counts.AddChild(new Label { Text = $" {Form.CityStates.ToString(CultureInfo.InvariantCulture)} {"city-states".Tr()} " });
         AddButton(counts, "More city-states", () => Change(Form.SetCityStates(Form.CityStates + 1)));
         playersPage.AddChild(counts);
 
@@ -236,7 +238,7 @@ public partial class NewGameScreen : Control
             var line = new HBoxContainer { Name = $"Slot{(i + 1).ToString(CultureInfo.InvariantCulture)}" };
             var nation = new Button
             {
-                Text = $"{(i + 1).ToString(CultureInfo.InvariantCulture)}. {Form.Slots[i].Nation}",
+                Text = $"{(i + 1).ToString(CultureInfo.InvariantCulture)}. {Form.Slots[i].Nation.TrText()}",
                 ToggleMode = true,
                 ButtonPressed = i == selectedSlot,
                 CustomMinimumSize = new Vector2(theme.Px(190), 0),
@@ -248,7 +250,7 @@ public partial class NewGameScreen : Control
                 selectedSlot = slot;
                 Refresh();
             };
-            var human = new Button { Text = Form.Slots[i].IsHuman ? "Human" : "AI" };
+            var human = new Button { Text = (Form.Slots[i].IsHuman ? "Human" : "AI").TrText() };
             human.Pressed += () => Change(Form.SetHuman(slot, !Form.Slots[slot].IsHuman));
             line.AddChild(nation);
             line.AddChild(human);
@@ -262,7 +264,7 @@ public partial class NewGameScreen : Control
         playersPage.AddChild(grid);
         foreach (string name in new[] { Constants.Random }.Concat(Form.PlayableNations))
         {
-            var button = new Button { Text = name };
+            var button = new Button { Text = name.TrText() };
             Colour(button, name);
             bool taken = name != Constants.Random && Form.Slots.Select((s, index) => (s, index)).Any(it => it.s.Nation == name && it.index != selectedSlot);
             button.Disabled = taken;
@@ -314,7 +316,7 @@ public partial class NewGameScreen : Control
         AddCheck(flags, "No ancient ruins", Form.NoRuins, on => Form.NoRuins = on);
         AddCheck(flags, "No natural wonders", Form.NoNaturalWonders, on => Form.NoNaturalWonders = on);
         AddHeading(mapPage, "Seed (empty for a random map)");
-                seedField = new LineEdit { Name = "SeedField", Text = Form.SeedText, PlaceholderText = "random", CustomMinimumSize = new Vector2(theme.Px(240), 0) };
+                seedField = new LineEdit { Name = "SeedField", Text = Form.SeedText, PlaceholderText = "random".Tr(), CustomMinimumSize = new Vector2(theme.Px(240), 0) };
         seedField.TextChanged += text =>
         {
             Form.SeedText = text;

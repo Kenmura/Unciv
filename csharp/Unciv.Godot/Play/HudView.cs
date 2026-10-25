@@ -2,6 +2,7 @@ using Godot;
 using Unciv.Assets;
 using Unciv.GodotClient.Ui;
 using Unciv.Queries.Empire;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
 
@@ -21,7 +22,7 @@ public partial class HudView : Control
     private readonly HBoxContainer row = new() { Name = "Row" };
     private readonly Label banner = new() { Name = "Banner", Visible = false, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
     private readonly Button actionButton = new() { Name = "NextAction" };
-    private readonly Button endTurnButton = new() { Name = "EndTurn", Text = HudModel.EndTurnLabel, Visible = false };
+    private readonly Button endTurnButton = new() { Name = "EndTurn", Text = HudModel.EndTurnLabel.TrText(), Visible = false };
     private readonly Dictionary<string, Control> entries = [];
     private UiTheme theme = null!; // JUSTIFY: C011 assigned by Init before the HUD is updated
     private IReadOnlyList<HudStat> stats = [];
@@ -99,14 +100,14 @@ public partial class HudView : Control
         stats = HudModel.TopBar(topBar);
         Rebuild();
         Action = action;
-        actionButton.Text = action.Label;
+        actionButton.Text = action.Label.TrText();
         actionButton.Disabled = !action.Enabled;
         endTurnButton.Visible = action.Kind != HudActionKind.EndTurn && canEndTurn && action.Enabled;
     }
 
     public void ShowBanner(string text)
     {
-        banner.Text = text;
+        banner.Text = text.TrText();
         banner.Visible = true;
         bannerLeft = BannerFrames;
         LayoutIn(Size);
@@ -138,7 +139,7 @@ public partial class HudView : Control
             if (stat.Id == "Turn") row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Ignore });
             Control item = stat.Icon is { } icon ? new IconLabel(theme, icon, stat.Text) : new Label { Text = stat.Text };
             item.Name = stat.Id.Replace(':', '_');
-            item.TooltipText = stat.Tooltip;
+            item.TooltipText = stat.Tooltip.TrText();
             row.AddChild(item);
             entries[stat.Id] = item;
         }

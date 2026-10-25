@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Ui;
 
@@ -64,14 +65,14 @@ public partial class PopupStack : Control
         centre.AddChild(panel);
         var column = new VBoxContainer();
         panel.AddChild(column);
-        column.AddChild(new Label { Text = spec.Title, HorizontalAlignment = HorizontalAlignment.Center });
-        column.AddChild(new Label { Text = spec.Body, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(theme.Px(300), 0) });
+        column.AddChild(new Label { Text = spec.Title.TrText(), HorizontalAlignment = HorizontalAlignment.Center });
+        column.AddChild(new Label { Text = spec.Body.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(theme.Px(300), 0) });
         var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         column.AddChild(buttons);
         for (int i = 0; i < spec.Choices.Count; i++)
         {
             int index = i;
-            var button = new Button { Text = spec.Choices[i].Text };
+            var button = new Button { Text = spec.Choices[i].Text.TrText() };
             button.Pressed += () => Choose(index);
             buttons.AddChild(button);
         }

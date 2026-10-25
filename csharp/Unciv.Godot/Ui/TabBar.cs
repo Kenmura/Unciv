@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Ui;
 
@@ -27,7 +28,7 @@ public partial class TabBar : VBoxContainer
     public void AddTab(string title, Control page)
     {
         int index = tabs.Count;
-        var button = new Button { Text = title, ToggleMode = true, ButtonGroup = group };
+        var button = new Button { Text = title.TrText(), ToggleMode = true, ButtonGroup = group };
         button.Pressed += () => Select(index);
         strip.AddChild(button);
         page.Visible = false;

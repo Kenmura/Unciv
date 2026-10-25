@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Ui;
 
@@ -13,7 +14,7 @@ public partial class ChoiceRow : HFlowContainer
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         foreach (string option in options)
         {
-            var button = new Button { Text = option, ToggleMode = true, ButtonGroup = group, ButtonPressed = option == selected };
+            var button = new Button { Text = option.TrText(), ToggleMode = true, ButtonGroup = group, ButtonPressed = option == selected };
             button.Pressed += () => Chosen?.Invoke(option);
             buttons[option] = button;
             AddChild(button);

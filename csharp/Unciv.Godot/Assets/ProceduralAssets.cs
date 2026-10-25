@@ -128,10 +128,10 @@ public static class ProceduralAssets
         return box;
     }
 
-    /// <summary>Dark slate panels with a gold accent; the default Godot font is kept (CJK and friends arrive through <c>font/default</c>, C025).</summary>
+    /// <summary>Dark slate panels with a gold accent; the default font is the engine's built-in one with the C025 fallback chain (<see cref="FontChain"/>) behind it.</summary>
     public static Theme BuildTheme()
     {
-        var theme = new Theme { DefaultFontSize = ThemeSpec.FontSize };
+        var theme = new Theme { DefaultFontSize = ThemeSpec.FontSize, DefaultFont = FontChain.Default };
         theme.SetStylebox("panel", "PanelContainer", Panel());
         theme.SetStylebox("panel", "Panel", Panel());
         var states = new (string Name, Rgb Fill, Rgb Border)[]

@@ -1,6 +1,8 @@
 using Godot;
 using Unciv.Assets;
 using Unciv.GodotClient.Ui;
+using Unciv.Models.Translations;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
 
@@ -16,7 +18,7 @@ public partial class CombatPreviewView : PanelContainer
     private readonly Label title = new() { Name = "Title" };
     private readonly Label body = new() { Name = "Body", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Button confirm = new() { Name = "Confirm" };
-    private readonly Button cancel = new() { Name = "Cancel", Text = "Cancel" };
+    private readonly Button cancel = new() { Name = "Cancel", Text = "Cancel".Tr() };
     private UiTheme? theme;
 
     public CombatPreviewView()
@@ -55,9 +57,9 @@ public partial class CombatPreviewView : PanelContainer
 
     public void Show(CombatPreviewText text)
     {
-        title.Text = text.Title;
-        body.Text = string.Join("\n", text.Lines);
-        confirm.Text = text.ConfirmLabel;
+        title.Text = text.Title.TrText();
+        body.Text = string.Join("\n", text.Lines.Select(it => it.TrText()));
+        confirm.Text = text.ConfirmLabel.TrText();
         confirm.Disabled = !text.CanConfirm;
         Visible = true;
         LayoutIn(GetViewportRect().Size);

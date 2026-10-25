@@ -68,7 +68,7 @@ public sealed class AssetRegistry
             AssetKind.Icon => ProceduralAssets.Icon(key),
             AssetKind.Theme => ProceduralAssets.BuildTheme(),
             AssetKind.StyleBox => key.Name == "button" ? ProceduralAssets.Button() : ProceduralAssets.Panel(),
-            AssetKind.Font => ThemeDB.FallbackFont,
+            AssetKind.Font => FontChain.Default,
             _ => null,
         };
         return made as T ?? throw new ArgumentException($"{key} is a {AssetKinds.Of(key)} asset and cannot be obtained as {typeof(T).Name}");

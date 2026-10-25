@@ -5,6 +5,8 @@ using Unciv.Commands.City;
 using Unciv.GodotClient.Ui;
 using Unciv.Models.Ruleset;
 using Unciv.Queries.Cities;
+using Unciv.Models.Translations;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
 
@@ -68,7 +70,7 @@ public partial class CityProductionView : HBoxContainer
 
         queueColumn.AddChild(Heading("Production queue"));
         var queue = CityProductionModel.Queue(panel, list, gold);
-        if (queue.Count == 0) queueColumn.AddChild(new Label { Text = "The queue is empty." });
+        if (queue.Count == 0) queueColumn.AddChild(new Label { Text = "The queue is empty.".Tr() });
         foreach (var row in queue)
         {
             queueTexts.Add(row.Label);
@@ -101,7 +103,7 @@ public partial class CityProductionView : HBoxContainer
                 add.ClipText = true;
                 add.Alignment = HorizontalAlignment.Left;
                 line.AddChild(add);
-                var detail = new Label { Name = "Detail", Text = row.Detail, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(theme.Px(75), 0f), TooltipText = row.Tooltip, MouseFilter = MouseFilterEnum.Stop };
+                var detail = new Label { Name = "Detail", Text = row.Detail.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(theme.Px(75), 0f), TooltipText = row.Tooltip.TrText(), MouseFilter = MouseFilterEnum.Stop };
                 detail.AddThemeFontSizeOverride("font_size", theme.Px(10));
                 line.AddChild(detail);
                 foreach (var option in row.Buy)
@@ -116,7 +118,7 @@ public partial class CityProductionView : HBoxContainer
         // Built buildings
         buildingColumn.AddChild(Heading("Buildings"));
         var buildings = CityProductionModel.Buildings(panel, ruleset);
-        if (buildings.Count == 0) buildingColumn.AddChild(new Label { Text = "None yet." });
+        if (buildings.Count == 0) buildingColumn.AddChild(new Label { Text = "None yet.".Tr() });
         foreach (var row in buildings)
         {
             buildingTexts.Add(row.Label);
@@ -136,12 +138,12 @@ public partial class CityProductionView : HBoxContainer
 
     private Label Wrapped(string text, int width, string name = "") => new()
     {
-        Name = name.Length == 0 ? "Text" : name, Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(theme.Px(width), 0f),
+        Name = name.Length == 0 ? "Text" : name, Text = text.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(theme.Px(width), 0f),
     };
 
     private Button MakeButton(string name, string text, bool enabled, string tooltip, GameCommand command)
     {
-        var button = new Button { Name = name, Text = text, Disabled = !enabled, TooltipText = tooltip };
+        var button = new Button { Name = name, Text = text.TrText(), Disabled = !enabled, TooltipText = tooltip.TrText() };
         button.AddThemeFontSizeOverride("font_size", theme.Px(11));
         button.Pressed += () => Send(command);
         buttons[name] = button;
@@ -163,7 +165,7 @@ public partial class CityProductionView : HBoxContainer
 
     private Label Heading(string text)
     {
-        var label = new Label { Text = text };
+        var label = new Label { Text = text.TrText() };
         label.AddThemeFontSizeOverride("font_size", theme.Px(14));
         return label;
     }

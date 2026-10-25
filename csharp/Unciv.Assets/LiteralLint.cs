@@ -6,6 +6,7 @@ public sealed record LintViolation(string File, int Line, string Rule, string Te
 
 /// <summary>
 /// "Assets by name only": client code outside <c>Unciv.Godot/Assets/</c> must not name resource paths (<c>res://</c>) or write colour literals.
+/// C025 adds "all labels through Tr()": a literal with a letter in it assigned to <c>Text</c>, <c>PlaceholderText</c> or <c>TooltipText</c> must end in <c>.Tr()</c>.
 /// Comment-only lines and block comments are ignored; everything else in a <c>.cs</c> file is scanned.
 /// </summary>
 public static partial class LiteralLint
@@ -14,6 +15,7 @@ public static partial class LiteralLint
     [
         ("res:// literal", ResPath()),
         ("colour literal", ColourLiteral()),
+        ("untranslated text literal", UntranslatedText()),
     ];
 
     private static readonly string[] BuildOutput = ["bin", "obj", ".godot", ".mono"];
@@ -65,6 +67,9 @@ public static partial class LiteralLint
 
     [GeneratedRegex(""""\b(res|uid|user)://|"://"""")]
     private static partial Regex ResPath();
+
+    [GeneratedRegex("""\b(Text|PlaceholderText|TooltipText)\s*=\s*"(?=[^"]*\p{L})[^"]*"(?!\s*\.Tr\()""")]
+    private static partial Regex UntranslatedText();
 
     [GeneratedRegex("""new\s+(Godot\.)?Color\s*\(|\bColor\b[^;=]*=\s*new\s*\(|\bColors\.|\bColor\.(Color8|FromHtml|FromString|FromOkHsl|FromHsv)\b|"#[0-9a-fA-F]{3,8}\b""")]
     private static partial Regex ColourLiteral();

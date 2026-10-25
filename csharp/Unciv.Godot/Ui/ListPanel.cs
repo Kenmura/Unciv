@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Ui;
 
@@ -20,7 +21,7 @@ public partial class ListPanel : PanelContainer
         CustomMinimumSize = size;
         var column = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         AddChild(column);
-        TitleLabel = new Label { Text = title };
+        TitleLabel = new Label { Text = title.TrText() };
         column.AddChild(TitleLabel);
         var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, SizeFlagsVertical = SizeFlags.ExpandFill };
         column.AddChild(scroll);
@@ -47,7 +48,7 @@ public partial class ListPanel : PanelContainer
         int index = items.Count;
         var button = new Button
         {
-            Text = text,
+            Text = text.TrText(),
             ToggleMode = true,
             ButtonGroup = group,
             Alignment = HorizontalAlignment.Left,

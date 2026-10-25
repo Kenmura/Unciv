@@ -22,3 +22,17 @@ public static class RulesetLocator
         return RulesetCache.GetVanillaRuleset();
     }
 }
+
+/// <summary>C025: finds the game's translation files (<c>android/assets/jsons/translations</c>) above the Godot project, like <see cref="RulesetLocator"/> does for the rulesets.</summary>
+public static class TranslationLocator
+{
+    public static string Directory()
+    {
+        for (var d = ProjectSettings.GlobalizePath("res://"); !string.IsNullOrEmpty(d); d = System.IO.Path.GetDirectoryName(d.TrimEnd('/')) ?? "")
+        {
+            var candidate = System.IO.Path.Combine(d, "android", "assets", "jsons", "translations");
+            if (System.IO.Directory.Exists(candidate)) return candidate;
+        }
+        throw new System.IO.DirectoryNotFoundException("android/assets/jsons/translations not found above the project");
+    }
+}

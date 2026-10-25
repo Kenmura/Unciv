@@ -1,10 +1,13 @@
 using Godot;
+using Unciv.Assets.Localization;
 using Unciv.GodotClient.Assets;
+using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Play;
 using Unciv.GodotClient.Saves;
 using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Setup;
 using Unciv.GodotClient.Ui;
+using Unciv.Models.Translations;
 
 namespace Unciv.GodotClient;
 
@@ -19,6 +22,7 @@ public partial class App : Node
     private ScreenManager screens = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private UiTheme theme = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private ClientSettingsService settings = null!; // JUSTIFY: C015 assigned in _Ready before any use
+    private ClientLocalization localization = null!; // JUSTIFY: C025 assigned in _Ready before any use
     private SaveStore store = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private SaveController menuSaves = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private MainMenu menu = null!; // JUSTIFY: C015 assigned in _Ready before any use
@@ -28,6 +32,7 @@ public partial class App : Node
         var vanilla = RulesetLocator.LoadVanilla();
         theme = new UiTheme(AssetRegistry.ForRuleset(vanilla));
         settings = new ClientSettingsService(new ClientSettingsStore(UserPaths.Settings));
+        localization = Loc.Init(settings, GetWindow());
         store = new SaveStore(UserPaths.Saves);
         screens = new ScreenManager(theme);
         AddChild(screens);
@@ -62,8 +67,8 @@ public partial class App : Node
     private void OpenOptions()
     {
         var page = new VBoxContainer();
-        page.AddChild(new SettingsPanel(settings));
-        var back = new Button { Text = "Back" };
+        page.AddChild(new SettingsPanel(settings, localization));
+        var back = new Button { Text = "Back".Tr() };
         back.Pressed += () => screens.Pop();
         page.AddChild(back);
         screens.Push(page);

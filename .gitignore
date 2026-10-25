@@ -205,3 +205,4 @@ detekt/reports.html
 # Coverage run output (csharp/migration/tools/coverage.py)
 /csharp/migration/.coverage/
 __pycache__/
+!csharp/Unciv.Godot/Assets/fonts/

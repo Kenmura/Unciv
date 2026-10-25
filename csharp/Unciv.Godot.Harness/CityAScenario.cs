@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.Assets;
 using Unciv.Commands;
 using Unciv.Commands.City;
 using Unciv.Commands.Empire;
@@ -7,10 +8,9 @@ using Unciv.GodotClient.Play;
 using Unciv.Harness;
 using Unciv.Logic.City;
 using Unciv.Models.StatTypes;
-using Unciv.Utils;
 using Unciv.Net.Visibility;
 using Unciv.Queries;
-using Unciv.Assets;
+using Unciv.Utils;
 
 namespace Unciv.GodotHarness;
 
@@ -38,7 +38,16 @@ public sealed class CityAScenario : Scenario
 
     private static readonly CityDto Foreign = new CityDto
     {
-        Name = "Thebes", Owner = ScenarioGame.HumanB, X = 1, Y = 1, Population = 7, IsCapital = true, IsPuppet = false, IsBeingRazed = false, Health = 25, MaxHealth = 40,
+        Name = "Thebes",
+        Owner = ScenarioGame.HumanB,
+        X = 1,
+        Y = 1,
+        Population = 7,
+        IsCapital = true,
+        IsPuppet = false,
+        IsBeingRazed = false,
+        Health = 25,
+        MaxHealth = 40,
         VisibleBuildings = ["Pyramids"],
     };
 

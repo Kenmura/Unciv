@@ -11,6 +11,8 @@ using Unciv.Logic.Map;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Units;
 using Unciv.Utils;
+using Unciv.Models.Translations;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
 
@@ -76,7 +78,7 @@ public partial class GameScreen : Control
 
     public bool IsDiplomacyVisible => Diplomacy.Visible;
 
-    public Button DiplomacyButton { get; } = new() { Name = "DiplomacyButton", Text = "Diplomacy" };
+    public Button DiplomacyButton { get; } = new() { Name = "DiplomacyButton", Text = "Diplomacy".Tr() };
 
     /// <summary>C020: the policy screen, opened by the Policies button or the "Pick a policy" decision.</summary>
     public PolicyScreen Policies { get; private set; } = null!; // JUSTIFY: C020 assigned in Start before any use
@@ -690,5 +692,5 @@ public partial class GameScreen : Control
         }
     }
 
-    private void SetStatus(string text) => statusLabel.Text = text;
+    private void SetStatus(string text) => statusLabel.Text = text.TrText();
 }

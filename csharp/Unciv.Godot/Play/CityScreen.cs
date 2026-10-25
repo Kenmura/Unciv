@@ -6,6 +6,8 @@ using Unciv.GodotClient.Ui;
 using Unciv.Logic.City;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Cities;
+using Unciv.Models.Translations;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
 
@@ -34,8 +36,8 @@ public partial class CityScreen : PanelContainer
     private IReadOnlyList<CityTileCell> cells = [];
     private OptionButton? focusChoice;
     private readonly HBoxContainer middle = new() { Name = "Middle", SizeFlagsVertical = SizeFlags.ExpandFill };
-    private readonly Button citizensTab = new() { Name = "ShowCitizens", Text = "Citizens", ToggleMode = true };
-    private readonly Button productionTab = new() { Name = "ShowProduction", Text = "Production", ToggleMode = true };
+    private readonly Button citizensTab = new() { Name = "ShowCitizens", Text = "Citizens".Tr(), ToggleMode = true };
+    private readonly Button productionTab = new() { Name = "ShowProduction", Text = "Production".Tr(), ToggleMode = true };
     private readonly CityProductionView productionView;
     private bool showProduction;
     private int generation;
@@ -65,7 +67,7 @@ public partial class CityScreen : PanelContainer
         message.ClipText = true;
         message.HorizontalAlignment = HorizontalAlignment.Right;
         head.AddChild(message);
-        var close = new Button { Name = "CityPanelClose", Text = "Close city" };
+        var close = new Button { Name = "CityPanelClose", Text = "Close city".Tr() };
         close.Pressed += Close;
         head.AddChild(close);
         column.AddChild(info);
@@ -209,26 +211,26 @@ public partial class CityScreen : PanelContainer
         SetTabs(visible: false);
         SetProduction(false);
         var text = CityScreenModel.Foreign(city);
-        title.Text = text.Title;
+        title.Text = text.Title.TrText();
         info.Text = "";
-        foreach (string line in text.Lines) side.AddChild(new Label { Text = line });
+        foreach (string line in text.Lines) side.AddChild(new Label { Text = line.TrText() });
         SetMessage("");
     }
 
     private void Rebuild(CityPanelResult panel, CityTilesResult tiles)
     {
-        title.Text = CityScreenModel.Title(panel);
-        info.Text = string.Join("\n", CityScreenModel.InfoLines(panel));
+        title.Text = CityScreenModel.Title(panel).TrText();
+        info.Text = string.Join("\n", CityScreenModel.InfoLines(panel).Select(it => it.TrText()));
         ClearSide();
         foreach (var stat in panel.TotalStats)
         {
-            var label = new Label { Name = "Stat_" + stat.Stat, Text = $"{stat.Stat} {(stat.Value >= 0 ? "+" : "")}{stat.Value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}", MouseFilter = MouseFilterEnum.Stop };
-            label.TooltipText = CityScreenModel.StatBreakdown(panel, stat.Stat);
+            var label = new Label { Name = "Stat_" + stat.Stat, Text = $"{stat.Stat.ToString().TrText()} {(stat.Value >= 0 ? "+" : "")}{stat.Value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}", MouseFilter = MouseFilterEnum.Stop };
+            label.TooltipText = CityScreenModel.StatBreakdown(panel, stat.Stat).TrText();
             label.AddThemeColorOverride("font_color", ToColour(PlaceholderPalette.ForStat(stat.Stat)));
             side.AddChild(label);
         }
         var specialists = CityScreenModel.Specialists(panel);
-        if (specialists.Count > 0) side.AddChild(new Label { Text = "Specialists" });
+        if (specialists.Count > 0) side.AddChild(new Label { Text = "Specialists".Tr() });
         foreach (var row in specialists) side.AddChild(SpecialistLine(panel, row));
         focusChoice = new OptionButton { Name = "Focus", Disabled = panel.IsPuppet };
         var focuses = CityScreenModel.Focuses(panel, religionEnabled: true);
@@ -239,7 +241,7 @@ public partial class CityScreen : PanelContainer
         }
         focusChoice.ItemSelected += index => ChooseFocus(focuses[(int)index].Focus);
         side.AddChild(focusChoice);
-        var reset = new Button { Name = "ResetCitizens", Text = "Reset citizens", Disabled = panel.IsPuppet };
+        var reset = new Button { Name = "ResetCitizens", Text = "Reset citizens".Tr(), Disabled = panel.IsPuppet };
         reset.Pressed += () => Fire(Send(new ReassignPopulation { CityId = panel.CityId, ResetLocked = true }));
         side.AddChild(reset);
 
@@ -253,7 +255,7 @@ public partial class CityScreen : PanelContainer
     private Control SpecialistLine(CityPanelResult panel, SpecialistRow row)
     {
         var line = new HBoxContainer { Name = "Specialist_" + row.Name };
-        line.AddChild(new Label { Text = $"{row.Name} {row.Assigned}/{row.Max}", SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        line.AddChild(new Label { Text = $"{row.Name.TrText()} {row.Assigned}/{row.Max}", SizeFlagsHorizontal = SizeFlags.ExpandFill });
         foreach (bool add in new[] { false, true })
         {
             var button = new Button { Name = (add ? "Add_" : "Remove_") + row.Name, Text = add ? "+" : "-", Disabled = add ? !row.CanAdd : !row.CanRemove };
@@ -267,7 +269,7 @@ public partial class CityScreen : PanelContainer
     private Button TileCell(CityPanelResult panel, CityTilesResult tiles, CityTileCell cell)
     {
         string text = string.Join("\n", cell.Label.Split(' ', StringSplitOptions.RemoveEmptyEntries).Chunk(2).Select(it => string.Join(' ', it)));
-        var button = new Button { Name = $"Tile_{cell.X}_{cell.Y}", Text = text, TooltipText = cell.Tooltip, ClipText = true };
+        var button = new Button { Name = $"Tile_{cell.X}_{cell.Y}", Text = text.TrText(), TooltipText = cell.Tooltip.TrText(), ClipText = true };
         button.AddThemeFontSizeOverride("font_size", theme.Px(CellFontSize));
         var fill = ToColour(PlaceholderPalette.ForCityTile(cell.State));
         foreach (string state in new[] { "normal", "hover", "pressed", "focus", "disabled" })
@@ -370,7 +372,7 @@ public partial class CityScreen : PanelContainer
         cells = [];
     }
 
-    private void SetMessage(string text) => message.Text = text;
+    private void SetMessage(string text) => message.Text = text.TrText();
 
     private static Color ToColour(Rgb rgb) => new(rgb.R / 255f, rgb.G / 255f, rgb.B / 255f);
 }

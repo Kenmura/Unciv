@@ -3,6 +3,8 @@ using Unciv.Assets;
 using Unciv.Commands;
 using Unciv.GodotClient.Ui;
 using Unciv.Queries.Empire;
+using Unciv.Models.Translations;
+using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
 
@@ -42,14 +44,14 @@ public partial class DiplomacyScreen : PanelContainer
         AddChild(column);
         var head = new HBoxContainer();
         column.AddChild(head);
-        var heading = new Label { Text = "Diplomacy", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var heading = new Label { Text = "Diplomacy".Tr(), SizeFlagsHorizontal = SizeFlags.ExpandFill };
         heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
         head.AddChild(heading);
         message.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         message.ClipText = true;
         message.HorizontalAlignment = HorizontalAlignment.Right;
         head.AddChild(message);
-        var close = new Button { Name = "DiplomacyClose", Text = "Close diplomacy" };
+        var close = new Button { Name = "DiplomacyClose", Text = "Close diplomacy".Tr() };
         close.Pressed += Close;
         head.AddChild(close);
 
@@ -169,7 +171,7 @@ public partial class DiplomacyScreen : PanelContainer
         civButtons.Clear();
         foreach (var row in Rows)
         {
-            var button = new Button { Name = "Civ_" + row.CivId, Text = row.Label, Alignment = HorizontalAlignment.Left, ToggleMode = true };
+            var button = new Button { Name = "Civ_" + row.CivId, Text = row.Label.TrText(), Alignment = HorizontalAlignment.Left, ToggleMode = true };
             string id = row.CivId;
             button.Pressed += () => Fire(SelectAsync(id));
             civButtons[row.CivId] = button;
@@ -180,7 +182,7 @@ public partial class DiplomacyScreen : PanelContainer
     private void ShowNothing(string text)
     {
         title.Text = "";
-        info.Text = text;
+        info.Text = text.TrText();
         modifiers.Text = "";
         quests.Text = "";
         buttons = [];
@@ -193,16 +195,16 @@ public partial class DiplomacyScreen : PanelContainer
     private void Rebuild(DiplomacyRow row, DiplomacyPanelResult panel, DiplomacyActionsResult legal, CityStateQuestsResult? questList)
     {
         foreach (var (id, button) in civButtons) button.SetPressedNoSignal(id == row.CivId);
-        title.Text = DiplomacyScreenModel.Title(panel);
-        info.Text = string.Join("\n", DiplomacyScreenModel.InfoLines(panel));
-        modifiers.Text = string.Join("\n", DiplomacyScreenModel.ModifierLines(panel));
-        quests.Text = questList == null ? "" : "Quests\n" + string.Join("\n", DiplomacyScreenModel.QuestLines(questList));
+        title.Text = DiplomacyScreenModel.Title(panel).TrText();
+        info.Text = string.Join("\n", DiplomacyScreenModel.InfoLines(panel).Select(it => it.TrText()));
+        modifiers.Text = string.Join("\n", DiplomacyScreenModel.ModifierLines(panel).Select(it => it.TrText()));
+        quests.Text = questList == null ? "" : "Quests".Tr() + "\n" + string.Join("\n", DiplomacyScreenModel.QuestLines(questList).Select(it => it.TrText()));
         Clear(actions);
         actionButtons.Clear();
         buttons = DiplomacyScreenModel.Buttons(row, panel, legal);
         foreach (var entry in buttons)
         {
-            var button = new Button { Name = entry.Id, Text = entry.Label, Disabled = !entry.Enabled, TooltipText = entry.Enabled ? "" : entry.Hint, Alignment = HorizontalAlignment.Left };
+            var button = new Button { Name = entry.Id, Text = entry.Label.TrText(), Disabled = !entry.Enabled, TooltipText = entry.Enabled ? "" : entry.Hint.TrText(), Alignment = HorizontalAlignment.Left };
             var chosen = entry;
             button.Pressed += () => OnPressed(chosen);
             actionButtons[entry.Id] = button;
@@ -215,9 +217,9 @@ public partial class DiplomacyScreen : PanelContainer
     {
         if (entry.NeedsConfirm && armed != entry.Id)
         {
-            if (armed != null && actionButtons.TryGetValue(armed, out var previous)) previous.Text = buttons.First(it => it.Id == armed).Label;
+            if (armed != null && actionButtons.TryGetValue(armed, out var previous)) previous.Text = buttons.First(it => it.Id == armed).Label.TrText();
             armed = entry.Id;
-            actionButtons[entry.Id].Text = entry.ConfirmLabel;
+            actionButtons[entry.Id].Text = entry.ConfirmLabel.TrText();
             SetMessage("Press again to confirm.");
             return;
         }
@@ -262,5 +264,5 @@ public partial class DiplomacyScreen : PanelContainer
         }
     }
 
-    private void SetMessage(string text) => message.Text = text;
+    private void SetMessage(string text) => message.Text = text.TrText();
 }
