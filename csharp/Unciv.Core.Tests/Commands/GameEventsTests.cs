@@ -12,6 +12,7 @@ using Unciv.Logic.Trade;
 using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Net.Visibility;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
@@ -491,6 +492,24 @@ public sealed class GameEventsTests
         var moved = Assert.Single(Of<UnitMoved>(sink));
         Assert.Equal(b.CivId, moved.CivId);
         Assert.Equal([start, unit.CurrentTile.Position], moved.Path);
+    }
+
+    [Fact]
+    public void MeleeWithdrawalReportsTheDefendersMove()
+    {
+        var (sink, a, b) = Arena();
+        var attacker = testGame.AddUnit("Warrior", a, testGame.GetTile(1, 0));
+        attacker.CurrentMovement = 2f;
+        var defender = testGame.AddDefaultMeleeUnitWithUniques(b, testGame.GetTile(0, 1), UniqueType.WithdrawsBeforeMeleeCombat.Text());
+        defender.CurrentMovement = 2f;
+        var start = defender.GetTile().Position;
+        sink.Drain();
+        Battle.Attack(new MapUnitCombatant(attacker), new MapUnitCombatant(defender));
+        var moved = Assert.Single(Of<UnitMoved>(sink));
+        Assert.Equal(b.CivId, moved.CivId);
+        Assert.Equal(defender.Id, moved.UnitId);
+        Assert.Equal([start, defender.CurrentTile.Position], moved.Path);
+        Assert.NotEqual(start, defender.CurrentTile.Position);
     }
 
     [Fact]

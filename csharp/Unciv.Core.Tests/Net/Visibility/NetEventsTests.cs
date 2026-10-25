@@ -114,6 +114,36 @@ public sealed class NetEventsTests
     }
 
     [Fact]
+    public void UnitCaptured_NeedsTheUnitToBeSeenUnlessParticipant()
+    {
+        var captured = new UnitCaptured(7, "Settler", P0, "A", "F");
+        Assert.Single(EventFilter.Classify(captured, "A", new FakeVisibility([])));
+        Assert.Single(EventFilter.Classify(captured, "F", new FakeVisibility([])));
+        Assert.Single(EventFilter.Classify(captured, "B", new FakeVisibility([P0])));
+        Assert.Empty(EventFilter.Classify(captured, "B", new FakeVisibility([Far])));
+        Assert.Empty(EventFilter.Classify(captured, "B", new FakeVisibility([P0], hiddenUnits: [7])));
+    }
+
+    [Fact]
+    public void CityDestroyed_IsLocatedAndParticipantsSeeItEverywhere()
+    {
+        var destroyed = new CityDestroyed("c1", "Rome", P0, "F");
+        Assert.Single(EventFilter.Classify(destroyed, "F", new FakeVisibility([])));
+        Assert.Single(EventFilter.Classify(destroyed, "B", new FakeVisibility([P0])));
+        Assert.Empty(EventFilter.Classify(destroyed, "B", new FakeVisibility([Far])));
+    }
+
+    [Fact]
+    public void CityTraded_IsForTheTwoPartiesOnly()
+    {
+        var traded = new CityTraded("c1", "Rome", P0, "A", "F");
+        Assert.Single(EventFilter.Classify(traded, "A", new FakeVisibility([])));
+        Assert.Single(EventFilter.Classify(traded, "F", new FakeVisibility([])));
+        Assert.Empty(EventFilter.Classify(traded, "B", new FakeVisibility([P0])));
+        Assert.Empty(EventFilter.Classify(traded, "B", new FakeVisibility([P0], ["A", "F"])));
+    }
+
+    [Fact]
     public void LocatedEvents_RequireEveryPositionVisible()
     {
         var founded = new CityFounded("A", "c1", "Rome", P0);

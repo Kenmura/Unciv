@@ -54,7 +54,7 @@ public static class EventFilter
         [typeof(UnitMoved)] = ClassifyUnitMoved,
         [typeof(UnitAttacked)] = ClassifyUnitAttacked,
         [typeof(UnitCreated)] = (e, r, v) => LocatedUnit(e, r, v, ((UnitCreated)e).CivId, ((UnitCreated)e).UnitId, ((UnitCreated)e).Position),
-        [typeof(UnitCaptured)] = LocatedAllVisible,
+        [typeof(UnitCaptured)] = (e, r, v) => LocatedUnit(e, r, v, ((UnitCaptured)e).PreviousOwnerCivId, ((UnitCaptured)e).UnitId, ((UnitCaptured)e).Position),
         [typeof(UnitDestroyed)] = (e, r, v) => LocatedUnit(e, r, v, ((UnitDestroyed)e).CivId, ((UnitDestroyed)e).UnitId, ((UnitDestroyed)e).Position),
 
         [typeof(CityFounded)] = LocatedAllVisible,

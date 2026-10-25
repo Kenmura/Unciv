@@ -2584,7 +2584,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T200 review: (d) Civ.Stats (Happiness) is a transient cache not restored by load; a Simultaneous save taken mid-Resolving before StartNextTurn (RecordRankingStats reads it) does not reproduce the live hash. Include refreshing/canonicalising it here (or hosts checkpoint only at Playing).
 
 ### T209 Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T186
 - Source: T186 adversarial review findings 1-3, 8, 10
 - Fixtures: none
@@ -2600,6 +2600,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - FAIL 2 (tests): no behavioural classifier tests for the new events; only the reflection sample in GameEventsTests. Add to NetEventsTests: UnitCaptured (participant, visible tile, fogged tile, hidden unit), CityDestroyed (participant, visible, fogged), CityTraded (participants only; non-participant who sees the tile gets nothing, a third civ with knowledge gets nothing).
       - FAIL 3 (tests): melee withdrawal UnitMoved (Battle.cs) has no test; displacement, cargo teleport and carrier path are covered.
       - Minor (not blocking): sink Emit does an O(n) FindLastIndex on every essential emit while saturated (4096 cap, so bounded); ordering is deterministic and tested. Essential-set test pins the list, good.
+  - Rework (Claude): UnitCaptured now classified via CanSeeUnit on the previous owner's unit (LocatedUnit); added NetEventsTests for UnitCaptured/CityDestroyed/CityTraded and GameEventsTests.MeleeWithdrawalReportsTheDefendersMove. Gate+Standard (5106 pass) and coverage --check green.
 
 ### T210 Spy coup and counter-intelligence commands (not covered by T192)
 - State: Done
