@@ -2612,13 +2612,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T213 Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T193
 - Source: AlertPopup.kt (Denouncement, AcceptingDemand, RejectingDemand, DemandViolationNoticed)
 - Fixtures: none
 - Deliverables: Commands to dismiss/answer these PopupAlerts, with tests
 - Gate: Standard
-- Claimed:
+- Claimed: 2026-10-25T12:50Z
 - Notes:
 
 ### T214 Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness
