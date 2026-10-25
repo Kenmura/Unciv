@@ -99,6 +99,7 @@
     "Unciv.Core/Commands/Empire/ReligionCommandChecks.cs": {"branch": 92.86, "line": 100.0},
     "Unciv.Core/Commands/Empire/SetGoldToScience.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Commands/Empire/SetResearchQueue.cs": {"branch": 95.83, "line": 96.88},
+    "Unciv.Core/Commands/Empire/SetSpyCoup.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Commands/Empire/VoteDiplomatic.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Commands/Events/CommonEvents.cs": {"branch": 100.0, "line": 98.0},
     "Unciv.Core/Commands/Events/EngineEvent.cs": {"branch": 100.0, "line": 100.0},

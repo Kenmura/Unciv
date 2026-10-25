@@ -2585,7 +2585,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T210 Spy coup and counter-intelligence commands (not covered by T192)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T192
 - Source: core/src/com/unciv/logic/civilization/managers/EspionageManager.kt; Spy.kt; ui/screens/espionagescreen
 - Fixtures: none
@@ -2593,6 +2593,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter "FullyQualifiedName~Espionage"
 - Claimed: 2026-10-25T12:50Z
 - Notes: Found by T192: no listed command covers spy coup or counter-intelligence. Needed by the espionage screen (C023).
+  - Implemented SetSpyCoup (Commands/Empire, "set-spy-coup"): Stage=true -> spy.SetAction(Coup,1) when CanDoCoup and not already Coup; Stage=false -> SetAction(CounterIntelligence,10) when action is Coup (EspionageScreen.CoupButton toggle; counter-intelligence is only reachable this way in the UI, own-city counter-intelligence is set by Spy.EndTurn). MoveSpy already exists from T192. Sample lives in DiplomacySamples (needs the city-state world). Tests: EspionageCommandTests.
 
 ### T211 Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161
 - State: In-Progress [Claude]
