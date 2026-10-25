@@ -1878,13 +1878,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Tests only (UnitAutomationTests.ExploreGaps.cs). Covered: TryFogBust (reflection call; private and only reachable late in AutomateUnitMoves), MapUnit.Automation AutomateUnitMoves via DoAction, UnitActions Explore/Automate delegates, TryRetreat swap (healthy melee swaps, <=80 HP and ranged-too-close skipped), TryHealUnit air-unit branch (reaches nearest own-city tile; an air unit's own city tile always counts as an empty city, so the "emptyCities.Count==0" and "nextTile==null" lines stay uncovered). MaxByScore (ConstructionAutomation) and damage-aware A* were already fully covered by later tickets. Remaining gaps, not closed: SpecificUnitAutomation 92, 122-130 (multi-settler frontier filter), 152-162, 179-182, 212 (AddInCapital swap) and UnitAutomation.Explore 41, 91-93; needs a follow-up ticket. Pre-existing --all failures unrelated to this ticket: Era.cs, Terrain.cs, CollectionExtensions.cs (baseline 100% but now <100%) and the generated RegexGenerator.g.cs under obj/.
 
 ### T162 Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T159
 - Source:
 - Fixtures: none
 - Deliverables:
 - Gate:
-- Claimed:
+- Claimed: 2026-10-25T04:40Z
 - Notes: Pre-existing: plain --check only looks at changed files, so --all exposes these. Add tests to meet the baseline (do not lower it).
 
 ### T163 ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule)
