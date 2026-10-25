@@ -1895,6 +1895,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Implements PROTOCOL.md 'Green before Done': ticket.py state T### Done runs (or verifies a recent stamp of) build, format, test, coverage --check on the rebased tree and refuses on failure; also checks for stale TODO(T###) markers naming the ticket.
 
+### T164 Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log
+- State: Available
+- Depends: T012, T071, T083, T080, T100, A003, A004, A005, A006, A007
+- Source: csharp/migration/COMMANDS.md; Unciv.Core/Commands skeleton
+- Fixtures: none
+- Deliverables: Unciv.Core/Commands/* concrete commands over real GameInfo, validation by actor/turn, serializable log, replay test
+- Gate: dotnet test --filter FullyQualifiedName~Commands
+- Claimed:
+- Notes: T012 only delivered the skeleton against a toy state. The client (C004/C005), a server (C006) and AI all need real commands. Replaying a command log from a seed must reproduce the T102 state hashes.
+
+### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
+- State: Available
+- Depends: T012, T100, A003, A004, A005, A006, A007
+- Source: csharp/migration/PROTOCOL.md goals; COMMANDS.md
+- Fixtures: none
+- Deliverables: design doc + headless server project using Unciv.Core commands, protocol tests
+- Gate: dotnet test --filter FullyQualifiedName~Server
+- Claimed:
+- Notes: C006 says 'separate server ticket needed'. Designs on the command log (replay-verifiable). Must not depend on the Won't-port Kotlin multiplayer stack. Split design and implementation if large.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
@@ -1912,10 +1932,11 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Claimed: 2026-10-25T00:21Z
   - Implemented csharp/Unciv.Godot (Godot.NET.Sdk 4.7.2, net10.0, references Unciv.Core, empty Main.tscn/Main.cs, project.godot). Namespace Unciv.GodotClient (a namespace Unciv.Godot would shadow the Godot namespace). Kept OUT of Unciv.sln like Unciv.Godot.Harness so Standard checks never need the Godot SDK; headless gate is `dotnet build Unciv.Godot -warnaserror` (passes, 0 warnings; dotnet format clean). No assets used. No policy files edited. GODOT.md updated.
 ### C002 3D hex terrain rendering
-- State: Blocked
-- Depends: C001
+- State: Available
+- Depends: C001, A003, A004, A005, A006, A007
 - Scope: 3D hex tile meshes with per-terrain materials and elevation (grass, plains, desert, tundra, snow, hills, mountains, forest/jungle, water with depth), smooth blending between adjacent terrains, fog of war and visibility tinting, tile yields and improvements as in-world props.
 - Notes: Grass rendered as real textured/shaded terrain with instanced vegetation; no flat sprite tiles. Validation includes automated snapshot capture and golden image verification via C000 harness.
+  - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
 
 ### C003 Resource and improvement props
 - State: Blocked
@@ -1924,17 +1945,17 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C004 3D military units
 - State: Blocked
-- Depends: C002
+- Depends: C002, T164
 - Scope: 3D unit models with idle, move, attack, damage and death animations for combat units; formation or multiple figures per unit; selection, path preview and attack-range overlays; combat resolved by the engine, presented by the client.
 
 ### C005 Civ 5-style UI shell
 - State: Blocked
-- Depends: C002
+- Depends: C002, T164
 - Scope: top bar (yields, science/culture/gold/happiness), minimap, unit panel, city screen, tech/policy trees, diplomacy, turn banner, notifications, tooltips.
 
 ### C006 Networked play client
 - State: Blocked
-- Depends: T012, C001
+- Depends: T012, C001, T164, T165
 - Scope: client for our own authoritative server (to be designed; separate server ticket needed), lobby, turn notifications, reconnect/resume.
 
 ## Game AI track (Civ 5 behavioral spec)
