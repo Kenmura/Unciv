@@ -35,7 +35,7 @@ internal static class Base64Url
 {
     public static string Encode(ReadOnlySpan<byte> data) => Convert.ToBase64String(data).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
-    /// <summary>Decodes unpadded base64url; null for any malformed input (never throws).</summary>
+    /// <summary>Decodes canonical unpadded base64url (one spelling per value); null for any malformed input (never throws).</summary>
     public static byte[]? TryDecode(string? text)
     {
         if (string.IsNullOrEmpty(text) || text.Length > 8192) return null;
@@ -46,7 +46,13 @@ internal static class Base64Url
             case 2: padded += "=="; break;
             case 3: padded += "="; break;
         }
-        try { return Convert.FromBase64String(padded); }
+        if (text.Contains('=') || text.Any(char.IsWhiteSpace)) return null;
+        try
+        {
+            var bytes = Convert.FromBase64String(padded);
+            // canonical only: rejects non-zero trailing bits so one value has exactly one spelling
+            return string.Equals(Encode(bytes), text, StringComparison.Ordinal) ? bytes : null;
+        }
         catch (FormatException) { return null; }
     }
 }

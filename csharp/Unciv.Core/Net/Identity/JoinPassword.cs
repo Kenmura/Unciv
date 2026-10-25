@@ -10,8 +10,8 @@ public sealed class JoinPassword
     public const int DefaultIterations = 120_000;
     private const int SaltBytes = 16;
     private const int HashBytes = 32;
-    private const int MaxPasswordBytes = 256;
-    private const int MaxIterations = 10_000_000;
+    public const int MaxPasswordBytes = 256;
+    private const int MaxIterations = 1_000_000;
     private const string Scheme = "pbkdf2-sha256";
 
     private readonly int iterations;
@@ -28,6 +28,8 @@ public sealed class JoinPassword
     public static JoinPassword Create(string password, ISecureRandom random, int iterations = DefaultIterations)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(iterations, 1);
+        if (Encoding.UTF8.GetByteCount(password) > MaxPasswordBytes)
+            throw new ArgumentException($"Password longer than {MaxPasswordBytes} bytes", nameof(password));
         var salt = random.Bytes(SaltBytes);
         return new JoinPassword(iterations, salt, Derive(password, salt, iterations));
     }

@@ -22,16 +22,20 @@ public static class AuthMessage
 {
     private const string Domain = "unciv-auth-v1";
 
-    /// <summary>Length-prefixed so (sessionId, challenge) pairs cannot be shifted into each other.</summary>
-    public static byte[] Build(string sessionId, string challenge)
+    /// <summary>
+    /// Length-prefixed so the parts cannot be shifted into each other. The verifying host's fingerprint is signed
+    /// too, so a proof obtained by a malicious host cannot be relayed to another host.
+    /// </summary>
+    public static byte[] Build(string hostFingerprint, string sessionId, string challenge)
     {
+        var host = Encoding.UTF8.GetBytes(hostFingerprint);
         var session = Encoding.UTF8.GetBytes(sessionId);
         var chal = Encoding.UTF8.GetBytes(challenge);
         var domain = Encoding.UTF8.GetBytes(Domain);
-        var result = new byte[4 + domain.Length + 4 + session.Length + 4 + chal.Length];
+        var result = new byte[16 + domain.Length + host.Length + session.Length + chal.Length];
         var span = result.AsSpan();
         var pos = 0;
-        foreach (var part in new[] { domain, session, chal })
+        foreach (var part in new[] { domain, host, session, chal })
         {
             System.Buffers.Binary.BinaryPrimitives.WriteInt32BigEndian(span[pos..], part.Length);
             pos += 4;
@@ -83,8 +87,8 @@ public sealed class ClientIdentity : IDisposable
     }
 
     /// <summary>Proves possession for this session and challenge (<c>Auth.Proof</c>).</summary>
-    public string Sign(string sessionId, string challenge) =>
-        Base64Url.Encode(key.SignData(AuthMessage.Build(sessionId, challenge), HashAlgorithmName.SHA256));
+    public string Sign(string hostFingerprint, string sessionId, string challenge) =>
+        Base64Url.Encode(key.SignData(AuthMessage.Build(hostFingerprint, sessionId, challenge), HashAlgorithmName.SHA256));
 
     public void Dispose() => key.Dispose();
 }
@@ -95,18 +99,19 @@ public static class PlayerKeys
     /// <summary>True when the text is a well-formed P-256 public key.</summary>
     public static bool IsValid(string? playerKey) => TryImport(playerKey) is { } k && Dispose(k);
 
-    public static bool VerifyProof(string? playerKey, string sessionId, string challenge, string? proof)
+    public static bool VerifyProof(string? playerKey, string hostFingerprint, string sessionId, string challenge, string? proof)
     {
         var signature = Base64Url.TryDecode(proof);
         if (signature == null || signature.Length != 64) return false;
         using var ecdsa = TryImport(playerKey);
         if (ecdsa == null) return false;
-        try { return ecdsa.VerifyData(AuthMessage.Build(sessionId, challenge), signature, HashAlgorithmName.SHA256); }
+        try { return ecdsa.VerifyData(AuthMessage.Build(hostFingerprint, sessionId, challenge), signature, HashAlgorithmName.SHA256); }
         catch (CryptographicException) { return false; }
     }
 
     internal static bool IsP256(ECDsa key) =>
-        key.KeySize == 256 && string.Equals(key.ExportParameters(false).Curve.Oid.Value, ECCurve.NamedCurves.nistP256.Oid.Value, StringComparison.Ordinal);
+        key.KeySize == 256 && key.ExportParameters(false).Curve is { IsNamed: true } curve &&
+        string.Equals(curve.Oid.Value, ECCurve.NamedCurves.nistP256.Oid.Value, StringComparison.Ordinal);
 
     private static bool Dispose(ECDsa k)
     {
@@ -122,19 +127,14 @@ public static class PlayerKeys
         try
         {
             ecdsa.ImportSubjectPublicKeyInfo(spki, out var read);
-            if (read != spki.Length || !IsP256(ecdsa))
+            if (read != spki.Length || !IsP256(ecdsa) || !ecdsa.ExportSubjectPublicKeyInfo().AsSpan().SequenceEqual(spki))
             {
                 ecdsa.Dispose();
                 return null;
             }
             return ecdsa;
         }
-        catch (CryptographicException)
-        {
-            ecdsa.Dispose();
-            return null;
-        }
-        catch (ArgumentException)
+        catch (Exception e) when (e is CryptographicException or ArgumentException or NullReferenceException or InvalidOperationException or NotSupportedException)
         {
             ecdsa.Dispose();
             return null;

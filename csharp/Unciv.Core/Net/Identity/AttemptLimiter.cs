@@ -1,8 +1,10 @@
 namespace Unciv.Net.Identity;
 
 /// <summary>
-/// Failed-join back-off per remote key (an IP address). After <see cref="MaxFailures"/> failures the key is locked
-/// for <see cref="BaseLockout"/>, doubling with every further failure up to <see cref="MaxLockout"/>. A success clears the key.
+/// Failed-join back-off per remote key (an IP address; callers normalise IPv6 to its /64). An attempt is reserved
+/// atomically before the credential is checked (<see cref="TryBeginAttempt"/>) and refunded by <see cref="RecordSuccess"/>,
+/// so concurrent guesses are counted. After <see cref="MaxFailures"/> attempts the key is locked for
+/// <see cref="BaseLockout"/>, doubling with every further attempt up to <see cref="MaxLockout"/>.
 /// </summary>
 public sealed class AttemptLimiter
 {
@@ -25,32 +27,38 @@ public sealed class AttemptLimiter
         public DateTimeOffset LastFailure;
     }
 
-    /// <summary>False while the key is locked out; callers must refuse without evaluating the credential.</summary>
+    /// <summary>Read-only check (no reservation).</summary>
     public bool IsAllowed(string key)
     {
         lock (gate)
             return !states.TryGetValue(key, out var s) || clock.GetUtcNow() >= s.LockedUntil;
     }
 
-    public void RecordFailure(string key)
+    /// <summary>
+    /// False while the key is locked out: refuse without evaluating the credential. Otherwise counts the attempt as a
+    /// failure right now; <see cref="RecordSuccess"/> clears it. When the table is full the oldest entry is evicted, so a
+    /// flood of distinct sources cannot switch limiting off for a new one.
+    /// </summary>
+    public bool TryBeginAttempt(string key)
     {
         lock (gate)
         {
             var now = clock.GetUtcNow();
-            if (!states.TryGetValue(key, out var s))
+            if (!states.TryGetValue(key, out var s) || (now >= s.LockedUntil && now - s.LastFailure > IdleForget))
             {
-                if (states.Count >= MaxTrackedKeys) Prune(now);
-                if (states.Count >= MaxTrackedKeys) return; // table saturated by distinct sources: stay bounded, the global session cap applies
+                if (s == null && states.Count >= MaxTrackedKeys) EvictOne(now);
                 states[key] = s = new State();
             }
+            else if (now < s.LockedUntil) return false;
+
             s.Failures++;
             s.LastFailure = now;
             if (s.Failures >= MaxFailures)
             {
                 var exponent = Math.Min(s.Failures - MaxFailures, 16);
-                var lockout = TimeSpan.FromTicks(Math.Min(BaseLockout.Ticks << exponent, MaxLockout.Ticks));
-                s.LockedUntil = now + lockout;
+                s.LockedUntil = now + TimeSpan.FromTicks(Math.Min(BaseLockout.Ticks << exponent, MaxLockout.Ticks));
             }
+            return true;
         }
     }
 
@@ -59,9 +67,20 @@ public sealed class AttemptLimiter
         lock (gate) states.Remove(key);
     }
 
-    private void Prune(DateTimeOffset now)
+    private void EvictOne(DateTimeOffset now)
     {
-        foreach (var stale in states.Where(p => now >= p.Value.LockedUntil && now - p.Value.LastFailure > IdleForget).Select(p => p.Key).ToList())
-            states.Remove(stale);
+        string? victim = null;
+        var oldest = DateTimeOffset.MaxValue;
+        foreach (var (k, v) in states)
+        {
+            // prefer unlocked entries; among them the least recently failed
+            var rank = now >= v.LockedUntil ? v.LastFailure : v.LockedUntil.AddYears(100);
+            if (rank < oldest)
+            {
+                oldest = rank;
+                victim = k;
+            }
+        }
+        if (victim != null) states.Remove(victim);
     }
 }

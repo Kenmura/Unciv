@@ -11,12 +11,14 @@ public sealed class HostChallenge
 {
     private int used;
 
-    public HostChallenge(ISecureRandom random)
+    public HostChallenge(string hostFingerprint, ISecureRandom random)
     {
+        HostFingerprint = hostFingerprint;
         SessionId = Base64Url.Encode(random.Bytes(16));
         Challenge = Base64Url.Encode(random.Bytes(32));
     }
 
+    public string HostFingerprint { get; }
     public string SessionId { get; }
     public string Challenge { get; }
 
@@ -24,7 +26,7 @@ public sealed class HostChallenge
     public bool Verify(string? playerKey, string? proof)
     {
         if (Interlocked.Exchange(ref used, 1) != 0) return false;
-        return PlayerKeys.VerifyProof(playerKey, SessionId, Challenge, proof);
+        return PlayerKeys.VerifyProof(playerKey, HostFingerprint, SessionId, Challenge, proof);
     }
 }
 

@@ -20,12 +20,14 @@ internal sealed class CountingRandom : ISecureRandom
 
 public class NetIdentityKeyTests
 {
+    private const string Host = "AOIFR-RXSYD-FUSLC-THMFE-2FHPO-4";
+
     [Fact]
     public void ProofVerifiesForRightKeySessionAndChallenge()
     {
         using var id = ClientIdentity.Generate();
-        var ch = new HostChallenge(SystemSecureRandom.Instance);
-        Assert.True(ch.Verify(id.PlayerKey, id.Sign(ch.SessionId, ch.Challenge)));
+        var ch = new HostChallenge(Host, SystemSecureRandom.Instance);
+        Assert.True(ch.Verify(id.PlayerKey, id.Sign(ch.HostFingerprint, ch.SessionId, ch.Challenge)));
     }
 
     [Fact]
@@ -33,16 +35,16 @@ public class NetIdentityKeyTests
     {
         using var owner = ClientIdentity.Generate();
         using var other = ClientIdentity.Generate();
-        var ch = new HostChallenge(SystemSecureRandom.Instance);
-        Assert.False(ch.Verify(owner.PlayerKey, other.Sign(ch.SessionId, ch.Challenge)));
+        var ch = new HostChallenge(Host, SystemSecureRandom.Instance);
+        Assert.False(ch.Verify(owner.PlayerKey, other.Sign(ch.HostFingerprint, ch.SessionId, ch.Challenge)));
     }
 
     [Fact]
     public void ReplayOnSameChallengeIsRejected()
     {
         using var id = ClientIdentity.Generate();
-        var ch = new HostChallenge(SystemSecureRandom.Instance);
-        var proof = id.Sign(ch.SessionId, ch.Challenge);
+        var ch = new HostChallenge(Host, SystemSecureRandom.Instance);
+        var proof = id.Sign(ch.HostFingerprint, ch.SessionId, ch.Challenge);
         Assert.True(ch.Verify(id.PlayerKey, proof));
         Assert.False(ch.Verify(id.PlayerKey, proof));
     }
@@ -51,9 +53,9 @@ public class NetIdentityKeyTests
     public void ProofFromAnotherSessionIsRejected()
     {
         using var id = ClientIdentity.Generate();
-        var recorded = new HostChallenge(SystemSecureRandom.Instance);
-        var proof = id.Sign(recorded.SessionId, recorded.Challenge);
-        var fresh = new HostChallenge(SystemSecureRandom.Instance);
+        var recorded = new HostChallenge(Host, SystemSecureRandom.Instance);
+        var proof = id.Sign(recorded.HostFingerprint, recorded.SessionId, recorded.Challenge);
+        var fresh = new HostChallenge(Host, SystemSecureRandom.Instance);
         Assert.False(fresh.Verify(id.PlayerKey, proof));
     }
 
@@ -61,15 +63,15 @@ public class NetIdentityKeyTests
     public void FailedAttemptConsumesChallenge()
     {
         using var id = ClientIdentity.Generate();
-        var ch = new HostChallenge(SystemSecureRandom.Instance);
+        var ch = new HostChallenge(Host, SystemSecureRandom.Instance);
         Assert.False(ch.Verify(id.PlayerKey, "garbage"));
-        Assert.False(ch.Verify(id.PlayerKey, id.Sign(ch.SessionId, ch.Challenge)));
+        Assert.False(ch.Verify(id.PlayerKey, id.Sign(ch.HostFingerprint, ch.SessionId, ch.Challenge)));
     }
 
     [Fact]
     public void AuthMessageIsUnambiguous()
     {
-        Assert.NotEqual(AuthMessage.Build("ab", "c"), AuthMessage.Build("a", "bc"));
+        Assert.NotEqual(AuthMessage.Build("h", "ab", "c"), AuthMessage.Build("h", "a", "bc"));
     }
 
     [Theory]
@@ -81,15 +83,15 @@ public class NetIdentityKeyTests
     {
         using var id = ClientIdentity.Generate();
         Assert.False(PlayerKeys.IsValid(junk));
-        Assert.False(PlayerKeys.VerifyProof(junk, "s", "c", id.Sign("s", "c")));
-        Assert.False(PlayerKeys.VerifyProof(id.PlayerKey, "s", "c", junk));
+        Assert.False(PlayerKeys.VerifyProof(junk, "h", "s", "c", id.Sign("h", "s", "c")));
+        Assert.False(PlayerKeys.VerifyProof(id.PlayerKey, "h", "s", "c", junk));
     }
 
     [Fact]
     public void ProofWithWrongLengthIsRejected()
     {
         using var id = ClientIdentity.Generate();
-        Assert.False(PlayerKeys.VerifyProof(id.PlayerKey, "s", "c", "AAAA"));
+        Assert.False(PlayerKeys.VerifyProof(id.PlayerKey, "h", "s", "c", "AAAA"));
     }
 
     [Fact]
@@ -301,15 +303,19 @@ public class NetIdentityLimiterTests
     {
         var clock = new FakeClock();
         var limiter = new AttemptLimiter(clock);
-        for (var i = 0; i < 5; i++) limiter.RecordFailure("k");
+        for (var i = 0; i < 5; i++) Assert.True(limiter.TryBeginAttempt("k"));
         clock.Advance(AttemptLimiter.BaseLockout + TimeSpan.FromSeconds(1));
         Assert.True(limiter.IsAllowed("k"));
-        limiter.RecordFailure("k"); // 6th failure: 60 s
+        Assert.True(limiter.TryBeginAttempt("k")); // 6th failure: 60 s
         clock.Advance(TimeSpan.FromSeconds(59));
         Assert.False(limiter.IsAllowed("k"));
         clock.Advance(TimeSpan.FromSeconds(2));
         Assert.True(limiter.IsAllowed("k"));
-        for (var i = 0; i < 40; i++) limiter.RecordFailure("k");
+        for (var i = 0; i < 20; i++)
+        {
+            clock.Advance(AttemptLimiter.MaxLockout + TimeSpan.FromSeconds(1));
+            Assert.True(limiter.TryBeginAttempt("k"));
+        }
         clock.Advance(AttemptLimiter.MaxLockout - TimeSpan.FromSeconds(1));
         Assert.False(limiter.IsAllowed("k"));
         clock.Advance(TimeSpan.FromSeconds(2));
@@ -317,17 +323,40 @@ public class NetIdentityLimiterTests
     }
 
     [Fact]
-    public void TableStaysBoundedAndPrunesIdleEntries()
+    public void FullTableEvictsOldestSoNewSourcesAreStillLimited()
     {
         var clock = new FakeClock();
         var limiter = new AttemptLimiter(clock);
-        for (var i = 0; i < AttemptLimiter.MaxTrackedKeys + 10; i++) limiter.RecordFailure("k" + i);
-        // saturated: an overflow key is not tracked, so it is never locked
-        for (var i = 0; i < 10; i++) limiter.RecordFailure("overflow");
-        Assert.True(limiter.IsAllowed("overflow"));
-        clock.Advance(TimeSpan.FromHours(1));
-        for (var i = 0; i < 10; i++) limiter.RecordFailure("overflow");
+        for (var i = 0; i < AttemptLimiter.MaxTrackedKeys + 10; i++)
+        {
+            limiter.TryBeginAttempt("k" + i);
+            clock.Advance(TimeSpan.FromMilliseconds(1));
+        }
+        for (var i = 0; i < AttemptLimiter.MaxFailures; i++) Assert.True(limiter.TryBeginAttempt("overflow"));
         Assert.False(limiter.IsAllowed("overflow"));
+        Assert.False(limiter.TryBeginAttempt("overflow"));
+    }
+
+    [Fact]
+    public void IdleEntriesDecay()
+    {
+        var clock = new FakeClock();
+        var limiter = new AttemptLimiter(clock);
+        for (var i = 0; i < 4; i++) limiter.TryBeginAttempt("k");
+        clock.Advance(TimeSpan.FromHours(1));
+        for (var i = 0; i < 4; i++) Assert.True(limiter.TryBeginAttempt("k"));
+    }
+
+    [Fact]
+    public void ParallelGuessesAreCounted()
+    {
+        var limiter = new AttemptLimiter(new FakeClock());
+        var allowed = 0;
+        Parallel.For(0, 200, _ =>
+        {
+            if (limiter.TryBeginAttempt("ip")) Interlocked.Increment(ref allowed);
+        });
+        Assert.Equal(AttemptLimiter.MaxFailures, allowed);
     }
 }
 
@@ -398,8 +427,8 @@ public class NetIdentitySlotTests
         Assert.False(slots.TryBind(0, intruder.PlayerKey));
         Assert.False(slots.IsOwner(0, intruder.PlayerKey));
         // and a resume proof signed by the intruder does not verify for the owner's key
-        var ch = new HostChallenge(SystemSecureRandom.Instance);
-        Assert.False(ch.Verify(owner.PlayerKey, intruder.Sign(ch.SessionId, ch.Challenge)));
+        var ch = new HostChallenge("h", SystemSecureRandom.Instance);
+        Assert.False(ch.Verify(owner.PlayerKey, intruder.Sign(ch.HostFingerprint, ch.SessionId, ch.Challenge)));
         Assert.True(slots.IsOwner(0, owner.PlayerKey));
     }
 
@@ -426,8 +455,84 @@ public class NetIdentitySlotTests
         using var a = ClientIdentity.Generate();
         var slots = new SlotBindings();
         slots.TryBind(5, a.PlayerKey);
-        slots.Restore([KeyValuePair.Create(1, a.PlayerKey), KeyValuePair.Create(2, "junk")]);
+        var dropped = slots.Restore([KeyValuePair.Create(1, a.PlayerKey), KeyValuePair.Create(2, "junk"), KeyValuePair.Create(3, a.PlayerKey)]);
+        Assert.Equal([2, 3], dropped);
         Assert.Single(slots.Bindings);
         Assert.True(slots.IsOwner(1, a.PlayerKey));
+    }
+}
+
+public class NetIdentityHardeningTests
+{
+    private const string HostA = "AOIFR-RXSYD-FUSLC-THMFE-2FHPO-4";
+    private const string HostB = "BBBBB-BBBBB-BBBBB-BBBBB-BBBBB-B";
+
+    [Fact]
+    public void ProofForOneHostCannotBeRelayedToAnother()
+    {
+        using var id = ClientIdentity.Generate();
+        var onB = new HostChallenge(HostB, SystemSecureRandom.Instance);
+        // a malicious host A forwards B's session and challenge to the client, which signs them for A
+        var relayed = id.Sign(HostA, onB.SessionId, onB.Challenge);
+        Assert.False(onB.Verify(id.PlayerKey, relayed));
+        var onB2 = new HostChallenge(HostB, SystemSecureRandom.Instance);
+        Assert.True(onB2.Verify(id.PlayerKey, id.Sign(HostB, onB2.SessionId, onB2.Challenge)));
+    }
+
+    [Fact]
+    public void KeyAliasesAreRejected()
+    {
+        using var id = ClientIdentity.Generate();
+        var key = id.PlayerKey;
+        Assert.True(PlayerKeys.IsValid(key));
+        Assert.False(PlayerKeys.IsValid(key + "="));
+        Assert.False(PlayerKeys.IsValid(key.Insert(5, " ")));
+        var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        var last = key[^1];
+        var tweaked = key[..^1] + alphabet.First(c => c != last && alphabet.IndexOf(c, StringComparison.Ordinal) / 4 == alphabet.IndexOf(last, StringComparison.Ordinal) / 4);
+        Assert.False(PlayerKeys.IsValid(tweaked));
+        var slots = new SlotBindings();
+        Assert.True(slots.TryBind(0, key));
+        Assert.False(slots.TryBind(1, key + "="));
+        Assert.False(slots.TryBind(1, tweaked));
+    }
+
+    [Fact]
+    public void ExplicitCurveKeyIsRejectedWithoutThrowing()
+    {
+        var p = System.Security.Cryptography.ECCurve.NamedCurves.nistP256;
+        using var named = System.Security.Cryptography.ECDsa.Create(p);
+        var ex = named.ExportExplicitParameters(false);
+        using var explicitKey = System.Security.Cryptography.ECDsa.Create(ex);
+        var key = Convert.ToBase64String(explicitKey.ExportSubjectPublicKeyInfo()).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        Assert.False(PlayerKeys.IsValid(key));
+    }
+
+    [Fact]
+    public void OverlongPasswordIsRefusedAtCreate() =>
+        Assert.Throws<ArgumentException>(() => JoinPassword.Create(new string('x', JoinPassword.MaxPasswordBytes + 1), new CountingRandom(), 10));
+
+    [Fact]
+    public void MaxLengthPasswordRoundTrips()
+    {
+        var text = new string('x', JoinPassword.MaxPasswordBytes);
+        Assert.True(JoinPassword.Create(text, new CountingRandom(), 10).Verify(text));
+    }
+
+    [Fact]
+    public void ExcessiveStoredIterationsAreRejected() =>
+        Assert.Null(JoinPassword.TryParse("pbkdf2-sha256$5000000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));
+
+    [Fact]
+    public void ConcurrentRedeemSucceedsOnce()
+    {
+        var tokens = new InviteTokens(new FakeClock(), SystemSecureRandom.Instance);
+        var t = tokens.Mint(TimeSpan.FromMinutes(1))!;
+        var wins = 0;
+        Parallel.For(0, 50, _ =>
+        {
+            if (tokens.Redeem(t)) Interlocked.Increment(ref wins);
+        });
+        Assert.Equal(1, wins);
     }
 }

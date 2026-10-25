@@ -41,10 +41,12 @@ public sealed class LobbyAdmission
 
     public AdmissionResult Admit(string remoteKey, string? passwordAttempt, string? inviteToken)
     {
-        if (!limiter.IsAllowed(remoteKey)) return AdmissionResult.RateLimited;
-        if (password == null && !InviteOnly) return AdmissionResult.Admitted;
+        if (password == null && !InviteOnly) return limiter.IsAllowed(remoteKey) ? AdmissionResult.Admitted : AdmissionResult.RateLimited;
+        // Reserves an attempt atomically before the expensive check, so parallel guesses cannot all slip past the limit.
+        if (!limiter.TryBeginAttempt(remoteKey)) return AdmissionResult.RateLimited;
 
         // Evaluate both, without short-circuiting, so a spent token or wrong password costs the same time.
+        // Consequence (deliberate): a valid token presented together with a correct password is consumed.
         var passwordOk = password != null && password.Verify(passwordAttempt);
         var tokenOk = tokens.Redeem(inviteToken);
         if (passwordOk || tokenOk)
@@ -52,38 +54,64 @@ public sealed class LobbyAdmission
             limiter.RecordSuccess(remoteKey);
             return AdmissionResult.Admitted;
         }
-        limiter.RecordFailure(remoteKey);
         return AdmissionResult.BadCredentials;
     }
 }
 
-/// <summary>Slot to player-key bindings (trust on first use). A leaked password cannot take a seat that is already bound.</summary>
+/// <summary>Slot to player-key bindings (trust on first use). A leaked password cannot take a seat that is already bound. Thread-safe.</summary>
 public sealed class SlotBindings
 {
+    private readonly Lock gate = new();
     private readonly Dictionary<int, string> keyBySlot = new();
 
-    public IReadOnlyDictionary<int, string> Bindings => keyBySlot;
+    /// <summary>Snapshot of the bindings (for persistence).</summary>
+    public IReadOnlyDictionary<int, string> Bindings
+    {
+        get { lock (gate) return new Dictionary<int, string>(keyBySlot); }
+    }
 
     /// <summary>Binds on first use. False when the key is malformed, the slot belongs to another key, or this key already owns another slot.</summary>
     public bool TryBind(int slot, string playerKey)
     {
+        // PlayerKeys.IsValid is strict (canonical spelling only), so string equality is key equality.
         if (!PlayerKeys.IsValid(playerKey)) return false;
-        if (keyBySlot.TryGetValue(slot, out var owner)) return string.Equals(owner, playerKey, StringComparison.Ordinal);
-        if (keyBySlot.ContainsValue(playerKey)) return false;
-        keyBySlot[slot] = playerKey;
-        return true;
+        lock (gate)
+        {
+            if (keyBySlot.TryGetValue(slot, out var owner)) return string.Equals(owner, playerKey, StringComparison.Ordinal);
+            if (keyBySlot.ContainsValue(playerKey)) return false;
+            keyBySlot[slot] = playerKey;
+            return true;
+        }
     }
 
-    public bool IsOwner(int slot, string playerKey) => keyBySlot.TryGetValue(slot, out var owner) && string.Equals(owner, playerKey, StringComparison.Ordinal);
+    public bool IsOwner(int slot, string playerKey)
+    {
+        lock (gate) return keyBySlot.TryGetValue(slot, out var owner) && string.Equals(owner, playerKey, StringComparison.Ordinal);
+    }
 
-    public int? SlotOf(string playerKey) => keyBySlot.FirstOrDefault(p => string.Equals(p.Value, playerKey, StringComparison.Ordinal)) is { Value: not null } hit ? hit.Key : null;
+    public int? SlotOf(string playerKey)
+    {
+        lock (gate)
+        {
+            foreach (var (slot, key) in keyBySlot)
+                if (string.Equals(key, playerKey, StringComparison.Ordinal)) return slot;
+            return null;
+        }
+    }
 
     /// <summary>Host UI action for a lost key.</summary>
-    public bool Clear(int slot) => keyBySlot.Remove(slot);
-
-    public void Restore(IEnumerable<KeyValuePair<int, string>> saved)
+    public bool Clear(int slot)
     {
-        keyBySlot.Clear();
-        foreach (var (slot, key) in saved) TryBind(slot, key);
+        lock (gate) return keyBySlot.Remove(slot);
+    }
+
+    /// <summary>Replaces all bindings from saved data and returns the slots that could not be restored (corrupt or duplicate key); the host must surface or refuse those seats.</summary>
+    public List<int> Restore(IEnumerable<KeyValuePair<int, string>> saved)
+    {
+        var dropped = new List<int>();
+        lock (gate) keyBySlot.Clear();
+        foreach (var (slot, key) in saved)
+            if (!TryBind(slot, key)) dropped.Add(slot);
+        return dropped;
     }
 }
