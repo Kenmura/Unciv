@@ -425,7 +425,7 @@ flowchart TD
   class A004 done
   class A005 done
   class A006 done
-  class A007 prog
+  class A007 review
   class A008 ready
   class C001 done
   class C002 waiting
@@ -587,7 +587,7 @@ xychart-beta
 | T187 | Available (waiting on T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T188 | Available (waiting on T186) | T164, T186, T083 | 39 | Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue |
 | T175 | Available (waiting on T172, T174, T186) | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
-| A007 | In-Progress [Claude] | A004, A005 | 35 | Operations and armies layer |
+| A007 | Needs-Review [Claude] | A004, A005 | 35 | Operations and armies layer |
 | C009 | Available (waiting on C007, C008, T174, T185) | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C010 | Available (waiting on C009, T184, T187, T188, T174, T175) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | C005 | Available (waiting on C007, C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
