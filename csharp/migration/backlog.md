@@ -2549,6 +2549,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Found by T192: no listed command covers spy coup or counter-intelligence. Needed by the espionage screen (C023).
 
+### T211 Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161
+- State: Available
+- Depends: T161
+- Source: csharp/Unciv.Core/Logic/Automation/Unit/SpecificUnitAutomation*.cs, UnitAutomation.Explore.cs
+- Fixtures: none
+- Deliverables: Tests covering SpecificUnitAutomation lines 92, 122-130, 152-162, 179-182, 212; air-unit TryHealUnit remainder; Explore lines 41, 91-93; raise coverage baselines
+- Gate: python3 -I tools/coverage.py --check
+- Claimed:
+- Notes: Follow-up named in T161 Notes.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
