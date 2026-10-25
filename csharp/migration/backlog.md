@@ -2855,6 +2855,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Claimed: 2026-10-25T00:56Z
 - Notes: Solves the "one unit attacking at a time" weakness. Groups sufficient attackers to guarantee destruction without over-allocating, freeing remaining units for other tactical goals.
   - Implemented OverkillAssigner (new design, SPEC 6.4/6.5) on top of A004's TacticalRecruiter: ITacticalDamageEstimator seam (engine supplies; wiring is A008), TacticalAttacker, OverkillPlan/TacticalAssignment. Per target in order: estimate damage for free attackers, recruit to the (OVERKILL+100)% budget, trim recruits the budget does not need (weakest first), commit only if estimated damage >= target HP (requireKill, default true; false allows partial commits), report up to 6 free neighbour staging tiles (each tile offered to one target), leftovers returned as Unassigned. Deliberately not implemented: SPEC's "resultKind==1 budget=1" and per-entry self-damage gate ([?] in spec). Trimming/requireKill/staging dedup are our design, not from the spec.
+  - Review (adversarial subagent): APPROVE WITH NITS; fixed staging exclusion of attacker/target tiles, skipped-target RemainingBudget, estimator filtering by range/ops, doc comments. Known: trim is own design ([I]); duplicate attacker ids unsupported (documented).
 
 ### A006 Homeland AI priority move queue
 - State: Available
