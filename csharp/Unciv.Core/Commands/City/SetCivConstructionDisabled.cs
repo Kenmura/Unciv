@@ -10,12 +10,14 @@ namespace Unciv.Commands.City;
 [CommandType("set-civ-construction-disabled")]
 public sealed class SetCivConstructionDisabled : GameCommand
 {
+    /// <summary>The city whose screen the menu was opened on: it must be changeable, and it reassigns its citizens afterwards.</summary>
+    public string CityId { get; init; } = "";
     public string Name { get; init; } = "";
     public bool Disabled { get; init; }
 
     protected override CommandValidation ValidateCommand(CommandContext context)
     {
-        if (!context.RequireActive().TryGet(out var actor, out var failure)) return failure;
+        if (!context.TryChangeableCity(CityId, allowPuppet: false, out var actor, out _, out var failure)) return failure;
         var ruleset = actor.GameInfo.Ruleset;
         bool known = ruleset.Buildings.ContainsKey(Name) || ruleset.Units.ContainsKey(Name)
             || PerpetualConstruction.PerpetualConstructionsMap.ContainsKey(Name);
@@ -37,6 +39,7 @@ public sealed class SetCivConstructionDisabled : GameCommand
         }
         if (Disabled) actor.DisabledCityConstructions.Add(Name);
         else actor.DisabledCityConstructions.Remove(Name);
+        context.ValidatedCity(CityId).ReassignPopulation(); // the menu's close callback of CityConstructionsTable
         return [];
     }
 }

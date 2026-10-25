@@ -30,7 +30,7 @@ public sealed class QueueConstruction : GameCommand
             return CommandValidation.Fail(CommandErrors.NotAllowed, $"{Name} cannot be added to the queue of {city.Name}");
 
         var improvement = (construction as Building)?.GetImprovementToCreate(city.GetRuleset(), city.Civ);
-        if (AddToTop && (construction is PerpetualConstruction || improvement != null))
+        if (AddToTop && (construction is PerpetualConstruction || construction is Building { } top && top.HasCreateOneImprovementUnique()))
             return CommandValidation.Fail(CommandErrors.NotAllowed, $"{Name} cannot be added to the top of the queue");
         bool needsTile = improvement != null && constructions.GetTileForImprovement(improvement.Name) == null;
         if (!needsTile)

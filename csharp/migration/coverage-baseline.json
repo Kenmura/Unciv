@@ -47,6 +47,7 @@
     "Unciv.Core/Commands/City/PurchaseConstruction.cs": {"branch": 92.86, "line": 100.0},
     "Unciv.Core/Commands/City/QueueConstruction.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Commands/City/ReassignPopulation.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Commands/City/RemoveAllByName.cs": {"branch": 75.0, "line": 100.0},
     "Unciv.Core/Commands/City/RemoveFromQueue.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Commands/City/RenameCity.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Commands/City/ReorderQueue.cs": {"branch": 90.91, "line": 100.0},

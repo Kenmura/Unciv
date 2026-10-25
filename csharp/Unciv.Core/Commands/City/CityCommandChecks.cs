@@ -51,12 +51,12 @@ internal static class CityCommandChecks
         return construction != null;
     }
 
-    /// <summary>The tile of the command, which must additionally be a tile of the city's own territory in work range.</summary>
+    /// <summary>The tile of the command, which must additionally be a tile of the city's own territory in work range and not blockaded (CityTileGroup shows blockaded tiles as not workable).</summary>
     public static bool TryWorkableTile(this CommandContext context, CityObject city, HexCoord position,
         [NotNullWhen(true)] out TileClass? tile, out CommandValidation failure)
     {
         if (!context.TileAt(position).TryGet(out tile, out failure)) return false;
-        if (!city.GetWorkableTiles().Contains(tile))
+        if (!city.GetWorkableTiles().Contains(tile) || tile.IsBlockaded())
         {
             failure = CommandValidation.Fail(CommandErrors.InvalidTarget, $"{city.Name} cannot work the tile at {position.x},{position.y}");
             return false;

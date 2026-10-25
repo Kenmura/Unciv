@@ -235,6 +235,75 @@ public sealed class CityCommandTests
         Assert.Equal("Citadel", target.Improvement);
     }
 
+    [Fact]
+    public void PurchaseFromTheQueueKeepsTheMarkedTile()
+    {
+        var wonder = testGame.CreateBuilding("Creates a [Citadel] improvement on a specific tile");
+        wonder.Cost = 100;
+        var targets = city.GetWorkableTiles().Where(it => !it.IsCityCenter() && !it.IsWater && it.ImprovementFunctions.CanBuildImprovement(
+            city.GetRuleset().TileImprovements["Citadel"], city.State)).Take(2).ToList();
+        ClearQueue();
+        Ok(new QueueConstruction { CityId = city.Id, Name = wonder.Name, Tile = targets[1].Position });
+
+        Ok(new PurchaseConstruction { CityId = city.Id, Name = wonder.Name, QueueIndex = 0 });
+
+        Assert.Equal("Citadel", targets[1].Improvement);
+        Assert.Null(targets[0].Improvement);
+    }
+
+    [Fact]
+    public void RemoveAllByNameRemovesEveryEntryAndChecksTheCity()
+    {
+        ClearQueue();
+        foreach (var name in new[] { "Warrior", "Monument", "Warrior" }) Ok(new QueueConstruction { CityId = city.Id, Name = name });
+        AssertRejected(new RemoveAllByName { CityId = city.Id, Name = "Worker" }, CommandErrors.InvalidTarget);
+        Ok(new RemoveAllByName { CityId = city.Id, Name = "Warrior" });
+        Assert.Equal(["Monument"], Queue);
+        city.IsBeingRazed = true;
+        AssertRejected(new RemoveAllByName { CityId = city.Id, Name = "Monument" }, CommandErrors.NotAllowed);
+    }
+
+    [Fact]
+    public void WorkTileRefusesTilesAnotherCityWorksOrBlockadedOnes()
+    {
+        var other = testGame.AddCity(a, testGame.GetTile(3, 0), initialPopulation: 2);
+        testGame.AddTileToCity(other, testGame.GetTile(2, 0));
+        testGame.GetTile(2, 0).SetOwningCity(other);
+        city.ReassignPopulation(resetLocked: true);
+        other.ReassignPopulation(resetLocked: true);
+        var contested = city.GetWorkableTiles().Concat(other.GetWorkableTiles()).First(it => !it.IsCityCenter() && it.IsWorked());
+        var workedBy = contested.GetWorkingCity()!;
+        var notWorker = ReferenceEquals(workedBy, city) ? other : city;
+        if (notWorker.GetWorkableTiles().Contains(contested))
+            AssertRejected(new WorkTile { CityId = notWorker.Id, Tile = contested.Position }, CommandErrors.InvalidTarget);
+        AssertRejected(new WorkTile { CityId = city.Id, Tile = city.GetCenterTile().Position }, CommandErrors.InvalidTarget);
+    }
+
+    [Fact]
+    public void WorkTileRefusesTilesThatYieldNothing()
+    {
+        city.ReassignPopulation(resetLocked: true);
+        Ok(new StopWorkingTile { CityId = city.Id, Tile = WorkedTile().Position });
+        var tile = FreeWorkableTile();
+        testGame.SetTileTerrain(tile.Position, "Mountain");
+        city.CityStats.Update();
+        AssertRejected(new WorkTile { CityId = city.Id, Tile = tile.Position }, CommandErrors.InvalidTarget);
+    }
+
+    [Fact]
+    public void TileCommandsRejectUnknownAndForeignTiles()
+    {
+        var far = testGame.GetTile(8, 0).Position;
+        AssertRejected(new UnlockTile { CityId = city.Id, Tile = new Unciv.Logic.Map.HexCoord(99, 99) }, CommandErrors.UnknownTile);
+        AssertRejected(new StopWorkingTile { CityId = city.Id, Tile = far }, CommandErrors.InvalidTarget);
+        AssertRejected(new LockTile { CityId = city.Id, Tile = far }, CommandErrors.InvalidTarget);
+        AssertRejected(new UnassignSpecialist { CityId = city.Id, Specialist = "Mystic" }, CommandErrors.InvalidTarget);
+        city.IsPuppet = true;
+        city.UnitShouldUseSavedPromotion["Warrior"] = true;
+        Ok(new SetUnitSavedPromotion { CityId = city.Id, Unit = "Warrior", Value = false }); // offered on puppets
+        AssertRejected(new PurchaseConstruction { CityId = city.Id, Name = "Worker" }, CommandErrors.NotAllowed); // puppets may not buy
+    }
+
     // --- purchase
 
     [Fact]
@@ -424,7 +493,8 @@ public sealed class CityCommandTests
         Ok(new SetCityFocus { CityId = city.Id, Focus = CityFocus.GoldFocus });
         Assert.Equal(CityFocus.GoldFocus, city.GetCityFocus());
         Ok(new SetCityFocus { CityId = city.Id, Focus = CityFocus.GoldFocus }); // re-applying is offered
-        AssertRejected(new SetCityFocus { CityId = city.Id, Focus = CityFocus.HappinessFocus }, CommandErrors.NotAllowed); // not in the table
+        Ok(new SetCityFocus { CityId = city.Id, Focus = CityFocus.HappinessFocus }); // the stat icons of CityStatsTable offer it
+        AssertRejected(new SetCityFocus { CityId = city.Id, Focus = (CityFocus)99 }, CommandErrors.NotAllowed);
         Assert.Equal(testGame.GameInfo.IsReligionEnabled(),
             new SetCityFocus { CityId = city.Id, Focus = CityFocus.FaithFocus }.Validate(testGame.GameInfo, a.CivId).IsValid);
 
@@ -539,17 +609,17 @@ public sealed class CityCommandTests
     public void CivWideDisableReachesEveryCityAndIsUndone()
     {
         var other = testGame.AddCity(a, testGame.GetTile(-6, 0));
-        Ok(new SetCivConstructionDisabled { Name = "Monument", Disabled = true });
+        Ok(new SetCivConstructionDisabled { CityId = city.Id, Name = "Monument", Disabled = true });
         Assert.Contains("Monument", city.DisabledConstructions);
         Assert.Contains("Monument", other.DisabledConstructions);
         Assert.Contains("Monument", a.DisabledCityConstructions);
-        AssertRejected(new SetCivConstructionDisabled { Name = "Monument", Disabled = true }, CommandErrors.NotAllowed);
-        AssertRejected(new SetCivConstructionDisabled { Name = PerpetualConstruction.Idle.Name, Disabled = true }, CommandErrors.NotAllowed);
-        AssertRejected(new SetCivConstructionDisabled { Name = "Nothing at all", Disabled = true }, CommandErrors.InvalidTarget);
+        AssertRejected(new SetCivConstructionDisabled { CityId = city.Id, Name = "Monument", Disabled = true }, CommandErrors.NotAllowed);
+        AssertRejected(new SetCivConstructionDisabled { CityId = city.Id, Name = PerpetualConstruction.Idle.Name, Disabled = true }, CommandErrors.NotAllowed);
+        AssertRejected(new SetCivConstructionDisabled { CityId = city.Id, Name = "Nothing at all", Disabled = true }, CommandErrors.InvalidTarget);
 
-        Ok(new SetCivConstructionDisabled { Name = "Monument", Disabled = false });
+        Ok(new SetCivConstructionDisabled { CityId = city.Id, Name = "Monument", Disabled = false });
         Assert.DoesNotContain("Monument", other.DisabledConstructions);
         Assert.DoesNotContain("Monument", a.DisabledCityConstructions);
-        AssertRejected(new SetCivConstructionDisabled { Name = "Monument", Disabled = false }, CommandErrors.NotAllowed);
+        AssertRejected(new SetCivConstructionDisabled { CityId = city.Id, Name = "Monument", Disabled = false }, CommandErrors.NotAllowed);
     }
 }

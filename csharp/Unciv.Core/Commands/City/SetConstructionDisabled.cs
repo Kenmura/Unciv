@@ -29,6 +29,7 @@ public sealed class SetConstructionDisabled : GameCommand
         var city = context.ValidatedCity(CityId);
         if (Disabled) city.DisabledConstructions.Add(Name);
         else city.DisabledConstructions.Remove(Name);
+        city.ReassignPopulation(); // the menu's close callback of CityConstructionsTable
         return [];
     }
 }

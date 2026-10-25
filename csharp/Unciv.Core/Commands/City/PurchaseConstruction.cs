@@ -57,7 +57,12 @@ public sealed class PurchaseConstruction : GameCommand
     protected override IReadOnlyList<GameEvent> ApplyCommand(CommandContext context)
     {
         var city = context.ValidatedCity(CityId);
+        var constructions = city.CityConstructions;
         var tile = Tile == null ? null : context.TileAt(Tile.Value).Value;
+        // Bought from the queue: pass the marked tile down like BuyButtonFactory, otherwise automation would choose another one.
+        if (tile == null && constructions.GetConstruction(Name) is Building building
+            && building.GetImprovementToCreate(city.GetRuleset(), city.Civ) is { } improvement)
+            tile = constructions.GetTileForImprovement(improvement.Name);
         // The result is true on every path Validate admits (unit placement was checked); the UI only reports a false one.
         city.CityConstructions.PurchaseConstruction(Name, QueueIndex, automatic: false, Stat, tile);
         return [];

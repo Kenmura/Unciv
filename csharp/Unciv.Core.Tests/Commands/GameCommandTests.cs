@@ -106,7 +106,8 @@ public sealed class GameCommandTests : IDisposable
         "set-razing" => new SetRazing { CityId = c.RazeCityId, Raze = true },
         "set-unit-saved-promotion" => new SetUnitSavedPromotion { CityId = cityId, Unit = "Warrior", Value = false },
         "set-construction-disabled" => new SetConstructionDisabled { CityId = cityId, Name = "Warrior", Disabled = true },
-        "set-civ-construction-disabled" => new SetCivConstructionDisabled { Name = "Warrior", Disabled = true },
+        "remove-all-by-name" => new RemoveAllByName { CityId = cityId, Name = "Warrior" },
+        "set-civ-construction-disabled" => new SetCivConstructionDisabled { CityId = cityId, Name = "Warrior", Disabled = true },
         _ => throw new InvalidOperationException($"No sample for command type \"{type}\"; add one to GameCommandTests.Sample"),
     };
 
