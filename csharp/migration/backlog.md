@@ -1865,6 +1865,36 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Split from T102 (Claude): T102 proves same-seed/save-load/clone/culture determinism inside C#. Still open: compare the C# per-turn state hash against hashes exported from the Kotlin game for fixed seeds (needs a canonical state-hash export on the JVM side, the C# hash is currently FNV over the save JSON whose property order T128 changed), and a run with one mod ruleset.
 
+### T161 Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches
+- State: Available
+- Depends: T093, T159
+- Source:
+- Fixtures: none
+- Deliverables:
+- Gate:
+- Claimed:
+- Notes: Collected from the T091, T093, T159 and T158 reviews. Tests only unless a parity bug shows up. Raise baselines with coverage.py --update-baseline, never lower.
+
+### T162 Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them)
+- State: Available
+- Depends: T159
+- Source:
+- Fixtures: none
+- Deliverables:
+- Gate:
+- Claimed:
+- Notes: Pre-existing: plain --check only looks at changed files, so --all exposes these. Add tests to meet the baseline (do not lower it).
+
+### T163 ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule)
+- State: Available
+- Depends: T104
+- Source:
+- Fixtures: none
+- Deliverables:
+- Gate:
+- Claimed:
+- Notes: Implements PROTOCOL.md 'Green before Done': ticket.py state T### Done runs (or verifies a recent stamp of) build, format, test, coverage --check on the rebased tree and refuses on failure; also checks for stale TODO(T###) markers naming the ticket.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
@@ -1927,7 +1957,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - State: Done (full ticket: backlog-archive.md)
 
 ### A003 Victory scorers (BNW)
-- State: Blocked
+- State: Available
 - Depends: A002, T030, T055, T057, T059
 - Source: `csharp/migration/ai-spec/SPEC.md` §4 (Conquest §4.1, Culture §4.2, Diplomatic §4.3, Spaceship §4.4)
 - Deliverables: `csharp/Unciv.Core/AI/GrandStrategy/Scorers/` (`ConquestScorer`, `CultureScorer`, `DiplomaticScorer`, `SpaceshipScorer`), tests
