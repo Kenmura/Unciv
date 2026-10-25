@@ -444,7 +444,7 @@ flowchart TD
   class T162 ready
   class T163 ready
   class T164 done
-  class T166 ready
+  class T166 prog
   class T169 ready
   class T170 done
   class T171 done
@@ -474,7 +474,7 @@ flowchart TD
   class T195 done
   class T196 ready
   class T197 ready
-  class T198 waiting
+  class T198 ondeck
   class T199 review
   class T200 waiting
   class T201 waiting
@@ -503,8 +503,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00"]
     y-axis "Tickets" 0 --> 83
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 71]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 70]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4]
 ```
 
 ## Incomplete tickets
@@ -518,7 +518,6 @@ xychart-beta
 | T173 | **Ready to start** | T172 | 12 | Host identity and join auth: client ECDSA P-256 key bound to a slot (TOFU), lobby password / single-use invite token for admission, host key fingerprint |
 | T193 | **Ready to start** | T164, T186, T086, T089 | 5 | Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage |
 | T197 | **Ready to start** | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
-| T166 | **Ready to start** | A003 | 3 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
 | T196 | **Ready to start** | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
 | A008 | **Ready to start** | A004 | 0 | Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks |
 | C030 | **Ready to start** | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
@@ -530,6 +529,7 @@ xychart-beta
 | T208 | **Ready to start** | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
 | T209 | **Ready to start** | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
 | T184 | **On deck** (after T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
+| T198 | **On deck** (after T166) | T185, T166, A003 | 2 | Query API: victory progress, scores, rankings and demographics |
 | T183 | In-Progress [Claude] | T071, T046 | 45 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
 | T187 | Available (waiting on T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T188 | Needs-Review [Claude] | T164, T186, T083 | 39 | Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue |
@@ -548,10 +548,10 @@ xychart-beta
 | T204 | Available (waiting on T173, T178, T199) | T172, T173, T178, T199 | 7 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
 | C002 | Available (waiting on C009) | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | T180 | Available (waiting on T173, T174, T175, T179, T204) | T172, T173, T174, T175, T179, T204 | 4 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
+| T166 | In-Progress [Claude] | A003 | 3 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
 | T190 | Available (waiting on T189) | T189 | 3 | Unit actions B: unique-driven actions through descriptors (great person improvements and hurry, religion, trade mission, paradrop, transform, gift unit, trigger unique, add in capital, air/set-up, stockpile) |
 | C011 | Available (waiting on C005, C010, T174, T184) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | Available (waiting on C005, C010, T188, T189, T190) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
-| T198 | Available (waiting on T166) | T185, T166, A003 | 2 | Query API: victory progress, scores, rankings and demographics |
 | C003 | Available (waiting on C002) | C002 | 1 | Resource and improvement props |
 | C004 | Available (waiting on C002, C010, C012) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
 | C015 | Available (waiting on C005, C010, T199) | C005, C010, T099, T045, T021, T034, T170, T199 | 1 | Main menu and game setup screen: nations, difficulty, speed, map options |

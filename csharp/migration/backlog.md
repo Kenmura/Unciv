@@ -1930,13 +1930,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Superseded by the server design (design/SERVER.md) and split into T172 (protocol/transport interface), T173 (identity), T174 (visibility filter), T175 (event stream), T176 (persistence/resync), T177 (turn policy), T178 (host+lobby), T179 (real transport, owner decision), T180 (client library), T181 (private channels), T182 (e2e). Original notes preserved above: designs on the command log; must not depend on the Won't-port Kotlin multiplayer stack.
 
 ### T166 Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: A003
 - Source: csharp/migration/ai-spec/SPEC.md §4
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/AI/GrandStrategy/Scorers/VictoryScorerInputsFactory.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~VictoryScorerInputsTests
-- Claimed:
+- Claimed: 2026-10-25T03:03Z
 - Notes:
 
 ### T167 L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage
