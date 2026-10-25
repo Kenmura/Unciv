@@ -336,6 +336,7 @@ public class CityConquestFunctions(CityObject city)
         oldCiv.Cities = oldCiv.Cities.WithoutItem(city);
         newCiv.Cities = newCiv.Cities.WithItem(city);
         city.Civ = newCiv;
+        GameEventHooks.CityMoved(city, oldCiv, newCiv);
         city.Id = city.Id != CityObject.NoId ? city.Id : CityObject.PseudoRandomId(newCiv);
         city.State = GameContext.ForCity(city);
         city.HasJustBeenConquered = false;

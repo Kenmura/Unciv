@@ -6,6 +6,7 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Trade;
+using Unciv.Models.Ruleset.Unique;
 using CityObject = Unciv.Logic.City.City;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using NotificationObject = Unciv.Logic.Civilization.Notification;
@@ -105,9 +106,11 @@ public static class GameEventHooks
         if (civ.GameInfo.EventSink is { } sink) sink.Emit(new AlertAdded(civ.CivId, alert.Type, alert.Value));
     }
 
-    public static void UnitCreated(CivilizationObject civ, MapUnit unit)
+    /// <summary>Called by <c>TileMap.PlaceUnitNearTile</c>, which every spawn path (cities, barbarians, uniques) goes through.</summary>
+    public static void UnitCreated(TileMap map, IGameContextCivilization civ, IGameContextUnit unit, TileObject tile)
     {
-        if (civ.GameInfo.EventSink is { } sink) sink.Emit(new UnitCreated(civ.CivId, unit.Id, unit.Name, unit.CurrentTile.Position));
+        if (unit is MapUnit mapUnit && map.GameInfo is GameInfo { EventSink: { } sink })
+            sink.Emit(new UnitCreated(civ.CivId, mapUnit.Id, mapUnit.Name, tile.Position));
     }
 
     /// <summary>Call before the unit is removed. Units that were never on a map and repeated destroys are not reported.</summary>
@@ -117,6 +120,12 @@ public static class GameEventHooks
             sink.Emit(new UnitDestroyed(unit.Civ.CivId, unit.Id, unit.Name, unit.CurrentTile.Position));
     }
 
+    /// <summary>Two-step move (air, paradrop); the path is built only when a sink listens.</summary>
+    public static void UnitMoved(MapUnit unit, TileObject from, TileObject to)
+    {
+        if (unit.Civ.GameInfo.EventSink != null) UnitMoved(unit, [from, to]);
+    }
+
     /// <summary><paramref name="path"/> starts at the tile the unit left and ends where it stopped.</summary>
     public static void UnitMoved(MapUnit unit, IReadOnlyList<TileObject> path)
     {
@@ -124,12 +133,25 @@ public static class GameEventHooks
         sink.Emit(new UnitMoved(unit.Civ.CivId, unit.Id, unit.Name, path.Select(it => it.Position).ToList()));
     }
 
-    public static void UnitAttacked(ICombatant attacker, ICombatant defender, DamageDealt damage)
-    {
-        if (attacker.GetCivInfo().GameInfo.EventSink is not { } sink) return;
-        sink.Emit(new UnitAttacked(
+    /// <summary>Identity of both sides taken before the blows (a captured civilian changes owner during them).</summary>
+    public readonly record struct AttackSnapshot(string AttackerCivId, int? AttackerUnitId, string? AttackerCityId, HexCoord AttackerPosition,
+        string DefenderCivId, int? DefenderUnitId, string? DefenderCityId, HexCoord DefenderPosition);
+
+    /// <summary>Call before the blows; <c>null</c> (no allocation) when nobody listens.</summary>
+    public static AttackSnapshot? BeginAttack(ICombatant attacker, ICombatant defender) =>
+        attacker.GetCivInfo().GameInfo.EventSink == null ? null : new AttackSnapshot(
             attacker.GetCivInfo().CivId, (attacker as MapUnitCombatant)?.Unit.Id, (attacker as CityCombatant)?.City.Id, attacker.GetTile().Position,
-            defender.GetCivInfo().CivId, (defender as MapUnitCombatant)?.Unit.Id, (defender as CityCombatant)?.City.Id, defender.GetTile().Position,
+            defender.GetCivInfo().CivId, (defender as MapUnitCombatant)?.Unit.Id, (defender as CityCombatant)?.City.Id, defender.GetTile().Position);
+
+    /// <summary>
+    /// Emitted after the blows, so effects they caused (a UnitDestroyed of the loser) come before it in the stream: the event is the
+    /// summary of the exchange, order within one command is call order.
+    /// </summary>
+    public static void UnitAttacked(AttackSnapshot? before, ICombatant attacker, ICombatant defender, DamageDealt damage)
+    {
+        if (before is not { } s || attacker.GetCivInfo().GameInfo.EventSink is not { } sink) return;
+        sink.Emit(new UnitAttacked(s.AttackerCivId, s.AttackerUnitId, s.AttackerCityId, s.AttackerPosition,
+            s.DefenderCivId, s.DefenderUnitId, s.DefenderCityId, s.DefenderPosition,
             damage.AttackerDealt, damage.DefenderDealt, attacker.IsDefeated(), defender.IsDefeated()));
     }
 
@@ -142,6 +164,14 @@ public static class GameEventHooks
     {
         if (city.Civ.GameInfo.EventSink is { } sink)
             sink.Emit(new CityCaptured(city.Id, city.Name, city.Location.ToHexCoord(), conquering.CivId, previousOwner.CivId, newOwner.CivId));
+    }
+
+    /// <summary>A city changed civ: each of its tiles changes owner (sorted by position, the tile set is hash ordered).</summary>
+    public static void CityMoved(CityObject city, CivilizationObject oldCiv, CivilizationObject newCiv)
+    {
+        if (city.Civ.GameInfo.EventSink is not { } sink) return;
+        foreach (var position in city.Tiles.OrderBy(it => it.x).ThenBy(it => it.y))
+            sink.Emit(new TileOwnerChanged(position, oldCiv.CivId, newCiv.CivId));
     }
 
     public static void CityGrew(CityObject city)

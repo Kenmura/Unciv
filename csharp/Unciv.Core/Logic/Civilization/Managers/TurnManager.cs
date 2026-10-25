@@ -313,7 +313,7 @@ public class TurnManager(Civilization civInfo)
     public void EndTurn(Action? progressBar = null)
     {
         EndTurnCore(progressBar);
-        GameEventHooks.TurnEnded(civInfo);
+        if (!civInfo.IsSpectator()) GameEventHooks.TurnEnded(civInfo);
     }
 
     // T186 deviation: the body of Kotlin's endTurn, split off so that the TurnEnded event is reported once after every early return.

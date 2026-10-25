@@ -545,7 +545,7 @@ public class UnitMovement
         {
             var airOrigin = Unit.GetTile();
             MoveAirUnitToTile(destination);
-            GameEventHooks.UnitMoved(Unit, [airOrigin, Unit.GetTile()]);
+            GameEventHooks.UnitMoved(Unit, airOrigin, Unit.GetTile());
             return;
         }
 
@@ -553,7 +553,7 @@ public class UnitMovement
         {
             var dropOrigin = Unit.GetTile();
             ParadropToTile(destination);
-            GameEventHooks.UnitMoved(Unit, [dropOrigin, Unit.GetTile()]);
+            GameEventHooks.UnitMoved(Unit, dropOrigin, Unit.GetTile());
             return;
         }
 

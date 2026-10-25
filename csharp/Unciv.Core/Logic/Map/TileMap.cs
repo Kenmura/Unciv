@@ -791,6 +791,7 @@ public class TileMap : IsPartOfGameInfoSerialization
         unit.PutInTile(unitToPlaceTile);
         unit.SetCurrentMovement((float)unit.GetMaxMovement());
         unit.AddMovementMemory();
+        GameEventHooks.UnitCreated(this, civInfo, unit, unitToPlaceTile);
 
         // Only once we add the unit to the civ we can activate addPromotion, because it will try to update civ viewable tiles
         foreach (var promotion in unit.BaseUnit.Promotions)

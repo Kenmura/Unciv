@@ -133,8 +133,9 @@ public static class Battle
 
         TriggerCombatUniques(attacker, defender, attackedTile);
 
+        var attackSnapshot = GameEventHooks.BeginAttack(attacker, defender);
         var damageDealt = TakeDamage(attacker, defender) + extraRangedAttackDamage;
-        GameEventHooks.UnitAttacked(attacker, defender, damageDealt);
+        GameEventHooks.UnitAttacked(attackSnapshot, attacker, defender, damageDealt);
 
         // check if unit is captured by the attacker (prize ships unique)
         // As ravignir clarified in issue #4374, this only works for aggressor

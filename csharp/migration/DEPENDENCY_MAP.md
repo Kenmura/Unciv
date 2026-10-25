@@ -90,6 +90,7 @@ flowchart TD
     T206["T206<br/>Optional: LAN discovery (UDP broadcast beacon, 'Games on you..."]
     T207["T207<br/>Optional: UPnP/NAT-PMP automatic port mapping for the host"]
     T208["T208<br/>Running game must equal its own save-)load: make transient c..."]
+    T209["T209<br/>Game events follow-up: secondary unit movement (cargo, swap,..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -236,6 +237,7 @@ flowchart TD
   T176 --> T205
   T179 --> T206
   T179 --> T207
+  T186 --> T209
   C001 --> C002
   A003 --> C002
   A004 --> C002
@@ -515,6 +517,7 @@ flowchart TD
   class T206 waiting
   class T207 waiting
   class T208 ready
+  class T209 ondeck
 ```
 
 ## Remaining tickets over time
@@ -532,7 +535,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00"]
     y-axis "Tickets" 0 --> 83
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 74]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 75]
     line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 2]
 ```
 
@@ -559,7 +562,8 @@ xychart-beta
 | T192 | **On deck** (after T186) | T164, T186 | 17 | Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode) |
 | T193 | **On deck** (after T186) | T164, T186, T086, T089 | 5 | Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage |
 | C030 | **On deck** (after C007) | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
-| T186 | Needs-Review [Claude] | T164 | 50 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
+| T209 | **On deck** (after T186) | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
+| T186 | Needs-Review [Claude] | T164 | 51 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T187 | Available (waiting on T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |

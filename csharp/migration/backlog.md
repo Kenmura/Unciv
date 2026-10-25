@@ -2198,6 +2198,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
           - Sink: `GameInfo.EventSink` (JsonIgnore, not copied by Clone, default null) + `GameInfoEventSink` (bounded, default 4096, then counted and reported as one EventsTruncated) + static `GameEventHooks` (one method per call site; returns before allocating when no sink). `IGameInfoState.EventSink` has a default `=> null` so test fakes are untouched. `GameCommand.Apply` installs a fresh sink for one command and returns sink events in call order followed by events the command itself returns. Hash purity test: 6 turns of a real game with and without a sink give equal state hashes, two sinks give identical event JSON.
           - Call sites (single lines): TurnManager (StartTurn, EndTurn split into EndTurnCore so TurnEnded follows every early return, AutomateTurn), Civilization.AddNotification (AI civs ignored as before), `AddPopupAlert` extension replaces `PopupAlerts.Add` at the 25 engine sites, UnitManager.PlaceUnitNearTile, MapUnit.Destroy, UnitMovement.MoveToTile (ground path entered, air and paradrop two-step), Battle.Attack, CityFounder, CityConquestFunctions.ConquerCity (not trades), CityPopulationManager growth, Tile.SetOwningCity (only when the owning civ changes), TechManager.AddTechnology (new techs), PolicyManager.Adopt, DeclareWar, DiplomacyManager.MakePeace, TradeLogic.AcceptTrade. Done this way so the size and coupling ratchets (Civilization.cs, Tile.cs, Battle.cs, MapUnit.cs, TechManager.cs) did not move.
           - Not events (by design): fog reveals / StatsChanged (T175 diffs), unit gifts, city transfers by trade.
+  -   - Review round 1 (adversarial subagent): fixed UnitAttacked defender identity (snapshot before blows), TileOwnerChanged on city transfer (sorted per tile), UnitCreated moved into TileMap.PlaceUnitNearTile (barbarian/unique spawns), air/paradrop no-alloc overload, TurnEnded skips spectators. Deferred to T209 (finding ids 1-3, 8, 10): secondary moves, unit capture event, city destroyed/traded event, priority truncation. Documented: SetTransients runs without a sink, Apply must be serialized per game.
 
 ### T187 Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign
 - State: Available
@@ -2481,6 +2482,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: UNCIV_SOAK=1 dotnet test --filter Category=Soak
 - Claimed:
 - Notes: Found by the T167 soak (Small map, 6 civs + 6 city states, seed 11/5, 150 turns, then 1 more turn). Facts: (1) save text of the running game and of its reload are byte-identical apart from the legacy pointsForNextGreatGeneral (BackwardCompatibility rewrites it) and exploredBy; (2) two loads of that save, and GameInfo.Clone()+SetTransients, play on identically; (3) the running game does NOT: after one turn barbarian units are 7 (running) vs 9 (reload) and a England unit count differs. Causes seen, all faithful ports of upstream laziness: a) DiplomacyManager.HasOpenBorders is a transient refreshed only at turn start, so a deal whose Duration hit 0 this turn still gives open borders (DiplomaticModifiers OpenBorders 2.375 vs 2.125 after reload); b) MapUnit.UpdateVisibleTiles skips the civ-wide vision/exploration update when old and new view lie inside own borders, so Civ.ViewableTiles / Tile.exploredBy can be one tile stale (Greece, tile 6,13) and BarbarianManager reads ViewableTiles for fog; c) at least one more (stat history column E 424 vs 426 for a city state) not yet attributed. For lockstep play and join-in-progress a client that loaded a snapshot must not diverge from clients that did not. Fix idea: refresh the lazily-maintained caches at a fixed point (end of NextTurn) so running state equals the rebuilt one, or hash/serialise them; then add the assertion original == reload for 50 turns in the soak. Hash-set iteration order (JavaHashSet) also differs between a running and a reloaded game for sets that saw removals (builtBuildings at turn 300 on the same seed): JVM-faithful, but a second source of divergence to decide on.
+
+### T209 Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation
+- State: Available
+- Depends: T186
+- Source: T186 adversarial review findings 1-3, 8, 10
+- Fixtures: none
+- Deliverables: Commands/Events/*.cs, GameEventHooks call sites, tests
+- Gate: dotnet test --filter FullyQualifiedName~GameEvents
+- Claimed:
+- Notes:
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

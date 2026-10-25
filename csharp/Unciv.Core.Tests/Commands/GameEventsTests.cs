@@ -304,6 +304,63 @@ public sealed class GameEventsTests
     }
 
     [Fact]
+    public void CapturingACivilianKeepsTheVictimAsDefender()
+    {
+        var (sink, a, b) = Arena();
+        a.GetDiplomacyManager(b)!.DeclareWar();
+        var attacker = testGame.AddUnit("Warrior", a, testGame.GetTile(1, 0));
+        var worker = testGame.AddUnit("Worker", b, testGame.GetTile(HexCoord.Zero));
+        attacker.CurrentMovement = 2f;
+        sink.Drain();
+
+        Battle.Attack(new MapUnitCombatant(attacker), new MapUnitCombatant(worker));
+
+        var attacked = Assert.Single(Of<UnitAttacked>(sink));
+        Assert.Equal(b.CivId, attacked.DefenderCivId);
+        Assert.Equal(worker.Id, attacked.DefenderUnitId);
+        Assert.Contains(b.CivId, attacked.Participants());
+    }
+
+    [Fact]
+    public void UnitsPlacedThroughTheTileMapAreReportedAsCreated()
+    {
+        var (sink, a, _) = Arena();
+        sink.Drain();
+        var unit = (Unciv.Logic.Map.MapUnits.MapUnit)testGame.TileMap.PlaceUnitNearTile(new HexCoord(-3, 0), "Warrior", a)!;
+        Assert.Equal(new UnitCreated(a.CivId, unit.Id, "Warrior", unit.CurrentTile.Position), Assert.Single(Of<UnitCreated>(sink)));
+    }
+
+    [Fact]
+    public void SpectatorsGetNoTurnEndedWithoutTurnStarted()
+    {
+        var (sink, _, _) = Arena();
+        var spectator = testGame.AddCiv(new Unciv.Models.Ruleset.Nation.Nation { Name = Constants.Spectator }, isPlayer: true);
+        Assert.True(spectator.IsSpectator());
+        sink.Drain();
+        new Unciv.Logic.Civilization.Managers.TurnManager(spectator).StartTurn();
+        new Unciv.Logic.Civilization.Managers.TurnManager(spectator).EndTurn();
+        Assert.Empty(sink.Drain().OfType<TurnEnded>());
+    }
+
+    [Fact]
+    public void CityTransferReportsEveryTileOwnerInPositionOrder()
+    {
+        var (sink, a, b) = Arena();
+        testGame.AddUnit("Warrior", b, testGame.GetTile(2, 2));
+        testGame.GameInfo.CurrentPlayerCiv = a;
+        testGame.GameInfo.CurrentPlayer = a.CivId;
+        var city = testGame.AddCity(b, testGame.GetTile(HexCoord.Zero), initialPopulation: 2);
+        testGame.AddCity(b, testGame.GetTile(2, 1));
+        sink.Drain();
+
+        city.MoveToCiv(a);
+
+        var owners = Of<TileOwnerChanged>(sink).Where(it => it.OldOwnerCivId == b.CivId && it.NewOwnerCivId == a.CivId).Select(it => it.Position).ToList();
+        Assert.NotEmpty(owners);
+        Assert.Equal(owners.OrderBy(it => it.x).ThenBy(it => it.y), owners);
+    }
+
+    [Fact]
     public void CityAttacksReportTheCityIds()
     {
         var (sink, a, b) = Arena();
