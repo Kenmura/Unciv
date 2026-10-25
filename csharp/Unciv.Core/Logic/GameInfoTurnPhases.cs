@@ -52,6 +52,7 @@ public partial class GameInfo
         var playerIndex = Civilizations.IndexOf(player);
 
         EndCivTurn(player, nowMillis, progressBar, shouldGainTime);
+        RefreshTransientCaches(); // T218: every civ's turn ends canonical, exactly like a resolve step of a simultaneous round
         if (player.IsHuman()) playerIndex = AdvancePlayerIndex(playerIndex);
         pendingPlayerIndex = playerIndex;
     }
@@ -110,6 +111,7 @@ public partial class GameInfo
 
             // Clean up
             new TurnManager(player).EndTurn(progressBar);
+            RefreshTransientCaches(); // T218
 
             // To the next player
             index = AdvancePlayerIndex(index);
@@ -162,7 +164,7 @@ public partial class GameInfo
     /// reload of its own save continue identically (lockstep replay, join-in-progress). Upstream refreshes these lazily (open borders only at
     /// turn start; civ-wide vision only when a unit's view leaves the own borders), which a reload then "corrects".
     /// </summary>
-    public void RefreshTransientCaches()
+    internal void RefreshTransientCaches()
     {
         foreach (var civInfo in Civilizations)
         {
@@ -183,7 +185,7 @@ public partial class GameInfo
         }
         foreach (var civInfo in Civilizations) civInfo.Tech.RebuildTransients();
         foreach (var civInfo in Civilizations)
-            foreach (var diplomacyManager in civInfo.Diplomacy.Values)
+            foreach (var diplomacyManager in civInfo.Diplomacy.Values.ToList()) // T218: a refresh between steps may find a civ whose manager is still missing
                 diplomacyManager.UpdateHasOpenBorders();
         var loadRank = new Dictionary<Unciv.Logic.Map.MapUnits.MapUnit, int>();
         foreach (var tile in TileMap.Values)
@@ -195,15 +197,12 @@ public partial class GameInfo
                 foreach (var tile in city.GetWorkedTiles().ToList())
                     if (!ReferenceEquals(tile.GetOwner(), civInfo))
                         city.StopWorkingTile(tile);
-        foreach (var civInfo in Civilizations.OrderByDescending(it => it.IsCityState).ToList())
-        {
-            foreach (var unit in civInfo.Units.GetCivUnits().ToList())
-                unit.UpdateVisibleTiles(false);
-            civInfo.Cache.UpdateOurTiles();
-            civInfo.Cache.UpdateSightAndResources();
-            civInfo.Cache.UpdateCitiesConnectedToCapital(true);
-            foreach (var city in civInfo.Cities) city.CityStats.UpdateTileStats(); // releases blockaded worked tiles, like a load
-        }
+        // The tail of SetTransients: vision, civ-wide caches, then city and civ stats (Civ.Stats is not serialised, a load recomputes it).
+        UpdateCivilizationState();
+        // A civ without cities is never reached by the city stat updates above: its Stats keep the value of its last update while a load starts
+        // them at zero. Recompute them so both agree.
+        foreach (var civInfo in Civilizations.Where(it => it.Cities.Count == 0))
+            civInfo.UpdateStatsForNextTurn();
     }
 
     /// <summary>We rotate Players in cycle: 1,2...N,1,2...</summary>
@@ -212,6 +211,7 @@ public partial class GameInfo
         playerIndex = (playerIndex + 1) % Civilizations.Count;
         if (playerIndex == 0)
         {
+            RefreshTransientCaches(); // T218: the stats the ranking history reads are canonical (a mid-round reload recomputes them)
             RecordRankingStats();
             Turns++;
             if (EngineOptions.SimulateUntilTurn != 0)

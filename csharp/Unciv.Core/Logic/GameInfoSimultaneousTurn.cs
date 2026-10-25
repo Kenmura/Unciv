@@ -148,10 +148,7 @@ public partial class GameInfo
     public void StartNextTurn()
     {
         var state = Expect(new ResolveStep.StartNextTurn());
-        // T218: Civ.Stats (Happiness, StatsForNextTurn) is not serialised and a load recomputes it, while a running game holds the value of its
-        // last update; recompute it here so the ranking history recorded below is the same live and after a mid-round reload.
-        foreach (var civ in Civilizations)
-            civ.UpdateStatsForNextTurn();
+        RefreshTransientCaches(); // T218: as AdvancePlayerIndex does at the wrap of the sequential cycle
         RecordRankingStats();
         Turns++;
         if (EngineOptions.SimulateUntilTurn != 0)
@@ -187,6 +184,7 @@ public partial class GameInfo
     {
         state.Stage = stage;
         state.Next = Civilizations.IndexOf(civ) + 1;
+        RefreshTransientCaches(); // T218: every resolve step ends canonical, so a host snapshot between steps reloads to the live state
         CompleteRoundIfDone(state);
     }
 
