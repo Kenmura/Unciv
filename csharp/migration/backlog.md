@@ -1908,7 +1908,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Held (Blocked) while the design/splitting agents run: this ticket is too coarse to implement as written (gap review). It will be split into domain tickets and re-pointed by the design agent; do not claim it until it is Available again.
 
 ### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
-- State: Available
+- State: Blocked
 - Depends: T012, T100
 - Source: csharp/migration/PROTOCOL.md goals; COMMANDS.md
 - Fixtures: none
@@ -1916,6 +1916,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~Server
 - Claimed:
 - Notes: C006 says 'separate server ticket needed'. Designs on the command log (replay-verifiable). Must not depend on the Won't-port Kotlin multiplayer stack. Split design and implementation if large.
+  - Held (Blocked) while the design/splitting agents run: this ticket is too coarse to implement as written (gap review). It will be split into domain tickets and re-pointed by the design agent; do not claim it until it is Available again.
 
 ### T166 Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization)
 - State: Available
