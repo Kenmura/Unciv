@@ -1,0 +1,66 @@
+using Unciv.Assets;
+using Unciv.Net.Visibility;
+
+namespace Unciv.Core.Tests.Assets;
+
+public class NotificationsModelTests
+{
+    private static NotificationDto Note(string text, string category = "General", params NotificationActionDto[] actions) =>
+        new() { Category = category, Text = text, Icons = [], Actions = [.. actions] };
+
+    private static NotificationActionDto At(string kind, int x, int y) => new() { Kind = kind, X = x, Y = y };
+
+    [Fact]
+    public void RowsAreNewestFirstKeepSnapshotIndexAndDropBrackets()
+    {
+        var rows = NotificationsModel.Rows([Note("[Rome] met you"), Note("second")]);
+        Assert.Equal([1, 0], rows.Select(it => it.Index));
+        Assert.Equal("Rome met you", rows[1].Text);
+        Assert.Empty(NotificationsModel.Rows([]));
+    }
+
+    [Theory]
+    [InlineData("location")]
+    [InlineData("city")]
+    [InlineData("unit")]
+    public void PlaceActionsTargetTheTile(string kind)
+    {
+        var target = NotificationsModel.TargetOf([At(kind, 3, 4)]);
+        Assert.Equal(new NotificationTarget(NotificationTargetKind.Tile, 3, 4, null), target);
+    }
+
+    [Fact]
+    public void ATileBeatsATechAndTheFirstTileWins()
+    {
+        var tech = new NotificationActionDto { Kind = "tech", Name = "Mining" };
+        Assert.Equal(NotificationTargetKind.Tile, NotificationsModel.TargetOf([tech, At("city", 1, 2), At("location", 5, 6)])!.Kind);
+        Assert.Equal(1, NotificationsModel.TargetOf([tech, At("city", 1, 2), At("location", 5, 6)])!.X);
+        Assert.Equal("Mining", NotificationsModel.TargetOf([tech])!.Name);
+    }
+
+    [Fact]
+    public void ActionsWithoutAPlaceOrNameHaveNoTarget()
+    {
+        Assert.Null(NotificationsModel.TargetOf([]));
+        Assert.Null(NotificationsModel.TargetOf([new NotificationActionDto { Kind = "location" }])); // coordinates stripped by the engine for an unseen tile
+        Assert.Null(NotificationsModel.TargetOf([new NotificationActionDto { Kind = "tech", Name = "" }]));
+        Assert.Null(NotificationsModel.TargetOf([new NotificationActionDto { Kind = "other", X = 1, Y = 1 }]));
+    }
+
+    [Fact]
+    public void SummaryCountsByCategoryInEngineOrder()
+    {
+        var rows = NotificationsModel.Rows([Note("a", "War"), Note("b", "Cities"), Note("c", "War"), Note("d", "Zzz"), Note("e", "Production")]);
+        Assert.Equal("Turn 3: 5 notifications (1 Production, 2 War, 1 Cities, 1 Zzz)", NotificationsModel.Summary(3, rows));
+        Assert.Equal("Turn 4: 2 notifications (1 Aaa, 1 Zzz)", NotificationsModel.Summary(4, NotificationsModel.Rows([Note("a", "Zzz"), Note("b", "Aaa")])));
+        Assert.Equal("Turn 3: 1 notification (1 War)", NotificationsModel.Summary(3, NotificationsModel.Rows([Note("a", "War")])));
+        Assert.Equal("Turn 12: nothing new", NotificationsModel.Summary(12, []));
+    }
+
+    [Fact]
+    public void ToggleLabelShowsCountAndState()
+    {
+        Assert.Equal("Notifications (4)", NotificationsModel.ToggleLabel(4, open: false));
+        Assert.Equal("Hide notifications (0)", NotificationsModel.ToggleLabel(0, open: true));
+    }
+}

@@ -7,6 +7,7 @@ using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
+using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Harness;
@@ -51,8 +52,9 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false)
     {
+        diplomacy |= alerts;
         solo |= skirmish | diplomacy | policies;
         var ruleset = LoadVanilla();
         var game = GameStarter.StartNewGame(
@@ -81,6 +83,7 @@ public static class ScenarioGame
         if (policies) SetUpPolicies(game);
         if (skirmish) SetUpSkirmish(game);
         if (diplomacy) SetUpDiplomacy(game);
+        if (alerts) SetUpAlerts(game);
         return new GameSession(game);
     }
 
@@ -141,6 +144,28 @@ public static class ScenarioGame
         foreach (var civ in game.Civilizations.Where(it => it.CivName != HumanA && it.CivName != HumanB && !it.IsBarbarian).OrderBy(it => it.CivName, StringComparer.Ordinal))
             human.DiplomacyFunctions.MakeCivilizationsMeet(civ);
         human.AddGold(1000 - human.Gold); // after the meetings: meeting a city-state pays a bonus
+    }
+
+    /// <summary>
+    /// C013: the diplomacy game plus a founded capital, four notifications (a city, a tech, a tile the human cannot see, one without a place) and four pending
+    /// alerts after the welcome alert: Rome's demand, Rome's friendship offer, the capital as a just-conquered city (blocking), a built wonder. Set up directly on the
+    /// state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpAlerts(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var settler = human.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());
+        var city = human.AddCity(settler.CurrentTile.Position, settler);
+        var capital = city.GetCenterTile();
+        var unseen = game.TileMap.Values.Where(it => !it.IsVisible(human)).OrderByDescending(it => it.AerialDistanceTo(capital)).ThenBy(it => it.Position.x).ThenBy(it => it.Position.y).First();
+        human.AddNotification("Your city [" + city.Name + "] has been founded", capital.Position, NotificationCategory.Cities);
+        human.AddNotification("You have discovered [Agriculture]!", new TechAction("Agriculture"), NotificationCategory.General);
+        human.AddNotification("An enemy scout was seen far away", unseen.Position, NotificationCategory.War);
+        human.AddNotification("[Rome] wishes to speak with you", NotificationCategory.Diplomacy);
+        human.AddPopupAlert(new PopupAlert(AlertType.DemandToStopSpreadingReligion, Ai));
+        human.AddPopupAlert(new PopupAlert(AlertType.DeclarationOfFriendship, Ai));
+        human.AddPopupAlert(new PopupAlert(AlertType.CityConquered, city.Id));
+        human.AddPopupAlert(new PopupAlert(AlertType.WonderBuilt, "Pyramids"));
     }
 
     /// <summary>The 64-bit canonical hash of the whole game state (serialised form), as lowercase hex.</summary>

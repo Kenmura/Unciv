@@ -65,6 +65,15 @@ public partial class GameScreen : Control
 
     public int? SelectedUnitId { get; private set; }
 
+    /// <summary>C013: the clickable notification list.</summary>
+    public NotificationListView Notifications { get; private set; } = null!; // JUSTIFY: C013 assigned in _Ready before any use
+
+    /// <summary>C013: the modal popup for the first pending alert.</summary>
+    public AlertPopupView Alerts { get; private set; } = null!; // JUSTIFY: C013 assigned in _Ready before any use
+
+    private readonly HashSet<string> deferredAlerts = [];
+    private bool reviewingAlerts;
+
     /// <summary>The city whose screen (<see cref="City"/>) is open: the hook that tells which city.</summary>
     public CityDto? OpenCity { get; private set; }
 
@@ -169,6 +178,10 @@ public partial class GameScreen : Control
         PolicyButton.Pressed += OpenPolicyScreen;
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
+        Notifications = new NotificationListView();
+        AddChild(Notifications);
+        Notifications.Chosen += OnNotificationChosen;
+        Notifications.ReviewRequested += () => Run(ReviewAlerts());
         Panel = new UnitPanelView();
         AddChild(Panel);
         Panel.EntryChosen += OnMenuEntry;
@@ -180,6 +193,15 @@ public partial class GameScreen : Control
         Minimap = new MinimapView { Name = "Minimap" };
         AddChild(Minimap);
         Minimap.Attach(Map);
+        Alerts = new AlertPopupView();
+        AddChild(Alerts);
+        Alerts.Answered += (popup, answer) => Run(AnswerAlert(popup, answer));
+        Alerts.Deferred += popup =>
+        {
+            deferredAlerts.Add(popup.Key);
+            Alerts.Close();
+            Run(RefreshHud());
+        };
         GetViewport().SizeChanged += Layout;
         Layout();
 
@@ -217,6 +239,8 @@ public partial class GameScreen : Control
         }
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
+        Notifications.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
+        Alerts.LayoutIn(Size);
         Panel.LayoutIn(Size);
         CombatPreview.LayoutIn(Size);
     }
@@ -242,6 +266,10 @@ public partial class GameScreen : Control
         queries = new GameQueries(session);
         var theme = new UiTheme(registry);
         Hud.Init(theme);
+        Notifications.Init(theme);
+        Alerts.Init(theme);
+        deferredAlerts.Clear();
+        reviewingAlerts = false;
         City = new CityScreen(session, theme);
         AddChild(City);
         City.CommandAccepted += Refresh;
@@ -275,6 +303,7 @@ public partial class GameScreen : Control
         PolicyButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
+        MoveChild(Alerts, -1); // the popup sits above every screen opened above
         ReachableOverlay.Setup(registry);
         AttackOverlay.Setup(registry);
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
@@ -619,10 +648,55 @@ public partial class GameScreen : Control
         var action = HudModel.NextAction(pending, snapshot.TurnStatus, session.ViewerCivId);
         Hud.Update(bar, action, HudModel.CanEndTurn(pending));
         Layout();
+        var rows = NotificationsModel.Rows(snapshot.Notifications);
+        Notifications.Update(bar.Turn, rows);
         if (bar.Turn != bannerTurn)
         {
             bannerTurn = bar.Turn;
             Hud.ShowBanner(HudModel.Banner(bar.Turn, bar.Year, session.ViewerCivId));
+        }
+        ShowNextAlert(pending, reopen: false);
+    }
+
+    /// <summary>
+    /// Opens the first pending alert that asks for a decision and was not put off; with <paramref name="reopen"/> the player asked to review, which also opens the
+    /// informational and the put-off alerts, one after the other until none is left. Closes the popup when there is nothing to show.
+    /// </summary>
+    private void ShowNextAlert(Unciv.Queries.Empire.PendingDecisionsResult? pending, bool reopen)
+    {
+        if (reopen)
+        {
+            deferredAlerts.Clear();
+            reviewingAlerts = true;
+        }
+        var next = AlertPopupModel.Next(pending, snapshot, deferredAlerts, reviewingAlerts);
+        if (next == null) reviewingAlerts = false;
+        Notifications.SetWaiting(AlertPopupModel.WaitingCount(pending, snapshot, deferredAlerts));
+        if (next == null) Alerts.Close();
+        else if (Alerts.Current?.Key != next.Key || !Alerts.Visible) Alerts.Open(next);
+    }
+
+    private async Task AnswerAlert(AlertPopup popup, AlertButton answer)
+    {
+        var result = await session.SubmitAsync(answer.Command);
+        if (!result.Accepted)
+        {
+            SetStatus($"{popup.Title}: {answer.Label} refused: {result.Message}");
+            return;
+        }
+        Refresh();
+    }
+
+    private void OnNotificationChosen(NotificationRow row)
+    {
+        switch (row.Target)
+        {
+            case { Kind: NotificationTargetKind.Tile } tile:
+                Map.FocusOn(UnitPosition(new HexCoord(tile.X, tile.Y), 0));
+                break;
+            case { Kind: NotificationTargetKind.Tech } tech:
+                OpenTechScreen(tech.Name);
+                break;
         }
     }
 
@@ -645,6 +719,9 @@ public partial class GameScreen : Control
             case HudActionKind.Decision when action.Decision == DecisionKind.Policy:
                 OpenPolicyScreen();
                 break;
+            case HudActionKind.Decision when action.Decision == Unciv.Logic.DecisionKind.Alert:
+                Run(ReviewAlerts());
+                break;
             default:
                 SetStatus($"{action.Label}: this screen is not built yet.");
                 break;
@@ -666,6 +743,8 @@ public partial class GameScreen : Control
         SelectUnit(node);
         Map.FocusOn(UnitPosition(new HexCoord(node.Unit.X, node.Unit.Y), 0));
     }
+
+    private async Task ReviewAlerts() => ShowNextAlert(await queries.Pending(), reopen: true);
 
     private void OnNextTurn() => Run(EndTurn());
 

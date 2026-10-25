@@ -36,5 +36,8 @@ public abstract class Scenario
     /// <summary>C020: Babylon has a capital and <see cref="Unciv.Harness.ScenarioGame.PolicyCulture"/> stored culture, so policies can be adopted.</summary>
     public virtual bool Policies => false;
 
+    /// <summary>C013: the diplomacy game plus a founded capital, four notifications and four pending alerts (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
+    public virtual bool Alerts => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

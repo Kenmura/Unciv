@@ -184,6 +184,32 @@ Scenario `unit-orders`.
 
 *Disband confirmation prompt.* (`unit-orders/disband-confirm.png`)
 
+## C013 (ticket not Done or unknown)
+
+Notification list and popup alerts: demand, city conquered, review of informational alerts, clickable notifications.
+
+Scenario `alerts`.
+
+![Rome's demand as a modal popup: accept, refuse or decide later; informational alerts wait under Review alerts.](../Unciv.Godot.Harness/golden/alerts/demand.png)
+
+*Rome's demand as a modal popup: accept, refuse or decide later; informational alerts wait under Review alerts.* (`alerts/demand.png`)
+
+![A just-conquered city: only the engine's choices (annex, puppet) and no way to put it off.](../Unciv.Godot.Harness/golden/alerts/city-conquered.png)
+
+*A just-conquered city: only the engine's choices (annex, puppet) and no way to put it off.* (`alerts/city-conquered.png`)
+
+![Review alerts: the welcome alert, informational, with only an OK.](../Unciv.Godot.Harness/golden/alerts/welcome.png)
+
+*Review alerts: the welcome alert, informational, with only an OK.* (`alerts/welcome.png`)
+
+![A put-off friendship offer, back in the review with accept and decline.](../Unciv.Godot.Harness/golden/alerts/friendship.png)
+
+*A put-off friendship offer, back in the review with accept and decline.* (`alerts/friendship.png`)
+
+![The notification list open with its category summary; clicking the city row centred the camera on the city.](../Unciv.Godot.Harness/golden/alerts/list.png)
+
+*The notification list open with its category summary; clicking the city row centred the camera on the city.* (`alerts/list.png`)
+
 ## C014 Minimap
 
 Minimap in the top right corner with a camera rectangle; click to jump.

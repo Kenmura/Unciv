@@ -376,5 +376,31 @@
         "caption": "Arabic and Hebrew sample lines laid out right to left with digits and a Latin word inside."
       }
     ]
+  },
+  "C013": {
+    "scenario": "alerts",
+    "about": "Notification list and popup alerts: demand, city conquered, review of informational alerts, clickable notifications.",
+    "shots": [
+      {
+        "golden": "alerts/demand.png",
+        "caption": "Rome's demand as a modal popup: accept, refuse or decide later; informational alerts wait under Review alerts."
+      },
+      {
+        "golden": "alerts/city-conquered.png",
+        "caption": "A just-conquered city: only the engine's choices (annex, puppet) and no way to put it off."
+      },
+      {
+        "golden": "alerts/welcome.png",
+        "caption": "Review alerts: the welcome alert, informational, with only an OK."
+      },
+      {
+        "golden": "alerts/friendship.png",
+        "caption": "A put-off friendship offer, back in the review with accept and decline."
+      },
+      {
+        "golden": "alerts/list.png",
+        "caption": "The notification list open with its category summary; clicking the city row centred the camera on the city."
+      }
+    ]
   }
 }

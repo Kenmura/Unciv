@@ -188,4 +188,21 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.True(ScenarioResult.FromJson(new ScenarioResult("p", 1, 2, "h", [], [], [], [], Policies: true).ToJson()).Policies);
         Assert.False(ScenarioResult.FromJson(new ScenarioResult("p", 1, 2, "h", [], [], [], []).ToJson()).Policies);
     }
+
+    [Fact]
+    public void AlertsGameHasTheNotificationsAndAlertsAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(alerts: true);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        Assert.Single(human.Cities);
+        Assert.Contains(human.Notifications, it => it.Text == "[Rome] wishes to speak with you");
+        Assert.Contains(human.Notifications, it => it.Text.StartsWith("An enemy scout", StringComparison.Ordinal));
+        Assert.Equal(["StartIntro", "FirstContact", "FirstContact", "DemandToStopSpreadingReligion", "DeclarationOfFriendship", "CityConquered", "WonderBuilt"], human.PopupAlerts.Select(it => it.Type.ToString()));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(alerts: true)));
+        Assert.NotEqual(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(diplomacy: true)));
+        var result = session.Submit(ScenarioGame.HumanA, new Unciv.Commands.Turn.AckAlert { Index = 6, AlertType = Unciv.Logic.Civilization.AlertType.WonderBuilt, Value = "Pyramids" });
+        Assert.True(result.Accepted, "rejected");
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, alerts: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("d", 1, 2, "h", [], [], [], [], Alerts: true).ToJson()).Alerts);
+    }
 }
