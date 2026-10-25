@@ -134,6 +134,7 @@ public static class Battle
         TriggerCombatUniques(attacker, defender, attackedTile);
 
         var damageDealt = TakeDamage(attacker, defender) + extraRangedAttackDamage;
+        GameEventHooks.UnitAttacked(attacker, defender, damageDealt);
 
         // check if unit is captured by the attacker (prize ships unique)
         // As ravignir clarified in issue #4374, this only works for aggressor
@@ -774,7 +775,7 @@ public static class Battle
         else if (attackerCiv.IsHuman() && clientState.AutoPlay != null && !clientState.IsFullAutoPlayAI)
         {
             // we're not taking our former capital
-            attackerCiv.PopupAlerts.Add(new PopupAlert(AlertType.CityConquered, city.Id));
+            attackerCiv.AddPopupAlert(new PopupAlert(AlertType.CityConquered, city.Id));
         }
         else AutomateCityConquer(attackerCiv, city);
 
@@ -829,7 +830,7 @@ public static class Battle
             if (attackedCiv.IsCityState)
                 attackedCiv.CityStateFunctions.CityStateDestroyed(attacker);
             attackedCiv.Destroy(notificationLocation);
-            attacker.PopupAlerts.Add(new PopupAlert(AlertType.Defeated, attackedCiv.CivId));
+            attacker.AddPopupAlert(new PopupAlert(AlertType.Defeated, attackedCiv.CivId));
         }
     }
 

@@ -604,7 +604,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
 
         if (construction is Building { IsWonder: true })
         {
-            City.Civ.PopupAlerts.Add(new PopupAlert(AlertType.WonderBuilt, construction.Name));
+            City.Civ.AddPopupAlert(new PopupAlert(AlertType.WonderBuilt, construction.Name));
             foreach (var civ in City.Civ.GameInfo.Civilizations)
             {
                 if (civ.HasExplored(City.GetCenterTile()))

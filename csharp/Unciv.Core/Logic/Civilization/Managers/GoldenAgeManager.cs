@@ -72,7 +72,7 @@ public class GoldenAgeManager : IsPartOfGameInfoSerialization
         CivInfo.AddNotification("You have entered a Golden Age!",
             new CivilopediaAction("Tutorial/Golden Age"),
             NotificationCategory.General, "StatIcons/Happiness");
-        CivInfo.PopupAlerts.Add(new PopupAlert(AlertType.GoldenAge, ""));
+        CivInfo.AddPopupAlert(new PopupAlert(AlertType.GoldenAge, ""));
 
         CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUponEnteringGoldenAge, CivInfo.State, _ => true, false, unique =>
         {

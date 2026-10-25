@@ -288,7 +288,7 @@ public static partial class NextTurnAutomation
         // violation after promise (broke promise)
         else if (diplomacyManager.HasFlag(demand.AgreedToDemand))
         {
-            offendingCiv.PopupAlerts.Add(new PopupAlert(demand.ViolationDiscoveredAlert, civView.CivId));
+            offendingCiv.AddPopupAlert(new PopupAlert(demand.ViolationDiscoveredAlert, civView.CivId));
             diplomacyManager.SetFlag(demand.WillIgnoreViolation, 100, true);
             diplomacyManager.SetModifier(demand.BetrayedPromiseDiplomacyModifier, -20f);
             if (demand == Demand.DoNotAttackUs)
@@ -307,7 +307,7 @@ public static partial class NextTurnAutomation
             var threatLevel = Automation.ThreatAssessment(civView, ViewOf(civInfo).GetForeignCivView(offendingCiv));
             if (threatLevel < ThreatLevel.High // don't piss them off for no reason please.
                 || demand == Demand.DoNotAttackUs)
-                offendingCiv.PopupAlerts.Add(new PopupAlert(demand.DemandAlert, civView.CivId));
+                offendingCiv.AddPopupAlert(new PopupAlert(demand.DemandAlert, civView.CivId));
         }
         diplomacyManager.RemoveFlag(demand.ViolationOccurred);
     }

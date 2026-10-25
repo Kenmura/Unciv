@@ -29,7 +29,7 @@ public class DiplomacyFunctions(Civilization civInfo)
         CivInfo.Diplomacy[otherCiv.CivId] = new DiplomacyManager(CivInfo, otherCiv) { DiplomaticStatus = DiplomaticStatus.Peace };
 
         if (!otherCiv.IsSpectator())
-            otherCiv.PopupAlerts.Add(new PopupAlert(AlertType.FirstContact, CivInfo.CivId));
+            otherCiv.AddPopupAlert(new PopupAlert(AlertType.FirstContact, CivInfo.CivId));
 
         if (CivInfo.IsCityState && otherCiv.IsMajorCiv())
         {

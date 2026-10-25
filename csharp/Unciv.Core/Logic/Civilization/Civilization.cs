@@ -1261,7 +1261,7 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
     public void AddNotification(string text, IEnumerable<NotificationAction>? actions, NotificationCategory category, params string[] notificationIcons)
     {
         if (PlayerType == PlayerType.AI) return; // no point in lengthening the saved game info if no one will read it
-        Notifications.Add(new Notification(text, notificationIcons, actions, category));
+        Notifications.Add(GameEventHooks.NotificationAdded(this, new Notification(text, notificationIcons, actions, category)));
     }
     #endregion
 

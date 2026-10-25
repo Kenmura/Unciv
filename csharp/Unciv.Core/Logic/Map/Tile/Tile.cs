@@ -900,7 +900,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
             roadOwner = "";
             roadOwnerObject = null;
         }
-        OwningCity = city;
+        OwningCity = GameEventHooks.TileOwnerChanged(this, OwningCity, city);
         StateThisTile = new GameContext(tile: this, city: city, gameInfo: TileMap.GameInfo);
         isCityCenterInternal = GetCity()?.Location == Position;
     }

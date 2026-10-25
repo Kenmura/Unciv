@@ -582,7 +582,7 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
                 diplomacy.AddInfluence(-10f);
                 if (!diplomacy.HasFlag(DiplomacyFlags.BorderConflict))
                 {
-                    otherCiv.PopupAlerts.Add(new PopupAlert(AlertType.BorderConflict, civInfo.CivId));
+                    otherCiv.AddPopupAlert(new PopupAlert(AlertType.BorderConflict, civInfo.CivId));
                     diplomacy.SetFlag(DiplomacyFlags.BorderConflict, 10);
                 }
             }
@@ -647,7 +647,7 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
                 bully.AddNotification($"[{protector.CivName}] is upset that you demanded tribute from [{civInfo.CivName}], whom they have pledged to protect!",
                     NotificationCategory.Diplomacy, NotificationIcon.Diplomacy, protector.CivName);
             else // Let humans choose who to side with
-                protector.PopupAlerts.Add(
+                protector.AddPopupAlert(
                     new PopupAlert(
                         AlertType.BulliedProtectedMinor,
                         bully.CivName + "@" + civInfo.CivName)); // we need to pass both civs as argument, hence the horrible chimera
@@ -758,7 +758,7 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
                     $"[{protector.CivName}] is upset that you attacked [{civInfo.CivName}], whom they have pledged to protect!",
                     NotificationCategory.Diplomacy, NotificationIcon.Diplomacy, protector.CivName);
             else // Let humans choose who to side with
-                protector.PopupAlerts.Add(
+                protector.AddPopupAlert(
                     new PopupAlert(
                         AlertType.AttackedProtectedMinor,
                         attacker.CivName + "@" + civInfo.CivName)); // we need to pass both civs as argument, hence the horrible chimera
@@ -779,7 +779,7 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
                     $"[{allyCiv.CivName}] is upset that you attacked [{civInfo.CivName}], whom they are allied with!",
                     NotificationCategory.Diplomacy, NotificationIcon.Diplomacy, allyCiv.CivName);
             else // Let humans choose who to side with
-                allyCiv.PopupAlerts.Add(
+                allyCiv.AddPopupAlert(
                     new PopupAlert(
                         AlertType.AttackedAllyMinor,
                         attacker.CivName + "@" + civInfo.CivName));

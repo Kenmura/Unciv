@@ -124,6 +124,7 @@ public class CityConquestFunctions(CityObject city)
         DestroyBuildingsOnCapture();
 
         city.MoveToCiv(receivingCiv);
+        GameEventHooks.CityCaptured(city, conqueringCiv, conqueredCiv, receivingCiv);
 
         city.ConquestExternals.DestroyIfDefeated(conqueredCiv, conqueringCiv, city.Location.ToHexCoord());
 

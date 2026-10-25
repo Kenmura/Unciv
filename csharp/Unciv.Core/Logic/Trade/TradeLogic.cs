@@ -153,6 +153,7 @@ public class TradeLogic
         var ourDiploManager = OurCivilization.GetDiplomacyManager(OtherCivilization).NotNull();
         var theirDiploManager = OtherCivilization.GetDiplomacyManager(OurCivilization).NotNull();
 
+        GameEventHooks.TradeAccepted(OurCivilization, OtherCivilization, CurrentTrade);
         ourDiploManager.Trades.Add(CurrentTrade);
         ourDiploManager.UpdateHasOpenBorders();
         theirDiploManager.Trades.Add(CurrentTrade.Reverse());
@@ -269,7 +270,7 @@ public class TradeLogic
                         && city.FoundingCivObject != null
                         && from != city.FoundingCivObject // can't liberate if the city actually belongs to those guys
                         && to != city.FoundingCivObject) // can't liberate if it's our city
-                        to.PopupAlerts.Add(new PopupAlert(AlertType.CityTraded, city.Id));
+                        to.AddPopupAlert(new PopupAlert(AlertType.CityTraded, city.Id));
                     break;
                 }
             case TradeOfferType.Treaty:

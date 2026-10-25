@@ -314,6 +314,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
 
         AdoptedPolicies.Add(policy.Name);
         AddPolicyToTransients(policy);
+        GameEventHooks.PolicyAdopted(CivInfo, policy.Name);
 
         if (!branchCompletion)
         {

@@ -364,7 +364,10 @@ public class TechManager : IsPartOfGameInfoSerialization
                 NotificationCategory.General,
                 NotificationIcon.Science);
         if (isNewTech)
-            CivInfo.PopupAlerts.Add(new PopupAlert(AlertType.TechResearched, techName));
+        {
+            CivInfo.AddPopupAlert(new PopupAlert(AlertType.TechResearched, techName));
+            GameEventHooks.ResearchCompleted(CivInfo, techName);
+        }
 
         var triggerNotificationText = $"due to researching [{techName}]";
         foreach (var unique in newTech.UniqueObjects)

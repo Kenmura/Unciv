@@ -20,6 +20,8 @@ namespace Unciv.Logic.Civilization;
 /// <summary>What Civilization reads from <c>GameInfo</c>, on top of <see cref="IConstructionGameInfo"/> (GameInfo implements both).</summary>
 public interface IGameInfoState : IConstructionGameInfo
 {
+    /// <summary>T186: where the engine reports events; <c>null</c> (the default) when nobody listens.</summary>
+    GameInfoEventSink? EventSink => null;
     /// <summary><c>gameInfo.ruleset</c></summary>
     new Ruleset Ruleset { get; }
     /// <summary><c>gameInfo.speed</c></summary>

@@ -147,7 +147,7 @@ public static class BattleUnitCapture
         {
             // Return captured civilian to its original owner?
             capturedUnit.CapturedBy(attacker.GetCivInfo());
-            attacker.GetCivInfo().PopupAlerts.Add(
+            attacker.GetCivInfo().AddPopupAlert(
                 new PopupAlert(
                     AlertType.RecapturedCivilian,
                     capturedUnit.CurrentTile.Position.ToPrettyString()));

@@ -37,7 +37,7 @@ public static class DiplomacyAutomation
                 <= 2 * civInfo.GetPersonality().ScaledFocus(PersonalityValue.Diplomacy)
                 && WantsToSignDeclarationOfFrienship(civView, otherCiv))
             {
-                otherCiv.PopupAlerts.Add(new PopupAlert(AlertType.DeclarationOfFriendship, civView.CivId));
+                otherCiv.AddPopupAlert(new PopupAlert(AlertType.DeclarationOfFriendship, civView.CivId));
             }
         }
     }

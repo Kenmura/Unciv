@@ -1016,6 +1016,7 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
 
     public void Destroy(bool destroyTransportedUnit = true)
     {
+        GameEventHooks.UnitDestroyed(this);
         StopEscorting();
         CurrentMovement = 0f;
         Civ.Units.RemoveUnit(this, true);

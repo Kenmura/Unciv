@@ -27,6 +27,7 @@ public static class DeclareWar
         if (otherCiv.IsCityState && declareWarReason.WarType == WarType.DirectWar)
             HandleCityStateDirectAttack(diplomacyManager);
 
+        GameEventHooks.WarDeclared(civInfo, otherCiv);
         NotifyOfWar(diplomacyManager, declareWarReason);
 
         OnWarDeclared(diplomacyManager, true, declareWarReason.WarType);
@@ -82,7 +83,7 @@ public static class DeclareWar
         switch (declareWarReason.WarType)
         {
             case WarType.DirectWar:
-                otherCiv.PopupAlerts.Add(new PopupAlert(AlertType.WarDeclaration, civInfo.CivName));
+                otherCiv.AddPopupAlert(new PopupAlert(AlertType.WarDeclaration, civInfo.CivName));
 
                 otherCiv.AddNotification($"[{civInfo.CivName}] has declared war on us!",
                     NotificationCategory.Diplomacy, otherCiv.CivName, NotificationIcon.War, civInfo.CivName);
@@ -99,7 +100,7 @@ public static class DeclareWar
             case WarType.AlliedCityStateWar:
                 {
                     var allyCiv = declareWarReason.AllyCiv.NotNull();
-                    otherCiv.PopupAlerts.Add(new PopupAlert(AlertType.WarDeclaration, civInfo.CivName));
+                    otherCiv.AddPopupAlert(new PopupAlert(AlertType.WarDeclaration, civInfo.CivName));
                     var aggressor = declareWarReason.WarType == WarType.DefensivePactWar ? otherCiv : civInfo;
                     var defender = declareWarReason.WarType == WarType.DefensivePactWar ? civInfo : otherCiv;
 
@@ -124,8 +125,8 @@ public static class DeclareWar
                     // We only want to send these notifications once, it doesn't matter who sends it though
                     if (IndexOf(civInfo.GameInfo.Civilizations, civInfo) > IndexOf(civInfo.GameInfo.Civilizations, allyCiv)) return;
 
-                    otherCiv.PopupAlerts.Add(new PopupAlert(AlertType.WarDeclaration, civInfo.CivId));
-                    otherCiv.PopupAlerts.Add(new PopupAlert(AlertType.WarDeclaration, allyCiv.CivId));
+                    otherCiv.AddPopupAlert(new PopupAlert(AlertType.WarDeclaration, civInfo.CivId));
+                    otherCiv.AddPopupAlert(new PopupAlert(AlertType.WarDeclaration, allyCiv.CivId));
 
                     civInfo.AddNotification($"You and [{allyCiv.CivName}] have declared war against [{otherCiv.CivName}]!",
                         NotificationCategory.Diplomacy, otherCiv.CivName, NotificationIcon.War, allyCiv.CivName, civInfo.CivName);

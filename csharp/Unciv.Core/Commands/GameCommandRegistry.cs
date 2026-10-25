@@ -10,7 +10,7 @@ namespace Unciv.Commands;
 /// </summary>
 public static class GameCommandRegistry
 {
-    private static bool IsKebabCase(string name) =>
+    internal static bool IsKebabCase(string name) =>
         name.Length > 0
         && name[0] is >= 'a' and <= 'z'
         && name[^1] != '-'

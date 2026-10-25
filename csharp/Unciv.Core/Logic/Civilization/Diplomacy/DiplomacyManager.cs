@@ -543,6 +543,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     {
         MakePeaceOneSide();
         OtherCivDiplomacy().MakePeaceOneSide();
+        GameEventHooks.PeaceMade(CivInfo, OtherCiv);
 
         foreach (var civ in GetCommonKnownCivsWithSpectators())
         {
@@ -772,7 +773,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
         SetFlag(DiplomacyFlags.Denunciation, 30);
 
         // the denounced civ will get a popup
-        OtherCiv.PopupAlerts.Add(new PopupAlert(AlertType.Denounced, CivInfo.CivId));
+        OtherCiv.AddPopupAlert(new PopupAlert(AlertType.Denounced, CivInfo.CivId));
         // ...and a notification as a reminder for the rest of the turn
         OtherCiv.AddNotification(
             $"[{CivInfo.CivName}] has denounced us!",
@@ -817,7 +818,7 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     private void QueueOtherCivPopupIfUnique(PopupAlert popup)
     {
         if (!OtherCiv.PopupAlerts.Any(it => it.Type == popup.Type && it.Value == popup.Value))
-            OtherCiv.PopupAlerts.Add(popup);
+            OtherCiv.AddPopupAlert(popup);
     }
 
     public void AgreeToDemand(Demand demand)

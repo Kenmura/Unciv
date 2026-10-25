@@ -543,13 +543,17 @@ public class UnitMovement
 
         if (Unit.BaseUnit.IsAirUnit()) // air units move differently from all other units
         {
+            var airOrigin = Unit.GetTile();
             MoveAirUnitToTile(destination);
+            GameEventHooks.UnitMoved(Unit, [airOrigin, Unit.GetTile()]);
             return;
         }
 
         if (Unit.IsPreparingParadrop()) // paradropping units move differently
         {
+            var dropOrigin = Unit.GetTile();
             ParadropToTile(destination);
+            GameEventHooks.UnitMoved(Unit, [dropOrigin, Unit.GetTile()]);
             return;
         }
 
@@ -571,6 +575,7 @@ public class UnitMovement
 
         var lastReachedEnterableTile = Unit.GetTile();
         var previousTile = Unit.GetTile();
+        List<Tile>? enteredTiles = Unit.Civ.GameInfo.EventSink != null ? [origin] : null; // T186: the path for the UnitMoved event
         var passingMovementSpent = 0f; // Movement points spent since last tile we could end our turn on
 
         foreach (var tile in pathToLastReachableTile)
@@ -598,6 +603,7 @@ public class UnitMovement
                 Unit.UseMovementPoints(passingMovementSpent);
                 Unit.RemoveFromTile();
                 Unit.PutInTile(tile); // Required for ruins,
+                enteredTiles?.Add(tile);
 
                 if (escortUnit != null)
                 {
@@ -616,6 +622,7 @@ public class UnitMovement
         }
 
         var finalTileReached = lastReachedEnterableTile;
+        if (enteredTiles != null) GameEventHooks.UnitMoved(Unit, enteredTiles);
 
         // Silly floats which are almost zero
         if (Unit.CurrentMovement < Constants.MinimumMovementEpsilon)

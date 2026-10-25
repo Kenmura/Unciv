@@ -99,7 +99,7 @@ public static class UniqueTriggerActivation
                             // See AlertPopup.addEvent for the deserializing of this string to the context
                             var eventText = eventObj.Name;
                             if (unit != null) eventText += Constants.StringSplitCharacter + "unitId=" + unit.Id;
-                            civInfo.PopupAlerts.Add(new PopupAlert(AlertType.Event, eventText));
+                            civInfo.AddPopupAlert(new PopupAlert(AlertType.Event, eventText));
                             return true;
                         };
                     // Deviation (T171): Kotlin throws NotImplementedError for Floating (todo: park them in a queue in GameInfo).
@@ -1457,7 +1457,7 @@ public static class UniqueTriggerActivation
 
                                 if (!diplomacyCityState.HasFlag(DiplomacyFlags.TilesStolen))
                                 {
-                                    civInfo.PopupAlerts.Add(new PopupAlert(AlertType.TilesStolen, otherCiv.CivId));
+                                    civInfo.AddPopupAlert(new PopupAlert(AlertType.TilesStolen, otherCiv.CivId));
                                     diplomacyCityState.SetFlag(DiplomacyFlags.TilesStolen, 1);
                                 }
                             }

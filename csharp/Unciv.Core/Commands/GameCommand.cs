@@ -20,7 +20,26 @@ public abstract class GameCommand : ICommand<GameInfo>
 
     public CommandValidation Validate(GameInfo state, string actorId) => ValidateCommand(new CommandContext(state, actorId));
 
-    public IReadOnlyList<GameEvent> Apply(GameInfo state, string actorId) => ApplyCommand(new CommandContext(state, actorId));
+    /// <summary>
+    /// Runs the command with a fresh <see cref="GameInfoEventSink"/> installed. The result is the events the engine reported, in call
+    /// order, followed by those the command returns itself.
+    /// </summary>
+    public IReadOnlyList<GameEvent> Apply(GameInfo state, string actorId)
+    {
+        var previous = state.EventSink;
+        var sink = new GameInfoEventSink();
+        state.EventSink = sink;
+        try
+        {
+            var returned = ApplyCommand(new CommandContext(state, actorId));
+            var events = sink.Drain();
+            return returned.Count == 0 ? events : [.. events, .. returned];
+        }
+        finally
+        {
+            state.EventSink = previous;
+        }
+    }
 
     protected abstract CommandValidation ValidateCommand(CommandContext context);
 

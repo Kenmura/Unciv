@@ -156,7 +156,7 @@ public sealed class GameStarter
         foreach (var civ in gameInfo.Civilizations.Where(it =>
                      // isNotEmpty should also exclude a spectator
                      it.PlayerType == PlayerType.Human && it.Nation.StartIntroPart1.Length != 0).ToList())
-            civ.PopupAlerts.Add(new PopupAlert(AlertType.StartIntro, ""));
+            civ.AddPopupAlert(new PopupAlert(AlertType.StartIntro, ""));
     }
 
     private void AddTechSilently(CivilizationObject civ, string name)

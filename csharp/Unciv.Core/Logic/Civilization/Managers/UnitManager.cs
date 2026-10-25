@@ -107,6 +107,7 @@ public class UnitManager(Civilization civInfo)
         var unit = (MapUnit?)CivInfo.GameInfo.TileMap.PlaceUnitNearTile(location, baseUnit, CivInfo, unitId);
 
         if (unit == null) return unit;
+        GameEventHooks.UnitCreated(CivInfo, unit);
 
         // Must happen before the triggers or else things like "[This Unit] loses the [promotionName] promotion"
         //    will trigger *before* the unit actually has the promotion, and then will get the promotion anyway.

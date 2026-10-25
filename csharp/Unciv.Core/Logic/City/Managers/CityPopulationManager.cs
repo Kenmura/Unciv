@@ -157,6 +157,7 @@ public class CityPopulationManager : IsPartOfGameInfoSerialization
         FoodStored += KotlinMath.FloatToInt(foodNeededToGrow * percentOfFoodCarriedOver / 100f);
         AddPopulation(1);
         City.ShouldReassignPopulation = true;
+        GameEventHooks.CityGrew(City);
         City.Civ.AddNotification($"[{City.Name}] has grown!", City.Location,
             NotificationCategory.Cities, NotificationIcon.Growth);
     }

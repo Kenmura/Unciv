@@ -96,6 +96,7 @@ public class CityFounder
         city.ResetDisabledConstructions();
         city.ResetSpecialistsControl(autoAssignSpecialistsInNewCities, localUserId);
 
+        GameEventHooks.CityFounded(civInfo, city);
         civInfo.ForEachTriggeredUnique(UniqueType.TriggerUponFoundingCity,
             new GameContext(civInfo, city, unit), _ => true, false,
             unique =>

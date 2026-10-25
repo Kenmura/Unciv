@@ -31,6 +31,7 @@ public class TurnManager(Civilization civInfo)
     public void StartTurn(Action? progressBar = null)
     {
         if (civInfo.IsSpectator()) return;
+        GameEventHooks.TurnStarted(civInfo);
 
         foreach (var city in civInfo.Cities) city.HasSoldBuildingThisTurn = false;
 
@@ -311,6 +312,13 @@ public class TurnManager(Civilization civInfo)
 
     public void EndTurn(Action? progressBar = null)
     {
+        EndTurnCore(progressBar);
+        GameEventHooks.TurnEnded(civInfo);
+    }
+
+    // T186 deviation: the body of Kotlin's endTurn, split off so that the TurnEnded event is reported once after every early return.
+    private void EndTurnCore(Action? progressBar)
+    {
         var clientState = civInfo.GameInfo.ClientState;
         if (clientState.CitiesAutoBombardAtEndOfTurn)
             clientState.NextTurnAutomation?.AutomateCityBombardment(civInfo); // Bombard with all cities that haven't, maybe you missed one.
@@ -432,7 +440,7 @@ public class TurnManager(Civilization civInfo)
                 // Skip winner, displaying VictoryScreen is handled separately in WorldScreen.update
                 // by checking `viewingCiv.isDefeated() || gameInfo.checkForVictory()`
                 if (otherCiv.PlayerType != PlayerType.Human || otherCiv == civInfo) continue;
-                otherCiv.PopupAlerts.Add(new PopupAlert(AlertType.GameHasBeenWon, ""));
+                otherCiv.AddPopupAlert(new PopupAlert(AlertType.GameHasBeenWon, ""));
             }
         }
     }
@@ -448,5 +456,6 @@ public class TurnManager(Civilization civInfo)
         // Update barbarian camps
         if (civInfo.IsBarbarian && !civInfo.GameInfo.GameParameters.NoBarbarians)
             civInfo.GameInfo.Barbarians.UpdateEncampments();
+        GameEventHooks.AutoPlayerTurnProcessed(civInfo);
     }
 }

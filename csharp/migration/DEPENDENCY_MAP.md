@@ -492,7 +492,7 @@ flowchart TD
   class T183 ready
   class T184 waiting
   class T185 done
-  class T186 prog
+  class T186 review
   class T187 waiting
   class T188 ondeck
   class T189 ondeck
@@ -559,7 +559,7 @@ xychart-beta
 | T192 | **On deck** (after T186) | T164, T186 | 17 | Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode) |
 | T193 | **On deck** (after T186) | T164, T186, T086, T089 | 5 | Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage |
 | C030 | **On deck** (after C007) | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
-| T186 | In-Progress [Claude] | T164 | 50 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
+| T186 | Needs-Review [Claude] | T164 | 50 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T187 | Available (waiting on T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
