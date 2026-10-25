@@ -1,4 +1,6 @@
 using Unciv.Cli;
+using Unciv.Logic.Files;
+using Unciv.Logic.Map;
 using Unciv.Models.Ruleset;
 
 namespace Unciv.Core.Tests.Cli;
@@ -231,5 +233,168 @@ public sealed class CliTests : IDisposable
         var played = Run("play", "--in", Path("g.json"), "--turns", "0", "--out", Path("h.json"));
         Assert.Equal(CliRunner.ExitOk, played.Code);
         Assert.EndsWith("hash=" + hash, Lines(played.Out).Single(), StringComparison.Ordinal);
+    }
+
+    // ---- T221: record / replay / submit / ruleset, mods and saved maps
+
+    private static string HashOfLine(string line) => line.Split("hash=")[1].Trim();
+
+    [Fact]
+    public void RecordedLogReplaysToTheSameHashAndTamperingIsCaught()
+    {
+        var recorded = Run("record", "--out", Path("g.json"), "--log", Path("l.jsonl"), "--turns", "8", "--seed", "3", "--map-seed", "4", "--city-states", "0");
+        Assert.Equal(CliRunner.ExitOk, recorded.Code);
+        Assert.Contains("turns=8", recorded.Out, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path("g.json")));
+        Assert.Equal(CliRunner.ExitOk, Run("load", "--in", Path("g.json")).Code);
+
+        var replayed = Run("replay", "--log", Path("l.jsonl"), "--hashes");
+        Assert.Equal(CliRunner.ExitOk, replayed.Code);
+        Assert.True(Lines(replayed.Out).Count(it => it.StartsWith("checkpoint ", StringComparison.Ordinal)) >= 8);
+        Assert.Contains("replay ok", Lines(replayed.Out)[^1], StringComparison.Ordinal);
+        // the replay ends in the recorded state (the recorder prints the same full hash)
+        Assert.Equal(HashOfLine(recorded.Out), HashOfLine(Lines(replayed.Out)[^1]));
+        Assert.Equal(replayed.Out, Run("replay", "--log", Path("l.jsonl"), "--hashes").Out);
+
+        var lines = File.ReadAllLines(Path("l.jsonl")).ToList();
+        var index = lines.FindLastIndex(it => it.StartsWith("{\"checkpoint\"", StringComparison.Ordinal));
+        var digit = lines[index].IndexOf("\"fullHash\":\"", StringComparison.Ordinal) + "\"fullHash\":\"".Length + 15; // the last of 16 hex digits
+        lines[index] = string.Concat(lines[index].AsSpan(0, digit), lines[index][digit] == '0' ? "1" : "0", lines[index].AsSpan(digit + 1));
+        File.WriteAllLines(Path("bad.jsonl"), lines);
+        var bad = Run("replay", "--log", Path("bad.jsonl"));
+        Assert.Equal(CliRunner.ExitFailure, bad.Code);
+        Assert.Contains("DIVERGED", bad.Out, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReplayFailuresAreReported()
+    {
+        Assert.Equal(CliRunner.ExitUsage, Run("replay").Code);
+        Assert.Equal(CliRunner.ExitFailure, Run("replay", "--log", Path("none.jsonl")).Code);
+        File.WriteAllText(Path("junk.jsonl"), "not a log\n");
+        Assert.Equal(CliRunner.ExitFailure, Run("replay", "--log", Path("junk.jsonl")).Code);
+        Assert.Equal(CliRunner.ExitUsage, Run("record", "--log", Path("l"), "--out", Path("g")).Code); // --turns missing
+        Assert.Equal(CliRunner.ExitUsage, Run("record", "--log", Path("l"), "--turns", "1", "--map", Path("m")).Code); // a saved map cannot be replayed
+    }
+
+    [Fact]
+    public void SubmitAppliesCommandsAsTheHumanAndStopsAtTheFirstRefusal()
+    {
+        Run("new", "--out", Path("g.json"), "--city-states", "0");
+        File.WriteAllText(Path("ok.jsonl"), "{\"type\":\"end-turn\"}\n\n");
+        var ok = Run("submit", "--in", Path("g.json"), "--commands", Path("ok.jsonl"), "--out", Path("after.json"));
+        Assert.Equal(CliRunner.ExitOk, ok.Code);
+        Assert.Contains("line 1 end-turn accepted", ok.Out, StringComparison.Ordinal);
+        Assert.NotEqual(Lines(Run("hash", "--in", Path("g.json")).Out).Single(), Lines(Run("hash", "--in", Path("after.json")).Out).Single());
+
+        File.WriteAllText(Path("bad.jsonl"), "{\"type\":\"no-such-command\",\"payload\":{}}\n{\"type\":\"end-turn\"}\n");
+        var refused = Run("submit", "--in", Path("g.json"), "--commands", Path("bad.jsonl"), "--out", Path("never.json"));
+        Assert.Equal(CliRunner.ExitFailure, refused.Code);
+        Assert.Contains("line 1 no-such-command refused", refused.Out, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path("never.json")));
+
+        File.WriteAllText(Path("junk.jsonl"), "[1]\n");
+        Assert.Equal(CliRunner.ExitFailure, Run("submit", "--in", Path("g.json"), "--commands", Path("junk.jsonl")).Code);
+        Assert.Equal(CliRunner.ExitFailure, Run("submit", "--in", Path("g.json"), "--commands", Path("none.jsonl")).Code);
+        Assert.Equal(CliRunner.ExitUsage, Run("submit", "--in", Path("g.json")).Code);
+    }
+
+    [Fact]
+    public void RulesetOptionSelectsTheBaseRuleset()
+    {
+        var vanilla = Run("new", "--out", Path("v.json"), "--city-states", "0");
+        var gnk = Run("new", "--out", Path("k.json"), "--city-states", "0", "--ruleset", "Civ V - Gods & Kings");
+        Assert.Equal(CliRunner.ExitOk, gnk.Code);
+        Assert.Contains("Gods", File.ReadAllText(Path("k.json")), StringComparison.Ordinal);
+        Assert.DoesNotContain("Gods", File.ReadAllText(Path("v.json")), StringComparison.Ordinal);
+        Assert.NotEqual(HashOfLine(vanilla.Out), HashOfLine(gnk.Out));
+        Assert.Equal(CliRunner.ExitOk, Run("play", "--in", Path("k.json"), "--turns", "2").Code);
+        Assert.Equal(CliRunner.ExitUsage, Run("new", "--out", Path("x.json"), "--ruleset", "Nope").Code);
+    }
+
+    [Fact]
+    public void ModsComeFromTheModsFolder()
+    {
+        var mods = Directory.CreateDirectory(Path("mods")).FullName;
+        Directory.CreateDirectory(System.IO.Path.Combine(mods, "TestMod", "jsons"));
+        File.WriteAllText(System.IO.Path.Combine(mods, "TestMod", "jsons", "Nations.json"),
+            "[{\"name\":\"Atlantis\",\"leaderName\":\"Poseidon\",\"outerColor\":[0,0,0],\"innerColor\":[255,255,255],\"cities\":[\"Atlantis City\"]}]");
+
+        Assert.Equal(CliRunner.ExitUsage, Run("new", "--out", Path("n.json"), "--mods", "TestMod").Code); // no --mods-dir
+        Assert.Equal(CliRunner.ExitUsage, Run("new", "--out", Path("n.json"), "--mods-dir", Path("nowhere")).Code);
+        Assert.Equal(CliRunner.ExitUsage, Run("new", "--out", Path("n.json"), "--nations", "Atlantis", "--mods-dir", mods).Code); // mod not enabled
+        Assert.Equal(CliRunner.ExitUsage, Run("new", "--out", Path("n.json"), "--mods-dir", mods, "--mods", "TestMod,TestMod").Code);
+        Assert.Equal(CliRunner.ExitUsage, Run("new", "--out", Path("n.json"), "--mods-dir", mods, "--mods", "Civ V - Vanilla").Code);
+
+        var created = Run("new", "--out", Path("m.json"), "--city-states", "0", "--mods-dir", mods, "--mods", "TestMod", "--nations", "Atlantis,Rome");
+        Assert.True(created.Code == CliRunner.ExitOk, created.Err);
+        Assert.Contains("TestMod", File.ReadAllText(Path("m.json")), StringComparison.Ordinal);
+        Assert.Equal(CliRunner.ExitOk, Run("play", "--in", Path("m.json"), "--turns", "2", "--mods-dir", mods).Code);
+
+        var recorded = Run("record", "--log", Path("m.jsonl"), "--turns", "3", "--city-states", "0", "--mods-dir", mods, "--mods", "TestMod", "--nations", "Atlantis,Rome");
+        Assert.Equal(CliRunner.ExitOk, recorded.Code);
+        Assert.Equal(CliRunner.ExitOk, Run("replay", "--log", Path("m.jsonl"), "--mods-dir", mods).Code);
+        // without the mod the ruleset differs from the one the log was played with
+        Assert.Equal(CliRunner.ExitFailure, Run("replay", "--log", Path("m.jsonl")).Code);
+    }
+
+    [Fact]
+    public void SavedMapStartsAGameOnThatMap()
+    {
+        Run("new", "--out", Path("g.json"), "--city-states", "0", "--seed", "2");
+        var source = UncivFiles.GameInfoFromString(File.ReadAllText(Path("g.json")));
+        foreach (var tile in source.TileMap.Values)
+            foreach (var unit in tile.GetUnits().ToList()) unit.RemoveFromTile(); // like a map from the editor: terrain only
+        source.TileMap.AssignContinents(TileMap.AssignContinentsMode.Reassign);
+        FileConversions.WriteJson(new PathFileHandle(Path("m.map")), source.TileMap, false);
+
+        var created = Run("new", "--out", Path("on-map.json"), "--map", Path("m.map"), "--city-states", "0", "--seed", "8");
+        Assert.True(created.Code == CliRunner.ExitOk, created.Err);
+        var game = UncivFiles.GameInfoFromString(File.ReadAllText(Path("on-map.json")));
+        Assert.Equal(source.TileMap.Values.Count(), game.TileMap.Values.Count());
+        Assert.Equal(CliRunner.ExitOk, Run("play", "--in", Path("on-map.json"), "--turns", "2").Code);
+
+        var missing = Run("new", "--out", Path("x.json"), "--map", Path("none.map"));
+        Assert.Equal(CliRunner.ExitFailure, missing.Code);
+        Assert.False(File.Exists(Path("x.json")));
+    }
+
+    [Fact]
+    public void PlayingInOneGoEqualsPlayingInPartsOverALongRun()
+    {
+        Run("new", "--out", Path("g.json"), "--seed", "6", "--map-seed", "2");
+        var straight = Lines(Run("play", "--in", Path("g.json"), "--turns", "60", "--hashes").Out);
+        var first = Run("play", "--in", Path("g.json"), "--turns", "25", "--out", Path("mid.json"));
+        var second = Lines(Run("play", "--in", Path("mid.json"), "--turns", "35", "--hashes").Out);
+        Assert.Equal(CliRunner.ExitOk, first.Code);
+        Assert.Equal(straight[^1], second[^1]);
+        Assert.Equal(straight[25], second[0]);
+    }
+
+    [Fact]
+    public void PathFileHandleWrapsAHostPath()
+    {
+        var folder = new PathFileHandle(Path("sub"));
+        Assert.False(folder.Exists);
+        Assert.Equal(0, folder.Length);
+        Assert.Equal(0, folder.LastModified);
+        Assert.False(folder.Delete());
+        folder.MakeDirs();
+        Assert.True(folder.IsDirectory);
+        Assert.False(folder.IsInternal);
+        var file = folder.Child("a.txt");
+        using (var stream = file.Write(append: false)) stream.WriteByte(65);
+        using (var stream = file.Write(append: true)) stream.WriteByte(66);
+        Assert.Equal("a.txt", file.Name);
+        Assert.Equal("a", file.NameWithoutExtension);
+        Assert.Equal(2, file.Length);
+        Assert.True(file.LastModified > 0);
+        using (var stream = file.Read()) Assert.Equal(65, stream.ReadByte());
+        Assert.Equal(["a.txt"], folder.List().Select(it => it.Name));
+        Assert.Empty(file.List());
+        Assert.Equal("sub", file.Parent.Name);
+        Assert.True(file.Delete());
+        Assert.True(folder.Delete());
+        Assert.False(folder.Exists);
     }
 }
