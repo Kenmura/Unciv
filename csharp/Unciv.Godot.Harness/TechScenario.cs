@@ -72,7 +72,7 @@ public sealed class TechScenario : Scenario
                 ResearchableOnScreen().Count > 0 && ResearchableOnScreen().SequenceEqual(ResearchableByEngine()) && Queue().Count == 0 && screen.Tech.HeaderText == "Nothing is being researched"),
             new AssertQuery("a locked tech is shown locked, the starting tech researched and its follow-ups researchable", () =>
                 screen.Tech.Layout.Nodes.Single(it => it.Name == "Bronze Working").State == "Locked" && screen.Tech.Layout.Nodes.Single(it => it.Name == "Agriculture").State == "Researched" && screen.Tech.Layout.Nodes.Single(it => it.Name == "Mining").State == "Researchable"),
-            new Capture("open", "The tech tree on first open: nothing researched, root techs available, the rest locked"),
+            new Capture("open", "The tech tree on first open: Agriculture researched, its follow-ups available, the rest locked"),
         };
 
         steps.AddRange(Pick("Bronze Working"));

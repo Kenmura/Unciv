@@ -195,6 +195,15 @@ public class TechScreenModelTests
     }
 
     [Fact]
+    public void Actions_ResearchStaysEnabledForADifferentQueueOfTheSameLength()
+    {
+        var tree = Sample(queue: ["Pottery", "Sailing"], researched: ["Agriculture"]);
+        var research = Action(tree, "Bronze", "Research");
+        Assert.True(research.Enabled);
+        Assert.Equal(["Mining", "Bronze"], QueueOf(research));
+    }
+
+    [Fact]
     public void Actions_EnqueueAppendsOnlyWhatIsNotQueued()
     {
         var tree = Sample(queue: ["Agriculture"]);
