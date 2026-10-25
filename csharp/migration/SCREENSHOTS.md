@@ -238,6 +238,24 @@ Scenario `city-a`.
 
 *A locked tile keeps its golden outline.* (`city-a/tile-locked.png`)
 
+## C018 (ticket not Done or unknown)
+
+City screen B: production queue, buildable list, purchase, buildings, puppet and razing states.
+
+Scenario `city-b`.
+
+![The Production tab with Warrior, Monument and a perpetual Nothing item queued; Top/Up/Down/X per entry and Buy prices in gold.](../Unciv.Godot.Harness/golden/city-b/queued.png)
+
+*The Production tab with Warrior, Monument and a perpetual Nothing item queued; Top/Up/Down/X per entry and Buy prices in gold.* (`city-b/queued.png`)
+
+![After buying the Monument: it is listed under Buildings with its sell price and a Sell button; gold fell from 500 to 300.](../Unciv.Godot.Harness/golden/city-b/bought.png)
+
+*After buying the Monument: it is listed under Buildings with its sell price and a Sell button; gold fell from 500 to 300.* (`city-b/bought.png`)
+
+![A puppet city: the state is explained, Annex city is offered and every production button is disabled.](../Unciv.Godot.Harness/golden/city-b/puppet.png)
+
+*A puppet city: the state is explained, Annex city is offered and every production button is disabled.* (`city-b/puppet.png`)
+
 ## C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
 
 Flat-map cities, borders, roads and improvements.

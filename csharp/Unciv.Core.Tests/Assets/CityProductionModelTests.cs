@@ -170,6 +170,7 @@ public class CityProductionModelTests
         Assert.Equal("Library (Building)\nCost 90 production, 7 turns\nAlready 12 production invested\nNeeds a Granary\nBuy: 200 Gold", tooltip);
         var plain = CityProductionModel.Buildables(Panel(), List(Entry("Gold", "Perpetual", turns: null, cost: null)), 0)[0].Tooltip;
         Assert.Equal("Gold (Other)", plain);
+        Assert.Contains("Already 1 production invested", CityProductionModel.Buildables(Panel(), List(Entry("Warrior", workDone: 1)), 0)[0].Tooltip, StringComparison.Ordinal);
         Assert.Equal("Pyramids (Wonder)\nCost 5 production, 5 turns", CityProductionModel.Buildables(Panel(), List(Entry("Pyramids", "Wonder", cost: 5)), 0)[0].Tooltip);
         Assert.StartsWith("Heroic Epic (National wonder)", CityProductionModel.Buildables(Panel(), List(Entry("Heroic Epic", "NationalWonder")), 0)[0].Tooltip, StringComparison.Ordinal);
         Assert.Equal("Warrior (Unit)\nCost 30 production, never", CityProductionModel.Buildables(Panel(), List(Entry("Warrior", turns: null)), 0)[0].Tooltip);

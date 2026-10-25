@@ -215,6 +215,24 @@
    }
   ]
  },
+ "C018": {
+  "scenario": "city-b",
+  "about": "City screen B: production queue, buildable list, purchase, buildings, puppet and razing states.",
+  "shots": [
+   {
+    "golden": "city-b/queued.png",
+    "caption": "The Production tab with Warrior, Monument and a perpetual Nothing item queued; Top/Up/Down/X per entry and Buy prices in gold."
+   },
+   {
+    "golden": "city-b/bought.png",
+    "caption": "After buying the Monument: it is listed under Buildings with its sell price and a Sell button; gold fell from 500 to 300."
+   },
+   {
+    "golden": "city-b/puppet.png",
+    "caption": "A puppet city: the state is explained, Annex city is offered and every production button is disabled."
+   }
+  ]
+ },
  "C037": {
   "none": "IGameSession is an engine/client interface with no UI of its own; it is exercised by every scenario above."
  },
