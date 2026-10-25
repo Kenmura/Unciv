@@ -184,7 +184,7 @@ Scenario `minimap`.
 
 *After clicking the far corner of the minimap: the camera moved there.* (`minimap/jumped.png`)
 
-## C015 (ticket not Done or unknown)
+## C015 Main menu and game setup screen: nations, difficulty, speed, map options
 
 Main menu and new-game screen: players and nations, rules, game, map and advanced options, seed validation, then the started game.
 
