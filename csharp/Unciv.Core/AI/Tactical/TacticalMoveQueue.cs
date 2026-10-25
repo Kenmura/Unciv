@@ -43,8 +43,8 @@ public sealed class TacticalMoveQueue
         var entries = new List<TacticalQueueEntry>(moves.Count);
         foreach (var def in moves)
         {
-            long weighted = ((long)(def.OffenseFlavorWeight ?? 0) * flavors.Offense + (long)(def.DefenseFlavorWeight ?? 0) * flavors.Defense) / 100;
-            int bonus = (int)(dampening * weighted);
+            long weighted = (long)(def.OffenseFlavorWeight ?? 0) * flavors.Offense + (long)(def.DefenseFlavorWeight ?? 0) * flavors.Defense;
+            int bonus = (int)(dampening * weighted / 100.0);
             int jitter = random != null && randomness > 0 ? random.NextInt(randomness) : 0;
             entries.Add(new TacticalQueueEntry(TacticalMoveTypeExtensions.Parse(def.Type), def.Priority + bonus + jitter));
         }

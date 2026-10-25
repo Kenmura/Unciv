@@ -2705,6 +2705,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Notes: Replaces per-unit movement loops with a prioritized move queue. Critical high-value moves (e.g. `CAPTURE_CITY`, `DESTROY_HIGH_UNIT`) scan the board for valid targets and recruit the best candidate units across the civilization before lower-priority moves run.
   - Scope narrowed: engine-agnostic core on plain data (TacticalMoveType enum over all 55 TSV moves, TacticalTarget/TacticalTargetList, TacticalMoveQueue with seeded priority jitter, TacticalRecruiter overkill assignment per SPEC 6.5). Wiring to Civilization/TileMap and zone/posture expansion split to A008.
     Assumptions: effective priority uses the SPEC 6.4 [I] formula (unverified): Priority + trunc(0.3*(Off*offFlavor+Def*defFlavor)/100) + rand(6); ties keep TSV order. Recruiter tie-break: damage desc, distance, id (SPEC leaves the estimator [?]). Names use FrozenDictionary (mutable-static policy).
+  - Review fixes: priority bonus now divides after dampening (no early int division). Not implemented (SPEC [I]/[?]): resultKind budget floor of 1, melee per-entry skip gate, neighbour staging-tile post-step; damage-desc candidate ordering is our assumption. For() re-sorts per call (index it in A008 if needed).
 
 ### A005 Tactical overkill assignment & coordinated multi-unit attacks
 - State: Available

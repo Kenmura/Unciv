@@ -58,6 +58,8 @@ public class TacticalAITests
         Assert.Equal(Of(plain, TacticalMoveType.CaptureCity) + 3, Of(flavored, TacticalMoveType.CaptureCity));        // 0.3 * 10
         Assert.Equal(Of(plain, TacticalMoveType.DestroyHighUnit) + 6, Of(flavored, TacticalMoveType.DestroyHighUnit)); // 0.3 * 20
         Assert.Equal(Of(plain, TacticalMoveType.AncientRuins) + 4, Of(flavored, TacticalMoveType.AncientRuins));       // 0.3 * (50*10+50*20)/100 = 4.5 -> 4
+        // weight 50 * flavor 7 = 350 -> 0.3 * 3.5 = 1.05 -> 1 (no early integer division)
+        Assert.Equal(Of(plain, TacticalMoveType.AncientRuins) + 1, Of(NewQueue().Build(new TacticalFlavors(7, 0)), TacticalMoveType.AncientRuins));
         Assert.Equal(Of(plain, TacticalMoveType.EmergencyPurchases), Of(flavored, TacticalMoveType.EmergencyPurchases));
     }
 
@@ -73,8 +75,17 @@ public class TacticalAITests
             int baseP = plain.Single(p => p.Move == e.Move).Priority;
             Assert.InRange(e.Priority - baseP, 0, 5);
         }
+        Assert.Contains(a, e => e.Priority > plain.Single(p => p.Move == e.Move).Priority);
         var c = NewQueue().Build(new TacticalFlavors(0, 0), new GameRandom(43));
         Assert.NotEqual(a, c);
+    }
+
+    [Fact]
+    public void NegativeDamageUnitsAreNeverRecruited()
+    {
+        var target = new TacticalTarget(TacticalMoveType.CaptureCity, new HexCoord(0, 0), 1, 10);
+        var r = Recruiter.Recruit(target, [new TacticalUnit(1, new HexCoord(1, 0), -5, false)], new HashSet<int>());
+        Assert.Empty(r.Attackers);
     }
 
     [Fact]

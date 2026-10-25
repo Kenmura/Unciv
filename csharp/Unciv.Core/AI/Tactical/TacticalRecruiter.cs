@@ -47,15 +47,13 @@ public sealed class TacticalRecruiter(int recruitRange, int overkillPercent)
         ArgumentNullException.ThrowIfNull(candidates);
         ArgumentNullException.ThrowIfNull(assigned);
 
-        long budgetLong = ((long)(OverkillPercent + 100) * target.TargetHp) / 100;
+        long budgetLong = (((long)OverkillPercent + 100) * target.TargetHp) / 100;
         int budget = (int)Math.Clamp(budgetLong, int.MinValue, int.MaxValue);
 
         var eligible = candidates
-            .Where(u => u.ExpectedDamage > 0
-                        && !assigned.Contains(u.Id)
-                        && (operationsCanRecruit || !u.InOperation)
-                        && HexMath.GetDistance(u.Position, target.Position) <= RecruitRange)
+            .Where(u => u.ExpectedDamage > 0 && !assigned.Contains(u.Id) && (operationsCanRecruit || !u.InOperation))
             .Select(u => (Unit: u, Distance: HexMath.GetDistance(u.Position, target.Position)))
+            .Where(e => e.Distance <= RecruitRange)
             .OrderByDescending(e => e.Unit.ExpectedDamage)
             .ThenBy(e => e.Distance)
             .ThenBy(e => e.Unit.Id)
