@@ -374,7 +374,7 @@ flowchart TD
   class A005 done
   class A006 done
   class A007 done
-  class A008 ready
+  class A008 prog
   class C001 done
   class C002 waiting
   class C003 waiting
@@ -500,8 +500,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00"]
     y-axis "Tickets" 0 --> 83
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 69]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 68]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4]
 ```
 
 ## Incomplete tickets
@@ -516,7 +516,6 @@ xychart-beta
 | T197 | **Ready to start** | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
 | T196 | **Ready to start** | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
 | T198 | **Ready to start** | T185, T166, A003 | 2 | Query API: victory progress, scores, rankings and demographics |
-| A008 | **Ready to start** | A004 | 0 | Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks |
 | C030 | **Ready to start** | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
@@ -558,6 +557,7 @@ xychart-beta
 | C036 | Available (waiting on C010, C011, T180, T202, T175) | C010, C011, T180, T202, T175 | 1 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | T203 | Available (waiting on T202, T191, T192, T193, T194, T174) | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
+| A008 | In-Progress [Claude] | A004 | 0 | Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks |
 | C006 | Available (waiting on T173, T180, T179, C010, C016, T194, C035, C036) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C013 | Available (waiting on C005, C010, T187, T175) | C005, C010, T164, T051, T055, T171, T187, T175 | 0 | Notifications and popup alerts |
 | C014 | Available (waiting on C010, T174) | C010, T164, T174 | 0 | Minimap |
