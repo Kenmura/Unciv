@@ -153,6 +153,57 @@ public partial class GameInfo
 
         // This would belong at the end of TurnManager.startTurn, but needs to come after notifyOfCloseEnemyUnits
         player.NotificationCountAtStartTurn = player.Notifications.Count;
+
+        RefreshTransientCaches();
+    }
+
+    /// <summary>
+    /// T208: the canonical point at which every lazily maintained cache equals what SetTransients would rebuild, so the running game and a
+    /// reload of its own save continue identically (lockstep replay, join-in-progress). Upstream refreshes these lazily (open borders only at
+    /// turn start; civ-wide vision only when a unit's view leaves the own borders), which a reload then "corrects".
+    /// </summary>
+    public void RefreshTransientCaches()
+    {
+        foreach (var civInfo in Civilizations)
+        {
+            // Hash sets that saw removals or resizes iterate differently from their own reload (which re-adds in saved order): rebuild them so.
+            civInfo.Policies.AdoptedPolicies.Canonicalize();
+            foreach (var city in civInfo.Cities)
+            {
+                city.CityConstructions.BuiltBuildings.Canonicalize();
+                city.CityConstructions.SetTransients(); // the cached building objects (and unique map) are in research order while running, set order after a load
+                foreach (var provided in city.CityConstructions.FreeBuildingsProvidedFromThisCity.Values) provided.Canonicalize();
+                city.CityConstructions.FreeBuildingsProvidedFromThisCity.Canonicalize();
+                city.DisabledConstructions.Canonicalize();
+                city.Tiles.Canonicalize();
+                city.WorkedTiles.Canonicalize();
+                city.LockedTiles.Canonicalize();
+            }
+            foreach (var unit in civInfo.Units.GetCivUnits()) unit.Promotions.Promotions.Canonicalize();
+        }
+        foreach (var civInfo in Civilizations) civInfo.Tech.RebuildTransients();
+        foreach (var civInfo in Civilizations)
+            foreach (var diplomacyManager in civInfo.Diplomacy.Values)
+                diplomacyManager.UpdateHasOpenBorders();
+        var loadRank = new Dictionary<Unciv.Logic.Map.MapUnits.MapUnit, int>();
+        foreach (var tile in TileMap.Values)
+            foreach (var unit in tile.GetUnits())
+                loadRank[unit] = loadRank.Count;
+        foreach (var civInfo in Civilizations) civInfo.Units.SortLikeLoad(loadRank);
+        foreach (var civInfo in Civilizations)
+            foreach (var city in civInfo.Cities)
+                foreach (var tile in city.GetWorkedTiles().ToList())
+                    if (!ReferenceEquals(tile.GetOwner(), civInfo))
+                        city.StopWorkingTile(tile);
+        foreach (var civInfo in Civilizations.OrderByDescending(it => it.IsCityState).ToList())
+        {
+            foreach (var unit in civInfo.Units.GetCivUnits().ToList())
+                unit.UpdateVisibleTiles(false);
+            civInfo.Cache.UpdateOurTiles();
+            civInfo.Cache.UpdateSightAndResources();
+            civInfo.Cache.UpdateCitiesConnectedToCapital(true);
+            foreach (var city in civInfo.Cities) city.CityStats.UpdateTileStats(); // releases blockaded worked tiles, like a load
+        }
     }
 
     /// <summary>We rotate Players in cycle: 1,2...N,1,2...</summary>

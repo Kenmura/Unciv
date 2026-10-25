@@ -118,6 +118,20 @@ public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
         }
     }
 
+    /// <summary>
+    /// T208: rebuilds the table the way a load does (default capacity, entries re-added in the current iteration order), so a set or map that
+    /// saw removals or resizes iterates exactly like its own reload.
+    /// </summary>
+    public void Canonicalize()
+    {
+        var entries = this.ToList();
+        modCount++;
+        table = null;
+        threshold = 0;
+        Count = 0;
+        foreach (var entry in entries) PutVal(Hash(entry.Key), entry.Key, entry.Value);
+    }
+
     public IEnumerable<TKey> Keys => this.Select(entry => entry.Key);
 
     public IEnumerable<TValue> Values => this.Select(entry => entry.Value);
@@ -346,6 +360,9 @@ public sealed class JavaHashSet<T> : IEnumerable<T> where T : notnull
     public bool Remove(T item) => map.Remove(item);
 
     public void Clear() => map.Clear();
+
+    /// <summary>T208: rebuild like a load does, see <see cref="JavaHashMap{TKey,TValue}.Canonicalize"/>.</summary>
+    public void Canonicalize() => map.Canonicalize();
 
     public IEnumerator<T> GetEnumerator() => map.Keys.GetEnumerator();
 

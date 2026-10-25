@@ -192,43 +192,56 @@ public sealed class SoakTests : IDisposable
     private static string Digest(GameInfo game) => string.Join(";", game.Civilizations.Select(it => string.Create(CultureInfo.InvariantCulture,
         $"{it.CivName}:{it.Gold}:{it.Cities.Count}:{it.Cities.Sum(c => c.Population.Population)}:{it.Units.GetCivUnits().Count()}:{it.Tech.TechsResearched.Count}:{it.Policies.FreePolicies}:{it.IsDefeated()}")));
 
-    // Saved games keep JVM-style hash sets (builtBuildings etc.), whose iteration order depends on how the set was built: sort them before comparing text.
-    // The same goes for exploredBy: MapUnit.UpdateVisibleTiles skips the civ-wide vision update (as upstream does) when a unit's old and new view lie
-    // inside the owner's borders, so a tile can be unexplored in a running game, yet explored once loading recomputes all vision. Masked here.
+    // Religion followers/cities are JVM-style hash sets whose order depends on how the set was built: sorted before comparing text (builtBuildings are compared in order).
     private static string Normalise(string saved) => System.Text.RegularExpressions.Regex.Replace(
-        System.Text.RegularExpressions.Regex.Replace(
-        System.Text.RegularExpressions.Regex.Replace(saved, "\"exploredBy\":\\[[^\\]]*\\]", "\"exploredBy\":[]"), "\"pointsForNextGreatGeneral\":\\d+", "\"pointsForNextGreatGeneral\":0"),
-        "\"(builtBuildings|followers|cities)\":\\[([^\\]\\[]*)\\]",
+        System.Text.RegularExpressions.Regex.Replace(saved, "\"pointsForNextGreatGeneral\":\\d+", "\"pointsForNextGreatGeneral\":0"),
+        "\"(followers|cities)\":\\[([^\\]\\[]*)\\]",
         m => $"\"{m.Groups[1].Value}\":[{string.Join(",", m.Groups[2].Value.Split(',').OrderBy(x => x, StringComparer.Ordinal))}]");
 
-    // Replaying from a snapshot must be deterministic: two games loaded from the same save, and a Clone of the running game, all play on identically
-    // for 50 turns (digest every turn). The running game itself is NOT required to match them: see the note below.
+    // T208: the running game must continue exactly like a reload of its own save (lockstep replay, join-in-progress): the original and two loads of its
+    // save agree on the full saved text after every civ's turn (GameInfo.RefreshTransientCaches makes the lazily maintained caches canonical).
     [SoakFact]
-    public void SaveLoadOfALongRunningGameReplaysIdentically()
+    public void SaveLoadOfALongRunningGameReplaysIdentically() => SaveLoadReplaysIdentically(11L, 5);
+
+    [SoakFact]
+    public void SaveLoadOfAnotherLongRunningGameReplaysIdentically() => SaveLoadReplaysIdentically(29L, 8);
+
+    private static string Saved(GameInfo game) => Normalise(UncivFiles.GameInfoToString(game, forceZip: false));
+
+    private void SaveLoadReplaysIdentically(long gameSeed, int mapSeed)
     {
-        var original = NewGame(MapSize.Small, 6, 6, 11L, 5);
+        var original = NewGame(MapSize.Small, 6, 6, gameSeed, mapSeed);
         Play(original, "saveload", sampleHashes: false, stopAt: 150);
         var text = UncivFiles.GameInfoToString(original, forceZip: false);
         var loaded = UncivFiles.GameInfoFromString(text);
         var loaded2 = UncivFiles.GameInfoFromString(text);
+        // A Clone is not played on here: it still shares some state (e.g. trade requests) with its source, a gap outside this ticket.
         var clone = original.Clone();
         clone.SetTransients();
+        Assert.Equal(Digest(original), Digest(clone));
         // Loading runs BackwardCompatibility.MigrateGreatGeneralPools like upstream, which rewrites the legacy, otherwise unread field
         // pointsForNextGreatGeneral; Normalise masks it.
         AssertSameText(Normalise(text), Normalise(UncivFiles.GameInfoToString(loaded, forceZip: false)), "right after loading");
         Assert.Equal(Digest(original), Digest(loaded));
         for (var i = 0; i < 50; i++)
         {
-            PlayTurns(loaded, 1);
-            PlayTurns(loaded2, 1);
-            PlayTurns(clone, 1);
-            var digest = Digest(loaded);
-            Assert.True(digest == Digest(loaded2), $"two loads of the same save diverged {i + 1} turns after loading");
-            Assert.True(digest == Digest(clone), $"a clone and a load of the same state diverged {i + 1} turns after loading:\n{digest}\n{Digest(clone)}");
+            // Civ by civ, so a divergence is found at the step that causes it, not a whole turn later.
+            var all = new[] { original, loaded, loaded2 };
+            foreach (var g in all) { g.SimulateUntilWin = true; g.SimulateMaxTurns = g.Turns + 1; g.EndPlayerTurn(2000L); }
+            for (var running = true; running;)
+            {
+                var phases = all.Select(g => g.RunAutoPlayers(1)).ToList();
+                running = phases[0] is TurnPhase.AutoPlayers;
+                Assert.All(phases, ph => Assert.Equal(running, ph is TurnPhase.AutoPlayers));
+                AssertSameText(Saved(original), Saved(loaded), $"after one more civ, {i + 1} turns after loading: the running game and a reload of its save");
+            }
+            foreach (var g in all) g.BeginPlayerTurn(2000L);
+            var expected = Saved(original);
+            AssertSameText(expected, Saved(loaded), $"the running game and a reload of its save, {i + 1} turns after loading");
+            AssertSameText(expected, Saved(loaded2), $"the running game and a second reload, {i + 1} turns after loading");
+            Assert.True(Digest(original) == Digest(loaded), $"digest differs {i + 1} turns after loading");
         }
         Assert.Equal(Hash(loaded), Hash(loaded2));
-        // Known gap (ticket T208): the running game itself does not continue exactly like a reload of its own save, because some caches
-        // (cached vision and exploration, open-borders flags) are only refreshed lazily while loading recomputes them. Not asserted here.
     }
 
     private static void AssertSameText(string expected, string actual, string when)
@@ -237,16 +250,6 @@ public sealed class SoakTests : IDisposable
         var at = 0;
         while (at < expected.Length && at < actual.Length && expected[at] == actual[at]) at++;
         Assert.Fail($"saved text differs {when}, first at char {at}: A ...{Excerpt(expected, at)}... B ...{Excerpt(actual, at)}...");
-    }
-
-    private static void PlayTurns(GameInfo game, int turns)
-    {
-        for (var i = 0; i < turns; i++)
-        {
-            game.SimulateUntilWin = true;
-            game.SimulateMaxTurns = game.Turns + 1;
-            game.NextTurn(2000L);
-        }
     }
 
     [SoakFact]

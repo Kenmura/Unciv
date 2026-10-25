@@ -2578,7 +2578,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Optional, lowest priority. Failure is non-fatal and reported in the Host screen; mapping removed on shutdown; no third-party dependency (ask via a ticket note if one is judged necessary). Manual forward and overlay VPN docs are the MVP path (T179).
 
 ### T208 Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T167
 - Source: core/src/com/unciv/logic/GameInfo.kt (setTransients), civilization/diplomacy/DiplomacyManager.kt (updateHasOpenBorders), map/mapunit/MapUnit.kt (updateVisibleTiles), civilization/managers/BarbarianManager
 - Fixtures: none
@@ -2589,6 +2589,8 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Reset (migration: reset stale T208); was 'In-Progress [Claude]'.
   - Stale claim reset by Claude (2026-10-25T12:50Z). Partial work from the abandoned attempt is uncommitted in .worktrees/claude-T208 (do not discard; build on or review it).
   - From T200 review: (d) Civ.Stats (Happiness) is a transient cache not restored by load; a Simultaneous save taken mid-Resolving before StartNextTurn (RecordRankingStats reads it) does not reproduce the live hash. Include refreshing/canonicalising it here (or hosts checkpoint only at Playing).
+  - Implemented (Claude). GameInfo.RefreshTransientCaches() runs at the end of BeginPlayerTurn and makes the lazy caches canonical: JavaHashSet/Map.Canonicalize() (rebuild like a load: policies, builtBuildings, free-building maps, city tiles/worked/locked/disabled, unit promotions), CityConstructions.SetTransients (cached building objects were in append order while running, set order after load: this made conquest's 34% building removal draw differently), TechManager.RebuildTransients, DiplomacyManager.UpdateHasOpenBorders, UnitManager.SortLikeLoad (load's tile-by-tile unit order + cursor reset), stop working unowned tiles, then per-unit UpdateVisibleTiles + civ UpdateOurTiles/UpdateSightAndResources/UpdateCitiesConnectedToCapital + UpdateTileStats (city states first like a load). Soak: original vs two reloads asserted byte-identical (only followers/cities sets and legacy pointsForNextGreatGeneral normalised) after EVERY civ's turn for 50 turns, seeds 11/5 and 29/8; exploredBy mask removed.
+    NOT done: (1) the T200-review caveat (Civ.Stats happiness cache): not canonicalised here; hosts must checkpoint at Playing (or a follow-up ticket). (2) GameInfo.Clone() still shares some state (e.g. trade requests) so a Clone is only digest-compared right after cloning, not played on. (3) Canonicalize only covers the hash sets listed above; other JVM hash sets/maps (religion beliefs, flags maps, etc.) are not rebuilt - the soak shows no divergence from them in 50 turns x 2 seeds.
 
 ### T209 Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation
 - State: Done

@@ -187,6 +187,17 @@ public class UnitManager(Civilization civInfo)
         }
     }
 
+    /// <summary>
+    /// T208: puts the unit list into the order a load would rebuild it in (see <see cref="unitList"/>) and resets the "next unit" cursor,
+    /// so a running game and its reload iterate (and automate) their units identically.
+    /// </summary>
+    /// <param name="loadRank">each unit's position in the tile-by-tile enumeration SetTransients uses</param>
+    public void SortLikeLoad(IReadOnlyDictionary<MapUnit, int> loadRank)
+    {
+        unitList = unitList.OrderBy(it => loadRank[it]).ToList(); // OrderBy is stable
+        nextPotentiallyDueAt = 0;
+    }
+
     public virtual void RemoveUnit(MapUnit mapUnit, bool updateCivInfo = true)
     {
         // See comment in addUnit().

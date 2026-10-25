@@ -604,6 +604,20 @@ public class TechManager : IsPartOfGameInfoSerialization
         UpdateTransientBooleans();
     }
 
+    /// <summary>
+    /// T208: rebuilds everything <see cref="SetTransients"/> derives from <see cref="TechsResearched"/>, in the same order, so a running game
+    /// (which appends in research order, and for barbarians swaps <see cref="TechsResearched"/> wholesale) equals a reloaded one.
+    /// </summary>
+    public void RebuildTransients()
+    {
+        ResearchedTechnologies = [];
+        TechUniques = new UniqueMap();
+        ResearchedTechnologies.AddRange(TechsResearched.Select(it => GetRuleset().Technologies[it]).ToList());
+        ResearchedTechnologies.ForEach(AddTechToTransients);
+        UpdateEra();
+        UpdateTransientBooleans();
+    }
+
     private void UpdateTransientBooleans()
     {
         UnitsCanEmbark = CivInfo.HasUnique(UniqueType.LandUnitEmbarkation);
