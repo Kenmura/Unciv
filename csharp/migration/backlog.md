@@ -2535,7 +2535,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario asset-sheet: swatch sheet golden + registry resolves every Vanilla ruleset name. Human: colour/readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
 
 ### C008 Client scenario runner and owner review sheet
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: C001, A003, A004, A005, A006, A007
 - Source:
 - Fixtures: none
@@ -2547,6 +2547,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
     Gate run: dotnet build Unciv.Godot -warnaserror ok; run-scenario.sh rename-city exit 0 (about 6 s), state hash fc6f58dc10fe2873 equals replay; --expect-golden-failure rejects wrong goldens; review-sheet.sh builds out/review. Standard checks 0 failed; coverage check passed, baseline raised.
     Captured PNG/contact sheet (opened): three 640x480 frames on a dark blue-grey background, large white label "City: Babylon" then "City: Ur" then "City: Uruk" above a grey "Rename city" button (darker when unfocused, lighter after click). Sheet is a 3-column grid, each cell captioned "rename-city / step" plus caption, readable.
     Assets: only the engine's built-in default font, recorded in ASSETS.md. Not touched: C007 files, policy files.
+  - Review notes (isolated adversarial subagent): APPROVE, no blocking findings; build/format/test (0 failed), Godot build, run-scenario, wrong-golden self-test, review-sheet all re-run green. Non-blocking, left for later client slices: scenario may pass vacuously with an empty command log (add expected-command-count); --expect-golden-failure accepts any non-zero exit; review-sheet.sh should delete stale result.json before each run; ContactSheet assumes 640x480 captures; replay shares the Godot process (not process-isolated).
 
 ### C009 Map view v1: flat hex map from queries, camera, tile picking, fog tint
 - State: Available

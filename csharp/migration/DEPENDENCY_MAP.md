@@ -411,7 +411,7 @@ flowchart TD
   class C005 waiting
   class C006 waiting
   class C007 prog
-  class C008 review
+  class C008 done
   class C009 waiting
   class C010 waiting
   class C011 waiting
@@ -530,10 +530,10 @@ Generated from the git history of `backlog.md` (UTC; each point is the backlog a
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
+    x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00"]
     y-axis "Tickets" 0 --> 83
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 74]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -565,8 +565,7 @@ xychart-beta
 | T187 | Available (waiting on T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T175 | Available (waiting on T172, T174, T186) | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
 | C007 | In-Progress [Claude] | C001, A003, A004, A005, A006, A007 | 33 | Asset registry and procedural placeholder generator |
-| C008 | Needs-Review [Claude] | C001, A003, A004, A005, A006, A007 | 32 | Client scenario runner and owner review sheet |
-| C009 | Available (waiting on C007, C008, T174) | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
+| C009 | Available (waiting on C007, T174) | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C010 | Available (waiting on C009, T184, T187, T188, T174, T175) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | C005 | Available (waiting on C007, C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T200 | Available (waiting on T184) | T184 | 16 | Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep |
