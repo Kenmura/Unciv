@@ -2229,7 +2229,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review round 1 (adversarial subagent): fixed UnitAttacked defender identity (snapshot before blows), TileOwnerChanged on city transfer (sorted per tile), UnitCreated moved into TileMap.PlaceUnitNearTile (barbarian/unique spawns), air/paradrop no-alloc overload, TurnEnded skips spectators. Deferred to T209 (finding ids 1-3, 8, 10): secondary moves, unit capture event, city destroyed/traded event, priority truncation. Documented: SetTransients runs without a sink, Apply must be serialized per game.
 
 ### T187 Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T164, T186, T184, T183
 - Source: design/COMMANDS-IMPLEMENTATION.md sections 3.1 and 5; ui/screens/worldscreen/AlertPopup.kt; status/NextTurnAction.kt; view/CivView.kt (tryDismiss*, tryMarkMovedAutomatedUnits, tryAutomateAllUnits)
 - Fixtures: none
