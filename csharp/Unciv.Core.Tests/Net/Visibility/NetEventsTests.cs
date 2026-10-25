@@ -85,6 +85,35 @@ public sealed class NetEventsTests
     }
 
     [Fact]
+    public void UnitMoved_VisibleEndsWithFoggedMiddle_IsDisappearThenAppear_AndHiddenUnitStaysSilent()
+    {
+        var moved = new UnitMoved("A", 5, "Warrior", [P0, P1, P2]);
+        var vis = new FakeVisibility([P0, P2]);
+        Assert.Equal<EngineEvent>([new UnitDisappeared("A", 5, P0), new UnitAppeared("A", 5, "Warrior", P2)], EventFilter.Classify(moved, "B", vis));
+        Assert.Empty(EventFilter.Classify(moved, "B", new FakeVisibility([P0, P2], hiddenUnits: [5])));
+    }
+
+    [Fact]
+    public void PeaceTerritoryAndCityEvents_NonParticipantNeedsSight()
+    {
+        Assert.Single(EventFilter.Classify(new PeaceMade("A", "F"), "B", new FakeVisibility([], ["A", "F"])));
+        Assert.Single(EventFilter.Classify(new PeaceMade("A", "F"), "A", new FakeVisibility([])));
+        Assert.Empty(EventFilter.Classify(new PeaceMade("A", "F"), "B", new FakeVisibility([], ["F"])));
+        var owner = new TileOwnerChanged(P0, "", "A");
+        Assert.Single(EventFilter.Classify(owner, "B", new FakeVisibility([P0])));
+        Assert.Empty(EventFilter.Classify(owner, "B", new FakeVisibility([P1])));
+        var captured = new CityCaptured("c", "Ur", P0, "A", "F", "A");
+        Assert.Single(EventFilter.Classify(captured, "B", new FakeVisibility([P0])));
+        Assert.Empty(EventFilter.Classify(captured, "B", new FakeVisibility([])));
+        var grew = new CityGrew("A", "c", P0, 3);
+        Assert.Single(EventFilter.Classify(grew, "B", new FakeVisibility([P0])));
+        Assert.Empty(EventFilter.Classify(grew, "B", new FakeVisibility([])));
+        var cities = new UnitAttacked("A", null, "cA", P0, "F", null, "cF", P1, 1, 1, false, false);
+        Assert.Single(EventFilter.Classify(cities, "B", new FakeVisibility([P0, P1])));
+        Assert.Empty(EventFilter.Classify(cities, "B", new FakeVisibility([P0])));
+    }
+
+    [Fact]
     public void LocatedEvents_RequireEveryPositionVisible()
     {
         var founded = new CityFounded("A", "c1", "Rome", P0);
@@ -197,7 +226,8 @@ public sealed class NetEventsTests
         var deltaB = ViewDeltaBuilder.Build(game.GameInfo, b, ViewDeltaBuilder.Capture(game.GameInfo, b), [moved, note], 4);
         Assert.Equal(4, deltaA.Seq);
         Assert.Equal(2, deltaA.Events.Count);
-        Assert.Empty(deltaB.Events);
+        Assert.Empty(deltaB.Events); // B sees neither the moved tiles nor owns the notification
+        Assert.IsType<UnitMoved>(GameEventRegistry.FromEnvelope(deltaA.Events[0].Deserialize<GameEventEnvelope>(Unciv.Json.UncivJson.DefaultOptions)!));
         var envelope = deltaA.Events[1].Deserialize<GameEventEnvelope>(Unciv.Json.UncivJson.DefaultOptions)!;
         var back = Assert.IsType<NotificationAdded>(GameEventRegistry.FromEnvelope(envelope));
         Assert.Empty(back.Locations);
@@ -221,5 +251,9 @@ public sealed class NetEventsTests
         Assert.False(vis.CanSeeUnit(b.CivId, warrior.Id, new HexCoord(5, 0)));
         Assert.True(vis.CanSeeUnit(b.CivId, 99999, new HexCoord(0, 1))); // gone unit
         Assert.True(vis.CanSeeUnit("nobody", 1, new HexCoord(0, 1)));
+        // Hidden before the command: its death or move stays unreported, whether the unit is gone or elsewhere.
+        var hiddenVis = new GameViewVisibility(game.GameInfo, a, new HashSet<(string, int)> { (b.CivId, 99999), (b.CivId, warrior.Id) });
+        Assert.False(hiddenVis.CanSeeUnit(b.CivId, 99999, new HexCoord(0, 1)));
+        Assert.False(hiddenVis.CanSeeUnit(b.CivId, warrior.Id, new HexCoord(0, 1)));
     }
 }

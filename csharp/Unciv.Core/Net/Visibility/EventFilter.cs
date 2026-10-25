@@ -121,7 +121,8 @@ public static class EventFilter
     private static IEnumerable<EngineEvent> ClassifyUnitMoved(EngineEvent gameEvent, string recipient, IViewerVisibility vis)
     {
         var e = (UnitMoved)gameEvent;
-        if (IsParticipant(e, recipient) || e.Path.Count == 0) return IsParticipant(e, recipient) ? [e] : [];
+        if (IsParticipant(e, recipient)) return [e];
+        if (e.Path.Count == 0) return [];
         var start = e.Path[0];
         var end = e.Path[^1];
         bool startSeen = vis.CanSeeUnit(e.CivId, e.UnitId, start);

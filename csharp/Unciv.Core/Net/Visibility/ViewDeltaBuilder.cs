@@ -27,8 +27,10 @@ public sealed record StatsChanged(string CivId, int Gold, int Happiness) : Engin
 }
 
 /// <summary><see cref="IViewerVisibility"/> answered from the View classes of one viewer.</summary>
-public sealed class GameViewVisibility(GameInfo gameInfo, CivilizationClass viewer) : IViewerVisibility
+public sealed class GameViewVisibility(GameInfo gameInfo, CivilizationClass viewer, IReadOnlySet<(string CivId, int UnitId)>? hiddenBefore = null) : IViewerVisibility
 {
+    private readonly IReadOnlySet<(string CivId, int UnitId)> hiddenBefore = hiddenBefore ?? new HashSet<(string, int)>();
+
     private readonly GameView gameView = new(gameInfo, viewer);
 
     public bool CanSeeTile(HexCoord position) =>
@@ -38,7 +40,9 @@ public sealed class GameViewVisibility(GameInfo gameInfo, CivilizationClass view
     {
         if (!CanSeeTile(position)) return false;
         var unit = gameInfo.GetCivilizationOrNull(civId)?.Units.GetUnitById(unitId);
-        if (unit == null) return true; // e.g. destroyed: nothing left to be invisible
+        // A unit that was invisible to the viewer before the command stays unreported even when it moved or died meanwhile.
+        if (hiddenBefore.Contains((civId, unitId))) return false;
+        if (unit == null) return true; // destroyed and not hidden before: nothing left to ask
         return unit.GetTile().Position == position ? unit.IsVisibleTo(viewer) : !unit.HasActiveInvisibilityUnique(viewer);
     }
 
@@ -48,12 +52,15 @@ public sealed class GameViewVisibility(GameInfo gameInfo, CivilizationClass view
 public static class ViewDeltaBuilder
 {
     /// <summary>The recipient's state before a command, to diff against after it.</summary>
-    public sealed record ViewMark(HashSet<HexCoord> Explored, int Gold, int Happiness);
+    public sealed record ViewMark(HashSet<HexCoord> Explored, int Gold, int Happiness, HashSet<(string CivId, int UnitId)> HiddenUnits);
 
     public static ViewMark Capture(GameInfo gameInfo, CivilizationClass viewer)
     {
         var view = new GameView(gameInfo, viewer).CivView;
-        return new ViewMark(ExploredSet(gameInfo, viewer), view.Gold, view.GetHappiness());
+        var hidden = gameInfo.Civilizations.Where(it => it != viewer).SelectMany(it => it.Units.GetCivUnits().Select(unit => (Civ: it, Unit: unit)))
+            .Where(it => it.Unit.HasActiveInvisibilityUnique(viewer) && !it.Unit.IsVisibleTo(viewer))
+            .Select(it => (it.Civ.CivId, it.Unit.Id)).ToHashSet();
+        return new ViewMark(ExploredSet(gameInfo, viewer), view.Gold, view.GetHappiness(), hidden);
     }
 
     private static HashSet<HexCoord> ExploredSet(GameInfo gameInfo, CivilizationClass viewer) =>
@@ -62,7 +69,7 @@ public static class ViewDeltaBuilder
     /// <summary>Events in order: reveals first (so later events can refer to new tiles), the filtered engine events, then stat changes.</summary>
     public static IReadOnlyList<EngineEvent> BuildEvents(GameInfo gameInfo, CivilizationClass viewer, ViewMark before, IEnumerable<EngineEvent> events)
     {
-        var visibility = new GameViewVisibility(gameInfo, viewer);
+        var visibility = new GameViewVisibility(gameInfo, viewer, before.HiddenUnits);
         var result = new List<EngineEvent>();
         var revealed = RevealedSince(gameInfo, viewer, before);
         if (revealed != null) result.Add(revealed);

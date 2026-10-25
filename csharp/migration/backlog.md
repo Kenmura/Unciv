@@ -2065,6 +2065,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented. EventFilter (explicit classifier table, FrozenDictionary, default deny; reflection test requires an entry per [EventType]), IViewerVisibility + GameViewVisibility (from View classes; unit visibility via MapUnit.IsVisibleTo / HasActiveInvisibilityUnique), ViewDeltaBuilder (Capture before, BuildEvents/Build after: TilesRevealed first, filtered events, StatsChanged last), server-built events UnitAppeared/UnitDisappeared/TilesRevealed/StatsChanged (classifier Nothing: an engine-emitted copy is never forwarded).
     Rules: Located events to non-participants need EVERY position visible (conservative; UnitAttacked also checks unit hiddenness of both sides); UnitMoved partial visibility => UnitDisappeared at visible start and/or UnitAppeared at visible end, never a path; NotificationAdded owner-only with unseen Locations stripped; War/Peace widened to civs knowing both parties; trades, alerts, research, policy participants only.
     Gaps: stats diff covers gold and happiness only; reveals diff explored tiles only (visible->fogged flips and newly met civs' CivDto are not sent); a destroyed unit is judged by tile visibility only.
+  - Review pass 1 (CHANGES-REQUESTED) addressed: ViewMark now captures units hidden from the viewer before the command and GameViewVisibility denies them (death or move of an invisible unit stays silent); UnitMoved guard simplified; tests added for peace, territory, city events, city-vs-city attack, fogged-middle moves, hidden-before units. Decisions: sighting a civ's unit or tile owner implies the civ id may reach the client (same as the snapshot's tile Owner); a CivDto introduction event, fog-to-visible tile refresh and wider StatsChanged are in a follow-up ticket. Notification locations are judged on post-command visibility (creation-time capture not available).
 
 ### T176 Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot)
 - State: Available
@@ -2611,6 +2612,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Fixtures: none
 - Deliverables: Commands to dismiss/answer these PopupAlerts, with tests
 - Gate: Standard
+- Claimed:
+- Notes:
+
+### T214 Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness
+- State: Available
+- Depends: T175
+- Source: csharp/migration/design/SERVER.md sections 2.4, 3
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Visibility/ViewDeltaBuilder.cs, tests
+- Gate: dotnet test --filter FullyQualifiedName~NetEvents
 - Claimed:
 - Notes:
 
