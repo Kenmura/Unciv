@@ -2220,7 +2220,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Simultaneous turns: in Simultaneous mode EndTurn only marks the civ ended (T202 adds UndoEndTurn, ProcessEndTurn, StartNextTurn, SetController and replaces the 'actor is CurrentPlayerCiv' check by RequireActive). Implement the Sequential behaviour here but route the gate through one helper. RunAiTurn/BeginTurn take the civ.
 
 ### T188 Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T164, T186, T083
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.2; logic/map/mapunit/movement/UnitMovement.kt (moveToTile, headTowards, getShortestPath); logic/battle/Battle.kt (moveAndAttack, attackOrNuke, nuke); view/MapUnitView.kt tryMoveToTile/tryHeadTowards/trySetMoveToAction/tryMovePreparingAttack/tryNuke/tryAirSweep/trySwapMoveToTile/tryDisband
 - Fixtures: none
