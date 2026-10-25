@@ -2699,9 +2699,10 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Claimed: 2026-10-25T00:21Z
   - Implemented csharp/Unciv.Godot (Godot.NET.Sdk 4.7.2, net10.0, references Unciv.Core, empty Main.tscn/Main.cs, project.godot). Namespace Unciv.GodotClient (a namespace Unciv.Godot would shadow the Godot namespace). Kept OUT of Unciv.sln like Unciv.Godot.Harness so Standard checks never need the Godot SDK; headless gate is `dotnet build Unciv.Godot -warnaserror` (passes, 0 warnings; dotnet format clean). No assets used. No policy files edited. GODOT.md updated.
 ### C002 3D hex terrain rendering (elevation, materials, water depth)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: C001, A003, A004, A005, A006, A007, C009
 - Scope: Replace C009's flat hexes with displaced 3D meshes: elevation per terrain, hill/mountain shapes, per-terrain materials with generated noise textures, water with depth and shore, instanced vegetation (grass tufts via MultiMesh; no flat sprite tiles). Blending, fog polish and chunking moved to C031; in-world yields/improvements to C032.
+- Claimed: 2026-10-25T13:55Z
 - Notes: Grass rendered as real textured/shaded terrain with instanced vegetation; no flat sprite tiles. Validation includes automated snapshot capture and golden image verification via C000 harness.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
   - Narrowed per design/CLIENT-SLICES.md: blending and fog/visibility polish -> C031; tile yields and improvements as props -> C032. Verification: golden at 3 camera angles; picking tests still pass on displaced terrain.
