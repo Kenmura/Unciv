@@ -64,3 +64,22 @@ proves a wrong golden fails. `review-sheet.sh` runs all scenarios and writes `ou
 - `Unciv.Godot` (C001) is the real client project: it references `Unciv.Core`, boots an empty `Main.tscn`, and is likewise kept out of `Unciv.sln`. CI builds it headlessly with `dotnet build Unciv.Godot -warnaserror` (needs only the .NET SDK and the `Godot.NET.Sdk` NuGet package; no editor or Godot binary). It uses no assets (see ASSETS.md).
 - Linux x86-64 only (the install script and the Xvfb path). Windows/macOS are not covered.
 - llvmpipe is slow; keep test scenes small and the resolution at 640x480 unless a ticket needs more.
+
+## Packaging an exported client (C042)
+
+```
+Unciv.Godot/tools/install-export-templates.sh      # once: export templates matching the pinned editor (checksum verified)
+Unciv.Godot/tools/package.sh [linux|windows]       # -> Unciv.Godot/build/<platform>/ (git-ignored)
+Unciv.Godot/tools/smoke-export.sh                  # copies build/linux outside the checkout, runs it under Xvfb, expects the main menu
+```
+
+`package.sh` builds, runs `--export-release` with the presets in `Unciv.Godot/export_presets.cfg` (Linux, Windows; **macOS is not
+a preset yet**: it needs a Mac host for signing/notarisation), then copies `android/assets/jsons` (rulesets and `translations/`) to
+`<build>/data/jsons`, plus `LICENSE` and `THIRD_PARTY_NOTICES.md`. `RulesetLocator` looks for `data/jsons` beside the executable first and
+falls back to the checkout's `android/assets/jsons` when run from the editor (`ContentLocator`). Godot's .NET export requires a solution file
+beside `project.godot`; the script generates a throw-away, git-ignored `Unciv.Godot.sln`. Template version = editor version (`4.7.2-stable`),
+pinned in `setup-godot.sh` and `install-export-templates.sh`; a unit test keeps the two equal.
+
+Local mods: drop mod folders (same layout as Unciv's `mods/`) into the `mods` folder of the user data directory (`user://mods`, created on first start;
+Linux `~/.local/share/godot/app_userdata/Unciv/mods`). They are loaded with the built-in rulesets at start-up.
+No Firaxis/Civ 5 or Unciv atlas/sound/image is bundled (the client draws generated placeholders).

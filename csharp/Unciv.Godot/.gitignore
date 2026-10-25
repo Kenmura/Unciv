@@ -2,3 +2,7 @@ out/
 .godot/
 .mono/
 *.translation
+build/
+*.sln
+*.slnx
+*.uid

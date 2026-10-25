@@ -11,6 +11,7 @@
     "Unciv.Assets/MeshData.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/MinimapRaster.cs": {"branch": 93.75, "line": 100.0},
     "Unciv.Assets/ModelSpecs.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/Packaging/ContentLocator.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PlaceholderPalette.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/ProceduralImages.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Rgb.cs": {"branch": 100.0, "line": 100.0},

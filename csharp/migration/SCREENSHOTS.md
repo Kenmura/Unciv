@@ -349,3 +349,4 @@ Done tickets with nothing meaningful to show.
 - **C001 Godot project skeleton**: Empty Main.tscn skeleton; there is nothing to look at.
 - **C007 Asset registry and procedural placeholder generator**: Asset registry and procedural generator. Its gate (Unciv.Godot/tools/run-asset-sheet.sh) writes out/asset-sheet.png, but no golden is committed (C008 was to wrap it). Candidate for a follow-up: an asset-sheet scenario with a golden.
 - **C037 IGameSession: client reads and writes only through a session interface; LocalHost implements it**: IGameSession is an engine/client interface with no UI of its own; it is exercised by every scenario above.
+- **C042 (ticket not Done or unknown)**: Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015.

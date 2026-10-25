@@ -42,7 +42,14 @@ public partial class App : Node
         menu.SetCanResume(store.Latest() != null);
         screens.Push(menu);
         screens.AddChild(menuSaves);
+
+        // C042: the packaged-build smoke test (tools/smoke-export.sh) waits for this line and asks the app to exit once the menu is up.
+        GD.Print(MenuReadyMarker);
+        if (OS.GetCmdlineUserArgs().Contains(ExitOnMenuArg)) GetTree().Quit();
     }
+
+    public const string MenuReadyMarker = "UNCIV_MENU_READY";
+    public const string ExitOnMenuArg = "--exit-on-menu";
 
     private void OpenNewGame()
     {

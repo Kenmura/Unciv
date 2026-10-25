@@ -321,5 +321,8 @@
         "caption": "Pottery researched instead: the queue is replaced and Pottery is the current research."
       }
     ]
+  },
+  "C042": {
+    "none": "Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015."
   }
 }
