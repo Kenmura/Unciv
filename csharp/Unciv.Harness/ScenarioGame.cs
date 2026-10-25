@@ -44,7 +44,10 @@ public static class ScenarioGame
         throw new DirectoryNotFoundException("android/assets/jsons not found above " + AppContext.BaseDirectory);
     }
 
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed)
+    /// <summary>
+    /// <paramref name="solo"/> (C010): one human (Babylon) and the AI, no city founded: the game the client's QuickStart builds; otherwise the two-human game above.
+    /// </summary>
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false)
     {
         var ruleset = LoadVanilla();
         var game = GameStarter.StartNewGame(
@@ -54,11 +57,13 @@ public static class ScenarioGame
                     BaseRuleset = ruleset.Name,
                     NumberOfCityStates = 0,
                     VictoryTypes = ruleset.Victories.Keys.ToList(),
-                    Players = [new Player(HumanA, PlayerType.Human), new Player(HumanB, PlayerType.Human), new Player(Ai)],
+                    Players = solo
+                        ? [new Player(HumanA, PlayerType.Human), new Player(Ai)]
+                        : [new Player(HumanA, PlayerType.Human), new Player(HumanB, PlayerType.Human), new Player(Ai)],
                 },
                 new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = mapSeed, MapSize = MapSize.Tiny }),
             gameSeed, FixedClockMillis);
-        foreach (string name in new[] { HumanA, HumanB })
+        foreach (string name in solo ? Array.Empty<string>() : new[] { HumanA, HumanB })
         {
             var civ = game.GetCivilization(name);
             var settler = civ.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());

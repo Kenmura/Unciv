@@ -2731,7 +2731,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
     Human to judge: terrain readability, camera feel, dim vs unexplored contrast.
 
 ### C010 V1 vertical slice: unit blocks, select, move, end turn, AI turns
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: C009, T164, T184, T187, T188, T174, T175
 - Source:
 - Fixtures: none
@@ -2741,6 +2741,9 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario v1-vertical: select, move (assert tile+movement spent), 5x end turn (turn==6, state hash equals headless replay), captures. Human: is it playable, are AI moves visible. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
   - Design agent (commands): T164 is now only the command infrastructure. Depends re-pointed: T184 (phased turn API, PendingDecisions), T187 (EndTurn and friends), T188 (move/attack), T174/T175 (snapshot and events). Note C009/C011/C014 read world state from the T174 ClientSnapshot and T175 deltas, NOT from the T185 query API, which serves previews and panels (design/COMMANDS-IMPLEMENTATION.md section 8).
   - Multiplayer: End turn in a hosted game only marks the civ ended and shows the waiting state (C036); single player uses the same button in Sequential mode.
+  - Implemented [Claude]. Scenario: v1-vertical (run-scenario.sh v1-vertical). Deliverables: Unciv.Godot/Play/{GameScreen,UnitNode,LocalHost,GameQueries}.cs, QuickStart.cs/.tscn, Assets/RulesetLocator.cs, MapView right-click event + Load(keepCamera), MapMaterials.ColourBanner/PathDot; harness: V1VerticalScenario, Scenario.Solo + ScenarioGame.Create(solo) + ScenarioResult.Solo (replay uses the same factory), 9 goldens.
+    Deviations/assumptions: (1) the engine's turn counter starts at 0, so five Next turns end on turn 5, not 6 (asserted as start+5). (2) LocalHost is the single-player authority: after EndTurn it submits RunAiTurn per auto civ and BeginTurn as server (what T202/T204 hosts will do); a second human stops the flow (C029). (3) Solo game = Babylon + Rome, no city founded (Settler+Warrior; found-city is C012). (4) Move goes to PathPreview.FirstStep, so a multi-turn destination moves as far as possible this turn. (5) World state comes from SnapshotBuilder (T174) rebuilt after each accepted command; previews from PathPreview/ReachableTiles (T195). Game scenario game rebuilds the Godot Control size from the viewport (runner Control has size 0 under the root Window). (6) Banner colour = nation outer colour.
+    Human review: playable? AI units only visible when in sight; scenario asserts every AI civ changed state.
 
 ### C011 HUD: top bar yields, turn banner, next-action button
 - State: Available

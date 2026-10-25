@@ -319,7 +319,7 @@ flowchart TD
   class C005 ondeck
   class C006 waiting
   class C007 done
-  class C010 prog
+  class C010 review
   class C011 waiting
   class C012 waiting
   class C013 waiting
@@ -455,7 +455,7 @@ xychart-beta
 | C005 | **On deck** (after C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | C014 | **On deck** (after C010) | C010, T164, T174 | 0 | Minimap |
 | C029 | **On deck** (after C010) | C010, T164, T184 | 0 | Hotseat player switch screen |
-| C010 | In-Progress [Claude] | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
+| C010 | Needs-Review [Claude] | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | T202 | Available (waiting on T200) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
 | T176 | Available (waiting on T194) | T172, T164, T140, T194 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T177 | Available (waiting on T200, T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |

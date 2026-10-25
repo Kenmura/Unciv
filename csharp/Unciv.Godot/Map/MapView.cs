@@ -59,6 +59,9 @@ public partial class MapView : Node3D
     /// <summary>Raised on a click (press and release without dragging); null when the click hit no drawn tile.</summary>
     public event Action<HexCoord?>? TileClicked;
 
+    /// <summary>Raised on a right click (C010: the quick "move there" order); the tile is picked but not selected.</summary>
+    public event Action<HexCoord?>? TileRightClicked;
+
     public float Zoom => zoom;
 
     public Vector3 Focus => focus;
@@ -86,8 +89,11 @@ public partial class MapView : Node3D
         UpdateCamera();
     }
 
-    /// <summary>Replaces the drawn map with <paramref name="snapshotTiles"/> and centres the camera on it. Clears the selection.</summary>
-    public void Load(AssetRegistry assets, IReadOnlyList<TileDto> snapshotTiles)
+    /// <summary>
+    /// Replaces the drawn map with <paramref name="snapshotTiles"/> and centres the camera on it (unless <paramref name="keepCamera"/>: a refresh after a
+    /// command). Clears the selection.
+    /// </summary>
+    public void Load(AssetRegistry assets, IReadOnlyList<TileDto> snapshotTiles, bool keepCamera = false)
     {
         highlight.Setup(assets);
         foreach (var node in tiles.Values) node.QueueFree();
@@ -122,7 +128,7 @@ public partial class MapView : Node3D
             tileRoot.AddChild(node);
             tiles[coord] = node;
         }
-        if (tiles.Count > 0) FocusOn(Centre());
+        if (tiles.Count > 0 && !keepCamera) FocusOn(Centre());
     }
 
     /// <summary>The feature or natural wonder drawn over the base terrain; hills are shown by height instead.</summary>
@@ -244,6 +250,9 @@ public partial class MapView : Node3D
                 break;
             case InputEventMouseButton { ButtonIndex: MouseButton.Left or MouseButton.Middle } button:
                 OnMouseButton(button);
+                break;
+            case InputEventMouseButton { Pressed: false, ButtonIndex: MouseButton.Right } right:
+                TileRightClicked?.Invoke(PickTile(right.Position));
                 break;
             case InputEventMouseMotion motion when pressAt != null:
                 if ((motion.ButtonMask & (MouseButtonMask.Left | MouseButtonMask.Middle)) == 0) CancelPress(); // the release was lost (left the window, eaten by a Control)

@@ -45,4 +45,23 @@ public static class MapMaterials
         AmbientLightColor = ProceduralAssets.ToColor(PlaceholderPalette.Light),
         AmbientLightEnergy = 0.55f,
     };
+
+    /// <summary>Gives a unit block's neutral <c>Banner</c> the civ's colour (C010). The model is freshly built per call, so its material is owned by the caller.</summary>
+    public static void ColourBanner(Node3D unitModel, float r, float g, float b)
+    {
+        if (unitModel.GetNodeOrNull<MeshInstance3D>("Banner") is { } banner)
+            banner.MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(r, g, b), Roughness = 1f };
+    }
+
+    /// <summary>Small unshaded sphere of the accent colour: one dot of the path preview (C010).</summary>
+    public static MeshInstance3D PathDot()
+    {
+        var colour = ProceduralAssets.ToColor(PlaceholderPalette.Accent);
+        return new MeshInstance3D
+        {
+            Mesh = new SphereMesh { Radius = 0.09f, Height = 0.18f, RadialSegments = 8, Rings = 4 },
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = colour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded },
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+    }
 }

@@ -19,7 +19,8 @@ public sealed record ScenarioResult(
     IReadOnlyList<CommandEnvelope> Commands,
     IReadOnlyList<ScenarioCapture> Captures,
     IReadOnlyList<string> Checklist,
-    IReadOnlyList<string> Failures)
+    IReadOnlyList<string> Failures,
+    bool Solo = false)
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 

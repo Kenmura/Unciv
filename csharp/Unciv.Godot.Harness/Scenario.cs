@@ -18,5 +18,8 @@ public abstract class Scenario
     /// <summary>A scenario that draws a 3D world: the runner then omits its opaque 2D backdrop, which would cover the 3D layer.</summary>
     public virtual bool Uses3D => false;
 
+    /// <summary>The scenario plays the single-human game (<see cref="Unciv.Harness.ScenarioGame.Create"/> with solo) instead of the two-human one.</summary>
+    public virtual bool Solo => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }
