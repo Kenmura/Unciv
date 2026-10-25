@@ -378,6 +378,12 @@ def render_map():
 PHASE_NAMES = {1: "Phase 1: CLI (headless engine)", 2: "Phase 2: single player (Godot client)", 3: "Phase 3: multiplayer"}
 
 
+def backlog_link(tid, title):
+    """Markdown link to the ticket's heading in backlog.md (GitHub anchor: lowercase, punctuation dropped, spaces to hyphens)."""
+    slug = re.sub(r"[^\w\- ]", "", f"{tid} {title}".lower()).replace(" ", "-")
+    return f"[{tid}](backlog.md#{slug})"
+
+
 def phase_overview(info, open_ids, ready_ids, inflight):
     """Markdown block: per delivery phase (phases.txt) done/total plus the remaining tickets, so the map opens
     with what is left before each milestone. Work proceeds phase by phase (see ready_list)."""
@@ -392,7 +398,7 @@ def phase_overview(info, open_ids, ready_ids, inflight):
         ready = [i for i in rem if i in ready_ids]
         fly = [i for i in rem if i in inflight]
         out.append(f"| {name} | {len(done)}/{len(mine)} | {len(rem)} | {len(ready)} | {len(fly)} | "
-                   f"{' '.join(rem) if rem else 'complete'} |")
+                   f"{' '.join(backlog_link(i, info[i][0]) for i in rem) if rem else 'complete'} |")
     return out
 
 
