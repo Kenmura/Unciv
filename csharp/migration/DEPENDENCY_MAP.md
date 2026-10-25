@@ -99,7 +99,7 @@ flowchart TD
   class C001 review
   class C002 waiting
   class C003 waiting
-  class C004 blocked
+  class C004 waiting
   class C005 blocked
   class C006 blocked
   class T012 done
@@ -156,6 +156,6 @@ xychart-beta
 | T104 | In-Progress [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 1 | Marker, seam and stale-comment sweep (final) |
 | T165 | Available (waiting on A003, A004, A005, A006, A007) | T012, T100, A003, A004, A005, A006, A007 | 1 | Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers) |
 | C003 | Available (waiting on C002) | C002 | 0 | Resource and improvement props |
-| C004 | Blocked | C002, T164 | 0 | 3D military units |
+| C004 | Available (waiting on C002, T164) | C002, T164 | 0 | 3D military units |
 | C005 | Blocked | C002, T164 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001, T164, T165 | 0 | Networked play client |
