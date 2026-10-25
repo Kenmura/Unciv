@@ -2672,13 +2672,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review pass [Adversarial Review]: Standard checks, coverage OK. Added 3 filter tests (unmet owner of sighted unit introduced w/o Own/private data; fogged-only unit/tile introduces nothing; foreign gold change emits no StatsChanged). Follow-up observation (non-leak): owners of newly visible tiles are not introduced in deltas though SnapshotBuilder does; client may see an unknown tile owner id.
 
 ### T215 Loaded mid-game GameInfo diverges from the live one (Explore automation, AI turns): save/load fidelity
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T102
 - Source: Unciv.Core/Logic/Files/UncivFiles.cs; GameInfo.SetTransients; Unciv.Core.Tests/Commands/ReplayDeterminismTests.cs
 - Fixtures: none
 - Deliverables: fix in Unciv.Core plus a regression test
 - Gate: dotnet test --filter FullyQualifiedName~ReplayDeterminism
-- Claimed:
+- Claimed: 2026-10-25T13:49Z
 - Notes:
   - Found by T194. Repro: AI-only game (Setup: Pangaea Tiny map seed 5, game seed 9, Babylon/Greece/Rome, Babylon human but played by NextTurn/AI) played 20 turns with GameStarter+NextTurn, then UncivFiles.GameInfoToString/FromString: the loaded copy and the original give different StateHasher hashes from the very next NextTurn on (turns 5, 10, 30 happen to match). With the scripted human (ReplayDeterminismTests), a snapshot at turn 8 diverges at the first move-automated-units (Explore): the loaded game reveals/explores different tiles (exploredBy and movementMemories differ). Suspect a cache or transient (viewable tiles, unit movement memories, civ caches) not rebuilt by SetTransients or not serialized. Fix, then raise the snapshotTurn InlineData in SnapshotPlusLogTailReproducesTheFinalHash and the 5-turn snapshot in SaveLoadContinueGivesTheSameFinalHash, and drop the TODO(T215) comment there.
 
