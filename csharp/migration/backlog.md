@@ -1857,7 +1857,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Claude: review (isolated adversarial) requested stronger assertions; fixed (8 vacuous NotNull asserts replaced, vacuous swap test deleted). Final measured UnitAutomation.cs 87.79% line / 72.73% branch; baseline set to that. Uncovered: TryRetreat swap branch, air-unit heal branch (no follow-up ticket; low value). `coverage --check --all` shows other files (Era, Terrain, CollectionExtensions) under baseline: not from this ticket.
 
 ### T160 Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T102
 - Source: core/src/com/unciv/logic/GameStarter.kt, GameInfo.nextTurn (run by a JVM exporter)
 - Fixtures: none - golden per-turn hashes exported from the Kotlin game
