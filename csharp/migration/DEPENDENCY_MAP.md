@@ -148,7 +148,7 @@ flowchart TD
   class T167 ready
   class T168 ready
   class T169 ready
-  class T170 ready
+  class T170 prog
   class T171 ready
   class T172 ready
   class T173 waiting
@@ -178,8 +178,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 30]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 1]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 29]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 2]
 ```
 
 ## Incomplete tickets
@@ -195,7 +195,6 @@ xychart-beta
 | T167 | **Ready to start** | T102 | 0 | L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage |
 | T168 | **Ready to start** | T099, T100, T102 | 0 | Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
-| T170 | **Ready to start** | T104 | 0 | Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods) |
 | T171 | **Ready to start** | T104 | 0 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
 | A005 | **On deck** (after A004) | A004 | 5 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | **On deck** (after A004) | A004, T091, T092 | 4 | Homeland AI priority move queue |
@@ -215,5 +214,6 @@ xychart-beta
 | C004 | Available (waiting on C002, T164) | C002, T164 | 0 | 3D military units |
 | C005 | Available (waiting on C002, T164) | C002, T164 | 0 | Civ 5-style UI shell |
 | C006 | Available (waiting on T164, T172, T173, T180, T179) | T012, C001, T164, T172, T173, T180, T179 | 0 | Networked play client |
+| T170 | In-Progress [Claude] | T104 | 0 | Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods) |
 | T181 | Available (waiting on T174, T175, T164) | T174, T175, T164 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
 | T182 | Available (waiting on T178, T180) | T178, T180 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |

@@ -1960,13 +1960,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Gap review: there is no csharp CI workflow; gates run manually in distrobox. Unciv.Godot is outside Unciv.sln, so CI must build it separately. Do not touch the Kotlin/Gradle workflows.
 
 ### T170 Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T104
 - Source:
 - Fixtures: none
 - Deliverables: RulesetCache mod folder loading, TranslationCache loading .properties files, tests with a bundled mod
 - Gate: dotnet test --filter FullyQualifiedName~ModLoading
-- Claimed:
+- Claimed: 2026-10-25T00:39Z
 - Notes: Gap review: Translations.cs:102 still carries a TODO: mod translation files are not wired through RulesetCache. Partly covered by T104/T137; this ticket owns what is left, including T160's mod ruleset run.
 
 ### T171 Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger)
