@@ -238,7 +238,7 @@ Scenario `city-a`.
 
 *A locked tile keeps its golden outline.* (`city-a/tile-locked.png`)
 
-## C018 (ticket not Done or unknown)
+## C018 City screen B: production queue, purchase, buildings
 
 City screen B: production queue, buildable list, purchase, buildings, puppet and razing states.
 
@@ -255,6 +255,36 @@ Scenario `city-b`.
 ![A puppet city: the state is explained, Annex city is offered and every production button is disabled.](../Unciv.Godot.Harness/golden/city-b/puppet.png)
 
 *A puppet city: the state is explained, Annex city is offered and every production button is disabled.* (`city-b/puppet.png`)
+
+## C021 Diplomacy screen
+
+Diplomacy screen: civ list, status and attitude, treaty and city-state actions.
+
+Scenario `diplomacy`.
+
+![Declare war armed: first press asks to press again to confirm.](../Unciv.Godot.Harness/golden/diplomacy/confirm.png)
+
+*Declare war armed: first press asks to press again to confirm.* (`diplomacy/confirm.png`)
+
+![State after war is declared.](../Unciv.Godot.Harness/golden/diplomacy/war.png)
+
+*State after war is declared.* (`diplomacy/war.png`)
+
+![Peace status with another civilization.](../Unciv.Godot.Harness/golden/diplomacy/peace.png)
+
+*Peace status with another civilization.* (`diplomacy/peace.png`)
+
+![City-state panel: influence, gifts, bullying, pledge to protect.](../Unciv.Godot.Harness/golden/diplomacy/city-state.png)
+
+*City-state panel: influence, gifts, bullying, pledge to protect.* (`diplomacy/city-state.png`)
+
+![After gifting gold to the city-state.](../Unciv.Godot.Harness/golden/diplomacy/gifted.png)
+
+*After gifting gold to the city-state.* (`diplomacy/gifted.png`)
+
+![City-state under the player's protection.](../Unciv.Godot.Harness/golden/diplomacy/protected.png)
+
+*City-state under the player's protection.* (`diplomacy/protected.png`)
 
 ## C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
 

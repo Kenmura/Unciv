@@ -1,263 +1,293 @@
 {
- "C000": {
-  "scenario": "smoke",
-  "about": "Headless Godot render of one hex prism, the harness's own smoke test (not a game screen).",
-  "shots": [
-   {
-    "golden": "smoke.png",
-    "caption": "A lit green hex prism on a navy background: proves Godot renders headlessly and the golden comparison works."
-   }
-  ]
- },
- "C001": {
-  "none": "Empty Main.tscn skeleton; there is nothing to look at."
- },
- "C002": {
-  "scenario": "terrain-3d",
-  "about": "3D terrain: elevation, per-terrain materials, water depth and shore, instanced grass tufts.",
-  "shots": [
-   {
-    "golden": "terrain-3d/angle-default.png",
-    "caption": "Default tilt (55 degrees): grass, plains, hills, mountains (dark), shallow and deep water, tufts."
-   },
-   {
-    "golden": "terrain-3d/angle-low.png",
-    "caption": "Low oblique, zoomed in: hill domes and mountain peaks seen in silhouette."
-   }
-  ]
- },
- "C003": {
-  "scenario": "props-3d",
-  "about": "Procedural feature and resource props: forests, jungle, marsh, livestock herds, crops, ore, sea resources.",
-  "shots": [
-   {
-    "golden": "props-3d/gallery-default.png",
-    "caption": "Gallery map at the default tilt: horse herd in the centre, forests, marsh, crops, ore, sea resources."
-   },
-   {
-    "golden": "props-3d/herd-close.png",
-    "caption": "Low close view of the herds and their neighbours."
-   }
-  ]
- },
- "C005": {
-  "scenario": "ui-kit",
-  "about": "Civ 5-style UI kit: theme, tab bar, scrolling icon list, tooltip host, popup queue, screen stack, UI scale.",
-  "shots": [
-   {
-    "golden": "ui-kit/screen.png",
-    "caption": "A screen with the tab bar, a scrolling list with generated icons and yield labels."
-   },
-   {
-    "golden": "ui-kit/tooltip.png",
-    "caption": "The tooltip host showing a Gold tooltip beside the pointer after the delay."
-   },
-   {
-    "golden": "ui-kit/popup.png",
-    "caption": "Popup A over the dimmed screen (B and C are queued behind it)."
-   }
-  ]
- },
- "C007": {
-  "none": "Asset registry and procedural generator. Its gate (Unciv.Godot/tools/run-asset-sheet.sh) writes out/asset-sheet.png, but no golden is committed (C008 was to wrap it). Candidate for a follow-up: an asset-sheet scenario with a golden."
- },
- "C008": {
-  "scenario": "rename-city",
-  "about": "Scenario runner demo: a trivial screen driven through real clicks and keys, golden per step.",
-  "shots": [
-   {
-    "golden": "rename-city/start.png",
-    "caption": "Before any command: the founding city name."
-   },
-   {
-    "golden": "rename-city/renamed.png",
-    "caption": "After clicking the button: the city is now Ur."
-   }
-  ]
- },
- "C009": {
-  "scenario": "map-v1",
-  "about": "Flat hex map from queries: camera, tile picking, fog tint.",
-  "shots": [
-   {
-    "golden": "map-v1/default.png",
-    "caption": "Default camera: visible tiles in full colour, explored ring dimmed, unexplored black."
-   },
-   {
-    "golden": "map-v1/selected.png",
-    "caption": "The capital tile clicked: highlight on the selected hex."
-   }
-  ]
- },
- "C010": {
-  "scenario": "v1-vertical",
-  "about": "V1 vertical slice: unit blocks, select, move, end turn, AI turns.",
-  "shots": [
-   {
-    "golden": "v1-vertical/start.png",
-    "caption": "Turn 1: the human's units as coloured blocks, nothing selected."
-   },
-   {
-    "golden": "v1-vertical/path.png",
-    "caption": "Warrior selected and a path previewed to the destination (the panel and top bar are later tickets' UI, drawn in this golden)."
-   },
-   {
-    "golden": "v1-vertical/turn3.png",
-    "caption": "Turn 2 after Next turn and a right-click move: the warrior has moved on."
-   }
-  ]
- },
- "C011": {
-  "scenario": "hud",
-  "about": "HUD: top bar with yields, turn banner, Next unit and Next turn buttons.",
-  "shots": [
-   {
-    "golden": "hud/start.png",
-    "caption": "Turn start: top bar, turn banner, Next unit button with a separate Next turn."
-   },
-   {
-    "golden": "hud/next-turn.png",
-    "caption": "After Next turn: new turn banner, updated top bar, units due again."
-   }
-  ]
- },
- "C012": {
-  "scenario": "unit-orders",
-  "about": "Unit orders panel: selecting units, order buttons, attack preview, disband confirmation.",
-  "shots": [
-   {
-    "golden": "unit-orders/warrior-selected.png",
-    "caption": "Warrior selected: stats and order buttons (fortify, automate, explore)."
-   },
-   {
-    "golden": "unit-orders/worker-selected.png",
-    "caption": "Worker selected: worker-specific orders list."
-   },
-   {
-    "golden": "unit-orders/attack-preview.png",
-    "caption": "Attack preview dialog with strength, health and damage ranges."
-   },
-   {
-    "golden": "unit-orders/after-attack.png",
-    "caption": "Result after confirming the attack."
-   },
-   {
-    "golden": "unit-orders/disband-confirm.png",
-    "caption": "Disband confirmation prompt."
-   }
-  ]
- },
- "C014": {
-  "scenario": "minimap",
-  "about": "Minimap in the top right corner with a camera rectangle; click to jump.",
-  "shots": [
-   {
-    "golden": "minimap/start.png",
-    "caption": "Minimap top right: explored terrain, own border, white camera rectangle."
-   },
-   {
-    "golden": "minimap/jumped.png",
-    "caption": "After clicking the far corner of the minimap: the camera moved there."
-   }
-  ]
- },
- "C015": {
-  "scenario": "setup",
-  "about": "Main menu and new-game screen: players and nations, rules, game, map and advanced options, seed validation, then the started game.",
-  "shots": [
-   {
-    "golden": "setup/menu.png",
-    "caption": "Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Options, Quit."
-   },
-   {
-    "golden": "setup/players.png",
-    "caption": "Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the nation grid, nations in their colours."
-   },
-   {
-    "golden": "setup/bad-seed.png",
-    "caption": "Map tab with a non-numeric seed: the reason is shown under the tabs and nothing starts."
-   },
-   {
-    "golden": "setup/started.png",
-    "caption": "The game started from the chosen options: Babylon, turn 0, tiny hexagonal map."
-   }
-  ]
- },
- "C016": {
-  "scenario": "saveload",
-  "about": "Save/load screen and autosave.",
-  "shots": [
-   {
-    "golden": "saveload/list.png",
-    "caption": "The save list: Alpha, the autosave and the numbered autosave with turn, civ and ruleset."
-   },
-   {
-    "golden": "saveload/damaged.png",
-    "caption": "Damaged save files listed as unreadable next to good ones; QuickSave loaded."
-   }
-  ]
- },
- "C017": {
-  "scenario": "city-a",
-  "about": "City screen A: info, tile grid, specialists, focus.",
-  "shots": [
-   {
-    "golden": "city-a/open.png",
-    "caption": "The capital's city screen: header, stats, focus picker and the tile grid with worked tiles lit."
-   },
-   {
-    "golden": "city-a/specialist.png",
-    "caption": "A Merchant specialist at work: the specialist row reads 1/1 and the stats include it."
-   },
-   {
-    "golden": "city-a/tile-locked.png",
-    "caption": "A locked tile keeps its golden outline."
-   }
-  ]
- },
- "C018": {
-  "scenario": "city-b",
-  "about": "City screen B: production queue, buildable list, purchase, buildings, puppet and razing states.",
-  "shots": [
-   {
-    "golden": "city-b/queued.png",
-    "caption": "The Production tab with Warrior, Monument and a perpetual Nothing item queued; Top/Up/Down/X per entry and Buy prices in gold."
-   },
-   {
-    "golden": "city-b/bought.png",
-    "caption": "After buying the Monument: it is listed under Buildings with its sell price and a Sell button; gold fell from 500 to 300."
-   },
-   {
-    "golden": "city-b/puppet.png",
-    "caption": "A puppet city: the state is explained, Annex city is offered and every production button is disabled."
-   }
-  ]
- },
- "C037": {
-  "none": "IGameSession is an engine/client interface with no UI of its own; it is exercised by every scenario above."
- },
- "C041": {
-  "scenario": "flat-city",
-  "about": "Flat-map cities, borders, roads and improvements.",
-  "shots": [
-   {
-    "golden": "flat-city/city.png",
-    "caption": "The founded city: block, banner (name, production) and the territory border."
-   },
-   {
-    "golden": "flat-city/improvement.png",
-    "caption": "A road and a trading post marker on the tile next to the city."
-   }
-  ]
- },
- "C043": {
-  "scenario": "settings",
-  "about": "Client settings model persisted under user:// and the engine PlayerSettings options.",
-  "shots": [
-   {
-    "golden": "settings/changed.png",
-    "caption": "The temporary settings screen after clicks: move-on-turn-start on, UI scale 1.25. (Real options screen is C028.)"
-   }
-  ]
- }
+  "C000": {
+    "scenario": "smoke",
+    "about": "Headless Godot render of one hex prism, the harness's own smoke test (not a game screen).",
+    "shots": [
+      {
+        "golden": "smoke.png",
+        "caption": "A lit green hex prism on a navy background: proves Godot renders headlessly and the golden comparison works."
+      }
+    ]
+  },
+  "C001": {
+    "none": "Empty Main.tscn skeleton; there is nothing to look at."
+  },
+  "C002": {
+    "scenario": "terrain-3d",
+    "about": "3D terrain: elevation, per-terrain materials, water depth and shore, instanced grass tufts.",
+    "shots": [
+      {
+        "golden": "terrain-3d/angle-default.png",
+        "caption": "Default tilt (55 degrees): grass, plains, hills, mountains (dark), shallow and deep water, tufts."
+      },
+      {
+        "golden": "terrain-3d/angle-low.png",
+        "caption": "Low oblique, zoomed in: hill domes and mountain peaks seen in silhouette."
+      }
+    ]
+  },
+  "C003": {
+    "scenario": "props-3d",
+    "about": "Procedural feature and resource props: forests, jungle, marsh, livestock herds, crops, ore, sea resources.",
+    "shots": [
+      {
+        "golden": "props-3d/gallery-default.png",
+        "caption": "Gallery map at the default tilt: horse herd in the centre, forests, marsh, crops, ore, sea resources."
+      },
+      {
+        "golden": "props-3d/herd-close.png",
+        "caption": "Low close view of the herds and their neighbours."
+      }
+    ]
+  },
+  "C005": {
+    "scenario": "ui-kit",
+    "about": "Civ 5-style UI kit: theme, tab bar, scrolling icon list, tooltip host, popup queue, screen stack, UI scale.",
+    "shots": [
+      {
+        "golden": "ui-kit/screen.png",
+        "caption": "A screen with the tab bar, a scrolling list with generated icons and yield labels."
+      },
+      {
+        "golden": "ui-kit/tooltip.png",
+        "caption": "The tooltip host showing a Gold tooltip beside the pointer after the delay."
+      },
+      {
+        "golden": "ui-kit/popup.png",
+        "caption": "Popup A over the dimmed screen (B and C are queued behind it)."
+      }
+    ]
+  },
+  "C007": {
+    "none": "Asset registry and procedural generator. Its gate (Unciv.Godot/tools/run-asset-sheet.sh) writes out/asset-sheet.png, but no golden is committed (C008 was to wrap it). Candidate for a follow-up: an asset-sheet scenario with a golden."
+  },
+  "C008": {
+    "scenario": "rename-city",
+    "about": "Scenario runner demo: a trivial screen driven through real clicks and keys, golden per step.",
+    "shots": [
+      {
+        "golden": "rename-city/start.png",
+        "caption": "Before any command: the founding city name."
+      },
+      {
+        "golden": "rename-city/renamed.png",
+        "caption": "After clicking the button: the city is now Ur."
+      }
+    ]
+  },
+  "C009": {
+    "scenario": "map-v1",
+    "about": "Flat hex map from queries: camera, tile picking, fog tint.",
+    "shots": [
+      {
+        "golden": "map-v1/default.png",
+        "caption": "Default camera: visible tiles in full colour, explored ring dimmed, unexplored black."
+      },
+      {
+        "golden": "map-v1/selected.png",
+        "caption": "The capital tile clicked: highlight on the selected hex."
+      }
+    ]
+  },
+  "C010": {
+    "scenario": "v1-vertical",
+    "about": "V1 vertical slice: unit blocks, select, move, end turn, AI turns.",
+    "shots": [
+      {
+        "golden": "v1-vertical/start.png",
+        "caption": "Turn 1: the human's units as coloured blocks, nothing selected."
+      },
+      {
+        "golden": "v1-vertical/path.png",
+        "caption": "Warrior selected and a path previewed to the destination (the panel and top bar are later tickets' UI, drawn in this golden)."
+      },
+      {
+        "golden": "v1-vertical/turn3.png",
+        "caption": "Turn 2 after Next turn and a right-click move: the warrior has moved on."
+      }
+    ]
+  },
+  "C011": {
+    "scenario": "hud",
+    "about": "HUD: top bar with yields, turn banner, Next unit and Next turn buttons.",
+    "shots": [
+      {
+        "golden": "hud/start.png",
+        "caption": "Turn start: top bar, turn banner, Next unit button with a separate Next turn."
+      },
+      {
+        "golden": "hud/next-turn.png",
+        "caption": "After Next turn: new turn banner, updated top bar, units due again."
+      }
+    ]
+  },
+  "C012": {
+    "scenario": "unit-orders",
+    "about": "Unit orders panel: selecting units, order buttons, attack preview, disband confirmation.",
+    "shots": [
+      {
+        "golden": "unit-orders/warrior-selected.png",
+        "caption": "Warrior selected: stats and order buttons (fortify, automate, explore)."
+      },
+      {
+        "golden": "unit-orders/worker-selected.png",
+        "caption": "Worker selected: worker-specific orders list."
+      },
+      {
+        "golden": "unit-orders/attack-preview.png",
+        "caption": "Attack preview dialog with strength, health and damage ranges."
+      },
+      {
+        "golden": "unit-orders/after-attack.png",
+        "caption": "Result after confirming the attack."
+      },
+      {
+        "golden": "unit-orders/disband-confirm.png",
+        "caption": "Disband confirmation prompt."
+      }
+    ]
+  },
+  "C014": {
+    "scenario": "minimap",
+    "about": "Minimap in the top right corner with a camera rectangle; click to jump.",
+    "shots": [
+      {
+        "golden": "minimap/start.png",
+        "caption": "Minimap top right: explored terrain, own border, white camera rectangle."
+      },
+      {
+        "golden": "minimap/jumped.png",
+        "caption": "After clicking the far corner of the minimap: the camera moved there."
+      }
+    ]
+  },
+  "C015": {
+    "scenario": "setup",
+    "about": "Main menu and new-game screen: players and nations, rules, game, map and advanced options, seed validation, then the started game.",
+    "shots": [
+      {
+        "golden": "setup/menu.png",
+        "caption": "Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Options, Quit."
+      },
+      {
+        "golden": "setup/players.png",
+        "caption": "Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the nation grid, nations in their colours."
+      },
+      {
+        "golden": "setup/bad-seed.png",
+        "caption": "Map tab with a non-numeric seed: the reason is shown under the tabs and nothing starts."
+      },
+      {
+        "golden": "setup/started.png",
+        "caption": "The game started from the chosen options: Babylon, turn 0, tiny hexagonal map."
+      }
+    ]
+  },
+  "C016": {
+    "scenario": "saveload",
+    "about": "Save/load screen and autosave.",
+    "shots": [
+      {
+        "golden": "saveload/list.png",
+        "caption": "The save list: Alpha, the autosave and the numbered autosave with turn, civ and ruleset."
+      },
+      {
+        "golden": "saveload/damaged.png",
+        "caption": "Damaged save files listed as unreadable next to good ones; QuickSave loaded."
+      }
+    ]
+  },
+  "C017": {
+    "scenario": "city-a",
+    "about": "City screen A: info, tile grid, specialists, focus.",
+    "shots": [
+      {
+        "golden": "city-a/open.png",
+        "caption": "The capital's city screen: header, stats, focus picker and the tile grid with worked tiles lit."
+      },
+      {
+        "golden": "city-a/specialist.png",
+        "caption": "A Merchant specialist at work: the specialist row reads 1/1 and the stats include it."
+      },
+      {
+        "golden": "city-a/tile-locked.png",
+        "caption": "A locked tile keeps its golden outline."
+      }
+    ]
+  },
+  "C018": {
+    "scenario": "city-b",
+    "about": "City screen B: production queue, buildable list, purchase, buildings, puppet and razing states.",
+    "shots": [
+      {
+        "golden": "city-b/queued.png",
+        "caption": "The Production tab with Warrior, Monument and a perpetual Nothing item queued; Top/Up/Down/X per entry and Buy prices in gold."
+      },
+      {
+        "golden": "city-b/bought.png",
+        "caption": "After buying the Monument: it is listed under Buildings with its sell price and a Sell button; gold fell from 500 to 300."
+      },
+      {
+        "golden": "city-b/puppet.png",
+        "caption": "A puppet city: the state is explained, Annex city is offered and every production button is disabled."
+      }
+    ]
+  },
+  "C021": {
+    "scenario": "diplomacy",
+    "about": "Diplomacy screen: civ list, status and attitude, treaty and city-state actions.",
+    "shots": [
+      {
+        "golden": "diplomacy/confirm.png",
+        "caption": "Declare war armed: first press asks to press again to confirm."
+      },
+      {
+        "golden": "diplomacy/war.png",
+        "caption": "State after war is declared."
+      },
+      {
+        "golden": "diplomacy/peace.png",
+        "caption": "Peace status with another civilization."
+      },
+      {
+        "golden": "diplomacy/city-state.png",
+        "caption": "City-state panel: influence, gifts, bullying, pledge to protect."
+      },
+      {
+        "golden": "diplomacy/gifted.png",
+        "caption": "After gifting gold to the city-state."
+      },
+      {
+        "golden": "diplomacy/protected.png",
+        "caption": "City-state under the player's protection."
+      }
+    ]
+  },
+  "C037": {
+    "none": "IGameSession is an engine/client interface with no UI of its own; it is exercised by every scenario above."
+  },
+  "C041": {
+    "scenario": "flat-city",
+    "about": "Flat-map cities, borders, roads and improvements.",
+    "shots": [
+      {
+        "golden": "flat-city/city.png",
+        "caption": "The founded city: block, banner (name, production) and the territory border."
+      },
+      {
+        "golden": "flat-city/improvement.png",
+        "caption": "A road and a trading post marker on the tile next to the city."
+      }
+    ]
+  },
+  "C043": {
+    "scenario": "settings",
+    "about": "Client settings model persisted under user:// and the engine PlayerSettings options.",
+    "shots": [
+      {
+        "golden": "settings/changed.png",
+        "caption": "The temporary settings screen after clicks: move-on-turn-start on, UI scale 1.25. (Real options screen is C028.)"
+      }
+    ]
+  }
 }
