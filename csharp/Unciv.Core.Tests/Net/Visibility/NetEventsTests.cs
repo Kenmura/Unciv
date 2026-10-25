@@ -232,6 +232,62 @@ public sealed class NetEventsTests
         Assert.Empty(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, ViewDeltaBuilder.Capture(game.GameInfo, a), []));
     }
 
+    // Review T214: filter tests. AddUnit makes civs meet, so the meeting is undone to isolate the unit-owner path.
+    private HexCoord PlaceUnmetUnit(Civilization a, Civilization b, int x)
+    {
+        var spot = game.GetTile(new HexCoord(x, 0));
+        game.AddUnit("Warrior", b, spot);
+        a.Diplomacy.Remove(b.CivId);
+        b.Diplomacy.Remove(a.CivId);
+        Assert.DoesNotContain(b.CivId, a.GetKnownCivs().Select(it => it.CivId));
+        return spot.Position;
+    }
+
+    [Fact]
+    public void Delta_UnitSightedOnVisibleTile_IntroducesItsUnmetOwnerWithoutPrivateData()
+    {
+        var (a, b) = TwoCivs();
+        var pos = PlaceUnmetUnit(a, b, 3);
+        var before = ViewDeltaBuilder.Capture(game.GameInfo, a);
+        var spot = game.GetTile(pos);
+        spot.SetExplored(a, true);
+        a.ViewableTiles = a.ViewableTiles.Append(spot).ToHashSet();
+        var revealed = Assert.IsType<TilesRevealed>(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, before, []).Single());
+        var civ = Assert.Single(revealed.Civs!);
+        Assert.Equal(b.CivId, civ.CivId);
+        Assert.Null(civ.Own);
+        Assert.DoesNotContain("gold", JsonSerializer.Serialize(civ), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Delta_FoggedUnitOfAnUnmetCiv_DoesNotIntroduceItOrRefreshTheTile()
+    {
+        var (a, b) = TwoCivs();
+        var pos = PlaceUnmetUnit(a, b, 3);
+        var spot = game.GetTile(pos);
+        spot.SetExplored(a, true); // explored but not in view
+        var before = ViewDeltaBuilder.Capture(game.GameInfo, a);
+        Assert.Empty(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, before, []));
+        // Newly explored but still fogged: tile sent, no units, no civs.
+        var other = game.GetTile(new HexCoord(4, 0));
+        other.SetExplored(a, true);
+        var revealed = Assert.IsType<TilesRevealed>(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, before, []).Single());
+        Assert.False(revealed.Tiles.Single().Visible);
+        Assert.Null(revealed.Tiles.Single().Owner);
+        Assert.Empty(revealed.Units);
+        Assert.Empty(revealed.Civs!);
+    }
+
+    [Fact]
+    public void Delta_ForeignYieldChange_NeverEmitsStatsChangedToTheOtherCiv()
+    {
+        var (a, b) = TwoCivs();
+        var before = ViewDeltaBuilder.Capture(game.GameInfo, a);
+        b.AddGold(500);
+        Assert.Empty(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, before, []));
+        Assert.Equal([a.CivId], new StatsChanged(a.CivId, 1, 1).Participants());
+    }
+
     [Fact]
     public void Delta_MeetingACiv_IntroducesItWithoutTiles()
     {
