@@ -84,7 +84,7 @@ public partial class UnitAutomationTests
     }
 
     [Fact]
-    public void FogBustReturnsFalseWhenFullyVisibleOrNotAfraid()
+    public void FogBustReturnsFalseWhenNotAfraidOfBarbarians()
     {
         var scout = SetUpFogBustScout(_ => true);
         testGame.GameInfo.GameParameters.NoBarbarians = true;
