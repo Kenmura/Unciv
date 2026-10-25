@@ -198,7 +198,7 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class C001 done
-  class C004 prog
+  class C004 review
   class C005 done
   class C006 waiting
   class C010 done
@@ -325,7 +325,7 @@ xychart-beta
 | T204 | Available (waiting on T178) | T172, T173, T178, T199 | 9 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
 | T180 | Available (waiting on T179, T204, T223, T224) | T172, T173, T174, T175, T179, T204, T223, T224 | 6 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C036 | Available (waiting on T180, T202) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
-| C004 | In-Progress [Claude] | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
+| C004 | Needs-Review [Claude] | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
 | C025 | In-Progress [Claude] | C005, T023, T170, C043 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
 | C035 | Available (waiting on T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
 | C042 | In-Progress [Claude] | C001, T170 | 1 | Client packaging: bundle rulesets and translations, user mods folder, export presets, third-party notices |
