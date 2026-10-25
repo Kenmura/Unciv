@@ -2032,7 +2032,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - OWNER DECISION: no auth service. The earlier note 'no passwords' is superseded: admission = optional lobby password or single-use invite token (sent only inside the pinned TLS channel, stored as a salted hash), slot ownership = the client keypair signature on reconnect. Password and key have different jobs (SERVER.md 6.2).
 
 ### T174 Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T172, T084, T085, T138, T140
 - Source: csharp/migration/design/SERVER.md sections 2.1-2.3, 3
 - Fixtures: none
