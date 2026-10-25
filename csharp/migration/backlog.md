@@ -1889,7 +1889,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented: tests restoring 100% on Era.cs (era-gated See also), Terrain.cs (single-resource inline link, unknown-type subcategory), CollectionExtensions.cs (JavaHashMap-of-sets Contains). tools/coverage.py: parse() now skips generated files (*.g.cs and anything under /obj/, e.g. RegexGenerator.g.cs): compiler output has no baseline/80% floor; hand-written code declaring [GeneratedRegex] is still measured. No baseline lowered; baseline unchanged. Gate: build -warnaserror, format, test (0 failed), coverage --check and --check --all all exit 0.
 
 ### T163 ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T104
 - Source:
 - Fixtures: none
