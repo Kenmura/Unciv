@@ -622,6 +622,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
             CurrentPlayer = CurrentPlayerCiv.CivId;
         }
         else CurrentPlayerCiv = GetCivilization(CurrentPlayer);
+        // T200: simultaneous rounds must not call SetTransients mid-round, it would drop the other civs' started flags.
         if (pendingPlayerIndex == null) // a saved or new game always waits for its current player's input
         {
             turnStartedCivs.Clear();

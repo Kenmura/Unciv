@@ -13,7 +13,10 @@ namespace Unciv.Logic;
 
 public partial class GameInfo
 {
-    /// <summary>Where the turn flow is now. <see cref="TurnPhase.GameOver"/> is only reported between turns, never in the middle of the auto players.</summary>
+    /// <summary>
+    /// Where the turn flow is now, derived from the state. <see cref="TurnPhase.GameOver"/> is only reported between turns, never in the middle of the auto players.
+    /// After <see cref="RunAutoPlayers"/> stopped on a simulation win-check break, use its return value: the simulation flags it reset may let this report <c>AutoPlayers</c> for that civ.
+    /// </summary>
     [JsonIgnore]
     public TurnPhase TurnPhase
     {
