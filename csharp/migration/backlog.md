@@ -1968,11 +1968,12 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Backlog audit: Depends extended with T055/T057/T059 (Civilization, victory/culture/religion managers, diplomacy state the scorers read).
 
 ### A004 Target-centric Tactical AI: TacticalMoveQueue & recruitment
-- State: Available
+- State: In-Progress [Claude]
 - Depends: A001, T039, T040, T065, T067, T081, T090
 - Source: `csharp/migration/ai-spec/SPEC.md` §6.1, §6.2, §6.4
 - Deliverables: `csharp/Unciv.Core/AI/Tactical/` (`TacticalMoveQueue`, `TacticalMoveType`, `TacticalTarget`, `TacticalRecruiter`), tests
 - Gate: `dotnet test --filter FullyQualifiedName~TacticalAITests`
+- Claimed: 2026-10-25T00:21Z
 - Notes: Replaces per-unit movement loops with a prioritized move queue. Critical high-value moves (e.g. `CAPTURE_CITY`, `DESTROY_HIGH_UNIT`) scan the board for valid targets and recruit the best candidate units across the civilization before lower-priority moves run.
 
 ### A005 Tactical overkill assignment & coordinated multi-unit attacks
