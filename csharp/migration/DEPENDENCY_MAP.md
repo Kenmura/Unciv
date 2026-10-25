@@ -81,7 +81,6 @@ flowchart TD
     T210["T210<br/>Spy coup and counter-intelligence commands (not covered by T..."]
     T211["T211<br/>Cover remaining SpecificUnitAutomation, TryHealUnit and Expl..."]
     T212["T212<br/>Views: expose diplomatic status, trade requests, foreign-cit..."]
-    T213["T213<br/>Diplomacy alert responses left out of T193: denouncement rea..."]
     T214["T214<br/>Event stream follow-ups: fog-to-visible refresh in TilesReve..."]
   end
   subgraph CTRACK["Client track (Godot)"]
@@ -401,7 +400,6 @@ flowchart TD
   class T210 prog
   class T211 prog
   class T212 prog
-  class T213 review
   class T214 ready
 ```
 
@@ -421,7 +419,7 @@ xychart-beta
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
     line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 49]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
 ```
 
 ## Incomplete tickets
@@ -482,4 +480,3 @@ xychart-beta
 | T210 | In-Progress [Claude] | T192 | 0 | Spy coup and counter-intelligence commands (not covered by T192) |
 | T211 | In-Progress [Claude] | T161 | 0 | Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161 |
 | T212 | In-Progress [Claude] | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
-| T213 | Needs-Review [Claude] | T193 | 0 | Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts |

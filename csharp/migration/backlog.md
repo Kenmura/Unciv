@@ -2613,7 +2613,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T213 Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T193
 - Source: AlertPopup.kt (Denouncement, AcceptingDemand, RejectingDemand, DemandViolationNoticed)
 - Fixtures: none
