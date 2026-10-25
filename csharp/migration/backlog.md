@@ -2003,7 +2003,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented. Deviation from Kotlin (deliberate, per ticket): Presentation.Floating no longer throws NotImplementedError; it is queued as an AlertType.Event PopupAlert exactly like Alert (Kotlin's own todo: park in a queue in GameInfo). The client decides how to show it. New engine data type EventPresentation (Models/Ruleset/EventPresentation.cs): Resolve(civ, alert) mirrors AlertPopup.addEvent + RenderEvent.isValid (name + unitId= parsing, matching choices; null if unknown/none match); GetPending(civ); Choice list = index/name/text/keyShortcut; Choose(civ, index) removes the alert then triggers the choice (AlertPopup.close + RenderEvent.addChoice), false on bad index. Choices use the unit looked up from the alert. No UI types, no RNG. Tests in UniqueTriggerTests (Floating queued, presentation data + Choose, null cases). Coverage run: first instrumented run crashed the test host once (not reproducible, --run passed).
 
 ### T172 Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net)
-- State: In-Review [Claude]
+- State: Done
 - Depends: T012
 - Source: csharp/migration/design/SERVER.md sections 2, 6.1
 - Fixtures: none
