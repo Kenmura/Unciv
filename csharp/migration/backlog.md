@@ -2577,13 +2577,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T200 review: (d) Civ.Stats (Happiness) is a transient cache not restored by load; a Simultaneous save taken mid-Resolving before StartNextTurn (RecordRankingStats reads it) does not reproduce the live hash. Include refreshing/canonicalising it here (or hosts checkpoint only at Playing).
 
 ### T209 Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T186
 - Source: T186 adversarial review findings 1-3, 8, 10
 - Fixtures: none
 - Deliverables: Commands/Events/*.cs, GameEventHooks call sites, tests
 - Gate: dotnet test --filter FullyQualifiedName~GameEvents
-- Claimed: 2026-10-25T12:53Z
+- Claimed: 2026-10-25T13:30Z
 - Notes:
   -   - Implemented (Claude). New events unit-captured (MapUnit.CapturedBy), city-destroyed (City.DestroyCity, after safeties), city-traded (TradeLogic city offer); classifiers added to EventFilter (captured/destroyed Located, traded participants-only like trades).
       - UnitMoved now also for: displacement teleport (TeleportToClosestMoveableTile), cargo carried on teleport/paradrop (TeleportTransportedUnitsTo) and along a carrier path (BringAlongPayloads, two-step origin->final path), and melee withdrawal. Swap moves already emitted via MoveToTile.
