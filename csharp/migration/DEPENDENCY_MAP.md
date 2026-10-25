@@ -397,7 +397,7 @@ flowchart TD
   class T206 waiting
   class T207 waiting
   class T208 review
-  class T215 prog
+  class T215 review
   class T216 ready
   class T217 ready
 ```
@@ -450,7 +450,7 @@ xychart-beta
 | C028 | **On deck** (after C005) | C005 | 0 | Options screen, hotkeys, edge-pan |
 | C031 | **On deck** (after C002) | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
 | C005 | In-Progress [Claude] | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
-| T215 | In-Progress [Claude] | T102 | 13 | Loaded mid-game GameInfo diverges from the live one (Explore automation, AI turns): save/load fidelity |
+| T215 | Needs-Review [Claude] | T102 | 13 | Loaded mid-game GameInfo diverges from the live one (Explore automation, AI turns): save/load fidelity |
 | T177 | Available (waiting on T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T178) | T172, T173, T178 | 9 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |

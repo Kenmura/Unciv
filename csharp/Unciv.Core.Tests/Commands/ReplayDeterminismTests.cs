@@ -121,7 +121,6 @@ public sealed class ReplayDeterminismTests : IDisposable
     }
 
     // T215: a loaded mid-game state must continue exactly like the live one (the unit list order used to differ: a load rebuilds it tile by tile).
-    // Snapshots around turn 40 still diverge later through stale civ-wide vision (MapUnit.UpdateVisibleTiles skips it inside own borders): T208.
     [Theory]
     [InlineData(1)]
     [InlineData(3)]
@@ -129,6 +128,8 @@ public sealed class ReplayDeterminismTests : IDisposable
     [InlineData(8)]
     [InlineData(20)]
     [InlineData(30)]
+    [InlineData(40)]
+    [InlineData(55)]
     public void SnapshotPlusLogTailReproducesTheFinalHash(int snapshotTurn)
     {
         var live = Play(9L, 5, snapshotTurn);
