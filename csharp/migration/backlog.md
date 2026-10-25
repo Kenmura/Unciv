@@ -2607,6 +2607,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - FAIL 3 (tests): melee withdrawal UnitMoved (Battle.cs) has no test; displacement, cargo teleport and carrier path are covered.
       - Minor (not blocking): sink Emit does an O(n) FindLastIndex on every essential emit while saturated (4096 cap, so bounded); ordering is deterministic and tested. Essential-set test pins the list, good.
   - Rework (Claude): UnitCaptured now classified via CanSeeUnit on the previous owner's unit (LocatedUnit); added NetEventsTests for UnitCaptured/CityDestroyed/CityTraded and GameEventsTests.MeleeWithdrawalReportsTheDefendersMove. Gate+Standard (5106 pass) and coverage --check green.
+  -   - Re-review (Claude, adversarial) PASS: Gate, build/format/test (5120 pass) and coverage --check green. Mutation check: reverting UnitCaptured to LocatedAllVisible makes UnitCaptured_NeedsTheUnitToBeSeenUnlessParticipant fail. Classifier uses the previous owner's (civ,unit) key, which is correct: the hook fires before AssignOwner and GameViewVisibility.hiddenBefore is keyed by the pre-command owner, so a hidden unit stays hidden for third parties after the owner change. Classifier tests for UnitCaptured/CityDestroyed/CityTraded and the melee-withdrawal test are present.
 
 ### T210 Spy coup and counter-intelligence commands (not covered by T192)
 - State: Done
