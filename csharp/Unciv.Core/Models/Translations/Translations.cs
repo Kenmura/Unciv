@@ -1,6 +1,7 @@
 using System.Collections;
 using Unciv.Logic;
 using Unciv.Models.Metadata;
+using Unciv.Models.Ruleset;
 using Unciv.Utils;
 
 namespace Unciv.Models.Translations;
@@ -149,6 +150,28 @@ public sealed class Translations : IEnumerable<KeyValuePair<string, TranslationE
 
         CreateTranslations(language, languageTranslations);
     }
+
+    /// <summary>
+    /// <c>tryReadTranslationForLanguage</c> as the game calls it: the game's file is <c>jsons/translations/$language.properties</c> below
+    /// <paramref name="gameFolder"/>, and the mod files are the same relative path below the <c>FolderLocation</c> of every
+    /// ruleset in <see cref="RulesetCache"/> that has one (iteration order of the cache), keyed by the mod folder name.
+    /// </summary>
+    public void TryReadTranslationForLanguage(string language, IRulesetFolder gameFolder)
+    {
+        string translationFileName = TranslationsFolderPath + language + ".properties";
+        var modFiles = RulesetCache.Values
+            .Select(it => it.FolderLocation)
+            .OfType<IRulesetFolder>()
+            .Select(modFolder => (modFolder.Name, (ITranslationFileHandle)new RulesetFolderTranslationFileHandle(modFolder.Child(translationFileName))))
+            .ToList();
+        TryReadTranslationForLanguage(language, new RulesetFolderTranslationFileHandle(gameFolder.Child(translationFileName)), modFiles);
+    }
+
+    /// <summary><c>loadPercentageCompleteOfLanguages</c>: reads <c>jsons/translations/completionPercentages.properties</c> below <paramref name="gameFolder"/>.</summary>
+    public void LoadPercentageCompleteOfLanguages(IRulesetFolder gameFolder) =>
+        LoadPercentageCompleteOfLanguages(new RulesetFolderTranslationFileHandle(gameFolder.Child(TranslationsFolderPath + "completionPercentages.properties")));
+
+    private const string TranslationsFolderPath = "jsons/translations/";
 
     public void CreateTranslations(string language, IEnumerable<KeyValuePair<string, string>> languageTranslations)
     {

@@ -344,7 +344,7 @@ flowchart TD
   class T167 prog
   class T168 prog
   class T169 ready
-  class T170 prog
+  class T170 review
   class T171 ready
   class T172 ready
   class T173 waiting
@@ -407,7 +407,7 @@ xychart-beta
 | T173 | Available (waiting on T172) | T172 | 5 | Server identity and auth: ECDSA P-256 keypair, invite tokens, challenge-response, allow-list (friends-only) |
 | T176 | Available (waiting on T172, T164) | T172, T164, T140 | 4 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T177 | Available (waiting on T172, T164) | T172, T164 | 4 | Turn policy: sequential phase machine, injected clock, turn timer, AFK skip, drop and AI replacement |
-| T170 | In-Progress [Claude] | T104 | 3 | Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods) |
+| T170 | Needs-Review [Claude] | T104 | 3 | Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods) |
 | T178 | Available (waiting on T172, T173, T174, T175, T176, T177) | T172, T173, T174, T175, T176, T177 | 3 | Headless host and lobby: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (rate, size, dedup, existence-oracle-safe errors) |
 | C012 | Available (waiting on C005, C010, T164) | C005, C010, T164, T080, T083, T040 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
 | T180 | Available (waiting on T172, T173, T174, T175) | T172, T173, T174, T175 | 2 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |

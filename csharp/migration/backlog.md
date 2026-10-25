@@ -1960,7 +1960,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Gap review: there is no csharp CI workflow; gates run manually in distrobox. Unciv.Godot is outside Unciv.sln, so CI must build it separately. Do not touch the Kotlin/Gradle workflows.
 
 ### T170 Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T104
 - Source:
 - Fixtures: none
@@ -1968,6 +1968,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~ModLoading
 - Claimed: 2026-10-25T00:39Z
 - Notes: Gap review: Translations.cs:102 still carries a TODO: mod translation files are not wired through RulesetCache. Partly covered by T104/T137; this ticket owns what is left, including T160's mod ruleset run.
+  - Implemented: Translations.TryReadTranslationForLanguage(language, IRulesetFolder gameFolder) (the Kotlin Gdx.files.internal lookup plus the mod loop over RulesetCache.Values' FolderLocation, keyed by mod folder name; resolves the former TODO), Translations.LoadPercentageCompleteOfLanguages(IRulesetFolder), RulesetFolderTranslationFileHandle adapter. RulesetCache mod folder loading (LoadRulesets/ReloadSingleRuleset/LoadSingleRuleset) already existed from T104; this ticket adds tests with bundled mods (Models/Ruleset/ModLoading/Mods: TestMod, LateMod, BrokenMod, .hidden), own content, no third-party art. TranslationCache.ActiveMods itself is untouched (T137); mod-order lookup is tested via Translations.Get with an ordered active-mod set. Left for T160: loading real third-party mods from a user mods folder, and wiring Translations.Current/ActiveMods at game start (the test uses fresh Translations instances to stay out of the TranslationState collection).
 
 ### T171 Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger)
 - State: Available
