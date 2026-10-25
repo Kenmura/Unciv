@@ -57,9 +57,9 @@ public static class ProtocolCodec
         JsonObject? node;
         try
         {
-            node = JsonNode.Parse(frame, documentOptions: new JsonDocumentOptions { MaxDepth = Options.MaxDepth }) as JsonObject;
+            node = JsonNode.Parse(frame, documentOptions: new JsonDocumentOptions { MaxDepth = Options.MaxDepth, AllowDuplicateProperties = false }) as JsonObject;
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or ArgumentException)
         {
             return Fail(ErrorCodes.Malformed);
         }
