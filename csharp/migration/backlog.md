@@ -1923,7 +1923,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - State: Done (full ticket: backlog-archive.md)
 
 ### C001 Godot project skeleton
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: C000, T006, T099, T100
 - Deliverables: csharp/Unciv.Godot/ project consuming Unciv.Core, empty scene, CI-friendly headless build
 - Gate: `dotnet build Unciv.Godot` (headless; no editor required)

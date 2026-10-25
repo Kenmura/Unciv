@@ -96,7 +96,7 @@ flowchart TD
   class A005 ondeck
   class A006 ondeck
   class A007 waiting
-  class C001 review
+  class C001 done
   class C002 waiting
   class C003 waiting
   class C004 waiting
@@ -134,7 +134,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 14]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -150,12 +150,11 @@ xychart-beta
 | A004 | In-Progress [Claude] | A001, T039, T040, T065, T067, T081, T090 | 10 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | A003 | In-Progress [Claude] | A002, T030, T055, T057, T059 | 7 | Victory scorers (BNW) |
 | A007 | Available (waiting on A004, A005) | A004, A005 | 7 | Operations and armies layer |
-| C001 | Needs-Review [Claude] | C000, T006, T099, T100 | 5 | Godot project skeleton |
-| C002 | Available (waiting on C001, A003, A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
+| C002 | Available (waiting on A003, A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
 | T164 | Available (waiting on A003, A004, A005, A006, A007) | T012, T071, T083, T080, T100, A003, A004, A005, A006, A007 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
 | T104 | In-Progress [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 1 | Marker, seam and stale-comment sweep (final) |
 | T165 | Available (waiting on A003, A004, A005, A006, A007) | T012, T100, A003, A004, A005, A006, A007 | 1 | Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers) |
 | C003 | Available (waiting on C002) | C002 | 0 | Resource and improvement props |
 | C004 | Available (waiting on C002, T164) | C002, T164 | 0 | 3D military units |
 | C005 | Available (waiting on C002, T164) | C002, T164 | 0 | Civ 5-style UI shell |
-| C006 | Available (waiting on C001, T164, T165) | T012, C001, T164, T165 | 0 | Networked play client |
+| C006 | Available (waiting on T164, T165) | T012, C001, T164, T165 | 0 | Networked play client |
