@@ -2391,6 +2391,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - TradeHint is new (no Kotlin). Behind new GameParameters.TradeHintsEnabled (default false, json "tradeHintsEnabled", cloned). Only AI major civs. Uses TradeEvaluation.GetTradeAcceptability on the receiver's view (trade.Reverse(), gifts included) like the AI's response. Buckets: accept (>=0), counter-needed (negative, deficit <= viewer gold), refuse (hard no / int.MinValue / invalid / deficit above gold). Number never returned. Offers must exist in the available lists.
       - Unmet civs are answered as unknown-civ (DiplomacyPanel, TradeOptions, TradeHint). Notification actions on unexplored tiles (Location, City, MapUnit, PromoteUnit) are dropped, the notification stays. Policy branch Adopted/Total count the opener plus members, not the completion bonus. Tech Turns mirrors TechManager.TurnsToTech as int? (null = no science). Others' rankings in Overview only if GameParameters.ShowRankings and civ is met.
       - Deviation: empire.* errors use EmpireQueryCodes (unknown-civ, not-available, bad-request, hints-disabled).
+  -   - Review (adversarial subagent): PASS. Non-blocking: DiplomacyPanel Flags lists all flags incl. AI bookkeeping ones (candidate whitelist); TradeHint is a probing oracle by design (gated by TradeHintsEnabled, no rate limit); untested: TradeHint human/CS target, Religion enhancing branch, Notification default arm, CS diplomacy panel.
 
 ### T198 Query API: victory progress, scores, rankings and demographics
 - State: Available
