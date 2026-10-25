@@ -2390,7 +2390,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Trap: ranking values of unmet civs must be hidden (Kotlin shows them only for known civs, check VictoryScreenCivRankings). Scores use Double in Kotlin; keep the type.
 
 ### T199 Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T185, T099, T045, T170
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; ui/screens/newgamescreen/*, models/metadata/GameSetupInfo.kt, GameParameters.kt, logic/map/MapParameters.kt, logic/GameStarter.kt; csharp Models/Metadata/*, Logic/GameStarter.cs
 - Fixtures: none
@@ -2402,6 +2402,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - NewGame(setup, seed, clockMillis) wraps GameStarter.StartNewGame; note Kotlin defaults MapParameters.seed to currentTimeMillis and picks civs with unseeded random: the C# GameStarter already takes both explicitly (T099), keep it that way and record seed + clock in the log header.
       - Trap: the 'random' nation and 'random number of players' options must be resolved by the seeded RNG in GameStarter, not by the query. The query returns static lists in ruleset file order (LinkedHashMap order, not alphabetical: sorting is the client's job with its collator).
   - Hosted games: NewGame(setup, seed, clock) must accept a per-slot human PlayerId (player key id) and the seed from the host; the nation-selection rules (PlayerPickerTable.isChoosable) feed the lobby (T204). Expose LobbySettings <-> GameSetupInfo mapping.
+  -   - Implemented (Claude). Setup queries are NOT IQuery/QueryRegistry members: pre-game has no GameView; they are plain records with Run() reading the RulesetCache (NewGameOptionsQuery(BaseRuleset, Mods), ValidateSetupQuery(Setup, IsHostedGame)). Type consts setup.NewGameOptions / setup.ValidateSetup for the wire layer.
+      - ValidateSetup ports PlayerPickerTable validity + NewGameScreen.getErrorMessage (no human, no victory, map size fix on a clone) + added duplicate-nation/unknown-nation/spectator-human/player-id checks + combined-ruleset errors. Not checked: saved map file loading, MP server. 'Player count vs map size' not checked (Kotlin does not).
+      - Logic/NewGame.Start validates then GameStarter.StartNewGame(seed, clock explicit); NewGame.ApplyLobby/ToLobby map lobby slots (nation + player key id) <-> GameParameters.Players. Seed+clock log header left to the session/log ticket.
 
 ### T200 Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep
 - State: Available
