@@ -38,7 +38,7 @@ public static class ProceduralImages
 
     /// <summary>Fill colour for an icon key: the stat palette for stat icons, otherwise a hash-derived hue.</summary>
     public static Rgb IconColour(AssetKey key) =>
-        key.Category == RulesetAssetKeys.StatIcon ? PlaceholderPalette.ForStat(key.Name) : PlaceholderPalette.FromHash(key.Category + "/" + key.Name, 170, 200);
+        key.Category == RulesetAssetKeys.StatIcon ? PlaceholderPalette.ForStat(key.Name) : key.Category == RulesetAssetKeys.StatusIcon ? PlaceholderPalette.ForStatus(key.Name) : PlaceholderPalette.FromHash(key.Category + "/" + key.Name, 170, 200);
 
     /// <summary>64x64 icon: coloured shape with a dark outline and the name's initials in a bitmap font. Transparent outside the shape.</summary>
     public static PixelImage Icon(AssetKey key)
@@ -93,6 +93,25 @@ public static class ProceduralImages
             data[i * 4 + 3] = 210;
         }
         GlyphFont.Draw(data, width, height, text, PlaceholderPalette.IconGlyph, scale);
+        return new PixelImage(width, height, data);
+    }
+
+    /// <summary>C004: a unit's health bar picture, <paramref name="width"/> x <paramref name="height"/> px: a dark plate with a one-pixel rim and the left <paramref name="fraction"/> of the inside filled with <paramref name="fill"/> (at least one pixel while anything is left).</summary>
+    public static PixelImage HealthBar(float fraction, Rgb fill, int width = 40, int height = 6)
+    {
+        var data = new byte[width * height * 4];
+        var inner = width - 2;
+        var filled = fraction <= 0f ? 0 : Math.Clamp((int)(fraction * inner + 0.5f), 1, inner);
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var rim = x == 0 || y == 0 || x == width - 1 || y == height - 1;
+                var colour = rim ? PlaceholderPalette.IconOutline : x - 1 < filled ? fill : PlaceholderPalette.HealthBack;
+                var o = (y * width + x) * 4;
+                data[o] = colour.R; data[o + 1] = colour.G; data[o + 2] = colour.B; data[o + 3] = 255;
+            }
+        }
         return new PixelImage(width, height, data);
     }
 

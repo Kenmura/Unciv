@@ -22,6 +22,7 @@ public static class RulesetAssetKeys
     public const string ImprovementIcon = "icon/improvement";
     public const string PolicyIcon = "icon/policy";
     public const string PromotionIcon = "icon/promotion";
+    public const string StatusIcon = "icon/status";
     public const string Ui = "ui";
 
     public static readonly AssetKey HexMesh = new("mesh", "hex");
@@ -34,7 +35,7 @@ public static class RulesetAssetKeys
     public static readonly string[] Categories =
     [
         Terrain, Feature, Unit, UnitType, Resource, ResourceType, Improvement, Building,
-        StatIcon, TechIcon, BuildingIcon, UnitIcon, ResourceIcon, ImprovementIcon, PolicyIcon, PromotionIcon, Ui, "mesh", "font",
+        StatIcon, TechIcon, BuildingIcon, UnitIcon, ResourceIcon, ImprovementIcon, PolicyIcon, PromotionIcon, StatusIcon, Ui, "mesh", "font",
     ];
 
     /// <summary>Fallback table for a ruleset: units to their unit type, resources to their resource type.</summary>
@@ -74,6 +75,7 @@ public static class RulesetAssetKeys
         keys.AddRange(ruleset.TileImprovements.Keys.Select(n => AssetKey.Of(ImprovementIcon, n)));
         keys.AddRange(ruleset.Policies.Keys.Select(n => AssetKey.Of(PolicyIcon, n)));
         keys.AddRange(ruleset.UnitPromotions.Keys.Select(n => AssetKey.Of(PromotionIcon, n)));
+        keys.AddRange(Enum.GetValues<UnitStatusIcon>().Select(UnitVisuals.IconKey));
         return keys;
     }
 }

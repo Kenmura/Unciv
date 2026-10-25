@@ -14,3 +14,4 @@ unit-orders
 diplomacy
 setup
 city-b
+unit-visuals

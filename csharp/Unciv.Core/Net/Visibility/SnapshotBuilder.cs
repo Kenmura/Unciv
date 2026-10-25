@@ -187,7 +187,9 @@ public static class SnapshotBuilder
                 CurrentMovement = unit.CurrentMovement,
                 Xp = ownView.Xp,
                 Action = ownView.Action,
-                Promotions = ownView.GetPromotionNames().Order(StringComparer.Ordinal).ToList()
+                Promotions = ownView.GetPromotionNames().Order(StringComparer.Ordinal).ToList(),
+                Automated = ownView.IsAutomated(),
+                CanBePromoted = ownView.CanBePromoted()
             }
         };
     }

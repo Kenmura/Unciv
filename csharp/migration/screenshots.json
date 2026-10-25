@@ -289,5 +289,19 @@
         "caption": "The temporary settings screen after clicks: move-on-turn-start on, UI scale 1.25. (Real options screen is C028.)"
       }
     ]
+  },
+  "C004": {
+    "scenario": "unit-visuals",
+    "about": "Unit visuals: per-type models, 1 to 4 figures by strength tier, civ colour, health bar, status marks.",
+    "shots": [
+      {
+        "golden": "unit-visuals/gallery.png",
+        "caption": "Gallery of 15 units: civilians, land units by era (1 to 4 figures), ships and a plane; red and blue civs, health bars and status marks."
+      },
+      {
+        "golden": "unit-visuals/formations.png",
+        "caption": "Close view: Infantry (3 figures), Tank (4, hurt, promotion mark) and Cannon (3, automated mark)."
+      }
+    ]
   }
 }

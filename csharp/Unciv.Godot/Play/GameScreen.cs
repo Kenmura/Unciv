@@ -244,11 +244,9 @@ public partial class GameScreen : Control
             var coord = new HexCoord(unit.X, unit.Y);
             int index = stack.GetValueOrDefault(coord);
             stack[coord] = index + 1;
-            var model = assets.Get<Node3D>(AssetKey.Of(RulesetAssetKeys.Unit, unit.Name));
             var colour = session.Ruleset.Nations.TryGetValue(unit.Owner, out var nation) ? nation.GetOuterColor() : null;
-            if (colour != null) MapMaterials.ColourBanner(model, colour.R, colour.G, colour.B);
             var node = new UnitNode { Name = $"Unit_{unit.Id}", Unit = unit, Position = UnitPosition(coord, index) };
-            node.AddChild(model);
+            node.Build(assets, session.Ruleset, session.Ruleset.Units.GetValueOrDefault(unit.Name), colour == null ? null : (colour.R, colour.G, colour.B));
             unitLayer.AddChild(node);
             unitNodes[unit.Id] = node;
         }

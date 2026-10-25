@@ -137,6 +137,12 @@ public sealed record OwnUnitDto
     public required int Xp { get; init; }
     public string? Action { get; init; }
     public required List<string> Promotions { get; init; }
+
+    /// <summary>C004: the unit is on automation (auto-work, auto-explore as a flag; Kotlin keeps this outside <see cref="Action"/>). Private to the owner like the rest of this record.</summary>
+    public bool Automated { get; init; }
+
+    /// <summary>C004: the unit has the experience to take another promotion (the engine's own check, not recomputed by the client).</summary>
+    public bool CanBePromoted { get; init; }
 }
 
 /// <summary>Public war/peace fact between two civs the recipient knows (always including the recipient). Detailed status is a gap, see the ticket notes.</summary>

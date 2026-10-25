@@ -77,6 +77,15 @@ public static class PlaceholderPalette
     public static Rgb RoadBrown { get; } = new(158, 115, 71);
     public static Rgb RailGrey { get; } = new(64, 64, 71);
     public static Rgb CityWall { get; } = new(158, 153, 143);
+    /// <summary>C004: unit health bar fills and the bar's back plate.</summary>
+    public static Rgb HealthGood { get; } = new(90, 200, 80);
+    public static Rgb HealthWarn { get; } = new(235, 190, 50);
+    public static Rgb HealthBad { get; } = new(220, 60, 50);
+    public static Rgb HealthBack { get; } = new(20, 22, 28);
+    /// <summary>C004: unit figure parts (head, metal, wood).</summary>
+    public static Rgb UnitSkin { get; } = new(226, 190, 150);
+    public static Rgb UnitMetal { get; } = new(170, 176, 188);
+    public static Rgb UnitWood { get; } = new(122, 86, 52);
     public static Rgb Light { get; } = new(255, 250, 240);
     public static Rgb SheetLabel { get; } = new(230, 230, 230);
 
@@ -85,6 +94,17 @@ public static class PlaceholderPalette
 
     /// <summary>Multiplied into the albedo of an explored tile that is not currently visible.</summary>
     public static Rgb FogDim { get; } = new(120, 120, 140);
+
+    private static readonly Dictionary<string, Rgb> StatusColours = new(StringComparer.Ordinal)
+    {
+        ["Fortified"] = new Rgb(90, 130, 200),
+        ["Sleeping"] = new Rgb(140, 120, 200),
+        ["Automated"] = new Rgb(80, 180, 120),
+        ["PromotionAvailable"] = new Rgb(240, 200, 60),
+    };
+
+    /// <summary>C004: fill of a unit status mark; an unknown name gets a hash colour.</summary>
+    public static Rgb ForStatus(string name) => StatusColours.TryGetValue(name, out var c) ? c : FromHash(name, 150, 210);
 
     public static Rgb ForTerrain(string name) => TerrainColours.TryGetValue(name, out var c) ? c : FromHash(name, 110, 170);
 

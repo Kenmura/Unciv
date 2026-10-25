@@ -66,6 +66,20 @@ Scenario `props-3d`.
 
 *Low close view of the herds and their neighbours.* (`props-3d/herd-close.png`)
 
+## C004 (ticket not Done or unknown)
+
+Unit visuals: per-type models, 1 to 4 figures by strength tier, civ colour, health bar, status marks.
+
+Scenario `unit-visuals`.
+
+![Gallery of 15 units: civilians, land units by era (1 to 4 figures), ships and a plane; red and blue civs, health bars and status marks.](../Unciv.Godot.Harness/golden/unit-visuals/gallery.png)
+
+*Gallery of 15 units: civilians, land units by era (1 to 4 figures), ships and a plane; red and blue civs, health bars and status marks.* (`unit-visuals/gallery.png`)
+
+![Close view: Infantry (3 figures), Tank (4, hurt, promotion mark) and Cannon (3, automated mark).](../Unciv.Godot.Harness/golden/unit-visuals/formations.png)
+
+*Close view: Infantry (3 figures), Tank (4, hurt, promotion mark) and Cannon (3, automated mark).* (`unit-visuals/formations.png`)
+
 ## C005 Civ 5-style UI kit: theme, screen stack, popups, tooltip host
 
 Civ 5-style UI kit: theme, tab bar, scrolling icon list, tooltip host, popup queue, screen stack, UI scale.
