@@ -31,7 +31,6 @@ flowchart TD
     T104["T104<br/>Marker, seam and stale-comment sweep (final)"]
     T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
     T107["T107<br/>TileMap and Tile JSON wiring, MapSaver round trips"]
-    T154["T154<br/>Deferred TestGame cases: CountableTests, EducatedElite gifti..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -107,7 +106,6 @@ flowchart TD
   class T104 waiting
   class T106 done
   class T107 done
-  class T154 review
 ```
 
 ## Remaining tickets over time
@@ -126,7 +124,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 13]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 2]
 ```
 
 ## Incomplete tickets
@@ -148,4 +146,3 @@ xychart-beta
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
 | T104 | Available (waiting on T102, T093) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
-| T154 | Needs-Review [Claude] | T143, T094 | 0 | Deferred TestGame cases: CountableTests, EducatedElite gifting, Victory fixtures (split from T143) |
