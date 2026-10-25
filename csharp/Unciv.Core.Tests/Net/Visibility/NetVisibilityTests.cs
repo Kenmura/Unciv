@@ -22,6 +22,7 @@ public sealed class NetVisibilityTests
     private readonly Civilization b;
     private readonly Civilization f;
     private readonly Civilization h;
+    private readonly Civilization g;
     private readonly CityClass fogCity;
     private readonly CityClass hiddenCity;
     private readonly CityClass foreignCity;
@@ -35,6 +36,7 @@ public sealed class NetVisibilityTests
         b = game.AddCiv(isPlayer: true);
         f = game.AddCiv();
         h = game.AddCiv();
+        g = game.AddCiv();
         game.GameInfo.CurrentPlayerCiv = a;
         game.GameInfo.TileMap.MapParameters.Seed = long.Parse(SecretSeedText, System.Globalization.CultureInfo.InvariantCulture);
         game.GameInfo.GameId = SecretGameId;
@@ -44,7 +46,8 @@ public sealed class NetVisibilityTests
         fogCity = game.AddCity(f, game.GetTile(new HexCoord(0, 3)));
         hiddenCity = game.AddCity(h, game.GetTile(new HexCoord(6, 0)));
         game.AddCity(b, game.GetTile(new HexCoord(-6, 0)));
-        foreach (var civ in new[] { a, b, f, h }) civ.Cache.UpdateState();
+        game.AddCity(g, game.GetTile(new HexCoord(0, -6)));
+        foreach (var civ in new[] { a, b, f, h, g }) civ.Cache.UpdateState();
         a.DiplomacyFunctions.MakeCivilizationsMeet(f);
 
         f.AddGold(4242);
@@ -235,6 +238,51 @@ public sealed class NetVisibilityTests
         Assert.Equal(b.Gold, forB.Civs.Single(it => it.CivId == b.CivId).Own!.Gold);
         Assert.Equal(b.CivId, forB.You);
         Assert.Equal(["B"], forB.TurnStatus.Ended);
+    }
+
+    [Fact]
+    public void Tiles_FoggedImprovementIsTheLastSeenOne()
+    {
+        var tile = game.GetTile(new HexCoord(0, 3));
+        tile.Improvement = "Farm";
+        a.SetLastSeenImprovement(tile.Position, "Mine");
+        Assert.Equal("Mine", SnapshotFor(a).Tiles.Single(it => it.X == 0 && it.Y == 3).Improvement);
+    }
+
+    [Fact]
+    public void OwnDetail_NeverGrantedForForeignCitiesOrUnitsEvenWithVisibleMap()
+    {
+        game.GameInfo.EngineOptions.VisibleMap = true;
+        var unit = game.AddUnit("Warrior", f, game.GetTile(new HexCoord(2, 0)));
+        var snapshot = SnapshotFor(a);
+        Assert.All(snapshot.Cities.Where(it => it.Owner != a.CivId), it => Assert.Null(it.Own));
+        Assert.Null(snapshot.Units.Single(it => it.Id == unit.Id).Own);
+        Assert.DoesNotContain("Worker", Text(snapshot));
+    }
+
+    [Fact]
+    public void Diplomacy_ThirdPartyWarsArePublicButThirdPartyPeaceIsNot()
+    {
+        a.DiplomacyFunctions.MakeCivilizationsMeet(g);
+        f.DiplomacyFunctions.MakeCivilizationsMeet(g);
+        f.GetDiplomacyManager(g)!.DeclareWar();
+        Assert.True(f.IsAtWarWith(g), f.GetDiplomacyManager(g)!.DiplomaticStatus.ToString());
+        var pairs = SnapshotFor(a).Diplomacy;
+        Assert.Contains(pairs, it => it.A == f.CivId && it.B == g.CivId && it.AtWar);
+        Assert.DoesNotContain(pairs, it => it.A == h.CivId || it.B == h.CivId);
+        f.GetDiplomacyManager(g)!.MakePeace();
+        Assert.DoesNotContain(SnapshotFor(a).Diplomacy, it => it.A == f.CivId && it.B == g.CivId);
+    }
+
+    [Fact]
+    public void Civs_OwnerOfAVisibleTileIsListed()
+    {
+        var tile = game.GetTile(new HexCoord(1, 1));
+        tile.SetOwningCity(hiddenCity);
+        var snapshot = SnapshotFor(a);
+        var dto = snapshot.Tiles.Single(it => it.X == 1 && it.Y == 1);
+        Assert.Equal(h.CivId, dto.Owner);
+        Assert.Contains(snapshot.Civs, it => it.CivId == h.CivId);
     }
 
     [Fact]

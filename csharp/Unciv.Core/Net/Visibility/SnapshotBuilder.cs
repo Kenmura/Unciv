@@ -38,7 +38,9 @@ public static class SnapshotBuilder
         {
             var tileView = gameView.TileMapView.GetTile(tile);
             if (!tileView.IsExplored()) continue;
-            tiles.Add(BuildTile(tileView, gameView));
+            var tileDto = BuildTile(tileView, gameView);
+            tiles.Add(tileDto);
+            if (tileDto.Owner != null) referencedCivs.Add(tileDto.Owner);
             if (!tileView.IsVisible()) continue;
             foreach (var unit in tileView.GetVisibleUnits())
             {
