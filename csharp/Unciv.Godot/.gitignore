@@ -1,0 +1,4 @@
+out/
+.godot/
+.mono/
+*.translation

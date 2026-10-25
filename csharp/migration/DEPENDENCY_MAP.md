@@ -64,7 +64,7 @@ flowchart TD
   class A005 ondeck
   class A006 ondeck
   class A007 waiting
-  class C001 prog
+  class C001 review
   class C002 blocked
   class C003 blocked
   class C004 blocked
@@ -109,7 +109,7 @@ xychart-beta
 | A005 | **On deck** (after A004) | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | **On deck** (after A004) | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | T163 | **On deck** (after T104) | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
-| C001 | In-Progress [Claude] | C000, T006, T099, T100 | 5 | Godot project skeleton |
+| C001 | Needs-Review [Claude] | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | In-Progress [Claude] | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | T104 | In-Progress [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 1 | Marker, seam and stale-comment sweep (final) |

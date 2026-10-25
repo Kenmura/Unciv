@@ -1903,13 +1903,14 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - State: Done (full ticket: backlog-archive.md)
 
 ### C001 Godot project skeleton
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: C000, T006, T099, T100
 - Deliverables: csharp/Unciv.Godot/ project consuming Unciv.Core, empty scene, CI-friendly headless build
 - Gate: `dotnet build Unciv.Godot` (headless; no editor required)
   - Backlog audit: C001's Depends named 'a loadable game state (ticket to be added)': that is now GameStarter (T099, new game) and UncivFiles (T100, load). A-track Depends extended with the engine tickets they use (A003 Civilization/Victory/Diplomacy state, A004/A006 MapUnit, movement, combat and the Kotlin unit automation they replace).
 
 - Claimed: 2026-10-25T00:21Z
+  - Implemented csharp/Unciv.Godot (Godot.NET.Sdk 4.7.2, net10.0, references Unciv.Core, empty Main.tscn/Main.cs, project.godot). Namespace Unciv.GodotClient (a namespace Unciv.Godot would shadow the Godot namespace). Kept OUT of Unciv.sln like Unciv.Godot.Harness so Standard checks never need the Godot SDK; headless gate is `dotnet build Unciv.Godot -warnaserror` (passes, 0 warnings; dotnet format clean). No assets used. No policy files edited. GODOT.md updated.
 ### C002 3D hex terrain rendering
 - State: Blocked
 - Depends: C001
