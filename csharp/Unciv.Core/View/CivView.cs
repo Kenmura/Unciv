@@ -96,6 +96,9 @@ public class CivView(CivilizationClass civ, CivilizationClass viewer, bool spect
     // Policies
     public bool HasAdoptedPolicies() => Civ.Policies.AdoptedPolicies.Count != 0;
 
+    /// <summary>Names of the adopted policies; private to the owner (T212).</summary>
+    public List<string> GetAdoptedPolicies() => [.. Civ.Policies.AdoptedPolicies];
+
     public bool CanAdoptPolicy() => Civ.Policies.CanAdoptPolicy();
 
     public bool ShouldShowPolicyPicker() => Civ.Policies.ShouldShowPolicyPicker();

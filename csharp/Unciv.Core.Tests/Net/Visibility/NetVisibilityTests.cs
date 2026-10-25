@@ -167,6 +167,18 @@ public sealed class NetVisibilityTests
     }
 
     [Fact]
+    public void OwnPolicies_AndDiplomacyStatus_AreExposedToTheOwnerOnly()
+    {
+        a.Policies.AdoptedPolicies.Add("Secret Policy");
+        var forA = SnapshotFor(a);
+        Assert.Equal(["Secret Policy"], forA.Civs.Single(it => it.CivId == a.CivId).Own!.Policies);
+        Assert.All(forA.Civs.Where(it => it.CivId != a.CivId), it => Assert.Null(it.Own));
+        Assert.DoesNotContain("Secret Policy", Text(SnapshotFor(b)));
+        Assert.All(forA.Diplomacy, it => Assert.NotNull(it.Status));
+        Assert.All(forA.Cities, it => Assert.NotNull(it.VisibleBuildings));
+    }
+
+    [Fact]
     public void Trades_OnlyTheTwoPartiesSeeAProposal()
     {
         var offer = new Trade();
@@ -319,14 +331,14 @@ public sealed class NetVisibilityTests
         [nameof(ClientSnapshot)] = "Seq Turn Phase TurnStatus You Civs Tiles Cities Units Diplomacy PendingTrades Notifications ViewHash",
         [nameof(TurnStatusDto)] = "Ended Deadline Phase",
         [nameof(CivDto)] = "CivId Name IsCityState IsMajor IsBarbarian IsDefeated Own",
-        [nameof(OwnCivDto)] = "Gold Happiness CurrentTech Techs Spies",
+        [nameof(OwnCivDto)] = "Gold Happiness CurrentTech Techs Policies Spies",
         [nameof(SpyDto)] = "Name Rank Location Action",
         [nameof(TileDto)] = "X Y Visible BaseTerrain Features NaturalWonder Resource Improvement RiverBottom RiverBottomLeft RiverBottomRight Owner Road RoadPillaged ImprovementPillaged",
-        [nameof(CityDto)] = "Name Owner X Y Population IsCapital IsPuppet IsBeingRazed Health MaxHealth Own",
+        [nameof(CityDto)] = "Name Owner X Y Population IsCapital IsPuppet IsBeingRazed Health MaxHealth VisibleBuildings Own",
         [nameof(OwnCityDto)] = "FoodStored CultureStored Buildings ConstructionQueue",
         [nameof(UnitDto)] = "Id Name Owner X Y HealthBucket IsEmbarked IsFortified Own",
         [nameof(OwnUnitDto)] = "Health CurrentMovement Xp Action Promotions",
-        [nameof(DiplomacyDto)] = "A B AtWar",
+        [nameof(DiplomacyDto)] = "A B AtWar Status",
         [nameof(PendingTradeDto)] = "From To Offered Requested",
         [nameof(TradeOfferDto)] = "Name Type Amount Duration",
         [nameof(NotificationDto)] = "Category Text Icons Actions",

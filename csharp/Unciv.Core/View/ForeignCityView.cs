@@ -66,6 +66,10 @@ public class ForeignCityView(CityClass city, CivilizationClass viewer, bool spec
     public List<ForeignCityView> GetNeighboringCities(int maxDistance = 12) =>
         City.GetNeighboringCities(maxDistance).Select(it => GameView.GetForeignCityView(it)).ToList();
 
+    /// <summary>Buildings knowable to anyone who has explored the city: wonders only (T212). Everything else stays private to the owner.</summary>
+    public List<string> GetVisibleBuildings() =>
+        City.CityConstructions.GetBuiltBuildings().Where(it => it.IsAnyWonder()).Select(it => it.Name).ToList();
+
     public int GetPopulationCount() => City.Population.Population;
 
     public bool IsCapital() => City.IsCapital();

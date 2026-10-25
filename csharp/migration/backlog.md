@@ -2603,7 +2603,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Follow-up named in T161 Notes.
 
 ### T212 Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T174
 - Source: csharp/migration/design/SERVER.md section 3; T174 notes
 - Fixtures: none
@@ -2611,6 +2611,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~NetVisibility
 - Claimed: 2026-10-25T12:50Z
 - Notes:
+  - Added DiplomacyManagerView.Status, ForeignCityView.GetVisibleBuildings (wonders only, per Civ: other buildings stay private), ForeignCivView.GetTradeRequestsVisibleToViewer, CivView.GetAdoptedPolicies; DTOs: DiplomacyDto.Status, CityDto.VisibleBuildings, OwnCivDto.Policies. SnapshotBuilder no longer uses GetCiv() for trades or own-civ check. Remaining GetCiv() use: PrivateSpies.cs (spies, outside this ticket's scope).
 
 ### T213 Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts
 - State: Done

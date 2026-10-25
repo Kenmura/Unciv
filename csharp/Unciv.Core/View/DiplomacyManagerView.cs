@@ -9,5 +9,8 @@ namespace Unciv.View;
 public class DiplomacyManagerView(DiplomacyManager diplomacyManager, CivilizationClass viewer, bool spectatorMode, GameView gameView)
     : GameBasedView<DiplomacyManager>(diplomacyManager, viewer, spectatorMode, gameView)
 {
+    /// <summary>The public war/peace/etc. status of this relationship (T212).</summary>
+    public DiplomaticStatus Status => Wrapped.DiplomaticStatus;
+
     public bool CanDeclareWar() => Wrapped.CanDeclareWar();
 }

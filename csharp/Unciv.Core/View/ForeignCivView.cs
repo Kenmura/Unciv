@@ -1,3 +1,4 @@
+using Unciv.Logic.Trade;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Nation;
@@ -72,6 +73,10 @@ public class ForeignCivView(CivilizationClass civ, CivilizationClass viewer, boo
     public int GetGoldPerTurn() => KotlinMath.FloatToInt(Civ.Stats.StatsForNextTurn.Gold);
 
     public ResourceSupplyList GetPerTurnResourcesWithOriginsForTrade() => Civ.GetPerTurnResourcesWithOriginsForTrade();
+
+    /// <summary>Trade requests held by this civ that the viewer may know about: all of them for the viewer's own civ, otherwise only those the viewer sent (T212).</summary>
+    public List<TradeRequest> GetTradeRequestsVisibleToViewer() =>
+        Civ.TradeRequests.Where(it => Civ == Viewer || it.RequestingCiv == Viewer.CivId).ToList();
 
     public int GetResearchAgreementCost(ForeignCivView other) => Civ.DiplomacyFunctions.GetResearchAgreementCost(other.Civ);
 }

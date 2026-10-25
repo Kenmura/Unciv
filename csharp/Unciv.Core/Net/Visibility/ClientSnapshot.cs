@@ -54,6 +54,7 @@ public sealed record OwnCivDto
     public required int Happiness { get; init; }
     public string? CurrentTech { get; init; }
     public required List<string> Techs { get; init; }
+    public required List<string> Policies { get; init; }
 
     /// <summary>The recipient's own spies; foreign spies are never described (design/SERVER.md section 3, espionage row).</summary>
     public required List<SpyDto> Spies { get; init; }
@@ -93,6 +94,9 @@ public sealed record CityDto
     public required bool IsBeingRazed { get; init; }
     public required int Health { get; init; }
     public required int MaxHealth { get; init; }
+
+    /// <summary>Wonders in the city, knowable by anyone who explored it (T212).</summary>
+    public required List<string> VisibleBuildings { get; init; }
 
     /// <summary>Private detail, present only for the recipient's own cities.</summary>
     public OwnCityDto? Own { get; init; }
@@ -138,6 +142,9 @@ public sealed record DiplomacyDto
     public required string A { get; init; }
     public required string B { get; init; }
     public required bool AtWar { get; init; }
+
+    /// <summary>The <c>DiplomaticStatus</c> name (War, Peace, Protector, ...), or null when the pair has no relationship.</summary>
+    public string? Status { get; init; }
 }
 
 /// <summary>A trade proposal between exactly two civs; only the two parties ever receive it.</summary>

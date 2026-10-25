@@ -14,8 +14,6 @@ namespace Unciv.Net.Visibility;
 // T174 (design/SERVER.md sections 2.3, 3). Builds the ClientSnapshot of one civ by walking the View classes, which are the single
 // source of truth for what that civ may know (never reimplement IsExplored/IsVisible/isInvisible here). Output order is
 // deterministic: civilization list order, tile list order, tile unit order.
-// Gaps in the Views (DiplomacyManagerView exposes no status, no view exposes trade requests or visible buildings of foreign cities)
-// are bridged with the temporary GetCiv() escape hatch only where unavoidable, and filed as follow-up tickets.
 
 /// <summary>Visibility filter: GameInfo plus viewer to <see cref="ClientSnapshot"/>.</summary>
 public static class SnapshotBuilder
@@ -119,7 +117,7 @@ public static class SnapshotBuilder
     {
         var view = gameView.GetForeignCivView(civ);
         OwnCivDto? own = null;
-        if (civ == gameView.CivView.GetCiv())
+        if (view.IsOwnedByViewer())
         {
             var ownView = gameView.CivView;
             own = new OwnCivDto
@@ -128,6 +126,7 @@ public static class SnapshotBuilder
                 Happiness = ownView.GetHappiness(),
                 CurrentTech = ownView.CurrentTechnologyName(),
                 Techs = view.Ruleset.Technologies.Keys.Where(ownView.IsResearched).Order(StringComparer.Ordinal).ToList(),
+                Policies = ownView.GetAdoptedPolicies().Order(StringComparer.Ordinal).ToList(),
                 Spies = PrivateSpies.Build(gameView)
             };
         }
@@ -219,6 +218,7 @@ public static class SnapshotBuilder
             IsBeingRazed = city.IsBeingRazed(),
             Health = city.GetHealth(),
             MaxHealth = city.GetMaxHealth(),
+            VisibleBuildings = city.GetVisibleBuildings(),
             Own = own
         };
     }
@@ -235,7 +235,7 @@ public static class SnapshotBuilder
                 var atWar = members[i].IsAtWarWith(members[j]);
                 // Peace between two third parties is not a public fact the viewer needs; wars are.
                 if (involvesViewer || atWar)
-                    result.Add(new DiplomacyDto { A = members[i].CivId, B = members[j].CivId, AtWar = atWar });
+                    result.Add(new DiplomacyDto { A = members[i].CivId, B = members[j].CivId, AtWar = atWar, Status = members[i].GetDiplomacyManagerWith(members[j])?.Status.ToString() });
             }
         }
         return result;
@@ -247,11 +247,9 @@ public static class SnapshotBuilder
         // Only requests the viewer sent or received: the holder of a request is always one of the two parties.
         foreach (var civ in gameInfo.Civilizations)
         {
-            var holder = gameView.GetForeignCivView(civ).GetCiv();
             if (civ != viewer && !known.Contains(civ.CivId)) continue;
-            foreach (var request in holder.TradeRequests)
+            foreach (var request in gameView.GetForeignCivView(civ).GetTradeRequestsVisibleToViewer())
             {
-                if (civ != viewer && request.RequestingCiv != viewer.CivId) continue;
                 // The trade is stored from the holder's side: TheirOffers are what the requester offers, OurOffers what it asks of the holder.
                 result.Add(new PendingTradeDto
                 {
