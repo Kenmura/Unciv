@@ -2312,13 +2312,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Simultaneous turns: header gains turnMode and the initial controller bindings; entries of different human actors and the server's ProcessEndTurn/RunAiTurn/StartNextTurn/BeginTurn/ForceEndTurn/SetController interleave in one Seq order; a checkpoint is written after the last BeginTurn of each turn. The verifier needs no clock. Two-human replay test is T203.
 
 ### T195 Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T185, T139
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/MapUnitView.kt (getDistanceToTiles, getShortestPath, getReachableTilesInCurrentTurn, getAttackableEnemies), CombatantView.kt, AttackableTileView.kt; logic/battle/BattleDamage.kt, ui/screens/worldscreen/unit/*, ui/screens/worldscreen/BattleTableHelpers
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Queries/Units/{ReachableTilesQuery,PathPreviewQuery,AttackPreviewQuery,AttackableTargetsQuery}.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~Queries.Units
-- Claimed:
+- Claimed: 2026-10-25T01:46Z
 - Notes:
   - Already in C# (do not duplicate, wrap): MapUnitView.GetDistanceToTiles / GetReachableTilesInCurrentTurn / GetPathToTile / GetShortestPath / CanReach / GetAttackableEnemies / GetTilesInAttackRange, CombatantView.GetFinalAttackingStrength / GetFinalDefendingStrength / CalculateDamageToDefender / CalculateDamageToAttacker / GetAttackModifiers / GetDefenceModifiers, AttackableTileView.GetTileToAttackFrom / GetMovementLeftAfterMovingToAttackTile. Missing: the serializable shapes and the multi-turn aspects.
       - ReachableTiles(unitId): tile -> movement left after arriving (float), whether it needs more than one turn is a PathPreview concern. PathPreview(unitId, target): list of legs {tiles, turn index} plus total turns; derive the turn split by replaying the cost (UnitMovement.GetShortestPath + MovementCost) without moving the unit; if the A* option (PlayerSettings) is on, use the same pathing the command will use or the preview and the move disagree.
