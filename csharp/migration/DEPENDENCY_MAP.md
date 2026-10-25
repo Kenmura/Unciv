@@ -390,9 +390,9 @@ flowchart TD
   class T197 done
   class T198 done
   class T199 done
-  class T200 ready
-  class T201 waiting
-  class T202 waiting
+  class T200 prog
+  class T201 ondeck
+  class T202 ondeck
   class T203 waiting
   class T204 waiting
   class T205 waiting
@@ -431,7 +431,6 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | C005 | **Ready to start** | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
-| T200 | **Ready to start** | T184 | 16 | Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep |
 | T194 | **Ready to start** | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
 | C002 | **Ready to start** | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | C014 | **Ready to start** | C010, T164, T174 | 0 | Minimap |
@@ -445,7 +444,9 @@ xychart-beta
 | T212 | **Ready to start** | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
 | T213 | **Ready to start** | T193 | 0 | Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts |
 | T214 | **Ready to start** | T175 | 0 | Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness |
-| T202 | Available (waiting on T200) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
+| T202 | **On deck** (after T200) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
+| T201 | **On deck** (after T200) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
+| T200 | In-Progress [Claude] | T184 | 16 | Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep |
 | T176 | Available (waiting on T194) | T172, T164, T140, T194 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T177 | Available (waiting on T200, T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
@@ -482,7 +483,6 @@ xychart-beta
 | C034 | Available (waiting on C005, C015, T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | T181 | Needs-Review [Claude] | T174, T175, T164, T193 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
-| T201 | Available (waiting on T200) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
 | T211 | In-Progress [Claude] | T161 | 0 | Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161 |

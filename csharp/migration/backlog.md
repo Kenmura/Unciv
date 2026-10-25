@@ -2480,13 +2480,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review pass (adversarial subagent). Follow-up for T204: NewGameScreen 'You are not allowed to spectate!' rule (anyoneCanSpectate=false) is not in ValidateSetup.
 
 ### T200 Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T184
 - Source: design/SIMULTANEOUS-TURNS.md sections 2-3; Unciv.Core/Logic/GameInfoTurn.cs; Managers/TurnManager.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Logic/TurnState.cs, GameInfoSimultaneousTurn.cs (ProcessEndTurn, RunAiTurn, StartNextTurn, BeginTurn steps, NextResolveStep), JSON wiring (optional field), tests
 - Gate: dotnet test --filter "FullyQualifiedName~SimultaneousTurn|FullyQualifiedName~EndToEndDeterminism"
-- Claimed:
+- Claimed: 2026-10-25T12:50Z
 - Notes: Engine only, no commands. Model: all living humans active in Playing; Resolving = ProcessEndTurn(h) civ-index order, RunAiTurn(c) auto civs in civ-index order, StartNextTurn (RecordRankingStats, Turns++), BeginTurn(h) civ-index order. Acceptance: (1) a Simultaneous game with exactly one human at civ index 0 gives the same per-turn state hashes as Sequential/NextTurn over 60 turns (T102 regression); (2) TurnState round trips and an older reader ignores it; Sequential games never write it; (3) NextResolveStep is a pure function of state, so a half-resolved turn resumes from a loaded save; (4) first turn: all humans start Started (GameStarter never calls TurnManager). Defeated humans and spectators are auto civs. Sequential NextTurn stays byte-identical.
 
 ### T201 Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks)
