@@ -2105,37 +2105,312 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 - Claimed: 2026-10-25T00:21Z
   - Implemented csharp/Unciv.Godot (Godot.NET.Sdk 4.7.2, net10.0, references Unciv.Core, empty Main.tscn/Main.cs, project.godot). Namespace Unciv.GodotClient (a namespace Unciv.Godot would shadow the Godot namespace). Kept OUT of Unciv.sln like Unciv.Godot.Harness so Standard checks never need the Godot SDK; headless gate is `dotnet build Unciv.Godot -warnaserror` (passes, 0 warnings; dotnet format clean). No assets used. No policy files edited. GODOT.md updated.
-### C002 3D hex terrain rendering
+### C002 3D hex terrain rendering (elevation, materials, water depth)
 - State: Available
-- Depends: C001, A003, A004, A005, A006, A007
-- Scope: 3D hex tile meshes with per-terrain materials and elevation (grass, plains, desert, tundra, snow, hills, mountains, forest/jungle, water with depth), smooth blending between adjacent terrains, fog of war and visibility tinting, tile yields and improvements as in-world props.
+- Depends: C001, A003, A004, A005, A006, A007, C009
+- Scope: Replace C009's flat hexes with displaced 3D meshes: elevation per terrain, hill/mountain shapes, per-terrain materials with generated noise textures, water with depth and shore, instanced vegetation (grass tufts via MultiMesh; no flat sprite tiles). Blending, fog polish and chunking moved to C031; in-world yields/improvements to C032.
 - Notes: Grass rendered as real textured/shaded terrain with instanced vegetation; no flat sprite tiles. Validation includes automated snapshot capture and golden image verification via C000 harness.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
+  - Narrowed per design/CLIENT-SLICES.md: blending and fog/visibility polish -> C031; tile yields and improvements as props -> C032. Verification: golden at 3 camera angles; picking tests still pass on displaced terrain.
 
 ### C003 Resource and improvement props
 - State: Available
 - Depends: C002
-- Scope: 3D resource props, including **horses** (animated or posed horse herds on the Horses resource tile), cattle, sheep, wheat, iron, etc., plus improvements (farms, pastures, mines, roads).
+- Scope: Feature props (forest, jungle, marsh) and resource props, including horses (posed herd of 3-5 blocks, animation later), cattle, sheep, wheat, iron etc., built by the procedural generator and overridable by registry key. Improvements and roads -> C032.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
+  - Narrowed per design/CLIENT-SLICES.md: improvements (farms, pastures, mines) and roads moved to C032. Verification: scenario props + swap test overriding resource/Horses without code change.
 
-### C004 3D military units
+### C004 Unit visuals: per-type models, formations, status icons
 - State: Available
-- Depends: C002, T164
-- Scope: 3D unit models with idle, move, attack, damage and death animations for combat units; formation or multiple figures per unit; selection, path preview and attack-range overlays; combat resolved by the engine, presented by the client.
+- Depends: C002, C010, C012, T164
+- Scope: Unit models per unit type via asset registry, multiple figures per unit by strength tier, civ colouring, health bar, status icons (fortified, sleeping, automated, promotion available). Animations and combat presentation -> C033; selection, path preview and attack-range overlays -> C010/C012.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
+  - Narrowed per design/CLIENT-SLICES.md. Verification: scenario unit-visuals golden, figure count equals tier rule.
 
-### C005 Civ 5-style UI shell
+### C005 Civ 5-style UI kit: theme, screen stack, popups, tooltip host
 - State: Available
-- Depends: C002, T164
-- Scope: top bar (yields, science/culture/gold/happiness), minimap, unit panel, city screen, tech/policy trees, diplomacy, turn banner, notifications, tooltips.
+- Depends: C007, C010
+- Scope: UiTheme from asset registry, ScreenManager (push/pop, Esc), PopupStack (modal queue), TooltipHost, ListPanel, IconLabel, TabBar, scroll lists, UI scale.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
+  - Narrowed per design/CLIENT-SLICES.md; old shell items moved: top bar+turn banner C011, minimap C014, unit panel C012, city screen C017/C018, tech C019, policy C020, diplomacy C021/C022, notifications C013, tooltip content C027. Verification: scenario ui-kit.
 
 ### C006 Networked play client
 - State: Available
-- Depends: T012, C001, T164, T172, T173, T180, T179
+- Depends: T012, C001, T164, T172, T173, T180, T179, C010, C016
 - Scope: Godot side of networked play only (the protocol, session, mirror state and transport live in Unciv.Client.Net, T180/T179): lobby and join screens (invite code entry), identity key storage under user://, 'your turn' notification list and toast, turn timer display, reconnect overlay, marshalling network events onto the Godot main thread, feeding ClientEvents to the C004/C005 presentation. Server is our own (design/SERVER.md); no upstream Unciv servers.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
   - Narrowed by the server design (design/SERVER.md section 7). Server tickets T172-T182; C006 owns only Godot scenes and the main-thread pump. Single-player should use the same ClientSession over a loopback host (T178).
+  - Per design/CLIENT-SLICES.md: also depends on V1 vertical (C010) and save/load (C016); the client codes against an IGameSession interface implemented locally and by T180 ClientSession.
+
+### C007 Asset registry and procedural placeholder generator
+- State: Available
+- Depends: C001, A003, A004, A005, A006, A007
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): AssetKey/AssetRegistry (override > pack > procedural), PlaceholderPalette, hex prism mesh, terrain materials, unit blocks, prop builder, icon generator, UI theme generator, ASSETS.md rows, key-coverage test and no-literal lint. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario asset-sheet: swatch sheet golden + registry resolves every Vanilla ruleset name. Human: colour/readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C008 Client scenario runner and owner review sheet
+- State: Available
+- Depends: C001, A003, A004, A005, A006, A007
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Unciv.Godot.Harness run-scenario.sh (seeded GameSession, Click/Key/Press/WaitFrames/AssertQuery/Capture, golden per step, state-hash equals headless replay) and review-sheet.sh (contact sheet + checklist). Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: trivial scenario passes, wrong golden fails. Human: sheet readable. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C009 Map view v1: flat hex map from queries, camera, tile picking, fog tint
+- State: Available
+- Depends: C007, C008, T164, T099
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): MapView from map query, flat hex per tile via registry, fog tint (unexplored/explored), pan/zoom camera, HexPicking to tile coordinate, tile highlight. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario map-v1: golden at default+zoomed camera, picked coords equal expected hexes, tint counts equal query counts. Human: terrain readability, camera feel. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C010 V1 vertical slice: unit blocks, select, move, end turn, AI turns
+- State: Available
+- Depends: C009, T164
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): QuickStart.tscn (seeded Tiny game via GameStarter), UnitView blocks, click select, move command with path dots, plain Next turn button, AI turns run, repeat. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario v1-vertical: select, move (assert tile+movement spent), 5x end turn (turn==6, state hash equals headless replay), captures. Human: is it playable, are AI moves visible. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C011 HUD: top bar yields, turn banner, next-action button
+- State: Available
+- Depends: C005, C010, T164, T062
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Top bar (gold, science, culture, happiness, faith, golden age, resources, turn/year), turn banner on turn start, next-action button (next unit / choose research / end turn) from the engine's turn-over query. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario hud: labels equal CivInfoStatsForNextTurn values; button text changes as units are ordered. Human: Civ-5 feel. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C012 Unit panel and orders: attack, fortify, found city, workers, automate
+- State: Available
+- Depends: C005, C010, T164, T080, T083, T040
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Unit panel (strength, moves, health, promotions), action menu from unit-actions query (found city, improve, road, fortify, sleep, explore, automate, pillage, upgrade, disband, promote, great person), attack with combat preview and attack-range overlay, path preview and reachable overlay. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario unit-orders: menu equals query, found city creates city, fortify state, attack HP equals BattleResult. Human: discoverability, preview legibility. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C013 Notifications and popup alerts
+- State: Available
+- Depends: C005, C010, T164, T051, T055, T171
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Clickable notification list (jump to tile/screen), turn-start summary, PopupAlert popups (ruin reward, great person, religion founding, city captured, quest, event choice). Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario notifications: injected notifications, click centres camera, popup choice submits right command. Human: urgency. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C014 Minimap
+- State: Available
+- Depends: C010, T164
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): ImageTexture minimap from map query with borders, viewport rectangle, click to jump. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario minimap: golden + click moves camera to matching tile. Human: readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C015 Main menu and game setup screen: nations, difficulty, speed, map options
+- State: Available
+- Depends: C005, C010, T099, T045, T021, T034, T170
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Main menu; setup (nations grid, human/AI, player and city-state count, difficulty, speed, era, map type/shape/size/wrap/resources, seed, victory types, base ruleset and mods, advanced) building GameSetupInfo and calling GameStarter. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario setup: choices reflected in GameInfo, state hash equals headless GameStarter with same GameSetupInfo. Human: option clarity. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C016 Save/load screen and autosave
+- State: Available
+- Depends: C005, C010, T100
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Save list with metadata, load, save as, delete, autosave every turn, quick save/load, resume last. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario saveload: save, advance, load, state hash equals saved; autosave file appears. Human: layout only. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C017 City screen A: info, tiles, specialists, focus
+- State: Available
+- Depends: C005, C010, T164, T060, T062
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): City screen shell, header, worked/available/locked tile grid with assign/lock commands, specialists, focus, stat breakdown. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario city-a: assert tile assignment changes CityStats, specialists, capture. Human: density. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C018 City screen B: production queue, purchase, buildings
+- State: Available
+- Depends: C017, T063
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Production queue (add, reorder, remove, perpetual), buildable list with costs/turns, buy with gold/faith with disabled reasons, buildings/wonders list, sell, raze/puppet/annex states. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario city-b: queue after commands, purchase reduces gold by query cost. Human: density. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C019 Tech screen
+- State: Available
+- Depends: C005, C010, T164, T056
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Tech tree by TechColumn, state colours, choose/queue research, unlocks list. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario tech: available set equals query, choose changes current tech. Human: tree legibility. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C020 Policy screen
+- State: Available
+- Depends: C005, C010, T164, T056
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Policy branches, adopt command, cost, ideology/tenets, golden age info. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario policy: adoptable set equals query, adopt works. Human: layout. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C021 Diplomacy screen
+- State: Available
+- Depends: C005, C010, T164, T059, T068
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Met-civ list, status, relationship text, declare war/peace/denounce, city-state screen (influence, quests, gifts, bully, protect). Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario diplomacy: legal actions equal query, declare war changes status. Human: flow. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C022 Trade screen
+- State: Available
+- Depends: C021, T164, T059
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Offer builder both sides (gold, gold/turn, luxuries, strategics, cities, techs, treaties, open borders), AI response, AI demands popups. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario trade: legal offer set equals engine, accepted trade changes both civs. Human: flow. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C023 Overview screens: empire, cities, units, resources, ranking, religion, espionage
+- State: Available
+- Depends: C005, C010, T164, T057
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Overview tabs with tables: stats, cities, units (select/jump), resources, ranking, religion beliefs, espionage spies, global politics. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario overview: rows equal query. Human: layout. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C024 Victory and defeat screen, game over
+- State: Available
+- Depends: C005, C010, T166
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Victory screen (type, ranking, history graph from CivRankingHistory), continue playing / main menu, defeat screen, spectator after defeat. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario victory: forced 1-turn conquest; screen shown and continue resumes. Human: tone. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C025 Localization: translations in the client, language picker, non-Latin fonts
+- State: Available
+- Depends: C005, T023, T170
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): All labels through Tr(), language picker (persisted), registry font/default fallback chain (CJK, Cyrillic, Arabic, Hebrew, Thai, Devanagari, Korean) with OFL fonts recorded in ASSETS.md, RTL/shaping via TextServer (check HarfBuzz/ICU in installed Godot). Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario l10n-sheet: HasChar for every character of every shipped translation (no tofu), no raw keys on screen, golden per script. Human: shaping/RTL by a reader of the script. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C026 Tutorials
+- State: Available
+- Depends: C005, C010, T030, T049
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Tutorial popup queue fired by TutorialTrigger, dont-show-again persistence, tutorial list in menu, tasks overlay. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario tutorial: trigger shows right id, flag persisted. Human: wording. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C027 Tooltips and Civilopedia
+- State: Available
+- Depends: C005, C025
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Tooltip content builders (tile, unit, building, stat breakdown) and Civilopedia screen generated from ruleset objects. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario tooltips: text equals engine descriptions. Human: reading comfort. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C028 Options screen, hotkeys, edge-pan
+- State: Available
+- Depends: C005
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Sound, language link, UI scale, window mode, key rebinding persisted, scroll speed, yield/resource icon toggles, asset pack selection. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario options: rebind key triggers action, persisted. Human: usability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C029 Hotseat player switch screen
+- State: Available
+- Depends: C010, T164
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Pass-the-device screen hiding the map between human players (per human turn flow ticket). Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario hotseat: two humans, map hidden between turns. Human: none. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C030 Placeholder audio: UncivSound to generated tones
+- State: Available
+- Depends: C007, T049
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): UncivSound enum to generated AudioStreamWav via registry sound/<name>, music none. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: test: every UncivSound resolves to non-empty stream. Human: none. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C031 Terrain blending, fog of war polish, chunked meshes
+- State: Available
+- Depends: C002
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Blend between adjacent terrains, fog/visibility polish, chunked mesh with culling, frame-time budget on Standard map. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario terrain-blend + perf budget; picking still passes. Human: look. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C032 Improvements, roads, cities, borders and in-world yield icons
+- State: Available
+- Depends: C003, C010
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Improvement props, road/rail meshes, city models and banners, civ-colour border lines, in-world yield icons toggle. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario improvements: one prop per improvement, golden. Human: recognisability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+
+### C033 Unit animation and combat presentation
+- State: Available
+- Depends: C004
+- Source:
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): Idle, move along path, attack, damaged, death as procedural tweens, floating damage numbers, ranged projectile, bombard flash, driven by engine BattleResult. Slice detail in design/CLIENT-SLICES.md
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Design: design/CLIENT-SLICES.md. Verification: scenario combat-presentation: queue drains, dead node freed, numbers equal BattleResult. Human: timing and feel. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
 
 ## Game AI track (Civ 5 behavioral spec)
 
