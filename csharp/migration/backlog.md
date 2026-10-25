@@ -2126,13 +2126,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Host-a-lobby revision: ClientSession also does Join (password/invite token, fingerprint check from invite, TOFU prompt callback, known-hosts store), LobbyState, TurnStatus, HostClosing handling, reconnect with the same key and Resume to the last address. Mirror tolerates unsolicited deltas (simultaneous turns). Depends gained T179 and T204.
 
 ### T181 Private-channel filtering: trade offers, diplomacy and espionage visibility (server side)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T174, T175, T164, T193
 - Source: csharp/migration/design/SERVER.md section 3 (trade, espionage rows); View/TradeView.cs, SpyView.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Visibility/Private*.cs, tests with 3-civ fixture: third party never sees A-B offers or A's spies, AI willingness numbers never serialized
 - Gate: dotnet test --filter FullyQualifiedName~NetPrivacy
-- Claimed:
+- Claimed: 2026-10-25T05:47Z
 - Notes: Needs trade/diplomacy/espionage commands from the T164 split (design/COMMANDS-IMPLEMENTATION.md): re-point Depends to those tickets once they exist.
   - Design agent: Depends gained T193 (diplomacy/trade commands) - private-channel rules need the concrete trade/diplomacy commands and events.
   - Simultaneous turns: trade/peace offers between two active humans are delivered live to the recipient only (TradeRequested event); AI valuation never leaves the host. A third human sees neither the offer nor its answer.
