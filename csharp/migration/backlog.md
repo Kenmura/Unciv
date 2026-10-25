@@ -2380,13 +2380,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Trap: ranking values of unmet civs must be hidden (Kotlin shows them only for known civs, check VictoryScreenCivRankings). Scores use Double in Kotlin; keep the type.
 
 ### T199 Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T185, T099, T045, T170
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; ui/screens/newgamescreen/*, models/metadata/GameSetupInfo.kt, GameParameters.kt, logic/map/MapParameters.kt, logic/GameStarter.kt; csharp Models/Metadata/*, Logic/GameStarter.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Queries/Setup/{NewGameOptionsQuery,ValidateSetupQuery}.cs, Logic/NewGame.cs (thin, takes seed and clock explicitly), tests
 - Gate: dotnet test --filter FullyQualifiedName~Queries.Setup
-- Claimed:
+- Claimed: 2026-10-25T02:44Z
 - Notes:
   - Pre-game, so no GameInfo and no viewer: the query context is a set of ruleset names (base + mods, T170 mod folder loading). NewGameOptions(rulesets): choosable nations (PlayerPickerTable.isChoosable = (nation.isMajorCiv || nation.isSpectator) && !WillNotBeChosenForNewGames), city-state nations, difficulties, game speeds, victory types (Ruleset.Victories), eras, map parameters domain (shapes, types, sizes, resource settings, MapGeneratorSteps), mod compatibility (BaseRuleset vs mods, ModOptions), default GameParameters; ValidateSetup(setup): the checks NewGameScreen does before enabling Start (player count vs map size, at most one nation per player, RulesetValidator errors of the combined ruleset, spectator rules, GameSetupInfo.reload fix-ups).
       - NewGame(setup, seed, clockMillis) wraps GameStarter.StartNewGame; note Kotlin defaults MapParameters.seed to currentTimeMillis and picks civs with unseeded random: the C# GameStarter already takes both explicitly (T099), keep it that way and record seed + clock in the log header.
