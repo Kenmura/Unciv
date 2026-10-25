@@ -174,7 +174,6 @@ flowchart TD
   T186 --> T187
   T184 --> T187
   T183 --> T187
-  T189 --> T190
   T187 --> T194
   T188 --> T194
   T189 --> T194
@@ -455,8 +454,8 @@ flowchart TD
   class T186 done
   class T187 waiting
   class T188 done
-  class T189 review
-  class T190 ondeck
+  class T189 done
+  class T190 ready
   class T191 done
   class T192 review
   class T193 ready
@@ -494,7 +493,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00", "25 06:00"]
     y-axis "Tickets" 0 --> 83
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 63, 63]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -505,6 +504,7 @@ xychart-beta
 | T174 | **Ready to start** | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T173 | **Ready to start** | T172 | 12 | Host identity and join auth: client ECDSA P-256 key bound to a slot (TOFU), lobby password / single-use invite token for admission, host key fingerprint |
 | T193 | **Ready to start** | T164, T186, T086, T089 | 5 | Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage |
+| T190 | **Ready to start** | T189 | 3 | Unit actions B: unique-driven actions through descriptors (great person improvements and hurry, religion, trade mission, paradrop, transform, gift unit, trigger unique, add in capital, air/set-up, stockpile) |
 | T198 | **Ready to start** | T185, T166, A003 | 2 | Query API: victory progress, scores, rankings and demographics |
 | C030 | **Ready to start** | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
@@ -513,16 +513,14 @@ xychart-beta
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T208 | **Ready to start** | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
 | T209 | **Ready to start** | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
-| T190 | **On deck** (after T189) | T189 | 3 | Unit actions B: unique-driven actions through descriptors (great person improvements and hurry, religion, trade mission, paradrop, transform, gift unit, trigger unique, add in capital, air/set-up, stockpile) |
 | T187 | Available (waiting on T184) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T175 | Available (waiting on T174) | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
 | C009 | Available (waiting on T174) | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C010 | Available (waiting on C009, T184, T187, T174, T175) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | C005 | Available (waiting on C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
-| T189 | Needs-Review [Claude] | T164, T186, T080, T185 | 19 | Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop) |
 | T192 | Needs-Review [Claude] | T164, T186 | 17 | Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode) |
 | T200 | Available (waiting on T184) | T184 | 16 | Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep |
-| T194 | Available (waiting on T187, T189, T192) | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
+| T194 | Available (waiting on T187, T192) | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
 | T202 | Available (waiting on T200, T187) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
 | T176 | Available (waiting on T194) | T172, T164, T140, T194 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T177 | Available (waiting on T184, T187, T200, T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
@@ -532,7 +530,7 @@ xychart-beta
 | C002 | Available (waiting on C009) | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | T180 | Available (waiting on T173, T174, T175, T179, T204) | T172, T173, T174, T175, T179, T204 | 4 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C011 | Available (waiting on C005, C010, T174, T184) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
-| C012 | Available (waiting on C005, C010, T189, T190) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
+| C012 | Available (waiting on C005, C010, T190) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
 | T196 | Needs-Review [Claude] | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
 | C003 | Available (waiting on C002) | C002 | 1 | Resource and improvement props |
 | C004 | Available (waiting on C002, C010, C012) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |

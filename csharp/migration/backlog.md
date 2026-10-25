@@ -2249,7 +2249,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (adversarial subagent): PASS. Fixed MINOR 1 (Bombard rejects enemy city tiles, as BattleTable) and MINOR 2 (SetMoveOrder is a no-op when the unit cannot move, as the UI; supersedes the earlier note). Open minors: no tests for escort pairs, embarked/transported units, air units in MoveUnit/SetMoveOrder.
 
 ### T189 Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T164, T186, T080, T185
 - Source: design/COMMANDS-IMPLEMENTATION.md section 4; logic/map/mapunit/actions/UnitActions.kt (getUnitActions, invokeUnitAction), models/UnitAction.kt; csharp Models/UnitAction.cs, Logic/Map/MapUnit/UnitActions*.cs
 - Fixtures: none
