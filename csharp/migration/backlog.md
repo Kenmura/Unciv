@@ -2031,13 +2031,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - OWNER DECISION: no auth service. The earlier note 'no passwords' is superseded: admission = optional lobby password or single-use invite token (sent only inside the pinned TLS channel, stored as a salted hash), slot ownership = the client keypair signature on reconnect. Password and key have different jobs (SERVER.md 6.2).
 
 ### T174 Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T172, T084, T085, T138, T140
 - Source: csharp/migration/design/SERVER.md sections 2.1-2.3, 3
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Visibility/* (ClientSnapshot DTOs, SnapshotBuilder, viewHash), tests with hidden-state fixtures proving no unexplored tile, hidden foreign unit/city, seed, foreign gold/queue is serialized
 - Gate: dotnet test --filter FullyQualifiedName~NetVisibility
-- Claimed:
+- Claimed: 2026-10-25T04:31Z
 - Notes: Walk GameView/ForeignCivView/ForeignCityView/ForeignMapUnitView; never reimplement isInvisible/IsVisible. First step: audit that the Views expose every field needed and file gaps as tickets. Include a reflection test that the DTOs contain only whitelisted members and a test that serialized snapshot text contains no seed/gameId-seed. viewHash = StateHasher (T011) over canonical snapshot JSON; the full-game hash stays server-side (T011 hashes the whole serialized GameInfo).
   - Simultaneous turns: ClientSnapshot carries turnStatus {ended civs, deadline, phase}; deltas are pushed at any time (other humans' visible actions), mirror must accept them between own commands. Add a two-human fixture (see T203): B's snapshot never holds what only A sees. design/SIMULTANEOUS-TURNS.md section 7.
 
