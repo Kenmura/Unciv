@@ -2180,13 +2180,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review 2 (CHANGES-REQUESTED, low items only) fixed: Register(Type,string) validates IQuery/non-empty name, RegisterFromAssembly atomic, view creation inside the try, hostile-payload test asserts malformed-query, dead branches removed. Also committed a whitespace-only dotnet format fix to T167's SoakTests.cs (tip failed format verify). Not independently re-reviewed beyond round 2.
 
 ### T186 Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T164
 - Source: design/COMMANDS-IMPLEMENTATION.md section 7; design/SERVER.md 2.4/2.5; Logic/Battle/AttackRecorder.cs, Logic/Civilization/Notification.cs, PopupAlert.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/Events/{GameEventRegistry.cs,CommonEvents.cs}, Logic/GameInfoEventSink.cs (null by default, no behaviour change when absent), tests
 - Gate: dotnet test --filter FullyQualifiedName~GameEvents
-- Claimed:
+- Claimed: 2026-10-25T01:46Z
 - Notes:
   - Events are facts for presentation/sync; per design/SERVER.md every event type needs a visibility classifier (T175) so events are defined in code with an [EventType] attribute scanned like commands. The engine mutates state directly and has no event emission, so add a small sink: GameInfo.EventSink (null in tests/AI-only runs, set by the session for the duration of one command) with calls at the few choke points that already exist: MapUnit position set (movementMemories), Battle/AttackRecorder (damage, kill, capture), CityFounder, CityConquestFunctions, Tile ownership changes, Civilization.AddNotification and PopupAlerts.Add, Tech/Policy/Religion adoption, Diplomacy status changes. Add only the call sites needed by the event list below; each domain ticket may add its own events through the same registry.
       - Initial event set: TurnEnded, TurnStarted, AutoPlayerTurnProcessed(civ), UnitMoved(path of positions, with start/end), UnitAttacked(attacker, defender, damage both sides, killed), UnitCreated, UnitDestroyed, CityFounded, CityCaptured, CityGrew, TileOwnerChanged, NotificationAdded (per civ), AlertAdded (per civ), ResearchCompleted, PolicyAdopted, WarDeclared, PeaceMade, TradeAccepted.
