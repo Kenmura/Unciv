@@ -2535,7 +2535,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario asset-sheet: swatch sheet golden + registry resolves every Vanilla ruleset name. Human: colour/readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
 
 ### C008 Client scenario runner and owner review sheet
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: C001, A003, A004, A005, A006, A007
 - Source:
 - Fixtures: none
