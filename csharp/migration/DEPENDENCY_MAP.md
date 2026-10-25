@@ -232,7 +232,7 @@ flowchart TD
   class C006 waiting
   class C010 done
   class C011 done
-  class C012 prog
+  class C012 review
   class C013 ready
   class C015 ready
   class C016 review
@@ -366,7 +366,7 @@ xychart-beta
 | T179 | Available (waiting on T178) | T172, T173, T178 | 11 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
 | T204 | Available (waiting on T178) | T172, T173, T178, T199 | 9 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
 | T180 | Available (waiting on T179, T204, T223, T224) | T172, T173, T174, T175, T179, T204, T223, T224 | 6 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
-| C012 | In-Progress [Claude] | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195, C037, T220 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
+| C012 | Needs-Review [Claude] | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195, C037, T220 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
 | C016 | Needs-Review [Claude] | C005, C010, T100, C037, T208, T215, C043 | 2 | Save/load screen and autosave |
 | C036 | Available (waiting on T180, T202) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | C022 | Available (waiting on C021) | C021, T164, T059, T193, T197 | 1 | Trade screen |
