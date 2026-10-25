@@ -19,6 +19,10 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
 
     public void Register(Type queryClass, string type)
     {
+        if (string.IsNullOrEmpty(type))
+            throw new InvalidOperationException("Query type name must not be empty");
+        if (!typeof(IQuery).IsAssignableFrom(queryClass) || queryClass.IsAbstract)
+            throw new InvalidOperationException($"{queryClass.Name} is not a concrete IQuery");
         if (typeByName.ContainsKey(type))
             throw new InvalidOperationException($"Query type \"{type}\" is already registered");
         if (nameByType.ContainsKey(queryClass))
@@ -35,12 +39,17 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
             .Where(it => it.Attribute != null)
             .Select(it => (it.Class, Name: it.Attribute.NotNull().Name))
             .OrderBy(it => it.Name, StringComparer.Ordinal);
-        foreach (var (queryClass, name) in found)
+        var all = found.ToList();
+        // Validate everything before registering anything, so a bad class leaves the registry untouched.
+        foreach (var (queryClass, name) in all)
         {
             if (queryClass.IsAbstract || !typeof(IQuery).IsAssignableFrom(queryClass))
                 throw new InvalidOperationException($"{queryClass.Name} has [QueryType] but is not a concrete IQuery");
-            Register(queryClass, name);
+            if (typeByName.ContainsKey(name) || nameByType.ContainsKey(queryClass))
+                throw new InvalidOperationException($"{queryClass.Name} (\"{name}\") is already registered");
         }
+        foreach (var (queryClass, name) in all)
+            Register(queryClass, name);
     }
 
     public QueryEnvelope ToEnvelope(string viewerId, IQuery query)
@@ -92,10 +101,10 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
     public QueryResponse Execute(QueryEnvelope envelope, QueryContext context)
     {
         if (!TryFromEnvelope(envelope, out var query, out var failure)) return failure;
-        if (envelope.ViewerId == null || !context.TryCreateView(envelope.ViewerId, out var view))
-            return QueryResponse.Fail(QueryCodes.UnknownViewer, $"Unknown viewer \"{envelope.ViewerId}\"");
         try
         {
+            if (envelope.ViewerId == null || !context.TryCreateView(envelope.ViewerId, out var view))
+                return QueryResponse.Fail(QueryCodes.UnknownViewer, $"Unknown viewer \"{envelope.ViewerId}\"");
             object? result = query.NotNull().RunBoxed(view.NotNull());
             if (result == null) return QueryResponse.Fail(QueryCodes.InternalError, $"Query \"{envelope.Type}\" returned no result");
             return QueryResponse.Success(JsonSerializer.SerializeToElement(result, result.GetType(), options));

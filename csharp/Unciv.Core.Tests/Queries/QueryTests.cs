@@ -176,7 +176,13 @@ public class QueryTests
                 continue;
             }
             var response = registry.Execute(new QueryEnvelope("test.Terrain", player.CivName, payload), context);
-            Assert.True(response.Ok || response.Code == QueryCodes.MalformedQuery || response.Code == QueryCodes.InternalError, json);
+            if (json.Contains("Extra", StringComparison.Ordinal))
+            {
+                Assert.True(response.Ok, json); // unknown properties are ignored, as for commands
+                continue;
+            }
+            Assert.False(response.Ok, json);
+            Assert.Equal(QueryCodes.MalformedQuery, response.Code);
         }
     }
 
@@ -192,6 +198,9 @@ public class QueryTests
     {
         var fresh = new QueryRegistry(UncivJson.DefaultOptions);
         Assert.Throws<InvalidOperationException>(() => fresh.RegisterFromAssembly(typeof(QueryTests).Assembly));
+        Assert.Empty(fresh.RegisteredTypes);
+        Assert.Throws<InvalidOperationException>(() => fresh.Register(typeof(string), "test.NotAQuery"));
+        Assert.Throws<InvalidOperationException>(() => fresh.Register(typeof(ViewerQuery), ""));
 
         fresh.Register<MismatchQuery>("test.WrongName");
         var envelope = new QueryEnvelope("test.WrongName", player.CivName, JsonSerializer.SerializeToElement(new { }));
