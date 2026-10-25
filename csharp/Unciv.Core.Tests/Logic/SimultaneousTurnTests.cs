@@ -177,8 +177,7 @@ public sealed class SimultaneousTurnTests : IDisposable
         Assert.Equal(Resolve(game), Resolve(loaded));
         Assert.Equal(game.Turns, loaded.Turns);
         Assert.True(loaded.IsActive(loaded.GetCivilization("Babylon")));
-        // Not compared: the hash after the round. Civ.Stats (Happiness...) is a transient cache that a load does not restore, and StartNextTurn
-        // records it into the ranking history. A host saves at checkpoints (Playing) or after StartNextTurn, which the next test covers.
+        Assert.Equal(Hash(game), Hash(loaded)); // T218: the ranking history recorded by StartNextTurn must not depend on a cache the load skipped
     }
 
     [Fact]

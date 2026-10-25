@@ -148,6 +148,10 @@ public partial class GameInfo
     public void StartNextTurn()
     {
         var state = Expect(new ResolveStep.StartNextTurn());
+        // T218: Civ.Stats (Happiness, StatsForNextTurn) is not serialised and a load recomputes it, while a running game holds the value of its
+        // last update; recompute it here so the ranking history recorded below is the same live and after a mid-round reload.
+        foreach (var civ in Civilizations)
+            civ.UpdateStatsForNextTurn();
         RecordRankingStats();
         Turns++;
         if (EngineOptions.SimulateUntilTurn != 0)

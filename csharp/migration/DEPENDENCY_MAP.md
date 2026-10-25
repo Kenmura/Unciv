@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 198/202 | 4 | 1 | 3 | [T216](backlog/T216.md) [T217](backlog/T217.md) [T218](backlog/T218.md) [T219](backlog/T219.md) |
+| Phase 1: CLI (headless engine) | 198/202 | 4 | 2 | 2 | [T216](backlog/T216.md) [T217](backlog/T217.md) [T218](backlog/T218.md) [T219](backlog/T219.md) |
 | Phase 2: single player (Godot client) | 6/34 | 28 | 3 | 3 | [C002](backlog/C002.md) [C003](backlog/C003.md) [C004](backlog/C004.md) [C005](backlog/C005.md) [C011](backlog/C011.md) [C012](backlog/C012.md) [C013](backlog/C013.md) [C014](backlog/C014.md) [C015](backlog/C015.md) [C016](backlog/C016.md) [C017](backlog/C017.md) [C018](backlog/C018.md) [C019](backlog/C019.md) [C020](backlog/C020.md) [C021](backlog/C021.md) [C022](backlog/C022.md) [C023](backlog/C023.md) [C024](backlog/C024.md) [C025](backlog/C025.md) [C026](backlog/C026.md) [C027](backlog/C027.md) [C028](backlog/C028.md) [C029](backlog/C029.md) [C030](backlog/C030.md) [C031](backlog/C031.md) [C032](backlog/C032.md) [C033](backlog/C033.md) [T169](backlog/T169.md) |
 | Phase 3: multiplayer | 6/23 | 17 | 3 | 0 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [T176](backlog/T176.md) [T177](backlog/T177.md) [T178](backlog/T178.md) [T179](backlog/T179.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T201](backlog/T201.md) [T202](backlog/T202.md) [T203](backlog/T203.md) [T204](backlog/T204.md) [T205](backlog/T205.md) [T206](backlog/T206.md) [T207](backlog/T207.md) |
 
@@ -390,8 +390,8 @@ flowchart TD
   class T206 waiting
   class T207 waiting
   class T216 prog
-  class T217 review
-  class T218 prog
+  class T217 ready
+  class T218 review
   class T219 ready
 ```
 
@@ -410,8 +410,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
-    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 43]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6]
+    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 44]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
 ```
 
 ## Incomplete tickets
@@ -424,6 +424,7 @@ xychart-beta
 | C030 | **Ready to start** | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T201 | **Ready to start** | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
+| T217 | **Ready to start** | T160 | 0 | Kotlin golden run with a mod ruleset |
 | T219 | **Ready to start** | T208 | 0 | GameInfo.Clone() shares state (trade requests etc.) and Canonicalize skips remaining JVM hash sets/maps (religion beliefs, flag maps): make Clone playable and extend soak |
 | C011 | **On deck** (after C005) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | **On deck** (after C005) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
@@ -465,5 +466,4 @@ xychart-beta
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
 | T216 | In-Progress [Claude] | T160 | 0 | Kotlin per-turn golden hashes from a fixed saved map (sidesteps unseeded resource shuffles) |
-| T217 | Needs-Review [Claude] | T160 | 0 | Kotlin golden run with a mod ruleset |
-| T218 | In-Progress [Claude] | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
+| T218 | Needs-Review [Claude] | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
