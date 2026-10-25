@@ -1990,7 +1990,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Notes: Handles non-combat and idle units (workers, settlers, great people, trade units, exploration, garrison) using the same prioritized move-queue architecture with `AI_HOMELAND_MOVE_PRIORITY_*` tunables.
 
 ### A007 Operations and armies layer
-- State: Blocked
+- State: Available
 - Depends: A004, A005
 - Source: `csharp/migration/ai-spec/SPEC.md` §8
 - Deliverables: `csharp/Unciv.Core/AI/Operations/` (`AIOperation`, `ArmyAI`, operation types: `CityAttack`, `BarbarianCamp`, etc.), tests

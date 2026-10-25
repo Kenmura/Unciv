@@ -63,7 +63,7 @@ flowchart TD
   class A004 ready
   class A005 waiting
   class A006 waiting
-  class A007 blocked
+  class A007 waiting
   class C001 blocked
   class C002 blocked
   class C003 blocked
@@ -113,7 +113,7 @@ xychart-beta
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | A005 | Available (waiting on A004) | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | Available (waiting on A004) | A004, T091, T092 | 0 | Homeland AI priority move queue |
-| A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
+| A007 | Available (waiting on A004, A005) | A004, A005 | 0 | Operations and armies layer |
 | C003 | Blocked | C002 | 0 | Resource and improvement props |
 | C004 | Blocked | C002 | 0 | 3D military units |
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
