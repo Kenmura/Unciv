@@ -61,6 +61,10 @@ public static class PlaceholderPalette
     public static Rgb PanelFill { get; } = new(36, 42, 54);
     public static Rgb PanelBorder { get; } = new(62, 70, 86);
     public static Rgb Accent { get; } = new(214, 170, 60);
+    /// <summary>C012: overlay on the tiles the selected unit can move to.</summary>
+    public static Rgb ReachableTint { get; } = new(70, 130, 220);
+    /// <summary>C012: overlay on the tiles the selected unit can attack.</summary>
+    public static Rgb AttackTint { get; } = new(220, 60, 50);
     public static Rgb AccentHover { get; } = new(240, 200, 90);
     public static Rgb ButtonFill { get; } = new(48, 56, 72);
     public static Rgb ButtonHover { get; } = new(66, 76, 96);

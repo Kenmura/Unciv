@@ -1,5 +1,6 @@
 using Unciv.Queries.Cities;
 using Unciv.Queries.Empire;
+using Unciv.Queries.Tiles;
 using Unciv.Queries.Units;
 
 namespace Unciv.GodotClient.Play;
@@ -22,4 +23,14 @@ public sealed class GameQueries(IGameSession session)
     public Task<CityPanelResult?> CityPanel(string cityId) => session.QueryAsync(new CityPanelQuery(cityId));
 
     public Task<CityTilesResult?> CityTiles(string cityId) => session.QueryAsync(new CityTilesQuery(cityId));
+
+    public Task<UnitActionsResult?> Actions(int unitId) => session.QueryAsync(new UnitActionsQuery(unitId));
+
+    public Task<AttackableTargetsResult?> AttackTargets(int unitId) => session.QueryAsync(new AttackableTargetsQuery(unitId));
+
+    public Task<AttackPreviewResult?> AttackPreview(int unitId, int x, int y) => session.QueryAsync(new AttackPreviewQuery(x, y, unitId));
+
+    public Task<TileInfoResult?> TileInfo(int x, int y, int unitId) => session.QueryAsync(new TileInfoQuery(x, y, unitId));
+
+    public Task<PromotionChoicesResult?> Promotions(int unitId) => session.QueryAsync(new PromotionChoicesQuery(unitId));
 }

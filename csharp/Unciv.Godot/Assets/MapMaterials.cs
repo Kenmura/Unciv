@@ -68,6 +68,14 @@ public static class MapMaterials
         };
     }
 
+    /// <summary>Translucent unshaded film of one colour: the reachable-tile and attack-range overlays (C012).</summary>
+    public static StandardMaterial3D Overlay(Rgb tint)
+    {
+        var colour = ProceduralAssets.ToColor(tint);
+        colour.A = 0.4f;
+        return new StandardMaterial3D { AlbedoColor = colour, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, Transparency = BaseMaterial3D.TransparencyEnum.Alpha };
+    }
+
     /// <summary>Black backdrop with flat white-ish ambient light, so unexplored space is black and tiles keep their palette colours.</summary>
     public static Godot.Environment Backdrop() => new()
     {

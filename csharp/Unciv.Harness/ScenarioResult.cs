@@ -21,7 +21,8 @@ public sealed record ScenarioResult(
     IReadOnlyList<string> Checklist,
     IReadOnlyList<string> Failures,
     bool Solo = false,
-    bool GodMode = false)
+    bool GodMode = false,
+    bool Skirmish = false)
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 

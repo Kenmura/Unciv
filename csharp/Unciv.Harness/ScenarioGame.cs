@@ -48,8 +48,9 @@ public static class ScenarioGame
     /// <paramref name="solo"/> (C010): one human (Babylon) and the AI, no city founded: the game the client's QuickStart builds; otherwise the two-human game above.
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false)
     {
+        solo |= skirmish;
         var ruleset = LoadVanilla();
         var game = GameStarter.StartNewGame(
             new GameSetupInfo(
@@ -71,8 +72,27 @@ public static class ScenarioGame
             var settler = civ.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());
             civ.AddCity(settler.CurrentTile.Position, settler);
         }
+        if (skirmish) SetUpSkirmish(game);
         return new GameSession(game);
     }
+
+    /// <summary>
+    /// C012: the solo game plus an AI warrior on a tile next to the human warrior, at war with the human, and a human worker on another neighbouring tile: a
+    /// battle, a worker and a settler to give orders to. Set up directly on the state (like the founded cities above), so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpSkirmish(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var ai = game.GetCivilization(Ai);
+        var warrior = human.Units.GetCivUnits().OrderBy(it => it.Id).First(it => it.BaseUnit.Name == "Warrior");
+        var free = warrior.CurrentTile.Neighbors
+            .Where(it => it.IsLand && !it.IsImpassible() && !it.GetUnits().Any())
+            .OrderBy(it => it.Position.x).ThenBy(it => it.Position.y).ToList();
+        ai.Units.PlaceUnitNearTile(free[0].Position, "Warrior");
+        human.Units.PlaceUnitNearTile(free[1].Position, "Worker");
+        human.GetDiplomacyManagerOrMeet(ai).DeclareWar();
+    }
+
 
     /// <summary>The 64-bit canonical hash of the whole game state (serialised form), as lowercase hex.</summary>
     public static string StateHash(GameSession session) =>

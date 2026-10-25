@@ -108,4 +108,22 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.Contains("- FAILED: golden mismatch", md);
         foreach (string item in ReviewIndex.GeneralChecklist) Assert.Contains("- [ ] " + item, md);
     }
+
+    [Fact]
+    public void SkirmishGameHasAdjacentEnemyAtWarAndAWorkerAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(skirmish: true);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        var ai = session.Game.GetCivilization(ScenarioGame.Ai);
+        var warrior = human.Units.GetCivUnits().First(it => it.BaseUnit.Name == "Warrior");
+        var enemy = ai.Units.GetCivUnits().First(it => it.BaseUnit.Name == "Warrior" && it.CurrentTile.AerialDistanceTo(warrior.CurrentTile) == 1);
+        Assert.True(human.IsAtWarWith(ai));
+        Assert.Contains(human.Units.GetCivUnits(), it => it.BaseUnit.Name == "Worker");
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(skirmish: true)));
+        var result = session.Submit(ScenarioGame.HumanA, new Unciv.Commands.Units.AttackWithUnit { UnitId = warrior.Id, Target = enemy.CurrentTile.Position });
+        Assert.True(result.Accepted);
+        Assert.True(enemy.Health < 100);
+        string hash = ScenarioGame.StateHash(session);
+        Assert.Equal(hash, ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, skirmish: true));
+    }
 }

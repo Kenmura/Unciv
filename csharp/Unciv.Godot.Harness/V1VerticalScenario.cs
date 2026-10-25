@@ -99,7 +99,8 @@ public sealed class V1VerticalScenario : Scenario
             {
                 steps.Add(new Act("pick a second destination", () =>
                 {
-                    var options = queries.Reachable(warrior.Id).GetAwaiter().GetResult().NotNull().Tiles.Where(it => it.CanEnter && !(it.X == warrior.CurrentTile.Position.x && it.Y == warrior.CurrentTile.Position.y))
+                    var options = queries.Reachable(warrior.Id).GetAwaiter().GetResult().NotNull().Tiles.Where(it => it.CanEnter && !(it.X == warrior.CurrentTile.Position.x && it.Y == warrior.CurrentTile.Position.y)
+                            && !screen.Panel.GetGlobalRect().Grow(8f).HasPoint(screen.Map.ScreenPositionOf(new HexCoord(it.X, it.Y)))) // C012: the unit panel covers part of the map
                         .OrderBy(it => it.X).ThenBy(it => it.Y).ToList();
                     secondDestination = new HexCoord(options[0].X, options[0].Y);
                     seqBefore = session.LastSeq;

@@ -23,6 +23,8 @@ public abstract class Scenario
 
     /// <summary>The game is created with God mode on (debug commands allowed); recorded in the result so the headless replay creates it the same way.</summary>
     public virtual bool GodMode => false;
+    /// <summary>The scenario plays the skirmish game (<see cref="Unciv.Harness.ScenarioGame.Create"/> with skirmish): the solo game plus an adjacent enemy warrior at war and a worker.</summary>
+    public virtual bool Skirmish => false;
 
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

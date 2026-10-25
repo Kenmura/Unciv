@@ -1,6 +1,7 @@
 using System.Globalization;
 using Godot;
 using Unciv.Assets;
+using Unciv.Commands;
 using Unciv.Commands.Units;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Map;
@@ -8,6 +9,7 @@ using Unciv.GodotClient.Ui;
 using Unciv.Logic.Map;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Units;
+using Unciv.Utils;
 
 namespace Unciv.GodotClient.Play;
 
@@ -37,6 +39,9 @@ public partial class GameScreen : Control
     private int previewRequest;
     private PathPreviewResult? preview;
     private bool mapLoaded;
+    private int selectionRequest;
+    private HashSet<(int X, int Y)> attackTiles = [];
+    private (string Kind, HexCoord Target)? pendingAttack;
 
     public MapView Map { get; private set; } = null!; // JUSTIFY: C010 assigned in _Ready before any use
 
@@ -46,6 +51,14 @@ public partial class GameScreen : Control
 
     /// <summary>Cities, borders, roads and improvements drawn on the map (C041).</summary>
     public MapOverlayLayer Overlays { get; private set; } = null!; // JUSTIFY: C041 assigned in _Ready before any use
+
+    public UnitPanelView Panel { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
+
+    public CombatPreviewView CombatPreview { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
+
+    public TileOverlay ReachableOverlay { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
+
+    public TileOverlay AttackOverlay { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
 
     public int? SelectedUnitId { get; private set; }
 
@@ -82,6 +95,10 @@ public partial class GameScreen : Control
         AddChild(unitLayer);
         dotLayer = new Node3D { Name = "PathDots" };
         AddChild(dotLayer);
+        ReachableOverlay = new TileOverlay(PlaceholderPalette.ReachableTint) { Name = "ReachableOverlay" };
+        AttackOverlay = new TileOverlay(PlaceholderPalette.AttackTint) { Name = "AttackOverlay" };
+        AddChild(ReachableOverlay);
+        AddChild(AttackOverlay);
 
         statusLabel = new Label { Name = "StatusLabel" };
         AddChild(statusLabel);
@@ -89,6 +106,14 @@ public partial class GameScreen : Control
         AddChild(Hud);
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
+        Panel = new UnitPanelView();
+        AddChild(Panel);
+        Panel.EntryChosen += OnMenuEntry;
+        Panel.Confirmed += entry => Run(ExecuteEntry(entry, confirmed: true));
+        CombatPreview = new CombatPreviewView();
+        AddChild(CombatPreview);
+        CombatPreview.ConfirmRequested += () => Run(ConfirmAttack());
+        CombatPreview.CancelRequested += ClearAttackPreview;
         Minimap = new MinimapView { Name = "Minimap" };
         AddChild(Minimap);
         Minimap.Attach(Map);
@@ -111,6 +136,8 @@ public partial class GameScreen : Control
         }
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
+        Panel.LayoutIn(Size);
+        CombatPreview.LayoutIn(Size);
     }
 
     public override void _ExitTree()
@@ -138,6 +165,10 @@ public partial class GameScreen : Control
         AddChild(City);
         City.CommandAccepted += Refresh;
         City.Closed += () => ShowCity(null);
+        Panel.Init(theme);
+        CombatPreview.Init(theme);
+        ReachableOverlay.Setup(registry);
+        AttackOverlay.Setup(registry);
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
         Refresh();
         var first = snapshot.Units.FirstOrDefault(it => it.Own != null);
@@ -162,6 +193,7 @@ public partial class GameScreen : Control
             Map.Select(new HexCoord(selected.Unit.X, selected.Unit.Y));
         else SelectedUnitId = null;
         ApplySelectionScale();
+        Run(RefreshSelection());
     }
 
     private Rgb? OwnerColour(string owner) => session.Ruleset.Nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetOuterColor()) : null;
@@ -217,21 +249,27 @@ public partial class GameScreen : Control
             ShowCity(city); // a click on a city opens it, unless a unit elsewhere is selected (then the click is a move target) or a unit there is still to be selected
             return;
         }
-        if (own.Count > 0)
+        switch (UnitOrdersModel.ClickIntent((tile.X, tile.Y), own.Count > 0, SelectedUnitId != null, attackTiles))
         {
-            int at = SelectedUnitId is { } current ? own.FindIndex(it => it.Unit.Id == current) : -1;
-            SelectUnit(own[(at + 1) % own.Count]);
-            return;
+            case TileClickIntent.SelectOwn:
+                int at = SelectedUnitId is { } current ? own.FindIndex(it => it.Unit.Id == current) : -1;
+                SelectUnit(own[(at + 1) % own.Count]);
+                break;
+            case TileClickIntent.AttackPreview:
+                Run(ShowAttackPreview(tile));
+                break;
+            case TileClickIntent.PathPreview:
+                if (PreviewTarget == tile) Run(MoveSelectedTo());
+                else Run(ShowPreview(tile));
+                break;
         }
-        if (SelectedUnitId == null) return;
-        if (PreviewTarget == tile) Run(MoveSelectedTo());
-        else Run(ShowPreview(tile));
     }
 
     private void OnTileRightClicked(HexCoord? coord)
     {
         if (coord is not { } tile || SelectedUnitId == null) return;
-        Run(RightClickMove(tile));
+        if (attackTiles.Contains((tile.X, tile.Y))) Run(ShowAttackPreview(tile));
+        else Run(RightClickMove(tile));
     }
 
     private async Task RightClickMove(HexCoord tile)
@@ -250,6 +288,7 @@ public partial class GameScreen : Control
         Map.Select(new HexCoord(node.Unit.X, node.Unit.Y));
         ApplySelectionScale();
         SetStatus(DescribeSelected());
+        Run(RefreshSelection());
     }
 
     /// <summary>Opens (or, with null, closes) the city screen for a city of the snapshot.</summary>
@@ -270,6 +309,7 @@ public partial class GameScreen : Control
         SelectedUnitId = null;
         ClearPreview();
         ApplySelectionScale();
+        ClearSelectionUi();
         SetStatus("Click one of your units.");
     }
 
@@ -333,6 +373,117 @@ public partial class GameScreen : Control
         preview = null;
         PreviewTarget = null;
         foreach (var dot in dotLayer.GetChildren()) dot.QueueFree();
+        ClearAttackPreview();
+    }
+
+    // C012: unit panel, menu and overlays
+
+    private void ClearSelectionUi()
+    {
+        selectionRequest++;
+        attackTiles = [];
+        Panel.Clear();
+        ReachableOverlay.Clear();
+        AttackOverlay.Clear();
+        ClearAttackPreview();
+    }
+
+    private void ClearAttackPreview()
+    {
+        pendingAttack = null;
+        CombatPreview.Clear();
+    }
+
+    private Vector3 TileTopAt(HexCoord coord) => MapLayout.TileTop(coord.X, coord.Y, Map.TileNodeAt(coord)?.Elevation ?? 1f);
+
+    /// <summary>Asks the engine what the selected unit can do (actions, improvements, promotions, reach, attack targets) and shows the panel and both overlays; nothing is computed here.</summary>
+    private async Task RefreshSelection()
+    {
+        int request = ++selectionRequest;
+        if (SelectedUnitId is not { } id || !unitNodes.TryGetValue(id, out var node) || !node.IsOwn)
+        {
+            ClearSelectionUi();
+            return;
+        }
+        var unit = node.Unit;
+        var actions = await queries.Actions(id);
+        var tile = await queries.TileInfo(unit.X, unit.Y, id);
+        var promotions = await queries.Promotions(id);
+        var reach = await queries.Reachable(id);
+        var targets = await queries.AttackTargets(id);
+        if (request != selectionRequest || SelectedUnitId != id) return; // superseded by another selection or a deselect
+        session.Ruleset.Units.TryGetValue(unit.Name, out var baseUnit);
+        var menu = UnitOrdersModel.Menu(actions ?? new UnitActionsResult(id, []), tile, promotions, unit.Own?.CurrentMovement > 0f);
+        Panel.Show(UnitOrdersModel.Panel(unit, baseUnit), menu);
+        attackTiles = targets == null ? [] : [.. UnitOrdersModel.AttackTiles(targets)];
+        ReachableOverlay.Show(reach == null ? [] : [.. UnitOrdersModel.ReachableTiles(reach).Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
+        AttackOverlay.Show([.. attackTiles.Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
+    }
+
+    private async Task ShowAttackPreview(HexCoord tile)
+    {
+        ClearPreview();
+        int request = ++previewRequest;
+        if (SelectedUnitId is not { } id) return;
+        var result = await queries.AttackPreview(id, tile.X, tile.Y);
+        if (request != previewRequest) return;
+        if (result == null)
+        {
+            SetStatus($"{DescribeSelected()}   (no battle preview for that tile)");
+            return;
+        }
+        pendingAttack = (result.Kind, tile);
+        CombatPreview.Show(UnitOrdersModel.Combat(result));
+        SetStatus($"{DescribeSelected()}   confirm the attack or cancel");
+    }
+
+    private async Task ConfirmAttack()
+    {
+        if (pendingAttack is not { } pending || SelectedUnitId is not { } id) return;
+        GameCommand command = pending.Kind switch
+        {
+            "nuke" => new Nuke { UnitId = id, Target = pending.Target },
+            "airsweep" => new AirSweep { UnitId = id, Target = pending.Target },
+            _ => new AttackWithUnit { UnitId = id, Target = pending.Target },
+        };
+        var result = await session.SubmitAsync(command);
+        ClearAttackPreview();
+        if (!result.Accepted)
+        {
+            SetStatus("Attack refused: " + result.Message);
+            return;
+        }
+        Refresh();
+        SetStatus("Attack made.");
+    }
+
+    private void OnMenuEntry(MenuEntry entry)
+    {
+        if (entry.Kind == MenuEntryKind.Engine && entry.Action?.Confirmation is { } confirmation)
+            Panel.AskConfirmation(entry, confirmation.Question, confirmation.ConfirmText);
+        else if (entry.Kind == MenuEntryKind.Disband)
+            Panel.AskConfirmation(entry, "Disband this unit?", "Disband");
+        else Run(ExecuteEntry(entry, confirmed: false));
+    }
+
+    private async Task ExecuteEntry(MenuEntry entry, bool confirmed)
+    {
+        if (SelectedUnitId is not { } id) return;
+        GameCommand command = entry.Kind switch
+        {
+            MenuEntryKind.Engine => new ExecuteUnitAction { UnitId = id, Descriptor = entry.Action.NotNull().Descriptor, Confirmed = confirmed },
+            MenuEntryKind.Improve => new SetWorkerOrder { UnitId = id, Order = WorkerOrderKind.Build, Improvement = entry.Argument.NotNull() },
+            MenuEntryKind.Promote => new PromoteUnit { UnitId = id, Promotion = entry.Argument.NotNull() },
+            _ => new DisbandUnit { UnitId = id },
+        };
+        var result = await session.SubmitAsync(command);
+        if (!result.Accepted)
+        {
+            SetStatus($"{entry.Label} refused: {result.Message}");
+            return;
+        }
+        Refresh();
+        SetStatus($"{entry.Label}: done.");
     }
 
     private async Task MoveSelectedTo()
