@@ -54,9 +54,10 @@ public static class RulesetAssetKeys
     /// <summary>All keys the client may ask for given <paramref name="ruleset"/>, in ruleset order, defaults and fixed UI keys included.</summary>
     public static IReadOnlyList<AssetKey> KeysFor(RulesetClass ruleset)
     {
-        var keys = new List<AssetKey> { HexMesh, UiTheme, UiPanel, UiButton, DefaultFont };
+        var keys = new List<AssetKey> { HexMesh, VegetationGeometry.TuftMeshKey, UiTheme, UiPanel, UiButton, DefaultFont };
         foreach (var category in Categories) keys.Add(new AssetKey(category, AssetKey.DefaultName));
         keys.AddRange(ruleset.Terrains.Keys.Select(n => AssetKey.Of(Terrain, n)));
+        keys.AddRange(ruleset.Terrains.Keys.Select(TerrainRelief.MeshKey));
         keys.AddRange(ruleset.Units.Keys.Select(n => AssetKey.Of(Unit, n)));
         keys.AddRange(ruleset.UnitTypes.Keys.Select(n => AssetKey.Of(UnitType, n)));
         keys.AddRange(ruleset.TileResources.Keys.Select(n => AssetKey.Of(Resource, n)));

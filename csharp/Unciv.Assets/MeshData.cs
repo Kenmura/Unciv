@@ -1,7 +1,7 @@
 namespace Unciv.Assets;
 
-/// <summary>Plain triangle mesh: interleaved xyz positions and normals, uv pairs and a triangle index list (clockwise front faces, as Godot expects).</summary>
-public sealed record MeshData(float[] Positions, float[] Normals, float[] Uvs, int[] Indices)
+/// <summary>Plain triangle mesh: xyz positions and normals, uv pairs, a triangle index list (clockwise front faces, as Godot expects) and optionally rgba vertex colours (multiplied onto the material's albedo).</summary>
+public sealed record MeshData(float[] Positions, float[] Normals, float[] Uvs, int[] Indices, float[]? Colors = null)
 {
     public int VertexCount => Positions.Length / 3;
     public int TriangleCount => Indices.Length / 3;

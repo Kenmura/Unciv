@@ -22,6 +22,22 @@ public static class MapMaterials
         return copy;
     }
 
+    /// <summary>Material of the instanced grass tufts (C002): vertex colours (root dark, tip light) times the per-instance colour; double sided because a blade is one triangle.</summary>
+    public static StandardMaterial3D Vegetation() => new()
+    {
+        AlbedoColor = new Color(1f, 1f, 1f),
+        VertexColorUseAsAlbedo = true,
+        CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        Roughness = 1f,
+    };
+
+    /// <summary>Per-instance colour of a tuft on <paramref name="baseTerrain"/>: the terrain's palette colour lightened a little, dimmed when the tile is not visible.</summary>
+    public static Color TuftColour(string baseTerrain, bool visible)
+    {
+        var colour = ProceduralAssets.ToColor(PlaceholderPalette.ForTerrain(baseTerrain)).Lerp(new Color(1f, 1f, 1f), 0.25f);
+        return visible ? colour : colour * ProceduralAssets.ToColor(PlaceholderPalette.FogDim);
+    }
+
     /// <summary>Translucent unshaded accent colour for the selected tile.</summary>
     public static StandardMaterial3D Highlight()
     {

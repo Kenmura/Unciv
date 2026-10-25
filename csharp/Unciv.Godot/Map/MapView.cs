@@ -22,6 +22,9 @@ public partial class TileNode : MeshInstance3D
     public HexCoord Coord { get; set; }
     public TileFog Fog { get; set; }
     public float Elevation { get; set; } = 1f;
+
+    /// <summary>C002: the silhouette family the tile's mesh was built from (picking intersects the real surface profile).</summary>
+    public ReliefKind Relief { get; set; } = ReliefKind.Flat;
 }
 
 /// <summary>
@@ -33,6 +36,8 @@ public partial class TileNode : MeshInstance3D
 public partial class MapView : Node3D
 {
     public const float TiltDegrees = 55f;
+    public const float MinTilt = 25f;
+    public const float MaxTilt = 80f;
     public const float MinZoom = 4f;
     public const float MaxZoom = 40f;
     public const float DefaultZoom = 14f;
@@ -41,14 +46,16 @@ public partial class MapView : Node3D
     private const float KeyPanPerSecond = 1.2f;
     private const float DragThresholdPixels = 4f;
     private const int CandidateRadius = 2;
-    private const float HillElevation = 3f;
-    private const float MountainElevation = 6f;
+    private const int PickSteps = 24;
 
     private readonly Dictionary<HexCoord, TileNode> tiles = [];
     private Node3D tileRoot = null!; // JUSTIFY: C009 assigned in _Ready before any use
     private TileHighlight highlight = null!; // JUSTIFY: C009 assigned in _Ready before any use
     private Vector3 focus;
     private float zoom = DefaultZoom;
+    private float tilt = TiltDegrees;
+    private float yaw;
+    private MultiMeshInstance3D? vegetation;
     private Vector2? pressAt;
     private bool dragging;
 
@@ -63,6 +70,16 @@ public partial class MapView : Node3D
     public event Action<HexCoord?>? TileRightClicked;
 
     public float Zoom => zoom;
+
+    public float Tilt => tilt;
+
+    public float Yaw => yaw;
+
+    /// <summary>Tufts instanced by the vegetation MultiMesh (C002).</summary>
+    public int VegetationCount => vegetation?.Multimesh?.InstanceCount ?? 0;
+
+    /// <summary>Triangles of every drawn tile mesh plus every vegetation instance; the budget check of the terrain scenario.</summary>
+    public int TriangleCount { get; private set; }
 
     public Vector3 Focus => focus;
 
@@ -84,7 +101,7 @@ public partial class MapView : Node3D
         AddChild(tileRoot);
         highlight = new TileHighlight { Name = "Highlight" };
         AddChild(highlight);
-        Camera = new Camera3D { Projection = Camera3D.ProjectionType.Orthogonal, Far = 200f, Current = true, RotationDegrees = new Vector3(-TiltDegrees, 0f, 0f) };
+        Camera = new Camera3D { Projection = Camera3D.ProjectionType.Orthogonal, Far = 200f, Current = true };
         AddChild(Camera);
         UpdateCamera();
     }
@@ -100,7 +117,10 @@ public partial class MapView : Node3D
         tiles.Clear();
         ClearSelection();
 
-        var hex = assets.Get<Mesh>(RulesetAssetKeys.HexMesh);
+        vegetation?.QueueFree();
+        vegetation = null;
+        TriangleCount = 0;
+        var tuftTransforms = new List<(Transform3D Transform, Color Colour)>();
         var tintCache = new Dictionary<(string Base, string? Feature, bool Visible), Material>();
         foreach (var tile in snapshotTiles)
         {
@@ -112,22 +132,27 @@ public partial class MapView : Node3D
                 var overlay = feature == null ? null : assets.Get<Material>(AssetKey.Of(RulesetAssetKeys.Terrain, feature));
                 tintCache[key] = material = MapMaterials.Tinted(baseMaterial, overlay, tile.Visible);
             }
-            var elevation = ElevationOf(tile);
+            var reliefName = ReliefTerrainOf(tile);
+            var kind = TerrainRelief.KindOf(reliefName);
+            var mesh = assets.Get<Mesh>(TerrainRelief.MeshKey(reliefName));
+            TriangleCount += (mesh.GetFaces().Length / 3);
             var coord = new HexCoord(tile.X, tile.Y);
             var node = new TileNode
             {
                 Name = $"Tile_{tile.X}_{tile.Y}",
                 Coord = coord,
                 Fog = tile.Visible ? TileFog.Visible : TileFog.Explored,
-                Elevation = elevation,
-                Mesh = hex,
+                Elevation = TerrainRelief.Elevation(kind),
+                Relief = kind,
+                Mesh = mesh,
                 MaterialOverride = material,
                 Position = MapLayout.TileTop(tile.X, tile.Y, 0f),
-                Scale = new Vector3(1f, elevation, 1f),
             };
             tileRoot.AddChild(node);
             tiles[coord] = node;
+            if (feature == null && kind == ReliefKind.Flat) AddTufts(tuftTransforms, tile, node.Position);
         }
+        BuildVegetation(assets, tuftTransforms);
         if (tiles.Count > 0 && !keepCamera) FocusOn(Centre());
     }
 
@@ -138,8 +163,42 @@ public partial class MapView : Node3D
     private const string HillFeature = "Hill";
     private const string MountainTerrain = "Mountain";
 
-    private static float ElevationOf(TileDto tile) =>
-        tile.BaseTerrain == MountainTerrain ? MountainElevation : tile.Features.Contains(HillFeature) ? HillElevation : 1f;
+    /// <summary>The terrain whose silhouette the tile uses: mountains and hills stand out, everything else keeps its base terrain's (water sits lower).</summary>
+    private static string ReliefTerrainOf(TileDto tile) =>
+        tile.BaseTerrain == MountainTerrain ? TerrainRelief.MountainName : tile.Features.Contains(HillFeature) ? TerrainRelief.HillName : tile.BaseTerrain;
+
+    private static void AddTufts(List<(Transform3D, Color)> into, TileDto tile, Vector3 origin)
+    {
+        var count = VegetationGeometry.TuftsFor(tile.BaseTerrain);
+        if (count == 0) return;
+        var colour = MapMaterials.TuftColour(tile.BaseTerrain, tile.Visible);
+        for (var i = 0; i < count; i++)
+        {
+            var (x, z, yaw, scale) = VegetationGeometry.Placement(tile.X, tile.Y, i);
+            var basis = new Basis(Vector3.Up, yaw).Scaled(new Vector3(scale, scale, scale));
+            into.Add((new Transform3D(basis, origin + new Vector3(x, TerrainRelief.LandHeight, z)), colour));
+        }
+    }
+
+    private void BuildVegetation(AssetRegistry assets, List<(Transform3D Transform, Color Colour)> tufts)
+    {
+        if (tufts.Count == 0) return;
+        var multi = new MultiMesh
+        {
+            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+            UseColors = true,
+            Mesh = assets.Get<Mesh>(VegetationGeometry.TuftMeshKey),
+            InstanceCount = tufts.Count,
+        };
+        for (var i = 0; i < tufts.Count; i++)
+        {
+            multi.SetInstanceTransform(i, tufts[i].Transform);
+            multi.SetInstanceColor(i, tufts[i].Colour);
+        }
+        TriangleCount += tufts.Count * (multi.Mesh.GetFaces().Length / 3);
+        vegetation = new MultiMeshInstance3D { Name = "Vegetation", Multimesh = multi, MaterialOverride = MapMaterials.Vegetation(), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
+        AddChild(vegetation);
+    }
 
     private Vector3 Centre()
     {
@@ -173,36 +232,67 @@ public partial class MapView : Node3D
         UpdateCamera();
     }
 
+    /// <summary>Tilts the camera (degrees below the horizon, clamped) and turns it around the vertical axis; the focus stays put.</summary>
+    public void SetView(float tiltDegrees, float yawDegrees = 0f)
+    {
+        tilt = Math.Clamp(tiltDegrees, MinTilt, MaxTilt);
+        yaw = yawDegrees;
+        UpdateCamera();
+    }
+
     private void UpdateCamera()
     {
         if (Camera == null) return;
+        Camera.RotationDegrees = new Vector3(-tilt, yaw, 0f);
         Camera.Size = zoom;
         Camera.Position = focus + Camera.Basis.Z * CameraDistance;
     }
 
     /// <summary>
-    /// The drawn tile under a screen position, or null if the ray misses the ground or no drawn tile is hit. Raised tiles (hills, mountains) are hit on
-    /// their own top face: every tile near the flat-plane hit is tested at its real elevation and the one the ray reaches first (highest hit) wins.
+    /// The drawn tile under a screen position, or null if the ray misses every drawn tile. The ray is marched through each nearby tile's real surface profile
+    /// (<see cref="TerrainRelief.SurfaceHeight"/>, so hill flanks and mountain slopes count, not just their apex plane); the tile the ray reaches first wins.
     /// </summary>
     public HexCoord? PickTile(Vector2 screenPosition)
     {
         var flat = PickGround(screenPosition, ProceduralAssets.HexHeight);
         if (flat == null) return null;
+        var origin = Camera.ProjectRayOrigin(screenPosition);
+        var direction = Camera.ProjectRayNormal(screenPosition);
         HexCoord? best = null;
-        var bestHeight = float.MinValue;
+        var bestDistance = float.MaxValue;
         foreach (var candidate in HexMath.GetHexCoordsInDistance(MapLayout.TileAt(flat.Value), CandidateRadius, false))
         {
             if (!tiles.TryGetValue(candidate, out var node)) continue;
-            var top = ProceduralAssets.HexHeight * node.Elevation;
-            var hit = PickGround(screenPosition, top);
-            if (hit == null || MapLayout.TileAt(hit.Value) != candidate) continue;
-            if (top > bestHeight)
+            var distance = RayDistanceToSurface(origin, direction, candidate, node);
+            if (distance < bestDistance)
             {
                 best = candidate;
-                bestHeight = top;
+                bestDistance = distance;
             }
         }
         return best;
+    }
+
+    /// <summary>Distance along the ray at which it first goes below the tile's surface inside the tile, or infinity.</summary>
+    private static float RayDistanceToSurface(Vector3 origin, Vector3 direction, HexCoord coord, TileNode node)
+    {
+        if (Math.Abs(direction.Y) < 1e-6f) return float.PositiveInfinity;
+        var top = ProceduralAssets.HexHeight * node.Elevation;
+        var rim = TerrainRelief.RimHeight(node.Relief);
+        var centre = MapLayout.TileTop(coord.X, coord.Y, 0f);
+        var upper = Math.Max(top, rim);
+        var lower = Math.Min(top, rim);
+        var tStart = (upper - origin.Y) / direction.Y;
+        var tEnd = (lower - origin.Y) / direction.Y;
+        for (var step = 0; step <= PickSteps; step++)
+        {
+            var t = tStart + (tEnd - tStart) * step / PickSteps;
+            var p = origin + direction * t;
+            if (MapLayout.TileAt(p) != coord) continue;
+            var surface = TerrainRelief.SurfaceHeight(node.Relief, TerrainRelief.RimFraction(p.X - centre.X, p.Z - centre.Z));
+            if (p.Y <= surface + 1e-3f) return t;
+        }
+        return float.PositiveInfinity;
     }
 
     private Vector3? PickGround(Vector2 screenPosition, float planeY)

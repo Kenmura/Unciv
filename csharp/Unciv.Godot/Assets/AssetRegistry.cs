@@ -62,7 +62,7 @@ public sealed class AssetRegistry
         {
             AssetKind.TerrainMaterial when typeof(T).IsAssignableFrom(typeof(StandardMaterial3D)) => ProceduralAssets.TerrainMaterial(key),
             AssetKind.TerrainMaterial when typeof(T).IsAssignableFrom(typeof(ImageTexture)) => ProceduralAssets.ToTexture(ProceduralImages.Noise(key)),
-            AssetKind.Mesh => ProceduralAssets.HexMesh(),
+            AssetKind.Mesh => ProceduralAssets.MeshFor(key),
             AssetKind.UnitBlock => ProceduralAssets.Model(key, ModelSpecs.Unit(key, unitType), withBanner: true),
             AssetKind.Prop => ProceduralAssets.Model(key, ModelSpecs.Prop(key), withBanner: false),
             AssetKind.Icon => ProceduralAssets.Icon(key),

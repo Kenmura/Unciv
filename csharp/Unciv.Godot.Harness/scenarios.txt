@@ -3,3 +3,4 @@ map-v1
 v1-vertical
 minimap
 ui-kit
+terrain-3d

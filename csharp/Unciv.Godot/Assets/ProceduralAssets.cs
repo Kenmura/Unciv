@@ -23,11 +23,13 @@ public static class ProceduralAssets
         var positions = new Vector3[data.VertexCount];
         var normals = new Vector3[data.VertexCount];
         var uvs = new Vector2[data.VertexCount];
+        var colours = data.Colors == null ? null : new Color[data.VertexCount];
         for (var i = 0; i < data.VertexCount; i++)
         {
             positions[i] = new Vector3(data.Positions[i * 3], data.Positions[i * 3 + 1], data.Positions[i * 3 + 2]);
             normals[i] = new Vector3(data.Normals[i * 3], data.Normals[i * 3 + 1], data.Normals[i * 3 + 2]);
             uvs[i] = new Vector2(data.Uvs[i * 2], data.Uvs[i * 2 + 1]);
+            if (colours != null) colours[i] = new Color(data.Colors![i * 4], data.Colors[i * 4 + 1], data.Colors[i * 4 + 2], data.Colors[i * 4 + 3]);
         }
         var arrays = new Godot.Collections.Array();
         arrays.Resize((int)Mesh.ArrayType.Max);
@@ -35,6 +37,7 @@ public static class ProceduralAssets
         arrays[(int)Mesh.ArrayType.Normal] = normals;
         arrays[(int)Mesh.ArrayType.TexUV] = uvs;
         arrays[(int)Mesh.ArrayType.Index] = data.Indices;
+        if (colours != null) arrays[(int)Mesh.ArrayType.Color] = colours;
         var mesh = new ArrayMesh();
         mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
         return mesh;
@@ -42,12 +45,20 @@ public static class ProceduralAssets
 
     public static ArrayMesh HexMesh() => ToMesh(HexGeometry.Prism(HexRadius, HexHeight));
 
+    /// <summary>The mesh a <c>mesh/...</c> key names: the plain hex prism, the grass tuft, or a terrain's displaced tile (C002).</summary>
+    public static ArrayMesh MeshFor(AssetKey key)
+    {
+        if (key == VegetationGeometry.TuftMeshKey) return ToMesh(VegetationGeometry.Tuft());
+        return TerrainRelief.TerrainOf(key) != null ? ToMesh(TerrainRelief.Build(key, HexRadius)) : HexMesh();
+    }
+
     /// <summary>Flat albedo from the palette times a tiny generated noise texture.</summary>
     public static StandardMaterial3D TerrainMaterial(AssetKey key) => new()
     {
         AlbedoColor = ToColor(PlaceholderPalette.ForTerrain(key.Name)),
         AlbedoTexture = ToTexture(ProceduralImages.Noise(key)),
         TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+        VertexColorUseAsAlbedo = true, // C002: relief meshes carry height/depth shading in vertex colours
         Roughness = 1f,
     };
 
