@@ -322,10 +322,44 @@ public class VictoryQueryTests
     }
 
     [Fact]
+    public void HistoryZoomIsInclusiveAndDropsTheLivePointOutsideTheRange()
+    {
+        testGame.GameInfo.Turns = 5;
+        player.StatsHistory[2] = Stats(2);
+        player.StatsHistory[3] = Stats(3);
+        List<int> Turns(HistoryQuery q) => Ask(q).Series.SelectMany(it => it.Points).Select(it => it.Turn).ToList();
+        Assert.Equal([2, 3], Turns(new HistoryQuery("Gold", FromTurn: 2, ToTurn: 3)));
+        Assert.Equal([2, 3, 5], Turns(new HistoryQuery("Gold", FromTurn: 2, ToTurn: int.MaxValue)));
+        Assert.Empty(Turns(new HistoryQuery("Gold", FromTurn: 4, ToTurn: 3)));
+        Assert.Equal([2, 3, 5], Turns(new HistoryQuery("Gold", FromTurn: int.MinValue)));
+    }
+
+    [Fact]
+    public void RankingTiesBreakByCivName()
+    {
+        var gold = Ask(new RankingsQuery()).Single(it => it.Type == "Gold");
+        Assert.Equal(gold.Entries.Select(it => it.Civ.CivName).Where(it => it != null).Order(StringComparer.Ordinal), gold.Entries.Select(it => it.Civ.CivName).Where(it => it != null));
+    }
+
+    [Fact]
+    public void DefeatedViewerSeesEveryNameAndNoOwnValue()
+    {
+        player.Cities = [];
+        Assert.True(player.IsDefeated());
+        var column = Ask(new DemographicsQuery())[0];
+        Assert.True(column.Rank > 0);
+        Assert.Null(column.Value);
+        var civs = Assert.Single(Ask(new RankingsQuery()).Take(1)).Entries;
+        Assert.DoesNotContain(civs, it => it.Civ.CivName == null);
+    }
+
+    [Fact]
     public void HistoryRejectsUnknownCategoriesAndHiddenCharts()
     {
         Assert.Equal(VictoryQueryCodes.BadRequest, Fail(new HistoryQuery("Nonsense")));
         Assert.Equal(VictoryQueryCodes.BadRequest, Fail(new HistoryQuery("99")));
+        Assert.Equal(VictoryQueryCodes.BadRequest, Fail(new HistoryQuery("1")));
+        Assert.Equal(VictoryQueryCodes.BadRequest, Fail(new HistoryQuery(" Gold")));
         testGame.GameInfo.GameParameters.ShowAdditionalRankingTypes = false;
         Assert.Equal(VictoryQueryCodes.BadRequest, Fail(new HistoryQuery("TilesExplored")));
         testGame.GameInfo.GameParameters.ShowCharts = false;

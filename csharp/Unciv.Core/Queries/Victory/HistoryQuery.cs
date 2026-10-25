@@ -12,7 +12,7 @@ public sealed record HistoryResult(string Category, IReadOnlyList<HistorySeries>
 // Category: a RankingType name. FromTurn/ToTurn: optional inclusive zoom range (VictoryScreenCharts zoom)
 // T198: the data of the Charts page. Per viewable major civ the recorded CivRankingHistory values in turn order, then the live value
 // of the current turn for living civs (both as in Kotlin getLineChartData, which can list the current turn twice).
-// Not available when the game does not show charts.
+// Not available when the game does not show charts. Unlike Kotlin the tab is not hidden for a history of fewer than 2 turns (a UI nicety): the series are just short.
 [QueryType("victory.History")]
 public sealed record HistoryQuery(string Category = nameof(RankingType.Score), int? FromTurn = null, int? ToTurn = null) : IQuery<HistoryResult>
 {
@@ -22,8 +22,10 @@ public sealed record HistoryQuery(string Category = nameof(RankingType.Score), i
     {
         var viewer = view.CivView.Unwrap();
         var game = viewer.GameInfo;
-        if (!Enum.TryParse<RankingType>(Category, out var category) || !Enum.IsDefined(category) || !RankingTypes.FilteredEntries(game.GameParameters).Contains(category))
+        if (!Enum.GetNames<RankingType>().Contains(Category, StringComparer.Ordinal)
+            || !RankingTypes.FilteredEntries(game.GameParameters).Contains(Enum.Parse<RankingType>(Category)))
             throw new QueryException(VictoryQueryCodes.BadRequest, $"Unknown ranking type \"{Category}\"");
+        var category = Enum.Parse<RankingType>(Category);
         VictoryQueryHelpers.RequireTab(game, viewer, game.GameParameters.ShowCharts, "Charts");
         bool InZoom(int turn) => turn >= (FromTurn ?? int.MinValue) && turn <= (ToTurn ?? int.MaxValue);
 

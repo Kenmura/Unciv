@@ -31,7 +31,7 @@ public sealed record DemographicsQuery : IQuery<IReadOnlyList<DemographicColumn>
             RankingEntry Entry((Civilization Civ, int Value) it) => new(VictoryQueryHelpers.Ref(viewer, it.Civ), it.Value);
             bool hasViewer = sorted.Any(it => ReferenceEquals(it.Civ, viewer));
             var own = hasViewer && !viewer.IsDefeated() && viewer.IsMajorCiv() ? Entry(sorted.First(it => ReferenceEquals(it.Civ, viewer))) : null;
-            int average = sorted.Count == 0 ? 0 : KotlinMath.RoundToInt(sorted.Sum(it => it.Value) / (float)sorted.Count);
+            int average = sorted.Count == 0 ? 0 : KotlinMath.RoundToInt(unchecked(sorted.Sum(it => it.Value)) / (float)sorted.Count);
             columns.Add(new DemographicColumn(category.ToString(), category.Label(),
                 sorted.FindIndex(it => ReferenceEquals(it.Civ, viewer)) + 1, own,
                 sorted.Count == 0 ? null : Entry(sorted[0]), average, sorted.Count == 0 ? null : Entry(sorted[^1])));
