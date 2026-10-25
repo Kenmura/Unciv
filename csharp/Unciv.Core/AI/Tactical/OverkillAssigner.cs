@@ -31,7 +31,8 @@ public sealed record OverkillPlan(IReadOnlyList<TacticalAssignment> Assignments,
 /// overkill budget is met, then drops any recruit the budget does not need (weakest first) so no unit is over-allocated.
 /// With <c>requireKill</c> a target whose recruits cannot reach its full hit points is skipped and nobody is committed
 /// to it. The neighbouring free tiles of a handled target (up to six) are reported as staging tiles, and each tile
-/// is offered to one target only.
+/// is offered to one target only. Tiles holding an attacker or a target are never staged; callers add other occupied tiles.
+/// Trimming is this port's own design (the original lets the last recruit overshoot); attacker ids must be unique.
 /// </summary>
 public sealed class OverkillAssigner(TacticalRecruiter recruiter, ITacticalDamageEstimator estimator, bool requireKill = true)
 {
@@ -50,11 +51,17 @@ public sealed class OverkillAssigner(TacticalRecruiter recruiter, ITacticalDamag
         var pool = attackers.ToList();
         var taken = new HashSet<int>();
         var blocked = new HashSet<HexCoord>(occupiedTiles ?? []);
+        foreach (var a in pool) blocked.Add(a.Position);
+        var targetList = targets.ToList();
+        foreach (var t in targetList)
+        {
+            ArgumentNullException.ThrowIfNull(t);
+            blocked.Add(t.Position);
+        }
         var results = new List<TacticalAssignment>();
 
-        foreach (var target in targets)
+        foreach (var target in targetList)
         {
-            ArgumentNullException.ThrowIfNull(target);
             results.Add(AssignOne(target, pool, taken, blocked, operationsCanRecruit));
         }
 
@@ -65,7 +72,8 @@ public sealed class OverkillAssigner(TacticalRecruiter recruiter, ITacticalDamag
         TacticalTarget target, List<TacticalAttacker> pool, HashSet<int> taken, HashSet<HexCoord> blocked, bool operationsCanRecruit)
     {
         var candidates = pool
-            .Where(a => !taken.Contains(a.Id))
+            .Where(a => !taken.Contains(a.Id) && (operationsCanRecruit || !a.InOperation)
+                && HexMath.GetDistance(a.Position, target.Position) <= recruiter.RecruitRange)
             .Select(a => new TacticalUnit(a.Id, a.Position, estimator.EstimateDamage(a, target), a.IsRanged, a.InOperation))
             .ToList();
 
@@ -76,7 +84,7 @@ public sealed class OverkillAssigner(TacticalRecruiter recruiter, ITacticalDamag
         long total = chosen.Sum(u => (long)u.ExpectedDamage);
         bool kills = target.TargetHp > 0 && chosen.Count > 0 && total >= target.TargetHp;
         if (chosen.Count == 0 || (requireKill && !kills))
-            return new TacticalAssignment(target, [], recruitment.RemainingBudget, false, []);
+            return new TacticalAssignment(target, [], (int)Math.Clamp(Budget(target), int.MinValue, int.MaxValue), false, []);
 
         foreach (var u in chosen) taken.Add(u.Id);
         int budget = (int)Math.Clamp(Budget(target) - total, int.MinValue, int.MaxValue);
@@ -85,7 +93,7 @@ public sealed class OverkillAssigner(TacticalRecruiter recruiter, ITacticalDamag
 
     private long Budget(TacticalTarget target) => ((long)recruiter.OverkillPercent + 100) * target.TargetHp / 100;
 
-    /// <summary>Removes recruits the budget can do without, weakest first (then furthest id), keeping the acting order.</summary>
+    /// <summary>Removes recruits the budget can do without, weakest first (then highest id), keeping the acting order.</summary>
     private List<TacticalUnit> Trim(List<TacticalUnit> chosen, TacticalTarget target)
     {
         long budget = Budget(target);

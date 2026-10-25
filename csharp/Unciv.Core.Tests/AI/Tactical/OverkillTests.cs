@@ -86,19 +86,32 @@ public class OverkillTests
     {
         var damage = new Dictionary<int, int> { [1] = 99, [2] = 99 };
         var target = Target(10, 10);
-        var occupied = new[] { new HexCoord(10, 1), new HexCoord(10, 0) };   // one neighbour is taken, one is the target itself
+        var occupied = new[] { new HexCoord(10, 1) };   // one neighbour is taken; attacker and target tiles are excluded automatically
         var plan = Assigner(damage).Assign([target, Target(11, 10)], [Unit(1, 10), Unit(2, 11)], occupied);
         var first = plan.Assignments[0].StagingTiles;
         var second = plan.Assignments[1].StagingTiles;
-        Assert.Equal(5, first.Count);
+        Assert.Equal(3, first.Count);   // 6 neighbours minus the occupied tile, the other target and the other attacker
         Assert.DoesNotContain(new HexCoord(10, 1), first);
         Assert.DoesNotContain(target.Position, first);
         Assert.All(first, t => Assert.Equal(1, HexMath.GetDistance(t, target.Position)));
         Assert.Empty(first.Intersect(second));
         Assert.DoesNotContain(plan.Assignments[1].Target.Position, second);
         var free = Assigner(damage).Assign([target], [Unit(1, 10)]);
-        Assert.Equal(6, free.Assignments[0].StagingTiles.Count);
+        Assert.Equal(5, free.Assignments[0].StagingTiles.Count);   // the attacker stands on one neighbour
         Assert.Equal(free.Assignments[0].StagingTiles, Assigner(damage).Assign([target], [Unit(1, 10)]).Assignments[0].StagingTiles);
+    }
+
+    [Fact]
+    public void SkippedTargetReportsFullBudgetAndStagingExcludesUnitsAndTargets()
+    {
+        var plan = Assigner(new() { [1] = 10 }).Assign([Target(0, 100)], [Unit(1, 1)]);
+        Assert.Equal(125, plan.Assignments[0].RemainingBudget);
+        var staged = Assigner(new() { [1] = 99 }).Assign([Target(0, 10)], [new TacticalAttacker(1, new HexCoord(1, 0), false)]);
+        Assert.DoesNotContain(new HexCoord(1, 0), staged.Assignments[0].StagingTiles);
+        Assert.Equal(5, staged.Assignments[0].StagingTiles.Count);
+        var exact = Assigner(new() { [1] = 8, [2] = 5 }).Assign([Target(0, 10)], [Unit(1, 1), Unit(2, 2)]);   // budget 12: both needed
+        Assert.Equal(2, exact.Assignments[0].Attackers.Count);
+        Assert.Equal(-1, exact.Assignments[0].RemainingBudget);
     }
 
     [Fact]
