@@ -2071,7 +2071,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T176 Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot)
 - State: Available
-- Depends: T172, T164, T140, T194
+- Depends: T172, T164, T140, T194, T215
 - Source: csharp/migration/design/SERVER.md section 5; Unciv.Core/Logic/Files/UncivFiles.cs; Unciv.Core/Utils/StateHasher.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Persistence/* (IGameStore, FileGameStore, recovery, retention), tests: kill mid-write, corrupt tail, replay tail reproduces checkpoint hash, save opens via UncivFiles
@@ -2394,6 +2394,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - ScriptedHuman also hosts the server loop (RunAiTurn per civ, BeginTurn, checkpoint); PlayTurns stops with the human's next turn begun so a snapshot loads (a load treats the current civ as started).
       - Save/load gap: snapshots after turn ~8 diverge on replay (engine bug, unrelated to commands); filed as T215. Tests snapshot at turns 1, 3, 5 until it is fixed.
       - Verifier: a command that no longer validates throws CommandDesyncException; a checkpoint mismatch returns DivergedAtSeq and stops.
+  -   - Review notes (Adversarial Review, Claude): PASS. Gate + Standard checks green (5116 passed); coverage report: all touched files ok (ReplayVerifier 97%, ScriptedHuman 93%). Determinism: fixed member order, invariant formatting, no clock/Random/unordered iteration (SortedDictionary ordinal); same-seed byte test and hostile-culture test present. Hostile inputs: unknown type/non-object payload -> CommandDesyncException, seq gap/reorder -> desync, mismatch reported with DivergedAtSeq and replay stops. Added test ReorderedOrDroppedLinesAreADesyncAndATruncatedTailIsStillVerified (covered the previously uncovered out-of-order-checkpoint guard). Known property: a log truncated at a line boundary verifies as Matches with fewer checkpoints (no end marker); T176's store must compare CheckpointsVerified/LastSeq against its own record. Scope: snapshot+tail only at turns <=5 is an engine save/load fidelity bug (UncivFiles/SetTransients), outside this ticket's Deliverables; accepted since the acceptance path is exercised and T215 is filed. T176 (snapshot resume) now depends on T215 so the gap cannot be skipped.
 
 ### T195 Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets)
 - State: Done

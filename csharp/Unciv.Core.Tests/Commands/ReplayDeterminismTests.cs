@@ -167,6 +167,27 @@ public sealed class ReplayDeterminismTests : IDisposable
     }
 
     [Fact]
+    public void ReorderedOrDroppedLinesAreADesyncAndATruncatedTailIsStillVerified()
+    {
+        var log = CommandLogReader.Read(Play(1L, 3, 6).Text.ToString());
+        var checkpoint = log.Lines.OfType<CommandLogLine.Checkpoint>().Last();
+        var misplaced = log.Lines.Select(it => it == checkpoint ? checkpoint with { Seq = checkpoint.Seq - 1 } : it).ToList();
+        Assert.Throws<CommandDesyncException>(() => ReplayVerifier.Verify(log with { Lines = misplaced }));
+
+        var dropped = log.Lines.Where((_, i) => i != 3).ToList(); // a command missing from the middle
+        Assert.Throws<CommandDesyncException>(() => ReplayVerifier.Verify(log with { Lines = dropped }));
+
+        var swapped = log.Lines.ToList();
+        (swapped[1], swapped[2]) = (swapped[2], swapped[1]);
+        Assert.Throws<CommandDesyncException>(() => ReplayVerifier.Verify(log with { Lines = swapped }));
+
+        var truncated = log.Lines.Take(log.Lines.Count / 2).ToList();
+        var result = ReplayVerifier.Verify(log with { Lines = truncated });
+        Assert.True(result.Matches);
+        Assert.True(result.CheckpointsVerified < Checkpoints(log).Count);
+    }
+
+    [Fact]
     public void ALogFromAnotherEngineVersionOrRulesetIsRefused()
     {
         var log = CommandLogReader.Read(Play(1L, 3, 3).Text.ToString());
