@@ -156,10 +156,10 @@ public class Milestone
         return incompleteSpaceshipParts;
     }
 
-    private static int OriginalMajorCapitalsOwned(Civilization civInfo) => civInfo.Cities
+    internal static int OriginalMajorCapitalsOwned(Civilization civInfo) => civInfo.Cities
         .Count(it => it.IsOriginalCapital && it.FoundingCivObject != null && it.FoundingCivObject.IsMajorCiv());
 
-    private static HashSet<Civilization> CivsWithPotentialCapitalsToOwn(IGameInfoState gameInfo)
+    internal static HashSet<Civilization> CivsWithPotentialCapitalsToOwn(IGameInfoState gameInfo)
     {
         // Capitals that still exist, even if the civ is dead
         var civsWithCapitals = gameInfo.GetCities().Where(it => it.IsOriginalCapital)

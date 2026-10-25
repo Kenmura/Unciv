@@ -287,6 +287,11 @@ public class QueryTests
         ["cities.ConstructionList"] = () => new Unciv.Queries.Cities.ConstructionListQuery("c"),
         ["cities.BuyableTiles"] = () => new Unciv.Queries.Cities.BuyableTilesQuery("c"),
         ["tiles.TileInfo"] = () => new Unciv.Queries.Tiles.TileInfoQuery(0, 0),
+        ["victory.Progress"] = () => new Unciv.Queries.Victory.VictoryProgressQuery(),
+        ["victory.Scores"] = () => new Unciv.Queries.Victory.ScoresQuery(),
+        ["victory.Rankings"] = () => new Unciv.Queries.Victory.RankingsQuery(),
+        ["victory.Demographics"] = () => new Unciv.Queries.Victory.DemographicsQuery(),
+        ["victory.History"] = () => new Unciv.Queries.Victory.HistoryQuery(),
     };
 
     [Fact]
