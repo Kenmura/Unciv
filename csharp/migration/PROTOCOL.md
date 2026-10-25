@@ -145,8 +145,9 @@ All reviews must apply the multi-persona adversarial review skill ([`csharp/.age
    - No wall-clock, culture-sensitive formatting/parsing, or threading nondeterminism in engine logic.
 3. Check that ported tests cover every Kotlin test case and add cases for any untested branch you find.
 4. Run the Gate and the Standard checks yourself. Do not trust the implementer's claim.
-5. Confirm the diff adds no new `#pragma warning disable`, `SuppressMessage`, `NoWarn` or `.editorconfig`/`BannedSymbols*.txt` change unless the ticket is a policy ticket; any suppression needs a `JUSTIFY: T###` comment that you agree with.
-6. Pass → `ticket.py state T### Done -m 'migration: review T### pass [You]' --publish --origin` (publishes and pushes to `origin`). Fail → `ticket.py note T### -` with the findings under `Review notes`, then `ticket.py state T### Available -m 'migration: review T### changes-requested [You]' --publish`.
+5. **UI tickets (client track):** a ticket that adds or changes a screen/feature the player sees must have an entry in `screenshots.json` (1-3 goldens with captions, or `{"none": reason}`) and a regenerated `SCREENSHOTS.md` (`python3 -I tools/screenshots.py`; `--check` must pass). Reviewers open the referenced PNGs and confirm the captions are true.
+6. Confirm the diff adds no new `#pragma warning disable`, `SuppressMessage`, `NoWarn` or `.editorconfig`/`BannedSymbols*.txt` change unless the ticket is a policy ticket; any suppression needs a `JUSTIFY: T###` comment that you agree with.
+7. Pass → `ticket.py state T### Done -m 'migration: review T### pass [You]' --publish --origin` (publishes and pushes to `origin`). Fail → `ticket.py note T### -` with the findings under `Review notes`, then `ticket.py state T### Available -m 'migration: review T### changes-requested [You]' --publish`.
 
 ## Running until budget is exhausted
 

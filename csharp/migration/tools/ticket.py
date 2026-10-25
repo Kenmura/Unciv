@@ -47,6 +47,7 @@ WRITE (each touches only the named ticket's block, verified before the file is w
   publish [--origin]        git rebase csharp-migration && git push . HEAD:csharp-migration (clean tree only)
   archive                   retired no-op (Done tickets stay in their own backlog/T###.md file)
 """
+import json
 import os
 import re
 import shlex
@@ -902,6 +903,12 @@ def cmd_check():
             errs.append(f"{i}: dependency cycle")
     for e in errs:
         print("ERROR", e)
+    shots = HERE / "screenshots.json"
+    if shots.exists():  # warning only: Done UI tickets need a gallery entry (PROTOCOL 'UI tickets')
+        mapped = json.loads(shots.read_text(encoding="utf-8"))
+        for i, _, s, _, _ in ts:
+            if i.startswith("C") and s == "Done" and i not in mapped:
+                print(f"WARN {i}: Done but no entry in screenshots.json (add a screenshot or {{\"none\": reason}})")
     print(f"{len(ts)} tickets, {len(errs)} errors")
     sys.exit(1 if errs else 0)
 

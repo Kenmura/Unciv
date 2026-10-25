@@ -199,3 +199,56 @@ class GreenGate(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ScreenshotGallery(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.mig = Path(self.tmp.name) / "csharp" / "migration"
+        (self.mig / "backlog").mkdir(parents=True)
+        (self.mig / "backlog" / "README.md").write_text("# Backlog\n")
+        for n, state in (("C001", "Done"), ("C002", "Done"), ("C003", "Available")):
+            (self.mig / "backlog" / f"{n}.md").write_text(f"### {n} Thing {n}\n- State: {state}\n- Depends: none\n- Notes:\n")
+        golden = Path(self.tmp.name) / "csharp" / "Unciv.Godot.Harness" / "golden" / "s"
+        golden.mkdir(parents=True)
+        (golden / "a.png").write_bytes(b"x")
+        self.env = {**os.environ, "TICKET_MIGRATION_DIR": str(self.mig)}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_tool(self, tool, *args):
+        return subprocess.run(["python3", "-I", str(Path(__file__).resolve().parent / tool), *args],
+                              capture_output=True, text=True, env=self.env)
+
+    def write_map(self, mapping):
+        import json
+        (self.mig / "screenshots.json").write_text(json.dumps(mapping))
+
+    def test_generate_check_and_missing(self):
+        self.write_map({"C001": {"scenario": "s", "about": "A", "shots": [{"golden": "s/a.png", "caption": "Cap"}]}})
+        self.assertEqual(self.run_tool("screenshots.py", "--missing").stdout.split(), ["C002"])
+        self.assertEqual(self.run_tool("screenshots.py", "--check").returncode, 1)  # no page yet + C002 unmapped
+        self.write_map({"C001": {"scenario": "s", "about": "A", "shots": [{"golden": "s/a.png", "caption": "Cap"}]},
+                        "C002": {"none": "no UI"}})
+        self.assertEqual(self.run_tool("screenshots.py").returncode, 0)
+        page = (self.mig / "SCREENSHOTS.md").read_text()
+        self.assertIn("## C001 Thing C001", page)
+        self.assertIn("golden/s/a.png)", page)
+        self.assertIn("**C002 Thing C002**: no UI", page)
+        self.assertEqual(self.run_tool("screenshots.py", "--check").returncode, 0)
+
+    def test_missing_golden_fails_check(self):
+        self.write_map({"C001": {"scenario": "s", "about": "A", "shots": [{"golden": "s/zzz.png", "caption": "C"}]},
+                        "C002": {"none": "n"}})
+        self.run_tool("screenshots.py")
+        r = self.run_tool("screenshots.py", "--check")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("missing golden", r.stdout)
+
+    def test_ticket_check_warns_but_passes(self):
+        self.write_map({"C001": {"none": "n"}})
+        r = self.run_tool("ticket.py", "check")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("WARN C002", r.stdout)
+        self.assertNotIn("WARN C001", r.stdout)
