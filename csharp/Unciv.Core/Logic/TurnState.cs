@@ -67,8 +67,14 @@ public sealed class TurnState
     [JsonPropertyName("next")]
     public int Next { get; set; }
 
+    /// <summary>T228: the host allows StartAutoPlay in this simultaneous game (auto-play changes outcomes, so it is refused by default).</summary>
+    [JsonPropertyName("autoPlayAllowed")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AutoPlayAllowed { get; set; }
+
     public TurnState Clone() => new()
     {
+        AutoPlayAllowed = AutoPlayAllowed,
         Mode = Mode,
         Phase = Phase,
         Ended = [.. Ended],

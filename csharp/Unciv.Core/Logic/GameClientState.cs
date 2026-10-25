@@ -14,7 +14,13 @@ public sealed class GameClientState
     public bool AlternateUnitCycleOrder { get; set; }
 
     /// <summary><c>worldScreen?.autoPlay?.isAutoPlayingAndFullAutoPlayAI() == true</c></summary>
-    public bool IsFullAutoPlayAI { get; set; }
+    public bool IsFullAutoPlayAI
+    {
+        get => isFullAutoPlayAI || AutoPlay?.IsAutoPlayingAndFullAutoPlayAI() == true;
+        set => isFullAutoPlayAI = value;
+    }
+
+    private bool isFullAutoPlayAI;
 
     /// <summary>Test seam standing in for the Mockito spy of NextTurnAutomationTest, which runs an action the first time automation reaches a unit
     /// (Kotlin spies <c>getDamageFromTerrain</c>, the first thing <c>automateUnitMoves</c> asks of a unit). Always null in the game.</summary>
@@ -53,6 +59,12 @@ public interface IAutoPlay
 
     /// <summary><c>autoPlay.stopAutoPlay()</c></summary>
     void StopAutoPlay();
+
+    /// <summary><c>autoPlay.isAutoPlayingAndFullAutoPlayAI()</c></summary>
+    bool IsAutoPlayingAndFullAutoPlayAI() => false;
+
+    /// <summary>The <c>selectedGameView.civView.getCiv() == this &amp;&amp; autoPlay.isAutoPlaying()</c> of <c>Civilization.isAIOrAutoPlaying</c>: the viewing civ is the one auto-played.</summary>
+    bool IsAutoPlayingFor(string civId) => false;
 }
 
 /// <summary>What <c>UniqueTriggerActivation</c> calls on the client's <c>SoundPlayer</c> and <c>musicController</c>.</summary>

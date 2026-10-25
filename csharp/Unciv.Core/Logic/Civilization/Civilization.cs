@@ -558,8 +558,8 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
     {
         if (PlayerType == PlayerType.AI) return true;
         if (GameInfo.IsSimulation()) return true;
-        // Kotlin: UncivGame.Current.worldScreen (the UI auto-play state); a headless engine has none.
-        return false;
+        // Kotlin: worldScreen.selectedGameView.civView.getCiv() == this && worldScreen.autoPlay.isAutoPlaying(); the auto-played civ is the one the command named (T228).
+        return GameInfo.ClientState.AutoPlay?.IsAutoPlayingFor(CivId) == true;
     }
 
     public bool IsOneCityChallenger() => PlayerType == PlayerType.Human && GameInfo.GameParameters.OneCityChallenge;

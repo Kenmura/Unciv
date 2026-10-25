@@ -12,6 +12,7 @@ internal static class TurnSamples
     [
         "end-turn", "force-end-turn", "run-ai-turn", "begin-turn", "move-automated-units", "set-player-settings", "ack-alert",
         "respond-to-alert", "dismiss-policy-picker", "dismiss-move-spies", "resign", "one-more-turn",
+        "start-auto-play", "stop-auto-play", "auto-play-turn",
     ];
 
     // A new game asks for a production and a research target; end-turn needs both settled.
@@ -19,6 +20,13 @@ internal static class TurnSamples
     {
         babylon.Cities[0].CityConstructions.AddToQueue("Warrior");
         babylon.Tech.TechsToResearch.Add("Pottery");
+    }
+
+    private static AutoPlayState StartedAutoPlay()
+    {
+        var state = new AutoPlayState();
+        state.StartMultiturnAutoPlay("Babylon", 3, true, false);
+        return state;
     }
 
     public static (GameCommand Command, string Actor) Sample(string type, GameInfo game)
@@ -62,6 +70,14 @@ internal static class TurnSamples
                 return (new DismissMoveSpies(), "Babylon");
             case "resign":
                 return (new Resign { Now = 5000 }, "Babylon");
+            case "start-auto-play":
+                return (new StartAutoPlay { Turns = 3 }, "Babylon");
+            case "stop-auto-play":
+                game.ClientState.AutoPlay = StartedAutoPlay();
+                return (new StopAutoPlay(), "Babylon");
+            case "auto-play-turn":
+                game.ClientState.AutoPlay = StartedAutoPlay();
+                return (new AutoPlayTurn { Now = 5000 }, "Babylon");
             case "one-more-turn":
                 game.VictoryData = new VictoryData { WinningCiv = "Greece", VictoryType = "Scientific", VictoryTurn = 1 };
                 return (new OneMoreTurn(), "Babylon");
