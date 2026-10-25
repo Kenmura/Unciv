@@ -410,7 +410,7 @@ flowchart TD
   class C004 waiting
   class C005 waiting
   class C006 waiting
-  class C007 ready
+  class C007 prog
   class C008 prog
   class C009 waiting
   class C010 waiting
@@ -433,7 +433,7 @@ flowchart TD
   class C027 waiting
   class C028 waiting
   class C029 waiting
-  class C030 waiting
+  class C030 ondeck
   class C031 waiting
   class C032 waiting
   class C033 waiting
@@ -532,8 +532,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 83
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 75]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
 ```
 
 ## Incomplete tickets
@@ -542,7 +542,6 @@ xychart-beta
 |---|---|---|---|---|
 | T172 | **Ready to start** | T012 | 47 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
 | T183 | **Ready to start** | T071, T046 | 45 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
-| C007 | **Ready to start** | C001, A003, A004, A005, A006, A007 | 33 | Asset registry and procedural placeholder generator |
 | T199 | **Ready to start** | T185, T099, T045, T170 | 9 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
 | T197 | **Ready to start** | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
 | T166 | **Ready to start** | A003 | 3 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
@@ -559,11 +558,13 @@ xychart-beta
 | T191 | **On deck** (after T186) | T164, T186 | 17 | City commands: production queue, purchase, buy tile, worked tiles and specialists, focus, annex/puppet/raze, sell building, rename |
 | T192 | **On deck** (after T186) | T164, T186 | 17 | Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode) |
 | T193 | **On deck** (after T186) | T164, T186, T086, T089 | 5 | Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage |
+| C030 | **On deck** (after C007) | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
 | T186 | In-Progress [Claude] | T164 | 50 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T187 | Available (waiting on T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T175 | Available (waiting on T172, T174, T186) | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
+| C007 | In-Progress [Claude] | C001, A003, A004, A005, A006, A007 | 33 | Asset registry and procedural placeholder generator |
 | C008 | In-Progress [Claude] | C001, A003, A004, A005, A006, A007 | 32 | Client scenario runner and owner review sheet |
 | C009 | Available (waiting on C007, C008, T174) | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C010 | Available (waiting on C009, T184, T187, T188, T174, T175) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
@@ -608,7 +609,6 @@ xychart-beta
 | C027 | Available (waiting on C005, C025) | C005, C025 | 0 | Tooltips and Civilopedia |
 | C028 | Available (waiting on C005) | C005 | 0 | Options screen, hotkeys, edge-pan |
 | C029 | Available (waiting on C010, T184) | C010, T164, T184 | 0 | Hotseat player switch screen |
-| C030 | Available (waiting on C007) | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
 | C031 | Available (waiting on C002) | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
 | C032 | Available (waiting on C003, C010) | C003, C010 | 0 | Improvements, roads, cities, borders and in-world yield icons |
 | C033 | Available (waiting on C004) | C004 | 0 | Unit animation and combat presentation |

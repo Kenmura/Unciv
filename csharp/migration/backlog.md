@@ -2525,13 +2525,13 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Host-a-lobby revision (SERVER.md 6-7, owner decision): C006 is now the JOIN side: join screen (address:port or invite code, password, TOFU fingerprint prompt, known hosts), reconnect overlay with the same key and last address, 'host went away, waiting' state, key storage under user://. The Host screen is C034, the lobby C035, the in-game turn bar C036. Depends T179 is the new direct-connect TCP+TLS transport (no WebSocket, no server accounts).
 
 ### C007 Asset registry and procedural placeholder generator
-- State: Available
+- State: In-Progress [Claude]
 - Depends: C001, A003, A004, A005, A006, A007
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): AssetKey/AssetRegistry (override > pack > procedural), PlaceholderPalette, hex prism mesh, terrain materials, unit blocks, prop builder, icon generator, UI theme generator, ASSETS.md rows, key-coverage test and no-literal lint. Slice detail in design/CLIENT-SLICES.md
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
-- Claimed:
+- Claimed: 2026-10-25T01:46Z
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario asset-sheet: swatch sheet golden + registry resolves every Vanilla ruleset name. Human: colour/readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
 
 ### C008 Client scenario runner and owner review sheet
