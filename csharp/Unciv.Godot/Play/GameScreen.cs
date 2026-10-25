@@ -114,7 +114,7 @@ public partial class GameScreen : Control
 
     public bool IsTechVisible => Tech.Visible;
 
-    public Button TechButton { get; } = new() { Name = "TechButton", Text = "Technology" };
+    public Button TechButton { get; } = new() { Name = "TechButton", Text = "Technology".Tr() };
 
     /// <summary>Opens the tech screen on a tech (the current research when null), closing the city and diplomacy screens.</summary>
     public void OpenTechScreen(string? tech = null)

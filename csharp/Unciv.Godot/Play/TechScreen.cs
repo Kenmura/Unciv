@@ -2,6 +2,8 @@ using Godot;
 using Unciv.Assets;
 using Unciv.GodotClient.Ui;
 using Unciv.Queries.Empire;
+using Unciv.GodotClient.Localization;
+using Unciv.Models.Translations;
 
 namespace Unciv.GodotClient.Play;
 
@@ -49,7 +51,7 @@ public partial class TechScreen : PanelContainer
         AddChild(column);
         var head = new HBoxContainer();
         column.AddChild(head);
-        var heading = new Label { Text = "Technology" };
+        var heading = new Label { Text = "Technology".Tr() };
         heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
         head.AddChild(heading);
         header.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -59,7 +61,7 @@ public partial class TechScreen : PanelContainer
         message.ClipText = true;
         message.CustomMinimumSize = new Vector2(uiTheme.Px(60), 0f);
         head.AddChild(message);
-        var close = new Button { Name = "TechClose", Text = "Close technology" };
+        var close = new Button { Name = "TechClose", Text = "Close technology".Tr() };
         close.Pressed += Close;
         head.AddChild(close);
 
@@ -155,12 +157,12 @@ public partial class TechScreen : PanelContainer
         if (tree == null)
         {
             Tree = null;
-            header.Text = "The engine would not show the tree.";
+            header.Text = "The engine would not show the tree.".Tr();
             return;
         }
         Tree = tree;
         Layout = TechScreenModel.Layout(tree);
-        header.Text = TechScreenModel.Header(tree);
+        header.Text = TechScreenModel.Header(tree).TrText();
         BuildTree();
         string? pick = choose != null && Layout.Nodes.Any(it => it.Name == choose) ? choose
             : tree.CurrentTech != null && Layout.Nodes.Any(it => it.Name == tree.CurrentTech) ? tree.CurrentTech
@@ -182,13 +184,13 @@ public partial class TechScreen : PanelContainer
         int w = theme.Px(NodeWidth), h = theme.Px(NodeHeight), gx = theme.Px(GapX), gy = theme.Px(GapY), top = theme.Px(HeadingHeight);
         canvas.CustomMinimumSize = new Vector2(Layout.Columns * (w + gx), top + Layout.Rows * (h + gy));
         for (int i = 0; i < Layout.ColumnEras.Count; i++)
-            canvas.AddChild(new Label { Text = Layout.ColumnEras[i], Position = new Vector2(i * (w + gx), 0f), Name = "Era_" + i });
+            canvas.AddChild(new Label { Text = Layout.ColumnEras[i].TrText(), Position = new Vector2(i * (w + gx), 0f), Name = "Era_" + i });
         var centres = new Dictionary<string, Vector2>(StringComparer.Ordinal);
         foreach (var node in Layout.Nodes)
         {
             var button = new Button
             {
-                Name = "Tech_" + node.Name, Text = node.Label, Alignment = HorizontalAlignment.Left, ClipText = true,
+                Name = "Tech_" + node.Name, Text = node.Label.TrText(), Alignment = HorizontalAlignment.Left, ClipText = true,
                 Position = new Vector2(node.GridColumn * (w + gx), top + node.GridRow * (h + gy)), Size = new Vector2(w, h), CustomMinimumSize = new Vector2(w, h),
                 TooltipText = node.Name + ": " + node.State,
             };
@@ -213,7 +215,7 @@ public partial class TechScreen : PanelContainer
         actionButtons.Clear();
         current = [];
         var node = SelectedTech == null ? null : Layout.Nodes.FirstOrDefault(it => it.Name == SelectedTech);
-        queueLabel.Text = Tree == null ? "" : "Research queue\n" + (Tree.Queue.Count == 0 ? "empty" : string.Join("\n", TechScreenModel.QueueLines(Tree)));
+        queueLabel.Text = Tree == null ? "" : "Research queue".Tr() + "\n" + (Tree.Queue.Count == 0 ? "empty".Tr() : string.Join("\n", TechScreenModel.QueueLines(Tree).Select(it => it.TrText())));
         if (node == null || Tree == null)
         {
             title.Text = "";
@@ -221,13 +223,13 @@ public partial class TechScreen : PanelContainer
             unlocks.Text = "";
             return;
         }
-        title.Text = node.Name;
-        state.Text = node.Era + ": " + TechScreenModel.Detail(Tree.Techs.First(it => it.Name == node.Name));
-        unlocks.Text = "Unlocks\n" + string.Join("\n", TechScreenModel.UnlockLines(node));
+        title.Text = node.Name.TrText();
+        state.Text = node.Era.TrText() + ": " + TechScreenModel.Detail(Tree.Techs.First(it => it.Name == node.Name));
+        unlocks.Text = "Unlocks".Tr() + "\n" + string.Join("\n", TechScreenModel.UnlockLines(node).Select(it => it.TrText()));
         current = TechScreenModel.Actions(Tree, node.Name);
         foreach (var entry in current)
         {
-            var button = new Button { Name = entry.Id, Text = entry.Label, Disabled = !entry.Enabled, TooltipText = entry.Enabled ? "" : entry.Why, Alignment = HorizontalAlignment.Left };
+            var button = new Button { Name = entry.Id, Text = entry.Label.TrText(), Disabled = !entry.Enabled, TooltipText = entry.Enabled ? "" : entry.Why.TrText(), Alignment = HorizontalAlignment.Left };
             var chosen = entry;
             button.Pressed += () => Fire(Send(chosen));
             actionButtons[entry.Id] = button;
@@ -242,7 +244,7 @@ public partial class TechScreen : PanelContainer
         if (!result.Accepted)
         {
             await ReloadAsync(SelectedTech);
-            message.Text = "Refused: " + result.Message;
+            message.Text = "Refused".Tr() + ": " + result.Message.TrText();
             return;
         }
         CommandAccepted?.Invoke();
@@ -260,7 +262,7 @@ public partial class TechScreen : PanelContainer
         catch (Exception e)
         {
             GD.PushError("Session call failed: " + e);
-            message.Text = "Connection problem: " + e.Message;
+            message.Text = "Connection problem".Tr() + ": " + e.Message;
         }
     }
 
