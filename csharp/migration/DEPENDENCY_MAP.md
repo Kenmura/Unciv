@@ -455,7 +455,7 @@ flowchart TD
   class T167 prog
   class T168 prog
   class T169 ready
-  class T170 review
+  class T170 done
   class T171 prog
   class T172 ready
   class T173 waiting
@@ -501,9 +501,9 @@ Generated from the git history of `backlog.md` (UTC; each point is the backlog a
 xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
-    y-axis "Tickets" 0 --> 81
+    y-axis "Tickets" 0 --> 80
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 71]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 5]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
 ```
 
 ## Incomplete tickets
@@ -543,7 +543,6 @@ xychart-beta
 | T173 | Available (waiting on T172) | T172 | 5 | Server identity and auth: ECDSA P-256 keypair, invite tokens, challenge-response, allow-list (friends-only) |
 | T194 | Available (waiting on T187, T188, T189, T191, T192) | T187, T188, T189, T191, T192, T102, T011 | 5 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
 | T197 | Available (waiting on T185) | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
-| T170 | Needs-Review [Claude] | T104 | 4 | Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods) |
 | T176 | Available (waiting on T172, T164, T194) | T172, T164, T140, T194 | 4 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T177 | Available (waiting on T172, T164, T184, T187) | T172, T164, T184, T187 | 4 | Turn policy: sequential phase machine, injected clock, turn timer, AFK skip, drop and AI replacement |
 | T178 | Available (waiting on T172, T173, T174, T175, T176, T177) | T172, T173, T174, T175, T176, T177 | 3 | Headless host and lobby: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (rate, size, dedup, existence-oracle-safe errors) |
@@ -559,15 +558,15 @@ xychart-beta
 | C016 | Available (waiting on C005, C010) | C005, C010, T100 | 1 | Save/load screen and autosave |
 | C017 | Available (waiting on C005, C010, T164, T191, T196) | C005, C010, T164, T060, T062, T191, T196 | 1 | City screen A: info, tiles, specialists, focus |
 | C021 | Available (waiting on C005, C010, T164, T193, T197) | C005, C010, T164, T059, T068, T193, T197 | 1 | Diplomacy screen |
-| C025 | Available (waiting on C005, T170) | C005, T023, T170 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
+| C025 | Available (waiting on C005) | C005, T023, T170 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
 | T171 | In-Progress [Claude] | T104 | 1 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
 | T179 | Blocked | T178 | 1 | Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes |
-| T199 | Available (waiting on T185, T170) | T185, T099, T045, T170 | 1 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
+| T199 | Available (waiting on T185) | T185, T099, T045, T170 | 1 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
 | C006 | Available (waiting on T164, T172, T173, T180, T179, C010, C016, T194) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194 | 0 | Networked play client |
 | C011 | Available (waiting on C005, C010, T164, T174, T184) | C005, C010, T164, T062, T174, T184 | 0 | HUD: top bar yields, turn banner, next-action button |
 | C013 | Available (waiting on C005, C010, T164, T171, T187, T175) | C005, C010, T164, T051, T055, T171, T187, T175 | 0 | Notifications and popup alerts |
 | C014 | Available (waiting on C010, T164, T174) | C010, T164, T174 | 0 | Minimap |
-| C015 | Available (waiting on C005, C010, T170, T199) | C005, C010, T099, T045, T021, T034, T170, T199 | 0 | Main menu and game setup screen: nations, difficulty, speed, map options |
+| C015 | Available (waiting on C005, C010, T199) | C005, C010, T099, T045, T021, T034, T170, T199 | 0 | Main menu and game setup screen: nations, difficulty, speed, map options |
 | C018 | Available (waiting on C017, T191, T196) | C017, T063, T191, T196 | 0 | City screen B: production queue, purchase, buildings |
 | C019 | Available (waiting on C005, C010, T164, T192, T197) | C005, C010, T164, T056, T192, T197 | 0 | Tech screen |
 | C020 | Available (waiting on C005, C010, T164, T192, T197) | C005, C010, T164, T056, T192, T197 | 0 | Policy screen |
