@@ -151,6 +151,7 @@ public partial class MapView : Node3D
             tileRoot.AddChild(node);
             tiles[coord] = node;
             if (feature == null && kind == ReliefKind.Flat) AddTufts(tuftTransforms, tile, node.Position);
+            AddProps(assets, node, tile, kind);
         }
         BuildVegetation(assets, tuftTransforms);
         if (tiles.Count > 0 && !keepCamera) FocusOn(Centre());
@@ -166,6 +167,34 @@ public partial class MapView : Node3D
     /// <summary>The terrain whose silhouette the tile uses: mountains and hills stand out, everything else keeps its base terrain's (water sits lower).</summary>
     private static string ReliefTerrainOf(TileDto tile) =>
         tile.BaseTerrain == MountainTerrain ? TerrainRelief.MountainName : tile.Features.Contains(HillFeature) ? TerrainRelief.HillName : tile.BaseTerrain;
+
+    /// <summary>Number of feature and resource prop models currently on the map (C003).</summary>
+    public int PropCount => tiles.Values.Sum(it => it.GetChildCount());
+
+    /// <summary>The prop models standing on a tile: feature props (<c>feature/&lt;name&gt;</c>) then the resource prop (<c>resource/&lt;name&gt;</c>), each a child of the tile node.</summary>
+    public IReadOnlyList<Node3D> PropsAt(HexCoord coord) => tiles.TryGetValue(coord, out var node) ? [.. node.GetChildren().OfType<Node3D>()] : [];
+
+    /// <summary>
+    /// Props of a tile (C003): a ring-shaped feature prop (forest, jungle, marsh) and a centred resource prop, both fetched through the registry so a
+    /// file override or pack entry for the key replaces them. Fogged tiles dim them like their terrain.
+    /// </summary>
+    private static void AddProps(AssetRegistry assets, TileNode node, TileDto tile, ReliefKind kind)
+    {
+        void Place(string name, AssetKey key, float height)
+        {
+            var model = assets.Get<Node3D>(key);
+            model.Name = name;
+            model.Position = new Vector3(0f, height, 0f);
+            if (!tile.Visible) MapMaterials.Dim(model);
+            node.AddChild(model);
+        }
+        foreach (var feature in tile.Features.Where(PropSpecs.HasFeatureProp))
+            Place("Feature_" + feature, AssetKey.Of(RulesetAssetKeys.Feature, feature), TerrainRelief.SurfaceHeight(kind, FeatureRingFraction));
+        if (tile.Resource != null) Place("Resource", AssetKey.Of(RulesetAssetKeys.Resource, tile.Resource), TerrainRelief.TopHeight(kind));
+    }
+
+    /// <summary>Where on a raised tile the feature ring stands (rim fraction of the ring radius), so forests on hills follow the slope instead of floating or sinking.</summary>
+    private const float FeatureRingFraction = 0.55f;
 
     private static void AddTufts(List<(Transform3D, Color)> into, TileDto tile, Vector3 origin)
     {

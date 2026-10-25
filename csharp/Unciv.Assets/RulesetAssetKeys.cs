@@ -9,6 +9,7 @@ public static class RulesetAssetKeys
     public const string Terrain = "terrain";
     public const string Unit = "unit";
     public const string UnitType = "unitType";
+    public const string Feature = "feature";
     public const string Resource = "resource";
     public const string ResourceType = "resourceType";
     public const string Improvement = "improvement";
@@ -32,7 +33,7 @@ public static class RulesetAssetKeys
     /// <summary>Every category has a <c>_default</c> key so fallback chains always terminate in something that exists.</summary>
     public static readonly string[] Categories =
     [
-        Terrain, Unit, UnitType, Resource, ResourceType, Improvement, Building,
+        Terrain, Feature, Unit, UnitType, Resource, ResourceType, Improvement, Building,
         StatIcon, TechIcon, BuildingIcon, UnitIcon, ResourceIcon, ImprovementIcon, PolicyIcon, PromotionIcon, Ui, "mesh", "font",
     ];
 
@@ -58,6 +59,7 @@ public static class RulesetAssetKeys
         foreach (var category in Categories) keys.Add(new AssetKey(category, AssetKey.DefaultName));
         keys.AddRange(ruleset.Terrains.Keys.Select(n => AssetKey.Of(Terrain, n)));
         keys.AddRange(ruleset.Terrains.Keys.Select(TerrainRelief.MeshKey));
+        keys.AddRange(ruleset.Terrains.Values.Where(t => t.Type == Unciv.Models.Ruleset.Tile.TerrainType.TerrainFeature).Select(t => AssetKey.Of(Feature, t.Name)));
         keys.AddRange(ruleset.Units.Keys.Select(n => AssetKey.Of(Unit, n)));
         keys.AddRange(ruleset.UnitTypes.Keys.Select(n => AssetKey.Of(UnitType, n)));
         keys.AddRange(ruleset.TileResources.Keys.Select(n => AssetKey.Of(Resource, n)));

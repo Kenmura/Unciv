@@ -22,6 +22,22 @@ public static class MapMaterials
         return copy;
     }
 
+    /// <summary>Multiplies the fog dimming into every mesh of a prop model (C003) so props on explored-but-unseen tiles darken with their tile; materials are copied, never edited in place.</summary>
+    public static void Dim(Node3D model)
+    {
+        var fog = ProceduralAssets.ToColor(PlaceholderPalette.FogDim);
+        foreach (var child in model.GetChildren())
+        {
+            if (child is MeshInstance3D { MaterialOverride: StandardMaterial3D material } mesh)
+            {
+                var copy = (StandardMaterial3D)material.Duplicate();
+                copy.AlbedoColor *= fog;
+                mesh.MaterialOverride = copy;
+            }
+            else if (child is Node3D nested) Dim(nested);
+        }
+    }
+
     /// <summary>Material of the instanced grass tufts (C002): vertex colours (root dark, tip light) times the per-instance colour; double sided because a blade is one triangle.</summary>
     public static StandardMaterial3D Vegetation() => new()
     {

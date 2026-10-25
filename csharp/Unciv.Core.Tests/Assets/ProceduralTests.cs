@@ -207,10 +207,68 @@ public class ProceduralTests
     }
 
     [Fact]
-    public void HorsesAreTwoBoxesAndASphere()
+    public void HorsesAreAHerdOfThreeToFivePosedAnimals()
     {
-        var horses = ModelSpecs.Prop(new AssetKey("resource", "Horses")).Primitives;
-        Assert.Equal([PrimitiveShape.Box, PrimitiveShape.Box, PrimitiveShape.Sphere], horses.Select(p => p.Shape));
+        var key = new AssetKey("resource", "Horses");
+        var horses = ModelSpecs.Prop(key).Primitives;
+        Assert.InRange(PropSpecs.HerdSize(key), PropSpecs.MinHerd, PropSpecs.MaxHerd);
+        Assert.Equal(PropSpecs.HerdSize(key) * 3, horses.Count);
+        Assert.Equal(PropSpecs.HerdSize(key), horses.Count(p => p.Shape == PrimitiveShape.Sphere));
+        Assert.True(horses.Select(p => p.Yaw).Distinct().Count() > 1, "animals face different ways");
+    }
+
+    [Fact]
+    public void LivestockHerdSizesStayInRangeForEveryHerdKey()
+    {
+        foreach (var name in new[] { "Horses", "Cattle", "Sheep", "Deer", "Bison" })
+        {
+            var key = new AssetKey("resource", name);
+            Assert.Equal(PropSpecs.HerdSize(key) * 3, ModelSpecs.Prop(key).Primitives.Count);
+        }
+    }
+
+    [Fact]
+    public void PropsAreDeterministicAndStandOnTheGround()
+    {
+        foreach (var key in new[] { "feature/Forest", "feature/Jungle", "feature/Marsh", "resource/Horses", "resource/Wheat", "resource/Iron", "resource/Fish" })
+        {
+            var a = ModelSpecs.Prop(AssetKey.Parse(key)).Primitives;
+            Assert.Equal(a, ModelSpecs.Prop(AssetKey.Parse(key)).Primitives);
+            Assert.All(a, p => Assert.True(p.Y - p.SizeY / 2f >= -0.001f, key + " sinks below the tile"));
+        }
+    }
+
+    [Fact]
+    public void FeatureAndResourcePropsShareATileWithoutOverlapping()
+    {
+        foreach (var feature in new[] { "Forest", "Jungle", "Marsh" })
+        {
+            Assert.True(PropSpecs.HasFeatureProp(feature));
+            foreach (var p in ModelSpecs.Prop(new AssetKey("feature", feature)).Primitives.Where(p => p.Shape != PrimitiveShape.Cylinder || p.SizeX < 0.2f))
+                Assert.InRange(MathF.Sqrt(p.X * p.X + p.Z * p.Z), 0.45f, 0.8f);
+        }
+        foreach (var resource in new[] { "Horses", "Cattle", "Sheep", "Wheat", "Iron", "Fish" })
+            Assert.All(ModelSpecs.Prop(new AssetKey("resource", resource)).Primitives, p => Assert.InRange(MathF.Sqrt(p.X * p.X + p.Z * p.Z), 0f, 0.45f));
+        Assert.False(PropSpecs.HasFeatureProp("Oasis"));
+    }
+
+    [Fact]
+    public void OverridingHorsesSwapsOnlyHorses()
+    {
+        var files = new MemoryAssetFiles().Add("assets/override/resource/Horses.tres");
+        var resolver = new AssetResolver(files, new AssetFallbacks());
+        Assert.Equal(AssetSourceKind.Override, resolver.Resolve(new AssetKey("resource", "Horses")).Source);
+        Assert.Equal(AssetSourceKind.Procedural, resolver.Resolve(new AssetKey("resource", "Cattle")).Source);
+        Assert.Equal(AssetSourceKind.Procedural, resolver.Resolve(new AssetKey("feature", "Forest")).Source);
+        Assert.Equal(AssetSourceKind.Override, new AssetResolver(new MemoryAssetFiles().Add("assets/override/feature/Forest.glb"), new AssetFallbacks()).Resolve(new AssetKey("feature", "Forest")).Source);
+    }
+
+    [Fact]
+    public void ResourceKindsLookDifferent()
+    {
+        var shapes = new[] { "Horses", "Wheat", "Iron", "Fish" }.Select(n => ModelSpecs.Prop(new AssetKey("resource", n)).Primitives.Select(p => p.Colour).Distinct().OrderBy(c => c.R).ThenBy(c => c.G).ThenBy(c => c.B).ToList()).ToList();
+        Assert.Equal(4, shapes.Select(s => string.Join(",", s)).Distinct().Count());
+        Assert.Equal(AssetKind.Prop, AssetKinds.Of(new AssetKey("feature", "Forest")));
     }
 
     [Fact]

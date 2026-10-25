@@ -8,8 +8,8 @@ public enum PrimitiveShape
     Sphere,
 }
 
-/// <summary>One primitive of a placeholder model, in tile units: centre offset, size (width, height, depth; diameter for sphere/cylinder/cone from X/Z) and colour.</summary>
-public readonly record struct PrimitiveSpec(PrimitiveShape Shape, float X, float Y, float Z, float SizeX, float SizeY, float SizeZ, Rgb Colour);
+/// <summary>One primitive of a placeholder model, in tile units: centre offset, size (width, height, depth; diameter for sphere/cylinder/cone from X/Z), colour and rotation about the vertical axis in degrees (C003; positions are already in the model frame, Yaw only turns the primitive itself).</summary>
+public readonly record struct PrimitiveSpec(PrimitiveShape Shape, float X, float Y, float Z, float SizeX, float SizeY, float SizeZ, Rgb Colour, float Yaw = 0f);
 
 /// <summary>A placeholder model: primitives standing on y = 0, plus the initials shown on a billboard above it (empty for none).</summary>
 public sealed record ModelSpec(IReadOnlyList<PrimitiveSpec> Primitives, string Initials, float BillboardHeight);
@@ -67,20 +67,11 @@ public static class ModelSpecs
         return new ModelSpec([primitive], GlyphFont.Initials(key.Name), 0.75f);
     }
 
-    /// <summary>Resources, improvements and buildings from primitives. Horses are two small boxes and a sphere; others get one to three hash-chosen primitives.</summary>
+    /// <summary>Resources, features, improvements and buildings from primitives. Designed props (<see cref="PropSpecs"/>: herds, crops, ores, forest, jungle, marsh) come first; anything else gets one to three hash-chosen primitives.</summary>
     public static ModelSpec Prop(AssetKey key)
     {
+        if (PropSpecs.TryBuild(key) is { } designed) return designed;
         var colour = PlaceholderPalette.FromHash(key.ToString(), 120, 200);
-        if (key is { Category: RulesetAssetKeys.Resource, Name: "Horses" })
-        {
-            var brown = PlaceholderPalette.HorseBrown;
-            return new ModelSpec(
-            [
-                new PrimitiveSpec(PrimitiveShape.Box, -0.15f, 0.1f, 0f, 0.3f, 0.2f, 0.15f, brown),
-                new PrimitiveSpec(PrimitiveShape.Box, 0.15f, 0.1f, 0.1f, 0.3f, 0.2f, 0.15f, brown.Scale(120)),
-                new PrimitiveSpec(PrimitiveShape.Sphere, 0f, 0.3f, -0.1f, 0.2f, 0.2f, 0.2f, brown.Scale(80)),
-            ], "", 0f);
-        }
         var hash = StableHash.Of(key.ToString());
         var count = 1 + (int)(hash / 7 % 3);
         var primitives = new List<PrimitiveSpec>();

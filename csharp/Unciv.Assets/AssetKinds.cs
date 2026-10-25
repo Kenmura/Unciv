@@ -20,7 +20,7 @@ public static class AssetKinds
         RulesetAssetKeys.Terrain => AssetKind.TerrainMaterial,
         "mesh" => AssetKind.Mesh,
         RulesetAssetKeys.Unit or RulesetAssetKeys.UnitType => AssetKind.UnitBlock,
-        RulesetAssetKeys.Resource or RulesetAssetKeys.ResourceType or RulesetAssetKeys.Improvement or RulesetAssetKeys.Building => AssetKind.Prop,
+        RulesetAssetKeys.Feature or RulesetAssetKeys.Resource or RulesetAssetKeys.ResourceType or RulesetAssetKeys.Improvement or RulesetAssetKeys.Building => AssetKind.Prop,
         "font" => AssetKind.Font,
         RulesetAssetKeys.Ui when key.Name == "theme" => AssetKind.Theme,
         RulesetAssetKeys.Ui => AssetKind.StyleBox,

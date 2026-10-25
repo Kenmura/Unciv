@@ -77,6 +77,7 @@ public static class ProceduralAssets
                 Mesh = PrimitiveMesh(p),
                 MaterialOverride = new StandardMaterial3D { AlbedoColor = ToColor(p.Colour), Roughness = 1f },
                 Position = new Vector3(p.X, p.Y, p.Z),
+                RotationDegrees = new Vector3(0f, p.Yaw, 0f),
             });
         }
         if (withBanner)
