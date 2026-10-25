@@ -41,6 +41,22 @@ Pure `--headless` is not used because it installs a dummy renderer that produces
 mean per-channel difference (overall colour drift) and the fraction of pixels differing by more than a per-pixel tolerance.
 The hash alone is weak on small images with a flat background, which is why all three must pass.
 
+## Scenarios and the owner review sheet (C008)
+
+```
+Unciv.Godot.Harness/tools/run-scenario.sh <name> [--update-golden | --expect-golden-failure]
+Unciv.Godot.Harness/tools/review-sheet.sh [name ...]
+```
+
+A scenario (`Scenario` subclass registered in `ScenarioCatalog`, name listed in `scenarios.txt`) builds its UI over the seeded
+`ScenarioGame.Create()` session (Vanilla, Tiny map, two humans + one AI, fixed seeds) and returns a script of `Click`, `PressKey`,
+`Press("Button text")`, `WaitFrames`, `AssertQuery` (engine state, asserted before pixels) and `Capture` (PNG compared with
+`golden/<scenario>/<step>.png`). All state changes must go through `GameSession.Submit`; at the end the state hash must equal the hash of a
+headless replay of the recorded command log (`ScenarioReplay`, plain C#, tested in `Unciv.Core.Tests/Harness`). `--expect-golden-failure`
+proves a wrong golden fails. `review-sheet.sh` runs all scenarios and writes `out/review/contact-sheet.png` and `out/review/index.md`
+(captions plus the owner checklist). The engine-only parts (`ScenarioGame`, `ScenarioReplay`, `ScenarioResult`, `ContactSheetLayout`,
+`ReviewIndex`) live in `Unciv.Harness` and run in the Standard checks.
+
 ## Limits
 
 - `Unciv.Godot.Harness` is not in `Unciv.sln`: it needs the Godot SDK and runtime, which the Standard checks must not require.

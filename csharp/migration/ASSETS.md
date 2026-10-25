@@ -6,3 +6,4 @@ Every asset used by the Godot client must be listed here with source and license
 
 | Asset | Source | License | Ticket |
 |---|---|---|---|
+| Godot built-in default font (Label/Button text in scenarios and the contact sheet) | Bundled in the Godot 4.7.2 engine (Open Sans) | OFL-1.1 (engine third-party notice) | C008 |

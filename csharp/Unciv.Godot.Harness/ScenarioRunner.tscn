@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c008scenario"]
+
+[ext_resource type="Script" path="res://ScenarioRunner.cs" id="1"]
+
+[node name="ScenarioRunner" type="Control"]
+script = ExtResource("1")

@@ -391,10 +391,15 @@
     "Unciv.Core/View/TileView.cs": {"branch": 71.88, "line": 93.37},
     "Unciv.Core/View/TradeView.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/View/View.cs": {"branch": 75.0, "line": 100.0},
+    "Unciv.Harness/ContactSheetLayout.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/GoldenComparer.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ImageStats.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/PerceptualHash.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0}
+    "Unciv.Harness/ReviewIndex.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Harness/ScenarioGame.cs": {"branch": 87.5, "line": 97.3},
+    "Unciv.Harness/ScenarioReplay.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0}
   },
   "excused": {
     "Unciv.Core/Logic/Battle/AirInterception.cs": "the interception damage/XP and notification tails sit behind Battle.takeDamage/addXp (BattleSeams, T083); T083 wires them and tests the rest",
