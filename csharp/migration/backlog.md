@@ -1865,6 +1865,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~KotlinGolden`
 - Claimed: 2026-10-25T13:30Z
 - Notes: Split from T102 (Claude): T102 proves same-seed/save-load/clone/culture determinism inside C#. Still open: compare the C# per-turn state hash against hashes exported from the Kotlin game for fixed seeds (needs a canonical state-hash export on the JVM side, the C# hash is currently FNV over the save JSON whose property order T128 changed), and a run with one mod ruleset.
+  - 2026-10-25 migration review: also load a few real save files written by the Kotlin game (different eras, G&K) and assert they load and play one turn: 'Save format stays Kotlin-compatible' is untested beyond a 3x2 MapSaver fixture. Add same-seed map-generation goldens from the JVM if the full per-turn hash export is slow to land.
 
 ### T161 Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches
 - State: Done
@@ -1977,13 +1978,14 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T169 CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes
 - State: Available
-- Depends: C001
+- Depends: C001, C042
 - Source:
 - Fixtures: none
 - Deliverables: .github/workflows csharp workflow, docs
 - Gate: workflow runs green on a PR to csharp-migration
 - Claimed:
 - Notes: Gap review: there is no csharp CI workflow; gates run manually in distrobox. Unciv.Godot is outside Unciv.sln, so CI must build it separately. Do not touch the Kotlin/Gradle workflows.
+  - 2026-10-25 migration review: CI also needs the pinned Godot install (setup-godot.sh, SHA-checked), Xvfb with a fixed Mesa/llvmpipe for stable golden screenshots, the run-scenario.sh scenarios (and --expect-golden-failure), separate builds of Unciv.Godot and Unciv.Godot.Harness (outside Unciv.sln), and an export smoke test (C042).
 
 ### T170 Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods)
 - State: Done
@@ -2071,7 +2073,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T176 Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot)
 - State: Available
-- Depends: T172, T164, T140, T194
+- Depends: T172, T164, T140, T194, T208, T215
 - Source: csharp/migration/design/SERVER.md section 5; Unciv.Core/Logic/Files/UncivFiles.cs; Unciv.Core/Utils/StateHasher.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Persistence/* (IGameStore, FileGameStore, recovery, retention), tests: kill mid-write, corrupt tail, replay tail reproduces checkpoint hash, save opens via UncivFiles
@@ -2080,10 +2082,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Needs real replayable commands from T164 (split tickets in design/COMMANDS-IMPLEMENTATION.md: re-point). Log append+fsync before ack; snapshots via UncivFiles (gzip+base64 JSON, Kotlin-compatible). Server-side fullHash = hash of the serialized full GameInfo as in EndToEndDeterminismTests. Open point: replay-per-reconnect cost; start with head state in RAM plus recent filtered-delta ring.
   - Design agent: Depends re-pointed to T194 (engine-level CommandLogWriter/Reader, header, checkpoint entries and ReplayVerifier). This ticket adds only store concerns: fsync ordering, rotation, snapshot cadence, crash recovery, retention.
   - Host-owned persistence (SERVER.md 5): games/<gameId>/ with snapshot, commands.log, game.json (LobbySettings, slot->key bindings, host fingerprint, password hash). Snapshot always at clean shutdown, including mid-turn state and TurnState.Ended; a half-resolved turn resumes via NextResolveStep (T200). Clean marker + HostClosing on quit. The directory is portable: zipping it to another host keeps the key bindings, so clients reconnect with the same keys (manual host change; no automatic migration).
+  - 2026-10-25 migration review: (1) added Depends T208/T215: recovery = snapshot + log tail only works once load equals live. Restrict snapshots to the Playing phase or after StartNextTurn (T200 finding 4: a snapshot taken mid-Resolving diverges), or prove mid-Resolving snapshots with a test. (2) Durable dedup: log the clientCmdId with each entry and rebuild the dedup table on recovery, and let Resume return the results of commands still outstanding; otherwise a crash after fsync but before the ack makes the client retry and the command (purchase, attack) applies twice. (3) Define the fallback for a checkpoint mismatch during recovery (load last good snapshot, drop the tail, notify players) instead of leaving the game quarantined.
 
 ### T177 Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump
 - State: Available
-- Depends: T172, T164, T184, T187, T200, T202
+- Depends: T172, T164, T184, T187, T200, T202, T222
 - Source: csharp/migration/design/SERVER.md section 4; COMMANDS.md open questions (simultaneous turns)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Turns/* (TurnPolicy, IClock, TurnTimer, ResolvePump that loops NextResolveStep and submits the server commands), tests with a fake clock: all ended => resolve once, timer => ForceEndTurn in civ-index order, disconnect grace => ForceEndTurn and undo on return, onDisconnect=ai after K absent turns and reclaim, no wall-clock reads in the engine
@@ -2092,10 +2095,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Sequential only for v1 (decision D3 default); keep phase in a server-layer state object so simultaneous mode can be added without reworking the processor. Timer expiry becomes a logged server command (actor 'server'), so replay needs no clock. Depends on T164 turn-flow tickets: re-point to the human-turn-flow ticket from design/COMMANDS-IMPLEMENTATION.md when it exists.
   - Design agent: Depends re-pointed to T184 (phased turn API: EndPlayerTurn / RunAutoPlayers / BeginPlayerTurn, TurnPhase) and T187 (EndTurn, ForceEndTurn, RunAiTurn, BeginTurn commands; actor 'server' is reserved). The AI round is logged per AI civ (RunAiTurn), see design section 5.4: this deliberately refines design/SERVER.md section 1 ('AI as commands issued by the AI civ'), because AI code mutates GameInfo directly in ~100 files and cannot be re-expressed as per-action commands; replay re-runs the engine's AI per civ and the checkpoint hash catches any divergence.
   - OWNER DECISION: simultaneous turns are the MVP (replaces 'sequential only for v1'). Sequential remains for single player and hotseat. See SERVER.md 4 and design/SIMULTANEOUS-TURNS.md. Defaults: timer off, grace 120 s, ForceEndTurn (not AI) on disconnect, join mid-game only between turns. Mid-game joins/leaves use SetController (T202).
+  - 2026-10-25 migration review: added Depends T222: ForceEndTurn needs a defined default resolution for blocking decisions.
 
 ### T178 Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors)
 - State: Available
-- Depends: T172, T173, T174, T175, T176, T177, T202
+- Depends: T172, T173, T174, T175, T176, T177, T202, T219, T220
 - Source: csharp/migration/design/SERVER.md sections 1, 3 (command validation), 6.1
 - Fixtures: none
 - Deliverables: csharp/Unciv.Server/* (console host, Lobby, GameHost single-threaded actor, CommandGate, AI-as-commands runner), Unciv.Server.Tests or Unciv.Core.Tests/Server/*, solution wiring
@@ -2103,6 +2107,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Supersedes the host part of T165. Uses InMemoryTransport only; real sockets are the transport ticket. Creates a new project: coordinate .csproj/solution edits and stay out of Directory.Build.props. Actor id injected from session, never payload. AI civs act through Submit with the AI civ as actor.
   - Lobby is split out to T204; real sockets to T179. Host is the dedicated Unciv.Server or in-process (T205): GameHost must not assume a console. Actor applies commands one at a time in arrival order and stamps Seq (design/SIMULTANEOUS-TURNS.md section 4); AI is RunAiTurn per civ (not AI-as-commands). Multiple human sessions active in the same turn.
+  - 2026-10-25 migration review: dedup must survive a crash (see T176 note): seed the in-memory ClientCommandId table from the log on recovery. Remote queries are T219 and the snapshot-diff delta model is T220. Collapse NotYourUnit-style command errors (CommandContext.OwnUnit text 'Unit X does not belong to Y') so they are not an existence oracle.
 
 ### T179 Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs
 - State: Available
@@ -2114,10 +2119,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: OWNER DECISION D1 (transport) and D2 (hosting) before claiming. Recommendation: A, WebSocket+TLS, Kestrel confined to Unciv.Server; B raw TCP and C ENet considered (see SERVER.md 6.3). Question for the owner: confirm WebSocket+TLS, and VPS vs friend-hosted+overlay.
   - OWNER DECISION (supersedes D1/D2): player-hosted lobby on a port, joined by address:port; no VPS, Caddy or accounts server. Unblocked and re-scoped: raw TCP + TLS 1.3 with a self-signed ECDSA P-256 host certificate; the invite code carries the SHA-256 fingerprint so an invite join has no first-use window; a typed address gets TOFU with a hard stop on later mismatch. No Kestrel/ASP.NET. Verify SslStream TLS 1.3 with self-signed ECDSA on Linux and Windows (inference in SERVER.md section 10). UPnP and LAN discovery are optional tickets T206/T207.
+  - 2026-10-25 migration review: TLS 1.3-only is verified on Linux and Windows only; DETERMINISM.md also lists macOS, Android and WASM. Platform matrix / fallback is tracked in T221.
 
 ### T180 Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types)
 - State: Available
-- Depends: T172, T173, T174, T175, T179, T204
+- Depends: T172, T173, T174, T175, T179, T204, T219, T220
 - Source: csharp/migration/design/SERVER.md sections 2.3, 7
 - Fixtures: none
 - Deliverables: csharp/Unciv.Client.Net/* (ClientSession, ClientGameState, ClientEvent stream), tests over InMemoryTransport: gap => resync, viewHash mismatch => snapshot, duplicate command ids
@@ -2125,6 +2131,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Split out of C006 so the networking logic is testable headless. C004/C005 should consume ClientEvent; re-point after review.
   - Host-a-lobby revision: ClientSession also does Join (password/invite token, fingerprint check from invite, TOFU prompt callback, known-hosts store), LobbyState, TurnStatus, HostClosing handling, reconnect with the same key and Resume to the last address. Mirror tolerates unsolicited deltas (simultaneous turns). Depends gained T179 and T204.
+  - 2026-10-25 migration review: query API comes from T219 (async, remote); mirror updates follow T220 (snapshot-diff deltas, alerts and pending decisions in the snapshot). On Resume, apply the outstanding command results returned by the host (T176 note).
 
 ### T181 Private-channel filtering: trade offers, diplomacy and espionage visibility (server side)
 - State: Done
@@ -2539,6 +2546,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~NetLobby
 - Claimed:
 - Notes: Settings: map, speed, difficulty, era, victories, civ/city-state counts, aiFill, barbarians, ruleset+mods with rulesetHash (mismatch refused with host's list), turn timer, onDisconnect, password, maxPlayers, allowJoinInProgress. Start: nation uniqueness and Random resolved by host, human slots bound to player key ids, NewGame(setup, seed, clock), game.json, first snapshot. Host kick/close slot/chat; late join into Open or AI slot between turns via SetController.
+  - 2026-10-25 migration review: (1) rulesetHash is FNV over object names only (CommandLogHeader.RulesetHashOf, T194), so two versions of the same mod pass; use a canonical content hash of the combined ruleset and send mod versions in Hello. (2) Force GodMode and TradeHintsEnabled off when mapping LobbySettings to GameParameters (or make them explicit host settings shown to everyone).
 
 ### T205 In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game
 - State: Available
@@ -2675,6 +2683,76 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
   - Found by T194. Repro: AI-only game (Setup: Pangaea Tiny map seed 5, game seed 9, Babylon/Greece/Rome, Babylon human but played by NextTurn/AI) played 20 turns with GameStarter+NextTurn, then UncivFiles.GameInfoToString/FromString: the loaded copy and the original give different StateHasher hashes from the very next NextTurn on (turns 5, 10, 30 happen to match). With the scripted human (ReplayDeterminismTests), a snapshot at turn 8 diverges at the first move-automated-units (Explore): the loaded game reveals/explores different tiles (exploredBy and movementMemories differ). Suspect a cache or transient (viewable tiles, unit movement memories, civ caches) not rebuilt by SetTransients or not serialized. Fix, then raise the snapshotTurn InlineData in SnapshotPlusLogTailReproducesTheFinalHash and the 5-turn snapshot in SaveLoadContinueGivesTheSameFinalHash, and drop the TODO(T215) comment there.
 
+### T216 Engine queries the client still lacks: pending decisions with alert details, promotion choices, spy destinations, city-state quests, diplomatic vote candidates
+- State: Available
+- Depends: T184, T185, T197, T192
+- Source: Unciv.Core/Logic/PendingDecisions.cs, Logic/Civilization/PopupAlert, UnitPromotions, EspionageManager/Spy.CanMoveTo, QuestManager, Civilization diplomatic vote (Kotlin ui/screens/pickerscreens/*, DiplomaticVotePickerScreen, PromotionPickerScreen, EspionageOverviewScreen)
+- Fixtures: none
+- Deliverables: Unciv.Core/Queries/** new IQuery types and tests in Unciv.Core.Tests/Queries
+- Gate: dotnet test --filter FullyQualifiedName~Queries
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). Every blocking decision has a command, but the client cannot ask what to choose: (a) PendingDecisions is a Logic function, not an IQuery (T184's title promised a query); expose it per viewer with each alert's detail (Event choices via EventPresentation, legal CityConquered options e.g. liberate allowed). (b) Promotions: Promote is a UI-only action in Kotlin so UnitActionsQuery never lists it; expose CanBePromoted and available promotions per unit. (c) Espionage: legal spy destinations (and coup odds) before MoveSpy. (d) City-state quests per city state (DiplomacyPanelResult has none, C021 scopes quests). (e) Diplomatic vote candidates. Go through View classes only (T174 visibility rules); these are reused over the network (see the remote-queries ticket).
+
+### T217 CLI: replay/verify a command log, play scripted human commands, ruleset/mod and saved-map options
+- State: Available
+- Depends: T168, T170, T194
+- Source: csharp/Unciv.Cli/CliRunner.cs, Unciv.Core/Commands/Log/{CommandLogReader,ReplayVerifier,ScriptedHuman}.cs, GameStarter openMapFile, RulesetCache.LoadRulesets
+- Fixtures: none
+- Deliverables: Unciv.Cli (new subcommands/options), Unciv.Cli/README.md, Unciv.Core.Tests/Cli/CliTests.cs
+- Gate: dotnet test --filter FullyQualifiedName~Cli
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). Phase 1 promises a headless engine + CLI driven through the command layer, but CliRunner only has new/play/save/load/hash/info and play is AI-only (human auto-played via SimulateUntilWin). The command log, replay verifier and scripted human exist but are reachable only from tests. Add: `replay <log>` (verify per-turn hashes), a way to submit commands for the human civ (command file / scripted human), `--ruleset`/`--mods` (CLI calls LoadRulesets(noMods: true) then GetVanillaRuleset, so no Gods & Kings and no mods; T168 deferred this to T170, which did not add it) and `--map <file>`. Also fix the README 'Determinism' claim that play N == play a + play b once T208/T215 land, and test it for a long run.
+
+### T218 Hardening sweep 3: findings from the 2026-10-25 migration review
+- State: Available
+- Depends: none
+- Source: see Notes
+- Fixtures: none
+- Deliverables: small fixes in Unciv.Core / Unciv.Core.Tests
+- Gate: dotnet build -warnaserror && dotnet test
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). (1) Stale header comments: Logic/Map/MapUnit/MapUnit.cs:27 ('triggerUnique is the T052 stub'), Logic/Civilization/Diplomacy/DiplomacyManager.cs:20-21 ('throws until then'). (2) HashCode.Combine is randomized per process: UnitPromotions.cs:256, ResourceSupplyList.cs:49; replace with the deterministic JVM-style hash helper (T017) so nothing can ever order by it. (3) JavaHashMap.cs:203 throws NotSupportedException when a bucket reaches 9+ keys (treeification); either implement or prove unreachable with a test, a mid-game crash is not acceptable. (4) C# test classes with fewer cases than Kotlin: GameSerializationTests 7->6, CapitalConnectionsFinderTests 6->4, MultiFilterTests 9->7, UniqueErrorTests 9->8; port or record why. (5) DETERMINISM.md:44 ordinal string ordering is not enforced: add a SourcePolicy check for OrderBy/ThenBy on string keys without StringComparer.Ordinal. (6) Scenario loading (UncivFiles.getScenarioFiles, cut at UncivFiles.cs:12) has no ticket: port it or record it as Won't port.
+
+### T219 Remote queries: Query/QueryResult wire messages, GameHost dispatch, async queries in ClientSession, per-query exposure audit, rate limits
+- State: Available
+- Depends: T172, T174, T185, T216
+- Source: Unciv.Core/Net/Messages.cs (no Query message), Unciv.Core/Queries/**, design/SERVER.md, COMMANDS-IMPLEMENTATION.md 8.1
+- Fixtures: none
+- Deliverables: Net messages Query{queryId,type,payload} / QueryResult{queryId,ok,code,payload}; host-side dispatch on the game actor (refused with turn-resolving during Resolving, cached per view seq, rate limited); ClientSession async Query API; exposure audit test listing every IQuery with an allow/deny decision for remote use; collapse query error codes so they are not an existence oracle
+- Gate: dotnet test --filter FullyQualifiedName~Net
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). The client depends on queries for reach/paths, combat preview, city panels, tech/policy trees, diplomacy panels and pending decisions, but the protocol has no query message and T178/T180 do not mention queries. Without this a remote client either does nothing or needs the full GameInfo (the leak the design forbids). Several queries bypass View classes and must be fixed or denied remotely: Queries/Empire/EmpireQueryHelpers.cs (GameInfo.GetCivilizationOrNull), Victory/VictoryProgressQuery.cs (iterates game.Civilizations), TradeHintQuery. Pathfinding queries are expensive on the single game thread: rate limit and cache.
+
+### T220 Client mirror correctness: per-recipient snapshot-diff deltas, popup alerts and pending decisions in ClientSnapshot
+- State: Available
+- Depends: T174, T175, T216
+- Source: Unciv.Core/Net/Visibility/{ClientSnapshot,SnapshotBuilder}.cs, event classifiers (T175), T209 EventsTruncated
+- Fixtures: none
+- Deliverables: host computes each recipient's filtered snapshot DTO after every command and sends the diff as the ViewDelta (events kept for animation only); alerts and pending decisions added to ClientSnapshot; test: random command sequences keep every client viewHash equal to a fresh snapshot
+- Gate: dotnet test --filter FullyQualifiedName~Visibility
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). Many ClientSnapshot fields have no event that updates them (own-city food stored, construction queue, buildings; own-unit health, movement, XP, current action, promotions; current tech; tile improvement/road/pillage; diplomacy status; spies; city health, puppet, razing) and events can be truncated (T209). T180's 'viewHash mismatch => snapshot' would then fire on nearly every command and T182's 'every client viewHash matches' fails. The snapshot also has no PopupAlerts/PendingDecisions, so a reconnecting player cannot see what blocks their End turn. Diffing the filtered DTO is safe (never GameInfo).
+
+### T221 Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix
+- State: Available
+- Depends: T179, T180
+- Source: Unciv.Core/Net/ProtocolCodec.cs:47 (throws above MaxFrameBytes 4 MiB), ProtocolVersion.cs, T179 transport
+- Fixtures: none
+- Deliverables: multi-client test over real TCP+TLS on loopback with injected latency/loss and half-open sockets; bounded per-session outbound queue with slow-reader disconnect; ping/pong timeout policy; chunked or compressed frames so a large-map snapshot never throws; ResyncRequest rate limit; pings and joins answered while an AI turn runs; documented supported platforms for TLS 1.3 (Linux, Windows verified; macOS SslStream, Android server mode, WASM raw TCP unknown) or a TLS 1.2 fallback
+- Gate: dotnet test --filter FullyQualifiedName~Net
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). T182 runs over the in-memory transport and T179 only tests loopback basics, so nothing exercises a real network. ProtocolCodec.Encode throws InvalidOperationException above 4 MiB with no chunking or compression.
+
+### T222 Multiplayer game-over and forced-end rules: One More Turn authority, defeated humans, default resolution of blocking decisions on ForceEndTurn
+- State: Available
+- Depends: T202
+- Source: Unciv.Core/Commands/Turn/OneMoreTurn.cs, ForceEndTurn (T177/T202), PendingDecisions
+- Fixtures: none
+- Deliverables: rules + tests: in Simultaneous mode only the host (or a vote) can switch to one-more-turn and a defeated civ cannot; defeated humans become spectators (no commands, full-map or own-view per lobby setting); ForceEndTurn resolves each blocking decision deterministically (e.g. CityConquered -> AI choice, free tech -> AI pick) and logs it
+- Gate: dotnet test --filter FullyQualifiedName~Turn
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). Today any player, including a loser, can switch the whole game to one-more-turn; no ticket defines the multiplayer victory flow, and when the timer forces a turn end with blocking decisions pending no default is specified.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
@@ -2722,7 +2800,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C006 Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage
 - State: Available
-- Depends: T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036
+- Depends: T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T221, C037
 - Scope: Godot side of networked play only (the protocol, session, mirror state and transport live in Unciv.Client.Net, T180/T179): lobby and join screens (invite code entry), identity key storage under user://, 'your turn' notification list and toast, turn timer display, reconnect overlay, marshalling network events onto the Godot main thread, feeding ClientEvents to the C004/C005 presentation. Server is our own (design/SERVER.md); no upstream Unciv servers.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
   - Narrowed by the server design (design/SERVER.md section 7). Server tickets T172-T182; C006 owns only Godot scenes and the main-thread pump. Single-player should use the same ClientSession over a loopback host (T178).
@@ -2794,7 +2872,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C011 HUD: top bar yields, turn banner, next-action button
 - State: Available
-- Depends: C005, C010, T164, T062, T174, T184
+- Depends: C005, C010, T164, T062, T174, T184, C037
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Top bar (gold, science, culture, happiness, faith, golden age, resources, turn/year), turn banner on turn start, next-action button (next unit / choose research / end turn) from the engine's turn-over query. Slice detail in design/CLIENT-SLICES.md
@@ -2805,7 +2883,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C012 Unit panel and orders: attack, fortify, found city, workers, automate
 - State: Available
-- Depends: C005, C010, T164, T080, T083, T040, T188, T189, T190, T195
+- Depends: C005, C010, T164, T080, T083, T040, T188, T189, T190, T195, C037, T216
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Unit panel (strength, moves, health, promotions), action menu from unit-actions query (found city, improve, road, fortify, sleep, explore, automate, pillage, upgrade, disband, promote, great person), attack with combat preview and attack-range overlay, path preview and reachable overlay. Slice detail in design/CLIENT-SLICES.md
@@ -2815,7 +2893,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C013 Notifications and popup alerts
 - State: Available
-- Depends: C005, C010, T164, T051, T055, T171, T187, T175
+- Depends: C005, C010, T164, T051, T055, T171, T187, T175, C037, T216
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Clickable notification list (jump to tile/screen), turn-start summary, PopupAlert popups (ruin reward, great person, religion founding, city captured, quest, event choice). Slice detail in design/CLIENT-SLICES.md
@@ -2823,10 +2901,11 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario notifications: injected notifications, click centres camera, popup choice submits right command. Human: urgency. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
   - Multiplayer: notifications and alerts also arrive unsolicited between the player's own commands (other humans act live); decision alerts stay per civ.
+  - 2026-10-25 migration review: scope the alerts as a table over all 31 AlertType values (PopupAlert.kt), each with its resolver from PendingDecisions.ResolverOf: respond-to-alert (CityConquered [Blocking: annex/puppet/raze/liberate/destroy], CityTraded, DiplomaticMarriage, RecapturedCivilian, the minor-civ alerts, Event, Denounced), respond-demand (the four DemandTo* alerts), respond-friendship (DeclarationOfFriendship), ack-alert (the rest). The current list (ruin reward, great person, religion founding, city captured, quest) is mostly not AlertType values. Pickers for blocking decisions are C038; trade requests are C039. Scenario: every AlertType has a handler.
 
 ### C014 Minimap
 - State: Available
-- Depends: C010, T164, T174
+- Depends: C010, T164, T174, C037
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): ImageTexture minimap from map query with borders, viewport rectangle, click to jump. Slice detail in design/CLIENT-SLICES.md
@@ -2836,7 +2915,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C015 Main menu and game setup screen: nations, difficulty, speed, map options
 - State: Available
-- Depends: C005, C010, T099, T045, T021, T034, T170, T199
+- Depends: C005, C010, T099, T045, T021, T034, T170, T199, C037
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Main menu; setup (nations grid, human/AI, player and city-state count, difficulty, speed, era, map type/shape/size/wrap/resources, seed, victory types, base ruleset and mods, advanced) building GameSetupInfo and calling GameStarter. Slice detail in design/CLIENT-SLICES.md
@@ -2847,17 +2926,18 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C016 Save/load screen and autosave
 - State: Available
-- Depends: C005, C010, T100
+- Depends: C005, C010, T100, C037, T208, T215, C043
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Save list with metadata, load, save as, delete, autosave every turn, quick save/load, resume last. Slice detail in design/CLIENT-SLICES.md
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario saveload: save, advance, load, state hash equals saved; autosave file appears. Human: layout only. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - 2026-10-25 migration review: added Depends T208/T215: the gate 'load -> state hash equals saved' fails until save/load fidelity is fixed.
 
 ### C017 City screen A: info, tiles, specialists, focus
 - State: Available
-- Depends: C005, C010, T164, T060, T062, T191, T196
+- Depends: C005, C010, T164, T060, T062, T191, T196, C037, C041
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): City screen shell, header, worked/available/locked tile grid with assign/lock commands, specialists, focus, stat breakdown. Slice detail in design/CLIENT-SLICES.md
@@ -2877,7 +2957,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C019 Tech screen
 - State: Available
-- Depends: C005, C010, T164, T056, T192, T197
+- Depends: C005, C010, T164, T056, T192, T197, C037
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Tech tree by TechColumn, state colours, choose/queue research, unlocks list. Slice detail in design/CLIENT-SLICES.md
@@ -2887,7 +2967,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C020 Policy screen
 - State: Available
-- Depends: C005, C010, T164, T056, T192, T197
+- Depends: C005, C010, T164, T056, T192, T197, C037
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Policy branches, adopt command, cost, ideology/tenets, golden age info. Slice detail in design/CLIENT-SLICES.md
@@ -2897,7 +2977,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C021 Diplomacy screen
 - State: Available
-- Depends: C005, C010, T164, T059, T068, T193, T197
+- Depends: C005, C010, T164, T059, T068, T193, T197, C037, T216
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Met-civ list, status, relationship text, declare war/peace/denounce, city-state screen (influence, quests, gifts, bully, protect). Slice detail in design/CLIENT-SLICES.md
@@ -2917,7 +2997,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C023 Overview screens: empire, cities, units, resources, ranking, religion, espionage
 - State: Available
-- Depends: C005, C010, T164, T057, T197, T198
+- Depends: C005, C010, T164, T057, T197, T198, C037, T216
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Overview tabs with tables: stats, cities, units (select/jump), resources, ranking, religion beliefs, espionage spies, global politics. Slice detail in design/CLIENT-SLICES.md
@@ -2927,7 +3007,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C024 Victory and defeat screen, game over
 - State: Available
-- Depends: C005, C010, T166, T198, T187
+- Depends: C005, C010, T166, T198, T187, C037
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Victory screen (type, ranking, history graph from CivRankingHistory), continue playing / main menu, defeat screen, spectator after defeat. Slice detail in design/CLIENT-SLICES.md
@@ -2937,7 +3017,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C025 Localization: translations in the client, language picker, non-Latin fonts
 - State: Available
-- Depends: C005, T023, T170
+- Depends: C005, T023, T170, C043
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): All labels through Tr(), language picker (persisted), registry font/default fallback chain (CJK, Cyrillic, Arabic, Hebrew, Thai, Devanagari, Korean) with OFL fonts recorded in ASSETS.md, RTL/shaping via TextServer (check HarfBuzz/ICU in installed Godot). Slice detail in design/CLIENT-SLICES.md
@@ -2947,7 +3027,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C026 Tutorials
 - State: Available
-- Depends: C005, C010, T030, T049
+- Depends: C005, C010, T030, T049, C043
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Tutorial popup queue fired by TutorialTrigger, dont-show-again persistence, tutorial list in menu, tasks overlay. Slice detail in design/CLIENT-SLICES.md
@@ -2967,7 +3047,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C028 Options screen, hotkeys, edge-pan
 - State: Available
-- Depends: C005
+- Depends: C005, C043
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Sound, language link, UI scale, window mode, key rebinding persisted, scroll speed, yield/resource icon toggles, asset pack selection. Slice detail in design/CLIENT-SLICES.md
@@ -2977,7 +3057,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 
 ### C029 Hotseat player switch screen
 - State: Available
-- Depends: C010, T164, T184
+- Depends: C010, T164, T184, C037
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Pass-the-device screen hiding the map between human players (per human turn flow ticket). Slice detail in design/CLIENT-SLICES.md
@@ -2985,6 +3065,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario hotseat: two humans, map hidden between turns. Human: none. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
   - Hotseat is TurnMode.Sequential (T184). Hosted games are Simultaneous and need no pass-the-device screen. Keep this ticket for local hotseat only.
+  - 2026-10-25 migration review: undersized: LocalHost has a single HumanCivId; hotseat needs a viewer per human (snapshot and queries per civ through IGameSession, C037) and BeginTurn per human, not only a pass-the-device screen.
 
 ### C030 Placeholder audio: UncivSound to generated tones
 - State: Available
@@ -3055,6 +3136,96 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed:
 - Notes: Scenario mp-turn: two scripted humans; assert ended marks follow TurnStatus, Undo restores, commands during Resolving show turn-resolving. Human: is it clear whom the game is waiting for.
+
+### C037 IGameSession: client reads and writes only through a session interface; LocalHost implements it
+- State: Available
+- Depends: C010, T185, T175, T174
+- Source: design/CLIENT-SLICES.md principle 2; Unciv.Godot/Play/{LocalHost,GameQueries,GameScreen}.cs
+- Fixtures: none
+- Deliverables: Unciv.Godot/Play/IGameSession.cs (snapshot + delta mirror, async Query, Submit command, event stream, turn status), LocalHost implementing it, GameScreen/GameQueries moved onto it, a source-policy test that Unciv.Godot code outside the session implementation does not touch GameInfo (static ruleset reads allowed)
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). CLIENT-SLICES.md requires client code to go through IGameSession, but it does not exist and no ticket owns it; the C010 review left it as a non-blocking follow-up ('needed before C006'). Today GameScreen.Refresh builds a snapshot from host.Session.Game with a fake TurnStatusDto, GameQueries is constructed from GameInfo, LocalHost reads Session.Game.TurnPhase. If C011-C033 are built on that, phase 3 (T180 ClientSession) means rewriting them. Make queries async now so the remote implementation (remote-queries ticket) can slot in. Verification: scenario session: existing C010 slice runs unchanged through the interface.
+
+### C038 Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result
+- State: Available
+- Depends: C005, C037, T216, T192, T197
+- Source: Kotlin ui/screens/pickerscreens/{PromotionPickerScreen,GreatPersonPickerScreen,PantheonPickerScreen,ReligiousBeliefsPickerScreen,DiplomaticVotePickerScreen,DiplomaticVoteResultScreen}, EspionageOverviewScreen; Unciv.Core/Logic/PendingDecisions.cs (DecisionKind)
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): one picker per blocking DecisionKind, opened from the next-action button and from notifications
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). EndTurn refuses while a Blocking decision is pending (Commands/Turn/EndTurn.cs:22), but these have no client screen: DiplomaticVote (vote-diplomatic; any game reaching the United Nations deadlocks), Pantheon/FoundReligion/EnhanceReligion/ReformReligion (found-pantheon, found-religion, choose-beliefs; religion name and icon too), MoveSpies (move-spy / dismiss-move-spies), FreeGreatPerson, free technology (pick-free-technology), promotions. Verification: scenario pickers: for every Blocking DecisionKind a handler exists (test enumerates the enum), each picker submits the right command and End turn becomes allowed.
+
+### C039 Incoming proposal popups: trade, peace and friendship requests from AI (and other humans), proposer's pending/declined/withdrawn state
+- State: Available
+- Depends: C005, C037, C022, T193
+- Source: Kotlin ui/screens/worldscreen/TradePopup.kt; PendingDecisions TradeRequests (respond-trade-request), PendingTradeDto in ClientSnapshot
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): popup for each incoming trade request with accept / decline / counter-offer (opens C022), status of our own outstanding offers
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). AI peace and trade proposals arrive as non-blocking TradeRequests; without a popup they silently expire (C022 covers only the offer builder and 'AI demands', which are actually alerts handled by C013). In multiplayer the same popup handles proposals from other humans (T181/T193/T202 cover the engine side). Verification: scenario proposals: AI offer shown, accept changes both civs, decline notifies.
+
+### C040 Run end-turn processing and AI turns off the UI thread with a next-turn progress overlay
+- State: Available
+- Depends: C037, C011
+- Source: Kotlin ui/screens/worldscreen/status/NextTurnProgress.kt; Unciv.Godot/Play/LocalHost.cs (EndTurn runs RunAiTurn per AI in the button handler)
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): worker-thread turn pump in LocalHost, progress overlay (civ n of m), UI input blocked but window responsive
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). CLIENT-SLICES.md 'Unverified assumptions' says a progress overlay is not scheduled. On Standard/Large maps with 8+ AIs the window freezes for seconds. Needs IGameSession first so the UI never reads the live GameInfo while the worker mutates it. Verification: scenario next-turn: frame time stays bounded during a 10-AI end turn.
+
+### C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
+- State: Available
+- Depends: C010, C037
+- Source: Unciv.Godot map view (C009); ClientSnapshot cities/tiles
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): city marker + banner (name, size, production, health, click opens city screen), territory borders, road and improvement markers on the flat map; replaced or reused by C032 later
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). GameScreen draws only tiles and units; C032 (cities, borders, roads, improvements) sits behind C003 -> C002 (3D terrain). Until then founded cities and finished improvements are invisible, and C017 'opens by clicking a city'. Verification: scenario flat-city: founded city and built road appear, click opens city screen.
+
+### C042 Client packaging: bundle rulesets and translations, user mods folder, export presets, third-party notices
+- State: Available
+- Depends: C001, T170
+- Source: Unciv.Godot/Assets/RulesetLocator.cs (walks up to android/assets/jsons), ASSETS.md
+- Fixtures: none
+- Deliverables: Unciv.Godot export_presets.cfg (Linux, Windows; macOS noted), build step copying android/assets/jsons + translations into the export, user:// mods folder for local mods, licence/notices file, docs
+- Gate: exported build starts outside the repo checkout and reaches the main menu (scripted smoke test)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). RulesetLocator only works inside a repo checkout; nothing bundles rulesets or translations, no export presets/templates, no notices. T169 only promises 'export/packaging notes'. Pin the Godot export template version alongside the editor (setup-godot.sh).
+
+### C043 Client settings model persisted under user:// (language, key bindings, UI scale, asset pack, autosave, tutorials seen, player name) and the engine PlayerSettings options
+- State: Available
+- Depends: C005, T183
+- Source: Kotlin models/metadata/GameSettings.kt (not ported to the engine); Unciv.Core PlayerSettings + SetPlayerSettings (T183/T187)
+- Fixtures: none
+- Deliverables: Unciv.Godot ClientSettings (versioned JSON under user://, load/save, defaults), wiring of SetPlayerSettings options (AutomatedUnitsMoveOnTurnStart, AutoAssignCityProduction, CitiesAutoBombardAtEndOfTurn, ...)
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). GameSettings is 'not ported' and no ticket replaces it on the client, so C016/C025/C026/C028 would each persist settings separately. The engine-side PlayerSettings have no UI in any C ticket. Verification: scenario settings: change, restart client, value persists; SetPlayerSettings submitted on change.
+
+### C044 In-game menu: save, load, new game, resign, victory status, options, main menu
+- State: Available
+- Depends: C005, C016
+- Source: Kotlin ui/screens/worldscreen/mainmenu/WorldScreenMenuPopup.kt; Commands Resign
+- Fixtures: none
+- Deliverables: Unciv.Godot/ client code (scope): in-game menu popup; resign confirmation submits Resign
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). No C ticket owns the in-game menu, so a player cannot save mid-game or resign from the map (Resign command exists without UI). Verification: scenario menu: save from menu, resign ends the game for the civ.
+
+### C045 In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key
+- State: Available
+- Depends: C036, T178, T204
+- Source: design/SERVER.md 6.2 (host clears a slot binding 'in the lobby UI'), Net LobbyChat
+- Fixtures: none
+- Deliverables: chat message type usable in game (not only LobbyChat), Unciv.Godot in-game chat panel and player list with host-only kick and slot rebind
+- Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
+- Claimed:
+- Notes: Found by the 2026-10-25 migration review (all three phases). Only lobby chat exists (C035); there is no in-game chat, kick or admin UI, and SERVER.md's 'host clears the binding in the lobby UI' has no in-game UI for a player who lost their key or changed device.
 
 ## Game AI track (Civ 5 behavioral spec)
 
