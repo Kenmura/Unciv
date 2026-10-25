@@ -1903,12 +1903,13 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - State: Done (full ticket: backlog-archive.md)
 
 ### C001 Godot project skeleton
-- State: Available
+- State: In-Progress [Claude]
 - Depends: C000, T006, T099, T100
 - Deliverables: csharp/Unciv.Godot/ project consuming Unciv.Core, empty scene, CI-friendly headless build
 - Gate: `dotnet build Unciv.Godot` (headless; no editor required)
   - Backlog audit: C001's Depends named 'a loadable game state (ticket to be added)': that is now GameStarter (T099, new game) and UncivFiles (T100, load). A-track Depends extended with the engine tickets they use (A003 Civilization/Victory/Diplomacy state, A004/A006 MapUnit, movement, combat and the Kotlin unit automation they replace).
 
+- Claimed: 2026-10-25T00:21Z
 ### C002 3D hex terrain rendering
 - State: Blocked
 - Depends: C001
