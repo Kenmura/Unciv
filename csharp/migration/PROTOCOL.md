@@ -2,7 +2,7 @@
 
 Any agent (Claude, Antigravity, or other) that is told **"Begin Conversion work"**
 must follow this file exactly. No live agent-to-agent channel exists: git and
-`backlog.md` are the only coordination mechanism.
+the `backlog/` folder (one file per ticket) are the only coordination mechanism.
 
 ## Trigger phrase
 
@@ -13,22 +13,22 @@ ticket, then immediately start the next one, until a Stop Condition is met.
 
 **Read the protocol and backlog from the `csharp-migration` branch, not from whatever
 is checked out**: after your worktree exists, everything below refers to your worktree's copy.
-**Never read `backlog.md` whole** (see Context discipline). Use `tools/ticket.py`.
+**Never read the backlog files directly** (see Context discipline). Use `tools/ticket.py`.
 
 ### No-prompt rule
 
 Never ask the user a question and never stop for a confirmation. Where this file or
 the situation is ambiguous, pick the conservative reading, note it in the ticket's `Notes`, and
 continue. Concretely: do not use AskUserQuestion; keep file writes inside your worktree
-(temporary files go in your harness scratchpad); resolve rebase conflicts yourself (in `backlog.md`
+(temporary files go in your harness scratchpad); resolve rebase conflicts yourself (in `backlog/T###.md`
 take `csharp-migration`'s text and re-apply only your own ticket's lines); a dirty worktree you own is
 yours to commit or discard, one you do not own is left alone. Only the Stop Conditions below end the loop.
 
 ## Goals and non-goals
 
-Long-term goal: a headless, **deterministic** C# engine driving a Godot client with a Civ 5-style UI (see `backlog.md`, Client track), playable online with friends over our **own** networking. The port exists to serve that goal.
+Long-term goal: a headless, **deterministic** C# engine driving a Godot client with a Civ 5-style UI (see `backlog/README.md`, Client track), playable online with friends over our **own** networking. The port exists to serve that goal.
 
-Non-goals (mark such tickets `Won't port`, do not port them; see the exhaustive file-by-file inventory and rationale in `backlog.md` under `## Non-goals (Won't port)`):
+Non-goals (mark such tickets `Won't port`, do not port them; see the exhaustive file-by-file inventory and rationale in `backlog/README.md` under `## Non-goals (Won't port)`):
 - Unciv's multiplayer stack (`logic/multiplayer`, apiv2, Dropbox sync, `server/`) and any dependency on the original implementers' servers.
 - libGDX UI/screens, Android/desktop launchers, platform-specific code.
 
@@ -36,7 +36,7 @@ Non-goals (mark such tickets `Won't port`, do not port them; see the exhaustive 
 
 - `csharp/Unciv.Core/` – headless engine (no UI, no libGDX). Namespaces mirror Kotlin packages (`com.unciv.logic.map` → `Unciv.Logic.Map`).
 - `csharp/Unciv.Core.Tests/` – xUnit tests, one test class per ported Kotlin test class.
-- `csharp/migration/backlog.md` – the ticket ledger.
+- `csharp/migration/backlog/` – the ticket ledger: one file per ticket (`T001.md`, `C005.md`, `A003.md`; Done tickets stay), plus `README.md` with the non-goals inventory and the track introductions.
 - Kotlin sources under `core/` and `tests/` are the **source of truth** and are never modified by this effort.
 
 ## Environment
@@ -74,7 +74,7 @@ Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs t
   ```
   git rebase csharp-migration && git push . HEAD:csharp-migration
   ```
-  The push is fast-forward only. If it is rejected, the other agent published first: `git rebase csharp-migration`, re-read `backlog.md`, re-check your ticket choice still holds, and publish again.
+  The push is fast-forward only. If it is rejected, the other agent published first: `git rebase csharp-migration`, re-read your ticket (`ticket.py show`), re-check your ticket choice still holds, and publish again.
 - **Push to Remote on Review Pass:**
   Whenever a ticket passes review and is marked `Done`, push the integration branch to `origin`:
   ```
@@ -101,23 +101,22 @@ A review may send a ticket back to `Available` (with notes, keeping the implemen
 
 ### Context discipline
 
-- **Backlog access: only through `tools/ticket.py`; never `Read`, `grep -n`, `sed` or hand-edit `backlog.md`/`backlog-archive.md`.** Run `python3 -I tools/ticket.py` from `csharp/migration/` (its docstring lists every command). Read: `ready`, `next <You>`, `show T### [Field]`, `list [State]`, `blockers T###`, `stale`, `check`. Write: `claim`, `state`, `reset`, `note`, `set`, `add`, `publish`, `archive`. Every write regenerates `DEPENDENCY_MAP.md` (GitHub-rendered mermaid map of all incomplete tickets and their direct dependencies) in the same commit; `ticket.py graph` rebuilds it on demand. Every write touches one ticket's block only and is verified before the file is written; illegal state transitions, unknown dependency ids and dependency cycles are refused. Long Notes go in with `ticket.py note T### - <<'EOF' ... EOF`. If you need something the tool cannot do, add it to the tool in your own ticket's commit rather than hand-editing the backlog.
+- **Backlog access: only through `tools/ticket.py`; never `Read`, `grep -n`, `sed` or hand-edit the files in `backlog/`.** Run `python3 -I tools/ticket.py` from `csharp/migration/` (its docstring lists every command). Read: `ready`, `next <You>`, `show T### [Field]`, `list [State]`, `blockers T###`, `stale`, `check`. Write: `claim`, `state`, `reset`, `note`, `set`, `add`, `publish` (`archive` is a retired no-op). Every write regenerates `DEPENDENCY_MAP.md` (GitHub-rendered mermaid map of all incomplete tickets and their direct dependencies) in the same commit; `ticket.py graph` rebuilds it on demand. Every write touches one ticket's block only and is verified before the file is written; illegal state transitions, unknown dependency ids and dependency cycles are refused. Long Notes go in with `ticket.py note T### - <<'EOF' ... EOF`. If you need something the tool cannot do, add it to the tool in your own ticket's commit rather than hand-editing the backlog.
 - **Parallel subagents.** When `python3 -I tools/ticket.py ready` lists several tickets, the orchestrator dispatches one subagent per ticket **in parallel** (one message, several Agent calls). Rules:
   - **One worktree per subagent**: `git -C /var/home/nickmarc/repos/Unciv worktree add .worktrees/<you>-T### -b agent/<you>-T### csharp-migration` (remove it after the ticket is Done and published). Never let two subagents share a working directory or branch; concurrent builds corrupt `bin/`/`obj/`.
   - Only dispatch tickets that are independent: no dependency between them (`ready` already guarantees deps are Done) and no overlap in Deliverables or in shared files (`IHasUniques.cs`, `*Seams.cs`, `Utils/*Extensions.cs`, `.csproj`). If two tickets would extend the same seam file, run them one after the other.
-  - **Claim with the tool**: `python3 -I tools/ticket.py claim T### <You>` sets State and Claimed on that ticket only, commits only `backlog.md`, rebases and fast-forwards `csharp-migration`, and exits 2 if you lost the race or the ticket is not claimable (pick another).
-  - **Publishing is serialised by git**: `ticket.py publish` (or `state ... --publish`) rebases onto `csharp-migration` and fast-forwards it, retrying on rejection; `--origin` also runs `git push origin csharp-migration` (use on Done; safe to repeat). A rebase conflict aborts and is reported (backlog.md: take `csharp-migration`'s text and re-apply only your own ticket's changes with the tool).
+  - **Claim with the tool**: `python3 -I tools/ticket.py claim T### <You>` sets State and Claimed on that ticket only, commits only that ticket's `backlog/T###.md` and `DEPENDENCY_MAP.md`, rebases and fast-forwards `csharp-migration`, and exits 2 if you lost the race or the ticket is not claimable (pick another).
+  - **Publishing is serialised by git**: `ticket.py publish` (or `state ... --publish`) rebases onto `csharp-migration` and fast-forwards it, retrying on rejection; `--origin` also runs `git push origin csharp-migration` (use on Done; safe to repeat). A rebase conflict aborts and is reported (conflict resolution is per file: for each conflicted `backlog/T###.md` take `csharp-migration`'s file and re-apply only your own ticket's changes with the tool; `DEPENDENCY_MAP.md` alone is rebuilt automatically).
   - Several tickets in `Needs-Review` by the same implementer are reviewed in parallel too, each by its own isolated review subagent.
   - `ready`/`next` order IMPLEMENT candidates by `[unblocks N]`, the number of incomplete tickets that depend on the ticket directly or transitively: dispatch from the top (subject to the overlap rule). A `REVIEW` row whose implementer subagent is still running is already being reviewed; do not dispatch it again.
   - After `ticket.py add`, commit and `ticket.py publish` straight away (ids are allocated against the published branch, but two unpublished adds can still collide; `ticket.py check` flags duplicates, `ticket.py renumber` fixes them).
   - **Never publish a non-building state to `csharp-migration`.** Every published commit (claim, implement, review, or a mid-ticket publish) must pass `dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` on the rebased tree. WIP stays on your own agent branch, never on the shared branch (a `wip` commit on the shared branch once broke every other agent's rebase). If you find the tip broken, tell the orchestrator and do not mark anything Done until the tip builds.
   - **Enforced by the tool (T163).** `ticket.py state T### Done` itself refuses unless the worktree is clean, HEAD contains `csharp-migration`, `dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` and `coverage.py --check` pass (it runs them; `ticket.py green` runs and stamps the exact tree beforehand, and a matching stamp makes `Done` instant), and no `TODO(T###)` marker naming the ticket remains outside the backlog files. `Done` combined with `--all` is refused. The only escape hatch is `--no-green REASON`, for backlog-only/docs tickets whose Deliverables list no `.cs/.csproj/.props/.editorconfig/.json/.py/.txt/.sln/.targets` file; the reason is recorded in Notes. Tool tests: `python3 -I -m unittest discover -s tools -p 'test_*.py'` (run when you change `tools/ticket.py`).
-  - **Green before Done (no exceptions).** Marking a ticket `Done` (and any publish that follows) requires, on the tree rebased onto the *current* `csharp-migration` tip: `dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` with exit code 0 and **0 failed** (read the exit code and the failed count; never chain the publish after the tests with `;`), then `python3 -I tools/coverage.py --check`. Before publishing run `git diff --stat <previous tip>..HEAD` and confirm it contains only your ticket's files plus `backlog.md`/`DEPENDENCY_MAP.md`: a rebase or conflict resolution that reverts another agent's files is a bug. Marking your ticket Done also invalidates every `TODO(T###)` marker and seam-file owner that names it: grep the whole tree (including `*Seams.cs` headers) and retarget them to open tickets in the same change. `wip` commits stay on your own branch. If `coverage.py --update-baseline` (raise/add only) is refused by the permission classifier, report it in the ticket Notes; the orchestrator runs it.
+  - **Green before Done (no exceptions).** Marking a ticket `Done` (and any publish that follows) requires, on the tree rebased onto the *current* `csharp-migration` tip: `dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` with exit code 0 and **0 failed** (read the exit code and the failed count; never chain the publish after the tests with `;`), then `python3 -I tools/coverage.py --check`. Before publishing run `git diff --stat <previous tip>..HEAD` and confirm it contains only your ticket's files plus your ticket's `backlog/T###.md` and `DEPENDENCY_MAP.md`: a rebase or conflict resolution that reverts another agent's files is a bug. Marking your ticket Done also invalidates every `TODO(T###)` marker and seam-file owner that names it: grep the whole tree (including `*Seams.cs` headers) and retarget them to open tickets in the same change. `wip` commits stay on your own branch. If `coverage.py --update-baseline` (raise/add only) is refused by the permission classifier, report it in the ticket Notes; the orchestrator runs it.
   - The orchestrator keeps at most **4** subagents running at once (CPU/RAM: each runs a full `dotnet build/test`), refills the slot as each returns, and after each return re-runs `ticket.py ready`.
   - A ticket's Done-publish may land while another subagent works: before its own review/Done publish each subagent rebases and re-runs the Standard checks if `csharp-migration` moved in files it touches.
 - **One ticket = one fresh subagent** when the harness has subagents: the orchestrator runs `ticket.py next`, then dispatches a subagent with the ticket ID, agent name and this file's path; the subagent does claim → implement/review → Gate → publish and returns a **3-line report** (ticket, outcome, commit). The orchestrator then loops. The orchestrator itself never reads Kotlin or C# sources, so its context stays flat. Without subagents, rely on auto-compaction.
 - Run the Standard checks with output trimmed: `... 2>&1 | tail -40`, and read the full log only on failure.
-- Periodically run `python3 -I tools/ticket.py archive` (and commit) when many tickets are Done.
 - Read only the files listed in the ticket. For anything else, `grep` instead of opening whole files.
 - **Optional delegation:** if the ticket's Source is over ~500 lines or touches more than 3 files, and your harness supports subagents, delegate the *read-and-brief* step. The brief returns: files involved, semantic traps (numeric types, rounding, ordering, null handling), stripped or deferred members, and fixture cases to port.
 - Never delegate the port itself, the claim/state commits, or the final Gate run. Run the Gate yourself.
@@ -170,7 +169,7 @@ When the backlog runs low, an agent that finds nothing `Available` should first 
 
 ## Rules
 
-- One ticket per commit series; commit only files belonging to that ticket plus `backlog.md`.
+- One ticket per commit series; commit only files belonging to that ticket plus its `backlog/T###.md`.
 - Never mark `Done` without a passing Gate you ran in this session.
 - New tickets discovered along the way are appended to the backlog as `Available` with correct `Depends`.
 - Do not touch Gradle/Android build files.

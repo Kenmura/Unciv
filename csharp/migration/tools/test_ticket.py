@@ -8,15 +8,13 @@ from pathlib import Path
 
 TOOL = Path(__file__).resolve().parent / "ticket.py"
 
-BACKLOG = """# Backlog
-
-### T001 Code ticket
+T001 = """### T001 Code ticket
 - State: In-Review [Bot]
 - Depends: none
 - Deliverables: Unciv.Core/Foo.cs
 - Notes:
-
-### T002 Docs ticket
+"""
+T002 = """### T002 Docs ticket
 - State: In-Review [Bot]
 - Depends: none
 - Deliverables: PROTOCOL.md
@@ -37,7 +35,10 @@ class GreenGate(unittest.TestCase):
         git(root, "config", "user.name", "t")
         self.mig = root / "csharp" / "migration"
         self.mig.mkdir(parents=True)
-        (self.mig / "backlog.md").write_text(BACKLOG)
+        (self.mig / "backlog").mkdir()
+        (self.mig / "backlog" / "README.md").write_text("# Backlog\n")
+        (self.mig / "backlog" / "T001.md").write_text(T001)
+        (self.mig / "backlog" / "T002.md").write_text(T002)
         (self.mig / "notes.txt").write_text("nothing\n")
         git(root, "add", "-A")
         git(root, "commit", "-q", "-m", "init")
@@ -115,7 +116,7 @@ class GreenGate(unittest.TestCase):
         self.assertEqual(self.ran, [])
 
     def test_stale_todo_marker_refused_but_backlog_mentions_ignored(self):
-        (self.mig / "backlog.md").write_text(BACKLOG + "\nsee TODO(T001) here\n")
+        (self.mig / "backlog" / "T001.md").write_text(T001 + "\nsee TODO(T001) here\n")
         (self.mig / "Seams.cs").write_text("// TODO(T001) later\n// TODO(T0011) other\n")
         git(self.root, "add", "-A")
         git(self.root, "commit", "-q", "-m", "marker")
@@ -127,7 +128,7 @@ class GreenGate(unittest.TestCase):
     def test_no_green_allowed_for_docs_and_noted(self):
         self.assertEqual(self.state("T002", "Done", "--no-green", "docs only"), 0)
         self.assertEqual(self.ran, [])
-        self.assertIn("docs only", (self.mig / "backlog.md").read_text())
+        self.assertIn("docs only", (self.mig / "backlog" / "T002.md").read_text())
 
     def test_no_green_refused_for_code_ticket_and_empty_reason(self):
         self.assertEqual(self.state("T001", "Done", "--no-green", "lazy"), 1)
@@ -156,6 +157,44 @@ class GreenGate(unittest.TestCase):
         (self.mig / "A.cs").write_text("// TODO(T10) x\n")
         git(self.root, "add", "-A")
         self.assertEqual(self.t.stale_markers("T1"), [])
+
+    def test_claim_commits_only_that_ticket_and_map(self):
+        self.t.mutate("T001", lambda b: self.t.set_line(b, "State", "Available"))
+        git(self.root, "commit", "-qam", "avail")
+        (self.mig / "notes.txt").write_text("unrelated\n")
+        self.t.cmd_claim(["T001", "Z", "--no-publish"])
+        files = git(self.root, "show", "--name-only", "--format=", "HEAD").split()
+        self.assertEqual(sorted(files), ["csharp/migration/DEPENDENCY_MAP.md", "csharp/migration/backlog/T001.md"])
+        self.assertIn("notes.txt", git(self.root, "status", "--porcelain"))
+
+    def test_add_order_show_and_history(self):
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.t.cmd_add(["--title", "New one", "--depends", "T001"])
+        self.assertEqual(buf.getvalue().strip(), "T003")
+        self.assertEqual([r[0] for r in self.t.tickets()], ["T001", "T002", "T003"])
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "add")
+        pts = self.t.backlog_history()
+        self.assertEqual(pts[-1][1:], (1, 2))
+        self.assertEqual(self.t.cmd_archive(), None)
+
+    def test_history_reads_old_single_file_layout(self):
+        git(self.root, "checkout", "-q", "csharp-migration")
+        git(self.root, "rm", "-rq", "csharp/migration/backlog")
+        (self.mig / "backlog.md").write_text("### T001 A\n- State: Available\n\n### T002 B\n- State: Done\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "legacy")
+        for p in (self.mig / "backlog.md",):
+            p.unlink()
+        (self.mig / "backlog").mkdir()
+        (self.mig / "backlog" / "T001.md").write_text("### T001 A\n- State: In-Progress [x]\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "split")
+        self.t._cache.clear()
+        pts = self.t.backlog_history()
+        self.assertEqual([p[1:] for p in pts][-2:], [(1, 0), (0, 1)])
 
 
 if __name__ == "__main__":

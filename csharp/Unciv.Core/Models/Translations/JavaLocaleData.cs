@@ -1,5 +1,5 @@
 // Generated from the JVM (OpenJDK 25, CLDR locale data) with the Unciv.jar LocaleCode / java.text.DecimalFormat / String.toUpperCase(Locale)
-// classes, see migration/backlog.md T023. Under InvariantGlobalization there is no culture data, so the facts the Kotlin code takes from
+// classes, see migration/backlog/T023.md. Under InvariantGlobalization there is no culture data, so the facts the Kotlin code takes from
 // java.util.Locale are kept here as data. Do not edit by hand; regenerate with the harness described in the T023 notes.
 namespace Unciv.Models.Translations;
 

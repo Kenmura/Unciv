@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""The only way agents read or change the migration backlog (backlog.md is large and hand edits have
-clobbered neighbouring tickets). Run from anywhere: python3 -I tools/ticket.py <command>.
+"""The only way agents read or change the migration backlog (backlog/ holds one file per ticket, backlog/T001.md ...;
+hand edits have clobbered neighbouring tickets). Run from anywhere: python3 -I tools/ticket.py <command>.
 
 READ
   list [STATE]              one line per open ticket: id, state, deps, title
-  show T027 [Field]         whole ticket (backlog.md, then backlog-archive.md) or one field
+  show T027 [Field]         whole ticket (backlog/T027.md) or one field
   ready                     everything workable now: Needs-Review first, then Available with deps all Done
                             ordered by delivery phase first (phases.txt: 1 CLI, 2 single player, 3 multiplayer),
                             most downstream-unblocking first (direct + transitive incomplete dependents)
@@ -15,17 +15,18 @@ READ
 
 WRITE (each touches only the named ticket's block, verified before the file is written)
   claim T033 AGENT [--no-publish]
-                            Available -> In-Progress [AGENT], stamps Claimed, commits ONLY backlog.md,
+                            Available -> In-Progress [AGENT], stamps Claimed, commits ONLY backlog/T033.md
+                            (+ DEPENDENCY_MAP.md),
                             rebases onto csharp-migration, fast-forwards it. Exit 2 = lost the race.
   state T033 STATE [-m MSG] [--all] [--publish] [--origin]
                             STATE: Needs-Review AGENT | In-Review AGENT | Done | Available | Blocked | "Won't port".
-                            Legal transitions only. Commits ONLY backlog.md (--all: every change in the worktree, e.g. your
+                            Legal transitions only. Commits ONLY backlog/T033.md + DEPENDENCY_MAP.md (--all: every change in the worktree, e.g. your
                             deliverables, in the same commit); --publish also rebases and
                             fast-forwards csharp-migration; --origin also pushes it to origin (use on Done).
                             Done is refused unless the rebased tip is green (T163, PROTOCOL 'Green before Done'): the tree must
                             be clean and contain csharp-migration, `dotnet build -warnaserror && dotnet format
                             --verify-no-changes && dotnet test` and `coverage.py --check` must pass (re-run unless `green`
-                            already stamped this exact tree), and no TODO(T033) marker may remain outside the backlog.
+                            already stamped this exact tree), and no TODO(T033) marker may remain outside the backlog files.
                             --no-green REASON skips the build/test/coverage run for backlog-only/docs tickets (Deliverables
                             with no .cs/.csproj/.props/.editorconfig/.json/.py/.txt files); REASON is recorded in Notes.
   green                     run (and stamp) the Green-before-Done checks on the current tree without changing any ticket
@@ -44,7 +45,7 @@ WRITE (each touches only the named ticket's block, verified before the file is w
   renumber OLD NEW TITLE_SUBSTR [--refs T1,T2]
                             fix a duplicate id (parallel `add` calls): rename that block, update the id in --refs tickets
   publish [--origin]        git rebase csharp-migration && git push . HEAD:csharp-migration (clean tree only)
-  archive                   move Done ticket bodies to backlog-archive.md, leaving a stub
+  archive                   retired no-op (Done tickets stay in their own backlog/T###.md file)
 """
 import os
 import re
@@ -56,7 +57,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 HERE = Path(os.environ.get("TICKET_MIGRATION_DIR") or Path(__file__).resolve().parent.parent)
-BACKLOG, ARCHIVE = HERE / "backlog.md", HERE / "backlog-archive.md"
+BACKLOG_DIR = HERE / "backlog"
+README = BACKLOG_DIR / "README.md"
+LEGACY = HERE / "backlog.md"  # the pre-split single file; must not exist
+TICKET_FILE = re.compile(r"^([A-Z])(\d+)\.md$")
 DEPMAP = HERE / "DEPENDENCY_MAP.md"
 HEADER = re.compile(r"^### ([A-Z]\d+)\b(.*)$")
 STATE_RE = re.compile(r"^(Available|Blocked|Done|Won't port|(In-Progress|Needs-Review|In-Review) \[[^\]]+\])( \(.*\))?$")
@@ -108,8 +112,28 @@ def field(lines, name):
     return ""
 
 
+_cache = []
+
+
+def ticket_path(tid):
+    return BACKLOG_DIR / f"{tid}.md"
+
+
+def ticket_files():
+    """Ticket files in backlog order: track (T, C, A, others), then number."""
+    files = [p for p in BACKLOG_DIR.glob("*.md") if TICKET_FILE.match(p.name)] if BACKLOG_DIR.is_dir() else []
+    rank = {k: n for n, k in enumerate(TRACKS)}
+    return sorted(files, key=lambda p: (rank.get(p.name[0], 99), p.name[0], int(p.name[1:-3])))
+
+
 def tickets():
-    return [(i, t, field(b, "State"), field(b, "Depends"), b) for i, t, b in blocks(BACKLOG)]
+    if not _cache:
+        rows = []
+        for p in ticket_files():
+            for i, t, b in blocks(p):
+                rows.append((i, t, field(b, "State"), field(b, "Depends"), b))
+        _cache.append(rows)
+    return _cache[0]
 
 
 def deps_of(text):
@@ -117,11 +141,8 @@ def deps_of(text):
 
 
 def all_states():
-    """id -> state for backlog and archive (archived tickets are Done)."""
-    st = {i: s for i, _, s, _, _ in tickets()}
-    for i, _, _ in blocks(ARCHIVE):
-        st.setdefault(i, "Done")
-    return st
+    """id -> state for every ticket."""
+    return {i: s for i, _, s, _, _ in tickets()}
 
 
 def downstream_counts(ts):
@@ -180,15 +201,21 @@ def ready_list(ts):
 def locate(lines, tid):
     start = next((n for n, l in enumerate(lines) if l.startswith(f"### {tid} ") or l.rstrip() == f"### {tid}"), None)
     if start is None:
-        die(f"{tid} not found in backlog.md (archived tickets are Done and cannot be edited)")
+        die(f"{tid} not found in its backlog file")
     end = next((n for n in range(start + 1, len(lines)) if lines[n].startswith("#")), len(lines))
     return start, end
 
 
-def write_backlog(lines):
-    tmp = BACKLOG.with_suffix(".md.tmp")
-    tmp.write_text("\n".join(lines), encoding="utf-8")
-    os.replace(tmp, BACKLOG)
+def write_file(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".md.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+    _cache.clear()
+
+
+def write_backlog(path, lines):
+    write_file(path, "\n".join(lines))
     refresh_map()
 
 
@@ -213,7 +240,7 @@ NEW_COLOUR, ACTIVE_COLOUR = "#1a7f37", "#b58900"
 
 
 def count_remaining(text):
-    """(new, active) ticket counts in one version of backlog.md. Done and Won't are not counted.
+    """(new, active) ticket counts in one version of a backlog file (or of the old single backlog.md). Done and Won't are not counted.
 
     new = Available or Blocked (not started); active = In-Progress, Needs-Review or In-Review.
     """
@@ -233,34 +260,59 @@ def count_remaining(text):
 
 
 def backlog_history():
-    """[(unix time, new, active)] oldest first: backlog.md at every commit that touched it, plus the live file if it differs."""
-    log = git("log", "--format=%H %at", "--", BACKLOG.name, check=False)
-    commits = [l.split() for l in log.stdout.splitlines() if l.strip()][::-1]
-    if log.returncode or not commits:
+    """[(unix time, new, active)] oldest first: every commit that touched the backlog (the old single backlog.md,
+    then the backlog/ folder), plus the live state if it differs."""
+    log = git("log", "--reverse", "--no-renames", "--no-abbrev", "--relative", "--raw", "--format=%x01%H %at",
+              "--", "backlog.md", "backlog", check=False)
+    if log.returncode:
+        return []
+    commits, shas = [], set()
+    for line in log.stdout.splitlines():
+        if line.startswith("\x01"):
+            commits.append((int(line.split()[1]), []))
+        elif line.startswith(":") and commits:
+            meta, _, path = line.partition("\t")
+            m = meta.split()
+            sha = None if m[4].startswith("D") else m[3]
+            if path == "backlog.md" or (path.startswith("backlog/") and path.endswith(".md")):
+                commits[-1][1].append((path, sha))
+                if sha:
+                    shas.add(sha)
+    if not commits:
         return []
     r = subprocess.run(["git", "-C", str(HERE), "cat-file", "--batch"], capture_output=True,
-                       input="".join(f"{h}:./{BACKLOG.name}\n" for h, _ in commits).encode())
+                       input="".join(f"{h}\n" for h in sorted(shas)).encode())
     if r.returncode:
         return []
-    out, pos, points = r.stdout, 0, []
-    for _, at in commits:
+    out, pos, counts = r.stdout, 0, {}
+    for h in sorted(shas):
         nl = out.index(b"\n", pos)
         head = out[pos:nl].split()
-        if len(head) != 3:  # "<spec> missing": the file did not exist at that commit
+        if len(head) != 3:
             pos = nl + 1
             continue
         size = int(head[2])
-        points.append((max(int(at), points[-1][0] if points else 0),
-                       *count_remaining(out[nl + 1:nl + 1 + size].decode("utf-8", "replace"))))
+        counts[h] = count_remaining(out[nl + 1:nl + 1 + size].decode("utf-8", "replace"))
         pos = nl + 1 + size + 1
-    live = count_remaining(BACKLOG.read_text(encoding="utf-8")) if BACKLOG.exists() else None
-    if points and live and live != points[-1][1:]:
+    legacy, folder, points = None, {}, []
+    for at, changes in commits:
+        for path, sha in changes:
+            c = counts.get(sha) if sha else None
+            if path == "backlog.md":
+                legacy = c
+            else:
+                folder[path] = c
+        cur = legacy or (sum(c[0] for c in folder.values() if c), sum(c[1] for c in folder.values() if c))
+        points.append((max(at, points[-1][0] if points else 0), *cur))
+    live = (sum(1 for _, _, s, _, _ in tickets() if kind(s) in ("Available", "Blocked")),
+            sum(1 for _, _, s, _, _ in tickets() if kind(s) in ("In-Progress", "Needs-Review", "In-Review")))
+    if points and live != points[-1][1:]:
         points.append((max(int(datetime.now(timezone.utc).timestamp()), points[-1][0]), *live))
     return points
 
 
 def render_chart():
-    """Mermaid xychart of remaining (not Done) tickets over time: new vs active, built from git history of backlog.md."""
+    """Mermaid xychart of remaining (not Done) tickets over time: new vs active, built from the git history of the backlog."""
     pts = backlog_history()
     if len(pts) < 2:
         return []
@@ -275,7 +327,7 @@ def render_chart():
     labels = [stamp(t, timezone.utc).strftime(fmt) for t, _, _ in bins]
     top = max(n + a for _, n, a in bins)
     return ["## Remaining tickets over time", "",
-            "Generated from the git history of `backlog.md` (UTC; each point is the backlog as of that time, the last one the current backlog). "
+            "Generated from the git history of `backlog/` (UTC; each point is the backlog as of that time, the last one the current backlog). "
             "Completed tickets (Done, Won't port) are not counted.", "",
             "| Line | Meaning |", "|---|---|",
             f"| green | New: Available or Blocked, not started yet |",
@@ -295,8 +347,6 @@ def render_map():
     """GitHub-renderable mermaid map: every incomplete ticket plus its direct dependencies (done or not)."""
     ts = tickets()
     info = {i: (t, s, d) for i, t, s, d, _ in ts}
-    for i, _, b in blocks(ARCHIVE):
-        info.setdefault(i, (next(t for j, t, _ in blocks(ARCHIVE) if j == i), "Done", ""))
     open_ids = [i for i, _, s, _, _ in ts if not s.startswith(("Done", "Won't"))]
 
     def is_done(i):
@@ -376,9 +426,8 @@ PHASE_NAMES = {1: "Phase 1: CLI (headless engine)", 2: "Phase 2: single player (
 
 
 def backlog_link(tid, title):
-    """Markdown link to the ticket's heading in backlog.md (GitHub anchor: lowercase, punctuation dropped, spaces to hyphens)."""
-    slug = re.sub(r"[^\w\- ]", "", f"{tid} {title}".lower()).replace(" ", "-")
-    return f"[{tid}](backlog.md#{slug})"
+    """Markdown link to the ticket's file."""
+    return f"[{tid}](backlog/{tid}.md)"
 
 
 def phase_overview(info, open_ids, ready_ids, inflight):
@@ -408,7 +457,10 @@ def refresh_map():
 def mutate(tid, fn):
     """Apply fn(block_lines) -> new block_lines to one ticket and write atomically.
     Everything outside the block is compared before writing."""
-    lines = BACKLOG.read_text(encoding="utf-8").split("\n")
+    path = ticket_path(tid)
+    if not path.exists():
+        die(f"{tid} not found in backlog/")
+    lines = path.read_text(encoding="utf-8").split("\n")
     start, end = locate(lines, tid)
     new_block = fn(lines[start:end])
     if not new_block or not new_block[0].startswith(f"### {tid}"):
@@ -416,7 +468,7 @@ def mutate(tid, fn):
     out = lines[:start] + new_block + lines[end:]
     if out[:start] != lines[:start] or out[start + len(new_block):] != lines[end:]:
         die("internal error: edit leaked outside the ticket block")
-    write_backlog(out)
+    write_backlog(path, out)
 
 
 def set_line(block, name, value):
@@ -444,7 +496,7 @@ def current_state(tid):
     for i, _, s, _, _ in tickets():
         if i == tid:
             return s
-    die(f"{tid} not found in backlog.md")
+    die(f"{tid} not found in backlog/")
 
 
 def git(*args, check=True):
@@ -458,14 +510,15 @@ def tree_clean():
     return not git("status", "--porcelain").stdout.strip()
 
 
-def commit_backlog(msg, everything=False):
-    """Commit only backlog.md, or (everything) all of the worktree's changes in one commit."""
+def commit_backlog(msg, tid=None, everything=False):
+    """Commit only the ticket's file + DEPENDENCY_MAP.md, or (everything) all of the worktree's changes in one commit."""
     if everything:
         git("add", "-A")
         git("commit", "-q", "-m", msg)
     else:
-        git("add", "--", str(BACKLOG), str(DEPMAP))
-        git("commit", "-q", "-m", msg, "--", str(BACKLOG), str(DEPMAP))
+        paths = [str(ticket_path(tid)), str(DEPMAP)]
+        git("add", "--", *paths)
+        git("commit", "-q", "-m", msg, "--", *paths)
 
 
 def publish(origin=False):
@@ -485,7 +538,7 @@ def publish(origin=False):
             break
         if r.returncode:
             git("rebase", "--abort", check=False)
-            die(f"rebase onto {BRANCH} conflicted; resolve by hand (backlog.md: take {BRANCH}'s text, "
+            die(f"rebase onto {BRANCH} conflicted; resolve by hand (each conflicted backlog/T###.md: take {BRANCH}'s file, "
                 f"re-apply only your ticket's lines):\n{r.stdout}{r.stderr}", 3)
         if git("push", ".", f"HEAD:{BRANCH}", check=False).returncode == 0:
             if origin:
@@ -529,7 +582,7 @@ def cmd_claim(argv):
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
     state = f"In-Progress [{agent}]"
     mutate(tid, lambda b: set_line(set_line(b, "State", state), "Claimed", stamp))
-    commit_backlog(f"migration: claim {tid} [{agent}] {stamp}")
+    commit_backlog(f"migration: claim {tid} [{agent}] {stamp}", tid)
     if publish_it:
         publish()
         s = current_state(tid)
@@ -539,7 +592,12 @@ def cmd_claim(argv):
 
 
 CODE_SUFFIXES = (".cs", ".csproj", ".props", ".editorconfig", ".json", ".py", ".txt", ".sln", ".targets")
-BACKLOG_FILES = {"backlog.md", "backlog-archive.md", "DEPENDENCY_MAP.md"}
+
+
+def is_backlog_file(path):
+    """Ticket files, the backlog README and the generated map are ledger text, not code (path relative to HERE)."""
+    p = (HERE / path).resolve()
+    return p == DEPMAP.resolve() or BACKLOG_DIR.resolve() in p.parents
 CONTAINER = "dotnet-dev"
 
 
@@ -559,7 +617,7 @@ def stale_markers(tid):
     """TODO(tid) markers still in the tracked tree (the backlog files may mention them)."""
     pat = r"TODO\(" + re.escape(tid) + r"\b"
     out = git("grep", "-n", "-I", "-E", pat, "--", ":/", check=False).stdout.splitlines()
-    return [l for l in out if Path(l.split(":", 1)[0]).name not in BACKLOG_FILES]
+    return [l for l in out if not is_backlog_file(l.split(":", 1)[0])]
 
 
 def stamp_path():
@@ -598,9 +656,9 @@ def run_green(force=False):
 def require_green(tid, no_green):
     """Gate for `state T### Done` (PROTOCOL 'Green before Done')."""
     if no_green:
-        deliverables = field(next(b for i, _, b in blocks(BACKLOG) if i == tid), "Deliverables") or ""
+        deliverables = field(next(b for i, _, _, _, b in tickets() if i == tid), "Deliverables") or ""
         if not deliverables.strip():
-            die(f"--no-green needs {tid} to list its (non-code) Deliverables, e.g. PROTOCOL.md or backlog.md")
+            die(f"--no-green needs {tid} to list its (non-code) Deliverables, e.g. PROTOCOL.md")
         touched = git("diff", "--name-only", f"{BRANCH}...HEAD", check=False).stdout.split()
         touched = [f for f in touched if not f.lower().endswith(".md")]
         if touched:
@@ -657,7 +715,7 @@ def cmd_state(argv):
     mutate(tid, lambda b: set_line(b, "State", state))
     if no_green and kind(state) == "Done":
         mutate(tid, lambda b: add_note(b, f"Done without the build/test run (--no-green): {no_green}"))
-    commit_backlog(msg or f"migration: {tid} -> {state}", everything=do_all)
+    commit_backlog(msg or f"migration: {tid} -> {state}", tid, everything=do_all)
     if do_publish or do_origin:
         publish(origin=do_origin)
     print(f"{tid}: {state}")
@@ -671,7 +729,7 @@ def cmd_reset(argv):
         die(f"{tid} is '{cur}': nothing to reset")
     mutate(tid, lambda b: add_note(set_line(set_line(b, "State", "Available"), "Claimed", ""),
                                    f"Reset ({reason}); was '{cur}'."))
-    commit_backlog(f"migration: reset {tid} ({reason})")
+    commit_backlog(f"migration: reset {tid} ({reason})", tid)
     print(f"{tid}: Available")
 
 
@@ -719,9 +777,8 @@ def cmd_add(argv):
     known = all_states()
     # Also look at the published branch so two worktrees adding at once do not pick the same id.
     ids = {i for i in known if i.startswith(prefix)}
-    for name in ("backlog.md", "backlog-archive.md"):
-        shown = git("show", f"{BRANCH}:{(HERE / name).relative_to(Path(git('rev-parse', '--show-toplevel').stdout.strip()))}", check=False)
-        ids |= set(re.findall(rf"^### ({prefix}\d+)\b", shown.stdout, re.M))
+    shown = git("ls-tree", "--name-only", BRANCH, "--", git("rev-parse", "--show-prefix").stdout.strip() + "backlog/", check=False)
+    ids |= set(re.findall(rf"/({prefix}\d+)\.md$", shown.stdout, re.M))
     tid = f"{prefix}{max([int(i[1:]) for i in ids] or [0]) + 1:03d}"
     deps = opts.get("--depends", "none")
     bad = [d for d in deps_of(deps) if d not in known]
@@ -732,21 +789,16 @@ def cmd_add(argv):
              f"- Deliverables: {opts.get('--deliverables', '')}", f"- Gate: {opts.get('--gate', '')}",
              "- Claimed:", f"- Notes: {opts.get('--notes', '')}"]
     block = [l.rstrip() for l in block]
-    lines = BACKLOG.read_text(encoding="utf-8").split("\n")
-    last = max((n for n, l in enumerate(lines) if re.match(rf"### {prefix}\d+\b", l)), default=None)
-    if last is None:
-        die(f"no existing {prefix}-tickets to append after")
-    end = next((n for n in range(last + 1, len(lines)) if lines[n].startswith("#")), len(lines))
-    while end > last + 1 and not lines[end - 1].strip():
-        end -= 1
-    lines[end:end] = [""] + block
-    write_backlog(lines)
+    if prefix not in TRACKS:
+        die(f"unknown prefix {prefix} (tracks: {', '.join(TRACKS)})")
+    write_file(ticket_path(tid), "\n".join(block) + "\n")
+    refresh_map()
     print(tid)
 
 
 def prose_chunks():
     """(start, end, heading) of each '#'-heading chunk that is not a ticket block."""
-    lines = BACKLOG.read_text(encoding="utf-8").split("\n")
+    lines = README.read_text(encoding="utf-8").split("\n")
     heads = [n for n, l in enumerate(lines) if l.startswith("#") or re.match(r"^\*\*.*Planned", l)]
     out = []
     for k, n in enumerate(heads):
@@ -776,7 +828,7 @@ def cmd_planned_clear(args):
         die(f"{len(hit)} sections match '{args[0]}' (need exactly 1)")
     n, e = hit[0]
     del lines[n:e]
-    write_backlog(lines)
+    write_backlog(README, lines)
     print("section removed")
 
 
@@ -785,18 +837,16 @@ def cmd_drop(args):
     ts = tickets()
     row = next((t for t in ts if t[0] == tid), None)
     if row is None:
-        die(f"{tid} not found in backlog.md")
+        die(f"{tid} not found in backlog/")
     if row[2] != "Available" or field(row[4], "Claimed"):
         die(f"{tid} is not an unclaimed Available ticket")
     if any(tid in deps_of(d) for i, _, _, d, _ in ts if i != tid):
         die(f"{tid} is a dependency of another ticket")
     if max(all_states(), key=lambda i: (i[0] == tid[0], int(i[1:]))) != tid:
         die(f"{tid} is not the newest {tid[0]}-ticket")
-    lines = BACKLOG.read_text(encoding="utf-8").split("\n")
-    start, end = locate(lines, tid)
-    while start > 0 and not lines[start - 1].strip():
-        start -= 1
-    write_backlog(lines[:start] + lines[end:])
+    ticket_path(tid).unlink()
+    _cache.clear()
+    refresh_map()
     print(f"{tid}: dropped")
 
 
@@ -807,23 +857,36 @@ def cmd_renumber(argv):
     refs = argv[argv.index("--refs") + 1].split(",") if "--refs" in argv else []
     if new in all_states():
         die(f"{new} already exists")
-    lines = BACKLOG.read_text(encoding="utf-8").split("\n")
-    hits = [n for n, l in enumerate(lines) if l.startswith(f"### {old} ") and sub in l]
-    if len(hits) != 1:
-        die(f"expected exactly one '### {old}' header containing '{sub}', found {len(hits)}")
-    lines[hits[0]] = lines[hits[0]].replace(f"### {old} ", f"### {new} ", 1)
+    path = ticket_path(old)
+    if not path.exists():
+        die(f"{old} not found")
+    lines = path.read_text(encoding="utf-8").split("\n")
+    if not (lines[0].startswith(f"### {old} ") and sub in lines[0]):
+        die(f"{old}'s heading does not contain '{sub}'")
+    lines[0] = lines[0].replace(f"### {old} ", f"### {new} ", 1)
     token = re.compile(rf"\b{old}\b")
     for tid in refs:
-        a, b = locate(lines, tid)
-        for n in range(a, b):
-            lines[n] = token.sub(new, lines[n])
-    write_backlog(lines)
+        rp = ticket_path(tid)
+        rl = rp.read_text(encoding="utf-8").split("\n")
+        write_file(rp, "\n".join(token.sub(new, l) for l in rl))
+    write_file(ticket_path(new), "\n".join(lines))
+    path.unlink()
+    refresh_map()
     print(f"{old} ({sub}) -> {new}; refs updated in: {', '.join(refs) or 'none'}")
 
 
 def cmd_check():
     errs = []
     seen = set()
+    if LEGACY.exists():
+        errs.append("backlog.md still exists: the backlog is the backlog/ folder (tools/split_backlog.py converts it)")
+    for p in sorted(BACKLOG_DIR.glob("*")) if BACKLOG_DIR.is_dir() else []:
+        if p.name != "README.md" and not TICKET_FILE.match(p.name):
+            errs.append(f"backlog/{p.name}: not a ticket file (expected T###.md, C###.md or A###.md)")
+    for p in ticket_files():
+        found = [i for i, _, _ in blocks(p)]
+        if found != [p.name[:-3]]:
+            errs.append(f"backlog/{p.name}: must contain exactly the one ticket {p.name[:-3]}, found {found}")
     known = all_states()
     ts = tickets()
     for i, t, s, d, b in ts:
@@ -858,20 +921,7 @@ def cmd_stale():
 
 
 def cmd_archive():
-    text = BACKLOG.read_text(encoding="utf-8")
-    moved = []
-    for i, t, b in list(blocks(BACKLOG)):
-        if field(b, "State") == "Done":
-            body = "".join(b)
-            stub = f"### {i} {t}\n- State: Done (full ticket: backlog-archive.md)\n\n"
-            text = text.replace(body, stub, 1)
-            moved.append(body.rstrip() + "\n\n")
-    BACKLOG.write_text(text, encoding="utf-8")
-    refresh_map()
-    head = "" if ARCHIVE.exists() else "# Migration Backlog Archive\n\nDone tickets moved out of `backlog.md`. Read with `tools/ticket.py show T###`.\n\n"
-    with ARCHIVE.open("a", encoding="utf-8") as f:
-        f.write(head + "".join(moved))
-    print(f"archived {len(moved)} tickets")
+    print("archive is retired: Done tickets stay in their own backlog/T###.md file (nothing to do)")
 
 
 def main():
@@ -885,11 +935,10 @@ def main():
             if want is None or s.lower().startswith(want):
                 print(f"{i}\t{s}\t[{d}]\t{t}")
     elif cmd == "show":
-        for path in (BACKLOG, ARCHIVE):
-            for i, _, b in blocks(path):
-                if i == args[0]:
-                    print(field(b, args[1]) if len(args) > 1 else "".join(b).rstrip())
-                    return
+        for i, _, _, _, b in ts:
+            if i == args[0]:
+                print(field(b, args[1]) if len(args) > 1 else "".join(b).rstrip())
+                return
         die(f"{args[0]} not found")
     elif cmd == "ready":
         for k, i, t, s, n in ready_list(ts):

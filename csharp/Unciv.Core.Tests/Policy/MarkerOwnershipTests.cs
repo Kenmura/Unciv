@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 namespace Unciv.Core.Tests.Policy;
 
 // Marker ownership policy (T118). A TODO(T###) marker, a throwing NotSupported/NotImplemented seam and a *Seams*.cs file are
-// promises that a backlog ticket will do the work. This test reads the ticket headers and States of backlog.md and
-// backlog-archive.md (as text) and fails when a promise points at a ticket that does not exist or is already Done / Won't port,
+// promises that a backlog ticket will do the work. This test reads the ticket headers and States of migration/backlog/*.md
+// (as text) and fails when a promise points at a ticket that does not exist or is already Done / Won't port,
 // so a marker can no longer outlive its owner. Tickets that are Available, Blocked, In-Progress, Needs-Review or In-Review are open.
 public partial class MarkerOwnershipTests
 {
@@ -40,10 +40,10 @@ public partial class MarkerOwnershipTests
     private static Dictionary<string, bool> LoadTicketStates()
     {
         var states = new Dictionary<string, bool>();
-        foreach (var name in new[] { "backlog.md", "backlog-archive.md" })
+        var dir = Path.Combine(CSharpRoot, "migration", "backlog");
+        if (!Directory.Exists(dir)) return states;
+        foreach (var path in Directory.EnumerateFiles(dir, "*.md").OrderBy(p => p, StringComparer.Ordinal))
         {
-            var path = Path.Combine(CSharpRoot, "migration", name);
-            if (!File.Exists(path)) continue;
             string? current = null;
             foreach (var line in File.ReadLines(path))
             {
@@ -53,9 +53,7 @@ public partial class MarkerOwnershipTests
                 var state = StateRegex().Match(line);
                 if (!state.Success) continue;
                 var text = state.Groups[1].Value.Trim();
-                var isOpen = !(text.StartsWith("Done", StringComparison.Ordinal) || text.StartsWith("Won't port", StringComparison.Ordinal));
-                // a ticket whose full text is archived appears twice (stub in backlog.md, full ticket in the archive): Done wins
-                states[current] = states.TryGetValue(current, out var before) ? before && isOpen : isOpen;
+                states[current] = !(text.StartsWith("Done", StringComparison.Ordinal) || text.StartsWith("Won't port", StringComparison.Ordinal));
                 current = null;
             }
         }
@@ -79,7 +77,7 @@ public partial class MarkerOwnershipTests
     public void BacklogIsParsed()
     {
         var states = LoadTicketStates();
-        Assert.True(states.Count > 50, "backlog.md / backlog-archive.md were not parsed");
+        Assert.True(states.Count > 50, "migration/backlog/*.md were not parsed");
         Assert.True(states.ContainsKey("T118"));
     }
 

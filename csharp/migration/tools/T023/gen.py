@@ -12,7 +12,7 @@ for l in open('case.tsv',encoding='utf-8'):
 out=[]
 w=out.append
 w('// Generated from the JVM (OpenJDK 25, CLDR locale data) with the Unciv.jar LocaleCode / java.text.DecimalFormat / String.toUpperCase(Locale)')
-w('// classes, see migration/backlog.md T023. Under InvariantGlobalization there is no culture data, so the facts the Kotlin code takes from')
+w('// classes, see migration/backlog/T023.md. Under InvariantGlobalization there is no culture data, so the facts the Kotlin code takes from')
 w('// java.util.Locale are kept here as data. Do not edit by hand; regenerate with the harness described in the T023 notes.')
 w('namespace Unciv.Models.Translations;')
 w('')

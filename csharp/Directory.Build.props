@@ -1,6 +1,6 @@
 <Project>
 
-  <!-- Shared build policy for every C# project. Rationale and ticket: migration/backlog.md T013. -->
+  <!-- Shared build policy for every C# project. Rationale and ticket: migration/backlog/T013.md. -->
   <PropertyGroup>
     <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>

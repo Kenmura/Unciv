@@ -1,6 +1,6 @@
 # C# style for the Kotlin -> C# migration. Inherits the repo-root .editorconfig (charset, LF, 4 spaces).
 # Rule of thumb: correctness and determinism rules are `error`; pure taste stays `suggestion` so agents
-# do not burn time on it. See AGENTS.md and migration/backlog.md T013.
+# do not burn time on it. See AGENTS.md and migration/backlog/T013.md.
 
 [*.cs]
 # ---- Structure ----
