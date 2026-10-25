@@ -2591,6 +2591,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T200 review: (d) Civ.Stats (Happiness) is a transient cache not restored by load; a Simultaneous save taken mid-Resolving before StartNextTurn (RecordRankingStats reads it) does not reproduce the live hash. Include refreshing/canonicalising it here (or hosts checkpoint only at Playing).
   - Implemented (Claude). GameInfo.RefreshTransientCaches() runs at the end of BeginPlayerTurn and makes the lazy caches canonical: JavaHashSet/Map.Canonicalize() (rebuild like a load: policies, builtBuildings, free-building maps, city tiles/worked/locked/disabled, unit promotions), CityConstructions.SetTransients (cached building objects were in append order while running, set order after load: this made conquest's 34% building removal draw differently), TechManager.RebuildTransients, DiplomacyManager.UpdateHasOpenBorders, UnitManager.SortLikeLoad (load's tile-by-tile unit order + cursor reset), stop working unowned tiles, then per-unit UpdateVisibleTiles + civ UpdateOurTiles/UpdateSightAndResources/UpdateCitiesConnectedToCapital + UpdateTileStats (city states first like a load). Soak: original vs two reloads asserted byte-identical (only followers/cities sets and legacy pointsForNextGreatGeneral normalised) after EVERY civ's turn for 50 turns, seeds 11/5 and 29/8; exploredBy mask removed.
     NOT done: (1) the T200-review caveat (Civ.Stats happiness cache): not canonicalised here; hosts must checkpoint at Playing (or a follow-up ticket). (2) GameInfo.Clone() still shares some state (e.g. trade requests) so a Clone is only digest-compared right after cloning, not played on. (3) Canonicalize only covers the hash sets listed above; other JVM hash sets/maps (religion beliefs, flags maps, etc.) are not rebuilt - the soak shows no divergence from them in 50 turns x 2 seeds.
+  -   - Review (Claude, Adversarial): PASS. Auditor: refresh runs at one fixed point (end of BeginPlayerTurn) and calls only load-path routines (SetTransients, UpdateHasOpenBorders, UpdateVisibleTiles, UpdateOurTiles...), so semantics equal Kotlin's own load; it deliberately deviates from upstream lazy refresh (ticket-mandated), so hashes vs a Kotlin run may differ, accepted. Adversary: soak compares the original with TWO fresh reloads of a save, advancing all through identical game code after every civ for 50 turns on two seeds; the live game gets no special refresh the loaded copies don't also get, so divergence is not hidden (exploredBy mask removed; only legacy pointsForNextGreatGeneral and religion followers/cities sets normalised). Gate (4 soak tests), Standard checks, coverage pass; new lines covered. Gaps (Stats cache, Clone sharing, other hash sets) are outside Gate/Deliverables: follow-up tickets added (see newest Available).
 
 ### T209 Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation
 - State: Done
@@ -2708,6 +2709,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~KotlinGolden
 - Claimed:
 - Notes: Follow-up of T160 review (Claude): the original T160 deliverable required one mod ruleset run; T160 covered vanilla only. Extend exporter and test with a mod ruleset (map and start state digests; per-turn if the per-turn follow-up has landed).
+
+### T218 Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash
+- State: Available
+- Depends: T208
+- Source: core/src/com/unciv/logic/civilization/Civilization.kt (stats), managers/StatsManager
+- Fixtures: none
+- Deliverables: Unciv.Core (Civilization/RefreshTransientCaches), regression test comparing live vs reload StateHasher mid-Resolving
+- Gate: dotnet test --filter FullyQualifiedName~SimultaneousTurns
+- Claimed:
+- Notes: From T200 review, left out of T208 (its soak compares saved text; Stats is not serialised). Refresh Civ.Stats in RefreshTransientCaches or at load so RecordRankingStats yields the same live and reloaded; or document that hosts checkpoint only at Playing.
+
+### T219 GameInfo.Clone() shares state (trade requests etc.) and Canonicalize skips remaining JVM hash sets/maps (religion beliefs, flag maps): make Clone playable and extend soak
+- State: Available
+- Depends: T208
+- Source: core/src/com/unciv/logic/GameInfo.kt (clone), JavaHashSet/Map users
+- Fixtures: none
+- Deliverables: Unciv.Core (GameInfo.Clone, RefreshTransientCaches), SoakTests playing a Clone for 50 turns alongside original
+- Gate: UNCIV_SOAK=1 dotnet test --filter Category=Soak
+- Claimed:
+- Notes: From T208 review: a Clone is only digest-compared right after cloning. Find shared references (trade requests, ...), deep-copy, then play a clone on in the soak; audit other JavaHashSet/JavaHashMap fields that iterate into state and Canonicalize them or prove order-independence.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
