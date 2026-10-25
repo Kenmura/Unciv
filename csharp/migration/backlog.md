@@ -1960,7 +1960,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Gap review: there is no csharp CI workflow; gates run manually in distrobox. Unciv.Godot is outside Unciv.sln, so CI must build it separately. Do not touch the Kotlin/Gradle workflows.
 
 ### T170 Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T104
 - Source:
 - Fixtures: none

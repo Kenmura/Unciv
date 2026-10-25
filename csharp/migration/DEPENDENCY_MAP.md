@@ -344,7 +344,7 @@ flowchart TD
   class T167 prog
   class T168 prog
   class T169 ready
-  class T170 review
+  class T170 done
   class T171 ready
   class T172 ready
   class T173 waiting
@@ -375,7 +375,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 55]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -407,7 +407,6 @@ xychart-beta
 | T173 | Available (waiting on T172) | T172 | 5 | Server identity and auth: ECDSA P-256 keypair, invite tokens, challenge-response, allow-list (friends-only) |
 | T176 | Available (waiting on T172, T164) | T172, T164, T140 | 4 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T177 | Available (waiting on T172, T164) | T172, T164 | 4 | Turn policy: sequential phase machine, injected clock, turn timer, AFK skip, drop and AI replacement |
-| T170 | Needs-Review [Claude] | T104 | 3 | Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods) |
 | T178 | Available (waiting on T172, T173, T174, T175, T176, T177) | T172, T173, T174, T175, T176, T177 | 3 | Headless host and lobby: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (rate, size, dedup, existence-oracle-safe errors) |
 | C012 | Available (waiting on C005, C010, T164) | C005, C010, T164, T080, T083, T040 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
 | T180 | Available (waiting on T172, T173, T174, T175) | T172, T173, T174, T175 | 2 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
@@ -416,13 +415,13 @@ xychart-beta
 | C016 | Available (waiting on C005, C010) | C005, C010, T100 | 1 | Save/load screen and autosave |
 | C017 | Available (waiting on C005, C010, T164) | C005, C010, T164, T060, T062 | 1 | City screen A: info, tiles, specialists, focus |
 | C021 | Available (waiting on C005, C010, T164) | C005, C010, T164, T059, T068 | 1 | Diplomacy screen |
-| C025 | Available (waiting on C005, T170) | C005, T023, T170 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
+| C025 | Available (waiting on C005) | C005, T023, T170 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
 | T179 | Blocked | T178 | 1 | Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes |
 | C006 | Available (waiting on T164, T172, T173, T180, T179, C010, C016) | T012, C001, T164, T172, T173, T180, T179, C010, C016 | 0 | Networked play client |
 | C011 | Available (waiting on C005, C010, T164) | C005, C010, T164, T062 | 0 | HUD: top bar yields, turn banner, next-action button |
 | C013 | Available (waiting on C005, C010, T164, T171) | C005, C010, T164, T051, T055, T171 | 0 | Notifications and popup alerts |
 | C014 | Available (waiting on C010, T164) | C010, T164 | 0 | Minimap |
-| C015 | Available (waiting on C005, C010, T170) | C005, C010, T099, T045, T021, T034, T170 | 0 | Main menu and game setup screen: nations, difficulty, speed, map options |
+| C015 | Available (waiting on C005, C010) | C005, C010, T099, T045, T021, T034, T170 | 0 | Main menu and game setup screen: nations, difficulty, speed, map options |
 | C018 | Available (waiting on C017) | C017, T063 | 0 | City screen B: production queue, purchase, buildings |
 | C019 | Available (waiting on C005, C010, T164) | C005, C010, T164, T056 | 0 | Tech screen |
 | C020 | Available (waiting on C005, C010, T164) | C005, C010, T164, T056 | 0 | Policy screen |
