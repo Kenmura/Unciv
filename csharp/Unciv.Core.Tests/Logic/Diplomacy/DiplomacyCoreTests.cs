@@ -525,7 +525,8 @@ public class DiplomacyCoreTests
         Assert.Equal(3f, clone.DiplomaticModifiers["YearsOfPeace"]);
         Assert.Equal(7f, clone.Influence);
         Assert.NotSame(trade, Assert.Single(clone.Trades)); // trades are cloned...
-        Assert.Same(trade.OurOffers[0], clone.Trades[0].OurOffers[0]); // ...but share their offers (Trade.clone)
+        Assert.NotSame(trade.OurOffers[0], clone.Trades[0].OurOffers[0]); // ...and own copies of their offers (T167: Kotlin shares them, which aged the original's deals)
+        Assert.Equal(trade.OurOffers[0], clone.Trades[0].OurOffers[0]);
     }
 
     [Fact]
@@ -766,10 +767,13 @@ public class DiplomacyCoreTests
         Assert.True(reversed.Reverse().EqualTrade(trade));
 
         var clone = trade.Clone();
-        Assert.Same(trade.OurOffers[0], clone.OurOffers[0]); // clone shares the offers
+        Assert.NotSame(trade.OurOffers[0], clone.OurOffers[0]); // T167: the clone copies the offers (Kotlin shares them)
+        Assert.Equal(trade.OurOffers[0], clone.OurOffers[0]);
         Assert.True(clone.EqualTrade(trade));
         clone.OurOffers[0].Amount = 2;
-        Assert.Equal(2, trade.OurOffers[0].Amount);
+        Assert.Equal(1, trade.OurOffers[0].Amount); // T167: the clone's offers are its own
+        Assert.False(clone.EqualTrade(trade));
+        trade.OurOffers[0].Amount = 2;
         Assert.True(clone.EqualTrade(trade));
 
         var different = new Trade();

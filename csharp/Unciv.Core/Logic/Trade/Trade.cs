@@ -45,8 +45,10 @@ public class Trade : IsPartOfGameInfoSerialization
     public Trade Clone()
     {
         var toReturn = new Trade();
-        toReturn.TheirOffers.AddRange(TheirOffers);
-        toReturn.OurOffers.AddRange(OurOffers);
+        // Deviation (T167): Kotlin's clone() shares the TradeOffer instances, but DiplomacyTurnManager decrements Duration in place,
+        // so a cloned game (GameInfo.Clone, AI simulation, snapshots) aged the original's deals as well. Copy the offers.
+        toReturn.TheirOffers.AddRange(TheirOffers.Select(it => it.Copy()));
+        toReturn.OurOffers.AddRange(OurOffers.Select(it => it.Copy()));
         return toReturn;
     }
 

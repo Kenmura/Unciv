@@ -1938,10 +1938,17 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Depends: T102
 - Source:
 - Fixtures: none
-- Deliverables: soak test project/category (excluded from the default fast test run), turn-time and memory budget report in Notes
-- Gate: dotnet test --filter Category=Soak
+- Deliverables: csharp/Unciv.Core.Tests/Determinism/SoakTests.cs (Category=Soak, env-gated), Trade.Clone fix + TradeCloneTests, budgets in Notes
+- Gate: UNCIV_SOAK=1 dotnet test --filter Category=Soak --logger "console;verbosity=detailed"  (without UNCIV_SOAK=1 the soak tests are skipped, so the default dotnet test stays fast)
 - Claimed: 2026-10-25T00:39Z
 - Notes: From the playability gap review: T102 only proves 60 turns on Tiny/Small, 3-5 civs, no city states, no run to a real victory. Assert no exception, record turn-time and memory budgets, run to a victory or the turn limit. Real bugs found go to the engine with regression tests.
+  - Implemented (Claude). Soak = Unciv.Core.Tests/Determinism/SoakTests.cs, [Trait Category=Soak], [SoakFact] skips unless UNCIV_SOAK=1. Run: `UNCIV_SOAK=1 dotnet test --filter Category=Soak --logger "console;verbosity=detailed"` (about 3.2 min for all three). Default `dotnet test` reports them as 3 skipped.
+          - What ran: Civ V Gods & Kings ruleset (religion, espionage on, EspionageEnabled), all ruleset victories, barbarians on, first civ Human but auto-simulated (SimulateUntilWin, same as T102), per-turn NextTurn, 300-turn limit or first victory, game on its own 256 MB-stack thread with a 25 min hang timeout. (1) Small map (SmallContinents), 6 civs + 6 city states, run TWICE with the same seeds: state-hash sampled every 25 turns equal, same winner and turn. (2) Medium map (ContinentAndIslands, Unciv has no 'Standard' size: Tiny/Small/Medium/Large/Huge), 8 civs + 10 city states. (3) Save at turn 150 -> two loads + a Clone replay identically for 50 turns. Not run: Large/Huge, a mod ruleset, vanilla ruleset (no religion/espionage), multiple seeds per size, human-driven turns, trade routes (G&K has none; 'trade' = diplomacy deals, 26-118 active deals seen), wonders/nukes/naval specific checks.
+          - Content seen (Small, turn 300): 15 cities, 8 religions founded, 28 spies, 4 city states left each with quests, barbarian camps spawn (3 at turn 25) and die out, wars and conquests (6 -> 2 majors), Greece wins at turn 300 (Small, both runs) / turn 285 (Medium, 8 -> 5 majors). No exception, no hang, no NaN gold in any run.
+          - Budgets (dev container, Debug build, one core): Small 300 turns: 36-48 s total, avg 0.12-0.16 s/turn, slowest turn 0.60 s (late game), managed heap peak 82 MB (38 MB live after GC), process peak RSS 226 MB. Medium 285 turns: 61-68 s, avg 0.21-0.24 s/turn, slowest 0.66-1.03 s, managed peak 65-73 MB, RSS 209 MB. Turn time grows roughly linearly with turn (0.02 s at turn 25 -> 0.45 s at turn 300 on Small); memory is flat (no leak). Test asserts generous caps: avg < 5 s/turn, slowest < 60 s, managed < 1 GB, RSS < 3 GB, total < 25 min.
+          - Real bug fixed: Trade.Clone shared TradeOffer instances (faithful to Kotlin Trade.clone) while DiplomacyTurnManager decrements Duration in place, so playing a GameInfo.Clone() aged the original's deals too (found when a clone and the original disagreed on Open Borders durations). Trade.Clone now copies offers; regression TradeCloneTests; two DiplomacyCoreTests that pinned the sharing (Assert.Same / mutate-clone-sees-original) were corrected to the new contract. Deviation from Kotlin, documented in Trade.cs.
+          - Real findings filed: T200 (running game != reload of its own save; stale lazily-refreshed caches: open-borders flags, cached vision/exploration, barbarian reads them; JavaHashSet order differs after reload at turn 300). Also documented, not bugs: loading runs BackwardCompatibility.MigrateGreatGeneralPools which rewrites legacy pointsForNextGreatGeneral (200 -> 350), matches upstream.
+          - No nondeterminism found run-to-run (same seed twice, sampled hashes equal over 300 turns on Small).
 
 ### T168 Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs
 - State: Done
@@ -2440,6 +2447,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~NetNat
 - Claimed:
 - Notes: Optional, lowest priority. Failure is non-fatal and reported in the Host screen; mapping removed on shutdown; no third-party dependency (ask via a ticket note if one is judged necessary). Manual forward and overlay VPN docs are the MVP path (T179).
+
+### T200 Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync
+- State: Available
+- Depends: T167
+- Source: core/src/com/unciv/logic/GameInfo.kt (setTransients), civilization/diplomacy/DiplomacyManager.kt (updateHasOpenBorders), map/mapunit/MapUnit.kt (updateVisibleTiles), civilization/managers/BarbarianManager
+- Fixtures: none
+- Deliverables: Unciv.Core (GameInfo/TurnManager/DiplomacyTurnManager/MapUnit/CivilizationCache), SoakTests.SaveLoadOfALongRunningGame... strengthened to assert original == reload every turn
+- Gate: UNCIV_SOAK=1 dotnet test --filter Category=Soak
+- Claimed:
+- Notes: Found by the T167 soak (Small map, 6 civs + 6 city states, seed 11/5, 150 turns, then 1 more turn). Facts: (1) save text of the running game and of its reload are byte-identical apart from the legacy pointsForNextGreatGeneral (BackwardCompatibility rewrites it) and exploredBy; (2) two loads of that save, and GameInfo.Clone()+SetTransients, play on identically; (3) the running game does NOT: after one turn barbarian units are 7 (running) vs 9 (reload) and a England unit count differs. Causes seen, all faithful ports of upstream laziness: a) DiplomacyManager.HasOpenBorders is a transient refreshed only at turn start, so a deal whose Duration hit 0 this turn still gives open borders (DiplomaticModifiers OpenBorders 2.375 vs 2.125 after reload); b) MapUnit.UpdateVisibleTiles skips the civ-wide vision/exploration update when old and new view lie inside own borders, so Civ.ViewableTiles / Tile.exploredBy can be one tile stale (Greece, tile 6,13) and BarbarianManager reads ViewableTiles for fog; c) at least one more (stat history column E 424 vs 426 for a city state) not yet attributed. For lockstep play and join-in-progress a client that loaded a snapshot must not diverge from clients that did not. Fix idea: refresh the lazily-maintained caches at a fixed point (end of NextTurn) so running state equals the rebuilt one, or hash/serialise them; then add the assertion original == reload for 50 turns in the soak. Hash-set iteration order (JavaHashSet) also differs between a running and a reloaded game for sets that saw removals (builtBuildings at turn 300 on the same seed): JVM-faithful, but a second source of divergence to decide on.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
