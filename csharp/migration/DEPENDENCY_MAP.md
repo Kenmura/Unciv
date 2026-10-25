@@ -27,6 +27,7 @@ flowchart TD
     T103["T103<br/>Remaining Kotlin tests sweep: uniques, filters, tutorials"]
     T104["T104<br/>Marker, seam and stale-comment sweep (final)"]
     T106["T106<br/>Deferred ruleset-object members (T030-T033 leftovers)"]
+    T160["T160<br/>Kotlin golden state hashes and mod ruleset for the end-to-en..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -51,6 +52,7 @@ flowchart TD
   T089 --> T104
   T094 --> T104
   T100 --> T104
+  T102 --> T160
   C001 --> C002
   C002 --> C003
   C002 --> C004
@@ -89,10 +91,11 @@ flowchart TD
   class T094 done
   class T097 done
   class T100 done
-  class T102 prog
+  class T102 review
   class T103 done
   class T104 ondeck
   class T106 done
+  class T160 ondeck
 ```
 
 ## Remaining tickets over time
@@ -110,7 +113,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 12]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 13]
     line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 1]
 ```
 
@@ -119,11 +122,12 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T104 | **On deck** (after T102) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
+| T160 | **On deck** (after T102) | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
+| T102 | Needs-Review [Claude] | T101, T100, T072, T011, T107 | 2 | End-to-end determinism over N turns |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
-| T102 | In-Progress [Claude] | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |

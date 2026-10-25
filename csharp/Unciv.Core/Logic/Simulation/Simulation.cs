@@ -1,3 +1,4 @@
+using System.Globalization;
 using Unciv.Models.Metadata;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
@@ -62,7 +63,6 @@ public sealed class Simulation
     private static readonly bool PrintAvgCityPop = false;
 
     /// <param name="newGameInfo">The game to take the civilizations, setup and ruleset from; each simulated game is started anew from its setup.</param>
-    /// <param name="seed">Seeds every game (see the file header).</param>
     /// <param name="simulationsPerThread">Games per (formerly parallel) thread.</param>
     /// <param name="threadsNumber">Number of formerly parallel threads; the games now run sequentially.</param>
     /// <param name="maxTurns">The turn limit of a game that is not won earlier.</param>
@@ -70,9 +70,10 @@ public sealed class Simulation
     /// <param name="civIdsInExperimentGroup">The civs that run the experimental AI code, for A/B reporting.</param>
     /// <param name="output">Receives each line Kotlin printed.</param>
     /// <param name="onCivilizationCreated">Passed on to <see cref="GameStarter.StartNewGame"/>.</param>
-    public Simulation(GameInfo newGameInfo, long seed, int simulationsPerThread = 1, int threadsNumber = 1, int maxTurns = 500,
+    /// <param name="seed">Seeds every game (see the file header). Last, so that a positional Kotlin-style call <c>Simulation(game, 500, 8)</c> keeps the Kotlin meaning (simulationsPerThread, threadsNumber).</param>
+    public Simulation(GameInfo newGameInfo, int simulationsPerThread = 1, int threadsNumber = 1, int maxTurns = 500,
         IReadOnlyList<int>? statTurns = null, ISet<string>? civIdsInExperimentGroup = null,
-        Action<string>? output = null, Action<CivilizationObject>? onCivilizationCreated = null)
+        Action<string>? output = null, Action<CivilizationObject>? onCivilizationCreated = null, long seed = 0)
     {
         this.newGameInfo = newGameInfo;
         this.seed = seed;
@@ -124,6 +125,9 @@ public sealed class Simulation
         byStat[Stat.NUM] = new MutableInt(0);
     }
 
+    // Int interpolation would use the current culture (negative sign, digits): always invariant (DETERMINISM.md 2.5).
+    private static string Inv(int value) => value.ToString(CultureInfo.InvariantCulture);
+
     private void Println(string line) => output?.Invoke(line);
 
     public void Start()
@@ -173,15 +177,15 @@ public sealed class Simulation
                 {
                     step.SaveTurnStats(gameInfo);
                     step.Winner = step.CurrentPlayer;
-                    Println($"{step.Winner} won {step.VictoryType} victory on turn {step.Turns}");
+                    Println($"{step.Winner} won {step.VictoryType} victory on turn {Inv(step.Turns)}");
                 }
                 else if (gameInfo.GetAliveMajorCivs().Count == 0)
                 {
-                    Println($"No major civ left on turn {step.Turns}: Draw");
+                    Println($"No major civ left on turn {Inv(step.Turns)}: Draw");
                 }
                 else
                 {
-                    Println($"Max simulation {step.Turns} turns reached: Draw");
+                    Println($"Max simulation {Inv(step.Turns)} turns reached: Draw");
                 }
 
                 UpdateCounter();
@@ -227,7 +231,7 @@ public sealed class Simulation
     public void UpdateCounter()
     {
         stepCounter++;
-        Println($"Simulation step ({stepCounter}/{maxSimulations})");
+        Println($"Simulation step ({Inv(stepCounter)}/{Inv(maxSimulations)})");
     }
 
     public void Print() => Println(Text());
@@ -245,9 +249,9 @@ public sealed class Simulation
     // Helper text formatter
     private static string SummaryStatsText(Dictionary<Stat, MutableInt> summaryStats, int turn, string statStr)
     {
-        var turnStr = turn == -1 ? "END" : turn.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var turnStr = turn == -1 ? "END" : Inv(turn);
         var avg = (float)summaryStats[Stat.SUM].Value / (float)summaryStats[Stat.NUM].Value;
-        return $"@{turnStr}: {statStr} avg={JavaFormat.ToJavaString(avg)} cnt={summaryStats[Stat.NUM].Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}\n";
+        return $"@{turnStr}: {statStr} avg={JavaFormat.ToJavaString(avg)} cnt={Inv(summaryStats[Stat.NUM].Value)}\n";
     }
 
     private static string Fmt1(float value) => JavaFormat.Format("%.1f", [value]);
@@ -272,7 +276,7 @@ public sealed class Simulation
         foreach (var victory in newGameInfo.Ruleset.Victories.Keys)
         {
             var winsVictory = unchecked(groupCivs.Aggregate(0, (sum, it) => unchecked(sum + winRateByVictory[it][victory].Value)) * 100) / Math.Max(groupWins, 1);
-            outString += $"{victory}: {winsVictory}%    ";
+            outString += $"{victory}: {Inv(winsVictory)}%    ";
         }
         outString += "\n";
         return outString;
@@ -304,13 +308,13 @@ public sealed class Simulation
             foreach (var victory in newGameInfo.Ruleset.Victories.Keys)
             {
                 var winsVictory = unchecked(winRateByVictory[civ][victory].Value * 100) / Math.Max(NumWins[civ].Value, 1);
-                outString += $"{victory}: {winsVictory}%    ";
+                outString += $"{victory}: {Inv(winsVictory)}%    ";
             }
             outString += "\n";
             foreach (var victory in newGameInfo.Ruleset.Victories.Keys)
             {
                 var winsTurns = winTurnByVictory[civ][victory].Value / Math.Max(winRateByVictory[civ][victory].Value, 1);
-                outString += $"{victory}: {winsTurns}    ";
+                outString += $"{victory}: {Inv(winsTurns)}    ";
             }
             outString += "avg turns\n";
             foreach (var turn in statTurns)

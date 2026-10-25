@@ -340,10 +340,10 @@ public readonly record struct HexCoord(int x = 0, int y = 0)
     public HexCoord AsSerializable() => new(x, y);
     public HexCoord asSerializable() => AsSerializable();
 
-    public string ToPrettyString() => $"({x},{y})";
+    public string ToPrettyString() => string.Create(CultureInfo.InvariantCulture, $"({x},{y})");
     public string toPrettyString() => ToPrettyString();
 
-    public override string ToString() => $"HexCoord(x={x}, y={y})";
+    public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"HexCoord(x={x}, y={y})");
 
     // Kotlin data class hashCode (31 * x + y): it feeds GameContext.hashCode, which seeds stateBasedRandom
     public override int GetHashCode() => 31 * x + y;
@@ -378,7 +378,7 @@ public readonly record struct InlineHexCoord(int coords = 0)
     public int X => x;
     public int Y => y;
 
-    public override string ToString() => $"HexCoord(x={x}, y={y})";
+    public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"HexCoord(x={x}, y={y})");
 
     public static InlineHexCoord Of(int x, int y)
     {

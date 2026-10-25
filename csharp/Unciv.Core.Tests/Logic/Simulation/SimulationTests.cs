@@ -101,7 +101,7 @@ public sealed class SimulationTests : IDisposable
     public void AddTalliesWinsAndSummaries()
     {
         var game = NewGame();
-        var sim = new Unciv.Logic.Simulation.Simulation(game, 1, statTurns: [10]);
+        var sim = new Unciv.Logic.Simulation.Simulation(game, statTurns: [10]);
         var step = new SimulationStep(game, [10]);
         step.TurnStatsPop["Greece"][10].Set(8);
         step.TurnStatsCities["Greece"][10].Set(2);
@@ -131,7 +131,7 @@ public sealed class SimulationTests : IDisposable
     public void ExperimentGroupAddsGroupSections()
     {
         var game = NewGame();
-        var sim = new Unciv.Logic.Simulation.Simulation(game, 1, civIdsInExperimentGroup: new HashSet<string> { "Greece" });
+        var sim = new Unciv.Logic.Simulation.Simulation(game, civIdsInExperimentGroup: new HashSet<string> { "Greece" });
         var text = sim.Text();
         Assert.Contains("Experiment group (Greece):\n0.0% total win rate (expected 33.3% if no effect)\n", text);
         Assert.Contains("Control group (Babylon, Rome):\n0.0% total win rate (expected 66.7% if no effect)\n", text);
@@ -141,7 +141,7 @@ public sealed class SimulationTests : IDisposable
     public void LargeSamplesReportAPValue()
     {
         var game = NewGame();
-        var sim = new Unciv.Logic.Simulation.Simulation(game, 1, civIdsInExperimentGroup: new HashSet<string> { "Greece" });
+        var sim = new Unciv.Logic.Simulation.Simulation(game, civIdsInExperimentGroup: new HashSet<string> { "Greece" });
         for (var i = 0; i < 40; i++)
         {
             var step = new SimulationStep(game);
@@ -169,8 +169,8 @@ public sealed class SimulationTests : IDisposable
         {
             var lines = new List<string>();
             var game = NewGame();
-            new Unciv.Logic.Simulation.Simulation(game, seed, simulationsPerThread: 2, threadsNumber: 1, maxTurns: 3,
-                statTurns: [1], output: lines.Add, onCivilizationCreated: Wire).Start();
+            new Unciv.Logic.Simulation.Simulation(game, simulationsPerThread: 2, threadsNumber: 1, maxTurns: 3,
+                statTurns: [1], output: lines.Add, onCivilizationCreated: Wire, seed: seed).Start();
             return string.Join('\n', lines);
         }
 
