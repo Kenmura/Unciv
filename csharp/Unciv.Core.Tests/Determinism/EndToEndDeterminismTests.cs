@@ -105,6 +105,47 @@ public sealed class EndToEndDeterminismTests : IDisposable
         Assert.Equal(viaNextTurn, phased);
     }
 
+    // T200: a Simultaneous game with exactly one human at civ index 0 resolves a round in NextTurn's order, so (TurnState aside) its state is identical every turn.
+    [Theory]
+    [InlineData(1L, 3)]
+    [InlineData(77L, 11)]
+    public void OneHumanSimultaneousGameGivesTheSameHashesAsNextTurn(long gameSeed, int mapSeed)
+    {
+        var sequential = NewGame(gameSeed, mapSeed);
+        var simultaneous = NewGame(gameSeed, mapSeed);
+        // Barbarians are civ index 0 and Kotlin processes them after the last civ's wrap; "the human at civ index 0" needs them last in both games.
+        foreach (var game in new[] { sequential, simultaneous })
+        {
+            var barbarians = game.Civilizations.Single(it => it.IsBarbarian);
+            game.Civilizations.Remove(barbarians);
+            game.Civilizations.Add(barbarians);
+        }
+        simultaneous.StartSimultaneousTurns();
+        for (var i = 0; i < Turns; i++)
+        {
+            sequential.NextTurn(2000L);
+            foreach (var civ in simultaneous.Civilizations.Where(simultaneous.IsActive).ToList()) simultaneous.EndHumanTurn(civ);
+            simultaneous.BeginResolving();
+            while (simultaneous.NextResolveStep() is { } step)
+            {
+                switch (step)
+                {
+                    case ResolveStep.ProcessEndTurn s: simultaneous.ProcessEndTurn(simultaneous.GetCivilization(s.CivId), 2000L); break;
+                    case ResolveStep.RunAiTurn s: simultaneous.RunAiTurn(simultaneous.GetCivilization(s.CivId)); break;
+                    case ResolveStep.StartNextTurn: simultaneous.StartNextTurn(); break;
+                    case ResolveStep.BeginTurn s: simultaneous.BeginTurn(simultaneous.GetCivilization(s.CivId), 2000L); break;
+                    default: throw new InvalidOperationException(step.ToString());
+                }
+            }
+            var state = simultaneous.TurnState;
+            simultaneous.TurnState = null; // the only difference between the two games
+            var simultaneousHash = Hash(simultaneous);
+            simultaneous.TurnState = state;
+            Assert.Equal(Hash(sequential), simultaneousHash);
+        }
+        Assert.Equal(sequential.Turns, simultaneous.Turns);
+    }
+
     [Fact]
     public void DifferentSeedsDiverge()
     {

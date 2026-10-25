@@ -22,6 +22,13 @@ public partial class GameInfo
     {
         get
         {
+            if (IsSimultaneous)
+            {
+                if (VictoryData != null && !OneMoreTurnMode) return new TurnPhase.GameOver(VictoryData);
+                return NextResolveStep() is ResolveStep.RunAiTurn ai
+                    ? new TurnPhase.AutoPlayers(GetCivilization(ai.CivId))
+                    : new TurnPhase.AwaitingInput(CurrentPlayerCiv);
+            }
             if (pendingPlayerIndex is { } index)
             {
                 var next = Civilizations[index];
@@ -44,6 +51,14 @@ public partial class GameInfo
         var player = civ ?? CurrentPlayerCiv;
         var playerIndex = Civilizations.IndexOf(player);
 
+        EndCivTurn(player, nowMillis, progressBar, shouldGainTime);
+        if (player.IsHuman()) playerIndex = AdvancePlayerIndex(playerIndex);
+        pendingPlayerIndex = playerIndex;
+    }
+
+    // The civ-level part of EndPlayerTurn, shared with the simultaneous ProcessEndTurn (T200).
+    private void EndCivTurn(CivilizationClass player, long nowMillis, Action? progressBar, bool shouldGainTime)
+    {
         if (player.IsHuman() && player.IsAlive())
         {
             var elapsedSeconds = (nowMillis - CurrentTurnStartTime) / 1000;
@@ -58,12 +73,7 @@ public partial class GameInfo
         //  would skip a turn if an AI civ calls nextTurn
         //  this happens when resigning a multiplayer game)
         turnStartedCivs.Remove(player.CivId);
-        if (player.IsHuman())
-        {
-            new TurnManager(player).EndTurn(progressBar);
-            playerIndex = AdvancePlayerIndex(playerIndex);
-        }
-        pendingPlayerIndex = playerIndex;
+        if (player.IsHuman()) new TurnManager(player).EndTurn(progressBar);
     }
 
     /// <summary>
@@ -123,13 +133,19 @@ public partial class GameInfo
         CurrentPlayerCiv = player;
         pendingPlayerIndex = null;
 
+        StartCivTurn(player, progressBar);
+    }
+
+    // The civ-level part of BeginPlayerTurn, shared with the simultaneous BeginTurn (T200).
+    private void StartCivTurn(CivilizationClass player, Action? progressBar)
+    {
         // Starting their turn
         new TurnManager(player).StartTurn(progressBar);
         turnStartedCivs.Add(player.CivId);
 
         // No popups for spectators
-        if (CurrentPlayerCiv.IsSpectator())
-            CurrentPlayerCiv.PopupAlerts.Clear();
+        if (player.IsSpectator())
+            player.PopupAlerts.Clear();
 
         // Start our turn immediately before the player can make decisions - affects
         // whether our units can commit automated actions and then be attacked immediately etc.

@@ -277,6 +277,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         toReturn.CurrentPlayer = CurrentPlayer;
         toReturn.pendingPlayerIndex = pendingPlayerIndex;
         toReturn.turnStartedCivs.UnionWith(turnStartedCivs);
+        toReturn.TurnState = TurnState?.Clone();
         toReturn.CurrentTurnStartTime = CurrentTurnStartTime;
         toReturn.Turns = Turns;
         toReturn.Difficulty = Difficulty;
@@ -531,6 +532,21 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
     #endregion
     #region State changing functions
 
+    // T200: which civs' turns have begun. Simultaneous rounds must not call SetTransients mid-round, it would drop the other civs' started flags.
+    private void RestoreTurnStartedCivs()
+    {
+        if (TurnState is { Mode: TurnMode.Simultaneous } turnState) // the saved list says whose turn has begun
+        {
+            turnStartedCivs.Clear();
+            turnStartedCivs.UnionWith(turnState.Started);
+        }
+        else if (pendingPlayerIndex == null) // a saved or new game always waits for its current player's input
+        {
+            turnStartedCivs.Clear();
+            turnStartedCivs.Add(CurrentPlayer);
+        }
+    }
+
     /// <summary>
     /// All cross-game data which needs to be altered (e.g. when removing or changing a name of a building/tech)
     /// will be done here, and not in Civilization.setTransients or City
@@ -623,11 +639,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         }
         else CurrentPlayerCiv = GetCivilization(CurrentPlayer);
         // T200: simultaneous rounds must not call SetTransients mid-round, it would drop the other civs' started flags.
-        if (pendingPlayerIndex == null) // a saved or new game always waits for its current player's input
-        {
-            turnStartedCivs.Clear();
-            turnStartedCivs.Add(CurrentPlayer);
-        }
+        RestoreTurnStartedCivs();
 
         foreach (var religion in Religions.Values) religion.SetTransients(this);
 
