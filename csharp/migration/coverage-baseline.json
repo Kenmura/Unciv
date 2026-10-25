@@ -1,5 +1,18 @@
 {
   "files": {
+    "Unciv.Assets/AssetFallbacks.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/AssetKey.cs": {"branch": 95.83, "line": 100.0},
+    "Unciv.Assets/AssetKinds.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/AssetResolver.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/GlyphFont.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/LiteralLint.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/MeshData.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/ModelSpecs.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/PlaceholderPalette.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/ProceduralImages.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/Rgb.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/RulesetAssetKeys.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/StableHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Cli/CliArgs.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Cli/CliRunner.cs": {"branch": 93.94, "line": 97.4},
     "Unciv.Cli/Program.cs": {"branch": 100.0, "line": 100.0},

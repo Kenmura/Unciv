@@ -2531,7 +2531,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Host-a-lobby revision (SERVER.md 6-7, owner decision): C006 is now the JOIN side: join screen (address:port or invite code, password, TOFU fingerprint prompt, known hosts), reconnect overlay with the same key and last address, 'host went away, waiting' state, key storage under user://. The Host screen is C034, the lobby C035, the in-game turn bar C036. Depends T179 is the new direct-connect TCP+TLS transport (no WebSocket, no server accounts).
 
 ### C007 Asset registry and procedural placeholder generator
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: C001, A003, A004, A005, A006, A007
 - Source:
 - Fixtures: none
@@ -2539,6 +2539,9 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed: 2026-10-25T01:46Z
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario asset-sheet: swatch sheet golden + registry resolves every Vanilla ruleset name. Human: colour/readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - Implemented. Design choice: engine-independent logic (AssetKey, fallback chains, AssetResolver with override/pack-manifest resolution, PlaceholderPalette, hex prism MeshData, noise/icon/billboard pixel generation, bitmap glyph font, model specs, LiteralLint) lives in the new plain net10.0 project Unciv.Assets (in Unciv.sln, 100% covered, tests in Unciv.Core.Tests/Assets incl. every-Vanilla-key-resolves and the no-res:///colour-literal lint over Unciv.Godot). Godot-specific code (AssetRegistry.Get<T>, ProceduralAssets, GodotAssetFiles, AssetSheet) is in Unciv.Godot/Assets (outside the sln; gate: dotnet build Unciv.Godot -warnaserror).
+    Scenario asset-sheet: C008's runner does not exist yet, so Unciv.Godot/tools/run-asset-sheet.sh (build + Xvfb render) is the gate for now: resolves all 863 Vanilla keys via the Godot registry, saves out/asset-sheet.png, exits 0. Golden comparison is left to C008 (wrap res://Assets/AssetSheet.tscn). Human to judge colours and readability from out/asset-sheet.png.
+    Semantics: per chain entry (key, parent e.g. unit->unitType, category _default) override file then selected pack; procedural for the requested key only when no file exists anywhere in the chain. Broken/unsafe manifests never throw (Diagnostics). Terrain materials are lit (StandardMaterial3D): C009 must add a light. Override-file loading in Godot (GodotAssetFiles.Load) is exercised only by thin code, not by a render test. Sound keys (C030) and real fonts (C025) not included; font/default returns Godot's fallback font.
 
 ### C008 Client scenario runner and owner review sheet
 - State: Done
