@@ -98,7 +98,7 @@
     "Unciv.Core/Commands/Units/PromoteUnit.cs": {"branch": 81.25, "line": 100.0},
     "Unciv.Core/Commands/Units/SetMoveOrder.cs": {"branch": 85.0, "line": 88.89},
     "Unciv.Core/Commands/Units/SetUnitDue.cs": {"branch": 83.33, "line": 100.0},
-    "Unciv.Core/Commands/Units/SetWorkerOrder.cs": {"branch": 80.56, "line": 96.15},
+    "Unciv.Core/Commands/Units/SetWorkerOrder.cs": {"branch": 84.78, "line": 96.49},
     "Unciv.Core/Commands/Units/SwapUnits.cs": {"branch": 87.5, "line": 100.0},
     "Unciv.Core/Commands/Units/UnitActionDescriptor.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Constants.cs": {"branch": 100.0, "line": 100.0},
