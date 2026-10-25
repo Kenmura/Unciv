@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 204/210 | 6 | 1 | 5 | [T218](backlog/T218.md) [T219](backlog/T219.md) [T222](backlog/T222.md) [T227](backlog/T227.md) [T229](backlog/T229.md) [T231](backlog/T231.md) |
+| Phase 1: CLI (headless engine) | 203/211 | 8 | 2 | 5 | [T218](backlog/T218.md) [T219](backlog/T219.md) [T222](backlog/T222.md) [T227](backlog/T227.md) [T229](backlog/T229.md) [T231](backlog/T231.md) [T232](backlog/T232.md) [T234](backlog/T234.md) |
 | Phase 2: single player (Godot client) | 9/45 | 36 | 5 | 1 | [C003](backlog/C003.md) [C004](backlog/C004.md) [C011](backlog/C011.md) [C012](backlog/C012.md) [C013](backlog/C013.md) [C015](backlog/C015.md) [C016](backlog/C016.md) [C017](backlog/C017.md) [C018](backlog/C018.md) [C019](backlog/C019.md) [C020](backlog/C020.md) [C021](backlog/C021.md) [C022](backlog/C022.md) [C023](backlog/C023.md) [C024](backlog/C024.md) [C025](backlog/C025.md) [C026](backlog/C026.md) [C027](backlog/C027.md) [C028](backlog/C028.md) [C029](backlog/C029.md) [C030](backlog/C030.md) [C031](backlog/C031.md) [C032](backlog/C032.md) [C033](backlog/C033.md) [C037](backlog/C037.md) [C038](backlog/C038.md) [C039](backlog/C039.md) [C040](backlog/C040.md) [C041](backlog/C041.md) [C042](backlog/C042.md) [C043](backlog/C043.md) [C044](backlog/C044.md) [C046](backlog/C046.md) [C047](backlog/C047.md) [C048](backlog/C048.md) [T169](backlog/T169.md) |
 | Phase 3: multiplayer | 6/29 | 23 | 6 | 0 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T176](backlog/T176.md) [T177](backlog/T177.md) [T178](backlog/T178.md) [T179](backlog/T179.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T201](backlog/T201.md) [T202](backlog/T202.md) [T203](backlog/T203.md) [T204](backlog/T204.md) [T205](backlog/T205.md) [T206](backlog/T206.md) [T207](backlog/T207.md) [T223](backlog/T223.md) [T224](backlog/T224.md) [T225](backlog/T225.md) [T226](backlog/T226.md) [T230](backlog/T230.md) |
 
@@ -98,6 +98,8 @@ flowchart TD
     T229["T229<br/>Dev console in the engine: console command tree and paramete..."]
     T230["T230<br/>Host-secret salt for state-based randomness in hosted multip..."]
     T231["T231<br/>Unit-order parity with a live Kotlin game: GameInfo.RefreshT..."]
+    T232["T232<br/>GameStarter: a saved map with pre-placed units throws 'latei..."]
+    T234["T234<br/>Dev console: remaining engine commands (activatetrigger, civ..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -199,6 +201,7 @@ flowchart TD
   T179 --> T225
   T180 --> T225
   T202 --> T226
+  T229 --> T234
   C002 --> C004
   C010 --> C004
   C012 --> C004
@@ -416,7 +419,7 @@ flowchart TD
   class C034 waiting
   class C035 waiting
   class C036 waiting
-  class C037 prog
+  class C037 review
   class C038 ondeck
   class C039 waiting
   class C040 waiting
@@ -489,7 +492,7 @@ flowchart TD
   class T208 done
   class T215 done
   class T218 review
-  class T219 prog
+  class T219 ready
   class T220 done
   class T222 review
   class T223 ready
@@ -501,6 +504,8 @@ flowchart TD
   class T229 review
   class T230 ready
   class T231 ready
+  class T232 review
+  class T234 ondeck
 ```
 
 ## Remaining tickets over time
@@ -518,7 +523,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00", "25 18:00"]
     y-axis "Tickets" 0 --> 80
-    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 63, 59]
+    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 63, 61]
     line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6, 6]
 ```
 
@@ -537,6 +542,7 @@ xychart-beta
 | C030 | **Ready to start** | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
 | C031 | **Ready to start** | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
 | T201 | **Ready to start** | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
+| T219 | **Ready to start** | T208 | 0 | GameInfo.Clone() shares state (trade requests etc.) and Canonicalize skips remaining JVM hash sets/maps (religion beliefs, flag maps): make Clone playable and extend soak |
 | T231 | **Ready to start** | T208 | 0 | Unit-order parity with a live Kotlin game: GameInfo.RefreshTransientCaches/SortLikeLoad re-sorts civ units (T208) so barbarian wander diverges from Kotlin per-turn golden |
 | C011 | **On deck** (after C037) | C005, C010, T164, T062, T174, T184, C037 | 5 | HUD: top bar yields, turn banner, next-action button |
 | C041 | **On deck** (after C037) | C010, C037 | 3 | Flat-map cities, borders, roads and improvements (before the 3D chain) |
@@ -551,7 +557,8 @@ xychart-beta
 | C029 | **On deck** (after C037) | C010, T164, T184, C037 | 0 | Hotseat player switch screen |
 | C038 | **On deck** (after C037) | C005, C037, T220, T192, T197 | 0 | Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result |
 | C046 | **On deck** (after C037, T229) | C005, C037, T229 | 0 | Dev console UI: console popup with history and autocomplete |
-| C037 | In-Progress [Claude] | C010, T185, T175, T174 | 28 | IGameSession: client reads and writes only through a session interface; LocalHost implements it |
+| T234 | **On deck** (after T229) | T229 | 0 | Dev console: remaining engine commands (activatetrigger, civ add/remove, remove-spectator, tile find) |
+| C037 | Needs-Review [Claude] | C010, T185, T175, T174 | 28 | IGameSession: client reads and writes only through a session interface; LocalHost implements it |
 | T226 | Available (waiting on T202) | T202 | 15 | Multiplayer game-over and forced-end rules: One More Turn authority, defeated humans, default resolution of blocking decisions on ForceEndTurn |
 | T177 | Available (waiting on T202, T226) | T172, T164, T184, T187, T200, T202, T226 | 14 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202, T223, T224, T230) | T172, T173, T174, T175, T176, T177, T202, T223, T224, T230 | 13 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
@@ -561,6 +568,7 @@ xychart-beta
 | C016 | Available (waiting on C037, C043) | C005, C010, T100, C037, T208, T215, C043 | 2 | Save/load screen and autosave |
 | C017 | Available (waiting on C037, C041) | C005, C010, T164, T060, T062, T191, T196, C037, C041 | 2 | City screen A: info, tiles, specialists, focus |
 | C036 | Available (waiting on C011, T180, T202) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
+| T229 | Needs-Review [Claude] | T192, T164 | 2 | Dev console in the engine: console command tree and parameter parsing as logged commands |
 | C004 | Available (waiting on C012) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
 | C022 | Available (waiting on C021) | C021, T164, T059, T193, T197 | 1 | Trade screen |
 | C025 | Available (waiting on C043) | C005, T023, T170, C043 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
@@ -568,7 +576,6 @@ xychart-beta
 | T203 | Available (waiting on T202) | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
-| T229 | Needs-Review [Claude] | T192, T164 | 1 | Dev console in the engine: console command tree and parameter parsing as logged commands |
 | C006 | Available (waiting on T180, T179, C016, C035, C036, T225, C037) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C018 | Available (waiting on C017) | C017, T063, T191, T196 | 0 | City screen B: production queue, purchase, buildings |
 | C026 | Available (waiting on C043) | C005, C010, T030, T049, C043 | 0 | Tutorials |
@@ -588,6 +595,6 @@ xychart-beta
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
 | T218 | Needs-Review [Claude] | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
-| T219 | In-Progress [Claude] | T208 | 0 | GameInfo.Clone() shares state (trade requests etc.) and Canonicalize skips remaining JVM hash sets/maps (religion beliefs, flag maps): make Clone playable and extend soak |
 | T222 | Needs-Review [Claude] | none | 0 | Hardening sweep 3: findings from the 2026-10-25 migration review |
 | T227 | In-Progress [Claude] | A008, T094, T166 | 0 | Use the A-track AI in AI turns: wire GrandStrategy, Tactical AI, Homeland moves and Operations into the turn loop |
+| T232 | Needs-Review [Claude] | T221 | 0 | GameStarter: a saved map with pre-placed units throws 'lateinit property gameInfo' |

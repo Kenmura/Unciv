@@ -484,6 +484,33 @@ public sealed class ConsoleCommandTests : IDisposable
         return new ConsoleSelection(tile.Position);
     }
 
+    // --- hostile input
+
+    [Fact]
+    public void HostileLinesAreRejectedCleanlyWithoutChangingState()
+    {
+        string[] lines =
+        [
+            "", " ", "\"", "\"\"", "\" \"", "civ \"addstat", "civ addstat gold", "civ addstat gold abc", "civ addstat gold 99999999999999999999",
+            "civ addstat gold 1.5", "civ addstat \u00e9\u4e2d gold 1", "unit", "unit add", "unit add Babylon", "unit add Babylon Nonsense", "unit add Atlantis Warrior",
+            "unit setmovement NaN", "unit setmovement Infinity", "unit setmovement -1", "unit sethealth 0", "unit sethealth 101", "unit setxp -5", "unit setxp x",
+            "city setpop 0", "city setpop -3", "city setpop abc", "city setname", "city add Nonsense", "tile setresource Iron -4", "tile setresource Iron 0",
+            "tile setowner Atlantis", "tile addriver nowhere", "tile setterrain", "tile setterrain Ocean", "tile addfeature Nonsense", "tile setpillaged maybe",
+            "game setturn 99999999999999999999", "game setturn x", "game setdifficulty", "diplomacy", "diplomacy declarewar", "diplomacy declarewar Babylon Babylon",
+            "diplomacy declarewar Atlantis Rome", "civ setplayertype Babylon robot", "civ checkcountable \"", "civ checkcountable [", new string('a', 900),
+            "civ " + new string('a', 900), "civ addpolicy Babylon " + new string('\"', 500), "\0\0", "civ\taddstat\tgold\t1\n", "CIV ADDSTAT GOLD 1",
+        ];
+        foreach (string line in lines)
+        {
+            ulong before = Hash(game);
+            int logged = session.Log.Count;
+            var result = session.Submit("Babylon", Line(line, onCity));
+            if (result.Accepted) continue; // a line that is valid on its own terms is allowed to change state, it was logged
+            Assert.Equal(before, Hash(game));
+            Assert.Equal(logged, session.Log.Count);
+        }
+    }
+
     // --- replay
 
     [Fact]
