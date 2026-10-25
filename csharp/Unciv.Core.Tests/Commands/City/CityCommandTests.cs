@@ -274,8 +274,8 @@ public sealed class CityCommandTests
         var contested = city.GetWorkableTiles().Concat(other.GetWorkableTiles()).First(it => !it.IsCityCenter() && it.IsWorked());
         var workedBy = contested.GetWorkingCity()!;
         var notWorker = ReferenceEquals(workedBy, city) ? other : city;
-        if (notWorker.GetWorkableTiles().Contains(contested))
-            AssertRejected(new WorkTile { CityId = notWorker.Id, Tile = contested.Position }, CommandErrors.InvalidTarget);
+        Assert.Contains(contested, notWorker.GetWorkableTiles());
+        AssertRejected(new WorkTile { CityId = notWorker.Id, Tile = contested.Position }, CommandErrors.InvalidTarget);
         AssertRejected(new WorkTile { CityId = city.Id, Tile = city.GetCenterTile().Position }, CommandErrors.InvalidTarget);
     }
 
@@ -621,5 +621,35 @@ public sealed class CityCommandTests
         Assert.DoesNotContain("Monument", other.DisabledConstructions);
         Assert.DoesNotContain("Monument", a.DisabledCityConstructions);
         AssertRejected(new SetCivConstructionDisabled { CityId = city.Id, Name = "Monument", Disabled = false }, CommandErrors.NotAllowed);
+    }
+
+    [Fact]
+    public void WorkTileRefusesBlockadedTiles()
+    {
+        city.ReassignPopulation(resetLocked: true);
+        Ok(new StopWorkingTile { CityId = city.Id, Tile = WorkedTile().Position });
+        var tile = FreeWorkableTile();
+        Assert.False(tile.Stats.GetTileStats(city, city.Civ).IsEmpty());
+        a.DiplomacyFunctions.MakeCivilizationsMeet(b);
+        a.GetDiplomacyManager(b)!.DeclareWar();
+        testGame.AddUnit("Warrior", b, tile);
+        Assert.True(tile.IsBlockaded());
+        AssertRejected(new WorkTile { CityId = city.Id, Tile = tile.Position }, CommandErrors.InvalidTarget);
+    }
+
+    [Fact]
+    public void DisableCommandsReassignPopulation()
+    {
+        city.ShouldReassignPopulation = true;
+        Ok(new SetConstructionDisabled { CityId = city.Id, Name = "Warrior", Disabled = true });
+        Assert.False(city.ShouldReassignPopulation);
+        city.ShouldReassignPopulation = true;
+        Ok(new SetCivConstructionDisabled { CityId = city.Id, Name = "Monument", Disabled = true });
+        Assert.False(city.ShouldReassignPopulation);
+        city.ShouldReassignPopulation = true;
+        Ok(new QueueConstruction { CityId = city.Id, Name = "Worker" });
+        city.ShouldReassignPopulation = true;
+        Ok(new RemoveAllByName { CityId = city.Id, Name = "Worker" });
+        Assert.False(city.ShouldReassignPopulation);
     }
 }
