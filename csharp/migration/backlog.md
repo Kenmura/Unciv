@@ -2375,7 +2375,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Trap: GetGoldCostOfTile/CanBuyTile read Expansion state that has lazy caches; the purity test must run with a cold cache and a warm cache and compare. All numbers that Kotlin computes as Float for display (stats, percents) stay float in the DTO; round only where Kotlin rounds.
 
 ### T197 Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview)
-- State: Needs-Review [Claude]
+- State: In-Review [Claude]
 - Depends: T185, T138
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/CivView.kt, ForeignCivView.kt, TradeView.kt, DiplomacyManagerView.kt; ui/screens/pickerscreens/*, diplomacyscreen/*, overviewscreen/*; csharp UI/EmpireOverviewCategories.cs, UI/RankingType.cs
 - Fixtures: none
