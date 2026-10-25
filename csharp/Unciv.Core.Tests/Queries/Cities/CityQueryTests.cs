@@ -199,6 +199,9 @@ public class CityQueryTests
         Assert.Single(result.Tiles, it => it.State == "Center");
         var worked = result.Tiles.Where(it => it.State == "Worked").Select(it => (it.Position.X, it.Position.Y)).Order().ToList();
         Assert.Equal(city.WorkedTiles.Select(it => (it.X, it.Y)).Order().ToList(), worked);
+        Assert.Equal(result.Tiles.OrderBy(it => it.Position.X).ThenBy(it => it.Position.Y).Select(it => (it.Position.X, it.Position.Y)),
+            result.Tiles.Select(it => (it.Position.X, it.Position.Y)));
+        Assert.Contains(result.Tiles, it => it.State == "Available");
         foreach (var tile in result.Tiles.Where(it => it.State == "Available"))
         {
             var engineTile = testGame.GetTile(tile.Position.X, tile.Position.Y);
@@ -206,6 +209,59 @@ public class CityQueryTests
             Assert.False(engineTile.ProvidesYield());
             Assert.NotEmpty(tile.Stats);
         }
+    }
+
+    private CityTile TileState(string state) => Ask(player, new CityTilesQuery(city.Id)).Tiles.First(it => it.State == state);
+
+    [Fact]
+    public void CityTilesReportFreeCitizensAfterAWorkerIsReleased()
+    {
+        Assert.Equal(0, Ask(player, new CityTilesQuery(city.Id)).FreePopulation);
+        var released = city.WorkedTiles.First();
+        city.StopWorkingTile(testGame.GetTile(released.X, released.Y));
+        var result = Ask(player, new CityTilesQuery(city.Id));
+        Assert.Equal(1, result.FreePopulation);
+        Assert.Equal(city.Population.GetFreePopulation(), result.FreePopulation);
+        Assert.Contains(result.Tiles, it => it.Position.X == released.X && it.Position.Y == released.Y && it.State == "Available");
+    }
+
+    [Fact]
+    public void CityTilesCallATileAnotherCityWorksTaken()
+    {
+        var shared = Ask(player, new CityTilesQuery(city.Id)).Tiles.First(it => it.State == "Available");
+        var other = testGame.AddCity(player, testGame.GetTile(4, 0), initialPopulation: 1);
+        var tile = testGame.GetTile(shared.Position.X, shared.Position.Y);
+        Assert.Same(player, tile.GetOwner());
+        Assert.False(city.IsWorked(tile));
+        other.WorkedTiles.Add(tile.Position);
+        Assert.True(tile.ProvidesYield());
+        var taken = Ask(player, new CityTilesQuery(city.Id)).Tiles.Single(it => it.Position == shared.Position);
+        Assert.Equal("Taken", taken.State);
+    }
+
+    [Fact]
+    public void CityTilesCallABlockadedTileUnavailable()
+    {
+        var free = TileState("Available");
+        var tile = testGame.GetTile(free.Position.X, free.Position.Y);
+        player.DiplomacyFunctions.MakeCivilizationsMeet(enemy);
+        player.GetDiplomacyManager(enemy)!.DeclareWar();
+        testGame.AddUnit("Warrior", enemy, tile);
+        Assert.True(tile.IsBlockaded());
+        Assert.Equal("Unavailable", Ask(player, new CityTilesQuery(city.Id)).Tiles.Single(it => it.Position == free.Position).State);
+    }
+
+    [Fact]
+    public void CityTilesCallATileThatYieldsNothingUnavailable()
+    {
+        var free = TileState("Available");
+        var tile = testGame.GetTile(free.Position.X, free.Position.Y);
+        tile.BaseTerrain = "Snow";
+        tile.SetTerrainTransients();
+        Assert.False(tile.IsBlockaded());
+        var result = Ask(player, new CityTilesQuery(city.Id)).Tiles.Single(it => it.Position == free.Position);
+        Assert.Equal("Unavailable", result.State);
+        Assert.Empty(result.Stats);
     }
 
     [Fact]

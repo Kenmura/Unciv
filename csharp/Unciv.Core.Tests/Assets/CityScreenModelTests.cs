@@ -1,6 +1,7 @@
 using Unciv.Assets;
 using Unciv.Commands.City;
 using Unciv.Logic.City;
+using Unciv.Logic.Map;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Cities;
 using Unciv.Queries.Units;
@@ -25,7 +26,7 @@ public class CityScreenModelTests
 
     private static CityTile Tile(int x, int y, string state, bool locked = false, params StatAmount[] stats) => new(new TilePos(x, y), state, locked, stats);
 
-    private static CityTileCell Cell(string state, bool locked = false) => new(1, 1, state, locked, 0f, 0f, "", "");
+    private static CityTileCell Cell(string state, bool locked = false) => new(3, 5, state, locked, 0f, 0f, "", "");
 
     [Fact]
     public void Title_ShowsNameSizeAndFlags()
@@ -77,6 +78,13 @@ public class CityScreenModelTests
         Assert.Equal("F2", worked.Label);
         Assert.NotEqual(0f, worked.Px);
         Assert.NotEqual(0f, cells[2].Py);
+        // North is up: a tile whose world y is above the city's gets a negative Py (y down), one below it a positive Py.
+        var cityWorld = HexMath.Hex2WorldCoords(new HexCoord(2, 3));
+        var north = new[] { (2, 4), (3, 3), (1, 3), (2, 2), (3, 4), (1, 2) }.First(it => HexMath.Hex2WorldCoords(new HexCoord(it.Item1, it.Item2)).y > cityWorld.y + 0.01f);
+        var south = new[] { (2, 4), (3, 3), (1, 3), (2, 2), (3, 4), (1, 2) }.First(it => HexMath.Hex2WorldCoords(new HexCoord(it.Item1, it.Item2)).y < cityWorld.y - 0.01f);
+        var flipped = CityScreenModel.Cells(Tiles(Tile(north.Item1, north.Item2, "Available"), Tile(south.Item1, south.Item2, "Available")));
+        Assert.True(flipped[0].Py < 0f);
+        Assert.True(flipped[1].Py > 0f);
         var (minX, minY, maxX, maxY) = CityScreenModel.Bounds(cells);
         Assert.True(minX <= 0f && maxX >= 0f);
         Assert.True(minY <= 0f && maxY >= 0f);
@@ -106,9 +114,12 @@ public class CityScreenModelTests
     {
         var work = Assert.IsType<WorkTile>(CityScreenModel.ClickCommand("id1", Cell("Available"), 1, false, out _));
         Assert.Equal("id1", work.CityId);
-        Assert.Equal(1, work.Tile.x);
+        Assert.Equal((3, 5), (work.Tile.x, work.Tile.y));
         var stop = Assert.IsType<StopWorkingTile>(CityScreenModel.ClickCommand("id1", Cell("Worked", true), 0, false, out _));
-        Assert.Equal(1, stop.Tile.y);
+        Assert.Equal("id1", stop.CityId);
+        Assert.Equal((3, 5), (stop.Tile.x, stop.Tile.y));
+        Assert.Null(CityScreenModel.ClickCommand("id1", Cell("Worked"), 1, true, out var why));
+        Assert.Contains("puppet", why, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -126,8 +137,10 @@ public class CityScreenModelTests
     [Fact]
     public void LockCommand_PinsWorkedAndReleasesLockedTiles()
     {
-        Assert.IsType<LockTile>(CityScreenModel.LockCommand("id1", Cell("Worked"), false, out _));
-        Assert.IsType<UnlockTile>(CityScreenModel.LockCommand("id1", Cell("Worked", true), false, out _));
+        var pin = Assert.IsType<LockTile>(CityScreenModel.LockCommand("id1", Cell("Worked"), false, out _));
+        Assert.Equal(("id1", 3, 5), (pin.CityId, pin.Tile.x, pin.Tile.y));
+        var release = Assert.IsType<UnlockTile>(CityScreenModel.LockCommand("id1", Cell("Worked", true), false, out _));
+        Assert.Equal(("id1", 3, 5), (release.CityId, release.Tile.x, release.Tile.y));
         Assert.Null(CityScreenModel.LockCommand("id1", Cell("Available"), false, out var why));
         Assert.Contains("worked tile", why, StringComparison.Ordinal);
         Assert.Null(CityScreenModel.LockCommand("id1", Cell("Worked"), true, out why));

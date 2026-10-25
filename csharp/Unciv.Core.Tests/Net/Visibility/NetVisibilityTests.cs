@@ -200,6 +200,16 @@ public sealed class NetVisibilityTests
     }
 
     [Fact]
+    public void CityId_IsOnlyInTheOwnersSnapshot()
+    {
+        var id = foreignCity.Id;
+        Assert.False(string.IsNullOrEmpty(id));
+        Assert.Equal(id, SnapshotFor(f).Cities.Single(it => it.Name == foreignCity.Name).Own!.Id);
+        Assert.Null(SnapshotFor(a).Cities.Single(it => it.Name == foreignCity.Name).Own);
+        foreach (var viewer in new[] { a, b, h, g }) Assert.DoesNotContain(id, Text(SnapshotFor(viewer)));
+    }
+
+    [Fact]
     public void Trades_ThirdPartyRequestToAKnownCivIsAbsent()
     {
         var other = new Trade();
@@ -227,10 +237,11 @@ public sealed class NetVisibilityTests
         Assert.Contains(snapshot.PendingTrades, it => it.From == a.CivId && it.To == f.CivId && it.Offered[0].Amount == 55 && it.Requested[0].Amount == 66);
         Assert.Contains(snapshot.PendingTrades, it => it.From == f.CivId && it.To == a.CivId);
 
+        Assert.Contains("\"amount\":55", Text(snapshot)); // the needle format is right, so its absence below means something
         var forB = Text(SnapshotFor(b));
         Assert.Empty(SnapshotFor(b).PendingTrades);
-        Assert.DoesNotContain(":55", forB); // a JSON number; city ids (C017) are random text that may contain "55"
-        Assert.DoesNotContain(":31337", forB);
+        Assert.DoesNotContain("\"amount\":55", forB); // a JSON number; city ids (C017) are random text that may contain "55"
+        Assert.DoesNotContain("\"amount\":31337", forB);
     }
 
     [Fact]
