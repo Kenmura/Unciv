@@ -7,8 +7,8 @@ namespace Unciv.Commands.Units;
 /// <summary>
 /// Multi-turn move order. Kotlin: WorldMapHolder.moveUnitToTargetTile, i.e. <c>headTowards</c> now, then
 /// <c>MapUnitView.trySetMoveToAction</c> (<c>unit.action = "moveTo x,y"</c>) unless the unit arrived, so <c>DoAction</c> continues
-/// next turn. Offered when <c>canReach</c> holds (a shortest path exists). The order is also stored when the unit could not
-/// get any closer this turn (the UI treats that as a dud; a stored order is harmless and deterministic).
+/// next turn. Offered when <c>canReach</c> holds (a shortest path exists). When the unit could not get any closer this turn
+/// nothing changes (the UI treats that as a dud and keeps e.g. fortify).
 /// </summary>
 [CommandType("set-move-order")]
 public sealed class SetMoveOrder : GameCommand
@@ -41,7 +41,8 @@ public sealed class SetMoveOrder : GameCommand
         {
             // The UI ignores this as well: the board changed between the check and the move; nothing moved.
         }
-        if (unit.CurrentTile != origin && (unit.IsExploring() || unit.IsMoving())) unit.Action = null;
+        if (unit.CurrentTile == origin) return []; // a dud, like the UI: leave the current action alone
+        if (unit.IsExploring() || unit.IsMoving()) unit.Action = null;
         if (unit.CurrentTile != target) unit.Action = $"moveTo {To.x},{To.y}";
         return [];
     }

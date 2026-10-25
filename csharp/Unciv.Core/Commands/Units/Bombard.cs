@@ -22,7 +22,8 @@ public sealed class BombardWithCity : GameCommand
         if (!context.OwnCity(actor, CityId).TryGet(out var city, out failure)) return failure;
         if (!context.TileAt(Target).TryGet(out var tile, out failure)) return failure;
         if (!city.CanBombard()) return CommandValidation.Fail(CommandErrors.NotAllowed, "The city cannot bombard now");
-        return TargetHelper.GetBombardableTiles(city).Contains(tile)
+        // BattleTable hides the table when the defender is a city, so the UI never offers city against city.
+        return TargetHelper.GetBombardableTiles(city).Contains(tile) && BattleClass.GetMapCombatantOfTile(tile) is not CityCombatant
             ? CommandValidation.Ok
             : CommandValidation.Fail(CommandErrors.InvalidTarget, "That tile cannot be bombarded");
     }

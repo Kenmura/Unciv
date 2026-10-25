@@ -171,6 +171,22 @@ public sealed class MovementCombatCommandTests
     }
 
     [Fact]
+    public void SetMoveOrderClearsExploringAfterMovingAndKeepsAnActionWhenNothingMoves()
+    {
+        var warrior = Unit("Warrior", a, -3, 0);
+        warrior.Action = "Explore";
+        Assert.True(session.Submit(a.CivId, new SetMoveOrder { UnitId = warrior.Id, To = At(Tile(3, 0)) }).Accepted);
+        Assert.Equal("moveTo 3,0", warrior.Action);
+
+        var boxed = Unit("Warrior", a, 0, 4);
+        foreach (var around in boxed.CurrentTile.Neighbors.ToList()) Unit("Warrior", a, around.Position.x, around.Position.y);
+        boxed.Action = "Fortify";
+        var origin = boxed.CurrentTile;
+        session.Submit(a.CivId, new SetMoveOrder { UnitId = boxed.Id, To = At(Tile(0, -4)) });
+        if (boxed.CurrentTile == origin) Assert.Equal("Fortify", boxed.Action);
+    }
+
+    [Fact]
     public void SetMoveOrderRejectsAnUnreachableDestination()
     {
         var warrior = Unit("Warrior", a, -3, 0);
@@ -290,6 +306,15 @@ public sealed class MovementCombatCommandTests
         Assert.True(city.AttackedThisTurn);
         var second = session.Submit(a.CivId, new BombardWithCity { CityId = city.Id, Target = At(inRange) });
         Assert.Equal(CommandErrors.NotAllowed, second.Validation.Code);
+    }
+
+    [Fact]
+    public void BombardWithCityDoesNotTargetAnEnemyCity()
+    {
+        var city = testGame.AddCity(a, Tile(0, 0));
+        testGame.AddCity(b, Tile(0, 2));
+        See(a);
+        AssertRejected(new BombardWithCity { CityId = city.Id, Target = At(Tile(0, 2)) }, CommandErrors.InvalidTarget);
     }
 
     [Fact]
