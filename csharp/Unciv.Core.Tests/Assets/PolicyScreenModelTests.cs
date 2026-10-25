@@ -25,6 +25,7 @@ public class PolicyScreenModelTests
         Assert.Equal(["Culture: 50 / 15", "You can adopt a policy now"], PolicyScreenModel.HeaderLines(Tree()));
         Assert.Equal(["Culture: 15 / 40", "Next policy in 25 more culture"], PolicyScreenModel.HeaderLines(Tree(false, 15, 40)));
         Assert.Equal(["Culture: 0 / 40", "Free policies: 2", "You can adopt a policy now"], PolicyScreenModel.HeaderLines(Tree(true, 0, 40, 2)));
+        Assert.Equal(["Culture: 0 / 40", "Free policies: 1", "You can adopt a policy now"], PolicyScreenModel.HeaderLines(Tree(true, 0, 40, 1)));
         Assert.Equal("Next policy in 0 more culture", PolicyScreenModel.HeaderLines(Tree(false, 50, 40))[1]); // never negative
     }
 
@@ -33,6 +34,7 @@ public class PolicyScreenModelTests
     {
         var running = new EmpireTopBarResult(0, 0, 0, 0f, 0f, 0f, 0f, 1, 4, 10, 100, []);
         Assert.Equal("Golden Age: 4 turns left", PolicyScreenModel.GoldenAgeLine(running));
+        Assert.Equal("Golden Age: 1 turns left", PolicyScreenModel.GoldenAgeLine(running with { GoldenAgeTurnsLeft = 1 }));
         Assert.Equal("Golden Age: 10 / 100 happiness stored", PolicyScreenModel.GoldenAgeLine(running with { GoldenAgeTurnsLeft = 0 }));
     }
 
@@ -52,6 +54,14 @@ public class PolicyScreenModelTests
         Assert.Equal("Liberty", views[1].Title); // no era: no brackets
         Assert.Equal((0, 0), (views[1].Columns, views[1].Rows));
         Assert.Null(views[1].Complete);
+    }
+
+    [Fact]
+    public void ColumnCountIsTheHighestColumnNotTheMemberCount()
+    {
+        var view = PolicyScreenModel.Branches(Tree(true, 50, 15, 0, Branch("B", "", 0, 2, Entry("A", row: 1, column: 4), Entry("C", row: 1, column: 1))))[0];
+        Assert.Equal(4, view.Columns);
+        Assert.Equal(1, view.Rows);
     }
 
     [Fact]
