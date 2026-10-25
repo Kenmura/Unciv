@@ -118,8 +118,11 @@ public sealed class DiplomacyActionsQueryTests
         Assert.Equal(EmpireQueryCodes.UnknownCiv, Execute(w.A.CivId, w.A.CivId).Code);
         Assert.Equal(EmpireQueryCodes.UnknownCiv, Execute(w.A.CivId, "Nobody").Code);
         Assert.Equal(EmpireQueryCodes.UnknownCiv, Execute(w.A.CivId, "").Code);
-        var barbarian = w.Game.GameInfo.Civilizations.FirstOrDefault(it => it.IsBarbarian);
-        if (barbarian != null) Assert.Equal(EmpireQueryCodes.UnknownCiv, Execute(w.A.CivId, barbarian.CivId).Code);
+        // C021 review: the barbarian refusal was behind an `if` that never ran; the barbarian is made to meet the viewer so only the barbarian guard can refuse it
+        var barbarian = w.Game.AddBarbarianCiv();
+        w.A.DiplomacyFunctions.MakeCivilizationsMeet(barbarian);
+        Assert.Equal(EmpireQueryCodes.UnknownCiv, Execute(w.A.CivId, barbarian.CivId).Code);
+        Assert.Equal(EmpireQueryCodes.UnknownCiv, Execute(w.A.CivId, Constants.Barbarians).Code);
     }
 
     [Fact]
@@ -146,6 +149,23 @@ public sealed class DiplomacyActionsQueryTests
         w.MakeWar(w.B, w.C);
         Assert.False(Ask(w.C.CivId, w.B.CivId).OfferPeace); // at war, but not B's turn
         Assert.False(Ask(w.C.CivId).OfferPeace); // A is not at war with C
+    }
+
+    [Fact]
+    public void BullyingGoldAndWorkerAreJudgedEachByItsOwnCommand()
+    {
+        bool sawGoldOnly = false;
+        foreach (int modifier in Enumerable.Range(-20, 100).Select(it => it * 5).Append(1000))
+        {
+            w.Game.Ruleset.ModOptions.Constants.TributeGlobalModifier = modifier;
+            var result = Ask(w.S.CivId);
+            bool gold = new TributeGold { CivId = w.S.CivId }.Validate(w.Game.GameInfo, w.A.CivId).IsValid;
+            bool worker = new TributeWorker { CivId = w.S.CivId }.Validate(w.Game.GameInfo, w.A.CivId).IsValid;
+            Assert.Equal(gold, result.TributeGold);
+            Assert.Equal(worker, result.TributeWorker);
+            sawGoldOnly |= gold != worker;
+        }
+        Assert.True(sawGoldOnly, "no state separated the two flags: the test cannot tell them apart");
     }
 
     [Fact]

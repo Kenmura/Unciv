@@ -241,4 +241,51 @@ public class DiplomacyScreenModelTests
             Assert.All(buttons, it => Assert.False(it.Enabled));
         }
     }
+
+    // ---- C021 review: boundaries and fields the first tests could not tell apart
+
+    [Fact]
+    public void RowLabelUsesTheNameNotTheId() => Assert.Equal("Rome - Peace", new DiplomacyRow("civ-7", "Rome", false, "Peace").Label);
+
+    [Fact]
+    public void InfoLinesShowOneTurnOneOfferAndEachBorderOnItsOwn()
+    {
+        Assert.Contains("Peace treaty: war is forbidden for 1 more turns", DiplomacyScreenModel.InfoLines(Panel(treaty: 1)));
+        Assert.DoesNotContain(DiplomacyScreenModel.InfoLines(Panel(treaty: 0)), it => it.StartsWith("Peace treaty", StringComparison.Ordinal));
+        Assert.Contains("They sent you 1 trade offer(s)", DiplomacyScreenModel.InfoLines(Panel(offersFromThem: 1)));
+        Assert.DoesNotContain(DiplomacyScreenModel.InfoLines(Panel(offersFromThem: 0)), it => it.StartsWith("They sent", StringComparison.Ordinal));
+        Assert.Equal(["Status: Peace", "Attitude: Neutral", "Your units may cross their borders"], DiplomacyScreenModel.InfoLines(Panel(openOurs: true)));
+        Assert.Equal(["Status: Peace", "Attitude: Neutral", "Their units may cross your borders"], DiplomacyScreenModel.InfoLines(Panel(openTheirs: true)));
+        Assert.Equal(["Status: Peace", "Attitude: Neutral", "Your offer waits for their answer"], DiplomacyScreenModel.InfoLines(Panel(offerFromUs: true)));
+    }
+
+    [Fact]
+    public void AQuestWithOneTurnLeftSaysSo() =>
+        Assert.Equal(["Route: Go (+5 influence, 1 turns left)"], DiplomacyScreenModel.QuestLines(new CityStateQuestsResult("Kyiv", [new QuestEntry("Route", "Go", false, 1, 5f, "")])));
+
+    [Fact]
+    public void ProtectionButtonFollowsThePanelNotTheRow()
+    {
+        var protectedPanel = DiplomacyScreenModel.Buttons(RomeRow(cityState: true, status: "Peace"), Panel("Protector", cityState: true), Actions(withdraw: true, pledge: true));
+        Assert.Contains(protectedPanel, it => it.Id == "WithdrawProtection");
+        Assert.DoesNotContain(protectedPanel, it => it.Id == "PledgeProtection");
+        var unprotected = DiplomacyScreenModel.Buttons(RomeRow(cityState: true, status: "Protector"), Panel("Peace", cityState: true), Actions(withdraw: true, pledge: true));
+        Assert.Contains(unprotected, it => it.Id == "PledgeProtection");
+        Assert.DoesNotContain(unprotected, it => it.Id == "WithdrawProtection");
+    }
+
+    [Fact]
+    public void OnlyWarDenounceAndRevokeNeedConfirmationAndEachHintSaysItsOwnThing()
+    {
+        var all = new List<DiplomacyButton>();
+        foreach (var (row, panel) in new[] { (RomeRow(), Panel()), (RomeRow(status: "War"), Panel("War")), (RomeRow(cityState: true), Panel(cityState: true)),
+            (RomeRow(cityState: true, status: "Protector"), Panel("Protector", cityState: true)), (RomeRow(cityState: true, status: "War"), Panel("War", cityState: true)) })
+            all.AddRange(DiplomacyScreenModel.Buttons(row, panel, Actions(true, true, true, true, true, true, true, true, 250)));
+        Assert.All(all, it => Assert.Equal(it.Kind is DiplomacyActionKind.DeclareWar or DiplomacyActionKind.Denounce or DiplomacyActionKind.WithdrawProtection, it.NeedsConfirm));
+        var hints = all.GroupBy(it => it.Kind).ToDictionary(it => it.Key, it => it.First().Hint);
+        Assert.Equal(hints.Count, hints.Values.Distinct().Count()); // one wording per kind
+        Assert.Contains("tribute", hints[DiplomacyActionKind.TributeGold], StringComparison.Ordinal);
+        Assert.Contains("worker", hints[DiplomacyActionKind.TributeWorker], StringComparison.Ordinal);
+        Assert.Contains("peace treaty", hints[DiplomacyActionKind.DeclareWar], StringComparison.Ordinal);
+    }
 }
