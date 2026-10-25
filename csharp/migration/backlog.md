@@ -2743,12 +2743,13 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Narrowed per design/CLIENT-SLICES.md. Verification: scenario unit-visuals golden, figure count equals tier rule.
 
 ### C005 Civ 5-style UI kit: theme, screen stack, popups, tooltip host
-- State: Available
+- State: In-Progress [Claude]
 - Depends: C007, C010
 - Scope: UiTheme from asset registry, ScreenManager (push/pop, Esc), PopupStack (modal queue), TooltipHost, ListPanel, IconLabel, TabBar, scroll lists, UI scale.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
   - Narrowed per design/CLIENT-SLICES.md; old shell items moved: top bar+turn banner C011, minimap C014, unit panel C012, city screen C017/C018, tech C019, policy C020, diplomacy C021/C022, notifications C013, tooltip content C027. Verification: scenario ui-kit.
 
+- Claimed: 2026-10-25T13:55Z
 ### C006 Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage
 - State: Available
 - Depends: T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036
