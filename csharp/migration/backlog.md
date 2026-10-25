@@ -2578,7 +2578,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Optional, lowest priority. Failure is non-fatal and reported in the Host screen; mapping removed on shutdown; no third-party dependency (ask via a ticket note if one is judged necessary). Manual forward and overlay VPN docs are the MVP path (T179).
 
 ### T208 Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync
-- State: In-Review [Claude]
+- State: Done
 - Depends: T167
 - Source: core/src/com/unciv/logic/GameInfo.kt (setTransients), civilization/diplomacy/DiplomacyManager.kt (updateHasOpenBorders), map/mapunit/MapUnit.kt (updateVisibleTiles), civilization/managers/BarbarianManager
 - Fixtures: none

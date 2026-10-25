@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 197/202 | 5 | 2 | 1 | [T208](backlog.md#t208-running-game-must-equal-its-own-save-load-make-transient-caches-vision-exploration-open-borders-flags--canonical-so-replayjoin-in-progress-cannot-desync) [T216](backlog.md#t216-kotlin-per-turn-golden-hashes-from-a-fixed-saved-map-sidesteps-unseeded-resource-shuffles) [T217](backlog.md#t217-kotlin-golden-run-with-a-mod-ruleset) [T218](backlog.md#t218-civstats-happiness-cache-is-not-restored-by-load-canonicalise-it-so-a-mid-turn-resolving-snapshot-reproduces-the-live-hash) [T219](backlog.md#t219-gameinfoclone-shares-state-trade-requests-etc-and-canonicalize-skips-remaining-jvm-hash-setsmaps-religion-beliefs-flag-maps-make-clone-playable-and-extend-soak) |
+| Phase 1: CLI (headless engine) | 198/202 | 4 | 4 | 0 | [T216](backlog.md#t216-kotlin-per-turn-golden-hashes-from-a-fixed-saved-map-sidesteps-unseeded-resource-shuffles) [T217](backlog.md#t217-kotlin-golden-run-with-a-mod-ruleset) [T218](backlog.md#t218-civstats-happiness-cache-is-not-restored-by-load-canonicalise-it-so-a-mid-turn-resolving-snapshot-reproduces-the-live-hash) [T219](backlog.md#t219-gameinfoclone-shares-state-trade-requests-etc-and-canonicalize-skips-remaining-jvm-hash-setsmaps-religion-beliefs-flag-maps-make-clone-playable-and-extend-soak) |
 | Phase 2: single player (Godot client) | 6/34 | 28 | 3 | 3 | [C002](backlog.md#c002-3d-hex-terrain-rendering-elevation-materials-water-depth) [C003](backlog.md#c003-resource-and-improvement-props) [C004](backlog.md#c004-unit-visuals-per-type-models-formations-status-icons) [C005](backlog.md#c005-civ-5-style-ui-kit-theme-screen-stack-popups-tooltip-host) [C011](backlog.md#c011-hud-top-bar-yields-turn-banner-next-action-button) [C012](backlog.md#c012-unit-panel-and-orders-attack-fortify-found-city-workers-automate) [C013](backlog.md#c013-notifications-and-popup-alerts) [C014](backlog.md#c014-minimap) [C015](backlog.md#c015-main-menu-and-game-setup-screen-nations-difficulty-speed-map-options) [C016](backlog.md#c016-saveload-screen-and-autosave) [C017](backlog.md#c017-city-screen-a-info-tiles-specialists-focus) [C018](backlog.md#c018-city-screen-b-production-queue-purchase-buildings) [C019](backlog.md#c019-tech-screen) [C020](backlog.md#c020-policy-screen) [C021](backlog.md#c021-diplomacy-screen) [C022](backlog.md#c022-trade-screen) [C023](backlog.md#c023-overview-screens-empire-cities-units-resources-ranking-religion-espionage) [C024](backlog.md#c024-victory-and-defeat-screen-game-over) [C025](backlog.md#c025-localization-translations-in-the-client-language-picker-non-latin-fonts) [C026](backlog.md#c026-tutorials) [C027](backlog.md#c027-tooltips-and-civilopedia) [C028](backlog.md#c028-options-screen-hotkeys-edge-pan) [C029](backlog.md#c029-hotseat-player-switch-screen) [C030](backlog.md#c030-placeholder-audio-uncivsound-to-generated-tones) [C031](backlog.md#c031-terrain-blending-fog-of-war-polish-chunked-meshes) [C032](backlog.md#c032-improvements-roads-cities-borders-and-in-world-yield-icons) [C033](backlog.md#c033-unit-animation-and-combat-presentation) [T169](backlog.md#t169-ci-for-the-c-solution-and-uncivgodot-headless-build-format-tests-coverage-check-exportpackaging-notes) |
 | Phase 3: multiplayer | 6/23 | 17 | 3 | 0 | [C006](backlog.md#c006-networked-play-client-join-screen-addressport--invite-tofu-prompt-reconnect-overlay-key-storage) [C034](backlog.md#c034-host-game-screen-lobby-settings-address-list-and-copy-invite-start-hosting-in-process-resume-saved-hosted-game) [C035](backlog.md#c035-lobby-screen-slots-nation-pick-ready-up-chat-kick-start-host-and-joiner-views) [C036](backlog.md#c036-multiplayer-turn-bar-who-has-ended-deadline-end-turn--undo-end-turn-turn-resolving-overlay-connection-markers) [T176](backlog.md#t176-game-store-snapshot--append-only-command-log-hash-checkpoints-crash-recovery-resume-delta-ring-or-snapshot) [T177](backlog.md#t177-turn-policy-for-simultaneous-turns-injected-clock-turn-timer-forceendturn-order-disconnect-grace-ai-takeover-opt-in-resolve-pump) [T178](backlog.md#t178-headless-host-core-uncivserver-project-gamehost-actor-sessions-bound-to-civs-command-gate-requireactive-rate-size-dedup-existence-oracle-safe-errors) [T179](backlog.md#t179-direct-connect-transport-tcp--tls-13-frames-behind-itransport-self-signed-host-key-invite-code-hostport-fingerprint-token-tofu-known-hosts-port-forward-and-overlay-vpn-docs) [T180](backlog.md#t180-client-network-library-uncivclientnet-clientsession-state-machine-mirror-state-delta-apply-command-retry-reconnectresume-no-godot-types) [T182](backlog.md#t182-multi-client-end-to-end-scripted-3-human--ai-game-over-in-memory-transport-killrestart-server-reconnect-hash-agreement) [T201](backlog.md#t201-current-player-readers-make-rules-civ-explicit-reassignpopulationdeferred-gift-action-cityviewcivview-gating-tutorial-hooks) [T202](backlog.md#t202-simultaneous-turn-commands-endturnundoendturnforceendturn-semantics-processendturnstartnextturn-server-commands-setcontroller-requireactive-gate-and-codes) [T203](backlog.md#t203-two-human-determinism-and-conflict-tests-interleaved-scriptedhumans-same-tile-moveattackfound-city-war-vs-peace-trade-races-replay-and-visibility) [T204](backlog.md#t204-lobby-slots-nation-pick-ready-up-host-settings-lobbysettings-to-gamesetupinfo-ai-fill-ruleset-hash-check-join-password-start-game) [T205](backlog.md#t205-in-process-host-run-gamehost-inside-the-client-host-button-loopback--tcp-listener-clean-shutdown-saves-the-game-resume-saved-game) [T206](backlog.md#t206-optional-lan-discovery-udp-broadcast-beacon-games-on-your-network) [T207](backlog.md#t207-optional-upnpnat-pmp-automatic-port-mapping-for-the-host) |
 
@@ -83,7 +83,6 @@ flowchart TD
     T205["T205<br/>In-process host: run GameHost inside the client (Host button..."]
     T206["T206<br/>Optional: LAN discovery (UDP broadcast beacon, 'Games on you..."]
     T207["T207<br/>Optional: UPnP/NAT-PMP automatic port mapping for the host"]
-    T208["T208<br/>Running game must equal its own save-)load: make transient c..."]
     T216["T216<br/>Kotlin per-turn golden hashes from a fixed saved map (sidest..."]
     T217["T217<br/>Kotlin golden run with a mod ruleset"]
     T218["T218<br/>Civ.Stats happiness cache is not restored by load: canonical..."]
@@ -167,8 +166,6 @@ flowchart TD
   T176 --> T205
   T179 --> T206
   T179 --> T207
-  T208 --> T218
-  T208 --> T219
   C002 --> C003
   C002 --> C004
   C010 --> C004
@@ -392,11 +389,10 @@ flowchart TD
   class T205 waiting
   class T206 waiting
   class T207 waiting
-  class T208 review
   class T216 ready
   class T217 ready
-  class T218 ondeck
-  class T219 ondeck
+  class T218 ready
+  class T219 ready
 ```
 
 ## Remaining tickets over time
@@ -415,7 +411,7 @@ xychart-beta
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
     line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 46]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 4]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 3]
 ```
 
 ## Incomplete tickets
@@ -430,6 +426,8 @@ xychart-beta
 | T201 | **Ready to start** | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T216 | **Ready to start** | T160 | 0 | Kotlin per-turn golden hashes from a fixed saved map (sidesteps unseeded resource shuffles) |
 | T217 | **Ready to start** | T160 | 0 | Kotlin golden run with a mod ruleset |
+| T218 | **Ready to start** | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
+| T219 | **Ready to start** | T208 | 0 | GameInfo.Clone() shares state (trade requests etc.) and Canonicalize skips remaining JVM hash sets/maps (religion beliefs, flag maps): make Clone playable and extend soak |
 | C011 | **On deck** (after C005) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | **On deck** (after C005) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
 | C003 | **On deck** (after C002) | C002 | 1 | Resource and improvement props |
@@ -446,8 +444,6 @@ xychart-beta
 | C026 | **On deck** (after C005) | C005, C010, T030, T049 | 0 | Tutorials |
 | C028 | **On deck** (after C005) | C005 | 0 | Options screen, hotkeys, edge-pan |
 | C031 | **On deck** (after C002) | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
-| T218 | **On deck** (after T208) | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
-| T219 | **On deck** (after T208) | T208 | 0 | GameInfo.Clone() shares state (trade requests etc.) and Canonicalize skips remaining JVM hash sets/maps (religion beliefs, flag maps): make Clone playable and extend soak |
 | C005 | In-Progress [Claude] | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T177 | Available (waiting on T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
@@ -455,7 +451,6 @@ xychart-beta
 | T204 | Available (waiting on T178) | T172, T173, T178, T199 | 7 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
 | C002 | In-Progress [Claude] | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | T180 | Available (waiting on T179, T204) | T172, T173, T174, T175, T179, T204 | 4 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
-| T208 | In-Review [Claude] | T167 | 2 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
 | C004 | Available (waiting on C002, C012) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
 | C035 | Available (waiting on C005, T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
 | C036 | Available (waiting on C011, T180, T202) | C010, C011, T180, T202, T175 | 1 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
