@@ -74,7 +74,14 @@ internal sealed class ConsoleTriggerAction(string topLevelCommand)
         {
             // Simplification: You either specify a fully formatted Unique as one parameter or the default text and a full set of replacements
             string[] values = [.. paramStack.Select(it => it.OriginalUnquoted())];
-            uniqueText = new CliInput(uniqueType.PlaceholderText().FillPlaceholders(values), CliInput.Method.Quoted);
+            try
+            {
+                uniqueText = new CliInput(uniqueType.PlaceholderText().FillPlaceholders(values), CliInput.Method.Quoted);
+            }
+            catch (ArgumentException ex) // a wrong number of values for the placeholders
+            {
+                throw new ConsoleErrorException(ex.Message);
+            }
         }
         var unique = new UniqueObject(uniqueText.Content, targetType, "DevConsole");
 

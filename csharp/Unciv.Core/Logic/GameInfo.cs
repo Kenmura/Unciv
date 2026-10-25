@@ -343,8 +343,25 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
     /// <summary>Removes <paramref name="civ"/> from the game and from the id lookup (dev console <c>civ remove</c>, <c>game remove-spectator</c>).</summary>
     public void RemoveCivilization(Civilization.Civilization civ)
     {
-        Civilizations.Remove(civ);
+        int removedIndex = Civilizations.IndexOf(civ);
+        if (removedIndex < 0) return;
+        Civilizations.RemoveAt(removedIndex);
         if (civMap.Value.TryGetValue(civ.CivId, out var mapped) && ReferenceEquals(mapped, civ)) civMap.Value.Remove(civ.CivId);
+
+        // Turn bookkeeping indexes into Civilizations (the next civ of a pending sequential turn, the scan start of a resolving round) and names civs by id
+        if (pendingPlayerIndex is { } pending)
+        {
+            if (removedIndex < pending) pending--;
+            // The pending civ was the last one: the round is over, exactly as AdvancePlayerIndex does
+            pendingPlayerIndex = pending >= Civilizations.Count ? AdvancePlayerIndex(Civilizations.Count - 1) : pending;
+        }
+        turnStartedCivs.Remove(civ.CivId);
+        if (TurnState is { } state)
+        {
+            if (removedIndex < state.Next) state.Next--;
+            state.Ended.RemoveAll(it => it == civ.CivId);
+            state.Started.RemoveAll(it => it == civ.CivId);
+        }
     }
 
     public Civilization.Civilization? GetCivilizationOrNull(string civId) =>

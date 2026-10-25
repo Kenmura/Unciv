@@ -498,7 +498,10 @@ public sealed class ConsoleCommandTests : IDisposable
             "tile setowner Atlantis", "tile addriver nowhere", "tile setterrain", "tile setterrain Ocean", "tile addfeature Nonsense", "tile setpillaged maybe",
             "game setturn 99999999999999999999", "game setturn x", "game setdifficulty", "diplomacy", "diplomacy declarewar", "diplomacy declarewar Babylon Babylon",
             "diplomacy declarewar Atlantis Rome", "civ setplayertype Babylon robot", "civ checkcountable \"", "civ checkcountable [", new string('a', 900),
-            "civ " + new string('a', 900), "civ addpolicy Babylon " + new string('\"', 500), "\0\0", "civ\taddstat\tgold\t1\n", "CIV ADDSTAT GOLD 1",
+            "civ " + new string('a', 900), "civ addpolicy Babylon " + new string('\"', 500),
+            "civ activatetrigger \"Gain [amount] [stat]\" 30", "civ activatetrigger \"Gain [amount] [stat]\" a b c d e", "civ activatetrigger \"Gain [20] [Gold]\" extra",
+            "civ activatetrigger \"\"", "civ activatetrigger \"[\"", "civ activatetrigger Atlantis \"Gain [20] [Gold]\"", "civ add", "civ add Atlantis", "civ remove", "civ remove Atlantis",
+            "civ remove Babylon", "game remove-spectator x", "tile find", "tile find \"", "\0\0", "civ\taddstat\tgold\t1\n", "CIV ADDSTAT GOLD 1",
         ];
         foreach (string line in lines)
         {
@@ -634,5 +637,137 @@ public sealed class ConsoleCommandTests : IDisposable
         string message = Rejected("tile find Land", CommandErrors.NotAllowed);
         Assert.StartsWith($"tile find [land]: {all.Count} matches: (", message, StringComparison.Ordinal);
         Assert.Equal("None found", Rejected("tile find land", CommandErrors.NotAllowed));
+    }
+
+    [Fact]
+    public void RemovingACivWhileASequentialTurnIsPendingKeepsTheTurnCycle()
+    {
+        var order = game.Civilizations.Select(it => it.CivId).ToList();
+        Assert.True(order.IndexOf("Greece") > 0);
+        Ok("civ add \"" + ruleset.Nations.Values.First(it => it.IsMajorCiv && game.Civilizations.All(c => c.Nation != it)).Name + "\"", new ConsoleSelection(FreeLandTileNextToCity().Position));
+        string victim = game.Civilizations.First(it => it.CivId != "Babylon" && it.CivId != "Greece" && game.Civilizations.IndexOf(it) < game.Civilizations.IndexOf(game.GetCivilization("Greece"))).CivId;
+        game.EndPlayerTurn(1000000, game.GetCivilization(game.CurrentPlayer));
+        var phase = game.TurnPhase;
+        var next = ((TurnPhase.AwaitingInput)phase).Civ.CivId;
+        var human = game.Civilizations.First(it => it.IsHuman() && it.CivId != victim).CivId;
+        var result = session.Submit(human, Line("civ remove " + victim));
+        Assert.True(result.Accepted, result.Validation.Message);
+        var after = Assert.IsType<TurnPhase.AwaitingInput>(game.TurnPhase);
+        Assert.Equal(next, after.Civ.CivId);
+    }
+
+    [Fact]
+    public void RemovingTheLastCivWhileItIsPendingWrapsTheRound()
+    {
+        var last = game.Civilizations[^1];
+        game.EndPlayerTurn(1000000, game.GetCivilization(game.CurrentPlayer));
+        // run the cycle until the last civ is the pending one
+        int turns = game.Turns;
+        var pendingPhase = game.TurnPhase;
+        while (!ReferenceEquals(PendingCiv(pendingPhase), last))
+        {
+            if (pendingPhase is TurnPhase.AutoPlayers) pendingPhase = game.RunAutoPlayers();
+            else
+            {
+                var civ = ((TurnPhase.AwaitingInput)pendingPhase).Civ;
+                game.BeginPlayerTurn(1000000);
+                game.EndPlayerTurn(1000000, civ);
+                pendingPhase = game.TurnPhase;
+            }
+        }
+        string actor = game.Civilizations.First(it => it.IsHuman() && it != last).CivId;
+        var result = session.Submit(actor, Line("civ remove " + last.CivId));
+        Assert.True(result.Accepted, result.Validation.Message);
+        Assert.Equal(turns + 1, game.Turns);
+        var after = game.TurnPhase;
+        Assert.Same(game.Civilizations[0], PendingCiv(after));
+    }
+
+    private static Civilization PendingCiv(TurnPhase phase) => phase switch
+    {
+        TurnPhase.AutoPlayers a => a.NextCiv,
+        TurnPhase.AwaitingInput w => w.Civ,
+        _ => throw new InvalidOperationException(phase.ToString()),
+    };
+
+    [Fact]
+    public void RemovingACivMidRoundOfASimultaneousGameKeepsTheResolution()
+    {
+        game.StartSimultaneousTurns();
+        game.EndHumanTurn(babylon);
+        var greece = game.GetCivilization("Greece");
+        game.EndHumanTurn(greece);
+        Assert.Contains("Babylon", game.TurnState!.Ended);
+        game.BeginResolving();
+        var first = Assert.IsType<ResolveStep.ProcessEndTurn>(game.NextResolveStep());
+        game.ProcessEndTurn(game.GetCivilization(first.CivId), 2000L);
+        string victim = game.Civilizations.First(it => it.CivId != "Babylon" && it.CivId != "Greece" && game.Civilizations.IndexOf(it) < game.TurnState.Next).CivId;
+        var expected = game.NextResolveStep();
+        int turns = game.Turns;
+        var human = game.Civilizations.First(it => it.IsHuman() && it.CivId != victim).CivId;
+        var result = session.Submit(human, Line("civ remove " + victim));
+        Assert.True(result.Accepted, result.Validation.Message);
+        Assert.Equal(expected, game.NextResolveStep());
+        while (game.NextResolveStep() is { } step)
+        {
+            switch (step)
+            {
+                case ResolveStep.ProcessEndTurn s: game.ProcessEndTurn(game.GetCivilization(s.CivId), 2000L); break;
+                case ResolveStep.RunAiTurn s: game.RunAiTurn(game.GetCivilization(s.CivId)); break;
+                case ResolveStep.StartNextTurn: game.StartNextTurn(); break;
+                case ResolveStep.BeginTurn s: game.BeginTurn(game.GetCivilization(s.CivId), 2000L); break;
+                default: throw new InvalidOperationException(step.ToString());
+            }
+        }
+        Assert.Equal(turns + 1, game.Turns);
+        Assert.True(game.IsTurnStarted(babylon) && game.IsTurnStarted(greece));
+    }
+
+    [Fact]
+    public void RemovingAnEndedHumanDropsItFromTheRoundState()
+    {
+        game.StartSimultaneousTurns();
+        game.EndHumanTurn(babylon);
+        game.RemoveCivilization(babylon);
+        Assert.DoesNotContain("Babylon", game.TurnState!.Ended);
+        Assert.DoesNotContain("Babylon", game.TurnState.Started);
+        Assert.False(game.IsTurnStarted(babylon));
+        game.EndHumanTurn(game.GetCivilization("Greece"));
+        Assert.True(game.AllHumansEnded());
+    }
+
+    [Fact]
+    public void NewConsoleCommandsReplayToTheSameState()
+    {
+        var setup = Setup(godMode: true);
+        var header = CommandLogHeader.Create(setup, 11L, 1000L);
+        var live = GameStarter.StartNewGame(setup, 11L, 1000L);
+        var liveSession = new GameSession(live);
+        var text = new StringWriter(CultureInfo.InvariantCulture);
+        var writer = new CommandLogWriter(text, header);
+        var start = live.GetCivilization("Babylon").Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder()).CurrentTile;
+        var spot = start.Neighbors.First(it => it.IsLand && it.GetFirstUnit() == null).Position;
+        var greeceTile = live.GetCivilization("Greece").Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder()).CurrentTile.Position;
+        Assert.True(liveSession.Submit("Babylon", new RunConsoleCommand { Line = "city add Greece", Tile = greeceTile }).Accepted);
+        string nation = ruleset.Nations.Values.First(it => it.IsMajorCiv && live.Civilizations.All(c => c.Nation != it)).Name;
+        string[] lines =
+        [
+            "game add-spectator", $"civ add \"{nation}\"", "civ activatetrigger \"Gain [20] [Gold]\"", "civ activatetrigger Greece \"Gain [amount] [stat]\" 30 Gold",
+            $"civ remove \"{nation}\"", "civ remove Greece", "game remove-spectator",
+        ];
+        foreach (string line in lines)
+        {
+            var result = liveSession.Submit("Babylon", new RunConsoleCommand { Line = line, Tile = spot });
+            Assert.True(result.Accepted, line + ": " + result.Validation.Message);
+        }
+        Assert.False(liveSession.Submit("Babylon", new RunConsoleCommand { Line = "tile find Land" }).Accepted);
+        writer.Sync(liveSession);
+        writer.WriteCheckpoint(liveSession.LastSeq, live.Turns, ReplayVerifier.FullHash(live));
+        var log = CommandLogReader.Read(text.ToString());
+        Assert.Equal(lines.Length + 1, log.Lines.Count(it => it is CommandLogLine.Command { Envelope.Type: "run-console-command" }));
+        var replay = ReplayVerifier.Verify(log);
+        Assert.True(replay.Matches, $"diverged at {replay.DivergedAtSeq}");
+        Assert.Equal(ReplayVerifier.FullHash(live), replay.FinalHash);
+        Assert.Null(replay.Game.GetCivilizationOrNull("Greece"));
     }
 }
