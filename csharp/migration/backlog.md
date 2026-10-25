@@ -2368,13 +2368,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Trap: GetGoldCostOfTile/CanBuyTile read Expansion state that has lazy caches; the purity test must run with a cold cache and a warm cache and compare. All numbers that Kotlin computes as Float for display (stats, percents) stay float in the DTO; round only where Kotlin rounds.
 
 ### T197 Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T185, T138
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/CivView.kt, ForeignCivView.kt, TradeView.kt, DiplomacyManagerView.kt; ui/screens/pickerscreens/*, diplomacyscreen/*, overviewscreen/*; csharp UI/EmpireOverviewCategories.cs, UI/RankingType.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Queries/Empire/{TechTreeQuery,PolicyTreeQuery,ReligionQuery,GreatPeopleQuery,DiplomacyPanelQuery,TradeOptionsQuery,NotificationsQuery,EmpireOverviewQuery}.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~Queries.Empire
-- Claimed:
+- Claimed: 2026-10-25T03:15Z
 - Notes:
   - Already in C#: CivView.ShouldOpenTechPicker / TurnsToTech / IsResearched / CanAdoptPolicy / GetBeliefsToChoose* / GetGreatPersonPoints* / GetHappinessBreakdown / CalculateScoreBreakdown, TradeView offers lists, ForeignCivView.GetResearchAgreementCost / GetStatForRanking. Missing: tech/policy tree states (researched, researchable, queued, locked; turns; unlocks via Civilopedia text), policy branch states (adoptable via PolicyManager.IsAdoptable, adopted, locked with the reason), available beliefs per type, free great person options, per-civ diplomacy panel (relationship level, modifiers, flags, what can be offered), trade options (TradeLogic Our/TheirAvailableOffers filtered by what is valid), notifications with serialisable actions.
       - Trade evaluation for a human: Kotlin has NONE (verified: diplomacyscreen never calls TradeEvaluation; the AI answers on its turn). A Civ 5-style 'would they accept' hint is a NEW feature: expose it as TradeHintQuery using TradeEvaluation.GetTradeAcceptability(trade, them, us) mapped to {accept, counter-needed, refuse} buckets (never the raw number), behind a game option, because it lets a player probe the AI valuation.
