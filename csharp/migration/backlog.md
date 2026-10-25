@@ -1897,7 +1897,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Implements PROTOCOL.md 'Green before Done': ticket.py state T### Done runs (or verifies a recent stamp of) build, format, test, coverage --check on the rebased tree and refuses on failure; also checks for stale TODO(T###) markers naming the ticket.
 
 ### T164 Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T012, T071, T100, T140, T011
 - Source: csharp/migration/COMMANDS.md; design/COMMANDS-IMPLEMENTATION.md sections 2 and 3; Unciv.Core/Commands skeleton
 - Fixtures: none
