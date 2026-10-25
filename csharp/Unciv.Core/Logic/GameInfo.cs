@@ -275,6 +275,8 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         };
         toReturn.Religions.PutAll(Religions.Select(it => new KeyValuePair<string, Religion>(it.Key, it.Value.Clone())));
         toReturn.CurrentPlayer = CurrentPlayer;
+        toReturn.pendingPlayerIndex = pendingPlayerIndex;
+        toReturn.turnStartedCivs.UnionWith(turnStartedCivs);
         toReturn.CurrentTurnStartTime = CurrentTurnStartTime;
         toReturn.Turns = Turns;
         toReturn.Difficulty = Difficulty;
@@ -620,6 +622,11 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
             CurrentPlayer = CurrentPlayerCiv.CivId;
         }
         else CurrentPlayerCiv = GetCivilization(CurrentPlayer);
+        if (pendingPlayerIndex == null) // a saved or new game always waits for its current player's input
+        {
+            turnStartedCivs.Clear();
+            turnStartedCivs.Add(CurrentPlayer);
+        }
 
         foreach (var religion in Religions.Values) religion.SetTransients(this);
 

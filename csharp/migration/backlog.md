@@ -2158,7 +2158,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - The SetPlayerSettings command itself is the domain commands ticket's job. Test fakes: FakeGameInfoState.PlayerSettingsByCiv.
 
 ### T184 Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T183, T102, T084
 - Source: core/src/com/unciv/logic/GameInfo.kt nextTurn/setNextPlayer; ui/screens/worldscreen/status/NextTurnAction.kt; ui/screens/worldscreen/AlertPopup.kt; logic/civilization/managers/TurnManager.kt; csharp Logic/GameInfoTurn.cs, View/CivView.cs; design/COMMANDS-IMPLEMENTATION.md section 5
 - Fixtures: none
@@ -2174,6 +2174,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - PendingDecisions.For(civ) is a pure query ordered like NextTurnAction: free great person, city with empty queue (not puppet), tech picker (CivView.ShouldOpenTechPicker), policy picker, move spies, found/expand pantheon, found/enhance/reform religion, world congress vote, then the soft ones (move automated units, due units) and popup alerts split into decision alerts (CityConquered, DiplomaticMarriage, demands, Event, RecapturedCivilian, DeclarationOfFriendship offer, WarDeclaration-style choices) vs informational ones. Each Decision names the command that resolves it. Blocking set = the NextTurnAction choices above NextUnit plus MoveAutomatedUnits.
       - Hotseat/spectator/defeated cases: keep ShouldAutoProcessHotseatPlayer / OnlinePlayer semantics exactly. Do not read UI state.
   - Simultaneous turns (design/SIMULTANEOUS-TURNS.md): make EndPlayerTurn(civ, now) and BeginPlayerTurn(civ, now) take the civ explicitly (default CurrentPlayerCiv), and make 'started' a per-civ fact, so T200 composes the simultaneous sequence without rewriting this API. No behaviour change in Sequential; PendingDecisions.For(civ) already per civ.
+  -   - Implemented (T184): TurnPhase (AwaitingInput/AutoPlayers/GameOver records), GameInfo.EndPlayerTurn/RunAutoPlayers/BeginPlayerTurn/TurnPhase in GameInfoTurnPhases.cs, NextTurn = the three (T102 hash equality test PhasedTurnsGiveTheSameHashesAsNextTurn; all T102 tests unchanged), PendingDecisions.For/BlockingFor + Decision/DecisionKind.
+      - Deviations from design 5.2: RunAutoPlayers(max, progressBar) takes no clock (nothing in the auto loop reads it); EndPlayerTurn/BeginPlayerTurn(now, civ = null, ...) take the civ as an optional trailing parameter. 'Started' is GameInfo.IsTurnStarted (non-serialised civ-id set, cloned, derived in SetTransients when no phase is pending). The between-phase state is a non-serialised GameInfo.pendingPlayerIndex (cloned). BeginPlayerTurn refuses a civ whose turn already began. Win-check break in the auto loop returns GameOver (if VictoryData) else AwaitingInput(civ) and Begin runs StartTurn again on that civ (Kotlin quirk kept).
+      - PendingDecisions: ResolvedBy strings 'move-automated-units', 'answer-alert', 'dismiss-alert', 'respond-trade-request' name commands that do not exist yet (future tickets). Choice alerts = CityConquered, DiplomaticMarriage, RecapturedCivilian, DeclarationOfFriendship, Event, WarDeclaration, BorderConflict, the four Demand* alerts; only CityConquered is Blocking. PromotableUnits kind not implemented (not in NextTurnAction); DueUnits always listed (UI setting checkForDueUnits not engine state). Spectators get an empty list.
 
 ### T185 Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test
 - State: Done

@@ -84,6 +84,27 @@ public sealed class EndToEndDeterminismTests : IDisposable
         Assert.Contains(game.Civilizations, it => it.Cities.Count > 0); // ... and the hashed state has cities in it
     }
 
+    // T184: NextTurn is EndPlayerTurn + RunAutoPlayers + BeginPlayerTurn; walking the phases by hand (one civ per call) must give the same hashes.
+    [Theory]
+    [InlineData(1L, 3)]
+    [InlineData(77L, 11)]
+    public void PhasedTurnsGiveTheSameHashesAsNextTurn(long gameSeed, int mapSeed)
+    {
+        var viaNextTurn = Play(NewGame(gameSeed, mapSeed), 12);
+        var game = NewGame(gameSeed, mapSeed);
+        var phased = new List<ulong>();
+        for (var i = 0; i < 12; i++)
+        {
+            game.SimulateUntilWin = true;
+            game.SimulateMaxTurns = game.Turns + 1;
+            game.EndPlayerTurn(2000L);
+            while (game.RunAutoPlayers() is TurnPhase.AutoPlayers) { }
+            game.BeginPlayerTurn(2000L);
+            phased.Add(Hash(game));
+        }
+        Assert.Equal(viaNextTurn, phased);
+    }
+
     [Fact]
     public void DifferentSeedsDiverge()
     {

@@ -30,121 +30,26 @@ public partial class GameInfo
         }
     }
 
+    // T184: NextTurn re-expressed on the phases of GameInfoTurnPhases.cs. Between EndPlayerTurn and BeginPlayerTurn this is the index of the
+    // civ whose turn comes next (null while a human's turn is running). Not serialized: a saved game is always at "awaiting input".
+    private int? pendingPlayerIndex;
+
+    // The civs whose turn has begun (BeginPlayerTurn) and not yet ended. Not serialized: SetTransients derives it. Kotlin has no such state - the
+    // first human turn of a new game is "started" by convention, since GameStarter never calls TurnManager. Membership only, never iterated.
+    private readonly HashSet<string> turnStartedCivs = new(StringComparer.Ordinal);
+
     /// <summary>
-    /// Advance a turn, running automation for AI players, stopping for human players
+    /// Advance a turn, running automation for AI players, stopping for human players.
+    /// Exactly <see cref="EndPlayerTurn"/>, then <see cref="RunAutoPlayers"/> one civ at a time, then <see cref="BeginPlayerTurn"/>.
     /// </summary>
     /// <param name="nowMillis">The current time, epoch milliseconds (Kotlin reads the wall clock).</param>
     /// <param name="progressBar">Optional progress callback, or <c>null</c> when simulating</param>
     /// <param name="shouldGainTime">on a multiplayer game, if true, makes the player whose turn is ended recover time to play before risking getting forced to resign, 'false' by default</param>
     public void NextTurn(long nowMillis, Action? progressBar = null, bool shouldGainTime = false)
     {
-        var player = CurrentPlayerCiv;
-        var playerIndex = Civilizations.IndexOf(player);
-
-        if (player.IsHuman() && player.IsAlive())
-        {
-            var elapsedSeconds = (nowMillis - CurrentTurnStartTime) / 1000;
-            player.TotalTurnTimeSeconds = unchecked(player.TotalTurnTimeSeconds + (int)elapsedSeconds);
-            player.TurnsPlayedAsHuman++;
-        }
-
-        if (GameParameters.IsOnlineMultiplayer) UpdateMinutesBeforeForceResign(player, shouldGainTime, nowMillis);
-
-        // We rotate Players in cycle: 1,2...N,1,2...
-        void SetNextPlayer()
-        {
-            playerIndex = (playerIndex + 1) % Civilizations.Count;
-            if (playerIndex == 0)
-            {
-                RecordRankingStats();
-                Turns++;
-                if (EngineOptions.SimulateUntilTurn != 0)
-                    Log.Debug("Starting simulation of turn %s", Turns);
-            }
-            player = Civilizations[playerIndex];
-        }
-
-        // Ending current player's turn
-        //  (Check is important or else switchTurn
-        //  would skip a turn if an AI civ calls nextTurn
-        //  this happens when resigning a multiplayer game)
-        if (player.IsHuman())
-        {
-            new TurnManager(player).EndTurn(progressBar);
-            SetNextPlayer();
-        }
-
-        var isOnline = GameParameters.IsOnlineMultiplayer;
-
-        // Skip the player if we are playing hotseat
-        // If all hotseat players are defeated then skip all but the first one
-        bool ShouldAutoProcessHotseatPlayer() =>
-            !isOnline &&
-            player.IsDefeated() && (Civilizations.Any(it => it.IsHuman() && it.IsAlive())
-                || Civilizations.First(it => it.IsHuman()) != player);
-
-        // Skip all spectators and defeated players
-        // If all players are defeated then let the first player control next turn
-        bool ShouldAutoProcessOnlinePlayer() =>
-            isOnline && (player.IsSpectator() || (player.IsDefeated() &&
-                (Civilizations.Any(it => it.IsHuman() && it.IsAlive())
-                    || Civilizations.First(it => it.IsHuman()) != player)));
-
-        // We process player automatically if:
-        while (IsSimulation()                       // simulation is active
-               || player.IsAI()                     // or player is AI
-               || ShouldAutoProcessHotseatPlayer()  // or a player is defeated in hotseat
-               || ShouldAutoProcessOnlinePlayer())  // or player is online spectator
-        {
-            // Starting preparations
-            new TurnManager(player).StartTurn(progressBar);
-
-            // Automation done here
-            new TurnManager(player).AutomateTurn();
-
-            var autoPlay = ClientState.AutoPlay;
-            // Do we need to break if player won?
-            if (SimulateUntilWin && (player.VictoryManager.HasWon() || (SimulateMaxTurns >= 1 && SimulateMaxTurns <= Turns)
-                    || GetAliveMajorCivs().Count == 0))
-            {
-                SimulateUntilWin = false;
-                SimulateMaxTurns = 0;
-                autoPlay?.StopAutoPlay();
-                break;
-            }
-
-            // Do we need to stop AutoPlay?
-            if (autoPlay != null && autoPlay.IsAutoPlaying() && player.VictoryManager.HasWon() && !OneMoreTurnMode)
-                autoPlay.StopAutoPlay();
-
-            // Clean up
-            new TurnManager(player).EndTurn(progressBar);
-
-            // To the next player
-            SetNextPlayer();
-        }
-
-        if (Turns == EngineOptions.SimulateUntilTurn)
-            EngineOptions.SimulateUntilTurn = 0;
-
-        // We found a human player, so we are making them current
-        CurrentTurnStartTime = nowMillis;
-        CurrentPlayer = player.CivId;
-        CurrentPlayerCiv = player;
-
-        // Starting their turn
-        new TurnManager(player).StartTurn(progressBar);
-
-        // No popups for spectators
-        if (CurrentPlayerCiv.IsSpectator())
-            CurrentPlayerCiv.PopupAlerts.Clear();
-
-        // Start our turn immediately before the player can make decisions - affects
-        // whether our units can commit automated actions and then be attacked immediately etc.
-        NotifyOfCloseEnemyUnits(player);
-
-        // This would belong at the end of TurnManager.startTurn, but needs to come after notifyOfCloseEnemyUnits
-        player.NotificationCountAtStartTurn = player.Notifications.Count;
+        EndPlayerTurn(nowMillis, progressBar: progressBar, shouldGainTime: shouldGainTime);
+        while (RunAutoPlayers(1, progressBar) is TurnPhase.AutoPlayers) { }
+        BeginPlayerTurn(nowMillis, progressBar: progressBar);
     }
 
     private void UpdateMinutesBeforeForceResign(Civilization.Civilization player, bool shouldGainTime, long nowMillis)

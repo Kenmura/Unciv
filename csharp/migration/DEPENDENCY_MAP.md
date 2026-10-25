@@ -451,7 +451,7 @@ flowchart TD
   class T181 waiting
   class T182 waiting
   class T183 done
-  class T184 prog
+  class T184 review
   class T185 done
   class T186 done
   class T187 ondeck
@@ -522,7 +522,7 @@ xychart-beta
 | T200 | **On deck** (after T184) | T184 | 16 | Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep |
 | T212 | **On deck** (after T174) | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
 | T174 | Needs-Review [Claude] | T172, T084, T085, T138, T140 | 44 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
-| T184 | In-Progress [Claude] | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
+| T184 | Needs-Review [Claude] | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | C010 | Available (waiting on C009, T184, T187, T174, T175) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | C005 | Available (waiting on C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T194 | Available (waiting on T187) | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
