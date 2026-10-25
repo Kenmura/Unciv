@@ -1,6 +1,7 @@
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
+using Unciv.Logic.Trade;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
@@ -139,14 +140,67 @@ internal static class ConsoleCivCommands
         // Remove tile references outside territory
         foreach (var tile in game.TileMap.TileList)
             if (ReferenceEquals(tile.GetRoadOwner(), civ)) tile.RemoveRoadOwner();
+        ForgetReferences(game, civ); // needs the victim still resolvable
         game.RemoveCivilization(civ);
         // Make other civs forget the victim and recall spies
         foreach (var otherCiv in game.Civilizations)
         {
             otherCiv.Diplomacy.Remove(civ.CivId);
+            otherCiv.Proximity.Remove(civ.CivId);
             if (otherCiv.IsCityState) otherCiv.QuestManager.RemoveQuestsFor(civ);
             otherCiv.EspionageManager.RecallAllSpiesFrom(civ);
         }
+    }
+
+    /// <summary>Alerts whose <c>Value</c> names civs (one id, or two joined by '@'); the other alert values are wonder, tech, city or text names.</summary>
+    private static bool IsCivValued(AlertType type) => type is
+        AlertType.Defeated or AlertType.WarDeclaration or AlertType.FirstContact or AlertType.BorderConflict or AlertType.TilesStolen
+        or AlertType.DemandToStopSettlingCitiesNear or AlertType.CitySettledNearOtherCivDespiteOurPromise
+        or AlertType.DemandToStopSpreadingReligion or AlertType.ReligionSpreadDespiteOurPromise
+        or AlertType.DemandToStopSpyingOnUs or AlertType.SpyingOnUsDespiteOurPromise
+        or AlertType.DemandToNotAttackUs or AlertType.AttackedUsDespitePromise
+        or AlertType.AcceptingDemand or AlertType.RejectingDemand or AlertType.DeclarationOfFriendship
+        or AlertType.BulliedProtectedMinor or AlertType.AttackedProtectedMinor or AlertType.AttackedAllyMinor or AlertType.Denounced;
+
+    /// <summary>
+    /// Removes everything outside the victim that names it by id and would be looked up later (a lookup of a removed civ throws, and the game stays
+    /// stuck): trade requests and trades from or naming it, popup alerts, city founders, unit original owners, its religions, its war-with-major
+    /// quests, diplomatic votes and ally links. Kotlin leaves them (its id lookup cache never forgets the civ until the next load).
+    /// </summary>
+    private static void ForgetReferences(GameInfo game, CivilizationObject civ)
+    {
+        var id = civ.CivId;
+        static bool Names(Trade trade, string civId) =>
+            trade.OurOffers.Concat(trade.TheirOffers).Any(it => it.Name == civId
+                && it.Type is TradeOfferType.Introduction or TradeOfferType.WarDeclaration or TradeOfferType.PeaceProposal);
+
+        var religions = game.Religions.Values.Where(it => it.FoundingCivName == id).Select(it => it.Name).ToList();
+        foreach (var other in game.Civilizations)
+        {
+            if (ReferenceEquals(other, civ)) continue;
+            other.TradeRequests.RemoveAll(it => it.RequestingCiv == id || Names(it.Trade, id));
+            foreach (var diplomacy in other.Diplomacy.Values) diplomacy.Trades.RemoveAll(it => Names(it, id));
+            other.PopupAlerts.RemoveAll(it => IsCivValued(it.Type) && (it.Value.Split('@').Contains(id) || it.Value.Split('@').Contains(civ.CivName)));
+            if (other.AllyCiv != null && ReferenceEquals(other.AllyCiv, civ)) other.AllyCiv = null;
+            foreach (var city in other.Cities)
+            {
+                if (ReferenceEquals(city.FoundingCivObject, civ))
+                {
+                    // As when a city-state is annexed (CityStateFunctions): no founder, so no original capital either (Victory needs a founder for those)
+                    city.FoundingCivObject = null;
+                    city.IsOriginalCapital = false;
+                }
+                foreach (var religion in religions) city.Religion.ForgetReligion(religion);
+            }
+            foreach (var unit in other.Units.GetCivUnits())
+            {
+                if (unit.OriginalOwner == id) unit.ClearOriginalOwner();
+                if (unit.Religion != null && religions.Contains(unit.Religion)) unit.Religion = null;
+            }
+        }
+        foreach (var religion in religions) game.Religions.Remove(religion);
+        foreach (var vote in game.DiplomaticVictoryVotesCast.ToList())
+            if (vote.Key == id || vote.Value == id) game.DiplomaticVictoryVotesCast.Remove(vote.Key);
     }
 
     // Kotlin findCliInput<Policy>: yes this also finds PolicyBranch instances

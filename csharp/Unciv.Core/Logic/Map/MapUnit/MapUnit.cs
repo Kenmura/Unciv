@@ -192,6 +192,14 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     [JsonIgnore]
     public MapUnitCache Cache { get; set; }
 
+    /// <summary>Forgets the original owner (dev console <c>civ remove</c>: that civ is gone).</summary>
+    public void ClearOriginalOwner()
+    {
+        OriginalOwner = null;
+        originalOwningCiv = null;
+        originalOwningCivResolved = true;
+    }
+
     private Civilization.Civilization? originalOwningCiv;
     private bool originalOwningCivResolved;
     /// <summary>

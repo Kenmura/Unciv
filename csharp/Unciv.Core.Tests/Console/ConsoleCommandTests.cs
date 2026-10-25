@@ -10,10 +10,13 @@ using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapGenerator;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.Trade;
+using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
+using MapUnitObject = Unciv.Logic.Map.MapUnits.MapUnit;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Core.Tests.DevConsole;
@@ -819,6 +822,97 @@ public sealed class ConsoleCommandTests : IDisposable
         Assert.False(game.IsTurnStarted(babylon));
         game.EndHumanTurn(game.GetCivilization("Greece"));
         Assert.True(game.AllHumansEnded());
+    }
+
+    // Everything that names Rome by id outside Rome: a removed civ is no longer resolvable, so each of these used to throw on a later turn (or never clear).
+    private MapUnitObject PoisonWithRome(Civilization rome)
+    {
+        var greece = game.GetCivilization("Greece");
+        greece.DiplomacyFunctions.MakeCivilizationsMeet(babylon);
+        var request = new Trade();
+        request.TheirOffers.Add(new TradeOffer("Embassy", TradeOfferType.Embassy));
+        greece.TradeRequests.Add(new TradeRequest("Rome", request));
+        var naming = new Trade();
+        naming.OurOffers.Add(new TradeOffer("Rome", TradeOfferType.WarDeclaration));
+        babylon.TradeRequests.Add(new TradeRequest("Greece", naming)); // a third civ's request that mentions Rome
+        var naming2 = new Trade();
+        naming2.TheirOffers.Add(new TradeOffer("Rome", TradeOfferType.Introduction));
+        babylon.GetDiplomacyManager(greece)!.Trades.Add(naming2);
+        greece.AddPopupAlert(new PopupAlert(AlertType.WarDeclaration, "Rome"));
+        greece.AddPopupAlert(new PopupAlert(AlertType.DeclarationOfFriendship, "Rome"));
+        greece.AddPopupAlert(new PopupAlert(AlertType.AttackedProtectedMinor, "Rome@Babylon"));
+        greece.AddPopupAlert(new PopupAlert(AlertType.GoldenAge, ""));
+        babylon.AddPopupAlert(new PopupAlert(AlertType.DemandToStopSpyingOnUs, "Rome"));
+        city.FoundingCivObject = rome;
+        var unit = greece.Units.GetCivUnits().First();
+        unit.OriginalOwner = "Rome";
+        var religion = new Religion("Romanism", game, rome, 1);
+        game.Religions["Romanism"] = religion;
+        city.Religion.AddPressure("Romanism", 100);
+        city.Religion.ReligionThisIsTheHolyCityOf = "Romanism";
+        unit.Religion = "Romanism";
+        game.DiplomaticVictoryVotesCast["Greece"] = "Rome";
+        game.DiplomaticVictoryVotesCast["Rome"] = "Greece";
+        return unit;
+    }
+
+    private void PlaySequentialTurns(int turns)
+    {
+        int target = game.Turns + turns;
+        game.EndPlayerTurn(1000000, game.GetCivilization(game.CurrentPlayer));
+        var phase = game.TurnPhase;
+        while (game.Turns < target)
+        {
+            if (phase is TurnPhase.AutoPlayers) phase = game.RunAutoPlayers();
+            else
+            {
+                var civ = ((TurnPhase.AwaitingInput)phase).Civ;
+                game.BeginPlayerTurn(1000000);
+                game.EndPlayerTurn(1000000, civ);
+                phase = game.TurnPhase;
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RemovingACivThatNamesItselfInOtherCivsStateLeavesTheGamePlayable(bool simultaneous)
+    {
+        var rome = game.GetCivilization("Rome");
+        var unit = PoisonWithRome(rome);
+        var greece = game.GetCivilization("Greece");
+        if (simultaneous) game.StartSimultaneousTurns();
+        Ok("civ remove Rome");
+        Assert.Empty(greece.TradeRequests);
+        Assert.Empty(babylon.TradeRequests);
+        Assert.Empty(babylon.GetDiplomacyManager(greece)!.Trades);
+        Assert.DoesNotContain(greece.PopupAlerts, it => it.Value.Contains("Rome", StringComparison.Ordinal));
+        Assert.Contains(greece.PopupAlerts, it => it.Type == AlertType.GoldenAge);
+        Assert.DoesNotContain(babylon.PopupAlerts, it => it.Type == AlertType.DemandToStopSpyingOnUs);
+        Assert.Null(city.FoundingCivObject);
+        Assert.False(city.IsOriginalCapital);
+        Assert.Null(unit.OriginalOwner);
+        Assert.Null(unit.Religion);
+        Assert.DoesNotContain("Romanism", game.Religions.Keys);
+        Assert.Equal(0, city.Religion.GetFollowersOf("Romanism"));
+        Assert.Null(city.Religion.ReligionThisIsTheHolyCityOf);
+        Assert.Empty(game.DiplomaticVictoryVotesCast);
+        for (int round = 0; round < 2; round++)
+        {
+            int turns = game.Turns;
+            if (simultaneous)
+            {
+                game.EndHumanTurn(babylon);
+                game.EndHumanTurn(greece);
+                game.BeginResolving();
+                ResolveRound();
+            }
+            else PlaySequentialTurns(1);
+            Assert.Equal(turns + 1, game.Turns);
+        }
+        var loaded = UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(game, forceZip: false));
+        Assert.Equal(Hash(game), Hash(loaded));
     }
 
     [Fact]

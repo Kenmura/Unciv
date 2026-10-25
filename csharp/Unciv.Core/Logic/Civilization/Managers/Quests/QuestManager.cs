@@ -173,6 +173,9 @@ public class QuestManager : IsPartOfGameInfoSerialization
     {
         RemoveAll(GetAssignedQuestsFor(civ).ToList());
         individualQuestCountdown.Remove(civ.CivId);
+        unitsToKillForCiv.Remove(civ.CivId);
+        unitsKilledFromCiv.Remove(civ.CivId);
+        foreach (var killed in unitsKilledFromCiv.Values) killed.Remove(civ.CivId);
     }
 
     public void HandleObsoleteGlobalQuests()
