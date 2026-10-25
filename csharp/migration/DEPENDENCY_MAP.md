@@ -18,7 +18,6 @@ flowchart TD
     T012["T012<br/>Command layer design"]
     T091["T091<br/>Civilian automation: CivilianUnitAutomation, SpecificUnitAut..."]
     T092["T092<br/>Worker and road automation: WorkerAutomation, RoadBetweenCit..."]
-    T104["T104<br/>Marker, seam and stale-comment sweep (final)"]
     T160["T160<br/>Kotlin golden state hashes and mod ruleset for the end-to-en..."]
     T161["T161<br/>Close known coverage gaps: UnitAutomation TryRetreat swap an..."]
     T162["T162<br/>Coverage baselines for Era.cs, Terrain.cs, CollectionExtensi..."]
@@ -47,9 +46,6 @@ flowchart TD
     A006["A006<br/>Homeland AI priority move queue"]
     A007["A007<br/>Operations and armies layer"]
   end
-  T104 --> T163
-  T104 --> T170
-  T104 --> T171
   C001 --> C002
   A003 --> C002
   A004 --> C002
@@ -92,19 +88,18 @@ flowchart TD
   class T012 done
   class T091 done
   class T092 done
-  class T104 review
   class T160 ready
   class T161 ready
   class T162 ready
-  class T163 ondeck
+  class T163 ready
   class T164 blocked
   class T165 blocked
   class T166 ready
   class T167 ready
   class T168 ready
   class T169 ready
-  class T170 ondeck
-  class T171 ondeck
+  class T170 ready
+  class T171 ready
 ```
 
 ## Remaining tickets over time
@@ -123,7 +118,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 20]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 2]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 1]
 ```
 
 ## Incomplete tickets
@@ -133,19 +128,18 @@ xychart-beta
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
+| T163 | **Ready to start** | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
 | T166 | **Ready to start** | A003 | 0 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
 | T167 | **Ready to start** | T102 | 0 | L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage |
 | T168 | **Ready to start** | T099, T100, T102 | 0 | Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
+| T170 | **Ready to start** | T104 | 0 | Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods) |
+| T171 | **Ready to start** | T104 | 0 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
 | A005 | **On deck** (after A004) | A004 | 5 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | **On deck** (after A004) | A004, T091, T092 | 4 | Homeland AI priority move queue |
-| T163 | **On deck** (after T104) | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
-| T170 | **On deck** (after T104) | T104 | 0 | Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods) |
-| T171 | **On deck** (after T104) | T104 | 0 | Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger) |
 | A004 | In-Progress [Claude] | A001, T039, T040, T065, T067, T081, T090 | 7 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | A007 | Available (waiting on A004, A005) | A004, A005 | 4 | Operations and armies layer |
 | C002 | Available (waiting on A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
-| T104 | Needs-Review [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 3 | Marker, seam and stale-comment sweep (final) |
 | T164 | Blocked | T012, T071, T083, T080, T100 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
 | T165 | Blocked | T012, T100 | 1 | Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers) |
 | C003 | Available (waiting on C002) | C002 | 0 | Resource and improvement props |
