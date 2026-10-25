@@ -493,6 +493,7 @@
     "Unciv.Core/Net/Visibility/PrivateSpies.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Visibility/SnapshotBuilder.cs": {"branch": 95.35, "line": 99.17},
     "Unciv.Core/Net/Visibility/ViewDeltaBuilder.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Net/Visibility/ViewerEventFilter.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Queries/Cities/BuyableTilesQuery.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Queries/Cities/CityPanelQuery.cs": {"branch": 66.67, "line": 100.0},
     "Unciv.Core/Queries/Cities/CityQueryHelpers.cs": {"branch": 100.0, "line": 100.0},

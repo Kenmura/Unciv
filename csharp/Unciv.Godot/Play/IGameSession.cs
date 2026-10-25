@@ -9,6 +9,12 @@ namespace Unciv.GodotClient.Play;
 public sealed record SubmitResult(bool Accepted, string Message, IReadOnlyList<GameEvent> Events);
 
 /// <summary>
+/// One batch of events the viewer may see (already filtered for the viewer). <see cref="Seq"/> is the sequence number of the command that produced them;
+/// a consumer that sees a gap in the sequence it has been given has missed events and must call <see cref="IGameSession.ResyncAsync"/>.
+/// </summary>
+public sealed record EventBatch(long Seq, IReadOnlyList<GameEvent> Events);
+
+/// <summary>
 /// What one End turn did. <see cref="AiTurnsRun"/> and <see cref="NextTurnBegun"/> are informational: a remote session that cannot tell reports 0 / false.
 /// </summary>
 public sealed record TurnOutcome(bool Accepted, string Message, int AiTurnsRun, bool NextTurnBegun, IReadOnlyList<GameEvent> Events);
@@ -19,6 +25,10 @@ public sealed record TurnOutcome(bool Accepted, string Message, int AiTurnsRun, 
 /// through <see cref="QueryAsync{TResult}"/>, and changes the game only by <see cref="SubmitAsync"/>. It never sees a GameInfo, a clock, a seed or
 /// another civ's private state. Everything that can take time is a Task, so the remote implementation (T180 ClientSession) slots in without changing callers;
 /// the local one completes synchronously. A source-policy test keeps GameInfo out of the rest of Unciv.Godot.
+/// <para>Async error contract: a command or query the host refuses is a <b>result</b> (<see cref="SubmitResult.Accepted"/> false, <see cref="TurnOutcome.Accepted"/>
+/// false, a null query result), never an exception. A <b>transport failure</b> (connection lost, timeout, protocol violation) faults the returned Task with an
+/// exception, which callers must observe and show; they must not drop the Task. Events are filtered to what the viewer may see before they reach
+/// <see cref="EventsReceived"/>, <see cref="SubmitResult.Events"/> and <see cref="TurnOutcome.Events"/>.</para>
 /// </summary>
 public interface IGameSession
 {
@@ -34,8 +44,14 @@ public interface IGameSession
     /// <summary>Raised after <see cref="Snapshot"/> was replaced, with the new value.</summary>
     event Action<ClientSnapshot>? SnapshotChanged;
 
-    /// <summary>Raised for every batch of engine events the viewer may see (own commands, other civs' turns, server commands), in order.</summary>
-    event Action<IReadOnlyList<GameEvent>>? EventsReceived;
+    /// <summary>Raised for every batch of engine events the viewer may see (own commands, other civs' turns, server commands), in order, numbered by command sequence.</summary>
+    event Action<EventBatch>? EventsReceived;
+
+    /// <summary>Raised when the session knows its mirror may be out of date (event sequence gap, reconnect) with a reason; the session then resyncs by itself or the client calls <see cref="ResyncAsync"/>.</summary>
+    event Action<string>? Desynchronized;
+
+    /// <summary>Replaces <see cref="Snapshot"/> with a fresh full snapshot of the viewer's view (raising <see cref="SnapshotChanged"/>). Faults on transport failure.</summary>
+    Task ResyncAsync();
 
     /// <summary>A preview question as the viewer. A refused query (unknown unit, unexplored target) completes with null, never throws.</summary>
     Task<TResult?> QueryAsync<TResult>(IQuery<TResult> query) where TResult : class;

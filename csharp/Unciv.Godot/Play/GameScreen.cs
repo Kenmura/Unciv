@@ -174,14 +174,14 @@ public partial class GameScreen : Control
             return;
         }
         if (SelectedUnitId == null) return;
-        if (PreviewTarget == tile) _ = MoveSelectedTo();
-        else _ = ShowPreview(tile);
+        if (PreviewTarget == tile) Run(MoveSelectedTo());
+        else Run(ShowPreview(tile));
     }
 
     private void OnTileRightClicked(HexCoord? coord)
     {
         if (coord is not { } tile || SelectedUnitId == null) return;
-        _ = RightClickMove(tile);
+        Run(RightClickMove(tile));
     }
 
     private async Task RightClickMove(HexCoord tile)
@@ -286,7 +286,7 @@ public partial class GameScreen : Control
         SetStatus(DescribeSelected());
     }
 
-    private void OnNextTurn() => _ = EndTurn();
+    private void OnNextTurn() => Run(EndTurn());
 
     private async Task EndTurn()
     {
@@ -295,6 +295,20 @@ public partial class GameScreen : Control
         SetStatus(outcome.Accepted
             ? $"Turn {snapshot.Turn.ToString(CultureInfo.InvariantCulture)}: {outcome.AiTurnsRun.ToString(CultureInfo.InvariantCulture)} civ(s) played, {outcome.Events.Count.ToString(CultureInfo.InvariantCulture)} event(s)."
             : "Cannot end the turn: " + outcome.Message);
+    }
+
+    /// <summary>Observes a UI-triggered Task: a transport failure of the session (IGameSession error contract) is logged and shown instead of vanishing.</summary>
+    private async void Run(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch (Exception e)
+        {
+            GD.PushError("Session call failed: " + e);
+            SetStatus("Connection problem: " + e.Message);
+        }
     }
 
     private void SetStatus(string text) => statusLabel.Text = text;

@@ -19,12 +19,14 @@ public sealed class LocalHost : IGameSession
 {
     private readonly GameSession session;
     private readonly Func<long> clock;
+    private readonly ViewerEventFilter eventFilter;
 
     public LocalHost(GameSession session, string humanCivId, Func<long> clock)
     {
         this.session = session;
         this.clock = clock;
         ViewerCivId = humanCivId;
+        eventFilter = new ViewerEventFilter(session.Game, humanCivId);
         Snapshot = BuildSnapshot();
     }
 
@@ -36,7 +38,22 @@ public sealed class LocalHost : IGameSession
 
     public event Action<ClientSnapshot>? SnapshotChanged;
 
-    public event Action<IReadOnlyList<GameEvent>>? EventsReceived;
+    public event Action<EventBatch>? EventsReceived;
+
+    // A local session shares the engine's memory, so it can never miss a batch or lose a connection: it never raises this.
+    // TODO(T180): the network ClientSession raises it on a sequence gap or reconnect and then resyncs from a snapshot.
+    public event Action<string>? Desynchronized
+    {
+        add { }
+        remove { }
+    }
+
+    public Task ResyncAsync()
+    {
+        Snapshot = BuildSnapshot();
+        SnapshotChanged?.Invoke(Snapshot);
+        return Task.CompletedTask;
+    }
 
     public Task<TResult?> QueryAsync<TResult>(IQuery<TResult> query) where TResult : class
     {
@@ -58,21 +75,26 @@ public sealed class LocalHost : IGameSession
     private ClientSnapshot BuildSnapshot()
     {
         var game = session.Game;
+        // Stopgap owned by C036: the multiplayer TurnStatus (who has ended, deadline); single player only ever shows this "Playing" placeholder.
         return SnapshotBuilder.Build(game, game.GetCivilization(ViewerCivId), session.LastSeq, new TurnStatusDto { Ended = [], Phase = "Playing" });
     }
 
-    private void Publish(IReadOnlyList<GameEvent> events)
+    // TODO(T180): a full snapshot is rebuilt after every accepted command; the network session applies ViewDeltas to its mirror instead.
+    private IReadOnlyList<GameEvent> Publish(CommandResult result, ViewDeltaBuilder.ViewMark before)
     {
+        var visible = eventFilter.Filter(before, result.Events);
         Snapshot = BuildSnapshot();
         SnapshotChanged?.Invoke(Snapshot);
-        EventsReceived?.Invoke(events);
+        EventsReceived?.Invoke(new EventBatch(result.Seq, visible));
+        return visible;
     }
 
     private SubmitResult Submit(GameCommand command)
     {
+        var before = eventFilter.Mark();
         var result = session.Submit(ViewerCivId, command);
-        if (result.Accepted) Publish(result.Events);
-        return new SubmitResult(result.Accepted, result.Validation.Message, result.Events);
+        var visible = result.Accepted ? Publish(result, before) : [];
+        return new SubmitResult(result.Accepted, result.Validation.Message, visible);
     }
 
     /// <summary>Ends the human's turn and plays everything up to the human's next turn (or the end of the game).</summary>
@@ -87,7 +109,7 @@ public sealed class LocalHost : IGameSession
         while (session.Game.TurnPhase is TurnPhase.AutoPlayers(var next))
         {
             var ran = ServerCommand(new RunAiTurn { CivId = next.CivId });
-            if (!ran.Accepted) return new TurnOutcome(false, ran.Validation.Message, aiTurns, false, events);
+            if (!ran.Accepted) return new TurnOutcome(false, ran.Message, aiTurns, false, events);
             events.AddRange(ran.Events);
             aiTurns++;
         }
@@ -96,17 +118,18 @@ public sealed class LocalHost : IGameSession
         if (session.Game.TurnPhase is TurnPhase.AwaitingInput(var human) && human.CivId == ViewerCivId && !session.Game.IsTurnStarted(human))
         {
             var began = ServerCommand(new BeginTurn { CivId = ViewerCivId, Now = clock() });
-            if (!began.Accepted) return new TurnOutcome(false, began.Validation.Message, aiTurns, false, events);
+            if (!began.Accepted) return new TurnOutcome(false, began.Message, aiTurns, false, events);
             events.AddRange(began.Events);
             begun = true;
         }
         return new TurnOutcome(true, "", aiTurns, begun, events);
     }
 
-    private CommandResult ServerCommand(GameCommand command)
+    private SubmitResult ServerCommand(GameCommand command)
     {
+        var before = eventFilter.Mark();
         var result = session.SubmitAsServer(command);
-        if (result.Accepted) Publish(result.Events);
-        return result;
+        var visible = result.Accepted ? Publish(result, before) : [];
+        return new SubmitResult(result.Accepted, result.Validation.Message, visible);
     }
 }
