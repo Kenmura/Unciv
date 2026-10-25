@@ -302,7 +302,7 @@ flowchart TD
   class C002 prog
   class C003 ondeck
   class C004 waiting
-  class C005 prog
+  class C005 review
   class C006 waiting
   class C010 done
   class C011 ondeck
@@ -443,7 +443,7 @@ xychart-beta
 | C026 | **On deck** (after C005) | C005, C010, T030, T049 | 0 | Tutorials |
 | C028 | **On deck** (after C005) | C005 | 0 | Options screen, hotkeys, edge-pan |
 | C031 | **On deck** (after C002) | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
-| C005 | In-Progress [Claude] | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
+| C005 | Needs-Review [Claude] | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T177 | Available (waiting on T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T178) | T172, T173, T178 | 9 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
