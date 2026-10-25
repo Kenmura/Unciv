@@ -12,3 +12,4 @@ saveload
 city-a
 unit-orders
 diplomacy
+setup

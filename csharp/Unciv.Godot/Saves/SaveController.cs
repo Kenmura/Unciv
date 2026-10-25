@@ -51,6 +51,13 @@ public partial class SaveController : Control
     /// <summary>Always set after an action, success or failure.</summary>
     public string Message => messageLabel.Text;
 
+    /// <summary>Whether the corner "Saves" button shows (the main menu has its own buttons for the same dialog).</summary>
+    public bool ButtonVisible
+    {
+        get => openButton.Visible;
+        set => openButton.Visible = value;
+    }
+
     public bool IsDialogOpen => dialog != null;
 
     public LineEdit? NameField { get; private set; }

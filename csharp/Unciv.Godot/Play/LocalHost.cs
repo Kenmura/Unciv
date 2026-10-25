@@ -1,5 +1,6 @@
 using Unciv.Commands;
 using Unciv.Commands.Turn;
+using Unciv.GodotClient.Setup;
 using Unciv.Logic;
 using Unciv.Logic.Files;
 using Unciv.Models.Ruleset;
@@ -8,6 +9,9 @@ using Unciv.Queries;
 using Unciv.View;
 
 namespace Unciv.GodotClient.Play;
+
+/// <summary>The result of <see cref="LocalHost.Start"/>: the session, or the reasons there is none.</summary>
+public sealed record StartOutcome(LocalHost? Host, IReadOnlyList<string> Errors);
 
 /// <summary>
 /// The single-player implementation of <see cref="IGameSession"/> and the only client class that holds the engine's <see cref="GameSession"/> (C037). It is the single-player authority around a <see cref="GameSession"/> (C010): the one human's commands go in as that civ, and after End turn this
@@ -48,6 +52,18 @@ public sealed class LocalHost : IGameSession
         var human = game.Civilizations.FirstOrDefault(it => it.IsHuman());
         if (human == null) throw new InvalidDataException("The save has no human player");
         return new LocalHost(new GameSession(game), human.CivName, clock);
+    }
+
+    /// <summary>
+    /// C015: starts a new game from the setup form through <see cref="NewGameLauncher"/> (<c>NewGame.Start</c>: validation, then GameStarter) and wraps it for the civ the form's human slot ended up with
+    /// (a random nation is drawn by the seeded GameStarter). Invalid setups come back as <see cref="StartOutcome.Errors"/>, never as exceptions.
+    /// </summary>
+    public static StartOutcome Start(NewGameForm form, Func<long> clock)
+    {
+        var launched = NewGameLauncher.Launch(form, clock());
+        return launched.Game == null
+            ? new StartOutcome(null, launched.Errors)
+            : new StartOutcome(new LocalHost(new GameSession(launched.Game), launched.HumanCiv, clock), []);
     }
 
     /// <summary>The engine session, for the composition root and the harness (hashing a loaded game); client screens use only <see cref="IGameSession"/>.</summary>

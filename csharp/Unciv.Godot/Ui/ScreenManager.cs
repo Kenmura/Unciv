@@ -47,6 +47,18 @@ public partial class ScreenManager : Control
         TopChanged?.Invoke(screen);
     }
 
+    /// <summary>Replaces the whole stack with <paramref name="screen"/> (Escape then cannot pop back into what was there), e.g. when a game starts.</summary>
+    public void Reset(Control screen)
+    {
+        foreach (var old in screens)
+        {
+            screenLayer.RemoveChild(old);
+            old.QueueFree();
+        }
+        screens.Clear();
+        Push(screen);
+    }
+
     /// <summary>Removes the top screen and shows the one below it. Returns false (and does nothing) when only one screen is left.</summary>
     public bool Pop()
     {

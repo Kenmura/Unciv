@@ -70,6 +70,7 @@ public static class PlaceholderPalette
     public static Rgb ButtonHover { get; } = new(66, 76, 96);
     public static Rgb ButtonPressed { get; } = new(30, 36, 48);
     public static Rgb Text { get; } = new(232, 232, 236);
+    public static Rgb ErrorText { get; } = new(255, 140, 128);
     public static Rgb TextDisabled { get; } = new(130, 134, 142);
     public static Rgb IconOutline { get; } = new(16, 18, 24);
     public static Rgb IconGlyph { get; } = new(250, 250, 250);
