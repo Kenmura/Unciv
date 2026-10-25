@@ -296,7 +296,7 @@ Scenario `city-b`.
 
 *A puppet city: the state is explained, Annex city is offered and every production button is disabled.* (`city-b/puppet.png`)
 
-## C019 (ticket not Done or unknown)
+## C019 Tech screen
 
 Tech screen: the tree by column and row with state colours, unlock list, research now / add to queue / remove from queue.
 
