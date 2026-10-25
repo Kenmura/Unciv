@@ -216,7 +216,7 @@ public sealed class SoakTests : IDisposable
         var text = UncivFiles.GameInfoToString(original, forceZip: false);
         var loaded = UncivFiles.GameInfoFromString(text);
         var loaded2 = UncivFiles.GameInfoFromString(text);
-        // A Clone is not played on here: it still shares some state (e.g. trade requests) with its source, a gap outside this ticket.
+        // T219: a Clone plays on exactly like the original too (it shares no mutable state with it).
         var clone = original.Clone();
         clone.SetTransients();
         Assert.Equal(Digest(original), Digest(clone));
@@ -227,7 +227,7 @@ public sealed class SoakTests : IDisposable
         for (var i = 0; i < 50; i++)
         {
             // Civ by civ, so a divergence is found at the step that causes it, not a whole turn later.
-            var all = new[] { original, loaded, loaded2 };
+            var all = new[] { original, loaded, loaded2, clone };
             foreach (var g in all) { g.SimulateUntilWin = true; g.SimulateMaxTurns = g.Turns + 1; g.EndPlayerTurn(2000L); }
             for (var running = true; running;)
             {
@@ -235,11 +235,13 @@ public sealed class SoakTests : IDisposable
                 running = phases[0] is TurnPhase.AutoPlayers;
                 Assert.All(phases, ph => Assert.Equal(running, ph is TurnPhase.AutoPlayers));
                 AssertSameText(Saved(original), Saved(loaded), $"after one more civ, {i + 1} turns after loading: the running game and a reload of its save");
+                AssertSameText(Saved(original), Saved(clone), $"after one more civ, {i + 1} turns after loading: the running game and its clone");
             }
             foreach (var g in all) g.BeginPlayerTurn(2000L);
             var expected = Saved(original);
             AssertSameText(expected, Saved(loaded), $"the running game and a reload of its save, {i + 1} turns after loading");
             AssertSameText(expected, Saved(loaded2), $"the running game and a second reload, {i + 1} turns after loading");
+            AssertSameText(expected, Saved(clone), $"the running game and its clone, {i + 1} turns after loading");
             Assert.True(Digest(original) == Digest(loaded), $"digest differs {i + 1} turns after loading");
         }
         Assert.Equal(Hash(loaded), Hash(loaded2));

@@ -70,6 +70,15 @@ public class QuestManager : IsPartOfGameInfoSerialization
     private JavaHashMap<string, JavaHashMap<string, int>> unitsKilledFromCiv = new();
     #endregion
 
+    /// <summary>T219: rebuild the hash tables like a load does, see <see cref="JavaHashMap{TKey,TValue}.Canonicalize"/>.</summary>
+    internal void Canonicalize()
+    {
+        individualQuestCountdown.Canonicalize();
+        unitsToKillForCiv.Canonicalize();
+        foreach (var killed in unitsKilledFromCiv.Values) killed.Canonicalize();
+        unitsKilledFromCiv.Canonicalize();
+    }
+
     #region Transients, clone, etc
     private Civilization? civ;
     /// <summary>Civilization object holding and dispatching quests. Kotlin <c>@Transient lateinit</c>.</summary>

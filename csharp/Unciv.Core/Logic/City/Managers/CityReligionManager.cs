@@ -39,6 +39,9 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
     [JsonInclude]
     private JavaHashSet<string> religionsAtSomePointAdopted = new();
 
+    /// <summary>T219: rebuild the hash set like a load does, see <see cref="JavaHashMap{TKey,TValue}.Canonicalize"/>.</summary>
+    internal void Canonicalize() => religionsAtSomePointAdopted.Canonicalize();
+
     [JsonPropertyName("pressures")]
     [JsonInclude]
     private Counter<string> pressures = new();

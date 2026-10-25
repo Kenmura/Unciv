@@ -814,7 +814,7 @@ public class CivilizationCoreTests
         Assert.Equal(5, clone.NotificationCountAtStartTurn);
         Assert.Equal(CityStatePersonalityHostile, clone.CityStatePersonality);
         Assert.Equal("Farm", clone.LastSeenImprovement[HexCoord.Of(0, 0)]);
-        Assert.Same(civ.NeutralRoads, clone.NeutralRoads); // Kotlin shares the reference
+        Assert.NotSame(civ.NeutralRoads, clone.NeutralRoads); // T219 deviation: Kotlin shares the reference
         var attack = Assert.Single(clone.AttacksSinceTurnStart);
         Assert.NotSame(civ.AttacksSinceTurnStart[0], attack);
         Assert.Equal("Archer", attack.AttackingUnit);

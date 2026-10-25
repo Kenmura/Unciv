@@ -39,6 +39,13 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
     [JsonInclude]
     private JavaHashSet<string> followerBeliefs = new();
 
+    /// <summary>T219: rebuild the belief sets like a load does, see <see cref="JavaHashMap{TKey,TValue}.Canonicalize"/>.</summary>
+    internal void Canonicalize()
+    {
+        founderBeliefs.Canonicalize();
+        followerBeliefs.Canonicalize();
+    }
+
     /// <summary>Transient.</summary>
     [JsonIgnore]
     public UniqueMap FounderBeliefUniqueMap { get; private set; } = new();

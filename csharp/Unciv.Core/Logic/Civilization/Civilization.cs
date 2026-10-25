@@ -468,17 +468,18 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
             toReturn.Diplomacy[diplomacyManager.OtherCivName] = diplomacyManager;
         toReturn.Proximity.PutAll(Proximity);
         toReturn.Cities = Cities.Select(it => it.Clone()).ToList();
-        toReturn.NeutralRoads = NeutralRoads;
+        toReturn.NeutralRoads = [.. NeutralRoads]; // T219: copies, not the source's own collections
         foreach (var construction in DisabledCityConstructions) toReturn.DisabledCityConstructions.Add(construction);
         toReturn.ExploredRegion = ExploredRegion.Clone();
         foreach (var (position, improvement) in LastSeenImprovement) toReturn.LastSeenImprovement[position] = improvement;
         toReturn.LeaderTitle = LeaderTitle;
         toReturn.Notifications.AddRange(Notifications);
-        toReturn.NotificationsLogs.AddRange(NotificationsLogs);
+        foreach (var log in NotificationsLogs)
+            toReturn.NotificationsLogs.Add(new NotificationsLog(log.Turn) { Notifications = [.. log.Notifications] });
         toReturn.NotificationCountAtStartTurn = NotificationCountAtStartTurn;
         toReturn.CitiesCreated = CitiesCreated;
-        toReturn.PopupAlerts.AddRange(PopupAlerts);
-        toReturn.TradeRequests.AddRange(TradeRequests);
+        toReturn.PopupAlerts.AddRange(PopupAlerts.Select(it => new PopupAlert(it.Type, it.Value)));
+        toReturn.TradeRequests.AddRange(TradeRequests.Select(it => new TradeRequest(it.RequestingCiv, it.Trade.Clone())));
         toReturn.NaturalWonders.AddRange(NaturalWonders);
         toReturn.CityStatePersonality = CityStatePersonality;
         toReturn.CityStateResource = CityStateResource;

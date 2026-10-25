@@ -166,8 +166,26 @@ public partial class GameInfo
     /// </summary>
     internal void RefreshTransientCaches()
     {
+        // T219: the game-wide maps, the flag maps and the religion belief sets (all JVM-style hash tables) too.
+        Religions.Canonicalize();
+        foreach (var religion in Religions.Values) religion.Canonicalize();
+        DiplomaticVictoryVotesCast.Canonicalize();
         foreach (var civInfo in Civilizations)
         {
+            civInfo.Diplomacy.Canonicalize();
+            civInfo.Proximity.Canonicalize();
+            civInfo.FlagsCountdown.Canonicalize();
+            civInfo.DisabledCityConstructions.Canonicalize();
+            civInfo.PassableImpassables.Canonicalize();
+            civInfo.Tech.TechsResearched.Canonicalize();
+            civInfo.Tech.TechsInProgress.Canonicalize();
+            civInfo.GreatPeople.LongCountGPPool.Canonicalize();
+            civInfo.QuestManager.Canonicalize();
+            foreach (var diplomacyManager in civInfo.Diplomacy.Values)
+            {
+                diplomacyManager.FlagsCountdown.Canonicalize();
+                diplomacyManager.DiplomaticModifiers.Canonicalize();
+            }
             // Hash sets that saw removals or resizes iterate differently from their own reload (which re-adds in saved order): rebuild them so.
             civInfo.Policies.AdoptedPolicies.Canonicalize();
             foreach (var city in civInfo.Cities)
@@ -180,8 +198,19 @@ public partial class GameInfo
                 city.Tiles.Canonicalize();
                 city.WorkedTiles.Canonicalize();
                 city.LockedTiles.Canonicalize();
+                city.FlagsCountdown.Canonicalize();
+                city.CityConstructions.InProgressConstructions.Canonicalize();
+                city.UnitShouldUseSavedPromotion.Canonicalize();
+                city.UnitToPromotions.Canonicalize();
+                foreach (var promotions in city.UnitToPromotions.Values) promotions.Promotions.Canonicalize();
+                city.Religion.Canonicalize();
             }
-            foreach (var unit in civInfo.Units.GetCivUnits()) unit.Promotions.Promotions.Canonicalize();
+            foreach (var unit in civInfo.Units.GetCivUnits())
+            {
+                unit.Promotions.Promotions.Canonicalize();
+                unit.AbilityToTimesUsed.Canonicalize();
+                unit.StatusMap.Canonicalize();
+            }
         }
         foreach (var civInfo in Civilizations) civInfo.Tech.RebuildTransients();
         // Military might is cached until the next turn start; a reload recomputes it on first use (T227: the Civ 5 AI reads force mid-turn).
