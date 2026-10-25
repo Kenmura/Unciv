@@ -462,7 +462,7 @@ flowchart TD
   class T193 ready
   class T194 waiting
   class T195 done
-  class T196 prog
+  class T196 review
   class T197 done
   class T198 ready
   class T199 done
@@ -533,7 +533,7 @@ xychart-beta
 | T180 | Available (waiting on T173, T174, T175, T179, T204) | T172, T173, T174, T175, T179, T204 | 4 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C011 | Available (waiting on C005, C010, T174, T184) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | Available (waiting on C005, C010, T189, T190) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
-| T196 | In-Progress [Claude] | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
+| T196 | Needs-Review [Claude] | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
 | C003 | Available (waiting on C002) | C002 | 1 | Resource and improvement props |
 | C004 | Available (waiting on C002, C010, C012) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
 | C015 | Available (waiting on C005, C010) | C005, C010, T099, T045, T021, T034, T170, T199 | 1 | Main menu and game setup screen: nations, difficulty, speed, map options |

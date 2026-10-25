@@ -283,6 +283,10 @@ public class QueryTests
         ["empire.TradeOptions"] = () => new Unciv.Queries.Empire.TradeOptionsQuery("Egypt"),
         ["empire.TradeHint"] = () => new Unciv.Queries.Empire.TradeHintQuery("Egypt", [], []),
         ["units.AttackPreview"] = () => new Unciv.Queries.Units.AttackPreviewQuery(0, 0, UnitId: 1),
+        ["cities.CityPanel"] = () => new Unciv.Queries.Cities.CityPanelQuery("c"),
+        ["cities.ConstructionList"] = () => new Unciv.Queries.Cities.ConstructionListQuery("c"),
+        ["cities.BuyableTiles"] = () => new Unciv.Queries.Cities.BuyableTilesQuery("c"),
+        ["tiles.TileInfo"] = () => new Unciv.Queries.Tiles.TileInfoQuery(0, 0),
     };
 
     [Fact]
