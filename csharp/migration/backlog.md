@@ -2333,7 +2333,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - GameCommandTests builds a fresh game per empire command (EmpireSamples) since the samples are mutually exclusive.
 
 ### T193 Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T164, T186, T086, T089
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.6; logic/civilization/diplomacy/DiplomacyManager.kt, DeclareWar.kt, CityStateFunctions.kt; logic/trade/TradeLogic.kt; ui/screens/diplomacyscreen/*; ui/screens/worldscreen/TradePopup.kt; view/TradeView.kt
 - Fixtures: none
@@ -2578,6 +2578,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/View/{DiplomacyManagerView,ForeignCityView,CivView}.cs; extend Net/Visibility DTOs (DiplomacyDto status, CityDto buildings, OwnCivDto policies), remove GetCiv() use in SnapshotBuilder trades
 - Gate: dotnet test --filter FullyQualifiedName~NetVisibility
+- Claimed:
+- Notes:
+
+### T213 Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts
+- State: Available
+- Depends: T193
+- Source: AlertPopup.kt (Denouncement, AcceptingDemand, RejectingDemand, DemandViolationNoticed)
+- Fixtures: none
+- Deliverables: Commands to dismiss/answer these PopupAlerts, with tests
+- Gate: Standard
 - Claimed:
 - Notes:
 
