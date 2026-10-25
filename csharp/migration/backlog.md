@@ -2481,7 +2481,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review pass (adversarial subagent). Follow-up for T204: NewGameScreen 'You are not allowed to spectate!' rule (anyoneCanSpectate=false) is not in ValidateSetup.
 
 ### T200 Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T184
 - Source: design/SIMULTANEOUS-TURNS.md sections 2-3; Unciv.Core/Logic/GameInfoTurn.cs; Managers/TurnManager.cs
 - Fixtures: none

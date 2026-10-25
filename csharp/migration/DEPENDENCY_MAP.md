@@ -53,7 +53,6 @@ flowchart TD
     T179["T179<br/>Direct-connect transport: TCP + TLS 1.3 frames behind ITrans..."]
     T180["T180<br/>Client network library Unciv.Client.Net: ClientSession state..."]
     T182["T182<br/>Multi-client end-to-end: scripted 3-human + AI game over in-..."]
-    T183["T183<br/>Engine player settings: per-civ state-affecting settings, he..."]
     T184["T184<br/>Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlay..."]
     T187["T187<br/>Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, M..."]
     T188["T188<br/>Movement and combat commands: MoveUnit, SetMoveOrder, SwapUn..."]
@@ -147,10 +146,6 @@ flowchart TD
   T180 --> T182
   T204 --> T182
   T203 --> T182
-  T183 --> T201
-  T200 --> T201
-  T200 --> T202
-  T187 --> T202
   T202 --> T203
   T188 --> T203
   T191 --> T203
@@ -371,7 +366,6 @@ flowchart TD
   class T179 waiting
   class T180 waiting
   class T182 waiting
-  class T183 done
   class T184 done
   class T187 done
   class T188 done
@@ -386,9 +380,9 @@ flowchart TD
   class T197 done
   class T198 done
   class T199 done
-  class T200 review
-  class T201 ondeck
-  class T202 ondeck
+  class T200 done
+  class T201 waiting
+  class T202 waiting
   class T203 waiting
   class T204 waiting
   class T205 waiting
@@ -417,7 +411,7 @@ xychart-beta
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
     line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 47]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
 ```
 
 ## Incomplete tickets
@@ -426,13 +420,11 @@ xychart-beta
 |---|---|---|---|---|
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T208 | **Ready to start** | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
-| T202 | **On deck** (after T200) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
 | T176 | **On deck** (after T194) | T172, T164, T140, T194 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
-| T201 | **On deck** (after T200) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | C005 | Available (waiting on ) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
-| T200 | Needs-Review [Claude] | T184 | 16 | Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep |
 | T194 | In-Progress [Claude] | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
-| T177 | Available (waiting on T200, T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
+| T202 | Available (waiting on ) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
+| T177 | Available (waiting on T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T178) | T172, T173, T178 | 9 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
 | T204 | Available (waiting on T178) | T172, T173, T178, T199 | 7 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
@@ -471,6 +463,7 @@ xychart-beta
 | C034 | Available (waiting on C005, C015, T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | T169 | Available (waiting on ) | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
+| T201 | Available (waiting on ) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
 | T209 | In-Progress [Claude] | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
