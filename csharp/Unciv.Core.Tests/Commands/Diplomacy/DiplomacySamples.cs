@@ -16,7 +16,7 @@ internal static class DiplomacySamples
     [
         "declare-war", "denounce", "offer-friendship", "respond-friendship", "make-demand", "respond-demand", "propose-trade",
         "retract-trade", "respond-trade-request", "dismiss-trade-request", "gift-gold", "gift-improvement", "tribute-gold",
-        "tribute-worker", "pledge-protection", "withdraw-protection", "diplomatic-marriage", "negotiate-city-state-peace",
+        "tribute-worker", "pledge-protection", "withdraw-protection", "diplomatic-marriage", "negotiate-city-state-peace", "set-spy-coup",
     ];
 
     public static DiplomacyWorld NewWorld() => new([BuyUnique]);
@@ -86,6 +86,12 @@ internal static class DiplomacySamples
             case "negotiate-city-state-peace":
                 w.MakeWar(w.A, w.S);
                 return new NegotiateCityStatePeace { CivId = w.S.CivId };
+            case "set-spy-coup": // T210: needs the city-state of this world
+                w.Game.GameInfo.GameParameters.EspionageEnabled = true;
+                var spy = w.A.EspionageManager.AddSpy();
+                spy.MoveTo(w.CityS);
+                spy.SetAction(Unciv.Models.SpyAction.Surveillance);
+                return new Unciv.Commands.Empire.SetSpyCoup { Spy = spy.Name, Stage = true };
             default:
                 throw new ArgumentException("No diplomacy sample for " + type);
         }
