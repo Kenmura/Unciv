@@ -2324,7 +2324,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - GameCommandTests builds a fresh game per empire command (EmpireSamples) since the samples are mutually exclusive.
 
 ### T193 Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T164, T186, T086, T089
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.6; logic/civilization/diplomacy/DiplomacyManager.kt, DeclareWar.kt, CityStateFunctions.kt; logic/trade/TradeLogic.kt; ui/screens/diplomacyscreen/*; ui/screens/worldscreen/TradePopup.kt; view/TradeView.kt
 - Fixtures: none
@@ -2336,6 +2336,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Validate = what the diplomacy screen enabled: DiplomacyManager.CanDeclareWar (DiplomacyManagerView), IsAtWarWith, flags (DiplomacyFlags like DeclaredWar cooldown), civ knows the other civ, not both AI-only restrictions, TradeLogic.IsValid offers (Our/TheirAvailableOffers), trade value inflation uses TradeEvaluation (T089): only the AI's answer uses it; a human-human trade has no evaluation.
       - Traps: (1) Trade offers contain cities, units' resources and gold: re-validate everything at Apply time against current state (TurnManager.StartTurn drops requests that are no longer valid). (2) DeclareWar has a WarType and may cascade to allies/defensive pacts and trigger popup alerts for humans; it runs in Apply. (3) The AI 'would accept' hint (Civ 5 style) is NOT in Kotlin; it is a query in the empire-panels ticket, and leaks AI valuation, so it is optional per game setting. (4) City-state bully/tribute have random outcomes via the state RNG in Apply. (5) Demands (MajorCivDiplomacyTable) add a PopupAlert to the other civ: for an AI target the answer is computed in its RunAiTurn (NextTurnAutomation.respondToPopupAlerts).
   - Simultaneous turns: human-to-human trade/peace/friendship use the queued TradeRequest while both are active: ProposeTrade adds it (recipient gets TradeRequested), RespondToTradeRequest{requestId, accept} may come at any time in Playing even after the recipient ended their turn, and re-validates IsTradeValid at accept time (stale => stale-reference). DeclareWar clears pending requests between the pair (DeclareWar.kt:155). Offers to an offline human stay pending (Kotlin behaviour). AI recipients still answer in RunAiTurn.
+  - Commands live in Unciv.Core/Commands/Diplomacy (18 commands); no new events. Human-to-AI trades, friendship offers and demands are asynchronous: the AI answers in its AutomateTurn (TradeAutomation / RespondToPopupAlerts), as in Kotlin.
+  - Kept quirks: refusing a DoNotAttackUs demand declares war a second time; DismissTradeRequest (How about something else) removes the request quietly with no notification and no resource update; ProposeTrade amounts apply only to gold, gold-per-turn and resource offers.
+  - Deliberate deviation: RespondToTradeRequest removes the request before AcceptTrade (as the AI path does). Responses to a stale alert (offerer defeated or at war) just drop the alert. TradeOfferSpec uses Kind, not Type, because the envelope payload may not contain a type field. The AI-would-accept hint (TradeHintQuery) is not part of this ticket.
 
 ### T194 Command log format, replay verifier and scripted-human replay test against the T102 state hashes
 - State: Available

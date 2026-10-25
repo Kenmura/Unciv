@@ -2,6 +2,7 @@ using System.Text.Json;
 using Unciv.Commands;
 using Unciv.Commands.City;
 using Unciv.Commands.Units;
+using Unciv.Core.Tests.Commands.Diplomacy;
 using Unciv.Core.Tests.Commands.Empire;
 using Unciv.Json;
 using Unciv.Logic;
@@ -222,8 +223,16 @@ public sealed class GameCommandTests : IDisposable
         foreach (var (name, _) in GameCommandRegistry.Scan())
         {
             var game = session.Game;
+            string actor = "Babylon";
             GameCommand command;
-            if (EmpireSamples.Types.Contains(name))
+            if (DiplomacySamples.Types.Contains(name))
+            {
+                var world = DiplomacySamples.NewWorld();
+                game = world.Game.GameInfo;
+                actor = world.A.CivId;
+                command = DiplomacySamples.Sample(name, world);
+            }
+            else if (EmpireSamples.Types.Contains(name))
             {
                 var (fresh, _, _) = NewSession();
                 game = fresh.Game;
@@ -232,19 +241,19 @@ public sealed class GameCommandTests : IDisposable
             else command = Sample(name, game, babylonCity.Id, scenario, cityScenario);
             Assert.Equal(name, command.Type);
 
-            var envelope = session.Registry.ToEnvelope(5, "Babylon", command);
+            var envelope = session.Registry.ToEnvelope(5, actor, command);
             string wire = JsonSerializer.Serialize(envelope, UncivJson.DefaultOptions);
             var back = JsonSerializer.Deserialize<CommandEnvelope>(wire, UncivJson.DefaultOptions)!;
             var decoded = session.Registry.FromEnvelope(back);
 
             Assert.Equal(name, back.Type);
             Assert.Equal(command.GetType(), decoded.GetType());
-            Assert.Equal(wire, JsonSerializer.Serialize(session.Registry.ToEnvelope(5, "Babylon", (GameCommand)decoded), UncivJson.DefaultOptions));
+            Assert.Equal(wire, JsonSerializer.Serialize(session.Registry.ToEnvelope(5, actor, (GameCommand)decoded), UncivJson.DefaultOptions));
             Assert.DoesNotContain("actor", back.Payload.GetRawText(), StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("\"type\"", back.Payload.GetRawText(), StringComparison.OrdinalIgnoreCase);
 
             ulong before = Hash(game);
-            var validation = decoded.Validate(game, "Babylon");
+            var validation = decoded.Validate(game, actor);
             Assert.True(validation.IsValid, name + ": " + validation.Message);
             Assert.Equal(before, Hash(game));
         }
