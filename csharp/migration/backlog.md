@@ -2729,13 +2729,13 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
     Human to judge: terrain readability, camera feel, dim vs unexplored contrast.
 
 ### C010 V1 vertical slice: unit blocks, select, move, end turn, AI turns
-- State: Available
+- State: In-Progress [Claude]
 - Depends: C009, T164, T184, T187, T188, T174, T175
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): QuickStart.tscn (seeded Tiny game via GameStarter), UnitView blocks, click select, move command with path dots, plain Next turn button, AI turns run, repeat. Slice detail in design/CLIENT-SLICES.md
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
-- Claimed:
+- Claimed: 2026-10-25T05:47Z
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario v1-vertical: select, move (assert tile+movement spent), 5x end turn (turn==6, state hash equals headless replay), captures. Human: is it playable, are AI moves visible. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
   - Design agent (commands): T164 is now only the command infrastructure. Depends re-pointed: T184 (phased turn API, PendingDecisions), T187 (EndTurn and friends), T188 (move/attack), T174/T175 (snapshot and events). Note C009/C011/C014 read world state from the T174 ClientSnapshot and T175 deltas, NOT from the T185 query API, which serves previews and panels (design/COMMANDS-IMPLEMENTATION.md section 8).
   - Multiplayer: End turn in a hosted game only marks the civ ended and shows the waiting state (C036); single player uses the same button in Sequential mode.
