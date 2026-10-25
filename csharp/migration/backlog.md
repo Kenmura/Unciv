@@ -2299,7 +2299,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Re-review round 2 (adversarial subagent): PASS. Verified each round-1 fix in fb3796ea3 against code: WorkTile (ProvidesYield + empty stats + blockade), PurchaseConstruction queued-marker tile, SetCityFocus, IsDefined guard, disable commands reassign, SetCivConstructionDisabled CityId, RemoveAllByName, AddToTop refusal. Gate green (build -warnaserror, format, test 0 failed, coverage --check). Found test gaps (no regressions in code): blockade check, disable-command ReassignPopulation, and the contested-tile assertion was conditional (vacuous). Added WorkTileRefusesBlockadedTiles, DisableCommandsReassignPopulation, made contested assertion unconditional; mutation-checked (removing the blockade check / reassign line fails them).
 
 ### T192 Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T164, T186
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.5; models/TechManager (techsToResearch, getFreeTechnology, updateResearchProgress), PolicyManager.adopt/removePolicy, ReligionManager (foundPantheon/foundReligion/chooseBeliefs), GreatPersonManager.getFreeGreatPersonOptions, EspionageManager spy.moveTo, Civilization.diplomaticVoteForCiv; ui/screens/pickerscreens/*; view/CivView.kt tryDisable/TrySetGoldPercentConvertedToScience
 - Fixtures: none
