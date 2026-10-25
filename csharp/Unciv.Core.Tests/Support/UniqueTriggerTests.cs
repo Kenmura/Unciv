@@ -377,6 +377,15 @@ public class UniqueTriggerTests
     }
 
     [Fact]
+    public void EventPresentationWithoutUnitOrWithDeadUnitHasNoUnit()
+    {
+        var eventObj = AddEvent(Event.PresentationType.Alert, "Free Technology");
+        Assert.Null(EventPresentation.Resolve(civ, new PopupAlert(AlertType.Event, eventObj.Name))!.Unit);
+        var dead = new PopupAlert(AlertType.Event, $"{eventObj.Name}{Constants.StringSplitCharacter}unitId=99999");
+        Assert.Null(EventPresentation.Resolve(civ, dead)!.Unit);
+    }
+
+    [Fact]
     public void EventPresentationIsNullForNonEventUnknownOrNoLongerMatchingAlerts()
     {
         Assert.Null(EventPresentation.Resolve(civ, new PopupAlert(AlertType.GoldenAge, "")));

@@ -19,7 +19,7 @@ public class Event : RulesetObject
         None,
         /// <summary>Queues a blocking modal alert the player must resolve before continuing.</summary>
         Alert,
-        /// <summary>Not yet implemented - triggering an Event with this presentation currently throws NotImplementedError upstream.</summary>
+        /// <summary>Kotlin throws NotImplementedError for this; the engine queues it as an Event alert like <see cref="Alert"/> (T171), the client decides how to show it.</summary>
         Floating,
     }
 
