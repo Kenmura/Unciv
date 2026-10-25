@@ -196,7 +196,7 @@ flowchart TD
   class C006 waiting
   class C010 done
   class C011 done
-  class C013 prog
+  class C013 review
   class C015 done
   class C016 done
   class C019 review
@@ -321,7 +321,7 @@ xychart-beta
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
-| C013 | In-Progress [Claude] | C005, C010, T164, T051, T055, T171, T187, T175, C037, T220 | 0 | Notifications and popup alerts |
+| C013 | Needs-Review [Claude] | C005, C010, T164, T051, T055, T171, T187, T175, C037, T220 | 0 | Notifications and popup alerts |
 | C019 | Needs-Review [Claude] | C005, C010, T164, T056, T192, T197, C037 | 0 | Tech screen |
 | C020 | Needs-Review [Claude] | C005, C010, T164, T056, T192, T197, C037 | 0 | Policy screen |
 | C023 | In-Progress [Claude] | C005, C010, T164, T057, T197, T198, C037, T220 | 0 | Overview screens: empire, cities, units, resources, ranking, religion, espionage |
