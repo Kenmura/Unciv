@@ -370,9 +370,9 @@ flowchart TD
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class A003 done
   class A004 done
-  class A005 ready
+  class A005 prog
   class A006 ready
-  class A007 waiting
+  class A007 ondeck
   class A008 ready
   class C001 done
   class C002 waiting
@@ -493,8 +493,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 79
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 71]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 70]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
 ```
 
 ## Incomplete tickets
@@ -504,7 +504,6 @@ xychart-beta
 | T164 | **Ready to start** | T012, T071, T100, T140, T011 | 46 | Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command |
 | T185 | **Ready to start** | T084, T085, T138, T139, T012 | 41 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
 | T172 | **Ready to start** | T012 | 39 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
-| A005 | **Ready to start** | A004 | 33 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T183 | **Ready to start** | T071, T046 | 33 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
 | A006 | **Ready to start** | A004, T091, T092 | 32 | Homeland AI priority move queue |
 | T166 | **Ready to start** | A003 | 3 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
@@ -514,9 +513,10 @@ xychart-beta
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
 | T163 | **Ready to start** | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
+| A007 | **On deck** (after A005) | A004, A005 | 32 | Operations and armies layer |
 | T186 | Available (waiting on T164) | T164 | 41 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 35 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
-| A007 | Available (waiting on A005) | A004, A005 | 32 | Operations and armies layer |
+| A005 | In-Progress [Claude] | A004 | 33 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 32 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T187 | Available (waiting on T164, T186, T184, T183) | T164, T186, T184, T183 | 31 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | C007 | Available (waiting on A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 30 | Asset registry and procedural placeholder generator |

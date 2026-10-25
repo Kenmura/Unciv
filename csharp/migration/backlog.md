@@ -2708,11 +2708,12 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Review fixes: priority bonus now divides after dampening (no early int division). Not implemented (SPEC [I]/[?]): resultKind budget floor of 1, melee per-entry skip gate, neighbour staging-tile post-step; damage-desc candidate ordering is our assumption. For() re-sorts per call (index it in A008 if needed).
 
 ### A005 Tactical overkill assignment & coordinated multi-unit attacks
-- State: Available
+- State: In-Progress [Claude]
 - Depends: A004
 - Source: `csharp/migration/ai-spec/SPEC.md` §6.4, §6.5
 - Deliverables: `csharp/Unciv.Core/AI/Tactical/OverkillAssigner.cs`, damage estimator integrations, tests
 - Gate: `dotnet test --filter FullyQualifiedName~OverkillTests`
+- Claimed: 2026-10-25T00:56Z
 - Notes: Solves the "one unit attacking at a time" weakness. Groups sufficient attackers to guarantee destruction without over-allocating, freeing remaining units for other tactical goals.
 
 ### A006 Homeland AI priority move queue
