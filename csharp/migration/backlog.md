@@ -2003,13 +2003,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented. Deviation from Kotlin (deliberate, per ticket): Presentation.Floating no longer throws NotImplementedError; it is queued as an AlertType.Event PopupAlert exactly like Alert (Kotlin's own todo: park in a queue in GameInfo). The client decides how to show it. New engine data type EventPresentation (Models/Ruleset/EventPresentation.cs): Resolve(civ, alert) mirrors AlertPopup.addEvent + RenderEvent.isValid (name + unitId= parsing, matching choices; null if unknown/none match); GetPending(civ); Choice list = index/name/text/keyShortcut; Choose(civ, index) removes the alert then triggers the choice (AlertPopup.close + RenderEvent.addChoice), false on bad index. Choices use the unit looked up from the alert. No UI types, no RNG. Tests in UniqueTriggerTests (Floating queued, presentation data + Choose, null cases). Coverage run: first instrumented run crashed the test host once (not reproducible, --run passed).
 
 ### T172 Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T012
 - Source: csharp/migration/design/SERVER.md sections 2, 6.1
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/* (Messages, ProtocolVersion, ITransport, InMemoryTransport), tests incl. golden JSON per message and unknown-type/oversize handling
 - Gate: dotnet test --filter FullyQualifiedName~NetProtocol
-- Claimed:
+- Claimed: 2026-10-25T02:44Z
 - Notes: Pure wire layer, no sockets. Strict schema, default-deny, unknown type => Error not exception. ClientSnapshot/ViewDelta carry opaque typed DTOs filled by the filter ticket.
   - Revised by the host-lobby decision: add messages Join{password?, playerKey, displayName, inviteToken?}, LobbyState/LobbySet/LobbyChat/GameStarting, Welcome{hostKeyFingerprint, requiresPassword}, JoinRefused{code}, TurnStatus{turn, ended[], deadline, phase}, HostClosing, UndoEndTurn passes as a normal Command. ClientSnapshot gains turnStatus. See SERVER.md 6.1. Transport is TCP+TLS frames (T179), not WebSocket.
 
