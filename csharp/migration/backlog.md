@@ -2021,7 +2021,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review (adversarial subagent): FAIL round 1 on duplicate JSON keys throwing; fixed (AllowDuplicateProperties=false, tests added). Nits left: null list elements accepted, no value-range validation (host layer), in-memory peer IsOpen stays true after the other end closes.
 
 ### T173 Host identity and join auth: client ECDSA P-256 key bound to a slot (TOFU), lobby password / single-use invite token for admission, host key fingerprint
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T172
 - Source: csharp/migration/design/SERVER.md sections 6.2, 6.4
 - Fixtures: none
@@ -2030,6 +2030,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-25T04:53Z
 - Notes: BCL ECDsa only, no third-party crypto. Decision D4 default accepted (keypair+invite); no passwords. Key storage on disk is behind an interface (Godot client uses user:// via C006).
   - OWNER DECISION: no auth service. The earlier note 'no passwords' is superseded: admission = optional lobby password or single-use invite token (sent only inside the pinned TLS channel, stored as a salted hash), slot ownership = the client keypair signature on reconnect. Password and key have different jobs (SERVER.md 6.2).
+  - Implemented Unciv.Net.Identity: ISecureRandom/SystemSecureRandom (only RandomNumberGenerator use in Core, JUSTIFY'd), ClientIdentity (ECDSA P-256, PKCS8 via IIdentityKeyStore, base64url SPKI PlayerKey, Sign over length-prefixed domain-separated session+challenge), PlayerKeys.VerifyProof (P1363 64-byte sig, never throws), HostChallenge (single-use), HostKey fingerprint (SHA-256 first 128 bits, base32 grouped 5, constant-time Matches) + KnownHosts TOFU, JoinPassword (PBKDF2-SHA256 salted, FixedTimeEquals), AttemptLimiter (5 failures then doubling lockout, bounded table), InviteTokens (hash-only storage, single use, expiry, cap), LobbyAdmission (password OR token, no short-circuit), SlotBindings (TOFU, one seat per key). Time via TimeProvider, randomness via ISecureRandom injection. Tests: NetIdentity* (48).
 
 ### T174 Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs
 - State: Done
