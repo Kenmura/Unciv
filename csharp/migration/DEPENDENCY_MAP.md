@@ -89,9 +89,9 @@ flowchart TD
   class T094 done
   class T097 done
   class T100 done
-  class T102 ready
+  class T102 prog
   class T103 done
-  class T104 waiting
+  class T104 ondeck
   class T106 done
 ```
 
@@ -110,19 +110,20 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 13]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 0]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 12]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 1]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T102 | **Ready to start** | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
+| T104 | **On deck** (after T102) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | Blocked | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
+| T102 | In-Progress [Claude] | T101, T100, T072, T011, T107 | 1 | End-to-end determinism over N turns |
 | A003 | Blocked | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
@@ -130,4 +131,3 @@ xychart-beta
 | C004 | Blocked | C002 | 0 | 3D military units |
 | C005 | Blocked | C002 | 0 | Civ 5-style UI shell |
 | C006 | Blocked | T012, C001 | 0 | Networked play client |
-| T104 | Available (waiting on T102) | T102, T103, T106, T097, T093, T089, T094, T100 | 0 | Marker, seam and stale-comment sweep (final) |
