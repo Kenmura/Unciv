@@ -1,31 +1,14 @@
-using Unciv.Logic;
-using Unciv.Queries;
 using Unciv.Queries.Units;
-using Unciv.View;
 
 namespace Unciv.GodotClient.Play;
 
 /// <summary>
-/// The client's questions to the engine (T185/T195): previews only, always as the human's civ and never mutating. The client renders the answer and
-/// never recomputes reach, cost or path. A refused query (unknown unit, unexplored target) is reported as null, not thrown, so the view just shows nothing.
+/// The client's questions to the engine (T185/T195): previews only, always as the viewer and never mutating, asked through the <see cref="IGameSession"/>.
+/// The client renders the answer and never recomputes reach, cost or path. A refused query is reported as null, so the view just shows nothing.
 /// </summary>
-public sealed class GameQueries(GameInfo game, string viewerCivId)
+public sealed class GameQueries(IGameSession session)
 {
-    private GameView View() => new(game, game.GetCivilization(viewerCivId));
+    public Task<ReachableTilesResult?> Reachable(int unitId) => session.QueryAsync(new ReachableTilesQuery(unitId));
 
-    public ReachableTilesResult? Reachable(int unitId) => Run(new ReachableTilesQuery(unitId));
-
-    public PathPreviewResult? Path(int unitId, int x, int y) => Run(new PathPreviewQuery(unitId, x, y));
-
-    private TResult? Run<TResult>(IQuery<TResult> query) where TResult : class
-    {
-        try
-        {
-            return query.Run(View());
-        }
-        catch (QueryException)
-        {
-            return null;
-        }
-    }
+    public Task<PathPreviewResult?> Path(int unitId, int x, int y) => session.QueryAsync(new PathPreviewQuery(unitId, x, y));
 }

@@ -25,7 +25,7 @@ public partial class GameScreen : Control
     private const float HudMargin = 12f;
 
     private readonly Dictionary<int, UnitNode> unitNodes = [];
-    private LocalHost host = null!; // JUSTIFY: C010 assigned by Start before the screen is used
+    private IGameSession session = null!; // JUSTIFY: C010 assigned by Start before the screen is used
     private AssetRegistry assets = null!; // JUSTIFY: C010 assigned by Start before the screen is used
     private GameQueries queries = null!; // JUSTIFY: C010 assigned by Start before the screen is used
     private Node3D unitLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
@@ -34,6 +34,7 @@ public partial class GameScreen : Control
     private Label statusLabel = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Button nextTurnButton = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private ClientSnapshot snapshot = null!; // JUSTIFY: C010 assigned by Refresh in Start
+    private int previewRequest;
     private PathPreviewResult? preview;
     private bool mapLoaded;
 
@@ -93,11 +94,11 @@ public partial class GameScreen : Control
     public override void _ExitTree() => GetViewport().SizeChanged -= Layout;
 
     /// <summary>Connects the screen to a game and draws it, centred on the human's first unit. Call once, after the screen entered the tree.</summary>
-    public void Start(LocalHost localHost, AssetRegistry registry)
+    public void Start(IGameSession gameSession, AssetRegistry registry)
     {
-        host = localHost;
+        session = gameSession;
         assets = registry;
-        queries = new GameQueries(host.Session.Game, host.HumanCivId);
+        queries = new GameQueries(session);
         Refresh();
         var first = snapshot.Units.FirstOrDefault(it => it.Own != null);
         if (first != null) Map.FocusOn(MapLayout.TileTop(first.X, first.Y));
@@ -106,17 +107,15 @@ public partial class GameScreen : Control
 
     private void Refresh()
     {
-        var game = host.Session.Game;
-        var civ = game.GetCivilization(host.HumanCivId);
-        snapshot = SnapshotBuilder.Build(game, civ, host.Session.LastSeq, new TurnStatusDto { Ended = [], Phase = "Playing" });
+        snapshot = session.Snapshot;
         Map.Load(assets, snapshot.Tiles, keepCamera: mapLoaded);
         mapLoaded = true;
-        var nations = game.Ruleset.Nations;
+        var nations = session.Ruleset.Nations;
         Minimap.Update(snapshot.Tiles, owner => nations.TryGetValue(owner, out var nation) ? ToRgb(nation.GetOuterColor()) : null);
         Layout();
         RebuildUnits();
         ClearPreview();
-        turnLabel.Text = $"Turn {snapshot.Turn.ToString(CultureInfo.InvariantCulture)}   {host.HumanCivId}";
+        turnLabel.Text = $"Turn {snapshot.Turn.ToString(CultureInfo.InvariantCulture)}   {session.ViewerCivId}";
         if (SelectedUnitId is { } id && unitNodes.TryGetValue(id, out var selected) && selected.IsOwn)
             Map.Select(new HexCoord(selected.Unit.X, selected.Unit.Y));
         else SelectedUnitId = null;
@@ -137,7 +136,7 @@ public partial class GameScreen : Control
             int index = stack.GetValueOrDefault(coord);
             stack[coord] = index + 1;
             var model = assets.Get<Node3D>(AssetKey.Of(RulesetAssetKeys.Unit, unit.Name));
-            var colour = host.Session.Game.Ruleset.Nations.TryGetValue(unit.Owner, out var nation) ? nation.GetOuterColor() : null;
+            var colour = session.Ruleset.Nations.TryGetValue(unit.Owner, out var nation) ? nation.GetOuterColor() : null;
             if (colour != null) MapMaterials.ColourBanner(model, colour.R, colour.G, colour.B);
             var node = new UnitNode { Name = $"Unit_{unit.Id}", Unit = unit, Position = UnitPosition(coord, index) };
             node.AddChild(model);
@@ -175,15 +174,20 @@ public partial class GameScreen : Control
             return;
         }
         if (SelectedUnitId == null) return;
-        if (PreviewTarget == tile) MoveSelectedTo();
-        else ShowPreview(tile);
+        if (PreviewTarget == tile) _ = MoveSelectedTo();
+        else _ = ShowPreview(tile);
     }
 
     private void OnTileRightClicked(HexCoord? coord)
     {
         if (coord is not { } tile || SelectedUnitId == null) return;
-        ShowPreview(tile);
-        if (PreviewTarget == tile) MoveSelectedTo();
+        _ = RightClickMove(tile);
+    }
+
+    private async Task RightClickMove(HexCoord tile)
+    {
+        await ShowPreview(tile);
+        if (PreviewTarget == tile) await MoveSelectedTo();
     }
 
     private List<UnitNode> OwnUnitsAt(HexCoord tile) =>
@@ -213,16 +217,18 @@ public partial class GameScreen : Control
         return $"{unit.Name}   moves {moves}   health {(unit.Own?.Health ?? 0).ToString(CultureInfo.InvariantCulture)}";
     }
 
-    private void ShowPreview(HexCoord tile)
+    private async Task ShowPreview(HexCoord tile)
     {
         ClearPreview();
+        int request = ++previewRequest;
         var unitNode = unitNodes[SelectedUnitId!.Value];
         if (unitNode.Unit.Own?.CurrentMovement is not > 0f)
         {
             SetStatus($"{DescribeSelected()}   (no movement left)");
             return;
         }
-        var result = queries.Path(unitNode.Unit.Id, tile.X, tile.Y);
+        var result = await queries.Path(unitNode.Unit.Id, tile.X, tile.Y);
+        if (request != previewRequest) return; // a newer click or a deselect superseded this answer
         if (result is not { Reachable: true, FirstStep: not null })
         {
             SetStatus($"{DescribeSelected()}   (cannot reach that tile)");
@@ -260,28 +266,31 @@ public partial class GameScreen : Control
 
     private void ClearPreview()
     {
+        previewRequest++;
         preview = null;
         PreviewTarget = null;
         foreach (var dot in dotLayer.GetChildren()) dot.QueueFree();
     }
 
-    private void MoveSelectedTo()
+    private async Task MoveSelectedTo()
     {
         var path = preview;
         if (path?.FirstStep is not { } step || SelectedUnitId is not { } unitId) return;
-        var result = host.Submit(new MoveUnit { UnitId = unitId, To = new HexCoord(step.X, step.Y) });
+        var result = await session.SubmitAsync(new MoveUnit { UnitId = unitId, To = new HexCoord(step.X, step.Y) });
         if (!result.Accepted)
         {
-            SetStatus("Move refused: " + result.Validation.Message);
+            SetStatus("Move refused: " + result.Message);
             return;
         }
         Refresh();
         SetStatus(DescribeSelected());
     }
 
-    private void OnNextTurn()
+    private void OnNextTurn() => _ = EndTurn();
+
+    private async Task EndTurn()
     {
-        var outcome = host.EndTurn();
+        var outcome = await session.EndTurnAsync();
         Refresh();
         SetStatus(outcome.Accepted
             ? $"Turn {snapshot.Turn.ToString(CultureInfo.InvariantCulture)}: {outcome.AiTurnsRun.ToString(CultureInfo.InvariantCulture)} civ(s) played, {outcome.Events.Count.ToString(CultureInfo.InvariantCulture)} event(s)."
