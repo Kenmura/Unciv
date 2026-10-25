@@ -12,7 +12,7 @@ using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 namespace Unciv.Core.Tests.Determinism;
 
 // T102: the project's determinism gate. A whole AI-only game from one seed must produce the same state hash every turn, run after run,
-// and a game saved and loaded mid-way must continue exactly like the original. (Per-turn hashes from the Kotlin game: KotlinGoldenTests, partial until TODO(T231).)
+// and a game saved and loaded mid-way must continue exactly like the original. (Per-turn hashes from the Kotlin game: KotlinGoldenTests, all 30 turns for seed 11, seed 3 up to Kotlin's own unseeded divergence at turn 23.)
 [Collection("RulesetCache")]
 public sealed class EndToEndDeterminismTests : IDisposable
 {
