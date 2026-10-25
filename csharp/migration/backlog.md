@@ -2003,7 +2003,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented. Deviation from Kotlin (deliberate, per ticket): Presentation.Floating no longer throws NotImplementedError; it is queued as an AlertType.Event PopupAlert exactly like Alert (Kotlin's own todo: park in a queue in GameInfo). The client decides how to show it. New engine data type EventPresentation (Models/Ruleset/EventPresentation.cs): Resolve(civ, alert) mirrors AlertPopup.addEvent + RenderEvent.isValid (name + unitId= parsing, matching choices; null if unknown/none match); GetPending(civ); Choice list = index/name/text/keyShortcut; Choose(civ, index) removes the alert then triggers the choice (AlertPopup.close + RenderEvent.addChoice), false on bad index. Choices use the unit looked up from the alert. No UI types, no RNG. Tests in UniqueTriggerTests (Floating queued, presentation data + Choose, null cases). Coverage run: first instrumented run crashed the test host once (not reproducible, --run passed).
 
 ### T172 Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net)
-- State: Needs-Review [Claude]
+- State: In-Review [Claude]
 - Depends: T012
 - Source: csharp/migration/design/SERVER.md sections 2, 6.1
 - Fixtures: none
@@ -2014,6 +2014,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Revised by the host-lobby decision: add messages Join{password?, playerKey, displayName, inviteToken?}, LobbyState/LobbySet/LobbyChat/GameStarting, Welcome{hostKeyFingerprint, requiresPassword}, JoinRefused{code}, TurnStatus{turn, ended[], deadline, phase}, HostClosing, UndoEndTurn passes as a normal Command. ClientSnapshot gains turnStatus. See SERVER.md 6.1. Transport is TCP+TLS frames (T179), not WebSocket.
   -   - Implemented (Claude). Namespace Unciv.Net: Messages (all SERVER.md 6.1 messages as records), ProtocolVersion (Current=1, MaxFrameBytes=4MiB), ProtocolCodec (strict System.Text.Json: unmapped members and nulls/missing required rejected, case-sensitive camelCase, depth 64, size measured in UTF-8 bytes before parse; bad input => Error{frame-too-large|malformed|unknown-type|invalid-message}, never an exception), ITransport (string frames, async), InMemoryTransport.CreatePair.
       - Deviation: Command's SERVER.md field `type` is `commandType` on the wire because `type` is the message discriminator. Snapshot/ViewDelta/LobbyState payload lists are JsonElement (opaque) for the filter ticket to type. Snapshot.turnStatus reuses the TurnStatus record. Deadline is host-supplied Unix ms (no clock in Core).
+  -   - Review (adversarial subagent): FAIL round 1 on duplicate JSON keys throwing; fixed (AllowDuplicateProperties=false, tests added). Nits left: null list elements accepted, no value-range validation (host layer), in-memory peer IsOpen stays true after the other end closes.
 
 ### T173 Host identity and join auth: client ECDSA P-256 key bound to a slot (TOFU), lobby password / single-use invite token for admission, host key fingerprint
 - State: Available
