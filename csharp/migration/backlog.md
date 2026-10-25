@@ -2965,7 +2965,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Review 2: PASS (adversarial subagent). Green on tip: build/format/test exit 0, 0 failed.
 
 ### A008 Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: A004
 - Source: csharp/migration/ai-spec/SPEC.md section 6.1, 6.5
 - Fixtures: none
