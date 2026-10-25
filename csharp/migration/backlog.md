@@ -1897,7 +1897,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Implements PROTOCOL.md 'Green before Done': ticket.py state T### Done runs (or verifies a recent stamp of) build, format, test, coverage --check on the rebased tree and refuses on failure; also checks for stale TODO(T###) markers naming the ticket.
 
 ### T164 Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T012, T071, T100, T140, T011
 - Source: csharp/migration/COMMANDS.md; design/COMMANDS-IMPLEMENTATION.md sections 2 and 3; Unciv.Core/Commands skeleton
 - Fixtures: none
@@ -1910,6 +1910,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Build: GameCommand : ICommand<GameInfo> with helper CommandContext (resolve civ/unit/city/tile by id with stable error codes: unknown-civ, unknown-unit, not-your-unit, not-your-turn, game-over, ...); [CommandType("name")] attribute and reflection scan so domain tickets add commands without editing a shared registry file (the overlap rule in PROTOCOL.md); GameSession = GameInfo + CommandProcessor + registry + the engine inputs a log needs (see section 6 of the design).
       - Traps: (1) Validate must be pure, but many engine predicates mutate caches (UpdateViewableTiles, lazy transients): tests compare the full state hash before/after Validate for every command. (2) Submit round-trips through the envelope (existing rule), so command records must be JSON-stable: ruleset objects by name, ids not references, no float paths. (3) Turn check: a command is valid only if ActorId is the CurrentPlayer civ, a human, and the game has no VictoryData unless the command is allowed after victory; server actor 'server' is a reserved id for server commands. (4) Faulting keeps its semantics; add a rebuild-from-snapshot helper later in the log ticket.
   - Simultaneous turns: the turn check helper is CommandContext.RequireActive(actor) (sequential: actor is CurrentPlayerCiv; simultaneous: Playing, human, alive, not ended; implemented by T202). Do not hard-code CurrentPlayerCiv in GameCommand.
+  -   - Implemented (Claude): GameCommand (Validate/Apply delegate to ValidateCommand/ApplyCommand(CommandContext)), CommandTypeAttribute, GameCommandRegistry (assembly scan, ordinal order, kebab-case + parameterless ctor enforced), CommandContext (+Resolved<T>; RequireActive, OwnUnit, OwnCity, TileAt, Civ), CommandErrors, GameSession (lock = arrival order, Seq from processor; client Submit refuses actor "server" as malformed-command; SubmitAsServer), RenameCity ("rename-city"), SetUnitDue ("set-unit-due"). CommandRegistry gained non-generic Register(Type,string) and Types. T012 skeleton tests kept (generic processor).
+      - RequireActive is the only turn check; sequential rule today, marked TODO(T202) for the simultaneous rule. No command reads CurrentPlayerCiv.
+      - SetUnitDue validates unit.HasMovement() (the Kotlin Skip action is offered only then) and carries the wanted value (idempotent) instead of toggling. RenameCity validates non-empty name (CityRenamePopup) + own city.
+      - Tests: GameCommandTests has Sample(type) switch; a new [CommandType] class without a sample fails the round-trip/purity test, so domain tickets must add a line.
+      - Not done (per scope): GameSession log-header inputs (seed, clock, settings) belong to T194; events to T186.
 
 ### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
 - State: Won't port

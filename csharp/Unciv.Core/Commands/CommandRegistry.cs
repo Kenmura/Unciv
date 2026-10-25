@@ -9,15 +9,22 @@ public sealed class CommandRegistry<TState>(JsonSerializerOptions options)
     private readonly Dictionary<string, Type> typeByName = [];
     private readonly Dictionary<Type, string> nameByType = [];
 
-    public void Register<TCommand>(string type) where TCommand : ICommand<TState>
+    public void Register<TCommand>(string type) where TCommand : ICommand<TState> => Register(typeof(TCommand), type);
+
+    public void Register(Type commandClass, string type)
     {
+        if (!typeof(ICommand<TState>).IsAssignableFrom(commandClass))
+            throw new InvalidOperationException($"{commandClass.Name} is not a command for {typeof(TState).Name}");
         if (typeByName.ContainsKey(type))
             throw new InvalidOperationException($"Command type \"{type}\" is already registered");
-        if (nameByType.ContainsKey(typeof(TCommand)))
-            throw new InvalidOperationException($"{typeof(TCommand).Name} is already registered");
-        typeByName.Add(type, typeof(TCommand));
-        nameByType.Add(typeof(TCommand), type);
+        if (nameByType.ContainsKey(commandClass))
+            throw new InvalidOperationException($"{commandClass.Name} is already registered");
+        typeByName.Add(type, commandClass);
+        nameByType.Add(commandClass, type);
     }
+
+    /// <summary>The registered wire names, in registration order.</summary>
+    public IReadOnlyCollection<string> Types => typeByName.Keys;
 
     public CommandEnvelope ToEnvelope(long seq, string actorId, ICommand<TState> command)
     {

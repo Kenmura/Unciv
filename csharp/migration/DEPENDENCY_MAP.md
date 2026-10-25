@@ -500,7 +500,7 @@ flowchart TD
   class T161 ready
   class T162 ready
   class T163 ready
-  class T164 prog
+  class T164 review
   class T166 ready
   class T167 review
   class T169 ready
@@ -584,7 +584,7 @@ xychart-beta
 | T195 | **On deck** (after T185) | T185, T139 | 3 | Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets) |
 | T196 | **On deck** (after T185) | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
 | T208 | **On deck** (after T167) | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
-| T164 | In-Progress [Claude] | T012, T071, T100, T140, T011 | 55 | Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command |
+| T164 | Needs-Review [Claude] | T012, T071, T100, T140, T011 | 55 | Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command |
 | T185 | Needs-Review [Claude] | T084, T085, T138, T139, T012 | 50 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
