@@ -48,20 +48,22 @@ public static class ScenarioGame
     /// <paramref name="solo"/> (C010): one human (Babylon) and the AI, no city founded: the game the client's QuickStart builds; otherwise the two-human game above.
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false)
     {
-        solo |= skirmish;
+        solo |= skirmish | diplomacy;
         var ruleset = LoadVanilla();
         var game = GameStarter.StartNewGame(
             new GameSetupInfo(
                 new GameParameters
                 {
                     BaseRuleset = ruleset.Name,
-                    NumberOfCityStates = 0,
+                    NumberOfCityStates = diplomacy ? 1 : 0,
                     GodMode = godMode,
                     VictoryTypes = ruleset.Victories.Keys.ToList(),
                     Players = solo
-                        ? [new Player(HumanA, PlayerType.Human), new Player(Ai)]
+                        ? diplomacy
+                            ? [new Player(HumanA, PlayerType.Human), new Player(Ai), new Player(HumanB)]
+                            : [new Player(HumanA, PlayerType.Human), new Player(Ai)]
                         : [new Player(HumanA, PlayerType.Human), new Player(HumanB, PlayerType.Human), new Player(Ai)],
                 },
                 new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = mapSeed, MapSize = MapSize.Tiny }),
@@ -73,6 +75,7 @@ public static class ScenarioGame
             civ.AddCity(settler.CurrentTile.Position, settler);
         }
         if (skirmish) SetUpSkirmish(game);
+        if (diplomacy) SetUpDiplomacy(game);
         return new GameSession(game);
     }
 
@@ -93,6 +96,18 @@ public static class ScenarioGame
         human.GetDiplomacyManagerOrMeet(ai).DeclareWar();
     }
 
+
+    /// <summary>
+    /// C021: the solo game plus a city-state and a second AI civ (Greece). The human has met Rome and the city-state (peace) and has 1000 gold; Greece is never met,
+    /// so the diplomacy screen must not list it. Set up directly on the state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpDiplomacy(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        foreach (var civ in game.Civilizations.Where(it => it.CivName != HumanA && it.CivName != HumanB && !it.IsBarbarian).OrderBy(it => it.CivName, StringComparer.Ordinal))
+            human.DiplomacyFunctions.MakeCivilizationsMeet(civ);
+        human.AddGold(1000 - human.Gold); // after the meetings: meeting a city-state pays a bonus
+    }
 
     /// <summary>The 64-bit canonical hash of the whole game state (serialised form), as lowercase hex.</summary>
     public static string StateHash(GameSession session) =>

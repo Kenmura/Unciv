@@ -126,4 +126,28 @@ public sealed class ScenarioHarnessTests : IDisposable
         string hash = ScenarioGame.StateHash(session);
         Assert.Equal(hash, ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, skirmish: true));
     }
+
+    [Fact]
+    public void DiplomacyGameHasMetRomeAndACityStateAnUnmetGreeceAndGoldAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(diplomacy: true);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        var rome = session.Game.GetCivilization(ScenarioGame.Ai);
+        var greece = session.Game.GetCivilization(ScenarioGame.HumanB);
+        var cityStates = session.Game.Civilizations.Where(it => it.IsCityState).ToList();
+        var cityState = Assert.Single(cityStates);
+        Assert.True(human.Knows(rome));
+        Assert.True(human.Knows(cityState));
+        Assert.False(human.Knows(greece));
+        Assert.Equal(1000, human.Gold);
+        Assert.False(human.IsAtWarWith(rome));
+        Assert.False(greece.IsHuman());
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(diplomacy: true)));
+        Assert.NotEqual(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(solo: true)));
+        var result = session.Submit(ScenarioGame.HumanA, new Unciv.Commands.Diplomacy.DeclareWar { CivId = rome.CivId });
+        Assert.True(result.Accepted);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, diplomacy: true));
+        var json = new ScenarioResult("d", 1, 2, "h", [], [], [], [], Diplomacy: true).ToJson();
+        Assert.True(ScenarioResult.FromJson(json).Diplomacy);
+    }
 }

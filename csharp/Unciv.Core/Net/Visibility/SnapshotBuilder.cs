@@ -234,9 +234,12 @@ public static class SnapshotBuilder
             {
                 var involvesViewer = members[i].IsOwnedByViewer() || members[j].IsOwnedByViewer();
                 var atWar = members[i].IsAtWarWith(members[j]);
+                // C021: a city-state's protector status lives on its side of the pair (it is the city-state's manager that says Protector), so a pair with a
+                // city-state reports that side, whichever order the civs are listed in.
+                var (from, to) = members[j].IsCityState && !members[i].IsCityState ? (members[j], members[i]) : (members[i], members[j]);
                 // Peace between two third parties is not a public fact the viewer needs; wars are.
                 if (involvesViewer || atWar)
-                    result.Add(new DiplomacyDto { A = members[i].CivId, B = members[j].CivId, AtWar = atWar, Status = members[i].GetDiplomacyManagerWith(members[j])?.Status.ToString() });
+                    result.Add(new DiplomacyDto { A = members[i].CivId, B = members[j].CivId, AtWar = atWar, Status = from.GetDiplomacyManagerWith(to)?.Status.ToString() });
             }
         }
         return result;

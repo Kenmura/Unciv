@@ -11,3 +11,4 @@ flat-city
 saveload
 city-a
 unit-orders
+diplomacy

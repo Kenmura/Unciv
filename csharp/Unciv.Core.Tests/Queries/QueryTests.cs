@@ -281,6 +281,7 @@ public class QueryTests
         ["empire.TopBar"] = () => new Unciv.Queries.Empire.EmpireTopBarQuery(),
         ["empire.Overview"] = () => new Unciv.Queries.Empire.EmpireOverviewQuery(),
         ["empire.DiplomacyPanel"] = () => new Unciv.Queries.Empire.DiplomacyPanelQuery("Egypt"),
+        ["empire.DiplomacyActions"] = () => new Unciv.Queries.Empire.DiplomacyActionsQuery("Egypt"),
         ["empire.TradeOptions"] = () => new Unciv.Queries.Empire.TradeOptionsQuery("Egypt"),
         ["empire.TradeHint"] = () => new Unciv.Queries.Empire.TradeHintQuery("Egypt", [], []),
         ["empire.PendingDecisions"] = () => new Unciv.Queries.Empire.PendingDecisionsQuery(),

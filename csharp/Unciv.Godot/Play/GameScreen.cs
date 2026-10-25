@@ -70,6 +70,22 @@ public partial class GameScreen : Control
 
     public bool IsCityPanelVisible => City.Visible;
 
+    /// <summary>C021: the diplomacy screen, opened by the Diplomacy button.</summary>
+    public DiplomacyScreen Diplomacy { get; private set; } = null!; // JUSTIFY: C021 assigned in Start before any use
+
+    public bool IsDiplomacyVisible => Diplomacy.Visible;
+
+    public Button DiplomacyButton { get; } = new() { Name = "DiplomacyButton", Text = "Diplomacy" };
+
+    /// <summary>Opens the diplomacy screen on the civ with this id (the first met civ when null), closing the city screen.</summary>
+    public void OpenDiplomacyScreen(string? civId = null)
+    {
+        ShowCity(null);
+        Deselect();
+        SetStatus("Diplomacy");
+        Run(Diplomacy.OpenAsync(civId));
+    }
+
     /// <summary>Opens the city screen for a city of the snapshot (the viewer's own in full, any other from its snapshot entry), or closes it with null.</summary>
     public void OpenCityScreen(CityDto? city) => ShowCity(city);
 
@@ -104,6 +120,8 @@ public partial class GameScreen : Control
         AddChild(statusLabel);
         Hud = new HudView { Name = "Hud" };
         AddChild(Hud);
+        AddChild(DiplomacyButton);
+        DiplomacyButton.Pressed += () => OpenDiplomacyScreen();
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
         Panel = new UnitPanelView();
@@ -134,6 +152,12 @@ public partial class GameScreen : Control
             City.Position = new Vector2(0f, Hud.TopBarHeight);
             City.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
+        if (Diplomacy != null)
+        {
+            Diplomacy.Position = new Vector2(0f, Hud.TopBarHeight);
+            Diplomacy.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
+        }
+        DiplomacyButton.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
         Panel.LayoutIn(Size);
@@ -165,6 +189,15 @@ public partial class GameScreen : Control
         AddChild(City);
         City.CommandAccepted += Refresh;
         City.Closed += () => ShowCity(null);
+        if (Diplomacy != null)
+        {
+            RemoveChild(Diplomacy);
+            Diplomacy.QueueFree();
+        }
+        Diplomacy = new DiplomacyScreen(session, theme);
+        AddChild(Diplomacy);
+        Diplomacy.CommandAccepted += Refresh;
+        DiplomacyButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
         ReachableOverlay.Setup(registry);
@@ -294,6 +327,7 @@ public partial class GameScreen : Control
     /// <summary>Opens (or, with null, closes) the city screen for a city of the snapshot.</summary>
     private void ShowCity(CityDto? city)
     {
+        if (city != null && Diplomacy.Visible) Diplomacy.Close();
         if (city != null) Deselect(); // C012: the unit panel gives way to the city screen
         OpenCity = city;
         if (city == null)

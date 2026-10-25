@@ -24,6 +24,13 @@ public sealed class GameQueries(IGameSession session)
 
     public Task<CityTilesResult?> CityTiles(string cityId) => session.QueryAsync(new CityTilesQuery(cityId));
 
+    /// <summary>The diplomacy screen's answers about one civ the viewer has met (null for any other: the engine answers an unmet civ like an unknown one).</summary>
+    public Task<DiplomacyPanelResult?> DiplomacyPanel(string civName) => session.QueryAsync(new DiplomacyPanelQuery(civName));
+
+    public Task<DiplomacyActionsResult?> DiplomacyActions(string civName) => session.QueryAsync(new DiplomacyActionsQuery(civName));
+
+    public Task<CityStateQuestsResult?> CityStateQuests(string civName) => session.QueryAsync(new CityStateQuestsQuery(civName));
+
     public Task<UnitActionsResult?> Actions(int unitId) => session.QueryAsync(new UnitActionsQuery(unitId));
 
     public Task<AttackableTargetsResult?> AttackTargets(int unitId) => session.QueryAsync(new AttackableTargetsQuery(unitId));
