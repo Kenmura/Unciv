@@ -94,7 +94,8 @@ public sealed class SoakTests : IDisposable
         {
             try { result = PlayOnThread(game, label, sampleHashes, stopAt); }
             catch (Exception ex) { failure = ex; }
-        }, 256 * 1024 * 1024) { IsBackground = true };
+        }, 256 * 1024 * 1024)
+        { IsBackground = true };
         worker.Start();
         if (!worker.Join(GameTimeout))
         {
