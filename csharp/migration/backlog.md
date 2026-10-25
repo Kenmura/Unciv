@@ -2592,13 +2592,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Found by T192: no listed command covers spy coup or counter-intelligence. Needed by the espionage screen (C023).
 
 ### T211 Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T161
 - Source: csharp/Unciv.Core/Logic/Automation/Unit/SpecificUnitAutomation*.cs, UnitAutomation.Explore.cs
 - Fixtures: none
 - Deliverables: Tests covering SpecificUnitAutomation lines 92, 122-130, 152-162, 179-182, 212; air-unit TryHealUnit remainder; Explore lines 41, 91-93; raise coverage baselines
 - Gate: python3 -I tools/coverage.py --check
-- Claimed:
+- Claimed: 2026-10-25T12:50Z
 - Notes: Follow-up named in T161 Notes.
 
 ### T212 Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174)
