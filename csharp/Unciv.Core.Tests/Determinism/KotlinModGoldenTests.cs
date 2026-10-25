@@ -98,6 +98,7 @@ public sealed class KotlinModGoldenTests : IDisposable
             new GameSetupInfo(
                 new GameParameters
                 {
+                    UseCiv5Ai = false,   // T235: the golden values come from the Kotlin AI
                     BaseRuleset = ruleset.Name,
                     Mods = ["golden-mod"],
                     NumberOfCityStates = 0,

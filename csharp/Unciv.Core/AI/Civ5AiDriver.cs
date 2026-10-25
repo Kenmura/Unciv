@@ -2,6 +2,7 @@ using Unciv.AI.Data;
 using Unciv.AI.GrandStrategy;
 using Unciv.AI.GrandStrategy.Scorers;
 using Unciv.AI.Homeland;
+using Unciv.AI.Operations;
 using Unciv.AI.Tactical;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map.MapUnits;
@@ -16,9 +17,10 @@ namespace Unciv.AI;
 /// driven from here: the grand strategy is evaluated, its flavors rank the tactical move queue and the attacks that queue recruits are carried out,
 /// then the homeland move queue decides in which order the non-combat and idle units act. What a unit then does is still the ported Kotlin unit automation
 /// (workers, exploring, movement towards the enemy, ...), passed in as <c>automate</c>.
-/// Nothing is kept between turns: the strategy is re-derived from the civ's state with a state-based seed each turn (no hysteresis, lock or rival
-/// guesses; <see cref="GrandStrategyPlayerState"/> is rebuilt), so a saved game, its reload and a lockstep peer all see the same decisions.
-/// Operations (<see cref="Operations.OperationManager"/>) keep state between turns and are not wired yet (see the ticket notes).
+/// T235: what the AI remembers lives in <see cref="Civilization.Civ5Ai"/> and is saved with the game: the current grand strategy and its turns-active
+/// counter (the +50 stickiness and the 10-turn lock), and the running operations (<see cref="OperationsAdapter"/>). Each turn's noise still comes from a
+/// state-based seed, so a reload and a lockstep peer see the same decisions. Rival guesses (<see cref="GrandStrategyPlayerState.GuessedStrategiesOfOthers"/>)
+/// are not modelled.
 /// </summary>
 public static class Civ5AiDriver
 {
@@ -30,6 +32,9 @@ public static class Civ5AiDriver
         public readonly GlobalAIDefines Defines = GlobalAIDefines.LoadEmbedded();
         public readonly GrandStrategyFlavors Flavors = GrandStrategyFlavors.LoadEmbedded();
         public readonly IReadOnlyList<TacticalMoveDefinition> TacticalMoves = TacticalMoveDefinition.LoadEmbedded();
+        public readonly OperationTunables Operations;
+
+        public Data3() => Operations = OperationTunables.FromDefines(Defines, Edition);
     }
 
     private const AIEdition Edition = AIEdition.BNW;
@@ -45,8 +50,23 @@ public static class Civ5AiDriver
         return civ.GameInfo.GameParameters.UseCiv5Ai && civ.IsAI() && !civ.IsBarbarian;
     }
 
-    /// <summary>The civ's grand strategy this turn, from its flavors and the four victory scorers (SPEC.md sections 3 and 4).</summary>
-    public static GrandStrategyEvaluationResult EvaluateGrandStrategy(Civilization civ)
+    /// <summary>
+    /// The civ's grand strategy this turn, from its flavors, the four victory scorers and the saved strategy (SPEC.md sections 3 and 4).
+    /// Pure: the saved state is not changed, so asking twice gives the same answer; <see cref="AdvanceGrandStrategy"/> commits it.
+    /// </summary>
+    public static GrandStrategyEvaluationResult EvaluateGrandStrategy(Civilization civ) => Evaluate(civ, out _);
+
+    /// <summary>Evaluates the grand strategy and saves the outcome (chosen strategy and lock counter) for the next turn. Call once per turn.</summary>
+    public static GrandStrategyEvaluationResult AdvanceGrandStrategy(Civilization civ)
+    {
+        var result = Evaluate(civ, out var state);
+        var saved = civ.Civ5Ai ??= new Civ5AiState();
+        saved.CurrentStrategy = state.CurrentStrategy;
+        saved.TurnsActive = state.TurnsActive;
+        return result;
+    }
+
+    private static GrandStrategyEvaluationResult Evaluate(Civilization civ, out GrandStrategyPlayerState state)
     {
         ArgumentNullException.ThrowIfNull(civ);
         var data = Data.Value;
@@ -63,13 +83,25 @@ public static class Civ5AiDriver
             GrandStrategyKind.Spaceship => spaceship.Score(VictoryScorerInputsFactory.Spaceship(civ)),
             _ => 0,
         };
-        var state = new GrandStrategyPlayerState
+        state = new GrandStrategyPlayerState
         {
             PersonalityFlavors = personality,
+            CurrentStrategy = civ.Civ5Ai?.CurrentStrategy ?? GrandStrategyKind.None,
+            TurnsActive = civ.Civ5Ai?.TurnsActive ?? 0,
             MetMajorCivsCount = 1 + civ.GetKnownCivs().Count(it => it.IsMajorCiv() && !it.IsDefeated()),
         };
         var evaluator = new GrandStrategyEvaluator(data.Defines, data.Flavors, Edition);
         return evaluator.Evaluate(state, Victory, civ.State.StateBasedRandom("Civ5AiDriver.grandStrategy"));
+    }
+
+    /// <summary>
+    /// Runs the civ's operations for this turn (start, recruit, muster, march; see <see cref="OperationsAdapter"/>).
+    /// Returns the unit ids that were ordered to march: the caller must not automate those again this turn.
+    /// </summary>
+    public static HashSet<int> RunOperations(Civilization civ)
+    {
+        ArgumentNullException.ThrowIfNull(civ);
+        return OperationsAdapter.Run(civ, Data.Value.Operations);
     }
 
     /// <summary>Offense and defense flavors of the leader with the strategy's modifiers applied.</summary>
@@ -81,12 +113,12 @@ public static class Civ5AiDriver
             personality.GetModifiedFlavor(DefenseFlavor, strategy, Data.Value.Flavors));
     }
 
-    /// <summary>Evaluates the grand strategy, then runs the tactical queue: returns the number of attacks made.</summary>
+    /// <summary>Advances the grand strategy, then runs the tactical queue: returns the number of attacks made.</summary>
     public static int RunTactical(Civilization civ)
     {
         ArgumentNullException.ThrowIfNull(civ);
         var data = Data.Value;
-        var strategy = EvaluateGrandStrategy(civ).ChosenStrategy;
+        var strategy = AdvanceGrandStrategy(civ).ChosenStrategy;
         var queue = new TacticalMoveQueue(data.TacticalMoves, data.Defines, Edition);
         var recruiter = TacticalRecruiter.FromDefines(data.Defines, Edition);
         var entries = queue.Build(FlavorsFor(strategy), civ.State.StateBasedRandom("Civ5AiDriver.tacticalQueue"));

@@ -13,6 +13,28 @@ public sealed class OperationManager(OperationTunables tunables)
     private readonly SortedSet<int> locked = [];
     private int nextId = 1;
 
+    /// <summary>T235: continues from saved state; the recruitment lock is rebuilt from the held units, so it never has to be saved.</summary>
+    public static OperationManager Restore(OperationTunables tunables, Civ5AiState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var manager = new OperationManager(tunables) { nextId = state.NextOperationId };
+        foreach (var record in state.Operations.OrderBy(it => it.Id))
+        {
+            var op = AIOperation.Restore(record, tunables);
+            manager.operations.Add(op);
+            if (!op.IsFinished) foreach (int id in op.UnitIds) manager.locked.Add(id);
+        }
+        return manager;
+    }
+
+    /// <summary>T235: writes the live operations back to the saved state, .</summary>
+    public void Save(Civ5AiState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        state.NextOperationId = nextId;
+        state.Operations = [.. operations.Where(o => !o.IsFinished).Select(o => o.ToRecord())];
+    }
+
     public IReadOnlyList<AIOperation> Operations => operations;
 
     /// <summary>Ids of every unit held by an operation: feed these to <see cref="TacticalUnit.InOperation"/>.</summary>

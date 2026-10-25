@@ -121,11 +121,44 @@ public sealed class AIOperation
         MaxRecruitTurns = enemyTerritory ? tunables.MaxRecruitTurnsEnemyTerritory : tunables.MaxRecruitTurnsDefault;
     }
 
+    /// <summary>T235: rebuilds an operation from its saved form. A record that does not describe a valid operation (no slots, mismatched slot lists) is rejected.</summary>
+    internal static AIOperation Restore(OperationRecord record, OperationTunables tunables)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        if (record.Filled.Count != record.Slots.Count) throw new ArgumentException("Saved operation has mismatched slot lists", nameof(record));
+        var op = new AIOperation(record.Id, record.Type, record.Target, record.Muster, record.Slots, false, tunables)
+        {
+            MaxRecruitTurns = record.MaxRecruitTurns,
+            TurnsRecruiting = record.TurnsRecruiting,
+            State = record.State,
+            StartTurn = record.StartTurn,
+        };
+        for (int i = 0; i < record.Filled.Count; i++) op.filled[i] = record.Filled[i];
+        return op;
+    }
+
+    /// <summary>T235: the saved form.</summary>
+    internal OperationRecord ToRecord() => new()
+    {
+        Id = Id,
+        Type = Type,
+        Target = Target,
+        Muster = Muster,
+        Slots = [.. slots],
+        Filled = [.. filled],
+        MaxRecruitTurns = MaxRecruitTurns,
+        TurnsRecruiting = TurnsRecruiting,
+        State = State,
+        StartTurn = StartTurn,
+    };
+
     public int Id { get; }
+    /// <summary>The game turn this operation began (set by the driver; it ages out operations that cannot make progress).</summary>
+    public int StartTurn { get; internal set; }
     public OperationType Type { get; }
     public HexCoord Target { get; }
     public HexCoord Muster { get; }
-    public int MaxRecruitTurns { get; }
+    public int MaxRecruitTurns { get; private set; }
     public int TurnsRecruiting { get; private set; }
     public OperationState State { get; private set; } = OperationState.Recruiting;
     public bool IsFinished => State is OperationState.Succeeded or OperationState.Aborted;

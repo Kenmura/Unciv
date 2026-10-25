@@ -172,11 +172,11 @@ public class GameParameters : IIsPartOfGameInfoSerialization
 
     /// <summary>
     /// C#-only (T227): AI civs take their military, tactical and homeland decisions from the Civ 5 AI of <c>Unciv.AI</c> (grand strategy, tactical
-    /// and homeland move queues) instead of only the ported Kotlin unit automation. Saved with the game, so a reload plays on the same way; false (the
-    /// default) keeps the Kotlin AI, which the Kotlin golden tests are written against.
+    /// and homeland move queues) instead of only the ported Kotlin unit automation. Saved with the game, so a reload plays on the same way. T235: on by default;
+    /// false keeps the Kotlin AI only, which the Kotlin golden tests are written against (they opt out).
     /// </summary>
     [JsonPropertyName("useCiv5Ai")]
-    public bool UseCiv5Ai { get; set; }
+    public bool UseCiv5Ai { get; set; } = true;
 
     [JsonPropertyName("acceptedModCheckErrors")]
     public string AcceptedModCheckErrors { get; set; } = "";

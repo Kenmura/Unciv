@@ -33,6 +33,7 @@ public sealed class Civ5AiDriverTests
     [Fact]
     public void IsOnlyActiveWhenTheGameOptionIsOnAndTheCivIsAnAi()
     {
+        game.GameInfo.GameParameters.UseCiv5Ai = false;
         Assert.False(Civ5AiDriver.IsActive(ai));
         game.GameInfo.GameParameters.UseCiv5Ai = true;
         Assert.True(Civ5AiDriver.IsActive(ai));

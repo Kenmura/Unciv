@@ -1,5 +1,6 @@
 using Unciv.Core.Tests.Support;
 using Unciv.Logic.Automation.Civilization;
+using Unciv.Models;
 using Unciv.View;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using MapUnitClass = Unciv.Logic.Map.MapUnits.MapUnit;
@@ -16,6 +17,7 @@ public abstract class NextTurnAutomationTestsBase
 
     protected NextTurnAutomationTestsBase(bool useAStar)
     {
+        testGame.GameInfo.GameParameters.UseCiv5Ai = false;   // T235: these are the Kotlin AI's unit pass tests
         testGame.GameInfo.EngineOptions.UseAStarPathfinding = useAStar;
         testGame.MakeHexagonalMap(7);
         civInfo = testGame.AddCiv();
@@ -170,6 +172,34 @@ public abstract class NextTurnAutomationTestsBase
         Assert.Same(victimTile, victim.CurrentTile); // former owner did not move the gifted unit
         Assert.Equal(victimMovement, victim.CurrentMovement, 0.01f);
         Assert.True(bystander.CurrentTile != bystanderStart || bystander.CurrentMovement < 2f, "unaffected unit was still automated");
+    }
+
+    // T235: the Kotlin city-conquer pass (five or more of our units near an enemy city) was only reached through games played with the Kotlin AI,
+    // which are no longer the default.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ManyUnitsNearAnEnemyCityAttackIt(bool cityAlmostTaken)
+    {
+        var enemy = testGame.AddCiv();
+        var enemyCity = testGame.AddCity(enemy, testGame.TileMap[0, 4]);
+        civInfo.DiplomacyFunctions.MakeCivilizationsMeet(enemy);
+        civInfo.GetDiplomacyManager(enemy)!.DeclareWar();
+        var defenderTile = testGame.TileMap[1, 4];
+        var attackers = defenderTile.GetTilesAtDistance(1).Where(t => t != enemyCity.GetCenterTile()).Take(5)
+            .Select(t => testGame.AddUnit("Warrior", civInfo, t)).ToList();
+        var catapult = testGame.AddUnit("Catapult", civInfo, testGame.TileMap[0, 2]);
+        catapult.Action = UnitActionType.SetUp.Value();
+        var defender = testGame.AddUnit("Warrior", enemy, defenderTile);
+        civInfo.Cache.UpdateViewableTiles();
+        if (cityAlmostTaken) enemyCity.Health = 20;   // the melee units go all in on the city
+        int cityHealth = enemyCity.Health;
+        int defenderHealth = defender.Health;
+
+        NextTurnAutomation.AutomateCivMoves(civInfo, tradeAndChangeState: false);
+
+        Assert.True(enemyCity.Health < cityHealth || defender.IsDestroyed || defender.Health < defenderHealth
+            || attackers.Any(it => it.CurrentMovement < it.GetMaxMovement()), "no unit acted against the city");
     }
 }
 

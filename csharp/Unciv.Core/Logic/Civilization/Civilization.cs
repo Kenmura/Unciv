@@ -495,7 +495,7 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
         toReturn.HasMovedAutomatedUnits = HasMovedAutomatedUnits;
         toReturn.StatsHistory = StatsHistory.Clone();
         toReturn.ResourceStockpiles = ResourceStockpiles.Clone();
-        return toReturn;
+        return CopyCiv5AiTo(toReturn);
     }
 
     #region pure functions
