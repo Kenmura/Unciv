@@ -1966,7 +1966,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Backlog audit: Depends extended with T055/T057/T059 (Civilization, victory/culture/religion managers, diplomacy state the scorers read).
 
 ### A004 Target-centric Tactical AI: TacticalMoveQueue & recruitment
-- State: Blocked
+- State: Available
 - Depends: A001, T039, T040, T065, T067, T081, T090
 - Source: `csharp/migration/ai-spec/SPEC.md` §6.1, §6.2, §6.4
 - Deliverables: `csharp/Unciv.Core/AI/Tactical/` (`TacticalMoveQueue`, `TacticalMoveType`, `TacticalTarget`, `TacticalRecruiter`), tests
