@@ -36,6 +36,12 @@ public sealed class RespondToAlert : GameCommand
     {
         if (!context.RequirePlayer().TryGet(out var actor, out var failure)) return failure;
         if (!AlertCommandChecks.TryFind(actor, Index, AlertType, Value, out var alert, out failure)) return failure;
+        return ValidateChoice(context, actor, alert);
+    }
+
+    /// <summary>The part of validation that depends on <see cref="Choice"/> (T220: the pending-decisions query asks it for every candidate choice).</summary>
+    internal CommandValidation ValidateChoice(CommandContext context, CivilizationObject actor, PopupAlert alert)
+    {
         if (AlertType == AlertType.Event) return ValidateEvent(actor, alert);
         if (AlertType is AlertType.CityConquered or AlertType.CityTraded or AlertType.DiplomaticMarriage) return ValidateCity(context, actor);
         return AlertType switch
