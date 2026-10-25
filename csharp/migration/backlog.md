@@ -1172,7 +1172,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (isolated adversarial subagent): PASS. Correction: 24 Kotlin cases ported (not 29). Nit fixed: attack-set assertions now use SetEquals.
 
 ### T104 Marker, seam and stale-comment sweep (final)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T102, T103, T106, T097, T093, T089, T094, T100
 - Source: (new) csharp/Unciv.Core, csharp/Unciv.Core.Tests
 - Fixtures: none

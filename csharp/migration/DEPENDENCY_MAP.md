@@ -109,7 +109,7 @@ flowchart TD
   class T091 done
   class T092 done
   class T100 done
-  class T104 prog
+  class T104 review
   class T160 ready
   class T161 ready
   class T162 ready
@@ -152,7 +152,7 @@ xychart-beta
 | A007 | Available (waiting on A004, A005) | A004, A005 | 7 | Operations and armies layer |
 | C002 | Available (waiting on A003, A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
 | T164 | Available (waiting on A003, A004, A005, A006, A007) | T012, T071, T083, T080, T100, A003, A004, A005, A006, A007 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
-| T104 | In-Progress [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 1 | Marker, seam and stale-comment sweep (final) |
+| T104 | Needs-Review [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 1 | Marker, seam and stale-comment sweep (final) |
 | T165 | Available (waiting on A003, A004, A005, A006, A007) | T012, T100, A003, A004, A005, A006, A007 | 1 | Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers) |
 | C003 | Available (waiting on C002) | C002 | 0 | Resource and improvement props |
 | C004 | Available (waiting on C002, T164) | C002, T164 | 0 | 3D military units |
