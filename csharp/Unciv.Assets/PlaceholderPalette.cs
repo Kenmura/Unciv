@@ -55,6 +55,12 @@ public static class PlaceholderPalette
     public static Rgb Light { get; } = new(255, 250, 240);
     public static Rgb SheetLabel { get; } = new(230, 230, 230);
 
+    /// <summary>Map backdrop: what an unexplored tile looks like (nothing is drawn there).</summary>
+    public static Rgb Unexplored { get; } = new(0, 0, 0);
+
+    /// <summary>Multiplied into the albedo of an explored tile that is not currently visible.</summary>
+    public static Rgb FogDim { get; } = new(120, 120, 140);
+
     public static Rgb ForTerrain(string name) => TerrainColours.TryGetValue(name, out var c) ? c : FromHash(name, 110, 170);
 
     public static Rgb ForStat(string name) => StatColours.TryGetValue(name, out var c) ? c : FromHash(name, 150, 210);

@@ -359,7 +359,7 @@ flowchart TD
   class C005 waiting
   class C006 waiting
   class C007 done
-  class C009 prog
+  class C009 review
   class C010 ondeck
   class C011 waiting
   class C012 waiting
@@ -500,7 +500,7 @@ xychart-beta
 | T181 | **On deck** (after T175) | T174, T175, T164, T193 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
 | T187 | Needs-Review [Claude] | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T175 | Needs-Review [Claude] | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
-| C009 | In-Progress [Claude] | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
+| C009 | Needs-Review [Claude] | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C005 | Available (waiting on C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T202 | Available (waiting on T200, T187) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
 | T176 | Available (waiting on T194) | T172, T164, T140, T194 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |

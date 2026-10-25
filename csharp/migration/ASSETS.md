@@ -8,5 +8,6 @@ Every asset used by the Godot client must be listed here with source and license
 |---|---|---|---|
 | Godot built-in default font (Label/Button text in scenarios and the contact sheet) | Bundled in the Godot 4.7.2 engine (Open Sans) | OFL-1.1 (engine third-party notice) | C008 |
 | All client placeholders (terrain materials and noise, hex mesh, unit blocks, props, icons, billboards, UI theme) | Generated at runtime by `Unciv.Godot/Assets/ProceduralAssets.cs` from `Unciv.Assets` (hash of the key, palette in `PlaceholderPalette.cs`); no files, original 5x7 bitmap glyph font written for this project | n/a (generated, project MPL-2.0) | C007 |
+| Map view fog dimming, highlight and black backdrop (`Unciv.Godot/Assets/MapMaterials.cs`, colours `PlaceholderPalette.FogDim/Unexplored`) | Generated at runtime, no files | n/a (generated, project MPL-2.0) | C009 |
 
 Override file names: `assets/override/<category>/<name>.{tres,glb,png,ogg}` where characters outside `A-Za-z0-9_-.` in the name are percent-encoded as UTF-8 (`terrain/Flood plains` -> `assets/override/terrain/Flood%20plains.png`). Keep names unique ignoring case on case-insensitive filesystems.

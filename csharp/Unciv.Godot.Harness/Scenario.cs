@@ -15,5 +15,8 @@ public abstract class Scenario
     /// <summary>Questions for the owner on the review sheet; empty means the general checklist.</summary>
     public virtual IReadOnlyList<string> Checklist => [];
 
+    /// <summary>A scenario that draws a 3D world: the runner then omits its opaque 2D backdrop, which would cover the 3D layer.</summary>
+    public virtual bool Uses3D => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

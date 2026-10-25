@@ -2699,7 +2699,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Review notes (isolated adversarial subagent): APPROVE, no blocking findings; build/format/test (0 failed), Godot build, run-scenario, wrong-golden self-test, review-sheet all re-run green. Non-blocking, left for later client slices: scenario may pass vacuously with an empty command log (add expected-command-count); --expect-golden-failure accepts any non-zero exit; review-sheet.sh should delete stale result.json before each run; ContactSheet assumes 640x480 captures; replay shares the Godot process (not process-isolated).
 
 ### C009 Map view v1: flat hex map from queries, camera, tile picking, fog tint
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: C007, C008, T164, T099, T174, T185
 - Source:
 - Fixtures: none
@@ -2707,6 +2707,13 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed: 2026-10-25T05:23Z
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario map-v1: golden at default+zoomed camera, picked coords equal expected hexes, tint counts equal query counts. Human: terrain readability, camera feel. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - Scenario: map-v1 (Unciv.Godot.Harness/MapV1Scenario.cs; goldens default/selected/zoomed). Run: Unciv.Godot.Harness/tools/run-scenario.sh map-v1 (+ --expect-golden-failure self-test passes).
+    Data source: no whole-map query exists; MapView reads only ClientSnapshot.Tiles (T174 SnapshotBuilder, explored tiles only, Visible flag). Re-point to a real IGameSession/map query when one exists.
+    Unexplored tiles are not drawn (snapshot withholds them); the black backdrop is the unexplored tint, so "tint counts" = visible vs explored tiles drawn.
+    The seeded game has no fog at turn 0, so the scenario marks tiles >2 hexes from the capital Visible=false in the snapshot it gives the view (documented in the scenario).
+    Harness changes: Scenario.Uses3D (runner omits opaque 2D backdrop, root MouseFilter Ignore), Act step, InputSimulator.SimulateWheel/SimulateDrag, Harness csproj references Unciv.Godot.
+    Pan: left-drag (>4px), middle-drag, WASD/arrows; zoom wheel about focus; hills x3 and Mountain x6 prism height; feature blended 50% into base colour. Picking at the flat top plane (hill footprint).
+    Human to judge: terrain readability, camera feel, dim vs unexplored contrast.
 
 ### C010 V1 vertical slice: unit blocks, select, move, end turn, AI turns
 - State: Available

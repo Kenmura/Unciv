@@ -28,3 +28,9 @@ public sealed record AssertQuery(string What, Func<bool> Check) : ScenarioStep;
 
 /// <summary>Capture the viewport as <c>out/&lt;scenario&gt;/&lt;Step&gt;.png</c>, compare it with <c>golden/&lt;scenario&gt;/&lt;Step&gt;.png</c>; the caption goes on the review sheet.</summary>
 public sealed record Capture(string Step, string Caption) : ScenarioStep;
+
+/// <summary>
+/// Run view-side code (camera, simulated wheel or drag) that does not touch the game: state changes still go through <c>GameSession.Submit</c>,
+/// so the command log stays complete.
+/// </summary>
+public sealed record Act(string What, Action Run) : ScenarioStep;

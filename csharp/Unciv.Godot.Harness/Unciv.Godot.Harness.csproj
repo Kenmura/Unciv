@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Unciv.Harness\Unciv.Harness.csproj" />
+    <ProjectReference Include="..\Unciv.Godot\Unciv.Godot.csproj" />
   </ItemGroup>
 
 </Project>

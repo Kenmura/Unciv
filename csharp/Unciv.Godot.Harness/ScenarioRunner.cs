@@ -60,7 +60,8 @@ public partial class ScenarioRunner : Control
         foreach (string stale in Directory.GetFiles(scenarioOut)) File.Delete(stale);
 
         GetViewport().TransparentBg = false;
-        AddChild(new ColorRect { Color = new Color(0.12f, 0.14f, 0.2f), AnchorRight = 1, AnchorBottom = 1 });
+        MouseFilter = MouseFilterEnum.Ignore; // keep mouse events flowing to scenarios that handle them in the 3D world
+        if (!scenario.Uses3D) AddChild(new ColorRect { Color = new Color(0.12f, 0.14f, 0.2f), AnchorRight = 1, AnchorBottom = 1 });
         var session = ScenarioGame.Create();
         var script = scenario.Build(this, session);
 
@@ -99,6 +100,10 @@ public partial class ScenarioRunner : Control
                 break;
             case WaitFrames wait:
                 for (int i = 0; i < wait.Frames; i++) await NextFrame();
+                break;
+            case Act act:
+                act.Run();
+                await NextFrame();
                 break;
             case AssertQuery assert:
                 if (!assert.Check()) failures.Add("AssertQuery: " + assert.What);
