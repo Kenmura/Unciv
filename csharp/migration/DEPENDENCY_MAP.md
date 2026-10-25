@@ -415,7 +415,7 @@ flowchart TD
   class C034 waiting
   class C035 waiting
   class C036 waiting
-  class C037 prog
+  class C037 review
   class C038 ondeck
   class C039 waiting
   class C040 waiting
@@ -550,7 +550,7 @@ xychart-beta
 | C032 | **On deck** (after C003) | C003, C010 | 0 | Improvements, roads, cities, borders and in-world yield icons |
 | C038 | **On deck** (after C037) | C005, C037, T220, T192, T197 | 0 | Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result |
 | C046 | **On deck** (after C037) | C005, C037, T229 | 0 | Dev console UI: console popup with history and autocomplete |
-| C037 | In-Progress [Claude] | C010, T185, T175, T174 | 28 | IGameSession: client reads and writes only through a session interface; LocalHost implements it |
+| C037 | Needs-Review [Claude] | C010, T185, T175, T174 | 28 | IGameSession: client reads and writes only through a session interface; LocalHost implements it |
 | T226 | Available (waiting on T202) | T202 | 15 | Multiplayer game-over and forced-end rules: One More Turn authority, defeated humans, default resolution of blocking decisions on ForceEndTurn |
 | T177 | Available (waiting on T202, T226) | T172, T164, T184, T187, T200, T202, T226 | 14 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202, T223, T224, T230) | T172, T173, T174, T175, T176, T177, T202, T223, T224, T230 | 13 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
