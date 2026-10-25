@@ -64,10 +64,22 @@ public class AssetKeyTests
     [InlineData("unit", "\u4E2D", "unit/%E4%B8%AD")]
     public void FileStemIsFilesystemSafe(string category, string name, string expected) => Assert.Equal(expected, new AssetKey(category, name).FileStem);
 
+    [Theory]
+    [InlineData("\U0001F600", "unit/%F0%9F%98%80")]
+    public void FileStemHandlesAstral(string name, string expected) => Assert.Equal(expected, new AssetKey("unit", name).FileStem);
+
+    [Fact]
+    public void FileStemEscapesLoneSurrogates()
+    {
+        // not a theory: test-data serialisation would replace lone surrogates
+        Assert.Equal("unit/%uD800", new AssetKey("unit", "\uD800").FileStem);
+        Assert.Equal("unit/a%uDC00b", new AssetKey("unit", "a\uDC00b").FileStem);
+    }
+
     [Fact]
     public void FileStemIsCollisionFree()
     {
-        string[] names = ["a b", "a_b", "a%20b", "\u4E2D", "\u6587", "\u00E9", "e", "A", "a"];
+        string[] names = ["a b", "a_b", "a%20b", "\u4E2D", "\u6587", "\u00E9", "e", "A", "a", "\U0001F600", "\U0001F601", "\uD800", "\uD801", "\uD83D"];
         Assert.Equal(names.Length, names.Select(n => new AssetKey("unit", n).FileStem).Distinct().Count());
     }
 

@@ -66,6 +66,6 @@ public static partial class LiteralLint
     [GeneratedRegex(""""\b(res|uid|user)://|"://"""")]
     private static partial Regex ResPath();
 
-    [GeneratedRegex("""new\s+Color\s*\(|\bColor\b[^;=]*=\s*new\s*\(|\bColors\.|\bColor\.(Color8|FromHtml|FromString|FromOkHsl|FromHsv)\b|"#[0-9a-fA-F]{3,8}\b""")]
+    [GeneratedRegex("""new\s+(Godot\.)?Color\s*\(|\bColor\b[^;=]*=\s*new\s*\(|\bColors\.|\bColor\.(Color8|FromHtml|FromString|FromOkHsl|FromHsv)\b|"#[0-9a-fA-F]{3,8}\b""")]
     private static partial Regex ColourLiteral();
 }

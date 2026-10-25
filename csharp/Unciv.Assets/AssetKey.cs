@@ -68,17 +68,42 @@ public readonly record struct AssetKey
         }
     }
 
-    /// <summary>Percent-encodes the UTF-8 bytes of everything outside [A-Za-z0-9_-.] so distinct names never share a file; a segment of only dots is fully encoded so it cannot mean '.' or '..'.</summary>
+    /// <summary>
+    /// Percent-encodes the UTF-8 bytes of everything outside [A-Za-z0-9_-.] so distinct names never share a file (surrogate pairs are encoded as one code point,
+    /// an unpaired surrogate as %uXXXX); a segment of only dots is fully encoded so it cannot mean '.' or '..'. Case is preserved: on case-insensitive filesystems
+    /// names differing only in case would share a file, so keep override file names unique ignoring case.
+    /// </summary>
     private static string Sanitize(string part)
     {
         var allDots = part.All(c => c == '.');
         var sb = new StringBuilder(part.Length);
-        foreach (var c in part)
+        for (var i = 0; i < part.Length; i++)
         {
-            if (!allDots && c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_' or '-' or '.') sb.Append(c);
-            else foreach (var b in Encoding.UTF8.GetBytes(c.ToString())) sb.Append('%').Append(b.ToString("X2", System.Globalization.CultureInfo.InvariantCulture));
+            var c = part[i];
+            if (!allDots && c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_' or '-' or '.')
+            {
+                sb.Append(c);
+            }
+            else if (char.IsHighSurrogate(c) && i + 1 < part.Length && char.IsLowSurrogate(part[i + 1]))
+            {
+                AppendUtf8(sb, part.Substring(i, 2));
+                i++;
+            }
+            else if (char.IsSurrogate(c))
+            {
+                sb.Append("%u").Append(((int)c).ToString("X4", System.Globalization.CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                AppendUtf8(sb, c.ToString());
+            }
         }
         return sb.ToString();
+    }
+
+    private static void AppendUtf8(StringBuilder sb, string text)
+    {
+        foreach (var b in Encoding.UTF8.GetBytes(text)) sb.Append('%').Append(b.ToString("X2", System.Globalization.CultureInfo.InvariantCulture));
     }
 
     public override string ToString() => Category + "/" + Name;

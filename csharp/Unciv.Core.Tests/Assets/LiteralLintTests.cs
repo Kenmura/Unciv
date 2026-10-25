@@ -9,6 +9,7 @@ public class LiteralLintTests
     [InlineData("var c = new Color(1, 0, 0);", "colour literal")]
     [InlineData("var c = new Color (1, 0, 0);", "colour literal")]
     [InlineData("var c = Colors.Red;", "colour literal")]
+    [InlineData("var c = new Godot.Color(1, 0, 0);", "colour literal")]
     [InlineData("var c = Color.Color8(1, 2, 3);", "colour literal")]
     [InlineData("var c = Color.FromHtml(\"x\");", "colour literal")]
     [InlineData("var c = \"#ff00aa\";", "colour literal")]
