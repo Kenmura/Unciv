@@ -200,5 +200,7 @@ public sealed class CityAScenario : Scenario
         public Task<SubmitResult> SubmitAsync(GameCommand command) => inner.SubmitAsync(command);
 
         public Task<TurnOutcome> EndTurnAsync() => inner.EndTurnAsync();
+
+        public Task<string?> ExportSaveAsync() => inner.ExportSaveAsync();
     }
 }
