@@ -114,7 +114,7 @@ public sealed class SimulationTests : IDisposable
         }
         step.Winner = "Greece";
         var victory = ruleset.Victories.Keys.First();
-        typeof(SimulationStep).GetProperty(nameof(SimulationStep.VictoryType))!.SetValue(step, victory);
+        step.VictoryType = victory;
         sim.Add(step);
         Assert.Equal(1, sim.NumWins["Greece"].Value);
         Assert.Equal(0, sim.NumWins["Rome"].Value);
@@ -153,7 +153,7 @@ public sealed class SimulationTests : IDisposable
             if (i < 30)
             {
                 step.Winner = "Greece";
-                typeof(SimulationStep).GetProperty(nameof(SimulationStep.VictoryType))!.SetValue(step, ruleset.Victories.Keys.First());
+                step.VictoryType = ruleset.Victories.Keys.First();
             }
             sim.Add(step);
         }

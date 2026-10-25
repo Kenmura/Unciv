@@ -11,10 +11,10 @@ public sealed class SimulationStep
 {
     private readonly List<string> civilizationNames;
 
-    public int Turns { get; private set; }
-    public string? VictoryType { get; private set; }
+    public int Turns { get; set; }
+    public string? VictoryType { get; set; }
     public string? Winner { get; set; }
-    public string CurrentPlayer { get; private set; }
+    public string CurrentPlayer { get; set; }
 
     /// <summary>[civ][turn]; turn -1 is the end of the game.</summary>
     public LinkedHashMap<string, LinkedHashMap<int, MutableInt>> TurnStatsPop { get; } = new();
