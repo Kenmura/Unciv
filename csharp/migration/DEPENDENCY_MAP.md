@@ -59,7 +59,7 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class A003 ready
+  class A003 prog
   class A004 ready
   class A005 waiting
   class A006 waiting
@@ -95,8 +95,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 15]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 1]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 14]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 2]
 ```
 
 ## Incomplete tickets
@@ -105,7 +105,6 @@ xychart-beta
 |---|---|---|---|---|
 | C001 | **Ready to start** | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | **Ready to start** | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
-| A003 | **Ready to start** | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
@@ -113,6 +112,7 @@ xychart-beta
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | A005 | Available (waiting on A004) | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T104 | In-Progress [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 1 | Marker, seam and stale-comment sweep (final) |
+| A003 | In-Progress [Claude] | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | A006 | Available (waiting on A004) | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Available (waiting on A004, A005) | A004, A005 | 0 | Operations and armies layer |
 | C003 | Blocked | C002 | 0 | Resource and improvement props |
