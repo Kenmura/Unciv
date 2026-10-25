@@ -5,7 +5,7 @@ namespace Unciv.Assets;
 /// <summary>
 /// Typed asset name such as <c>terrain/Grassland</c> or <c>icon/stat/Gold</c>. The category is everything before the last
 /// slash, the name everything after. Keys are derived from ruleset names, so the name may contain spaces or mod-supplied
-/// characters; <see cref="FileStem"/> is the filesystem-safe form used for override files.
+/// characters; <see cref="FileStem"/> is the filesystem-safe, collision-free form used for override files.
 /// </summary>
 public readonly record struct AssetKey
 {
@@ -53,7 +53,7 @@ public readonly record struct AssetKey
     /// <summary>The <c>category/_default</c> key every chain ends in.</summary>
     public AssetKey Default => new(Category, DefaultName);
 
-    /// <summary>Filesystem-safe relative path stem (no extension): letters, digits, '_', '-' and '.' kept, everything else becomes '_'; '..' cannot survive.</summary>
+    /// <summary>Filesystem-safe relative path stem (no extension): see Sanitize.</summary>
     public string FileStem
     {
         get
@@ -68,12 +68,17 @@ public readonly record struct AssetKey
         }
     }
 
+    /// <summary>Percent-encodes the UTF-8 bytes of everything outside [A-Za-z0-9_-.] so distinct names never share a file; a segment of only dots is fully encoded so it cannot mean '.' or '..'.</summary>
     private static string Sanitize(string part)
     {
+        var allDots = part.All(c => c == '.');
         var sb = new StringBuilder(part.Length);
-        foreach (var c in part) sb.Append(c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_' or '-' or '.' ? c : '_');
-        var result = sb.ToString();
-        return result.Trim('.').Length == 0 ? new string('_', Math.Max(1, result.Length)) : result;
+        foreach (var c in part)
+        {
+            if (!allDots && c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_' or '-' or '.') sb.Append(c);
+            else foreach (var b in Encoding.UTF8.GetBytes(c.ToString())) sb.Append('%').Append(b.ToString("X2", System.Globalization.CultureInfo.InvariantCulture));
+        }
+        return sb.ToString();
     }
 
     public override string ToString() => Category + "/" + Name;

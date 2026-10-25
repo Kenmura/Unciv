@@ -93,7 +93,7 @@ public static class ProceduralAssets
         return root;
     }
 
-    private static string StableNodeName(AssetKey key) => key.Name.Replace('.', '_').Replace(':', '_').Replace('@', '_').Replace('/', '_');
+    private static string StableNodeName(AssetKey key) => new string(key.Name.Select(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or ' ' ? c : '_').ToArray());
 
     private static Mesh PrimitiveMesh(PrimitiveSpec p) => p.Shape switch
     {

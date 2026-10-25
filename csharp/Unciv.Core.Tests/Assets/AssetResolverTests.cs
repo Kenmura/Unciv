@@ -192,6 +192,15 @@ public class AssetResolverTests
     }
 
     [Fact]
+    public void UnsafeManifestEntryIgnoredEvenWhenFileExists()
+    {
+        var files = new MemoryAssetFiles()
+            .Add("assets/packs/p/manifest.json", """{"keys":{"unit/Warrior":"../../override/secret.png"}}""")
+            .Add("assets/packs/p/../../override/secret.png");
+        Assert.Equal(AssetSourceKind.Procedural, new AssetResolver(files, Fallbacks(), "p").Resolve(Warrior).Source);
+    }
+
+    [Fact]
     public void SafeRelativePathAcceptsNormalPaths() => Assert.True(AssetResolver.IsSafeRelativePath("models/w.GLB"));
 
     [Fact]

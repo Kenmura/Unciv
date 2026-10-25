@@ -49,10 +49,11 @@ public static class ModelSpecs
         ["Aircraft Carrier"] = PrimitiveShape.Box,
     };
 
-    /// <summary>Unit block: one coloured primitive (shape from the unit type, colour from the key's hash) with an initials billboard above.</summary>
-    public static ModelSpec Unit(AssetKey key)
+    /// <summary>Unit block: one coloured primitive (shape from <paramref name="unitType"/>, or the key itself for unitType keys; hash-chosen when unknown; colour from the key's hash) with an initials billboard above.</summary>
+    public static ModelSpec Unit(AssetKey key, string? unitType = null)
     {
-        var shape = key.Category == RulesetAssetKeys.UnitType && UnitTypeShapes.TryGetValue(key.Name, out var s)
+        var typeName = key.Category == RulesetAssetKeys.UnitType ? key.Name : unitType;
+        var shape = typeName != null && UnitTypeShapes.TryGetValue(typeName, out var s)
             ? s
             : (PrimitiveShape)(StableHash.Of(key.ToString()) % 4);
         var colour = PlaceholderPalette.FromHash(key.ToString(), 140, 210);
@@ -72,7 +73,7 @@ public static class ModelSpecs
         var colour = PlaceholderPalette.FromHash(key.ToString(), 120, 200);
         if (key is { Category: RulesetAssetKeys.Resource, Name: "Horses" })
         {
-            var brown = new Rgb(120, 80, 45);
+            var brown = PlaceholderPalette.HorseBrown;
             return new ModelSpec(
             [
                 new PrimitiveSpec(PrimitiveShape.Box, -0.15f, 0.1f, 0f, 0.3f, 0.2f, 0.15f, brown),

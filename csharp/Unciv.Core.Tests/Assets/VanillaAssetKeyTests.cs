@@ -97,6 +97,18 @@ public sealed class VanillaAssetKeyTests : IDisposable
     }
 
     [Fact]
+    public void UnitKeysTakeTheShapeOfTheirUnitType()
+    {
+        Assert.Equal(ModelSpecs.Unit(AssetKey.Of("unitType", "Sword")).Primitives[0].Shape, ModelSpecs.Unit(AssetKey.Of("unit", "Warrior"), "Sword").Primitives[0].Shape);
+        Assert.Equal(Unciv.Assets.PrimitiveShape.Cone, ModelSpecs.Unit(AssetKey.Of("unit", "Horseman"), "Mounted").Primitives[0].Shape);
+        Assert.Equal("HO", ModelSpecs.Unit(AssetKey.Of("unit", "Horseman"), "Mounted").Initials);
+        foreach (var unit in ruleset.Units.Values)
+        {
+            Assert.Equal(ModelSpecs.Unit(AssetKey.Of("unitType", unit.UnitType)).Primitives[0].Shape, ModelSpecs.Unit(AssetKey.Of("unit", unit.Name), unit.UnitType).Primitives[0].Shape);
+        }
+    }
+
+    [Fact]
     public void ScoutAndSiegeTypesGetTheirTableShapes()
     {
         Assert.Equal(Unciv.Assets.PrimitiveShape.Cone, ModelSpecs.Unit(AssetKey.Of("unitType", "Scout")).Primitives[0].Shape);

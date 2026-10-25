@@ -9,15 +9,18 @@ namespace Unciv.GodotClient.Assets;
 /// Resolution (see <see cref="AssetResolver"/>): override file, then selected pack, along the key's fallback chain, then the procedural generator.
 /// Get never returns null and never throws for a well-formed key and a type the key's kind can produce
 /// (Mesh; Material or Texture2D for terrain; Node3D for unit and prop keys; Texture2D for icons; Theme; StyleBox; Font).
+/// Only the first file found along the chain is tried; if it cannot be loaded as T the placeholder is used. Sound keys are not supported yet (audio ticket C030).
 /// Shared resources are cached per key; Node3D models are built fresh on every call because the caller owns and parents them.
 /// </summary>
 public sealed class AssetRegistry
 {
     private readonly AssetResolver resolver;
+    private readonly IAssetFallbacks fallbacks;
     private readonly Dictionary<(AssetKey, Type), object> cache = [];
 
     public AssetRegistry(IAssetFiles files, IAssetFallbacks fallbacks, string? pack = null)
     {
+        this.fallbacks = fallbacks;
         resolver = new AssetResolver(files, fallbacks, pack);
     }
 
@@ -35,7 +38,7 @@ public sealed class AssetRegistry
         var resolution = resolver.Resolve(key);
         T? result = null;
         if (resolution.Path != null) result = LoadFile<T>(resolution.Path);
-        result ??= Generate<T>(key);
+        result ??= Generate<T>(key, UnitTypeOf(key));
         if (result is not Node3D) cache[(key, typeof(T))] = result;
         return result;
     }
@@ -49,14 +52,18 @@ public sealed class AssetRegistry
         return null;
     }
 
-    private static T Generate<T>(AssetKey key) where T : class
+    /// <summary>The unit type a unit key falls back to (first unitType entry of its chain), used to pick the placeholder shape.</summary>
+    private string? UnitTypeOf(AssetKey key) =>
+        AssetFallbacks.Chain(key, fallbacks).Where(k => k.Category == RulesetAssetKeys.UnitType).Select(k => k.Name).FirstOrDefault();
+
+    private static T Generate<T>(AssetKey key, string? unitType) where T : class
     {
         object? made = AssetKinds.Of(key) switch
         {
             AssetKind.TerrainMaterial when typeof(T).IsAssignableFrom(typeof(StandardMaterial3D)) => ProceduralAssets.TerrainMaterial(key),
             AssetKind.TerrainMaterial when typeof(T).IsAssignableFrom(typeof(ImageTexture)) => ProceduralAssets.ToTexture(ProceduralImages.Noise(key)),
             AssetKind.Mesh => ProceduralAssets.HexMesh(),
-            AssetKind.UnitBlock => ProceduralAssets.Model(key, ModelSpecs.Unit(key), withBanner: true),
+            AssetKind.UnitBlock => ProceduralAssets.Model(key, ModelSpecs.Unit(key, unitType), withBanner: true),
             AssetKind.Prop => ProceduralAssets.Model(key, ModelSpecs.Prop(key), withBanner: false),
             AssetKind.Icon => ProceduralAssets.Icon(key),
             AssetKind.Theme => ProceduralAssets.BuildTheme(),

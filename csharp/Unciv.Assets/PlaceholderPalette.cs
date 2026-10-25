@@ -39,6 +39,7 @@ public static class PlaceholderPalette
         ["Faith"] = new Rgb(230, 230, 240),
     };
 
+    public static Rgb HorseBrown { get; } = new(120, 80, 45);
     public static Rgb Background { get; } = new(24, 28, 36);
     public static Rgb PanelFill { get; } = new(36, 42, 54);
     public static Rgb PanelBorder { get; } = new(62, 70, 86);

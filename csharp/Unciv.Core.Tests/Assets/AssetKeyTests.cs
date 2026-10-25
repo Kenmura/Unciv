@@ -56,17 +56,19 @@ public class AssetKeyTests
 
     [Theory]
     [InlineData("terrain", "Grassland", "terrain/Grassland")]
-    [InlineData("terrain", "Flood plains", "terrain/Flood_plains")]
-    [InlineData("unit", "..", "unit/__")]
+    [InlineData("terrain", "Flood plains", "terrain/Flood%20plains")]
+    [InlineData("unit", "..", "unit/%2E%2E")]
+    [InlineData("unit", ".", "unit/%2E")]
     [InlineData("unit", "a..b", "unit/a..b")]
-    [InlineData("unit", ".hidden.", "unit/hidden")]
-    [InlineData("unit", "Ünïcode", "unit/_n_code")]
-    public void FileStemIsFilesystemSafe(string category, string name, string expected)
+    [InlineData("unit", "%", "unit/%25")]
+    [InlineData("unit", "\u4E2D", "unit/%E4%B8%AD")]
+    public void FileStemIsFilesystemSafe(string category, string name, string expected) => Assert.Equal(expected, new AssetKey(category, name).FileStem);
+
+    [Fact]
+    public void FileStemIsCollisionFree()
     {
-        var stem = new AssetKey(category, name).FileStem;
-        if (name == ".hidden.") Assert.StartsWith("unit/", stem);
-        else Assert.Equal(expected, stem);
-        Assert.DoesNotContain("..", stem.Replace("a..b", "ab"), StringComparison.Ordinal);
+        string[] names = ["a b", "a_b", "a%20b", "\u4E2D", "\u6587", "\u00E9", "e", "A", "a"];
+        Assert.Equal(names.Length, names.Select(n => new AssetKey("unit", n).FileStem).Distinct().Count());
     }
 
     [Fact]

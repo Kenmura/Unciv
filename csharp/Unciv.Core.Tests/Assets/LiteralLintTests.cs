@@ -13,16 +13,30 @@ public class LiteralLintTests
     [InlineData("var c = Color.FromHtml(\"x\");", "colour literal")]
     [InlineData("var c = \"#ff00aa\";", "colour literal")]
     [InlineData("var c = \"#fff\";", "colour literal")]
+    [InlineData("Color c = new(1f, 0f, 0f);", "colour literal")]
+    [InlineData("var p = \"uid://abc\";", "res:// literal")]
+    [InlineData("var p = \"user://save\";", "res:// literal")]
+    [InlineData("var p = \"res\" + \"://\" + x;", "res:// literal")]
     public void DetectsViolations(string line, string rule) => Assert.Equal(rule, Assert.Single(LiteralLint.Scan("X.cs", line)).Rule);
 
     [Theory]
     [InlineData("// res://x.png in a comment")]
     [InlineData("    /// new Color(1,2,3)")]
-    [InlineData(" * Colors.Red")]
     [InlineData("var s = \"issue #12\";")]
     [InlineData("var c = registry.Get<Material>(key);")]
     [InlineData("var c = MyColors.Red;")]
     public void IgnoresCommentsAndLookalikes(string line) => Assert.Empty(LiteralLint.Scan("X.cs", line));
+
+    [Fact]
+    public void BlockCommentsAreSkippedButCodeAfterThemIsScanned()
+    {
+        Assert.Empty(LiteralLint.Scan("X.cs", "/* start\nres://inside\n end */"));
+        Assert.Equal(4, Assert.Single(LiteralLint.Scan("X.cs", "/* a */\n/* b\nc */\nres://x")).Line);
+        Assert.Empty(LiteralLint.Scan("X.cs", "/* one line res:// */"));
+    }
+
+    [Fact]
+    public void TargetTypedVectorsAreNotColours() => Assert.Empty(LiteralLint.Scan("X.cs", "Vector3 v = new(1f, 2f, 3f);"));
 
     [Fact]
     public void ReportsLineNumbers() => Assert.Equal(3, LiteralLint.Scan("X.cs", "a\nb\nres://c").Single().Line);
@@ -33,13 +47,15 @@ public class LiteralLintTests
         var root = Directory.CreateTempSubdirectory("lint-").FullName;
         try
         {
-            foreach (var dir in new[] { "Assets", "obj", "UI" }) Directory.CreateDirectory(Path.Combine(root, dir));
+            foreach (var dir in new[] { "Assets", "obj", "UI", "Screens/Assets", "Screens/bin" }) Directory.CreateDirectory(Path.Combine(root, dir));
             File.WriteAllText(Path.Combine(root, "Assets", "A.cs"), "res://ok");
             File.WriteAllText(Path.Combine(root, "obj", "B.cs"), "res://ok");
             File.WriteAllText(Path.Combine(root, "UI", "C.cs"), "res://bad");
             File.WriteAllText(Path.Combine(root, "D.cs"), "fine");
+            File.WriteAllText(Path.Combine(root, "Screens", "Assets", "E.cs"), "res://nested assets dir is not exempt");
+            File.WriteAllText(Path.Combine(root, "Screens", "bin", "F.cs"), "res://build output");
             var found = LiteralLint.ScanDirectory(root);
-            Assert.Equal("UI/C.cs", Assert.Single(found).File);
+            Assert.Equal(["Screens/Assets/E.cs", "UI/C.cs"], found.Select(v => v.File));
         }
         finally
         {
