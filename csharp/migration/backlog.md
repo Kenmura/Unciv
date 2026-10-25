@@ -2170,13 +2170,15 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Scorers are pure functions of input records (VictoryScorerInputs.cs), not of Civilization: SPEC section 4 leaves many operands unrecovered ([?]: BNW conquest base term and -50 tail predicate, culture/diplomatic X, diplomatic c1..c3, spaceship progress count), so the caller supplies them. Game adapter split to a follow-up ticket (see backlog). Assumptions: int division truncates as in C; diplomatic with a League but VotesNeeded<=0 skips the vote terms; clamp5 = Clamp(5x,-limit,limit) with limits 40/20/40 as public consts; spaceship ProgressWeight 5 and conquest tail 50 are literals. Edition param kept but only BNW formulas implemented. 15 tests, 100% line/branch coverage.
 
 ### A004 Target-centric Tactical AI: TacticalMoveQueue & recruitment
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: A001, T039, T040, T065, T067, T081, T090
 - Source: `csharp/migration/ai-spec/SPEC.md` §6.1, §6.2, §6.4
 - Deliverables: `csharp/Unciv.Core/AI/Tactical/` (`TacticalMoveQueue`, `TacticalMoveType`, `TacticalTarget`, `TacticalRecruiter`), tests
 - Gate: `dotnet test --filter FullyQualifiedName~TacticalAITests`
 - Claimed: 2026-10-25T00:21Z
 - Notes: Replaces per-unit movement loops with a prioritized move queue. Critical high-value moves (e.g. `CAPTURE_CITY`, `DESTROY_HIGH_UNIT`) scan the board for valid targets and recruit the best candidate units across the civilization before lower-priority moves run.
+  - Scope narrowed: engine-agnostic core on plain data (TacticalMoveType enum over all 55 TSV moves, TacticalTarget/TacticalTargetList, TacticalMoveQueue with seeded priority jitter, TacticalRecruiter overkill assignment per SPEC 6.5). Wiring to Civilization/TileMap and zone/posture expansion split to A008.
+    Assumptions: effective priority uses the SPEC 6.4 [I] formula (unverified): Priority + trunc(0.3*(Off*offFlavor+Def*defFlavor)/100) + rand(6); ties keep TSV order. Recruiter tie-break: damage desc, distance, id (SPEC leaves the estimator [?]). Names use FrozenDictionary (mutable-static policy).
 
 ### A005 Tactical overkill assignment & coordinated multi-unit attacks
 - State: Available
@@ -2201,3 +2203,13 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Deliverables: `csharp/Unciv.Core/AI/Operations/` (`AIOperation`, `ArmyAI`, operation types: `CityAttack`, `BarbarianCamp`, etc.), tests
 - Gate: `dotnet test --filter FullyQualifiedName~OperationTests`
 - Notes: Coordinates multi-unit strategic movements, muster staging areas, recruitment locks, and forward deployments.
+
+### A008 Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks
+- State: Available
+- Depends: A004
+- Source: csharp/migration/ai-spec/SPEC.md section 6.1, 6.5
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/AI/Tactical/ (target scanner + handlers over Civilization, MapUnit, Tile), tests
+- Gate: dotnet test --filter FullyQualifiedName~TacticalAdapterTests
+- Claimed:
+- Notes: Split from A004: A004 delivered the engine-agnostic queue, targets and overkill recruiter on plain data. This wires them to the real game objects and adds zone/posture expansion (SPEC 6.1/6.3).
