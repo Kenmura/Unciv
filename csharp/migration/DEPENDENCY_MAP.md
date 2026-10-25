@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 213/214 | 1 | 0 | 1 | [T237](backlog/T237.md) |
+| Phase 1: CLI (headless engine) | 214/214 | 0 | 0 | 0 | complete |
 | Phase 2: single player (Godot client) | 21/45 | 24 | 16 | 5 | [C013](backlog/C013.md) [C019](backlog/C019.md) [C020](backlog/C020.md) [C022](backlog/C022.md) [C023](backlog/C023.md) [C024](backlog/C024.md) [C025](backlog/C025.md) [C026](backlog/C026.md) [C027](backlog/C027.md) [C028](backlog/C028.md) [C029](backlog/C029.md) [C030](backlog/C030.md) [C031](backlog/C031.md) [C032](backlog/C032.md) [C033](backlog/C033.md) [C038](backlog/C038.md) [C039](backlog/C039.md) [C040](backlog/C040.md) [C042](backlog/C042.md) [C044](backlog/C044.md) [C046](backlog/C046.md) [C047](backlog/C047.md) [C048](backlog/C048.md) [T169](backlog/T169.md) |
 | Phase 3: multiplayer | 6/29 | 23 | 6 | 0 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T176](backlog/T176.md) [T177](backlog/T177.md) [T178](backlog/T178.md) [T179](backlog/T179.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T201](backlog/T201.md) [T202](backlog/T202.md) [T203](backlog/T203.md) [T204](backlog/T204.md) [T205](backlog/T205.md) [T206](backlog/T206.md) [T207](backlog/T207.md) [T223](backlog/T223.md) [T224](backlog/T224.md) [T225](backlog/T225.md) [T226](backlog/T226.md) [T230](backlog/T230.md) |
 
@@ -59,7 +59,6 @@ flowchart TD
     T225["T225<br/>Network robustness: real TCP+TLS multi-client tests, backpre..."]
     T226["T226<br/>Multiplayer game-over and forced-end rules: One More Turn au..."]
     T230["T230<br/>Host-secret salt for state-based randomness in hosted multip..."]
-    T237["T237<br/>Civ5AiState: null-tolerant Clone/sanitize on load, cap opera..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -264,7 +263,6 @@ flowchart TD
   class T225 waiting
   class T226 waiting
   class T230 ready
-  class T237 review
 ```
 
 ## Remaining tickets over time
@@ -283,7 +281,7 @@ xychart-beta
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00", "25 18:00", "25 21:00", "26 00:00"]
     y-axis "Tickets" 0 --> 80
     line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 63, 55, 48, 42]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6, 5, 6, 6]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6, 5, 6, 5]
 ```
 
 ## Incomplete tickets
@@ -337,4 +335,3 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T237 | In-Review [Claude] | none | 0 | Civ5AiState: null-tolerant Clone/sanitize on load, cap operations and blocked targets |
