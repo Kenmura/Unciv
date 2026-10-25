@@ -201,6 +201,18 @@ public sealed class GameStarterTests : IDisposable
     }
 
     [Fact]
+    public void RandomCityStateCountIsDrawnBetweenTheSwappedBounds()
+    {
+        var game = Start(Setup(it =>
+        {
+            it.RandomNumberOfCityStates = true;
+            it.MinNumberOfCityStates = 2; // min and max given the wrong way round are swapped
+            it.MaxNumberOfCityStates = 1;
+        }));
+        Assert.InRange(game.Civilizations.Count(it => it.IsCityState), 1, 2);
+    }
+
+    [Fact]
     public void NegativeCityStateCountFailsLoudly()
     {
         var setup = Setup(it => it.NumberOfCityStates = -1);
