@@ -1940,7 +1940,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T167 L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T102
 - Source:
 - Fixtures: none

@@ -51,7 +51,6 @@ flowchart TD
     T163["T163<br/>ticket.py: refuse Done unless the tip builds, tests pass and..."]
     T164["T164<br/>Command infrastructure over GameInfo: GameCommand base, asse..."]
     T166["T166<br/>Victory scorer game adapter (fills ConquestInputs/CultureInp..."]
-    T167["T167<br/>L1 acceptance soak: 300+ turn headless games on Small and St..."]
     T169["T169<br/>CI for the C# solution and Unciv.Godot (headless build, form..."]
     T170["T170<br/>Ruleset/mod folder loading and real translation file loading..."]
     T171["T171<br/>Event presentation types in UniqueTriggerActivation (replace..."]
@@ -248,7 +247,6 @@ flowchart TD
   T176 --> T205
   T179 --> T206
   T179 --> T207
-  T167 --> T208
   C001 --> C002
   A003 --> C002
   A004 --> C002
@@ -501,7 +499,6 @@ flowchart TD
   class T163 ready
   class T164 done
   class T166 ready
-  class T167 review
   class T169 ready
   class T170 done
   class T171 done
@@ -541,7 +538,7 @@ flowchart TD
   class T205 waiting
   class T206 waiting
   class T207 waiting
-  class T208 ondeck
+  class T208 ready
 ```
 
 ## Remaining tickets over time
@@ -558,9 +555,9 @@ Generated from the git history of `backlog.md` (UTC; each point is the backlog a
 xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
-    y-axis "Tickets" 0 --> 86
+    y-axis "Tickets" 0 --> 85
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 78]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 2]
 ```
 
 ## Incomplete tickets
@@ -577,13 +574,13 @@ xychart-beta
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
 | T163 | **Ready to start** | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
+| T208 | **Ready to start** | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
 | C007 | **On deck** (after A007) | C001, A003, A004, A005, A006, A007 | 33 | Asset registry and procedural placeholder generator |
 | C008 | **On deck** (after A007) | C001, A003, A004, A005, A006, A007 | 32 | Client scenario runner and owner review sheet |
 | T199 | **On deck** (after T185) | T185, T099, T045, T170 | 9 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
 | T197 | **On deck** (after T185) | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
 | T195 | **On deck** (after T185) | T185, T139 | 3 | Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets) |
 | T196 | **On deck** (after T185) | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
-| T208 | **On deck** (after T167) | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
 | T185 | Needs-Review [Claude] | T084, T085, T138, T139, T012 | 50 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
@@ -622,7 +619,6 @@ xychart-beta
 | C025 | Available (waiting on C005) | C005, T023, T170 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
 | C035 | Available (waiting on C005, T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
 | C036 | Available (waiting on C010, C011, T180, T202, T175) | C010, C011, T180, T202, T175 | 1 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
-| T167 | Needs-Review [Claude] | T102 | 1 | L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage |
 | T203 | Available (waiting on T202, T188, T191, T192, T193, T194, T174) | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | C006 | Available (waiting on T172, T173, T180, T179, C010, C016, T194, C035, C036) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
