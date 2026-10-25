@@ -84,6 +84,7 @@ public class QueryTests
         foreach (var type in typeof(QueryTests).Assembly.GetTypes().Where(it => it.IsDefined(typeof(QueryTypeAttribute), false)))
             if (type != typeof(MismatchQuery))
                 registry.Register(type, type.GetCustomAttributes(typeof(QueryTypeAttribute), false).Cast<QueryTypeAttribute>().Single().Name);
+        registry.RegisterFromAssembly(typeof(QueryRegistry).Assembly); // the purity test runs the real queries too
         return registry;
     }
 
@@ -264,9 +265,15 @@ public class QueryTests
 
     // Sample requests for every query that Unciv.Core registers: the purity test below fails for a registered
     // query without an entry, so query tickets (T195-T199) must add theirs here.
-    // Empty by design until T195 lands. The state hash is the serialized GameInfo, which includes the RNG state, so a
+    // The state hash is the serialized GameInfo, which includes the RNG state, so a
     // query that draws randomness is caught here too.
-    private static readonly Dictionary<string, Func<IQuery>> CoreSamples = [];
+    private static readonly Dictionary<string, Func<IQuery>> CoreSamples = new()
+    {
+        ["units.ReachableTiles"] = () => new Unciv.Queries.Units.ReachableTilesQuery(1),
+        ["units.PathPreview"] = () => new Unciv.Queries.Units.PathPreviewQuery(1, 0, 0),
+        ["units.AttackableTargets"] = () => new Unciv.Queries.Units.AttackableTargetsQuery(UnitId: 1),
+        ["units.AttackPreview"] = () => new Unciv.Queries.Units.AttackPreviewQuery(0, 0, UnitId: 1),
+    };
 
     [Fact]
     public void EveryRegisteredQueryIsPureAndHasASample()
