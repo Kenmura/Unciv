@@ -463,7 +463,7 @@ flowchart TD
   class T194 waiting
   class T195 done
   class T196 ready
-  class T197 review
+  class T197 done
   class T198 ready
   class T199 done
   class T200 waiting
@@ -494,7 +494,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00"]
     y-axis "Tickets" 0 --> 83
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 65]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 3]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 2]
 ```
 
 ## Incomplete tickets
@@ -531,7 +531,6 @@ xychart-beta
 | T179 | Available (waiting on T173, T178) | T172, T173, T178 | 9 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
 | T204 | Available (waiting on T173, T178) | T172, T173, T178, T199 | 7 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
 | C002 | Available (waiting on C009) | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
-| T197 | In-Review [Claude] | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
 | T180 | Available (waiting on T173, T174, T175, T179, T204) | T172, T173, T174, T175, T179, T204 | 4 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C011 | Available (waiting on C005, C010, T174, T184) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | Available (waiting on C005, C010, T189, T190) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
@@ -540,7 +539,7 @@ xychart-beta
 | C015 | Available (waiting on C005, C010) | C005, C010, T099, T045, T021, T034, T170, T199 | 1 | Main menu and game setup screen: nations, difficulty, speed, map options |
 | C016 | Available (waiting on C005, C010) | C005, C010, T100 | 1 | Save/load screen and autosave |
 | C017 | Available (waiting on C005, C010, T196) | C005, C010, T164, T060, T062, T191, T196 | 1 | City screen A: info, tiles, specialists, focus |
-| C021 | Available (waiting on C005, C010, T193, T197) | C005, C010, T164, T059, T068, T193, T197 | 1 | Diplomacy screen |
+| C021 | Available (waiting on C005, C010, T193) | C005, C010, T164, T059, T068, T193, T197 | 1 | Diplomacy screen |
 | C025 | Available (waiting on C005) | C005, T023, T170 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
 | C035 | Available (waiting on C005, T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
 | C036 | Available (waiting on C010, C011, T180, T202, T175) | C010, C011, T180, T202, T175 | 1 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
@@ -550,10 +549,10 @@ xychart-beta
 | C013 | Available (waiting on C005, C010, T187, T175) | C005, C010, T164, T051, T055, T171, T187, T175 | 0 | Notifications and popup alerts |
 | C014 | Available (waiting on C010, T174) | C010, T164, T174 | 0 | Minimap |
 | C018 | Available (waiting on C017, T196) | C017, T063, T191, T196 | 0 | City screen B: production queue, purchase, buildings |
-| C019 | Available (waiting on C005, C010, T192, T197) | C005, C010, T164, T056, T192, T197 | 0 | Tech screen |
-| C020 | Available (waiting on C005, C010, T192, T197) | C005, C010, T164, T056, T192, T197 | 0 | Policy screen |
-| C022 | Available (waiting on C021, T193, T197) | C021, T164, T059, T193, T197 | 0 | Trade screen |
-| C023 | Available (waiting on C005, C010, T197, T198) | C005, C010, T164, T057, T197, T198 | 0 | Overview screens: empire, cities, units, resources, ranking, religion, espionage |
+| C019 | Available (waiting on C005, C010, T192) | C005, C010, T164, T056, T192, T197 | 0 | Tech screen |
+| C020 | Available (waiting on C005, C010, T192) | C005, C010, T164, T056, T192, T197 | 0 | Policy screen |
+| C022 | Available (waiting on C021, T193) | C021, T164, T059, T193, T197 | 0 | Trade screen |
+| C023 | Available (waiting on C005, C010, T198) | C005, C010, T164, T057, T197, T198 | 0 | Overview screens: empire, cities, units, resources, ranking, religion, espionage |
 | C024 | Available (waiting on C005, C010, T198, T187) | C005, C010, T166, T198, T187 | 0 | Victory and defeat screen, game over |
 | C026 | Available (waiting on C005, C010) | C005, C010, T030, T049 | 0 | Tutorials |
 | C027 | Available (waiting on C005, C025) | C005, C025 | 0 | Tooltips and Civilopedia |
