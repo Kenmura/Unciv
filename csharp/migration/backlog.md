@@ -2375,7 +2375,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Deliberate deviation: RespondToTradeRequest removes the request before AcceptTrade (as the AI path does). Responses to a stale alert (offerer defeated or at war) just drop the alert. TradeOfferSpec uses Kind, not Type, because the envelope payload may not contain a type field. The AI-would-accept hint (TradeHintQuery) is not part of this ticket.
 
 ### T194 Command log format, replay verifier and scripted-human replay test against the T102 state hashes
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T187, T188, T189, T191, T192, T102, T011
 - Source: design/COMMANDS-IMPLEMENTATION.md section 6; Unciv.Core/Commands/CommandProcessor.cs; Unciv.Core.Tests/Determinism/EndToEndDeterminismTests.cs; Utils/StateHasher.cs
 - Fixtures: none
