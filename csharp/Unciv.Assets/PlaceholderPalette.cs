@@ -1,0 +1,63 @@
+namespace Unciv.Assets;
+
+/// <summary>
+/// The single table of placeholder colours (the only place colour values are written down). Known names get a hand-picked colour so
+/// terrain reads correctly; every other name gets a colour derived from its stable hash, so mods render something distinguishable.
+/// </summary>
+public static class PlaceholderPalette
+{
+    private static readonly Dictionary<string, Rgb> TerrainColours = new(StringComparer.Ordinal)
+    {
+        ["Ocean"] = new Rgb(30, 70, 140),
+        ["Coast"] = new Rgb(60, 120, 190),
+        ["Lakes"] = new Rgb(70, 140, 200),
+        ["Grassland"] = new Rgb(100, 170, 70),
+        ["Plains"] = new Rgb(190, 180, 90),
+        ["Desert"] = new Rgb(225, 200, 130),
+        ["Tundra"] = new Rgb(150, 160, 140),
+        ["Snow"] = new Rgb(240, 245, 250),
+        ["Hill"] = new Rgb(130, 115, 70),
+        ["Mountain"] = new Rgb(110, 105, 105),
+        ["Forest"] = new Rgb(40, 110, 50),
+        ["Jungle"] = new Rgb(20, 130, 70),
+        ["Marsh"] = new Rgb(90, 130, 110),
+        ["Oasis"] = new Rgb(60, 190, 160),
+        ["Flood plains"] = new Rgb(150, 190, 90),
+        ["Ice"] = new Rgb(200, 230, 245),
+        ["Atoll"] = new Rgb(110, 200, 200),
+        ["Fallout"] = new Rgb(120, 130, 60),
+    };
+
+    private static readonly Dictionary<string, Rgb> StatColours = new(StringComparer.Ordinal)
+    {
+        ["Production"] = new Rgb(160, 110, 60),
+        ["Food"] = new Rgb(90, 170, 60),
+        ["Gold"] = new Rgb(235, 190, 40),
+        ["Science"] = new Rgb(70, 140, 230),
+        ["Culture"] = new Rgb(170, 90, 200),
+        ["Happiness"] = new Rgb(240, 150, 60),
+        ["Faith"] = new Rgb(230, 230, 240),
+    };
+
+    public static Rgb Background { get; } = new(24, 28, 36);
+    public static Rgb PanelFill { get; } = new(36, 42, 54);
+    public static Rgb PanelBorder { get; } = new(62, 70, 86);
+    public static Rgb Accent { get; } = new(214, 170, 60);
+    public static Rgb AccentHover { get; } = new(240, 200, 90);
+    public static Rgb ButtonFill { get; } = new(48, 56, 72);
+    public static Rgb ButtonHover { get; } = new(66, 76, 96);
+    public static Rgb ButtonPressed { get; } = new(30, 36, 48);
+    public static Rgb Text { get; } = new(232, 232, 236);
+    public static Rgb TextDisabled { get; } = new(130, 134, 142);
+    public static Rgb IconOutline { get; } = new(16, 18, 24);
+    public static Rgb IconGlyph { get; } = new(250, 250, 250);
+    public static Rgb Light { get; } = new(255, 250, 240);
+    public static Rgb SheetLabel { get; } = new(230, 230, 230);
+
+    public static Rgb ForTerrain(string name) => TerrainColours.TryGetValue(name, out var c) ? c : FromHash(name, 110, 170);
+
+    public static Rgb ForStat(string name) => StatColours.TryGetValue(name, out var c) ? c : FromHash(name, 150, 210);
+
+    /// <summary>Colour for any name: hue from its stable hash, fixed saturation and value so neighbours stay distinguishable.</summary>
+    public static Rgb FromHash(string name, int saturation, int value) => Rgb.FromHsv((int)(StableHash.Of(name) % 360), saturation, value);
+}
