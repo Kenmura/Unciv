@@ -2133,7 +2133,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Revised acceptance: 3 humans act simultaneously with interleaved commands for 20+ turns plus AI; timer forces one civ's end; one client dropped and resumed (UndoEndTurn after return); host killed mid-Resolving and restarted (NextResolveStep continues); late join into an AI slot; tampered command rejected; wrong password refused; fingerprint mismatch hard-fails.
 
 ### T183 Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T071, T046
 - Source: core/src/com/unciv/logic/GameInfo.kt; logic/city/CityConstructions.kt chooseNextConstruction; logic/battle/Battle.kt conquerCity; logic/civilization/managers/TurnManager.kt; logic/multiplayer/Multiplayer.kt isUsersTurn; design/COMMANDS-IMPLEMENTATION.md section 3 'ClientState audit'
 - Fixtures: none
