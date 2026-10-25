@@ -2537,6 +2537,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes:
 
+### T210 Spy coup and counter-intelligence commands (not covered by T192)
+- State: Available
+- Depends: T192
+- Source: core/src/com/unciv/logic/civilization/managers/EspionageManager.kt; Spy.kt; ui/screens/espionagescreen
+- Fixtures: none
+- Deliverables: Espionage action commands (coup, counter-intelligence, move spy) under Unciv.Core/Commands with tests
+- Gate: dotnet test --filter "FullyQualifiedName~Espionage"
+- Claimed:
+- Notes: Found by T192: no listed command covers spy coup or counter-intelligence. Needed by the espionage screen (C023).
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
