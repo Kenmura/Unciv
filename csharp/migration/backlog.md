@@ -2322,13 +2322,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - GameCommandTests builds a fresh game per empire command (EmpireSamples) since the samples are mutually exclusive.
 
 ### T193 Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T164, T186, T086, T089
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.6; logic/civilization/diplomacy/DiplomacyManager.kt, DeclareWar.kt, CityStateFunctions.kt; logic/trade/TradeLogic.kt; ui/screens/diplomacyscreen/*; ui/screens/worldscreen/TradePopup.kt; view/TradeView.kt
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/Diplomacy/*.cs (DeclareWar, Denounce, ProposeTrade, RetractTrade, RespondToTradeRequest, MakeDemand, GiftGold, TributeGold/TributeWorker, PledgeProtection, WithdrawProtection, DiplomaticMarriage, ...), tests incl. a human-proposes -> AI answers in its RunAiTurn scenario
 - Gate: dotnet test --filter FullyQualifiedName~Commands.Diplomacy
-- Claimed:
+- Claimed: 2026-10-25T04:20Z
 - Notes:
   - Verified flow: human -> AI trades are ASYNCHRONOUS. TradeView.TryProposeStagedTrade only adds a TradeRequest to the other civ's TradeRequests; the AI answers inside its own turn (TradeAutomation.RespondToTradeRequests: accept -> TradeLogic.AcceptTrade, else counteroffer or decline with notification). So 'ProposeTrade' returns no verdict; the verdict arrives as a notification/TradeRequest in a later RunAiTurn. A human receiving a request responds with RespondToTradeRequest(requestId, accept) = TradeLogic(...).AcceptTrade after IsTradeValid; TradePopup.kt is the reference. Peace treaties and declarations of friendship are trade offer types (TradeOfferType) or DiplomacyManager calls: verify each in MajorCivDiplomacyTable before choosing the command, and keep one command per UI button.
       - Validate = what the diplomacy screen enabled: DiplomacyManager.CanDeclareWar (DiplomacyManagerView), IsAtWarWith, flags (DiplomacyFlags like DeclaredWar cooldown), civ knows the other civ, not both AI-only restrictions, TradeLogic.IsValid offers (Our/TheirAvailableOffers), trade value inflation uses TradeEvaluation (T089): only the AI's answer uses it; a human-human trade has no evaluation.
