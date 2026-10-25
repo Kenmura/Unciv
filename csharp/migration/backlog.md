@@ -2318,7 +2318,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Simultaneous turns: header gains turnMode and the initial controller bindings; entries of different human actors and the server's ProcessEndTurn/RunAiTurn/StartNextTurn/BeginTurn/ForceEndTurn/SetController interleave in one Seq order; a checkpoint is written after the last BeginTurn of each turn. The verifier needs no clock. Two-human replay test is T203.
 
 ### T195 Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T185, T139
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/MapUnitView.kt (getDistanceToTiles, getShortestPath, getReachableTilesInCurrentTurn, getAttackableEnemies), CombatantView.kt, AttackableTileView.kt; logic/battle/BattleDamage.kt, ui/screens/worldscreen/unit/*, ui/screens/worldscreen/BattleTableHelpers
 - Fixtures: none
