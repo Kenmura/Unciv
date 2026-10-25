@@ -15,6 +15,7 @@
     "Unciv.Core/AI/GrandStrategy/Scorers/DiplomaticScorer.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/GrandStrategy/Scorers/SpaceshipScorer.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/GrandStrategy/Scorers/VictoryScorerInputs.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/AI/Tactical/OverkillAssigner.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Tactical/TacticalMoveQueue.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Tactical/TacticalMoveType.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Tactical/TacticalRecruiter.cs": {"branch": 100.0, "line": 100.0},
