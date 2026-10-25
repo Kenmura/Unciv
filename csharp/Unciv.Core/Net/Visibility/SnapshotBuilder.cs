@@ -142,7 +142,7 @@ public static class SnapshotBuilder
         };
     }
 
-    private static TileDto BuildTile(TileView tile, GameView gameView)
+    internal static TileDto BuildTile(TileView tile, GameView gameView)
     {
         var position = tile.Position();
         var visible = tile.IsVisible();
@@ -166,7 +166,7 @@ public static class SnapshotBuilder
         };
     }
 
-    private static UnitDto BuildUnit(ForeignMapUnitView unit, TileView tile)
+    internal static UnitDto BuildUnit(ForeignMapUnitView unit, TileView tile)
     {
         var position = tile.Position();
         var ownView = unit.TryGetMapUnitView();

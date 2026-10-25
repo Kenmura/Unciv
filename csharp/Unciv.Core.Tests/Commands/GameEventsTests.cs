@@ -12,6 +12,7 @@ using Unciv.Logic.Trade;
 using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
+using Unciv.Net.Visibility;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
@@ -52,6 +53,11 @@ public sealed class GameEventsTests
         "peace-made" => new PeaceMade("Babylon", "Rome"),
         "trade-accepted" => new TradeAccepted("Babylon", "Rome",
             [new TradeOfferFact("Gold", TradeOfferType.Gold, 50, -1)], [new TradeOfferFact("Agriculture", TradeOfferType.Technology, 1, -1)]),
+        "unit-appeared" => new UnitAppeared("Babylon", 12, "Warrior", P1),
+        "unit-disappeared" => new UnitDisappeared("Babylon", 12, P1),
+        "stats-changed" => new StatsChanged("Babylon", 100, 5),
+        "tiles-revealed" => new TilesRevealed("Babylon",
+            [new TileDto { X = 1, Y = 2, Visible = false, BaseTerrain = "Grassland", Features = [], RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }], []),
         _ => throw new InvalidOperationException($"No sample for event type \"{type}\"; add one to GameEventsTests.Sample"),
     };
 
