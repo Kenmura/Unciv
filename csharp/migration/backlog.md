@@ -2443,7 +2443,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review (adversarial subagent): PASS. Non-blocking: DiplomacyPanel Flags lists all flags incl. AI bookkeeping ones (candidate whitelist); TradeHint is a probing oracle by design (gated by TradeHintsEnabled, no rate limit); untested: TradeHint human/CS target, Religion enhancing branch, Notification default arm, CS diplomacy panel.
 
 ### T198 Query API: victory progress, scores, rankings and demographics
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T185, T166, A003
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; ui/screens/victoryscreen/*, logic/civilization/managers/VictoryManager.kt, Civilization.calculateScoreBreakdown, CivRankingHistory; csharp AI/GrandStrategy/Scorers/VictoryScorerInputs.cs, UI/RankingType.cs
 - Fixtures: none
@@ -2457,6 +2457,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Implemented (Claude): Queries/Victory/{VictoryProgress,Scores,Rankings,Demographics,History}Query + VictoryQueryHelpers (wire types victory.Progress/Scores/Rankings/Demographics/History); tests in Queries/Victory/VictoryQueryTests.cs, samples added to QueryTests.CoreSamples. Victory.cs: OriginalMajorCapitalsOwned/CivsWithPotentialCapitalsToOwn made internal (progress numbers).
       - Privacy follows Kotlin exactly: VictoryScreen.canViewCivStats (HideOtherCivilizationStats, VictoryData, spectator) filters Rankings and History only; Demographics and the global progress page list all major civs (Kotlin does not filter them); an unmet civ is anonymous (CivName null, VictoryScreenCivGroup rule) but its numbers are shown. Rankings/Demographics/History return not-available when the Kotlin tab would be hidden (ShowCivilizationStats && ShowRankings/ShowDemographics/ShowCharts, else spectator or VictoryData). The 'at least 2 history entries' Charts rule is a UI nicety and not enforced.
       - A003 scorers/T166 adapter not used: milestone numbers are computed from the Milestone members directly (same formulas as GetVictoryScreenButtonHeaderText, Total null where ShouldHideCivCount). Scores keeps Double; breakdown in JavaHashMap order. Rankings use live values (as Kotlin), Demographics the turn snapshot. History keeps Kotlin's possible duplicate current-turn point.
+  -   - Review notes (Claude, adversarial subagent): pass 1 PASS with fixes (exact ordinal category match, unchecked sum, tests for zoom/tie-break/defeated viewer, Charts-size divergence documented); pass 2 PASS. Gate green on rebased tree (build, format, 5049 tests, coverage check).
 
 ### T199 Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point
 - State: Done

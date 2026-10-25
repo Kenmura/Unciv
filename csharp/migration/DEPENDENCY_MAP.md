@@ -420,7 +420,7 @@ flowchart TD
   class T195 done
   class T196 done
   class T197 done
-  class T198 review
+  class T198 done
   class T199 done
   class T200 ready
   class T201 waiting
@@ -488,7 +488,6 @@ xychart-beta
 | T180 | Available (waiting on T179, T204) | T172, T173, T174, T175, T179, T204 | 4 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C011 | Available (waiting on C005, C010) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | Available (waiting on C005, C010) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
-| T198 | Needs-Review [Claude] | T185, T166, A003 | 2 | Query API: victory progress, scores, rankings and demographics |
 | C003 | Available (waiting on C002) | C002 | 1 | Resource and improvement props |
 | C004 | Available (waiting on C002, C010, C012) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
 | C015 | Available (waiting on C005, C010) | C005, C010, T099, T045, T021, T034, T170, T199 | 1 | Main menu and game setup screen: nations, difficulty, speed, map options |
@@ -507,8 +506,8 @@ xychart-beta
 | C019 | Available (waiting on C005, C010) | C005, C010, T164, T056, T192, T197 | 0 | Tech screen |
 | C020 | Available (waiting on C005, C010) | C005, C010, T164, T056, T192, T197 | 0 | Policy screen |
 | C022 | Available (waiting on C021) | C021, T164, T059, T193, T197 | 0 | Trade screen |
-| C023 | Available (waiting on C005, C010, T198) | C005, C010, T164, T057, T197, T198 | 0 | Overview screens: empire, cities, units, resources, ranking, religion, espionage |
-| C024 | Available (waiting on C005, C010, T198, T187) | C005, C010, T166, T198, T187 | 0 | Victory and defeat screen, game over |
+| C023 | Available (waiting on C005, C010) | C005, C010, T164, T057, T197, T198 | 0 | Overview screens: empire, cities, units, resources, ranking, religion, espionage |
+| C024 | Available (waiting on C005, C010, T187) | C005, C010, T166, T198, T187 | 0 | Victory and defeat screen, game over |
 | C026 | Available (waiting on C005, C010) | C005, C010, T030, T049 | 0 | Tutorials |
 | C027 | Available (waiting on C005, C025) | C005, C025 | 0 | Tooltips and Civilopedia |
 | C028 | Available (waiting on C005) | C005 | 0 | Options screen, hotkeys, edge-pan |
