@@ -2052,7 +2052,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review pass 2 (adversarial subagent): fixes verified (mutations of improvement, city Own gating, tile-owner civs killed). Two guards (visible-tile check before GetVisibleUnits, IsOwnedByViewer in BuildUnit) are redundant with the Views and kept as commented defense in depth. PASS.
 
 ### T175 Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T172, T174, T164, T186
 - Source: csharp/migration/design/SERVER.md sections 2.4, 2.5
 - Fixtures: none
