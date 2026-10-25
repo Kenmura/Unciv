@@ -2650,6 +2650,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-25T12:59Z
 - Notes:
   - Implemented in ViewDeltaBuilder: (1) ViewMark now records Visible tiles; fog-to-visible tiles are re-sent in TilesRevealed with their visible units. (2) TilesRevealed gained optional Civs (CivDto, no Own): civs newly in KnownCivs since the mark plus owners of units in the delta; a delta with only civs (e.g. meeting by diplomacy) is emitted. (3) StatsChanged gained GoldPerTurn/SciencePerTurn/CulturePerTurn/FaithPerTurn (sum of CivView.GetStatMapForNextTurn, Float->Int truncation); emitted when they change. New fields are optional so existing constructors/wire stay compatible. Quirk: TestGame.AddUnit makes civs meet, so tests capture before adding units. Standard checks + coverage pass.
+  -   - Review pass [Adversarial Review]: Standard checks, coverage OK. Added 3 filter tests (unmet owner of sighted unit introduced w/o Own/private data; fogged-only unit/tile introduces nothing; foreign gold change emits no StatsChanged). Follow-up observation (non-leak): owners of newly visible tiles are not introduced in deltas though SnapshotBuilder does; client may see an unknown tile owner id.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
