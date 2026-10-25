@@ -2128,13 +2128,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Revised acceptance: 3 humans act simultaneously with interleaved commands for 20+ turns plus AI; timer forces one civ's end; one client dropped and resumed (UndoEndTurn after return); host killed mid-Resolving and restarted (NextResolveStep continues); late join into an AI slot; tampered command rejected; wrong password refused; fingerprint mismatch hard-fails.
 
 ### T183 Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T071, T046
 - Source: core/src/com/unciv/logic/GameInfo.kt; logic/city/CityConstructions.kt chooseNextConstruction; logic/battle/Battle.kt conquerCity; logic/civilization/managers/TurnManager.kt; logic/multiplayer/Multiplayer.kt isUsersTurn; design/COMMANDS-IMPLEMENTATION.md section 3 'ClientState audit'
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Logic/PlayerSettings.cs (new), edits to GameClientState.cs, GameInfo.cs, Battle.cs, CityConstructions.cs, TurnManager.cs, UnitAutomation/WorkerAutomation/RoadBetweenCitiesAutomation readers; tests
 - Gate: dotnet test --filter FullyQualifiedName~PlayerSettings
-- Claimed:
+- Claimed: 2026-10-25T02:44Z
 - Notes:
   - Problem (verified): rules read client preferences from GameClientState (Kotlin UncivGame.Current.settings): AutomatedUnitsMoveOnTurnStart (TurnManager.StartTurn), CitiesAutoBombardAtEndOfTurn (EndTurn), AutoAssignCityProduction (CityConstructions.ChooseNextConstruction, gated by IsUsersTurn() = CurrentPlayer's PlayerId == ClientState.UserId, or not online), AutoAssignSpecialistsInNewCities, AutomatedUnitsChoosePromotions (AI always promotes, humans only with the setting), AutoBuildingRoads, AutomatedWorkersReplaceImprovements, StopAutomatedWorkersRemoveVegetation, UseAStarPathfinding (changes path results, so it is a game rule, not a preference), NotificationsLogMaxTurns. These change GameInfo state, so a replayable/authoritative game cannot read them from whoever runs the process.
       - Trap (verified, Battle.cs ~774): a human conquest raises the CityConquered alert only if ClientState.AutoPlay != null && !IsFullAutoPlayAI. Headless/server has AutoPlay == null, so a human civ silently auto-conquers (AutomateCityConquer). Kotlin behaves the same without a worldScreen, so the port is faithful, but a server must give human civs the alert. Same null-AutoPlay pattern in UnitAutomation, WorkerAutomation, RoadBetweenCitiesAutomation, MayaCalendar.
