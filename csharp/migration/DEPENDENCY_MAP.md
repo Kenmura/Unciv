@@ -128,6 +128,7 @@ flowchart TD
   T164 --> T176
   T140 --> T176
   T194 --> T176
+  T215 --> T176
   T172 --> T177
   T164 --> T177
   T184 --> T177
@@ -368,7 +369,7 @@ flowchart TD
   class T173 done
   class T174 done
   class T175 done
-  class T176 ondeck
+  class T176 waiting
   class T177 waiting
   class T178 waiting
   class T179 waiting
@@ -424,11 +425,11 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T215 | **Ready to start** | T102 | 0 | Loaded mid-game GameInfo diverges from the live one (Explore automation, AI turns): save/load fidelity |
-| T176 | **On deck** (after T194) | T172, T164, T140, T194 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
+| T215 | **Ready to start** | T102 | 13 | Loaded mid-game GameInfo diverges from the live one (Explore automation, AI turns): save/load fidelity |
 | C005 | Available (waiting on ) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T194 | Needs-Review [Claude] | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
 | T202 | Available (waiting on ) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
+| T176 | Available (waiting on T194, T215) | T172, T164, T140, T194, T215 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T177 | Available (waiting on T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T178) | T172, T173, T178 | 9 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
