@@ -2626,7 +2626,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     Still uncovered, not coverable: SpecificUnitAutomation.cs 122-130 (multi-settler filter: needs another same-type settler on a tile this one can move to, which civilian stacking forbids), 181 (throw "City within distance": ranker and CanBeSettled agree), 155 (Select lambda, needs a near tile within 5 rank of a >3-turn best tile); Explore.cs 41 (bestTile null after non-empty MaxBy). Air-unit TryHealUnit remainder was already covered; the non-air embarked branch UnitAutomation.cs 249-256 remains (not in this ticket).
 
 ### T212 Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T174
 - Source: csharp/migration/design/SERVER.md section 3; T174 notes
 - Fixtures: none
