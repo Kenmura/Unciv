@@ -2582,13 +2582,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T210 Spy coup and counter-intelligence commands (not covered by T192)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T192
 - Source: core/src/com/unciv/logic/civilization/managers/EspionageManager.kt; Spy.kt; ui/screens/espionagescreen
 - Fixtures: none
 - Deliverables: Espionage action commands (coup, counter-intelligence, move spy) under Unciv.Core/Commands with tests
 - Gate: dotnet test --filter "FullyQualifiedName~Espionage"
-- Claimed:
+- Claimed: 2026-10-25T12:50Z
 - Notes: Found by T192: no listed command covers spy coup or counter-intelligence. Needed by the espionage screen (C023).
 
 ### T211 Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161
