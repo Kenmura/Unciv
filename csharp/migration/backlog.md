@@ -1978,6 +1978,86 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Gap review: UniqueTriggerActivation.cs throws NotImplementedException for an event presentation type: a real runtime path for rulesets with events. Present as data (choices, texts), no UI types.
 
+### T172 Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net)
+- State: Available
+- Depends: T012
+- Source: csharp/migration/design/SERVER.md sections 2, 6.1
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/* (Messages, ProtocolVersion, ITransport, InMemoryTransport), tests incl. golden JSON per message and unknown-type/oversize handling
+- Gate: dotnet test --filter FullyQualifiedName~NetProtocol
+- Claimed:
+- Notes: Pure wire layer, no sockets. Strict schema, default-deny, unknown type => Error not exception. ClientSnapshot/ViewDelta carry opaque typed DTOs filled by the filter ticket.
+
+### T173 Server identity and auth: ECDSA P-256 keypair, invite tokens, challenge-response, allow-list (friends-only)
+- State: Available
+- Depends: T172
+- Source: csharp/migration/design/SERVER.md section 6.2
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Identity/* (key generation/storage abstraction, invite token, signer/verifier), tests: replay, wrong key, expired/used invite, TOFU binding
+- Gate: dotnet test --filter FullyQualifiedName~NetIdentity
+- Claimed:
+- Notes: BCL ECDsa only, no third-party crypto. Decision D4 default accepted (keypair+invite); no passwords. Key storage on disk is behind an interface (Godot client uses user:// via C006).
+
+### T174 Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs
+- State: Available
+- Depends: T172, T084, T085, T138, T140
+- Source: csharp/migration/design/SERVER.md sections 2.1-2.3, 3
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Visibility/* (ClientSnapshot DTOs, SnapshotBuilder, viewHash), tests with hidden-state fixtures proving no unexplored tile, hidden foreign unit/city, seed, foreign gold/queue is serialized
+- Gate: dotnet test --filter FullyQualifiedName~NetVisibility
+- Claimed:
+- Notes: Walk GameView/ForeignCivView/ForeignCityView/ForeignMapUnitView; never reimplement isInvisible/IsVisible. First step: audit that the Views expose every field needed and file gaps as tickets. Include a reflection test that the DTOs contain only whitelisted members and a test that serialized snapshot text contains no seed/gameId-seed. viewHash = StateHasher (T011) over canonical snapshot JSON; the full-game hash stays server-side (T011 hashes the whole serialized GameInfo).
+
+### T175 Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery
+- State: Available
+- Depends: T172, T174, T164
+- Source: csharp/migration/design/SERVER.md sections 2.4, 2.5
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Visibility/EventFilter*.cs, ViewDelta builder, reflection test that every GameEvent type has a classifier, tests (UnitMoved partly visible => appear/disappear, notification action on unexplored tile stripped)
+- Gate: dotnet test --filter FullyQualifiedName~NetEvents
+- Claimed:
+- Notes: Depends T164 (command layer split) for the concrete GameEvent types: when tickets from design/COMMANDS-IMPLEMENTATION.md appear, re-point Depends to the event-definition ticket(s) and add them. Until real events exist, build and test against the toy events in CommandTests plus Notification/PopupAlert.
+
+### T176 Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot)
+- State: Available
+- Depends: T172, T164, T140
+- Source: csharp/migration/design/SERVER.md section 5; Unciv.Core/Logic/Files/UncivFiles.cs; Unciv.Core/Utils/StateHasher.cs
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Persistence/* (IGameStore, FileGameStore, recovery, retention), tests: kill mid-write, corrupt tail, replay tail reproduces checkpoint hash, save opens via UncivFiles
+- Gate: dotnet test --filter FullyQualifiedName~NetPersistence
+- Claimed:
+- Notes: Needs real replayable commands from T164 (split tickets in design/COMMANDS-IMPLEMENTATION.md: re-point). Log append+fsync before ack; snapshots via UncivFiles (gzip+base64 JSON, Kotlin-compatible). Server-side fullHash = hash of the serialized full GameInfo as in EndToEndDeterminismTests. Open point: replay-per-reconnect cost; start with head state in RAM plus recent filtered-delta ring.
+
+### T177 Turn policy: sequential phase machine, injected clock, turn timer, AFK skip, drop and AI replacement
+- State: Available
+- Depends: T172, T164
+- Source: csharp/migration/design/SERVER.md section 4; COMMANDS.md open questions (simultaneous turns)
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/Net/Turns/* (TurnPolicy, IClock, TurnTimer, ForceEndTurn/SetController server commands), tests with a fake clock: timeout skip, K timeouts => AI, reclaim, disconnect grace, no wall-clock reads in engine
+- Gate: dotnet test --filter FullyQualifiedName~NetTurnPolicy
+- Claimed:
+- Notes: Sequential only for v1 (decision D3 default); keep phase in a server-layer state object so simultaneous mode can be added without reworking the processor. Timer expiry becomes a logged server command (actor 'server'), so replay needs no clock. Depends on T164 turn-flow tickets: re-point to the human-turn-flow ticket from design/COMMANDS-IMPLEMENTATION.md when it exists.
+
+### T178 Headless host and lobby: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (rate, size, dedup, existence-oracle-safe errors)
+- State: Available
+- Depends: T172, T173, T174, T175, T176, T177
+- Source: csharp/migration/design/SERVER.md sections 1, 3 (command validation), 6.1
+- Fixtures: none
+- Deliverables: csharp/Unciv.Server/* (console host, Lobby, GameHost single-threaded actor, CommandGate, AI-as-commands runner), Unciv.Server.Tests or Unciv.Core.Tests/Server/*, solution wiring
+- Gate: dotnet test --filter FullyQualifiedName~Server
+- Claimed:
+- Notes: Supersedes the host part of T165. Uses InMemoryTransport only; real sockets are the transport ticket. Creates a new project: coordinate .csproj/solution edits and stay out of Directory.Build.props. Actor id injected from session, never payload. AI civs act through Submit with the AI civ as actor.
+
+### T179 Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes
+- State: Blocked
+- Depends: T178
+- Source: csharp/migration/design/SERVER.md sections 6.3-6.5
+- Fixtures: none
+- Deliverables: csharp/Unciv.Server/Transport/* WebSocketTransport, client WebSocketClientTransport in Unciv.Client.Net, loopback tests, docs (Caddy/VPS, Tailscale)
+- Gate: dotnet test --filter FullyQualifiedName~NetTransport
+- Claimed:
+- Notes: OWNER DECISION D1 (transport) and D2 (hosting) before claiming. Recommendation: A, WebSocket+TLS, Kestrel confined to Unciv.Server; B raw TCP and C ENet considered (see SERVER.md 6.3). Question for the owner: confirm WebSocket+TLS, and VPS vs friend-hosted+overlay.
+
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
 Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but equivalent look and feel. Create detailed tickets here once their engine dependencies are `Done`; each must name an asset source and license.
