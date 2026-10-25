@@ -2152,13 +2152,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - The SetPlayerSettings command itself is the domain commands ticket's job. Test fakes: FakeGameInfoState.PlayerSettingsByCiv.
 
 ### T184 Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T183, T102, T084
 - Source: core/src/com/unciv/logic/GameInfo.kt nextTurn/setNextPlayer; ui/screens/worldscreen/status/NextTurnAction.kt; ui/screens/worldscreen/AlertPopup.kt; logic/civilization/managers/TurnManager.kt; csharp Logic/GameInfoTurn.cs, View/CivView.cs; design/COMMANDS-IMPLEMENTATION.md section 5
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Logic/GameInfoTurnPhases.cs, TurnPhase.cs, PendingDecisions.cs (DecisionKind, Decision records), edits to GameInfoTurn.cs (NextTurn composed of the phases); tests incl. T102 hash equality and hotseat/defeated/spectator cases
 - Gate: dotnet test --filter "FullyQualifiedName~TurnPhase|FullyQualifiedName~PendingDecisions|FullyQualifiedName~EndToEndDeterminism"
-- Claimed:
+- Claimed: 2026-10-25T04:29Z
 - Notes:
   - Verified facts about human civs (Kotlin GameInfo.nextTurn and C# GameInfoTurn.NextTurn are identical in structure): one call = (1) if the current civ is human: TurnManager.EndTurn, advance index; (2) loop while IsSimulation || civ.IsAI() || defeated hotseat human || online spectator: StartTurn, AutomateTurn, EndTurn, advance (Turns++ and RecordRankingStats when the index wraps to 0); (3) the first non-auto civ becomes CurrentPlayer, its StartTurn runs, NotifyOfCloseEnemyUnits, NotificationCountAtStartTurn. Human civs are never AutomateTurn'd (NextTurnAutomation.AutomateCivMoves is only reached through the loop; the autoplay menu calls TurnManager.AutomateTurn for a human on demand).
       - Quirk to preserve: StartTurn is NOT called for the first human on turn 1 (GameStarter never calls TurnManager); a game's first human turn begins 'started' by convention. The phase state therefore needs 'started' = true after GameStarter.
