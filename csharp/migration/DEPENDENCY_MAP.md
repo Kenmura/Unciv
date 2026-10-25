@@ -61,7 +61,7 @@ flowchart TD
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class A003 ready
   class A004 ready
-  class A005 blocked
+  class A005 waiting
   class A006 blocked
   class A007 blocked
   class C001 blocked
@@ -111,7 +111,7 @@ xychart-beta
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
 | C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
-| A005 | Blocked | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
+| A005 | Available (waiting on A004) | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | Blocked | A004, T091, T092 | 0 | Homeland AI priority move queue |
 | A007 | Blocked | A004, A005 | 0 | Operations and armies layer |
 | C003 | Blocked | C002 | 0 | Resource and improvement props |

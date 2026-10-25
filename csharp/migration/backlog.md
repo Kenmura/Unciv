@@ -1974,7 +1974,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Notes: Replaces per-unit movement loops with a prioritized move queue. Critical high-value moves (e.g. `CAPTURE_CITY`, `DESTROY_HIGH_UNIT`) scan the board for valid targets and recruit the best candidate units across the civilization before lower-priority moves run.
 
 ### A005 Tactical overkill assignment & coordinated multi-unit attacks
-- State: Blocked
+- State: Available
 - Depends: A004
 - Source: `csharp/migration/ai-spec/SPEC.md` §6.4, §6.5
 - Deliverables: `csharp/Unciv.Core/AI/Tactical/OverkillAssigner.cs`, damage estimator integrations, tests
