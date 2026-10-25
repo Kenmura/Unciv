@@ -2,6 +2,9 @@ using Godot;
 using Unciv.Commands;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Saves;
+using Unciv.GodotClient.Settings;
+using Unciv.GodotClient.Ui;
 using Unciv.Logic;
 using Unciv.Models.Metadata;
 using Unciv.Logic.Civilization;
@@ -38,6 +41,13 @@ public partial class QuickStart : Node
         var screen = new GameScreen { Name = "GameScreen" };
         AddChild(screen);
         screen.Start(host, AssetRegistry.ForRuleset(game.Ruleset));
+
+        // C016: save/load. Saves live in the per-user saves folder; a loaded game is a new LocalHost handed to the same screen. Settings come from the C043 service (autosave interval).
+        var settings = new ClientSettingsService(new ClientSettingsStore(UserPaths.Settings));
+        var saves = new SaveController(new SaveStore(UserPaths.Saves), settings, new UiTheme(AssetRegistry.ForRuleset(game.Ruleset)),
+            text => LocalHost.FromSave(text, WallClockMillis), loaded => screen.Start(loaded, AssetRegistry.ForRuleset(loaded.Ruleset)));
+        AddChild(saves);
+        saves.Attach(host);
     }
 
     private static long WallClockMillis() => (long)(Time.GetUnixTimeFromSystem() * 1000.0);

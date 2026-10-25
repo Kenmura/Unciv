@@ -53,4 +53,10 @@ public interface IGameSession
 
     /// <summary>Ends the viewer's turn and completes when the host has the viewer's next turn ready (or the end of the game, or a refusal).</summary>
     Task<TurnOutcome> EndTurnAsync();
+
+    /// <summary>
+    /// C016: the whole game as save-file text (what <c>LocalHost.FromSave</c> reads back), or null when this session does not hold the game (a network client: the host saves).
+    /// Faults only on a real failure to serialize.
+    /// </summary>
+    Task<string?> ExportSaveAsync();
 }

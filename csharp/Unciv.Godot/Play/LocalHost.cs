@@ -1,5 +1,7 @@
 using Unciv.Commands;
 using Unciv.Commands.Turn;
+using Unciv.Logic;
+using Unciv.Logic.Files;
 using Unciv.Models.Ruleset;
 using Unciv.Net.Visibility;
 using Unciv.Queries;
@@ -26,6 +28,30 @@ public sealed class LocalHost : IGameSession
         flow = new ViewerSessionFlow(session, humanCivId, clock, Publish);
         Snapshot = BuildSnapshot();
     }
+
+    /// <summary>
+    /// C016: a session around a saved game text (the human is the first human civ, so a save of a single-player game resumes as that player).
+    /// Throws <see cref="InvalidDataException"/> with a player-readable message when the text is not a loadable save with a human in it.
+    /// </summary>
+    public static LocalHost FromSave(string saveText, Func<long> clock)
+    {
+        GameInfo game;
+        try
+        {
+            game = UncivFiles.GameInfoFromString(saveText);
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            // any parse failure of a file the player picked is a damaged save, whatever the serializer threw
+            throw new InvalidDataException("The save is damaged or from an incompatible version: " + e.Message, e);
+        }
+        var human = game.Civilizations.FirstOrDefault(it => it.IsHuman());
+        if (human == null) throw new InvalidDataException("The save has no human player");
+        return new LocalHost(new GameSession(game), human.CivName, clock);
+    }
+
+    /// <summary>The engine session, for the composition root and the harness (hashing a loaded game); client screens use only <see cref="IGameSession"/>.</summary>
+    public GameSession Session => session;
 
     public string ViewerCivId { get; }
 
@@ -68,6 +94,8 @@ public sealed class LocalHost : IGameSession
     public Task<SubmitResult> SubmitAsync(GameCommand command) => Task.FromResult(flow.Submit(command));
 
     public Task<TurnOutcome> EndTurnAsync() => Task.FromResult(flow.EndTurn());
+
+    public Task<string?> ExportSaveAsync() => Task.FromResult<string?>(UncivFiles.GameInfoToString(session.Game, forceZip: true));
 
     private ClientSnapshot BuildSnapshot()
     {

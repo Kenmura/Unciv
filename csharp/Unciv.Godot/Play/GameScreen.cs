@@ -111,9 +111,16 @@ public partial class GameScreen : Control
         if (session != null) session.SnapshotChanged -= OnSnapshotChanged;
     }
 
-    /// <summary>Connects the screen to a game and draws it, centred on the human's first unit. Call once, after the screen entered the tree.</summary>
+    /// <summary>Connects the screen to a game and draws it, centred on the human's first unit. Call after the screen entered the tree; calling it again switches to another game (C016: load).</summary>
     public void Start(IGameSession gameSession, AssetRegistry registry)
     {
+        if (session != null)
+        {
+            session.SnapshotChanged -= OnSnapshotChanged;
+            SelectedUnitId = null;
+            mapLoaded = false;
+            bannerTurn = -1;
+        }
         session = gameSession;
         assets = registry;
         queries = new GameQueries(session);
