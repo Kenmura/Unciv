@@ -489,10 +489,10 @@ flowchart TD
   class T207 waiting
   class T208 done
   class T215 done
-  class T218 prog
+  class T218 review
   class T219 ready
   class T220 done
-  class T222 prog
+  class T222 review
   class T223 ready
   class T224 ready
   class T225 waiting
@@ -502,7 +502,7 @@ flowchart TD
   class T229 prog
   class T230 ready
   class T231 ready
-  class T232 prog
+  class T232 review
 ```
 
 ## Remaining tickets over time
@@ -590,7 +590,7 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T218 | In-Progress [Claude] | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
-| T222 | In-Progress [Claude] | none | 0 | Hardening sweep 3: findings from the 2026-10-25 migration review |
+| T218 | Needs-Review [Claude] | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
+| T222 | Needs-Review [Claude] | none | 0 | Hardening sweep 3: findings from the 2026-10-25 migration review |
 | T227 | In-Progress [Claude] | A008, T094, T166 | 0 | Use the A-track AI in AI turns: wire GrandStrategy, Tactical AI, Homeland moves and Operations into the turn loop |
-| T232 | In-Progress [Claude] | T221 | 0 | GameStarter: a saved map with pre-placed units throws 'lateinit property gameInfo' |
+| T232 | Needs-Review [Claude] | T221 | 0 | GameStarter: a saved map with pre-placed units throws 'lateinit property gameInfo' |
