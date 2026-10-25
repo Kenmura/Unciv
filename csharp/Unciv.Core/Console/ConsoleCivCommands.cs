@@ -117,6 +117,7 @@ internal static class ConsoleCivCommands
         civ.Cache.UpdateState();
         civ.SetTransients();
         game.Civilizations.Add(civ);
+        BackwardCompatibility.MigrateGreatGeneralPools(game); // what every load does for every civ: the live state must equal the reloaded one
         var location = civ.Units.PlaceUnitNearTile(position, baseUnit);
         civ.Cache.UpdateViewableTiles();
         if (location == null) game.RemoveCivilization(civ);

@@ -291,10 +291,6 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
     public int GetFollowersOfOtherReligionsThan(string religion) =>
         followers.Where(it => it.Key != religion).Sum(it => it.Value);
 
-    /// <summary>
-    /// Removes all pantheons except for the one founded by the current owner of the city
-    /// Should be called whenever a city changes hands, e.g. conquering and trading
-    /// </summary>
     /// <summary>Drops every trace of a religion that no longer exists (dev console <c>civ remove</c> of its founder).</summary>
     public void ForgetReligion(string religionName)
     {
@@ -304,6 +300,10 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
         UpdateNumberOfFollowers(false);
     }
 
+    /// <summary>
+    /// Removes all pantheons except for the one founded by the current owner of the city
+    /// Should be called whenever a city changes hands, e.g. conquering and trading
+    /// </summary>
     public void RemoveUnknownPantheons()
     {
         foreach (var pressure in pressures.Keys.ToList())

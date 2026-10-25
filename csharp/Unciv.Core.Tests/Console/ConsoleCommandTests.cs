@@ -597,6 +597,7 @@ public sealed class ConsoleCommandTests : IDisposable
         Assert.Equal("Select tile", Error($"civ add \"{nation}\""));
         Ok($"civ add \"{nation}\"", at);
         var added = game.GetCivilization(nation);
+        Assert.Equal(Hash(game), Hash(UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(game, forceZip: false)))); // live equals reloaded
         Assert.Single(added.Units.GetCivUnits());
         Assert.True(added.Units.GetCivUnits().Single().BaseUnit.IsCityFounder());
         Assert.Contains("is not a valid Nation", Error("civ add Babylon", at), StringComparison.Ordinal);
@@ -898,6 +899,45 @@ public sealed class ConsoleCommandTests : IDisposable
         Assert.Equal(0, city.Religion.GetFollowersOf("Romanism"));
         Assert.Null(city.Religion.ReligionThisIsTheHolyCityOf);
         Assert.Empty(game.DiplomaticVictoryVotesCast);
+        for (int round = 0; round < 2; round++)
+        {
+            int turns = game.Turns;
+            if (simultaneous)
+            {
+                game.EndHumanTurn(babylon);
+                game.EndHumanTurn(greece);
+                game.BeginResolving();
+                ResolveRound();
+            }
+            else PlaySequentialTurns(1);
+            Assert.Equal(turns + 1, game.Turns);
+        }
+        var loaded = UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(game, forceZip: false));
+        Assert.Equal(Hash(game), Hash(loaded));
+    }
+
+    // TryEndWarWithMajorQuests resolves the attackers of a city-state's war-with-major pseudo-quest by id at every city-state turn start.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RemovingTheAttackerOfACityStateWarQuestLeavesTheGamePlayable(bool simultaneous)
+    {
+        var at = new ConsoleSelection(FreeLandTileNextToCity().Position);
+        string cityStateName = ruleset.Nations.Values.First(it => it.IsCityState).Name;
+        Ok($"civ add \"{cityStateName}\"", at);
+        var cityState = game.GetCivilization(cityStateName);
+        Assert.Equal(Hash(game), Hash(UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(game, forceZip: false)))); // civ add leaves what a load would have made
+        var rome = game.GetCivilization("Rome");
+        var greece = game.GetCivilization("Greece");
+        foreach (var civ in new[] { rome, babylon, greece }) cityState.DiplomacyFunctions.MakeCivilizationsMeet(civ);
+        cityState.QuestManager.WasAttackedBy(rome);
+        cityState.QuestManager.MilitaryUnitKilledBy(babylon, rome); // also fills the kill counts
+        Assert.True(cityState.QuestManager.IsWarWithMajorActive(rome));
+        Assert.Equal(1, cityState.QuestManager.UnitsKilledSoFar(rome, babylon));
+        if (simultaneous) game.StartSimultaneousTurns();
+        Ok("civ remove Rome");
+        Assert.False(cityState.QuestManager.IsWarWithMajorActive(rome));
+        Assert.Equal(0, cityState.QuestManager.UnitsKilledSoFar(rome, babylon));
         for (int round = 0; round < 2; round++)
         {
             int turns = game.Turns;
