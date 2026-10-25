@@ -573,7 +573,7 @@ xychart-beta
 | T203 | Available (waiting on T202) | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
-| T227 | Needs-Review [Claude] | A008, T094, T166 | 1 | Use the A-track AI in AI turns: wire GrandStrategy, Tactical AI, Homeland moves and Operations into the turn loop |
+| T227 | In-Review [Reviewer] | A008, T094, T166 | 1 | Use the A-track AI in AI turns: wire GrandStrategy, Tactical AI, Homeland moves and Operations into the turn loop |
 | C006 | Available (waiting on T180, T179, C016, C035, C036, T225, C037) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C018 | Available (waiting on C017) | C017, T063, T191, T196 | 0 | City screen B: production queue, purchase, buildings |
 | C027 | Available (waiting on C025) | C005, C025 | 0 | Tooltips and Civilopedia |
