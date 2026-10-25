@@ -227,7 +227,7 @@ flowchart TD
   class C038 ready
   class C039 waiting
   class C040 ready
-  class C042 prog
+  class C042 review
   class C044 ready
   class C045 waiting
   class C046 ready
@@ -328,7 +328,7 @@ xychart-beta
 | C004 | In-Review [Claude] | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
 | C025 | In-Progress [Claude] | C005, T023, T170, C043 | 1 | Localization: translations in the client, language picker, non-Latin fonts |
 | C035 | Available (waiting on T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
-| C042 | In-Progress [Claude] | C001, T170 | 1 | Client packaging: bundle rulesets and translations, user mods folder, export presets, third-party notices |
+| C042 | Needs-Review [Claude] | C001, T170 | 1 | Client packaging: bundle rulesets and translations, user mods folder, export presets, third-party notices |
 | T203 | Available (waiting on T202) | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
