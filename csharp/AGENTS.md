@@ -15,7 +15,7 @@ When marking a ticket `Done` on passing review, publish and push progress to rem
     git push origin csharp-migration
 
 ## Porting rules
-- Port behaviour, not style. Do not "improve", simplify, or reorder the Kotlin logic; keep its quirks and note them in the ticket.
+- Port behaviour, not style. Default to the Kotlin logic and quirks; do not "improve" casually. Exact Kotlin parity is no longer a hard requirement (owner decision): an intentional change that improves the engine (determinism, save/load equality, correctness) is fine if it is deterministic, tested, and recorded in the ticket Notes as a deliberate deviation. Reviewers must not fail a ticket for deviating from Kotlin per se.
 - Mirror Kotlin names (PascalCase for members, Kotlin-style camelCase private fields). Do not add public API the Kotlin did not have.
 - `Int` is `int`, `Float` is `float`, `Double` is `double`. Never widen silently. Arithmetic wraps (unchecked), as in Kotlin.
 - Kotlin `LinkedHashMap`/`List`/sorted collections are ordered: do not substitute `Dictionary`/`HashSet` where order can reach game state or output.
