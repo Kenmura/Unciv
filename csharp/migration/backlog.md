@@ -2241,6 +2241,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Nuke: IsNuclearWeapon, CanAttack, MayUseNuke. AirSweep: IsPreparingAirSweep, CanAttack, tile in range 1..GetRange. Disband: HasMovement; Apply = Disband + Civ.UpdateStatsForNextTurn.
       - Class Nuke shares its name with Logic.Battle.Nuke; the command file aliases the engine class. GameCommandTests.Sample now needs a Scenario (Arrange) so every command validates on a real started game; purity (hash before/after Validate) is checked for all of them there.
       - Human city conquest alert (CityConquered) is not part of this ticket (needs player settings).
+  - Review (adversarial subagent): PASS. Fixed MINOR 1 (Bombard rejects enemy city tiles, as BattleTable) and MINOR 2 (SetMoveOrder is a no-op when the unit cannot move, as the UI; supersedes the earlier note). Open minors: no tests for escort pairs, embarked/transported units, air units in MoveUnit/SetMoveOrder.
 
 ### T189 Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop)
 - State: Available
