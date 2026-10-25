@@ -86,8 +86,8 @@ public static class Civ5AiDriver
         state = new GrandStrategyPlayerState
         {
             PersonalityFlavors = personality,
-            CurrentStrategy = civ.Civ5Ai?.CurrentStrategy ?? GrandStrategyKind.None,
-            TurnsActive = civ.Civ5Ai?.TurnsActive ?? 0,
+            CurrentStrategy = Civ5AiStateSanitizer.SafeStrategy(civ.Civ5Ai?.CurrentStrategy ?? GrandStrategyKind.None),
+            TurnsActive = Civ5AiStateSanitizer.SafeTurnsActive(civ.Civ5Ai?.TurnsActive ?? 0),
             MetMajorCivsCount = 1 + civ.GetKnownCivs().Count(it => it.IsMajorCiv() && !it.IsDefeated()),
         };
         var evaluator = new GrandStrategyEvaluator(data.Defines, data.Flavors, Edition);

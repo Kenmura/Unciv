@@ -37,6 +37,7 @@ public static class OperationsAdapter
         ArgumentNullException.ThrowIfNull(civ);
         ArgumentNullException.ThrowIfNull(tunables);
         var state = civ.Civ5Ai ??= new Civ5AiState();
+        Civ5AiStateSanitizer.Sanitize(state, civ);
         var manager = OperationManager.Restore(tunables, state);
         int turn = civ.GameInfo.Turns;
 
