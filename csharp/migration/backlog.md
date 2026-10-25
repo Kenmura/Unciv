@@ -2272,13 +2272,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Great person unique triggers consume the unit and may start Golden Ages or create improvements: run Apply through the closure, never re-implement.
 
 ### T191 City commands: production queue, purchase, buy tile, worked tiles and specialists, focus, annex/puppet/raze, sell building, rename
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T164, T186
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.4; logic/city/CityConstructions.kt (addToQueue, removeFromQueue, moveEntryToEnd/Top, purchaseConstruction), CityExpansionManager.kt buyTile, CityPopulationManager.kt, City.kt workTile/lockedTiles; view/CityView.kt try* methods; ui/screens/cityscreen/*
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/City/*.cs (QueueConstruction, RemoveFromQueue, ReorderQueue, PurchaseConstruction, BuyTile, WorkTile, LockTile, AssignSpecialist, SetCityFocus, ReassignPopulation, ToggleAvoidGrowth, SellBuilding, AnnexCity, SetRazing, SetUnitSavedPromotion, DisableConstruction, SetCreatesOneImprovementTile), tests
 - Gate: dotnet test --filter FullyQualifiedName~Commands.City
-- Claimed:
+- Claimed: 2026-10-25T03:10Z
 - Notes:
   - Validate = the UI predicate: CityConstructions.CanAddToQueue(construction) (IsBuildable and not already queued/IsQueueFull), IsConstructionPurchaseAllowed + GetStatBuyCost + civ.HasStatToBuy, Expansion.CanBuyTile(tile) + GetGoldCostOfTile, specialist limits (GetMaxSpecialists), CanChangeState-equivalent (city.Civ == actor and actor is current player). Puppet cities reject production commands (UI hides them); verify per command.
       - Traps: (1) CityView.TryAddToQueue does not check CanAddToQueue - do not copy it. (2) PurchaseConstruction: cost depends on the construction's inflation/'increasing price' counters and happens in the same Apply as the gold deduction; the payload carries no price. Purchasing a unit with a blocked tile (IsConstructionPurchaseBlockedByUnit) is a rejected command with a specific code. (3) Queue index arguments (RemoveFromQueue(index, automatic)) are positional: reject out-of-range, and the 'automatic' flag must be false for player commands. (4) Adding a Building with CreatesOneImprovement needs a tile: QueueConstruction has an optional Tile (TryAddToQueueWithTile). (5) AnnexCity/SetRazing on a city the actor has just conquered are resolved through the alert response in the turn ticket - the same Apply helpers. (6) ReassignPopulation, ToggleAvoidGrowth and manual-specialist switches mutate flags that CityTurnManager reads next turn: they are state changes, hence commands, even though the UI treats them as 'view' toggles. (7) Hurry production from Great People is a unit action (B), not here.
