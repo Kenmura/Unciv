@@ -161,7 +161,7 @@ public sealed class CityAScenario : Scenario
     }
 
     /// <summary>Forwards to a real session and remembers every query type asked since the last <see cref="Queries"/> clear.</summary>
-    private sealed class RecordingSession(IGameSession inner) : IGameSession
+    internal sealed class RecordingSession(IGameSession inner) : IGameSession
     {
         public List<string> Queries { get; } = [];
 

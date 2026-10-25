@@ -22,6 +22,9 @@ public sealed class GameQueries(IGameSession session)
     /// <summary>The city screen's numbers for one of the viewer's cities (null for a city of another civ: nothing private is asked for those).</summary>
     public Task<CityPanelResult?> CityPanel(string cityId) => session.QueryAsync(new CityPanelQuery(cityId));
 
+    /// <summary>The whole construction list of one of the viewer's cities (each entry says whether it is displayed): turns, cost, rejection reasons and buy prices from the engine.</summary>
+    public Task<ConstructionListResult?> ConstructionList(string cityId) => session.QueryAsync(new ConstructionListQuery(cityId, OnlyDisplayed: false));
+
     public Task<CityTilesResult?> CityTiles(string cityId) => session.QueryAsync(new CityTilesQuery(cityId));
 
     /// <summary>The diplomacy screen's answers about one civ the viewer has met (null for any other: the engine answers an unmet civ like an unknown one).</summary>

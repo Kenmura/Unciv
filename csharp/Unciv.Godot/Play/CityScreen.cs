@@ -17,6 +17,7 @@ namespace Unciv.GodotClient.Play;
 /// </summary>
 public partial class CityScreen : PanelContainer
 {
+    private const string Hint = "Click: work or free. Right click: lock.";
     private const int GridMargin = 8;
     private const int CellFontSize = 9;
 
@@ -32,6 +33,11 @@ public partial class CityScreen : PanelContainer
     private readonly Dictionary<(string Name, bool Add), Button> specialistButtons = [];
     private IReadOnlyList<CityTileCell> cells = [];
     private OptionButton? focusChoice;
+    private readonly HBoxContainer middle = new() { Name = "Middle", SizeFlagsVertical = SizeFlags.ExpandFill };
+    private readonly Button citizensTab = new() { Name = "ShowCitizens", Text = "Citizens", ToggleMode = true };
+    private readonly Button productionTab = new() { Name = "ShowProduction", Text = "Production", ToggleMode = true };
+    private readonly CityProductionView productionView;
+    private bool showProduction;
     private int generation;
 
     public CityScreen(IGameSession gameSession, UiTheme uiTheme)
@@ -51,6 +57,10 @@ public partial class CityScreen : PanelContainer
         column.AddChild(head);
         title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         head.AddChild(title);
+        citizensTab.Pressed += () => SetProduction(false);
+        productionTab.Pressed += () => SetProduction(true);
+        head.AddChild(citizensTab);
+        head.AddChild(productionTab);
         message.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         message.ClipText = true;
         message.HorizontalAlignment = HorizontalAlignment.Right;
@@ -59,14 +69,34 @@ public partial class CityScreen : PanelContainer
         close.Pressed += Close;
         head.AddChild(close);
         column.AddChild(info);
-        var middle = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         column.AddChild(middle);
+        productionView = new CityProductionView(Send, SetMessage, uiTheme);
+        column.AddChild(productionView);
         side.AddThemeConstantOverride("separation", 2);
         side.CustomMinimumSize = new Vector2(uiTheme.Px(190), 0f);
         middle.AddChild(side);
         middle.AddChild(grid);
         grid.Resized += LayoutGrid;
+        SetProduction(false);
     }
+
+    /// <summary>The production half (queue, buildable list, buildings), shown by the Production tab.</summary>
+    public CityProductionView Production => productionView;
+
+    public bool ShowingProduction => showProduction;
+
+    /// <summary>Switches between the citizens view (tiles, specialists, focus) and the production view (what the Citizens / Production tabs do).</summary>
+    public void SetProduction(bool production)
+    {
+        showProduction = production;
+        middle.Visible = !production;
+        productionView.Visible = production;
+        citizensTab.SetPressedNoSignal(!production);
+        productionTab.SetPressedNoSignal(production);
+        SetMessage(production || Panel == null ? "" : Hint);
+    }
+
+    public Button? Tab(bool production) => production ? productionTab : citizensTab;
 
     /// <summary>The city on show (the snapshot entry it was opened with).</summary>
     public CityDto? City { get; private set; }
@@ -116,8 +146,10 @@ public partial class CityScreen : PanelContainer
         }
         var panel = await queries.CityPanel(Id(city));
         var tiles = await queries.CityTiles(Id(city));
+        var list = await queries.ConstructionList(Id(city));
+        var bar = await queries.TopBar();
         if (ticket != generation) return; // a newer open or a close superseded this answer
-        if (panel == null || tiles == null)
+        if (panel == null || tiles == null || list == null)
         {
             Panel = null;
             Tiles = null;
@@ -128,6 +160,8 @@ public partial class CityScreen : PanelContainer
         Panel = panel;
         Tiles = tiles;
         Rebuild(panel, tiles);
+        productionView.Show(panel, list, bar?.Gold ?? 0, session.Ruleset);
+        SetTabs(visible: true);
     }
 
     public void Close()
@@ -137,6 +171,7 @@ public partial class CityScreen : PanelContainer
         City = null;
         Panel = null;
         Tiles = null;
+        SetProduction(false);
         Closed?.Invoke();
     }
 
@@ -159,12 +194,20 @@ public partial class CityScreen : PanelContainer
     private static IEnumerable<Label> AllLabels(Node node) =>
         node.GetChildren().SelectMany(it => it is Label label ? [label] : AllLabels(it));
 
+    private void SetTabs(bool visible)
+    {
+        citizensTab.Visible = visible;
+        productionTab.Visible = visible;
+    }
+
     private static string Id(CityDto city) => city.Own!.Id;
 
     private void ShowForeign(CityDto city)
     {
         ClearSide();
         ClearGrid();
+        SetTabs(visible: false);
+        SetProduction(false);
         var text = CityScreenModel.Foreign(city);
         title.Text = text.Title;
         info.Text = "";
@@ -204,7 +247,7 @@ public partial class CityScreen : PanelContainer
         cells = CityScreenModel.Cells(tiles);
         foreach (var cell in cells) grid.AddChild(TileCell(panel, tiles, cell));
         LayoutGrid();
-        SetMessage("Click: work or free. Right click: lock.");
+        SetMessage(showProduction ? "" : Hint);
     }
 
     private Control SpecialistLine(CityPanelResult panel, SpecialistRow row)

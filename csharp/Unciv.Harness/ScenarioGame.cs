@@ -24,6 +24,7 @@ public static class ScenarioGame
     public const string HumanA = "Babylon";
     public const string HumanB = "Greece";
     public const string Ai = "Rome";
+    public const int RichGold = 500;
 
     /// <summary>Loads the Vanilla ruleset into <see cref="RulesetCache"/> (from the repository's jsons, no mods) unless it is already there.</summary>
     public static RulesetClass LoadVanilla()
@@ -46,9 +47,10 @@ public static class ScenarioGame
 
     /// <summary>
     /// <paramref name="solo"/> (C010): one human (Babylon) and the AI, no city founded: the game the client's QuickStart builds; otherwise the two-human game above.
+    /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false)
     {
         solo |= skirmish | diplomacy;
         var ruleset = LoadVanilla();
@@ -74,9 +76,25 @@ public static class ScenarioGame
             var settler = civ.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());
             civ.AddCity(settler.CurrentTile.Position, settler);
         }
+        if (rich) SetUpRich(game);
         if (skirmish) SetUpSkirmish(game);
         if (diplomacy) SetUpDiplomacy(game);
         return new GameSession(game);
+    }
+
+    /// <summary>
+    /// C018: every human civ has <see cref="RichGold"/> gold and Babylon owns a second, puppet city (the first land tile at least 5 tiles from its capital, in coordinate
+    /// order), so the city screen can annex it. Set up directly on the state so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpRich(GameInfo game)
+    {
+        foreach (var civ in game.Civilizations.Where(it => it.IsHuman())) civ.AddGold(RichGold - civ.Gold);
+        var human = game.GetCivilization(HumanA);
+        var capital = human.Cities[0].GetCenterTile();
+        var site = game.TileMap.Values
+            .Where(it => it.IsLand && !it.IsImpassible() && !it.IsCityCenter() && it.GetOwner() == null && it.AerialDistanceTo(capital) >= 5)
+            .OrderBy(it => it.Position.x).ThenBy(it => it.Position.y).First();
+        human.AddCity(site.Position).IsPuppet = true;
     }
 
     /// <summary>

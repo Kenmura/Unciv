@@ -150,4 +150,24 @@ public sealed class ScenarioHarnessTests : IDisposable
         var json = new ScenarioResult("d", 1, 2, "h", [], [], [], [], Diplomacy: true).ToJson();
         Assert.True(ScenarioResult.FromJson(json).Diplomacy);
     }
+
+    [Fact]
+    public void RichGameGivesEveryHumanGoldAndBabylonAPuppetCityAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(rich: true);
+        var babylon = session.Game.GetCivilization(ScenarioGame.HumanA);
+        var greece = session.Game.GetCivilization(ScenarioGame.HumanB);
+        Assert.Equal(ScenarioGame.RichGold, babylon.Gold);
+        Assert.Equal(ScenarioGame.RichGold, greece.Gold);
+        Assert.Equal(2, babylon.Cities.Count);
+        Assert.False(babylon.Cities[0].IsPuppet);
+        Assert.True(babylon.Cities[1].IsPuppet);
+        Assert.True(babylon.Cities[1].GetCenterTile().AerialDistanceTo(babylon.Cities[0].GetCenterTile()) >= 5);
+        Assert.Single(greece.Cities);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(rich: true)));
+        Assert.NotEqual(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create()));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, rich: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("r", 1, 2, "h", [], [], [], [], Rich: true).ToJson()).Rich);
+        Assert.False(ScenarioResult.FromJson(new ScenarioResult("r", 1, 2, "h", [], [], [], []).ToJson()).Rich);
+    }
 }

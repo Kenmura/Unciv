@@ -9,9 +9,9 @@ namespace Unciv.Harness;
 /// </summary>
 public static class ScenarioReplay
 {
-    public static string ReplayHash(long gameSeed, int mapSeed, IReadOnlyList<CommandEnvelope> commands, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false)
+    public static string ReplayHash(long gameSeed, int mapSeed, IReadOnlyList<CommandEnvelope> commands, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false)
     {
-        var session = ScenarioGame.Create(gameSeed, mapSeed, solo, godMode, skirmish, diplomacy);
+        var session = ScenarioGame.Create(gameSeed, mapSeed, solo, godMode, skirmish, diplomacy, rich);
         foreach (var envelope in commands) session.Replay(envelope);
         return ScenarioGame.StateHash(session);
     }
@@ -19,7 +19,7 @@ public static class ScenarioReplay
     /// <summary>Null when the replay reproduces the recorded hash, otherwise a one-line failure message.</summary>
     public static string? Verify(ScenarioResult result)
     {
-        string replayed = ReplayHash(result.GameSeed, result.MapSeed, result.Commands, result.Solo, result.GodMode, result.Skirmish, result.Diplomacy);
+        string replayed = ReplayHash(result.GameSeed, result.MapSeed, result.Commands, result.Solo, result.GodMode, result.Skirmish, result.Diplomacy, result.Rich);
         return replayed == result.StateHash
             ? null
             : $"state hash {result.StateHash} of the Godot run differs from the headless replay of its {result.Commands.Count} command(s): {replayed}";

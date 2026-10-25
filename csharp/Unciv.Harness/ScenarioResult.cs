@@ -23,7 +23,8 @@ public sealed record ScenarioResult(
     bool Solo = false,
     bool GodMode = false,
     bool Skirmish = false,
-    bool Diplomacy = false)
+    bool Diplomacy = false,
+    bool Rich = false)
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 

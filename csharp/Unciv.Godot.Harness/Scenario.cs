@@ -30,5 +30,8 @@ public abstract class Scenario
     /// <summary>The scenario plays the diplomacy game (<see cref="Unciv.Harness.ScenarioGame.Create"/> with diplomacy): the solo game plus a city-state and an unmet second AI civ.</summary>
     public virtual bool Diplomacy => false;
 
+    /// <summary>Every human civ starts with <see cref="Unciv.Harness.ScenarioGame.RichGold"/> gold (C018: real purchases without God mode).</summary>
+    public virtual bool Rich => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

@@ -13,3 +13,4 @@ city-a
 unit-orders
 diplomacy
 setup
+city-b
