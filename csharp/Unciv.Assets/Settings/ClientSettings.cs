@@ -58,7 +58,7 @@ public sealed record ClientSettings
             UiScale = float.IsFinite(UiScale) ? Math.Clamp(UiScale, 0.5f, 4f) : Default.UiScale,
             AssetPack = string.IsNullOrWhiteSpace(AssetPack) ? Default.AssetPack : AssetPack,
             AutosaveTurns = Math.Max(0, AutosaveTurns),
-            TutorialsSeen = TutorialsSeen?.Distinct(StringComparer.Ordinal).ToList() ?? [],
+            TutorialsSeen = TutorialsSeen?.Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal).ToList() ?? [],
             PlayerName = string.IsNullOrWhiteSpace(PlayerName) ? Default.PlayerName : PlayerName,
             Player = Player is null ? PlayerSettings.Default : Player with { NotificationsLogMaxTurns = Math.Max(0, Player.NotificationsLogMaxTurns) },
         };
@@ -99,32 +99,58 @@ public sealed class ClientSettingsStore(string path)
 
     public string Path { get; } = path;
 
-    /// <summary>The stored settings; the defaults when the file is missing, unreadable, damaged or written by a newer version.</summary>
+    // Set when Load found a file it could not use (damaged or written by a newer version): the next Save keeps a copy first.
+    private bool backupBeforeSave;
+
+    /// <summary>The file a damaged or newer-version settings file is copied to before it is overwritten.</summary>
+    public string BackupPath => Path + ".bak";
+
+    /// <summary>The stored settings; the defaults when the file is missing, unreadable, damaged or written by a newer version (the unusable file is then preserved as <see cref="BackupPath"/> by the next <see cref="Save"/>).</summary>
     public ClientSettings Load()
     {
         try
         {
             if (!File.Exists(Path)) return ClientSettings.Default;
             var loaded = System.Text.Json.JsonSerializer.Deserialize<ClientSettings>(File.ReadAllText(Path), Options);
-            if (loaded == null || loaded.Version > ClientSettings.CurrentVersion || loaded.Version < 1) return ClientSettings.Default;
+            if (loaded == null || loaded.Version > ClientSettings.CurrentVersion || loaded.Version < 1)
+            {
+                backupBeforeSave = true;
+                return ClientSettings.Default;
+            }
+            backupBeforeSave = false;
             return Migrate(loaded).Sanitized();
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or NotSupportedException)
         {
+            backupBeforeSave = true;
             return ClientSettings.Default;
         }
     }
 
-    /// <summary>Writes the settings; false when the file could not be written (the caller keeps the values in memory). Written to a temp file first, so a crash never leaves half a file.</summary>
+    /// <summary>Writes the settings; false when the file could not be written (the caller keeps the values in memory). Written to a temp file first, so a crash never leaves half a file. An unusable file found by <see cref="Load"/> is copied to <see cref="BackupPath"/> first; if that fails nothing is overwritten.</summary>
     public bool Save(ClientSettings settings)
     {
         try
         {
             string? dir = System.IO.Path.GetDirectoryName(Path);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            if (backupBeforeSave && File.Exists(Path))
+            {
+                File.Copy(Path, BackupPath, overwrite: true);
+            }
+            backupBeforeSave = false;
             string temp = Path + ".tmp";
-            File.WriteAllText(temp, System.Text.Json.JsonSerializer.Serialize(settings with { Version = ClientSettings.CurrentVersion }, Options));
-            File.Move(temp, Path, overwrite: true);
+            try
+            {
+                File.WriteAllText(temp, System.Text.Json.JsonSerializer.Serialize(settings with { Version = ClientSettings.CurrentVersion }, Options));
+                File.Move(temp, Path, overwrite: true);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                try { File.Delete(temp); }
+                catch (Exception d) when (d is IOException or UnauthorizedAccessException) { }
+                throw;
+            }
             return true;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
