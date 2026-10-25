@@ -1976,7 +1976,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Implemented: Translations.TryReadTranslationForLanguage(language, IRulesetFolder gameFolder) (the Kotlin Gdx.files.internal lookup plus the mod loop over RulesetCache.Values' FolderLocation, keyed by mod folder name; resolves the former TODO), Translations.LoadPercentageCompleteOfLanguages(IRulesetFolder), RulesetFolderTranslationFileHandle adapter. RulesetCache mod folder loading (LoadRulesets/ReloadSingleRuleset/LoadSingleRuleset) already existed from T104; this ticket adds tests with bundled mods (Models/Ruleset/ModLoading/Mods: TestMod, LateMod, BrokenMod, .hidden), own content, no third-party art. TranslationCache.ActiveMods itself is untouched (T137); mod-order lookup is tested via Translations.Get with an ordered active-mod set. Left for T160: loading real third-party mods from a user mods folder, and wiring Translations.Current/ActiveMods at game start (the test uses fresh Translations instances to stay out of the TranslationState collection).
 
 ### T171 Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T104
 - Source:
 - Fixtures: none
