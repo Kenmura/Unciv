@@ -4,6 +4,7 @@ using Unciv.Commands.City;
 using Unciv.Commands.Units;
 using Unciv.Core.Tests.Commands.Diplomacy;
 using Unciv.Core.Tests.Commands.Empire;
+using Unciv.Core.Tests.Commands.Turn;
 using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.City;
@@ -237,6 +238,12 @@ public sealed class GameCommandTests : IDisposable
                 var (fresh, _, _) = NewSession();
                 game = fresh.Game;
                 command = EmpireSamples.Sample(name, game);
+            }
+            else if (TurnSamples.Types.Contains(name))
+            {
+                var (fresh, _, _) = NewSession();
+                game = fresh.Game;
+                (command, actor) = TurnSamples.Sample(name, game);
             }
             else command = Sample(name, game, babylonCity.Id, scenario, cityScenario);
             Assert.Equal(name, command.Type);

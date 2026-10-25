@@ -37,11 +37,20 @@ public sealed record Decision(DecisionKind Kind, string Subject, string Resolved
 
 public static class PendingDecisions
 {
-    /// <summary>Alerts that ask for a choice; the rest are information to be dismissed.</summary>
-    private static bool IsChoiceAlert(AlertType type) => type is
-        AlertType.CityConquered or AlertType.DiplomaticMarriage or AlertType.RecapturedCivilian or AlertType.DeclarationOfFriendship
-        or AlertType.Event or AlertType.WarDeclaration or AlertType.BorderConflict
-        or AlertType.DemandToStopSettlingCitiesNear or AlertType.DemandToStopSpreadingReligion or AlertType.DemandToStopSpyingOnUs or AlertType.DemandToNotAttackUs;
+    /// <summary>
+    /// The command type that answers an alert (T187). Kotlin <c>AlertPopup</c>: demands and friendship offers have their own diplomacy commands, the rest that
+    /// has a button with an effect is <c>respond-to-alert</c>, and every other alert (including those whose buttons only close it, such as a war declaration or
+    /// a border conflict) is dismissed with <c>ack-alert</c>.
+    /// </summary>
+    public static string ResolverOf(AlertType type) => type switch
+    {
+        AlertType.DemandToStopSettlingCitiesNear or AlertType.DemandToStopSpreadingReligion or AlertType.DemandToStopSpyingOnUs
+            or AlertType.DemandToNotAttackUs => "respond-demand",
+        AlertType.DeclarationOfFriendship => "respond-friendship",
+        AlertType.CityConquered or AlertType.DiplomaticMarriage or AlertType.RecapturedCivilian or AlertType.Event
+            or AlertType.BulliedProtectedMinor or AlertType.AttackedProtectedMinor or AlertType.AttackedAllyMinor => "respond-to-alert",
+        _ => "ack-alert",
+    };
 
     /// <summary>Alerts that leave game state in limbo until answered.</summary>
     private static bool IsBlockingAlert(AlertType type) => type == AlertType.CityConquered;
@@ -93,8 +102,7 @@ public static class PendingDecisions
         for (var i = 0; i < civ.PopupAlerts.Count; i++)
         {
             var type = civ.PopupAlerts[i].Type;
-            var choice = IsChoiceAlert(type);
-            result.Add(new Decision(DecisionKind.Alert, type.ToString(), choice ? "answer-alert" : "dismiss-alert", IsBlockingAlert(type), i));
+            result.Add(new Decision(DecisionKind.Alert, type.ToString(), ResolverOf(type), IsBlockingAlert(type), i));
         }
 
         for (var i = 0; i < civ.TradeRequests.Count; i++)

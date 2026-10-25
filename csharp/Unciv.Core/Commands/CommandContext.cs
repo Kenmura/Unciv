@@ -52,7 +52,7 @@ public sealed class CommandContext(GameInfo game, string actorId)
     /// <summary>
     /// May the actor issue ordinary player commands now? The single place that answers "is it your turn", so that
     /// sequential and simultaneous turns (T200/T202) differ in one spot and no command reads CurrentPlayerCiv itself.
-    /// Sequential rule: the actor is a human civ, is the current player, and nobody has won yet.
+    /// Sequential rule: the actor is a human civ, is the current player, and nobody has won yet (or the players chose one more turn).
     /// </summary>
     public Resolved<CivilizationObject> RequireActive()
     {
@@ -62,7 +62,7 @@ public sealed class CommandContext(GameInfo game, string actorId)
         if (civ.Value == null) return civ;
         if (!civ.Value.IsHuman() || civ.Value.IsSpectator())
             return Resolved<CivilizationObject>.Fail(CommandErrors.NotHuman, $"{ActorId} is not a human player");
-        if (Game.VictoryData != null)
+        if (Game.VictoryData != null && !Game.OneMoreTurnMode)
             return Resolved<CivilizationObject>.Fail(CommandErrors.GameOver, "The game is over");
         if (civ.Value.IsDefeated())
             return Resolved<CivilizationObject>.Fail(CommandErrors.NotAllowed, $"{ActorId} has been defeated");

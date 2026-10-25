@@ -26,6 +26,9 @@ public sealed class CommandRegistry<TState>(JsonSerializerOptions options)
     /// <summary>The registered wire names, in registration order.</summary>
     public IReadOnlyCollection<string> Types => typeByName.Keys;
 
+    /// <summary>The class registered under <paramref name="type"/>, or null.</summary>
+    public Type? TypeOf(string type) => typeByName.GetValueOrDefault(type);
+
     public CommandEnvelope ToEnvelope(long seq, string actorId, ICommand<TState> command)
     {
         if (!nameByType.TryGetValue(command.GetType(), out string? registered) || registered != command.Type)

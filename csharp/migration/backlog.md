@@ -2227,7 +2227,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review round 1 (adversarial subagent): fixed UnitAttacked defender identity (snapshot before blows), TileOwnerChanged on city transfer (sorted per tile), UnitCreated moved into TileMap.PlaceUnitNearTile (barbarian/unique spawns), air/paradrop no-alloc overload, TurnEnded skips spectators. Deferred to T209 (finding ids 1-3, 8, 10): secondary moves, unit capture event, city destroyed/traded event, priority truncation. Documented: SetTransients runs without a sink, Apply must be serialized per game.
 
 ### T187 Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T164, T186, T184, T183
 - Source: design/COMMANDS-IMPLEMENTATION.md sections 3.1 and 5; ui/screens/worldscreen/AlertPopup.kt; status/NextTurnAction.kt; view/CivView.kt (tryDismiss*, tryMarkMovedAutomatedUnits, tryAutomateAllUnits)
 - Fixtures: none
@@ -2241,6 +2241,15 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Trap: EndTurn must NOT accept a client-supplied time. The envelope's server-assigned field 'Now' (epoch ms) is logged; ClientCommandId idempotency stays a server concern.
       - After victory (GameInfo.VictoryData set) only AckAlert, Resign and OneMoreTurn-type commands are valid; check what Kotlin allows (OneMoreTurnMode, GameInfo.OneMoreTurnMode).
   - Simultaneous turns: in Simultaneous mode EndTurn only marks the civ ended (T202 adds UndoEndTurn, ProcessEndTurn, StartNextTurn, SetController and replaces the 'actor is CurrentPlayerCiv' check by RequireActive). Implement the Sequential behaviour here but route the gate through one helper. RunAiTurn/BeginTurn take the civ.
+  -   - Implemented (T187, Claude). Commands in Unciv.Core/Commands/Turn: EndTurn, ForceEndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, AckAlert, RespondToAlert, DismissPolicyPicker, DismissMoveSpies, Resign, plus OneMoreTurn (added: Kotlin VictoryScreen oneMoreTurnMode, needed because RequireActive refuses everything after a victory).
+      - Time: commands that read the clock (EndTurn, ForceEndTurn, BeginTurn, Resign) implement ITimedCommand.Now; GameSession.Clock (optional) stamps the payload's "now" before validating/logging and discards a client's value. Without a Clock the payload value is used (tests, replay). EndTurn/ForceEndTurn/Resign refuse Now before CurrentTurnStartTime.
+      - Double EndPlayerTurn guard (T184 note): EndTurn/ForceEndTurn require IsTurnStarted(civ) and TurnPhase AwaitingInput(civ), routed through TurnCommandChecks.CanEndTurnOf (the T202 replacement point, TODO(T202)). Not put in RequireActive because test worlds that set CurrentPlayerCiv by hand never mark a turn started.
+      - RequireActive now allows play after a victory when OneMoreTurnMode is set.
+      - Deviation/clarification vs the ticket text: Kotlin WarDeclaration and BorderConflict popups have only close buttons ("You'll pay for this!", "Sorry."/"Never!" all just close), so they are AckAlert, not decisions; the "THIS MEANS WAR" buttons exist on Denounced (Declare war) and on the three protected/allied city-state alerts (war / side / abandon), all in RespondToAlert. Demand and DeclarationOfFriendship alerts keep their T193 commands (RespondToDemand, RespondToFriendship); RespondToAlert rejects them naming those. PendingDecisions.ResolverOf(AlertType) is the single classification and replaced the old answer-alert / dismiss-alert strings (now ack-alert, respond-to-alert, respond-demand, respond-friendship).
+      - AckAlert is also accepted for alerts Kotlin does not open any more (shouldOpen=false): Event with no matching choice, RecapturedCivilian whose unit is gone or owner defeated, city-state alerts whose bully is defeated. AckAlert/Resign/OneMoreTurn/SetPlayerSettings use RequirePlayer (human, not turn bound, valid after victory/defeat).
+      - Event choice = decimal index into EventPresentation.Choices.
+      - Resign follows Multiplayer.resignPlayer (AI, empty PlayerId, human counters reset, EndPlayerTurn if it was running, General notification to every civ); the out-of-sync check is the transport's.
+      - Acceptance: CommandsReproduceNextTurnExactly (EndTurn + RunAiTurn* + BeginTurn state hash == NextTurn).
 
 ### T188 Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue
 - State: Done

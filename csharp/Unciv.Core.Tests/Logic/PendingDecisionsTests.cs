@@ -190,9 +190,9 @@ public sealed class PendingDecisionsTests : IDisposable
         babylon.PopupAlerts.Add(new PopupAlert(AlertType.CityConquered, "c"));
         Assert.Equal(
             [
-                new Decision(DecisionKind.Alert, "WonderBuilt", "dismiss-alert", false, 0),
-                new Decision(DecisionKind.Alert, "DiplomaticMarriage", "answer-alert", false, 1),
-                new Decision(DecisionKind.Alert, "CityConquered", "answer-alert", true, 2),
+                new Decision(DecisionKind.Alert, "WonderBuilt", "ack-alert", false, 0),
+                new Decision(DecisionKind.Alert, "DiplomaticMarriage", "respond-to-alert", false, 1),
+                new Decision(DecisionKind.Alert, "CityConquered", "respond-to-alert", true, 2),
             ],
             PendingDecisions.For(babylon));
         Assert.Single(PendingDecisions.BlockingFor(babylon));

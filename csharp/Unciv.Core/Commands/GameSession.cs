@@ -1,4 +1,8 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Unciv.Commands.Turn;
 using Unciv.Logic;
+using Unciv.Utils;
 
 namespace Unciv.Commands;
 
@@ -19,6 +23,12 @@ public sealed class GameSession
         this.registry = registry ?? GameCommandRegistry.Create();
         processor = new CommandProcessor<GameInfo>(game, this.registry);
     }
+
+    /// <summary>
+    /// The authority's clock (epoch milliseconds). When set, every <see cref="ITimedCommand"/> is stamped with it before it is validated and logged and the
+    /// value a client sent is discarded; the log then carries the time, so replay never reads a clock. Null: the command's own value is kept (tests, replay hosts).
+    /// </summary>
+    public Func<long>? Clock { get; init; }
 
     public GameInfo Game => processor.State;
 
@@ -57,6 +67,17 @@ public sealed class GameSession
 
     private CommandResult SubmitTrusted(CommandEnvelope envelope)
     {
-        lock (gate) return processor.Submit(envelope);
+        lock (gate) return processor.Submit(Stamp(envelope));
+    }
+
+    private CommandEnvelope Stamp(CommandEnvelope envelope)
+    {
+        if (Clock == null || registry.TypeOf(envelope.Type) is not { } type || !typeof(ITimedCommand).IsAssignableFrom(type)) return envelope;
+        if (envelope.Payload.ValueKind != JsonValueKind.Object) return envelope; // the processor rejects it as malformed
+        var payload = JsonNode.Parse(envelope.Payload.GetRawText()).NotNull().AsObject();
+        foreach (var name in payload.Select(it => it.Key).Where(it => string.Equals(it, nameof(ITimedCommand.Now), StringComparison.OrdinalIgnoreCase)).ToList())
+            payload.Remove(name);
+        payload["now"] = Clock();
+        return envelope with { Payload = JsonSerializer.SerializeToElement(payload) };
     }
 }
