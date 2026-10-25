@@ -1898,7 +1898,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T164 Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log
 - State: Available
-- Depends: T012, T071, T083, T080, T100, A003, A004, A005, A006, A007
+- Depends: T012, T071, T083, T080, T100
 - Source: csharp/migration/COMMANDS.md; Unciv.Core/Commands skeleton
 - Fixtures: none
 - Deliverables: Unciv.Core/Commands/* concrete commands over real GameInfo, validation by actor/turn, serializable log, replay test
@@ -1908,7 +1908,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 
 ### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
 - State: Available
-- Depends: T012, T100, A003, A004, A005, A006, A007
+- Depends: T012, T100
 - Source: csharp/migration/PROTOCOL.md goals; COMMANDS.md
 - Fixtures: none
 - Deliverables: design doc + headless server project using Unciv.Core commands, protocol tests
@@ -1925,6 +1925,56 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~VictoryScorerInputsTests
 - Claimed:
 - Notes:
+
+### T167 L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage
+- State: Available
+- Depends: T102
+- Source:
+- Fixtures: none
+- Deliverables: soak test project/category (excluded from the default fast test run), turn-time and memory budget report in Notes
+- Gate: dotnet test --filter Category=Soak
+- Claimed:
+- Notes: From the playability gap review: T102 only proves 60 turns on Tiny/Small, 3-5 civs, no city states, no run to a real victory. Assert no exception, record turn-time and memory budgets, run to a victory or the turn limit. Real bugs found go to the engine with regression tests.
+
+### T168 Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs
+- State: Available
+- Depends: T099, T100, T102
+- Source:
+- Fixtures: none
+- Deliverables: csharp/Unciv.Cli project (not in the fast test path unless it stays green), README section
+- Gate: dotnet build Unciv.Cli -warnaserror
+- Claimed:
+- Notes: Gap review: the Harness projects are image tools, not a game runner. The CLI is also the entry point for the soak ticket and for demos.
+
+### T169 CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes
+- State: Available
+- Depends: C001
+- Source:
+- Fixtures: none
+- Deliverables: .github/workflows csharp workflow, docs
+- Gate: workflow runs green on a PR to csharp-migration
+- Claimed:
+- Notes: Gap review: there is no csharp CI workflow; gates run manually in distrobox. Unciv.Godot is outside Unciv.sln, so CI must build it separately. Do not touch the Kotlin/Gradle workflows.
+
+### T170 Ruleset/mod folder loading and real translation file loading wiring (Translations.cs TODO, RulesetCache mods)
+- State: Available
+- Depends: T104
+- Source:
+- Fixtures: none
+- Deliverables: RulesetCache mod folder loading, TranslationCache loading .properties files, tests with a bundled mod
+- Gate: dotnet test --filter FullyQualifiedName~ModLoading
+- Claimed:
+- Notes: Gap review: Translations.cs:102 still carries a TODO: mod translation files are not wired through RulesetCache. Partly covered by T104/T137; this ticket owns what is left, including T160's mod ruleset run.
+
+### T171 Event presentation types in UniqueTriggerActivation (replace the NotImplementedException at the event trigger)
+- State: Available
+- Depends: T104
+- Source:
+- Fixtures: none
+- Deliverables: engine-side data for event choices/presentation, tests with an event-bearing ruleset
+- Gate: dotnet test --filter FullyQualifiedName~UniqueTrigger
+- Claimed:
+- Notes: Gap review: UniqueTriggerActivation.cs throws NotImplementedException for an event presentation type: a real runtime path for rulesets with events. Present as data (choices, texts), no UI types.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
