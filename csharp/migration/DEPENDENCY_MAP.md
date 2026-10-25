@@ -551,7 +551,7 @@ xychart-beta
 | C017 | Available (waiting on C037, C041) | C005, C010, T164, T060, T062, T191, T196, C037, C041 | 2 | City screen A: info, tiles, specialists, focus |
 | C021 | Available (waiting on C037) | C005, C010, T164, T059, T068, T193, T197, C037, T220 | 2 | Diplomacy screen |
 | C036 | Available (waiting on C011, T180, T202) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
-| C003 | Needs-Review [Claude] | C002 | 1 | Resource and improvement props |
+| C003 | In-Review [Claude] | C002 | 1 | Resource and improvement props |
 | C004 | Available (waiting on C012) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
 | C015 | Available (waiting on C037) | C005, C010, T099, T045, T021, T034, T170, T199, C037 | 1 | Main menu and game setup screen: nations, difficulty, speed, map options |
 | C022 | Available (waiting on C021) | C021, T164, T059, T193, T197 | 1 | Trade screen |
