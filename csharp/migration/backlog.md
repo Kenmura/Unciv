@@ -2283,7 +2283,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Round-2 review (adversarial subagent, fixes only): PASS. Mutation-checked each fix: removing GetRoadPath check, HasMovement, AttacksThisTurn, CanBePromoted, puppet check or the Confirmation check each fails a test. Two gaps found and closed with tests: the foreign-city SaveAsDefault case was vacuous (the foreign city expels the unit, so it hit the no-city branch; now the unit is placed by hand in a B city and the own-city check fails when removed) and AttacksThisTurn/puppet/island-target were untested. Remaining redundancy: IsImpassible/HasExplored clauses in ConnectRoad overlap with GetRoadPath==null (no test distinguishes them; harmless, mirrors the UI offer). Gates green: build -warnaserror, format, test 0 failed, coverage --check.
 
 ### T190 Unit actions B: unique-driven actions through descriptors (great person improvements and hurry, religion, trade mission, paradrop, transform, gift unit, trigger unique, add in capital, air/set-up, stockpile)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T189
 - Source: design/COMMANDS-IMPLEMENTATION.md section 4; logic/map/mapunit/actions/UnitActionsFromUniques.kt, UnitActionsGreatPerson.kt, UnitActionsReligion.kt, UnitActionsUpgrade.kt, UnitActionsPillage.kt
 - Fixtures: none
