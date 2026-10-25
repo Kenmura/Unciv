@@ -1,3 +1,4 @@
+using Unciv.Commands.Events;
 using Unciv.Logic.Automation.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Trade;
@@ -154,6 +155,6 @@ public sealed class ProposeTrade : GameCommand
         TryBuild(context, actor, other, out var trade, out _);
         other.TradeRequests.Add(new TradeRequest(actor.CivId, trade.Reverse()));
         actor.Cache.UpdateCivResources();
-        return [];
+        return [new TradeRequested(actor.CivId, other.CivId, PrivateTradeFacts.Of(trade.OurOffers), PrivateTradeFacts.Of(trade.TheirOffers))];
     }
 }

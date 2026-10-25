@@ -53,6 +53,8 @@ public sealed class GameEventsTests
         "peace-made" => new PeaceMade("Babylon", "Rome"),
         "trade-accepted" => new TradeAccepted("Babylon", "Rome",
             [new TradeOfferFact("Gold", TradeOfferType.Gold, 50, -1)], [new TradeOfferFact("Agriculture", TradeOfferType.Technology, 1, -1)]),
+        "trade-requested" => new TradeRequested("Babylon", "Rome", [new TradeOfferFact("Gold", TradeOfferType.Gold, 50, -1)], []),
+        "trade-withdrawn" => new TradeWithdrawn("Babylon", "Rome"),
         "unit-appeared" => new UnitAppeared("Babylon", 12, "Warrior", P1),
         "unit-disappeared" => new UnitDisappeared("Babylon", 12, P1),
         "stats-changed" => new StatsChanged("Babylon", 100, 5),

@@ -70,6 +70,8 @@ public static class EventFilter
         [typeof(WarDeclared)] = KnownToBothParties,
         [typeof(PeaceMade)] = KnownToBothParties,
         [typeof(TradeAccepted)] = ParticipantsOnly,
+        [typeof(TradeRequested)] = ParticipantsOnly,
+        [typeof(TradeWithdrawn)] = ParticipantsOnly,
 
         // Built by the server for one recipient; an engine-emitted instance must never be forwarded.
         [typeof(UnitAppeared)] = Nothing,

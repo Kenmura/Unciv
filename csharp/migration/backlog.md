@@ -2126,7 +2126,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Host-a-lobby revision: ClientSession also does Join (password/invite token, fingerprint check from invite, TOFU prompt callback, known-hosts store), LobbyState, TurnStatus, HostClosing handling, reconnect with the same key and Resume to the last address. Mirror tolerates unsolicited deltas (simultaneous turns). Depends gained T179 and T204.
 
 ### T181 Private-channel filtering: trade offers, diplomacy and espionage visibility (server side)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T174, T175, T164, T193
 - Source: csharp/migration/design/SERVER.md section 3 (trade, espionage rows); View/TradeView.cs, SpyView.cs
 - Fixtures: none
@@ -2136,6 +2136,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Needs trade/diplomacy/espionage commands from the T164 split (design/COMMANDS-IMPLEMENTATION.md): re-point Depends to those tickets once they exist.
   - Design agent: Depends gained T193 (diplomacy/trade commands) - private-channel rules need the concrete trade/diplomacy commands and events.
   - Simultaneous turns: trade/peace offers between two active humans are delivered live to the recipient only (TradeRequested event); AI valuation never leaves the host. A third human sees neither the offer nor its answer.
+  -   - Implementation (Claude): trade and espionage private channels. New events TradeRequested / TradeWithdrawn (Commands/Events/PrivateEvents.cs, recipient-only via Participants()=[To]; ProposeTrade and RetractTrade now return them; EventFilter ParticipantsOnly). Snapshot: OwnCivDto.Spies (Net/Visibility/PrivateSpies.cs, SpyDto), built only from the viewer's own EspionageManager via SpyView; no path exists for foreign spies (default deny; the ruleset-reveal clause is not implemented, MVP). PendingTrades/Diplomacy filtering and AI valuation absence were already in T174; NetPrivacyTests pin them with a 3-civ world (A,B humans; C third; S city-state), omniscient-recipient checks, and a reflection test that no wire type carries willingness/valuation members. Deviation: events live in Commands/Events (not Net/Visibility) so commands do not depend on the Net namespace. DismissTradeRequest and decline emit nothing (proposer is not told in Kotlin).
 
 ### T182 Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement
 - State: Available

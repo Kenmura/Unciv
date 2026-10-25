@@ -54,6 +54,9 @@ public sealed record OwnCivDto
     public required int Happiness { get; init; }
     public string? CurrentTech { get; init; }
     public required List<string> Techs { get; init; }
+
+    /// <summary>The recipient's own spies; foreign spies are never described (design/SERVER.md section 3, espionage row).</summary>
+    public required List<SpyDto> Spies { get; init; }
 }
 
 /// <summary>An explored tile. Fogged tiles carry terrain only; <see cref="Visible"/> tiles add live ownership, road and pillage state.</summary>

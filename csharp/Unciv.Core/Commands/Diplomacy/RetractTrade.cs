@@ -1,3 +1,5 @@
+using Unciv.Commands.Events;
+
 namespace Unciv.Commands.Diplomacy;
 
 /// <summary>
@@ -22,6 +24,6 @@ public sealed class RetractTrade : GameCommand
         var actor = context.Actor;
         context.ValidatedOther(CivId).TradeRequests.RemoveAll(it => it.RequestingCiv == actor.CivId);
         actor.Cache.UpdateCivResources();
-        return [];
+        return [new TradeWithdrawn(actor.CivId, CivId)];
     }
 }

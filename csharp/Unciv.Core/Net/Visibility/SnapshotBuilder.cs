@@ -127,7 +127,8 @@ public static class SnapshotBuilder
                 Gold = ownView.Gold,
                 Happiness = ownView.GetHappiness(),
                 CurrentTech = ownView.CurrentTechnologyName(),
-                Techs = view.Ruleset.Technologies.Keys.Where(ownView.IsResearched).Order(StringComparer.Ordinal).ToList()
+                Techs = view.Ruleset.Technologies.Keys.Where(ownView.IsResearched).Order(StringComparer.Ordinal).ToList(),
+                Spies = PrivateSpies.Build(gameView)
             };
         }
         return new CivDto
