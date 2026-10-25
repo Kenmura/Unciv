@@ -214,6 +214,47 @@ public sealed class NetEventsTests
     }
 
     [Fact]
+    public void Delta_FoggedTileTurningVisible_IsRefreshedWithItsUnits()
+    {
+        var (a, b) = TwoCivs();
+        var spot = game.GetTile(new HexCoord(3, 0));
+        spot.SetExplored(a, true);
+        var before = ViewDeltaBuilder.Capture(game.GameInfo, a);
+        Assert.Empty(before.KnownCivs!);
+        game.AddUnit("Warrior", b, spot);
+        a.ViewableTiles = a.ViewableTiles.Append(spot).ToHashSet();
+        var revealed = Assert.IsType<TilesRevealed>(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, before, []).Single());
+        Assert.True(revealed.Tiles.Single().Visible);
+        Assert.Equal(b.CivId, revealed.Units.Single().Owner);
+        Assert.True(revealed.Civs != null, "null civs"); Assert.Equal(b.CivId, revealed.Civs!.Single().CivId); // sighted an unmet civ's unit
+        Assert.Null(revealed.Civs!.Single().Own);
+        // Nothing changes on a second diff.
+        Assert.Empty(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, ViewDeltaBuilder.Capture(game.GameInfo, a), []));
+    }
+
+    [Fact]
+    public void Delta_MeetingACiv_IntroducesItWithoutTiles()
+    {
+        var (a, b) = TwoCivs();
+        var before = ViewDeltaBuilder.Capture(game.GameInfo, a);
+        a.DiplomacyFunctions.MakeCivilizationsMeet(b);
+        var revealed = Assert.IsType<TilesRevealed>(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, before, []).Single());
+        Assert.Empty(revealed.Tiles);
+        Assert.Equal(b.CivId, revealed.Civs!.Single().CivId);
+    }
+
+    [Fact]
+    public void Delta_PerTurnYieldChange_EmitsStatsChanged()
+    {
+        var (a, _) = TwoCivs();
+        var before = ViewDeltaBuilder.Capture(game.GameInfo, a);
+        Assert.Equal(before.Yields, ViewDeltaBuilder.Capture(game.GameInfo, a).Yields);
+        var changed = before with { Yields = new ViewDeltaBuilder.YieldsPerTurn(-1, -1, -1, -1) };
+        var stats = Assert.IsType<StatsChanged>(ViewDeltaBuilder.BuildEvents(game.GameInfo, a, changed, []).Single());
+        Assert.Equal(a.Gold, stats.Gold);
+    }
+
+    [Fact]
     public void Delta_WireForm_RoundTripsAndFiltersPerRecipient()
     {
         var (a, b) = TwoCivs();

@@ -113,7 +113,7 @@ public static class SnapshotBuilder
         };
     }
 
-    private static CivDto BuildCiv(GameView gameView, CivilizationClass civ)
+    internal static CivDto BuildCiv(GameView gameView, CivilizationClass civ)
     {
         var view = gameView.GetForeignCivView(civ);
         OwnCivDto? own = null;

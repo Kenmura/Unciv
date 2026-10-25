@@ -2630,7 +2630,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Audit of AlertPopup.kt: Denounced "THIS MEANS WAR!" is already RespondToAlert (choice "war", T193); "Very well." / "You'll pay for this!" (RejectingDemand) / AcceptingDemand / the three DemandViolationNoticed alerts only close the popup, so they are already dismissed by AckAlert (ResolverOf = ack-alert, defeated civ is just a no-op show). No new command needed; added tests (AlertCommandTests: DiplomacyNoticesAreDismissedWithAck, DenouncementFromADefeatedCivCanOnlyBeAcknowledged) pinning that behaviour.
 
 ### T214 Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T175
 - Source: csharp/migration/design/SERVER.md sections 2.4, 3
 - Fixtures: none
@@ -2638,6 +2638,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~NetEvents
 - Claimed: 2026-10-25T12:59Z
 - Notes:
+  - Implemented in ViewDeltaBuilder: (1) ViewMark now records Visible tiles; fog-to-visible tiles are re-sent in TilesRevealed with their visible units. (2) TilesRevealed gained optional Civs (CivDto, no Own): civs newly in KnownCivs since the mark plus owners of units in the delta; a delta with only civs (e.g. meeting by diplomacy) is emitted. (3) StatsChanged gained GoldPerTurn/SciencePerTurn/CulturePerTurn/FaithPerTurn (sum of CivView.GetStatMapForNextTurn, Float->Int truncation); emitted when they change. New fields are optional so existing constructors/wire stay compatible. Quirk: TestGame.AddUnit makes civs meet, so tests capture before adding units. Standard checks + coverage pass.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

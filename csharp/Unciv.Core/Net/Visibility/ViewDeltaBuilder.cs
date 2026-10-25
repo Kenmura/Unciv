@@ -3,6 +3,8 @@ using Unciv.Commands.Events;
 using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.Map;
+using Unciv.Models.StatTypes;
+using Unciv.Utils;
 using Unciv.View;
 using CivilizationClass = Unciv.Logic.Civilization.Civilization;
 
@@ -12,16 +14,22 @@ namespace Unciv.Net.Visibility;
 // comparing that recipient's filtered state before and after a command, so fog reveals and yield changes reach the client without
 // any hidden detail riding along.
 
-/// <summary>Tiles the recipient has explored since the command began, with the foreign units it sees on them. Server-built only.</summary>
+/// <summary>
+/// Tiles the recipient has explored (or moved from fog to visible) since the command began, with the foreign units it sees on them,
+/// and the civs it newly met or whose units it newly sighted (T214). Server-built only.
+/// </summary>
 [EventType("tiles-revealed", EventAudience.Participants)]
-public sealed record TilesRevealed(string CivId, IReadOnlyList<TileDto> Tiles, IReadOnlyList<UnitDto> Units) : EngineEvent
+public sealed record TilesRevealed(string CivId, IReadOnlyList<TileDto> Tiles, IReadOnlyList<UnitDto> Units, IReadOnlyList<CivDto>? Civs = null) : EngineEvent
 {
     public override IEnumerable<string> Participants() => [CivId];
 }
 
-/// <summary>The recipient's own gold or happiness changed. Server-built only, and only ever for the recipient's own civ.</summary>
+/// <summary>
+/// The recipient's own gold, happiness or per-turn yields changed (T214: per-turn gold, science, culture, faith, truncated like Kotlin Float to Int).
+/// Server-built only, and only ever for the recipient's own civ.
+/// </summary>
 [EventType("stats-changed", EventAudience.Participants)]
-public sealed record StatsChanged(string CivId, int Gold, int Happiness) : EngineEvent
+public sealed record StatsChanged(string CivId, int Gold, int Happiness, int GoldPerTurn = 0, int SciencePerTurn = 0, int CulturePerTurn = 0, int FaithPerTurn = 0) : EngineEvent
 {
     public override IEnumerable<string> Participants() => [CivId];
 }
@@ -52,7 +60,21 @@ public sealed class GameViewVisibility(GameInfo gameInfo, CivilizationClass view
 public static class ViewDeltaBuilder
 {
     /// <summary>The recipient's state before a command, to diff against after it.</summary>
-    public sealed record ViewMark(HashSet<HexCoord> Explored, int Gold, int Happiness, HashSet<(string CivId, int UnitId)> HiddenUnits);
+    public sealed record ViewMark(HashSet<HexCoord> Explored, int Gold, int Happiness, HashSet<(string CivId, int UnitId)> HiddenUnits,
+        HashSet<HexCoord>? Visible = null, HashSet<string>? KnownCivs = null, YieldsPerTurn? Yields = null);
+
+    /// <summary>Per-turn yields of the recipient's own civ.</summary>
+    public sealed record YieldsPerTurn(int Gold, int Science, int Culture, int Faith);
+
+    private static YieldsPerTurn Yields(CivView view)
+    {
+        var total = new Stats();
+        foreach (var stats in view.GetStatMapForNextTurn().Values) total.Add(stats);
+        return new YieldsPerTurn(KotlinMath.FloatToInt(total.Gold), KotlinMath.FloatToInt(total.Science),
+            KotlinMath.FloatToInt(total.Culture), KotlinMath.FloatToInt(total.Faith));
+    }
+
+    private static HashSet<string> KnownSet(CivView view) => view.GetKnownCivs().Select(it => it.CivId).ToHashSet();
 
     public static ViewMark Capture(GameInfo gameInfo, CivilizationClass viewer)
     {
@@ -60,7 +82,13 @@ public static class ViewDeltaBuilder
         var hidden = gameInfo.Civilizations.Where(it => it != viewer).SelectMany(it => it.Units.GetCivUnits().Select(unit => (Civ: it, Unit: unit)))
             .Where(it => it.Unit.HasActiveInvisibilityUnique(viewer) && !it.Unit.IsVisibleTo(viewer))
             .Select(it => (it.Civ.CivId, it.Unit.Id)).ToHashSet();
-        return new ViewMark(ExploredSet(gameInfo, viewer), view.Gold, view.GetHappiness(), hidden);
+        return new ViewMark(ExploredSet(gameInfo, viewer), view.Gold, view.GetHappiness(), hidden, VisibleSet(gameInfo, viewer), KnownSet(view), Yields(view));
+    }
+
+    private static HashSet<HexCoord> VisibleSet(GameInfo gameInfo, CivilizationClass viewer)
+    {
+        var tileMapView = new GameView(gameInfo, viewer).TileMapView;
+        return gameInfo.TileMap.TileList.Where(it => it.IsExplored(viewer) && tileMapView.GetTile(it).IsVisible()).Select(it => it.Position).ToHashSet();
     }
 
     private static HashSet<HexCoord> ExploredSet(GameInfo gameInfo, CivilizationClass viewer) =>
@@ -75,8 +103,9 @@ public static class ViewDeltaBuilder
         if (revealed != null) result.Add(revealed);
         foreach (var gameEvent in events) result.AddRange(EventFilter.Classify(gameEvent, viewer.CivId, visibility));
         var view = new GameView(gameInfo, viewer).CivView;
-        if (view.Gold != before.Gold || view.GetHappiness() != before.Happiness)
-            result.Add(new StatsChanged(viewer.CivId, view.Gold, view.GetHappiness()));
+        var yields = Yields(view);
+        if (view.Gold != before.Gold || view.GetHappiness() != before.Happiness || (before.Yields != null && yields != before.Yields))
+            result.Add(new StatsChanged(viewer.CivId, view.Gold, view.GetHappiness(), yields.Gold, yields.Science, yields.Culture, yields.Faith));
         return result;
     }
 
@@ -94,13 +123,23 @@ public static class ViewDeltaBuilder
         var units = new List<UnitDto>();
         foreach (var tile in gameInfo.TileMap.TileList)
         {
-            if (before.Explored.Contains(tile.Position)) continue;
+            var wasExplored = before.Explored.Contains(tile.Position);
             var tileView = gameView.TileMapView.GetTile(tile);
             if (!tileView.IsExplored()) continue;
+            var visible = tileView.IsVisible();
+            // Fog to visible: the client holds a terrain-only fogged tile and needs the live ownership and units.
+            var refreshed = wasExplored && visible && before.Visible != null && !before.Visible.Contains(tile.Position);
+            if (wasExplored && !refreshed) continue;
             tiles.Add(SnapshotBuilder.BuildTile(tileView, gameView));
-            if (!tileView.IsVisible()) continue;
+            if (!visible) continue;
             units.AddRange(tileView.GetVisibleUnits().Select(it => SnapshotBuilder.BuildUnit(it, tileView)));
         }
-        return tiles.Count == 0 ? null : new TilesRevealed(viewer.CivId, tiles, units);
+        var known = KnownSet(gameView.CivView);
+        var introduced = new HashSet<string>(known.Where(it => before.KnownCivs != null && !before.KnownCivs.Contains(it)));
+        foreach (var unit in units) introduced.Add(unit.Owner);
+        introduced.Remove(viewer.CivId);
+        if (before.KnownCivs != null) introduced.ExceptWith(before.KnownCivs);
+        var civs = gameInfo.Civilizations.Where(it => introduced.Contains(it.CivId)).Select(it => SnapshotBuilder.BuildCiv(gameView, it)).ToList();
+        return tiles.Count == 0 && civs.Count == 0 ? null : new TilesRevealed(viewer.CivId, tiles, units, civs);
     }
 }
