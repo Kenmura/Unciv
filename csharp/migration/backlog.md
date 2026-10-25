@@ -2731,7 +2731,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
     Human to judge: terrain readability, camera feel, dim vs unexplored contrast.
 
 ### C010 V1 vertical slice: unit blocks, select, move, end turn, AI turns
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: C009, T164, T184, T187, T188, T174, T175
 - Source:
 - Fixtures: none
