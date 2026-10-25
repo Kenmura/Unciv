@@ -2298,7 +2298,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Re-review round 2 (adversarial subagent): PASS. Verified each round-1 fix in fb3796ea3 against code: WorkTile (ProvidesYield + empty stats + blockade), PurchaseConstruction queued-marker tile, SetCityFocus, IsDefined guard, disable commands reassign, SetCivConstructionDisabled CityId, RemoveAllByName, AddToTop refusal. Gate green (build -warnaserror, format, test 0 failed, coverage --check). Found test gaps (no regressions in code): blockade check, disable-command ReassignPopulation, and the contested-tile assertion was conditional (vacuous). Added WorkTileRefusesBlockadedTiles, DisableCommandsReassignPopulation, made contested assertion unconditional; mutation-checked (removing the blockade check / reassign line fails them).
 
 ### T192 Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T164, T186
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.5; models/TechManager (techsToResearch, getFreeTechnology, updateResearchProgress), PolicyManager.adopt/removePolicy, ReligionManager (foundPantheon/foundReligion/chooseBeliefs), GreatPersonManager.getFreeGreatPersonOptions, EspionageManager spy.moveTo, Civilization.diplomaticVoteForCiv; ui/screens/pickerscreens/*; view/CivView.kt tryDisable/TrySetGoldPercentConvertedToScience
 - Fixtures: none
@@ -2314,6 +2314,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - MoveSpy(spyId, cityId|null): SpyView.TryMoveTo / Spy.MoveTo; Validate = espionage enabled, spy idle or movable, city explored.
       - SetGoldToScience(percent): only when the ruleset has ConvertGoldToScience; float -> quantise to the Kotlin step (0..100, step 10?) check TechManager, because a float in a payload is a determinism hazard (must round-trip exactly; use int percent).
       - Trap: these are all 'picker' choices that clear PendingDecisions; after each Apply the pending list must shrink (test per decision kind).
+  -   - Implemented (Commands/Empire): SetResearchQueue, PickFreeTechnology, DebugAddTechnology (the only godMode UI path that mutates state: TechPickerScreen second click; the "God mode" debug checkbox itself is a setup option, not a command), AdoptPolicy (policies and branches), FoundPantheon (also expands), ChooseBeliefs (enhance via GetBeliefsToChooseAtEnhancing, reform via FreeBeliefsAsEnums), FoundReligion (icon + display name rule from the rename popup + beliefs in slot order), ChooseFreeGreatPerson, MoveSpy (spy by name; UI predicate, not Spy.CanMoveTo which the screen never calls), VoteDiplomatic, SetGoldToScience (int percent 0..100 step 10, stores percent/100f, then CityStats.Update).
+      - SetCivConstructionDisabled already exists from T191 (Commands/City); not duplicated.
+      - Added ReligionManager.FoundingCityId (internal, JsonIgnore) so FoundReligion validates before Apply.
+      - Not done: the PendingDecisions-shrinks-per-kind tests (PendingDecisions does not exist yet, T184 Available). Spy coup / counter-intelligence actions (EspionageScreen CoupButton) are not covered by any listed command. ChooseFreeGreatPerson is a no-op when the unit cannot be placed (engine returns null), as in the UI.
+      - GameCommandTests builds a fresh game per empire command (EmpireSamples) since the samples are mutually exclusive.
 
 ### T193 Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage
 - State: Available

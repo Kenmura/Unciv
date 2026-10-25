@@ -69,6 +69,10 @@ public class ReligionManager : IsPartOfGameInfoSerialization
     [JsonInclude]
     private bool shouldChoosePantheonBelief;
 
+    /// <summary>The city the founding prophet was used in; read by the FoundReligion command to validate before <see cref="FoundReligion(string, string)"/> looks it up.</summary>
+    [JsonIgnore]
+    internal string? FoundingCityId => foundingCityId;
+
     public ReligionManager Clone()
     {
         var clone = new ReligionManager

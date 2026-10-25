@@ -2,6 +2,7 @@ using System.Text.Json;
 using Unciv.Commands;
 using Unciv.Commands.City;
 using Unciv.Commands.Units;
+using Unciv.Core.Tests.Commands.Empire;
 using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.City;
@@ -220,7 +221,15 @@ public sealed class GameCommandTests : IDisposable
         var cityScenario = ArrangeCity(session.Game, babylonCity);
         foreach (var (name, _) in GameCommandRegistry.Scan())
         {
-            var command = Sample(name, session.Game, babylonCity.Id, scenario, cityScenario);
+            var game = session.Game;
+            GameCommand command;
+            if (EmpireSamples.Types.Contains(name))
+            {
+                var (fresh, _, _) = NewSession();
+                game = fresh.Game;
+                command = EmpireSamples.Sample(name, game);
+            }
+            else command = Sample(name, game, babylonCity.Id, scenario, cityScenario);
             Assert.Equal(name, command.Type);
 
             var envelope = session.Registry.ToEnvelope(5, "Babylon", command);
@@ -234,9 +243,10 @@ public sealed class GameCommandTests : IDisposable
             Assert.DoesNotContain("actor", back.Payload.GetRawText(), StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("\"type\"", back.Payload.GetRawText(), StringComparison.OrdinalIgnoreCase);
 
-            ulong before = Hash(session.Game);
-            Assert.True(decoded.Validate(session.Game, "Babylon").IsValid);
-            Assert.Equal(before, Hash(session.Game));
+            ulong before = Hash(game);
+            var validation = decoded.Validate(game, "Babylon");
+            Assert.True(validation.IsValid, name + ": " + validation.Message);
+            Assert.Equal(before, Hash(game));
         }
     }
 
