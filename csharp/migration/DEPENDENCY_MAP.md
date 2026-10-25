@@ -386,6 +386,6 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T231 | Needs-Review [Claude] | T208 | 0 | Unit-order parity with a live Kotlin game: GameInfo.RefreshTransientCaches/SortLikeLoad re-sorts civ units (T208) so barbarian wander diverges from Kotlin per-turn golden |
+| T231 | In-Review [Claude] | T208 | 0 | Unit-order parity with a live Kotlin game: GameInfo.RefreshTransientCaches/SortLikeLoad re-sorts civ units (T208) so barbarian wander diverges from Kotlin per-turn golden |
 | T234 | In-Review [Claude] | T229 | 0 | Dev console: remaining engine commands (activatetrigger, civ add/remove, remove-spectator, tile find) |
 | T235 | In-Progress [Claude] | T227 | 0 | Civ 5 AI: wire OperationManager (persisted operations) and make UseCiv5Ai the default for new games |
