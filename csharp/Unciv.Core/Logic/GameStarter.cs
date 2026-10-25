@@ -53,14 +53,15 @@ public sealed class GameStarter
     /// <param name="seed">Seeds the gameId (Kotlin: a random UUID), and with it everything drawn from <c>stateBasedRandom</c>.</param>
     /// <param name="currentTimeMillis">The clock reading for <c>currentTurnStartTime</c> and for a map seed of 0.</param>
     /// <param name="openMapFile">Opens <see cref="GameSetupInfo.MapFile"/> when the setup names a saved map.</param>
+    /// <param name="gameId">T160: use this gameId instead of one drawn from <paramref name="seed"/> (replays a game started by Kotlin, whose id is a random UUID).</param>
     public static GameInfo StartNewGame(GameSetupInfo gameSetupInfo, long seed, long currentTimeMillis,
-        Func<string, IUncivFileHandle>? openMapFile = null) =>
-        new GameStarter(gameSetupInfo, seed, currentTimeMillis, openMapFile).gameInfo;
+        Func<string, IUncivFileHandle>? openMapFile = null, string? gameId = null) =>
+        new GameStarter(gameSetupInfo, seed, currentTimeMillis, openMapFile, gameId).gameInfo;
 
-    private GameStarter(GameSetupInfo gameSetupInfo, long seed, long currentTimeMillis, Func<string, IUncivFileHandle>? openMapFile)
+    private GameStarter(GameSetupInfo gameSetupInfo, long seed, long currentTimeMillis, Func<string, IUncivFileHandle>? openMapFile, string? gameId)
     {
         this.gameSetupInfo = gameSetupInfo;
-        gameInfo.GameId = GameInfoPreview.RandomGameId(new GameRandom(seed));
+        gameInfo.GameId = gameId ?? GameInfoPreview.RandomGameId(new GameRandom(seed));
         gameInfo.CurrentTurnStartTime = currentTimeMillis;
         rng = new GameContext(gameInfo: gameInfo).StateBasedRandom("GameStarter");
 

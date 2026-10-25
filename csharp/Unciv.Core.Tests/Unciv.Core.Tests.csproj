@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Determinism\*.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Logic\Golden\*.tsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Logic\Map\Golden\*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Logic\Map\MapGenerator\Golden\*.tsv" CopyToOutputDirectory="PreserveNewest" />

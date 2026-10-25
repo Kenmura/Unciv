@@ -1857,7 +1857,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Claude: review (isolated adversarial) requested stronger assertions; fixed (8 vacuous NotNull asserts replaced, vacuous swap test deleted). Final measured UnitAutomation.cs 87.79% line / 72.73% branch; baseline set to that. Uncovered: TryRetreat swap branch, air-unit heal branch (no follow-up ticket; low value). `coverage --check --all` shows other files (Era, Terrain, CollectionExtensions) under baseline: not from this ticket.
 
 ### T160 Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T102
 - Source: core/src/com/unciv/logic/GameStarter.kt, GameInfo.nextTurn (run by a JVM exporter)
 - Fixtures: none - golden per-turn hashes exported from the Kotlin game
@@ -1865,6 +1865,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: `dotnet test --filter FullyQualifiedName~KotlinGolden`
 - Claimed: 2026-10-25T13:30Z
 - Notes: Split from T102 (Claude): T102 proves same-seed/save-load/clone/culture determinism inside C#. Still open: compare the C# per-turn state hash against hashes exported from the Kotlin game for fixed seeds (needs a canonical state-hash export on the JVM side, the C# hash is currently FNV over the save JSON whose property order T128 changed), and a run with one mod ruleset.
+  - Implemented (Claude), PARTIAL by necessity. Kotlin CAN be run here: csharp/migration/golden/export.sh copies KotlinGoldenExporter.kt into tests/src for one `gradlew --offline :tests:test --rerun` run (JDK21, ~10 s), removes it again, and writes csharp/Unciv.Core.Tests/Determinism/kotlin-golden.txt (verbatim Kotlin output; stable over 6 re-runs).
+    Finding: a full per-turn Kotlin golden is IMPOSSIBLE without editing Kotlin. Kotlin's StrategicBonusResourcePlacementLogic uses unseeded `.shuffled()` (kotlin.random.Random.Default) and oasis placement is also unseeded, so two Kotlin games with the same gameId/map seed differ (verified: resource and Oasis columns vary between Kotlin runs), and everything downstream (AI, yields) differs with them. The C# port deliberately seeds those shuffles.
+    What is compared (KotlinGoldenTests, 2 map seeds, Pangaea/Rectangular/Tiny, Human+2 AI): FNV digest of the map without resources/Oasis (base terrain, features, improvement, natural wonder, road for every tile) and of the start state (civs, settler/warrior positions). Both match Kotlin exactly. Kotlin's gameId is a random UUID, so it is exported and replayed through a new optional `gameId` parameter of GameStarter.StartNewGame (T160, default behaviour unchanged).
+    NOT done / follow-ups: per-turn hashes vs Kotlin (blocked by Kotlin nondeterminism; would need a Kotlin-side seeded shuffle, forbidden), and a C#-only run with a mod ruleset (not started).
+    Checks: Standard checks pass (5104 passed, 0 failed); coverage check ok, baseline updated.
 
 ### T161 Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches
 - State: Done
