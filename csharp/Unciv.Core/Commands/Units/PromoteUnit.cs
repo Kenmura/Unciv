@@ -20,13 +20,16 @@ public sealed class PromoteUnit : GameCommand
     {
         if (!context.RequireActive().TryGet(out var actor, out var failure)) return failure;
         if (!context.OwnUnit(actor, UnitId).TryGet(out var unit, out failure)) return failure;
+        if (!unit.HasMovement() || unit.AttacksThisTurn != 0 || !unit.Promotions.CanBePromoted())
+            return CommandValidation.Fail(CommandErrors.NotAllowed, "The unit cannot be promoted now");
         var promotion = unit.Promotions.GetAvailablePromotions().FirstOrDefault(it => it.Name == Promotion);
         if (promotion == null)
             return CommandValidation.Fail(CommandErrors.InvalidTarget, $"\"{Promotion}\" is not an available promotion of this unit");
         if (!((IHasUniques)promotion).HasUnique(UniqueType.FreePromotion) && !unit.Promotions.CanAffordPromotions(1))
             return CommandValidation.Fail(CommandErrors.NotEnough("xp"), "The unit has not enough experience for a promotion");
-        if (SaveAsDefault && unit.CurrentTile.GetCity() == null)
-            return CommandValidation.Fail(CommandErrors.NotAllowed, "Default promotions can only be saved in a city");
+        var city = unit.CurrentTile.GetCity();
+        if (SaveAsDefault && (city == null || !ReferenceEquals(city.Civ, unit.Civ) || city.IsPuppet))
+            return CommandValidation.Fail(CommandErrors.NotAllowed, "Default promotions can only be saved in one of your own, non-puppet cities");
         return CommandValidation.Ok;
     }
 

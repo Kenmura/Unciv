@@ -41,6 +41,8 @@ public sealed class SetWorkerOrder : GameCommand
         switch (Order)
         {
             case WorkerOrderKind.Build:
+                if (Improvement == Constants.CancelImprovementOrder)
+                    return CommandValidation.Fail(CommandErrors.InvalidTarget, "Use the Cancel order to cancel");
                 if (tile.IsMarkedForCreatesOneImprovement())
                     return CommandValidation.Fail(CommandErrors.NotAllowed, "This tile is reserved for a one-time improvement");
                 var problem = CheckBuildable(unit, Improvement);
@@ -53,7 +55,11 @@ public sealed class SetWorkerOrder : GameCommand
             case WorkerOrderKind.ConnectRoad:
                 if (!unit.HasUnique(UniqueType.BuildImprovements) || unit.Civ.Tech.GetBestRoadAvailable() == RoadStatus.None)
                     return CommandValidation.Fail(CommandErrors.NotAllowed, "The unit cannot connect roads");
-                return context.TileAt(To).TryGet(out _, out failure) ? CommandValidation.Ok : failure;
+                if (!context.TileAt(To).TryGet(out var target, out failure)) return failure;
+                // WorldMapHolder offers the button only for explored, passable land with a road path
+                if (!target.IsLand || target.IsImpassible() || !unit.Civ.HasExplored(target) || unit.Movement.GetRoadPath(target) == null)
+                    return CommandValidation.Fail(CommandErrors.InvalidTarget, "No road can be built to that tile");
+                return CommandValidation.Ok;
             default:
                 return CommandValidation.Fail(CommandErrors.InvalidTarget, "Unknown worker order");
         }

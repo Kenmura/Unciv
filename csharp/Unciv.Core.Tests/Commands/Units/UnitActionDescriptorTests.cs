@@ -7,6 +7,7 @@ using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Queries;
 using Unciv.Queries.Units;
 using Unciv.Utils;
@@ -196,8 +197,10 @@ public sealed class UnitActionDescriptorTests
         tile.ImprovementFunctions.SetImprovement("Farm");
         var warrior = env.Unit("Warrior", 0, 0);
         var pillage = UnitActionDescriptor.Describe(warrior).First(it => it.Descriptor.ActionType == UnitActionType.Pillage);
-        if (pillage.Action.Confirmation == null) return; // the base ruleset asks only for owned improvements
+        Assert.NotNull(pillage.Action.Confirmation);
+        Assert.NotNull(pillage.Action.Action);
         AssertRejected(env, new ExecuteUnitAction { UnitId = warrior.Id, Descriptor = pillage.Descriptor }, CommandErrors.NotAllowed);
+        Assert.True(env.Session.Submit(env.A.CivId, new ExecuteUnitAction { UnitId = warrior.Id, Descriptor = pillage.Descriptor, Confirmed = true }).Accepted);
     }
 
     [Fact]
@@ -283,7 +286,7 @@ public sealed class UnitActionDescriptorTests
         Assert.True(env.Session.Submit(env.A.CivId, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.Cancel }).Accepted);
         Assert.Null(tile.ImprovementInProgress);
 
-        var connect = env.Session.Submit(env.A.CivId, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.ConnectRoad, To = new HexCoord(-6, 0) });
+        var connect = env.Session.Submit(env.A.CivId, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.ConnectRoad, To = new HexCoord(-3, 0) });
         Assert.True(connect.Accepted, connect.Validation.Message);
     }
 
@@ -294,7 +297,22 @@ public sealed class UnitActionDescriptorTests
         var warrior = env.Unit("Warrior", 0, 0);
         AssertRejected(env, new SetWorkerOrder { UnitId = warrior.Id, Order = WorkerOrderKind.ConnectRoad, To = new HexCoord(1, 0) }, CommandErrors.NotAllowed);
         var worker = env.Unit("Worker", 1, 0);
+        AssertRejected(env, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.Build, Improvement = Constants.CancelImprovementOrder }, CommandErrors.InvalidTarget);
         AssertRejected(env, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.ConnectRoad, To = new HexCoord(1, 1) }, CommandErrors.NotAllowed); // no road tech
+    }
+
+    [Fact]
+    public void ConnectRoadRejectsTargetsTheUiDoesNotOffer()
+    {
+        var env = new Env();
+        env.A.Tech.AddTechnology("The Wheel");
+        var worker = env.Unit("Worker", 0, 0);
+        var water = env.Game.GetTile(2, 0);
+        env.Game.SetTileTerrain(water.Position, Constants.Ocean);
+        var hidden = env.Game.GetTile(0, 2);
+        hidden.SetExplored(env.A, false);
+        AssertRejected(env, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.ConnectRoad, To = water.Position }, CommandErrors.InvalidTarget);
+        AssertRejected(env, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.ConnectRoad, To = hidden.Position }, CommandErrors.InvalidTarget);
     }
 
     // --- PromoteUnit
@@ -307,8 +325,11 @@ public sealed class UnitActionDescriptorTests
         const string available = "Shock I";
         Assert.Contains(available, warrior.Promotions.GetAvailablePromotions().Select(it => it.Name));
 
+        AssertRejected(env, new PromoteUnit { UnitId = warrior.Id, Promotion = available }, CommandErrors.NotAllowed); // no experience
+
+        // a free promotion makes the unit promotable, but a paid one still needs the experience
+        env.Game.CreateUnitPromotion(UniqueType.FreePromotion.Text()).UnitTypes.Add(warrior.BaseUnit.UnitType);
         AssertRejected(env, new PromoteUnit { UnitId = warrior.Id, Promotion = available }, CommandErrors.NotEnough("xp"));
-        AssertRejected(env, new PromoteUnit { UnitId = warrior.Id, Promotion = "Nonexistent" }, CommandErrors.InvalidTarget);
 
         warrior.Promotions.XP = 1000;
         AssertRejected(env, new PromoteUnit { UnitId = warrior.Id, Promotion = "Nonexistent" }, CommandErrors.InvalidTarget);
@@ -316,6 +337,15 @@ public sealed class UnitActionDescriptorTests
         Assert.True(result.Accepted, result.Validation.Message);
         Assert.Contains(available, warrior.Promotions.Promotions);
         Assert.True(env.A.Cities[0].UnitShouldUseSavedPromotion["Warrior"]);
+
+        warrior.CurrentMovement = 0f;
+        AssertRejected(env, new PromoteUnit { UnitId = warrior.Id, Promotion = "Shock II" }, CommandErrors.NotAllowed);
+
+        var guest = env.Unit("Warrior", 3, 3);
+        var foreignCity = env.Game.AddCity(env.B, env.Game.GetTile(3, 3));
+        guest.Promotions.XP = 1000;
+        AssertRejected(env, new PromoteUnit { UnitId = guest.Id, Promotion = available, SaveAsDefault = true }, CommandErrors.NotAllowed);
+        foreignCity.IsPuppet = true;
 
         var outside = env.Unit("Warrior", 0, 0);
         outside.Promotions.XP = 1000;
