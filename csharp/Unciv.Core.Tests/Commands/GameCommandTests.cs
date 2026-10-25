@@ -4,6 +4,7 @@ using Unciv.Commands.City;
 using Unciv.Commands.Units;
 using Unciv.Json;
 using Unciv.Logic;
+using Unciv.Logic.City;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
@@ -13,6 +14,7 @@ using Unciv.Models.Ruleset;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
+using TileClass = Unciv.Logic.Map.Tiles.Tile;
 
 namespace Unciv.Core.Tests.Commands;
 
@@ -72,7 +74,7 @@ public sealed class GameCommandTests : IDisposable
     private static int OwnUnitId(GameInfo game, string civ) => game.GetCivilization(civ).Units.GetCivUnits().First().Id;
 
     // One sample per command class: every [CommandType] class must appear here (a new domain ticket adds its own line).
-    private static GameCommand Sample(string type, GameInfo game, string cityId, Scenario s) => type switch
+    private static GameCommand Sample(string type, GameInfo game, string cityId, Scenario s, CityScenario c) => type switch
     {
         "rename-city" => new RenameCity { CityId = cityId, Name = "Ur" },
         "set-unit-due" => new SetUnitDue { UnitId = OwnUnitId(game, "Babylon"), Due = false },
@@ -84,6 +86,27 @@ public sealed class GameCommandTests : IDisposable
         "nuke" => new Nuke { UnitId = s.NukeId, Target = s.NukeTo },
         "air-sweep" => new AirSweep { UnitId = s.FighterId, Target = s.SweepTo },
         "disband-unit" => new DisbandUnit { UnitId = s.MoverId },
+        "queue-construction" => new QueueConstruction { CityId = cityId, Name = "Warrior" },
+        "remove-from-queue" => new RemoveFromQueue { CityId = cityId, Index = 0 },
+        "reorder-queue" => new ReorderQueue { CityId = cityId, Index = 0, Move = QueueMove.Down },
+        "purchase-construction" => new PurchaseConstruction { CityId = cityId, Name = "Monument" },
+        "buy-tile" => new BuyTile { CityId = cityId, Tile = c.BuyTile },
+        "work-tile" => new WorkTile { CityId = cityId, Tile = c.Unworked },
+        "stop-working-tile" => new StopWorkingTile { CityId = cityId, Tile = c.Worked },
+        "lock-tile" => new LockTile { CityId = cityId, Tile = c.Worked },
+        "unlock-tile" => new UnlockTile { CityId = cityId, Tile = c.Locked },
+        "assign-specialist" => new AssignSpecialist { CityId = cityId, Specialist = "Merchant" },
+        "unassign-specialist" => new UnassignSpecialist { CityId = cityId, Specialist = "Artist" },
+        "set-manual-specialists" => new SetManualSpecialists { CityId = cityId, Manual = false },
+        "set-city-focus" => new SetCityFocus { CityId = cityId, Focus = CityFocus.ProductionFocus },
+        "reassign-population" => new ReassignPopulation { CityId = cityId, ResetLocked = true },
+        "toggle-avoid-growth" => new ToggleAvoidGrowth { CityId = cityId },
+        "sell-building" => new SellBuilding { CityId = cityId, Building = "Temple" },
+        "annex-city" => new AnnexCity { CityId = c.PuppetCityId },
+        "set-razing" => new SetRazing { CityId = c.RazeCityId, Raze = true },
+        "set-unit-saved-promotion" => new SetUnitSavedPromotion { CityId = cityId, Unit = "Warrior", Value = false },
+        "set-construction-disabled" => new SetConstructionDisabled { CityId = cityId, Name = "Warrior", Disabled = true },
+        "set-civ-construction-disabled" => new SetCivConstructionDisabled { Name = "Warrior", Disabled = true },
         _ => throw new InvalidOperationException($"No sample for command type \"{type}\"; add one to GameCommandTests.Sample"),
     };
 
@@ -91,6 +114,43 @@ public sealed class GameCommandTests : IDisposable
     private sealed record Scenario(
         int MoverId, HexCoord MoveTo, HexCoord FarTo, int SwapId, HexCoord SwapTo, int AttackerId, HexCoord DefenderTile,
         HexCoord BombardTo, int NukeId, HexCoord NukeTo, int FighterId, HexCoord SweepTo);
+
+    // City commands (T191): a city with a queue, buildings, specialist slots, a free citizen, a locked tile; plus a puppet and a razable city.
+    private sealed record CityScenario(HexCoord BuyTile, HexCoord Unworked, HexCoord Worked, HexCoord Locked, string PuppetCityId, string RazeCityId);
+
+    private static CityScenario ArrangeCity(GameInfo game, CityObject city)
+    {
+        var babylon = game.GetCivilization("Babylon");
+        babylon.AddGold(5000);
+        city.CityConstructions.AddBuilding("Temple");
+        city.CityConstructions.AddBuilding("Market");
+        city.UnitShouldUseSavedPromotion["Warrior"] = true;
+        city.CityConstructions.AddToQueue("Warrior");
+        city.CityConstructions.AddToQueue("Warrior");
+        city.Population.SetPopulation(5);
+        city.ReassignPopulation(resetLocked: true);
+        city.ManualSpecialists = true;
+        city.Population.SpecialistAllocations.Clear();
+        var worked = city.GetWorkedTiles().Where(it => !it.IsCityCenter()).ToList();
+        Assert.True(worked.Count >= 4);
+        city.StopWorkingTile(worked[0]);
+        city.StopWorkingTile(worked[1]);
+        city.Population.SpecialistAllocations.Add("Artist", 1);
+        city.LockTile(worked[3]);
+        city.CityStats.Update();
+
+        var buy = game.TileMap.TileList.First(it => city.Expansion.CanBuyTile(it));
+        var center = city.GetCenterTile();
+        CityObject FarCity(Func<TileClass, bool> extra)
+        {
+            var tile = game.TileMap.TileList.First(it => !it.IsWater && it.GetOwner() == null && it.AerialDistanceTo(center) >= 8 && extra(it));
+            return babylon.AddCity(tile.Position);
+        }
+        var puppet = FarCity(_ => true);
+        puppet.IsPuppet = true;
+        var razable = FarCity(it => it.AerialDistanceTo(puppet.GetCenterTile()) >= 8);
+        return new CityScenario(buy.Position, worked[0].Position, worked[2].Position, worked[3].Position, puppet.Id, razable.Id);
+    }
 
     private static Scenario Arrange(GameInfo game, CityObject city)
     {
@@ -144,9 +204,10 @@ public sealed class GameCommandTests : IDisposable
     {
         var (session, babylonCity, _) = NewSession();
         var scenario = Arrange(session.Game, babylonCity);
+        var cityScenario = ArrangeCity(session.Game, babylonCity);
         foreach (var (name, _) in GameCommandRegistry.Scan())
         {
-            var command = Sample(name, session.Game, babylonCity.Id, scenario);
+            var command = Sample(name, session.Game, babylonCity.Id, scenario, cityScenario);
             Assert.Equal(name, command.Type);
 
             var envelope = session.Registry.ToEnvelope(5, "Babylon", command);
