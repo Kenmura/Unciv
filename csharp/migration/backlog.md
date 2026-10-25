@@ -2021,13 +2021,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review (adversarial subagent): FAIL round 1 on duplicate JSON keys throwing; fixed (AllowDuplicateProperties=false, tests added). Nits left: null list elements accepted, no value-range validation (host layer), in-memory peer IsOpen stays true after the other end closes.
 
 ### T173 Host identity and join auth: client ECDSA P-256 key bound to a slot (TOFU), lobby password / single-use invite token for admission, host key fingerprint
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T172
 - Source: csharp/migration/design/SERVER.md sections 6.2, 6.4
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Identity/* (key generation/storage abstraction, challenge signer/verifier, JoinPassword salted hash + attempt back-off, InviteToken single-use, HostKey fingerprint), tests: replay, wrong key, leaked password cannot take a bound seat, expired/used token, back-off after 5 bad passwords
 - Gate: dotnet test --filter FullyQualifiedName~NetIdentity
-- Claimed:
+- Claimed: 2026-10-25T04:53Z
 - Notes: BCL ECDsa only, no third-party crypto. Decision D4 default accepted (keypair+invite); no passwords. Key storage on disk is behind an interface (Godot client uses user:// via C006).
   - OWNER DECISION: no auth service. The earlier note 'no passwords' is superseded: admission = optional lobby password or single-use invite token (sent only inside the pinned TLS channel, stored as a salted hash), slot ownership = the client keypair signature on reconnect. Password and key have different jobs (SERVER.md 6.2).
 
