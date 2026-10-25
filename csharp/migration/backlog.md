@@ -1897,13 +1897,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Implements PROTOCOL.md 'Green before Done': ticket.py state T### Done runs (or verifies a recent stamp of) build, format, test, coverage --check on the rebased tree and refuses on failure; also checks for stale TODO(T###) markers naming the ticket.
 
 ### T164 Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T012, T071, T100, T140, T011
 - Source: csharp/migration/COMMANDS.md; design/COMMANDS-IMPLEMENTATION.md sections 2 and 3; Unciv.Core/Commands skeleton
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/{GameCommand.cs,GameCommandRegistry.cs,CommandContext.cs,CommandErrors.cs,GameSession.cs,CommandTypeAttribute.cs}, Commands/City/RenameCity.cs, Commands/Units/SetUnitDue.cs, tests (every [CommandType] class: unique name, JSON round trip, rejected-command leaves state hash unchanged, actor spoofing impossible)
 - Gate: dotnet test --filter FullyQualifiedName~Commands
-- Claimed:
+- Claimed: 2026-10-25T01:02Z
 - Notes: T012 only delivered the skeleton against a toy state. The client (C004/C005), a server (C006) and AI all need real commands. Replaying a command log from a seed must reproduce the T102 state hashes.
   - Held (Blocked) while the design/splitting agents run: this ticket is too coarse to implement as written (gap review). It will be split into domain tickets and re-pointed by the design agent; do not claim it until it is Available again.
   - Narrowed by the design agent (design/COMMANDS-IMPLEMENTATION.md). This ticket is ONLY the infrastructure; the domain commands are separate tickets (turn/decision, movement+combat, unit actions A/B, city, research/policy/religion, diplomacy/trade) and the replayable log is its own ticket. The old Notes (replay from a seed must reproduce the T102 hashes) are carried by the log/replay ticket.

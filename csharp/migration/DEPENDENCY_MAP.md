@@ -501,7 +501,7 @@ flowchart TD
   class T161 ready
   class T162 ready
   class T163 ready
-  class T164 ready
+  class T164 prog
   class T166 ready
   class T167 prog
   class T168 review
@@ -522,7 +522,7 @@ flowchart TD
   class T183 ready
   class T184 waiting
   class T185 ready
-  class T186 waiting
+  class T186 ondeck
   class T187 waiting
   class T188 waiting
   class T189 waiting
@@ -561,15 +561,14 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 89
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 81]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 80]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T164 | **Ready to start** | T012, T071, T100, T140, T011 | 55 | Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command |
 | T185 | **Ready to start** | T084, T085, T138, T139, T012 | 50 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
 | T172 | **Ready to start** | T012 | 47 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
 | T183 | **Ready to start** | T071, T046 | 45 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
@@ -581,8 +580,9 @@ xychart-beta
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
 | T163 | **Ready to start** | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
+| T186 | **On deck** (after T164) | T164 | 50 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
 | A007 | **On deck** (after A005) | A004, A005 | 35 | Operations and armies layer |
-| T186 | Available (waiting on T164) | T164 | 50 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
+| T164 | In-Progress [Claude] | T012, T071, T100, T140, T011 | 55 | Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T187 | Available (waiting on T164, T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
