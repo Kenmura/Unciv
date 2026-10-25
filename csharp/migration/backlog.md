@@ -1934,7 +1934,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T167 L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T102
 - Source:
 - Fixtures: none
@@ -1949,6 +1949,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
           - Real bug fixed: Trade.Clone shared TradeOffer instances (faithful to Kotlin Trade.clone) while DiplomacyTurnManager decrements Duration in place, so playing a GameInfo.Clone() aged the original's deals too (found when a clone and the original disagreed on Open Borders durations). Trade.Clone now copies offers; regression TradeCloneTests; two DiplomacyCoreTests that pinned the sharing (Assert.Same / mutate-clone-sees-original) were corrected to the new contract. Deviation from Kotlin, documented in Trade.cs.
           - Real findings filed: T200 (running game != reload of its own save; stale lazily-refreshed caches: open-borders flags, cached vision/exploration, barbarian reads them; JavaHashSet order differs after reload at turn 300). Also documented, not bugs: loading runs BackwardCompatibility.MigrateGreatGeneralPools which rewrites legacy pointsForNextGreatGeneral (200 -> 350), matches upstream.
           - No nondeterminism found run-to-run (same seed twice, sampled hashes equal over 300 turns on Small).
+  - Correction: the follow-up ticket mentioned above as T200 (an id collision with another agent's concurrent add) was renumbered T208.
 
 ### T168 Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs
 - State: Done
@@ -2448,7 +2449,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Optional, lowest priority. Failure is non-fatal and reported in the Host screen; mapping removed on shutdown; no third-party dependency (ask via a ticket note if one is judged necessary). Manual forward and overlay VPN docs are the MVP path (T179).
 
-### T200 Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync
+### T208 Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync
 - State: Available
 - Depends: T167
 - Source: core/src/com/unciv/logic/GameInfo.kt (setTransients), civilization/diplomacy/DiplomacyManager.kt (updateHasOpenBorders), map/mapunit/MapUnit.kt (updateVisibleTiles), civilization/managers/BarbarianManager

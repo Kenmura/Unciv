@@ -226,7 +226,7 @@ public sealed class SoakTests : IDisposable
             Assert.True(digest == Digest(clone), $"a clone and a load of the same state diverged {i + 1} turns after loading:\n{digest}\n{Digest(clone)}");
         }
         Assert.Equal(Hash(loaded), Hash(loaded2));
-        // Known gap (ticket T200): the running game itself does not continue exactly like a reload of its own save, because some caches
+        // Known gap (ticket T208): the running game itself does not continue exactly like a reload of its own save, because some caches
         // (cached vision and exploration, open-borders flags) are only refreshed lazily while loading recomputes them. Not asserted here.
     }
 
