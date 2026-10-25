@@ -306,10 +306,10 @@ Generated from the git history of `backlog/` (UTC; each point is the backlog as 
 %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#1a7f37, #b58900"}}}}%%
 xychart-beta
     title "Remaining tickets"
-    x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00", "25 18:00", "25 21:00"]
+    x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00", "25 18:00", "25 21:00", "26 00:00"]
     y-axis "Tickets" 0 --> 80
-    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 63, 55, 48]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6, 5, 6]
+    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 63, 55, 48, 48]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6, 5, 6, 6]
 ```
 
 ## Incomplete tickets
@@ -358,7 +358,7 @@ xychart-beta
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
-| C018 | Needs-Review [Claude] | C017, T063, T191, T196 | 0 | City screen B: production queue, purchase, buildings |
+| C018 | In-Review [Claude] | C017, T063, T191, T196 | 0 | City screen B: production queue, purchase, buildings |
 | C027 | Available (waiting on C025) | C005, C025 | 0 | Tooltips and Civilopedia |
 | C033 | Available (waiting on C004) | C004 | 0 | Unit animation and combat presentation |
 | C034 | Available (waiting on C015, T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
