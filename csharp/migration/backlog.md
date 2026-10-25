@@ -1172,13 +1172,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review (isolated adversarial subagent): PASS. Correction: 24 Kotlin cases ported (not 29). Nit fixed: attack-set assertions now use SetEquals.
 
 ### T104 Marker, seam and stale-comment sweep (final)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T102, T103, T106, T097, T093, T089, T094, T100
 - Source: (new) csharp/Unciv.Core, csharp/Unciv.Core.Tests
 - Fixtures: none
 - Deliverables: edits in the files below, no new API
 - Gate: `dotnet test --filter FullyQualifiedName~SourcePolicyTests`
-- Claimed:
+- Claimed: 2026-10-25T00:21Z
 - Notes: Created by the backlog audit. Final hygiene ticket, run when every porting ticket is Done. (1) grep -rn 'TODO(T' csharp/Unciv.Core csharp/Unciv.Core.Tests: every marker must name a ticket that is not Done (fix or delete the stale ones). Known stale at audit time: IHasUniques.cs (TODO(T033), owner T087 for getWeightForAiDecision), Player.cs (TODO(T034)/Nation transients: port Player.chosenNation/setNationTransient(ruleset) and the Nation constructor here if GameStarter T099 did not), Translations.cs TryReadTranslationForLanguage (TODO(T034): RulesetCache should be the caller), MayaCalendar.cs (TODO(T050): owner T070), Tile.cs:533 (upstream note 'Generic-ify', leave as plain comment), ReligionState.cs (TODO(T052) should be T057). (2) Delete every *Seams.cs / PendingTickets file and 'NotSupportedException(... not ported ...)' stub whose owner ticket is Done, e.g. MapGeneratorSeams.cs, NaturalWonderSeams.cs, MapRegionsSeams.cs (T041/T076/T077), BaseUnit.CanBePurchasedWithStat (T063), CityStats/TileMap/Tile seams. (3) grep -rn 'NotSupportedException\|NotImplementedException' csharp/Unciv.Core: only intentional guards (Counter.ZERO, EngineColor, JavaHashMap treeify) may remain. (4) Re-run python3 -I tools/ticket.py section Planned: it must be empty/removed.
   - Backlog audit, after T055 landed: TileMap.cs still carries TODO(T055) (lines ~21, ~855) for switchPlayersNation, which T055 did not port; T055 will be Done, so this ticket owns it: port TileMap.switchPlayersNation (Kotlin: 'currently unreachable', constructs a Civilization) or record it as Won't-port-unreachable in the code comment and drop the marker. Also check CivilizationSeams.cs / *Seams.cs files created by T055-T072: each must be deleted by its owner ticket; list survivors here.
 
