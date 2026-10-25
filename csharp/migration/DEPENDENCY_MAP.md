@@ -364,7 +364,7 @@ xychart-beta
 | T180 | Available (waiting on T179, T204, T223, T224) | T172, T173, T174, T175, T179, T204, T223, T224 | 6 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C012 | Needs-Review [Claude] | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195, C037, T220 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
 | C017 | In-Review [Claude] | C005, C010, T164, T060, T062, T191, T196, C037, C041 | 2 | City screen A: info, tiles, specialists, focus |
-| C021 | Needs-Review [Claude] | C005, C010, T164, T059, T068, T193, T197, C037, T220 | 2 | Diplomacy screen |
+| C021 | In-Review [Claude] | C005, C010, T164, T059, T068, T193, T197, C037, T220 | 2 | Diplomacy screen |
 | C036 | Available (waiting on T180, T202) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | C015 | In-Progress [Claude] | C005, C010, T099, T045, T021, T034, T170, T199, C037 | 1 | Main menu and game setup screen: nations, difficulty, speed, map options |
 | C035 | Available (waiting on T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
