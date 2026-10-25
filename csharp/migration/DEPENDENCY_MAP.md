@@ -64,7 +64,6 @@ flowchart TD
   A005 --> T165
   A006 --> T165
   A007 --> T165
-  A003 --> T166
   C001 --> C002
   A003 --> C002
   A004 --> C002
@@ -93,7 +92,7 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class A003 review
+  class A003 done
   class A004 prog
   class A005 ondeck
   class A006 ondeck
@@ -118,7 +117,7 @@ flowchart TD
   class T163 ondeck
   class T164 waiting
   class T165 waiting
-  class T166 ondeck
+  class T166 ready
 ```
 
 ## Remaining tickets over time
@@ -137,7 +136,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 65
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 15]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 2]
 ```
 
 ## Incomplete tickets
@@ -147,17 +146,16 @@ xychart-beta
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
+| T166 | **Ready to start** | A003 | 0 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
 | A005 | **On deck** (after A004) | A004 | 8 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | **On deck** (after A004) | A004, T091, T092 | 7 | Homeland AI priority move queue |
 | T163 | **On deck** (after T104) | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
-| T166 | **On deck** (after A003) | A003 | 0 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
 | A004 | In-Progress [Claude] | A001, T039, T040, T065, T067, T081, T090 | 10 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
-| A003 | Needs-Review [Claude] | A002, T030, T055, T057, T059 | 8 | Victory scorers (BNW) |
 | A007 | Available (waiting on A004, A005) | A004, A005 | 7 | Operations and armies layer |
-| C002 | Available (waiting on A003, A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
-| T164 | Available (waiting on A003, A004, A005, A006, A007) | T012, T071, T083, T080, T100, A003, A004, A005, A006, A007 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
+| C002 | Available (waiting on A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
+| T164 | Available (waiting on A004, A005, A006, A007) | T012, T071, T083, T080, T100, A003, A004, A005, A006, A007 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
 | T104 | Needs-Review [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 1 | Marker, seam and stale-comment sweep (final) |
-| T165 | Available (waiting on A003, A004, A005, A006, A007) | T012, T100, A003, A004, A005, A006, A007 | 1 | Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers) |
+| T165 | Available (waiting on A004, A005, A006, A007) | T012, T100, A003, A004, A005, A006, A007 | 1 | Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers) |
 | C003 | Available (waiting on C002) | C002 | 0 | Resource and improvement props |
 | C004 | Available (waiting on C002, T164) | C002, T164 | 0 | 3D military units |
 | C005 | Available (waiting on C002, T164) | C002, T164 | 0 | Civ 5-style UI shell |

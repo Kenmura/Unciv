@@ -1995,7 +1995,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - State: Done (full ticket: backlog-archive.md)
 
 ### A003 Victory scorers (BNW)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: A002, T030, T055, T057, T059
 - Source: `csharp/migration/ai-spec/SPEC.md` §4 (Conquest §4.1, Culture §4.2, Diplomatic §4.3, Spaceship §4.4)
 - Deliverables: `csharp/Unciv.Core/AI/GrandStrategy/Scorers/` (`ConquestScorer`, `CultureScorer`, `DiplomaticScorer`, `SpaceshipScorer`), tests
