@@ -2423,13 +2423,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review (adversarial subagent): PASS. Non-blocking: DiplomacyPanel Flags lists all flags incl. AI bookkeeping ones (candidate whitelist); TradeHint is a probing oracle by design (gated by TradeHintsEnabled, no rate limit); untested: TradeHint human/CS target, Religion enhancing branch, Notification default arm, CS diplomacy panel.
 
 ### T198 Query API: victory progress, scores, rankings and demographics
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T185, T166, A003
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; ui/screens/victoryscreen/*, logic/civilization/managers/VictoryManager.kt, Civilization.calculateScoreBreakdown, CivRankingHistory; csharp AI/GrandStrategy/Scorers/VictoryScorerInputs.cs, UI/RankingType.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Queries/Victory/{VictoryProgressQuery,ScoresQuery,RankingsQuery,DemographicsQuery,HistoryQuery}.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~Queries.Victory
-- Claimed:
+- Claimed: 2026-10-25T05:02Z
 - Notes:
   - Already in C#: VictoryManager (GetNextMilestone, AmountMilestonesCompleted, GetAvailableVictories, GetVictoriesShownInVictoryScreen, HasWon), Civilization.CalculateScoreBreakdown/CalculateTotalScore, ForeignCivView.GetStatForRanking, RankingType, CivRankingHistory/StatsHistory. A003 scorers (ConquestScorer, CultureScorer, DiplomaticScorer, SpaceshipScorer) answer 'how attractive is victory V for this AI', not 'how close is civ X': they are inputs to Grand Strategy, so DO NOT show their scores to players. T166 (the adapter that fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from a Civilization) is reused only for its raw input records (capitals held, policy branches completed, spaceship parts, votes) as the numeric progress of the matching Victory milestones.
       - VictoryProgress(viewer): for each enabled Victory the milestone list with {completed, progress numbers} for the viewer and for rivals only as far as VictoryScreenGlobalVictory shows (it shows other civs' status: verify which fields are public knowledge: e.g. spaceship parts are, gold is not). Scores/Rankings(viewer): per RankingType value for civs the viewer knows; Demographics = the VictoryScreenDemographics table (rank per stat, best/avg/worst); History = CivRankingHistory series for the replay chart.
