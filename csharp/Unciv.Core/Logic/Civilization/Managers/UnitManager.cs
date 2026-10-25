@@ -195,7 +195,18 @@ public class UnitManager(Civilization civInfo)
     /// </summary>
     public void SortById()
     {
-        unitList = unitList.OrderBy(it => it.Id).ToList(); // OrderBy is stable, units sharing an id (legacy saves) keep their relative order
+        // T236: units that share an id (legacy saves) are ordered by where a load would meet them (tile order, then the tile's own unit order),
+        // never by their current list position, so a running game and its reload agree on ties too. Only computed when a tie exists.
+        var ties = unitList.GroupBy(it => it.Id).Any(it => it.Count() > 1);
+        if (!ties)
+            unitList = unitList.OrderBy(it => it.Id).ToList();
+        else
+        {
+            var rank = new Dictionary<MapUnit, int>(ReferenceEqualityComparer.Instance);
+            foreach (var unit in CivInfo.GameInfo.TileMap.Values.SelectMany(it => it.GetUnits()))
+                rank[unit] = rank.Count;
+            unitList = unitList.OrderBy(it => it.Id).ThenBy(it => rank.GetValueOrDefault(it, int.MaxValue)).ToList();
+        }
         nextPotentiallyDueAt = 0;
     }
 

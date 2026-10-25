@@ -653,6 +653,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         SetGlobalTransients();
 
         TileMap.SetTransients(Ruleset);
+        BackwardCompatibility.EnsureUnitIds(this); // T236: before the sort, so units that get an id here are ordered like a running game orders them
         // T231: a load rebuilds unit lists tile by tile; use creation order instead (Kotlin keeps that order in a live game), see UnitManager.SortById.
         foreach (var civInfo in Civilizations) civInfo.Units.SortById();
 
@@ -695,7 +696,6 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
 
         BackwardCompatibility.MigrateToTileHistory(this);
         BackwardCompatibility.MigrateGreatGeneralPools(this);
-        BackwardCompatibility.EnsureUnitIds(this);
     }
 
     public void SetGlobalTransients()

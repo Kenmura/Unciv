@@ -1,5 +1,6 @@
 using Unciv.Core.Tests.Support;
 using Unciv.Logic.Files;
+using Unciv.Logic.Map;
 using Unciv.Utils;
 
 namespace Unciv.Core.Tests.Logic;
@@ -73,5 +74,71 @@ public class RefreshTransientCachesTests
 
         var loadedCiv = loaded.Civilizations.Single(it => it.Units.GetCivUnits().Any());
         Assert.Equal(new[] { 5, 9 }, loadedCiv.Units.GetCivUnits().Select(it => it.Id).ToArray());
+    }
+
+    private static int[] LoadedIds(TestGame game, Unciv.Logic.Civilization.Civilization civ)
+    {
+        game.GameInfo.CurrentPlayer = civ.CivName; // a saved game needs a current player
+        var loaded = UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(game.GameInfo, forceZip: false));
+        return loaded.GetCivilization(civ.CivName).Units.GetCivUnits().Select(it => it.Id).ToArray();
+    }
+
+    // T236: units sharing an id are ordered by tile order (then the tile's own order), not by where they sit in the list, on refresh and on load alike.
+    [Fact]
+    public void DuplicateUnitIdsAreOrderedByTileOnRefresh()
+    {
+        var (game, civ) = TwoUnits(idAt20: 5, idAt00: 5);
+        var far = civ.Units.GetCivUnits().First();
+        var near = civ.Units.GetCivUnits().Last();
+        Assert.Equal(new[] { near, far }, game.GameInfo.TileMap.Values.SelectMany(it => it.GetUnits()).ToArray()); // a load meets the (0,0) unit first
+        Assert.Same(far, civ.Units.GetCivUnits().First()); // the list holds them the other way round
+
+        game.GameInfo.RefreshTransientCaches();
+
+        Assert.Equal(new[] { near, far }, civ.Units.GetCivUnits().ToArray());
+        Assert.Equal(new[] { 5, 5 }, LoadedIds(game, civ));
+    }
+
+    [Fact]
+    public void DuplicateUnitIdsOnOneTileFollowTheTilesMilitaryBeforeCivilianOrder()
+    {
+        var game = new TestGame();
+        game.MakeHexagonalMap(3);
+        var civ = game.AddCiv(game.Ruleset.Nations["Babylon"]);
+        var tile = game.GetTile(1, 0);
+        var settler = game.AddUnit("Settler", civ, tile);
+        var warrior = game.AddUnit("Warrior", civ, tile);
+        settler.Id = 4;
+        warrior.Id = 4;
+        Assert.Equal(new[] { warrior, settler }, tile.GetUnits().ToArray()); // military first
+        Assert.Same(settler, civ.Units.GetCivUnits().First()); // list order: settler added first
+
+        game.GameInfo.RefreshTransientCaches();
+
+        Assert.Equal(new[] { warrior, settler }, civ.Units.GetCivUnits().ToArray());
+    }
+
+    // T236: units without an id (very old saves) receive one on load; they must be sorted by that id, after the units that already had one.
+    [Fact]
+    public void UnitsWithoutIdAreNumberedBeforeTheyAreSortedOnLoad()
+    {
+        var game = new TestGame();
+        game.MakeHexagonalMap(3);
+        var civ = game.AddCiv(game.Ruleset.Nations["Babylon"]);
+        game.AddUnit("Warrior", civ, game.GetTile(2, 0)).Id = Constants.NoId;
+        game.AddUnit("Warrior", civ, game.GetTile(0, 0)).Id = Constants.NoId;
+        game.AddUnit("Warrior", civ, game.GetTile(1, 0)).Id = 2;
+        game.GameInfo.CurrentPlayer = civ.CivName;
+        var json = UncivFiles.GameInfoToString(game.GameInfo, forceZip: false);
+
+        var loaded = UncivFiles.GameInfoFromString(json);
+        var units = loaded.GetCivilization(civ.CivName).Units.GetCivUnits().ToList();
+
+        // (0,0) is met before (2,0), so it is numbered first: the counter of the saved game (3, the three units were created through AddUnit) continues: ids 4, 5, and the unit that kept its id 2 sorts before them (tile order alone would put it last)
+        Assert.Equal(new[] { 2, 4, 5 }, units.Select(it => it.Id).ToArray());
+        Assert.Equal(new[] { new HexCoord(1, 0), new HexCoord(0, 0), new HexCoord(2, 0) }, units.Select(it => it.CurrentTile.Position).ToArray());
+        // and a refresh of the loaded game leaves that order alone
+        loaded.RefreshTransientCaches();
+        Assert.Equal(new[] { 2, 4, 5 }, loaded.GetCivilization(civ.CivName).Units.GetCivUnits().Select(it => it.Id).ToArray());
     }
 }
