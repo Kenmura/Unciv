@@ -2858,11 +2858,12 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Review (adversarial subagent): APPROVE WITH NITS; fixed staging exclusion of attacker/target tiles, skipped-target RemainingBudget, estimator filtering by range/ops, doc comments. Known: trim is own design ([I]); duplicate attacker ids unsupported (documented).
 
 ### A006 Homeland AI priority move queue
-- State: Available
+- State: In-Progress [Claude]
 - Depends: A004, T091, T092
 - Source: `csharp/migration/ai-spec/SPEC.md` §7
 - Deliverables: `csharp/Unciv.Core/AI/Homeland/` (`HomelandMoveQueue`, `HomelandMovePriority`), tests
 - Gate: `dotnet test --filter FullyQualifiedName~HomelandAITests`
+- Claimed: 2026-10-25T01:12Z
 - Notes: Handles non-combat and idle units (workers, settlers, great people, trade units, exploration, garrison) using the same prioritized move-queue architecture with `AI_HOMELAND_MOVE_PRIORITY_*` tunables.
 
 ### A007 Operations and armies layer
