@@ -101,7 +101,7 @@ flowchart TD
   class C003 waiting
   class C004 waiting
   class C005 waiting
-  class C006 blocked
+  class C006 waiting
   class T012 done
   class T071 done
   class T080 done
@@ -158,4 +158,4 @@ xychart-beta
 | C003 | Available (waiting on C002) | C002 | 0 | Resource and improvement props |
 | C004 | Available (waiting on C002, T164) | C002, T164 | 0 | 3D military units |
 | C005 | Available (waiting on C002, T164) | C002, T164 | 0 | Civ 5-style UI shell |
-| C006 | Blocked | T012, C001, T164, T165 | 0 | Networked play client |
+| C006 | Available (waiting on C001, T164, T165) | T012, C001, T164, T165 | 0 | Networked play client |
