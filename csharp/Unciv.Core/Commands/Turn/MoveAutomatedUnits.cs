@@ -1,3 +1,5 @@
+using Unciv.Logic;
+
 namespace Unciv.Commands.Turn;
 
 /// <summary>
@@ -12,9 +14,11 @@ public sealed class MoveAutomatedUnits : GameCommand
         if (!context.RequireActive().TryGet(out var actor, out var failure)) return failure;
         if (context.Game.GetPlayerSettings(actor.CivId).AutomatedUnitsMoveOnTurnStart)
             return CommandValidation.Fail(CommandErrors.NotAllowed, "Automated units already move at the start of the turn");
-        return actor.HasMovedAutomatedUnits
-            ? CommandValidation.Fail(CommandErrors.NotAllowed, "The automated units have already moved this turn")
-            : CommandValidation.Ok;
+        if (actor.HasMovedAutomatedUnits)
+            return CommandValidation.Fail(CommandErrors.NotAllowed, "The automated units have already moved this turn");
+        return PendingDecisions.CanMoveAutomatedUnits(actor)
+            ? CommandValidation.Ok
+            : CommandValidation.Fail(CommandErrors.NotAllowed, "No automated unit can move");
     }
 
     protected override IReadOnlyList<GameEvent> ApplyCommand(CommandContext context)

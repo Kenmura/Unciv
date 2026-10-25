@@ -154,7 +154,7 @@ public sealed class RespondToAlert : GameCommand
     private CommandValidation ValidateRecaptured(CivilizationObject actor)
     {
         var unit = actor.GameInfo.TileMap[AlertCommandChecks.HexCoordOf(Value)].CivilianUnit;
-        if (unit?.OriginalOwningCiv == null || unit.OriginalOwningCiv.IsDefeated())
+        if (unit == null || unit.Civ != actor || unit.OriginalOwningCiv == null || unit.OriginalOwningCiv.IsDefeated())
             return CommandValidation.Fail(CommandErrors.NotAllowed, "The unit is gone: acknowledge the alert");
         return Choice is "return" or "keep" ? CommandValidation.Ok : BadChoice();
     }

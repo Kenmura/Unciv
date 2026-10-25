@@ -118,6 +118,8 @@ public sealed class TurnFlowCommandTests : IDisposable
         Assert.False(session.Log[0].Payload.TryGetProperty("Now", out _));
         Assert.Equal(6, game.GetCivilization("Babylon").TotalTurnTimeSeconds); // (7000 - 1000) / 1000
 
+        var duplicate = new CommandEnvelope(0, "resign", "Greece", JsonDocument.Parse("""{"now":1,"now":2}""").RootElement.Clone());
+        Rejected(session.Submit(duplicate), CommandErrors.NotHuman); // stamping must not throw on duplicate keys
         var notAnObject = new CommandEnvelope(0, "end-turn", "Babylon", JsonDocument.Parse("[]").RootElement.Clone());
         Rejected(session.Submit(notAnObject), CommandCodes.MalformedCommand);
         var other = new CommandEnvelope(0, "set-player-settings", "Babylon", JsonDocument.Parse("""{"now":5}""").RootElement.Clone());
@@ -239,6 +241,9 @@ public sealed class TurnFlowCommandTests : IDisposable
         var session = Session(game);
         var babylon = game.GetCivilization("Babylon");
         babylon.HasMovedAutomatedUnits = false;
+        Rejected(session.Submit("Babylon", new MoveAutomatedUnits()), CommandErrors.NotAllowed); // nothing automated yet
+        var unit = babylon.Units.GetCivUnits().First(it => it.CurrentMovement > 0);
+        unit.Action = "Explore";
         Ok(session.Submit("Babylon", new MoveAutomatedUnits()));
         Assert.True(babylon.HasMovedAutomatedUnits);
         Rejected(session.Submit("Babylon", new MoveAutomatedUnits()), CommandErrors.NotAllowed);

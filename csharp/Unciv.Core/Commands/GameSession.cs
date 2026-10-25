@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Unciv.Commands.Turn;
 using Unciv.Logic;
-using Unciv.Utils;
 
 namespace Unciv.Commands;
 
@@ -74,9 +73,13 @@ public sealed class GameSession
     {
         if (Clock == null || registry.TypeOf(envelope.Type) is not { } type || !typeof(ITimedCommand).IsAssignableFrom(type)) return envelope;
         if (envelope.Payload.ValueKind != JsonValueKind.Object) return envelope; // the processor rejects it as malformed
-        var payload = JsonNode.Parse(envelope.Payload.GetRawText()).NotNull().AsObject();
-        foreach (var name in payload.Select(it => it.Key).Where(it => string.Equals(it, nameof(ITimedCommand.Now), StringComparison.OrdinalIgnoreCase)).ToList())
-            payload.Remove(name);
+        // Rebuilt from the element so duplicate or case-variant "now" keys cannot throw or survive: every one is dropped, one authoritative value is added.
+        var payload = new JsonObject();
+        foreach (var property in envelope.Payload.EnumerateObject())
+        {
+            if (string.Equals(property.Name, nameof(ITimedCommand.Now), StringComparison.OrdinalIgnoreCase)) continue;
+            payload[property.Name] = JsonNode.Parse(property.Value.GetRawText());
+        }
         payload["now"] = Clock();
         return envelope with { Payload = JsonSerializer.SerializeToElement(payload) };
     }

@@ -37,7 +37,7 @@ internal static class AlertCommandChecks
                 return EventPresentation.Resolve(civ, alert) == null;
             case AlertType.RecapturedCivilian:
                 var unit = civ.GameInfo.TileMap[HexCoordOf(alert.Value)].CivilianUnit;
-                return unit?.OriginalOwningCiv == null || unit.OriginalOwningCiv.IsDefeated();
+                return unit == null || unit.Civ != civ || unit.OriginalOwningCiv == null || unit.OriginalOwningCiv.IsDefeated();
             case AlertType.BulliedProtectedMinor or AlertType.AttackedProtectedMinor or AlertType.AttackedAllyMinor:
                 var bully = civ.GameInfo.GetCivilizationOrNull(alert.Value.Split('@')[0]);
                 return bully == null || bully.IsDefeated();

@@ -42,6 +42,7 @@ internal static class TurnSamples
                 var next = ((TurnPhase.AwaitingInput)game.TurnPhase).Civ; // the next human of the started game
                 return (new BeginTurn { CivId = next.CivId, Now = 6000 }, CommandContext.ServerActor);
             case "move-automated-units":
+                babylon.Units.GetCivUnits().First(it => it.CurrentMovement > 0).Action = "Explore";
                 return (new MoveAutomatedUnits(), "Babylon");
             case "set-player-settings":
                 return (new SetPlayerSettings { AutoBuildingRoads = false }, "Babylon");

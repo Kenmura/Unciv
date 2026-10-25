@@ -115,7 +115,7 @@ public static class PendingDecisions
     public static IReadOnlyList<Decision> BlockingFor(CivilizationClass civ) => For(civ).Where(it => it.Blocking).ToList();
 
     // NextTurnAction.canMoveAutomatedUnits
-    private static bool CanMoveAutomatedUnits(CivilizationClass civ)
+    internal static bool CanMoveAutomatedUnits(CivilizationClass civ)
     {
         if (civ.GameInfo.GetPlayerSettings(civ.CivId).AutomatedUnitsMoveOnTurnStart) return false;
         if (civ.HasMovedAutomatedUnits) return false;
