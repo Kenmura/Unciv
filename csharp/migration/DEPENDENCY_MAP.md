@@ -524,7 +524,7 @@ xychart-beta
 | A006 | **On deck** (after A004) | A004, T091, T092 | 32 | Homeland AI priority move queue |
 | A008 | **On deck** (after A004) | A004 | 0 | Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks |
 | T186 | Available (waiting on T164) | T164 | 41 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
-| A004 | Needs-Review [Claude] | A001, T039, T040, T065, T067, T081, T090 | 36 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
+| A004 | In-Review [Claude] | A001, T039, T040, T065, T067, T081, T090 | 36 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 35 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | A007 | Available (waiting on A004, A005) | A004, A005 | 32 | Operations and armies layer |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 32 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |

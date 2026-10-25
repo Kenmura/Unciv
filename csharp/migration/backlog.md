@@ -2696,7 +2696,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Scorers are pure functions of input records (VictoryScorerInputs.cs), not of Civilization: SPEC section 4 leaves many operands unrecovered ([?]: BNW conquest base term and -50 tail predicate, culture/diplomatic X, diplomatic c1..c3, spaceship progress count), so the caller supplies them. Game adapter split to a follow-up ticket (see backlog). Assumptions: int division truncates as in C; diplomatic with a League but VotesNeeded<=0 skips the vote terms; clamp5 = Clamp(5x,-limit,limit) with limits 40/20/40 as public consts; spaceship ProgressWeight 5 and conquest tail 50 are literals. Edition param kept but only BNW formulas implemented. 15 tests, 100% line/branch coverage.
 
 ### A004 Target-centric Tactical AI: TacticalMoveQueue & recruitment
-- State: Needs-Review [Claude]
+- State: In-Review [Claude]
 - Depends: A001, T039, T040, T065, T067, T081, T090
 - Source: `csharp/migration/ai-spec/SPEC.md` §6.1, §6.2, §6.4
 - Deliverables: `csharp/Unciv.Core/AI/Tactical/` (`TacticalMoveQueue`, `TacticalMoveType`, `TacticalTarget`, `TacticalRecruiter`), tests
