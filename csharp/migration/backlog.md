@@ -2564,13 +2564,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Optional, lowest priority. Failure is non-fatal and reported in the Host screen; mapping removed on shutdown; no third-party dependency (ask via a ticket note if one is judged necessary). Manual forward and overlay VPN docs are the MVP path (T179).
 
 ### T208 Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T167
 - Source: core/src/com/unciv/logic/GameInfo.kt (setTransients), civilization/diplomacy/DiplomacyManager.kt (updateHasOpenBorders), map/mapunit/MapUnit.kt (updateVisibleTiles), civilization/managers/BarbarianManager
 - Fixtures: none
 - Deliverables: Unciv.Core (GameInfo/TurnManager/DiplomacyTurnManager/MapUnit/CivilizationCache), SoakTests.SaveLoadOfALongRunningGame... strengthened to assert original == reload every turn
 - Gate: UNCIV_SOAK=1 dotnet test --filter Category=Soak
-- Claimed:
+- Claimed: 2026-10-25T13:17Z
 - Notes: Found by the T167 soak (Small map, 6 civs + 6 city states, seed 11/5, 150 turns, then 1 more turn). Facts: (1) save text of the running game and of its reload are byte-identical apart from the legacy pointsForNextGreatGeneral (BackwardCompatibility rewrites it) and exploredBy; (2) two loads of that save, and GameInfo.Clone()+SetTransients, play on identically; (3) the running game does NOT: after one turn barbarian units are 7 (running) vs 9 (reload) and a England unit count differs. Causes seen, all faithful ports of upstream laziness: a) DiplomacyManager.HasOpenBorders is a transient refreshed only at turn start, so a deal whose Duration hit 0 this turn still gives open borders (DiplomaticModifiers OpenBorders 2.375 vs 2.125 after reload); b) MapUnit.UpdateVisibleTiles skips the civ-wide vision/exploration update when old and new view lie inside own borders, so Civ.ViewableTiles / Tile.exploredBy can be one tile stale (Greece, tile 6,13) and BarbarianManager reads ViewableTiles for fog; c) at least one more (stat history column E 424 vs 426 for a city state) not yet attributed. For lockstep play and join-in-progress a client that loaded a snapshot must not diverge from clients that did not. Fix idea: refresh the lazily-maintained caches at a fixed point (end of NextTurn) so running state equals the rebuilt one, or hash/serialise them; then add the assertion original == reload for 50 turns in the soak. Hash-set iteration order (JavaHashSet) also differs between a running and a reloaded game for sets that saw removals (builtBuildings at turn 300 on the same seed): JVM-faithful, but a second source of divergence to decide on.
   - Reset (migration: reset stale T208); was 'In-Progress [Claude]'.
   - Stale claim reset by Claude (2026-10-25T12:50Z). Partial work from the abandoned attempt is uncommitted in .worktrees/claude-T208 (do not discard; build on or review it).

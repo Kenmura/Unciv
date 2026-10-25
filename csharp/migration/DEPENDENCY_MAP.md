@@ -388,7 +388,7 @@ flowchart TD
   class T205 waiting
   class T206 waiting
   class T207 waiting
-  class T208 ready
+  class T208 prog
   class T209 prog
   class T211 prog
   class T212 prog
@@ -410,8 +410,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
-    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 47]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
+    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 46]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6]
 ```
 
 ## Incomplete tickets
@@ -419,7 +419,6 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
-| T208 | **Ready to start** | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
 | T176 | **On deck** (after T194) | T172, T164, T140, T194 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | C005 | Available (waiting on ) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T194 | In-Progress [Claude] | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
@@ -466,6 +465,7 @@ xychart-beta
 | T201 | Available (waiting on ) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
+| T208 | In-Progress [Claude] | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
 | T209 | In-Progress [Claude] | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
 | T211 | In-Progress [Claude] | T161 | 0 | Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161 |
 | T212 | In-Progress [Claude] | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
