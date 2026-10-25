@@ -64,7 +64,7 @@ flowchart TD
   class A005 waiting
   class A006 waiting
   class A007 waiting
-  class C001 blocked
+  class C001 ready
   class C002 blocked
   class C003 blocked
   class C004 blocked
@@ -103,13 +103,13 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| C001 | **Ready to start** | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | A004 | **Ready to start** | A001, T039, T040, T065, T067, T081, T090 | 3 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | T104 | **Ready to start** | T102, T103, T106, T097, T093, T089, T094, T100 | 1 | Marker, seam and stale-comment sweep (final) |
 | A003 | **Ready to start** | A002, T030, T055, T057, T059 | 0 | Victory scorers (BNW) |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
-| C001 | Blocked | C000, T006, T099, T100 | 5 | Godot project skeleton |
 | C002 | Blocked | C001 | 3 | 3D hex terrain rendering |
 | A005 | Available (waiting on A004) | A004 | 1 | Tactical overkill assignment & coordinated multi-unit attacks |
 | A006 | Available (waiting on A004) | A004, T091, T092 | 0 | Homeland AI priority move queue |
