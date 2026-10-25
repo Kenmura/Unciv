@@ -1930,13 +1930,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T167 L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T102
 - Source:
 - Fixtures: none
 - Deliverables: soak test project/category (excluded from the default fast test run), turn-time and memory budget report in Notes
 - Gate: dotnet test --filter Category=Soak
-- Claimed:
+- Claimed: 2026-10-25T00:39Z
 - Notes: From the playability gap review: T102 only proves 60 turns on Tiny/Small, 3-5 civs, no city states, no run to a real victory. Assert no exception, record turn-time and memory budgets, run to a victory or the turn limit. Real bugs found go to the engine with regression tests.
 
 ### T168 Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs
