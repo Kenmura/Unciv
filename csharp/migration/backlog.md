@@ -2217,13 +2217,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Simultaneous turns: in Simultaneous mode EndTurn only marks the civ ended (T202 adds UndoEndTurn, ProcessEndTurn, StartNextTurn, SetController and replaces the 'actor is CurrentPlayerCiv' check by RequireActive). Implement the Sequential behaviour here but route the gate through one helper. RunAiTurn/BeginTurn take the civ.
 
 ### T188 Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T164, T186, T083
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.2; logic/map/mapunit/movement/UnitMovement.kt (moveToTile, headTowards, getShortestPath); logic/battle/Battle.kt (moveAndAttack, attackOrNuke, nuke); view/MapUnitView.kt tryMoveToTile/tryHeadTowards/trySetMoveToAction/tryMovePreparingAttack/tryNuke/tryAirSweep/trySwapMoveToTile/tryDisband
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/Units/{MoveUnit,SetMoveOrder,SwapUnits,Attack,Bombard,Nuke,AirSweep,DisbandUnit}.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~Commands.Units
-- Claimed:
+- Claimed: 2026-10-25T02:44Z
 - Notes:
   - Validation = the predicate the UI used to offer the action, never the View Try* methods (they return bool only, and MapUnitView.TryMoveToTile does not even check ownership): unit belongs to actor, civ is current player, unit has movement, target reachable (UnitMovement.CanReach / CanMoveTo / ContainsAttackableEnemy / GetAttackableEnemies for Attack).
       - Payload carries ids and the target tile only; the authority recomputes the path and cost (COMMANDS.md identifiers rule). MoveUnit = one-turn move (moveToTile: fails if the destination is not reachable this turn); SetMoveOrder = multi-turn 'moveTo' action (UnitMovement.headTowards now plus unit.Action = moveTo x,y so DoAction continues it).
