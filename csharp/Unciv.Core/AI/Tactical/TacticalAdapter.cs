@@ -108,7 +108,9 @@ public static class TacticalAdapter
                 if (unit == null || !unit.CanAttack()) continue;
                 var option = FindAttack(unit, tile);
                 if (option == null) continue;
-                Battle.MoveAndAttack(new MapUnitCombatant(unit), option);
+                var combatant = new MapUnitCombatant(unit);
+                if (!Battle.MovePreparingAttack(combatant, option, true)) continue;   // MoveAndAttack, but only counting real attacks
+                Battle.AttackOrNuke(combatant, option);
                 attacks++;
             }
         }
