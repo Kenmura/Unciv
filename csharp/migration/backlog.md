@@ -2162,7 +2162,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - The SetPlayerSettings command itself is the domain commands ticket's job. Test fakes: FakeGameInfoState.PlayerSettingsByCiv.
 
 ### T184 Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T183, T102, T084
 - Source: core/src/com/unciv/logic/GameInfo.kt nextTurn/setNextPlayer; ui/screens/worldscreen/status/NextTurnAction.kt; ui/screens/worldscreen/AlertPopup.kt; logic/civilization/managers/TurnManager.kt; csharp Logic/GameInfoTurn.cs, View/CivView.cs; design/COMMANDS-IMPLEMENTATION.md section 5
 - Fixtures: none
