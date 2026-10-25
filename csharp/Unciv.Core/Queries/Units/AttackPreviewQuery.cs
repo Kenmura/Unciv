@@ -56,13 +56,18 @@ public sealed record AttackPreviewQuery(int X, int Y, int? UnitId = null, string
             unit = UnitQueryHelpers.OwnUnit(view, UnitId.NotNull());
             attacker = unit.AsCombatant();
             if (unit.IsNuclearWeapon()) return Nuke(unit, target, targetPos);
+            if (unit.IsPreparingAirSweep()) return AirSweep(unit, attacker, target, targetPos);
+            // BattleTable.tryGetAttackerUnit shows no table for these
+            if (unit.IsCivilian() || unit.HasUnique(UniqueType.CannotAttack))
+                throw new QueryException(UnitQueryCodes.CannotAttack, "This unit cannot attack");
         }
 
         var defender = target.GetCombatant();
         if (defender == null || defender.GetCivInfo().Equals(attacker.GetCivInfo()))
             throw new QueryException(UnitQueryCodes.NoTarget, "There is no enemy combatant on that tile");
-        if (unit != null && unit.IsPreparingAirSweep())
-            return AirSweep(unit, attacker, defender, targetPos);
+        // BattleTable shows no bombard table against a city
+        if (unit == null && defender.IsCity())
+            throw new QueryException(UnitQueryCodes.NoTarget, "A city cannot bombard a city");
 
         var (from, canAttack) = ChooseOrigin(unit, attacker, target);
         var fromPos = from.Position();
@@ -140,10 +145,11 @@ public sealed record AttackPreviewQuery(int X, int Y, int? UnitId = null, string
             UnitQueryHelpers.Pos(from.Position()), null, null, 0, 0, 0, 0, false, false, unit.GetNukeBlastRadius());
     }
 
-    private static AttackPreviewResult AirSweep(MapUnitView unit, CombatantView attacker, CombatantView defender, TilePos targetPos)
+    // BattleTable.simulateAirsweep: the defender is unknown ("???"), any tile can be selected, it only has to be in range.
+    private static AttackPreviewResult AirSweep(MapUnitView unit, CombatantView attacker, TileView target, TilePos targetPos)
     {
         var from = unit.GetTile();
-        bool inRange = from.Unwrap().AerialDistanceTo(defender.GetTile().Unwrap()) <= unit.GetRange();
+        bool inRange = unit.GetTilesInAttackRange().Contains(target);
         var modifiers = unit.GetAirSweepAttackModifiers().Select(it => new StrengthModifier(it.Key, it.Value)).ToList();
         var preview = new CombatantPreview(attacker.GetCombatantName(), attacker.GetCivInfo().Unwrap().CivName, false, attacker.IsRanged(),
             attacker.GetHealth(), attacker.GetMaxHealth(), attacker.GetAttackingStrength(), attacker.GetAttackingStrength(), modifiers);

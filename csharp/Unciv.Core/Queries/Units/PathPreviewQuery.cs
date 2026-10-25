@@ -17,7 +17,8 @@ public sealed record PathPreviewResult(int UnitId, TilePos Target, bool Reachabl
 // T195: multi-turn path preview. The path is UnitMovement.GetShortestPath, which uses the A* pathing when the client state has
 // it switched on, so the preview and the move command agree. The engine's path holds the end tile of each turn, so legs are
 // read off it without moving the unit. The target must be explored by the viewer.
-// Known limit (shared with the engine): the pathfinder treats unexplored tiles as passable at cost 1 and its tie-breaking looks at
+// Known limits (shared with the engine and the Kotlin client): paths and reach treat tiles holding a hidden unit as blocked
+// (CanEnter, which is derived here, does not show it); and the pathfinder treats unexplored tiles as passable at cost 1 and its tie-breaking looks at
 // the real terrain, so a path through unexplored territory can depend on what the viewer has not seen. Only coordinates are returned.
 [QueryType("units.PathPreview")]
 public sealed record PathPreviewQuery(int UnitId, int X, int Y) : IQuery<PathPreviewResult>
@@ -35,7 +36,7 @@ public sealed record PathPreviewQuery(int UnitId, int X, int Y) : IQuery<PathPre
         if (destination == unit.CurrentTile)
             return new PathPreviewResult(UnitId, targetPos, true, true, 0, targetPos, []);
 
-        bool canEnter = unit.Movement.CanMoveTo(destination);
+        bool canEnter = UnitQueryHelpers.CanEnterAsSeen(target, unit);
         if (unit.Cache.CannotMove) return new PathPreviewResult(UnitId, targetPos, false, canEnter, 0, null, []);
 
         if (unit.BaseUnit.IsAirUnit() || unit.IsPreparingParadrop())

@@ -7,6 +7,7 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
+using Unciv.Models;
 using Unciv.Queries;
 using Unciv.Queries.Units;
 using Unciv.Utils;
@@ -448,6 +449,54 @@ public class UnitQueryTests
         Assert.False(forbidden.CanAttack);
         Assert.Equal(Nuke.MayUseNuke(new MapUnitCombatant(nuke), target), forbidden.CanAttack);
         Assert.Equal("nuke", Ask(player, new AttackableTargetsQuery(UnitId: nuke.Id)).Kind);
+    }
+
+    [Fact]
+    public void ABlockingHiddenUnitDoesNotShowAsCannotEnter()
+    {
+        War();
+        testGame.SetTileTerrain(new HexCoord(1, 0), "Coast");
+        foreach (var pos in new[] { new HexCoord(2, 0), new HexCoord(3, 0), new HexCoord(4, 0), new HexCoord(2, 1) }) testGame.SetTileTerrain(pos, "Coast");
+        var ship = testGame.AddUnit("Trireme", player, testGame.GetTile(2, 0));
+        var empty = Ask(player, new ReachableTilesQuery(ship.Id));
+        var submarine = testGame.AddUnit("Submarine", enemy, testGame.GetTile(4, 0));
+        Assert.False(submarine.IsVisibleTo(player));
+        Assert.True(Ask(player, new PathPreviewQuery(ship.Id, 4, 0)).CanEnter);
+        var withHidden = Ask(player, new ReachableTilesQuery(ship.Id)).Tiles.Single(it => it is { X: 4, Y: 0 });
+        Assert.Equal(empty.Tiles.Single(it => it is { X: 4, Y: 0 }).CanEnter, withHidden.CanEnter);
+        // a visible unit does block
+        var visible = testGame.AddUnit("Trireme", enemy, testGame.GetTile(2, 1));
+        Assert.True(visible.IsVisibleTo(player));
+        Assert.False(Ask(player, new PathPreviewQuery(ship.Id, 2, 1)).CanEnter);
+    }
+
+    [Fact]
+    public void CiviliansAndCityVersusCityHaveNoAttackPreview()
+    {
+        War();
+        var worker = testGame.AddUnit("Worker", player, testGame.GetTile(0, 0));
+        testGame.AddUnit("Warrior", enemy, testGame.GetTile(1, 0));
+        Assert.Equal(UnitQueryCodes.CannotAttack, Execute(player, new AttackPreviewQuery(1, 0, UnitId: worker.Id)).Code);
+
+        var city = testGame.AddCity(player, testGame.GetTile(-3, 0));
+        testGame.AddCity(enemy, testGame.GetTile(-5, 0));
+        Assert.Equal(UnitQueryCodes.NoTarget, Execute(player, new AttackPreviewQuery(-5, 0, CityId: city.Id)).Code);
+    }
+
+    [Fact]
+    public void AirSweepPreviewNeedsNoDefenderAndNukeOnItsOwnTileIsRefused()
+    {
+        testGame.AddCity(player, testGame.GetTile(0, 0));
+        var fighter = testGame.AddUnit("Fighter", player, testGame.GetTile(0, 0));
+        fighter.Action = UnitActionType.AirSweep.Value();
+        var sweep = Ask(player, new AttackPreviewQuery(0, 2, UnitId: fighter.Id));
+        Assert.Equal("airsweep", sweep.Kind);
+        Assert.Null(sweep.Defender);
+        Assert.Equal(fighter.GetTile().AerialDistanceTo(testGame.GetTile(0, 2)) <= fighter.GetRange(), sweep.CanAttack);
+        Assert.Equal(new TilePos(0, 0), sweep.AttackFrom);
+
+        var nuke = testGame.AddUnit("Atomic Bomb", player, testGame.GetTile(0, 0));
+        Assert.False(Ask(player, new AttackPreviewQuery(0, 0, UnitId: nuke.Id)).CanAttack);
     }
 
     // ---- purity

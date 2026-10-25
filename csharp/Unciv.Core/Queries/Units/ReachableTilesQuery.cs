@@ -29,10 +29,11 @@ public sealed record ReachableTilesQuery(int UnitId) : IQuery<ReachableTilesResu
         var tiles = new List<ReachableTile>();
         foreach (var tile in unit.Movement.GetReachableTilesInCurrentTurn())
         {
-            if (view.TileMapView.GetTile(tile.Position) == null) continue;
+            var tileView = view.TileMapView.GetTile(tile.Position);
+            if (tileView == null) continue;
             float cost = distances.TryGetValue(tile, out var path) ? path.TotalMovement : AirCost(unit, tile);
             tiles.Add(new ReachableTile(tile.Position.X, tile.Position.Y, cost,
-                Math.Max(unit.CurrentMovement - cost, 0f), unit.Movement.CanMoveTo(tile)));
+                Math.Max(unit.CurrentMovement - cost, 0f), UnitQueryHelpers.CanEnterAsSeen(tileView, unit)));
         }
         return new ReachableTilesResult(UnitId, UnitQueryHelpers.Pos(unit.CurrentTile.Position), unit.CurrentMovement,
             tiles.OrderBy(it => it.X).ThenBy(it => it.Y).ToList());

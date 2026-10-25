@@ -1,4 +1,5 @@
 using Unciv.Logic.Map;
+using Unciv.Logic.Map.MapUnits;
 using Unciv.View;
 
 namespace Unciv.Queries.Units;
@@ -12,6 +13,7 @@ public static class UnitQueryCodes
     public const string UnknownTile = "unknown-tile";
     public const string NoTarget = "no-target";
     public const string BadRequest = "bad-request";
+    public const string CannotAttack = "cannot-attack";
     public const string InvalidAttackFrom = "invalid-attack-from";
 }
 
@@ -34,6 +36,17 @@ internal static class UnitQueryHelpers
     public static TileView ExploredTile(GameView view, int x, int y) =>
         view.TileMapView.GetTile(new HexCoord(x, y))
         ?? throw new QueryException(UnitQueryCodes.UnknownTile, $"The tile ({x}, {y}) is not known to you");
+
+    /// <summary>
+    /// Whether the unit could end its move on the tile, as far as the viewer can tell: the engine's answer, except that a tile
+    /// the engine calls occupied while the viewer sees no unit on it counts as enterable (a hidden unit must not show through).
+    /// </summary>
+    public static bool CanEnterAsSeen(TileView tile, MapUnit unit)
+    {
+        var reason = unit.Movement.GetCannotMoveToReason(tile.Unwrap());
+        if (reason == null) return true;
+        return reason == UnitMovement.CannotMoveToReason.TileIsNotEmpty && tile.GetVisibleUnits().Count == 0;
+    }
 
     /// <summary>Exactly one of unit id and city id must be given.</summary>
     public static void RequireOneAttacker(int? unitId, string? cityId)
