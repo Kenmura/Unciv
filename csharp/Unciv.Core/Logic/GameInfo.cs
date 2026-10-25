@@ -361,6 +361,9 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
             if (removedIndex < state.Next) state.Next--;
             state.Ended.RemoveAll(it => it == civ.CivId);
             state.Started.RemoveAll(it => it == civ.CivId);
+            // The removed civ held the last pending step: the round is resolved, else nobody is active and the next step throws.
+            // Only while Resolving: CompleteRoundIfDone in Playing would clear Ended.
+            if (state.Phase == SimultaneousPhase.Resolving) CompleteRoundIfDone(state);
         }
     }
 

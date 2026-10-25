@@ -723,6 +723,91 @@ public sealed class ConsoleCommandTests : IDisposable
         Assert.True(game.IsTurnStarted(babylon) && game.IsTurnStarted(greece));
     }
 
+    private void ResolveRound()
+    {
+        while (game.NextResolveStep() != null) ResolveOne();
+    }
+
+    // Resolves until the only step left is the given one, removes its civ by console as the other human, then plays on for several rounds.
+    private void RemoveHumanAtLastStepAndPlayOn(bool lastBeginTurn)
+    {
+        game.StartSimultaneousTurns();
+        var greece = game.GetCivilization("Greece");
+        game.EndHumanTurn(babylon);
+        game.EndHumanTurn(greece);
+        game.BeginResolving();
+        string victim;
+        string actor;
+        if (lastBeginTurn)
+        {
+            while (game.NextResolveStep() is not ResolveStep.BeginTurn) ResolveOne();
+            var first = (ResolveStep.BeginTurn)game.NextResolveStep()!;
+            ResolveOne();
+            var last = Assert.IsType<ResolveStep.BeginTurn>(game.NextResolveStep());
+            victim = last.CivId;
+            actor = first.CivId;
+        }
+        else
+        {
+            var first = Assert.IsType<ResolveStep.ProcessEndTurn>(game.NextResolveStep());
+            ResolveOne();
+            var last = Assert.IsType<ResolveStep.ProcessEndTurn>(game.NextResolveStep());
+            victim = last.CivId;
+            actor = first.CivId;
+        }
+        Assert.NotEqual(victim, actor);
+        var result = session.Submit(actor, Line("civ remove " + victim));
+        Assert.True(result.Accepted, result.Validation.Message);
+        if (!lastBeginTurn) ResolveRound(); // the AI round, next turn and begin of the remaining human
+        Assert.Equal(SimultaneousPhase.Playing, game.TurnState!.Phase);
+        Assert.Null(game.NextResolveStep());
+        Assert.True(game.IsActive(game.GetCivilization(actor)));
+        for (int round = 0; round < 3; round++)
+        {
+            int turns = game.Turns;
+            game.EndHumanTurn(game.GetCivilization(actor));
+            Assert.True(game.AllHumansEnded());
+            game.BeginResolving();
+            ResolveRound();
+            Assert.Equal(turns + 1, game.Turns);
+            Assert.Equal(SimultaneousPhase.Playing, game.TurnState.Phase);
+            Assert.Empty(game.TurnState.Ended);
+        }
+        ulong live = Hash(game);
+        var loaded = UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(game, forceZip: false));
+        Assert.Equal(live, Hash(loaded));
+        Assert.Equal(SimultaneousPhase.Playing, loaded.TurnState!.Phase);
+    }
+
+    private void ResolveOne()
+    {
+        switch (game.NextResolveStep())
+        {
+            case ResolveStep.ProcessEndTurn s: game.ProcessEndTurn(game.GetCivilization(s.CivId), 2000L); break;
+            case ResolveStep.RunAiTurn s: game.RunAiTurn(game.GetCivilization(s.CivId)); break;
+            case ResolveStep.StartNextTurn: game.StartNextTurn(); break;
+            case ResolveStep.BeginTurn s: game.BeginTurn(game.GetCivilization(s.CivId), 2000L); break;
+            default: throw new InvalidOperationException("no step");
+        }
+    }
+
+    [Fact]
+    public void RemovingTheHumanWithTheLastPendingBeginTurnReturnsTheRoundToPlaying() => RemoveHumanAtLastStepAndPlayOn(lastBeginTurn: true);
+
+    [Fact]
+    public void RemovingTheHumanWithTheLastPendingProcessEndTurnKeepsTheRoundGoing() => RemoveHumanAtLastStepAndPlayOn(lastBeginTurn: false);
+
+    [Fact]
+    public void RemovingAnotherHumanWhilePlayingKeepsTheEndedList()
+    {
+        game.StartSimultaneousTurns();
+        game.EndHumanTurn(babylon);
+        game.RemoveCivilization(game.GetCivilization("Greece"));
+        Assert.Equal(SimultaneousPhase.Playing, game.TurnState!.Phase);
+        Assert.Contains("Babylon", game.TurnState.Ended);
+        Assert.True(game.AllHumansEnded());
+    }
+
     [Fact]
     public void RemovingAnEndedHumanDropsItFromTheRoundState()
     {
