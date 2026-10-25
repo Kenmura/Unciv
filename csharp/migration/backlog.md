@@ -2127,7 +2127,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Host-a-lobby revision: ClientSession also does Join (password/invite token, fingerprint check from invite, TOFU prompt callback, known-hosts store), LobbyState, TurnStatus, HostClosing handling, reconnect with the same key and Resume to the last address. Mirror tolerates unsolicited deltas (simultaneous turns). Depends gained T179 and T204.
 
 ### T181 Private-channel filtering: trade offers, diplomacy and espionage visibility (server side)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T174, T175, T164, T193
 - Source: csharp/migration/design/SERVER.md section 3 (trade, espionage rows); View/TradeView.cs, SpyView.cs
 - Fixtures: none

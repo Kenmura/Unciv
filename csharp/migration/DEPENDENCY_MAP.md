@@ -52,7 +52,6 @@ flowchart TD
     T178["T178<br/>Headless host core: Unciv.Server project, GameHost actor, se..."]
     T179["T179<br/>Direct-connect transport: TCP + TLS 1.3 frames behind ITrans..."]
     T180["T180<br/>Client network library Unciv.Client.Net: ClientSession state..."]
-    T181["T181<br/>Private-channel filtering: trade offers, diplomacy and espio..."]
     T182["T182<br/>Multi-client end-to-end: scripted 3-human + AI game over in-..."]
     T183["T183<br/>Engine player settings: per-civ state-affecting settings, he..."]
     T184["T184<br/>Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlay..."]
@@ -373,7 +372,6 @@ flowchart TD
   class T178 waiting
   class T179 waiting
   class T180 waiting
-  class T181 review
   class T182 waiting
   class T183 done
   class T184 done
@@ -423,7 +421,7 @@ xychart-beta
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
     line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 50]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
 ```
 
 ## Incomplete tickets
@@ -478,7 +476,6 @@ xychart-beta
 | C032 | Available (waiting on C003) | C003, C010 | 0 | Improvements, roads, cities, borders and in-world yield icons |
 | C033 | Available (waiting on C004) | C004 | 0 | Unit animation and combat presentation |
 | C034 | Available (waiting on C005, C015, T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
-| T181 | Needs-Review [Claude] | T174, T175, T164, T193 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
