@@ -34,6 +34,7 @@
     "Unciv.Core/AI/Operations/AIOperation.cs": {"branch": 95.35, "line": 100.0},
     "Unciv.Core/AI/Operations/OperationManager.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Tactical/OverkillAssigner.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/AI/Tactical/TacticalAdapter.cs": {"branch": 98.53, "line": 100.0},
     "Unciv.Core/AI/Tactical/TacticalMoveQueue.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Tactical/TacticalMoveType.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Tactical/TacticalRecruiter.cs": {"branch": 100.0, "line": 100.0},
