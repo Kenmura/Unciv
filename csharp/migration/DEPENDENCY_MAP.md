@@ -39,8 +39,6 @@ flowchart TD
     T085["T085<br/>Views B: CityView, ForeignCityView, CityConstructionsView, M..."]
     T086["T086<br/>TradeLogic"]
     T089["T089<br/>TradeEvaluation"]
-    T091["T091<br/>Civilian automation: CivilianUnitAutomation, SpecificUnitAut..."]
-    T092["T092<br/>Worker and road automation: WorkerAutomation, RoadBetweenCit..."]
     T099["T099<br/>GameStarter"]
     T100["T100<br/>Save/load B: UncivFiles"]
     T102["T102<br/>End-to-end determinism over N turns"]
@@ -361,13 +359,8 @@ flowchart TD
   C003 --> C032
   C010 --> C032
   C004 --> C033
-  A004 --> A005
-  A004 --> A006
-  T091 --> A006
-  T092 --> A006
   A004 --> A007
   A005 --> A007
-  A004 --> A008
   classDef waiting fill:#f3faf3,stroke:#9bc49b,color:#555,stroke-dasharray:2 2
   classDef ondeck fill:#ffe8cc,stroke:#e8590c,stroke-width:3px,color:#000
   classDef ready fill:#7ee787,stroke:#1a7f37,stroke-width:3px,color:#000
@@ -376,11 +369,11 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class A003 done
-  class A004 review
-  class A005 ondeck
-  class A006 ondeck
+  class A004 done
+  class A005 ready
+  class A006 ready
   class A007 waiting
-  class A008 ondeck
+  class A008 ready
   class C001 done
   class C002 waiting
   class C003 waiting
@@ -438,8 +431,6 @@ flowchart TD
   class T085 done
   class T086 done
   class T089 done
-  class T091 done
-  class T092 done
   class T099 done
   class T100 done
   class T102 done
@@ -501,9 +492,9 @@ Generated from the git history of `backlog.md` (UTC; each point is the backlog a
 xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
-    y-axis "Tickets" 0 --> 80
+    y-axis "Tickets" 0 --> 79
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 71]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -513,33 +504,32 @@ xychart-beta
 | T164 | **Ready to start** | T012, T071, T100, T140, T011 | 46 | Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command |
 | T185 | **Ready to start** | T084, T085, T138, T139, T012 | 41 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
 | T172 | **Ready to start** | T012 | 39 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
+| A005 | **Ready to start** | A004 | 33 | Tactical overkill assignment & coordinated multi-unit attacks |
 | T183 | **Ready to start** | T071, T046 | 33 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
+| A006 | **Ready to start** | A004, T091, T092 | 32 | Homeland AI priority move queue |
 | T166 | **Ready to start** | A003 | 3 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
+| A008 | **Ready to start** | A004 | 0 | Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
 | T162 | **Ready to start** | T159 | 0 | Coverage baselines for Era.cs, Terrain.cs, CollectionExtensions.cs (coverage.py --check --all fails on them) |
 | T163 | **Ready to start** | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
-| A005 | **On deck** (after A004) | A004 | 33 | Tactical overkill assignment & coordinated multi-unit attacks |
-| A006 | **On deck** (after A004) | A004, T091, T092 | 32 | Homeland AI priority move queue |
-| A008 | **On deck** (after A004) | A004 | 0 | Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks |
 | T186 | Available (waiting on T164) | T164 | 41 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
-| A004 | In-Review [Claude] | A001, T039, T040, T065, T067, T081, T090 | 36 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 35 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
-| A007 | Available (waiting on A004, A005) | A004, A005 | 32 | Operations and armies layer |
+| A007 | Available (waiting on A005) | A004, A005 | 32 | Operations and armies layer |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 32 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T187 | Available (waiting on T164, T186, T184, T183) | T164, T186, T184, T183 | 31 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
-| C007 | Available (waiting on A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 30 | Asset registry and procedural placeholder generator |
+| C007 | Available (waiting on A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 30 | Asset registry and procedural placeholder generator |
 | T175 | Available (waiting on T172, T174, T164, T186) | T172, T174, T164, T186 | 30 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
 | T188 | Available (waiting on T164, T186) | T164, T186, T083 | 30 | Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue |
-| C008 | Available (waiting on A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 29 | Client scenario runner and owner review sheet |
+| C008 | Available (waiting on A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 29 | Client scenario runner and owner review sheet |
 | C009 | Available (waiting on C007, C008, T164, T174, T185) | C007, C008, T164, T099, T174, T185 | 28 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C010 | Available (waiting on C009, T164, T184, T187, T188, T174, T175) | C009, T164, T184, T187, T188, T174, T175 | 24 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | C005 | Available (waiting on C007, C010) | C007, C010 | 20 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T189 | Available (waiting on T164, T186, T185) | T164, T186, T080, T185 | 10 | Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop) |
 | T191 | Available (waiting on T164, T186) | T164, T186 | 8 | City commands: production queue, purchase, buy tile, worked tiles and specialists, focus, annex/puppet/raze, sell building, rename |
 | T192 | Available (waiting on T164, T186) | T164, T186 | 8 | Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode) |
-| C002 | Available (waiting on A004, A005, A006, A007, C009) | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
+| C002 | Available (waiting on A005, A006, A007, C009) | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | T173 | Available (waiting on T172) | T172 | 5 | Server identity and auth: ECDSA P-256 keypair, invite tokens, challenge-response, allow-list (friends-only) |
 | T194 | Available (waiting on T187, T188, T189, T191, T192) | T187, T188, T189, T191, T192, T102, T011 | 5 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
 | T197 | Available (waiting on T185) | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
