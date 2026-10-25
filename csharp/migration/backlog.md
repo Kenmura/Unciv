@@ -1870,6 +1870,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     What is compared (KotlinGoldenTests, 2 map seeds, Pangaea/Rectangular/Tiny, Human+2 AI): FNV digest of the map without resources/Oasis (base terrain, features, improvement, natural wonder, road for every tile) and of the start state (civs, settler/warrior positions). Both match Kotlin exactly. Kotlin's gameId is a random UUID, so it is exported and replayed through a new optional `gameId` parameter of GameStarter.StartNewGame (T160, default behaviour unchanged).
     NOT done / follow-ups: per-turn hashes vs Kotlin (blocked by Kotlin nondeterminism; would need a Kotlin-side seeded shuffle, forbidden), and a C#-only run with a mod ruleset (not started).
     Checks: Standard checks pass (5104 passed, 0 failed); coverage check ok, baseline updated.
+  -   - Review (Claude, adversarial): Gate pass (28 tests), Standard checks pass (5123 passed, 0 failed), coverage report ok (GameStarter 86.32%, baseline held). Verified claim: Kotlin StrategicBonusResourcePlacementLogic (shuffled() at lines 58,101,153,181) and LuxuryResourcePlacementLogic use unseeded shuffles, so same-seed Kotlin games differ; the golden came from running Kotlin (export.sh), not hand-written. Engine change (optional gameId param) is minimal and default-preserving. PASS as partial; remainder split into T216 (per-turn golden from a fixed saved map, avoiding the unseeded generation) and T217 (mod ruleset golden).
 
 ### T161 Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches
 - State: Done
@@ -2681,6 +2682,26 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-25T13:49Z
 - Notes:
   - Found by T194. Repro: AI-only game (Setup: Pangaea Tiny map seed 5, game seed 9, Babylon/Greece/Rome, Babylon human but played by NextTurn/AI) played 20 turns with GameStarter+NextTurn, then UncivFiles.GameInfoToString/FromString: the loaded copy and the original give different StateHasher hashes from the very next NextTurn on (turns 5, 10, 30 happen to match). With the scripted human (ReplayDeterminismTests), a snapshot at turn 8 diverges at the first move-automated-units (Explore): the loaded game reveals/explores different tiles (exploredBy and movementMemories differ). Suspect a cache or transient (viewable tiles, unit movement memories, civ caches) not rebuilt by SetTransients or not serialized. Fix, then raise the snapshotTurn InlineData in SnapshotPlusLogTailReproducesTheFinalHash and the 5-turn snapshot in SaveLoadContinueGivesTheSameFinalHash, and drop the TODO(T215) comment there.
+
+### T216 Kotlin per-turn golden hashes from a fixed saved map (sidesteps unseeded resource shuffles)
+- State: Available
+- Depends: T160
+- Source: core/src/com/unciv/logic/GameStarter.kt, GameInfo.nextTurn (JVM exporter golden/KotlinGoldenExporter.kt)
+- Fixtures: none - exported by running Kotlin
+- Deliverables: csharp/Unciv.Core.Tests/Determinism/KotlinGoldenTests.cs (per-turn cases), kotlin-golden.txt, golden/KotlinGoldenExporter.kt
+- Gate: dotnet test --filter FullyQualifiedName~KotlinGolden
+- Claimed:
+- Notes: Follow-up of T160 review (Claude). Kotlin map generation uses unseeded shuffled() (StrategicBonusResourcePlacementLogic.kt:58,101,153,181; LuxuryResourcePlacementLogic.kt:96,225,244-249,280-281,364-366,400) so same-seed Kotlin games differ. Workaround without editing Kotlin: the exporter generates a map once, saves it as a map file, and both the Kotlin and C# games start from that saved map (GameSetupInfo.MapFile), so resources and oasis are fixed; then export canonical per-turn digests (turns 1..N) and compare. Identify any remaining Kotlin nondeterminism in nextTurn (unseeded Random); if any, document it and compare only the stable columns. Reuse export.sh and the gameId parameter.
+
+### T217 Kotlin golden run with a mod ruleset
+- State: Available
+- Depends: T160
+- Source: core/src/com/unciv/logic/GameStarter.kt (JVM exporter golden/KotlinGoldenExporter.kt)
+- Fixtures: none - exported by running Kotlin; a small mod ruleset
+- Deliverables: csharp/Unciv.Core.Tests/Determinism/KotlinGoldenTests.cs (mod case), kotlin-golden.txt, golden/KotlinGoldenExporter.kt
+- Gate: dotnet test --filter FullyQualifiedName~KotlinGolden
+- Claimed:
+- Notes: Follow-up of T160 review (Claude): the original T160 deliverable required one mod ruleset run; T160 covered vanilla only. Extend exporter and test with a mod ruleset (map and start state digests; per-turn if the per-turn follow-up has landed).
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
