@@ -1263,6 +1263,7 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
 
     public void CapturedBy(Civilization.Civilization captor)
     {
+        GameEventHooks.UnitCaptured(this, captor);
         Civ.Units.RemoveUnit(this, true);
         AssignOwner(captor);
         CurrentMovement = 0f;

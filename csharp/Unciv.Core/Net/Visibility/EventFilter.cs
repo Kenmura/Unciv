@@ -54,10 +54,12 @@ public static class EventFilter
         [typeof(UnitMoved)] = ClassifyUnitMoved,
         [typeof(UnitAttacked)] = ClassifyUnitAttacked,
         [typeof(UnitCreated)] = (e, r, v) => LocatedUnit(e, r, v, ((UnitCreated)e).CivId, ((UnitCreated)e).UnitId, ((UnitCreated)e).Position),
+        [typeof(UnitCaptured)] = LocatedAllVisible,
         [typeof(UnitDestroyed)] = (e, r, v) => LocatedUnit(e, r, v, ((UnitDestroyed)e).CivId, ((UnitDestroyed)e).UnitId, ((UnitDestroyed)e).Position),
 
         [typeof(CityFounded)] = LocatedAllVisible,
         [typeof(CityCaptured)] = LocatedAllVisible,
+        [typeof(CityDestroyed)] = LocatedAllVisible,
         [typeof(CityGrew)] = LocatedAllVisible,
         [typeof(TileOwnerChanged)] = LocatedAllVisible,
 
@@ -70,6 +72,7 @@ public static class EventFilter
         [typeof(WarDeclared)] = KnownToBothParties,
         [typeof(PeaceMade)] = KnownToBothParties,
         [typeof(TradeAccepted)] = ParticipantsOnly,
+        [typeof(CityTraded)] = ParticipantsOnly,
         [typeof(TradeRequested)] = ParticipantsOnly,
         [typeof(TradeWithdrawn)] = ParticipantsOnly,
 

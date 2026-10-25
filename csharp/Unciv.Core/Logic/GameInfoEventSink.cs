@@ -37,8 +37,15 @@ public sealed class GameInfoEventSink(int maxEvents = GameInfoEventSink.DefaultM
 
     public void Emit(EngineEvent gameEvent)
     {
-        if (events.Count >= maxEvents) dropped++;
-        else events.Add(gameEvent);
+        if (events.Count >= maxEvents)
+        {
+            // Full: an essential event takes the place of the newest non-essential one (the rest keep their order); else it is dropped.
+            int victim = gameEvent.IsEssential() ? events.FindLastIndex(it => !it.IsEssential()) : -1;
+            dropped++;
+            if (victim < 0) return;
+            events.RemoveAt(victim);
+        }
+        events.Add(gameEvent);
     }
 
     /// <summary>The collected events in call order, followed by one <see cref="EventsTruncated"/> marker if any were dropped. Empties the sink.</summary>
@@ -172,6 +179,26 @@ public static class GameEventHooks
         if (city.Civ.GameInfo.EventSink is not { } sink) return;
         foreach (var position in city.Tiles.OrderBy(it => it.x).ThenBy(it => it.y))
             sink.Emit(new TileOwnerChanged(position, oldCiv.CivId, newCiv.CivId));
+    }
+
+    /// <summary>Call before the city is removed from its civ.</summary>
+    public static void CityDestroyed(CityObject city)
+    {
+        if (city.Civ.GameInfo.EventSink is { } sink) sink.Emit(new CityDestroyed(city.Id, city.Name, city.Location.ToHexCoord(), city.Civ.CivId));
+    }
+
+    /// <summary>Call before a trade moves <paramref name="city"/> from its civ to <paramref name="to"/>.</summary>
+    public static void CityTraded(CityObject city, CivilizationObject to)
+    {
+        if (city.Civ.GameInfo.EventSink is { } sink)
+            sink.Emit(new CityTraded(city.Id, city.Name, city.Location.ToHexCoord(), city.Civ.CivId, to.CivId));
+    }
+
+    /// <summary>Call before the unit changes owner.</summary>
+    public static void UnitCaptured(MapUnit unit, CivilizationObject captor)
+    {
+        if (unit.Civ.GameInfo.EventSink is { } sink && unit.HasTile())
+            sink.Emit(new UnitCaptured(unit.Id, unit.Name, unit.CurrentTile.Position, captor.CivId, unit.Civ.CivId));
     }
 
     public static void CityGrew(CityObject city)

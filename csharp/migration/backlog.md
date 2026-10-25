@@ -2585,6 +2585,9 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~GameEvents
 - Claimed: 2026-10-25T12:53Z
 - Notes:
+  -   - Implemented (Claude). New events unit-captured (MapUnit.CapturedBy), city-destroyed (City.DestroyCity, after safeties), city-traded (TradeLogic city offer); classifiers added to EventFilter (captured/destroyed Located, traded participants-only like trades).
+      - UnitMoved now also for: displacement teleport (TeleportToClosestMoveableTile), cargo carried on teleport/paradrop (TeleportTransportedUnitsTo) and along a carrier path (BringAlongPayloads, two-step origin->final path), and melee withdrawal. Swap moves already emitted via MoveToTile.
+      - Truncation is priority-aware: EngineEvent.IsEssential() (turn flow, city founded/captured/destroyed/traded, war/peace/trade/research/policy); when the sink is full an essential event replaces the newest non-essential one, otherwise it is dropped; every loss counts toward EventsTruncated.
 
 ### T210 Spy coup and counter-intelligence commands (not covered by T192)
 - State: Done

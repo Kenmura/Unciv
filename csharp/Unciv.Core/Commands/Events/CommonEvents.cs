@@ -15,25 +15,40 @@ namespace Unciv.Commands.Events;
 #region Turn flow
 
 [EventType("turn-started", EventAudience.Everyone)]
-public sealed record TurnStarted(string CivId, int Turn) : EngineEvent;
+public sealed record TurnStarted(string CivId, int Turn) : EngineEvent
+{
+    public override bool IsEssential() => true;
+}
 
 [EventType("turn-ended", EventAudience.Everyone)]
-public sealed record TurnEnded(string CivId, int Turn) : EngineEvent;
+public sealed record TurnEnded(string CivId, int Turn) : EngineEvent
+{
+    public override bool IsEssential() => true;
+}
 
 [EventType("auto-player-turn-processed", EventAudience.Everyone)]
 public sealed record AutoPlayerTurnProcessed(string CivId, int Turn) : EngineEvent;
 
 /// <summary>Simultaneous turns: a human marked their turn as ended (emitted by the turn commands, T202).</summary>
 [EventType("player-ended-turn", EventAudience.Everyone)]
-public sealed record PlayerEndedTurn(string CivId, int Turn) : EngineEvent;
+public sealed record PlayerEndedTurn(string CivId, int Turn) : EngineEvent
+{
+    public override bool IsEssential() => true;
+}
 
 /// <summary>Simultaneous turns: a human took the end-of-turn mark back (T202).</summary>
 [EventType("player-undid-end-turn", EventAudience.Everyone)]
-public sealed record PlayerUndidEndTurn(string CivId, int Turn) : EngineEvent;
+public sealed record PlayerUndidEndTurn(string CivId, int Turn) : EngineEvent
+{
+    public override bool IsEssential() => true;
+}
 
 /// <summary>Simultaneous turns: every active human has ended, the host starts resolving the turn (T200/T202).</summary>
 [EventType("turn-resolving", EventAudience.Everyone)]
-public sealed record TurnResolving(int Turn) : EngineEvent;
+public sealed record TurnResolving(int Turn) : EngineEvent
+{
+    public override bool IsEssential() => true;
+}
 
 /// <summary>The sink hit its bound and dropped <paramref name="Dropped"/> events; clients should resync from a snapshot.</summary>
 [EventType("events-truncated", EventAudience.Everyone)]
@@ -82,12 +97,23 @@ public sealed record UnitDestroyed(string CivId, int UnitId, string UnitName, He
     public override IEnumerable<HexCoord> Positions() => [Position];
 }
 
+/// <summary>A unit changed owner by capture (a civilian taken in battle, an escorted or recaptured unit); it stays on the map.</summary>
+[EventType("unit-captured", EventAudience.Located)]
+public sealed record UnitCaptured(int UnitId, string UnitName, HexCoord Position, string CapturingCivId, string PreviousOwnerCivId) : EngineEvent
+{
+    public override IEnumerable<string> Participants() => [CapturingCivId, PreviousOwnerCivId];
+
+    public override IEnumerable<HexCoord> Positions() => [Position];
+}
+
 #endregion
 #region Cities and tiles
 
 [EventType("city-founded", EventAudience.Located)]
 public sealed record CityFounded(string CivId, string CityId, string CityName, HexCoord Position) : EngineEvent
 {
+    public override bool IsEssential() => true;
+
     public override IEnumerable<string> Participants() => [CivId];
 
     public override IEnumerable<HexCoord> Positions() => [Position];
@@ -97,7 +123,31 @@ public sealed record CityFounded(string CivId, string CityId, string CityName, H
 [EventType("city-captured", EventAudience.Located)]
 public sealed record CityCaptured(string CityId, string CityName, HexCoord Position, string ConqueringCivId, string PreviousOwnerCivId, string NewOwnerCivId) : EngineEvent
 {
+    public override bool IsEssential() => true;
+
     public override IEnumerable<string> Participants() => [ConqueringCivId, PreviousOwnerCivId, NewOwnerCivId];
+
+    public override IEnumerable<HexCoord> Positions() => [Position];
+}
+
+/// <summary>A city was razed or destroyed (its tiles report their own <see cref="TileOwnerChanged"/>).</summary>
+[EventType("city-destroyed", EventAudience.Located)]
+public sealed record CityDestroyed(string CityId, string CityName, HexCoord Position, string CivId) : EngineEvent
+{
+    public override bool IsEssential() => true;
+
+    public override IEnumerable<string> Participants() => [CivId];
+
+    public override IEnumerable<HexCoord> Positions() => [Position];
+}
+
+/// <summary>A city changed hands through a trade offer (conquest is <see cref="CityCaptured"/>).</summary>
+[EventType("city-traded", EventAudience.Located)]
+public sealed record CityTraded(string CityId, string CityName, HexCoord Position, string FromCivId, string ToCivId) : EngineEvent
+{
+    public override bool IsEssential() => true;
+
+    public override IEnumerable<string> Participants() => [FromCivId, ToCivId];
 
     public override IEnumerable<HexCoord> Positions() => [Position];
 }
@@ -143,12 +193,16 @@ public sealed record AlertAdded(string CivId, AlertType AlertType, string Value)
 [EventType("research-completed", EventAudience.Participants)]
 public sealed record ResearchCompleted(string CivId, string Tech) : EngineEvent
 {
+    public override bool IsEssential() => true;
+
     public override IEnumerable<string> Participants() => [CivId];
 }
 
 [EventType("policy-adopted", EventAudience.Participants)]
 public sealed record PolicyAdopted(string CivId, string Policy) : EngineEvent
 {
+    public override bool IsEssential() => true;
+
     public override IEnumerable<string> Participants() => [CivId];
 }
 
@@ -158,12 +212,16 @@ public sealed record PolicyAdopted(string CivId, string Policy) : EngineEvent
 [EventType("war-declared", EventAudience.Participants)]
 public sealed record WarDeclared(string DeclarerCivId, string TargetCivId) : EngineEvent
 {
+    public override bool IsEssential() => true;
+
     public override IEnumerable<string> Participants() => [DeclarerCivId, TargetCivId];
 }
 
 [EventType("peace-made", EventAudience.Participants)]
 public sealed record PeaceMade(string CivId, string OtherCivId) : EngineEvent
 {
+    public override bool IsEssential() => true;
+
     public override IEnumerable<string> Participants() => [CivId, OtherCivId];
 }
 
@@ -174,6 +232,8 @@ public sealed record TradeOfferFact(string Name, TradeOfferType Type, int Amount
 [EventType("trade-accepted", EventAudience.Participants)]
 public sealed record TradeAccepted(string CivId, string OtherCivId, IReadOnlyList<TradeOfferFact> OffersFromFirst, IReadOnlyList<TradeOfferFact> OffersFromSecond) : EngineEvent
 {
+    public override bool IsEssential() => true;
+
     public override IEnumerable<string> Participants() => [CivId, OtherCivId];
 }
 

@@ -251,6 +251,7 @@ public class TradeLogic
                     var city = from.Cities.First(it => it.Id == offer.Name);
 
                     city.Espionage.RemoveAllPresentSpies(SpyFleeReason.CityBought);
+                    GameEventHooks.CityTraded(city, to);
                     city.MoveToCiv(to);
                     foreach (var unit in city.GetCenterTile().GetUnits().ToList())
                         unit.Movement.TeleportToClosestMoveableTile();

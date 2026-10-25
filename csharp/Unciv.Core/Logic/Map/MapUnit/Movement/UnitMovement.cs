@@ -504,6 +504,7 @@ public class UnitMovement
         {
             Unit.RemoveFromTile(); // we "teleport" them away
             Unit.PutInTile(allowedTile);
+            GameEventHooks.UnitMoved(Unit, origin, allowedTile);
             // Cancel sleep or fortification if forcibly displaced - for now, leave movement / auto / explore orders
             if (Unit.IsSleeping() || Unit.IsFortified() || Unit.IsGuarding())
                 Unit.Action = null;
@@ -530,6 +531,7 @@ public class UnitMovement
         {
             payload.RemoveFromTile();
             payload.PutInTile(destination);
+            GameEventHooks.UnitMoved(payload, origin, destination);
             payload.IsTransported = true; // restore the flag to not leave the payload in the city
             payload.MostRecentMoveType = UnitMovementMemoryType.UnitTeleported;
         }
@@ -664,6 +666,7 @@ public class UnitMovement
                 if (tile == finalTileReached) break; // this is the final tile the transport reached
             }
             payload.PutInTile(finalTileReached);
+            GameEventHooks.UnitMoved(payload, origin, finalTileReached);
             payload.IsTransported = true; // restore the flag to not leave the payload in the city
             payload.MostRecentMoveType = UnitMovementMemoryType.UnitMoved;
         }

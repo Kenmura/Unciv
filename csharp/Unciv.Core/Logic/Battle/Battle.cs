@@ -876,8 +876,10 @@ public static class Battle
         else return false;
         // Withdraw success: Do it - move defender to toTile for no cost
         // NOT defender.unit.movement.moveToTile(toTile) - we want a free teleport
+        var withdrawOrigin = defender.Unit.GetTile();
         defender.Unit.RemoveFromTile();
         defender.Unit.PutInTile(toTile);
+        GameEventHooks.UnitMoved(defender.Unit, withdrawOrigin, toTile);
         defender.Unit.MostRecentMoveType = UnitMovementMemoryType.UnitWithdrew;
         // and count 1 attack for attacker but leave it in place
         ReduceAttackerMovementPointsAndAttacks(attacker, defender, fromTile);

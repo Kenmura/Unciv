@@ -43,6 +43,9 @@ public sealed class GameEventsTests
         "unit-destroyed" => new UnitDestroyed("Babylon", 12, "Warrior", P1),
         "city-founded" => new CityFounded("Babylon", "city-1", "Babylon", P1),
         "city-captured" => new CityCaptured("city-1", "Ur", P1, "Rome", "Babylon", "Rome"),
+        "unit-captured" => new UnitCaptured(12, "Worker", P1, "Rome", "Babylon"),
+        "city-destroyed" => new CityDestroyed("city-1", "Ur", P1, "Babylon"),
+        "city-traded" => new CityTraded("city-1", "Ur", P1, "Babylon", "Rome"),
         "city-grew" => new CityGrew("Babylon", "city-1", P1, 4),
         "tile-owner-changed" => new TileOwnerChanged(P1, "", "Babylon"),
         "notification-added" => new NotificationAdded("Babylon", "Hello [x]", NotificationCategory.War, ["War"], [P1]),
@@ -156,6 +159,20 @@ public sealed class GameEventsTests
         Assert.Equal(0, sink.Count);
         Assert.Empty(sink.Drain());
         Assert.Equal(GameInfoEventSink.DefaultMaxEvents, new GameInfoEventSink().GetType().GetField("DefaultMaxEvents")!.GetRawConstantValue());
+    }
+
+    [Fact]
+    public void FullSinkLetsEssentialEventsDisplaceTheNewestNonEssentialOnes()
+    {
+        var sink = new GameInfoEventSink(3);
+        sink.Emit(new AlertAdded("A", AlertType.WonderBuilt, "1"));
+        sink.Emit(new AlertAdded("A", AlertType.WonderBuilt, "2"));
+        sink.Emit(new TurnStarted("A", 1));
+        sink.Emit(new AlertAdded("A", AlertType.WonderBuilt, "3")); // dropped
+        sink.Emit(new TurnEnded("A", 1)); // displaces alert 2
+        sink.Emit(new TurnEnded("B", 1)); // displaces alert 1
+        sink.Emit(new TurnEnded("C", 1)); // nothing left to displace
+        Assert.Equal([new TurnStarted("A", 1), new TurnEnded("A", 1), new TurnEnded("B", 1), new EventsTruncated(4)], sink.Drain());
     }
 
     // --- engine call sites, on the small TestGame ---
@@ -366,6 +383,114 @@ public sealed class GameEventsTests
         var owners = Of<TileOwnerChanged>(sink).Where(it => it.OldOwnerCivId == b.CivId && it.NewOwnerCivId == a.CivId).Select(it => it.Position).ToList();
         Assert.NotEmpty(owners);
         Assert.Equal(owners.OrderBy(it => it.x).ThenBy(it => it.y), owners);
+    }
+
+    [Fact]
+    public void CapturedUnitsDestroyedCitiesAndTradedCitiesAreReported()
+    {
+        var (sink, a, b) = Arena();
+        var worker = testGame.AddUnit("Worker", b, testGame.GetTile(HexCoord.Zero));
+        sink.Drain();
+        worker.CapturedBy(a);
+        Assert.Equal(new UnitCaptured(worker.Id, "Worker", HexCoord.Zero, a.CivId, b.CivId), Assert.Single(Of<UnitCaptured>(sink)));
+
+        testGame.GameInfo.CurrentPlayerCiv = a;
+        testGame.GameInfo.CurrentPlayer = a.CivId;
+        testGame.AddCity(b, testGame.GetTile(2, 1));
+        var doomed = testGame.AddCity(b, testGame.GetTile(HexCoord.Zero), initialPopulation: 2);
+        sink.Drain();
+        doomed.DestroyCity(overrideSafeties: true);
+        Assert.Equal(new CityDestroyed(doomed.Id, doomed.Name, HexCoord.Zero, b.CivId), Assert.Single(Of<CityDestroyed>(sink)));
+
+        var sold = testGame.AddCity(b, testGame.GetTile(-1, 2), initialPopulation: 2);
+        var trade = new TradeLogic(b, a);
+        trade.CurrentTrade.OurOffers.Add(new TradeOffer(sold.Id, TradeOfferType.City));
+        sink.Drain();
+        trade.AcceptTrade();
+        var traded = Assert.Single(Of<CityTraded>(sink));
+        Assert.Equal(new CityTraded(sold.Id, sold.Name, new HexCoord(-1, 2), b.CivId, a.CivId), traded);
+    }
+
+    [Fact]
+    public void CargoTeleportedWithItsCarrierReportsItsOwnMove()
+    {
+        var (sink, a, _) = Arena();
+        var fighterBase = testGame.CreateBaseUnit("Fighter", "MyFighters", "MyAircraft");
+        var carrierBase = testGame.CreateBaseUnit("Aircraft Carrier", "Can carry [1] [MyFighters] units");
+        carrierBase.Strength = 10;
+        var origin = testGame.GetTile(-1, 1);
+        var destination = testGame.GetTile(-1, 2);
+        foreach (var water in new[] { origin, destination })
+        {
+            water.BaseTerrain = Constants.Coast;
+            water.SetTerrainTransients();
+        }
+        var carrier = testGame.AddUnit(carrierBase.Name, a, origin);
+        var fighter = testGame.AddUnit(fighterBase.Name, a, origin);
+        Assert.True(fighter.IsTransported);
+        sink.Drain();
+
+        carrier.RemoveFromTile();
+        carrier.PutInTile(destination);
+        carrier.Movement.TeleportTransportedUnitsTo(origin, destination);
+
+        var moved = Assert.Single(Of<UnitMoved>(sink));
+        Assert.Equal(fighter.Id, moved.UnitId);
+        Assert.Equal([origin.Position, destination.Position], moved.Path);
+    }
+
+    [Fact]
+    public void CargoMovesWithItsCarrierAlongThePath()
+    {
+        var (sink, a, _) = Arena();
+        var fighterBase = testGame.CreateBaseUnit("Fighter", "MyFighters", "MyAircraft");
+        var carrierBase = testGame.CreateBaseUnit("Aircraft Carrier", "Can carry [1] [MyFighters] units");
+        carrierBase.Strength = 10;
+        carrierBase.Movement = 3;
+        var origin = testGame.GetTile(-1, 1);
+        var destination = testGame.GetTile(-1, 3);
+        foreach (var water in new[] { origin, testGame.GetTile(-1, 2), destination })
+        {
+            water.BaseTerrain = Constants.Coast;
+            water.SetTerrainTransients();
+        }
+        var carrier = testGame.AddUnit(carrierBase.Name, a, origin);
+        var fighter = testGame.AddUnit(fighterBase.Name, a, origin);
+        carrier.CurrentMovement = 3f;
+        sink.Drain();
+
+        carrier.Movement.MoveToTile(destination);
+
+        var moves = Of<UnitMoved>(sink);
+        Assert.Equal([carrier.Id, fighter.Id], moves.Select(it => it.UnitId));
+        Assert.All(moves, it => Assert.Equal([origin.Position, carrier.CurrentTile.Position], [it.Path[0], it.Path[^1]]));
+    }
+
+    [Fact]
+    public void OnlyTurnCityAndDiplomacyFactsAreEssential()
+    {
+        var essential = GameEventRegistry.Scan().Where(it => Sample(it.Name).IsEssential()).Select(it => it.Name).ToList();
+        Assert.Equal(
+        [
+            "city-captured", "city-destroyed", "city-founded", "city-traded", "peace-made", "player-ended-turn", "player-undid-end-turn",
+            "policy-adopted", "research-completed", "trade-accepted", "turn-ended", "turn-resolving", "turn-started", "war-declared",
+        ], essential);
+    }
+
+    [Fact]
+    public void DisplacedUnitsReportATeleportMove()
+    {
+        var (sink, a, b) = Arena();
+        var unit = testGame.AddUnit("Warrior", b, testGame.GetTile(1, 0));
+        var city = testGame.AddCity(a, testGame.GetTile(HexCoord.Zero), initialPopulation: 2);
+        unit.GetTile().SetOwningCity(city);
+        Assert.Equal(a, unit.GetTile().GetOwner());
+        var start = unit.GetTile().Position;
+        sink.Drain();
+        unit.Movement.TeleportToClosestMoveableTile();
+        var moved = Assert.Single(Of<UnitMoved>(sink));
+        Assert.Equal(b.CivId, moved.CivId);
+        Assert.Equal([start, unit.CurrentTile.Position], moved.Path);
     }
 
     [Fact]

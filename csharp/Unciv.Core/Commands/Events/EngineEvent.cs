@@ -10,13 +10,15 @@ namespace Unciv.Commands.Events;
 /// Events are produced in call order and never feed back into the game state. An effect can precede the summary that caused it
 /// (UnitDestroyed of the loser, then UnitAttacked). A sink exists only while one command applies (<c>GameCommand.Apply</c>), so
 /// the commands of one game must be applied one at a time (GameSession does); transient rebuilds (load) run without a sink.
-/// Known gaps, tracked in T209: cargo/swap/withdrawal/teleport moves, unit capture, city destruction and trades emit only their tile
-/// owner changes; the sink keeps the first events when full.
+/// When the sink is full it keeps <see cref="IsEssential"/> events at the expense of the newest non-essential ones.
 /// </summary>
 public abstract record EngineEvent : GameEvent
 {
     [JsonIgnore]
     public sealed override string Type => EventTypeAttribute.NameOf(GetType());
+
+    /// <summary>Essential events (turn flow, city and diplomacy facts) displace non-essential ones when the sink is full.</summary>
+    public virtual bool IsEssential() => false;
 
     /// <summary>The civilization ids that always receive this event in full.</summary>
     public virtual IEnumerable<string> Participants() => [];

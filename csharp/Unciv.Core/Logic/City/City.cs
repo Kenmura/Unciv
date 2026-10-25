@@ -550,6 +550,7 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
         // Original capitals and holy cities cannot be destroyed,
         // unless, of course, they are captured by a one-city-challenger.
         if (!CanBeDestroyed() && !overrideSafeties) return;
+        GameEventHooks.CityDestroyed(this);
 
         // Destroy planes stationed in city
         foreach (var airUnit in GetCenterTile().AirUnits.ToList()) airUnit.Destroy();
