@@ -57,7 +57,7 @@
     "Unciv.Core/Commands/Units/DisbandUnit.cs": {"branch": 83.33, "line": 100.0},
     "Unciv.Core/Commands/Units/MoveUnit.cs": {"branch": 90.0, "line": 100.0},
     "Unciv.Core/Commands/Units/Nuke.cs": {"branch": 75.0, "line": 100.0},
-    "Unciv.Core/Commands/Units/SetMoveOrder.cs": {"branch": 85.0, "line": 88.46},
+    "Unciv.Core/Commands/Units/SetMoveOrder.cs": {"branch": 85.0, "line": 88.89},
     "Unciv.Core/Commands/Units/SetUnitDue.cs": {"branch": 83.33, "line": 100.0},
     "Unciv.Core/Commands/Units/SwapUnits.cs": {"branch": 87.5, "line": 100.0},
     "Unciv.Core/Constants.cs": {"branch": 100.0, "line": 100.0},
