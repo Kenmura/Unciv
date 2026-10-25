@@ -1,5 +1,7 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Localization;
+using Unciv.Models.Translations;
 using Unciv.GodotClient.Ui;
 
 namespace Unciv.GodotClient.Play;
@@ -66,8 +68,8 @@ public partial class AlertPopupView : Control
     public void Open(AlertPopup popup)
     {
         Current = popup;
-        title.Text = popup.Title;
-        body.Text = popup.Body;
+        title.Text = popup.Title.TrText();
+        body.Text = popup.Body.TrText();
         body.CustomMinimumSize = new Vector2(theme.Px(360), 0f);
         foreach (var child in buttons.GetChildren())
         {
@@ -77,7 +79,7 @@ public partial class AlertPopupView : Control
         byId.Clear();
         foreach (var answer in popup.Buttons)
         {
-            var button = new Button { Name = answer.Id, Text = answer.Label };
+            var button = new Button { Name = answer.Id, Text = answer.Label.TrText() };
             var chosen = answer;
             button.Pressed += () => Answered?.Invoke(popup, chosen);
             buttons.AddChild(button);
@@ -85,7 +87,7 @@ public partial class AlertPopupView : Control
         }
         if (popup.CanDefer)
         {
-            var later = new Button { Name = "DecideLater", Text = "Decide later" };
+            var later = new Button { Name = "DecideLater", Text = "Decide later".Tr() };
             later.Pressed += () => Deferred?.Invoke(popup);
             buttons.AddChild(later);
             byId["DecideLater"] = later;

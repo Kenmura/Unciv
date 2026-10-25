@@ -1,5 +1,6 @@
 {
   "files": {
+    "Unciv.Assets/AlertPopupModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/AssetFallbacks.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/AssetKey.cs": {"branch": 95.83, "line": 100.0},
     "Unciv.Assets/AssetKinds.cs": {"branch": 100.0, "line": 100.0},
@@ -15,6 +16,7 @@
     "Unciv.Assets/MeshData.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/MinimapRaster.cs": {"branch": 93.75, "line": 100.0},
     "Unciv.Assets/ModelSpecs.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/NotificationsModel.cs": {"branch": 97.06, "line": 100.0},
     "Unciv.Assets/Packaging/ContentLocator.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PlaceholderPalette.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PolicyScreenModel.cs": {"branch": 100.0, "line": 100.0},
@@ -607,7 +609,7 @@
     "Unciv.Harness/PerceptualHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ReviewIndex.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Harness/ScenarioGame.cs": {"branch": 92.86, "line": 98.77},
+    "Unciv.Harness/ScenarioGame.cs": {"branch": 93.18, "line": 98.98},
     "Unciv.Harness/ScenarioReplay.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0}
   },

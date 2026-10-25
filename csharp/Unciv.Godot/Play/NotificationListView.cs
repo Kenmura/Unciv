@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
 
 namespace Unciv.GodotClient.Play;
@@ -47,7 +48,7 @@ public partial class NotificationListView : VBoxContainer
         set
         {
             list.Visible = value;
-            toggle.Text = NotificationsModel.ToggleLabel(rows.Count, value);
+            toggle.Text = NotificationsModel.ToggleLabel(rows.Count, value).TrText();
         }
     }
 
@@ -78,7 +79,7 @@ public partial class NotificationListView : VBoxContainer
     {
         deferred = count;
         review.Visible = count > 0;
-        review.Text = AlertPopupModel.ReviewLabel(count);
+        review.Text = AlertPopupModel.ReviewLabel(count).TrText();
         Visible = rows.Count > 0 || deferred > 0;
     }
 
@@ -86,7 +87,7 @@ public partial class NotificationListView : VBoxContainer
     {
         theme = uiTheme;
         Theme = uiTheme.Theme;
-        toggle.Text = NotificationsModel.ToggleLabel(0, false);
+        toggle.Text = NotificationsModel.ToggleLabel(0, false).TrText();
     }
 
     public void Update(int currentTurn, IReadOnlyList<NotificationRow> newRows)
@@ -99,7 +100,7 @@ public partial class NotificationListView : VBoxContainer
             child.QueueFree();
         }
         buttons.Clear();
-        summary.Text = NotificationsModel.Summary(turn, rows);
+        summary.Text = NotificationsModel.Summary(turn, rows).TrText();
         summary.CustomMinimumSize = new Vector2(theme.Px(320), theme.Px(56)); // room for three wrapped lines: an autowrapped label does not reserve them itself
         summary.TooltipText = summary.Text;
         scroll.CustomMinimumSize = new Vector2(theme.Px(336), theme.Px(Math.Min(rows.Count, 5) * 32));
@@ -108,11 +109,11 @@ public partial class NotificationListView : VBoxContainer
             var button = new Button
             {
                 Name = "Notification_" + row.Index,
-                Text = row.Text,
+                Text = row.Text.TrText(),
                 Alignment = HorizontalAlignment.Left,
                 ClipText = true,
                 CustomMinimumSize = new Vector2(theme.Px(320), theme.Px(28)),
-                TooltipText = row.Category + (row.Target == null ? "" : row.Target.Kind == NotificationTargetKind.Tile ? ": click to show on the map" : ": click to open"),
+                TooltipText = (row.Category + (row.Target == null ? "" : row.Target.Kind == NotificationTargetKind.Tile ? ": click to show on the map" : ": click to open")).TrText(),
             };
             button.AddThemeFontSizeOverride("font_size", theme.Px(14));
             var chosen = row;
@@ -120,7 +121,7 @@ public partial class NotificationListView : VBoxContainer
             items.AddChild(button);
             buttons[row.Index] = button;
         }
-        toggle.Text = NotificationsModel.ToggleLabel(rows.Count, IsOpen);
+        toggle.Text = NotificationsModel.ToggleLabel(rows.Count, IsOpen).TrText();
         Visible = rows.Count > 0 || deferred > 0; // nothing to list: no button either
     }
 }
