@@ -390,8 +390,8 @@ flowchart TD
   class T206 waiting
   class T207 waiting
   class T216 ready
-  class T217 ready
-  class T218 prog
+  class T217 prog
+  class T218 ready
   class T219 ready
 ```
 
@@ -425,7 +425,7 @@ xychart-beta
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T201 | **Ready to start** | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T216 | **Ready to start** | T160 | 0 | Kotlin per-turn golden hashes from a fixed saved map (sidesteps unseeded resource shuffles) |
-| T217 | **Ready to start** | T160 | 0 | Kotlin golden run with a mod ruleset |
+| T218 | **Ready to start** | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
 | T219 | **Ready to start** | T208 | 0 | GameInfo.Clone() shares state (trade requests etc.) and Canonicalize skips remaining JVM hash sets/maps (religion beliefs, flag maps): make Clone playable and extend soak |
 | C011 | **On deck** (after C005) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | **On deck** (after C005) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
@@ -466,4 +466,4 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T218 | In-Progress [Claude] | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
+| T217 | In-Progress [Claude] | T160 | 0 | Kotlin golden run with a mod ruleset |
