@@ -109,10 +109,12 @@ public class CityQueryTests
     public void DuplicateQueueEntriesUseTheirOwnPosition()
     {
         city.CityConstructions.EditQueue(q => { q.Clear(); q.Add("Warrior"); q.Add("Warrior"); });
+        city.CityConstructions.InProgressConstructions["Warrior"] = 30;
         var queue = AskPure(new CityPanelQuery(city.Id)).Queue;
         Assert.Equal(city.CityConstructions.TurnsToConstruction("Warrior", true), queue[0].Turns);
         Assert.False(city.CityConstructions.IsFirstConstructionOfItsKind(1, "Warrior"));
         Assert.Equal(city.CityConstructions.TurnsToConstruction("Warrior", false), queue[1].Turns);
+        Assert.NotEqual(queue[0].Turns, queue[1].Turns); // stored production counts for the first entry only
     }
 
     [Fact]
