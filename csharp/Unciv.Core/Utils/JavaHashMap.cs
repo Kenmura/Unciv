@@ -14,7 +14,7 @@ namespace Unciv.Utils;
 // Reproduced: initial capacity 16 or tableSizeFor(n), load factor 0.75 and resize (bins keep their relative order),
 // hash spreading h ^ (h >>> 16), new nodes appended at the bin tail, resize instead of treeify below 64 buckets,
 // `clear()` keeping the table, HashMap(Map)/putAll pre-sizing. Not reproduced: treeified bins (nine or more nodes in one
-// bin of a 64+ table) stay linked lists (T222): same order for the first eight nodes, possibly different for later inserts.
+// bin of a 64+ table) stay linked lists (T222). The JVM's treeify (on the ninth node) moves the tree root to the front of the bin, so iteration order of such a bin can differ from the JVM from then on; only pathological hashes (nine keys in one bin of a 64+ table) get there, and for non-Comparable keys the JVM's own tie-break uses identityHashCode.
 // The version dependent part is HashSet(Collection) sizing (changed in JDK 19); this follows JDK 25.
 public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
 {
@@ -210,8 +210,8 @@ public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
     }
 
     // treeifyBin: below 64 buckets the JVM resizes instead; with 64+ it would build a tree bin. We keep the bin a linked list:
-    // lookups stay correct (only slower) and iteration order matches the JVM for the first eight nodes (treeifyBin keeps the
-    // list order); later inserts into a tree bin land after their tree parent in the JVM, which is not reproduced. A mid-game
+    // lookups stay correct (only slower); the JVM would move the tree root to the front of the bin (moveRootToFront) and place later
+    // inserts after their tree parent, neither of which is reproduced. A mid-game
     // crash is worse than that pathological divergence (T222).
     private void TreeifyBin()
     {
