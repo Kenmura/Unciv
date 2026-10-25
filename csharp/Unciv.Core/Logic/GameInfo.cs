@@ -336,6 +336,13 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
             ? civ
             : Civilizations.First(it => it.CivId == civId); // This is for spectators who are added in later, artificially
 
+    /// <summary>Removes <paramref name="civ"/> from the game and from the id lookup (dev console <c>civ remove</c>, <c>game remove-spectator</c>).</summary>
+    public void RemoveCivilization(Civilization.Civilization civ)
+    {
+        Civilizations.Remove(civ);
+        if (civMap.Value.TryGetValue(civ.CivId, out var mapped) && ReferenceEquals(mapped, civ)) civMap.Value.Remove(civ.CivId);
+    }
+
     public Civilization.Civilization? GetCivilizationOrNull(string civId) =>
         civMap.Value.TryGetValue(civId, out var civ) ? civ : Civilizations.FirstOrDefault(it => it.CivId == civId);
 

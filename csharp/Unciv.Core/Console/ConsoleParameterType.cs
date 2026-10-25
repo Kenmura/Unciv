@@ -1,14 +1,15 @@
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map.MapGenerator;
 using Unciv.Models.Ruleset.Tile;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 
 namespace Unciv.DevConsole;
 
 /// <summary>
 /// Kotlin: <c>ConsoleParameterType</c>. Knowledge about console command parameter types, limited to supplying autocomplete possibilities.
-/// The names are the ones used in the command format strings; an unknown name has no options. Triggered-unique templates are not ported
-/// (see the ticket notes: <c>activatetrigger</c> needs the Unique validator).
+/// The names are the ones used in the command format strings; an unknown name has no options. The triggered-unique templates are listed quoted, as in Kotlin
+/// (<c>preferquoted</c>); deprecated-at-error-level types are not filtered because the engine has no deprecation annotations.
 /// </summary>
 public static class ConsoleParameterType
 {
@@ -32,6 +33,8 @@ public static class ConsoleParameterType
             "policyName" => [.. ruleset.PolicyBranches.Keys, .. ruleset.Policies.Keys],
             "techName" => [.. ruleset.Technologies.Keys],
             "cityName" => [.. game.Civilizations.SelectMany(civ => civ.Cities).Select(it => it.Name)],
+            "triggeredCivUniqueTemplate" => TriggeredUniques(UniqueTarget.Triggerable),
+            "triggeredUnitUniqueTemplate" => TriggeredUniques(UniqueTarget.UnitTriggerable),
             "difficulty" => [.. ruleset.Difficulties.Keys],
             "boolean" => ["true", "false"],
             "diplomacyFlag" => [.. Enum.GetNames<DiplomacyFlags>()],
@@ -41,8 +44,14 @@ public static class ConsoleParameterType
         };
     }
 
+    // Not canAcceptUniqueTarget, we want to separate civ/unit triggerables
+    private static string[] TriggeredUniques(UniqueTarget target) =>
+        [.. UniqueTypeExtensions.Entries.Where(it => it.TargetTypes().Contains(target)).Select(it => it.Text())];
+
     public static IReadOnlyList<CliInput> GetOptions(string name, ConsoleContext console) =>
-        [.. Options(name, console).Select(it => new CliInput(it))];
+        name.StartsWith("triggered", StringComparison.Ordinal)
+            ? [.. Options(name, console).Select(it => new CliInput(it, CliInput.Method.Quoted))]
+            : [.. Options(name, console).Select(it => new CliInput(it))];
 
     /// <summary>Options of a <c>|</c>-separated list of types.</summary>
     public static IReadOnlyList<CliInput> MultiOptions(string name, ConsoleContext console) =>

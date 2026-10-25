@@ -1,4 +1,5 @@
 using Unciv.Logic;
+using Unciv.Logic.Map;
 
 namespace Unciv.DevConsole;
 
@@ -29,6 +30,10 @@ public static class ConsoleRunner
         if (result?.Text == null) return null;
         return (parameters.Count > 0 ? parameters[^1].OriginalLength() : 0, result);
     }
+
+    /// <summary>Positions of all tiles matching <paramref name="filter"/> (case sensitive), in tile list order. Pure query (<c>tile find</c>).</summary>
+    public static IReadOnlyList<HexCoord> FindTiles(GameInfo game, string filter) =>
+        [.. game.TileMap.TileList.Where(it => it.MatchesFilter(filter)).Select(it => it.Position)];
 
     public static IEnumerable<(IReadOnlyList<string> Nodes, string Format)> EnumerateCommands() => Root.EnumerateCommands();
 }

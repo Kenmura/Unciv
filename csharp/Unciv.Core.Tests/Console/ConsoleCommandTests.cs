@@ -542,4 +542,97 @@ public sealed class ConsoleCommandTests : IDisposable
         Assert.Equal(ReplayVerifier.FullHash(live), replay.FinalHash);
         Assert.Equal(9, replay.Game.Turns);
     }
+
+    // --- T234: activatetrigger, civ add/remove, game remove-spectator, tile find
+
+    [Fact]
+    public void CivActivateTriggerPlansWithoutChangeAndAppliesAsALoggedCommand()
+    {
+        int gold = babylon.Gold;
+        Ok("civ activatetrigger \"Gain [20] [Gold]\"", onCity);
+        Assert.NotEqual(gold, babylon.Gold);
+        int greece = game.GetCivilization("Greece").Gold;
+        Ok("civ activatetrigger Greece \"Gain [amount] [stat]\" 30 Gold");
+        Assert.Equal(greece + 30, game.GetCivilization("Greece").Gold);
+        Assert.Contains("not found in UniqueTypes", Error("civ activatetrigger \"No such unique [x]\""), StringComparison.Ordinal);
+        Assert.Equal("Parameter triggeredUnique missing", Error("civ activatetrigger Greece"));
+        Assert.Contains("is not a Triggerable", Error("civ activatetrigger Unbuildable"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UnitActivateTriggerNeedsASelectedUnit()
+    {
+        Assert.Equal("Select tile", Error("unit activatetrigger \"[This Unit] heals [10] HP\""));
+        var unit = babylon.Units.GetCivUnits().First();
+        var at = new ConsoleSelection(unit.CurrentTile.Position, unit.Id);
+        unit.Health = 50;
+        Ok("unit activatetrigger \"[This Unit] heals [10] HP\"", at);
+        Assert.Equal(60, unit.Health);
+    }
+
+    [Fact]
+    public void TriggerTemplatesAreOfferedQuotedPerTarget()
+    {
+        var civ = ConsoleParameterType.GetOptions("triggeredCivUniqueTemplate", new ConsoleContext(game, "Babylon", new ConsoleSelection()));
+        Assert.NotEmpty(civ);
+        Assert.All(civ, it => Assert.Equal(CliInput.Method.Quoted, it.MethodUsed));
+        Assert.Contains(civ, it => it.OriginalUnquoted() == "Free [unit] appears");
+        var unit = ConsoleParameterType.GetOptions("triggeredUnitUniqueTemplate", new ConsoleContext(game, "Babylon", new ConsoleSelection()));
+        Assert.NotEmpty(unit);
+        Assert.Contains(unit, it => it.OriginalUnquoted() == "[unitTriggerTarget] heals [positiveAmount] HP");
+    }
+
+    [Fact]
+    public void CivAddPlacesASettlerAndCivRemoveAnnihilates()
+    {
+        var spot = FreeLandTileNextToCity();
+        var at = new ConsoleSelection(spot.Position);
+        string nation = ruleset.Nations.Values.First(it => it.IsMajorCiv && game.Civilizations.All(c => c.Nation != it)).Name;
+        Assert.Equal("Select tile", Error($"civ add \"{nation}\""));
+        Ok($"civ add \"{nation}\"", at);
+        var added = game.GetCivilization(nation);
+        Assert.Single(added.Units.GetCivUnits());
+        Assert.True(added.Units.GetCivUnits().Single().BaseUnit.IsCityFounder());
+        Assert.Contains("is not a valid Nation", Error("civ add Babylon", at), StringComparison.Ordinal);
+
+        Assert.Equal("Suicide is not yet supported", Error("civ remove Babylon"));
+        Ok($"civ remove \"{nation}\"");
+        Assert.DoesNotContain(game.Civilizations, it => it.CivId == nation);
+        Assert.Null(game.GetCivilizationOrNull(nation));
+        Assert.Null(spot.GetFirstUnit());
+        Assert.All(game.Civilizations, it => Assert.False(it.Diplomacy.ContainsKey(nation)));
+
+        string cityState = ruleset.Nations.Values.First(it => it.IsCityState).Name;
+        Ok($"civ add \"{cityState}\"", at);
+        Assert.True(game.GetCivilization(cityState).IsCityState);
+        Ok($"civ remove \"{cityState}\"");
+        Assert.Null(game.GetCivilizationOrNull(cityState));
+
+        Ok("civ remove Greece");
+        Assert.Null(game.GetCivilizationOrNull("Greece"));
+        Assert.DoesNotContain(game.TileMap.TileList, it => it.GetOwner()?.CivId == "Greece");
+    }
+
+    [Fact]
+    public void GameRemoveSpectatorUndoesAddSpectator()
+    {
+        Assert.Equal("No Spectator in this game", Error("game remove-spectator"));
+        Ok("game add-spectator");
+        Ok("game remove-spectator");
+        Assert.DoesNotContain(game.Civilizations, it => it.Nation.IsSpectator);
+        Assert.Null(game.GetCivilizationOrNull("Spectator"));
+        Assert.All(game.Civilizations, it => Assert.False(it.Diplomacy.ContainsKey("Spectator")));
+        Ok("game add-spectator");
+    }
+
+    [Fact]
+    public void TileFindReportsMatchingPositionsAsAHint()
+    {
+        var all = ConsoleRunner.FindTiles(game, "Land");
+        Assert.Equal(game.TileMap.TileList.Where(it => it.IsLand).Select(it => it.Position), all);
+        Assert.Empty(ConsoleRunner.FindTiles(game, "land")); // case sensitive
+        string message = Rejected("tile find Land", CommandErrors.NotAllowed);
+        Assert.StartsWith($"tile find [land]: {all.Count} matches: (", message, StringComparison.Ordinal);
+        Assert.Equal("None found", Rejected("tile find land", CommandErrors.NotAllowed));
+    }
 }

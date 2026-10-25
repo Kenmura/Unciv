@@ -70,6 +70,15 @@ internal static class ConsoleTileCommands
                 newOwner?.Expansion.TakeOwnership(tile);
             });
         });
+        node.Subcommands["find"] = new ConsoleAction("tile find <tileFilter>", (console, parameters) =>
+        {
+            var locations = ConsoleRunner.FindTiles(console.Game, parameters[0].OriginalUnquoted());
+            if (locations.Count == 0) return ConsolePlan.Hint("None found");
+            // Kotlin shows a one-time notification with a location action per match; the engine answers with the positions
+            const int shown = 50;
+            string list = string.Join(", ", locations.Take(shown).Select(it => $"({it.x},{it.y})"));
+            return ConsolePlan.Hint($"tile find {parameters[0].ToStringAsPlaceholder()}: {locations.Count} matches: {list}{(locations.Count > shown ? ", ..." : "")}");
+        });
         node.Subcommands["spawn-barbarian-encampment"] = new ConsoleAction("tile spawn-barbarian-encampment", (console, _) =>
         {
             var tile = console.GetSelectedTile();

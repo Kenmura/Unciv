@@ -1,11 +1,12 @@
 namespace Unciv.DevConsole;
 
-/// <summary>Kotlin: <c>ConsoleUnitCommands</c>. <c>activatetrigger</c> is not ported (see ticket notes).</summary>
+/// <summary>Kotlin: <c>ConsoleUnitCommands</c>. <c>activatetrigger</c> is T234.</summary>
 internal static class ConsoleUnitCommands
 {
     public static ConsoleCommandNode Create()
     {
         var node = new ConsoleCommandNode();
+        node.Subcommands["activatetrigger"] = new ConsoleTriggerAction("unit");
         node.Subcommands["checkfilter"] = new ConsoleAction("unit checkfilter <unitFilter>", (console, parameters) =>
             ConsolePlan.Hint(console.GetSelectedUnit().MatchesFilter(parameters[0].OriginalUnquoted()).ToString().ToLowerInvariant()));
         node.Subcommands["add"] = new ConsoleAction("unit add <civName> <unitName>", (console, parameters) =>

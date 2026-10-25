@@ -1,7 +1,8 @@
 namespace Unciv.DevConsole;
 
 /// <summary>
-/// Kotlin: <c>ConsoleGameCommands</c>. <c>remove-spectator</c> is not ported: it saves, reloads and swaps the world screen (a client concern).
+/// Kotlin: <c>ConsoleGameCommands</c>. <c>remove-spectator</c> is only the state change: the Kotlin command also confirms, saves an autosave and
+/// reloads it to clear up the rest, which is the client's business (T234).
 /// </summary>
 internal static class ConsoleGameCommands
 {
@@ -33,6 +34,19 @@ internal static class ConsoleGameCommands
         {
             if (console.Game.Civilizations.Any(it => it.Nation.IsSpectator)) throw new ConsoleErrorException("Spectator already exists");
             return ConsolePlan.Do(() => console.Game.GetSpectator(""));
+        });
+        node.Subcommands["remove-spectator"] = new ConsoleAction("game remove-spectator", (console, _) =>
+        {
+            var game = console.Game;
+            var spectator = game.Civilizations.FirstOrDefault(it => it.Nation.IsSpectator)
+                ?? throw new ConsoleErrorException("No Spectator in this game");
+            return ConsolePlan.Do(() =>
+            {
+                if (game.CurrentPlayer == spectator.CivId) game.CurrentPlayer = "";
+                game.RemoveCivilization(spectator);
+                // dunno why a spectator makes it into everybody's diplomacy maps
+                foreach (var civ in game.Civilizations) civ.Diplomacy.Remove(Constants.Spectator);
+            });
         });
         return node;
     }
