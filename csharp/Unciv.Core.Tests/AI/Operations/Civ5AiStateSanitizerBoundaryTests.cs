@@ -1,10 +1,12 @@
 using Unciv.AI;
 using Unciv.AI.Operations;
+using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
+using GrandStrategyKind = Unciv.AI.GrandStrategy.GrandStrategy;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Core.Tests.AI.Operations;
@@ -114,12 +116,19 @@ public sealed class Civ5AiStateSanitizerBoundaryTests : IDisposable
             [
                 Record(1, r => { r.MaxRecruitTurns = max; r.TurnsRecruiting = 0; r.StartTurn = turn - max; }),
                 Record(2, r => { r.MaxRecruitTurns = max + 1; r.TurnsRecruiting = -1; r.StartTurn = turn - max - 1; }),
+            ],
+        });
+        Assert.Equal(100_000, s.TurnsActive);
+        Assert.Equal([(max, 0, turn - max), (max, 0, turn - max)], s.Operations.Select(o => (o.MaxRecruitTurns, o.TurnsRecruiting, o.StartTurn)));
+        var t = Sanitized(new Civ5AiState
+        {
+            Operations =
+            [
                 Record(3, r => { r.MaxRecruitTurns = 0; r.TurnsRecruiting = max; r.StartTurn = turn; }),
                 Record(4, r => { r.MaxRecruitTurns = -1; r.TurnsRecruiting = max + 1; r.StartTurn = turn + 1; }),
             ],
         });
-        Assert.Equal(100_000, s.TurnsActive);
-        Assert.Equal([(max, 0, turn - max), (max, 0, turn - max), (0, max, turn), (0, max, turn)], s.Operations.Select(o => (o.MaxRecruitTurns, o.TurnsRecruiting, o.StartTurn)));
+        Assert.Equal([(0, max, turn), (0, max, turn)], t.Operations.Select(o => (o.MaxRecruitTurns, o.TurnsRecruiting, o.StartTurn)));
         Assert.Equal(100_000, Sanitized(new Civ5AiState { TurnsActive = 100_001 }).TurnsActive);
         Assert.Equal(0, Sanitized(new Civ5AiState { TurnsActive = -1 }).TurnsActive);
     }
@@ -131,5 +140,70 @@ public sealed class Civ5AiStateSanitizerBoundaryTests : IDisposable
         Assert.Equal(1, Sanitized(new Civ5AiState { NextOperationId = 1 }).NextOperationId);
         Assert.Equal(5, Sanitized(new Civ5AiState { NextOperationId = 5, Operations = [Record(2)] }).NextOperationId);
         Assert.Equal(int.MaxValue - Civ5AiStateSanitizer.MaxCounter, Sanitized(new Civ5AiState { NextOperationId = int.MaxValue }).NextOperationId);
+    }
+
+    // T237
+    [Fact]
+    public void TwoOperationsAreKeptAndAThirdDropped()
+    {
+        Assert.Equal(2, Civ5AiStateSanitizer.MaxOperations);
+        var kept = Sanitized(new Civ5AiState { Operations = [Record(3), Record(1), Record(2)] });
+        Assert.Equal([1, 2], kept.Operations.Select(o => o.Id));
+        Assert.Equal(3, kept.NextOperationId);
+        Assert.Equal([1], Sanitized(new Civ5AiState { Operations = [Record(1)] }).Operations.Select(o => o.Id));
+    }
+
+    [Fact]
+    public void InvalidRecordsDoNotUseUpTheOperationCap() =>
+        Assert.Equal([2, 3], Sanitized(new Civ5AiState { Operations = [Record(0), Record(1, r => r.State = OperationState.Aborted), Record(2), Record(3), Record(4)] }).Operations.Select(o => o.Id));
+
+    private BlockedTarget Block(int i) => new() { Position = game.TileMap.TileList[i].Position, UntilTurn = game.Turns + i };
+
+    [Fact]
+    public void BlockedTargetsAtTheCapAreKeptAndPastItTheOldestGo()
+    {
+        int max = Civ5AiStateSanitizer.MaxBlockedTargets;
+        Assert.Equal(60, max);
+        Assert.True(game.TileMap.TileList.Count > max + 1);
+        var atCap = Sanitized(new Civ5AiState { BlockedTargets = [.. Enumerable.Range(0, max).Select(Block)] });
+        Assert.Equal(max, atCap.BlockedTargets.Count);
+        Assert.Equal(game.TileMap.TileList[0].Position, atCap.BlockedTargets[0].Position);
+        var over = Sanitized(new Civ5AiState { BlockedTargets = [.. Enumerable.Range(0, max + 1).Select(Block)] });
+        Assert.Equal(max, over.BlockedTargets.Count);
+        Assert.Equal(game.TileMap.TileList[1].Position, over.BlockedTargets[0].Position);
+        Assert.Equal(game.TileMap.TileList[max].Position, over.BlockedTargets[^1].Position);
+    }
+
+    [Fact]
+    public void CloneOfANullListsStateIsEmptyAndNullEntriesAreSkipped()
+    {
+        var clone = new Civ5AiState { Operations = null!, BlockedTargets = null! }.Clone();
+        Assert.Empty(clone.Operations);
+        Assert.Empty(clone.BlockedTargets);
+        var mixed = new Civ5AiState
+        {
+            Operations = [null!, Record(1, r => { r.Slots = null!; r.Filled = null!; })],
+            BlockedTargets = [null!, Block(1)],
+            CurrentStrategy = GrandStrategyKind.Conquest,
+            TurnsActive = 7,
+            NextOperationId = 4,
+        }.Clone();
+        var op = Assert.Single(mixed.Operations);
+        Assert.Empty(op.Slots);
+        Assert.Empty(op.Filled);
+        Assert.Equal(1, op.Id);
+        Assert.Equal(game.Turns + 1, Assert.Single(mixed.BlockedTargets).UntilTurn);
+        Assert.Equal((GrandStrategyKind.Conquest, 7, 4), (mixed.CurrentStrategy, mixed.TurnsActive, mixed.NextOperationId));
+    }
+
+    [Fact]
+    public void GameInfoCloneSurvivesAFreshlyLoadedStateWithNullLists()
+    {
+        civ.Civ5Ai = UncivJson.Deserialize<Civ5AiState>("{\"operations\":null,\"blockedTargets\":null}");
+        Assert.Null(civ.Civ5Ai!.Operations);
+        var copy = game.Clone();
+        var state = copy.Civilizations.First(c => c.CivName == civ.CivName).Civ5Ai!;
+        Assert.Empty(state.Operations);
+        Assert.Empty(state.BlockedTargets);
     }
 }

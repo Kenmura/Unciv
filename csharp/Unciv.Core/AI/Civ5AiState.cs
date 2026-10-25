@@ -28,13 +28,17 @@ public sealed class Civ5AiState : IsPartOfGameInfoSerialization
     [JsonPropertyName("blockedTargets")]
     public List<BlockedTarget> BlockedTargets { get; set; } = [];
 
+    /// <summary>
+    /// T237: tolerant of a freshly deserialized state, whose lists and entries may be null (a save is untrusted; the sanitizer only runs on the next AI turn).
+    /// Null lists clone as empty and null entries are skipped, which is what the sanitizer would make of them anyway.
+    /// </summary>
     public Civ5AiState Clone() => new()
     {
-        BlockedTargets = [.. BlockedTargets.Select(it => new BlockedTarget { Position = it.Position, UntilTurn = it.UntilTurn })],
+        BlockedTargets = [.. (BlockedTargets ?? []).Where(it => it != null).Select(it => new BlockedTarget { Position = it.Position, UntilTurn = it.UntilTurn })],
         CurrentStrategy = CurrentStrategy,
         TurnsActive = TurnsActive,
         NextOperationId = NextOperationId,
-        Operations = [.. Operations.Select(it => it.Clone())],
+        Operations = [.. (Operations ?? []).Where(it => it != null).Select(it => it.Clone())],
     };
 }
 
@@ -78,8 +82,8 @@ public sealed class OperationRecord
         Type = Type,
         Target = Target,
         Muster = Muster,
-        Slots = [.. Slots],
-        Filled = [.. Filled],
+        Slots = [.. Slots ?? []],
+        Filled = [.. Filled ?? []],
         MaxRecruitTurns = MaxRecruitTurns,
         TurnsRecruiting = TurnsRecruiting,
         State = State,

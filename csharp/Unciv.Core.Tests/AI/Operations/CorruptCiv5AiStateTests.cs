@@ -264,7 +264,7 @@ public sealed class CorruptCiv5AiStateTests : IDisposable
                 Valid(game, 8).With(r => r.Slots = [(ArmyRole)9, ArmyRole.Melee]),
                 Valid(game, 9).With(r => r.Slots = [.. Enumerable.Repeat(ArmyRole.Melee, 100_000)]),
                 Valid(game, 10).With(r => { r.Filled = [unitId, 424242]; r.TurnsRecruiting = int.MaxValue; r.MaxRecruitTurns = -1; r.StartTurn = int.MaxValue; }),
-                Valid(game, 11).With(r => r.Filled = [unitId, null]),        // unit already held by operation 10
+                Valid(game, 11),                                             // dropped by the cap of two running operations (T237)
                 Valid(game, -2),
                 Valid(game, int.MaxValue),
             ],
@@ -275,14 +275,25 @@ public sealed class CorruptCiv5AiStateTests : IDisposable
         Assert.Equal(0, state.TurnsActive);
         var blocked = Assert.Single(state.BlockedTargets);
         Assert.True(blocked.UntilTurn <= game.Turns + OperationsAdapter.BlockedTurns);
-        Assert.Equal([1, 10, 11], state.Operations.Select(o => o.Id));
+        Assert.Equal([1, 10], state.Operations.Select(o => o.Id));
         var ten = state.Operations[1];
         Assert.Equal([unitId, (int?)null], ten.Filled);
-        Assert.Equal([(int?)null, null], state.Operations[2].Filled);
         Assert.InRange(ten.TurnsRecruiting, 0, Civ5AiStateSanitizer.MaxCounter);
         Assert.Equal(0, ten.MaxRecruitTurns);
         Assert.InRange(ten.StartTurn, game.Turns - Civ5AiStateSanitizer.MaxCounter, game.Turns);
-        Assert.Equal(12, state.NextOperationId);
+        Assert.Equal(11, state.NextOperationId);
+    }
+
+    [Fact]
+    public void AUnitHeldByOneOperationLeavesTheSlotOfTheOther()
+    {
+        var game = StartAiGame();
+        var civ = game.Civilizations.First(c => c.IsAI() && !c.IsBarbarian);
+        int unitId = civ.Units.GetCivUnits().First().Id;
+        civ.Civ5Ai = new Civ5AiState { Operations = [Valid(game, 1).With(r => r.Filled = [unitId, null]), Valid(game, 2).With(r => r.Filled = [unitId, null])] };
+        Civ5AiStateSanitizer.Sanitize(civ.Civ5Ai, civ);
+        Assert.Equal([unitId, (int?)null], civ.Civ5Ai.Operations[0].Filled);
+        Assert.Equal([(int?)null, null], civ.Civ5Ai.Operations[1].Filled);
     }
 
     [Fact]

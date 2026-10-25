@@ -13,6 +13,12 @@ internal static class Civ5AiStateSanitizer
 {
     internal const int MaxSlots = 16;
     internal const int MaxCounter = 1000;
+    /// <summary>T237: a valid state holds at most the running operations the adapter allows (finished ones are not saved).</summary>
+    internal const int MaxOperations = OperationsAdapter.MaxOperations;
+
+    /// <summary>T237: a block lasts <see cref="OperationsAdapter.BlockedTurns"/> turns and at most <see cref="MaxOperations"/> operations can add one per turn.</summary>
+    internal const int MaxBlockedTargets = OperationsAdapter.BlockedTurns * OperationsAdapter.MaxOperations;
+
     private const int MaxTurnsActive = 100_000;
 
     internal static GrandStrategyKind SafeStrategy(GrandStrategyKind strategy) => Enum.IsDefined(strategy) ? strategy : GrandStrategyKind.None;
@@ -29,7 +35,9 @@ internal static class Civ5AiStateSanitizer
         state.CurrentStrategy = SafeStrategy(state.CurrentStrategy);
         state.TurnsActive = SafeTurnsActive(state.TurnsActive);
 
-        state.BlockedTargets = [.. (state.BlockedTargets ?? []).Where(b => b != null && map.Contains(b.Position))];
+        // over the cap the oldest entries (the front of the list) go, since new blocks are appended
+        var blockedKept = (state.BlockedTargets ?? []).Where(b => b != null && map.Contains(b.Position)).ToList();
+        state.BlockedTargets = blockedKept.Count > MaxBlockedTargets ? blockedKept.GetRange(blockedKept.Count - MaxBlockedTargets, MaxBlockedTargets) : blockedKept;
         foreach (var blocked in state.BlockedTargets) blocked.UntilTurn = Math.Min(blocked.UntilTurn, turn + OperationsAdapter.BlockedTurns);
 
         var unitIds = civ.Units.GetCivUnits().Select(u => u.Id).ToHashSet();
@@ -38,6 +46,7 @@ internal static class Civ5AiStateSanitizer
         var kept = new List<OperationRecord>();
         foreach (var record in (state.Operations ?? []).Where(r => r != null).OrderBy(r => r.Id))
         {
+            if (kept.Count >= MaxOperations) break;
             if (record.Id < 1 || record.Id >= int.MaxValue - MaxCounter || !seen.Add(record.Id)) continue;
             if (!Enum.IsDefined(record.Type) || record.State is not (OperationState.Recruiting or OperationState.Gathering or OperationState.Moving or OperationState.AtTarget)) continue;
             if (record.Slots == null || record.Filled == null || record.Slots.Count == 0 || record.Slots.Count > MaxSlots || record.Filled.Count != record.Slots.Count) continue;
