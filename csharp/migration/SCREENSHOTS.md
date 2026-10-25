@@ -184,6 +184,28 @@ Scenario `minimap`.
 
 *After clicking the far corner of the minimap: the camera moved there.* (`minimap/jumped.png`)
 
+## C015 (ticket not Done or unknown)
+
+Main menu and new-game screen: players and nations, rules, game, map and advanced options, seed validation, then the started game.
+
+Scenario `setup`.
+
+![Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Options, Quit.](../Unciv.Godot.Harness/golden/setup/menu.png)
+
+*Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Options, Quit.* (`setup/menu.png`)
+
+![Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the nation grid, nations in their colours.](../Unciv.Godot.Harness/golden/setup/players.png)
+
+*Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the nation grid, nations in their colours.* (`setup/players.png`)
+
+![Map tab with a non-numeric seed: the reason is shown under the tabs and nothing starts.](../Unciv.Godot.Harness/golden/setup/bad-seed.png)
+
+*Map tab with a non-numeric seed: the reason is shown under the tabs and nothing starts.* (`setup/bad-seed.png`)
+
+![The game started from the chosen options: Babylon, turn 0, tiny hexagonal map.](../Unciv.Godot.Harness/golden/setup/started.png)
+
+*The game started from the chosen options: Babylon, turn 0, tiny hexagonal map.* (`setup/started.png`)
+
 ## C016 Save/load screen and autosave
 
 Save/load screen and autosave.

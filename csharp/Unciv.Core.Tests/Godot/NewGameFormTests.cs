@@ -578,4 +578,143 @@ public sealed class NewGameFormTests
         var rome = form.NationColours("Rome");
         Assert.NotEqual(form.NationColours("Babylon"), rome);
     }
+
+    // Review additions (C015 r1): swapped fields, exact boundaries, argument passing and cache invalidation, each of which mutation survey found unpinned.
+
+    private static readonly Action<NewGameForm>[] FlagToggles =
+    [
+        f => f.NoBarbarians = true, f => f.RagingBarbarians = true, f => f.OneCityChallenge = true, f => f.NoCityRazing = true,
+        f => f.NuclearWeapons = false, f => f.Espionage = false, f => f.WorldWrap = false, f => f.NoRuins = true, f => f.NoNaturalWonders = true,
+    ];
+
+    private static bool[] Flags(Unciv.Models.Metadata.GameSetupInfo s) =>
+    [
+        s.GameParameters.NoBarbarians, s.GameParameters.RagingBarbarians, s.GameParameters.OneCityChallenge, s.GameParameters.NoCityRazing,
+        s.GameParameters.NuclearWeaponsEnabled, s.GameParameters.EspionageEnabled, s.MapParameters.WorldWrap, s.MapParameters.NoRuins, s.MapParameters.NoNaturalWonders,
+    ];
+
+    [Fact]
+    public void EachFlagReachesOnlyItsOwnParameter()
+    {
+        bool[] defaults = [false, false, false, false, true, true, true, false, false];
+        Assert.Equal(defaults, Flags(VanillaForm().Build(1).Setup!));
+        for (int i = 0; i < FlagToggles.Length; i++)
+        {
+            var form = VanillaForm();
+            FlagToggles[i](form);
+            var expected = (bool[])defaults.Clone();
+            expected[i] = !expected[i];
+            Assert.Equal(expected, Flags(form.Build(1).Setup!));
+        }
+    }
+
+    [Theory]
+    [InlineData("1", 1L)]
+    [InlineData("2", 2L)]
+    [InlineData("  7 ", 7L)]
+    public void SmallTypedSeedsWinOverTheClock(string text, long expected)
+    {
+        var form = VanillaForm();
+        form.SeedText = text;
+        var built = form.Build(500);
+        Assert.Equal(expected, built.Seed);
+        Assert.Equal(expected, built.Setup!.MapParameters.Seed);
+    }
+
+    [Fact]
+    public void CountsExactlyAtTheirMaximumAreValid()
+    {
+        var form = VanillaForm();
+        var vanilla = Unciv.Models.Ruleset.RulesetCache.GetVanillaRuleset();
+        Assert.Equal(vanilla.Nations.Values.Count(it => it.IsCityState), form.MaxCityStates);
+        Assert.Equal(vanilla.Nations.Values.Count(it => it.IsMajorCiv && !it.IsSpectator), form.MaxPlayers);
+        Assert.Null(form.SetPlayerCount(form.MaxPlayers));
+        Assert.Null(form.SetCityStates(form.MaxCityStates));
+        Assert.Empty(form.Problems());
+        Assert.Equal(form.MaxPlayers, form.Slots.Count);
+        Assert.Equal(form.MaxCityStates, form.CityStates);
+    }
+
+    [Fact]
+    public void ShrinkingRemovesAnAiAtTheFrontBeforeAnyHuman()
+    {
+        var form = Form(2);
+        form.SetPlayerCount(3);
+        form.SetHuman(1, true);
+        form.SetHuman(2, true); // two humans allowed: the oldest (slot 1) is demoted only when a third is chosen
+        Assert.Equal([false, true, true], form.Slots.Select(it => it.IsHuman));
+        Assert.Null(form.SetPlayerCount(2));
+        Assert.Equal([true, true], form.Slots.Select(it => it.IsHuman));
+    }
+
+    private static NewGameForm FormRecordingCalls(List<(string? Base, string Mods)> calls)
+    {
+        ScenarioGame.LoadVanilla();
+        return new NewGameForm((baseRuleset, mods) =>
+        {
+            calls.Add((baseRuleset, string.Join(",", mods)));
+            var real = new NewGameOptionsQuery(baseRuleset, []).Run();
+            return real with { Mods = mods.ToList(), AvailableRulesets = [.. real.AvailableRulesets, new SetupMod("FakeMod", false, true)] };
+        });
+    }
+
+    [Fact]
+    public void ReloadsAskForTheCurrentBaseRulesetAndMods()
+    {
+        var calls = new List<(string? Base, string Mods)>();
+        var form = FormRecordingCalls(calls);
+        Assert.Equal((null, ""), calls.Single());
+        form.SetBaseRuleset(Vanilla);
+        Assert.Equal((Vanilla, ""), calls[^1]);
+        form.SetMod("FakeMod", true);
+        Assert.Equal((Vanilla, "FakeMod"), calls[^1]);
+        form.SetBaseRuleset(Gnk);
+        Assert.Equal((Gnk, "FakeMod"), calls[^1]);
+        form.SetMod("FakeMod", false);
+        Assert.Equal((Gnk, ""), calls[^1]);
+    }
+
+    [Fact]
+    public void NationColoursAndSlotsFollowTheBaseRuleset()
+    {
+        var form = Form();
+        Assert.NotNull(form.NationColours("Austria")); // a Gods & Kings nation
+        Assert.Null(form.SetNation(1, "Austria"));
+        Assert.Null(form.SetBaseRuleset(Vanilla));
+        Assert.Null(form.NationColours("Austria"));
+        Assert.Equal("Random", form.Slots[1].Nation);
+        Assert.Null(form.SetBaseRuleset(Gnk));
+        Assert.NotNull(form.NationColours("Austria"));
+    }
+
+    [Fact]
+    public void EveryEngineErrorIsReported()
+    {
+        ScenarioGame.LoadVanilla();
+        var form = new NewGameForm((baseRuleset, mods) =>
+        {
+            var real = new NewGameOptionsQuery(baseRuleset, mods).Run();
+            return real with { Nations = [.. real.Nations, new SetupNation("Atlantis", true, false, false, true), new SetupNation("Lemuria", true, false, false, true)] };
+        });
+        Assert.Null(form.SetNation(0, "Atlantis"));
+        Assert.Null(form.SetNation(1, "Lemuria"));
+        Assert.Equal(["Unknown nation Atlantis", "Unknown nation Lemuria"], form.Build(1).Errors);
+    }
+
+    [Fact]
+    public void ALaunchedGameUsesTheFormsSeedNotTheClock()
+    {
+        var form = VanillaForm();
+        form.SetPlayerCount(3);
+        form.SetCityStates(3);
+        form.Size = "Tiny";
+        form.SeedText = "7";
+        var launched = NewGameLauncher.Launch(form, 1_000_000);
+        Assert.True(launched.Ok);
+        var direct = Unciv.Logic.NewGame.Start(form.Build(1_000_000).Setup!, 7, 1_000_000);
+        Assert.Equal(direct.Civilizations.Select(it => it.CivName), launched.Game!.Civilizations.Select(it => it.CivName));
+        Assert.Equal(direct.Civilizations.First(it => it.IsHuman()).CivName, launched.HumanCiv);
+        var otherSeed = Unciv.Logic.NewGame.Start(form.Build(1_000_000).Setup!, 1_000_000, 1_000_000);
+        Assert.NotEqual(direct.Civilizations.Select(it => it.CivName), otherSeed.Civilizations.Select(it => it.CivName));
+    }
 }
