@@ -21,6 +21,13 @@ WRITE (each touches only the named ticket's block, verified before the file is w
                             Legal transitions only. Commits ONLY backlog.md (--all: every change in the worktree, e.g. your
                             deliverables, in the same commit); --publish also rebases and
                             fast-forwards csharp-migration; --origin also pushes it to origin (use on Done).
+                            Done is refused unless the rebased tip is green (T163, PROTOCOL 'Green before Done'): the tree must
+                            be clean and contain csharp-migration, `dotnet build -warnaserror && dotnet format
+                            --verify-no-changes && dotnet test` and `coverage.py --check` must pass (re-run unless `green`
+                            already stamped this exact tree), and no TODO(T033) marker may remain outside the backlog.
+                            --no-green REASON skips the build/test/coverage run for backlog-only/docs tickets (Deliverables
+                            with no .cs/.csproj/.props/.editorconfig/.json/.py/.txt files); REASON is recorded in Notes.
+  green                     run (and stamp) the Green-before-Done checks on the current tree without changing any ticket
   reset T033 [-m REASON]    abandoned/stale claim -> Available, clears Claimed, notes the reason
   note T033 TEXT|-          append an indented bullet to Notes (- reads stdin, one bullet per call)
   set T033 FIELD VALUE|-    FIELD: Depends Source Fixtures Deliverables Gate Scope Title (not State, not Notes)
@@ -40,6 +47,8 @@ WRITE (each touches only the named ticket's block, verified before the file is w
 """
 import os
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -481,9 +490,86 @@ def cmd_claim(argv):
     print(f"{tid}: {state} {stamp}")
 
 
+CODE_SUFFIXES = (".cs", ".csproj", ".props", ".editorconfig", ".json", ".py", ".txt", ".sln", ".targets")
+BACKLOG_FILES = {"backlog.md", "backlog-archive.md", "DEPENDENCY_MAP.md"}
+CONTAINER = "dotnet-dev"
+
+
+def green_commands():
+    """Shell commands of the Green-before-Done rule, each run from csharp/ (dotnet-dev when dotnet is not on PATH)."""
+    csharp = str(HERE.parent)
+    dotnet = "dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test"
+    if shutil.which("dotnet") is None:
+        dotnet = f"distrobox enter {CONTAINER} -- bash -c {shlex.quote('cd ' + shlex.quote(csharp) + ' && ' + dotnet)}"
+    else:
+        dotnet = f"cd {shlex.quote(csharp)} && {dotnet}"
+    cov = f"cd {shlex.quote(str(HERE))} && python3 -I tools/coverage.py --check"
+    return [("build/format/test", dotnet), ("coverage --check", cov)]
+
+
+def stale_markers(tid):
+    """TODO(tid) markers still in the tracked tree (the backlog files may mention them)."""
+    pat = r"TODO\(" + re.escape(tid) + r"\b"
+    out = git("grep", "-n", "-I", "-E", pat, "--", ":/", check=False).stdout.splitlines()
+    return [l for l in out if Path(l.split(":", 1)[0]).name not in BACKLOG_FILES]
+
+
+def stamp_path():
+    return Path(git("rev-parse", "--path-format=absolute", "--git-path", "ticket-green").stdout.strip())
+
+
+def tree_id():
+    return git("rev-parse", "HEAD^{tree}").stdout.strip()
+
+
+def rebased():
+    return git("merge-base", "--is-ancestor", BRANCH, "HEAD", check=False).returncode == 0
+
+
+def run_green(force=False):
+    """Build, format, test and coverage-check the current (clean, rebased) tree, or die. A stamp for this exact tree
+    (written by a previous passing run) makes it instant."""
+    if not tree_clean():
+        die("green: the worktree has uncommitted changes; commit them first (the checks must cover what is published)")
+    if not rebased():
+        die(f"green: HEAD does not contain {BRANCH}; `git rebase {BRANCH}` and re-run the checks on the rebased tree")
+    stamp = stamp_path()
+    if not force and stamp.exists() and stamp.read_text().strip() == tree_id():
+        print("green: this tree already passed (stamp)")
+        return
+    stamp.unlink(missing_ok=True)
+    for name, cmd in green_commands():
+        print(f"green: {name} ...", flush=True)
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        if r.returncode:
+            print("\n".join((r.stdout + r.stderr).splitlines()[-40:]), file=sys.stderr)
+            die(f"green: {name} failed (exit {r.returncode}); fix it before marking Done")
+    stamp.write_text(tree_id() + "\n")
+
+
+def require_green(tid, no_green):
+    """Gate for `state T### Done` (PROTOCOL 'Green before Done')."""
+    if no_green:
+        deliverables = field(next(b for i, _, b in blocks(BACKLOG) if i == tid), "Deliverables") or ""
+        code = [d for d in re.findall(r"[\w./+-]+", deliverables) if d.lower().endswith(CODE_SUFFIXES)]
+        if code:
+            die(f"--no-green is only for backlog-only/docs tickets; {tid} lists code deliverables: {', '.join(code)}")
+    else:
+        run_green()
+    left = stale_markers(tid)
+    if left:
+        die(f"{tid} cannot be Done: markers naming it remain (retarget them to open tickets):\n" + "\n".join(left))
+
+
+def cmd_green():
+    run_green(force=True)
+    print("green: ok")
+
+
 def cmd_state(argv):
     msg = None
     do_publish = do_origin = do_all = False
+    no_green = None
     rest = []
     it = iter(argv)
     for a in it:
@@ -495,6 +581,10 @@ def cmd_state(argv):
             do_origin = True
         elif a == "--all":
             do_all = True
+        elif a == "--no-green":
+            no_green = next(it, "").strip()
+            if not no_green:
+                die("--no-green needs a REASON")
         else:
             rest.append(a)
     tid, state = rest[0], " ".join(rest[1:]).strip()
@@ -506,7 +596,13 @@ def cmd_state(argv):
     cur = current_state(tid)
     if kind(state) not in LEGAL.get(kind(cur), set()):
         die(f"illegal transition {tid}: '{cur}' -> '{state}' (use `reset` for abandoned claims)")
+    if kind(state) == "Done":
+        if do_all:
+            die("Done with --all would commit unchecked changes: commit the work, run the checks, then mark Done")
+        require_green(tid, no_green)
     mutate(tid, lambda b: set_line(b, "State", state))
+    if no_green and kind(state) == "Done":
+        mutate(tid, lambda b: add_note(b, f"Done without the build/test run (--no-green): {no_green}"))
     commit_backlog(msg or f"migration: {tid} -> {state}", everything=do_all)
     if do_publish or do_origin:
         publish(origin=do_origin)
@@ -775,6 +871,8 @@ def main():
         cmd_claim(args)
     elif cmd == "state":
         cmd_state(args)
+    elif cmd == "green":
+        cmd_green()
     elif cmd == "reset":
         cmd_reset(args)
     elif cmd == "note":
@@ -801,4 +899,5 @@ def main():
         die(__doc__)
 
 
-main()
+if __name__ == "__main__":
+    main()
