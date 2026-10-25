@@ -411,7 +411,7 @@ flowchart TD
   class C005 waiting
   class C006 waiting
   class C007 ready
-  class C008 ready
+  class C008 prog
   class C009 waiting
   class C010 waiting
   class C011 waiting
@@ -543,7 +543,6 @@ xychart-beta
 | T172 | **Ready to start** | T012 | 47 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
 | T183 | **Ready to start** | T071, T046 | 45 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
 | C007 | **Ready to start** | C001, A003, A004, A005, A006, A007 | 33 | Asset registry and procedural placeholder generator |
-| C008 | **Ready to start** | C001, A003, A004, A005, A006, A007 | 32 | Client scenario runner and owner review sheet |
 | T199 | **Ready to start** | T185, T099, T045, T170 | 9 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
 | T197 | **Ready to start** | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
 | T166 | **Ready to start** | A003 | 3 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
@@ -566,6 +565,7 @@ xychart-beta
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T187 | Available (waiting on T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T175 | Available (waiting on T172, T174, T186) | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
+| C008 | In-Progress [Claude] | C001, A003, A004, A005, A006, A007 | 32 | Client scenario runner and owner review sheet |
 | C009 | Available (waiting on C007, C008, T174) | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C010 | Available (waiting on C009, T184, T187, T188, T174, T175) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | C005 | Available (waiting on C007, C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |

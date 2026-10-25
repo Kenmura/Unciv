@@ -2535,13 +2535,13 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario asset-sheet: swatch sheet golden + registry resolves every Vanilla ruleset name. Human: colour/readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
 
 ### C008 Client scenario runner and owner review sheet
-- State: Available
+- State: In-Progress [Claude]
 - Depends: C001, A003, A004, A005, A006, A007
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): Unciv.Godot.Harness run-scenario.sh (seeded GameSession, Click/Key/Press/WaitFrames/AssertQuery/Capture, golden per step, state-hash equals headless replay) and review-sheet.sh (contact sheet + checklist). Slice detail in design/CLIENT-SLICES.md
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
-- Claimed:
+- Claimed: 2026-10-25T01:46Z
 - Notes: Design: design/CLIENT-SLICES.md. Verification: trivial scenario passes, wrong golden fails. Human: sheet readable. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
 
 ### C009 Map view v1: flat hex map from queries, camera, tile picking, fog tint
