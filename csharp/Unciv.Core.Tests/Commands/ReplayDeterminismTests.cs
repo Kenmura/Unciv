@@ -103,7 +103,7 @@ public sealed class ReplayDeterminismTests : IDisposable
     [Fact]
     public void SaveLoadContinueGivesTheSameFinalHash()
     {
-        var live = Play(9L, 5, 5);
+        var live = Play(9L, 5, 20);
         var snapshotSeq = live.Session.LastSeq;
         var saved = UncivFiles.GameInfoToString(live.Session.Game, forceZip: false);
 
@@ -120,11 +120,15 @@ public sealed class ReplayDeterminismTests : IDisposable
         Assert.Equal(live.Session.LastSeq, continued.LastSeq);
     }
 
-    // Snapshot turns stay small on purpose: a loaded mid-game state later diverges from the live one (TODO(T215), found by this test).
+    // T215: a loaded mid-game state must continue exactly like the live one (the unit list order used to differ: a load rebuilds it tile by tile).
+    // Snapshots around turn 40 still diverge later through stale civ-wide vision (MapUnit.UpdateVisibleTiles skips it inside own borders): T208.
     [Theory]
     [InlineData(1)]
     [InlineData(3)]
     [InlineData(5)]
+    [InlineData(8)]
+    [InlineData(20)]
+    [InlineData(30)]
     public void SnapshotPlusLogTailReproducesTheFinalHash(int snapshotTurn)
     {
         var live = Play(9L, 5, snapshotTurn);
@@ -138,6 +142,20 @@ public sealed class ReplayDeterminismTests : IDisposable
         Assert.Equal(live.Session.LastSeq, result.LastSeq);
         Assert.Equal(ReplayVerifier.FullHash(live.Session.Game), result.FinalHash);
         Assert.True(result.CheckpointsVerified >= 50);
+    }
+
+    [Fact]
+    public void AnAiOnlyGameLoadedMidwayContinuesLikeTheLiveOne()
+    {
+        var live = Start(9L, 5).Session.Game;
+        foreach (var g in new[] { live }) { g.SimulateUntilWin = true; }
+        for (var i = 0; i < 20; i++) { live.SimulateMaxTurns = live.Turns + 1; live.NextTurn(2000L); }
+        var loaded = UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(live, forceZip: false));
+        for (var i = 0; i < 25; i++)
+        {
+            foreach (var g in new[] { live, loaded }) { g.SimulateMaxTurns = g.Turns + 1; g.NextTurn(2000L); }
+            Assert.True(ReplayVerifier.FullHash(live) == ReplayVerifier.FullHash(loaded), $"diverged {i + 1} turns after loading");
+        }
     }
 
     [Fact]
