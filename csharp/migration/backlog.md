@@ -2277,7 +2277,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Great person unique triggers consume the unit and may start Golden Ages or create improvements: run Apply through the closure, never re-implement.
 
 ### T191 City commands: production queue, purchase, buy tile, worked tiles and specialists, focus, annex/puppet/raze, sell building, rename
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T164, T186
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.4; logic/city/CityConstructions.kt (addToQueue, removeFromQueue, moveEntryToEnd/Top, purchaseConstruction), CityExpansionManager.kt buyTile, CityPopulationManager.kt, City.kt workTile/lockedTiles; view/CityView.kt try* methods; ui/screens/cityscreen/*
 - Fixtures: none
