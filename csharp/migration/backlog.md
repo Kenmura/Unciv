@@ -2298,13 +2298,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Re-review round 2 (adversarial subagent): PASS. Verified each round-1 fix in fb3796ea3 against code: WorkTile (ProvidesYield + empty stats + blockade), PurchaseConstruction queued-marker tile, SetCityFocus, IsDefined guard, disable commands reassign, SetCivConstructionDisabled CityId, RemoveAllByName, AddToTop refusal. Gate green (build -warnaserror, format, test 0 failed, coverage --check). Found test gaps (no regressions in code): blockade check, disable-command ReassignPopulation, and the contested-tile assertion was conditional (vacuous). Added WorkTileRefusesBlockadedTiles, DisableCommandsReassignPopulation, made contested assertion unconditional; mutation-checked (removing the blockade check / reassign line fails them).
 
 ### T192 Research, policy, religion, great person, espionage and world congress commands (+ GodMode debug commands gated by GameParameters.godMode)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T164, T186
 - Source: design/COMMANDS-IMPLEMENTATION.md section 3.5; models/TechManager (techsToResearch, getFreeTechnology, updateResearchProgress), PolicyManager.adopt/removePolicy, ReligionManager (foundPantheon/foundReligion/chooseBeliefs), GreatPersonManager.getFreeGreatPersonOptions, EspionageManager spy.moveTo, Civilization.diplomaticVoteForCiv; ui/screens/pickerscreens/*; view/CivView.kt tryDisable/TrySetGoldPercentConvertedToScience
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/Empire/*.cs (SetResearchQueue, PickFreeTechnology, AdoptPolicy, FoundPantheon, ChooseBeliefs, FoundReligion, ChooseFreeGreatPerson, MoveSpy, VoteDiplomatic, SetGoldToScience, SetCivConstructionDisabled), tests
 - Gate: dotnet test --filter FullyQualifiedName~Commands.Empire
-- Claimed:
+- Claimed: 2026-10-25T03:53Z
 - Notes:
   - Verified UI behaviour to port: TechPickerScreen edits a temporary copy of techsToResearch and commits it on exit (SetResearchQueue(list): validate each tech is researchable given the previous ones in the queue, at most what the UI allows) and a free tech pick calls TechManager.getFreeTechnology after checking the tech is in researchableTechs ('fast-clicking cheat' guard #4977); both then call updateResearchProgress (keep it inside Apply). GodMode addTechnology is a debug command that must be rejected unless GameParameters.GodMode (verify other godMode UI paths in DebugTab and list them as separate Debug* commands or leave them out).
       - AdoptPolicy: PolicyManager.CanAdoptPolicy + IsAdoptable(policy); free policies vs culture cost decided by the engine. Branch completion bonuses trigger uniques: Apply only.
