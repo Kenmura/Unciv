@@ -6,6 +6,7 @@ using Unciv.Harness;
 using CityObject = Unciv.Logic.City.City;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Cities;
+using Unciv.Utils;
 
 namespace Unciv.GodotHarness;
 
@@ -49,8 +50,8 @@ public sealed class CityBScenario : Scenario
         Vector2 Centre(Button? button) => button?.GetGlobalRect().GetCenter() ?? Vector2.Zero;
         Vector2 At(string name) => Centre(screen.City.Production.ButtonNamed(name));
         List<string> Queue() => city.CityConstructions.ConstructionQueue.ToList();
-        CityPanelResult Panel() => screen.City.Panel!;
-        ConstructionListResult List() => recording.QueryAsync(new ConstructionListQuery(city.Id, OnlyDisplayed: false)).GetAwaiter().GetResult()!;
+        CityPanelResult Panel() => screen.City.Panel.NotNull();
+        ConstructionListResult List() => recording.QueryAsync(new ConstructionListQuery(city.Id, OnlyDisplayed: false)).GetAwaiter().GetResult().NotNull();
         bool Disabled(string name) => screen.City.Production.ButtonNamed(name) is { Disabled: true };
         bool Enabled(string name) => screen.City.Production.ButtonNamed(name) is { Disabled: false };
 
@@ -94,7 +95,7 @@ public sealed class CityBScenario : Scenario
             new Capture("reordered", "Monument first, Warrior second, after reordering and removing the perpetual item"),
 
             new AssertQuery("the Warrior's Buy button is disabled with the engine's reason, because a unit stands in the city center", () =>
-                Disabled("Buy_Warrior_Gold") && screen.City.Production.ButtonNamed("Buy_Warrior_Gold")!.TooltipText.Contains("cannot be bought", StringComparison.Ordinal)
+                Disabled("Buy_Warrior_Gold") && screen.City.Production.ButtonNamed("Buy_Warrior_Gold").NotNull().TooltipText.Contains("cannot be bought", StringComparison.Ordinal)
                 && !List().Entries.First(it => it.Name == "Warrior").BuyCosts.First(it => it.Stat == "Gold").Allowed),
             new Act("remember the gold and the price the engine quotes for the Monument", () =>
             {
@@ -102,7 +103,7 @@ public sealed class CityBScenario : Scenario
                 quoted = List().Entries.First(it => it.Name == "Monument").BuyCosts.First(it => it.Stat == "Gold").Cost;
             }),
             new AssertQuery("the queued Monument's Buy button is enabled and shows the quoted price", () =>
-                quoted > 0 && quoted <= goldBefore && Enabled("QBuy_0_Gold") && screen.City.Production.ButtonNamed("QBuy_0_Gold")!.Text == $"Buy {quoted} Gold"),
+                quoted > 0 && quoted <= goldBefore && Enabled("QBuy_0_Gold") && screen.City.Production.ButtonNamed("QBuy_0_Gold").NotNull().Text == $"Buy {quoted} Gold"),
             new Click(() => At("QBuy_0_Gold")),
             new AssertQuery("buying the Monument took exactly the quoted price, built it, and the Buildings column offers to sell it", () =>
                 refusals.Count == 0 && human.Gold == goldBefore - quoted && city.CityConstructions.IsBuilt("Monument") && Queue().SequenceEqual(new[] { "Warrior" })
