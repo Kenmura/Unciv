@@ -141,4 +141,46 @@ public class RefreshTransientCachesTests
         loaded.RefreshTransientCaches();
         Assert.Equal(new[] { 2, 4, 5 }, loaded.GetCivilization(civ.CivName).Units.GetCivUnits().Select(it => it.Id).ToArray());
     }
+
+    // T236 review: ties mixed with distinct ids, and three-plus ranked tiles (a tie broken by a partial rank would survive two-tile tests).
+    [Fact]
+    public void DuplicateIdsMixedWithDistinctIdsSortByIdThenTileOrder()
+    {
+        var game = new TestGame();
+        game.MakeHexagonalMap(3);
+        var civ = game.AddCiv(game.Ruleset.Nations["Babylon"]);
+        var tiles = game.GameInfo.TileMap.Values.Take(8).ToList(); // map order
+        var ids = new[] { 9, 5, 2, 5, 9, 5 }; // tile i gets ids[i] (i < 6); list order is reversed below
+        var units = new List<Unciv.Logic.Map.MapUnits.MapUnit>();
+        for (var i = ids.Length - 1; i >= 0; i--) units.Add(game.AddUnit("Warrior", civ, tiles[i]));
+        foreach (var unit in units) unit.Id = ids[tiles.IndexOf(unit.CurrentTile)];
+
+        game.GameInfo.RefreshTransientCaches();
+
+        var order = civ.Units.GetCivUnits().Select(it => (it.Id, tiles.IndexOf(it.CurrentTile))).ToArray();
+        Assert.Equal(new[] { (2, 2), (5, 1), (5, 3), (5, 5), (9, 0), (9, 4) }, order);
+        Assert.Equal(order.Select(it => it.Id), LoadedIds(game, civ));
+    }
+
+    // T236 review: a save whose counter is 0 continues after the highest kept id, and numbers units of one tile military first.
+    [Fact]
+    public void MissingIdsContinueAfterTheHighestKeptIdWhenTheSavedCounterIsZero()
+    {
+        var game = new TestGame();
+        game.MakeHexagonalMap(3);
+        var civ = game.AddCiv(game.Ruleset.Nations["Babylon"]);
+        var tile = game.GetTile(0, 0);
+        game.AddUnit("Settler", civ, tile).Id = Constants.NoId;
+        game.AddUnit("Warrior", civ, tile).Id = Constants.NoId;
+        game.AddUnit("Warrior", civ, game.GetTile(1, 0)).Id = 7;
+        game.GameInfo.CurrentPlayer = civ.CivName;
+        var json = System.Text.RegularExpressions.Regex.Replace(UncivFiles.GameInfoToString(game.GameInfo, forceZip: false), "\"lastUnitId\":\\d+", "\"lastUnitId\":0");
+
+        var loaded = UncivFiles.GameInfoFromString(json);
+
+        var units = loaded.GetCivilization(civ.CivName).Units.GetCivUnits().ToList();
+        Assert.Equal(new[] { 7, 8, 9 }, units.Select(it => it.Id).ToArray());
+        Assert.Equal(new[] { "Warrior", "Warrior", "Settler" }, units.Select(it => it.Name).ToArray()); // the tile's military unit gets 8, its civilian 9
+        Assert.Equal(10, loaded.GetNextUnitId());
+    }
 }
