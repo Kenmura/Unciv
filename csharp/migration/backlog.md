@@ -1940,13 +1940,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: From the playability gap review: T102 only proves 60 turns on Tiny/Small, 3-5 civs, no city states, no run to a real victory. Assert no exception, record turn-time and memory budgets, run to a victory or the turn limit. Real bugs found go to the engine with regression tests.
 
 ### T168 Headless runner Unciv.Cli: new game, play N turns, save and load, with build/run docs
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T099, T100, T102
 - Source:
 - Fixtures: none
 - Deliverables: csharp/Unciv.Cli project (not in the fast test path unless it stays green), README section
 - Gate: dotnet build Unciv.Cli -warnaserror
-- Claimed:
+- Claimed: 2026-10-25T00:39Z
 - Notes: Gap review: the Harness projects are image tools, not a game runner. The CLI is also the entry point for the soak ticket and for demos.
 
 ### T169 CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes
