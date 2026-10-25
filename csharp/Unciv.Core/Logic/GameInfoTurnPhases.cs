@@ -218,11 +218,7 @@ public partial class GameInfo
         foreach (var civInfo in Civilizations)
             foreach (var diplomacyManager in civInfo.Diplomacy.Values.ToList()) // T218: a refresh between steps may find a civ whose manager is still missing
                 diplomacyManager.UpdateHasOpenBorders();
-        var loadRank = new Dictionary<Unciv.Logic.Map.MapUnits.MapUnit, int>();
-        foreach (var tile in TileMap.Values)
-            foreach (var unit in tile.GetUnits())
-                loadRank[unit] = loadRank.Count;
-        foreach (var civInfo in Civilizations) civInfo.Units.SortLikeLoad(loadRank);
+        foreach (var civInfo in Civilizations) civInfo.Units.SortById(); // T231: creation order, as SetTransients does
         foreach (var civInfo in Civilizations)
             foreach (var city in civInfo.Cities)
                 foreach (var tile in city.GetWorkedTiles().ToList())

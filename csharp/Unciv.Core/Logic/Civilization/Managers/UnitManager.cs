@@ -188,13 +188,14 @@ public class UnitManager(Civilization civInfo)
     }
 
     /// <summary>
-    /// T208: puts the unit list into the order a load would rebuild it in (see <see cref="unitList"/>) and resets the "next unit" cursor,
-    /// so a running game and its reload iterate (and automate) their units identically.
+    /// T231 (deliberate deviation from Kotlin): puts the unit list into creation order (ascending <see cref="MapUnit.Id"/>, ids are monotonic
+    /// from GameInfo.lastUnitId) and resets the "next unit" cursor. Called by both the load path (GameInfo.SetTransients, where Kotlin would
+    /// keep tile-by-tile order) and GameInfo.RefreshTransientCaches (T208), so a running game and its reload iterate and automate their
+    /// units identically, and that order is the one a live Kotlin game keeps.
     /// </summary>
-    /// <param name="loadRank">each unit's position in the tile-by-tile enumeration SetTransients uses</param>
-    public void SortLikeLoad(IReadOnlyDictionary<MapUnit, int> loadRank)
+    public void SortById()
     {
-        unitList = unitList.OrderBy(it => loadRank[it]).ToList(); // OrderBy is stable
+        unitList = unitList.OrderBy(it => it.Id).ToList(); // OrderBy is stable, units sharing an id (legacy saves) keep their relative order
         nextPotentiallyDueAt = 0;
     }
 

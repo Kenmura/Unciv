@@ -38,4 +38,20 @@ public class RefreshTransientCachesTests
         Assert.Equal(reloaded, grown);
         Assert.Equal(8, grown.Count);
     }
+
+    [Fact]
+    public void UnitListsAreKeptInCreationIdOrder()
+    {
+        var game = new TestGame();
+        game.MakeHexagonalMap(3);
+        var civ = game.AddCiv();
+        var first = game.AddUnit("Warrior", civ, game.GetTile(2, 0));
+        var second = game.AddUnit("Warrior", civ, game.GetTile(0, 0)); // earlier in tile order than the first unit
+        first.Id = 5;
+        second.Id = 9;
+
+        game.GameInfo.RefreshTransientCaches();
+
+        Assert.Equal(new[] { 5, 9 }, civ.Units.GetCivUnits().Select(it => it.Id).ToArray());
+    }
 }

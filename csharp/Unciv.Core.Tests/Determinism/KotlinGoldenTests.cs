@@ -161,7 +161,7 @@ public sealed class KotlinGoldenTests : IDisposable
             1L, 1000L, name => new DiskFile(mapPath), golden.GameId);
         game.GameId = "golden-" + mapSeed; // the exporter pins the id after the start, see KotlinGoldenExporter.exportSavedMapTurns
         Assert.NotEmpty(golden.Turns);
-        var firstDivergence = FirstDivergentTurn[mapSeed];
+        var firstDivergence = FirstDivergentTurn.GetValueOrDefault(mapSeed, int.MaxValue);
         foreach (var (turn, digest) in golden.Turns)
         {
             if (turn > 0) game.NextTurn(2000L);
@@ -175,15 +175,12 @@ public sealed class KotlinGoldenTests : IDisposable
         }
     }
 
-    // T216: the first turn whose state differs from Kotlin's, per map seed (fix tracked by T231, TODO(T231): raise or remove these entries).
-    // Turns after the first divergent one are deliberately not asserted; Kotlin itself is unseeded-random late (re-exports differ from about turn 23). Kotlin itself is stable (3 exporter runs, identical digests); the
-    // difference is a deliberate C# deviation: GameInfo.RefreshTransientCaches (T208) re-sorts every civ's unit list into the order a save
-    // reload would rebuild (SortLikeLoad) so a running game and its reload play identically, while the Kotlin list keeps creation order.
-    // Barbarian "wander" moves depend on unit order (a unit moving first changes the tiles open to the next), so from the first turn where two
-    // barbarian units interact the games part. Both seeds were checked in the GOLDEN_DUMP output: the only differing lines are barbarian
-    // unit tiles (seed 11 turn 16: unit order 7,8,10,11,13,14 in Kotlin vs 14,8,11,10,13,7 in C#). Regenerating the golden keeps these turns
-    // (the saved maps and the pinned play gameId fix everything), but a new map file needs new values.
-    private static readonly Dictionary<int, int> FirstDivergentTurn = new() { [3] = 19, [11] = 16 };
+    // T231: the first turn whose state differs from Kotlin's, per map seed (absent = all 30 golden turns match). T216 found barbarian "wander"
+    // diverging at seed 3 turn 19 / seed 11 turn 16 because T208 re-sorted unit lists into tile order; unit lists are now kept in creation
+    // (MapUnit.Id) order on both load and refresh (deliberate deviation, see UnitManager.SortById), which matches a live Kotlin game.
+    // Seed 3 turn 23 still differs: Kotlin itself is not reproducible there (unseeded randomness, re-running export.sh gives different digests
+    // for seed 3 turns 23-24 and seed 11 turn 24), so later turns are deliberately not asserted.
+    private static readonly Dictionary<int, int> FirstDivergentTurn = new() { [3] = 23 };
 
     private sealed record Golden(int MapSeed, string GameId, string Map, string Start);
 

@@ -633,6 +633,8 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         SetGlobalTransients();
 
         TileMap.SetTransients(Ruleset);
+        // T231: a load rebuilds unit lists tile by tile; use creation order instead (Kotlin keeps that order in a live game), see UnitManager.SortById.
+        foreach (var civInfo in Civilizations) civInfo.Units.SortById();
 
         // Temporary - All games saved in 4.12.15 turned into 'hexagonal non world wrapped'
         // Here we attempt to fix that
