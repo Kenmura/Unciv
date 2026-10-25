@@ -1893,10 +1893,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Depends: T104
 - Source:
 - Fixtures: none
-- Deliverables:
-- Gate:
+- Deliverables: csharp/migration/tools/ticket.py, csharp/migration/tools/test_ticket.py, csharp/migration/PROTOCOL.md
+- Gate: python3 -I -m unittest discover -s tools -p 'test_*.py'
 - Claimed: 2026-10-25T05:47Z
 - Notes: Implements PROTOCOL.md 'Green before Done': ticket.py state T### Done runs (or verifies a recent stamp of) build, format, test, coverage --check on the rebased tree and refuses on failure; also checks for stale TODO(T###) markers naming the ticket.
+  - Reviewer round-1 fixes: --no-green now requires non-empty Deliverables, a diff vs csharp-migration of .md files only, and a REASON not starting with -; __pycache__ untracked+ignored. Known gaps: TODO(T164, T163) multi-id markers not matched; green_commands() itself not unit-tested.
 
 ### T164 Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command
 - State: Done

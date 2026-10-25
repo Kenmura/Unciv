@@ -134,6 +134,19 @@ class GreenGate(unittest.TestCase):
         self.assertEqual(self.state("T002", "Done", "--no-green", " "), 1)
         self.assertEqual(self.ran, [])
 
+    def test_no_green_refused_for_empty_deliverables_flag_reason_and_code_diff(self):
+        self.t.mutate("T002", lambda b: self.t.set_line(b, "Deliverables", ""))
+        git(self.root, "commit", "-qam", "empty")
+        self.assertEqual(self.state("T002", "Done", "--no-green", "docs"), 1)
+        self.t.mutate("T002", lambda b: self.t.set_line(b, "Deliverables", "X.md"))
+        git(self.root, "commit", "-qam", "md")
+        self.assertEqual(self.state("T002", "Done", "--no-green", "--publish"), 1)
+        (self.mig / "tool.py").write_text("x = 1\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "code")
+        self.assertEqual(self.state("T002", "Done", "--no-green", "docs"), 1)
+        self.assertEqual(self.ran, [])
+
     def test_done_with_all_refused_and_other_states_unchecked(self):
         self.assertEqual(self.state("T001", "Done", "--all"), 1)
         self.assertEqual(self.state("T001", "Available"), 0)

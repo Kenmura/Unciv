@@ -551,6 +551,12 @@ def require_green(tid, no_green):
     """Gate for `state T### Done` (PROTOCOL 'Green before Done')."""
     if no_green:
         deliverables = field(next(b for i, _, b in blocks(BACKLOG) if i == tid), "Deliverables") or ""
+        if not deliverables.strip():
+            die(f"--no-green needs {tid} to list its (non-code) Deliverables, e.g. PROTOCOL.md or backlog.md")
+        touched = git("diff", "--name-only", f"{BRANCH}...HEAD", check=False).stdout.split()
+        touched = [f for f in touched if not f.lower().endswith(".md")]
+        if touched:
+            die(f"--no-green is only for backlog-only/docs tickets; the branch changes: {', '.join(touched)}")
         code = [d for d in re.findall(r"[\w./+-]+", deliverables) if d.lower().endswith(CODE_SUFFIXES)]
         if code:
             die(f"--no-green is only for backlog-only/docs tickets; {tid} lists code deliverables: {', '.join(code)}")
@@ -583,8 +589,8 @@ def cmd_state(argv):
             do_all = True
         elif a == "--no-green":
             no_green = next(it, "").strip()
-            if not no_green:
-                die("--no-green needs a REASON")
+            if not no_green or no_green.startswith("-"):
+                die("--no-green needs a REASON (a sentence, not another flag)")
         else:
             rest.append(a)
     tid, state = rest[0], " ".join(rest[1:]).strip()
