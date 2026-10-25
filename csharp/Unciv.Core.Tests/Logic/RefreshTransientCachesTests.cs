@@ -1,4 +1,5 @@
 using Unciv.Core.Tests.Support;
+using Unciv.Logic.Files;
 using Unciv.Utils;
 
 namespace Unciv.Core.Tests.Logic;
@@ -39,19 +40,38 @@ public class RefreshTransientCachesTests
         Assert.Equal(8, grown.Count);
     }
 
-    [Fact]
-    public void UnitListsAreKeptInCreationIdOrder()
+    // The civ's unit list order must follow MapUnit.Id, not tile order and not insertion order (T231).
+    // The units sit on (2,0) and (0,0); the load path enumerates tiles in map order, which puts (0,0) first (the test below asserts it).
+    private static (TestGame game, Unciv.Logic.Civilization.Civilization civ) TwoUnits(int idAt20, int idAt00)
     {
         var game = new TestGame();
         game.MakeHexagonalMap(3);
-        var civ = game.AddCiv();
-        var first = game.AddUnit("Warrior", civ, game.GetTile(2, 0));
-        var second = game.AddUnit("Warrior", civ, game.GetTile(0, 0)); // earlier in tile order than the first unit
-        first.Id = 5;
-        second.Id = 9;
+        var civ = game.AddCiv(game.Ruleset.Nations["Babylon"]); // a real nation, so the saved game can be loaded again
+        game.AddUnit("Warrior", civ, game.GetTile(2, 0)).Id = idAt20;
+        game.AddUnit("Warrior", civ, game.GetTile(0, 0)).Id = idAt00;
+        return (game, civ);
+    }
+
+    [Fact]
+    public void RefreshKeepsUnitListsInCreationIdOrder()
+    {
+        var (game, civ) = TwoUnits(idAt20: 9, idAt00: 5); // insertion order [9, 5]
+        Assert.Equal(new[] { 9, 5 }, civ.Units.GetCivUnits().Select(it => it.Id).ToArray());
 
         game.GameInfo.RefreshTransientCaches();
 
         Assert.Equal(new[] { 5, 9 }, civ.Units.GetCivUnits().Select(it => it.Id).ToArray());
+    }
+
+    [Fact]
+    public void LoadBuildsUnitListsInCreationIdOrder()
+    {
+        var (game, civ) = TwoUnits(idAt20: 5, idAt00: 9); // tile order [9, 5]
+        Assert.Equal(new[] { 9, 5 }, game.GameInfo.TileMap.Values.SelectMany(it => it.GetUnits()).Select(it => it.Id).ToArray());
+        game.GameInfo.CurrentPlayer = civ.CivName; // a saved game needs a current player
+        var loaded = UncivFiles.GameInfoFromString(UncivFiles.GameInfoToString(game.GameInfo, forceZip: false));
+
+        var loadedCiv = loaded.Civilizations.Single(it => it.Units.GetCivUnits().Any());
+        Assert.Equal(new[] { 5, 9 }, loadedCiv.Units.GetCivUnits().Select(it => it.Id).ToArray());
     }
 }
