@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 198/208 | 10 | 7 | 3 | [T216](backlog/T216.md) [T217](backlog/T217.md) [T218](backlog/T218.md) [T219](backlog/T219.md) [T220](backlog/T220.md) [T221](backlog/T221.md) [T222](backlog/T222.md) [T227](backlog/T227.md) [T228](backlog/T228.md) [T229](backlog/T229.md) |
+| Phase 1: CLI (headless engine) | 198/208 | 10 | 6 | 4 | [T216](backlog/T216.md) [T217](backlog/T217.md) [T218](backlog/T218.md) [T219](backlog/T219.md) [T220](backlog/T220.md) [T221](backlog/T221.md) [T222](backlog/T222.md) [T227](backlog/T227.md) [T228](backlog/T228.md) [T229](backlog/T229.md) |
 | Phase 2: single player (Godot client) | 7/45 | 38 | 4 | 2 | [C002](backlog/C002.md) [C003](backlog/C003.md) [C004](backlog/C004.md) [C011](backlog/C011.md) [C012](backlog/C012.md) [C013](backlog/C013.md) [C014](backlog/C014.md) [C015](backlog/C015.md) [C016](backlog/C016.md) [C017](backlog/C017.md) [C018](backlog/C018.md) [C019](backlog/C019.md) [C020](backlog/C020.md) [C021](backlog/C021.md) [C022](backlog/C022.md) [C023](backlog/C023.md) [C024](backlog/C024.md) [C025](backlog/C025.md) [C026](backlog/C026.md) [C027](backlog/C027.md) [C028](backlog/C028.md) [C029](backlog/C029.md) [C030](backlog/C030.md) [C031](backlog/C031.md) [C032](backlog/C032.md) [C033](backlog/C033.md) [C037](backlog/C037.md) [C038](backlog/C038.md) [C039](backlog/C039.md) [C040](backlog/C040.md) [C041](backlog/C041.md) [C042](backlog/C042.md) [C043](backlog/C043.md) [C044](backlog/C044.md) [C046](backlog/C046.md) [C047](backlog/C047.md) [C048](backlog/C048.md) [T169](backlog/T169.md) |
 | Phase 3: multiplayer | 6/29 | 23 | 4 | 0 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T176](backlog/T176.md) [T177](backlog/T177.md) [T178](backlog/T178.md) [T179](backlog/T179.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T201](backlog/T201.md) [T202](backlog/T202.md) [T203](backlog/T203.md) [T204](backlog/T204.md) [T205](backlog/T205.md) [T206](backlog/T206.md) [T207](backlog/T207.md) [T223](backlog/T223.md) [T224](backlog/T224.md) [T225](backlog/T225.md) [T226](backlog/T226.md) [T230](backlog/T230.md) |
 
@@ -511,11 +511,11 @@ flowchart TD
   class T217 prog
   class T218 prog
   class T219 ready
-  class T220 ready
+  class T220 prog
   class T221 ready
   class T222 ready
-  class T223 waiting
-  class T224 waiting
+  class T223 ondeck
+  class T224 ondeck
   class T225 waiting
   class T226 waiting
   class T227 ready
@@ -539,8 +539,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
-    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 66]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
+    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 65]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6]
 ```
 
 ## Incomplete tickets
@@ -548,7 +548,6 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | C037 | **Ready to start** | C010, T185, T175, T174 | 29 | IGameSession: client reads and writes only through a session interface; LocalHost implements it |
-| T220 | **Ready to start** | T184, T185, T197, T192 | 25 | Engine queries the client still lacks: pending decisions with alert details, promotion choices, spy destinations, city-state quests, diplomatic vote candidates |
 | T202 | **Ready to start** | T200, T187 | 17 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
 | T176 | **Ready to start** | T172, T164, T140, T194, T215, T208 | 14 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T230 | **Ready to start** | T174, T194, T200 | 14 | Host-secret salt for state-based randomness in hosted multiplayer (combat and other rolls not predictable by clients) |
@@ -562,12 +561,13 @@ xychart-beta
 | T221 | **Ready to start** | T168, T170, T194 | 0 | CLI: replay/verify a command log, play scripted human commands, ruleset/mod and saved-map options |
 | T222 | **Ready to start** | none | 0 | Hardening sweep 3: findings from the 2026-10-25 migration review |
 | T227 | **Ready to start** | A008, T094, T166 | 0 | Use the A-track AI in AI turns: wire GrandStrategy, Tactical AI, Homeland moves and Operations into the turn loop |
+| T223 | **On deck** (after T220) | T172, T174, T185, T220 | 14 | Remote queries: Query/QueryResult wire messages, GameHost dispatch, async queries in ClientSession, per-query exposure audit, rate limits |
+| T224 | **On deck** (after T220) | T174, T175, T220 | 14 | Client mirror correctness: per-recipient snapshot-diff deltas, popup alerts and pending decisions in ClientSnapshot |
 | C003 | **On deck** (after C002) | C002 | 1 | Resource and improvement props |
 | C031 | **On deck** (after C002) | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
+| T220 | In-Progress [Claude] | T184, T185, T197, T192 | 25 | Engine queries the client still lacks: pending decisions with alert details, promotion choices, spy destinations, city-state quests, diplomatic vote candidates |
 | T226 | Available (waiting on T202) | T202 | 15 | Multiplayer game-over and forced-end rules: One More Turn authority, defeated humans, default resolution of blocking decisions on ForceEndTurn |
 | T177 | Available (waiting on T202, T226) | T172, T164, T184, T187, T200, T202, T226 | 14 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
-| T223 | Available (waiting on T220) | T172, T174, T185, T220 | 14 | Remote queries: Query/QueryResult wire messages, GameHost dispatch, async queries in ClientSession, per-query exposure audit, rate limits |
-| T224 | Available (waiting on T220) | T174, T175, T220 | 14 | Client mirror correctness: per-recipient snapshot-diff deltas, popup alerts and pending decisions in ClientSnapshot |
 | T178 | Available (waiting on T176, T177, T202, T223, T224, T230) | T172, T173, T174, T175, T176, T177, T202, T223, T224, T230 | 13 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T178) | T172, T173, T178 | 11 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
 | T204 | Available (waiting on T178) | T172, T173, T178, T199 | 9 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
