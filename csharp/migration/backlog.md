@@ -2573,13 +2573,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Stale claim reset by Claude (2026-10-25T12:50Z). Partial work from the abandoned attempt is uncommitted in .worktrees/claude-T208 (do not discard; build on or review it).
 
 ### T209 Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T186
 - Source: T186 adversarial review findings 1-3, 8, 10
 - Fixtures: none
 - Deliverables: Commands/Events/*.cs, GameEventHooks call sites, tests
 - Gate: dotnet test --filter FullyQualifiedName~GameEvents
-- Claimed:
+- Claimed: 2026-10-25T12:53Z
 - Notes:
 
 ### T210 Spy coup and counter-intelligence commands (not covered by T192)

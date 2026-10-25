@@ -397,7 +397,7 @@ flowchart TD
   class T206 waiting
   class T207 waiting
   class T208 ready
-  class T209 ready
+  class T209 prog
   class T210 prog
   class T211 prog
   class T212 prog
@@ -420,8 +420,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
-    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 50]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
+    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 49]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6]
 ```
 
 ## Incomplete tickets
@@ -437,7 +437,6 @@ xychart-beta
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T208 | **Ready to start** | T167 | 0 | Running game must equal its own save->load: make transient caches (vision, exploration, open-borders flags, ...) canonical so replay/join-in-progress cannot desync |
-| T209 | **Ready to start** | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
 | T214 | **Ready to start** | T175 | 0 | Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness |
 | T202 | **On deck** (after T200) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
 | T201 | **On deck** (after T200) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
@@ -479,6 +478,7 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
+| T209 | In-Progress [Claude] | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
 | T210 | In-Progress [Claude] | T192 | 0 | Spy coup and counter-intelligence commands (not covered by T192) |
 | T211 | In-Progress [Claude] | T161 | 0 | Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161 |
 | T212 | In-Progress [Claude] | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
