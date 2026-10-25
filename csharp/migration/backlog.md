@@ -2361,13 +2361,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Review 1 (CHANGES-REQUESTED) fixes: CanEnter no longer reveals hidden units (CanEnterAsSeen: an engine TileIsNotEmpty on a tile where the viewer sees no unit counts as enterable; reach/path sets still treat hidden-unit tiles as blocked like the engine, documented known limit); AttackPreview refuses civilian/CannotAttack attackers (cannot-attack) and city-vs-city bombard (no-target) as BattleTable hides them; airsweep preview needs no defender (Kotlin shows ???), range = GetTilesInAttackRange; tests for these, nuke on own tile. Culture-switch test dropped: test host runs in globalization-invariant mode (no de-DE); code does no culture formatting. Air Cost is the aerial distance (engine air moves spend by distance, unchanged).
 
 ### T196 Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields)
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T185, T139
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/CityView.kt, CityConstructionsView.kt, TileView.kt; ui/screens/cityscreen/*, ui/screens/worldscreen/tilemap tile info
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Queries/Cities/{CityPanelQuery,ConstructionListQuery,BuyableTilesQuery}.cs, Queries/Tiles/TileInfoQuery.cs, tests
 - Gate: dotnet test --filter FullyQualifiedName~Queries.Cities
-- Claimed:
+- Claimed: 2026-10-25T03:50Z
 - Notes:
   - Already in C#: CityView (GetGoldCostOfTile, CanBuyTile, IsWorked, GetMaxSpecialists, GetNewSpecialists, GetFinalStatList, GetHappinessList, GetFoodToNextPopulation, GetNumTurnsToNewPopulation, GetGreatPersonPointsBreakdown, GetResourceStockpiles...), CityConstructionsView (GetRejectionReasons, IsBuildable, GetStatBuyCost, TurnsToConstruction, IsConstructionPurchaseAllowed), TileView (GetTileStats, GetImprovementBuildingProblems, GetStatDiffForImprovement), Civilopedia text models (T095-T097, T108, T129) for descriptions. Missing: serialisable aggregates.
       - CityPanel(cityId): everything CityScreen shows in one record (stats breakdown, queue with turns/costs, worked/locked tiles, specialists, growth, religion pressure, buildings with sell price, garrison). ConstructionList(cityId): all constructions with state {buildable, enqueued, built, rejected + reasons}, turns, buy cost per stat, by category (what ConstructionsTable/CityScreen filters shows); reuse ShouldBeDisplayed and RejectionReasons verbatim.
