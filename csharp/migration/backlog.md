@@ -2896,7 +2896,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Implemented engine-agnostic (plain data, like A004/A005): HomelandMovePriority enum (one member per AI_HOMELAND_MOVE_PRIORITY_* define in file order, incl. the 6 variants beyond SPEC's summary list) and HomelandMoveQueue (edition-filtered, effective priority = base + rand(RANDOMNESS) via seeded GameRandom, stable sort, tie = file order; static Run(queue, handler)). Also exposes the four HOMELAND_* turn tunables. No flavor scaling (spec gives none for homeland). Real-unit handlers/wiring are A008. Ordering "higher first" and jitter form are [I] per spec.
 
 ### A007 Operations and armies layer
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: A004, A005
 - Source: `csharp/migration/ai-spec/SPEC.md` §8
 - Deliverables: `csharp/Unciv.Core/AI/Operations/` (`AIOperation`, `ArmyAI`, operation types: `CityAttack`, `BarbarianCamp`, etc.), tests
@@ -2905,6 +2905,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
 - Notes: Coordinates multi-unit strategic movements, muster staging areas, recruitment locks, and forward deployments.
   - Implemented engine-agnostic (plain data, no real game objects; engine wiring stays A008): AIOperation (state machine Recruiting -> Gathering -> Moving -> AtTarget -> Succeeded/Aborted), ArmyRole slots, OperationTunables.FromDefines (the AI_OPERATIONAL_* defines), OperationManager (id-ordered run, shared recruitment lock exposed as LockedUnits to feed TacticalUnit.InOperation), ChooseMuster (forward muster iff danger <= PERCENT_DANGER_FOR_FORWARD_MUSTER). All 19 OperationType names from SPEC section 8 exist; they share behaviour and differ only by deploy range (spec gives four ranges; others use the city-attack range [I]) and the caller-supplied slots/enemy-territory flag (recruit timeout 5 vs 10). Wounded (<80%) units leave a slot only before marching. Per-kind slot composition, target selection and danger values are unspecified in the spec ([?]) so callers supply them. Coverage baseline updated (raise/add).
   - Review 1 fixes: added OperationManager.Abort (AIOperation.Abort now internal), marching army that lost units still arrives (arrival counts held slots), recruit timeout resets when Gathering falls back to Recruiting, Muster get-only, duplicate unit ids rejected. Gathering/Moving have no timeout by design (spec gives none): the engine (A008) must call OperationManager.Abort on stalled armies. Reviewer saw a pre-existing dotnet-format whitespace failure in Determinism/SoakTests.cs (not this ticket's file).
+  - Review 2: PASS (adversarial subagent). Green on tip: build/format/test exit 0, 0 failed.
 
 ### A008 Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks
 - State: Available
