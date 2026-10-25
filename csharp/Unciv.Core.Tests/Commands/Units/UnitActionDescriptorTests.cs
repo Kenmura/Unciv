@@ -315,6 +315,34 @@ public sealed class UnitActionDescriptorTests
         AssertRejected(env, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.ConnectRoad, To = hidden.Position }, CommandErrors.InvalidTarget);
     }
 
+    [Fact]
+    public void ConnectRoadRejectsAnIslandAndImpassableTargets()
+    {
+        var env = new Env();
+        env.A.Tech.AddTechnology("The Wheel");
+        var worker = env.Unit("Worker", 0, 0);
+        var island = env.Game.GetTile(3, 3);
+        foreach (var neighbor in island.GetTilesAtDistance(1).ToList()) env.Game.SetTileTerrain(neighbor.Position, Constants.Ocean);
+        AssertRejected(env, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.ConnectRoad, To = island.Position }, CommandErrors.InvalidTarget);
+        var mountain = env.Game.GetTile(0, 3);
+        env.Game.SetTileTerrain(mountain.Position, "Mountain");
+        AssertRejected(env, new SetWorkerOrder { UnitId = worker.Id, Order = WorkerOrderKind.ConnectRoad, To = mountain.Position }, CommandErrors.InvalidTarget);
+    }
+
+    [Fact]
+    public void PromoteUnitIsRefusedAfterAttackingAndInsideAPuppetCity()
+    {
+        var env = new Env();
+        var warrior = env.Unit("Warrior", -6, 0);
+        warrior.Promotions.XP = 1000;
+        warrior.AttacksThisTurn = 1;
+        AssertRejected(env, new PromoteUnit { UnitId = warrior.Id, Promotion = "Shock I" }, CommandErrors.NotAllowed);
+        warrior.AttacksThisTurn = 0;
+        env.A.Cities[0].IsPuppet = true;
+        AssertRejected(env, new PromoteUnit { UnitId = warrior.Id, Promotion = "Shock I", SaveAsDefault = true }, CommandErrors.NotAllowed);
+        Assert.True(env.Session.Submit(env.A.CivId, new PromoteUnit { UnitId = warrior.Id, Promotion = "Shock I" }).Accepted);
+    }
+
     // --- PromoteUnit
 
     [Fact]
@@ -341,11 +369,12 @@ public sealed class UnitActionDescriptorTests
         warrior.CurrentMovement = 0f;
         AssertRejected(env, new PromoteUnit { UnitId = warrior.Id, Promotion = "Shock II" }, CommandErrors.NotAllowed);
 
-        var guest = env.Unit("Warrior", 3, 3);
         var foreignCity = env.Game.AddCity(env.B, env.Game.GetTile(3, 3));
+        var guest = env.Unit("Warrior", 0, 1);
+        guest.CurrentTile = foreignCity.GetCenterTile(); // borders are closed to peaceful entry, so move the unit by hand
         guest.Promotions.XP = 1000;
+        Assert.Same(env.B, guest.CurrentTile.GetCity()?.Civ);
         AssertRejected(env, new PromoteUnit { UnitId = guest.Id, Promotion = available, SaveAsDefault = true }, CommandErrors.NotAllowed);
-        foreignCity.IsPuppet = true;
 
         var outside = env.Unit("Warrior", 0, 0);
         outside.Promotions.XP = 1000;
