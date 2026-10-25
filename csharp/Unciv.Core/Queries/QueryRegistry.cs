@@ -17,7 +17,7 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
 
     public void Register<TQuery>(string type) where TQuery : IQuery => Register(typeof(TQuery), type);
 
-    private void Register(Type queryClass, string type)
+    public void Register(Type queryClass, string type)
     {
         if (typeByName.ContainsKey(type))
             throw new InvalidOperationException($"Query type \"{type}\" is already registered");
@@ -54,7 +54,7 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
     public bool TryFromEnvelope(QueryEnvelope envelope, out IQuery? query, out QueryResponse failure)
     {
         query = null;
-        if (!typeByName.TryGetValue(envelope.Type, out var type))
+        if (envelope.Type == null || !typeByName.TryGetValue(envelope.Type, out var type))
         {
             failure = QueryResponse.Fail(QueryCodes.UnknownQuery, $"Unknown query type \"{envelope.Type}\"");
             return false;
@@ -78,6 +78,12 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
             failure = QueryResponse.Fail(QueryCodes.MalformedQuery, $"Payload of \"{envelope.Type}\" is empty");
             return false;
         }
+        if (query.Type != envelope.Type)
+        {
+            query = null;
+            failure = QueryResponse.Fail(QueryCodes.MalformedQuery, $"Class registered as \"{envelope.Type}\" reports another type");
+            return false;
+        }
         failure = QueryResponse.Fail("", "");
         return true;
     }
@@ -86,17 +92,22 @@ public sealed class QueryRegistry(JsonSerializerOptions options)
     public QueryResponse Execute(QueryEnvelope envelope, QueryContext context)
     {
         if (!TryFromEnvelope(envelope, out var query, out var failure)) return failure;
-        if (!context.TryCreateView(envelope.ViewerId, out var view))
+        if (envelope.ViewerId == null || !context.TryCreateView(envelope.ViewerId, out var view))
             return QueryResponse.Fail(QueryCodes.UnknownViewer, $"Unknown viewer \"{envelope.ViewerId}\"");
-        object result;
         try
         {
-            result = query.NotNull().RunBoxed(view.NotNull());
+            object? result = query.NotNull().RunBoxed(view.NotNull());
+            if (result == null) return QueryResponse.Fail(QueryCodes.InternalError, $"Query \"{envelope.Type}\" returned no result");
+            return QueryResponse.Success(JsonSerializer.SerializeToElement(result, result.GetType(), options));
         }
         catch (QueryException e)
         {
             return QueryResponse.Fail(e.Code, e.Message);
         }
-        return QueryResponse.Success(JsonSerializer.SerializeToElement(result, result.GetType(), options));
+        catch (Exception e) when (e is not (OutOfMemoryException or StackOverflowException or InsufficientExecutionStackException))
+        {
+            // A bug in a query (or a payload that provokes one) must not take the host down.
+            return QueryResponse.Fail(QueryCodes.InternalError, $"Query \"{envelope.Type}\" failed: {e.GetType().Name}");
+        }
     }
 }

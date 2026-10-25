@@ -19,6 +19,7 @@ public static class QueryCodes
     public const string UnknownQuery = "unknown-query";
     public const string MalformedQuery = "malformed-query";
     public const string UnknownViewer = "unknown-viewer";
+    public const string InternalError = "internal-error";
 }
 
 // A query rejects a request it can answer only with an error (for example an id that does not exist for this viewer).

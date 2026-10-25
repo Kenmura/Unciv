@@ -48,6 +48,25 @@ public class QueryTests
         public ViewerResult Run(GameView view) => throw new QueryException("no-such-thing", "nothing here");
     }
 
+    [QueryType("test.Throws")]
+    public sealed record ThrowsQuery(int X) : IQuery<ViewerResult>
+    {
+        public string Type => "test.Throws";
+
+        public ViewerResult Run(GameView view) => X == 0 ? throw new InvalidOperationException("boom") : null!;
+    }
+
+    [QueryType("test.WrongName")]
+    public sealed record MismatchQuery : IQuery<ViewerResult>
+    {
+        public string Type => "test.Other";
+
+        public ViewerResult Run(GameView view) => new("", false, 0);
+    }
+
+    [QueryType("test.Abstract")]
+    public abstract record AbstractQuery;
+
     private readonly TestGame testGame = new();
     private readonly Civilization player;
     private readonly Civilization enemy;
@@ -63,7 +82,9 @@ public class QueryTests
     private static QueryRegistry NewRegistry()
     {
         var registry = new QueryRegistry(UncivJson.DefaultOptions);
-        registry.RegisterFromAssembly(typeof(QueryTests).Assembly);
+        foreach (var type in typeof(QueryTests).Assembly.GetTypes().Where(it => it.IsDefined(typeof(QueryTypeAttribute), false)))
+            if (type != typeof(AbstractQuery) && type != typeof(MismatchQuery))
+                registry.Register(type, type.GetCustomAttributes(typeof(QueryTypeAttribute), false).Cast<QueryTypeAttribute>().Single().Name);
         return registry;
     }
 
@@ -125,6 +146,60 @@ public class QueryTests
     }
 
     [Fact]
+    public void MissingEnvelopeFieldsAreRejectedNotThrown()
+    {
+        var context = new QueryContext(testGame.GameInfo);
+        var empty = JsonSerializer.Deserialize<QueryEnvelope>("{}", UncivJson.DefaultOptions)!;
+        Assert.Equal(QueryCodes.UnknownQuery, registry.Execute(empty, context).Code);
+        var noViewer = JsonSerializer.Deserialize<QueryEnvelope>("{\"Type\":\"test.Viewer\",\"Payload\":{}}", UncivJson.DefaultOptions)!;
+        Assert.Equal(QueryCodes.UnknownViewer, registry.Execute(noViewer, context).Code);
+        var noPayload = JsonSerializer.Deserialize<QueryEnvelope>("{\"Type\":\"test.Viewer\",\"ViewerId\":\"Germany\"}", UncivJson.DefaultOptions)!;
+        Assert.Equal(QueryCodes.MalformedQuery, registry.Execute(noPayload, context).Code);
+        var wrongCase = new QueryEnvelope("test.Viewer", player.CivName.ToUpperInvariant(), JsonSerializer.SerializeToElement(new { }));
+        Assert.Equal(QueryCodes.UnknownViewer, registry.Execute(wrongCase, context).Code);
+    }
+
+    [Fact]
+    public void HostilePayloadsDoNotEscape()
+    {
+        var context = new QueryContext(testGame.GameInfo);
+        var deep = new string('[', 5000) + new string(']', 5000);
+        foreach (var json in new[] { "{\"X\":99999999999}", "{\"X\":1,\"Extra\":[1,2]}", "{\"X\":1e999}", "{\"X\":" + deep + "}" })
+        {
+            JsonElement payload;
+            try
+            {
+                payload = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 10000 }).RootElement.Clone();
+            }
+            catch (JsonException)
+            {
+                continue;
+            }
+            var response = registry.Execute(new QueryEnvelope("test.Terrain", player.CivName, payload), context);
+            Assert.True(response.Ok || response.Code == QueryCodes.MalformedQuery || response.Code == QueryCodes.InternalError, json);
+        }
+    }
+
+    [Fact]
+    public void QueryBugsBecomeInternalErrors()
+    {
+        Assert.Equal(QueryCodes.InternalError, Run(player, new ThrowsQuery(0)).Code);
+        Assert.Equal(QueryCodes.InternalError, Run(player, new ThrowsQuery(1)).Code);
+    }
+
+    [Fact]
+    public void RegistrationGuardsCatchWrongClasses()
+    {
+        var fresh = new QueryRegistry(UncivJson.DefaultOptions);
+        Assert.Throws<InvalidOperationException>(() => fresh.RegisterFromAssembly(typeof(QueryTests).Assembly));
+
+        fresh.Register<MismatchQuery>("test.WrongName");
+        var envelope = new QueryEnvelope("test.WrongName", player.CivName, JsonSerializer.SerializeToElement(new { }));
+        Assert.Equal(QueryCodes.MalformedQuery, fresh.Execute(envelope, new QueryContext(testGame.GameInfo)).Code);
+        Assert.Throws<InvalidOperationException>(() => fresh.ToEnvelope("x", new MismatchQuery()));
+    }
+
+    [Fact]
     public void UnknownViewerIsRejected()
     {
         var envelope = registry.ToEnvelope("Atlantis", new ViewerQuery());
@@ -176,6 +251,8 @@ public class QueryTests
 
     // Sample requests for every query that Unciv.Core registers: the purity test below fails for a registered
     // query without an entry, so query tickets (T195-T199) must add theirs here.
+    // Empty by design until T195 lands. The state hash is the serialized GameInfo, which includes the RNG state, so a
+    // query that draws randomness is caught here too.
     private static readonly Dictionary<string, Func<IQuery>> CoreSamples = [];
 
     [Fact]
