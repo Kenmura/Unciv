@@ -50,7 +50,9 @@ public sealed class MapV1Scenario : Scenario
         var foggedCoord = new HexCoord(fogged.X, fogged.Y);
         var elsewhere = tiles.Where(it => it.Visible && (it.X != capital.X || it.Y != capital.Y)).Last();
         var elsewhereCoord = new HexCoord(elsewhere.X, elsewhere.Y);
+        var raised = tiles.Where(it => it.BaseTerrain == "Mountain" || it.Features.Contains("Hill")).ToList();
         var viewport = host.GetViewport();
+        bool raisedPicksOk = true;
         float zoomBefore = 0f;
         Vector3 focusBefore = default;
         HexCoord? underCursor = null;
@@ -74,6 +76,18 @@ public sealed class MapV1Scenario : Scenario
             new AssertQuery("click on a dimmed tile picks that tile", () => view.Selected == foggedCoord),
             new Click(() => view.ScreenPositionOf(elsewhereCoord)),
             new AssertQuery("click on a third tile picks that tile", () => view.Selected == elsewhereCoord),
+            new AssertQuery("the map has raised tiles to test picking on", () => raised.Count > 0),
+            new Act("click the top face of every raised tile", () =>
+            {
+                foreach (var tile in raised)
+                {
+                    var coord = new HexCoord(tile.X, tile.Y);
+                    var picked = view.PickTile(view.ScreenPositionOf(coord));
+                    if (picked != coord) GD.PrintErr($"raised tile {coord} picked {picked}");
+                    raisedPicksOk &= picked == coord;
+                }
+            }),
+            new AssertQuery("every hill and mountain is picked on its own raised top face", () => raisedPicksOk),
             new Click(new Vector2(2f, 2f)),
             new AssertQuery("click on the unexplored backdrop picks nothing and clears the highlight", () => view.Selected == null && !view.IsHighlightVisible),
 

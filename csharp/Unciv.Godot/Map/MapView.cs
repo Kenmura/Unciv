@@ -40,6 +40,7 @@ public partial class MapView : Node3D
     private const float WheelStep = 1.12f;
     private const float KeyPanPerSecond = 1.2f;
     private const float DragThresholdPixels = 4f;
+    private const int CandidateRadius = 2;
     private const float HillElevation = 3f;
     private const float MountainElevation = 6f;
 
@@ -173,14 +174,29 @@ public partial class MapView : Node3D
         Camera.Position = focus + Camera.Basis.Z * CameraDistance;
     }
 
-    /// <summary>The drawn tile under a screen position, or null if the ray misses the ground or the tile is not drawn (unexplored).</summary>
+    /// <summary>
+    /// The drawn tile under a screen position, or null if the ray misses the ground or no drawn tile is hit. Raised tiles (hills, mountains) are hit on
+    /// their own top face: every tile near the flat-plane hit is tested at its real elevation and the one the ray reaches first (highest hit) wins.
+    /// </summary>
     public HexCoord? PickTile(Vector2 screenPosition)
     {
-        // Intersect with the top plane of a flat tile, which is where the eye sees it; stretched hills are picked at their flat footprint.
-        var ground = PickGround(screenPosition, ProceduralAssets.HexHeight);
-        if (ground == null) return null;
-        var coord = MapLayout.TileAt(ground.Value);
-        return tiles.ContainsKey(coord) ? coord : null;
+        var flat = PickGround(screenPosition, ProceduralAssets.HexHeight);
+        if (flat == null) return null;
+        HexCoord? best = null;
+        var bestHeight = float.MinValue;
+        foreach (var candidate in HexMath.GetHexCoordsInDistance(MapLayout.TileAt(flat.Value), CandidateRadius, false))
+        {
+            if (!tiles.TryGetValue(candidate, out var node)) continue;
+            var top = ProceduralAssets.HexHeight * node.Elevation;
+            var hit = PickGround(screenPosition, top);
+            if (hit == null || MapLayout.TileAt(hit.Value) != candidate) continue;
+            if (top > bestHeight)
+            {
+                best = candidate;
+                bestHeight = top;
+            }
+        }
+        return best;
     }
 
     private Vector3? PickGround(Vector2 screenPosition, float planeY)
@@ -230,9 +246,16 @@ public partial class MapView : Node3D
                 OnMouseButton(button);
                 break;
             case InputEventMouseMotion motion when pressAt != null:
-                OnDrag(motion);
+                if ((motion.ButtonMask & (MouseButtonMask.Left | MouseButtonMask.Middle)) == 0) CancelPress(); // the release was lost (left the window, eaten by a Control)
+                else OnDrag(motion);
                 break;
         }
+    }
+
+    private void CancelPress()
+    {
+        pressAt = null;
+        dragging = false;
     }
 
     private void OnMouseButton(InputEventMouseButton button)
