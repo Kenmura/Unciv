@@ -2613,7 +2613,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T213 Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T193
 - Source: AlertPopup.kt (Denouncement, AcceptingDemand, RejectingDemand, DemandViolationNoticed)
 - Fixtures: none
@@ -2621,6 +2621,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: Standard
 - Claimed: 2026-10-25T12:50Z
 - Notes:
+  - Audit of AlertPopup.kt: Denounced "THIS MEANS WAR!" is already RespondToAlert (choice "war", T193); "Very well." / "You'll pay for this!" (RejectingDemand) / AcceptingDemand / the three DemandViolationNoticed alerts only close the popup, so they are already dismissed by AckAlert (ResolverOf = ack-alert, defeated civ is just a no-op show). No new command needed; added tests (AlertCommandTests: DiplomacyNoticesAreDismissedWithAck, DenouncementFromADefeatedCivCanOnlyBeAcknowledged) pinning that behaviour.
 
 ### T214 Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness
 - State: Available

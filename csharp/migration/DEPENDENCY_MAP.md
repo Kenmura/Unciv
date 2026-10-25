@@ -401,7 +401,7 @@ flowchart TD
   class T210 prog
   class T211 prog
   class T212 prog
-  class T213 prog
+  class T213 review
   class T214 ready
 ```
 
@@ -482,4 +482,4 @@ xychart-beta
 | T210 | In-Progress [Claude] | T192 | 0 | Spy coup and counter-intelligence commands (not covered by T192) |
 | T211 | In-Progress [Claude] | T161 | 0 | Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161 |
 | T212 | In-Progress [Claude] | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
-| T213 | In-Progress [Claude] | T193 | 0 | Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts |
+| T213 | Needs-Review [Claude] | T193 | 0 | Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts |

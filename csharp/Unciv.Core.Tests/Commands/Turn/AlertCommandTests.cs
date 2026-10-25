@@ -288,6 +288,36 @@ public sealed class AlertCommandTests
         w.Ok(new AckAlert { Index = 0, AlertType = AlertType.Denounced, Value = w.C.CivId }); // "Very well."
     }
 
+    // AlertPopup.addDenouncement / addAcceptingDemand / addRejectingDemand / addDemandViolationNoticed: the only buttons ("Very well.",
+    // "You'll pay for this!") just close the popup, so these are dismissed with ack-alert; only denouncement's "THIS MEANS WAR!" has an effect.
+    [Theory]
+    [InlineData(AlertType.Denounced)]
+    [InlineData(AlertType.AcceptingDemand)]
+    [InlineData(AlertType.RejectingDemand)]
+    [InlineData(AlertType.CitySettledNearOtherCivDespiteOurPromise)]
+    [InlineData(AlertType.ReligionSpreadDespiteOurPromise)]
+    [InlineData(AlertType.AttackedUsDespitePromise)]
+    public void DiplomacyNoticesAreDismissedWithAck(AlertType type)
+    {
+        Assert.Equal("ack-alert", PendingDecisions.ResolverOf(type));
+        w.A.PopupAlerts.Add(new PopupAlert(type, w.C.CivId));
+        w.Rejected(Respond(type, w.C.CivId, "ok"), type == AlertType.Denounced ? CommandErrors.InvalidTarget : CommandErrors.NotAllowed);
+        w.Rejected(new AckAlert { Index = 0, AlertType = type, Value = "someone else" }, CommandErrors.StaleReference);
+        w.Ok(new AckAlert { Index = 0, AlertType = type, Value = w.C.CivId });
+        Assert.Empty(w.A.PopupAlerts);
+    }
+
+    [Fact]
+    public void DenouncementFromADefeatedCivCanOnlyBeAcknowledged()
+    {
+        w.A.PopupAlerts.Add(new PopupAlert(AlertType.Denounced, w.C.CivId));
+        w.C.Cities = [];
+        w.C.HasEverOwnedOriginalCapital = true;
+        Assert.True(w.C.IsDefeated());
+        w.Rejected(Respond(AlertType.Denounced, w.C.CivId, "war"), CommandErrors.NotAllowed);
+        w.Ok(new AckAlert { Index = 0, AlertType = AlertType.Denounced, Value = w.C.CivId });
+    }
+
     [Fact]
     public void EventChoiceIsPickedByIndex()
     {
