@@ -2711,7 +2711,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Review notes (isolated adversarial subagent): APPROVE, no blocking findings; build/format/test (0 failed), Godot build, run-scenario, wrong-golden self-test, review-sheet all re-run green. Non-blocking, left for later client slices: scenario may pass vacuously with an empty command log (add expected-command-count); --expect-golden-failure accepts any non-zero exit; review-sheet.sh should delete stale result.json before each run; ContactSheet assumes 640x480 captures; replay shares the Godot process (not process-isolated).
 
 ### C009 Map view v1: flat hex map from queries, camera, tile picking, fog tint
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: C007, C008, T164, T099, T174, T185
 - Source:
 - Fixtures: none

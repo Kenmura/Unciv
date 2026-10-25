@@ -125,13 +125,6 @@ flowchart TD
     C035["C035<br/>Lobby screen: slots, nation pick, ready-up, chat, kick, star..."]
     C036["C036<br/>Multiplayer turn bar: who has ended, deadline, End turn / Un..."]
   end
-  subgraph ATRACK["Game AI track"]
-    A003["A003<br/>Victory scorers (BNW)"]
-    A004["A004<br/>Target-centric Tactical AI: TacticalMoveQueue & recruitment"]
-    A005["A005<br/>Tactical overkill assignment & coordinated multi-unit attack..."]
-    A006["A006<br/>Homeland AI priority move queue"]
-    A007["A007<br/>Operations and armies layer"]
-  end
   T172 --> T176
   T164 --> T176
   T140 --> T176
@@ -190,13 +183,6 @@ flowchart TD
   T176 --> T205
   T179 --> T206
   T179 --> T207
-  C001 --> C002
-  A003 --> C002
-  A004 --> C002
-  A005 --> C002
-  A006 --> C002
-  A007 --> C002
-  C009 --> C002
   C002 --> C003
   C002 --> C004
   C010 --> C004
@@ -344,19 +330,14 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class A003 done
-  class A004 done
-  class A005 done
-  class A006 done
-  class A007 done
   class C001 done
-  class C002 ondeck
+  class C002 ready
   class C003 waiting
   class C004 waiting
   class C005 waiting
   class C006 waiting
   class C007 done
-  class C009 review
+  class C009 done
   class C010 ondeck
   class C011 waiting
   class C012 waiting
@@ -474,7 +455,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00", "25 06:00"]
     y-axis "Tickets" 0 --> 83
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 63, 57]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -482,6 +463,7 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T200 | **Ready to start** | T184 | 16 | Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep |
+| C002 | **Ready to start** | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | C030 | **Ready to start** | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T163 | **Ready to start** | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
@@ -493,11 +475,9 @@ xychart-beta
 | T212 | **Ready to start** | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
 | T213 | **Ready to start** | T193 | 0 | Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts |
 | T214 | **Ready to start** | T175 | 0 | Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness |
-| C010 | **On deck** (after C009, T187) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
+| C010 | **On deck** (after T187) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | T194 | **On deck** (after T187) | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
-| C002 | **On deck** (after C009) | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | T187 | Needs-Review [Claude] | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
-| C009 | Needs-Review [Claude] | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | C005 | Available (waiting on C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T202 | Available (waiting on T200, T187) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
 | T176 | Available (waiting on T194) | T172, T164, T140, T194 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
