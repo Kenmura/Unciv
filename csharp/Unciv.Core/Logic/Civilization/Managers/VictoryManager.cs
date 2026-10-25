@@ -72,7 +72,7 @@ public class VictoryManager : IsPartOfGameInfoSerialization
         return (null, null);
     }
 
-    private int VotesNeededForDiplomaticVictory()
+    internal int VotesNeededForDiplomaticVictory()
     {
         // The original counts "teams ever alive", which excludes Observer and Barbarians.
         // The "ever alive" part sounds unfair - could make a Vote unwinnable?

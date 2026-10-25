@@ -1930,7 +1930,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Superseded by the server design (design/SERVER.md) and split into T172 (protocol/transport interface), T173 (identity), T174 (visibility filter), T175 (event stream), T176 (persistence/resync), T177 (turn policy), T178 (host+lobby), T179 (real transport, owner decision), T180 (client library), T181 (private channels), T182 (e2e). Original notes preserved above: designs on the command log; must not depend on the Won't-port Kotlin multiplayer stack.
 
 ### T166 Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: A003
 - Source: csharp/migration/ai-spec/SPEC.md §4
 - Fixtures: none
@@ -1938,6 +1938,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~VictoryScorerInputsTests
 - Claimed: 2026-10-25T03:03Z
 - Notes:
+  - Adapter: static VictoryScorerInputsFactory.Conquest/Culture/Diplomatic/Spaceship(Civilization, ...). VictoryEnabled = VictoryManager.GetAvailableVictories() contains Domination/Cultural/Diplomatic/Scientific. "Met" = GetKnownCivs() alive majors. Reference strength [I] = strongest met major's Force ranking stat; Cramped = a met major has a city on a continent where this civ has a city. Culture uses Civilization.TotalCultureForContests (Unciv has no lifetime culture/tourism/Influence: tourism and influential count are 0). Diplomatic votes from GetDiplomaticVictoryVoteBreakdown().Results; VotesNeeded via VictoryManager.VotesNeededForDiplomaticVictory (private -> internal, no behaviour change); UnknownRivals = alive majors not met. Unrecovered operands (conquest base term, tail predicate (false), X, c1..c3, spaceship progress) are caller parameters defaulting to 0. Flavors are caller-supplied (no flavor->Civilization link exists yet). 10 tests.
 
 ### T167 L1 acceptance soak: 300+ turn headless games on Small and Standard maps with 6+ civs, city states, barbarians, religion, trade, espionage
 - State: Done

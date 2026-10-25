@@ -28,6 +28,7 @@
     "Unciv.Core/AI/GrandStrategy/Scorers/DiplomaticScorer.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/GrandStrategy/Scorers/SpaceshipScorer.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/GrandStrategy/Scorers/VictoryScorerInputs.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/AI/GrandStrategy/Scorers/VictoryScorerInputsFactory.cs": {"branch": 93.75, "line": 100.0},
     "Unciv.Core/AI/Homeland/HomelandMovePriority.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Homeland/HomelandMoveQueue.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Operations/AIOperation.cs": {"branch": 95.35, "line": 100.0},
