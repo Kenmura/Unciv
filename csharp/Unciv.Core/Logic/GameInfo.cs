@@ -281,7 +281,11 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         toReturn.CurrentTurnStartTime = CurrentTurnStartTime;
         toReturn.Turns = Turns;
         toReturn.Difficulty = Difficulty;
-        toReturn.GameParameters = GameParameters;
+        toReturn.GameParameters = GameParameters.Clone(); // T219: Kotlin shares the object
+        // GameParameters.Clone resets godMode on purpose and makes the stats flags explicit; the game's own copy must stay exactly like its source (saved text, hash).
+        toReturn.GameParameters.GodMode = GameParameters.GodMode;
+        toReturn.GameParameters.ShowVictoryStats = GameParameters.ShowVictoryStats;
+        toReturn.GameParameters.ShowCivilizationStatsRaw = GameParameters.ShowCivilizationStatsRaw;
         toReturn.GameId = GameId;
         foreach (var vote in DiplomaticVictoryVotesCast) toReturn.DiplomaticVictoryVotesCast[vote.Key] = vote.Value;
         toReturn.OneMoreTurnMode = OneMoreTurnMode;

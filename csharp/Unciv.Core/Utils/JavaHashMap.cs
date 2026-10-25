@@ -132,6 +132,30 @@ public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
         foreach (var entry in entries) PutVal(Hash(entry.Key), entry.Key, entry.Value);
     }
 
+    /// <summary>
+    /// T219: an independent copy that iterates exactly like this map (same table size, same bin order), unlike <see cref="PutAll"/> into a new map,
+    /// whose table sizing can differ. <paramref name="copyValue"/> deep-copies mutable values; without it the values are shared.
+    /// </summary>
+    public JavaHashMap<TKey, TValue> Clone(Func<TValue, TValue>? copyValue = null)
+    {
+        var toReturn = new JavaHashMap<TKey, TValue>(hashCode) { Count = Count, threshold = threshold };
+        if (table == null) return toReturn;
+        var copy = new Node?[table.Length];
+        for (var i = 0; i < table.Length; i++)
+        {
+            Node? tail = null;
+            for (var node = table[i]; node != null; node = node.Next)
+            {
+                var added = new Node(node.Hash, node.Key, copyValue == null ? node.Value : copyValue(node.Value));
+                if (tail == null) copy[i] = added;
+                else tail.Next = added;
+                tail = added;
+            }
+        }
+        toReturn.table = copy;
+        return toReturn;
+    }
+
     public IEnumerable<TKey> Keys => this.Select(entry => entry.Key);
 
     public IEnumerable<TValue> Values => this.Select(entry => entry.Value);
@@ -361,6 +385,11 @@ public sealed class JavaHashSet<T> : IEnumerable<T> where T : notnull
     public bool Remove(T item) => map.Remove(item);
 
     public void Clear() => map.Clear();
+
+    /// <summary>T219: an independent copy that iterates exactly like this set, see <see cref="JavaHashMap{TKey,TValue}.Clone"/>.</summary>
+    public JavaHashSet<T> Clone() => new(map.Clone());
+
+    private JavaHashSet(JavaHashMap<T, bool> map) => this.map = map;
 
     /// <summary>T208: rebuild like a load does, see <see cref="JavaHashMap{TKey,TValue}.Canonicalize"/>.</summary>
     public void Canonicalize() => map.Canonicalize();

@@ -190,7 +190,7 @@ public class GameParameters : IIsPartOfGameInfoSerialization
             RandomNumberOfPlayers = RandomNumberOfPlayers,
             MinNumberOfPlayers = MinNumberOfPlayers,
             MaxNumberOfPlayers = MaxNumberOfPlayers,
-            Players = new List<Player>(Players),
+            Players = Players.Select(it => it.Clone()).ToList(), // T219: Kotlin shares the Player objects
             RandomNumberOfCityStates = RandomNumberOfCityStates,
             MinNumberOfCityStates = MinNumberOfCityStates,
             MaxNumberOfCityStates = MaxNumberOfCityStates,

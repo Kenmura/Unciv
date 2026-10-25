@@ -180,7 +180,8 @@ public class MetadataTests
         Assert.Equal(false, clone.ShowCivilizationStatsRaw);
         Assert.Equal(original.Players.Count, clone.Players.Count);
         Assert.NotSame(original.Players, clone.Players);
-        Assert.Same(original.Players[4], clone.Players[4]); // shallow: the Player instances are shared
+        Assert.NotSame(original.Players[4], clone.Players[4]); // T219: the Player instances are copied too
+        Assert.Equal(original.Players[4].ChosenCiv, clone.Players[4].ChosenCiv);
         Assert.NotSame(original.Mods, clone.Mods);
         Assert.Equal(["ModB", "ModA"], clone.Mods);
         // a never-set showCivilizationStats becomes explicit in the clone (the Kotlin setter runs with the resolved value)

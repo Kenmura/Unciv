@@ -73,7 +73,7 @@ public sealed class EngineOptions : IStateHashable
         SimulateUntilTurn = SimulateUntilTurn,
         CivIdsInExperimentGroup = new LinkedHashSet<string>(CivIdsInExperimentGroup),
         ShowSettlerScores = ShowSettlerScores,
-        SettlerScores = SettlerScores,
+        SettlerScores = new Dictionary<HexCoord, float>(SettlerScores),
         UnitPathing = UnitPathing,
         AttackPathing = AttackPathing,
         RoadPathing = RoadPathing,

@@ -219,7 +219,7 @@ public class TileMap : IsPartOfGameInfoSerialization
     {
         var toReturn = new TileMap(TileList.Count);
         toReturn.TileList.AddRange(TileList.Select(it => it.Clone()));
-        toReturn.MapParameters = MapParameters;
+        toReturn.MapParameters = MapParameters.Clone(); // T219: Kotlin shares the object
         toReturn.Ruleset = Ruleset;
 
         // Note during normal play this is empty. Supported for MapEditorScreen.getMapCloneForSave.

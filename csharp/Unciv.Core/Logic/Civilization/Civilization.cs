@@ -473,9 +473,9 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
         toReturn.ExploredRegion = ExploredRegion.Clone();
         foreach (var (position, improvement) in LastSeenImprovement) toReturn.LastSeenImprovement[position] = improvement;
         toReturn.LeaderTitle = LeaderTitle;
-        toReturn.Notifications.AddRange(Notifications);
+        toReturn.Notifications.AddRange(Notifications.Select(it => it.Clone()));
         foreach (var log in NotificationsLogs)
-            toReturn.NotificationsLogs.Add(new NotificationsLog(log.Turn) { Notifications = [.. log.Notifications] });
+            toReturn.NotificationsLogs.Add(new NotificationsLog(log.Turn) { Notifications = [.. log.Notifications.Select(it => it.Clone())] });
         toReturn.NotificationCountAtStartTurn = NotificationCountAtStartTurn;
         toReturn.CitiesCreated = CitiesCreated;
         toReturn.PopupAlerts.AddRange(PopupAlerts.Select(it => new PopupAlert(it.Type, it.Value)));

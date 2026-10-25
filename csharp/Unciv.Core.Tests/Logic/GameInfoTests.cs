@@ -313,7 +313,7 @@ public sealed class GameInfoTests : IDisposable
     }
 
     [Fact]
-    public void Clone_CopiesSerializedFieldsAndSharesGameParameters()
+    public void Clone_CopiesSerializedFieldsAndGameParameters()
     {
         var game = StartedGame();
         game.Turns = 7;
@@ -332,7 +332,7 @@ public sealed class GameInfoTests : IDisposable
         Assert.Equal(["Bob"], clone.UnitNamesTaken);
         Assert.Equal(3, clone.HistoryStartTurn);
         Assert.Equal("test-game", clone.GameId);
-        Assert.Same(game.GameParameters, clone.GameParameters);
+        Assert.NotSame(game.GameParameters, clone.GameParameters); // T219: copied, not shared
         Assert.Equal(4, clone.Civilizations.Count);
         Assert.NotSame(game.Civilizations[0], clone.Civilizations[0]);
         Assert.Equal("Greece", clone.VictoryData!.WinningCiv);

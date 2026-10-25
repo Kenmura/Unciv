@@ -19,7 +19,7 @@ namespace Unciv.Logic.Civilization;
 [JsonConverter(typeof(CivRankingHistoryConverter))]
 public class CivRankingHistory : IEnumerable<KeyValuePair<int, IReadOnlyDictionary<RankingType, int>>>, IsPartOfGameInfoSerialization
 {
-    private readonly JavaHashMap<int, IReadOnlyDictionary<RankingType, int>> map = new();
+    private readonly JavaHashMap<int, IReadOnlyDictionary<RankingType, int>> map;
 
     public int Count => map.Count;
 
@@ -44,15 +44,13 @@ public class CivRankingHistory : IEnumerable<KeyValuePair<int, IReadOnlyDictiona
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <summary>
-    /// Returns a shallow copy of this <see cref="CivRankingHistory"/> instance.
-    /// The inner maps are not cloned, only their references are copied.
+    /// Returns a deep copy of this <see cref="CivRankingHistory"/> instance (T219: Kotlin copies only the references of the inner maps).
     /// </summary>
-    public CivRankingHistory Clone()
-    {
-        var toReturn = new CivRankingHistory();
-        toReturn.map.PutAll(map);
-        return toReturn;
-    }
+    public CivRankingHistory Clone() => new(map.Clone(it => new Dictionary<RankingType, int>(it)));
+
+    private CivRankingHistory(JavaHashMap<int, IReadOnlyDictionary<RankingType, int>> map) => this.map = map;
+
+    public CivRankingHistory() => map = new();
 
     public override bool Equals(object? obj) =>
         obj is CivRankingHistory other && Count == other.Count

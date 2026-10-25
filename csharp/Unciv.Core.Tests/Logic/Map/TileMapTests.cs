@@ -405,7 +405,7 @@ public class TileMapTests
         var clone = map.Clone();
         Assert.Equal(7, clone.TileList.Count);
         Assert.NotSame(map.TileList[0], clone.TileList[0]);
-        Assert.Same(map.MapParameters, clone.MapParameters);
+        Assert.NotSame(map.MapParameters, clone.MapParameters); // T219: copied, not shared
         Assert.Same(map.Ruleset, clone.Ruleset);
         Assert.Same(map.TileUniqueMapCache, clone.TileUniqueMapCache);
         Assert.Equal("d", clone.Description);

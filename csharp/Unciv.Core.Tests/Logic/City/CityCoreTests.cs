@@ -602,7 +602,7 @@ public class CityCoreTests
     // ---- Clone
 
     [Fact]
-    public void Clone_CopiesTheFields_AndSharesTheTileSetsAndPromotionMaps()
+    public void Clone_CopiesTheFields_AndTheTileSetsAndPromotionMaps()
     {
         var w = NewWorld();
         var city = w.City;
@@ -644,11 +644,14 @@ public class CityCoreTests
         Assert.NotSame(city.ResourceStockpiles, clone.ResourceStockpiles);
         Assert.Equal(["Library"], clone.DisabledConstructions);
         Assert.NotSame(city.DisabledConstructions, clone.DisabledConstructions);
-        Assert.Same(city.Tiles, clone.Tiles);
-        Assert.Same(city.WorkedTiles, clone.WorkedTiles);
-        Assert.Same(city.LockedTiles, clone.LockedTiles);
-        Assert.Same(city.UnitToPromotions, clone.UnitToPromotions);
-        Assert.Same(city.UnitShouldUseSavedPromotion, clone.UnitShouldUseSavedPromotion);
+        Assert.NotSame(city.Tiles, clone.Tiles); // T219: copies, not Kotlin's shared references
+        Assert.NotSame(city.WorkedTiles, clone.WorkedTiles);
+        Assert.NotSame(city.LockedTiles, clone.LockedTiles);
+        Assert.NotSame(city.UnitToPromotions, clone.UnitToPromotions);
+        Assert.NotSame(city.UnitShouldUseSavedPromotion, clone.UnitShouldUseSavedPromotion);
+        Assert.Equal(city.Tiles, clone.Tiles);
+        Assert.Equal(city.WorkedTiles, clone.WorkedTiles);
+        Assert.Equal(city.LockedTiles, clone.LockedTiles);
         Assert.Same(w.Civ, WithTransients(clone, w).FoundingCivObject); // the foundingCiv string is copied
     }
 

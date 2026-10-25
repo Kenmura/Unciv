@@ -54,11 +54,12 @@ public class ExploredRegion : IsPartOfGameInfoSerialization
 
     public ExploredRegion Clone()
     {
-        // Kotlin copies the references: both regions share the same vectors (and checkTilePosition mutates them in place).
+        // T219: Kotlin copies the references, so both regions share the same vectors (and checkTilePosition mutates them in place);
+        // the clone gets its own.
         var toReturn = new ExploredRegion
         {
-            topLeft = topLeft,
-            bottomRight = bottomRight,
+            topLeft = topLeft.Cpy(),
+            bottomRight = bottomRight.Cpy(),
         };
         return toReturn;
     }

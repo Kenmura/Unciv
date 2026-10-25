@@ -216,7 +216,7 @@ public sealed class SoakTests : IDisposable
         var text = UncivFiles.GameInfoToString(original, forceZip: false);
         var loaded = UncivFiles.GameInfoFromString(text);
         var loaded2 = UncivFiles.GameInfoFromString(text);
-        // T219: a Clone plays on exactly like the original too (it shares no mutable state with it).
+        // T219: a Clone plays on exactly like the original too (GameInfoCloneIsolationTests walks both object graphs to prove they share no mutable object).
         var clone = original.Clone();
         clone.SetTransients();
         Assert.Equal(Digest(original), Digest(clone));

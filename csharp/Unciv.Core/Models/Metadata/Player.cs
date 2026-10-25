@@ -39,6 +39,9 @@ public class Player : IIsPartOfGameInfoSerialization
         ChosenNation = chosenNation;
     }
 
+    /// <summary>T219: an independent copy (GameParameters.Clone used to share the Player objects with its source).</summary>
+    public Player Clone() => new(ChosenCiv, PlayerType, PlayerId) { chosenNation = chosenNation };
+
     public void SetNationTransient(RulesetObject ruleset) => ChosenNation = ruleset.Nations[ChosenCiv];
 
     public Player(string chosenCiv = Constants.Random, PlayerType playerType = PlayerType.AI, string playerId = "")

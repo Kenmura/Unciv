@@ -41,6 +41,9 @@ public class Notification : IsPartOfGameInfoSerialization
         if (actions != null) Actions.AddRange(actions);
     }
 
+    /// <summary>T219: an independent copy (own icon and action lists; the actions themselves never change after creation).</summary>
+    public Notification Clone() => new(Text, [.. Icons], Actions, Category);
+
     public enum NotificationCategory
     {
         // These names are displayed, so remember to add a translation template

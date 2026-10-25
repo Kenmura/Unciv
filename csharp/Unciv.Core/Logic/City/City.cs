@@ -263,9 +263,11 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
             Religion = Religion.Clone(),
         };
         foreach (var construction in DisabledConstructions) toReturn.DisabledConstructions.Add(construction);
-        toReturn.Tiles = Tiles;
-        toReturn.WorkedTiles = WorkedTiles;
-        toReturn.LockedTiles = LockedTiles;
+        // T219: Kotlin shares these with the clone; the clone gets its own copies (iterating exactly alike), keeping the source's aliasing
+        // (ReassignPopulation makes WorkedTiles the very set LockedTiles is).
+        toReturn.Tiles = Tiles.Clone();
+        toReturn.LockedTiles = LockedTiles.Clone();
+        toReturn.WorkedTiles = ReferenceEquals(WorkedTiles, LockedTiles) ? toReturn.LockedTiles : WorkedTiles.Clone();
         toReturn.ResourceStockpiles = ResourceStockpiles.Clone();
         toReturn.IsBeingRazed = IsBeingRazed;
         toReturn.AttackedThisTurn = AttackedThisTurn;
@@ -282,8 +284,8 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
         toReturn.AvoidGrowth = AvoidGrowth;
         toReturn.ManualSpecialists = ManualSpecialists;
         toReturn.ConnectedToCapitalStatus = ConnectedToCapitalStatus;
-        toReturn.UnitShouldUseSavedPromotion = UnitShouldUseSavedPromotion;
-        toReturn.UnitToPromotions = UnitToPromotions;
+        toReturn.UnitShouldUseSavedPromotion = UnitShouldUseSavedPromotion.Clone();
+        toReturn.UnitToPromotions = UnitToPromotions.Clone(it => it.Clone());
         return toReturn;
     }
 

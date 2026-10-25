@@ -60,9 +60,9 @@ public class SerializationLeafTests
         var copy = Roundtrip(data);
         Assert.Equal(data, copy);
         Assert.Equal("""{"0":"F0T7","20":"A42T666"}""", UncivJson.Serialize(data));
-        var shallow = data.Clone();
-        Assert.Equal(data, shallow);
-        Assert.Same(data[0], shallow[0]);
+        var deep = data.Clone(); // T219: the inner maps are copied too
+        Assert.Equal(data, deep);
+        Assert.NotSame(data[0], deep[0]);
     }
 
     [Fact]
