@@ -2031,7 +2031,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - OWNER DECISION: no auth service. The earlier note 'no passwords' is superseded: admission = optional lobby password or single-use invite token (sent only inside the pinned TLS channel, stored as a salted hash), slot ownership = the client keypair signature on reconnect. Password and key have different jobs (SERVER.md 6.2).
 
 ### T174 Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T172, T084, T085, T138, T140
 - Source: csharp/migration/design/SERVER.md sections 2.1-2.3, 3
 - Fixtures: none
@@ -2040,6 +2040,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-25T04:31Z
 - Notes: Walk GameView/ForeignCivView/ForeignCityView/ForeignMapUnitView; never reimplement isInvisible/IsVisible. First step: audit that the Views expose every field needed and file gaps as tickets. Include a reflection test that the DTOs contain only whitelisted members and a test that serialized snapshot text contains no seed/gameId-seed. viewHash = StateHasher (T011) over canonical snapshot JSON; the full-game hash stays server-side (T011 hashes the whole serialized GameInfo).
   - Simultaneous turns: ClientSnapshot carries turnStatus {ended civs, deadline, phase}; deltas are pushed at any time (other humans' visible actions), mirror must accept them between own commands. Add a two-human fixture (see T203): B's snapshot never holds what only A sees. design/SIMULTANEOUS-TURNS.md section 7.
+  -   - Implemented (Claude): Unciv.Core/Net/Visibility/{ClientSnapshot.cs (whitelist DTOs), SnapshotBuilder.cs (Build, ToCanonicalJson, ComputeViewHash, ToMessage)}; tests Unciv.Core.Tests/Net/Visibility/NetVisibilityTests.cs (13: hidden-state fixture with unexplored city/unit, invisible unit, foreign gold/queue/seed/gameId markers, two-human fixture, trade/diplomacy/notification filtering, reflection whitelist pinning every DTO member, viewHash determinism, Snapshot message roundtrip).
+      - viewHash = StateHasher (FNV-1a) over canonical camelCase JSON of the snapshot with ViewHash unset (declaration order, nulls omitted). Client recomputes with SnapshotBuilder.ComputeViewHash.
+      - View audit gaps (filed as the follow-up ticket below, bridged meanwhile): (1) DiplomacyManagerView exposes only CanDeclareWar, so DiplomacyDto carries AtWar only (no peace/DoF/treaty status); (2) no view exposes TradeRequests, bridged with ForeignCivView.GetCiv() (TEMP escape hatch) restricted to requests the viewer sent or received; (3) ForeignCityView lacks visible buildings and CivView lacks adopted policies; (4) ForeignCivView.Cities() lists a city with an explored center even under fog with LIVE population/health (View rule, mirrored as is); (5) Snapshot has no spies/espionage and no per-civ religion DTOs yet.
+      - Notification actions: only location/city/unit (dropped unless the tile is currently visible) and tech survive; every other kind is dropped (default deny).
+      - Simultaneous turns: TurnStatusDto {ended, deadline, phase} is a Build parameter supplied by the host turn controller (T184/T203); delta pushes are a separate ticket.
 
 ### T175 Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery
 - State: Available
@@ -2561,6 +2566,16 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: python3 -I tools/coverage.py --check
 - Claimed:
 - Notes: Follow-up named in T161 Notes.
+
+### T212 Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174)
+- State: Available
+- Depends: T174
+- Source: csharp/migration/design/SERVER.md section 3; T174 notes
+- Fixtures: none
+- Deliverables: csharp/Unciv.Core/View/{DiplomacyManagerView,ForeignCityView,CivView}.cs; extend Net/Visibility DTOs (DiplomacyDto status, CityDto buildings, OwnCivDto policies), remove GetCiv() use in SnapshotBuilder trades
+- Gate: dotnet test --filter FullyQualifiedName~NetVisibility
+- Claimed:
+- Notes:
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 
