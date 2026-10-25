@@ -2223,13 +2223,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review round 1 (adversarial subagent): fixed UnitAttacked defender identity (snapshot before blows), TileOwnerChanged on city transfer (sorted per tile), UnitCreated moved into TileMap.PlaceUnitNearTile (barbarian/unique spawns), air/paradrop no-alloc overload, TurnEnded skips spectators. Deferred to T209 (finding ids 1-3, 8, 10): secondary moves, unit capture event, city destroyed/traded event, priority truncation. Documented: SetTransients runs without a sink, Apply must be serialized per game.
 
 ### T187 Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T164, T186, T184, T183
 - Source: design/COMMANDS-IMPLEMENTATION.md sections 3.1 and 5; ui/screens/worldscreen/AlertPopup.kt; status/NextTurnAction.kt; view/CivView.kt (tryDismiss*, tryMarkMovedAutomatedUnits, tryAutomateAllUnits)
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/Turn/*.cs (EndTurn, RunAiTurn, BeginTurn, ForceEndTurn, MoveAutomatedUnits, SetPlayerSettings, AckAlert, RespondToAlert, DismissPolicyPicker, DismissMoveSpies, Resign), tests
 - Gate: dotnet test --filter FullyQualifiedName~Commands.Turn
-- Claimed:
+- Claimed: 2026-10-25T05:13Z
 - Notes:
   - Commands (see design section 3.1 for payloads and validation): EndTurn (actor = current human; Validate rejects with code pending-decisions while PendingDecisions has a blocking item; Apply = GameInfo.EndPlayerTurn(now)), RunAiTurn(civ) and BeginTurn (actor 'server' only; Apply = RunAutoPlayers one civ / BeginPlayerTurn), ForceEndTurn (actor 'server': skips the pending-decision check; clears nothing else), MoveAutomatedUnits (CivView.TryAutomateAllUnits plus the HasMovedAutomatedUnits mark; rejects when AutomatedUnitsMoveOnTurnStart or already done), AckAlert(index/alert id) for informational alerts, RespondToAlert for decision alerts (CityConquered: annex/puppet/raze/liberate/keep; DiplomaticMarriage; demands accept/refuse; WarDeclaration-style 'THIS MEANS WAR' = DeclareWar; RecapturedCivilian return/keep; Event option choice; DeclarationOfFriendship offer), Dismiss* for the UI-state flags that live in saved state (PolicyManager.ShouldOpenPolicyPicker, EspionageManager dismissedShouldMoveSpies), Resign.
       - Trap: the UI removes popup alerts on open (AlertPopup.kt lines ~135 and ~679). PopupAlerts is serialised and therefore part of the state hash, so a client that merely 'looks' at an alert must still send AckAlert or the authority and the client diverge. Identify an alert by its index in civ.PopupAlerts plus (type,value) so a stale reference is rejected.
