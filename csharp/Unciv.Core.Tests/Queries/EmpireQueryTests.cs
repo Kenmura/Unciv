@@ -322,6 +322,20 @@ public class EmpireQueryTests
     }
 
     [Fact]
+    public void TopBarListsLuxuryAndStrategicResourcesSummedOverOriginsButNotBonus()
+    {
+        var rules = testGame.Ruleset.TileResources;
+        var supply = new Unciv.Models.Ruleset.Tile.ResourceSupplyList();
+        supply.Add(new Unciv.Models.Ruleset.Tile.ResourceSupplyList.ResourceSupply(rules["Iron"], "Tiles", 2));
+        supply.Add(new Unciv.Models.Ruleset.Tile.ResourceSupplyList.ResourceSupply(rules["Iron"], "Trade", 1));
+        supply.Add(new Unciv.Models.Ruleset.Tile.ResourceSupplyList.ResourceSupply(rules["Wheat"], "Tiles", 4));
+        supply.Add(new Unciv.Models.Ruleset.Tile.ResourceSupplyList.ResourceSupply(rules["Silk"], "Tiles", 1));
+        player.SummarizedCivResourceSupply = supply;
+        var resources = Ask(new EmpireTopBarQuery()).Resources;
+        Assert.Equal([("Iron", "Strategic", 3), ("Silk", "Luxury", 1)], resources.Select(it => (it.Name, it.Type, it.Amount)).OrderBy(it => it.Type, StringComparer.Ordinal).Reverse().ToList());
+    }
+
+    [Fact]
     public void NoEmpireQueryChangesTheState()
     {
         testGame.GameInfo.GameParameters.TradeHintsEnabled = true;
