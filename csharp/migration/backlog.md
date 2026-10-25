@@ -1857,13 +1857,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Claude: review (isolated adversarial) requested stronger assertions; fixed (8 vacuous NotNull asserts replaced, vacuous swap test deleted). Final measured UnitAutomation.cs 87.79% line / 72.73% branch; baseline set to that. Uncovered: TryRetreat swap branch, air-unit heal branch (no follow-up ticket; low value). `coverage --check --all` shows other files (Era, Terrain, CollectionExtensions) under baseline: not from this ticket.
 
 ### T160 Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T102
 - Source: core/src/com/unciv/logic/GameStarter.kt, GameInfo.nextTurn (run by a JVM exporter)
 - Fixtures: none - golden per-turn hashes exported from the Kotlin game
 - Deliverables: csharp/Unciv.Core.Tests/Determinism/KotlinGoldenTests.cs, fixture json, exporter note
 - Gate: `dotnet test --filter FullyQualifiedName~KotlinGolden`
-- Claimed:
+- Claimed: 2026-10-25T13:30Z
 - Notes: Split from T102 (Claude): T102 proves same-seed/save-load/clone/culture determinism inside C#. Still open: compare the C# per-turn state hash against hashes exported from the Kotlin game for fixed seeds (needs a canonical state-hash export on the JVM side, the C# hash is currently FNV over the save JSON whose property order T128 changed), and a run with one mod ruleset.
 
 ### T161 Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches
