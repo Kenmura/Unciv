@@ -2375,13 +2375,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Deliberate deviation: RespondToTradeRequest removes the request before AcceptTrade (as the AI path does). Responses to a stale alert (offerer defeated or at war) just drop the alert. TradeOfferSpec uses Kind, not Type, because the envelope payload may not contain a type field. The AI-would-accept hint (TradeHintQuery) is not part of this ticket.
 
 ### T194 Command log format, replay verifier and scripted-human replay test against the T102 state hashes
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T187, T188, T189, T191, T192, T102, T011
 - Source: design/COMMANDS-IMPLEMENTATION.md section 6; Unciv.Core/Commands/CommandProcessor.cs; Unciv.Core.Tests/Determinism/EndToEndDeterminismTests.cs; Utils/StateHasher.cs
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Commands/Log/{CommandLogHeader.cs,CommandLogWriter.cs,CommandLogReader.cs,ReplayVerifier.cs,ScriptedHuman.cs}, Unciv.Core.Tests/Commands/ReplayDeterminismTests.cs
 - Gate: dotnet test --filter FullyQualifiedName~ReplayDeterminism
-- Claimed:
+- Claimed: 2026-10-25T13:13Z
 - Notes:
   - Deliverable is the ENGINE-level log; the server store (fsync, rotation, snapshot cadence, crash recovery) is T176 and builds on this. Format (section 6): JSON Lines; line 1 = header {formatVersion, engineVersion, rulesetHash, gameSetup (GameSetupInfo), gameSeed, playerSettings per civ, startClockMillis}; then entries {seq, type, actor, now, payload} for commands and {checkpoint: seq, turn, fullHash} after every turn change. 'now' is the authority clock for commands that need it (EndTurn, BeginTurn, RunAiTurn). Replay = GameStarter.StartNewGame(header) then Replay each envelope; the verifier compares fullHash at each checkpoint (StateHasher over UncivFiles.GameInfoToString, as in T102) and reports the first diverging seq, never continuing past it.
       - Acceptance (the old T164 note): a ScriptedHuman policy (found city with the starting settler, choose production and research when PendingDecisions asks, move/explore a few units, end turn) plays N>=60 turns against AI civs through CommandProcessor.Submit; replaying the log from the header gives identical per-turn hashes; also save->load->continue and snapshot at turn k + log tail reproduces the final hash; a tampered payload is a CommandDesyncException; same seed twice gives the same log byte for byte.
