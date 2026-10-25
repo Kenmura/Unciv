@@ -2832,13 +2832,13 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Multiplayer: notifications and alerts also arrive unsolicited between the player's own commands (other humans act live); decision alerts stay per civ.
 
 ### C014 Minimap
-- State: Available
+- State: In-Progress [Claude]
 - Depends: C010, T164, T174
 - Source:
 - Fixtures: none
 - Deliverables: Unciv.Godot/ client code (scope): ImageTexture minimap from map query with borders, viewport rectangle, click to jump. Slice detail in design/CLIENT-SLICES.md
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
-- Claimed:
+- Claimed: 2026-10-25T13:55Z
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario minimap: golden + click moves camera to matching tile. Human: readability. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
 
 ### C015 Main menu and game setup screen: nations, difficulty, speed, map options
