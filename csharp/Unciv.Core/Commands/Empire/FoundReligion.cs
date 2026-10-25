@@ -12,6 +12,10 @@ namespace Unciv.Commands.Empire;
 [CommandType("found-religion")]
 public sealed class FoundReligion : GameCommand
 {
+    // AskTextPopup of the rename button: maxLength 32 and these characters are filtered out of the input.
+    private const int MaxNameLength = 32;
+    private const string ForbiddenNameChars = "[]{}\"\\<>";
+
     public string ReligionName { get; init; } = "";
     public string DisplayName { get; init; } = "";
     public List<string> Beliefs { get; init; } = [];
@@ -26,7 +30,8 @@ public sealed class FoundReligion : GameCommand
         if (!gameInfo.Ruleset.Religions.Contains(ReligionName) || gameInfo.Religions.ContainsKey(ReligionName))
             return CommandValidation.Fail(CommandErrors.InvalidTarget, $"\"{ReligionName}\" is not an available religion icon");
         bool nameOk = DisplayName == ReligionName
-            || (DisplayName != "" && DisplayName != NoReligionName
+            || (DisplayName != "" && DisplayName.Length <= MaxNameLength && DisplayName.IndexOfAny(ForbiddenNameChars.ToCharArray()) < 0
+                && DisplayName != NoReligionName
                 && !gameInfo.Ruleset.Religions.Contains(DisplayName)
                 && gameInfo.Religions.Values.All(it => it.Name != DisplayName));
         if (!nameOk)

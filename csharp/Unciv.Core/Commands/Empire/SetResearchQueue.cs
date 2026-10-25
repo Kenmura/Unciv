@@ -1,4 +1,3 @@
-
 namespace Unciv.Commands.Empire;
 
 /// <summary>

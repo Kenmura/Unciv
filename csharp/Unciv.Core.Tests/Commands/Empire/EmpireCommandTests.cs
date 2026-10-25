@@ -141,6 +141,9 @@ public sealed class EmpireCommandTests
         AssertRejected(new DebugAddTechnology { Tech = "Pottery" }, CommandErrors.NotAllowed);
         testGame.GameInfo.GameParameters.GodMode = true;
         AssertRejected(new DebugAddTechnology { Tech = "Nonsense" }, CommandErrors.InvalidTarget);
+        a.Tech.FreeTechs = 1;
+        AssertRejected(new DebugAddTechnology { Tech = "Pottery" }, CommandErrors.NotAllowed); // free-tech mode
+        a.Tech.FreeTechs = 0;
         Ok(new DebugAddTechnology { Tech = "Pottery" });
         Assert.True(a.Tech.IsResearched("Pottery"));
         AssertRejected(new DebugAddTechnology { Tech = "Pottery" }, CommandErrors.NotAllowed);
@@ -242,6 +245,8 @@ public sealed class EmpireCommandTests
         AssertRejected(new FoundReligion { ReligionName = "Nonsense", DisplayName = "Nonsense", Beliefs = good }, CommandErrors.InvalidTarget);
         AssertRejected(new FoundReligion { ReligionName = "Islam", DisplayName = "", Beliefs = good }, CommandErrors.InvalidTarget);
         AssertRejected(new FoundReligion { ReligionName = "Islam", DisplayName = "Buddhism", Beliefs = good }, CommandErrors.InvalidTarget);
+        AssertRejected(new FoundReligion { ReligionName = "Islam", DisplayName = "[x] has [y]", Beliefs = good }, CommandErrors.InvalidTarget);
+        AssertRejected(new FoundReligion { ReligionName = "Islam", DisplayName = new string('x', 33), Beliefs = good }, CommandErrors.InvalidTarget);
         AssertRejected(new FoundReligion { ReligionName = "Islam", DisplayName = "Islam", Beliefs = [.. good.Skip(1)] }, CommandErrors.InvalidTarget);
         AssertRejected(new FoundReligion { ReligionName = "Islam", DisplayName = "Islam", Beliefs = ["Nonsense", .. good.Skip(1)] }, CommandErrors.InvalidTarget);
         AssertRejected(new FoundReligion { ReligionName = "Islam", DisplayName = "Islam", Beliefs = [.. good.AsEnumerable().Reverse()] }, CommandErrors.InvalidTarget);
@@ -332,6 +337,9 @@ public sealed class EmpireCommandTests
         AssertRejected(new MoveSpy { Spy = spy.Name, CityId = foreign.Id }, CommandErrors.NotAllowed); // already there
 
         var second = a.EspionageManager.AddSpy();
+        var dead = a.EspionageManager.AddSpy();
+        dead.SetAction(Unciv.Models.SpyAction.Dead);
+        AssertRejected(new MoveSpy { Spy = dead.Name, CityId = null }, CommandErrors.NotAllowed);
         AssertRejected(new MoveSpy { Spy = second.Name, CityId = foreign.Id }, CommandErrors.NotAllowed); // occupied
 
         Ok(new MoveSpy { Spy = spy.Name, CityId = null });
