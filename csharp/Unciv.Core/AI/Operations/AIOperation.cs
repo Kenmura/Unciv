@@ -94,7 +94,8 @@ public sealed record OperationTunables(
 /// <summary>
 /// One planned multi-unit effort (SPEC.md section 8): recruit an army, muster it, march it to a target.
 /// A unit belongs to at most one operation (the recruitment lock); <see cref="Update"/> is called once per turn with
-/// the current state of the civilization's units and returns the orders for this turn. Engine-agnostic: the engine
+/// the current state of the civilization's units and returns the orders for this turn. Only the recruiting phase has a
+/// timeout; the engine side must abort an army that cannot make progress (see <see cref="OperationManager.Abort"/>). Engine-agnostic: the engine
 /// supplies unit snapshots and target validity, and carries out the orders.
 /// </summary>
 public sealed class AIOperation
@@ -123,7 +124,7 @@ public sealed class AIOperation
     public int Id { get; }
     public OperationType Type { get; }
     public HexCoord Target { get; }
-    public HexCoord Muster { get; private set; }
+    public HexCoord Muster { get; }
     public int MaxRecruitTurns { get; }
     public int TurnsRecruiting { get; private set; }
     public OperationState State { get; private set; } = OperationState.Recruiting;
@@ -159,7 +160,11 @@ public sealed class AIOperation
             return [];
         }
 
-        var byId = units.ToDictionary(u => u.Id);   // lookup only, never iterated
+        var byId = new Dictionary<int, OperationUnit>();   // lookup only, never iterated
+        foreach (var u in units)
+        {
+            if (!byId.TryAdd(u.Id, u)) throw new ArgumentException($"Duplicate unit id {u.Id}", nameof(units));
+        }
         for (int i = 0; i < filled.Count; i++)
         {
             if (filled[i] is not int uid) continue;
@@ -173,7 +178,11 @@ public sealed class AIOperation
             }
         }
 
-        if (State is OperationState.Gathering && filled.Any(u => u == null)) State = OperationState.Recruiting;
+        if (State is OperationState.Gathering && filled.Any(u => u == null))
+        {
+            State = OperationState.Recruiting;
+            TurnsRecruiting = 0;   // the recruit timeout is a budget per recruiting attempt
+        }
         if (State is OperationState.Moving or OperationState.AtTarget && !filled.Any(u => u.HasValue))
         {
             Finish(OperationState.Aborted, locked);
@@ -202,8 +211,8 @@ public sealed class AIOperation
         };
     }
 
-    /// <summary>Gives up the operation, releasing every held unit.</summary>
-    public void Abort(ISet<int> locked)
+    /// <summary>Gives up the operation, releasing every held unit. Engine code goes through <see cref="OperationManager.Abort"/>.</summary>
+    internal void Abort(ISet<int> locked)
     {
         ArgumentNullException.ThrowIfNull(locked);
         if (!IsFinished) Finish(OperationState.Aborted, locked);
@@ -225,8 +234,9 @@ public sealed class AIOperation
         }
     }
 
+    // Empty slots only matter while the army is still being assembled; a marching army that lost a unit goes on with the rest.
     private bool AllWithin(Dictionary<int, OperationUnit> byId, HexCoord point, int range) =>
-        filled.All(u => u.HasValue && byId.TryGetValue(u.Value, out var unit) && HexMath.GetDistance(unit.Position, point) <= range);
+        filled.OfType<int>().All(uid => byId.TryGetValue(uid, out var unit) && HexMath.GetDistance(unit.Position, point) <= range);
 
     private List<OperationOrder> OrdersTo(HexCoord destination) =>
         [.. UnitIds.Select(id => new OperationOrder(Id, id, destination))];

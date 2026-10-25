@@ -30,6 +30,14 @@ public sealed class OperationManager(OperationTunables tunables)
     public bool Exists(OperationType type, HexCoord target) =>
         operations.Any(o => !o.IsFinished && o.Type == type && o.Target == target);
 
+    /// <summary>Gives up an operation now: its units are unlocked and it leaves the list.</summary>
+    public void Abort(AIOperation operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        operation.Abort(locked);
+        operations.Remove(operation);
+    }
+
     /// <summary>
     /// Runs one turn for every live operation in id order and drops the finished ones.
     /// <paramref name="targetValid"/> is asked once per operation.

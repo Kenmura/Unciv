@@ -18,6 +18,7 @@ public class OperationTests
         Assert.Equal(5, T.MaxRecruitTurnsDefault);
         Assert.Equal(10, T.MaxRecruitTurnsEnemyTerritory);
         Assert.Equal(80, T.PercentHealthForOperation);
+        Assert.Equal(20, T.PercentDangerForForwardMuster);
         Assert.Equal(5, T.DeployRange(OperationType.BasicCityAttack));
         Assert.Equal(2, T.DeployRange(OperationType.DestroyBarbarianCamp));
         Assert.Equal(5, T.DeployRange(OperationType.PillageEnemy));
@@ -147,9 +148,46 @@ public class OperationTests
         Assert.True(m.Exists(OperationType.CityStateAttack, target));
         Assert.False(m.Exists(OperationType.BasicCityAttack, target));
         m.Update([U(1, 0)], _ => true);
-        op.Abort(new SortedSet<int>());
-        op.Abort(new SortedSet<int>());
+        Assert.NotEmpty(m.LockedUnits);
+        m.Abort(op);
+        m.Abort(op);
+        Assert.Empty(m.LockedUnits);
+        Assert.Empty(m.Operations);
         Assert.False(m.Exists(OperationType.CityStateAttack, target));
         Assert.Throws<ArgumentException>(() => m.Start(OperationType.FoundCity, target, target, []));
+    }
+
+    [Fact]
+    public void MarchingArmyThatLostAUnitStillArrives()
+    {
+        var m = Manager();
+        var op = m.Start(OperationType.BasicCityAttack, new HexCoord(30, 0), new HexCoord(0, 0), [ArmyRole.Melee, ArmyRole.Support]);
+        m.Update([U(1, 0), U(2, 0, ArmyRole.Support)], _ => true);
+        m.Update([U(1, 0), U(2, 0, ArmyRole.Support)], _ => true);
+        Assert.Equal(OperationState.Moving, op.State);
+        m.Update([U(1, 26)], _ => true);   // the support unit died
+        Assert.Equal(OperationState.AtTarget, op.State);
+        Assert.Equal([1], op.UnitIds.ToArray());
+    }
+
+    [Fact]
+    public void RecruitTimeoutRestartsAfterAnArmyFallsBackToRecruiting()
+    {
+        var m = Manager();
+        var op = m.Start(OperationType.BasicCityAttack, new HexCoord(30, 0), new HexCoord(0, 0), [ArmyRole.Melee, ArmyRole.Melee]);
+        m.Update([U(1, 0), U(2, 5), U(3, 9)], _ => true);
+        for (int i = 0; i < 8; i++) m.Update([U(1, 20), U(2, 20)], _ => true);   // gathering, never arrives
+        Assert.Equal(OperationState.Gathering, op.State);
+        m.Update([U(1, 20)], _ => true);
+        Assert.Equal(OperationState.Recruiting, op.State);
+        Assert.Equal(1, op.TurnsRecruiting);
+    }
+
+    [Fact]
+    public void DuplicateUnitIdsAreRejected()
+    {
+        var m = Manager();
+        m.Start(OperationType.BasicCityAttack, new HexCoord(30, 0), new HexCoord(0, 0), [ArmyRole.Melee]);
+        Assert.Throws<ArgumentException>(() => m.Update([U(1, 0), U(1, 1)], _ => true));
     }
 }
