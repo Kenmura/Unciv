@@ -2893,11 +2893,12 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Implemented engine-agnostic (plain data, like A004/A005): HomelandMovePriority enum (one member per AI_HOMELAND_MOVE_PRIORITY_* define in file order, incl. the 6 variants beyond SPEC's summary list) and HomelandMoveQueue (edition-filtered, effective priority = base + rand(RANDOMNESS) via seeded GameRandom, stable sort, tie = file order; static Run(queue, handler)). Also exposes the four HOMELAND_* turn tunables. No flavor scaling (spec gives none for homeland). Real-unit handlers/wiring are A008. Ordering "higher first" and jitter form are [I] per spec.
 
 ### A007 Operations and armies layer
-- State: Available
+- State: In-Progress [Claude]
 - Depends: A004, A005
 - Source: `csharp/migration/ai-spec/SPEC.md` §8
 - Deliverables: `csharp/Unciv.Core/AI/Operations/` (`AIOperation`, `ArmyAI`, operation types: `CityAttack`, `BarbarianCamp`, etc.), tests
 - Gate: `dotnet test --filter FullyQualifiedName~OperationTests`
+- Claimed: 2026-10-25T01:19Z
 - Notes: Coordinates multi-unit strategic movements, muster staging areas, recruitment locks, and forward deployments.
 
 ### A008 Tactical AI engine adapter: scan Civilization/TileMap into TacticalTargetList and TacticalUnit, execute recruited attacks
