@@ -42,6 +42,7 @@ public class UnitOrdersModelTests
         Assert.Equal("", UnitOrdersModel.Panel(Unit(Own()), new BaseUnit { Movement = 2 }).Strength);
         Assert.Equal("Moves 1.5", UnitOrdersModel.Panel(Unit(Own()), null).Moves);
         Assert.Equal("Sleep", UnitOrdersModel.Panel(Unit(Own(action: "Sleep")), null).Order);
+        Assert.Equal("x", UnitOrdersModel.Panel(Unit(Own(action: "x")), null).Order);
         Assert.Equal("Fortified", UnitOrdersModel.Panel(Unit(Own(), fortified: true), null).Order);
         var foreign = UnitOrdersModel.Panel(Unit(null), null);
         Assert.Equal("Health 75%", foreign.Health);
@@ -83,8 +84,8 @@ public class UnitOrdersModelTests
     {
         var reachable = new ReachableTilesResult(1, new TilePos(0, 0), 2f, [new ReachableTile(1, 0, 1f, 1f, true), new ReachableTile(2, 0, 2f, 0f, false)]);
         Assert.Equal([(1, 0)], UnitOrdersModel.ReachableTiles(reachable));
-        var targets = new AttackableTargetsResult("attack", true, [new AttackTarget(3, 3, "Warrior", "Rome", false, [])]);
-        Assert.Equal([(3, 3)], UnitOrdersModel.AttackTiles(targets));
+        var targets = new AttackableTargetsResult("attack", true, [new AttackTarget(3, 4, "Warrior", "Rome", false, [])]);
+        Assert.Equal([(3, 4)], UnitOrdersModel.AttackTiles(targets));
         Assert.Empty(UnitOrdersModel.AttackTiles(targets with { CanAttack = false }));
     }
 
