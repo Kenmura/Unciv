@@ -2,3 +2,4 @@ rename-city
 map-v1
 v1-vertical
 minimap
+ui-kit

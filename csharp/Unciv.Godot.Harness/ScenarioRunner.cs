@@ -28,7 +28,7 @@ public partial class ScenarioRunner : Control
             else if (arg.StartsWith("--golden-dir=", StringComparison.Ordinal)) goldenDir = arg["--golden-dir=".Length..];
             else if (arg == "--update-golden") updateGolden = true;
         }
-        SetAnchorsPreset(LayoutPreset.FullRect);
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _ = RunAsync();
     }
 
