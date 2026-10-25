@@ -2549,7 +2549,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Host-a-lobby revision (SERVER.md 6-7, owner decision): C006 is now the JOIN side: join screen (address:port or invite code, password, TOFU fingerprint prompt, known hosts), reconnect overlay with the same key and last address, 'host went away, waiting' state, key storage under user://. The Host screen is C034, the lobby C035, the in-game turn bar C036. Depends T179 is the new direct-connect TCP+TLS transport (no WebSocket, no server accounts).
 
 ### C007 Asset registry and procedural placeholder generator
-- State: In-Review [Claude]
+- State: Done
 - Depends: C001, A003, A004, A005, A006, A007
 - Source:
 - Fixtures: none
