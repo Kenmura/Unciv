@@ -1,3 +1,4 @@
+using Unciv.Utils;
 using Unciv.View;
 
 namespace Unciv.Queries.Units;
@@ -39,7 +40,7 @@ public sealed record AttackableTargetsQuery(int? UnitId = null, string? CityId =
             return new AttackableTargetsResult("bombard", city.AsCombatant().CanAttack(), targets);
         }
 
-        var unit = UnitQueryHelpers.OwnUnit(view, UnitId!.Value);
+        var unit = UnitQueryHelpers.OwnUnit(view, UnitId.NotNull());
         var grouped = new SortedDictionary<(int, int), (TileView Tile, List<AttackOrigin> From)>();
         foreach (var attackable in unit.GetAttackableEnemies())
         {

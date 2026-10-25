@@ -1,4 +1,5 @@
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
 using Unciv.View;
 
 namespace Unciv.Queries.Units;
@@ -52,7 +53,7 @@ public sealed record AttackPreviewQuery(int X, int Y, int? UnitId = null, string
         }
         else
         {
-            unit = UnitQueryHelpers.OwnUnit(view, UnitId!.Value);
+            unit = UnitQueryHelpers.OwnUnit(view, UnitId.NotNull());
             attacker = unit.AsCombatant();
             if (unit.IsNuclearWeapon()) return Nuke(unit, target, targetPos);
         }
@@ -77,9 +78,9 @@ public sealed record AttackPreviewQuery(int X, int Y, int? UnitId = null, string
             return (attacker.GetTile(), canBombard && attacker.CanAttack());
         }
         var options = unit.GetAttackableEnemies().Where(it => it.GetTileToAttack().Equals(target)).ToList();
-        if (FromX != null)
+        if (FromX is { } fromX && FromY is { } fromY)
         {
-            var chosen = options.FirstOrDefault(it => it.GetTileToAttackFrom().Position() == new Logic.Map.HexCoord(FromX.Value, FromY!.Value));
+            var chosen = options.FirstOrDefault(it => it.GetTileToAttackFrom().Position() == new Logic.Map.HexCoord(fromX, fromY));
             if (chosen == null) throw new QueryException(UnitQueryCodes.InvalidAttackFrom, "That target cannot be attacked from the given tile");
             return (chosen.GetTileToAttackFrom(), attacker.CanAttack());
         }
