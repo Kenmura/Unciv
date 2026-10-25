@@ -1915,6 +1915,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - SetUnitDue validates unit.HasMovement() (the Kotlin Skip action is offered only then) and carries the wanted value (idempotent) instead of toggling. RenameCity validates non-empty name (CityRenamePopup) + own city.
       - Tests: GameCommandTests has Sample(type) switch; a new [CommandType] class without a sample fails the round-trip/purity test, so domain tickets must add a line.
       - Not done (per scope): GameSession log-header inputs (seed, clock, settings) belong to T194; events to T186.
+  -   - Review (Claude, adversarial subagent): PASS. Follow-ups, not blocking: tests for RequireActive spectator/defeated branches and for two-actor interleaving (T202/T203); consider a name length cap for RenameCity (server hardening, Kotlin has none); GameSession getters are unlocked (owning thread only).
 
 ### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
 - State: Won't port
