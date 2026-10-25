@@ -53,6 +53,18 @@ public static class PlaceholderPalette
     /// <summary>Fill of a city-screen tile cell by its state (C017); an unknown state reads as unowned.</summary>
     public static Rgb ForCityTile(string state) => CityTileColours.TryGetValue(state, out var c) ? c : CityTileColours["Unowned"];
 
+    private static readonly Dictionary<string, Rgb> TechStateColours = new(StringComparer.Ordinal)
+    {
+        ["Researched"] = new Rgb(60, 130, 70),
+        ["Queued"] = new Rgb(200, 150, 50),
+        ["Researchable"] = new Rgb(70, 110, 170),
+        ["Locked"] = new Rgb(48, 52, 62),
+        ["Unavailable"] = new Rgb(40, 40, 44),
+    };
+
+    /// <summary>Fill of a tech tree node by its state (C019); an unknown state reads as locked.</summary>
+    public static Rgb ForTechState(string state) => TechStateColours.TryGetValue(state, out var c) ? c : TechStateColours["Locked"];
+
     /// <summary>Outline of a locked tile on the city screen.</summary>
     public static Rgb LockedOutline { get; } = new(240, 200, 90);
 

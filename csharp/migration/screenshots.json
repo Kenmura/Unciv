@@ -303,5 +303,23 @@
         "caption": "Close view: Infantry (3 figures), Tank (4, hurt, promotion mark) and Cannon (3, automated mark)."
       }
     ]
+  },
+  "C019": {
+    "scenario": "tech",
+    "about": "Tech screen: the tree by column and row with state colours, unlock list, research now / add to queue / remove from queue.",
+    "shots": [
+      {
+        "golden": "tech/open.png",
+        "caption": "First open: Agriculture researched (green), its follow-ups available (blue), the rest locked (grey)."
+      },
+      {
+        "golden": "tech/chosen.png",
+        "caption": "Bronze Working chosen: it and Mining are queued (amber) in prerequisite order; the side panel lists unlocks and the queue."
+      },
+      {
+        "golden": "tech/replaced.png",
+        "caption": "Pottery researched instead: the queue is replaced and Pottery is the current research."
+      }
+    ]
   }
 }

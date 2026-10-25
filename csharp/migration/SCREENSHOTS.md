@@ -270,6 +270,24 @@ Scenario `city-b`.
 
 *A puppet city: the state is explained, Annex city is offered and every production button is disabled.* (`city-b/puppet.png`)
 
+## C019 (ticket not Done or unknown)
+
+Tech screen: the tree by column and row with state colours, unlock list, research now / add to queue / remove from queue.
+
+Scenario `tech`.
+
+![First open: Agriculture researched (green), its follow-ups available (blue), the rest locked (grey).](../Unciv.Godot.Harness/golden/tech/open.png)
+
+*First open: Agriculture researched (green), its follow-ups available (blue), the rest locked (grey).* (`tech/open.png`)
+
+![Bronze Working chosen: it and Mining are queued (amber) in prerequisite order; the side panel lists unlocks and the queue.](../Unciv.Godot.Harness/golden/tech/chosen.png)
+
+*Bronze Working chosen: it and Mining are queued (amber) in prerequisite order; the side panel lists unlocks and the queue.* (`tech/chosen.png`)
+
+![Pottery researched instead: the queue is replaced and Pottery is the current research.](../Unciv.Godot.Harness/golden/tech/replaced.png)
+
+*Pottery researched instead: the queue is replaced and Pottery is the current research.* (`tech/replaced.png`)
+
 ## C021 Diplomacy screen
 
 Diplomacy screen: civ list, status and attitude, treaty and city-state actions.

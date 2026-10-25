@@ -34,6 +34,9 @@ public sealed class GameQueries(IGameSession session)
 
     public Task<CityStateQuestsResult?> CityStateQuests(string civName) => session.QueryAsync(new CityStateQuestsQuery(civName));
 
+    /// <summary>The viewer's tech tree and research queue (C019): states, costs, turns and unlock text from the engine.</summary>
+    public Task<TechTreeResult?> TechTree() => session.QueryAsync(new TechTreeQuery());
+
     public Task<UnitActionsResult?> Actions(int unitId) => session.QueryAsync(new UnitActionsQuery(unitId));
 
     public Task<AttackableTargetsResult?> AttackTargets(int unitId) => session.QueryAsync(new AttackableTargetsQuery(unitId));

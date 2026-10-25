@@ -83,7 +83,25 @@ public partial class GameScreen : Control
         ShowCity(null);
         Deselect();
         SetStatus("Diplomacy");
+        if (Tech.Visible) Tech.Close();
         Run(Diplomacy.OpenAsync(civId));
+    }
+
+    /// <summary>C019: the tech screen, opened by the Technology button.</summary>
+    public TechScreen Tech { get; private set; } = null!; // JUSTIFY: C019 assigned in Start before any use
+
+    public bool IsTechVisible => Tech.Visible;
+
+    public Button TechButton { get; } = new() { Name = "TechButton", Text = "Technology" };
+
+    /// <summary>Opens the tech screen on a tech (the current research when null), closing the city and diplomacy screens.</summary>
+    public void OpenTechScreen(string? tech = null)
+    {
+        ShowCity(null);
+        if (Diplomacy.Visible) Diplomacy.Close();
+        Deselect();
+        SetStatus("Technology");
+        Run(Tech.OpenAsync(tech));
     }
 
     /// <summary>Opens the city screen for a city of the snapshot (the viewer's own in full, any other from its snapshot entry), or closes it with null.</summary>
@@ -122,6 +140,8 @@ public partial class GameScreen : Control
         AddChild(Hud);
         AddChild(DiplomacyButton);
         DiplomacyButton.Pressed += () => OpenDiplomacyScreen();
+        AddChild(TechButton);
+        TechButton.Pressed += () => OpenTechScreen();
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
         Panel = new UnitPanelView();
@@ -157,7 +177,13 @@ public partial class GameScreen : Control
             Diplomacy.Position = new Vector2(0f, Hud.TopBarHeight);
             Diplomacy.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
+        if (Tech != null)
+        {
+            Tech.Position = new Vector2(0f, Hud.TopBarHeight);
+            Tech.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
+        }
         DiplomacyButton.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight);
+        TechButton.Position = new Vector2(HudMargin + DiplomacyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
         Panel.LayoutIn(Size);
@@ -198,6 +224,15 @@ public partial class GameScreen : Control
         AddChild(Diplomacy);
         Diplomacy.CommandAccepted += Refresh;
         DiplomacyButton.Theme = theme.Theme;
+        if (Tech != null)
+        {
+            RemoveChild(Tech);
+            Tech.QueueFree();
+        }
+        Tech = new TechScreen(session, theme);
+        AddChild(Tech);
+        Tech.CommandAccepted += Refresh;
+        TechButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
         ReachableOverlay.Setup(registry);
@@ -326,6 +361,7 @@ public partial class GameScreen : Control
     private void ShowCity(CityDto? city)
     {
         if (city != null && Diplomacy.Visible) Diplomacy.Close();
+        if (city != null && Tech.Visible) Tech.Close();
         if (city != null) Deselect(); // C012: the unit panel gives way to the city screen
         OpenCity = city;
         if (city == null)
