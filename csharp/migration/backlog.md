@@ -2147,13 +2147,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Simultaneous turns (design/SIMULTANEOUS-TURNS.md): make EndPlayerTurn(civ, now) and BeginPlayerTurn(civ, now) take the civ explicitly (default CurrentPlayerCiv), and make 'started' a per-civ fact, so T200 composes the simultaneous sequence without rewriting this API. No behaviour change in Sequential; PendingDecisions.For(civ) already per civ.
 
 ### T185 Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T084, T085, T138, T139, T012
 - Source: csharp/Unciv.Core/View/*; csharp/Unciv.Core/Commands/CommandRegistry.cs; design/COMMANDS-IMPLEMENTATION.md section 8
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Queries/{IQuery.cs,QueryRegistry.cs,QueryEnvelope.cs,QueryContext.cs}, tests (round trip, unknown type rejected, state hash unchanged after every registered query, viewer cannot see fogged data)
 - Gate: dotnet test --filter FullyQualifiedName~Queries
-- Claimed:
+- Claimed: 2026-10-25T01:06Z
 - Notes:
   - Why: the server design (design/SERVER.md 2.1, 7) gives a networked Godot client a filtered mirror, not a GameInfo, so UI questions that Kotlin answers by calling engine code (reachable tiles, path, attack odds, buy cost, ...) must be serializable request/response pairs computed where the GameInfo lives (loopback GameHost in single player, server online). One mechanism, not one ad-hoc DTO per screen.
       - Shape: IQuery<TResult> { Type } with Run(GameView view) -> TResult (TResult a plain JSON-able record, no engine objects, ruleset objects by name); QueryRegistry like CommandRegistry (attribute scanning, no shared file); a QueryEnvelope {Type, ViewerId, Payload}. ViewerId comes from the session, as ActorId does for commands. Queries never mutate: test every registered query by hashing state before/after (the same StateHasher as T102) and by running with a view whose civ has not explored the tiles.

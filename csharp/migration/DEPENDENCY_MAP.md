@@ -519,7 +519,7 @@ flowchart TD
   class T182 waiting
   class T183 ready
   class T184 waiting
-  class T185 ready
+  class T185 prog
   class T186 ondeck
   class T187 waiting
   class T188 waiting
@@ -529,11 +529,11 @@ flowchart TD
   class T192 waiting
   class T193 waiting
   class T194 waiting
-  class T195 waiting
-  class T196 waiting
-  class T197 waiting
+  class T195 ondeck
+  class T196 ondeck
+  class T197 ondeck
   class T198 waiting
-  class T199 waiting
+  class T199 ondeck
   class T200 waiting
   class T201 waiting
   class T202 waiting
@@ -559,15 +559,14 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00"]
     y-axis "Tickets" 0 --> 88
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 80]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 79]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T185 | **Ready to start** | T084, T085, T138, T139, T012 | 50 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
 | T172 | **Ready to start** | T012 | 47 | Net protocol: message DTOs, versioning, ITransport and in-memory transport (Unciv.Core/Net) |
 | T183 | **Ready to start** | T071, T046 | 45 | Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules |
 | A006 | **Ready to start** | A004, T091, T092 | 35 | Homeland AI priority move queue |
@@ -580,7 +579,12 @@ xychart-beta
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T186 | **On deck** (after T164) | T164 | 50 | Game events: GameEvent registry and JSON, event sink in the engine, common events (turn, notification, popup alert, unit/city/tile facts) |
 | A007 | **On deck** (after A005) | A004, A005 | 35 | Operations and armies layer |
+| T199 | **On deck** (after T185) | T185, T099, T045, T170 | 9 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
+| T197 | **On deck** (after T185) | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
+| T195 | **On deck** (after T185) | T185, T139 | 3 | Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets) |
+| T196 | **On deck** (after T185) | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
 | T164 | In-Progress [Claude] | T012, T071, T100, T140, T011 | 55 | Command infrastructure over GameInfo: GameCommand base, assembly-scanned registry, CommandContext and error codes, GameSession, first commands (RenameCity, SetUnitDue), JSON round trip of every command |
+| T185 | In-Progress [Claude] | T084, T085, T138, T139, T012 | 50 | Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test |
 | T184 | Available (waiting on T183) | T183, T102, T084 | 44 | Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases |
 | T174 | Available (waiting on T172) | T172, T084, T085, T138, T140 | 43 | Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs |
 | T187 | Available (waiting on T164, T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
@@ -603,17 +607,13 @@ xychart-beta
 | T177 | Available (waiting on T172, T164, T184, T187, T200, T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T172, T173, T174, T175, T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T172, T173, T178) | T172, T173, T178 | 9 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
-| T199 | Available (waiting on T185) | T185, T099, T045, T170 | 9 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
 | T204 | Available (waiting on T172, T173, T178, T199) | T172, T173, T178, T199 | 7 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
 | C002 | Available (waiting on A005, A006, A007, C009) | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | T193 | Available (waiting on T164, T186) | T164, T186, T086, T089 | 5 | Diplomacy, trade and city-state commands: war, peace, friendship, denounce, trade proposals and responses, demands, tribute/gift/protection/marriage |
-| T197 | Available (waiting on T185) | T185, T138 | 5 | Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview) |
 | T180 | Available (waiting on T172, T173, T174, T175, T179, T204) | T172, T173, T174, T175, T179, T204 | 4 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | T190 | Available (waiting on T189) | T189 | 3 | Unit actions B: unique-driven actions through descriptors (great person improvements and hurry, religion, trade mission, paradrop, transform, gift unit, trigger unique, add in capital, air/set-up, stockpile) |
-| T195 | Available (waiting on T185) | T185, T139 | 3 | Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets) |
 | C011 | Available (waiting on C005, C010, T164, T174, T184) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | Available (waiting on C005, C010, T164, T188, T189, T190, T195) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
-| T196 | Available (waiting on T185) | T185, T139 | 2 | Query API: city and tile panels (buildable lists with rejection reasons and costs, tile purchase costs, worked tiles and specialists, improvement placement problems, tile yields) |
 | T198 | Available (waiting on T185, T166) | T185, T166, A003 | 2 | Query API: victory progress, scores, rankings and demographics |
 | C003 | Available (waiting on C002) | C002 | 1 | Resource and improvement props |
 | C004 | Available (waiting on C002, C010, C012, T164) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
