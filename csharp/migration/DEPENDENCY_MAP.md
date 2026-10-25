@@ -93,7 +93,7 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class A003 prog
+  class A003 review
   class A004 prog
   class A005 ondeck
   class A006 ondeck
@@ -152,7 +152,7 @@ xychart-beta
 | T163 | **On deck** (after T104) | T104 | 0 | ticket.py: refuse Done unless the tip builds, tests pass and coverage --check passes (automates the Green-before-Done rule) |
 | T166 | **On deck** (after A003) | A003 | 0 | Victory scorer game adapter (fills ConquestInputs/CultureInputs/DiplomaticInputs/SpaceshipInputs from Civilization) |
 | A004 | In-Progress [Claude] | A001, T039, T040, T065, T067, T081, T090 | 10 | Target-centric Tactical AI: TacticalMoveQueue & recruitment |
-| A003 | In-Progress [Claude] | A002, T030, T055, T057, T059 | 8 | Victory scorers (BNW) |
+| A003 | Needs-Review [Claude] | A002, T030, T055, T057, T059 | 8 | Victory scorers (BNW) |
 | A007 | Available (waiting on A004, A005) | A004, A005 | 7 | Operations and armies layer |
 | C002 | Available (waiting on A003, A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
 | T164 | Available (waiting on A003, A004, A005, A006, A007) | T012, T071, T083, T080, T100, A003, A004, A005, A006, A007 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
