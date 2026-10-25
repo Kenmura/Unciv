@@ -427,7 +427,7 @@ flowchart TD
   class A003 done
   class A004 done
   class A005 done
-  class A006 prog
+  class A006 review
   class A007 ready
   class A008 ready
   class C001 done
@@ -591,7 +591,7 @@ xychart-beta
 | T187 | Available (waiting on T164, T186, T184, T183) | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
 | T188 | Available (waiting on T164, T186) | T164, T186, T083 | 39 | Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue |
 | T175 | Available (waiting on T172, T174, T164, T186) | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
-| A006 | In-Progress [Claude] | A004, T091, T092 | 35 | Homeland AI priority move queue |
+| A006 | Needs-Review [Claude] | A004, T091, T092 | 35 | Homeland AI priority move queue |
 | C007 | Available (waiting on A006, A007) | C001, A003, A004, A005, A006, A007 | 33 | Asset registry and procedural placeholder generator |
 | C008 | Available (waiting on A006, A007) | C001, A003, A004, A005, A006, A007 | 32 | Client scenario runner and owner review sheet |
 | C009 | Available (waiting on C007, C008, T164, T174, T185) | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
