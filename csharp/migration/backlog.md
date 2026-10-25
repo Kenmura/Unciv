@@ -2847,7 +2847,7 @@ All tickets start in `Blocked` until foundational engine systems (GameInfo, Tile
   - Review fixes: priority bonus now divides after dampening (no early int division). Not implemented (SPEC [I]/[?]): resultKind budget floor of 1, melee per-entry skip gate, neighbour staging-tile post-step; damage-desc candidate ordering is our assumption. For() re-sorts per call (index it in A008 if needed).
 
 ### A005 Tactical overkill assignment & coordinated multi-unit attacks
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: A004
 - Source: `csharp/migration/ai-spec/SPEC.md` §6.4, §6.5
 - Deliverables: `csharp/Unciv.Core/AI/Tactical/OverkillAssigner.cs`, damage estimator integrations, tests
