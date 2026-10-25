@@ -2594,6 +2594,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed: 2026-10-25T12:50Z
 - Notes: Found by T192: no listed command covers spy coup or counter-intelligence. Needed by the espionage screen (C023).
   - Implemented SetSpyCoup (Commands/Empire, "set-spy-coup"): Stage=true -> spy.SetAction(Coup,1) when CanDoCoup and not already Coup; Stage=false -> SetAction(CounterIntelligence,10) when action is Coup (EspionageScreen.CoupButton toggle; counter-intelligence is only reachable this way in the UI, own-city counter-intelligence is set by Spy.EndTurn). MoveSpy already exists from T192. Sample lives in DiplomacySamples (needs the city-state world). Tests: EspionageCommandTests.
+  -   - Review pass [Adversarial Review]: SetSpyCoup matches EspionageScreen.CoupButton toggle (Coup,1 / CounterIntelligence,10) and Spy.CanDoCoup (city-state, set up, not ally); MoveSpy from T192 covers move. Validation (espionage enabled, spy exists, active civ) sound. Build/format/test green (5083 pass).
 
 ### T211 Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161
 - State: In-Progress [Claude]
