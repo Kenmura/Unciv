@@ -501,7 +501,7 @@ flowchart TD
   class T207 waiting
   class T208 done
   class T215 done
-  class T216 prog
+  class T216 review
   class T217 review
   class T218 prog
   class T219 ready
@@ -607,7 +607,7 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T216 | In-Progress [Claude] | T160 | 0 | Kotlin per-turn golden hashes from a fixed saved map (sidesteps unseeded resource shuffles) |
+| T216 | Needs-Review [Claude] | T160 | 0 | Kotlin per-turn golden hashes from a fixed saved map (sidesteps unseeded resource shuffles) |
 | T217 | Needs-Review [Claude] | T160 | 0 | Kotlin golden run with a mod ruleset |
 | T218 | In-Progress [Claude] | T208 | 0 | Civ.Stats happiness cache is not restored by load: canonicalise it so a mid-turn (Resolving) snapshot reproduces the live hash |
 | T221 | In-Progress [Claude] | T168, T170, T194 | 0 | CLI: replay/verify a command log, play scripted human commands, ruleset/mod and saved-map options |

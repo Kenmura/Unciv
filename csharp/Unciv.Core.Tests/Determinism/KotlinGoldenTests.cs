@@ -1,6 +1,7 @@
 using System.Text;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
@@ -10,8 +11,11 @@ namespace Unciv.Core.Tests.Determinism;
 
 // T160: replays the games the real Kotlin code played (csharp/migration/golden/KotlinGoldenExporter.kt, run by export.sh) and compares a
 // canonical digest of the resource-free map and of the starting civ/unit state. kotlin-golden.txt is the Kotlin output, verbatim.
-// Not compared: resources, Oasis and anything after turn 0. Kotlin shuffles with an unseeded Random (StrategicBonusResourcePlacementLogic, oasis placement), so a
-// Kotlin game cannot be replayed (the C# port seeds those shuffles); see the T160 notes.
+// Those two games cannot compare resources/Oasis: Kotlin shuffles with an unseeded Random (StrategicBonusResourcePlacementLogic, oasis
+// placement) and the C# port seeds those shuffles; see the T160 notes.
+// T216: the per-turn tests sidestep that. The exporter generated a map once and saved it (golden-map-<seed>.map, written by Kotlin), then
+// played 30 turns from that file with the real Kotlin GameInfo.nextTurn, writing a digest of the whole map (resources and ownership
+// included) plus civs/cities/units per turn. The C# game starts from the same file with the same gameId and must match every turn.
 [Collection("RulesetCache")]
 public sealed class KotlinGoldenTests : IDisposable
 {
@@ -74,6 +78,111 @@ public sealed class KotlinGoldenTests : IDisposable
         }
         return sb.ToString();
     }
+
+    // Must stay byte-identical to fullDigest in KotlinGoldenExporter.kt.
+    private static string FullDigest(GameInfo game)
+    {
+        var sb = new StringBuilder();
+        foreach (var t in game.TileMap.TileList.OrderBy(it => it.Position.X).ThenBy(it => it.Position.Y))
+            sb.Append($"T {t.Position.X},{t.Position.Y} {t.BaseTerrain}|{string.Join('+', t.TerrainFeatures.Order(StringComparer.Ordinal))}|{t.Resource ?? ""}|{t.Improvement ?? ""}|{t.RoadStatus}|{t.GetCity()?.Civ.CivName ?? ""}\n");
+        return sb.ToString() + CivDigest(game);
+    }
+
+    private static string DebugRanks(GameInfo game)
+    {
+        var sb = new StringBuilder();
+        foreach (var civ in game.Civilizations)
+            foreach (var u in civ.Units.GetCivUnits())
+                sb.Append($"#DBG U {civ.CivName} {u.Name} {u.GetTile().Position.X},{u.GetTile().Position.Y} id={u.Id} mov={u.CurrentMovement.ToString("0.0###", System.Globalization.CultureInfo.InvariantCulture)} hp={u.Health} action={u.Action ?? "null"}\n");
+        foreach (var civ in game.Civilizations)
+            foreach (var c in civ.Cities)
+            {
+                sb.Append($"#DBG {c.Name} techs=[{string.Join(", ", civ.Tech.TechsResearched.Order(StringComparer.Ordinal))}]\n");
+                foreach (var t in c.Expansion.GetChoosableTiles().ToList())
+                    sb.Append($"#DBG  {t.Position.X},{t.Position.Y} rank={c.Expansion.RankTileForExpansion(t)} stats={t.Stats.GetTileStats(c, civ)} see={(civ.CanSeeResource(t.TileResource) ? "true" : "false")}\n");
+            }
+        return sb.ToString();
+    }
+
+    private sealed class DiskFile(string path) : IUncivFileHandle
+    {
+        public string Name => Path.GetFileName(path);
+        public string NameWithoutExtension => Path.GetFileNameWithoutExtension(path);
+        public bool IsInternal => false;
+        public bool Exists => File.Exists(path);
+        public bool IsDirectory => false;
+        public long Length => new FileInfo(path).Length;
+        public long LastModified => 0;
+        public IUncivFileHandle Parent => throw new NotSupportedException();
+        public IUncivFileHandle Child(string name) => throw new NotSupportedException();
+        public IReadOnlyList<IUncivFileHandle> List() => [];
+        public void MakeDirs() => throw new NotSupportedException();
+        public bool Delete() => throw new NotSupportedException();
+        public Stream Read() => File.OpenRead(path);
+        public Stream Write(bool append) => throw new NotSupportedException();
+    }
+
+    private sealed record SavedGolden(int MapSeed, string GameId, string MapFile, List<(int Turn, string Digest)> Turns);
+
+    private static List<SavedGolden> LoadSavedGolden()
+    {
+        var result = new List<SavedGolden>();
+        var path = Path.Combine(AppContext.BaseDirectory, "Determinism", "kotlin-golden.txt");
+        foreach (var line in File.ReadAllLines(path))
+        {
+            var parts = line.Split(' ');
+            string Field(string name) => parts.Single(it => it.StartsWith(name + "=", StringComparison.Ordinal))[(name.Length + 1)..];
+            if (parts[0] == "saved")
+                result.Add(new SavedGolden(int.Parse(Field("seed"), System.Globalization.CultureInfo.InvariantCulture), Field("gameId"), Field("file"), []));
+            else if (parts[0] == "turn")
+                result.Single(it => it.MapSeed == int.Parse(Field("seed"), System.Globalization.CultureInfo.InvariantCulture))
+                    .Turns.Add((int.Parse(Field("n"), System.Globalization.CultureInfo.InvariantCulture), Field("digest")));
+        }
+        return result;
+    }
+
+    [Theory]
+    [MemberData(nameof(Seeds))]
+    public void PerTurnStateFromSavedMapMatchesKotlin(int mapSeed)
+    {
+        var golden = LoadSavedGolden().Single(it => it.MapSeed == mapSeed);
+        var mapPath = Path.Combine(AppContext.BaseDirectory, "Determinism", golden.MapFile);
+        var game = GameStarter.StartNewGame(
+            new GameSetupInfo(
+                new GameParameters
+                {
+                    BaseRuleset = ruleset.Name,
+                    NumberOfCityStates = 0,
+                    VictoryTypes = ruleset.Victories.Keys.ToList(),
+                    Players = new[] { "Babylon", "Greece", "Rome" }.Select((it, i) => new Player(it, i == 0 ? PlayerType.Human : PlayerType.AI)).ToList(),
+                },
+                new MapParameters { Name = "golden" + mapSeed, Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = mapSeed, MapSize = MapSize.Tiny })
+            { MapFile = golden.MapFile },
+            1L, 1000L, name => new DiskFile(mapPath), golden.GameId);
+        game.GameId = "golden-" + mapSeed; // the exporter pins the id after the start, see KotlinGoldenExporter.exportSavedMapTurns
+        Assert.NotEmpty(golden.Turns);
+        var firstDivergence = FirstDivergentTurn[mapSeed];
+        foreach (var (turn, digest) in golden.Turns)
+        {
+            if (turn > 0) game.NextTurn(2000L);
+            Assert.Equal(turn, game.Turns);
+            DumpIfAsked(mapSeed, "turn " + turn, FullDigest(game) + DebugRanks(game));
+            var matches = digest == Fnv(FullDigest(game));
+            if (turn < firstDivergence)
+                Assert.True(matches, $"seed {mapSeed} turn {turn} diverges from Kotlin");
+            else if (turn == firstDivergence)
+                Assert.False(matches, $"seed {mapSeed} turn {turn} now matches Kotlin: raise FirstDivergentTurn (or drop the entry)");
+        }
+    }
+
+    // T216: the first turn whose state differs from Kotlin's, per map seed. Kotlin itself is stable (3 exporter runs, identical digests); the
+    // difference is a deliberate C# deviation: GameInfo.RefreshTransientCaches (T208) re-sorts every civ's unit list into the order a save
+    // reload would rebuild (SortLikeLoad) so a running game and its reload play identically, while the Kotlin list keeps creation order.
+    // Barbarian "wander" moves depend on unit order (a unit moving first changes the tiles open to the next), so from the first turn where two
+    // barbarian units interact the games part. Both seeds were checked in the GOLDEN_DUMP output: the only differing lines are barbarian
+    // unit tiles (seed 11 turn 16: unit order 7,8,10,11,13,14 in Kotlin vs 14,8,11,10,13,7 in C#). Regenerating the golden keeps these turns
+    // (the saved maps and the pinned play gameId fix everything), but a new map file needs new values.
+    private static readonly Dictionary<int, int> FirstDivergentTurn = new() { [3] = 19, [11] = 16 };
 
     private sealed record Golden(int MapSeed, string GameId, string Map, string Start);
 
