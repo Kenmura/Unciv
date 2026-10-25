@@ -1897,7 +1897,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Implements PROTOCOL.md 'Green before Done': ticket.py state T### Done runs (or verifies a recent stamp of) build, format, test, coverage --check on the rebased tree and refuses on failure; also checks for stale TODO(T###) markers naming the ticket.
 
 ### T164 Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log
-- State: Available
+- State: Blocked
 - Depends: T012, T071, T083, T080, T100
 - Source: csharp/migration/COMMANDS.md; Unciv.Core/Commands skeleton
 - Fixtures: none
@@ -1905,6 +1905,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~Commands
 - Claimed:
 - Notes: T012 only delivered the skeleton against a toy state. The client (C004/C005), a server (C006) and AI all need real commands. Replaying a command log from a seed must reproduce the T102 state hashes.
+  - Held (Blocked) while the design/splitting agents run: this ticket is too coarse to implement as written (gap review). It will be split into domain tickets and re-pointed by the design agent; do not claim it until it is Available again.
 
 ### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
 - State: Available

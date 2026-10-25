@@ -97,7 +97,7 @@ flowchart TD
   class T161 ready
   class T162 ready
   class T163 ondeck
-  class T164 ready
+  class T164 blocked
   class T165 ready
   class T166 ready
   class T167 ready
@@ -130,7 +130,6 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T164 | **Ready to start** | T012, T071, T083, T080, T100 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
 | T165 | **Ready to start** | T012, T100 | 1 | Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers) |
 | T160 | **Ready to start** | T102 | 0 | Kotlin golden state hashes and mod ruleset for the end-to-end determinism gate |
 | T161 | **Ready to start** | T093, T159 | 0 | Close known coverage gaps: UnitAutomation TryRetreat swap and air-unit heal, damage-aware A* branches, MaxByScore NaN/tie handling, SpecificUnitAutomation uncovered branches |
@@ -148,6 +147,7 @@ xychart-beta
 | A007 | Available (waiting on A004, A005) | A004, A005 | 4 | Operations and armies layer |
 | C002 | Available (waiting on A004, A005, A006, A007) | C001, A003, A004, A005, A006, A007 | 3 | 3D hex terrain rendering |
 | T104 | Needs-Review [Claude] | T102, T103, T106, T097, T093, T089, T094, T100 | 3 | Marker, seam and stale-comment sweep (final) |
+| T164 | Blocked | T012, T071, T083, T080, T100 | 3 | Command layer implementation over GameInfo (move, attack, found city, production queue and purchase, research, policies, diplomacy, end turn) with replayable log |
 | C003 | Available (waiting on C002) | C002 | 0 | Resource and improvement props |
 | C004 | Available (waiting on C002, T164) | C002, T164 | 0 | 3D military units |
 | C005 | Available (waiting on C002, T164) | C002, T164 | 0 | Civ 5-style UI shell |
