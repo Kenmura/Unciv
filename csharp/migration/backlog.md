@@ -2394,7 +2394,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Trap: ranking values of unmet civs must be hidden (Kotlin shows them only for known civs, check VictoryScreenCivRankings). Scores use Double in Kotlin; keep the type.
 
 ### T199 Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T185, T099, T045, T170
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; ui/screens/newgamescreen/*, models/metadata/GameSetupInfo.kt, GameParameters.kt, logic/map/MapParameters.kt, logic/GameStarter.kt; csharp Models/Metadata/*, Logic/GameStarter.cs
 - Fixtures: none
@@ -2409,6 +2409,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Implemented (Claude). Setup queries are NOT IQuery/QueryRegistry members: pre-game has no GameView; they are plain records with Run() reading the RulesetCache (NewGameOptionsQuery(BaseRuleset, Mods), ValidateSetupQuery(Setup, IsHostedGame)). Type consts setup.NewGameOptions / setup.ValidateSetup for the wire layer.
       - ValidateSetup ports PlayerPickerTable validity + NewGameScreen.getErrorMessage (no human, no victory, map size fix on a clone) + added duplicate-nation/unknown-nation/spectator-human/player-id checks + combined-ruleset errors. Not checked: saved map file loading, MP server. 'Player count vs map size' not checked (Kotlin does not).
       - Logic/NewGame.Start validates then GameStarter.StartNewGame(seed, clock explicit); NewGame.ApplyLobby/ToLobby map lobby slots (nation + player key id) <-> GameParameters.Players. Seed+clock log header left to the session/log ticket.
+  -   - Review pass (adversarial subagent). Follow-up for T204: NewGameScreen 'You are not allowed to spectate!' rule (anyoneCanSpectate=false) is not in ValidateSetup.
 
 ### T200 Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep
 - State: Available

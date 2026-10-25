@@ -472,7 +472,7 @@ flowchart TD
   class T196 ready
   class T197 ready
   class T198 ready
-  class T199 review
+  class T199 done
   class T200 waiting
   class T201 waiting
   class T202 waiting
@@ -501,7 +501,7 @@ xychart-beta
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00"]
     y-axis "Tickets" 0 --> 83
     line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 68]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 3]
 ```
 
 ## Incomplete tickets
@@ -539,8 +539,7 @@ xychart-beta
 | T177 | Available (waiting on T184, T187, T200, T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T173, T174, T175, T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T173, T178) | T172, T173, T178 | 9 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
-| T199 | Needs-Review [Claude] | T185, T099, T045, T170 | 9 | Query API: new-game setup data (nations, difficulties, speeds, victories, map options, mods) and NewGame(setup, seed, clock) entry point |
-| T204 | Available (waiting on T173, T178, T199) | T172, T173, T178, T199 | 7 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
+| T204 | Available (waiting on T173, T178) | T172, T173, T178, T199 | 7 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
 | C002 | Available (waiting on C009) | C001, A003, A004, A005, A006, A007, C009 | 5 | 3D hex terrain rendering (elevation, materials, water depth) |
 | T180 | Available (waiting on T173, T174, T175, T179, T204) | T172, T173, T174, T175, T179, T204 | 4 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | T190 | Available (waiting on T189) | T189 | 3 | Unit actions B: unique-driven actions through descriptors (great person improvements and hurry, religion, trade mission, paradrop, transform, gift unit, trigger unique, add in capital, air/set-up, stockpile) |
@@ -548,7 +547,7 @@ xychart-beta
 | C012 | Available (waiting on C005, C010, T189, T190) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
 | C003 | Available (waiting on C002) | C002 | 1 | Resource and improvement props |
 | C004 | Available (waiting on C002, C010, C012) | C002, C010, C012, T164 | 1 | Unit visuals: per-type models, formations, status icons |
-| C015 | Available (waiting on C005, C010, T199) | C005, C010, T099, T045, T021, T034, T170, T199 | 1 | Main menu and game setup screen: nations, difficulty, speed, map options |
+| C015 | Available (waiting on C005, C010) | C005, C010, T099, T045, T021, T034, T170, T199 | 1 | Main menu and game setup screen: nations, difficulty, speed, map options |
 | C016 | Available (waiting on C005, C010) | C005, C010, T100 | 1 | Save/load screen and autosave |
 | C017 | Available (waiting on C005, C010, T191, T196) | C005, C010, T164, T060, T062, T191, T196 | 1 | City screen A: info, tiles, specialists, focus |
 | C021 | Available (waiting on C005, C010, T193, T197) | C005, C010, T164, T059, T068, T193, T197 | 1 | Diplomacy screen |
