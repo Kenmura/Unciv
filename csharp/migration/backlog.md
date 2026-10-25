@@ -1132,7 +1132,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
     LIMITATION: Civilization has no JSON wiring, so a full GameInfo with civs cannot be serialized and SetTransients needs a human civ; tests use civ-less games and assert the load reaches SetTransients. Full round trips and the T011 state-hash preservation are deferred to new ticket T140 (depends on T100).
 
 ### T101 Simulation: Simulation, SimulationStep, MutableInt
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T099, T094, T071, T011
 - Source: core/src/com/unciv/logic/simulation/Simulation.kt, SimulationStep.kt, MutableInt.kt
 - Fixtures: none - generate golden values
