@@ -34,7 +34,7 @@ Existing skeleton (T012) [V]: `ICommand<TState>.Validate/Apply`, `CommandEnvelop
   `pending-decisions`, `invalid-target`, `not-enough-<stat>`, `not-allowed` (UI predicate said no), `stale-reference` (alert/queue index no longer matches).
 - Registry built by scanning `[CommandType]` (unique names, JSON round-trip test per class, ruleset objects by name, ids not references, no floats that must round-trip exactly: use ints).
 - `GameSession` = `GameInfo` + `CommandProcessor<GameInfo>` + registry + the inputs a log needs (section 6).
-- Turn check helper: valid only when `ActorId` is `CurrentPlayerCiv` and human, no `VictoryData` (except the post-victory commands in 3.1). The actor id `server` is reserved for 3.1 server commands; a client envelope claiming it is `malformed-command`.
+- Turn check helper `CommandContext.RequireActive(actor)`: Sequential mode: `ActorId` is `CurrentPlayerCiv` and human; Simultaneous mode (hosted games, `design/SIMULTANEOUS-TURNS.md`, T200/T202): phase Playing, actor human, alive, not in `TurnState.Ended`; both: no `VictoryData` (except the post-victory commands in 3.1). Never test `CurrentPlayerCiv` directly in a command. The actor id `server` is reserved for 3.1 server commands; a client envelope claiming it is `malformed-command`.
 - Purity rule, tested for every command: the full state hash (T102 `StateHasher` over `UncivFiles.GameInfoToString`) is equal before and after `Validate`, and after a rejected `Submit`. Engine predicates update lazy caches (`UpdateViewableTiles`, transients) so this will find real bugs.
 
 ## 3. Command catalogue
@@ -172,7 +172,7 @@ server RunAiTurn(c1) ... RunAiTurn(ck)           one log entry per AI civ, actor
 server BeginTurn                                 BeginPlayerTurn(now); checkpoint {seq, turn, fullHash} after it
 ```
 The host runs these as soon as the previous one returns, so AI time is bounded per civ and progress can be reported. `Now` for all four is the same logged value (as in `NextTurn`). Followers and replayers re-run the AI code; this requires the same engine version (already required, SERVER.md 5.2) and gives full-state hash verification at each checkpoint.
-Simultaneous turns (SERVER.md 4.1) are out of scope: the engine has a global `CurrentPlayerCiv` read by many paths [V `Civilization.IsCurrentPlayer`, `CityView.CanChangeState`]; sequential only.
+**Simultaneous turns are in scope for the MVP (owner decision; supersedes the earlier "sequential only")**, designed in `design/SIMULTANEOUS-TURNS.md`. The API above stays the Sequential path (single player, hotseat, T102 hashes). `EndPlayerTurn`/`BeginPlayerTurn` take the civ explicitly (T184), and T200 composes the simultaneous sequence on them: `EndTurn(h)` only marks the civ ended (new `UndoEndTurn` reverses it); when all active humans are ended or the host timer fires (`ForceEndTurn`), the host pumps server commands `ProcessEndTurn(h)` (civ-index order), `RunAiTurn(c)`, `StartNextTurn`, `BeginTurn(h)` driven by `GameInfo.NextResolveStep()`. `SetController` handles join/leave/AI takeover. The current-player readers that remain are listed and replaced in T201 [V list in SIMULTANEOUS-TURNS section 2]. Commands from several humans interleave in one `Seq` order; conflicts resolve first-applied-wins through ordinary state-dependent `Validate`.
 
 ## 6. Command log and replay (ticket T194; store = T176)
 
@@ -236,9 +236,11 @@ Query traps: movement over unexplored tiles must not reveal terrain; damage esti
 | 1 | T183 | Engine player settings (3.9) | T071, T046 |
 | 1 | T185 | Query infrastructure | T084, T085, T138, T139, T012 |
 | 1 | T164 | Command infrastructure (narrowed) | T012, T071, T100, T140, T011 |
-| 2 | T184 | Phased turn API, TurnPhase, PendingDecisions | T183, T102, T084 |
+| 2 | T184 | Phased turn API (civ-parameterised), TurnPhase, PendingDecisions | T183, T102, T084 |
+| 2 | T200, T201 | TurnState and simultaneous sequence; current-player reader audit | T184 (T183) |
 | 2 | T186 | Event model and sink | T164 |
 | 3 | T187 | Turn and decision commands | T164, T186, T184, T183 |
+| 3 | T202 | Simultaneous-turn commands (UndoEndTurn, ProcessEndTurn, StartNextTurn, SetController, RequireActive) | T200, T187 |
 | 3 | T188 | Movement and combat commands | T164, T186, T083 |
 | 3 | T189 | Unit actions A (descriptors, orders) | T164, T186, T080, T185 |
 | 3 | T191 | City commands | T164, T186 |
@@ -247,7 +249,8 @@ Query traps: movement over unexplored tiles must not reveal terrain; damage esti
 | 3 | T195-T199 | Query tickets (units, cities, empire, victory, setup) | T185 (+T166, T170, T099) |
 | 4 | T190 | Unit actions B (unique families) | T189 |
 | 5 | T194 | Command log, replay verifier, scripted human vs T102 hashes | T187, T188, T189, T191, T192, T102, T011 |
-| 6 | T172-T182 (server track) | store/turn policy/event stream re-pointed to T194, T184+T187, T186 | see tickets |
+| 5b | T203 | Two-human determinism and conflict tests | T202, T188-T194 |
+| 6 | T172-T182, T204-T207 (server track) | store/turn policy/event stream re-pointed to T194, T184+T187, T186 | see tickets |
 | 7 | C004/C005/C006 | UI re-pointed to the command and query tickets | see tickets |
 
 Parallelism: all "3" tickets write separate folders under `Unciv.Core/Commands/<Domain>/` and use attribute scanning, so they do not overlap in shared files (PROTOCOL.md overlap rule). T190 needs T189's descriptor classes. Dispatch limit 4 at a time.

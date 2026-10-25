@@ -1909,6 +1909,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Narrowed by the design agent (design/COMMANDS-IMPLEMENTATION.md). This ticket is ONLY the infrastructure; the domain commands are separate tickets (turn/decision, movement+combat, unit actions A/B, city, research/policy/religion, diplomacy/trade) and the replayable log is its own ticket. The old Notes (replay from a seed must reproduce the T102 hashes) are carried by the log/replay ticket.
       - Build: GameCommand : ICommand<GameInfo> with helper CommandContext (resolve civ/unit/city/tile by id with stable error codes: unknown-civ, unknown-unit, not-your-unit, not-your-turn, game-over, ...); [CommandType("name")] attribute and reflection scan so domain tickets add commands without editing a shared registry file (the overlap rule in PROTOCOL.md); GameSession = GameInfo + CommandProcessor + registry + the engine inputs a log needs (see section 6 of the design).
       - Traps: (1) Validate must be pure, but many engine predicates mutate caches (UpdateViewableTiles, lazy transients): tests compare the full state hash before/after Validate for every command. (2) Submit round-trips through the envelope (existing rule), so command records must be JSON-stable: ruleset objects by name, ids not references, no float paths. (3) Turn check: a command is valid only if ActorId is the CurrentPlayer civ, a human, and the game has no VictoryData unless the command is allowed after victory; server actor 'server' is a reserved id for server commands. (4) Faulting keeps its semantics; add a rebuild-from-snapshot helper later in the log ticket.
+  - Simultaneous turns: the turn check helper is CommandContext.RequireActive(actor) (sequential: actor is CurrentPlayerCiv; simultaneous: Playing, human, alive, not ended; implemented by T202). Do not hard-code CurrentPlayerCiv in GameCommand.
 
 ### T165 Authoritative game server: protocol, lobby, turn notification, reconnect/resume (our own multiplayer, no upstream Unciv servers)
 - State: Won't port
@@ -1994,16 +1995,18 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~NetProtocol
 - Claimed:
 - Notes: Pure wire layer, no sockets. Strict schema, default-deny, unknown type => Error not exception. ClientSnapshot/ViewDelta carry opaque typed DTOs filled by the filter ticket.
+  - Revised by the host-lobby decision: add messages Join{password?, playerKey, displayName, inviteToken?}, LobbyState/LobbySet/LobbyChat/GameStarting, Welcome{hostKeyFingerprint, requiresPassword}, JoinRefused{code}, TurnStatus{turn, ended[], deadline, phase}, HostClosing, UndoEndTurn passes as a normal Command. ClientSnapshot gains turnStatus. See SERVER.md 6.1. Transport is TCP+TLS frames (T179), not WebSocket.
 
-### T173 Server identity and auth: ECDSA P-256 keypair, invite tokens, challenge-response, allow-list (friends-only)
+### T173 Host identity and join auth: client ECDSA P-256 key bound to a slot (TOFU), lobby password / single-use invite token for admission, host key fingerprint
 - State: Available
 - Depends: T172
-- Source: csharp/migration/design/SERVER.md section 6.2
+- Source: csharp/migration/design/SERVER.md sections 6.2, 6.4
 - Fixtures: none
-- Deliverables: csharp/Unciv.Core/Net/Identity/* (key generation/storage abstraction, invite token, signer/verifier), tests: replay, wrong key, expired/used invite, TOFU binding
+- Deliverables: csharp/Unciv.Core/Net/Identity/* (key generation/storage abstraction, challenge signer/verifier, JoinPassword salted hash + attempt back-off, InviteToken single-use, HostKey fingerprint), tests: replay, wrong key, leaked password cannot take a bound seat, expired/used token, back-off after 5 bad passwords
 - Gate: dotnet test --filter FullyQualifiedName~NetIdentity
 - Claimed:
 - Notes: BCL ECDsa only, no third-party crypto. Decision D4 default accepted (keypair+invite); no passwords. Key storage on disk is behind an interface (Godot client uses user:// via C006).
+  - OWNER DECISION: no auth service. The earlier note 'no passwords' is superseded: admission = optional lobby password or single-use invite token (sent only inside the pinned TLS channel, stored as a salted hash), slot ownership = the client keypair signature on reconnect. Password and key have different jobs (SERVER.md 6.2).
 
 ### T174 Visibility filter: ClientSnapshot builder from GameInfo via View classes, default-deny whitelist DTOs
 - State: Available
@@ -2014,6 +2017,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Gate: dotnet test --filter FullyQualifiedName~NetVisibility
 - Claimed:
 - Notes: Walk GameView/ForeignCivView/ForeignCityView/ForeignMapUnitView; never reimplement isInvisible/IsVisible. First step: audit that the Views expose every field needed and file gaps as tickets. Include a reflection test that the DTOs contain only whitelisted members and a test that serialized snapshot text contains no seed/gameId-seed. viewHash = StateHasher (T011) over canonical snapshot JSON; the full-game hash stays server-side (T011 hashes the whole serialized GameInfo).
+  - Simultaneous turns: ClientSnapshot carries turnStatus {ended civs, deadline, phase}; deltas are pushed at any time (other humans' visible actions), mirror must accept them between own commands. Add a two-human fixture (see T203): B's snapshot never holds what only A sees. design/SIMULTANEOUS-TURNS.md section 7.
 
 ### T175 Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery
 - State: Available
@@ -2025,6 +2029,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Depends T164 (command layer split) for the concrete GameEvent types: when tickets from design/COMMANDS-IMPLEMENTATION.md appear, re-point Depends to the event-definition ticket(s) and add them. Until real events exist, build and test against the toy events in CommandTests plus Notification/PopupAlert.
   - Design agent: Depends re-pointed to T186 (event model and sink; domain tickets add their own [EventType]s). Per design/COMMANDS-IMPLEMENTATION.md section 7 events are derived through the sink, not by diffing; TilesRevealed/StatsChanged stay server-side here.
+  - Simultaneous turns: add events PlayerEndedTurn, PlayerUndidEndTurn, TurnResolving, TurnStarted (public to all lobby members, no content). A unit leaving sight between two deltas is UnitDisappeared at the visible end, never a path.
 
 ### T176 Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot)
 - State: Available
@@ -2036,47 +2041,52 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Needs real replayable commands from T164 (split tickets in design/COMMANDS-IMPLEMENTATION.md: re-point). Log append+fsync before ack; snapshots via UncivFiles (gzip+base64 JSON, Kotlin-compatible). Server-side fullHash = hash of the serialized full GameInfo as in EndToEndDeterminismTests. Open point: replay-per-reconnect cost; start with head state in RAM plus recent filtered-delta ring.
   - Design agent: Depends re-pointed to T194 (engine-level CommandLogWriter/Reader, header, checkpoint entries and ReplayVerifier). This ticket adds only store concerns: fsync ordering, rotation, snapshot cadence, crash recovery, retention.
+  - Host-owned persistence (SERVER.md 5): games/<gameId>/ with snapshot, commands.log, game.json (LobbySettings, slot->key bindings, host fingerprint, password hash). Snapshot always at clean shutdown, including mid-turn state and TurnState.Ended; a half-resolved turn resumes via NextResolveStep (T200). Clean marker + HostClosing on quit. The directory is portable: zipping it to another host keeps the key bindings, so clients reconnect with the same keys (manual host change; no automatic migration).
 
-### T177 Turn policy: sequential phase machine, injected clock, turn timer, AFK skip, drop and AI replacement
+### T177 Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump
 - State: Available
-- Depends: T172, T164, T184, T187
+- Depends: T172, T164, T184, T187, T200, T202
 - Source: csharp/migration/design/SERVER.md section 4; COMMANDS.md open questions (simultaneous turns)
 - Fixtures: none
-- Deliverables: csharp/Unciv.Core/Net/Turns/* (TurnPolicy, IClock, TurnTimer, ForceEndTurn/SetController server commands), tests with a fake clock: timeout skip, K timeouts => AI, reclaim, disconnect grace, no wall-clock reads in engine
+- Deliverables: csharp/Unciv.Core/Net/Turns/* (TurnPolicy, IClock, TurnTimer, ResolvePump that loops NextResolveStep and submits the server commands), tests with a fake clock: all ended => resolve once, timer => ForceEndTurn in civ-index order, disconnect grace => ForceEndTurn and undo on return, onDisconnect=ai after K absent turns and reclaim, no wall-clock reads in the engine
 - Gate: dotnet test --filter FullyQualifiedName~NetTurnPolicy
 - Claimed:
 - Notes: Sequential only for v1 (decision D3 default); keep phase in a server-layer state object so simultaneous mode can be added without reworking the processor. Timer expiry becomes a logged server command (actor 'server'), so replay needs no clock. Depends on T164 turn-flow tickets: re-point to the human-turn-flow ticket from design/COMMANDS-IMPLEMENTATION.md when it exists.
   - Design agent: Depends re-pointed to T184 (phased turn API: EndPlayerTurn / RunAutoPlayers / BeginPlayerTurn, TurnPhase) and T187 (EndTurn, ForceEndTurn, RunAiTurn, BeginTurn commands; actor 'server' is reserved). The AI round is logged per AI civ (RunAiTurn), see design section 5.4: this deliberately refines design/SERVER.md section 1 ('AI as commands issued by the AI civ'), because AI code mutates GameInfo directly in ~100 files and cannot be re-expressed as per-action commands; replay re-runs the engine's AI per civ and the checkpoint hash catches any divergence.
+  - OWNER DECISION: simultaneous turns are the MVP (replaces 'sequential only for v1'). Sequential remains for single player and hotseat. See SERVER.md 4 and design/SIMULTANEOUS-TURNS.md. Defaults: timer off, grace 120 s, ForceEndTurn (not AI) on disconnect, join mid-game only between turns. Mid-game joins/leaves use SetController (T202).
 
-### T178 Headless host and lobby: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (rate, size, dedup, existence-oracle-safe errors)
+### T178 Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors)
 - State: Available
-- Depends: T172, T173, T174, T175, T176, T177
+- Depends: T172, T173, T174, T175, T176, T177, T202
 - Source: csharp/migration/design/SERVER.md sections 1, 3 (command validation), 6.1
 - Fixtures: none
 - Deliverables: csharp/Unciv.Server/* (console host, Lobby, GameHost single-threaded actor, CommandGate, AI-as-commands runner), Unciv.Server.Tests or Unciv.Core.Tests/Server/*, solution wiring
 - Gate: dotnet test --filter FullyQualifiedName~Server
 - Claimed:
 - Notes: Supersedes the host part of T165. Uses InMemoryTransport only; real sockets are the transport ticket. Creates a new project: coordinate .csproj/solution edits and stay out of Directory.Build.props. Actor id injected from session, never payload. AI civs act through Submit with the AI civ as actor.
+  - Lobby is split out to T204; real sockets to T179. Host is the dedicated Unciv.Server or in-process (T205): GameHost must not assume a console. Actor applies commands one at a time in arrival order and stamps Seq (design/SIMULTANEOUS-TURNS.md section 4); AI is RunAiTurn per civ (not AI-as-commands). Multiple human sessions active in the same turn.
 
-### T179 Server transport: WebSocket over TLS (Kestrel) behind ITransport, invite code with host:port and cert fingerprint pinning, deployment notes
+### T179 Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs
 - State: Available
-- Depends: T178
+- Depends: T172, T173, T178
 - Source: csharp/migration/design/SERVER.md sections 6.3-6.5
 - Fixtures: none
-- Deliverables: csharp/Unciv.Server/Transport/* WebSocketTransport, client WebSocketClientTransport in Unciv.Client.Net, loopback tests, docs (Caddy/VPS, Tailscale)
+- Deliverables: csharp/Unciv.Server/Transport/* TcpTlsTransport (listener, SslStream, length-prefixed JSON frames), client TcpTlsClientTransport in Unciv.Client.Net, HostKey store, InviteCode parse/format, KnownHosts store, loopback tests (fingerprint mismatch hard-fails, TOFU, oversize frame, handshake timeout), docs/HOSTING.md (LAN, manual port forward TCP 47821, IPv6, Tailscale/ZeroTier/WireGuard)
 - Gate: dotnet test --filter FullyQualifiedName~NetTransport
 - Claimed:
 - Notes: OWNER DECISION D1 (transport) and D2 (hosting) before claiming. Recommendation: A, WebSocket+TLS, Kestrel confined to Unciv.Server; B raw TCP and C ENet considered (see SERVER.md 6.3). Question for the owner: confirm WebSocket+TLS, and VPS vs friend-hosted+overlay.
+  - OWNER DECISION (supersedes D1/D2): player-hosted lobby on a port, joined by address:port; no VPS, Caddy or accounts server. Unblocked and re-scoped: raw TCP + TLS 1.3 with a self-signed ECDSA P-256 host certificate; the invite code carries the SHA-256 fingerprint so an invite join has no first-use window; a typed address gets TOFU with a hard stop on later mismatch. No Kestrel/ASP.NET. Verify SslStream TLS 1.3 with self-signed ECDSA on Linux and Windows (inference in SERVER.md section 10). UPnP and LAN discovery are optional tickets T206/T207.
 
 ### T180 Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types)
 - State: Available
-- Depends: T172, T173, T174, T175
+- Depends: T172, T173, T174, T175, T179, T204
 - Source: csharp/migration/design/SERVER.md sections 2.3, 7
 - Fixtures: none
 - Deliverables: csharp/Unciv.Client.Net/* (ClientSession, ClientGameState, ClientEvent stream), tests over InMemoryTransport: gap => resync, viewHash mismatch => snapshot, duplicate command ids
 - Gate: dotnet test --filter FullyQualifiedName~ClientNet
 - Claimed:
 - Notes: Split out of C006 so the networking logic is testable headless. C004/C005 should consume ClientEvent; re-point after review.
+  - Host-a-lobby revision: ClientSession also does Join (password/invite token, fingerprint check from invite, TOFU prompt callback, known-hosts store), LobbyState, TurnStatus, HostClosing handling, reconnect with the same key and Resume to the last address. Mirror tolerates unsolicited deltas (simultaneous turns). Depends gained T179 and T204.
 
 ### T181 Private-channel filtering: trade offers, diplomacy and espionage visibility (server side)
 - State: Available
@@ -2088,16 +2098,18 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Claimed:
 - Notes: Needs trade/diplomacy/espionage commands from the T164 split (design/COMMANDS-IMPLEMENTATION.md): re-point Depends to those tickets once they exist.
   - Design agent: Depends gained T193 (diplomacy/trade commands) - private-channel rules need the concrete trade/diplomacy commands and events.
+  - Simultaneous turns: trade/peace offers between two active humans are delivered live to the recipient only (TradeRequested event); AI valuation never leaves the host. A third human sees neither the offer nor its answer.
 
 ### T182 Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement
 - State: Available
-- Depends: T178, T180
+- Depends: T178, T180, T204, T203
 - Source: csharp/migration/design/SERVER.md sections 5, 10
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core.Tests/Server/EndToEnd*.cs (or Unciv.Server.Tests)
 - Gate: dotnet test --filter FullyQualifiedName~ServerEndToEnd
 - Claimed:
 - Notes: Acceptance for the server track: 20+ turns, forced timeout and AI replacement, one client dropped and resumed, tampered client command rejected, no client mirror contains an unexplored tile. Server fullHash equals the replayed-from-log hash; every client viewHash matches its filtered snapshot.
+  - Revised acceptance: 3 humans act simultaneously with interleaved commands for 20+ turns plus AI; timer forces one civ's end; one client dropped and resumed (UndoEndTurn after return); host killed mid-Resolving and restarted (NextResolveStep continues); late join into an AI slot; tampered command rejected; wrong password refused; fingerprint mismatch hard-fails.
 
 ### T183 Engine player settings: per-civ state-affecting settings, headless human conquest alert, no UserId in game rules
 - State: Available
@@ -2113,6 +2125,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Design: a PlayerSettings record per civ id (default = Kotlin GameSettings defaults), stored in GameInfo as an optional serialised field (check UncivJson ignores unknown fields so Kotlin-compatible saves still load) so snapshot + log is self-contained; readers take civ.GameInfo.SettingsOf(civ). UseAStarPathfinding and the automation flags move to a per-game EngineOptions-style record fixed at game start. IsUsersTurn/UserId no longer affect rules: replace by 'civ is human-controlled'. 'AutoPlay present' becomes an explicit PlayerSettings.HumanConquestPrompt (true for human civs on a server and in the client).
       - Changing a setting mid-game is the SetPlayerSettings command (domain ticket 'turn and decision commands'). Not UI-only settings: AlternateUnitCycleOrder, Collator (GetCivsSorted ordering; read-only display), tutorials stay in GameClientState.
       - Tests: two human civs with different settings diverge as expected; same seed twice gives equal hash; T102 hashes unchanged with default settings.
+  - Simultaneous turns: every human civ has its own PlayerSettings (several humans active at once); IsUsersTurn/UserId must not remain in any rule. Remaining current-player readers are T201.
 
 ### T184 Human turn flow: phased turn API (EndPlayerTurn, RunAutoPlayers, BeginPlayerTurn), TurnPhase and PendingDecisions query; NextTurn re-expressed on the phases
 - State: Available
@@ -2130,6 +2143,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - API: EndPlayerTurn(now) -> runs EndTurn of the current human and advances; RunAutoPlayers(now, civLimit?) -> processes the following auto civs one at a time (returns after each so a host can log/checkpoint per civ); BeginPlayerTurn(now) -> sets CurrentPlayer, StartTurn, notify. NextTurn(now) == EndPlayerTurn + RunAutoPlayers + BeginPlayerTurn, byte-identical state hashes to today (T102 tests are the regression). TurnPhase { AwaitingInput(civ) | AutoPlayers(next civ) | GameOver } is derived from CurrentPlayerCiv + a non-serialised 'started' flag, with save/load re-deriving it.
       - PendingDecisions.For(civ) is a pure query ordered like NextTurnAction: free great person, city with empty queue (not puppet), tech picker (CivView.ShouldOpenTechPicker), policy picker, move spies, found/expand pantheon, found/enhance/reform religion, world congress vote, then the soft ones (move automated units, due units) and popup alerts split into decision alerts (CityConquered, DiplomaticMarriage, demands, Event, RecapturedCivilian, DeclarationOfFriendship offer, WarDeclaration-style choices) vs informational ones. Each Decision names the command that resolves it. Blocking set = the NextTurnAction choices above NextUnit plus MoveAutomatedUnits.
       - Hotseat/spectator/defeated cases: keep ShouldAutoProcessHotseatPlayer / OnlinePlayer semantics exactly. Do not read UI state.
+  - Simultaneous turns (design/SIMULTANEOUS-TURNS.md): make EndPlayerTurn(civ, now) and BeginPlayerTurn(civ, now) take the civ explicitly (default CurrentPlayerCiv), and make 'started' a per-civ fact, so T200 composes the simultaneous sequence without rewriting this API. No behaviour change in Sequential; PendingDecisions.For(civ) already per civ.
 
 ### T185 Query infrastructure: serializable IQuery requests/results over GameView (viewer-filtered), registry, purity test
 - State: Available
@@ -2158,6 +2172,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Events are facts for presentation/sync; per design/SERVER.md every event type needs a visibility classifier (T175) so events are defined in code with an [EventType] attribute scanned like commands. The engine mutates state directly and has no event emission, so add a small sink: GameInfo.EventSink (null in tests/AI-only runs, set by the session for the duration of one command) with calls at the few choke points that already exist: MapUnit position set (movementMemories), Battle/AttackRecorder (damage, kill, capture), CityFounder, CityConquestFunctions, Tile ownership changes, Civilization.AddNotification and PopupAlerts.Add, Tech/Policy/Religion adoption, Diplomacy status changes. Add only the call sites needed by the event list below; each domain ticket may add its own events through the same registry.
       - Initial event set: TurnEnded, TurnStarted, AutoPlayerTurnProcessed(civ), UnitMoved(path of positions, with start/end), UnitAttacked(attacker, defender, damage both sides, killed), UnitCreated, UnitDestroyed, CityFounded, CityCaptured, CityGrew, TileOwnerChanged, NotificationAdded (per civ), AlertAdded (per civ), ResearchCompleted, PolicyAdopted, WarDeclared, PeaceMade, TradeAccepted.
       - Trap: the AI round and StartTurn generate hundreds of events; the sink must be allocation-free when null and bounded when set (coalesce per civ), and events must be produced in deterministic order (never from a hash-ordered iteration). Events never feed back into state. Unit moves inside Apply with fog changes are NOT events: TilesRevealed/StatsChanged are server-computed diffs (T175).
+  - Simultaneous turns: add events PlayerEndedTurn, PlayerUndidEndTurn, TurnResolving (see T175). The sink must tolerate commands from different actors interleaving; event order is call order within a command.
 
 ### T187 Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign
 - State: Available
@@ -2173,6 +2188,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Trap: AI turns are server commands. RunAiTurn must call exactly the loop body of NextTurn (StartTurn, AutomateTurn, EndTurn, advance) and must set the same nowMillis the original NextTurn received; with NextTurn(now) == EndTurn + RunAiTurn* + BeginTurn the T102 hash equality is the acceptance test.
       - Trap: EndTurn must NOT accept a client-supplied time. The envelope's server-assigned field 'Now' (epoch ms) is logged; ClientCommandId idempotency stays a server concern.
       - After victory (GameInfo.VictoryData set) only AckAlert, Resign and OneMoreTurn-type commands are valid; check what Kotlin allows (OneMoreTurnMode, GameInfo.OneMoreTurnMode).
+  - Simultaneous turns: in Simultaneous mode EndTurn only marks the civ ended (T202 adds UndoEndTurn, ProcessEndTurn, StartNextTurn, SetController and replaces the 'actor is CurrentPlayerCiv' check by RequireActive). Implement the Sequential behaviour here but route the gate through one helper. RunAiTurn/BeginTurn take the civ.
 
 ### T188 Movement and combat commands: MoveUnit, SetMoveOrder, SwapUnits, AttackWithUnit (MoveAndAttack), BombardWithCity, Nuke, AirSweep, Disband, SetUnitDue
 - State: Available
@@ -2187,6 +2203,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Payload carries ids and the target tile only; the authority recomputes the path and cost (COMMANDS.md identifiers rule). MoveUnit = one-turn move (moveToTile: fails if the destination is not reachable this turn); SetMoveOrder = multi-turn 'moveTo' action (UnitMovement.headTowards now plus unit.Action = moveTo x,y so DoAction continues it).
       - Traps: (1) moveToTile may stop early (enemy revealed, ZoC, hidden unit found) - Apply returns events for the portion done; it is not an error. (2) Attack on a tile with several defenders: the target is chosen by Battle/TargetHelper from the tile, the payload only names the tile (+ attacker); if the AttackableTile list changes between client preview and apply, the command attacks what the authority computes. (3) Attack against a city that can be conquered: with a human attacker the engine raises PopupAlert CityConquered (needs ticket 'Engine player settings'), the follow-up is RespondToAlert in the turn ticket. (4) Nuke / air sweep require extra confirmations in the UI only; the command carries just the target. (5) Great General / promotion triggers consume the seeded RNG during Apply, never Validate. (6) Attack uses randomness through the state-owned RNG in Battle.DamageToAttacker; do not pre-roll in the command. (7) Disband: gold refund when in own territory (UnitActionsPillage not involved); Validate = MapUnit.CanBeDisbanded-equivalent.
       - SetUnitDue(unit,bool) replaces CivView/MapUnitView.SetDue; the 'cycle to next due unit' cursor (UnitManager.nextPotentiallyDueAt, AlternateUnitCycleOrder) is client-local presentation and is not a command (it is not serialised).
+  - Simultaneous turns: validation reads live state, so a second command that conflicts with an earlier one (tile now occupied by another civ, target dead) must be rejected by its own predicate, state unchanged. T203 tests each case (same-tile move, double attack).
 
 ### T189 Unit actions A: serializable UnitActionDescriptor, GetUnitActionDescriptors query, ExecuteUnitAction command; orders (fortify, sleep, explore, automate, found city, build/repair improvement, pillage, upgrade, promote, set up, skip, stop)
 - State: Available
@@ -2201,6 +2218,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - GetUnitActionDescriptors(unit) lists getUnitActions(unit) with IsEnabled = (action.Action != null), title, confirmation text, the UnitActionType priority data the UI needs (UnitActionPriority modifiers from AssociatedUnique), never the closure.
       - ExecuteUnitAction(unitId, descriptor, confirmed): Validate regenerates GetUnitActions(unit, type), finds the entry by (Key, Index), requires Action != null, and requires confirmed==true if the regenerated action has a Confirmation; Apply calls the closure. This mirrors UnitActions.invokeUnitAction (first enabled of the type) when Key is null.
       - Traps: (1) the action list depends on state and so the same descriptor can mean a different action after another command; the command is validated against the CURRENT list, not a cached one. (2) Several actions mutate lists while enumerating (Upgrade, FoundCity removes the unit): closures are invoked once, outside the sequence. (3) Title is a translation template and may contain Fonts icons: do not use it as the key. (4) Explore/Automate set unit.Action and nothing moves until DoAction (turn ticket MoveAutomatedUnits), except Explore which also runs once immediately - check UnitActions.addExplorationActions. (5) Worker orders (StartWorkingOnImprovement with queuedImprovement, StopWorking, Repair, connect-road via Constants.ConnectRoadAction, automation) go through MapUnitView.TryStartWorkingOnImprovement-style engine calls with a SetWorkerOrder command; promotions via PromoteUnit(unit, promotionName) (MapUnit.Promotions.AddPromotion with CanAffordPromotions check) and SaveDefaultPromotions. (6) The great-person, religion, hurry and gift families are ticket 'Unit actions B'; this ticket must make the descriptor mechanism generic so B only adds tests.
+  - Simultaneous turns: FoundCity (and any tile-claiming action) must re-check CanFoundCity at Validate; a settler whose tile was just taken is not consumed. Tested in T203.
 
 ### T190 Unit actions B: unique-driven actions through descriptors (great person improvements and hurry, religion, trade mission, paradrop, transform, gift unit, trigger unique, add in capital, air/set-up, stockpile)
 - State: Available
@@ -2258,6 +2276,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Verified flow: human -> AI trades are ASYNCHRONOUS. TradeView.TryProposeStagedTrade only adds a TradeRequest to the other civ's TradeRequests; the AI answers inside its own turn (TradeAutomation.RespondToTradeRequests: accept -> TradeLogic.AcceptTrade, else counteroffer or decline with notification). So 'ProposeTrade' returns no verdict; the verdict arrives as a notification/TradeRequest in a later RunAiTurn. A human receiving a request responds with RespondToTradeRequest(requestId, accept) = TradeLogic(...).AcceptTrade after IsTradeValid; TradePopup.kt is the reference. Peace treaties and declarations of friendship are trade offer types (TradeOfferType) or DiplomacyManager calls: verify each in MajorCivDiplomacyTable before choosing the command, and keep one command per UI button.
       - Validate = what the diplomacy screen enabled: DiplomacyManager.CanDeclareWar (DiplomacyManagerView), IsAtWarWith, flags (DiplomacyFlags like DeclaredWar cooldown), civ knows the other civ, not both AI-only restrictions, TradeLogic.IsValid offers (Our/TheirAvailableOffers), trade value inflation uses TradeEvaluation (T089): only the AI's answer uses it; a human-human trade has no evaluation.
       - Traps: (1) Trade offers contain cities, units' resources and gold: re-validate everything at Apply time against current state (TurnManager.StartTurn drops requests that are no longer valid). (2) DeclareWar has a WarType and may cascade to allies/defensive pacts and trigger popup alerts for humans; it runs in Apply. (3) The AI 'would accept' hint (Civ 5 style) is NOT in Kotlin; it is a query in the empire-panels ticket, and leaks AI valuation, so it is optional per game setting. (4) City-state bully/tribute have random outcomes via the state RNG in Apply. (5) Demands (MajorCivDiplomacyTable) add a PopupAlert to the other civ: for an AI target the answer is computed in its RunAiTurn (NextTurnAutomation.respondToPopupAlerts).
+  - Simultaneous turns: human-to-human trade/peace/friendship use the queued TradeRequest while both are active: ProposeTrade adds it (recipient gets TradeRequested), RespondToTradeRequest{requestId, accept} may come at any time in Playing even after the recipient ended their turn, and re-validates IsTradeValid at accept time (stale => stale-reference). DeclareWar clears pending requests between the pair (DeclareWar.kt:155). Offers to an offline human stay pending (Kotlin behaviour). AI recipients still answer in RunAiTurn.
 
 ### T194 Command log format, replay verifier and scripted-human replay test against the T102 state hashes
 - State: Available
@@ -2271,6 +2290,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Deliverable is the ENGINE-level log; the server store (fsync, rotation, snapshot cadence, crash recovery) is T176 and builds on this. Format (section 6): JSON Lines; line 1 = header {formatVersion, engineVersion, rulesetHash, gameSetup (GameSetupInfo), gameSeed, playerSettings per civ, startClockMillis}; then entries {seq, type, actor, now, payload} for commands and {checkpoint: seq, turn, fullHash} after every turn change. 'now' is the authority clock for commands that need it (EndTurn, BeginTurn, RunAiTurn). Replay = GameStarter.StartNewGame(header) then Replay each envelope; the verifier compares fullHash at each checkpoint (StateHasher over UncivFiles.GameInfoToString, as in T102) and reports the first diverging seq, never continuing past it.
       - Acceptance (the old T164 note): a ScriptedHuman policy (found city with the starting settler, choose production and research when PendingDecisions asks, move/explore a few units, end turn) plays N>=60 turns against AI civs through CommandProcessor.Submit; replaying the log from the header gives identical per-turn hashes; also save->load->continue and snapshot at turn k + log tail reproduces the final hash; a tampered payload is a CommandDesyncException; same seed twice gives the same log byte for byte.
       - Traps: (1) Replay must not run any UI/AutoPlay code: the header's PlayerSettings are authoritative. (2) The CultureInfo of the host must not change the JSON (the T102 hostile-culture test again, now for payload numbers). (3) A log is only valid for the engineVersion that wrote it; a different version must refuse to replay rather than diverge silently. (4) Log entries of rejected commands do not exist (existing processor rule) - the server may keep a separate audit stream.
+  - Simultaneous turns: header gains turnMode and the initial controller bindings; entries of different human actors and the server's ProcessEndTurn/RunAiTurn/StartNextTurn/BeginTurn/ForceEndTurn/SetController interleave in one Seq order; a checkpoint is written after the last BeginTurn of each turn. The verifier needs no clock. Two-human replay test is T203.
 
 ### T195 Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets)
 - State: Available
@@ -2338,6 +2358,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Pre-game, so no GameInfo and no viewer: the query context is a set of ruleset names (base + mods, T170 mod folder loading). NewGameOptions(rulesets): choosable nations (PlayerPickerTable.isChoosable = (nation.isMajorCiv || nation.isSpectator) && !WillNotBeChosenForNewGames), city-state nations, difficulties, game speeds, victory types (Ruleset.Victories), eras, map parameters domain (shapes, types, sizes, resource settings, MapGeneratorSteps), mod compatibility (BaseRuleset vs mods, ModOptions), default GameParameters; ValidateSetup(setup): the checks NewGameScreen does before enabling Start (player count vs map size, at most one nation per player, RulesetValidator errors of the combined ruleset, spectator rules, GameSetupInfo.reload fix-ups).
       - NewGame(setup, seed, clockMillis) wraps GameStarter.StartNewGame; note Kotlin defaults MapParameters.seed to currentTimeMillis and picks civs with unseeded random: the C# GameStarter already takes both explicitly (T099), keep it that way and record seed + clock in the log header.
       - Trap: the 'random' nation and 'random number of players' options must be resolved by the seeded RNG in GameStarter, not by the query. The query returns static lists in ruleset file order (LinkedHashMap order, not alphabetical: sorting is the client's job with its collator).
+  - Hosted games: NewGame(setup, seed, clock) must accept a per-slot human PlayerId (player key id) and the seed from the host; the nation-selection rules (PlayerPickerTable.isChoosable) feed the lobby (T204). Expose LobbySettings <-> GameSetupInfo mapping.
 
 ### T200 Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep
 - State: Available
@@ -2464,14 +2485,15 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
   - Narrowed per design/CLIENT-SLICES.md; old shell items moved: top bar+turn banner C011, minimap C014, unit panel C012, city screen C017/C018, tech C019, policy C020, diplomacy C021/C022, notifications C013, tooltip content C027. Verification: scenario ui-kit.
 
-### C006 Networked play client
+### C006 Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage
 - State: Available
-- Depends: T012, C001, T164, T172, T173, T180, T179, C010, C016, T194
+- Depends: T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036
 - Scope: Godot side of networked play only (the protocol, session, mirror state and transport live in Unciv.Client.Net, T180/T179): lobby and join screens (invite code entry), identity key storage under user://, 'your turn' notification list and toast, turn timer display, reconnect overlay, marshalling network events onto the Godot main thread, feeding ClientEvents to the C004/C005 presentation. Server is our own (design/SERVER.md); no upstream Unciv servers.
   - Opens only after every A-track ticket (A003-A007) is Done (C002 depends on them directly; the rest follow through C002). No art is supplied: use generated/procedural placeholders (flat colours, primitive or procedurally built meshes and textures) or CC0/public-domain assets, recorded in ASSETS.md (placeholder policy there); keep them swappable by name from one place. Visual validation uses the C000 harness (GODOT.md; Godot 4.7.2 and Xvfb are installed in dotnet-dev).
   - Narrowed by the server design (design/SERVER.md section 7). Server tickets T172-T182; C006 owns only Godot scenes and the main-thread pump. Single-player should use the same ClientSession over a loopback host (T178).
   - Per design/CLIENT-SLICES.md: also depends on V1 vertical (C010) and save/load (C016); the client codes against an IGameSession interface implemented locally and by T180 ClientSession.
   - Design agent: Depends gained T194 (engine command log) for reconnect/resume.
+  - Host-a-lobby revision (SERVER.md 6-7, owner decision): C006 is now the JOIN side: join screen (address:port or invite code, password, TOFU fingerprint prompt, known hosts), reconnect overlay with the same key and last address, 'host went away, waiting' state, key storage under user://. The Host screen is C034, the lobby C035, the in-game turn bar C036. Depends T179 is the new direct-connect TCP+TLS transport (no WebSocket, no server accounts).
 
 ### C007 Asset registry and procedural placeholder generator
 - State: Available
@@ -2513,6 +2535,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario v1-vertical: select, move (assert tile+movement spent), 5x end turn (turn==6, state hash equals headless replay), captures. Human: is it playable, are AI moves visible. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
   - Design agent (commands): T164 is now only the command infrastructure. Depends re-pointed: T184 (phased turn API, PendingDecisions), T187 (EndTurn and friends), T188 (move/attack), T174/T175 (snapshot and events). Note C009/C011/C014 read world state from the T174 ClientSnapshot and T175 deltas, NOT from the T185 query API, which serves previews and panels (design/COMMANDS-IMPLEMENTATION.md section 8).
+  - Multiplayer: End turn in a hosted game only marks the civ ended and shows the waiting state (C036); single player uses the same button in Sequential mode.
 
 ### C011 HUD: top bar yields, turn banner, next-action button
 - State: Available
@@ -2523,6 +2546,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario hud: labels equal CivInfoStatsForNextTurn values; button text changes as units are ordered. Human: Civ-5 feel. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - Multiplayer: the next-action button reads End turn / Undo end turn / Waiting for N players from TurnStatus (C036 supplies the player bar); in Sequential it is unchanged.
 
 ### C012 Unit panel and orders: attack, fortify, found city, workers, automate
 - State: Available
@@ -2543,6 +2567,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario notifications: injected notifications, click centres camera, popup choice submits right command. Human: urgency. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - Multiplayer: notifications and alerts also arrive unsolicited between the player's own commands (other humans act live); decision alerts stay per civ.
 
 ### C014 Minimap
 - State: Available
@@ -2563,6 +2588,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario setup: choices reflected in GameInfo, state hash equals headless GameStarter with same GameSetupInfo. Human: option clarity. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - Multiplayer: the setup form widgets are reused by the Host screen (C034); keep them a separate component, not baked into the single-player flow.
 
 ### C016 Save/load screen and autosave
 - State: Available
@@ -2703,6 +2729,7 @@ Vision: a Civ 5-style client. Not a copy of Civ 5 assets (see Assets rule), but 
 - Gate: dotnet build Unciv.Godot -warnaserror && Unciv.Godot.Harness/tools/run-scenario.sh (scenario named in Notes)
 - Claimed:
 - Notes: Design: design/CLIENT-SLICES.md. Verification: scenario hotseat: two humans, map hidden between turns. Human: none. Opens only after A003-A007 Done (via C007/C008 chain). Depends on T164 umbrella: re-point to the specific split tickets when they exist.
+  - Hotseat is TurnMode.Sequential (T184). Hosted games are Simultaneous and need no pass-the-device screen. Keep this ticket for local hotseat only.
 
 ### C030 Placeholder audio: UncivSound to generated tones
 - State: Available

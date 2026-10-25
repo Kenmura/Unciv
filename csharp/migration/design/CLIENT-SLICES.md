@@ -6,6 +6,8 @@ re-point each `Depends` to the specific command/query/turn-flow ticket named in 
 (T165 is Won't port; see T172-T182 and `design/SERVER.md`). C006 depends on T172, T173, T179, T180. T180 (`Unciv.Client.Net`, ClientSession) is the remote counterpart of the local `GameSession`
 the slices use: the client's `IGameSession` interface (queries + submit command + event stream) must be implemented by both, so C009/C010 code against the interface, never against `GameInfo`.
 
+**Hosting update (owner decisions, `design/SERVER.md`).** Online play is player-hosted (Terraria-style): one player presses Host, friends join by `address:port` or an invite code; turns are simultaneous. New slices: C034 Host screen, C035 Lobby screen, C036 multiplayer turn bar; C006 is now the join side (address/invite, fingerprint prompt, reconnect). A flat hex map with placeholder art is fine for the MVP; the placeholder-art plan below is unchanged. Hotseat (C029) stays a Sequential-mode feature.
+
 ## Principles
 
 1. **Vertical first, then widen.** Slice V1 (C007-C010) is a crude but complete loop: new game -> map -> select -> move -> end turn -> AI turns -> repeat.
@@ -93,7 +95,10 @@ slices should not make).
 | 5 | C032 | Improvements, roads, cities, borders, in-world yield icons | C003 | M |
 | 5 | C004 | Unit visuals: models, animations, formations, combat presentation | C012, C002 | L split below |
 | 5 | C033 | Unit animation + combat presentation (idle/move/attack/damage/death) | C004 | M |
-| 6 | C006 | Networked play client (lobby, turn notification, reconnect) | T165, C010, C016 | M |
+| 6 | C006 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay | T179, T180, C010, C016 | M |
+| 6 | C034 | Host screen: lobby settings, address list, Copy invite, start/resume hosting | T204, T205, C015 | M |
+| 6 | C035 | Lobby screen: slots, nation pick, ready-up, chat, kick, start | T180, T204 | M |
+| 6 | C036 | Multiplayer turn bar: who ended, deadline, End/Undo end turn, resolving overlay | T180, T202, T175 | S |
 
 C004 is the model/formation part (M); C033 is the animation and combat part (M). Slices within a tier are independent of each other unless the Depends says otherwise
 (each depends on the previous tier's anchor). The `Depends` fields in the backlog are authoritative.
@@ -164,7 +169,7 @@ assert `Font.HasChar` for every character of every translation value in every sh
 
 **C027 Tooltips and Civilopedia.** Tooltip content builders for tiles, units, buildings, stats (breakdown from `CityStats`, `TileStatFunctions`), and a Civilopedia screen (category lists, entries with icons, linked references) generated from ruleset objects (`Ruleset`, text from uniques `getDescription`). Verification: assert text for a few fixed objects equals the engine's description; capture. Human: reading comfort.
 
-**C028 Options.** Sound volume, language (links C025), UI scale, window mode, key rebinding (persisted), edge-pan/scroll speed, show tile yields/resource icons toggles, pack selection (asset packs). **C029 Hotseat.** "Pass the device" screen hiding the map between human players (spec by T164 human turn flow ticket). **C030 Audio.** `UncivSound` -> generated sine/click `AudioStreamWav` via registry `sound/<name>`; verification: each UncivSound enum value resolves to a non-empty stream. Human: none (placeholders).
+**C028 Options.** Sound volume, language (links C025), UI scale, window mode, key rebinding (persisted), edge-pan/scroll speed, show tile yields/resource icons toggles, pack selection (asset packs). **C029 Hotseat** (Sequential mode only; hosted games are simultaneous and do not use it). "Pass the device" screen hiding the map between human players (spec by T164 human turn flow ticket). **C030 Audio.** `UncivSound` -> generated sine/click `AudioStreamWav` via registry `sound/<name>`; verification: each UncivSound enum value resolves to a non-empty stream. Human: none (placeholders).
 
 **C002 3D terrain** (narrowed): replace C009's flat hex with displaced meshes: elevation per terrain, hill/mountain shapes, water depth colour and shore, per-terrain materials and the generated noise texture; MultiMesh for repeated instances (grass vegetation as instanced tufts, real shaded terrain, not flat sprites). **C031**: blending between adjacent terrains (vertex colours or splat edge), fog of war and visibility tint polish, chunked mesh with frustum culling and a performance check (Standard map 1000+ tiles within a frame budget, measured by a scenario that reports mean frame time; threshold generous because llvmpipe). Verification: golden at 3 camera angles and sizes; pick tests still pass (picking uses terrain height); assert the triangle/instance counts stay under budget. Human: the look.
 
@@ -172,7 +177,9 @@ assert `Font.HasChar` for every character of every translation value in every sh
 
 **C004 Unit visuals** (narrowed): unit models per unit type via registry (multi-figure formations: N figures by `BaseUnit` strength tier, arrangement on tile), civ colouring, health bar, status icons (fortified, sleeping, automated, promotion available). **C033**: idle, move (along path, tile by tile), attack, damaged, death animations as simple procedural tweens (bob, lunge, flash, fall) and combat presentation (floating damage numbers, ranged projectile, city bombard flash), driven by the combat results the engine already computed; the client animates, never decides. Verification: scenario `combat-presentation` runs an attack, asserts the animation queue drained, the dead unit node freed, and the numbers shown equal the engine's `BattleResult`. Human: feel, timing.
 
-**C006 Networked client**: keep scope; add depends on C010 and C016; the server ticket split from T165 is its engine dependency.
+**C006 Networked client (join side)**: join screen (address:port, or pasted invite `unciv://host:port/fingerprint[/token]`, password field), fingerprint prompt for typed addresses with a hard-stop screen when a known host's key changed, known hosts and identity key under `user://`, reconnect overlay (retry with backoff to the last address, `Resume`), "host went away" state. Scenario `join`: in-memory host, wrong password refused, fingerprint mismatch blocks, drop and resume restores the mirror (viewHash equal). Human: error wording.
+
+**C034 Host screen**: reuses the C015 setup widgets for `LobbySettings` (map, speed, difficulty, civ and city-state counts, AI fill, mods with ruleset hash, turn timer, password, max players), lists local addresses and a port-forward hint, Copy invite, Start hosting (in-process `GameHost`, T205), and a list of saved hosted games to resume. Scenario `host-screen` as in the ticket. **C035 Lobby screen**: slot table, nation picker (rules from T199), colour, ready, chat; host-only kick, close slot and Start; joiners see settings read-only and the refusal reason on ruleset mismatch. **C036 Multiplayer turn bar**: player list with ended/connected marks, countdown from `TurnStatus.deadline`, End turn / Undo end turn, "processing turn" overlay during Resolving, toast for another human's visible action. Verification by scripted multi-client scenarios over the in-memory transport; human review of the waiting-for-players clarity.
 
 ## Scope coverage of the old tickets
 

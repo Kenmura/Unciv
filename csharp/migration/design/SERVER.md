@@ -1,6 +1,7 @@
-# Authoritative server and networked play (design for T165 / C006)
+# Host-run authoritative game and networked play (design for T165 / C006)
 
-Status: design, no engine code. Owner: server/network track (tickets T172+, see "Tickets"). Companion document:
+Status: design, no engine code; revised after the OWNER decisions (host-a-lobby model, simultaneous turns for the MVP; section 8).
+Owner: server/network track (tickets T172+, see "Tickets"). Simultaneous-turn engine analysis: `design/SIMULTANEOUS-TURNS.md` (read it with sections 4-5). Companion document:
 `design/COMMANDS-IMPLEMENTATION.md` (command catalogue, human turn flow, engine query API; written by another agent).
 This document does **not** repeat it: wherever it says "the command layer" it means the T164 split tickets, and the
 events/commands named here are placeholders until that catalogue lands. Re-point `Depends: T164` to the concrete
@@ -11,7 +12,7 @@ implementing ticket.
 
 ## 0. Goal and non-goals
 
-Online play with friends (2-8 humans, plus AI and city states), over our own server binary and protocol. No upstream
+Online play with friends (2-8 humans, plus AI and city states), **Terraria-style**: one player *hosts* a lobby on a port and friends connect directly by `address:port`. No always-on VPS, no accounts service, no reverse proxy. The same server code runs as a dedicated headless `Unciv.Server` or in-process behind the client's "Host" button. No upstream
 Unciv server, no Dropbox, no apiv2. The Kotlin stack (`core/.../logic/multiplayer`, `server/`) is Won't-port; it is read
 only for lessons.
 
@@ -35,8 +36,8 @@ command, time is an input supplied by the host, push (not poll).
 ## 1. Architecture
 
 ```
- Godot client (C006)            Unciv.Client.Net (library)              Unciv.Server (headless host)
- UI, input, animation    <-->   session, mirror state, reconnect  <-->  Lobby / Sessions / Auth
+ Godot client (C006)            Unciv.Client.Net (library)         Host = Unciv.Server (dedicated) OR in-process in the client
+ UI, input, animation    <-->   session, mirror state, reconnect  <-->  Lobby / Sessions / Join auth
                                                                          GameHost (one per game)
                                  Transport (pluggable)                     CommandProcessor<GameInfo>   (T164)
                                                                            TurnPolicy + Clock (host)
@@ -49,11 +50,10 @@ command, time is an input supplied by the host, push (not poll).
   ticket (S-transport) behind an owner decision (section 6).
 - **One `GameHost` per game, single-threaded actor** (a channel of inbound items: client message, timer tick, AI result).
   This preserves the T012 rule "CommandProcessor is the single writer" and removes locking from the engine.
+- The host owns the **only full `GameInfo`** (and the authoritative saves, section 5). An in-process host trusts its own player (honor system, section 6.6); a dedicated host is the answer for a group that does not.
 - The server owns the **only full `GameInfo`**. Clients own a *mirror*: a visibility-filtered projection (section 2),
   never a complete `GameInfo`.
-- **AI** runs on the server, as commands issued by the AI civ through `Submit` (COMMANDS.md "open questions": recommended
-  yes, logged individually) [V design, I effort]. AI time is bounded by the host; the AI round is performed when the
-  turn policy says it is the AI's phase.
+- **AI** runs on the host and is logged **per AI civ** (`RunAiTurn(civ)`), not per action (`design/COMMANDS-IMPLEMENTATION.md` section 1.3 refines the earlier "AI as commands" idea: the AI code mutates `GameInfo` directly). The AI round runs once per turn, after all humans have ended it (or the timer fired); see `design/SIMULTANEOUS-TURNS.md`.
 - **Time** enters only via the host `IClock` and the server-supplied fields of a command (COMMANDS.md rule 1). Timer
   expiry is converted into ordinary logged commands (`ForceEndTurn`/`Skip`, issued by actor `server`), so replay needs no clock.
 
@@ -73,7 +73,7 @@ registry pattern, golden-file testable). Rejected for v1: binary/MessagePack (pr
 is too big, they compress well with permessage-deflate / gzip). Every message carries `protocol` version in `hello`.
 
 ### 2.3 Two kinds of server-to-client data
-1. **`Snapshot` (client-specific full state)**: `ClientSnapshot { seq, turn, phase, you:civId, civs[], tiles[], cities[],
+1. **`Snapshot` (client-specific full state)**: `ClientSnapshot { seq, turn, phase, turnStatus{ended[], deadline}, you:civId, civs[], tiles[], cities[],
    units[], diplomacy[], pendingTrades[], notifications[], viewHash }`. Built by the visibility filter from the full
    state. Sent on join, reconnect, resync request, and every N turns (cadence is a tunable, not a contract).
 2. **`ViewDelta` per accepted command** (`seq`, `events[]`): the *filtered* consequences of a command for that
@@ -130,7 +130,7 @@ serialized, so a newly added engine field cannot leak by omission.
 
 **Command validation** (on top of T164's per-command `Validate`): the server layer adds, before the engine sees the
 envelope: (1) session is authenticated and bound to exactly one civ in this game (actor id is *injected*, never read from
-payload, COMMANDS.md [V]); (2) phase/turn gate: actor is allowed to act in the current phase (section 4); (3) `ClientCommandId`
+payload, COMMANDS.md [V]); (2) turn gate: the engine's `RequireActive(actor)` (sequential: actor is the current civ; simultaneous: actor is human, alive, not ended, and the phase is Playing; section 4); (3) `ClientCommandId`
 dedup (idempotent retries); (4) size and rate limits (max payload, N commands/s, max unacknowledged); (5) references to
 units/cities/tiles must be ones the actor owns or *currently sees*; a rejected command returns only a generic code, never
 "that unit exists but is not yours" (existence oracle). `Validate`'s error text must not embed hidden data; a test
@@ -139,145 +139,128 @@ enumerates all rejection messages for fixed hidden-state fixtures.
 Residual leaks to accept or close later (list for the owner): timing side channels of AI/turn processing; the *count* of
 turns/commands; map size; list of nations in game (public by lobby). Out of scope: collusion between humans, screen sharing.
 
-## 4. Turn policy (requirement 3)
+## 4. Turn policy: simultaneous turns (owner decision 2)
 
-### 4.1 Modes
-`TurnMode` is a lobby/game setting stored in the host's `GameSettings`, with `phase` held *in the server layer's state*
-(COMMANDS.md open question: phase must live in state if simultaneous is supported; the processor does not assume sequential).
+Full analysis, verified facts and the conflict table are in `design/SIMULTANEOUS-TURNS.md`. Summary of what the server layer does:
 
-- **Sequential (default for v1, matches Unciv).** One human civ is `currentPlayer`; AIs run after the human block.
-  `Validate` already checks "is it your turn" per command. Implemented by the T164 turn-flow tickets; this design only
-  adds a clock and a skip.
-- **Simultaneous (v2, design now, build later).** All humans act in the same turn; a turn ends when every active human has
-  sent `EndTurn` (or timer fires); then the server runs the AI + turn-change as one deterministic sequence. Commands in
-  the same turn from different humans are ordered by server arrival (`Seq`), which the log fixes. Conflicts (two units to
-  the same tile) resolve by that order. Needs: per-civ `EndedTurn` flags, and an audit that no engine rule keeps a global
-  "current civ" (verify in T164 notes; **[I]** since Kotlin `GameInfo.currentPlayerCiv` exists and is used by many
-  `View`/UI paths, simultaneous mode likely needs `viewer` explicit everywhere, which the View classes already do [V]).
-- **Play-by-mail / async.** Not a separate mode: sequential + no timer + persistence + push notification when it is your
-  turn. A game with no one connected simply idles (server need not hold anything in RAM, section 5).
+- `TurnMode` is a game setting stored **in the game state** (`GameInfo.TurnState`, section 5 of that doc), not in the server layer: the engine's command gate must know who may act, otherwise replay of the log without a host would accept commands the host refused. Two modes: **Simultaneous** (every hosted game, the MVP) and **Sequential** (single player, hotseat, tests; byte-identical to today's `NextTurn`, T102 hashes unchanged).
+- **Playing phase.** All living human civs are *active* in parallel. The host applies commands **one at a time in arrival order** (single-writer actor); `Seq` is the canonical order, the log is that order. A command is validated and applied against the live state at that moment, so combat, movement and city founding resolve immediately (the player sees the result) and conflicts are first-come-first-served.
+- **Ending.** `EndTurn` marks the civ *ended* (cheap, no turn processing yet); `UndoEndTurn` clears the mark while the phase is still Playing. When every active human is ended, or the deadline fires (host issues logged `ForceEndTurn(civ)` per remaining civ, civ-index order), the host pumps the **Resolving** phase: `ProcessEndTurn(h)` for each human in civ-index order, `RunAiTurn(c)` for each auto civ in civ-index order (city states, barbarians, AI, defeated/spectator), `StartNextTurn` (ranking stats, `Turns++`), `BeginTurn(h)` for each human in civ-index order. The engine exposes `NextResolveStep()`, so the host only loops "ask engine, submit that server command" and crash recovery can resume a half-resolved turn from state. Human commands arriving in Resolving are rejected with `turn-resolving`.
+- A hosted game with one human at civ index 0 produces exactly the sequential hashes (T200 asserts it): the new model is a generalisation, not a fork.
 
-### 4.2 Timers, AFK, drop
-- Turn timer: host-side `TurnTimer` per game (optional, per-turn seconds or per-phase base+increment). Fires into
-  the actor queue; the effect is the logged server command `ForceEndTurn(civ)`.
-- **AFK vs disconnect**: disconnected for < grace (default 2 min) = waiting; AFK = connected but no command for the turn timer.
-  After timeout: `ForceEndTurn` for the civ (keeps the player, skips their remaining actions). After `K` consecutive timeouts
-  (default 3): civ marked `Dropped`.
-- **AI replacement of a dropped player**: `Dropped` civ flips to AI control (`PlayerType.AI`; `PlayerType` exists [V]) through a
-  logged server command `SetController(civ, AI)`. The player may `Reclaim` at their next turn start (lobby host can disable).
-  The Kotlin `resignPlayer` already does a civ-to-AI switch locally [V]; the command form is new. AI replacement must respect
-  fog: the AI is allowed the full state (it is the server) but is the same code path as AI civs, so no new leak.
-- **Resign / vote kick** are host-lobby messages that translate into the same commands.
-- Turn-start summary ("what happened while you were away") = the notifications in the snapshot since the player's `lastAckSeq`.
+### 4.1 Timers, AFK, disconnect, join and leave
+- Turn timer: optional lobby setting (seconds per turn, default off for friends; `0` = wait for everybody). The host owns the clock (`IClock`), the effect is the logged `ForceEndTurn`. The deadline is part of `turnStatus` so every client can show it.
+- **Disconnect**: a dropped human does not block the turn forever. After the grace period (default 120 s, `DropGraceSeconds`) the host logs `ForceEndTurn(civ)` for that civ (marks it ended; the player may come back and `UndoEndTurn` while the phase is still Playing). Alternative lobby setting `OnDisconnect = ai` flips the civ to AI after `K` consecutive absent turns (default 3) via the logged server command `SetController(civ, AI)`; `Reclaim` returns it at the next turn start. Default: `ForceEndTurn` (no AI takeover without the host asking).
+- **Joining mid-game** (a free human slot, or reclaiming an AI-controlled slot): allowed between turns only (Resolving ends, Playing starts), by key-bound slot (section 6.2) - never into a civ another key owns. `SetController(civ, Human, playerKeyId)` is logged. A new joiner receives a full snapshot (section 2.3).
+- **Leaving**: explicit leave or kick = `SetController(civ, AI)` at the next turn boundary, or `Resign` if the player says so. The Kotlin resign path already switches a civ to AI locally [V]; here it is a command.
+- Resign, vote kick and chat are lobby messages that translate into the same commands.
+- Turn-start summary: the notifications in the snapshot since the player's `lastAckSeq`.
+- Async/play-by-mail is not a mode: simultaneous + no timer + a persistent host save. If the host quits, the game is saved and can be resumed (section 5.3).
 
-## 5. Persistence and resync (requirement 4)
+## 5. Persistence and resync (host-owned, requirement 4)
 
 ### 5.1 Files [V design on T100]
-Per game a directory (or SQLite file; [owner/impl decision, default plain files]):
-- `snapshot-<seq>.json.gz`: full server `GameInfo` serialized by `UncivFiles` (gzip+base64 JSON, Kotlin-compatible) [V];
-  T140 (Done) wired civs so the round trip works [V]; the T011 hash over a save/load round trip is asserted by T102 [V].
-- `commands.log`: append-only JSON Lines of `CommandEnvelope` (`Seq`, `Type`, `ActorId`, `Payload`), plus `Hash` checkpoints
-  `{seq, turn, fullHash}` after each turn change. Server commands (timers, AI, controller changes) are in the same log.
-- `game.json`: lobby/meta: players, civ bindings, identities (public keys), settings, turn policy; not part of GameInfo.
-Write order: append + fsync log line *before* acknowledging an accepted command; snapshot written (tmp + rename) every N
-turns / M commands. Recovery = load latest snapshot + `Replay` the tail, verify the next checkpoint hash. A corrupt tail
-line is truncated and reported.
+Per game a directory under the host's data dir (`games/<gameId>/`; dedicated server: `--data-dir`; in-process: the user data dir). Plain files by default:
+- `snapshot-<seq>.json.gz`: full server `GameInfo` serialized by `UncivFiles` (gzip+base64 JSON, Kotlin-compatible) [V]; T140 (Done) wired civs so the round trip works [V]; T102 asserts the T011 hash across save/load [V]. The simultaneous-turn fields (`TurnState`) are additive (Kotlin `UncivJson` has `ignoreUnknownFields = true` [V: `json/UncivJson.kt:23`]; the C# side ignores unknown members by default [I]), so the snapshot still opens in single player.
+- `commands.log`: append-only JSON Lines, format owned by T194 (header incl. `turnMode`, `playerSettings`; entries `{seq,type,actor,now,payload}`; `{checkpoint:seq,turn,fullHash}` after every `BeginTurn` batch). Entries of both humans, server commands (`ProcessEndTurn`, `RunAiTurn`, `StartNextTurn`, `BeginTurn`, `ForceEndTurn`, `SetController`) interleave in one total order.
+- `game.json`: lobby/meta (not part of `GameInfo`): `LobbySettings` (section 6.5), slot bindings (civ -> player public key id, display name), host key fingerprint, join-password *hash*, turn policy.
+Write order: append + fsync the log line *before* acknowledging an accepted command; snapshot (tmp + rename) every N turns and always at a clean shutdown. Recovery = latest snapshot + `Replay` of the tail + verify the next checkpoint; a corrupt tail line is truncated and reported; a half-resolved turn resumes through `NextResolveStep()`.
 
 ### 5.2 Resync
-- Client reconnect: `Resume{gameId, lastSeq, lastViewHash}`. If the server's retained per-client delta ring contains
-  `lastSeq+1`, it sends the missed `ViewDelta`s; else a fresh `Snapshot`. (Deltas are *regenerated by replaying the log tail
-  through the filter*, so no per-client storage is needed beyond the log: replay on a scratch copy.) [I: cost of replaying
-  from the snapshot per reconnect; mitigate by keeping the head state in RAM and storing recent filtered deltas in a ring.]
-- Desync detection: server compares `fullHash` to the log checkpoint after replay (catches nondeterminism bugs, not cheating);
-  clients compare `viewHash` (section 2.6).
-- Faulted processor (`IsFaulted`, COMMANDS.md [V]): the game host reloads snapshot + log and refuses to continue past the
-  failing command, quarantines it, and tells the lobby.
-- **Save format interplay**: the server save is a normal Unciv save (`UncivFiles`), so it opens in the single-player game
-  (`GameInfoSerializationVersion` and `BackwardCompatibility` apply [V]). The command log is *new*; saves carry the `seq` they
-  correspond to in `game.json`. A log written by a later engine version is replayed only by the same engine version; across
-  versions the snapshot is authoritative (log tail dropped after an upgrade; the host does an end-of-turn snapshot before
-  upgrades). Determinism hashes from the Kotlin game are not comparable (T160 pending) [V].
-- Retention: logs older than the latest snapshot are kept as a replay file (game history/anti-cheat audit, "watch replay").
+- Client reconnect: `Resume{gameId, lastSeq, lastViewHash}` after the key challenge (section 6.2). If the host's per-client delta ring still has `lastSeq+1` it sends the missed `ViewDelta`s, else a fresh `Snapshot`. Deltas are regenerated by replaying the tail through the filter on a scratch copy, or kept in a small ring (decision left to T176; start with the ring). With simultaneous turns the gap is typically a few commands of another human, so a snapshot is usually the cheaper reply.
+- Desync detection: host compares `fullHash` to the log checkpoint after replay (catches nondeterminism, not cheating); clients compare `viewHash` (2.6).
+- Faulted processor (`IsFaulted`, COMMANDS.md [V]): the host reloads snapshot + log, refuses to continue past the failing command, quarantines it and tells the lobby.
+- Save interplay: the host save is a normal Unciv save, so it opens in single player; a log is replayed only by the engine version that wrote it, across versions the snapshot is authoritative (the host snapshots at end of turn before an upgrade). Kotlin hashes are not comparable (T160) [V].
 
-## 6. Network stack, identity, auth (requirement 5)
+### 5.3 When the host quits (no host migration in the MVP)
+- **Clean quit**: the host stops accepting commands after the current command, takes a snapshot at the next safe point (end of Playing if a turn is mid-flight: mid-turn state is saved as is, including each civ's *ended* flag, which is why `TurnState` is in the game state), writes the `clean` marker, sends `HostClosing` to clients and closes. Clients keep their identity key, last address and `lastSeq` and show "host went away; waiting".
+- **Crash**: recovery from snapshot + log on next start (5.1).
+- **Resume**: the host chooses "Host saved game"; slots stay bound to the same player keys; clients reconnect with `Resume` to the same `address:port` (or a new one; the invite can be re-copied). Players need not be online at the same time: a game can be played like a persistent world as long as *the host* process is up.
+- **Manual host change**: zip the game directory and hand it to a friend; their host process loads the same bindings and clients reconnect with the same keys (new address). No protocol feature is needed, only the doc. Automatic migration (leader election, state replication to a successor) is out of scope.
+- Retention: logs older than the latest snapshot are kept as a replay file (history, audit).
 
-### 6.1 Protocol messages (transport independent; JSON, one `type` string per frame)
-Client to server: `Hello{protocol, clientVersion, rulesetHash, modList}`, `Auth{proof}`, `ListGames`, `CreateGame`, `JoinGame`,
-`LeaveGame`, `LobbySet{civ, color, ready}`, `StartGame` (host), `Resume{gameId,lastSeq,lastViewHash}`, `Command{clientCmdId, type,
-payload}` (the `CommandEnvelope` minus `Seq`/`ActorId`), `ResyncRequest`, `Chat`, `Ping`.
-Server to client: `Welcome{sessionId, challenge}`, `AuthOk/AuthFail`, `Games`, `LobbyState`, `Snapshot`, `ViewDelta{seq, events}`,
-`CommandResult{clientCmdId, accepted, code, message, seq}`, `TurnNotice{game, turn, whoseTurn, deadline}`, `Error{code}`, `Pong`.
-Rules: strict schema, max frame size, unknown `type` is an `Error`, never an exception; every game-scoped message includes
-`gameId`; `ruleset hash` mismatch rejects at join (mods are a lobby setting, mod files are *not* transferred in v1, see ticket T170).
+## 6. Network stack, identity, security (host-a-lobby, requirement 5)
 
-### 6.2 Identity and auth (friends-only)
-Recommended: **keypair identity + invite code**. The client generates an ECDSA P-256 keypair on first run (BCL
-`ECDsa`, no third-party crypto; **Ed25519 is not in the .NET BCL [I]**). The public key is the player id. The server holds
-an allow-list: the host mints a single-use or time-limited **invite token**; first connection presents token + public key and
-is bound (trust-on-first-use) to a display name; later connections answer a server challenge by signing it. No passwords,
-no account system, nothing to phish or leak from a server DB. Lost key = host re-invites. Alternative (rejected): shared
-server password (one leak = everyone impersonated, no per-player attribution); OAuth/Steam/Discord login (external dependency,
-against the "own networking" goal).
+### 6.1 Protocol messages (transport independent; JSON, one `type` per frame)
+Client to host: `Hello{protocol, clientVersion, rulesetHash, modList}`, `Join{password?, playerKey, displayName, inviteToken?}`, `Auth{proof}`, `Resume{gameId,lastSeq,lastViewHash}`, `LobbySet{slot, nation, color, ready}`, `LobbyChat`, `Command{clientCmdId, type, payload}` (the `CommandEnvelope` minus `Seq`/`ActorId`), `ResyncRequest`, `Leave`, `Ping`.
+Host to client: `Welcome{sessionId, challenge, hostKeyFingerprint, requiresPassword}`, `JoinOk/JoinRefused{code}`, `LobbyState{settings, slots[], hostName}`, `GameStarting`, `Snapshot`, `ViewDelta{seq, events}`, `CommandResult{clientCmdId, accepted, code, seq}`, `TurnStatus{turn, ended[], deadline, phase}`, `HostClosing`, `Error{code}`, `Pong`.
+Rules: strict schema, max frame size, unknown `type` is an `Error`, never an exception; `rulesetHash` mismatch rejects at join with the host's mod list (mod files are not transferred in v1, T170); `JoinRefused` codes do not reveal whether a name or slot exists beyond what the lobby already shows.
 
-### 6.3 Transport options (decision D1)
-| Option | Server | Client | Pros | Cons |
-|---|---|---|---|---|
-| **A. WebSocket (text frames) over TLS** (Kestrel `UseWebSockets`) | ASP.NET Core minimal host in `Unciv.Server` | `System.Net.WebSockets.ClientWebSocket` in the .NET Godot project (or Godot `WebSocketPeer`) | One port, proxy/CDN/Caddy friendly, works through most firewalls, easy to debug (JSON), future web client possible | ASP.NET dependency in the server project (not in Core); TCP head-of-line blocking (irrelevant for turn-based) |
-| **B. Raw TCP + length-prefixed frames** | `System.Net.Sockets`/Pipelines | same | No ASP.NET; smallest dependency; simple | Hand-rolled framing/TLS (`SslStream`), no proxy ecosystem, no browser path |
-| **C. ENet / Godot high-level multiplayer (UDP)** | Godot headless as server, or ENet bindings | Godot `ENetMultiplayerPeer` | Built into Godot | Server would have to run the Godot runtime or a native ENet binding; weaker fit for an authoritative **.NET** engine host; UDP/NAT traversal pain; no real need for unreliable channels in a turn-based game; Godot-specific code cannot be unit-tested in the engine test project |
-**Recommendation: A**, JSON text frames, permessage-deflate on, ASP.NET Core confined to `Unciv.Server` (the Core stays dependency-free, and the transport interface keeps B possible). C is not recommended for this game.
+### 6.2 Identity and join (no accounts server)
+Two independent secrets with different jobs:
+1. **Admission** = a **lobby password** (optional, host-chosen; `none` is allowed for LAN) or a single-use **invite token** the host can mint for one friend. It answers "may this person enter the lobby at all". It travels only inside the encrypted channel (6.4) and the host stores only a salted hash.
+2. **Slot ownership** = the client's **ECDSA P-256 keypair** (BCL `ECDsa`; Ed25519 is not in the BCL [I]). At first join the key is bound to a display name and, on slot choice, to a civ (trust on first use). Reconnect and resume prove possession by signing a fresh host challenge. A leaked password therefore cannot hijack a seat that is already taken. Lost key = host clears the slot binding in the lobby UI.
+No account database, nothing to phish, nothing to run 24/7. Rejected: shared password as the only identity (any holder impersonates anyone), OAuth/Steam/Discord (external dependency).
 
-### 6.4 Hosting and NAT (decision D2)
-1. **Hosted VPS (recommended default)**: the headless server runs on a ~5 USD VPS, behind Caddy (automatic Let's Encrypt TLS) on
-   443. No NAT problem; always on, so async/PBM works with all players offline. Cost: a domain (optional, ~10 USD/yr) and the VPS; the owner must
-   operate it.
-2. **Friend-hosted with an overlay (Tailscale/ZeroTier/WireGuard)**: no port forwarding, private network is the transport
-   security; free; server only up when the host machine is. Players install the overlay.
-3. **Direct host with port forwarding / IPv6**: works if the host controls the router; needs dynamic DNS and a TLS cert (self-signed + the client
-   **pins the fingerprint** distributed in the invite code is acceptable for friends). CGNAT breaks it.
-No relay/hole-punching infrastructure in v1: an authoritative server *is* the rendezvous point, which removes P2P NAT traversal altogether. The
-dedicated-server binary must run as a headless console app (`Unciv.Server`), also embeddable "host a game" in the client later (same code, loopback).
+### 6.3 Transport (replaces decision D1)
+**Raw TCP with length-prefixed JSON frames, wrapped in TLS (`SslStream`), behind `ITransport`.** No ASP.NET/Kestrel, no reverse proxy, so the in-process host in the Godot client and the dedicated `Unciv.Server` use the same `System.Net.Sockets` code and there is nothing extra to deploy. WebSocket stays a possible second `ITransport` implementation (browser client), not built. ENet/UDP rejected again (NAT pain, Godot-bound).
+Default port `47821` (configurable). IPv4 and IPv6 dual-stack listen.
 
-### 6.5 Transport security
-TLS 1.2+ everywhere (WSS). Invite code carries `host:port` and optionally a cert fingerprint (so self-signed works without CA). Signed-challenge
-auth prevents replay (fresh server nonce per connection). Rate limits and a max-sessions cap per IP. No sensitive data at rest on the server
-except public keys. Logs never contain snapshot content.
+### 6.4 Transport security (recommendation: TLS 1.3 + host-key fingerprint pinned on first use, fingerprint carried in the invite)
+- On first run the host generates a **self-signed ECDSA P-256 certificate** (the *host key*, stored in `host-key.pfx`/PEM in the data dir, long-lived). The server presents it in the TLS handshake.
+- The **invite code** is a short string `unciv://<host>:<port>/<fp-base32>[/<token>]` where `fp` is the SHA-256 of the host certificate's public key (first 128 bits, grouped for reading aloud). A client that joins through an invite verifies the fingerprint *before* sending anything: no first-use window, MITM-proof.
+- A client that types only `address:port` gets **TOFU**: the UI shows the fingerprint, "trust this host?", and stores it in `known-hosts.json` (like SSH). A later mismatch is a hard stop with a "host key changed" screen, never a silent accept.
+- A **shared lobby secret as the transport key** (PSK) is rejected: password-derived keys are offline-brute-forceable by anyone who records a handshake, and the password already has a job (admission). The password is only ever sent over the pinned, encrypted channel.
+- TLS 1.3 only (`SslProtocols.Tls13`), no client certificates (the identity signature is in-protocol), AEAD ciphers by platform default. Unencrypted mode exists only as an explicit `--insecure-lan` flag for tests and is off by default.
+- Hardening: max frame size, handshake and join timeouts, per-IP connection and failed-join limits (back-off after 5 bad passwords), max sessions, frames never logged with snapshot content.
 
-## 7. Godot side (requirement 6, C006 at design level)
+### 6.5 Hosting, lobby and NAT
+**Who hosts.** Either a dedicated headless `Unciv.Server` (a friend's always-on PC, a home server, a cheap VPS if someone *chooses* one: nothing here depends on it) or the **Host** button in the client, which starts the same `GameHost` in-process, listening on the port, with the host player connected through the in-memory/loopback transport (one code path, 7). The host's save directory is the game (5).
 
-- **Library vs scene split**: `Unciv.Client.Net` (plain C#, no Godot types; testable in `Unciv.Core.Tests` style with the in-memory
-  transport) holds: transport client, auth, `ClientSession` state machine (Disconnected / Lobby / Syncing / InGame / Reconnecting),
-  the **client mirror** (`ClientGameState` built from `Snapshot`, mutated by `ViewDelta`s), command submission with `clientCmdId`
-  retry, and events surfaced as a plain .NET event/`Channel<>` of `ClientEvent`.
-- **Godot** (`Unciv.Godot`, C006, C-track): lobby/join screens, invite-code entry, "your turn" toast/notification list, reconnect overlay, turn
-  timer display, replay of events into animation (`C004`/`C005` consume the same `ClientEvent`s). Godot must marshal network events to the main
-  thread (`CallDeferred`/a pump in `_Process`), because the socket loop runs off-thread.
-- **Single player uses the same path**: a local `GameHost` + loopback transport, so offline and online share one code path; this is also the test
-  rig. (Dependency note: C004/C005 depend on T164 only; they should program against the `ClientEvent` interface from S-clientlib, not
-  `GameInfo`; re-point after review.)
-- Local persistence on the client: identity key file, known servers, last `seq`/`viewHash` per game (a small JSON file; never the snapshot).
+**Reaching the host (MVP scope).**
+| Path | MVP | Notes |
+|---|---|---|
+| Same LAN | yes | Show the host's LAN addresses in the Host screen; invite = `192.168.x.y:47821`. |
+| Manual port forward (TCP 47821) / public IPv6 | yes, documented | Doc page with router steps, "test from another network", firewall prompts on Windows/Linux. The Host screen shows local addresses and offers *Copy invite*; the public IP is "look it up (e.g. your router page)": no phone-home service. |
+| Overlay VPN (Tailscale, ZeroTier, WireGuard) | yes, documented | Zero router config, works behind CGNAT; the host uses the overlay address in the invite. This is the recommended answer to CGNAT. |
+| UPnP/NAT-PMP auto port mapping | optional ticket | BCL-only minimal SSDP+SOAP/NAT-PMP, off by default, shown as "Try to open the port automatically"; failures are reported, never fatal. Not a dependency of anything. |
+| LAN discovery | optional ticket | UDP broadcast beacon (`47822`): lobby name, version, slots free, port; "Games on your network" list in the join screen. Beacons carry no secrets. |
+| NAT hole punching / relay | out of scope | Needs a rendezvous server, which is exactly the infrastructure the owner ruled out. If ever wanted, the overlay VPN covers it. |
 
-## 8. Decision points for the human owner
+**Lobby.** `LobbySettings` (host-editable until Start; players see them read-only):
+`gameName`, `map` (`MapParameters`: type, shape, size, world wrap, resources, seed field hidden), `speed`, `difficulty`, `era`, `victoryTypes`, `maxMajorCivs`, `cityStateCount`, `aiFill` (empty slots become AI civs when the game starts), `noBarbarians`, `ruleset` + `mods` with **`rulesetHash`** (joiners with a different hash are refused with the host's list), `turnMode` (fixed Simultaneous in the UI), `turnTimerSeconds`, `onDisconnect`, `password`, `maxPlayers`, `allowJoinInProgress`. The settings map onto `GameSetupInfo`/`GameParameters` and the `NewGame(setup, seed, clock)` entry point (T199); the seed is chosen by the host and never sent.
+`Slot{index, kind: Human|AI|Closed|Open, nation|Random, color, playerKeyId, displayName, ready, connected}`. Rules: nation uniqueness and `Random` resolution by the host (using `PlayerPickerTable`-equivalent rules from T199), a joiner takes the first Open slot or a chosen one, everyone sets *ready*, the host can Start when all human slots are ready (or force), kick, close slots, chat. Starting builds the game with each human slot's `PlayerId` = player key id, writes `game.json`, takes the first snapshot and sends everyone `Snapshot`.
 
-| # | Question | Recommendation | Blocks |
+### 6.6 Trust model (state it to players)
+Clients are untrusted (sections 2-3). The **host is trusted**: it holds the full `GameInfo` and the save, and an in-process host's player can in principle inspect their own process. Friends-only; a group that wants hidden-information integrity against the host uses a dedicated server run by a third party. The anti-cheat filter still matters: it stops a modified *client*, which is the realistic threat.
+
+## 7. Godot side (C006 and the host/lobby slices)
+
+- **Library vs scene split**: `Unciv.Client.Net` (plain C#, no Godot types, tested over the in-memory transport) holds the transport client, key store and known-hosts store, `ClientSession` state machine (Disconnected / Joining / Lobby / Syncing / InGame / Reconnecting), the **client mirror** (`ClientGameState` from `Snapshot`, mutated by `ViewDelta`s), `TurnStatus`, command submission with `clientCmdId` retry, `ClientEvent` stream.
+- **Godot** (`Unciv.Godot`): Host screen (settings, address list, Copy invite, Start hosting), Join screen (address:port or invite, TOFU prompt, password), Lobby screen (slots, nation pick, ready, chat), in-game multiplayer bar (who has ended, deadline, End turn / Undo end turn, reconnect overlay), main-thread pump. See `design/CLIENT-SLICES.md` slices C006, C034-C036.
+- **Single player uses the same path**: an in-process `GameHost` + loopback (and hotseat uses `TurnMode.Sequential`); this is also the test rig. C004/C005 consume `ClientEvent`s, not `GameInfo`.
+- Local persistence on the client: identity key, `known-hosts.json`, recent invites, last `seq`/`viewHash` per game; never the snapshot.
+
+## 8. Decisions (owner decisions override the earlier recommendations D1-D6)
+
+| # | Question | Decision | Source |
 |---|---|---|---|
-| D1 | Transport stack | A: WebSocket+TLS on Kestrel, interface-isolated | S-transport |
-| D2 | Where does the game server run? | Hosted VPS (always on, PBM works); overlay VPN as free fallback | deployment doc, TLS ticket |
-| D3 | Turn mode for v1 | Sequential only; simultaneous designed but deferred | S-simultaneous (not filed until chosen) |
-| D4 | Identity | ECDSA keypair + invite tokens (no accounts) | none (S-identity proceeds with this default) |
-| D5 | Drop policy defaults | 2 min grace, 3 timeouts, then AI, reclaimable | none (configurable) |
-| D6 | Mods in multiplayer | Ruleset hash must match; no automatic mod download in v1 | T170 interplay |
+| D1 | Transport stack | **TCP + TLS 1.3 frames behind `ITransport`** (WebSocket/Kestrel dropped: no proxy, nothing to deploy) | consequence of D2 |
+| D2 | Where does the game run? | **Player-hosted lobby on a port, joined by address:port** (Terraria model); dedicated headless server or in-process Host button; no VPS/Caddy/accounts | OWNER |
+| D3 | Turn mode | **Simultaneous turns, required for the MVP**; sequential stays for single player/hotseat/tests | OWNER |
+| D4 | Identity and join | **Lobby password / invite token for admission + client ECDSA key bound to the slot**; no accounts service | OWNER (no auth service), recommendation for the rest |
+| D5 | Drop policy | `ForceEndTurn` after 120 s grace, player may resume and undo; optional AI takeover (`onDisconnect=ai`, 3 absent turns), reclaimable | recommendation |
+| D6 | Mods | Ruleset hash must match; no mod download in v1 | recommendation |
+| D7 | Transport security | **TLS 1.3, self-signed host key, fingerprint in the invite, TOFU for typed addresses** | recommendation |
+| D8 | NAT | Manual forward + overlay VPN docs for the MVP; UPnP and LAN discovery optional tickets; no hole punching | OWNER (scope delegated) |
+| D9 | Host leaves | Game saved, resumable by the same or another host process; no migration | OWNER |
+| D10 | Conflict model | Arrival-order, immediate application, first come first served (doc SIMULTANEOUS-TURNS) | recommendation |
+
+### Owner decisions still open (each has a default; work proceeds on the default)
+1. **Turn timer default.** Default: off for a new lobby (friends), configurable per lobby; `ForceEndTurn` order by civ index.
+2. **Disconnected player at turn end.** Default: `ForceEndTurn` after 120 s, undoable on return; AI takeover opt-in. Alternative: the host always waits.
+3. **Latency fairness.** Arrival order means a low-latency player wins contested tiles. Default: accept it (the host's own player has zero latency). Alternative: a short per-turn "simultaneous reveal" batching mode, rejected for the MVP because it removes immediate combat results.
+4. **Human-to-human trade requests when the recipient is offline.** Default: the request stays pending across turns (Kotlin behaviour). Alternative: expire at turn end.
+5. **Host trust.** Default: the host is trusted (6.6). Alternative: always require a dedicated server for ranked-style play.
+6. **Joining mid-game.** Default: allowed between turns into an Open or AI-controlled slot with a free nation, host can disable.
+7. **Port and discovery.** Default port 47821 and LAN beacon port 47822; change if the owner prefers others.
 
 ## 9. Tickets
 
-See `ticket.py list` for the live state. Dependency-ordered set (IDs in the backlog):
-protocol spec/DTOs -> (identity | visibility filter | persistence | turn policy | host+lobby) -> event stream
-classifiers -> client library -> e2e multi-client test -> transport (D1) -> C006 Godot UI. All of them depend on the
-command-layer tickets split from T164 only where they need concrete commands/events.
+See `ticket.py list` for live state. Dependency-ordered set:
+protocol DTOs (T172) -> (host identity/join auth T173 | visibility filter T174 | persistence T176 | turn policy T177) -> engine simultaneous turns (T200-T203, engine track, parallel to the above) -> host core (T178) -> lobby (T204) -> transport (T179) -> client library (T180) -> in-process host (T205) -> end-to-end (T182) -> Godot (C006, C034-C036). Optional: LAN discovery (T206), UPnP (T207). Command catalogue tickets (T164, T186-T194) are unchanged except for the notes added by this revision.
 
 ## 10. Verified vs inferred summary
 
-Verified: Kotlin server is a file store with optional auth; resign/skip mutate whole GameInfo client-side; T011 hash is over the full serialized
-GameInfo; `UncivFiles` + T140 round trip; `CommandProcessor` semantics; View classes and `Tile.IsExplored/IsVisible`; Notification model.
-Inferred: cost of snapshot size and replay-on-reconnect; Ed25519 absence from the BCL; how many engine paths use a global current civ (matters for
-simultaneous mode); whether the View classes cover every field the filter needs (S-filter ticket must audit and file gaps); AI duration per round.
+Verified: the Kotlin server is a file store; resign/skip mutate the whole GameInfo client-side; T011 hash is over the full serialized GameInfo; `UncivFiles` + T140 round trip; `CommandProcessor` semantics; View classes and `Tile.IsExplored/IsVisible`; Notification model; Kotlin `ignoreUnknownFields`; the exact list of engine readers of the current player (`design/SIMULTANEOUS-TURNS.md` section 2); combat randomness is state-derived, with no global RNG stream; human-to-human trade is a queued `TradeRequest`.
+Inferred: snapshot size and per-reconnect cost; Ed25519 absence from the BCL; that C# `System.Text.Json` ignores unknown members for `TurnState` (T200 tests it); that `SslStream` TLS 1.3 with a self-signed ECDSA certificate works on every Godot export platform we target (T179 verifies on Linux/Windows); AI duration per round; whether the View classes cover every field the filter needs (T174 audits).
