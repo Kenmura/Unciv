@@ -267,7 +267,7 @@ flowchart TD
   class T225 waiting
   class T226 waiting
   class T230 ready
-  class T237 prog
+  class T237 review
 ```
 
 ## Remaining tickets over time
@@ -341,4 +341,4 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T237 | In-Progress [Claude] | none | 0 | Civ5AiState: null-tolerant Clone/sanitize on load, cap operations and blocked targets |
+| T237 | Needs-Review [Claude] | none | 0 | Civ5AiState: null-tolerant Clone/sanitize on load, cap operations and blocked targets |
