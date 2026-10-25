@@ -6,9 +6,9 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 196/200 | 4 | 2 | 2 | [T208](backlog.md#t208-running-game-must-equal-its-own-save-load-make-transient-caches-vision-exploration-open-borders-flags--canonical-so-replayjoin-in-progress-cannot-desync) [T215](backlog.md#t215-loaded-mid-game-gameinfo-diverges-from-the-live-one-explore-automation-ai-turns-saveload-fidelity) [T216](backlog.md#t216-kotlin-per-turn-golden-hashes-from-a-fixed-saved-map-sidesteps-unseeded-resource-shuffles) [T217](backlog.md#t217-kotlin-golden-run-with-a-mod-ruleset) |
+| Phase 1: CLI (headless engine) | 197/200 | 3 | 2 | 1 | [T208](backlog.md#t208-running-game-must-equal-its-own-save-load-make-transient-caches-vision-exploration-open-borders-flags--canonical-so-replayjoin-in-progress-cannot-desync) [T216](backlog.md#t216-kotlin-per-turn-golden-hashes-from-a-fixed-saved-map-sidesteps-unseeded-resource-shuffles) [T217](backlog.md#t217-kotlin-golden-run-with-a-mod-ruleset) |
 | Phase 2: single player (Godot client) | 6/34 | 28 | 3 | 3 | [C002](backlog.md#c002-3d-hex-terrain-rendering-elevation-materials-water-depth) [C003](backlog.md#c003-resource-and-improvement-props) [C004](backlog.md#c004-unit-visuals-per-type-models-formations-status-icons) [C005](backlog.md#c005-civ-5-style-ui-kit-theme-screen-stack-popups-tooltip-host) [C011](backlog.md#c011-hud-top-bar-yields-turn-banner-next-action-button) [C012](backlog.md#c012-unit-panel-and-orders-attack-fortify-found-city-workers-automate) [C013](backlog.md#c013-notifications-and-popup-alerts) [C014](backlog.md#c014-minimap) [C015](backlog.md#c015-main-menu-and-game-setup-screen-nations-difficulty-speed-map-options) [C016](backlog.md#c016-saveload-screen-and-autosave) [C017](backlog.md#c017-city-screen-a-info-tiles-specialists-focus) [C018](backlog.md#c018-city-screen-b-production-queue-purchase-buildings) [C019](backlog.md#c019-tech-screen) [C020](backlog.md#c020-policy-screen) [C021](backlog.md#c021-diplomacy-screen) [C022](backlog.md#c022-trade-screen) [C023](backlog.md#c023-overview-screens-empire-cities-units-resources-ranking-religion-espionage) [C024](backlog.md#c024-victory-and-defeat-screen-game-over) [C025](backlog.md#c025-localization-translations-in-the-client-language-picker-non-latin-fonts) [C026](backlog.md#c026-tutorials) [C027](backlog.md#c027-tooltips-and-civilopedia) [C028](backlog.md#c028-options-screen-hotkeys-edge-pan) [C029](backlog.md#c029-hotseat-player-switch-screen) [C030](backlog.md#c030-placeholder-audio-uncivsound-to-generated-tones) [C031](backlog.md#c031-terrain-blending-fog-of-war-polish-chunked-meshes) [C032](backlog.md#c032-improvements-roads-cities-borders-and-in-world-yield-icons) [C033](backlog.md#c033-unit-animation-and-combat-presentation) [T169](backlog.md#t169-ci-for-the-c-solution-and-uncivgodot-headless-build-format-tests-coverage-check-exportpackaging-notes) |
-| Phase 3: multiplayer | 6/23 | 17 | 2 | 0 | [C006](backlog.md#c006-networked-play-client-join-screen-addressport--invite-tofu-prompt-reconnect-overlay-key-storage) [C034](backlog.md#c034-host-game-screen-lobby-settings-address-list-and-copy-invite-start-hosting-in-process-resume-saved-hosted-game) [C035](backlog.md#c035-lobby-screen-slots-nation-pick-ready-up-chat-kick-start-host-and-joiner-views) [C036](backlog.md#c036-multiplayer-turn-bar-who-has-ended-deadline-end-turn--undo-end-turn-turn-resolving-overlay-connection-markers) [T176](backlog.md#t176-game-store-snapshot--append-only-command-log-hash-checkpoints-crash-recovery-resume-delta-ring-or-snapshot) [T177](backlog.md#t177-turn-policy-for-simultaneous-turns-injected-clock-turn-timer-forceendturn-order-disconnect-grace-ai-takeover-opt-in-resolve-pump) [T178](backlog.md#t178-headless-host-core-uncivserver-project-gamehost-actor-sessions-bound-to-civs-command-gate-requireactive-rate-size-dedup-existence-oracle-safe-errors) [T179](backlog.md#t179-direct-connect-transport-tcp--tls-13-frames-behind-itransport-self-signed-host-key-invite-code-hostport-fingerprint-token-tofu-known-hosts-port-forward-and-overlay-vpn-docs) [T180](backlog.md#t180-client-network-library-uncivclientnet-clientsession-state-machine-mirror-state-delta-apply-command-retry-reconnectresume-no-godot-types) [T182](backlog.md#t182-multi-client-end-to-end-scripted-3-human--ai-game-over-in-memory-transport-killrestart-server-reconnect-hash-agreement) [T201](backlog.md#t201-current-player-readers-make-rules-civ-explicit-reassignpopulationdeferred-gift-action-cityviewcivview-gating-tutorial-hooks) [T202](backlog.md#t202-simultaneous-turn-commands-endturnundoendturnforceendturn-semantics-processendturnstartnextturn-server-commands-setcontroller-requireactive-gate-and-codes) [T203](backlog.md#t203-two-human-determinism-and-conflict-tests-interleaved-scriptedhumans-same-tile-moveattackfound-city-war-vs-peace-trade-races-replay-and-visibility) [T204](backlog.md#t204-lobby-slots-nation-pick-ready-up-host-settings-lobbysettings-to-gamesetupinfo-ai-fill-ruleset-hash-check-join-password-start-game) [T205](backlog.md#t205-in-process-host-run-gamehost-inside-the-client-host-button-loopback--tcp-listener-clean-shutdown-saves-the-game-resume-saved-game) [T206](backlog.md#t206-optional-lan-discovery-udp-broadcast-beacon-games-on-your-network) [T207](backlog.md#t207-optional-upnpnat-pmp-automatic-port-mapping-for-the-host) |
+| Phase 3: multiplayer | 6/23 | 17 | 3 | 0 | [C006](backlog.md#c006-networked-play-client-join-screen-addressport--invite-tofu-prompt-reconnect-overlay-key-storage) [C034](backlog.md#c034-host-game-screen-lobby-settings-address-list-and-copy-invite-start-hosting-in-process-resume-saved-hosted-game) [C035](backlog.md#c035-lobby-screen-slots-nation-pick-ready-up-chat-kick-start-host-and-joiner-views) [C036](backlog.md#c036-multiplayer-turn-bar-who-has-ended-deadline-end-turn--undo-end-turn-turn-resolving-overlay-connection-markers) [T176](backlog.md#t176-game-store-snapshot--append-only-command-log-hash-checkpoints-crash-recovery-resume-delta-ring-or-snapshot) [T177](backlog.md#t177-turn-policy-for-simultaneous-turns-injected-clock-turn-timer-forceendturn-order-disconnect-grace-ai-takeover-opt-in-resolve-pump) [T178](backlog.md#t178-headless-host-core-uncivserver-project-gamehost-actor-sessions-bound-to-civs-command-gate-requireactive-rate-size-dedup-existence-oracle-safe-errors) [T179](backlog.md#t179-direct-connect-transport-tcp--tls-13-frames-behind-itransport-self-signed-host-key-invite-code-hostport-fingerprint-token-tofu-known-hosts-port-forward-and-overlay-vpn-docs) [T180](backlog.md#t180-client-network-library-uncivclientnet-clientsession-state-machine-mirror-state-delta-apply-command-retry-reconnectresume-no-godot-types) [T182](backlog.md#t182-multi-client-end-to-end-scripted-3-human--ai-game-over-in-memory-transport-killrestart-server-reconnect-hash-agreement) [T201](backlog.md#t201-current-player-readers-make-rules-civ-explicit-reassignpopulationdeferred-gift-action-cityviewcivview-gating-tutorial-hooks) [T202](backlog.md#t202-simultaneous-turn-commands-endturnundoendturnforceendturn-semantics-processendturnstartnextturn-server-commands-setcontroller-requireactive-gate-and-codes) [T203](backlog.md#t203-two-human-determinism-and-conflict-tests-interleaved-scriptedhumans-same-tile-moveattackfound-city-war-vs-peace-trade-races-replay-and-visibility) [T204](backlog.md#t204-lobby-slots-nation-pick-ready-up-host-settings-lobbysettings-to-gamesetupinfo-ai-fill-ruleset-hash-check-join-password-start-game) [T205](backlog.md#t205-in-process-host-run-gamehost-inside-the-client-host-button-loopback--tcp-listener-clean-shutdown-saves-the-game-resume-saved-game) [T206](backlog.md#t206-optional-lan-discovery-udp-broadcast-beacon-games-on-your-network) [T207](backlog.md#t207-optional-upnpnat-pmp-automatic-port-mapping-for-the-host) |
 
 Generated by `tools/ticket.py` on every backlog change; do not edit by hand. Shows every incomplete ticket. A ticket that still has an incomplete dependency also shows all its direct dependencies (completed ones are grey and dashed); once every dependency is Done, they are hidden. An arrow `A --> B` means B depends on A.
 
@@ -46,7 +46,6 @@ flowchart TD
     T083["T083<br/>Battle C: Battle, Nuke"]
     T099["T099<br/>GameStarter"]
     T100["T100<br/>Save/load B: UncivFiles"]
-    T140["T140<br/>Civilization and manager JSON wiring (full GameInfo save/loa..."]
     T164["T164<br/>Command infrastructure over GameInfo: GameCommand base, asse..."]
     T166["T166<br/>Victory scorer game adapter (fills ConquestInputs/CultureInp..."]
     T169["T169<br/>CI for the C# solution and Unciv.Godot (headless build, form..."]
@@ -85,7 +84,6 @@ flowchart TD
     T206["T206<br/>Optional: LAN discovery (UDP broadcast beacon, 'Games on you..."]
     T207["T207<br/>Optional: UPnP/NAT-PMP automatic port mapping for the host"]
     T208["T208<br/>Running game must equal its own save-)load: make transient c..."]
-    T215["T215<br/>Loaded mid-game GameInfo diverges from the live one (Explore..."]
     T216["T216<br/>Kotlin per-turn golden hashes from a fixed saved map (sidest..."]
     T217["T217<br/>Kotlin golden run with a mod ruleset"]
   end
@@ -124,11 +122,6 @@ flowchart TD
     C035["C035<br/>Lobby screen: slots, nation pick, ready-up, chat, kick, star..."]
     C036["C036<br/>Multiplayer turn bar: who has ended, deadline, End turn / Un..."]
   end
-  T172 --> T176
-  T164 --> T176
-  T140 --> T176
-  T194 --> T176
-  T215 --> T176
   T172 --> T177
   T164 --> T177
   T184 --> T177
@@ -358,7 +351,6 @@ flowchart TD
   class T083 done
   class T099 done
   class T100 done
-  class T140 done
   class T164 done
   class T166 done
   class T169 ready
@@ -368,7 +360,7 @@ flowchart TD
   class T173 done
   class T174 done
   class T175 done
-  class T176 ondeck
+  class T176 ready
   class T177 waiting
   class T178 waiting
   class T179 waiting
@@ -397,7 +389,6 @@ flowchart TD
   class T206 waiting
   class T207 waiting
   class T208 review
-  class T215 review
   class T216 ready
   class T217 ready
 ```
@@ -418,7 +409,7 @@ xychart-beta
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
     line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 44]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 4]
 ```
 
 ## Incomplete tickets
@@ -426,13 +417,13 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T202 | **Ready to start** | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
+| T176 | **Ready to start** | T172, T164, T140, T194, T215 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | C029 | **Ready to start** | C010, T164, T184 | 0 | Hotseat player switch screen |
 | C030 | **Ready to start** | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
 | T169 | **Ready to start** | C001 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T201 | **Ready to start** | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T216 | **Ready to start** | T160 | 0 | Kotlin per-turn golden hashes from a fixed saved map (sidesteps unseeded resource shuffles) |
 | T217 | **Ready to start** | T160 | 0 | Kotlin golden run with a mod ruleset |
-| T176 | **On deck** (after T215) | T172, T164, T140, T194, T215 | 12 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | C011 | **On deck** (after C005) | C005, C010, T164, T062, T174, T184 | 2 | HUD: top bar yields, turn banner, next-action button |
 | C012 | **On deck** (after C005) | C005, C010, T164, T080, T083, T040, T188, T189, T190, T195 | 2 | Unit panel and orders: attack, fortify, found city, workers, automate |
 | C003 | **On deck** (after C002) | C002 | 1 | Resource and improvement props |
@@ -450,7 +441,6 @@ xychart-beta
 | C028 | **On deck** (after C005) | C005 | 0 | Options screen, hotkeys, edge-pan |
 | C031 | **On deck** (after C002) | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
 | C005 | In-Progress [Claude] | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
-| T215 | Needs-Review [Claude] | T102 | 13 | Loaded mid-game GameInfo diverges from the live one (Explore automation, AI turns): save/load fidelity |
 | T177 | Available (waiting on T202) | T172, T164, T184, T187, T200, T202 | 12 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202) | T172, T173, T174, T175, T176, T177, T202 | 11 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T178) | T172, T173, T178 | 9 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |

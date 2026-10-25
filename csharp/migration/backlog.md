@@ -2675,7 +2675,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review pass [Adversarial Review]: Standard checks, coverage OK. Added 3 filter tests (unmet owner of sighted unit introduced w/o Own/private data; fogged-only unit/tile introduces nothing; foreign gold change emits no StatsChanged). Follow-up observation (non-leak): owners of newly visible tiles are not introduced in deltas though SnapshotBuilder does; client may see an unknown tile owner id.
 
 ### T215 Loaded mid-game GameInfo diverges from the live one (Explore automation, AI turns): save/load fidelity
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T102
 - Source: Unciv.Core/Logic/Files/UncivFiles.cs; GameInfo.SetTransients; Unciv.Core.Tests/Commands/ReplayDeterminismTests.cs
 - Fixtures: none
