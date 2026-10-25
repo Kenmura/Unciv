@@ -14,7 +14,7 @@ namespace Unciv.Utils;
 // Reproduced: initial capacity 16 or tableSizeFor(n), load factor 0.75 and resize (bins keep their relative order),
 // hash spreading h ^ (h >>> 16), new nodes appended at the bin tail, resize instead of treeify below 64 buckets,
 // `clear()` keeping the table, HashMap(Map)/putAll pre-sizing. Not reproduced: treeified bins (nine or more nodes in one
-// bin of a 64+ table), which throw NotSupportedException rather than iterate in a possibly different order.
+// bin of a 64+ table) stay linked lists (T222): same order for the first eight nodes, possibly different for later inserts.
 // The version dependent part is HashSet(Collection) sizing (changed in JDK 19); this follows JDK 25.
 public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
 {
@@ -198,7 +198,7 @@ public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
                 if (node.Next == null)
                 {
                     node.Next = new Node(hash, key, value);
-                    if (binCount >= TreeifyThreshold - 1) TreeifyBin(buckets);
+                    if (binCount >= TreeifyThreshold - 1) TreeifyBin();
                     break;
                 }
                 node = node.Next;
@@ -209,12 +209,13 @@ public sealed class JavaHashMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
         return true;
     }
 
-    // treeifyBin: below 64 buckets the JVM resizes instead; with 64+ it would build a tree bin, which we do not reproduce
-    private void TreeifyBin(Node?[] buckets)
+    // treeifyBin: below 64 buckets the JVM resizes instead; with 64+ it would build a tree bin. We keep the bin a linked list:
+    // lookups stay correct (only slower) and iteration order matches the JVM for the first eight nodes (treeifyBin keeps the
+    // list order); later inserts into a tree bin land after their tree parent in the JVM, which is not reproduced. A mid-game
+    // crash is worse than that pathological divergence (T222).
+    private void TreeifyBin()
     {
-        if (buckets.Length < MinTreeifyCapacity) Resize();
-        // JUSTIFY: T118 JVM tree-bin iteration order is not reproduced (permanent limit)
-        else throw new NotSupportedException("A bin of a JavaHashMap would be treeified (nine or more colliding keys); the JVM iteration order of tree bins is not reproduced");
+        if (table is { Length: < MinTreeifyCapacity }) Resize();
     }
 
     private Node?[] Resize()

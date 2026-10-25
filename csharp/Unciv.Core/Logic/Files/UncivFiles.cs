@@ -10,7 +10,7 @@ namespace Unciv.Logic.Files;
 // - Gdx.Files / FileHandle become the explicit data-folder root (IUncivFileHandle). The external-storage preference (Android) is dropped:
 //   saves always live in the root's SaveFiles / MultiplayerGames folders.
 // - Not ported (client, Won't port or other tickets): GameSettings load/save, getSettingsForPlatformLaunchers, the custom location
-//   saver/loader (PlatformSaverLoader), the TextField filter, scenarios and the mod list cache. The autosave limit
+//   saver/loader (PlatformSaverLoader), the TextField filter, scenarios (Won't port, T232) and the mod list cache. The autosave limit
 //   (GameSettings.maxAutosavesStored) is an explicit argument.
 // - Autosaves run synchronously (Kotlin spawned a coroutine job and cloned the game first); the caller clones if it needs to keep playing.
 // - The default saveGame callback "rethrow" is an optional Action: null rethrows, like Kotlin's ::rethrowIfNotNull.

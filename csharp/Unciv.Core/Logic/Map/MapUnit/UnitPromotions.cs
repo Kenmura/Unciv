@@ -253,5 +253,5 @@ public class UnitPromotions : IsPartOfGameInfoSerialization
     public override bool Equals(object? obj) =>
         obj is UnitPromotions other && XP == other.XP && Promotions.Count == other.Promotions.Count && Promotions.All(other.Promotions.Contains) && NumberOfPromotions == other.NumberOfPromotions;
 
-    public override int GetHashCode() => HashCode.Combine(XP, NumberOfPromotions, Promotions.Count);
+    public override int GetHashCode() => unchecked(((XP * 31 + NumberOfPromotions) * 31) + Promotions.Count);
 }

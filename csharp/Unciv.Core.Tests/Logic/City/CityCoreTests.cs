@@ -725,6 +725,39 @@ public class CityCoreTests
         Assert.False(w.City.MatchesFilter("non-[Puppeted]", w.Civ, multiFilter: false)); // taken as one unknown filter
     }
 
+    // MultiFilterTests.kt `test cityFilter combining two non-filters` / `negating a combined filter` (T222)
+    [Fact]
+    public void CityFilterCombiningTwoNonFilters_ThroughTheConditional()
+    {
+        var w = NewWorld();
+        var conditional = new UniqueObject("in [{non-[Puppeted]} {non-[Razing]}] cities");
+        bool Applies() => Conditionals.ConditionalApplies(null, conditional, new GameContext(city: w.City));
+        Assert.True(Applies());
+        w.City.IsBeingRazed = true;
+        Assert.False(Applies());
+        w.City.IsBeingRazed = false;
+        w.City.IsPuppet = true;
+        Assert.False(Applies());
+        w.City.IsBeingRazed = true;
+        Assert.False(Applies());
+    }
+
+    [Fact]
+    public void CityFilterNegatingACombinedFilter_ThroughTheConditional()
+    {
+        var w = NewWorld();
+        var conditional = new UniqueObject("in [non-[{Puppeted} {Resisting}]] cities");
+        bool Applies() => Conditionals.ConditionalApplies(null, conditional, new GameContext(city: w.City));
+        Assert.True(Applies());
+        w.City.IsPuppet = true;
+        Assert.True(Applies());
+        w.City.IsPuppet = false;
+        w.City.SetFlag(CityFlags.Resistance, 3);
+        Assert.True(Applies());
+        w.City.IsPuppet = true;
+        Assert.False(Applies());
+    }
+
     [Fact]
     public void MatchesFilter_NonOccupiedUsesTheExtraAnnexUnhappiness()
     {

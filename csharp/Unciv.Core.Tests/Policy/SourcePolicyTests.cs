@@ -8,6 +8,32 @@ public partial class SourcePolicyTests
 {
     private static readonly string CSharpRoot = FindCSharpRoot();
 
+    // DETERMINISM.md: string ordering must be ordinal. Heuristic (types are not visible to a regex): an OrderBy/ThenBy whose key is a
+    // name/text-like member and that passes no comparer. Keys of other types are unaffected; add the comparer (or rename) when it fires.
+    [GeneratedRegex(@"\b(OrderBy|ThenBy|OrderByDescending|ThenByDescending)\(\s*\w+\s*=>\s*[\w.!?]*\.(Name|CivName|FullName|Text|Title|Label)\s*(\(\))?\s*\)")]
+    private static partial Regex StringKeyOrderingRegex();
+
+    [Fact]
+    public void StringKeyedOrderingUsesAnExplicitComparer()
+    {
+        Assert.Matches(StringKeyOrderingRegex(), "x.OrderBy(it => it.Name)");
+        Assert.Matches(StringKeyOrderingRegex(), "x.ThenByDescending(c => c.Civ.CivName)");
+        Assert.DoesNotMatch(StringKeyOrderingRegex(), "x.OrderBy(it => it.Name, StringComparer.Ordinal)");
+        Assert.DoesNotMatch(StringKeyOrderingRegex(), "x.OrderBy(it => it.Cost)");
+
+        var offenders = new List<string>();
+        foreach (var file in SourceFiles("*.cs"))
+        {
+            var lines = File.ReadAllLines(file);
+            for (var i = 0; i < lines.Length; i++)
+                if (StringKeyOrderingRegex().IsMatch(lines[i]))
+                    offenders.Add($"{Path.GetRelativePath(CSharpRoot, file)}:{i + 1}");
+        }
+
+        Assert.True(offenders.Count == 0,
+            "OrderBy/ThenBy on a string key needs StringComparer.Ordinal (DETERMINISM.md): " + string.Join(", ", offenders));
+    }
+
     private static string FindCSharpRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

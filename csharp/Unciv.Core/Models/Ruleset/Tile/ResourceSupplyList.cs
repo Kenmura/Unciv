@@ -46,7 +46,7 @@ public class ResourceSupplyList : IEnumerable<ResourceSupplyList.ResourceSupply>
 
         public override bool Equals(object? obj) => Equals(obj as ResourceSupply);
 
-        public override int GetHashCode() => HashCode.Combine(Resource, Origin, Amount);
+        public override int GetHashCode() => unchecked(((JavaHash.HashCode(Resource.Name) * 31 + JavaHash.HashCode(Origin)) * 31) + Amount);
     }
 
     public static ResourceSupplyList EmptyList { get; } = new();

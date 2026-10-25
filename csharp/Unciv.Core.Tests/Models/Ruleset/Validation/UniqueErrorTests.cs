@@ -81,6 +81,16 @@ public sealed class UniqueErrorTests : IDisposable
         Assert.Equal($"Circular Reference in Promotions: {firstBranch.Name}→{secondBranch.Name}→{firstBranch.Name}", errors.Single().Text);
     }
 
+    // MultiFilterTests.kt `test a complete Unique with a complex multi-filter is parsed and validated correctly` (T222)
+    [Fact]
+    public void TestCompleteUniqueWithComplexMultiFilterIsValidated()
+    {
+        var ruleset = RulesetCache.GetVanillaRuleset();
+        var unique = new UniqueObject("Only available <if [Colosseum] is constructed in all [non-[{non-[Resisting]} {non-[Razing]} {non-[Coastal]}]] cities>");
+        var errors = new UniqueValidator(ruleset).CheckUnique(unique, null, UniqueValidator.ExtensionModParameterSeverities);
+        Assert.False(errors.IsNotOK());
+    }
+
     [Fact]
     public void TestTimedGlobalUniqueAcceptsTriggerConditionsWhenOnUnit()
     {

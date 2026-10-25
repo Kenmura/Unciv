@@ -93,7 +93,7 @@ public class JavaHashMapTests
     }
 
     [Fact]
-    public void CollidingBinsResizeBelow64ThenRefuseToTreeify()
+    public void CollidingBinsResizeBelow64ThenKeepTheBinAsAList()
     {
         // JVM (constant hashCode): table 16 until the 8th key, 32 at the 9th (treeifyBin resizes small tables), 64 at the 10th
         var map = new JavaHashMap<int, int>(_ => 0);
@@ -104,12 +104,17 @@ public class JavaHashMapTests
             capacities.Add(map.Capacity);
         }
         Assert.Equal([16, 16, 16, 16, 16, 16, 16, 16, 32, 64], capacities);
-        // from here the JVM would build a tree bin (11th key); that order is not reproduced
-        Assert.Throws<NotSupportedException>(() => map.Put(11, 11));
+        // from here the JVM would build a tree bin (11th key); we keep a list instead of crashing
+        for (int i = 11; i <= 20; i++) map.Put(i, i);
+        Assert.Equal(20, map.Count);
+        Assert.Equal(15, map[15]);
+        Assert.Equal(20, ((System.Collections.IEnumerable)map).Cast<object>().Count()); // non-generic enumerator
 
         var large = new JavaHashMap<int, int>(64, _ => 0);
         for (int i = 1; i <= 8; i++) large.Put(i, i);
-        Assert.Throws<NotSupportedException>(() => large.Put(9, 9));
+        large.Put(9, 9);
+        Assert.Equal(9, large.Count);
+        Assert.Equal(9, large[9]);
     }
 
     [Fact]

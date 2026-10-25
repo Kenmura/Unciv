@@ -16,6 +16,17 @@ public class RulesetTileTests
 
     private static TileResource Resource(string name, ResourceType type = ResourceType.Bonus) => new() { Name = name, ResourceType = type };
 
+    [Fact]
+    public void HashCodesAreProcessIndependentJvmStyleValues()
+    {
+        // 31-based fold with Java's String hash ("Iron".hashCode() = 2287848): fixed numbers, not HashCode.Combine
+        var supply = new ResourceSupplyList.ResourceSupply(Resource("Iron"), "Tiles", 3);
+        Assert.Equal(unchecked((2287848 * 31 + Unciv.Utils.JavaHash.HashCode("Tiles")) * 31 + 3), supply.GetHashCode());
+        Assert.Equal(supply.GetHashCode(), new ResourceSupplyList.ResourceSupply(Resource("Iron"), "Tiles", 3).GetHashCode());
+        var promotions = new Unciv.Logic.Map.MapUnits.UnitPromotions { XP = 7, NumberOfPromotions = 2 };
+        Assert.Equal((7 * 31 + 2) * 31, promotions.GetHashCode());
+    }
+
     // region enums
 
     [Fact]

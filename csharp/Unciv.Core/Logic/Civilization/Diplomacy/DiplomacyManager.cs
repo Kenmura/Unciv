@@ -17,8 +17,8 @@ namespace Unciv.Logic.Civilization.Diplomacy;
 // core/src/com/unciv/logic/civilization/diplomacy/DiplomacyManager.kt (the enums are in their own files)
 //
 // Deviations / deferred (each names its ticket):
-// - UniqueTriggerActivation.triggerUnique (TriggerUponSigningPeace / DeclaringFriendship / SigningDefensivePact): T052; the call site is
-//   TriggerUnique() below and throws until then (only reachable for civs that have such a unique).
+// - UniqueTriggerActivation.triggerUnique (TriggerUponSigningPeace / DeclaringFriendship / SigningDefensivePact) is wired through
+//   TriggerUnique() below.
 // - makePeaceOneSide builds a plain Trade where Kotlin builds `TradeLogic(thirdCiv, otherCiv).currentTrade`: TradeLogic's constructor
 //   only computes the available offers and has no side effect, so the Trade is the same (TradeLogic: T086).
 // - recieveGoldGifts / getGoldInflation: TradeEvaluation().getGoldInflation is TradeEvaluation.Default.GetGoldInflation (T089).

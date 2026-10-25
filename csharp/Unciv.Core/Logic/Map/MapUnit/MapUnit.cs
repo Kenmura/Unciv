@@ -24,7 +24,6 @@ namespace Unciv.Logic.Map.MapUnits;
 // - getMovementString (needs UncivGame.Current.settings number format: UI), Timers.timeThis profiling, the @Readonly/@Cache/@LocalState
 //   purity annotations, VisibleForTesting.
 // - doAction's UnitAutomation calls (GameView(..).getMapUnitView) are wired (T156).
-// - UniqueTriggerActivation.triggerUnique is the T052 stub (returns false).
 
 /// <summary>
 /// The immutable properties and mutable game state of an individual unit present on the map.
