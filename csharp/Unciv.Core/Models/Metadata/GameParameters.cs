@@ -76,6 +76,10 @@ public class GameParameters : IIsPartOfGameInfoSerialization
     [JsonPropertyName("nuclearWeaponsEnabled")]
     public bool NuclearWeaponsEnabled { get; set; } = true;
 
+    /// <summary>T197: lets a player ask the Query API whether an AI civ would accept a trade (bucketed hint, see TradeHintQuery). Off: it would let a player probe the AI valuation.</summary>
+    [JsonPropertyName("tradeHintsEnabled")]
+    public bool TradeHintsEnabled { get; set; }
+
     [JsonPropertyName("espionageEnabled")]
     public bool EspionageEnabled { get; set; }
 
@@ -191,6 +195,7 @@ public class GameParameters : IIsPartOfGameInfoSerialization
             OneCityChallenge = OneCityChallenge,
             // godMode intentionally reset on clone
             NuclearWeaponsEnabled = NuclearWeaponsEnabled,
+            TradeHintsEnabled = TradeHintsEnabled,
             EspionageEnabled = EspionageEnabled,
             NoStartBias = NoStartBias,
             ShufflePlayerOrder = ShufflePlayerOrder,

@@ -272,6 +272,15 @@ public class QueryTests
         ["units.ReachableTiles"] = () => new Unciv.Queries.Units.ReachableTilesQuery(1),
         ["units.PathPreview"] = () => new Unciv.Queries.Units.PathPreviewQuery(1, 0, 0),
         ["units.AttackableTargets"] = () => new Unciv.Queries.Units.AttackableTargetsQuery(UnitId: 1),
+        ["empire.TechTree"] = () => new Unciv.Queries.Empire.TechTreeQuery(),
+        ["empire.PolicyTree"] = () => new Unciv.Queries.Empire.PolicyTreeQuery(),
+        ["empire.Religion"] = () => new Unciv.Queries.Empire.ReligionQuery(),
+        ["empire.GreatPeople"] = () => new Unciv.Queries.Empire.GreatPeopleQuery(),
+        ["empire.Notifications"] = () => new Unciv.Queries.Empire.NotificationsQuery(),
+        ["empire.Overview"] = () => new Unciv.Queries.Empire.EmpireOverviewQuery(),
+        ["empire.DiplomacyPanel"] = () => new Unciv.Queries.Empire.DiplomacyPanelQuery("Egypt"),
+        ["empire.TradeOptions"] = () => new Unciv.Queries.Empire.TradeOptionsQuery("Egypt"),
+        ["empire.TradeHint"] = () => new Unciv.Queries.Empire.TradeHintQuery("Egypt", [], []),
         ["units.AttackPreview"] = () => new Unciv.Queries.Units.AttackPreviewQuery(0, 0, UnitId: 1),
     };
 

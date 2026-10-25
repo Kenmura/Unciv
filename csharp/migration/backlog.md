@@ -2374,7 +2374,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Trap: GetGoldCostOfTile/CanBuyTile read Expansion state that has lazy caches; the purity test must run with a cold cache and a warm cache and compare. All numbers that Kotlin computes as Float for display (stats, percents) stay float in the DTO; round only where Kotlin rounds.
 
 ### T197 Query API: empire panels (tech tree and research queue, policy tree, religion beliefs, great people, diplomacy and trade panels incl. optional AI would-accept hint, notifications, empire overview)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T185, T138
 - Source: design/COMMANDS-IMPLEMENTATION.md section 8; view/CivView.kt, ForeignCivView.kt, TradeView.kt, DiplomacyManagerView.kt; ui/screens/pickerscreens/*, diplomacyscreen/*, overviewscreen/*; csharp UI/EmpireOverviewCategories.cs, UI/RankingType.cs
 - Fixtures: none
@@ -2385,6 +2385,11 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Already in C#: CivView.ShouldOpenTechPicker / TurnsToTech / IsResearched / CanAdoptPolicy / GetBeliefsToChoose* / GetGreatPersonPoints* / GetHappinessBreakdown / CalculateScoreBreakdown, TradeView offers lists, ForeignCivView.GetResearchAgreementCost / GetStatForRanking. Missing: tech/policy tree states (researched, researchable, queued, locked; turns; unlocks via Civilopedia text), policy branch states (adoptable via PolicyManager.IsAdoptable, adopted, locked with the reason), available beliefs per type, free great person options, per-civ diplomacy panel (relationship level, modifiers, flags, what can be offered), trade options (TradeLogic Our/TheirAvailableOffers filtered by what is valid), notifications with serialisable actions.
       - Trade evaluation for a human: Kotlin has NONE (verified: diplomacyscreen never calls TradeEvaluation; the AI answers on its turn). A Civ 5-style 'would they accept' hint is a NEW feature: expose it as TradeHintQuery using TradeEvaluation.GetTradeAcceptability(trade, them, us) mapped to {accept, counter-needed, refuse} buckets (never the raw number), behind a game option, because it lets a player probe the AI valuation.
       - Trap: PendingDecisions (turn-flow ticket) is the source for 'what do I still have to decide' - do not re-derive it here. Notification actions (LocationAction, MapUnitAction, PromoteUnitAction...) must be serialisable as they are in saves; strip actions pointing at tiles the viewer has not explored (design/SERVER.md 2.5).
+  -   - Implemented (Claude): 9 queries under Queries/Empire: empire.TechTree, PolicyTree, Religion, GreatPeople, DiplomacyPanel, TradeOptions, TradeHint, Notifications, Overview. All pure (state hash checked per query in EmpireQueryTests and QueryTests sample).
+      - Trap found: GreatPersonManager.GetPointsRequiredForGreatPerson writes the initial 100 into the saved counter; added internal PeekPointsRequiredForGreatPerson (same value, no write) and the query uses it.
+      - TradeHint is new (no Kotlin). Behind new GameParameters.TradeHintsEnabled (default false, json "tradeHintsEnabled", cloned). Only AI major civs. Uses TradeEvaluation.GetTradeAcceptability on the receiver's view (trade.Reverse(), gifts included) like the AI's response. Buckets: accept (>=0), counter-needed (negative, deficit <= viewer gold), refuse (hard no / int.MinValue / invalid / deficit above gold). Number never returned. Offers must exist in the available lists.
+      - Unmet civs are answered as unknown-civ (DiplomacyPanel, TradeOptions, TradeHint). Notification actions on unexplored tiles (Location, City, MapUnit, PromoteUnit) are dropped, the notification stays. Policy branch Adopted/Total count the opener plus members, not the completion bonus. Tech Turns mirrors TechManager.TurnsToTech as int? (null = no science). Others' rankings in Overview only if GameParameters.ShowRankings and civ is met.
+      - Deviation: empire.* errors use EmpireQueryCodes (unknown-civ, not-available, bad-request, hints-disabled).
 
 ### T198 Query API: victory progress, scores, rankings and demographics
 - State: Available

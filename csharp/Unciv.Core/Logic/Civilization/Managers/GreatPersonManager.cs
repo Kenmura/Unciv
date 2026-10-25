@@ -86,6 +86,13 @@ public class GreatPersonManager : IsPartOfGameInfoSerialization
         return KotlinMath.FloatToInt(PointsForNextGreatPersonCounter[key] * CivInfo.GameInfo.Speed.Modifier);
     }
 
+    /// <summary>T197: <see cref="GetPointsRequiredForGreatPerson"/> without its lazy initialisation of the counter (a query must not change the saved state).</summary>
+    internal int PeekPointsRequiredForGreatPerson(string greatPerson)
+    {
+        int points = PointsForNextGreatPersonCounter[GetPoolKey(greatPerson)];
+        return KotlinMath.FloatToInt((points == 0 ? 100 : points) * CivInfo.GameInfo.Speed.Modifier);
+    }
+
     public string? GetNewGreatPerson()
     {
         foreach (var (unit, value) in GreatGeneralPointsCounter)
