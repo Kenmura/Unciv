@@ -2375,7 +2375,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - Deliberate deviation: RespondToTradeRequest removes the request before AcceptTrade (as the AI path does). Responses to a stale alert (offerer defeated or at war) just drop the alert. TradeOfferSpec uses Kind, not Type, because the envelope payload may not contain a type field. The AI-would-accept hint (TradeHintQuery) is not part of this ticket.
 
 ### T194 Command log format, replay verifier and scripted-human replay test against the T102 state hashes
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T187, T188, T189, T191, T192, T102, T011
 - Source: design/COMMANDS-IMPLEMENTATION.md section 6; Unciv.Core/Commands/CommandProcessor.cs; Unciv.Core.Tests/Determinism/EndToEndDeterminismTests.cs; Utils/StateHasher.cs
 - Fixtures: none
@@ -2387,6 +2387,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
       - Acceptance (the old T164 note): a ScriptedHuman policy (found city with the starting settler, choose production and research when PendingDecisions asks, move/explore a few units, end turn) plays N>=60 turns against AI civs through CommandProcessor.Submit; replaying the log from the header gives identical per-turn hashes; also save->load->continue and snapshot at turn k + log tail reproduces the final hash; a tampered payload is a CommandDesyncException; same seed twice gives the same log byte for byte.
       - Traps: (1) Replay must not run any UI/AutoPlay code: the header's PlayerSettings are authoritative. (2) The CultureInfo of the host must not change the JSON (the T102 hostile-culture test again, now for payload numbers). (3) A log is only valid for the engineVersion that wrote it; a different version must refuse to replay rather than diverge silently. (4) Log entries of rejected commands do not exist (existing processor rule) - the server may keep a separate audit stream.
   - Simultaneous turns: header gains turnMode and the initial controller bindings; entries of different human actors and the server's ProcessEndTurn/RunAiTurn/StartNextTurn/BeginTurn/ForceEndTurn/SetController interleave in one Seq order; a checkpoint is written after the last BeginTurn of each turn. The verifier needs no clock. Two-human replay test is T203.
+  - Implemented: Commands/Log/{CommandLogHeader,CommandLogWriter,CommandLogReader,ReplayVerifier,ScriptedHuman}.cs; CommandProcessor and GameSession gained an optional lastSeq (snapshot + tail replay). Decisions and deviations:
+      - Entries are {seq,type,actor,payload}: the authority clock 'now' stays inside the payload of ITimedCommand commands (GameSession.Clock stamps it), not a separate entry member. Checkpoints are {checkpoint:seq,turn,fullHash} (hash as 16 hex digits), one at seq 0 and one after each BeginTurn. Header members carry explicit json names; playerSettings and turnMode ('Sequential') are in the header, simultaneous bindings are left to T203.
+      - Header GameSetup is a JSON round trip, not the GameSetupInfo copy constructor: GameParameters.Clone follows Kotlin and turns a null showCivilizationStats into showVictoryStats, which changes the saved game (so the copy would start another game).
+      - engineVersion = Unciv.Core assembly version (a coarse fence), rulesetHash = FNV over names of technologies/units/buildings/policies/nations of the combined ruleset; both, and formatVersion, are checked by ReplayVerifier.StartGame (CommandLogException).
+      - ScriptedHuman also hosts the server loop (RunAiTurn per civ, BeginTurn, checkpoint); PlayTurns stops with the human's next turn begun so a snapshot loads (a load treats the current civ as started).
+      - Save/load gap: snapshots after turn ~8 diverge on replay (engine bug, unrelated to commands); filed as T215. Tests snapshot at turns 1, 3, 5 until it is fixed.
+      - Verifier: a command that no longer validates throws CommandDesyncException; a checkpoint mismatch returns DivergedAtSeq and stops.
 
 ### T195 Query API: unit movement and combat previews (reachable tiles with costs, path preview with turns per leg, attackable tiles, attack odds and damage ranges, nuke/air/bombard targets)
 - State: Done
@@ -2653,6 +2660,17 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
   - Implemented in ViewDeltaBuilder: (1) ViewMark now records Visible tiles; fog-to-visible tiles are re-sent in TilesRevealed with their visible units. (2) TilesRevealed gained optional Civs (CivDto, no Own): civs newly in KnownCivs since the mark plus owners of units in the delta; a delta with only civs (e.g. meeting by diplomacy) is emitted. (3) StatsChanged gained GoldPerTurn/SciencePerTurn/CulturePerTurn/FaithPerTurn (sum of CivView.GetStatMapForNextTurn, Float->Int truncation); emitted when they change. New fields are optional so existing constructors/wire stay compatible. Quirk: TestGame.AddUnit makes civs meet, so tests capture before adding units. Standard checks + coverage pass.
   -   - Review pass [Adversarial Review]: Standard checks, coverage OK. Added 3 filter tests (unmet owner of sighted unit introduced w/o Own/private data; fogged-only unit/tile introduces nothing; foreign gold change emits no StatsChanged). Follow-up observation (non-leak): owners of newly visible tiles are not introduced in deltas though SnapshotBuilder does; client may see an unknown tile owner id.
+
+### T215 Loaded mid-game GameInfo diverges from the live one (Explore automation, AI turns): save/load fidelity
+- State: Available
+- Depends: T102
+- Source: Unciv.Core/Logic/Files/UncivFiles.cs; GameInfo.SetTransients; Unciv.Core.Tests/Commands/ReplayDeterminismTests.cs
+- Fixtures: none
+- Deliverables: fix in Unciv.Core plus a regression test
+- Gate: dotnet test --filter FullyQualifiedName~ReplayDeterminism
+- Claimed:
+- Notes:
+  - Found by T194. Repro: AI-only game (Setup: Pangaea Tiny map seed 5, game seed 9, Babylon/Greece/Rome, Babylon human but played by NextTurn/AI) played 20 turns with GameStarter+NextTurn, then UncivFiles.GameInfoToString/FromString: the loaded copy and the original give different StateHasher hashes from the very next NextTurn on (turns 5, 10, 30 happen to match). With the scripted human (ReplayDeterminismTests), a snapshot at turn 8 diverges at the first move-automated-units (Explore): the loaded game reveals/explores different tiles (exploredBy and movementMemories differ). Suspect a cache or transient (viewable tiles, unit movement memories, civ caches) not rebuilt by SetTransients or not serialized. Fix, then raise the snapshotTurn InlineData in SnapshotPlusLogTailReproducesTheFinalHash and the 5-turn snapshot in SaveLoadContinueGivesTheSameFinalHash, and drop the TODO(T215) comment there.
 
 ## Client track (Godot) — all tickets Blocked until the engine track delivers a playable core
 

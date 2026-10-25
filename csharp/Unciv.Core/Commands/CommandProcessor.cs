@@ -4,13 +4,14 @@ namespace Unciv.Commands;
 
 // The single writer of a game's state. Server role: Submit validates, applies, numbers and logs a command. Follower /
 // lockstep role: Replay applies another authority's log in order. Same state + same log = same state.
-public sealed class CommandProcessor<TState>(TState state, CommandRegistry<TState> registry)
+// lastSeq: the seq of the snapshot the state was loaded from (T194), so the log tail after it can be replayed.
+public sealed class CommandProcessor<TState>(TState state, CommandRegistry<TState> registry, long lastSeq = 0)
 {
     private readonly List<CommandEnvelope> log = [];
 
     public TState State { get; } = state;
 
-    public long LastSeq { get; private set; }
+    public long LastSeq { get; private set; } = lastSeq;
 
     public IReadOnlyList<CommandEnvelope> Log => log;
 

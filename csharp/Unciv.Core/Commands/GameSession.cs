@@ -17,10 +17,10 @@ public sealed class GameSession
     private readonly CommandRegistry<GameInfo> registry;
     private readonly CommandProcessor<GameInfo> processor;
 
-    public GameSession(GameInfo game, CommandRegistry<GameInfo>? registry = null)
+    public GameSession(GameInfo game, CommandRegistry<GameInfo>? registry = null, long lastSeq = 0)
     {
         this.registry = registry ?? GameCommandRegistry.Create();
-        processor = new CommandProcessor<GameInfo>(game, this.registry);
+        processor = new CommandProcessor<GameInfo>(game, this.registry, lastSeq);
     }
 
     /// <summary>
