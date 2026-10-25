@@ -358,5 +358,5 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T235 | Needs-Review [Claude] | T227 | 0 | Civ 5 AI: wire OperationManager (persisted operations) and make UseCiv5Ai the default for new games |
+| T235 | In-Review [Claude] | T227 | 0 | Civ 5 AI: wire OperationManager (persisted operations) and make UseCiv5Ai the default for new games |
 | T236 | Needs-Review [Claude] | none | 0 | Live state diverges from reload after MakeCivilizationsMeet with a city state (Tile.exploredBy), plus unit-id sort edge cases (duplicate ids, mixed missing ids: sort after EnsureUnitIds) |
