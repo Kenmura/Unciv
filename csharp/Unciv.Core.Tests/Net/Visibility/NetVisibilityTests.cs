@@ -178,6 +178,38 @@ public sealed class NetVisibilityTests
         Assert.All(forA.Cities, it => Assert.NotNull(it.VisibleBuildings));
     }
 
+    // GetVisibleBuildings uses IsAnyWonder, so national wonders count as public too (matches CityStatsTable.kt); only ordinary buildings are private.
+    [Fact]
+    public void ForeignCity_VisibleBuildingsListOnlyWonders_OwnerStillSeesEverything()
+    {
+        var wonder = game.CreateWonder();
+        var plain = game.CreateBuilding();
+        foreignCity.CityConstructions.AddBuilding(plain.Name);
+        foreignCity.CityConstructions.AddBuilding(wonder.Name);
+
+        var forA = SnapshotFor(a);
+        var dto = forA.Cities.Single(it => it.Name == foreignCity.Name);
+        // The capital's Palace is a national wonder, hence listed too.
+        Assert.Equal(["Palace", wonder.Name], dto.VisibleBuildings);
+        Assert.Null(dto.Own);
+        Assert.DoesNotContain(plain.Name, Text(forA));
+
+        var ownDto = SnapshotFor(f).Cities.Single(it => it.Name == foreignCity.Name);
+        Assert.Contains(plain.Name, ownDto.Own!.Buildings);
+        Assert.Contains(wonder.Name, ownDto.Own.Buildings);
+    }
+
+    [Fact]
+    public void Trades_ThirdPartyRequestToAKnownCivIsAbsent()
+    {
+        var other = new Trade();
+        other.TheirOffers.Add(new TradeOffer("Gold", TradeOfferType.Gold, 90210));
+        f.TradeRequests.Add(new TradeRequest(h.CivId, other));
+        var snapshot = SnapshotFor(a);
+        Assert.Empty(snapshot.PendingTrades);
+        Assert.DoesNotContain("90210", Text(snapshot));
+    }
+
     [Fact]
     public void Trades_OnlyTheTwoPartiesSeeAProposal()
     {

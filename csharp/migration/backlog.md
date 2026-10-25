@@ -2612,7 +2612,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes: Follow-up named in T161 Notes.
 
 ### T212 Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174)
-- State: In-Progress [Claude]
+- State: Needs-Review [Claude]
 - Depends: T174
 - Source: csharp/migration/design/SERVER.md section 3; T174 notes
 - Fixtures: none
@@ -2622,6 +2622,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
   - Added DiplomacyManagerView.Status, ForeignCityView.GetVisibleBuildings (wonders only, per Civ: other buildings stay private), ForeignCivView.GetTradeRequestsVisibleToViewer, CivView.GetAdoptedPolicies; DTOs: DiplomacyDto.Status, CityDto.VisibleBuildings, OwnCivDto.Policies. SnapshotBuilder no longer uses GetCiv() for trades or own-civ check. Remaining GetCiv() use: PrivateSpies.cs (spies, outside this ticket's scope).
   - Review notes (Claude, adversarial review): Gate + build/format/test pass (5069 passed). No leak found in the code itself: policies are only built under IsOwnedByViewer, trade requests keep the old filter, Status is emitted only for viewer pairs or wars. CHANGES REQUESTED: (1) the one new privacy filter, ForeignCityView.GetVisibleBuildings (wonders only), has no behavioural test: NetVisibilityTests only asserts VisibleBuildings is non-null. Add a test where a foreign (non-viewer) explored city holds a non-wonder building (e.g. Granary) and a wonder, and assert the snapshot for the viewer lists only the wonder and the text never contains the ordinary building name (while Own.Buildings for the owner still has it). (2) Add a test that a third party's trade request to the viewer's known civ is absent (if not already covered by Trades_OnlyTheTwoPartiesSeeAProposal, confirm it still exercises GetTradeRequestsVisibleToViewer). (3) Note IsAnyWonder includes national wonders (matches CityStatsTable.kt); keep but state it in the test. (4) coverage.py --check --since aborted with a testhost crash after all tests passed (infra); rerun after fixes.
+  -   - Review fixes (Claude): added ForeignCity_VisibleBuildingsListOnlyWonders_OwnerStillSeesEverything (plain building + wonder in foreign city: viewer sees only wonder, plus the capital's Palace because IsAnyWonder includes national wonders per CityStatsTable.kt; ordinary name absent from text; owner's Own.Buildings has both) and Trades_ThirdPartyRequestToAKnownCivIsAbsent (distinct amount 90210 absent). Gate, build/format/test (5085 passed) and coverage.py --check pass; the testhost crash did not reproduce (likely flaky/infra, 2 clean runs).
 
 ### T213 Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts
 - State: Done
