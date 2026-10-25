@@ -2051,13 +2051,13 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   -   - Review pass 2 (adversarial subagent): fixes verified (mutations of improvement, city Own gating, tile-owner civs killed). Two guards (visible-tile check before GetVisibleUnits, IsOwnedByViewer in BuildUnit) are redundant with the Views and kept as commented defense in depth. PASS.
 
 ### T175 Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery
-- State: Available
+- State: In-Progress [Claude]
 - Depends: T172, T174, T164, T186
 - Source: csharp/migration/design/SERVER.md sections 2.4, 2.5
 - Fixtures: none
 - Deliverables: csharp/Unciv.Core/Net/Visibility/EventFilter*.cs, ViewDelta builder, reflection test that every GameEvent type has a classifier, tests (UnitMoved partly visible => appear/disappear, notification action on unexplored tile stripped)
 - Gate: dotnet test --filter FullyQualifiedName~NetEvents
-- Claimed:
+- Claimed: 2026-10-25T05:13Z
 - Notes: Depends T164 (command layer split) for the concrete GameEvent types: when tickets from design/COMMANDS-IMPLEMENTATION.md appear, re-point Depends to the event-definition ticket(s) and add them. Until real events exist, build and test against the toy events in CommandTests plus Notification/PopupAlert.
   - Design agent: Depends re-pointed to T186 (event model and sink; domain tickets add their own [EventType]s). Per design/COMMANDS-IMPLEMENTATION.md section 7 events are derived through the sink, not by diffing; TilesRevealed/StatsChanged stay server-side here.
   - Simultaneous turns: add events PlayerEndedTurn, PlayerUndidEndTurn, TurnResolving, TurnStarted (public to all lobby members, no content). A unit leaving sight between two deltas is UnitDisappeared at the visible end, never a path.

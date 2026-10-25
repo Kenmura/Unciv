@@ -421,13 +421,13 @@ flowchart TD
   class T172 done
   class T173 review
   class T174 done
-  class T175 ready
+  class T175 prog
   class T176 waiting
   class T177 waiting
   class T178 waiting
   class T179 waiting
   class T180 waiting
-  class T181 waiting
+  class T181 ondeck
   class T182 waiting
   class T183 done
   class T184 done
@@ -475,15 +475,14 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 02:00", "24 04:00", "24 06:00", "24 08:00", "24 10:00", "24 12:00", "24 14:00", "24 16:00", "24 18:00", "24 20:00", "24 22:00", "25 00:00", "25 02:00", "25 04:00", "25 06:00"]
     y-axis "Tickets" 0 --> 83
-    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 63, 59]
-    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4, 3]
+    line [25, 30, 21, 21, 21, 57, 59, 48, 36, 20, 19, 13, 74, 63, 58]
+    line [3, 1, 0, 0, 0, 0, 1, 4, 5, 3, 2, 4, 4, 4, 4]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T175 | **Ready to start** | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
 | C009 | **Ready to start** | C007, C008, T164, T099, T174, T185 | 31 | Map view v1: flat hex map from queries, camera, tile picking, fog tint |
 | T200 | **Ready to start** | T184 | 16 | Concurrent human turns A: TurnState/TurnMode in GameInfo, civ-parameterised phases composed into the simultaneous sequence, NextResolveStep |
 | C030 | **Ready to start** | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
@@ -497,7 +496,9 @@ xychart-beta
 | T212 | **Ready to start** | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
 | T213 | **Ready to start** | T193 | 0 | Diplomacy alert responses left out of T193: denouncement reaction and acknowledge-only demand alerts |
 | T194 | **On deck** (after T187) | T187, T188, T189, T191, T192, T102, T011 | 14 | Command log format, replay verifier and scripted-human replay test against the T102 state hashes |
+| T181 | **On deck** (after T175) | T174, T175, T164, T193 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
 | T187 | In-Progress [Claude] | T164, T186, T184, T183 | 41 | Turn and decision commands: EndTurn, RunAiTurn, BeginTurn, MoveAutomatedUnits, SetPlayerSettings, alert responses, picker dismissals, resign |
+| T175 | In-Progress [Claude] | T172, T174, T164, T186 | 37 | Event stream: per-recipient event classifiers, TilesRevealed/StatsChanged deltas, notification and popup delivery |
 | C010 | Available (waiting on C009, T187, T175) | C009, T164, T184, T187, T188, T174, T175 | 27 | V1 vertical slice: unit blocks, select, move, end turn, AI turns |
 | C005 | Available (waiting on C010) | C007, C010 | 23 | Civ 5-style UI kit: theme, screen stack, popups, tooltip host |
 | T202 | Available (waiting on T200, T187) | T200, T187 | 14 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
@@ -540,7 +541,6 @@ xychart-beta
 | C032 | Available (waiting on C003, C010) | C003, C010 | 0 | Improvements, roads, cities, borders and in-world yield icons |
 | C033 | Available (waiting on C004) | C004 | 0 | Unit animation and combat presentation |
 | C034 | Available (waiting on C005, C010, C015, T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
-| T181 | Available (waiting on T175) | T174, T175, T164, T193 | 0 | Private-channel filtering: trade offers, diplomacy and espionage visibility (server side) |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T201 | Available (waiting on T200) | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
