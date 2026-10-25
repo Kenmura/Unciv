@@ -78,7 +78,6 @@ flowchart TD
     T207["T207<br/>Optional: UPnP/NAT-PMP automatic port mapping for the host"]
     T208["T208<br/>Running game must equal its own save-)load: make transient c..."]
     T209["T209<br/>Game events follow-up: secondary unit movement (cargo, swap,..."]
-    T210["T210<br/>Spy coup and counter-intelligence commands (not covered by T..."]
     T211["T211<br/>Cover remaining SpecificUnitAutomation, TryHealUnit and Expl..."]
     T212["T212<br/>Views: expose diplomatic status, trade requests, foreign-cit..."]
     T214["T214<br/>Event stream follow-ups: fog-to-visible refresh in TilesReve..."]
@@ -397,7 +396,6 @@ flowchart TD
   class T207 waiting
   class T208 ready
   class T209 prog
-  class T210 review
   class T211 prog
   class T212 prog
   class T214 prog
@@ -419,7 +417,7 @@ xychart-beta
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00"]
     y-axis "Tickets" 0 --> 80
     line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 48]
-    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6]
+    line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 5]
 ```
 
 ## Incomplete tickets
@@ -476,7 +474,6 @@ xychart-beta
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
 | T209 | In-Progress [Claude] | T186 | 0 | Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation |
-| T210 | Needs-Review [Claude] | T192 | 0 | Spy coup and counter-intelligence commands (not covered by T192) |
 | T211 | In-Progress [Claude] | T161 | 0 | Cover remaining SpecificUnitAutomation, TryHealUnit and Explore lines left by T161 |
 | T212 | In-Progress [Claude] | T174 | 0 | Views: expose diplomatic status, trade requests, foreign-city visible buildings, adopted policies (snapshot gaps from T174) |
 | T214 | In-Progress [Claude] | T175 | 0 | Event stream follow-ups: fog-to-visible refresh in TilesRevealed, civ introduction (CivDto) when an unmet civ is sighted, StatsChanged beyond gold/happiness |

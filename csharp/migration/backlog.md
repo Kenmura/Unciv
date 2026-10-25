@@ -2585,7 +2585,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
 - Notes:
 
 ### T210 Spy coup and counter-intelligence commands (not covered by T192)
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T192
 - Source: core/src/com/unciv/logic/civilization/managers/EspionageManager.kt; Spy.kt; ui/screens/espionagescreen
 - Fixtures: none
