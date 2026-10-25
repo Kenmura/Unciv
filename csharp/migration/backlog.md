@@ -2590,7 +2590,7 @@ See `PROTOCOL.md`. The target is a headless, 100% deterministic C# engine drivin
   - From T200 review: (d) Civ.Stats (Happiness) is a transient cache not restored by load; a Simultaneous save taken mid-Resolving before StartNextTurn (RecordRankingStats reads it) does not reproduce the live hash. Include refreshing/canonicalising it here (or hosts checkpoint only at Playing).
 
 ### T209 Game events follow-up: secondary unit movement (cargo, swap, withdrawal, teleports), unit capture, city destroyed/traded, priority-aware sink truncation
-- State: Needs-Review [Claude]
+- State: Done
 - Depends: T186
 - Source: T186 adversarial review findings 1-3, 8, 10
 - Fixtures: none
