@@ -107,6 +107,21 @@ public class SetupQueryTests
     }
 
     [Fact]
+    public void ValidationFindsUnknownRulesetReferences()
+    {
+        var setup = ValidSetup();
+        setup.GameParameters.VictoryTypes = ["No such victory"];
+        setup.GameParameters.Difficulty = "No such difficulty";
+        setup.GameParameters.Speed = "No such speed";
+        setup.GameParameters.StartingEra = "No such era";
+        var codes = new ValidateSetupQuery(setup).Run().Errors.Select(it => it.Code).ToList();
+        Assert.Contains("UnknownVictoryType", codes);
+        Assert.Contains("UnknownDifficulty", codes);
+        Assert.Contains("UnknownSpeed", codes);
+        Assert.Contains("UnknownEra", codes);
+    }
+
+    [Fact]
     public void ValidationPlayerCounts()
     {
         var setup = ValidSetup();
