@@ -294,6 +294,7 @@ public partial class GameScreen : Control
     /// <summary>Opens (or, with null, closes) the city screen for a city of the snapshot.</summary>
     private void ShowCity(CityDto? city)
     {
+        if (city != null) Deselect(); // C012: the unit panel and the city panel share the left edge, one at a time
         OpenCity = city;
         if (city == null)
         {
