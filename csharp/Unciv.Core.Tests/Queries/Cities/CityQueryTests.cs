@@ -106,6 +106,16 @@ public class CityQueryTests
     }
 
     [Fact]
+    public void DuplicateQueueEntriesUseTheirOwnPosition()
+    {
+        city.CityConstructions.EditQueue(q => { q.Clear(); q.Add("Warrior"); q.Add("Warrior"); });
+        var queue = AskPure(new CityPanelQuery(city.Id)).Queue;
+        Assert.Equal(city.CityConstructions.TurnsToConstruction("Warrior", true), queue[0].Turns);
+        Assert.False(city.CityConstructions.IsFirstConstructionOfItsKind(1, "Warrior"));
+        Assert.Equal(city.CityConstructions.TurnsToConstruction("Warrior", false), queue[1].Turns);
+    }
+
+    [Fact]
     public void CityQueriesRejectUnknownAndForeignCities()
     {
         var foreign = testGame.AddCity(enemy, testGame.GetTile(4, 0));
@@ -247,12 +257,31 @@ public class CityQueryTests
     }
 
     [Fact]
-    public void TileInfoListsUnitsAndHidesForeignOnesOutOfSight()
+    public void TileInfoListsVisibleUnitsOnly()
     {
+        var enemyTile = testGame.GetTile(3, 3);
+        testGame.AddUnit("Warrior", enemy, enemyTile);
+        Assert.Empty(AskPure(new TileInfoQuery(3, 3)).Units); // nothing of ours sees it
+        testGame.AddUnit("Warrior", player, testGame.GetTile(3, 2));
+        player.Cache.UpdateViewableTiles();
+        var seen = AskPure(new TileInfoQuery(3, 3)).Units;
+        Assert.Equal(enemy.CivName, Assert.Single(seen).Civ);
+
         var tile = testGame.GetTile(2, 0);
         testGame.AddUnit("Warrior", player, tile);
         var info = AskPure(new TileInfoQuery(2, 0));
         Assert.Equal("Warrior", Assert.Single(info.Units).Name);
+    }
+
+    [Fact]
+    public void TileInfoOfAForeignTileHasNoCityViewData()
+    {
+        var foreign = testGame.AddCity(enemy, testGame.GetTile(4, 0));
+        var info = AskPure(new TileInfoQuery(4, 0));
+        Assert.Equal(enemy.CivName, info.Owner);
+        Assert.False(info.IsLocked);
+        Assert.True(info.IsCityCenter);
+        Assert.Equal(foreign.Name, info.OwningCity);
     }
 
     [Fact]
@@ -293,8 +322,11 @@ public class CityQueryTests
         Assert.Equal("Road", info.Road);
         Assert.True(info.HasRiver);
         Assert.Null(info.Resource); // Iron needs Iron Working
+        Assert.Equal(0, info.ResourceAmount);
         player.Tech.AddTechnology("Iron Working");
-        Assert.Equal("Iron", Ask(player, new TileInfoQuery(1, 1)).Resource);
+        var revealed = Ask(player, new TileInfoQuery(1, 1));
+        Assert.Equal("Iron", revealed.Resource);
+        Assert.True(revealed.ResourceAmount > 0);
     }
 
     [Fact]

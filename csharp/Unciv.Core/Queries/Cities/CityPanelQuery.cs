@@ -54,7 +54,7 @@ public sealed record CityPanelQuery(string CityId) : IQuery<CityPanelResult>
         var happiness = city.GetHappinessList()
             .Where(it => it.Value != 0f).Select(it => new StatAmount(it.Key, it.Value)).ToList();
 
-        var queue = constructions.ConstructionQueue.Select(name => DescribeQueueEntry(city, name)).ToList();
+        var queue = constructions.ConstructionQueue.Select((name, index) => DescribeQueueEntry(city, name, index)).ToList();
 
         var locked = city.Unwrap().LockedTiles;
         var worked = city.Unwrap().WorkedTiles
@@ -77,12 +77,11 @@ public sealed record CityPanelQuery(string CityId) : IQuery<CityPanelResult>
             CityQueryHelpers.Named(city.GetResourceStockpiles()));
     }
 
-    private static QueueEntry DescribeQueueEntry(CityView city, string name)
+    private static QueueEntry DescribeQueueEntry(CityView city, string name, int index)
     {
         var constructions = city.Constructions;
         if (constructions.GetConstruction(name) is not INonPerpetualConstruction construction)
             return new QueueEntry(name, null, null, 0);
-        int index = constructions.ConstructionQueue.ToList().IndexOf(name);
         bool useStored = construction is Models.Ruleset.Building || constructions.IsFirstConstructionOfItsKind(index, name);
         return new QueueEntry(name, constructions.TurnsToConstruction(name, useStored), city.GetConstructionProductionCost(construction),
             constructions.GetWorkDone(name));

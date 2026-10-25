@@ -52,8 +52,9 @@ public sealed record TileInfoQuery(int X, int Y, int? UnitId = null) : IQuery<Ti
                 .ToList();
         }
 
+        var resource = tile.GetViewableResource(view.CivView);
         return new TileInfoResult(UnitQueryHelpers.Pos(tile.Position()), tile.BaseTerrain, tile.TerrainFeatures.ToList(), tile.NaturalWonder,
-            tile.GetViewableResource(view.CivView)?.Name, tile.ResourceAmount, tile.GetShownImprovement(), tile.ImprovementIsPillaged,
+            resource?.Name, resource == null ? 0 : tile.ResourceAmount, tile.GetShownImprovement(), tile.ImprovementIsPillaged,
             tile.ImprovementInProgress, tile.TurnsToImprovement,
             tile.RoadStatus.ToString(), tile.RoadIsPillaged, tile.HasBottomRiver || tile.HasBottomLeftRiver || tile.HasBottomRightRiver,
             tile.GetOwner()?.CivName, tile.OwningCity()?.Name, tile.GetWorkingCity()?.Name, locked, tile.IsCityCenter(), tile.IsVisible(),
