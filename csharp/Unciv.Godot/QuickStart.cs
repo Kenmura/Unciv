@@ -39,6 +39,7 @@ public partial class QuickStart : Node
             GameSeed, WallClockMillis());
         var host = new LocalHost(new GameSession(game), Human, WallClockMillis);
         var screen = new GameScreen { Name = "GameScreen" };
+        screen.Presenter.Enabled = true;
         AddChild(screen);
         screen.Start(host, AssetRegistry.ForRuleset(game.Ruleset));
 

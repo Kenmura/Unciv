@@ -106,6 +106,10 @@ public static class PlaceholderPalette
     public static Rgb UnitSkin { get; } = new(226, 190, 150);
     public static Rgb UnitMetal { get; } = new(170, 176, 188);
     public static Rgb UnitWood { get; } = new(122, 86, 52);
+    /// <summary>C033: floating damage numbers, projectiles and the bombard flash.</summary>
+    public static Rgb DamageNumber { get; } = new(255, 90, 70);
+    public static Rgb Projectile { get; } = new(250, 230, 150);
+    public static Rgb Flash { get; } = new(255, 200, 90);
     public static Rgb Light { get; } = new(255, 250, 240);
     public static Rgb SheetLabel { get; } = new(230, 230, 230);
 

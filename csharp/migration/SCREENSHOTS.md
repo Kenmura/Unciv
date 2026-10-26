@@ -458,7 +458,7 @@ Scenario `l10n-sheet`.
 
 *Arabic and Hebrew sample lines shaped and run right to left from their Noto fonts, each with a Latin word and digits inside (the settings page on the left is not mirrored here: the harness has no window to flip).* (`l10n-sheet/rtl.png`)
 
-## C026 (ticket not Done or unknown)
+## C026 Tutorials
 
 Tutorial popups from the ruleset's Tutorials.json: fired at game start and by game events, step by step, seen flags saved in the client settings.
 
@@ -533,6 +533,32 @@ Scenario `improvements`.
 ![The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged.](../Unciv.Godot.Harness/golden/improvements/yields-off.png)
 
 *The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged.* (`improvements/yields-off.png`)
+
+## C033 (ticket not Done or unknown)
+
+Unit animation and combat presentation: lunge, flinch with floating engine damage numbers, ranged shot, bombard flash, death shrink; stepped by hand so every frame is deterministic.
+
+Scenario `combat-presentation`.
+
+![Mid-lunge: our warrior leans into the enemy warrior (a real attack made through the UI).](../Unciv.Godot.Harness/golden/combat-presentation/lunge.png)
+
+*Mid-lunge: our warrior leans into the enemy warrior (a real attack made through the UI).* (`combat-presentation/lunge.png`)
+
+![Impact: both warriors flinch and the engine's damage numbers float up (-31 each).](../Unciv.Godot.Harness/golden/combat-presentation/impact.png)
+
+*Impact: both warriors flinch and the engine's damage numbers float up (-31 each).* (`combat-presentation/impact.png`)
+
+![A ranged shot in flight from our warrior toward a far tile.](../Unciv.Godot.Harness/golden/combat-presentation/shot.png)
+
+*A ranged shot in flight from our warrior toward a far tile.* (`combat-presentation/shot.png`)
+
+![A city bombards: a flash at the city and a shot toward our warrior.](../Unciv.Godot.Harness/golden/combat-presentation/bombard.png)
+
+*A city bombards: a flash at the city and a shot toward our warrior.* (`combat-presentation/bombard.png`)
+
+![A dying worker shrinks and sinks into its tile.](../Unciv.Godot.Harness/golden/combat-presentation/death.png)
+
+*A dying worker shrinks and sinks into its tile.* (`combat-presentation/death.png`)
 
 ## C038 Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result
 

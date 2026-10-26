@@ -66,6 +66,9 @@ public partial class GameScreen : Control
 
     public TileOverlay AttackOverlay { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
 
+    /// <summary>C033: plays the movement and combat events of every command on the map. Off until a host turns <see cref="CombatPresenter.Enabled"/> on.</summary>
+    public CombatPresenter Presenter { get; } = new() { Name = "Presenter" };
+
     public int? SelectedUnitId { get; private set; }
 
     /// <summary>C013: the clickable notification list.</summary>
@@ -497,6 +500,7 @@ public partial class GameScreen : Control
         AddChild(Overlays);
         unitLayer = new Node3D { Name = "Units" };
         AddChild(unitLayer);
+        AddChild(Presenter);
         dotLayer = new Node3D { Name = "PathDots" };
         AddChild(dotLayer);
         ReachableOverlay = new TileOverlay(PlaceholderPalette.ReachableTint) { Name = "ReachableOverlay" };
@@ -636,7 +640,11 @@ public partial class GameScreen : Control
     public override void _ExitTree()
     {
         GetViewport().SizeChanged -= Layout;
-        if (session != null) session.SnapshotChanged -= OnSnapshotChanged;
+        if (session != null)
+        {
+            session.SnapshotChanged -= OnSnapshotChanged;
+            session.EventsReceived -= OnEventsReceived;
+        }
     }
 
     /// <summary>Connects the screen to a game and draws it, centred on the human's first unit. Call after the screen entered the tree; calling it again switches to another game (C016: load).</summary>
@@ -645,6 +653,7 @@ public partial class GameScreen : Control
         if (session != null)
         {
             session.SnapshotChanged -= OnSnapshotChanged;
+            session.EventsReceived -= OnEventsReceived;
             SelectedUnitId = null;
             mapLoaded = false;
             bannerTurn = -1;
@@ -750,6 +759,8 @@ public partial class GameScreen : Control
         AddChild(Tooltips); // above everything, so a tip is never covered by a screen
         ReachableOverlay.Setup(registry);
         AttackOverlay.Setup(registry);
+        session.EventsReceived += OnEventsReceived;
+        Presenter.Bind(id => unitNodes.GetValueOrDefault(id), coord => UnitPosition(coord, 0));
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
         Refresh();
         var first = snapshot.Units.FirstOrDefault(it => it.Own != null);
@@ -793,11 +804,13 @@ public partial class GameScreen : Control
             int index = stack.GetValueOrDefault(coord);
             stack[coord] = index + 1;
             var colour = session.Ruleset.Nations.TryGetValue(unit.Owner, out var nation) ? nation.GetOuterColor() : null;
-            var node = new UnitNode { Name = $"Unit_{unit.Id}", Unit = unit, Position = UnitPosition(coord, index) };
+            var node = new UnitNode { Name = $"Unit_{unit.Id}", Unit = unit };
+            node.Place(UnitPosition(coord, index));
             node.Build(assets, session.Ruleset, session.Ruleset.Units.GetValueOrDefault(unit.Name), colour == null ? null : (colour.R, colour.G, colour.B));
             unitLayer.AddChild(node);
             unitNodes[unit.Id] = node;
         }
+        Presenter.Refresh();
     }
 
     private Vector3 UnitPosition(HexCoord coord, int stackIndex)
@@ -1209,6 +1222,12 @@ public partial class GameScreen : Control
                 break;
         }
     }
+
+    // Events arrive before the screen redraws from the new snapshot, so the presenter can still take the nodes of units that just died.
+    private void OnEventsReceived(EventBatch batch) => PresentEvents(batch.Events);
+
+    /// <summary>Queues events for the presenter (C033). Call before <see cref="Refresh"/>, while the nodes of units the events destroy are still in the table.</summary>
+    public bool PresentEvents(IReadOnlyList<GameEvent> events) => Presenter.Present(events, unitNodes);
 
     private void OnSnapshotChanged(ClientSnapshot changed)
     {

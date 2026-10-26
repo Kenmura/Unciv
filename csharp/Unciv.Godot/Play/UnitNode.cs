@@ -21,6 +21,16 @@ public partial class UnitNode : Node3D
 
     public UnitDto Unit { get; set; } = null!; // JUSTIFY: C010 set by GameScreen right after construction
 
+    /// <summary>C033: where the unit stands when no animation moves it; set by the screen when it places the node, and what the presenter returns the node to.</summary>
+    public Vector3 RestPosition { get; private set; }
+
+    /// <summary>Puts the node at its resting place (C033).</summary>
+    public void Place(Vector3 position)
+    {
+        RestPosition = position;
+        Position = position;
+    }
+
     public bool IsOwn => Unit.Own != null;
 
     /// <summary>How many figures stand on the tile.</summary>

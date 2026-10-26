@@ -92,6 +92,7 @@ public partial class App : Node
         var registry = AssetRegistry.ForRuleset(session.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack));
         var root = new Control { Name = "Play" };
         var screen = new GameScreen { Name = "GameScreen" };
+        screen.Presenter.Enabled = true;
         root.AddChild(screen);
         var saves = new SaveController(store, settings, new UiTheme(registry),
             text => LocalHost.FromSave(text, WallClockMillis), loaded => screen.Start(loaded, AssetRegistry.ForRuleset(loaded.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack))));

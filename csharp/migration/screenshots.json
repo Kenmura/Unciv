@@ -588,5 +588,31 @@
         "caption": "Civilopedia, Buildings: the Granary's page."
       }
     ]
+  },
+  "C033": {
+    "scenario": "combat-presentation",
+    "about": "Unit animation and combat presentation: lunge, flinch with floating engine damage numbers, ranged shot, bombard flash, death shrink; stepped by hand so every frame is deterministic.",
+    "shots": [
+      {
+        "golden": "combat-presentation/lunge.png",
+        "caption": "Mid-lunge: our warrior leans into the enemy warrior (a real attack made through the UI)."
+      },
+      {
+        "golden": "combat-presentation/impact.png",
+        "caption": "Impact: both warriors flinch and the engine's damage numbers float up (-31 each)."
+      },
+      {
+        "golden": "combat-presentation/shot.png",
+        "caption": "A ranged shot in flight from our warrior toward a far tile."
+      },
+      {
+        "golden": "combat-presentation/bombard.png",
+        "caption": "A city bombards: a flash at the city and a shot toward our warrior."
+      },
+      {
+        "golden": "combat-presentation/death.png",
+        "caption": "A dying worker shrinks and sinks into its tile."
+      }
+    ]
   }
 }
