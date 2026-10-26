@@ -84,6 +84,17 @@ public class TradeScreenModelTests
     }
 
     [Fact]
+    public void StockpiledResourceIsAQuantityLikeAnyOtherResource()
+    {
+        var builder = Builder(ours: [Offer("Oil", "Stockpiled_Resource", 5)]);
+        Assert.True(TradeScreenModel.IsQuantity("Stockpiled_Resource"));
+        builder.Toggle(TradeSide.Give, "Stockpiled_Resource", "Oil");
+        Assert.Equal(1, builder.StagedChoices(TradeSide.Give).Single().StagedAmount);
+        Assert.True(builder.Adjust(TradeSide.Give, "Stockpiled_Resource", "Oil", 2));
+        Assert.Equal(3, builder.StagedChoices(TradeSide.Give).Single().StagedAmount);
+    }
+
+    [Fact]
     public void ToggleRefusesUnlistedOrUntradableOffers()
     {
         var builder = Builder(ours: [Offer("Gold", "Gold", 100), Offer("Peace with X", "PeaceProposal", 0)]);
