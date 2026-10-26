@@ -458,7 +458,7 @@ Scenario `l10n-sheet`.
 
 *Arabic and Hebrew sample lines shaped and run right to left from their Noto fonts, each with a Latin word and digits inside (the settings page on the left is not mirrored here: the harness has no window to flip).* (`l10n-sheet/rtl.png`)
 
-## C028 (ticket not Done or unknown)
+## C028 Options screen, hotkeys, edge-pan
 
 Options screen: engine options, UI scale, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.
 
