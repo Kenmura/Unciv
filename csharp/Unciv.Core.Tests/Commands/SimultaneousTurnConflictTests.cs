@@ -15,8 +15,8 @@ using Unciv.Models;
 using Unciv.Net.Visibility;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
-using MapUnitObject = Unciv.Logic.Map.MapUnits.MapUnit;
 using DeclareWarCommand = Unciv.Commands.Diplomacy.DeclareWar;
+using MapUnitObject = Unciv.Logic.Map.MapUnits.MapUnit;
 
 namespace Unciv.Core.Tests.Commands;
 
