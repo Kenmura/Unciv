@@ -232,7 +232,9 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, defeat: true));
         Assert.True(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], [], Defeat: true).ToJson()).Defeat);
         Assert.False(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], []).ToJson()).Defeat);
+    }
 
+    [Fact]
     public void DecisionsGamePlaysGnkWithEveryPickerPendingAndReplaysEqual()
     {
         var session = ScenarioGame.Create(decisions: true);
