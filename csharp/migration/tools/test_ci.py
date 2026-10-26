@@ -106,9 +106,17 @@ class WorkflowShape(unittest.TestCase):
             paths = re.findall(r"^\s+- '([^']+)'", block, re.M)
             self.assertEqual(paths, ["csharp/**", "android/assets/jsons/**", ".github/workflows/csharp.yml"], trigger)
 
+    def test_triggers_are_exactly_push_to_the_integration_branch_pull_request_schedule_dispatch(self):
+        on = re.search(r"^on:\n(.*?)(?=^\S)", self.text, re.S | re.M).group(1)
+        self.assertEqual(re.findall(r"^  (\w+):", on, re.M), ["push", "pull_request", "schedule", "workflow_dispatch"])
+        self.assertRegex(on, r"(?m)^    branches: \[csharp-migration\]$")
+
     def test_read_only_without_secrets_or_publishing(self):
-        self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read\n")
-        self.assertNotIn("secrets.", self.text)
+        self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read\n(?=\n)")  # nothing else may follow in the block
+        self.assertEqual(len(re.findall(r"(?m)^\s*permissions:", self.text)), 1, "no job-level permissions")
+        code = re.sub(r"(?m)(^|\s)#.*$", "", self.text)  # comments may say "no secrets"
+        self.assertNotRegex(code, r"(?i)\bsecrets\b")  # secrets.X, secrets['X'], toJSON(secrets), secrets: inherit
+        self.assertNotRegex(code, r"(?i)github\.token|GITHUB_TOKEN")
         self.assertNotIn("pull_request_target", self.text)
         for word in ("upload-artifact", "gh release", "git push", "nuget push", "docker push"):
             self.assertNotIn(word, self.text)
