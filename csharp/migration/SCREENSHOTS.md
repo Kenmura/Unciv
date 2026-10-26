@@ -388,7 +388,7 @@ Scenario `trade`.
 
 *The next turn: Rome answered the gift, nothing waits and the treasuries changed.* (`trade/answered.png`)
 
-## C023 (ticket not Done or unknown)
+## C023 Overview screens: empire, cities, units, resources, ranking, religion, espionage
 
 Empire overview: tabs for stats, cities, units, resources, ranking, religion and espionage; Go to buttons jump to a city or unit.
 
@@ -476,6 +476,24 @@ Scenario `options`.
 
 *Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
 
+## C032 (ticket not Done or unknown)
+
+Improvement props, roads and rails, city models with civ flags, borders and in-world tile yield icons.
+
+Scenario `improvements`.
+
+![Gallery at the default camera: a prop per improvement, brown roads and a dark railroad, a village and a larger town with flags, blue and gold borders, and small yield icons with amounts on each tile.](../Unciv.Godot.Harness/golden/improvements/gallery-default.png)
+
+*Gallery at the default camera: a prop per improvement, brown roads and a dark railroad, a village and a larger town with flags, blue and gold borders, and small yield icons with amounts on each tile.* (`improvements/gallery-default.png`)
+
+![Low close view of the village: its model and flag, road links, neighbouring farms, pasture and mine with their yields.](../Unciv.Godot.Harness/golden/improvements/village-close.png)
+
+*Low close view of the village: its model and flag, road links, neighbouring farms, pasture and mine with their yields.* (`improvements/village-close.png`)
+
+![The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged.](../Unciv.Godot.Harness/golden/improvements/yields-off.png)
+
+*The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged.* (`improvements/yields-off.png`)
+
 ## C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
 
 Flat-map cities, borders, roads and improvements.
@@ -486,9 +504,9 @@ Scenario `flat-city`.
 
 *The founded city: block, banner (name, production) and the territory border.* (`flat-city/city.png`)
 
-![A road and a trading post marker on the tile next to the city.](../Unciv.Godot.Harness/golden/flat-city/improvement.png)
+![A road next to the city and a trading post on the worker's tile (yield icons now show on every tile).](../Unciv.Godot.Harness/golden/flat-city/improvement.png)
 
-*A road and a trading post marker on the tile next to the city.* (`flat-city/improvement.png`)
+*A road next to the city and a trading post on the worker's tile (yield icons now show on every tile).* (`flat-city/improvement.png`)
 
 ## C043 Client settings model persisted under user:// (language, key bindings, UI scale, asset pack, autosave, tutorials seen, player name) and the engine PlayerSettings options
 
