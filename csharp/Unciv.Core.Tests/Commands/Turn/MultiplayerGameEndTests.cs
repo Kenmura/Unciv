@@ -9,6 +9,7 @@ using Unciv.Logic.Map;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
+using Unciv.View;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Core.Tests.Commands.Turn;
@@ -168,6 +169,43 @@ public sealed class MultiplayerGameEndTests : IDisposable
         Assert.True(game.GetCivilization("Greece").HasSpectatorVision());
         game.TurnState.Mode = TurnMode.Sequential;
         Assert.False(game.GetCivilization("Greece").HasSpectatorVision());
+    }
+
+    [Fact]
+    public void TheSoleHumanOfAnOfflineSimultaneousGameWatchesLikeInSinglePlayerWhateverTheLobbySays()
+    {
+        var game = NewGame();
+        game.Turns = 1;
+        game.GetCivilization("Greece").PlayerType = PlayerType.AI;
+        Defeat(game, "Babylon");
+        Assert.True(game.GetCivilization("Babylon").HasSpectatorVision());
+        game.GameParameters.IsOnlineMultiplayer = true;
+        Assert.False(game.GetCivilization("Babylon").HasSpectatorVision());
+    }
+
+    [Fact]
+    public void InASimultaneousGameNoHumanIsSingledOutAsTheCurrentPlayerForTheMapReveal()
+    {
+        var game = NewGame();
+        game.Turns = 1;
+        game.TurnState!.DefeatedSeeFullMap = true;
+        Defeat(game, "Babylon");
+        Defeat(game, "Greece");
+        var views = new[] { "Babylon", "Greece" }.Select(it => new GameView(game, game.GetCivilization(it)).CivView).ToList();
+        Assert.All(views, it => Assert.True(it.IsMapRevealed()));
+        game.TurnState.DefeatedSeeFullMap = false;
+        Assert.All(views, it => Assert.False(it.IsMapRevealed())); // not even the first human: the current-player rule is gone here
+
+        var sequential = NewGame(simultaneous: false); // outside simultaneous games the Kotlin rule stays: the current player only
+        sequential.Turns = 1;
+        Defeat(sequential, "Babylon");
+        Defeat(sequential, "Greece");
+        foreach (var id in new[] { "Babylon", "Greece" })
+        {
+            var civ = sequential.GetCivilization(id);
+            Assert.Equal(civ.IsCurrentPlayer(), new GameView(sequential, civ).CivView.IsMapRevealed());
+        }
+        Assert.True(sequential.GetCivilization(sequential.CurrentPlayer).IsDefeated());
     }
 
     [Fact]

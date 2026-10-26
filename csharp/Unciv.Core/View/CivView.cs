@@ -65,8 +65,10 @@ public class CivView(CivilizationClass civ, CivilizationClass viewer, bool spect
 
     public bool IsSpectator() => Civ.IsSpectator();
 
-    /// <summary><c>true</c> when this civ is a human player defeated in a singleplayer game - the map is fully revealed for them to watch the game play out.</summary>
-    public bool IsMapRevealed() => !Civ.GameInfo.GameParameters.IsOnlineMultiplayer && Civ.IsCurrentPlayer() && Civ.IsDefeated();
+    /// <summary><c>true</c> when this civ is a human player defeated in a singleplayer game (T226: in a simultaneous game, any defeated human when the lobby allows it) - the map is fully revealed for them to watch the game play out.</summary>
+    public bool IsMapRevealed() => Logic.TurnState.IsSimultaneousGame(Civ)
+        ? Logic.TurnState.DefeatedSeesWholeMap(Civ)
+        : !Civ.GameInfo.GameParameters.IsOnlineMultiplayer && Civ.IsCurrentPlayer() && Civ.IsDefeated();
 
     public bool HasExplored(TileView tileView) => Civ.HasExplored(tileView.Unwrap());
 

@@ -85,9 +85,22 @@ public sealed class TurnState
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool DefeatedSeeFullMap { get; set; }
 
-    /// <summary>T226: whether <paramref name="civ"/> is a defeated human of a simultaneous game whose lobby lets defeated players watch the whole map.</summary>
+    /// <summary>T226: whether the game of <paramref name="civ"/> has simultaneous turns (there is no "current player" then).</summary>
+    public static bool IsSimultaneousGame(Civilization.Civilization civ) => civ.GameInfo is GameInfo { TurnState.Mode: TurnMode.Simultaneous };
+
+    /// <summary>
+    /// T226: should a defeated <paramref name="civ"/> see (<see cref="Civilization.Civilization.HasSpectatorVision"/>) and have revealed
+    /// (<see cref="Civilization.Civilization.RevealMapWhenDefeated"/>, <c>CivView.IsMapRevealed</c>) the whole map? Simultaneous games: every defeated human, if the
+    /// lobby allows it (<see cref="DefeatedSeeFullMap"/>), or the sole human of an offline game, as in single player (T200: one human is identical to a sequential game); there is no "current player" to single out. Other games: the Kotlin rule, the sole human of an offline
+    /// game (the current player).
+    /// </summary>
     public static bool DefeatedSeesWholeMap(Civilization.Civilization civ) =>
-        civ.IsDefeated() && civ.IsHuman() && civ.GameInfo.Turns > 0 && civ.GameInfo is GameInfo { TurnState: { Mode: TurnMode.Simultaneous, DefeatedSeeFullMap: true } };
+        civ.GameInfo is GameInfo { TurnState: { Mode: TurnMode.Simultaneous } state }
+            ? (state.DefeatedSeeFullMap || IsSoleOfflineHuman(civ)) && civ.IsDefeated() && civ.IsHuman() && civ.GameInfo.Turns > 0
+            : civ.IsDefeated() && civ.IsCurrentPlayer() && !civ.GameInfo.GameParameters.IsOnlineMultiplayer && civ.GameInfo.Turns > 0;
+
+    private static bool IsSoleOfflineHuman(Civilization.Civilization civ) =>
+        !civ.GameInfo.GameParameters.IsOnlineMultiplayer && civ.GameInfo.Civilizations.Count(it => it.IsHuman() && !it.IsSpectator()) == 1;
 
     public TurnState Clone() => new()
     {
