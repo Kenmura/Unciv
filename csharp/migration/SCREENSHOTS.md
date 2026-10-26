@@ -476,7 +476,7 @@ Scenario `tutorial`.
 
 *Workers tutorial shown after tutorials were switched back on and the seen list was reset.* (`tutorial/workers.png`)
 
-## C027 (ticket not Done or unknown)
+## C027 Tooltips and Civilopedia
 
 Tile hover tooltip and the Civilopedia: categories, entries with icons, engine-worded pages, links, unit tooltips in the list.
 
