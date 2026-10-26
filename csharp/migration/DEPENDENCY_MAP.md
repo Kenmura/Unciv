@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 216/220 | 4 | 1 | 2 | [T239](backlog/T239.md) [T241](backlog/T241.md) [T242](backlog/T242.md) [T243](backlog/T243.md) |
+| Phase 1: CLI (headless engine) | 216/220 | 4 | 0 | 3 | [T239](backlog/T239.md) [T241](backlog/T241.md) [T242](backlog/T242.md) [T243](backlog/T243.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 14/29 | 15 | 1 | 0 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T177](backlog/T177.md) [T178](backlog/T178.md) [T179](backlog/T179.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T204](backlog/T204.md) [T205](backlog/T205.md) [T206](backlog/T206.md) [T207](backlog/T207.md) [T225](backlog/T225.md) |
 
@@ -179,7 +179,7 @@ flowchart TD
   class T225 waiting
   class T230 done
   class T239 blocked
-  class T241 ready
+  class T241 prog
   class T242 prog
   class T243 prog
 ```
@@ -199,8 +199,8 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 06:00", "24 12:00", "24 18:00", "25 00:00", "25 06:00", "25 12:00", "25 18:00", "26 00:00", "26 06:00", "26 12:00", "26 18:00"]
     y-axis "Tickets" 0 --> 65
-    line [21, 57, 36, 13, 54, 54, 55, 39, 33, 19, 17]
-    line [0, 0, 5, 4, 3, 2, 5, 6, 6, 6, 2]
+    line [21, 57, 36, 13, 54, 54, 55, 39, 33, 19, 16]
+    line [0, 0, 5, 4, 3, 2, 5, 6, 6, 6, 3]
 ```
 
 ## Incomplete tickets
@@ -208,7 +208,6 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | T177 | **Ready to start** | T172, T164, T184, T187, T200, T202, T226 | 14 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
-| T241 | **Ready to start** | T223 | 0 | Remote query exposure residuals: live stats of unmet civs, fogged-city names, spectator reach |
 | T178 | Available (waiting on T177) | T172, T173, T174, T175, T176, T177, T202, T223, T224, T230 | 13 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T178) | T172, T173, T178 | 11 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
 | T204 | Available (waiting on T178) | T172, T173, T178, T199 | 9 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
@@ -224,5 +223,6 @@ xychart-beta
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
 | T239 | Blocked | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
+| T241 | In-Progress [Antigravity] | T223 | 0 | Remote query exposure residuals: live stats of unmet civs, fogged-city names, spectator reach |
 | T242 | In-Progress [Claude] | T203 | 0 | Two-human conflict tests: one-per-game wonder race, ruins, religion founding and belief limits |
 | T243 | In-Progress [Claude] | T203 | 0 | Real-started-game visibility test for two humans: B's mirror never holds A-only tiles/units across a simultaneous round |
