@@ -231,6 +231,8 @@ public class OverviewModelTests
         Assert.Equal("10", table.Rows[0].Cells[4]);
         Assert.Equal("You may enter", table.Rows[0].Cells[5]);
         Assert.Equal("They may enter", table.Rows[1].Cells[5]);
+        Assert.Equal("1 turns", OverviewModel.PoliticsTable([new PoliticsEntry(Civ("Rome"), Panel(treaty: 1))]).Rows[0].Cells[6]);
+        Assert.Equal("-", OverviewModel.PoliticsTable([new PoliticsEntry(Civ("Rome"), Panel(treaty: 0))]).Rows[0].Cells[6]);
     }
 
     [Fact]
