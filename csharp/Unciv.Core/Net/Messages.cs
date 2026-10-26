@@ -65,6 +65,18 @@ public sealed record Command : Message
     public required JsonElement Payload { get; init; }
 }
 
+/// <summary>
+/// A read-only question about the game from the session's own point of view (T223). <c>QueryType</c> is the query registry name (not <c>type</c>, which is the
+/// message discriminator); the viewer is the civ the session is bound to, never read from the frame. Answered by exactly one <see cref="QueryResult"/>.
+/// </summary>
+public sealed record Query : Message
+{
+    /// <summary>Client-chosen correlation id, echoed by the answer.</summary>
+    public required long QueryId { get; init; }
+    public required string QueryType { get; init; }
+    public required JsonElement Payload { get; init; }
+}
+
 public sealed record ResyncRequest : Message;
 
 public sealed record Leave : Message;
@@ -158,6 +170,15 @@ public sealed record CommandResult : Message
     public required bool Accepted { get; init; }
     public string? Code { get; init; }
     public long? Seq { get; init; }
+}
+
+/// <summary>The answer to a <see cref="Query"/>. A failure carries only a coarse <c>Code</c> (see <c>QueryWireCodes</c>), never free text, so it cannot reveal hidden state.</summary>
+public sealed record QueryResult : Message
+{
+    public required long QueryId { get; init; }
+    public required bool Ok { get; init; }
+    public string? Code { get; init; }
+    public JsonElement? Payload { get; init; }
 }
 
 public sealed record HostClosing : Message;

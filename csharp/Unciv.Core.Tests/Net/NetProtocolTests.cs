@@ -19,6 +19,9 @@ public class NetProtocolTests
         { new LobbySet { Slot = 2, Nation = "Rome", Color = "red", Ready = true }, """{"type":"LobbySet","slot":2,"nation":"Rome","color":"red","ready":true}""" },
         { new LobbyChat { Text = "hi" }, """{"type":"LobbyChat","text":"hi"}""" },
         { new Command { ClientCmdId = "c1", CommandType = "MoveUnit", Payload = J("""{"unit":4}""") }, """{"type":"Command","clientCmdId":"c1","commandType":"MoveUnit","payload":{"unit":4}}""" },
+        { new Query { QueryId = 12, QueryType = "units.ReachableTiles", Payload = J("""{"unitId":4}""") }, """{"type":"Query","queryId":12,"queryType":"units.ReachableTiles","payload":{"unitId":4}}""" },
+        { new QueryResult { QueryId = 12, Ok = true, Payload = J("""{"tiles":[]}""") }, """{"type":"QueryResult","queryId":12,"ok":true,"payload":{"tiles":[]}}""" },
+        { new QueryResult { QueryId = 13, Ok = false, Code = "query-rejected" }, """{"type":"QueryResult","queryId":13,"ok":false,"code":"query-rejected"}""" },
         { new ResyncRequest(), """{"type":"ResyncRequest"}""" },
         { new Leave(), """{"type":"Leave"}""" },
         { new Ping(), """{"type":"Ping"}""" },
@@ -72,6 +75,10 @@ public class NetProtocolTests
     [InlineData("""{"type":"Ping","extra":1}""", ErrorCodes.InvalidMessage)]
     [InlineData("""{"type":"Auth"}""", ErrorCodes.InvalidMessage)]
     [InlineData("""{"type":"Auth","proof":5}""", ErrorCodes.InvalidMessage)]
+    [InlineData("""{"type":"Query","queryType":"a","payload":{}}""", ErrorCodes.InvalidMessage)]
+    [InlineData("""{"type":"Query","queryId":1,"queryType":"a"}""", ErrorCodes.InvalidMessage)]
+    [InlineData("""{"type":"Query","queryId":1,"queryType":"a","payload":{},"viewer":"Rome"}""", ErrorCodes.InvalidMessage)]
+    [InlineData("""{"type":"QueryResult","queryId":1}""", ErrorCodes.InvalidMessage)]
     [InlineData("""{"type":"Auth","proof":null}""", ErrorCodes.InvalidMessage)]
     [InlineData("""{"proof":"x"}""", ErrorCodes.Malformed)]
     [InlineData("""{"type":7}""", ErrorCodes.Malformed)]
