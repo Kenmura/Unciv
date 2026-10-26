@@ -226,6 +226,6 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T240 | Needs-Review [Claude] | T223 | 0 | Remote-safe victory.Progress, empire.TradeHint and console queries (View-based rewrite, then allow in RemoteQueryPolicy) |
+| T240 | In-Review [Antigravity] | T223 | 0 | Remote-safe victory.Progress, empire.TradeHint and console queries (View-based rewrite, then allow in RemoteQueryPolicy) |
 | T242 | In-Progress [Claude] | T203 | 0 | Two-human conflict tests: one-per-game wonder race, ruins, religion founding and belief limits |
 | T243 | In-Progress [Claude] | T203 | 0 | Real-started-game visibility test for two humans: B's mirror never holds A-only tiles/units across a simultaneous round |
