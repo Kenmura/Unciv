@@ -27,8 +27,15 @@ public sealed partial class HarnessDeterminismTests
         ["TerrainBlendScenario.cs"] = "frame-time budget of the Standard-size map (C040 follow-up), best of three batches",
     };
 
-    [GeneratedRegex(@"Time\.GetTicks|OS\.GetTicks|DateTime(Offset)?\.(Utc)?Now|Stopwatch|CreateTween|CreateTimer|new\s+(Godot\.)?Timer\b|Task\.Delay|Thread\.Sleep|AnimationPlayer|\bTween\b|Engine\.TimeScale", RegexOptions.None)]
+    // The client reads the wall clock exactly twice, to seed a brand-new game at launch (a one-off, not frame-driven; scenarios build their own seeded sessions).
+    private static readonly HashSet<string> AllowedClientClock = new(StringComparer.Ordinal) { "App.cs", "QuickStart.cs" };
+
+    [GeneratedRegex(@"GetTicks(Msec|Usec)|OS\.GetTicks|GetUnixTime|GetDatetime|OS\.DelayM?Usec|OS\.DelayMsec|DateTime(Offset)?\.(Utc)?(Now|Today)|TimeProvider|Environment\.TickCount|Stopwatch|CreateTween|CreateTimer|new\s+([A-Za-z]+\.)*(Periodic)?Timer\b|Task\.Delay|Thread\.Sleep|AnimationPlayer|AnimationTree|\bTween\b|Engine\.TimeScale", RegexOptions.None)]
     private static partial Regex ClockApi();
+
+    // Any per-frame callback (renamed parameter or physics tick included) is a real-time consumer that must be accounted for below.
+    [GeneratedRegex(@"override\s+void\s+_(Physics)?Process\s*\(", RegexOptions.None)]
+    private static partial Regex ProcessOverride();
 
     [Fact]
     public void ScenariosDoNotReadTheWallClockOrStartTimers()
@@ -45,14 +52,14 @@ public sealed partial class HarnessDeterminismTests
     {
         // The client's own use of real time: frame deltas in _Process. Each must have a switch the runner turns (or be frame-counted/idle in scenarios).
         var clientClock = Sources("Unciv.Godot")
-            .Where(it => ClockApi().IsMatch(it.Text))
+            .Where(it => ClockApi().IsMatch(it.Text) && !AllowedClientClock.Contains(it.Name))
             .Select(it => it.Name)
             .OrderBy(it => it, StringComparer.Ordinal)
             .ToList();
         Assert.True(clientClock.Count == 0, "new wall-clock/timer use in the client; freeze it in ScenarioRunner.FreezeRealTime and extend this test: " + string.Join(", ", clientClock));
 
         var processUsers = Sources("Unciv.Godot")
-            .Where(it => it.Text.Contains("_Process(double delta)", StringComparison.Ordinal))
+            .Where(it => ProcessOverride().IsMatch(it.Text))
             .Select(it => Path.GetFileNameWithoutExtension(it.Name))
             .OrderBy(it => it, StringComparer.Ordinal)
             .ToList();
@@ -73,8 +80,8 @@ public sealed partial class HarnessDeterminismTests
     public void NativeControlTooltipsNeverAppearInTheHarnessProject()
     {
         string project = File.ReadAllText(Path.Combine(Root, "Unciv.Godot.Harness", "project.godot"));
-        var match = Regex.Match(project, @"^timers/tooltip_delay_sec=([0-9.]+)\s*$", RegexOptions.Multiline);
-        Assert.True(match.Success, "project.godot must set gui timers/tooltip_delay_sec");
+        var match = Regex.Match(project, @"^\[gui\]\s*$(?:(?!^\[).)*?^timers/tooltip_delay_sec=([0-9.]+)\s*$", RegexOptions.Multiline | RegexOptions.Singleline);
+        Assert.True(match.Success, "project.godot must set timers/tooltip_delay_sec in its [gui] section");
         Assert.True(double.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) >= 3600, "native tooltip delay must be unreachable");
     }
 

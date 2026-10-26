@@ -26,7 +26,7 @@ case "$mode" in
     --update-golden) extra+=(--update-golden) ;;
     --expect-golden-failure)
         # Every golden of the scenario replaced by one unrelated image: a comparison that cannot fail would pass here
-        golden="$(mktemp -d)"; trap 'rm -rf "$golden"' EXIT
+        golden="$(mktemp -d)"; cleanup_golden="$golden"
         mkdir -p "$golden/$name"
         for g in "$project/golden/$name"/*.png; do cp "$project/golden/smoke.png" "$golden/$name/$(basename "$g")"; done ;;
     *) echo "unknown option $mode" >&2; exit 64 ;;
@@ -34,8 +34,21 @@ esac
 
 # C058: own X server per run, display number chosen by Xvfb itself (-displayfd). `xvfb-run -a` picks a free number then starts the server, so two
 # runs starting together (several agents share this machine) could get the same display and kill each other's server mid-scenario.
+xvfb_pid=""; godot_pid=""; display_file=""; cleanup_golden=""
+cleanup() {
+    [[ -n "$godot_pid" ]] && { kill "$godot_pid" 2>/dev/null || true; wait "$godot_pid" 2>/dev/null || true; }
+    [[ -n "$xvfb_pid" ]] && { kill "$xvfb_pid" 2>/dev/null || true; wait "$xvfb_pid" 2>/dev/null || true; }
+    [[ -n "$display_file" ]] && rm -f "$display_file"
+    [[ -n "$cleanup_golden" ]] && rm -rf "$cleanup_golden"
+    return 0
+}
+# also on Ctrl-C / kill of the script alone (the signal would otherwise leave the Xvfb it started running)
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 run() {
-    local display_file xvfb_pid display="" status
+    local display="" status
     display_file="$(mktemp)"
     Xvfb -displayfd 3 -nolisten tcp -screen 0 1280x720x24 3>"$display_file" 2>/dev/null &
     xvfb_pid=$!
@@ -44,14 +57,15 @@ run() {
         [[ -n "$display" ]] && break
         sleep 0.1
     done
-    if [[ -z "$display" ]]; then kill "$xvfb_pid" 2>/dev/null || true; rm -f "$display_file"; echo "Xvfb did not start" >&2; return 1; fi
-    status=0
+    if [[ -z "$display" ]]; then echo "Xvfb did not start" >&2; return 1; fi
+    # background + wait, so a TERM/INT sent to this script alone runs the cleanup trap at once instead of after the scenario ends
     DISPLAY=":$display" timeout "${HARNESS_TIMEOUT:-120}" \
         "$godot" --path "$project" --rendering-driver opengl3 --resolution 640x480 res://ScenarioRunner.tscn \
-        -- --scenario="$name" --out="$out" --golden-dir="$golden" "${extra[@]}" || status=$?
-    kill "$xvfb_pid" 2>/dev/null || true
-    wait "$xvfb_pid" 2>/dev/null || true
-    rm -f "$display_file"
+        -- --scenario="$name" --out="$out" --golden-dir="$golden" "${extra[@]}" &
+    godot_pid=$!
+    status=0
+    wait "$godot_pid" || status=$?
+    godot_pid=""
     return "$status"
 }
 
