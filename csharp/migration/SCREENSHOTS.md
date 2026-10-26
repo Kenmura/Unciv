@@ -534,7 +534,7 @@ Scenario `improvements`.
 
 *The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged.* (`improvements/yields-off.png`)
 
-## C033 (ticket not Done or unknown)
+## C033 Unit animation and combat presentation
 
 Unit animation and combat presentation: lunge, flinch with floating engine damage numbers, ranged shot, bombard flash, death shrink; stepped by hand so every frame is deterministic.
 
@@ -631,6 +631,36 @@ Scenario `menu`.
 ![After resigning: the screen says so and offers only the main menu](../Unciv.Godot.Harness/golden/menu/resigned.png)
 
 *After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
+
+## C047 (ticket not Done or unknown)
+
+AutoPlay: an optional button with a menu (start N turns, AutoPlay End Turn), a Stop control with the turns left, and the AutoPlay options.
+
+Scenario `autoplay`.
+
+![The game screen with the AutoPlay option on: an AutoPlay button above Next turn.](../Unciv.Godot.Harness/golden/autoplay/button.png)
+
+*The game screen with the AutoPlay option on: an AutoPlay button above Next turn.* (`autoplay/button.png`)
+
+![The AutoPlay menu above the button: Start AutoPlay (5 turns) and AutoPlay End Turn (1 turn).](../Unciv.Godot.Harness/golden/autoplay/menu.png)
+
+*The AutoPlay menu above the button: Start AutoPlay (5 turns) and AutoPlay End Turn (1 turn).* (`autoplay/menu.png`)
+
+![AutoPlay running: the button reads Stop AutoPlay (4 left), Next unit is greyed and the turn counter has moved on.](../Unciv.Godot.Harness/golden/autoplay/running.png)
+
+*AutoPlay running: the button reads Stop AutoPlay (4 left), Next unit is greyed and the turn counter has moved on.* (`autoplay/running.png`)
+
+![After the five turns: the status line says AutoPlay finished after 5 turns, the button is idle again.](../Unciv.Godot.Harness/golden/autoplay/finished.png)
+
+*After the five turns: the status line says AutoPlay finished after 5 turns, the button is idle again.* (`autoplay/finished.png`)
+
+![After pressing Stop: the status line says AutoPlay stopped, the button is idle and the turn is the player's.](../Unciv.Godot.Harness/golden/autoplay/stopped.png)
+
+*After pressing Stop: the status line says AutoPlay stopped, the button is idle and the turn is the player's.* (`autoplay/stopped.png`)
+
+![Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI.](../Unciv.Godot.Harness/golden/autoplay/options.png)
+
+*Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI.* (`autoplay/options.png`)
 
 ## C048 (ticket not Done or unknown)
 

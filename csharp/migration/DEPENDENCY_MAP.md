@@ -197,7 +197,7 @@ flowchart TD
   class C040 prog
   class C045 waiting
   class C046 prog
-  class C047 prog
+  class C047 review
   class C048 review
   class C049 ready
   class C050 ready
@@ -301,7 +301,7 @@ xychart-beta
 | C040 | In-Progress [Claude] | C037, C011 | 0 | Run end-turn processing and AI turns off the UI thread with a next-turn progress overlay |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | C046 | In-Progress [Claude] | C005, C037, T229 | 0 | Dev console UI: console popup with history and autocomplete |
-| C047 | In-Progress [Claude] | C011, C037, T228, C043 | 0 | AutoPlay UI: auto-play status button, turn count and stop, options |
+| C047 | Needs-Review [Claude] | C011, C037, T228, C043 | 0 | AutoPlay UI: auto-play status button, turn count and stop, options |
 | C048 | Needs-Review [Claude] | C017, C037 | 0 | Rename city popup |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
