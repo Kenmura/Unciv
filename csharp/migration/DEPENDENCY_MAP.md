@@ -318,7 +318,7 @@ xychart-beta
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C024 | In-Review [Claude] | C005, C010, T166, T198, T187, C037 | 0 | Victory and defeat screen, game over |
-| C028 | Needs-Review [Claude] | C005, C043 | 0 | Options screen, hotkeys, edge-pan |
+| C028 | In-Review [Claude] | C005, C043 | 0 | Options screen, hotkeys, edge-pan |
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C038 | In-Progress [Claude] | C005, C037, T220, T192, T197 | 0 | Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
