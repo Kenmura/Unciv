@@ -187,7 +187,7 @@ flowchart TD
   class C039 review
   class C045 waiting
   class C051 prog
-  class C052 prog
+  class C052 review
   class C053 prog
   class C054 ready
   class C055 review
@@ -278,7 +278,7 @@ xychart-beta
 | C039 | Needs-Review [Claude] | C005, C037, C022, T193 | 0 | Incoming proposal popups: trade, peace and friendship requests from AI (and other humans), proposer's pending/declined/withdrawn state |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | C051 | In-Progress [Claude] | C038 | 0 | Espionage overview screen and spy coup/action buttons |
-| C052 | In-Progress [Claude] | C038 | 0 | Scenario coverage for religion (found, enhance, reform), spy and vote pickers, and open pickers from notifications |
+| C052 | Needs-Review [Claude] | C038 | 0 | Scenario coverage for religion (found, enhance, reform), spy and vote pickers, and open pickers from notifications |
 | C053 | In-Progress [Claude] | C038 | 0 | Diplomatic vote result screen: engine vote-breakdown query and acknowledge command, client screen |
 | C055 | In-Review [Claude] | C027 | 0 | Civilopedia hotkey and search, button visible under the unit panel |
 | C056 | Needs-Review [Claude] | C027 | 0 | Wire TooltipModel.StatBreakdown into city and tile screens |
