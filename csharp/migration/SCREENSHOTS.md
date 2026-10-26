@@ -554,7 +554,7 @@ Scenario `settings`.
 
 *The temporary settings screen after clicks: move-on-turn-start on, UI scale 1.25. (Real options screen is C028.)* (`settings/changed.png`)
 
-## C044 (ticket not Done or unknown)
+## C044 In-game menu: save, load, new game, resign, victory status, options, main menu
 
 In-game menu (Escape or the Menu button): save, load, new game, victory status, options, resign and main menu, with confirmations before destructive actions.
 
