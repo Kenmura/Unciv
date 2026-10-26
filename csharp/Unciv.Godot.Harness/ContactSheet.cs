@@ -61,7 +61,7 @@ public partial class ContactSheet : Node
         Directory.CreateDirectory(reviewDir);
         File.WriteAllText(Path.Combine(reviewDir, "index.md"), ReviewIndex.Render(sections, "contact-sheet.png", "../"));
 
-        var layout = ContactSheetLayout.Compute(Math.Max(1, cells.Count), SourceWidth, SourceHeight);
+        var layout = ContactSheetLayout.Compute(Math.Max(1, cells.Count), SourceWidth, SourceHeight, ContactSheetLayout.ColumnsFor(cells.Count));
         var viewport = new SubViewport
         {
             Size = new Vector2I(layout.Width, layout.Height),

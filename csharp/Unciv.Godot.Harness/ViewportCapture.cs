@@ -16,7 +16,8 @@ public static class ViewportCapture
     /// <summary>Captures the viewport, writes it to <paramref name="path"/> as PNG and returns the pixels.</summary>
     public static RgbaImage CaptureViewportPng(Viewport viewport, string path)
     {
-        using var image = viewport.GetTexture().GetImage();
+        using var image = viewport.GetTexture().GetImage()
+            ?? throw new IOException($"The viewport ({viewport.GetVisibleRect().Size}) rendered no image for {path}: it may exceed the GPU texture limit");
         var error = image.SavePng(path);
         if (error != Error.Ok) throw new IOException($"Could not write {path}: {error}");
         return ToRgba(image);

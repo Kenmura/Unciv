@@ -8,6 +8,12 @@ public sealed record SheetLayout(int Width, int Height, IReadOnlyList<SheetCell>
 /// <summary>Grid arithmetic for the owner's contact sheet, kept apart from Godot so it is tested in the normal suite.</summary>
 public static class ContactSheetLayout
 {
+    /// <summary>Most rows a sheet may have: a viewport texture beyond the GPU limit (16384 px) renders nothing, so the capture of a big sheet came back null.</summary>
+    public const int MaxRows = 40;
+
+    /// <summary>Columns for <paramref name="count"/> cells: three, or more when three would need more than <see cref="MaxRows"/> rows.</summary>
+    public static int ColumnsFor(int count) => Math.Max(3, (count + MaxRows - 1) / MaxRows);
+
     /// <summary>
     /// Lays <paramref name="count"/> thumbnails of the given aspect ratio row by row, <paramref name="columns"/> to a row.
     /// The thumbnail width is fixed; its height follows the source aspect (rounded up so nothing is cropped).

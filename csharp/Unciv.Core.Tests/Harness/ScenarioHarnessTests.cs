@@ -92,6 +92,21 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.Throws<ArgumentOutOfRangeException>(() => ContactSheetLayout.Compute(1, 640, 480, columns: 0));
     }
 
+    // The contact sheet is one GPU texture: with every scenario it grew past 16384 px high and the capture came back null (NullReferenceException).
+    [Fact]
+    public void ABigSheetWidensInsteadOfGrowingPastTheTextureLimit()
+    {
+        Assert.Equal(3, ContactSheetLayout.ColumnsFor(0));
+        Assert.Equal(3, ContactSheetLayout.ColumnsFor(120));
+        Assert.Equal(5, ContactSheetLayout.ColumnsFor(190));
+        foreach (var count in new[] { 1, 119, 121, 190, 600 })
+        {
+            var layout = ContactSheetLayout.Compute(count, 640, 480, ContactSheetLayout.ColumnsFor(count));
+            Assert.InRange(layout.Height, 0, 16384);
+            Assert.InRange(layout.Width, 0, 16384);
+        }
+    }
+
     [Fact]
     public void IndexListsCapturesFailuresAndTheChecklist()
     {
