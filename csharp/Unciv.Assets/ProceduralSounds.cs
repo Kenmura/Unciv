@@ -87,7 +87,7 @@ public static class ProceduralSounds
     {
         var start = (int)((long)note.StartMs * SampleRate / 1000);
         var count = (int)((long)note.DurationMs * SampleRate / 1000);
-        var attack = Math.Max(1, (int)((long)(note.Swell ? note.DurationMs / 2 : AttackMs) * SampleRate / 1000));
+        var attack = (int)((long)(note.Swell ? note.DurationMs / 2 : AttackMs) * SampleRate / 1000);
         for (var i = 0; i < count; i++)
         {
             var fade = 1f - (float)i / count;

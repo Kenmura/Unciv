@@ -123,6 +123,32 @@ public class ProceduralSoundsTests
     }
 
     [Fact]
+    public void EnvelopeIsAttackThenSquaredFade()
+    {
+        // click: one 40 ms square at gain 0.4, 5 ms (110 samples) linear attack, then (1 - i/count)^2 fade.
+        var click = ProceduralSounds.Samples("click");
+        var count = 40 * ProceduralSounds.SampleRate / 1000;
+        foreach (var i in new[] { 4, 8, 100 })
+        {
+            var sign = System.Math.Sin(2 * System.Math.PI * 1200 * i / ProceduralSounds.SampleRate) >= 0 ? 1f : -1f;
+            var fade = 1f - (float)i / count;
+            var expected = sign * System.Math.Min(1f, i / 110f) * fade * fade * 0.4f * short.MaxValue;
+            Assert.InRange(click[i], expected - 2, expected + 2);
+        }
+        // whoosh: seeded noise, 350 ms, gain 0.4, fade in over the first half (3858 samples).
+        var whoosh = ProceduralSounds.Samples("whoosh");
+        var length = 350 * ProceduralSounds.SampleRate / 1000;
+        var seed = StableHash.Of("whoosh");
+        foreach (var i in new[] { 100, 2000, 5000 })
+        {
+            var noise = StableHash.Mix(seed, i, 0) / (float)uint.MaxValue * 2f - 1f;
+            var fade = 1f - (float)i / length;
+            var expected = noise * System.Math.Min(1f, i / 3858f) * fade * fade * 0.4f * short.MaxValue;
+            Assert.InRange(whoosh[i], expected - 2, expected + 2);
+        }
+    }
+
+    [Fact]
     public void NoiseIsNotConstantAndIsSeededByName()
     {
         Assert.NotEqual(ProceduralSounds.Samples("fire"), ProceduralSounds.Samples("paper").Take(ProceduralSounds.Samples("fire").Length));
