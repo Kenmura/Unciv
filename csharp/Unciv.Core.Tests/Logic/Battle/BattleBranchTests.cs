@@ -635,7 +635,7 @@ public class BattleBranchTests
         BattleObject.Attack(C(attacker), new CityCombatant(city));
 
         Assert.Equal(attackerCiv, city.Civ);
-        Assert.Equal(completed, testGame.GameInfo.ClientState.TutorialTasksCompleted.Contains("Conquer a city"));
+        Assert.Equal(completed, testGame.GameInfo.ClientState.TutorialTasksCompleted(attackerCiv.CivId).Contains("Conquer a city"));
     }
 
     [Fact]
