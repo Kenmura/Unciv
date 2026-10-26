@@ -46,9 +46,9 @@ public sealed record DiplomaticVoteResultQuery : IQuery<DiplomaticVoteBreakdownR
             int weight = other == owner ? 2 : 1;
             var votedFor = votesCast.TryGetValue(other.CivId, out var votedId) && votedId != null ? game.GetCivilization(votedId) : null;
             bool abstained = votedFor == null || votedFor.IsDefeated();
-            bool known = !abstained && Visible(votedFor!);
+            string? target = !abstained && votedFor != null && Visible(votedFor) ? votedFor.CivName : null;
             rows.Add(new VoteRow(other.CivName, other.IsMajorCiv(), other.IsMajorCiv() ? results[other.CivId] : 0, weight, abstained,
-                known ? votedFor!.CivName : null, !abstained && !known));
+                target, !abstained && target == null));
         }
         return new DiplomaticVoteBreakdownResult(true, owner == null ? null : unBuilding, owner?.CivName, Anonymize(civ, winnerText), rows);
     }

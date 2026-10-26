@@ -90,7 +90,7 @@ public partial class VoteResultScreen : Control
             var colour = colourOf(row.Civ) ?? PlaceholderPalette.FromHash(row.Civ, 150, 210);
             rows.AddChild(new Label { Text = row.Received, HorizontalAlignment = HorizontalAlignment.Right });
             var name = new Label { Text = row.Civ.Tr() };
-            name.AddThemeColorOverride("font_color", new Color(colour.R / 255f, colour.G / 255f, colour.B / 255f));
+            name.AddThemeColorOverride("font_color", ToColour(colour));
             rows.AddChild(name);
             rows.AddChild(new Label { Text = row.Weight.Tr() });
             rows.AddChild(new Label { Text = row.UnBuilding?.Tr() ?? "" });
@@ -106,6 +106,8 @@ public partial class VoteResultScreen : Control
         Current = null;
         Visible = false;
     }
+
+    private static Color ToColour(Rgb rgb) => new(rgb.R / 255f, rgb.G / 255f, rgb.B / 255f);
 
     private static string CellText(Node node) => node is Label label ? label.Text : "";
 }

@@ -5,6 +5,7 @@ using Unciv.GodotClient.Play;
 using Unciv.Harness;
 using Unciv.Models.Translations;
 using Unciv.Queries.Empire;
+using Unciv.Utils;
 
 namespace Unciv.GodotHarness;
 
@@ -42,7 +43,7 @@ public sealed class VoteResultScenario : Scenario
         int logged = 0;
 
         Vector2 Centre(Button? button) => button?.GetGlobalRect().GetCenter() ?? Vector2.Zero;
-        DiplomaticVoteBreakdownResult Ask() => localHost.QueryAsync(new DiplomaticVoteResultQuery()).GetAwaiter().GetResult()!;
+        DiplomaticVoteBreakdownResult Ask() => localHost.QueryAsync(new DiplomaticVoteResultQuery()).GetAwaiter().GetResult().NotNull();
 
         return
         [
