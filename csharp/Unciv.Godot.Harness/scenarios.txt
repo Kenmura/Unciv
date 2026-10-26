@@ -30,3 +30,4 @@ decisions
 tutorial
 tooltips
 combat-presentation
+city-rename

@@ -614,5 +614,23 @@
         "caption": "A dying worker shrinks and sinks into its tile."
       }
     ]
+  },
+  "C048": {
+    "scenario": "city-rename",
+    "about": "Rename a city from the city screen header: popup with live validation, Enter to confirm, Escape to cancel; the new name shows in the title, the map banner and the overview.",
+    "shots": [
+      {
+        "golden": "city-rename/header.png",
+        "caption": "The capital's city screen with the new Rename button in the header, at 640x480."
+      },
+      {
+        "golden": "city-rename/refused.png",
+        "caption": "Rename popup over the dimmed city screen: a name with [ ] is refused with the reason shown and OK disabled."
+      },
+      {
+        "golden": "city-rename/overview.png",
+        "caption": "The overview's Cities tab lists the capital under its new name, Ur of the Chaldees."
+      }
+    ]
   }
 }

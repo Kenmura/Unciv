@@ -632,6 +632,24 @@ Scenario `menu`.
 
 *After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
 
+## C048 (ticket not Done or unknown)
+
+Rename a city from the city screen header: popup with live validation, Enter to confirm, Escape to cancel; the new name shows in the title, the map banner and the overview.
+
+Scenario `city-rename`.
+
+![The capital's city screen with the new Rename button in the header, at 640x480.](../Unciv.Godot.Harness/golden/city-rename/header.png)
+
+*The capital's city screen with the new Rename button in the header, at 640x480.* (`city-rename/header.png`)
+
+![Rename popup over the dimmed city screen: a name with [ ] is refused with the reason shown and OK disabled.](../Unciv.Godot.Harness/golden/city-rename/refused.png)
+
+*Rename popup over the dimmed city screen: a name with [ ] is refused with the reason shown and OK disabled.* (`city-rename/refused.png`)
+
+![The overview's Cities tab lists the capital under its new name, Ur of the Chaldees.](../Unciv.Godot.Harness/golden/city-rename/overview.png)
+
+*The overview's Cities tab lists the capital under its new name, Ur of the Chaldees.* (`city-rename/overview.png`)
+
 ## Missing screenshots
 
 Done tickets with nothing meaningful to show.

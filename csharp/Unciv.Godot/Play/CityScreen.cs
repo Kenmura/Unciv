@@ -39,6 +39,8 @@ public partial class CityScreen : PanelContainer
     private readonly Button citizensTab = new() { Name = "ShowCitizens", Text = "Citizens".Tr(), ToggleMode = true };
     private readonly Button productionTab = new() { Name = "ShowProduction", Text = "Production".Tr(), ToggleMode = true };
     private readonly CityProductionView productionView;
+    private readonly CityRenameView renameView;
+    private readonly Button renameButton = new() { Name = "RenameCity", Text = "Rename".Tr(), Visible = false };
     private bool showProduction;
     private int generation;
 
@@ -59,6 +61,8 @@ public partial class CityScreen : PanelContainer
         column.AddChild(head);
         title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         head.AddChild(title);
+        renameButton.Pressed += OpenRename;
+        head.AddChild(renameButton);
         citizensTab.Pressed += () => SetProduction(false);
         productionTab.Pressed += () => SetProduction(true);
         head.AddChild(citizensTab);
@@ -79,7 +83,22 @@ public partial class CityScreen : PanelContainer
         middle.AddChild(side);
         middle.AddChild(grid);
         grid.Resized += LayoutGrid;
+        renameView = new CityRenameView(command => Fire(Send(command)), uiTheme);
+        AddChild(renameView); // a PanelContainer lays every child over the whole panel: the popup covers the screen
         SetProduction(false);
+    }
+
+    /// <summary>The "Rename city" popup (C048).</summary>
+    public CityRenameView RenamePopup => renameView;
+
+    /// <summary>The header button that opens the rename popup; only an own city can be renamed.</summary>
+    public Button RenameButton => renameButton;
+
+    /// <summary>Opens the rename popup for the city on show (what the Rename button does); nothing for a foreign city or while loading.</summary>
+    public void OpenRename()
+    {
+        if (Panel == null || IsForeign) return;
+        renameView.Open(Panel.CityId, Panel.Name);
     }
 
     /// <summary>The production half (queue, buildable list, buildings), shown by the Production tab.</summary>
@@ -139,6 +158,7 @@ public partial class CityScreen : PanelContainer
         City = city;
         IsForeign = city.Own == null || city.Owner != session.ViewerCivId;
         Visible = true;
+        renameView.Cancel();
         if (IsForeign)
         {
             Panel = null;
@@ -161,6 +181,7 @@ public partial class CityScreen : PanelContainer
         }
         Panel = panel;
         Tiles = tiles;
+        renameButton.Visible = true;
         Rebuild(panel, tiles);
         productionView.Show(panel, list, bar?.Gold ?? 0, session.Ruleset);
         SetTabs(visible: true);
@@ -170,6 +191,8 @@ public partial class CityScreen : PanelContainer
     {
         generation++;
         Visible = false;
+        renameView.Cancel();
+        renameButton.Visible = false;
         City = null;
         Panel = null;
         Tiles = null;
@@ -188,7 +211,8 @@ public partial class CityScreen : PanelContainer
     {
         if (Visible && @event is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
-            Close();
+            if (renameView.Visible) renameView.Cancel(); // Escape leaves the popup, not the city screen
+            else Close();
             GetViewport().SetInputAsHandled();
         }
     }
@@ -206,6 +230,7 @@ public partial class CityScreen : PanelContainer
 
     private void ShowForeign(CityDto city)
     {
+        renameButton.Visible = false;
         ClearSide();
         ClearGrid();
         SetTabs(visible: false);
