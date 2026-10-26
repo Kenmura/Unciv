@@ -226,6 +226,58 @@ public partial class GameScreen : Control
         Run(Trade.OpenAsync(civId));
     }
 
+    /// <summary>C027: the Civilopedia, opened by the Civilopedia button.</summary>
+    public PediaScreen Pedia { get; private set; } = null!; // JUSTIFY: C027 assigned in Start before any use
+
+    public bool IsPediaVisible => Pedia.Visible;
+
+    public Button PediaButton { get; } = new() { Name = "PediaButton", Text = "Civilopedia".Tr() };
+
+    /// <summary>Opens the Civilopedia on a link (<c>Unit/Warrior</c>), or where it was last left; it covers whatever screen is open and Close returns to it.</summary>
+    public void OpenPediaScreen(string? link = null)
+    {
+        Tooltips.Unpoint();
+        Pedia.Open(link);
+    }
+
+    /// <summary>C027: the one tooltip of the game screen; the map feeds it the tile under the pointer.</summary>
+    public TooltipHost Tooltips { get; private set; } = null!; // JUSTIFY: C027 assigned in Start before any use
+
+    /// <summary>The tile under the pointer (null over the HUD or off the map) and the BBCode its tooltip will show once the engine answered ("" until then).</summary>
+    public HexCoord? HoveredTile { get; private set; }
+
+    public string HoverTip { get; private set; } = "";
+
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is InputEventMouseMotion motion && Map != null && Tooltips != null) UpdateHover(motion.Position);
+    }
+
+    /// <summary>Follows the pointer: over the map (no widget under it) the tile under it is asked of the engine for the tooltip; over a widget the tip goes away.</summary>
+    private void UpdateHover(Vector2 pointer)
+    {
+        var over = GetViewport().GuiGetHoveredControl();
+        HexCoord? tile = over == null || over == this ? Map.PickTile(pointer) : null;
+        if (tile == HoveredTile) return;
+        HoveredTile = tile;
+        HoverTip = "";
+        Tooltips.Restart();
+        if (tile is not { } coord)
+        {
+            Tooltips.Unpoint();
+            return;
+        }
+        Tooltips.Point(() => HoverTip);
+        Run(LoadHoverTip(coord));
+    }
+
+    private async Task LoadHoverTip(HexCoord coord)
+    {
+        var info = await queries.TileInfo(coord.X, coord.Y);
+        if (HoveredTile != coord || info == null) return; // the pointer moved on, or the engine would not describe an unexplored tile
+        HoverTip = TooltipModel.ToBbcode(TooltipModel.Tile(info, session.Ruleset), text => text.Tr());
+    }
+
     /// <summary>C019: the tech screen, opened by the Technology button.</summary>
     public TechScreen Tech { get; private set; } = null!; // JUSTIFY: C019 assigned in Start before any use
 
@@ -466,6 +518,8 @@ public partial class GameScreen : Control
         PolicyButton.Pressed += OpenPolicyScreen;
         AddChild(OverviewButton);
         OverviewButton.Pressed += () => OpenOverviewScreen();
+        AddChild(PediaButton);
+        PediaButton.Pressed += () => OpenPediaScreen();
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
         Notifications = new NotificationListView();
@@ -557,6 +611,12 @@ public partial class GameScreen : Control
             Policies.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
         OverviewButton.Position = new Vector2(PolicyButton.Position.X + PolicyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
+        PediaButton.Position = new Vector2(HudMargin, Size.Y - 2f * HudMargin - 24f - PediaButton.GetCombinedMinimumSize().Y); // bottom left above the status line: the top row is full
+        if (Pedia != null)
+        {
+            Pedia.Position = new Vector2(0f, Hud.TopBarHeight);
+            Pedia.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
+        }
         TradeButton.Position = new Vector2(OverviewButton.Position.X + OverviewButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
@@ -663,6 +723,22 @@ public partial class GameScreen : Control
         Overview.CityChosen += JumpToCity;
         Overview.UnitChosen += JumpToUnit;
         OverviewButton.Theme = theme.Theme;
+        if (Tooltips != null)
+        {
+            RemoveChild(Tooltips);
+            Tooltips.QueueFree();
+        }
+        Tooltips = new TooltipHost(theme) { Name = "Tooltips" };
+        HoveredTile = null;
+        HoverTip = "";
+        if (Pedia != null)
+        {
+            RemoveChild(Pedia);
+            Pedia.QueueFree();
+        }
+        Pedia = new PediaScreen(session.Ruleset, theme, Tooltips);
+        AddChild(Pedia);
+        PediaButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
         MoveChild(Picker, -1);
@@ -671,6 +747,7 @@ public partial class GameScreen : Control
         MoveChild(VictoryStatus, -1);
         MoveChild(GameMenu, -1);
         MoveChild(Tutorials, -1);
+        AddChild(Tooltips); // above everything, so a tip is never covered by a screen
         ReachableOverlay.Setup(registry);
         AttackOverlay.Setup(registry);
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows

@@ -41,6 +41,9 @@ public partial class ListPanel : PanelContainer
 
     public event Action<int>? Selected;
 
+    /// <summary>The button of the <paramref name="index"/>th selectable item (rows added with <see cref="AddRow"/> do not count), or null.</summary>
+    public Button? ItemAt(int index) => index >= 0 && index < items.Count ? items[index] : null;
+
     public void AddRow(Control row) => rows.AddChild(row);
 
     public void AddItem(string text, AssetKey? icon = null)

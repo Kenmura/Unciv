@@ -31,5 +31,6 @@ Every asset used by the Godot client must be listed here with source and license
 
 | Overview screen (`Unciv.Godot/Play/OverviewScreen.cs`, `Unciv.Assets/OverviewModel.cs`) | No new assets: text tables and buttons on the generated `ui/theme`; no Firaxis/Civ 5 material | n/a (generated, project MPL-2.0) | C023 |
 | Trade screen (`Unciv.Godot/Play/TradeScreen.cs`, `Unciv.Assets/TradeScreenModel.cs`) | No new assets: text buttons and labels on the existing generated `ui/theme`; no icons, no Firaxis/Civ 5 material | n/a (generated, project MPL-2.0) | C022 |
+| Tooltips and Civilopedia (`Unciv.Godot/Play/PediaScreen.cs`, `Unciv.Assets/PediaModel.cs`, `TooltipModel.cs`): text from the ruleset objects, existing generated icons (`icon/*` keys); no new files, no Firaxis/Civ 5 material | n/a (generated, project MPL-2.0) | C027 |
 
 Override file names: `assets/override/<category>/<name>.{tres,glb,png,ogg}` where characters outside `A-Za-z0-9_-.` in the name are percent-encoded as UTF-8 (`terrain/Flood plains` -> `assets/override/terrain/Flood%20plains.png`). Keep names unique ignoring case on case-insensitive filesystems.

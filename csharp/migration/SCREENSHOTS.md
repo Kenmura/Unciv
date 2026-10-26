@@ -476,6 +476,28 @@ Scenario `tutorial`.
 
 *Workers tutorial shown after tutorials were switched back on and the seen list was reset.* (`tutorial/workers.png`)
 
+## C027 (ticket not Done or unknown)
+
+Tile hover tooltip and the Civilopedia: categories, entries with icons, engine-worded pages, links, unit tooltips in the list.
+
+Scenario `tooltips`.
+
+![Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields.](../Unciv.Godot.Harness/golden/tooltips/tile.png)
+
+*Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields.* (`tooltips/tile.png`)
+
+![Civilopedia, Units: the Archer's page with stats, requirements and links.](../Unciv.Godot.Harness/golden/tooltips/unit.png)
+
+*Civilopedia, Units: the Archer's page with stats, requirements and links.* (`tooltips/unit.png`)
+
+![Hovering the Bowman entry shows its name, cost and short description.](../Unciv.Godot.Harness/golden/tooltips/entry-tip.png)
+
+*Hovering the Bowman entry shows its name, cost and short description.* (`tooltips/entry-tip.png`)
+
+![Civilopedia, Buildings: the Granary's page.](../Unciv.Godot.Harness/golden/tooltips/building.png)
+
+*Civilopedia, Buildings: the Granary's page.* (`tooltips/building.png`)
+
 ## C028 Options screen, hotkeys, edge-pan
 
 Options screen: engine options, UI scale, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.

@@ -16,6 +16,7 @@ public partial class TooltipHost : Control
     private Control? hovered;
     private Func<string>? textOf;
     private double rested;
+    private string shownSource = "";
 
     public TooltipHost(UiTheme theme)
     {
@@ -56,15 +57,43 @@ public partial class TooltipHost : Control
     public void Advance(double seconds)
     {
         if (hovered == null) return;
+        string current = textOf!();
+        if (current.Length == 0)
+        {
+            // nothing to say (yet): stay hidden but keep the delay served, so the tip appears as soon as the text is there
+            panel.Visible = false;
+            rested = Math.Min(rested + seconds, Delay);
+            return;
+        }
         if (!panel.Visible)
         {
             rested += seconds;
             if (rested < Delay) return;
-            text.Text = textOf!();
             panel.Visible = true;
             panel.Size = Vector2.Zero;
         }
+        if (current != shownSource)
+        {
+            shownSource = current;
+            text.Text = current;
+            panel.Size = Vector2.Zero;
+        }
         Follow();
+    }
+
+    /// <summary>Hides the tip and restarts the delay (the pointer moved to something else inside the same control, e.g. another map tile).</summary>
+    public void Restart() => HideTip();
+
+    /// <summary>Manual hover for a region that is not a control of its own (the map): the tip shows <paramref name="bbcodeText"/> until <see cref="Unpoint"/>; an empty text shows nothing.</summary>
+    public void Point(Func<string> bbcodeText)
+    {
+        if (hovered == this) textOf = bbcodeText;
+        else Enter(this, bbcodeText);
+    }
+
+    public void Unpoint()
+    {
+        if (hovered == this) Leave();
     }
 
     private void Enter(Control target, Func<string> bbcodeText)
@@ -85,6 +114,7 @@ public partial class TooltipHost : Control
     private void HideTip()
     {
         rested = 0;
+        shownSource = "";
         panel.Visible = false;
     }
 

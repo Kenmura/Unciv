@@ -71,6 +71,9 @@ public sealed class GameQueries(IGameSession session)
 
     public Task<AttackPreviewResult?> AttackPreview(int unitId, int x, int y) => session.QueryAsync(new AttackPreviewQuery(x, y, unitId));
 
+    /// <summary>C027: the hover tooltip's tile (no unit, so no improvement options); null for a tile the viewer has not explored.</summary>
+    public Task<TileInfoResult?> TileInfo(int x, int y) => session.QueryAsync(new TileInfoQuery(x, y));
+
     public Task<TileInfoResult?> TileInfo(int x, int y, int unitId) => session.QueryAsync(new TileInfoQuery(x, y, unitId));
 
     public Task<PromotionChoicesResult?> Promotions(int unitId) => session.QueryAsync(new PromotionChoicesQuery(unitId));

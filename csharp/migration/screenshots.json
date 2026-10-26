@@ -566,5 +566,27 @@
         "caption": "The promotion picker for the warrior: experience line, promotions it may take, the default-promotion checkbox and Take promotion."
       }
     ]
+  },
+  "C027": {
+    "scenario": "tooltips",
+    "about": "Tile hover tooltip and the Civilopedia: categories, entries with icons, engine-worded pages, links, unit tooltips in the list.",
+    "shots": [
+      {
+        "golden": "tooltips/tile.png",
+        "caption": "Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields."
+      },
+      {
+        "golden": "tooltips/unit.png",
+        "caption": "Civilopedia, Units: the Archer's page with stats, requirements and links."
+      },
+      {
+        "golden": "tooltips/entry-tip.png",
+        "caption": "Hovering the Bowman entry shows its name, cost and short description."
+      },
+      {
+        "golden": "tooltips/building.png",
+        "caption": "Civilopedia, Buildings: the Granary's page."
+      }
+    ]
   }
 }

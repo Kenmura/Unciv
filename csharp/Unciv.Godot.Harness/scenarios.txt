@@ -28,3 +28,4 @@ improvements
 menu
 decisions
 tutorial
+tooltips
