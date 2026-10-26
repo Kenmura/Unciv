@@ -59,6 +59,12 @@ public static class GameOverModel
         return new GameOverView(status, title, result.Text, buttons, Ranking(rankings), Graph(history));
     }
 
+    /// <summary>
+    /// C044: the screen after the viewer resigned. Not an engine status (the game goes on with the AI in the viewer's place), so it is built here from the same ranking and history and offers only the way out.
+    /// </summary>
+    public static GameOverView BuildResigned(IReadOnlyList<RankingColumn>? rankings, HistoryResult? history) =>
+        new("Resigned", GameMenuModel.ResignedTitle, GameMenuModel.ResignedText, [new GameOverButton("MainMenu", GameOverButtonKind.MainMenu, "Main menu")], Ranking(rankings), Graph(history));
+
     /// <summary>The Score column when there is one, else the first; empty without any. Equal scores share a place; defeated civs come last with no place.</summary>
     public static IReadOnlyList<GameOverRankRow> Ranking(IReadOnlyList<RankingColumn>? columns)
     {

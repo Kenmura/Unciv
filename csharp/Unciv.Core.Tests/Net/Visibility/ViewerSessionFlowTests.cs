@@ -3,6 +3,7 @@ using Unciv.Commands.Events;
 using Unciv.Commands.Turn;
 using Unciv.Harness;
 using Unciv.Logic;
+using Unciv.Logic.Civilization;
 using Unciv.Net.Visibility;
 
 namespace Unciv.Core.Tests.Net.Visibility;
@@ -61,5 +62,23 @@ public sealed class ViewerSessionFlowTests
         var result = flow.Submit(new EndTurn { Now = clock++ });
         submitEvents.AddRange(result.Events);
         Assert.DoesNotContain(submitEvents, IsAiOnly);
+    }
+
+    [Fact]
+    public void Submit_StampsAnUnstampedTimedCommandWithTheClock_AndKeepsAnExplicitNow()
+    {
+        var session = ScenarioGame.Create(solo: true);
+        long clock = ScenarioGame.FixedClockMillis;
+        var flow = new ViewerSessionFlow(session, ScenarioGame.HumanA, () => clock++, (_, _) => { });
+        var resign = new Resign();
+        var result = flow.Submit(resign);
+        Assert.True(result.Accepted, result.Message);
+        Assert.Equal(ScenarioGame.FixedClockMillis, resign.Now);
+        Assert.Equal(ScenarioGame.FixedClockMillis + 1, clock);
+        Assert.Equal(PlayerType.AI, session.Game.GetCivilization(ScenarioGame.HumanA).PlayerType);
+
+        var other = new Resign { Now = 12345 };
+        flow.Submit(other); // refused (no longer a human), but the explicit value must stay untouched
+        Assert.Equal(12345, other.Now);
     }
 }

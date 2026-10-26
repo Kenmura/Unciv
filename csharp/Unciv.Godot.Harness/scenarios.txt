@@ -25,3 +25,4 @@ overview
 options
 trade
 improvements
+menu

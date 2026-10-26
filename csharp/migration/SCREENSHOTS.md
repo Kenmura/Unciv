@@ -518,6 +518,36 @@ Scenario `settings`.
 
 *The temporary settings screen after clicks: move-on-turn-start on, UI scale 1.25. (Real options screen is C028.)* (`settings/changed.png`)
 
+## C044 (ticket not Done or unknown)
+
+In-game menu (Escape or the Menu button): save, load, new game, victory status, options, resign and main menu, with confirmations before destructive actions.
+
+Scenario `menu`.
+
+![The game screen with the new Menu button after Trade, clear of the minimap at 640x480](../Unciv.Godot.Harness/golden/menu/hud.png)
+
+*The game screen with the new Menu button after Trade, clear of the minimap at 640x480* (`menu/hud.png`)
+
+![The in-game menu: resume, save, load, new game, victory status, options, resign and main menu](../Unciv.Godot.Harness/golden/menu/menu.png)
+
+*The in-game menu: resume, save, load, new game, victory status, options, resign and main menu* (`menu/menu.png`)
+
+![Victory status: each victory with the milestones of your own path and every civ's progress](../Unciv.Godot.Harness/golden/menu/victory-status.png)
+
+*Victory status: each victory with the milestones of your own path and every civ's progress* (`menu/victory-status.png`)
+
+![Start new game with unsaved progress: the menu asks before the game is left](../Unciv.Godot.Harness/golden/menu/unsaved.png)
+
+*Start new game with unsaved progress: the menu asks before the game is left* (`menu/unsaved.png`)
+
+![Resign asks for confirmation and says the AI takes over](../Unciv.Godot.Harness/golden/menu/resign-confirm.png)
+
+*Resign asks for confirmation and says the AI takes over* (`menu/resign-confirm.png`)
+
+![After resigning: the screen says so and offers only the main menu](../Unciv.Godot.Harness/golden/menu/resigned.png)
+
+*After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
+
 ## Missing screenshots
 
 Done tickets with nothing meaningful to show.

@@ -500,5 +500,35 @@
         "caption": "The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged."
       }
     ]
+  },
+  "C044": {
+    "scenario": "menu",
+    "about": "In-game menu (Escape or the Menu button): save, load, new game, victory status, options, resign and main menu, with confirmations before destructive actions.",
+    "shots": [
+      {
+        "golden": "menu/hud.png",
+        "caption": "The game screen with the new Menu button after Trade, clear of the minimap at 640x480"
+      },
+      {
+        "golden": "menu/menu.png",
+        "caption": "The in-game menu: resume, save, load, new game, victory status, options, resign and main menu"
+      },
+      {
+        "golden": "menu/victory-status.png",
+        "caption": "Victory status: each victory with the milestones of your own path and every civ's progress"
+      },
+      {
+        "golden": "menu/unsaved.png",
+        "caption": "Start new game with unsaved progress: the menu asks before the game is left"
+      },
+      {
+        "golden": "menu/resign-confirm.png",
+        "caption": "Resign asks for confirmation and says the AI takes over"
+      },
+      {
+        "golden": "menu/resigned.png",
+        "caption": "After resigning: the screen says so and offers only the main menu"
+      }
+    ]
   }
 }

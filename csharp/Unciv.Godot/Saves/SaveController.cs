@@ -1,5 +1,6 @@
 using System.Globalization;
 using Godot;
+using Unciv.Assets;
 using Unciv.GodotClient.Play;
 using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Ui;
@@ -35,6 +36,7 @@ public partial class SaveController : Control
     private Button? confirmDelete;
     private ListPanel? list;
     private IReadOnlyList<SaveEntry> entries = [];
+    private readonly SaveProgress progress = new();
 
     public SaveController(SaveStore store, ClientSettingsService settings, UiTheme theme, Func<string, IGameSession> loader, Action<IGameSession> onLoaded)
     {
@@ -61,6 +63,9 @@ public partial class SaveController : Control
     }
 
     public bool IsDialogOpen => dialog != null;
+
+    /// <summary>C044: whether the attached game has accepted commands since the last save, autosave or load. The in-game menu asks before it throws such progress away.</summary>
+    public bool HasUnsavedProgress => session != null && progress.IsUnsaved(session.Snapshot.Seq);
 
     public LineEdit? NameField { get; private set; }
 
@@ -93,6 +98,7 @@ public partial class SaveController : Control
         Detach();
         session = gameSession;
         lastTurn = gameSession.Snapshot.Turn;
+        progress.Reset(gameSession.Snapshot.Seq);
         gameSession.SnapshotChanged += OnSnapshotChanged;
     }
 
@@ -111,9 +117,11 @@ public partial class SaveController : Control
 
     private async Task AutosaveAsync(int turn)
     {
+        long seq = session?.Snapshot.Seq ?? 0;
         var text = await ExportAsync();
         if (text == null) return;
         var result = store.Autosave(text, turn, MaxNumberedAutosaves);
+        if (result.Ok) progress.MarkSaved(seq);
         Say(result.Ok ? $"Autosaved turn {turn.ToString(CultureInfo.InvariantCulture)}." : "Autosave failed: " + result.Error);
     }
 
@@ -135,9 +143,11 @@ public partial class SaveController : Control
             Say(invalid);
             return false;
         }
+        long seq = session?.Snapshot.Seq ?? 0;
         var text = await ExportAsync();
         if (text == null) return false;
         var result = store.Write(name, text);
+        if (result.Ok) progress.MarkSaved(seq);
         Say(result.Ok ? $"Saved \"{name}\"." : "Save failed: " + result.Error);
         RefreshList();
         return result.Ok;

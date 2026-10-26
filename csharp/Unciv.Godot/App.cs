@@ -15,7 +15,7 @@ namespace Unciv.GodotClient;
 /// C015: the composition root of the real client. Main menu, then New game (<see cref="NewGameScreen"/> over a <see cref="NewGameForm"/>, started through
 /// <see cref="LocalHost.Start"/>), Resume last / Load game (C016 <see cref="SaveController"/> over <see cref="SaveStore"/>) or Options (the C043
 /// settings panel, which saves through <see cref="ClientSettingsService"/>). A started or loaded game replaces the whole screen stack; every game gets its own
-/// <see cref="SaveController"/> for saving. The game-over screen (C024) returns to a fresh menu; a pause menu is a later ticket.
+/// <see cref="SaveController"/> for saving. The game-over screen (C024) returns to a fresh menu; C044: the in-game menu (Escape or the Menu button) saves, loads, starts a new game, resigns, shows the victory status, opens the options and leaves for the main menu.
 /// </summary>
 public partial class App : Node
 {
@@ -96,6 +96,11 @@ public partial class App : Node
         root.AddChild(saves);
         screens.Reset(root);
         screen.MainMenuRequested += () => ShowMenu(first: false);
+        screen.SaveRequested += saves.OpenDialog;
+        screen.LoadRequested += saves.OpenDialog;
+        screen.NewGameRequested += OpenNewGame;
+        screen.OptionsRequested += OpenOptions;
+        screen.HasUnsavedProgress = () => saves.HasUnsavedProgress;
         screen.Start(session, registry);
         screen.BindSettings(settings);
         saves.Attach(session);

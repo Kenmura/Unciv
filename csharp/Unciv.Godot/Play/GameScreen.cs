@@ -76,8 +76,33 @@ public partial class GameScreen : Control
     /// <summary>C024: the victory/defeat screen, above everything else.</summary>
     public GameOverScreen GameOver { get; private set; } = null!; // JUSTIFY: C024 assigned in _Ready before any use
 
-    /// <summary>Raised when the player leaves the finished (or any) game from the game-over screen; the composition root shows the main menu.</summary>
+    /// <summary>Raised when the player leaves the finished (or any) game from the game-over screen or the menu; the composition root shows the main menu.</summary>
     public event Action? MainMenuRequested;
+
+    /// <summary>C044: the in-game menu (Escape or the Menu button).</summary>
+    public GameMenuView GameMenu { get; private set; } = null!; // JUSTIFY: C044 assigned in _Ready before any use
+
+    /// <summary>C044: the menu's "Victory status" page.</summary>
+    public VictoryStatusView VictoryStatus { get; private set; } = null!; // JUSTIFY: C044 assigned in _Ready before any use
+
+    public Button MenuButton { get; } = new() { Name = "MenuButton", Text = "Menu".Tr() };
+
+    /// <summary>
+    /// C044: the menu asks the owner whether the game has progress no save holds (the save controller knows). Without an owner's answer the menu assumes it has, so a
+    /// destructive entry asks.
+    /// </summary>
+    public Func<bool>? HasUnsavedProgress { get; set; }
+
+    /// <summary>C044: the owner opens its save dialog / the load dialog / the new-game setup / the options. The game screen keeps no files and no settings of its own.</summary>
+    public event Action? SaveRequested;
+
+    public event Action? LoadRequested;
+
+    public event Action? NewGameRequested;
+
+    public event Action? OptionsRequested;
+
+    private bool resigned;
 
     private bool watchingAfterDefeat;
     private int gameOverCheck;
@@ -264,7 +289,79 @@ public partial class GameScreen : Control
 
     public override void _UnhandledKeyInput(InputEvent @event)
     {
+        if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape } && IsVisibleInTree() && TryEscape()) GetViewport().SetInputAsHandled();
         if (@event is InputEventKey { Pressed: true, Echo: false } key && HotkeyInput.TextOf(key) is { } text && TryHotkey(text)) GetViewport().SetInputAsHandled();
+    }
+
+    /// <summary>C044: Escape closes the menu or the victory page when one is open, else opens the menu unless a screen or popup already covers the map (those take Escape themselves).</summary>
+    private bool TryEscape()
+    {
+        if (GameMenu.Visible) return GameMenu.Cancel();
+        if (VictoryStatus.Visible)
+        {
+            VictoryStatus.Close();
+            return true;
+        }
+        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || Alerts.Visible || GameOver.Visible) return false;
+        OpenGameMenu();
+        return true;
+    }
+
+    /// <summary>Opens the in-game menu. The entries depend on the engine's game-over status (a defeated civ cannot resign) and on whether the game has unsaved progress.</summary>
+    public void OpenGameMenu() => Run(OpenGameMenuAsync());
+
+    private async Task OpenGameMenuAsync()
+    {
+        var outcome = await queries.GameOver();
+        bool unsaved = HasUnsavedProgress?.Invoke() ?? true;
+        GameMenu.Open(GameMenuModel.Build(outcome?.Status ?? Unciv.Queries.Victory.GameOverQuery.Playing, unsaved));
+    }
+
+    private async Task OnMenuChosen(GameMenuKind kind)
+    {
+        GameMenu.Close();
+        switch (kind)
+        {
+            case GameMenuKind.Save:
+                SaveRequested?.Invoke();
+                break;
+            case GameMenuKind.Load:
+                LoadRequested?.Invoke();
+                break;
+            case GameMenuKind.NewGame:
+                NewGameRequested?.Invoke();
+                break;
+            case GameMenuKind.Options:
+                OptionsRequested?.Invoke();
+                break;
+            case GameMenuKind.MainMenu:
+                MainMenuRequested?.Invoke();
+                break;
+            case GameMenuKind.VictoryStatus:
+                VictoryStatus.Open(VictoryStatusModel.Build(await queries.VictoryProgress()));
+                break;
+            case GameMenuKind.Resign:
+                await Resign();
+                break;
+        }
+    }
+
+    /// <summary>The engine validates the actor and does the change; the screen only sends the command and shows what is left: the resigned screen with the way out.</summary>
+    private async Task Resign()
+    {
+        var result = await session.SubmitAsync(new Resign());
+        if (!result.Accepted)
+        {
+            SetStatus("Resign refused: " + result.Message);
+            return;
+        }
+        var rankings = await queries.Rankings();
+        var history = await queries.History();
+        resigned = true;
+        gameOverCheck++; // a check that was already asking must not close the screen
+        Refresh();
+        GameOver.Open(GameOverModel.BuildResigned(rankings, history), civ => OwnerColour(civ));
+        SetStatus("You resigned.");
     }
 
     /// <summary>Opens the city screen for a city of the snapshot (the viewer's own in full, any other from its snapshot entry), or closes it with null.</summary>
@@ -340,6 +437,13 @@ public partial class GameScreen : Control
         GameOver = new GameOverScreen();
         AddChild(GameOver);
         GameOver.Chosen += kind => Run(OnGameOverChosen(kind));
+        AddChild(MenuButton);
+        MenuButton.Pressed += OpenGameMenu;
+        VictoryStatus = new VictoryStatusView();
+        AddChild(VictoryStatus);
+        GameMenu = new GameMenuView();
+        AddChild(GameMenu);
+        GameMenu.Chosen += kind => Run(OnMenuChosen(kind));
         GetViewport().SizeChanged += Layout;
         Layout();
 
@@ -390,8 +494,11 @@ public partial class GameScreen : Control
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
         Notifications.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
+        MenuButton.Position = new Vector2(TradeButton.Position.X + TradeButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         Alerts.LayoutIn(Size);
         GameOver.LayoutIn(Size);
+        VictoryStatus.LayoutIn(Size);
+        GameMenu.LayoutIn(Size);
         Panel.LayoutIn(Size);
         CombatPreview.LayoutIn(Size);
     }
@@ -421,6 +528,12 @@ public partial class GameScreen : Control
         Alerts.Init(theme);
         GameOver.Init(theme);
         GameOver.Close();
+        VictoryStatus.Init(theme);
+        VictoryStatus.Close();
+        GameMenu.Init(theme);
+        GameMenu.Close();
+        MenuButton.Theme = theme.Theme;
+        resigned = false;
         watchingAfterDefeat = false;
         deferredAlerts.Clear();
         reviewingAlerts = false;
@@ -479,6 +592,8 @@ public partial class GameScreen : Control
         CombatPreview.Init(theme);
         MoveChild(Alerts, -1); // the popup sits above every screen opened above
         MoveChild(GameOver, -1);
+        MoveChild(VictoryStatus, -1);
+        MoveChild(GameMenu, -1);
         ReachableOverlay.Setup(registry);
         AttackOverlay.Setup(registry);
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
@@ -842,6 +957,7 @@ public partial class GameScreen : Control
     /// </summary>
     private async Task CheckGameOver()
     {
+        if (resigned) return; // the resigned screen stays until the player leaves; the civ is the AI's now
         int check = ++gameOverCheck;
         var outcome = await queries.GameOver();
         if (check != gameOverCheck) return; // a newer snapshot asked meanwhile

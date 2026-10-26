@@ -48,6 +48,8 @@ public sealed class ViewerSessionFlow
 
     public SubmitResult Submit(GameCommand command)
     {
+        // C044: a timed command the caller did not stamp (Resign from the menu) gets this session's clock, as the authority would; an explicit Now is kept.
+        if (command is ITimedCommand { Now: 0 } timed) timed.Now = clock();
         var before = eventFilter.Mark();
         return Publish(session.Submit(viewerCivId, command), before);
     }

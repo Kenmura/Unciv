@@ -44,6 +44,9 @@ public sealed class GameQueries(IGameSession session)
     /// <summary>The victory/defeat screen's three answers (C024): the outcome, the ranking columns and the score history. The last two are null when the game hides them from the viewer.</summary>
     public Task<GameOverResult?> GameOver() => session.QueryAsync(new GameOverQuery());
 
+    /// <summary>C044: the menu's victory status page (the viewer's milestones and every major civ's progress).</summary>
+    public Task<VictoryProgressResult?> VictoryProgress() => session.QueryAsync(new VictoryProgressQuery());
+
     public Task<IReadOnlyList<RankingColumn>?> Rankings() => session.QueryAsync(new RankingsQuery());
 
     public Task<HistoryResult?> History() => session.QueryAsync(new HistoryQuery());
