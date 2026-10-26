@@ -78,13 +78,15 @@ public sealed class AutoPlayScenario : Scenario
             new Capture("menu", "The AutoPlay menu above the button: Start AutoPlay (5 turns) and AutoPlay End Turn (1 turn)"),
 
             new Press("Start AutoPlay"),
-            new WaitFrames(4),
+            // C040: the turns are played on a worker, so the script waits for the state instead of counting frames
+            new WaitUntil("the first auto-played turn is done", () => screen.AutoPlay is { TurnsPlayed: >= 1 }),
+            new WaitFrames(1),
             new AssertQuery("the run started: one turn played, four left, the button is Stop", () =>
                 !screen.AutoPlayMenu.Visible && screen.AutoPlay is { TurnsPlayed: 1, TurnsLeft: 4 } && screen.Hud.AutoPlayButton.Text == "Stop AutoPlay (4 left)" && game.Turns == startTurn + 1),
             new AssertQuery("Next turn is greyed while it runs", () => screen.Hud.AutoPlayRunning && screen.Hud.ActionDisabled && !screen.Hud.EndTurnShown),
             new Capture("running", "AutoPlay running: the button reads Stop AutoPlay (4 left), Next turn is greyed and the turn counter has moved on"),
 
-            new WaitFrames(60),
+            new WaitUntil("the run is over", () => screen.AutoPlay == null),
             new AssertQuery("five turns were played and the run is over", () => screen.AutoPlay == null && game.Turns == startTurn + 5 && screen.AutoPlayResult == "AutoPlay finished after 5 turns."),
             new AssertQuery("the log holds one start and five auto-played turns, no stop", () => Count("start-auto-play") == 1 && Count("auto-play-turn") == 5 && Count("stop-auto-play") == 0),
             new AssertQuery("control is back: the button is idle and Next turn is enabled", () => screen.Hud.AutoPlayButton.Text == "AutoPlay" && !screen.Hud.AutoPlayRunning && !screen.Hud.ActionDisabled),
@@ -98,9 +100,10 @@ public sealed class AutoPlayScenario : Scenario
             }),
             new Press("AutoPlay"),
             new Press("Start AutoPlay"),
-            new WaitFrames(30),
+            new WaitUntil("three turns were played", () => screen.AutoPlay is { TurnsPlayed: >= 3 }),
             new AssertQuery("it is running", () => screen.AutoPlay != null && game.Turns > startTurn),
             new Click(() => Centre(screen.Hud.AutoPlayButton)),
+            new WaitUntil("Stop took effect (it waits for the turn being played)", () => screen.AutoPlay == null),
             new WaitFrames(3),
             new AssertQuery("Stop gave control back at once: not running, fewer than 50 turns, the engine was told", () =>
                 screen.AutoPlay == null && game.Turns > startTurn && game.Turns < startTurn + 50 && Count("stop-auto-play") == 1 && screen.AutoPlayResult.NotNull().StartsWith("AutoPlay stopped after", StringComparison.Ordinal)),
@@ -115,7 +118,7 @@ public sealed class AutoPlayScenario : Scenario
             new Act("remember the log", () => logged = session.Log.Count),
             new Press("AutoPlay"),
             new Press("AutoPlay End Turn"),
-            new WaitFrames(20),
+            new WaitUntil("the single turn is done", () => screen.AutoPlay == null && game.Turns == startTurn + 2),
             new AssertQuery("AutoPlay End Turn plays exactly one turn", () => screen.AutoPlay == null && game.Turns == startTurn + 2 && Count("start-auto-play") == 1 && Count("auto-play-turn") == 1),
 
             new Act("open the options", () => backdrop.Visible = true),
