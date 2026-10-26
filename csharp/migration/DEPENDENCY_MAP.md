@@ -304,7 +304,7 @@ xychart-beta
 | T180 | Available (waiting on T179, T204, T223, T224) | T172, T173, T174, T175, T179, T204, T223, T224 | 6 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C038 | Needs-Review [Claude] | C005, C037, T220, T192, T197 | 3 | Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result |
 | C036 | Available (waiting on T180, T202) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
-| C026 | Needs-Review [Claude] | C005, C010, T030, T049, C043 | 1 | Tutorials |
+| C026 | In-Review [Claude] | C005, C010, T030, T049, C043 | 1 | Tutorials |
 | C035 | Available (waiting on T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
 | T203 | Available (waiting on T202) | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
