@@ -43,6 +43,8 @@ internal sealed class FakeGameInfoState : FakeGameInfo, IGameInfoState
     SpeedObject IGameInfoState.Speed => SpeedData;
     IReadOnlyList<Civilization> IGameInfoState.Civilizations => Civs;
     Civilization? IGameInfoState.CurrentPlayerCiv => CurrentPlayer;
+    bool IGameInfoState.IsSimultaneousTurns => false;
+    bool IGameInfoState.IsCivActive(Civilization civ) => false;
     bool IGameInfoState.IsSimulation() => Simulation;
     GlobalUniques IGameInfoState.GetGlobalUniques() => Globals;
     JavaHashMap<string, string?> IGameInfoState.DiplomaticVictoryVotesCast => Votes;

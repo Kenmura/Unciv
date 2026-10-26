@@ -31,9 +31,9 @@ public interface IGameInfoState : IConstructionGameInfo
     /// <summary><c>gameInfo.currentPlayerCiv</c></summary>
     Civilization? CurrentPlayerCiv { get; }
     /// <summary>T201: whether turns are simultaneous (<see cref="GameInfo.TurnMode"/>); a game state without turn modes is Sequential.</summary>
-    bool IsSimultaneousTurns => false;
+    bool IsSimultaneousTurns { get; }
     /// <summary>T201: <see cref="GameInfo.IsActive"/>; only asked in simultaneous games.</summary>
-    bool IsCivActive(Civilization civ) => false;
+    bool IsCivActive(Civilization civ);
     /// <summary><c>gameInfo.isSimulation()</c></summary>
     bool IsSimulation();
     /// <summary><c>gameInfo.getGlobalUniques()</c></summary>
