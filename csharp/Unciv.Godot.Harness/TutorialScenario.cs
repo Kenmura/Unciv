@@ -36,7 +36,7 @@ public sealed class TutorialScenario : Scenario
     {
         var game = session.Game;
         var human = game.GetCivilization(ScenarioGame.HumanA);
-        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unciv-tutorial-scenario", "settings.json");
+        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unciv-tutorial-scenario-" + System.Environment.ProcessId, "settings.json");
         if (File.Exists(path)) File.Delete(path);
         var service = new ClientSettingsService(new ClientSettingsStore(path));
         var localHost = new LocalHost(session, ScenarioGame.HumanA, () => 1000L);

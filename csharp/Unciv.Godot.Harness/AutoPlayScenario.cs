@@ -33,7 +33,7 @@ public sealed class AutoPlayScenario : Scenario
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
         var game = session.Game;
-        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unciv-autoplay-scenario", "settings.json");
+        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unciv-autoplay-scenario-" + System.Environment.ProcessId, "settings.json");
         if (File.Exists(path)) File.Delete(path);
         var service = new ClientSettingsService(new ClientSettingsStore(path));
         var registry = AssetRegistry.ForRuleset(game.Ruleset);

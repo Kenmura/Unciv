@@ -32,7 +32,7 @@ public sealed class SaveLoadScenario : Scenario
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
-        string root = Path.Combine(Path.GetTempPath(), "unciv-saveload-scenario");
+        string root = Path.Combine(Path.GetTempPath(), "unciv-saveload-scenario-" + System.Environment.ProcessId);
         if (Directory.Exists(root)) Directory.Delete(root, true);
         string folder = Path.Combine(root, "saves");
         var store = new SaveStore(folder);

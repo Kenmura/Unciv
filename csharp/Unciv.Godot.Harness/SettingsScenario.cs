@@ -23,7 +23,7 @@ public sealed class SettingsScenario : Scenario
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
-        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unciv-settings-scenario", "settings.json");
+        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unciv-settings-scenario-" + System.Environment.ProcessId, "settings.json");
         if (File.Exists(path)) File.Delete(path);
         var store = new ClientSettingsStore(path);
         var service = new ClientSettingsService(store, command => session.Submit(ScenarioGame.HumanA, command).Accepted);

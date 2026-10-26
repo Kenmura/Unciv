@@ -44,7 +44,7 @@ public sealed class L10nScenario : Scenario
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
-        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unciv-l10n-scenario", "settings.json");
+        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unciv-l10n-scenario-" + System.Environment.ProcessId, "settings.json");
         if (File.Exists(path)) File.Delete(path);
         var service = new ClientSettingsService(new ClientSettingsStore(path));
         var localization = Loc.Init(service, null, TranslationLocator.Directory());

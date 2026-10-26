@@ -51,6 +51,19 @@ public class ProceduralSoundsTests
     }
 
     [Fact]
+    public void HostileModNamesStayBoundedAndDeterministic()
+    {
+        var longest = new string('x', 100_000);
+        foreach (var name in new[] { "", " ", "../../etc/passwd", "a\0b", "\ud800", longest, "\u00e9\u4e2d" })
+        {
+            var samples = ProceduralSounds.Samples(name);
+            Assert.InRange(samples.Length, 1, ProceduralSounds.SampleRate);
+            Assert.Equal(samples, ProceduralSounds.Samples(name));
+            Assert.All(samples, s => Assert.InRange((int)s, -(int)(0.8 * short.MaxValue) - 1, (int)(0.8 * short.MaxValue) + 1));
+        }
+    }
+
+    [Fact]
     public void OutputIsDeterministic()
     {
         foreach (var name in new[] { "whoosh", "bombard", "mod sound" })
