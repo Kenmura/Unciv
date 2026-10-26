@@ -144,6 +144,26 @@ public sealed class TutorialModelTests : IDisposable
     }
 
     [Fact]
+    public void ThresholdsSitOnTheExactBoundaries()
+    {
+        Assert.Equal([TutorialTrigger.Introduction], TutorialModel.Detect(Snapshot(civs: [Civ("Me", happiness: 5)]), ruleset));
+        Assert.Equal([TutorialTrigger.Introduction, TutorialTrigger.Happiness], TutorialModel.Detect(Snapshot(civs: [Civ("Me", happiness: 4)]), ruleset));
+        Assert.Equal([TutorialTrigger.Introduction, TutorialTrigger.Happiness], TutorialModel.Detect(Snapshot(civs: [Civ("Me", happiness: 0)]), ruleset));
+        Assert.Equal([TutorialTrigger.Introduction, TutorialTrigger.Happiness, TutorialTrigger.Unhappiness], TutorialModel.Detect(Snapshot(civs: [Civ("Me", happiness: -1)]), ruleset));
+        Assert.DoesNotContain(TutorialTrigger.IdleUnits, TutorialModel.Detect(Snapshot(turn: 49), ruleset));
+        Assert.Contains(TutorialTrigger.IdleUnits, TutorialModel.Detect(Snapshot(turn: 50), ruleset));
+    }
+
+    [Fact]
+    public void ForeignUnitsAndBarbariansAreNotAnotherCivilisationMet()
+    {
+        // Contact with the barbarians is not meeting a civilisation, and another civ's injured unit is not the viewer's.
+        var snapshot = Snapshot(civs: [Civ("Me"), Civ("Barb", barbarian: true)], units: [Unit(2, "Warrior", "Rome", 0, 0, health: 50)],
+            diplomacy: [new DiplomacyDto { A = "Me", B = "Barb", AtWar = true, Status = "War" }]);
+        Assert.Equal([TutorialTrigger.Introduction], TutorialModel.Detect(snapshot, ruleset));
+    }
+
+    [Fact]
     public void ADefeatedViewerOrAMissingCivTriggersNothing()
     {
         Assert.Empty(TutorialModel.Detect(Snapshot(civs: [Civ("Me", defeated: true)]), ruleset));
