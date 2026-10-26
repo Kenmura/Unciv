@@ -752,7 +752,7 @@ Scenario `city-rename`.
 
 *The overview's Cities tab lists the capital under its new name, Ur of the Chaldees.* (`city-rename/overview.png`)
 
-## C050 (ticket not Done or unknown)
+## C050 Overview: global politics tab and espionage scenario coverage
 
 Overview espionage and global politics tabs in a game with espionage on: spy moves, coup staging, and the relation with each met civ.
 
