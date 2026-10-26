@@ -408,11 +408,7 @@ public partial class GameScreen : Control
             Tutorials.OkButton.EmitSignal(BaseButton.SignalName.Pressed);
             return true;
         }
-<<<<<<< HEAD
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
-        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
-=======
->>>>>>> 1415a8612 (migration: C040 fix merge (overlay layout, menu scenario autosave, Escape while processing))
         if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
