@@ -18,7 +18,7 @@ WRITE (each touches only the named ticket's block, verified before the file is w
                             Available -> In-Progress [AGENT], stamps Claimed, commits ONLY backlog/T033.md
                             (+ DEPENDENCY_MAP.md),
                             rebases onto csharp-migration, fast-forwards it. Exit 2 = lost the race.
-  state T033 STATE [-m MSG] [--all] [--publish] [--origin]
+  state T033 STATE [-m MSG] [--all] [--publish] [--origin] [--no-release]
                             STATE: Needs-Review AGENT | In-Review AGENT | Done | Available | Blocked | "Won't port".
                             Legal transitions only. Commits ONLY backlog/T033.md + DEPENDENCY_MAP.md (--all: every change in the worktree, e.g. your
                             deliverables, in the same commit); --publish also rebases and
@@ -29,6 +29,8 @@ WRITE (each touches only the named ticket's block, verified before the file is w
                             already stamped this exact tree), and no TODO(T033) marker may remain outside the backlog files.
                             --no-green REASON skips the build/test/coverage run for backlog-only/docs tickets (Deliverables
                             with no .cs/.csproj/.props/.editorconfig/.json/.py/.txt files); REASON is recorded in Notes.
+                            After a Done, tools/release.py builds the CLI and Linux client into <repo>/csharp-releases/ (git-ignored;
+                            failure only warns; --no-release skips it).
   green                     run (and stamp) the Green-before-Done checks on the current tree without changing any ticket
   reset T033 [-m REASON]    abandoned/stale claim -> Available, clears Claimed, notes the reason
   note T033 TEXT|-          append an indented bullet to Notes (- reads stdin, one bullet per call)
@@ -679,9 +681,18 @@ def cmd_green():
     print("green: ok")
 
 
+def release(tid):
+    """Build the CLI and the client into <repo>/csharp-releases (tools/release.py). The ticket is already Done and published, so a failure
+    only warns: fix the cause and re-run `python3 -I tools/release.py T###`."""
+    r = subprocess.run([sys.executable, "-I", str(HERE / "tools" / "release.py"), tid])
+    if r.returncode:
+        print(f"WARNING: release build for {tid} failed (exit {r.returncode}); {tid} stays Done. "
+              f"Re-run: python3 -I tools/release.py {tid}", file=sys.stderr)
+
+
 def cmd_state(argv):
     msg = None
-    do_publish = do_origin = do_all = False
+    do_publish = do_origin = do_all = no_release = False
     no_green = None
     rest = []
     it = iter(argv)
@@ -694,6 +705,8 @@ def cmd_state(argv):
             do_origin = True
         elif a == "--all":
             do_all = True
+        elif a == "--no-release":
+            no_release = True
         elif a == "--no-green":
             no_green = next(it, "").strip()
             if not no_green or no_green.startswith("-"):
@@ -720,6 +733,8 @@ def cmd_state(argv):
     if do_publish or do_origin:
         publish(origin=do_origin)
     print(f"{tid}: {state}")
+    if kind(state) == "Done" and not no_release:
+        release(tid)
 
 
 def cmd_reset(argv):

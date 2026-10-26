@@ -206,3 +206,6 @@ detekt/reports.html
 /csharp/migration/.coverage/
 __pycache__/
 !csharp/Unciv.Godot/Assets/fonts/
+
+## C# release builds (tools/release.py): binaries never go into git
+/csharp-releases/

@@ -252,3 +252,41 @@ class ScreenshotGallery(unittest.TestCase):
         self.assertEqual(r.returncode, 0)
         self.assertIn("WARN C002", r.stdout)
         self.assertNotIn("WARN C001", r.stdout)
+
+
+class ReleaseFolder(unittest.TestCase):
+    """tools/release.py: pruning keeps the newest versions and what `latest` points at; the folder is git-ignored."""
+
+    def load(self):
+        spec = importlib.util.spec_from_file_location("release", Path(__file__).resolve().parent / "release.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def make(self, root, name, built):
+        d = root / name
+        d.mkdir()
+        (d / "manifest.json").write_text('{"built": %d}' % built)
+
+    def test_prune_keeps_newest_and_latest(self):
+        rel = self.load()
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            for i in range(6):
+                self.make(root, f"T{i}-aaaa", i + 1)
+            rel.point_latest(root, "T0-aaaa")  # oldest, but `latest`: must survive
+            gone = rel.prune(root, 3)
+            self.assertEqual(sorted(gone), ["T1-aaaa", "T2-aaaa"])
+            self.assertEqual(sorted(d.name for d in rel.versions(root)), ["T0-aaaa", "T3-aaaa", "T4-aaaa", "T5-aaaa"])
+
+    def test_nothing_pruned_under_the_limit(self):
+        rel = self.load()
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self.make(root, "T1-a", 1)
+            self.assertEqual(rel.prune(root, 5), [])
+
+    def test_releases_folder_is_ignored_by_git(self):
+        repo = Path(__file__).resolve().parents[3]
+        r = subprocess.run(["git", "-C", str(repo), "check-ignore", "csharp-releases/T1-abc/client-linux/Unciv.x86_64"], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, "csharp-releases/ must be in .gitignore: binaries never go into git")

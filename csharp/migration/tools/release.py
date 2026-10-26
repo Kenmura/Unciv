@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""Build the CLI and the Godot client from the current (clean) tree and publish them to <repo>/csharp-releases/.
+
+Usage: release.py T### [--cli-only | --client-only] [--windows] [--keep N] [--force] [--dry-run]
+
+ticket.py runs this after every `state T### Done`. The folder sits next to `csharp/` in the main checkout (never inside a worktree, which is
+removed when its agent finishes):
+
+    csharp-releases/<ticket>-<shortsha>/cli/        dotnet publish of Unciv.Cli (framework-dependent: run `dotnet Unciv.Cli.dll`, or ./Unciv.Cli)
+    csharp-releases/<ticket>-<shortsha>/client-linux/   Unciv.Godot/tools/package.sh linux (executable, data/jsons, fonts, LICENSE, notices)
+    csharp-releases/<ticket>-<shortsha>/manifest.json   ticket, commit, tree, build time, what was built
+    csharp-releases/latest -> newest version (only moves forward: a build of a commit older than the current latest never replaces it)
+    csharp-releases/releases.log                         one line per release
+
+The newest --keep (default 5) versions are kept. Builds run in the dotnet-dev container when `dotnet` is not on PATH, like the Green gate.
+The folder is git-ignored. A tree that was already released (same git tree id) is not rebuilt unless --force.
+"""
+import fcntl
+import json
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent.parent  # csharp/migration
+CSHARP = HERE.parent
+CONTAINER = "dotnet-dev"
+KEEP_DEFAULT = 5
+
+
+def git(*args, check=True):
+    r = subprocess.run(["git", "-C", str(HERE), *args], capture_output=True, text=True)
+    if check and r.returncode:
+        die(f"git {' '.join(args)} failed: {r.stderr.strip()}")
+    return r
+
+
+def die(msg, code=1):
+    print(f"release: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def releases_root():
+    """<main checkout>/csharp-releases, found through the shared .git directory so every worktree writes to the same place."""
+    common = Path(git("rev-parse", "--path-format=absolute", "--git-common-dir").stdout.strip())
+    return common.parent / "csharp-releases"
+
+
+def in_container(cmd):
+    """Wrap a shell command for dotnet-dev when dotnet is not on this PATH."""
+    if shutil.which("dotnet") is not None:
+        return cmd
+    return f"distrobox enter {CONTAINER} -- bash -c {shlex.quote(cmd)}"
+
+
+def run(name, cmd):
+    print(f"release: {name} ...", flush=True)
+    r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    if r.returncode:
+        print("\n".join((r.stdout + r.stderr).splitlines()[-30:]), file=sys.stderr)
+        die(f"{name} failed (exit {r.returncode})")
+
+
+def versions(root):
+    """Version folders, oldest first (by the build time in the manifest, else mtime)."""
+    found = []
+    for d in root.iterdir() if root.exists() else []:
+        m = d / "manifest.json"
+        if d.is_dir() and not d.is_symlink() and m.exists():
+            try:
+                found.append((json.loads(m.read_text()).get("built", 0), d))
+            except ValueError:
+                found.append((m.stat().st_mtime, d))
+    return [d for _, d in sorted(found, key=lambda x: (x[0], x[1].name))]
+
+
+def prune(root, keep):
+    """Delete all but the newest `keep` versions; whatever `latest` points at always stays. Returns the deleted names."""
+    latest = (root / "latest").resolve() if (root / "latest").exists() else None
+    vs = versions(root)
+    doomed = [d for d in vs[:-keep] if d.resolve() != latest] if keep > 0 and len(vs) > keep else []
+    for d in doomed:
+        shutil.rmtree(d)
+    return [d.name for d in doomed]
+
+
+def is_newer(new_sha, old_sha):
+    """True when `latest` may move to new_sha: there is no latest, or old_sha is an ancestor of (or equal to) new_sha."""
+    if not old_sha:
+        return True
+    if git("cat-file", "-e", f"{old_sha}^{{commit}}", check=False).returncode:
+        return True
+    return git("merge-base", "--is-ancestor", old_sha, new_sha, check=False).returncode == 0
+
+
+def point_latest(root, name):
+    tmp = root / ".latest.tmp"
+    tmp.unlink(missing_ok=True)
+    tmp.symlink_to(name)
+    os.replace(tmp, root / "latest")
+
+
+def main(argv):
+    if not argv or argv[0].startswith("-"):
+        die("usage: release.py T### [--cli-only | --client-only] [--windows] [--keep N] [--force] [--dry-run]", 2)
+    tid, opts = argv[0], argv[1:]
+    cli = "--client-only" not in opts
+    client = "--cli-only" not in opts
+    windows = "--windows" in opts
+    force, dry = "--force" in opts, "--dry-run" in opts
+    keep = int(opts[opts.index("--keep") + 1]) if "--keep" in opts else KEEP_DEFAULT
+    if git("status", "--porcelain").stdout.strip():
+        die("the worktree has uncommitted changes; a release must be built from a committed tree")
+    sha = git("rev-parse", "HEAD").stdout.strip()
+    tree = git("rev-parse", "HEAD^{tree}").stdout.strip()
+    name = f"{tid}-{sha[:9]}"
+    root = releases_root()
+    print(f"release: {tid} @ {sha[:9]} -> {root}/{name}")
+    if dry:
+        print(f"release: dry run (cli={cli}, client={client}, windows={windows}, keep={keep})")
+        return
+    root.mkdir(parents=True, exist_ok=True)
+    if not force:
+        for d in versions(root):
+            try:
+                if json.loads((d / "manifest.json").read_text()).get("tree") == tree:
+                    print(f"release: tree {tree[:9]} already released as {d.name}; nothing to build")
+                    return
+            except ValueError:
+                pass
+    stage = root / f".staging-{os.getpid()}"
+    shutil.rmtree(stage, ignore_errors=True)
+    stage.mkdir()
+    built = []
+    try:
+        if cli:
+            out = stage / "cli"
+            run("publish Unciv.Cli", in_container(f"cd {shlex.quote(str(CSHARP))} && dotnet publish Unciv.Cli -c Release -o {shlex.quote(str(out))}"))
+            built.append("cli")
+        if client:
+            for platform in ["linux"] + (["windows"] if windows else []):
+                run(f"package client ({platform})", in_container(f"cd {shlex.quote(str(CSHARP))} && Unciv.Godot/tools/package.sh {platform}"))
+                shutil.copytree(CSHARP / "Unciv.Godot" / "build" / platform, stage / f"client-{platform}", symlinks=True)
+                built.append(f"client-{platform}")
+        manifest = {"ticket": tid, "commit": sha, "tree": tree, "built": int(time.time()), "contents": built}
+        (stage / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+        with open(root / ".lock", "w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)  # one publisher at a time; builds above ran unlocked in this worktree
+            dest = root / name
+            shutil.rmtree(dest, ignore_errors=True)
+            os.replace(stage, dest)
+            old = None
+            if (root / "latest").exists():
+                try:
+                    old = json.loads((root / "latest" / "manifest.json").read_text()).get("commit")
+                except ValueError:
+                    old = None
+            moved = is_newer(sha, old)
+            if moved:
+                point_latest(root, name)
+            gone = prune(root, keep)
+            with open(root / "releases.log", "a") as log:
+                log.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {tid} {sha[:9]} {','.join(built)}{'' if moved else ' (latest kept: newer commit already released)'}\n")
+    finally:
+        shutil.rmtree(stage, ignore_errors=True)
+    print(f"release: published {dest}" + (" and moved latest" if moved else " (latest not moved: a newer commit is already there)"))
+    if gone:
+        print(f"release: pruned {', '.join(gone)}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
