@@ -68,7 +68,7 @@ public sealed class UiKitScenario : Scenario
             new Act("pointer onto the Gold label", () => InputSimulator.SimulateMouseMove(viewport, gold.GetGlobalRect().GetCenter())),
             new WaitFrames(2),
             new AssertQuery("tooltip waits for its delay", () => manager.Tooltips.Hovered == gold && !manager.Tooltips.IsShowing),
-            new Act("let the delay elapse", () => manager.Tooltips.Advance(1.0)),
+            new Act("let the delay elapse", () => manager.Tooltips.Advance(ScenarioRunner.UnreachableDelay)),
             new WaitFrames(2),
             new AssertQuery("tooltip shows the rich text next to the pointer", () => manager.Tooltips.IsShowing && manager.Tooltips.ShownText.Contains("Gold", StringComparison.Ordinal)),
             new Capture("tooltip", "Tooltip beside the pointer after the delay"),
