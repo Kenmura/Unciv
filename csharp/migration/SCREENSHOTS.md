@@ -458,6 +458,24 @@ Scenario `l10n-sheet`.
 
 *Arabic and Hebrew sample lines shaped and run right to left from their Noto fonts, each with a Latin word and digits inside (the settings page on the left is not mirrored here: the harness has no window to flip).* (`l10n-sheet/rtl.png`)
 
+## C026 (ticket not Done or unknown)
+
+Tutorial popups from the ruleset's Tutorials.json: fired at game start and by game events, step by step, seen flags saved in the client settings.
+
+Scenario `tutorial`.
+
+![Game start: the Introduction tutorial over the map with its OK button.](../Unciv.Godot.Harness/golden/tutorial/introduction.png)
+
+*Game start: the Introduction tutorial over the map with its OK button.* (`tutorial/introduction.png`)
+
+![Second of three steps of Culture and Policies: step counter 2 / 3 above OK.](../Unciv.Godot.Harness/golden/tutorial/second-step.png)
+
+*Second of three steps of Culture and Policies: step counter 2 / 3 above OK.* (`tutorial/second-step.png`)
+
+![Workers tutorial shown after tutorials were switched back on and the seen list was reset.](../Unciv.Godot.Harness/golden/tutorial/workers.png)
+
+*Workers tutorial shown after tutorials were switched back on and the seen list was reset.* (`tutorial/workers.png`)
+
 ## C028 Options screen, hotkeys, edge-pan
 
 Options screen: engine options, UI scale, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.
