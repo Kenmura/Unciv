@@ -532,7 +532,7 @@
     "Unciv.Core/Net/Visibility/ClientSnapshot.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Visibility/EventFilter.cs": {"branch": 95.65, "line": 100.0},
     "Unciv.Core/Net/Visibility/PrivateSpies.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Core/Net/Visibility/SnapshotBuilder.cs": {"branch": 95.45, "line": 99.19},
+    "Unciv.Core/Net/Visibility/SnapshotBuilder.cs": {"branch": 95.65, "line": 99.2},
     "Unciv.Core/Net/Visibility/ViewDeltaBuilder.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Visibility/ViewerEventFilter.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Visibility/ViewerSessionFlow.cs": {"branch": 72.73, "line": 100.0},
@@ -634,7 +634,7 @@
     "Unciv.Harness/PerceptualHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ReviewIndex.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Harness/ScenarioGame.cs": {"branch": 95.59, "line": 99.31},
+    "Unciv.Harness/ScenarioGame.cs": {"branch": 95.83, "line": 99.56},
     "Unciv.Harness/ScenarioReplay.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0}
   },
