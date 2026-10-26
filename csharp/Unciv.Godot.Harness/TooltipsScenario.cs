@@ -19,6 +19,7 @@ namespace Unciv.GodotHarness;
 /// </summary>
 public sealed class TooltipsScenario : Scenario
 {
+    /// <summary>C055 review: the hover delay is served only by explicit Advance calls; a slow machine (software GL under load) used to let real frame time show the tip before the assertions.</summary>
     private const double NeverReal = 1e9;
 
     public override string Name => "tooltips";
@@ -65,7 +66,6 @@ public sealed class TooltipsScenario : Scenario
 
         return
         [
-            // C055 review: the delay is served only by explicit Advance calls; a slow machine (software GL under load) used to let real frame time show the tip before the assertions
             new Act("make the hover delay unreachable by real time", () => screen.Tooltips.Delay = NeverReal),
             new WaitFrames(3),
             new Act("dismiss the start banner", () => screen.Hud.HideBanner()),
