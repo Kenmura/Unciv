@@ -366,6 +366,28 @@ Scenario `diplomacy`.
 
 *City-state under the player's protection.* (`diplomacy/protected.png`)
 
+## C023 (ticket not Done or unknown)
+
+Empire overview: tabs for stats, cities, units, resources, ranking, religion and espionage; Go to buttons jump to a city or unit.
+
+Scenario `overview`.
+
+![Stats tab: the engine's per-turn numbers and the score breakdown.](../Unciv.Godot.Harness/golden/overview/stats.png)
+
+*Stats tab: the engine's per-turn numbers and the score breakdown.* (`overview/stats.png`)
+
+![Cities tab: the capital and a puppet city with population, health, current build and a Go to button each.](../Unciv.Godot.Harness/golden/overview/cities.png)
+
+*Cities tab: the capital and a puppet city with population, health, current build and a Go to button each.* (`overview/cities.png`)
+
+![Units tab: own units only, with position, health, moves and order.](../Unciv.Godot.Harness/golden/overview/units.png)
+
+*Units tab: own units only, with position, health, moves and order.* (`overview/units.png`)
+
+![Ranking tab: one table per category, best first; unmet civs are shown as Unknown civilization.](../Unciv.Godot.Harness/golden/overview/ranking.png)
+
+*Ranking tab: one table per category, best first; unmet civs are shown as Unknown civilization.* (`overview/ranking.png`)
+
 ## C024 (ticket not Done or unknown)
 
 Victory and defeat screens: a forced one-turn Domination conquest, the ranking and score history, One more turn, and the defeat screen with keep watching.
