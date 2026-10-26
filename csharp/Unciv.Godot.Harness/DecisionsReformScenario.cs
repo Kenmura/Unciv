@@ -68,7 +68,7 @@ public sealed class DecisionsReformScenario : Scenario
             new WaitFrames(3),
             new AssertQuery("choose-beliefs was sent with that belief; nothing blocks and Next turn is offered", () =>
                 session.Log.Count == logged + 1 && session.Log[^1].Type == "choose-beliefs" && session.Log[^1].Payload.GetProperty("Beliefs")[0].GetString() == belief
-                && !screen.Picker.Visible && !human.ReligionManager.HasFreeBeliefs() && human.ReligionManager.Religion!.HasBelief(belief) && !Blocking() && screen.Hud.EndTurnShown),
+                && !screen.Picker.Visible && !human.ReligionManager.HasFreeBeliefs() && human.ReligionManager.Religion.NotNull().HasBelief(belief) && !Blocking() && screen.Hud.EndTurnShown),
         ];
     }
 }

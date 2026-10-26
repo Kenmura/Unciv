@@ -34,41 +34,66 @@ public sealed class DecisionsReligionScenario : Scenario
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
-        var game = session.Game;
-        var human = game.GetCivilization(ScenarioGame.HumanA);
-        var recording = new CityAScenario.RecordingSession(new LocalHost(session, ScenarioGame.HumanA, () => 1000L));
-        var screen = new GameScreen();
-        host.AddChild(screen);
-        screen.Start(recording, AssetRegistry.ForRuleset(game.Ruleset));
-        int logged = 0;
-        int foundCount = human.ReligionManager.GetBeliefsToChooseAtFounding().SumValues();
-        int enhanceCount = human.ReligionManager.GetBeliefsToChooseAtEnhancing().SumValues();
-        string picked = "";
+        var kit = new Kit(host, session);
+        return [.. kit.Spies(), .. kit.Found(), .. kit.Enhance()];
+    }
 
-        Vector2 Centre(Button? button) => button?.GetGlobalRect().GetCenter() ?? Vector2.Zero;
-        bool Blocking() => recording.QueryAsync(new PendingDecisionsQuery()).GetAwaiter().GetResult().NotNull().Decisions.Any(it => it.Blocking);
-        string FirstEnabled(int slot) => screen.Picker.Spec.NotNull().Slots[slot].Options.First(it => it.Enabled && screen.Picker.Selected.All(sel => sel != it.Id)).Id;
+    private sealed class Kit
+    {
+        private readonly Control host;
+        private readonly GameSession session;
+        private readonly Unciv.Logic.GameInfo game;
+        private readonly Unciv.Logic.Civilization.Civilization human;
+        private readonly CityAScenario.RecordingSession recording;
+        private readonly GameScreen screen;
+        private readonly int foundCount;
+        private readonly int enhanceCount;
+        private int logged;
+        private string picked = "";
+
+        public Kit(Control host, GameSession session)
+        {
+            this.host = host;
+            this.session = session;
+            game = session.Game;
+            human = game.GetCivilization(ScenarioGame.HumanA);
+            recording = new CityAScenario.RecordingSession(new LocalHost(session, ScenarioGame.HumanA, () => 1000L));
+            screen = new GameScreen();
+            host.AddChild(screen);
+            screen.Start(recording, AssetRegistry.ForRuleset(game.Ruleset));
+            foundCount = human.ReligionManager.GetBeliefsToChooseAtFounding().SumValues();
+            enhanceCount = human.ReligionManager.GetBeliefsToChooseAtEnhancing().SumValues();
+        }
+
+        private static Vector2 Centre(Button? button) => button?.GetGlobalRect().GetCenter() ?? Vector2.Zero;
+
+        private bool Blocking() => recording.QueryAsync(new PendingDecisionsQuery()).GetAwaiter().GetResult().NotNull().Decisions.Any(it => it.Blocking);
+
+        private string FirstEnabled(int slot) => screen.Picker.Spec.NotNull().Slots[slot].Options.First(it => it.Enabled && screen.Picker.Selected.All(sel => sel != it.Id)).Id;
+
         // the engine's action titles end in the faith icon, so the unit panel's buttons are found by their first words
-        Button? ActionButton(string start) => Buttons(host).FirstOrDefault(it => it.IsVisibleInTree() && !it.Disabled && it.Text.StartsWith(start, StringComparison.Ordinal));
-        Vector2 Row(string start)
+        private Button? ActionButton(string start) => Buttons(host).FirstOrDefault(it => it.IsVisibleInTree() && !it.Disabled && it.Text.StartsWith(start, StringComparison.Ordinal));
+
+        private Vector2 Row(string start)
         {
             var row = screen.Notifications.Rows.First(it => it.Text.StartsWith(start, StringComparison.Ordinal));
             screen.Notifications.EnsureVisible(row.Index);
             return Centre(screen.Notifications.RowButton(row.Index));
         }
-        MapUnit Prophet(int cityIndex) => human.Units.GetCivUnits().First(it => it.BaseUnit.Name == "Great Prophet" && it.CurrentTile.GetCity() == human.Cities[cityIndex]);
 
-        static IEnumerable<Button> Buttons(Node node) => node.GetChildren().SelectMany(it => it is Button button ? Buttons(it).Prepend(button) : Buttons(it));
+        private MapUnit Prophet(int cityIndex) => human.Units.GetCivUnits().First(it => it.BaseUnit.Name == "Great Prophet" && it.CurrentTile.GetCity() == human.Cities[cityIndex]);
+
+        private static IEnumerable<Button> Buttons(Node node) => node.GetChildren().SelectMany(it => it is Button button ? Buttons(it).Prepend(button) : Buttons(it));
 
         // one Act + Click per belief slot from <first>: the first option no other slot has taken
-        ScenarioStep[] ChooseBeliefs(int count, int first) => [.. Enumerable.Range(first, count).SelectMany(slot => new ScenarioStep[]
+        private ScenarioStep[] ChooseBeliefs(int count, int first) => [.. Enumerable.Range(first, count).SelectMany(slot => new ScenarioStep[]
         {
             new Act($"choose a belief for slot {slot}", () => picked = FirstEnabled(slot)),
             new Click(() => Centre(screen.Picker.OptionButton(slot, picked))),
             new WaitFrames(1),
         })];
 
-        return
+        public ScenarioStep[] Spies() =>
         [
             new WaitFrames(3),
             new Act("dismiss the start banner", () => screen.Hud.HideBanner()),
@@ -131,6 +156,10 @@ public sealed class DecisionsReligionScenario : Scenario
                 session.Log.Count == logged + 1 && session.Log[^1].Type == "promote-unit" && !screen.Picker.Visible
                 && human.Units.GetCivUnits().First(it => it.BaseUnit.Name == "Warrior").Promotions.Promotions.Contains(picked)),
 
+        ];
+
+        public ScenarioStep[] Found() =>
+        [
             new Act("select the capital's prophet", () => screen.SelectUnitById(Prophet(0).Id)),
             new WaitFrames(4),
             new Click(() => Centre(ActionButton("Found a Religion"))),
@@ -158,8 +187,12 @@ public sealed class DecisionsReligionScenario : Scenario
             new WaitFrames(3),
             new AssertQuery("found-religion was sent with the icon and the beliefs; the religion exists", () =>
                 session.Log.Count == logged + 1 && session.Log[^1].Type == "found-religion" && session.Log[^1].Payload.GetProperty("Beliefs").GetArrayLength() == foundCount
-                && !screen.Picker.Visible && human.ReligionManager.ReligionState == ReligionState.Religion && human.ReligionManager.Religion!.IsMajorReligion()),
+                && !screen.Picker.Visible && human.ReligionManager.ReligionState == ReligionState.Religion && human.ReligionManager.Religion.NotNull().IsMajorReligion()),
 
+        ];
+
+        public ScenarioStep[] Enhance() =>
+        [
             new Act("select the second city's prophet", () => screen.SelectUnitById(Prophet(1).Id)),
             new WaitFrames(4),
             new Click(() => Centre(ActionButton("Enhance "))),
