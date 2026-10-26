@@ -57,6 +57,11 @@ public sealed class TradeScenario : Scenario
         }
         TradeOptionsResult Options() => localHost.QueryAsync(new TradeOptionsQuery(rome.CivName)).GetAwaiter().GetResult().NotNull();
         Button? Offer(TradeSide side, string type, string name) => screen.Trade.Control(TradeScreenModel.KeyOf(side, type, name));
+        void RememberTreasuries()
+        {
+            humanGold = human.Gold;
+            romeGold = rome.Gold;
+        }
         // Every engine offer of both columns is a button and is disabled exactly when the engine cannot stage it.
         bool ButtonsEqualQuery()
         {
@@ -94,11 +99,7 @@ public sealed class TradeScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("refusing the demand sent one command and the engine's alert is gone", () =>
                 session.Log.Count == logged + 1 && screen.Trade.IncomingDemands.Count == 0 && human.PopupAlerts.All(it => it.Type != Unciv.Logic.Civilization.AlertType.DemandToStopSpreadingReligion)),
-            new Act("remember both treasuries", () =>
-            {
-                humanGold = human.Gold;
-                romeGold = rome.Gold;
-            }),
+            new Act("remember both treasuries", RememberTreasuries),
             new Click(() => Centre(screen.Trade.Control("Accept_" + rome.CivId))),
             new WaitFrames(2),
             new AssertQuery("accepting changed both civs: we got 100 gold and paid 30, Rome the reverse; the request is gone", () =>
@@ -132,11 +133,7 @@ public sealed class TradeScenario : Scenario
             new Click(() => Centre(screen.Trade.ProposeButton)),
             new WaitFrames(2),
             new AssertQuery("the gift of 30 gold is proposed again", () => rome.TradeRequests.Count == 1 && rome.TradeRequests[0].Trade.TheirOffers.Single().Amount == 30),
-            new Act("remember both treasuries", () =>
-            {
-                humanGold = human.Gold;
-                romeGold = rome.Gold;
-            }),
+            new Act("remember both treasuries", RememberTreasuries),
             new Press("Close trade"),
             new AssertQuery("the close button closes the screen", () => !screen.IsTradeVisible),
             new Press("Next turn"),
