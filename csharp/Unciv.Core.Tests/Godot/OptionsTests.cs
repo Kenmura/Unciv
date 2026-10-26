@@ -181,6 +181,37 @@ public sealed class OptionsTests
         Assert.Equal(OptionsModel.PanDistance(OptionsModel.MinScrollSpeed, 10f, 1), OptionsModel.PanDistance(0f, 10f, 1));
     }
 
+    [Theory]
+    [InlineData("{\"soundVolume\":NaN,\"uiScale\":Infinity}")]
+    [InlineData("{\"version\":1,\"soundVolume\":1e999,\"scrollSpeed\":-1e999,\"uiScale\":1e39}")]
+    [InlineData("{\"version\":1,\"keyBindings\":null,\"tutorialsSeen\":null,\"player\":null,\"windowMode\":null,\"assetPack\":null}")]
+    [InlineData("{\"version\":1,\"keyBindings\":{\"EndTurn\":null,\"Bogus\":\"X\",\"NextUnit\":\"T\"},\"soundVolme\":3}")]
+    [InlineData("{\"version\":1,\"keyBindings\":[1,2],\"soundVolume\":\"loud\"}")]
+    [InlineData("{\"version\":1,\"edgePan\":\"yes\"}")]
+    [InlineData("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[")]
+    [InlineData("\0\0\0")]
+    [InlineData("null")]
+    [InlineData("")]
+    public void HostileFilesNeverCrashAndLoadSaneValues(string text)
+    {
+        var dir = Directory.CreateTempSubdirectory("unciv-options-").FullName;
+        try
+        {
+            var path = Path.Combine(dir, "settings.json");
+            File.WriteAllText(path, text);
+            var loaded = new ClientSettingsStore(path).Load();
+            Assert.InRange(loaded.SoundVolume, 0f, 1f);
+            Assert.InRange(loaded.ScrollSpeed, OptionsModel.MinScrollSpeed, OptionsModel.MaxScrollSpeed);
+            Assert.InRange(loaded.UiScale, OptionsModel.MinUiScale, OptionsModel.MaxUiScale);
+            Assert.Contains(loaded.WindowMode, OptionsModel.WindowModes);
+            Assert.NotNull(loaded.KeyBindings);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
     [Fact]
     public void SettingsSanitizeTheNewFields()
     {

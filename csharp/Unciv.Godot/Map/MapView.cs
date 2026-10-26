@@ -389,7 +389,9 @@ public partial class MapView : Node3D
     public override void _Process(double delta)
     {
         var direction = Vector3.Zero;
-        bool Held(HotkeyAction action, Key arrow) => Input.IsPhysicalKeyPressed(arrow) || HotkeyInput.IsHeld(Hotkeys.KeyFor(KeyBindings, action));
+        // Typing into a text field must not pan the map behind it.
+        bool typing = GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit;
+        bool Held(HotkeyAction action, Key arrow) => !typing && (Input.IsPhysicalKeyPressed(arrow) || HotkeyInput.IsHeld(Hotkeys.KeyFor(KeyBindings, action)));
         if (Held(HotkeyAction.PanLeft, Key.Left)) direction.X -= 1f;
         if (Held(HotkeyAction.PanRight, Key.Right)) direction.X += 1f;
         if (Held(HotkeyAction.PanUp, Key.Up)) direction.Z -= 1f;

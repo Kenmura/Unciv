@@ -235,10 +235,10 @@ public partial class GameScreen : Control
 
     private IReadOnlyDictionary<string, string> hotkeys = new Dictionary<string, string>();
 
-    /// <summary>C028: runs the action a hotkey text is bound to (true when it was one of the game screen's actions and ran). Ignored while a full screen (city, diplomacy, tech, policies) covers the map.</summary>
+    /// <summary>C028: runs the action a hotkey text is bound to (true when it was one of the game screen's actions and ran). Ignored while a full screen (city, diplomacy, tech, policies, overview, game over) or an alert covers the map.</summary>
     public bool TryHotkey(string keyText)
     {
-        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Alerts.Visible) return false;
+        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
             case HotkeyAction.EndTurn:
