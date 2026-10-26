@@ -780,6 +780,31 @@ public sealed class SimultaneousCommandTests : IDisposable
         Assert.Equal(0, ((AutoPlayState)game.ClientState.AutoPlay!).TurnsToAutoPlay);
     }
 
+    // The clock is not read by a simultaneous AutoPlayTurn either (ProcessEndTurn carries the time).
+    [Fact]
+    public void AutoPlayTurnNeedsNoClockInASimultaneousRound()
+    {
+        var game = NewGame();
+        game.TurnState!.AutoPlayAllowed = true;
+        var session = new GameSession(game); // no Clock: Now (0) is before the turn start
+        Ok(session.Submit("Babylon", new StartAutoPlay { Turns = 1 }));
+        Ok(session.Submit("Babylon", new AutoPlayTurn()));
+        Assert.True(game.HasEndedTurn(game.GetCivilization("Babylon")));
+    }
+
+    // An answer to a decision (annex, raze, war) must not land between the steps of a resolving round.
+    [Fact]
+    public void RespondToAlertIsRefusedWhileTheRoundResolves()
+    {
+        var game = NewGame();
+        var session = Session(game);
+        game.GetCivilization("Babylon").PopupAlerts.Add(new PopupAlert(AlertType.Denounced, "Greece"));
+        Ok(session.Submit("Babylon", new EndTurn()));
+        Ok(session.Submit("Greece", new EndTurn()));
+        Assert.Equal(SimultaneousPhase.Resolving, game.TurnState!.Phase);
+        RejectsWithoutEffect(session, () => session.Submit("Babylon", new RespondToAlert { Index = 0, AlertType = AlertType.Denounced, Value = "Greece", Choice = "war" }), CommandErrors.TurnResolving);
+    }
+
     // ----- engine pieces -----
 
     [Fact]

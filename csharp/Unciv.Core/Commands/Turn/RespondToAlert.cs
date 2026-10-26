@@ -35,6 +35,9 @@ public sealed class RespondToAlert : GameCommand
     protected override CommandValidation ValidateCommand(CommandContext context)
     {
         if (!context.RequirePlayer().TryGet(out var actor, out var failure)) return failure;
+        // T202 review: an answer can annex, raze or declare war, so it must not land between the steps of a simultaneous round's resolution.
+        if (context.Game.TurnState is { Mode: TurnMode.Simultaneous, Phase: SimultaneousPhase.Resolving })
+            return CommandValidation.Fail(CommandErrors.TurnResolving, "The turn is being resolved");
         if (!AlertCommandChecks.TryFind(actor, Index, AlertType, Value, out var alert, out failure)) return failure;
         return ValidateChoice(context, actor, alert);
     }
