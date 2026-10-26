@@ -151,16 +151,22 @@ public sealed class HostSecretRandomTests
 
     // Audit (T230): every seeded generator in the engine goes through the host secret. A new `new GameRandom(` in game logic would let a client predict
     // its rolls, so it has to be a deliberate, listed exception (map generation and the game starter run before the secret exists; holidays use the calendar).
+    // T230 review: also catches target-typed `GameRandom x = new(seed)` / `=> new(seed)` (CityConquestFunctions slipped through the first version of the scan)
+    // and a direct Randomness.StateBasedRandom(...) / Salted(.., 0) bypass.
+    private static readonly System.Text.RegularExpressions.Regex UnsaltedRandom = new(
+        @"new\s+GameRandom\s*\(|GameRandom\??\s+\w+\s*=\s*new\s*\(|GameRandom\??\s+\w+\s*=>\s*new\s*\(|Randomness\.StateBasedRandom\(",
+        System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     [Fact]
     public void NoGameLogicBuildsAnUnsaltedGameRandom()
     {
         var root = AppContext.BaseDirectory;
         while (!Directory.Exists(Path.Combine(root, "Unciv.Core", "Logic"))) root = Path.GetDirectoryName(root) ?? throw new DirectoryNotFoundException("Unciv.Core not found");
-        string[] allowed = ["Utils/GameRandom.cs", "Utils/Randomness.cs", "Logic/GameStarter.cs", "Logic/HolidayDates.cs", "Logic/Simulation/Simulation.cs", "Logic/Map/MapGenerator/MapGenerationRandomness.cs"];
+        string[] allowed = ["Utils/GameRandom.cs", "Utils/Randomness.cs", "Logic/GameStarter.cs", "Logic/HolidayDates.cs", "Logic/Simulation/Simulation.cs", "Logic/Map/MapGenerator/MapGenerationRandomness.cs", "Models/Ruleset/Unique/GameContext.cs"];
         var offenders = Directory.EnumerateFiles(Path.Combine(root, "Unciv.Core"), "*.cs", SearchOption.AllDirectories)
             .Where(it => !it.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .Select(it => (Path: Path.GetRelativePath(Path.Combine(root, "Unciv.Core"), it).Replace('\\', '/'), Text: File.ReadAllText(it)))
-            .Where(it => it.Text.Split('\n').Any(line => line.Contains("new GameRandom(", StringComparison.Ordinal) && !line.TrimStart().StartsWith("//", StringComparison.Ordinal)))
+            .Where(it => it.Text.Split('\n').Any(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal) && UnsaltedRandom.IsMatch(line)))
             .Select(it => it.Path)
             .Where(it => !allowed.Contains(it))
             .ToList();

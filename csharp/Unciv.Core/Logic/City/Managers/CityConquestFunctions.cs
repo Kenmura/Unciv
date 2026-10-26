@@ -27,7 +27,7 @@ public class CityConquestFunctions(CityObject city)
     public const float MinorLiberationFriendship = 105f;
 
     private readonly CityObject city = city;
-    private readonly GameRandom tileBasedRandom = new(city.GetCenterTile().Position.GetHashCode());
+    private readonly GameRandom tileBasedRandom = city.Civ.GameInfo.SeededRandom(city.GetCenterTile().Position.GetHashCode()); // T230: salted with the host secret
 
     private int GetGoldForCapturingCity(CivilizationObject conqueringCiv)
     {
