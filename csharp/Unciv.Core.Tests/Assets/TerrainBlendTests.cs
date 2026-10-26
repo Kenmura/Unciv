@@ -134,6 +134,20 @@ public class TerrainBlendTests
         Assert.Equal(0.21404f, new Tint(0.5f, 0.5f, 0.5f).SrgbToLinear().R, 1e-4f);
         Assert.Equal(0.04045f / 12.92f, new Tint(0.04045f, 0f, 0f).SrgbToLinear().R, 1e-6f);
         Assert.Equal(MathF.Pow((0.0405f + 0.055f) / 1.055f, 2.4f), new Tint(0.0405f, 0f, 0f).SrgbToLinear().R, 1e-6f);
+        // just below the knee the linear branch applies (it differs from the power branch by about 1e-5 here)
+        Assert.Equal(0.0403f / 12.92f, new Tint(0.0403f, 0f, 0f).SrgbToLinear().R, 1e-7f);
+    }
+
+    [Fact]
+    public void TunedConstantsArePinned()
+    {
+        Assert.Equal(0.6f, TerrainBlend.StartFraction);
+        Assert.Equal(0.55f, TerrainBlend.MissingShare);
+        Assert.Equal(7f, TerrainChunks.CellSize);
+        // 55% of the way to the edge is still entirely the tile's own colour, 65% already blends
+        var (nx, nz) = TerrainBlend.EdgeNormals[0];
+        Assert.Equal(0f, TerrainBlend.EdgeWeight(nx * TerrainBlend.Apothem * 0.55f, nz * TerrainBlend.Apothem * 0.55f, 0));
+        Assert.True(TerrainBlend.EdgeWeight(nx * TerrainBlend.Apothem * 0.65f, nz * TerrainBlend.Apothem * 0.65f, 0) > 0f);
     }
 }
 
