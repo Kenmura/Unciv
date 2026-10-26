@@ -77,8 +77,6 @@ public sealed class GameQueries(IGameSession session)
 
     public Task<GreatPeopleResult?> GreatPeople() => session.QueryAsync(new GreatPeopleQuery());
 
-    public Task<ReligionResult?> Religion() => session.QueryAsync(new ReligionQuery());
-
     public Task<SpyDestinationsResult?> SpyDestinations() => session.QueryAsync(new SpyDestinationsQuery());
 
     public Task<DiplomaticVoteResult?> DiplomaticVote() => session.QueryAsync(new DiplomaticVoteQuery());
