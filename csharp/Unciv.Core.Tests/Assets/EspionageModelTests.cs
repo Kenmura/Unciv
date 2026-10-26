@@ -58,6 +58,7 @@ public class EspionageModelTests
             Spy("Staging", "Sparta", "Coup", coup: true, chance: 0.6f),
             Spy("No", "Sparta", "Surveillance"),
             Spy("NoOdds", "Sparta", "Surveillance", coup: true, chance: null),
+            Spy("OddsButForbidden", "Sparta", "Surveillance", coup: false, chance: 0.5f),
         ]));
         Assert.Equal("Stage a coup (46% chance)", spec.Spies[0].CoupLabel);
         Assert.Equal(("Idle", true), (spec.Spies[0].Coup!.Spy, spec.Spies[0].Coup!.Stage));
@@ -67,6 +68,8 @@ public class EspionageModelTests
         Assert.Equal("", spec.Spies[2].CoupLabel);
         Assert.Equal("", spec.Spies[3].CoupLabel); // the engine allows it but gave no odds: still a button, with no wording
         Assert.NotNull(spec.Spies[3].Coup);
+        Assert.Equal("", spec.Spies[4].CoupLabel); // odds without the engine's permission are not worded
+        Assert.Null(spec.Spies[4].Coup);
     }
 
     [Fact]
