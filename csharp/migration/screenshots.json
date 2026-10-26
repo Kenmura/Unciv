@@ -530,5 +530,23 @@
         "caption": "After resigning: the screen says so and offers only the main menu"
       }
     ]
+  },
+  "C038": {
+    "scenario": "decisions",
+    "about": "Decision pickers: free great person, pantheon and promotion (religion founding/enhancing, spies and the World Congress vote use the same picker, covered by model tests).",
+    "shots": [
+      {
+        "golden": "decisions/great-person.png",
+        "caption": "The free great person picker: one button per great person the engine offers; Confirm is disabled and says to choose first."
+      },
+      {
+        "golden": "decisions/pantheon.png",
+        "caption": "The pantheon picker with a belief chosen: its effects below the list and Found pantheon enabled."
+      },
+      {
+        "golden": "decisions/promotion.png",
+        "caption": "The promotion picker for the warrior: experience line, promotions it may take, the default-promotion checkbox and Take promotion."
+      }
+    ]
   }
 }

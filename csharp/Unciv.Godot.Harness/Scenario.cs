@@ -47,5 +47,8 @@ public abstract class Scenario
     /// <summary>C024: Babylon has no units and no city while Rome plays on, so the human civ is defeated and the game is not over.</summary>
     public virtual bool Defeat => false;
 
+    /// <summary>C038: the solo game with a capital and every blocking picker pending (free great person, free technology, pantheon) and a warrior ready for a promotion (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
+    public virtual bool Decisions => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

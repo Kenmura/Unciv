@@ -137,6 +137,9 @@ public class EmpireQueryTests
         Assert.Equal(testGame.Ruleset.Beliefs.Values.Count(it => it.Type == BeliefType.Follower), result.Available["Follower"].Count);
         Assert.Equal("None", result.State);
         Assert.Null(result.ReligionName);
+        Assert.Empty(result.Slots);
+        Assert.DoesNotContain(religion.Name, result.AvailableIcons);
+        Assert.Equal(testGame.Ruleset.Religions.Count, result.AvailableIcons.Count); // the test religion has no ruleset icon
     }
 
     [Fact]
@@ -303,6 +306,7 @@ public class EmpireQueryTests
         var result = Ask(new ReligionQuery());
         Assert.Equal([new BeliefEntry(belief.Name, "Pantheon")], result.OwnBeliefs);
         Assert.Equal(2, result.ToChoose["Follower"]);
+        Assert.Equal(["Follower", "Follower"], result.Slots);
         Assert.NotNull(result.ReligionName);
         Assert.DoesNotContain(belief.Name, result.Available["Pantheon"]);
     }

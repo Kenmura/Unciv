@@ -29,7 +29,8 @@ public sealed record ScenarioResult(
     bool Alerts = false,
     bool Victory = false,
     bool Defeat = false,
-    bool Trade = false)
+    bool Trade = false,
+    bool Decisions = false)
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 

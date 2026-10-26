@@ -108,6 +108,12 @@ public partial class GameScreen : Control
     private int gameOverCheck;
     private int gameOverTurn = -1;
 
+    /// <summary>C038: the modal decision picker (free great person, religion, spies, vote, promotion).</summary>
+    public DecisionPickerView Picker { get; private set; } = null!; // JUSTIFY: C038 assigned in _Ready before any use
+
+    /// <summary>C038: opens the promotion picker for the selected unit while the engine offers a promotion.</summary>
+    public Button PromoteButton { get; } = new() { Name = "PromoteButton", Text = "Promote".Tr(), Visible = false };
+
     private readonly HashSet<string> deferredAlerts = [];
     private bool reviewingAlerts;
 
@@ -425,6 +431,12 @@ public partial class GameScreen : Control
         Minimap = new MinimapView { Name = "Minimap" };
         AddChild(Minimap);
         Minimap.Attach(Map);
+        AddChild(PromoteButton);
+        PromoteButton.Pressed += () => Run(OpenPromotionPicker());
+        Picker = new DecisionPickerView();
+        AddChild(Picker);
+        Picker.Confirmed += (spec, commands) => Run(ConfirmPicker(spec, commands));
+        Picker.Dismissed += spec => Run(DismissPicker(spec));
         Alerts = new AlertPopupView();
         AddChild(Alerts);
         Alerts.Answered += (popup, answer) => Run(AnswerAlert(popup, answer));
@@ -499,7 +511,9 @@ public partial class GameScreen : Control
         GameOver.LayoutIn(Size);
         VictoryStatus.LayoutIn(Size);
         GameMenu.LayoutIn(Size);
+        Picker.LayoutIn(Size);
         Panel.LayoutIn(Size);
+        PlacePromoteButton();
         CombatPreview.LayoutIn(Size);
     }
 
@@ -535,6 +549,8 @@ public partial class GameScreen : Control
         MenuButton.Theme = theme.Theme;
         resigned = false;
         watchingAfterDefeat = false;
+        Picker.Init(theme);
+        PromoteButton.Theme = theme.Theme;
         deferredAlerts.Clear();
         reviewingAlerts = false;
         City = new CityScreen(session, theme);
@@ -590,7 +606,8 @@ public partial class GameScreen : Control
         OverviewButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
-        MoveChild(Alerts, -1); // the popup sits above every screen opened above
+        MoveChild(Picker, -1);
+        MoveChild(Alerts, -1); // the popups sit above every screen opened above
         MoveChild(GameOver, -1);
         MoveChild(VictoryStatus, -1);
         MoveChild(GameMenu, -1);
@@ -706,6 +723,16 @@ public partial class GameScreen : Control
     private List<UnitNode> OwnUnitsAt(HexCoord tile) =>
         unitNodes.Values.Where(it => it.IsOwn && it.Unit.X == tile.X && it.Unit.Y == tile.Y).OrderBy(it => it.Unit.Id).ToList();
 
+    /// <summary>The Promote button sits at the bottom, to the right of the unit panel.</summary>
+    private void PlacePromoteButton() =>
+        PromoteButton.Position = new Vector2(HudMargin + Panel.GetCombinedMinimumSize().X + HudMargin, Size.Y - 48f - PromoteButton.GetCombinedMinimumSize().Y);
+
+    /// <summary>Selects one of the viewer's units by id (what clicking it does); an unknown or foreign id selects nothing.</summary>
+    public void SelectUnitById(int id)
+    {
+        if (unitNodes.TryGetValue(id, out var node) && node.IsOwn) SelectUnit(node);
+    }
+
     private void SelectUnit(UnitNode node)
     {
         SelectedUnitId = node.Unit.Id;
@@ -814,6 +841,7 @@ public partial class GameScreen : Control
         selectionRequest++;
         attackTiles = [];
         Panel.Clear();
+        PromoteButton.Visible = false;
         ReachableOverlay.Clear();
         AttackOverlay.Clear();
         ClearAttackPreview();
@@ -846,6 +874,8 @@ public partial class GameScreen : Control
         session.Ruleset.Units.TryGetValue(unit.Name, out var baseUnit);
         var menu = UnitOrdersModel.Menu(actions ?? new UnitActionsResult(id, []), tile, promotions, unit.Own?.CurrentMovement > 0f);
         Panel.Show(UnitOrdersModel.Panel(unit, baseUnit), menu);
+        PromoteButton.Visible = promotions is { Promotions.Count: > 0 };
+        PlacePromoteButton();
         attackTiles = targets == null ? [] : [.. UnitOrdersModel.AttackTiles(targets)];
         ReachableOverlay.Show(reach == null ? [] : [.. UnitOrdersModel.ReachableTiles(reach).Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
         AttackOverlay.Show([.. attackTiles.Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
@@ -1058,16 +1088,120 @@ public partial class GameScreen : Control
             case HudActionKind.NextUnit:
                 SelectNextUnit();
                 break;
-            case HudActionKind.Decision when action.Decision == DecisionKind.Policy:
-                OpenPolicyScreen();
-                break;
-            case HudActionKind.Decision when action.Decision == Unciv.Logic.DecisionKind.Alert:
-                Run(ReviewAlerts());
+            case HudActionKind.Decision when action.Decision is { } decision:
+                Run(OpenDecision(decision));
                 break;
             default:
                 SetStatus($"{action.Label}: this screen is not built yet.");
                 break;
         }
+    }
+
+    /// <summary>C038: takes the player to what a pending decision asks for: a screen, a picker built from the engine's answer, or the engine's own command.</summary>
+    public async Task OpenDecision(DecisionKind kind)
+    {
+        switch (DecisionPickerModel.RouteOf(kind))
+        {
+            case DecisionRoute.PolicyScreen:
+                OpenPolicyScreen();
+                return;
+            case DecisionRoute.TechScreen:
+                OpenTechScreen();
+                return;
+            case DecisionRoute.AlertPopup:
+                await ReviewAlerts();
+                return;
+            case DecisionRoute.DiplomacyScreen:
+                OpenDiplomacyScreen();
+                return;
+            case DecisionRoute.NextUnit:
+                SelectNextUnit();
+                return;
+            case DecisionRoute.AutoCommand:
+                var moved = await session.SubmitAsync(new Unciv.Commands.Turn.MoveAutomatedUnits());
+                SetStatus(moved.Accepted ? "Automated units moved." : "Move automated units refused: " + moved.Message);
+                Refresh();
+                return;
+            case DecisionRoute.CityScreen:
+                var pending = await queries.Pending();
+                string? cityName = pending?.Decisions.FirstOrDefault(it => it.Kind == nameof(DecisionKind.CityProduction))?.Subject;
+                var city = snapshot.Cities.FirstOrDefault(it => it.Own != null && it.Name == cityName);
+                if (city == null) SetStatus("Pick construction: no city is waiting.");
+                else OpenCityScreen(city);
+                return;
+        }
+        ShowCity(null);
+        if (Diplomacy.Visible) Diplomacy.Close();
+        if (Policies.Visible) Policies.Close();
+        if (Tech.Visible) Tech.Close();
+        var spec = await BuildPicker(kind);
+        if (spec == null)
+        {
+            SetStatus($"{kind}: the engine offers nothing to choose now.");
+            return;
+        }
+        Picker.Open(spec);
+    }
+
+    private async Task<PickerSpec?> BuildPicker(DecisionKind kind)
+    {
+        var ruleset = session.Ruleset;
+        string DescribeUnit(string name) => ruleset.Units.TryGetValue(name, out var unit) ? unit.GetShortDescription() : "";
+        string DescribeBelief(string name) => ruleset.Beliefs.TryGetValue(name, out var belief) ? string.Join("\n", belief.Uniques) : "";
+        switch (kind)
+        {
+            case DecisionKind.FreeGreatPerson:
+                var people = await queries.GreatPeople();
+                return people == null ? null : DecisionPickerModel.FreeGreatPerson(people, DescribeUnit);
+            case DecisionKind.MoveSpies:
+                var spies = await queries.SpyDestinations();
+                return spies == null ? null : DecisionPickerModel.MoveSpies(spies);
+            case DecisionKind.DiplomaticVote:
+                var vote = await queries.DiplomaticVote();
+                return vote == null ? null : DecisionPickerModel.DiplomaticVote(vote, id => snapshot.Civs.FirstOrDefault(it => it.CivId == id)?.Name ?? id);
+            default:
+                var religion = await queries.Religion();
+                if (religion == null) return null;
+                return kind switch
+                {
+                    DecisionKind.Pantheon => DecisionPickerModel.Pantheon(religion, religion.State == "Pantheon", DescribeBelief),
+                    DecisionKind.FoundReligion => DecisionPickerModel.FoundReligion(religion, DescribeBelief),
+                    _ => DecisionPickerModel.ChooseBeliefs(religion, kind == DecisionKind.ReformReligion, DescribeBelief),
+                };
+        }
+    }
+
+    private async Task OpenPromotionPicker()
+    {
+        if (SelectedUnitId is not { } id || !unitNodes.TryGetValue(id, out var node)) return;
+        var choices = await queries.Promotions(id);
+        var spec = choices == null ? null : DecisionPickerModel.Promotion(choices, node.Unit.Name);
+        if (spec == null) SetStatus("This unit cannot be promoted now.");
+        else Picker.Open(spec);
+    }
+
+    private async Task ConfirmPicker(PickerSpec spec, IReadOnlyList<GameCommand> commands)
+    {
+        foreach (var command in commands)
+        {
+            var result = await session.SubmitAsync(command);
+            if (!result.Accepted)
+            {
+                SetStatus($"{spec.Title} refused: {result.Message}");
+                Refresh();
+                return;
+            }
+        }
+        Picker.Close();
+        Refresh();
+        SetStatus($"{spec.Title}: done.");
+    }
+
+    private async Task DismissPicker(PickerSpec spec)
+    {
+        if (spec.Dismiss != null) await session.SubmitAsync(spec.Dismiss);
+        Picker.Close();
+        Refresh();
     }
 
     /// <summary>The snapshot does not say which unit is "due" (the engine decides that), so the cycle visits the viewer's units that could still act: movement left, no standing order, not fortified.</summary>

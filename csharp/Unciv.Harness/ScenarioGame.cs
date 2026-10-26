@@ -52,11 +52,13 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false)
     {
         diplomacy |= alerts | trade;
-        solo |= skirmish | diplomacy | policies | victory | defeat;
-        var ruleset = LoadVanilla();
+        solo |= skirmish | diplomacy | policies | victory | defeat | decisions;
+        var vanilla = LoadVanilla();
+        // C038: religion needs Gods & Kings (Vanilla has no beliefs); every other scenario plays Vanilla
+        var ruleset = decisions ? RulesetCache.Get(BaseRuleset.Civ_V_GnK.FullName()).NotNull().Clone() : vanilla;
         var game = GameStarter.StartNewGame(
             new GameSetupInfo(
                 new GameParameters
@@ -87,6 +89,7 @@ public static class ScenarioGame
         if (victory) SetUpVictory(game);
         if (defeat) SetUpDefeat(game);
         if (trade) SetUpTrade(game);
+        if (decisions) SetUpDecisions(game);
         return new GameSession(game);
     }
 
@@ -207,6 +210,23 @@ public static class ScenarioGame
         offer.TheirOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.FlatGold, Unciv.Logic.Trade.TradeOfferType.Gold, 100, game.Speed));
         human.TradeRequests.Add(new Unciv.Logic.Trade.TradeRequest(rome.CivId, offer));
         human.AddPopupAlert(new Unciv.Logic.Civilization.PopupAlert(Unciv.Logic.Civilization.AlertType.DemandToStopSpreadingReligion, rome.CivId));
+    }
+
+    /// <summary>
+    /// C038: Babylon founds its capital (production and research chosen) and has a free great person to choose, a free technology to pick, enough faith for a pantheon, and a
+    /// warrior with enough experience to be promoted: every blocking picker is asked for in turn. Set up directly on the state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpDecisions(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var settler = human.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());
+        var capital = human.AddCity(settler.CurrentTile.Position, settler);
+        capital.CityConstructions.AddToQueue("Warrior");
+        human.Tech.TechsToResearch.Add("Agriculture");
+        human.GreatPeople.FreeGreatPeople = 1;
+        human.Tech.FreeTechs = 1;
+        human.ReligionManager.StoredFaith = human.ReligionManager.FaithForPantheon();
+        human.Units.GetCivUnits().OrderBy(it => it.Id).First(it => it.BaseUnit.Name == "Warrior").Promotions.XP = 30;
     }
 
     /// <summary>The 64-bit canonical hash of the whole game state (serialised form), as lowercase hex.</summary>

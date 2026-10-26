@@ -494,6 +494,24 @@ Scenario `improvements`.
 
 *The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged.* (`improvements/yields-off.png`)
 
+## C038 (ticket not Done or unknown)
+
+Decision pickers: free great person, pantheon and promotion (religion founding/enhancing, spies and the World Congress vote use the same picker, covered by model tests).
+
+Scenario `decisions`.
+
+![The free great person picker: one button per great person the engine offers; Confirm is disabled and says to choose first.](../Unciv.Godot.Harness/golden/decisions/great-person.png)
+
+*The free great person picker: one button per great person the engine offers; Confirm is disabled and says to choose first.* (`decisions/great-person.png`)
+
+![The pantheon picker with a belief chosen: its effects below the list and Found pantheon enabled.](../Unciv.Godot.Harness/golden/decisions/pantheon.png)
+
+*The pantheon picker with a belief chosen: its effects below the list and Found pantheon enabled.* (`decisions/pantheon.png`)
+
+![The promotion picker for the warrior: experience line, promotions it may take, the default-promotion checkbox and Take promotion.](../Unciv.Godot.Harness/golden/decisions/promotion.png)
+
+*The promotion picker for the warrior: experience line, promotions it may take, the default-promotion checkbox and Take promotion.* (`decisions/promotion.png`)
+
 ## C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
 
 Flat-map cities, borders, roads and improvements.
