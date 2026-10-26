@@ -85,3 +85,50 @@ pinned in `setup-godot.sh` and `install-export-templates.sh`; a unit test keeps 
 Local mods: drop mod folders (same layout as Unciv's `mods/`) into the `mods` folder of the user data directory (`user://mods`, created on first start;
 Linux `~/.local/share/godot/app_userdata/Unciv/mods`). They are loaded with the built-in rulesets at start-up.
 No Firaxis/Civ 5 or Unciv atlas/sound/image is bundled (the client draws generated placeholders).
+
+## How a release is produced (T169)
+
+Releases are built **locally** and never by CI: `csharp-releases/` is git-ignored and CI publishes nothing.
+
+- `python3 -I tools/release.py T### [--cli-only | --client-only] [--windows] [--keep N] [--force] [--dry-run]` (run automatically by `ticket.py` after
+  `state T### Done`) builds the tree it is run on into `<main checkout>/csharp-releases/<ticket>-<shortsha>/`:
+  `cli/` (`dotnet publish Unciv.Cli`, self-contained linux-x64, so `./Unciv.Cli` runs with no dotnet installed), `client-linux/` (the
+  `package.sh` output below) and `manifest.json`. `csharp-releases/latest` only ever moves forward, the newest 5 versions are kept, and a tree
+  already released (same git tree id) is not rebuilt without `--force`. After building, the CLI is smoke-run with an empty `PATH`.
+- `Unciv.Godot/tools/package.sh [linux|windows]` does the client: `dotnet build -c Release`, `godot --headless --export-release` with the presets in
+  `export_presets.cfg`, then copies `data/jsons`, fonts, `LICENSE` and `THIRD_PARTY_NOTICES.md` next to the executable. Output is
+  `Unciv.Godot/build/<platform>/` (git-ignored). `smoke-export.sh` runs the Linux build from outside the checkout and expects the main menu.
+- Needs: the pinned Godot 4.7.2 .NET editor (`setup-godot.sh`) and the matching export templates (`install-export-templates.sh`); both check SHA-512.
+  Bump the version in those two scripts together (a unit test keeps them equal).
+
+### Known Godot headless export crashes and the retry
+
+The headless export crashes intermittently (about 1 in 15 fresh imports, more under load) in Godot's threaded font import: exit 139 (SIGSEGV),
+134 (SIGABRT) or 132 (SIGILL), sometimes leaving `Unciv.Godot/.godot/imported` half written. It is not a project bug; the retry is the fix:
+
+- `release.py` retries a crashed export twice after deleting `.godot/imported` and `.godot/exported` (exit codes 139, 134, 132 and raw signals).
+- `Unciv.Godot/tools/retry-on-crash.sh <retries> <command...>` does the same for scripts and CI (`retry-on-crash.sh 2 Unciv.Godot/tools/package.sh linux`).
+  Any other exit code is a real failure and is returned immediately.
+- Other symptoms: "export produced no .NET assemblies folder (data_*)" means the export failed without a crash code, read the Godot output above it;
+  a missing solution file error is handled by `package.sh` (it generates the git-ignored `Unciv.Godot.sln`).
+
+## CI (T169)
+
+`.github/workflows/csharp.yml` is separate from the Kotlin/Gradle workflows and runs only for changes under `csharp/**`, `android/assets/jsons/**`
+(the rulesets the engine reads) or the workflow itself, on pushes to `csharp-migration` and on pull requests; plus a weekly schedule for the soak.
+`permissions: contents: read`, no secrets, no `pull_request_target`, no artifact upload, every action pinned by commit SHA.
+
+| Job | Runs | What |
+|---|---|---|
+| `engine` | push, PR | the Green gate: `dotnet build -warnaserror`, `dotnet format --verify-no-changes`, `dotnet test`, `Unciv.Godot` and `Unciv.Godot.Harness` builds with `-warnaserror` (they need only the SDK and the `Godot.NET.Sdk` NuGet package), `coverage.py --check` (base chosen by `tools/ci_base.py`: PR merge-base, push `before`, else `--all`), `screenshots.py --check`, `ticket.py check`, the tools' Python unit tests |
+| `client-export` | push, PR | pinned Godot + export templates (cached, SHA-512 checked), `retry-on-crash.sh 2 package.sh linux`, `smoke-export.sh` |
+| `client-scenarios` | push, PR (non-blocking) | `run-smoke.sh`, every scenario in `scenarios.txt`, and `run-scenario.sh menu --expect-golden-failure`, under Xvfb |
+| `soak` | weekly schedule, manual | `UNCIV_SOAK=1 dotnet test --filter Category=Soak` (T167); the ordinary `dotnet test` skips it |
+
+System packages for the Godot jobs on ubuntu-24.04: `xvfb xauth libgl1-mesa-dri libglx-mesa0 libxcursor1 libxinerama1 libxi6 libxrandr2 fontconfig libasound2t64`.
+Caches: `~/.nuget/packages` (keyed on csproj/`Directory.Packages.props`) and the Godot editor/templates (keyed on the two install scripts).
+
+`client-scenarios` has `continue-on-error: true`: the goldens were recorded on Fedora's Mesa llvmpipe, and ubuntu's rasterizer may differ by rounding
+(the golden comparer has tolerances, but this has not been seen green on a runner). When it has, delete that line so it gates merges. A
+scenario that fails there is reproduced locally with `run-scenario.sh <name>`. GitHub Actions cannot be run locally: the workflow was checked with
+`actionlint`, `test_ci.py` (shape: paths, permissions, pinning, no publishing) and by running each of its commands in `dotnet-dev`.

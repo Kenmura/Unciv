@@ -1,0 +1,213 @@
+# CI for the C# migration (csharp/). Separate from the Kotlin/Gradle workflows, which it does not touch: it only runs when csharp/**, the rulesets
+# the engine reads (android/assets/jsons/**) or this file change. Mirrors the local "Green gate" of csharp/migration/PROTOCOL.md.
+# Read-only: no secrets, no artifact upload, nothing is published (release builds stay local, see csharp/Unciv.Godot/GODOT.md).
+name: C# build and test
+
+on:
+  push:
+    branches: [csharp-migration]
+    paths:
+      - 'csharp/**'
+      - 'android/assets/jsons/**'
+      - '.github/workflows/csharp.yml'
+  pull_request:
+    paths:
+      - 'csharp/**'
+      - 'android/assets/jsons/**'
+      - '.github/workflows/csharp.yml'
+  schedule:
+    - cron: '17 3 * * 1'   # Mondays 03:17 UTC: the long soak (path filters do not apply to schedules)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: csharp-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # The Green gate. Needs only the .NET SDK (Unciv.Godot builds with the Godot.NET.Sdk NuGet package, no Godot binary).
+  engine:
+    name: Build, format, test, coverage
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # coverage.py diffs against the PR base
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('csharp/**/*.csproj', 'csharp/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Build (warnings are errors)
+        working-directory: csharp
+        run: dotnet build -warnaserror
+
+      - name: Format check
+        working-directory: csharp
+        run: dotnet format --verify-no-changes
+
+      - name: Test
+        working-directory: csharp
+        run: dotnet test --no-build
+
+      # Outside Unciv.sln because they need the Godot SDK package
+      - name: Build Unciv.Godot
+        working-directory: csharp
+        run: dotnet build Unciv.Godot -warnaserror
+
+      - name: Build Unciv.Godot.Harness
+        working-directory: csharp
+        run: dotnet build Unciv.Godot.Harness -warnaserror
+
+      - name: Coverage ratchet
+        working-directory: csharp/migration
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: python3 -I tools/coverage.py --check $(python3 -I tools/ci_base.py)
+
+      - name: Screenshot gallery check
+        working-directory: csharp/migration
+        run: python3 -I tools/screenshots.py --check
+
+      - name: Backlog check
+        working-directory: csharp/migration
+        run: python3 -I tools/ticket.py check
+
+      - name: Tools unit tests
+        working-directory: csharp/migration/tools
+        run: python3 -I -m unittest discover -s . -p 'test_*.py'
+
+  # Export smoke (C042): the packaged client must start from a folder outside the checkout and reach the main menu.
+  client-export:
+    name: Export the Linux client (smoke)
+    if: github.event_name != 'schedule'
+    needs: engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('csharp/**/*.csproj', 'csharp/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-4.7.2
+            ~/.local/share/godot/export_templates
+          key: godot-${{ runner.os }}-${{ hashFiles('csharp/Unciv.Godot.Harness/tools/setup-godot.sh', 'csharp/Unciv.Godot/tools/install-export-templates.sh') }}
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri libglx-mesa0 libxcursor1 libxinerama1 libxi6 libxrandr2 fontconfig libasound2t64
+      - name: Install the pinned Godot and export templates (SHA-512 checked)
+        working-directory: csharp
+        run: |
+          Unciv.Godot.Harness/tools/setup-godot.sh --print-path
+          Unciv.Godot/tools/install-export-templates.sh
+      # The headless export intermittently crashes in Godot's font import; retry on SIGSEGV/SIGABRT/SIGILL only.
+      - name: Package (Linux)
+        working-directory: csharp
+        run: Unciv.Godot/tools/retry-on-crash.sh 2 Unciv.Godot/tools/package.sh linux
+      - name: Smoke the packaged build
+        working-directory: csharp
+        run: Unciv.Godot/tools/smoke-export.sh
+
+  # Rendered scenarios (C008) against the committed goldens. Goldens were recorded with Fedora's Mesa llvmpipe; ubuntu's differs by rasterizer rounding,
+  # so this job does not gate merges (continue-on-error) until it has been seen green on the runner image. Then remove that line.
+  client-scenarios:
+    name: Client scenarios (Xvfb, software GL)
+    if: github.event_name != 'schedule'
+    needs: engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('csharp/**/*.csproj', 'csharp/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/opt/godot-4.7.2
+          key: godot-editor-${{ runner.os }}-${{ hashFiles('csharp/Unciv.Godot.Harness/tools/setup-godot.sh') }}
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri libglx-mesa0 libxcursor1 libxinerama1 libxi6 libxrandr2 fontconfig libasound2t64
+      - name: Install the pinned Godot (SHA-512 checked)
+        working-directory: csharp
+        run: Unciv.Godot.Harness/tools/setup-godot.sh --print-path
+      - name: Smoke scene
+        working-directory: csharp/Unciv.Godot.Harness
+        run: tools/run-smoke.sh
+      - name: Scenarios
+        working-directory: csharp/Unciv.Godot.Harness
+        env:
+          HARNESS_SKIP_BUILD: 1   # run-smoke.sh just built the project
+        run: |
+          failed=()
+          while read -r name; do
+            [[ -z "$name" || "$name" == \#* ]] && continue
+            tools/run-scenario.sh "$name" || failed+=("$name")
+          done < scenarios.txt
+          # A comparison that cannot fail would pass everything: a wrong golden must be rejected
+          tools/run-scenario.sh menu --expect-golden-failure || failed+=("menu --expect-golden-failure")
+          if (( ${#failed[@]} )); then echo "FAILED: ${failed[*]}" >&2; exit 1; fi
+
+  # Long AI-only games (T167). Env-gated, skipped by every other run.
+  soak:
+    name: Soak (scheduled or manual)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('csharp/**/*.csproj', 'csharp/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - name: Soak
+        working-directory: csharp
+        env:
+          UNCIV_SOAK: 1
+        run: dotnet test Unciv.Core.Tests --filter Category=Soak --logger "console;verbosity=detailed"
