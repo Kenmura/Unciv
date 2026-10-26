@@ -366,6 +366,24 @@ Scenario `diplomacy`.
 
 *City-state under the player's protection.* (`diplomacy/protected.png`)
 
+## C024 (ticket not Done or unknown)
+
+Victory and defeat screens: a forced one-turn Domination conquest, the ranking and score history, One more turn, and the defeat screen with keep watching.
+
+Scenario `victory`.
+
+![The victory screen after a one-turn conquest: title, the victory paragraph, the ranking with the viewer highlighted and the defeated civ last, the score history and the two buttons.](../Unciv.Godot.Harness/golden/victory/victory.png)
+
+*The victory screen after a one-turn conquest: title, the victory paragraph, the ranking with the viewer highlighted and the defeated civ last, the score history and the two buttons.* (`victory/victory.png`)
+
+![After One more turn the world is playable again on the next turn.](../Unciv.Godot.Harness/golden/victory/continued.png)
+
+*After One more turn the world is playable again on the next turn.* (`victory/continued.png`)
+
+![The defeat screen (scenario defeat): the game goes on without you; keep watching or go to the main menu.](../Unciv.Godot.Harness/golden/defeat/defeat.png)
+
+*The defeat screen (scenario defeat): the game goes on without you; keep watching or go to the main menu.* (`defeat/defeat.png`)
+
 ## C025 (ticket not Done or unknown)
 
 Translations in the client: language picker, OFL fallback fonts for non-Latin scripts, right-to-left text.

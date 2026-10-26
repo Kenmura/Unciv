@@ -15,7 +15,7 @@ namespace Unciv.GodotClient;
 /// C015: the composition root of the real client. Main menu, then New game (<see cref="NewGameScreen"/> over a <see cref="NewGameForm"/>, started through
 /// <see cref="LocalHost.Start"/>), Resume last / Load game (C016 <see cref="SaveController"/> over <see cref="SaveStore"/>) or Options (the C043
 /// settings panel, which saves through <see cref="ClientSettingsService"/>). A started or loaded game replaces the whole screen stack; every game gets its own
-/// <see cref="SaveController"/> for saving. Returning to the menu from a game is a later ticket (a pause menu); for now the player quits the window.
+/// <see cref="SaveController"/> for saving. The game-over screen (C024) returns to a fresh menu; a pause menu is a later ticket.
 /// </summary>
 public partial class App : Node
 {
@@ -37,20 +37,27 @@ public partial class App : Node
         screens = new ScreenManager(theme);
         AddChild(screens);
 
-        menu = new MainMenu();
         menuSaves = new SaveController(store, settings, theme, text => LocalHost.FromSave(text, WallClockMillis), ShowGame) { ButtonVisible = false };
+        screens.AddChild(menuSaves);
+        ShowMenu(first: true);
+
+        // C042: the packaged-build smoke test (tools/smoke-export.sh) waits for this line and asks the app to exit once the menu is up.
+        GD.Print(MenuReadyMarker);
+        if (OS.GetCmdlineUserArgs().Contains(ExitOnMenuArg)) GetTree().Quit();
+    }
+
+    // The menu is rebuilt each time (leaving a game frees the screen stack, menu included); the same save controller serves every menu.
+    private void ShowMenu(bool first)
+    {
+        menu = new MainMenu();
         menu.NewGameRequested += OpenNewGame;
         menu.ResumeRequested += () => _ = menuSaves.ResumeLastAsync();
         menu.LoadRequested += menuSaves.OpenDialog;
         menu.OptionsRequested += OpenOptions;
         menu.QuitRequested += () => GetTree().Quit();
         menu.SetCanResume(store.Latest() != null);
-        screens.Push(menu);
-        screens.AddChild(menuSaves);
-
-        // C042: the packaged-build smoke test (tools/smoke-export.sh) waits for this line and asks the app to exit once the menu is up.
-        GD.Print(MenuReadyMarker);
-        if (OS.GetCmdlineUserArgs().Contains(ExitOnMenuArg)) GetTree().Quit();
+        if (first) screens.Push(menu);
+        else screens.Reset(menu);
     }
 
     public const string MenuReadyMarker = "UNCIV_MENU_READY";
@@ -85,6 +92,7 @@ public partial class App : Node
             text => LocalHost.FromSave(text, WallClockMillis), loaded => screen.Start(loaded, AssetRegistry.ForRuleset(loaded.Ruleset)));
         root.AddChild(saves);
         screens.Reset(root);
+        screen.MainMenuRequested += () => ShowMenu(first: false);
         screen.Start(session, registry);
         saves.Attach(session);
     }

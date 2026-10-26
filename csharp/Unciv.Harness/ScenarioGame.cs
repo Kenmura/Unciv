@@ -52,10 +52,10 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false)
     {
         diplomacy |= alerts;
-        solo |= skirmish | diplomacy | policies;
+        solo |= skirmish | diplomacy | policies | victory | defeat;
         var ruleset = LoadVanilla();
         var game = GameStarter.StartNewGame(
             new GameSetupInfo(
@@ -84,6 +84,8 @@ public static class ScenarioGame
         if (skirmish) SetUpSkirmish(game);
         if (diplomacy) SetUpDiplomacy(game);
         if (alerts) SetUpAlerts(game);
+        if (victory) SetUpVictory(game);
+        if (defeat) SetUpDefeat(game);
         return new GameSession(game);
     }
 
@@ -166,6 +168,27 @@ public static class ScenarioGame
         human.AddPopupAlert(new PopupAlert(AlertType.DeclarationOfFriendship, Ai));
         human.AddPopupAlert(new PopupAlert(AlertType.CityConquered, city.Id));
         human.AddPopupAlert(new PopupAlert(AlertType.WonderBuilt, "Pyramids"));
+    }
+
+    /// <summary>
+    /// C024: the solo game with Babylon's capital founded and every Rome unit gone, so Rome is defeated (it never owned a capital, and a civ without units is destroyed) and
+    /// Babylon is the last major civ alive: ending the turn makes the engine record a Domination victory for Babylon. Set up directly on the state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpVictory(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var settler = human.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());
+        var capital = human.AddCity(settler.CurrentTile.Position, settler);
+        capital.CityConstructions.AddToQueue("Warrior"); // production and research already chosen, so ending the turn is not refused for a pending decision
+        human.Tech.TechsToResearch.Add("Agriculture");
+        foreach (var civ in game.Civilizations.Where(it => it.IsMajorCiv())) civ.StatsHistory.RecordRankingStats(civ); // the turn-0 record the game would hold, so the history graph has data
+        foreach (var unit in game.GetCivilization(Ai).Units.GetCivUnits().ToList()) unit.Destroy();
+    }
+
+    /// <summary>C024: the solo game with every Babylon unit gone and no city: the human civ is destroyed while Rome plays on, so the game is not over but lost for the viewer.</summary>
+    private static void SetUpDefeat(GameInfo game)
+    {
+        foreach (var unit in game.GetCivilization(HumanA).Units.GetCivUnits().ToList()) unit.Destroy();
     }
 
     /// <summary>The 64-bit canonical hash of the whole game state (serialised form), as lowercase hex.</summary>

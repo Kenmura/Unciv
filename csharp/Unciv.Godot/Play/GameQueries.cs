@@ -2,6 +2,7 @@ using Unciv.Queries.Cities;
 using Unciv.Queries.Empire;
 using Unciv.Queries.Tiles;
 using Unciv.Queries.Units;
+using Unciv.Queries.Victory;
 
 namespace Unciv.GodotClient.Play;
 
@@ -39,6 +40,13 @@ public sealed class GameQueries(IGameSession session)
 
     /// <summary>The viewer's tech tree and research queue (C019): states, costs, turns and unlock text from the engine.</summary>
     public Task<TechTreeResult?> TechTree() => session.QueryAsync(new TechTreeQuery());
+
+    /// <summary>The victory/defeat screen's three answers (C024): the outcome, the ranking columns and the score history. The last two are null when the game hides them from the viewer.</summary>
+    public Task<GameOverResult?> GameOver() => session.QueryAsync(new GameOverQuery());
+
+    public Task<IReadOnlyList<RankingColumn>?> Rankings() => session.QueryAsync(new RankingsQuery());
+
+    public Task<HistoryResult?> History() => session.QueryAsync(new HistoryQuery());
 
     public Task<UnitActionsResult?> Actions(int unitId) => session.QueryAsync(new UnitActionsQuery(unitId));
 

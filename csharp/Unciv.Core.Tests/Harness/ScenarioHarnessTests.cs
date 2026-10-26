@@ -205,4 +205,32 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, alerts: true));
         Assert.True(ScenarioResult.FromJson(new ScenarioResult("d", 1, 2, "h", [], [], [], [], Alerts: true).ToJson()).Alerts);
     }
+
+    [Fact]
+    public void VictoryGameEndsInADominationVictoryForBabylonAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(victory: true);
+        Assert.True(session.Game.GetCivilization(ScenarioGame.Ai).IsDefeated());
+        Assert.Null(session.Game.VictoryData);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(victory: true)));
+        Assert.NotEqual(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(solo: true)));
+        var flow = new Unciv.Net.Visibility.ViewerSessionFlow(session, ScenarioGame.HumanA, () => ScenarioGame.FixedClockMillis, (_, _) => { });
+        var outcome = flow.EndTurn();
+        Assert.True(outcome.Accepted, outcome.Message);
+        Assert.Equal(("Babylon", "Domination"), (session.Game.VictoryData?.WinningCiv, session.Game.VictoryData?.VictoryType));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, victory: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], [], Victory: true).ToJson()).Victory);
+        Assert.False(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], []).ToJson()).Victory);
+    }
+
+    [Fact]
+    public void DefeatGameDestroysBabylonButNotTheGameAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(defeat: true);
+        Assert.True(session.Game.GetCivilization(ScenarioGame.HumanA).IsDefeated());
+        Assert.Null(session.Game.VictoryData);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, defeat: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], [], Defeat: true).ToJson()).Defeat);
+        Assert.False(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], []).ToJson()).Defeat);
+    }
 }

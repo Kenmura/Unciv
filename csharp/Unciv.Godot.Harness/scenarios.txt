@@ -19,3 +19,5 @@ tech
 policy
 l10n-sheet
 alerts
+victory
+defeat

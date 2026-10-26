@@ -376,11 +376,49 @@ public class VictoryQueryTests
     }
 
     [Fact]
+    public void GameOverIsPlayingUntilSomeoneWinsOrTheViewerIsDestroyed()
+    {
+        Assert.Equal(new GameOverResult("Playing", null, null, 0, ""), Ask(new GameOverQuery()));
+    }
+
+    [Fact]
+    public void GameOverNamesTheWinnerAndPicksTheVictoryOrDefeatText()
+    {
+        var victory = testGame.Ruleset.Victories.Values.First();
+        testGame.GameInfo.VictoryData = new VictoryData(enemy.CivName, victory.Name, 12);
+        var asWinner = Ask(new GameOverQuery(), enemy);
+        Assert.Equal(new GameOverResult("Won", enemy.CivName, victory.Name, 12, victory.VictoryString), asWinner);
+        var asLoser = Ask(new GameOverQuery());
+        Assert.Equal(new GameOverResult("Lost", enemy.CivName, victory.Name, 12, victory.DefeatString), asLoser);
+    }
+
+    [Fact]
+    public void GameOverUsesTheDefaultTextsForAVictoryTheRulesetDoesNotDefine()
+    {
+        testGame.GameInfo.VictoryData = new VictoryData(player.CivName, "Mystery", 3);
+        Assert.Equal(new Unciv.Models.Ruleset.Victory().VictoryString, Ask(new GameOverQuery()).Text);
+    }
+
+    [Fact]
+    public void GameOverEndsWithOneMoreTurnButADefeatedViewerStaysDefeated()
+    {
+        testGame.GameInfo.VictoryData = new VictoryData(enemy.CivName, "Domination", 5);
+        testGame.GameInfo.OneMoreTurnMode = true;
+        Assert.Equal("Playing", Ask(new GameOverQuery()).Status);
+        player.HasEverOwnedOriginalCapital = true;
+        foreach (var city in player.Cities.ToList()) city.DestroyCity(overrideSafeties: true);
+        var defeated = Ask(new GameOverQuery());
+        Assert.Equal("Defeated", defeated.Status);
+        Assert.Null(defeated.Winner);
+        Assert.Equal(new Unciv.Models.Ruleset.Victory().DefeatString, defeated.Text);
+    }
+
+    [Fact]
     public void NoVictoryQueryChangesTheState()
     {
         player.StatsHistory[0] = Stats(1);
         var before = Hash(testGame.GameInfo);
-        IQuery[] queries = [new VictoryProgressQuery(), new ScoresQuery(), new RankingsQuery(), new DemographicsQuery(), new HistoryQuery()];
+        IQuery[] queries = [new VictoryProgressQuery(), new ScoresQuery(), new RankingsQuery(), new DemographicsQuery(), new HistoryQuery(), new GameOverQuery()];
         foreach (var query in queries)
         {
             var response = Execute(player, query);

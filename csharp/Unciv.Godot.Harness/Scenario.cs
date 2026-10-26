@@ -39,5 +39,11 @@ public abstract class Scenario
     /// <summary>C013: the diplomacy game plus a founded capital, four notifications and four pending alerts (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
     public virtual bool Alerts => false;
 
+    /// <summary>C024: Rome is destroyed and Babylon has a capital, so ending the turn wins a Domination victory (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
+    public virtual bool Victory => false;
+
+    /// <summary>C024: Babylon has no units and no city while Rome plays on, so the human civ is defeated and the game is not over.</summary>
+    public virtual bool Defeat => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

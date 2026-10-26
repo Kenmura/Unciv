@@ -2,6 +2,7 @@ using System.Globalization;
 using Godot;
 using Unciv.Assets;
 using Unciv.Commands;
+using Unciv.Commands.Turn;
 using Unciv.Commands.Units;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Map;
@@ -70,6 +71,16 @@ public partial class GameScreen : Control
 
     /// <summary>C013: the modal popup for the first pending alert.</summary>
     public AlertPopupView Alerts { get; private set; } = null!; // JUSTIFY: C013 assigned in _Ready before any use
+
+    /// <summary>C024: the victory/defeat screen, above everything else.</summary>
+    public GameOverScreen GameOver { get; private set; } = null!; // JUSTIFY: C024 assigned in _Ready before any use
+
+    /// <summary>Raised when the player leaves the finished (or any) game from the game-over screen; the composition root shows the main menu.</summary>
+    public event Action? MainMenuRequested;
+
+    private bool watchingAfterDefeat;
+    private int gameOverCheck;
+    private int gameOverTurn = -1;
 
     private readonly HashSet<string> deferredAlerts = [];
     private bool reviewingAlerts;
@@ -202,6 +213,9 @@ public partial class GameScreen : Control
             Alerts.Close();
             Run(RefreshHud());
         };
+        GameOver = new GameOverScreen();
+        AddChild(GameOver);
+        GameOver.Chosen += kind => Run(OnGameOverChosen(kind));
         GetViewport().SizeChanged += Layout;
         Layout();
 
@@ -241,6 +255,7 @@ public partial class GameScreen : Control
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
         Notifications.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
         Alerts.LayoutIn(Size);
+        GameOver.LayoutIn(Size);
         Panel.LayoutIn(Size);
         CombatPreview.LayoutIn(Size);
     }
@@ -268,6 +283,9 @@ public partial class GameScreen : Control
         Hud.Init(theme);
         Notifications.Init(theme);
         Alerts.Init(theme);
+        GameOver.Init(theme);
+        GameOver.Close();
+        watchingAfterDefeat = false;
         deferredAlerts.Clear();
         reviewingAlerts = false;
         City = new CityScreen(session, theme);
@@ -304,6 +322,7 @@ public partial class GameScreen : Control
         Panel.Init(theme);
         CombatPreview.Init(theme);
         MoveChild(Alerts, -1); // the popup sits above every screen opened above
+        MoveChild(GameOver, -1);
         ReachableOverlay.Setup(registry);
         AttackOverlay.Setup(registry);
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
@@ -656,6 +675,55 @@ public partial class GameScreen : Control
             Hud.ShowBanner(HudModel.Banner(bar.Turn, bar.Year, session.ViewerCivId));
         }
         ShowNextAlert(pending, reopen: false);
+        await CheckGameOver();
+    }
+
+    /// <summary>
+    /// C024: asks the engine whether the game is over for the viewer and opens the victory/defeat screen. The ranking and the history are asked only when the screen opens;
+    /// a game that hides them from the viewer simply shows none. A defeated viewer who chose to keep watching is not asked again.
+    /// </summary>
+    private async Task CheckGameOver()
+    {
+        int check = ++gameOverCheck;
+        var outcome = await queries.GameOver();
+        if (check != gameOverCheck) return; // a newer snapshot asked meanwhile
+        if (outcome == null || !GameOverModel.IsShown(outcome) || (outcome.Status == Unciv.Queries.Victory.GameOverQuery.Defeated && watchingAfterDefeat))
+        {
+            GameOver.Close();
+            return;
+        }
+        if (GameOver.Visible && GameOver.Current?.Status == outcome.Status && gameOverTurn == snapshot.Turn) return; // the same screen is not rebuilt, but a new turn changes the graph
+        var rankings = await queries.Rankings();
+        var history = await queries.History();
+        if (check != gameOverCheck) return;
+        gameOverTurn = snapshot.Turn;
+        GameOver.Open(GameOverModel.Build(outcome, rankings, history), civ => OwnerColour(civ));
+    }
+
+    private async Task OnGameOverChosen(GameOverButtonKind kind)
+    {
+        switch (kind)
+        {
+            case GameOverButtonKind.OneMoreTurn:
+                var result = await session.SubmitAsync(new OneMoreTurn());
+                if (!result.Accepted)
+                {
+                    SetStatus("One more turn refused: " + result.Message);
+                    return;
+                }
+                GameOver.Close();
+                Refresh();
+                SetStatus("The game goes on.");
+                break;
+            case GameOverButtonKind.KeepWatching:
+                watchingAfterDefeat = true;
+                GameOver.Close();
+                SetStatus("Watching the game.");
+                break;
+            default:
+                MainMenuRequested?.Invoke();
+                break;
+        }
     }
 
     /// <summary>

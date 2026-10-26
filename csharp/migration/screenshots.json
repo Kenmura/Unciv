@@ -402,5 +402,23 @@
         "caption": "The notification list open with its category summary; clicking the city row centred the camera on the city."
       }
     ]
+  },
+  "C024": {
+    "scenario": "victory",
+    "about": "Victory and defeat screens: a forced one-turn Domination conquest, the ranking and score history, One more turn, and the defeat screen with keep watching.",
+    "shots": [
+      {
+        "golden": "victory/victory.png",
+        "caption": "The victory screen after a one-turn conquest: title, the victory paragraph, the ranking with the viewer highlighted and the defeated civ last, the score history and the two buttons."
+      },
+      {
+        "golden": "victory/continued.png",
+        "caption": "After One more turn the world is playable again on the next turn."
+      },
+      {
+        "golden": "defeat/defeat.png",
+        "caption": "The defeat screen (scenario defeat): the game goes on without you; keep watching or go to the main menu."
+      }
+    ]
   }
 }
