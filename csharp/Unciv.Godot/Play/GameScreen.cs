@@ -92,6 +92,9 @@ public partial class GameScreen : Control
     /// <summary>C044: the menu's "Victory status" page.</summary>
     public VictoryStatusView VictoryStatus { get; private set; } = null!; // JUSTIFY: C044 assigned in _Ready before any use
 
+    /// <summary>C046: the developer console (the console hotkey); it does not block the map, so tiles and units can be selected for the next line.</summary>
+    public ConsoleView ConsolePopup { get; private set; } = null!; // JUSTIFY: C046 assigned in _Ready before any use
+
     public Button MenuButton { get; } = new() { Name = "MenuButton", Text = "Menu".Tr() };
 
     /// <summary>
@@ -397,6 +400,7 @@ public partial class GameScreen : Control
             Tutorials.OkButton.EmitSignal(BaseButton.SignalName.Pressed);
             return true;
         }
+        if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
         if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
@@ -414,6 +418,9 @@ public partial class GameScreen : Control
                 return true;
             case HotkeyAction.OpenDiplomacy:
                 OpenDiplomacyScreen();
+                return true;
+            case HotkeyAction.OpenConsole:
+                OpenConsole();
                 return true;
             default:
                 return false;
@@ -434,6 +441,7 @@ public partial class GameScreen : Control
             AutoPlayMenu.Close();
             return true;
         }
+        if (ConsolePopup.Visible) return ConsolePopup.Cancel();
         if (GameMenu.Visible) return GameMenu.Cancel();
         if (VictoryStatus.Visible)
         {
@@ -443,6 +451,13 @@ public partial class GameScreen : Control
         if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || Alerts.Visible || GameOver.Visible) return false;
         OpenGameMenu();
         return true;
+    }
+
+    /// <summary>C046: opens the developer console with the history and "Keep open" choice from the client settings (the screen's own memory when no settings are bound).</summary>
+    public void OpenConsole()
+    {
+        if (session == null) return;
+        ConsolePopup.Open(boundSettings?.Current.ConsoleHistory ?? ConsolePopup.History, boundSettings?.Current.KeepConsoleOpen ?? ConsolePopup.KeepOpen);
     }
 
     /// <summary>Opens the in-game menu. The entries depend on the engine's game-over status (a defeated civ cannot resign) and on whether the game has unsaved progress.</summary>
@@ -598,6 +613,9 @@ public partial class GameScreen : Control
         GameMenu = new GameMenuView();
         AddChild(GameMenu);
         GameMenu.Chosen += kind => Run(OnMenuChosen(kind));
+        ConsolePopup = new ConsoleView();
+        AddChild(ConsolePopup);
+        ConsolePopup.StateChanged += (history, keepOpen) => boundSettings?.Update(s => s with { ConsoleHistory = [.. history], KeepConsoleOpen = keepOpen });
         GetViewport().SizeChanged += Layout;
         Layout();
 
@@ -661,6 +679,7 @@ public partial class GameScreen : Control
         GameMenu.LayoutIn(Size);
         AutoPlayMenu.Size = AutoPlayMenu.GetCombinedMinimumSize();
         AutoPlayMenu.Position = new Vector2(Hud.AutoPlayButton.Position.X + Hud.AutoPlayButton.Size.X - AutoPlayMenu.Size.X, Hud.AutoPlayButton.Position.Y - AutoPlayMenu.Size.Y - HudMargin / 2f);
+        ConsolePopup.LayoutIn(Size);
         Picker.LayoutIn(Size);
         Tutorials.LayoutIn(Size);
         Panel.LayoutIn(Size);
@@ -711,6 +730,10 @@ public partial class GameScreen : Control
         autoPlayGeneration++; // a run of the previous game ends with it
         AutoPlay = null;
         Hud.SetAutoPlay(null);
+        ConsolePopup.Init(theme);
+        ConsolePopup.Close();
+        ConsolePopup.Bind(session, queries, () => (Map.Selected, SelectedUnitId), Run);
+        ConsolePopup.LayoutIn(Size);
         MenuButton.Theme = theme.Theme;
         resigned = false;
         watchingAfterDefeat = false;
@@ -793,6 +816,7 @@ public partial class GameScreen : Control
         MoveChild(VictoryStatus, -1);
         MoveChild(GameMenu, -1);
         MoveChild(AutoPlayMenu, -1);
+        MoveChild(ConsolePopup, -1);
         MoveChild(Tutorials, -1);
         AddChild(Tooltips); // above everything, so a tip is never covered by a screen
         ReachableOverlay.Setup(registry);

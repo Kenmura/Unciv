@@ -12,6 +12,9 @@ public enum HotkeyAction
     PanDown,
     PanLeft,
     PanRight,
+
+    /// <summary>C046: opens the developer console (Kotlin <c>KeyboardBinding.DeveloperConsole</c>, the backtick).</summary>
+    OpenConsole,
 }
 
 /// <summary>
@@ -35,6 +38,7 @@ public static class Hotkeys
         [HotkeyAction.PanDown] = "S",
         [HotkeyAction.PanLeft] = "A",
         [HotkeyAction.PanRight] = "D",
+        [HotkeyAction.OpenConsole] = "Quoteleft",
     };
 
     /// <summary>Keys that can never be bound (they close screens or are the always-on arrow pan keys).</summary>

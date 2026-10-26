@@ -11,6 +11,11 @@ public static class ConsoleRunner
 {
     public const int MaxLineLength = 1000;
 
+    /// <summary>Why a game without God mode refuses the console (the command and the C046 queries say the same).</summary>
+    public const string GodModeRequired = "The developer console needs God mode, enabled when the game was set up";
+
+    public const string LineTooLong = "The console line is too long";
+
     private static readonly ConsoleCommandRoot Root = new();
 
     /// <summary>Plans (does not run) <paramref name="line"/>. Pure: the game is not changed.</summary>

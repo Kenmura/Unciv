@@ -27,9 +27,9 @@ public sealed class RunConsoleCommand : GameCommand
     {
         if (!context.RequirePlayer().TryGet(out _, out var failure)) return failure;
         if (!context.Game.GameParameters.GodMode)
-            return CommandValidation.Fail(CommandErrors.NotAllowed, "The developer console needs God mode, enabled when the game was set up");
+            return CommandValidation.Fail(CommandErrors.NotAllowed, ConsoleRunner.GodModeRequired);
         if (Line.Length > ConsoleRunner.MaxLineLength)
-            return CommandValidation.Fail(CommandErrors.InvalidTarget, "The console line is too long");
+            return CommandValidation.Fail(CommandErrors.InvalidTarget, ConsoleRunner.LineTooLong);
         var plan = Plan(context);
         return plan.Response.Kind switch
         {

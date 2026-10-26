@@ -679,5 +679,23 @@
   },
   "C030": {
     "none": "Placeholder audio has nothing to look at; scenario audio asserts every UncivSound preset resolves to a non-empty generated stream."
+  },
+  "C046": {
+    "scenario": "console",
+    "about": "Developer console popup (backtick) in a God-mode game: Tab completion, history with Up, the engine's response inline; a line that runs is one logged command.",
+    "shots": [
+      {
+        "golden": "console/choices.png",
+        "caption": "Tab on the ambiguous word \"ci\" lists the matching completions (city, civ) in gold under the input."
+      },
+      {
+        "golden": "console/ran.png",
+        "caption": "After \"civ addstat gold 777\": the response says Done in green and the top bar shows 777 gold."
+      },
+      {
+        "golden": "console/error.png",
+        "caption": "A refused line stays in the input and the engine's reason is shown in red."
+      }
+    ]
   }
 }

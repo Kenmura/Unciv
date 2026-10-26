@@ -1,3 +1,4 @@
+using Unciv.Assets;
 using System.Text.Json.Serialization;
 using Unciv.Commands;
 using Unciv.Commands.Turn;
@@ -67,6 +68,14 @@ public sealed record ClientSettings
     [JsonPropertyName("tutorialsSeen")]
     public List<string> TutorialsSeen { get; init; } = [];
 
+    /// <summary>C046: the dev console's input history, oldest first, at most <see cref="ConsoleModel.MaxHistory"/> lines (Kotlin <c>consoleCommandHistory</c>).</summary>
+    [JsonPropertyName("consoleHistory")]
+    public List<string> ConsoleHistory { get; init; } = [];
+
+    /// <summary>C046: leave the dev console open after a command ran (Kotlin <c>keepConsoleOpen</c>).</summary>
+    [JsonPropertyName("keepConsoleOpen")]
+    public bool KeepConsoleOpen { get; init; }
+
     [JsonPropertyName("playerName")]
     public string PlayerName { get; init; } = "Player";
 
@@ -94,6 +103,7 @@ public sealed record ClientSettings
             AssetPack = string.IsNullOrWhiteSpace(AssetPack) ? Default.AssetPack : AssetPack,
             AutosaveTurns = Math.Max(0, AutosaveTurns),
             TutorialsSeen = TutorialsSeen?.Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal).ToList() ?? [],
+            ConsoleHistory = ConsoleModel.SanitizeHistory(ConsoleHistory),
             PlayerName = string.IsNullOrWhiteSpace(PlayerName) ? Default.PlayerName : PlayerName,
             AutoPlay = AutoPlay?.Sanitized() ?? new AutoPlaySettings(),
             Player = Player is null ? PlayerSettings.Default : Player with { NotificationsLogMaxTurns = Math.Max(0, Player.NotificationsLogMaxTurns) },

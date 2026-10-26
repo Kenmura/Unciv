@@ -1,4 +1,6 @@
+using Unciv.Logic.Map;
 using Unciv.Queries.Cities;
+using Unciv.Queries.DevConsole;
 using Unciv.Queries.Empire;
 using Unciv.Queries.Tiles;
 using Unciv.Queries.Units;
@@ -83,4 +85,10 @@ public sealed class GameQueries(IGameSession session)
     public Task<SpyDestinationsResult?> SpyDestinations() => session.QueryAsync(new SpyDestinationsQuery());
 
     public Task<DiplomaticVoteResult?> DiplomaticVote() => session.QueryAsync(new DiplomaticVoteQuery());
+
+    /// <summary>C046: what the dev console would answer to a line (error, usage, or OK) on the selection, before the line is sent.</summary>
+    public Task<ConsolePlanResult?> ConsolePlan(string line, HexCoord? tile, int? unitId) => session.QueryAsync(new ConsolePlanQuery(line, tile, unitId));
+
+    /// <summary>C046: the completion of the line's last word from the dev console's command tree and the game's names.</summary>
+    public Task<ConsoleAutocompleteResult?> ConsoleAutocomplete(string line, HexCoord? tile, int? unitId) => session.QueryAsync(new ConsoleAutocompleteQuery(line, tile, unitId));
 }

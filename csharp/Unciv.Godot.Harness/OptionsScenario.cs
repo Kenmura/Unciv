@@ -81,6 +81,7 @@ public sealed class OptionsScenario : Scenario
             new PressKey(Key.Escape),
             new WaitFrames(2),
             new AssertQuery("Escape cancelled: still Space and nothing saved", () => options.Listening == null && options.KeyButton(HotkeyAction.EndTurn).Text == "Space" && !File.Exists(path)),
+            .. Reveal(HotkeyAction.EndTurn), // C046: one more key row below pushes End turn out of view after the scroll to the bottom
             new Click(() => Centre(options.KeyButton(HotkeyAction.EndTurn))),
             new WaitFrames(2),
             new PressKey(Key.E),

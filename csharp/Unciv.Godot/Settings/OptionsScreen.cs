@@ -26,6 +26,7 @@ public partial class OptionsScreen : ScrollContainer
         (HotkeyAction.PanDown, "Pan down"),
         (HotkeyAction.PanLeft, "Pan left"),
         (HotkeyAction.PanRight, "Pan right"),
+        (HotkeyAction.OpenConsole, "Developer Console"),
     ];
 
     private readonly ClientSettingsService service;

@@ -646,7 +646,25 @@ Scenario `menu`.
 
 *After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
 
-## C047 (ticket not Done or unknown)
+## C046 (ticket not Done or unknown)
+
+Developer console popup (backtick) in a God-mode game: Tab completion, history with Up, the engine's response inline; a line that runs is one logged command.
+
+Scenario `console`.
+
+![Tab on the ambiguous word "ci" lists the matching completions (city, civ) in gold under the input.](../Unciv.Godot.Harness/golden/console/choices.png)
+
+*Tab on the ambiguous word "ci" lists the matching completions (city, civ) in gold under the input.* (`console/choices.png`)
+
+![After "civ addstat gold 777": the response says Done in green and the top bar shows 777 gold.](../Unciv.Godot.Harness/golden/console/ran.png)
+
+*After "civ addstat gold 777": the response says Done in green and the top bar shows 777 gold.* (`console/ran.png`)
+
+![A refused line stays in the input and the engine's reason is shown in red.](../Unciv.Godot.Harness/golden/console/error.png)
+
+*A refused line stays in the input and the engine's reason is shown in red.* (`console/error.png`)
+
+## C047 AutoPlay UI: auto-play status button, turn count and stop, options
 
 AutoPlay: an optional button with a menu (start N turns, AutoPlay End Turn), a Stop control with the turns left, and the AutoPlay options.
 
@@ -676,7 +694,7 @@ Scenario `autoplay`.
 
 *Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI.* (`autoplay/options.png`)
 
-## C048 (ticket not Done or unknown)
+## C048 Rename city popup
 
 Rename a city from the city screen header: popup with live validation, Enter to confirm, Escape to cancel; the new name shows in the title, the map banner and the overview.
 

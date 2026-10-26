@@ -290,6 +290,8 @@ public class QueryTests
         ["empire.DiplomaticVote"] = () => new Unciv.Queries.Empire.DiplomaticVoteQuery(),
         ["units.PromotionChoices"] = () => new Unciv.Queries.Units.PromotionChoicesQuery(1),
         ["units.PromotableUnits"] = () => new Unciv.Queries.Units.PromotableUnitsQuery(),
+        ["console.Plan"] = () => new Unciv.Queries.DevConsole.ConsolePlanQuery("civ addstat gold 5"),
+        ["console.Autocomplete"] = () => new Unciv.Queries.DevConsole.ConsoleAutocompleteQuery("civ add"),
         ["units.AttackPreview"] = () => new Unciv.Queries.Units.AttackPreviewQuery(0, 0, UnitId: 1),
         ["cities.CityPanel"] = () => new Unciv.Queries.Cities.CityPanelQuery("c"),
         ["cities.ConstructionList"] = () => new Unciv.Queries.Cities.ConstructionListQuery("c"),
