@@ -1473,6 +1473,7 @@ public partial class GameScreen : Control
             if (!outcome.Accepted)
             {
                 refusal = outcome.Message;
+                await session.SubmitAsync(new Unciv.Commands.Turn.StopAutoPlay()); // review C047: a refusal the engine did not cause itself must not leave its auto-play running (the next Start would be refused); refused harmlessly when it already stopped
                 break;
             }
             AutoPlay = AutoPlay.AfterTurn();
