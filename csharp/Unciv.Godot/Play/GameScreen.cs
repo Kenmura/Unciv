@@ -1321,7 +1321,23 @@ public partial class GameScreen : Control
         else if (Proposals.Current?.Key != next.Key || !Proposals.Visible) Proposals.Open(next);
     }
 
+    private bool answeringProposal;
+
     private async Task AnswerProposal(TradeProposal popup, AlertButton answer)
+    {
+        if (answeringProposal) return; // a second press while the engine answers would be refused and look like a withdrawal
+        answeringProposal = true;
+        try
+        {
+            await AnswerProposalOnce(popup, answer);
+        }
+        finally
+        {
+            answeringProposal = false;
+        }
+    }
+
+    private async Task AnswerProposalOnce(TradeProposal popup, AlertButton answer)
     {
         offerTracker.NoteAnswered(popup.FromId);
         var request = snapshot.PendingTrades.FirstOrDefault(it => it.From == popup.FromId && it.To == snapshot.You);
