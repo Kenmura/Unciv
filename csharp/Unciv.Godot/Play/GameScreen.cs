@@ -1509,7 +1509,19 @@ public partial class GameScreen : Control
         string refusal = "";
         while (AutoPlay is { Active: true } && generation == autoPlayGeneration)
         {
-            var outcome = await session.AutoPlayTurnAsync();
+            TurnOutcome outcome;
+            try
+            {
+                outcome = await session.AutoPlayTurnAsync();
+            }
+            catch (Exception e)
+            {
+                // review C040: a failed background turn must end the run visibly instead of leaving AutoPlay "active" with nothing playing
+                GD.PushError("AutoPlay turn failed: " + e);
+                if (generation != autoPlayGeneration) return;
+                refusal = "the turn could not be processed: " + e.Message;
+                break;
+            }
             if (generation != autoPlayGeneration) return; // stopped (or the game replaced) while the turn was played
             if (!outcome.Accepted)
             {

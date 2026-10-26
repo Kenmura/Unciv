@@ -141,8 +141,14 @@ public sealed class LocalHost : IGameSession
         finally
         {
             collected = null;
-            if (batches.Count > 0) fresh = BuildSnapshot();
-            gate.Release();
+            try
+            {
+                if (batches.Count > 0) fresh = BuildSnapshot();
+            }
+            finally
+            {
+                gate.Release(); // review C040: a throwing snapshot must never leave the gate held (every later call would wait forever)
+            }
             Raise(fresh, batches); // after the gate is released: a handler may call back into the session
         }
     }
@@ -179,15 +185,20 @@ public sealed class LocalHost : IGameSession
                 finally
                 {
                     collected = null;
-                    fresh = BuildSnapshot();
-                    endingTurn = false;
-                    gate.Release();
+                    try
+                    {
+                        fresh = BuildSnapshot();
+                    }
+                    finally
+                    {
+                        gate.Release(); // review C040: released even when the snapshot throws
+                    }
                 }
             }, CancellationToken.None);
         }
         finally
         {
-            endingTurn = false;
+            endingTurn = false; // review C040: cleared only here, on the caller's context, so a second End turn cannot slip in between the worker finishing and this turn's results being raised
             Raise(fresh, batches);
         }
     }
@@ -195,8 +206,9 @@ public sealed class LocalHost : IGameSession
     private void Raise(ClientSnapshot? fresh, List<(long Seq, IReadOnlyList<GameEvent> Events)> batches)
     {
         if (fresh == null) return;
-        Snapshot = fresh;
-        SnapshotChanged?.Invoke(fresh);
+        // review C040: a command that waited on the gate while the turn ran can finish (and raise a newer snapshot) before the turn's continuation runs; never go backwards
+        if (fresh.Seq >= Snapshot.Seq) Snapshot = fresh;
+        SnapshotChanged?.Invoke(Snapshot);
         foreach (var (seq, events) in batches) EventsReceived?.Invoke(new EventBatch(seq, events));
     }
 
