@@ -275,4 +275,16 @@ public sealed class ScenarioHarnessTests : IDisposable
         var json = new ScenarioResult("t", 1, 2, "h", [], [], [], [], Trade: true).ToJson();
         Assert.True(ScenarioResult.FromJson(json).Trade);
     }
+
+    [Fact]
+    public void CrowdGameHasTheHumanAndTenAiCivsAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(crowd: true);
+        var major = session.Game.Civilizations.Where(it => it.IsMajorCiv()).ToList();
+        Assert.Single(major, it => it.IsHuman());
+        Assert.Equal(ScenarioGame.CrowdAiCount, major.Count(it => it.IsAI()));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, crowd: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], [], Crowd: true).ToJson()).Crowd);
+        Assert.False(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], []).ToJson()).Crowd);
+    }
 }
