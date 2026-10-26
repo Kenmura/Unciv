@@ -58,7 +58,7 @@ def in_container(cmd):
     return f"distrobox enter {CONTAINER} -- bash -c {shlex.quote(cmd)}"
 
 
-CRASH_CODES = (139, 134, -11, -6)  # SIGSEGV / SIGABRT, as a shell reports them (128+n) or as a raw signal
+CRASH_CODES = (139, 134, 132, -11, -6, -4)  # SIGSEGV / SIGABRT / SIGILL (the Godot headless export crashed with 132 once), as a shell reports them (128+n) or as a raw signal
 CRASH_RETRIES = 2
 
 
