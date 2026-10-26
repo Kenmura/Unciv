@@ -54,9 +54,9 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false, bool proposals = false)
     {
-        diplomacy |= alerts | trade | espionage;
+        diplomacy |= alerts | trade | espionage | proposals;
         solo |= skirmish | diplomacy | policies | victory | defeat | decisions | crowd;
         var vanilla = LoadVanilla();
         // C038: religion needs Gods & Kings (Vanilla has no beliefs); every other scenario plays Vanilla
@@ -95,6 +95,7 @@ public static class ScenarioGame
         if (trade) SetUpTrade(game);
         if (decisions) SetUpDecisions(game);
         if (espionage) SetUpEspionage(game);
+        if (proposals) SetUpProposals(game);
         return new GameSession(game);
     }
 
@@ -223,6 +224,29 @@ public static class ScenarioGame
         offer.TheirOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.FlatGold, Unciv.Logic.Trade.TradeOfferType.Gold, 100, game.Speed));
         human.TradeRequests.Add(new Unciv.Logic.Trade.TradeRequest(rome.CivId, offer));
         human.AddPopupAlert(new Unciv.Logic.Civilization.PopupAlert(Unciv.Logic.Civilization.AlertType.DemandToStopSpreadingReligion, rome.CivId));
+    }
+
+    /// <summary>
+    /// C039: the diplomacy game where the human has also met Greece, Rome (at war with the human) has sent a peace proposal (the peace treaty on both sides) and Greece
+    /// a trade (50 gold for 20 gold); both are rich enough to honour it. Set up directly on the state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpProposals(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var rome = game.GetCivilization(Ai);
+        var greece = game.GetCivilization(HumanB);
+        human.DiplomacyFunctions.MakeCivilizationsMeet(greece);
+        human.AddGold(1000 - human.Gold);
+        greece.AddGold(500 - greece.Gold);
+        human.GetDiplomacyManagerOrMeet(rome).DeclareWar();
+        var peace = new Unciv.Logic.Trade.Trade();
+        peace.OurOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.PeaceTreaty, Unciv.Logic.Trade.TradeOfferType.Treaty, game.Speed));
+        peace.TheirOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.PeaceTreaty, Unciv.Logic.Trade.TradeOfferType.Treaty, game.Speed));
+        human.TradeRequests.Add(new Unciv.Logic.Trade.TradeRequest(rome.CivId, peace));
+        var gift = new Unciv.Logic.Trade.Trade();
+        gift.OurOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.FlatGold, Unciv.Logic.Trade.TradeOfferType.Gold, 20, game.Speed));
+        gift.TheirOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.FlatGold, Unciv.Logic.Trade.TradeOfferType.Gold, 50, game.Speed));
+        human.TradeRequests.Add(new Unciv.Logic.Trade.TradeRequest(greece.CivId, gift));
     }
 
     /// <summary>

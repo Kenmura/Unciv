@@ -424,6 +424,32 @@
       }
     ]
   },
+  "C039": {
+    "scenario": "proposals",
+    "about": "Incoming proposal popups: peace and trade proposals from AI civs with accept, decline, counter and decide later, and the status of our own outstanding offers.",
+    "shots": [
+      {
+        "golden": "proposals/peace.png",
+        "caption": "Rome's peace proposal as a popup: what they give and ask, with accept, decline, ask for something else and decide later."
+      },
+      {
+        "golden": "proposals/trade.png",
+        "caption": "Greece's trade proposal after the peace was accepted: they give 50 gold and ask 20 gold."
+      },
+      {
+        "golden": "proposals/counter.png",
+        "caption": "How about something else: the trade screen opens on Greece with its offer staged the other way round for us to change."
+      },
+      {
+        "golden": "proposals/waiting.png",
+        "caption": "Our own offer to Greece waits for its answer, listed under the notifications."
+      },
+      {
+        "golden": "proposals/answered.png",
+        "caption": "The next turn: the outcomes of our offers are reported (taken back, accepted by Greece)."
+      }
+    ]
+  },
   "C042": {
     "none": "Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015."
   },

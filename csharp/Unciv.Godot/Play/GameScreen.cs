@@ -77,6 +77,9 @@ public partial class GameScreen : Control
     /// <summary>C013: the modal popup for the first pending alert.</summary>
     public AlertPopupView Alerts { get; private set; } = null!; // JUSTIFY: C013 assigned in _Ready before any use
 
+    /// <summary>C039: the modal popup for the first incoming trade or peace proposal.</summary>
+    public TradeProposalView Proposals { get; private set; } = null!; // JUSTIFY: C039 assigned in _Ready before any use
+
     /// <summary>C026: the tutorial popup; it shows only while the screen follows client settings (<see cref="BindSettings"/>) that have tutorials on.</summary>
     public TutorialPopupView Tutorials { get; private set; } = null!; // JUSTIFY: C026 assigned in _Ready before any use
 
@@ -147,6 +150,8 @@ public partial class GameScreen : Control
     public Button PromoteButton { get; } = new() { Name = "PromoteButton", Text = "Promote".Tr(), Visible = false };
 
     private readonly HashSet<string> deferredAlerts = [];
+    private readonly HashSet<string> deferredProposals = [];
+    private readonly OfferTracker offerTracker = new();
     private bool reviewingAlerts;
 
     /// <summary>The city whose screen (<see cref="City"/>) is open: the hook that tells which city.</summary>
@@ -242,8 +247,8 @@ public partial class GameScreen : Control
 
     public Button TradeButton { get; } = new() { Name = "TradeButton", Text = "Trade".Tr() };
 
-    /// <summary>Opens the trade screen on the civ with this id (the first met major civ when null), closing the other screens.</summary>
-    public void OpenTradeScreen(string? civId = null)
+    /// <summary>Opens the trade screen on the civ with this id (the first met major civ when null), with the offer of <paramref name="stageFrom"/> staged as a counter proposal, closing the other screens.</summary>
+    public void OpenTradeScreen(string? civId = null, PendingTradeDto? stageFrom = null)
     {
         ShowCity(null);
         if (Diplomacy.Visible) Diplomacy.Close();
@@ -251,7 +256,7 @@ public partial class GameScreen : Control
         if (Overview.Visible) Overview.Close();
         Deselect();
         SetStatus("Trade");
-        Run(Trade.OpenAsync(civId));
+        Run(Trade.OpenAsync(civId, stageFrom));
     }
 
     /// <summary>C027: the Civilopedia, opened by the Civilopedia button.</summary>
@@ -409,7 +414,7 @@ public partial class GameScreen : Control
             return true;
         }
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
-        if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
+        if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible || Proposals.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
             case HotkeyAction.EndTurn:
@@ -457,7 +462,7 @@ public partial class GameScreen : Control
             VictoryStatus.Close();
             return true;
         }
-        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || Alerts.Visible || GameOver.Visible) return false;
+        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || Alerts.Visible || Proposals.Visible || GameOver.Visible) return false;
         OpenGameMenu();
         return true;
     }
@@ -609,6 +614,15 @@ public partial class GameScreen : Control
             Alerts.Close();
             Run(RefreshHud());
         };
+        Proposals = new TradeProposalView();
+        AddChild(Proposals);
+        Proposals.Answered += (popup, answer) => Run(AnswerProposal(popup, answer));
+        Proposals.Deferred += popup =>
+        {
+            deferredProposals.Add(popup.Key);
+            Proposals.Close();
+            Run(RefreshHud());
+        };
         TurnOverlay = new NextTurnProgressView();
         AddChild(TurnOverlay);
         GameOver = new GameOverScreen();
@@ -685,6 +699,7 @@ public partial class GameScreen : Control
         Notifications.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
         MenuButton.Position = new Vector2(TradeButton.Position.X + TradeButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         Alerts.LayoutIn(Size);
+        Proposals.LayoutIn(Size);
         GameOver.LayoutIn(Size);
         VictoryStatus.LayoutIn(Size);
         GameMenu.LayoutIn(Size);
@@ -730,6 +745,8 @@ public partial class GameScreen : Control
         Hud.Init(theme);
         Notifications.Init(theme);
         Alerts.Init(theme);
+        Proposals.Init(theme);
+        Proposals.Close();
         GameOver.Init(theme);
         Tutorials.Init(theme);
         Tutorials.Close();
@@ -756,6 +773,8 @@ public partial class GameScreen : Control
         Picker.Init(theme);
         PromoteButton.Theme = theme.Theme;
         deferredAlerts.Clear();
+        deferredProposals.Clear();
+        offerTracker.Reset();
         reviewingAlerts = false;
         City = new CityScreen(session, theme);
         AddChild(City);
@@ -783,6 +802,8 @@ public partial class GameScreen : Control
         Trade = new TradeScreen(session, theme);
         AddChild(Trade);
         Trade.CommandAccepted += Refresh;
+        Trade.Closed += () => Run(RefreshHud());
+        Trade.Retracting += offerTracker.NoteRetracted;
         TradeButton.Theme = theme.Theme;
         Tech = new TechScreen(session, theme);
         AddChild(Tech);
@@ -827,6 +848,7 @@ public partial class GameScreen : Control
         Panel.Init(theme);
         CombatPreview.Init(theme);
         MoveChild(Picker, -1);
+        MoveChild(Proposals, -1);
         MoveChild(Alerts, -1); // the popups sit above every screen opened above
         MoveChild(GameOver, -1);
         MoveChild(VictoryStatus, -1);
@@ -1207,6 +1229,7 @@ public partial class GameScreen : Control
             Hud.ShowBanner(HudModel.Banner(bar.Turn, bar.Year, session.ViewerCivId));
         }
         ShowNextAlert(pending, reopen: false);
+        ShowNextProposal(reopen: false);
         await CheckGameOver();
         CheckTutorials();
     }
@@ -1273,9 +1296,45 @@ public partial class GameScreen : Control
         }
         var next = AlertPopupModel.Next(pending, snapshot, deferredAlerts, reviewingAlerts);
         if (next == null) reviewingAlerts = false;
-        Notifications.SetWaiting(AlertPopupModel.WaitingCount(pending, snapshot, deferredAlerts));
+        Notifications.SetWaiting(AlertPopupModel.WaitingCount(pending, snapshot, deferredAlerts) + TradeProposalModel.WaitingCount(snapshot, deferredProposals));
         if (next == null) Alerts.Close();
         else if (Alerts.Current?.Key != next.Key || !Alerts.Visible) Alerts.Open(next);
+    }
+
+    /// <summary>
+    /// C039: opens the first incoming trade or peace proposal that was not put off, unless something else asks for the player first (an alert, a decision or a full
+    /// screen: the proposal then waits and shows once they are closed); with <paramref name="reopen"/> the proposals that were put off come back. Also keeps the
+    /// list of our own outstanding offers and what became of the latest ones.
+    /// </summary>
+    private void ShowNextProposal(bool reopen)
+    {
+        if (reopen) deferredProposals.Clear();
+        Notifications.SetOffers(offerTracker.Update(snapshot));
+        var next = TradeProposalModel.Next(snapshot, deferredProposals);
+        bool covered = Alerts.Visible || Picker.Visible || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || GameOver.Visible || Pedia.Visible;
+        if (next == null || covered) Proposals.Close();
+        else if (Proposals.Current?.Key != next.Key || !Proposals.Visible) Proposals.Open(next);
+    }
+
+    private async Task AnswerProposal(TradeProposal popup, AlertButton answer)
+    {
+        offerTracker.NoteAnswered(popup.FromId);
+        var request = snapshot.PendingTrades.FirstOrDefault(it => it.From == popup.FromId && it.To == snapshot.You);
+        var result = await session.SubmitAsync(answer.Command);
+        if (!result.Accepted)
+        {
+            offerTracker.NoteRefused(popup.FromId);
+            SetStatus($"{popup.Title}: {answer.Label} refused: {result.Message}");
+            return;
+        }
+        Proposals.Close();
+        if (answer.Id == TradeProposalModel.CounterId)
+        {
+            Refresh();
+            OpenTradeScreen(popup.FromId, request);
+            return;
+        }
+        Refresh();
     }
 
     private async Task AnswerAlert(AlertPopup popup, AlertButton answer)
@@ -1456,7 +1515,12 @@ public partial class GameScreen : Control
         Map.FocusOn(UnitPosition(new HexCoord(node.Unit.X, node.Unit.Y), 0));
     }
 
-    private async Task ReviewAlerts() => ShowNextAlert(await queries.Pending(), reopen: true);
+    private async Task ReviewAlerts()
+    {
+        deferredProposals.Clear();
+        ShowNextAlert(await queries.Pending(), reopen: true);
+        ShowNextProposal(reopen: true);
+    }
 
     private void OnNextTurn()
     {

@@ -56,5 +56,8 @@ public abstract class Scenario
     /// <summary>C050: the diplomacy game with espionage on, both capitals and the city-state's city explored, an idle spy in the hideout and a set-up spy in the city-state (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
     public virtual bool Espionage => false;
 
+    /// <summary>C039: the diplomacy game where the human has met Greece too, Rome (at war) proposes peace and Greece proposes a trade (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
+    public virtual bool Proposals => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

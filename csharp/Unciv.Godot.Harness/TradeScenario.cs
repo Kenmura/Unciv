@@ -77,6 +77,7 @@ public sealed class TradeScenario : Scenario
                 logged = session.Log.Count;
             }),
             new Click(() => Centre(screen.Alerts.ButtonById("DecideLater"))),
+            new Click(() => Centre(screen.Proposals.ButtonById("DecideLater"))),
             new Click(() => Centre(screen.TradeButton)),
             new WaitFrames(2),
             new AssertQuery("the screen is open and lists only Rome: not the city-state, not the unmet Greece", () =>

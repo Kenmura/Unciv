@@ -86,7 +86,12 @@ public partial class TradeScreen : PanelContainer
             Builder?.Clear();
             Redraw();
         };
-        retract.Pressed += () => Fire(SendAsync(new Commands.Diplomacy.RetractTrade { CivId = SelectedCivId ?? "" }));
+        retract.Pressed += () =>
+        {
+            string partner = SelectedCivId ?? "";
+            Retracting?.Invoke(partner);
+            Fire(SendAsync(new Commands.Diplomacy.RetractTrade { CivId = partner }));
+        };
         buttons.AddChild(propose);
         buttons.AddChild(clear);
         buttons.AddChild(retract);
@@ -136,20 +141,23 @@ public partial class TradeScreen : PanelContainer
 
     public event Action? Closed;
 
+    /// <summary>C039: the player takes back its offer to this civ (the engine tells only the recipient, so the owner learns of it here).</summary>
+    public event Action<string>? Retracting;
+
     public Button? PartnerButton(string civId) => partnerButtons.GetValueOrDefault(civId);
 
     /// <summary>A button of the screen by node name: <c>Give_...</c>/<c>Ask_...</c> offers (see <see cref="TradeChoice.Id"/>), <c>Plus_</c>/<c>Minus_</c> of those, <c>Accept_&lt;civ&gt;</c>, <c>Decline_&lt;civ&gt;</c>, <c>Counter_&lt;civ&gt;</c>, <c>DemandAccept_&lt;civ&gt;</c>, <c>DemandRefuse_&lt;civ&gt;</c>.</summary>
     public Button? Control(string id) => controls.GetValueOrDefault(id);
 
     /// <summary>Shows the screen with the met major civs, on the given civ (the chosen one if still met, else the first).</summary>
-    public async Task OpenAsync(string? civId = null)
+    public async Task OpenAsync(string? civId = null, PendingTradeDto? stageFrom = null)
     {
         Visible = true;
         Partners = TradeScreenModel.Partners(session.Snapshot);
         RebuildPartners();
         string? target = civId ?? SelectedCivId;
         if (target == null || Partners.All(it => it.CivId != target)) target = Partners.Count > 0 ? Partners[0].CivId : null;
-        await SelectAsync(target);
+        await SelectAsync(target, target == stageFrom?.From ? stageFrom : null);
     }
 
     public void Close()

@@ -37,3 +37,4 @@ autoplay
 audio
 console
 next-turn
+proposals

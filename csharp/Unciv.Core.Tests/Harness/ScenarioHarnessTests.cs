@@ -276,6 +276,25 @@ public sealed class ScenarioHarnessTests : IDisposable
     }
 
     [Fact]
+    public void ProposalsGameMeetsGreeceHasRomeAtWarProposingPeaceAndGreeceProposingATradeAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(proposals: true);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        var rome = session.Game.GetCivilization(ScenarioGame.Ai);
+        var greece = session.Game.GetCivilization(ScenarioGame.HumanB);
+        Assert.True(human.Knows(greece));
+        Assert.True(human.IsAtWarWith(rome));
+        Assert.Equal([rome.CivId, greece.CivId], human.TradeRequests.Select(it => it.RequestingCiv));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(proposals: true)));
+
+        var accepted = session.Submit(ScenarioGame.HumanA, new Unciv.Commands.Diplomacy.RespondToTradeRequest { CivId = rome.CivId, Accept = true });
+        Assert.True(accepted.Accepted);
+        Assert.False(human.IsAtWarWith(rome));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, proposals: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("p", 1, 2, "h", [], [], [], [], Proposals: true).ToJson()).Proposals);
+    }
+
+    [Fact]
     public void TradeGameHasHintsOnRomeRichAndATradeAndADemandWaitingAndReplaysEqual()
     {
         var session = ScenarioGame.Create(trade: true);

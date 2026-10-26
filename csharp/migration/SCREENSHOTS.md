@@ -592,6 +592,32 @@ Scenario `decisions`.
 
 *The promotion picker for the warrior: experience line, promotions it may take, the default-promotion checkbox and Take promotion.* (`decisions/promotion.png`)
 
+## C039 (ticket not Done or unknown)
+
+Incoming proposal popups: peace and trade proposals from AI civs with accept, decline, counter and decide later, and the status of our own outstanding offers.
+
+Scenario `proposals`.
+
+![Rome's peace proposal as a popup: what they give and ask, with accept, decline, ask for something else and decide later.](../Unciv.Godot.Harness/golden/proposals/peace.png)
+
+*Rome's peace proposal as a popup: what they give and ask, with accept, decline, ask for something else and decide later.* (`proposals/peace.png`)
+
+![Greece's trade proposal after the peace was accepted: they give 50 gold and ask 20 gold.](../Unciv.Godot.Harness/golden/proposals/trade.png)
+
+*Greece's trade proposal after the peace was accepted: they give 50 gold and ask 20 gold.* (`proposals/trade.png`)
+
+![How about something else: the trade screen opens on Greece with its offer staged the other way round for us to change.](../Unciv.Godot.Harness/golden/proposals/counter.png)
+
+*How about something else: the trade screen opens on Greece with its offer staged the other way round for us to change.* (`proposals/counter.png`)
+
+![Our own offer to Greece waits for its answer, listed under the notifications.](../Unciv.Godot.Harness/golden/proposals/waiting.png)
+
+*Our own offer to Greece waits for its answer, listed under the notifications.* (`proposals/waiting.png`)
+
+![The next turn: the outcomes of our offers are reported (taken back, accepted by Greece).](../Unciv.Godot.Harness/golden/proposals/answered.png)
+
+*The next turn: the outcomes of our offers are reported (taken back, accepted by Greece).* (`proposals/answered.png`)
+
 ## C040 (ticket not Done or unknown)
 
 End turn is processed off the UI thread with a progress overlay (civ n of m) that blocks input while the window keeps drawing.

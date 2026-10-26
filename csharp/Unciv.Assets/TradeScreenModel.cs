@@ -29,7 +29,7 @@ public sealed record TradeChoice(TradeSide Side, TradeOfferEntry Entry, bool Sta
 public sealed record TradeGroup(string Title, IReadOnlyList<TradeChoice> Choices);
 
 /// <summary>A trade another civ sent the viewer (from the snapshot): what it gives and what it asks.</summary>
-public sealed record IncomingTrade(string FromId, string FromName, IReadOnlyList<string> Gives, IReadOnlyList<string> Asks)
+public sealed record IncomingTrade(string FromId, string FromName, IReadOnlyList<string> Gives, IReadOnlyList<string> Asks, bool IsPeace = false)
 {
     public string Title => $"{FromName} proposes a trade";
 
@@ -262,9 +262,13 @@ public static class TradeScreenModel
         var names = snapshot.Civs.GroupBy(it => it.CivId, StringComparer.Ordinal).ToDictionary(it => it.Key, it => it.First().Name, StringComparer.Ordinal);
         string Text(TradeOfferDto offer) => OfferText(nameOf?.Invoke(offer.Type, offer.Name) ?? NameIfCiv(names, offer), offer.Type, offer.Amount, offer.Duration);
         return snapshot.PendingTrades.Where(it => it.To == snapshot.You)
-            .Select(it => new IncomingTrade(it.From, names.GetValueOrDefault(it.From, it.From), it.Offered.Select(Text).ToList(), it.Requested.Select(Text).ToList()))
+            .Select(it => new IncomingTrade(it.From, names.GetValueOrDefault(it.From, it.From), it.Offered.Select(Text).ToList(), it.Requested.Select(Text).ToList(), IsPeaceDeal(it)))
             .ToList();
     }
+
+    /// <summary>A proposal that includes the peace treaty (or a peace proposal): the AI's request to end a war.</summary>
+    public static bool IsPeaceDeal(PendingTradeDto trade) =>
+        trade.Offered.Concat(trade.Requested).Any(it => it.Type == nameof(Unciv.Logic.Trade.TradeOfferType.PeaceProposal) || (it.Type == nameof(Unciv.Logic.Trade.TradeOfferType.Treaty) && it.Name == Constants.PeaceTreaty));
 
     private static string NameIfCiv(Dictionary<string, string> names, TradeOfferDto offer) =>
         offer.Type is "Introduction" or "WarDeclaration" or "PeaceProposal" ? names.GetValueOrDefault(offer.Name, offer.Name) : offer.Name;

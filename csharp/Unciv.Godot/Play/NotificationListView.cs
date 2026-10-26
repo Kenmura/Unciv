@@ -12,6 +12,7 @@ namespace Unciv.GodotClient.Play;
 public partial class NotificationListView : VBoxContainer
 {
     private readonly Button toggle = new() { Name = "NotificationsToggle" };
+    private readonly Label offers = new() { Name = "OfferStatus", Visible = false, AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Button review = new() { Name = "ReviewAlerts", Visible = false };
     private readonly PanelContainer list = new() { Name = "NotificationList", Visible = false };
     private readonly VBoxContainer inner = new();
@@ -32,6 +33,7 @@ public partial class NotificationListView : VBoxContainer
         AddChild(review);
         AddChild(toggle);
         AddChild(list);
+        AddChild(offers);
         review.Pressed += () => ReviewRequested?.Invoke();
         list.AddChild(inner);
         inner.AddChild(summary);
@@ -74,13 +76,24 @@ public partial class NotificationListView : VBoxContainer
 
     public Button ReviewButton => review;
 
+    /// <summary>C039: the trade offers still waiting for an answer and what became of the latest ones (<see cref="OfferTracker"/>), under the list.</summary>
+    public string OfferText => offers.Text;
+
+    public void SetOffers(IReadOnlyList<string> lines)
+    {
+        offers.Text = string.Join("\n", lines.Select(it => it.TrText()));
+        offers.Visible = lines.Count > 0;
+        if (lines.Count > 0) offers.CustomMinimumSize = new Vector2(theme.Px(320), 0f);
+        Visible = rows.Count > 0 || deferred > 0 || lines.Count > 0;
+    }
+
     /// <summary>How many pending alerts wait to be reviewed (informational ones and ones put off with "Decide later"): the button that opens them shows while there are any.</summary>
     public void SetWaiting(int count)
     {
         deferred = count;
         review.Visible = count > 0;
         review.Text = AlertPopupModel.ReviewLabel(count).TrText();
-        Visible = rows.Count > 0 || deferred > 0;
+        Visible = rows.Count > 0 || deferred > 0 || offers.Visible;
     }
 
     public void Init(UiTheme uiTheme)
@@ -122,6 +135,6 @@ public partial class NotificationListView : VBoxContainer
             buttons[row.Index] = button;
         }
         toggle.Text = NotificationsModel.ToggleLabel(rows.Count, IsOpen).TrText();
-        Visible = rows.Count > 0 || deferred > 0; // nothing to list: no button either
+        Visible = rows.Count > 0 || deferred > 0 || offers.Visible; // nothing to list: no button either
     }
 }
