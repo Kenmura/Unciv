@@ -182,7 +182,7 @@ flowchart TD
   class C036 waiting
   class C037 done
   class C045 waiting
-  class C053 prog
+  class C053 review
   class C054 prog
   class C057 review
   class C058 review
@@ -268,7 +268,7 @@ xychart-beta
 | C029 | In-Progress [Claude] | C010, T164, T184, C037 | 0 | Hotseat player switch screen |
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
-| C053 | In-Progress [Claude] | C038 | 0 | Diplomatic vote result screen: engine vote-breakdown query and acknowledge command, client screen |
+| C053 | Needs-Review [Claude] | C038 | 0 | Diplomatic vote result screen: engine vote-breakdown query and acknowledge command, client screen |
 | C054 | In-Progress [Claude] | C026 | 0 | Tutorial tasks overlay (floating task card from ruleset Events) |
 | C057 | Needs-Review [Claude] | C030 | 0 | Wire engine PlaySound triggers to the client SoundPlayer (IClientAudio) |
 | C058 | Needs-Review [Claude] | C055 | 0 | Harness: other scenarios can capture stray hover tooltips under load (real-time TooltipHost delay) |
