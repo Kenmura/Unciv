@@ -71,18 +71,6 @@ public sealed class TerrainBlendScenario : Scenario
         var towardCoast = (coastTop - landTop).Normalized();
         Color? landCentre = null, landRim = null, coastCentre = null;
 
-        var big = StandardMap();
-        var bigTiles = big.Count;
-        var frameStart = 0UL;
-        var meanMs = 0.0;
-        var batchMeans = new List<double>();
-
-        ScenarioStep[] MeasureBatch() =>
-        [
-            new Act("start measuring frames", () => frameStart = Time.GetTicksMsec()),
-            new WaitFrames(MeasuredFrames),
-            new Act("stop measuring frames", () => batchMeans.Add((Time.GetTicksMsec() - frameStart) / (double)MeasuredFrames)),
-        ];
 
         return
         [
@@ -125,6 +113,28 @@ public sealed class TerrainBlendScenario : Scenario
             new AssertQuery("picking hits every raised and water tile at the high turned angle", () => picksOk),
             new Capture("blend-high", "High tilt turned 35 degrees: the fading ocean rim of the explored area"),
 
+            .. StandardMapSteps(view, assets),
+        ];
+    }
+
+    /// <summary>Loads a Standard-size map and checks the chunk plan, the triangle budget, the frame time and the culling.</summary>
+    private static ScenarioStep[] StandardMapSteps(MapView view, AssetRegistry assets)
+    {
+        var big = StandardMap();
+        var bigTiles = big.Count;
+        var frameStart = 0UL;
+        var meanMs = 0.0;
+        var batchMeans = new List<double>();
+
+        ScenarioStep[] MeasureBatch() =>
+        [
+            new Act("start measuring frames", () => frameStart = Time.GetTicksMsec()),
+            new WaitFrames(MeasuredFrames),
+            new Act("stop measuring frames", () => batchMeans.Add((Time.GetTicksMsec() - frameStart) / (double)MeasuredFrames)),
+        ];
+
+        return
+        [
             // Standard-size map: budgets, culling, frame time.
             new Act("load a Standard-size map", () =>
             {
