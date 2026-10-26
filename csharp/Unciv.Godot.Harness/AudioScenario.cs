@@ -24,7 +24,7 @@ public sealed class AudioScenario : Scenario
         var registry = AssetRegistry.ForRuleset(session.Game.Ruleset);
         var player = new SoundPlayer(registry);
         host.AddChild(player);
-        var presets = typeof(UncivSound).GetProperties().Select(it => it.GetValue(null)).OfType<UncivSound>().Where(it => it != UncivSound.Silent).ToList();
+        var presets = typeof(UncivSound).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static).Select(it => it.GetValue(null)).OfType<UncivSound>().Where(it => it != UncivSound.Silent).ToList();
 
         bool AllStreamsAudible() => presets.All(sound =>
             registry.Sound(sound) is AudioStreamWav { Data.Length: > 0 } wav && wav.MixRate == ProceduralSounds.SampleRate && !wav.Stereo
