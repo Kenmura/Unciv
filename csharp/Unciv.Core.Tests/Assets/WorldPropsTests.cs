@@ -186,6 +186,14 @@ public sealed class WorldPropsTests : IDisposable
         for (var i = 1; i < chips.Count; i++) Assert.True(System.Math.Abs(chips[i - 1].Amount) >= System.Math.Abs(chips[i].Amount));
     }
 
+    [Fact]
+    public void NegativeYieldsSortByMagnitudeNotSign()
+    {
+        // Desert gives nothing, Marsh -1 food, Oil +1 production: the loss ties the gain and keeps stat order, it does not sink to the end
+        var chips = TileYieldModel.Chips(ruleset, Tile("Desert", features: ["Marsh"], resource: "Oil"));
+        Assert.Equal([new YieldChip(Stat.Food, -1), new YieldChip(Stat.Production, 1)], chips);
+    }
+
     [Theory]
     [InlineData(0.5f, 1)]
     [InlineData(-0.5f, -1)]
