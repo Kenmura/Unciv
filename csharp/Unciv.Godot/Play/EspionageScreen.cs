@@ -160,10 +160,10 @@ public partial class EspionageScreen : PanelContainer
             box.AddChild(new Label { Text = page.Empty.Tr() });
             return box;
         }
-        var grid = new GridContainer { Columns = 6 };
+        var grid = new GridContainer { Columns = 5 };
         grid.AddThemeConstantOverride("h_separation", 14);
         box.AddChild(grid);
-        foreach (string heading in new[] { "Spy", "Spy rank", "Location", "Action", "", "" }) grid.AddChild(new Label { Text = heading.Tr() });
+        foreach (string heading in new[] { "Spy", "Spy rank", "Location", "Action", "" }) grid.AddChild(new Label { Text = heading.Tr() });
         foreach (var spy in page.Spies)
         {
             grid.AddChild(new Label { Text = spy.Name });
@@ -179,14 +179,21 @@ public partial class EspionageScreen : PanelContainer
             };
             moveButtons[spy.Name] = move;
             grid.AddChild(move);
-            if (spy.Coup is { } coup)
+        }
+        // The coup buttons sit under the table, one wrapping full-width row per spy: a long (translated) label wraps instead of widening the table past the screen
+        foreach (var spy in page.Spies.Where(it => it.Coup != null))
+        {
+            var coup = spy.Coup!;
+            var row = new HBoxContainer { Name = $"CoupRow_{spy.Name}" };
+            row.AddChild(new Label { Text = spy.Name });
+            var button = new Button
             {
-                var button = new Button { Name = $"Coup_{spy.Name}", Text = spy.CoupLabel.TrText() };
-                button.Pressed += () => Fire(Send(coup));
-                coupButtons[spy.Name] = button;
-                grid.AddChild(button);
-            }
-            else grid.AddChild(new Control());
+                Name = $"Coup_{spy.Name}", Text = spy.CoupLabel.TrText(), SizeFlagsHorizontal = SizeFlags.ExpandFill, AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            };
+            button.Pressed += () => Fire(Send(coup));
+            coupButtons[spy.Name] = button;
+            row.AddChild(button);
+            box.AddChild(row);
         }
         return box;
     }

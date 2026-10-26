@@ -774,15 +774,15 @@ Scenario `overview-espionage`.
 
 *Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line.* (`overview-espionage/politics.png`)
 
-## C051 (ticket not Done or unknown)
+## C051 Espionage overview screen and spy coup/action buttons
 
 Espionage screen: the spies and the places they can go, Move/Cancel/Move here, the coup button, and the multi-spy assignment picker.
 
 Scenario `espionage`.
 
-![The espionage screen: each spy with rank, location and action, a Move button and a coup button for the spy in the city-state, then the places with the spies present.](../Unciv.Godot.Harness/golden/espionage/screen.png)
+![The espionage screen: each spy with rank, location, action and a Move button, a full-width coup button (label wrapped, never clipped) under the table for the spy in the city-state, then the places with the spies present.](../Unciv.Godot.Harness/golden/espionage/screen.png)
 
-*The espionage screen: each spy with rank, location and action, a Move button and a coup button for the spy in the city-state, then the places with the spies present.* (`espionage/screen.png`)
+*The espionage screen: each spy with rank, location, action and a Move button, a full-width coup button (label wrapped, never clipped) under the table for the spy in the city-state, then the places with the spies present.* (`espionage/screen.png`)
 
 ![Move was pressed on the first spy: Move became Cancel and the places the engine offers it show Move here.](../Unciv.Godot.Harness/golden/espionage/selecting.png)
 

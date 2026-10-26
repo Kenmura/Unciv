@@ -74,6 +74,13 @@ public sealed class EspionageScenario : Scenario
                 string expected = $"Stage a coup ({KotlinMath.RoundToInt(Entry(resident).CoupChance.NotNull() * 100f)}% chance)";
                 return screen.Espionage.CoupButton(hidden.Name) == null && screen.Espionage.CoupButton(resident.Name)?.Text == expected;
             }),
+            new AssertQuery("the coup button is fully inside the 640px screen and its whole label is shown (wrapped, never clipped)", () =>
+            {
+                var button = screen.Espionage.CoupButton(resident.Name).NotNull();
+                var rect = button.GetGlobalRect();
+                return rect.Position.X >= 0 && rect.End.X <= screen.GetViewportRect().Size.X && button.AutowrapMode != TextServer.AutowrapMode.Off
+                    && button.GetCombinedMinimumSize().X <= rect.Size.X;
+            }),
             new Capture("screen", "The espionage screen: the spies with rank, location and action, and the places they can be sent to"),
 
             new Act("remember the command log", () => logged = session.Log.Count),

@@ -364,7 +364,7 @@
     "shots": [
       {
         "golden": "espionage/screen.png",
-        "caption": "The espionage screen: each spy with rank, location and action, a Move button and a coup button for the spy in the city-state, then the places with the spies present."
+        "caption": "The espionage screen: each spy with rank, location, action and a Move button, a full-width coup button (label wrapped, never clipped) under the table for the spy in the city-state, then the places with the spies present."
       },
       {
         "golden": "espionage/selecting.png",
