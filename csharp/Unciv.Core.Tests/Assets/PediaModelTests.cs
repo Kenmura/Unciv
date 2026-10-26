@@ -201,4 +201,15 @@ public class PediaModelTests
         var all = Enum.GetValues<CivilopediaCategories>().SelectMany(it => PediaModel.Entries(ruleset, it)).Select(it => it.Link).ToHashSet();
         Assert.All(PediaModel.Search(ruleset, "a"), it => Assert.Contains(it.Link, all));
     }
+
+    [Fact]
+    public void Search_HugeAndHostileInputStaysBoundedAndFindsNothing()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        Assert.Empty(PediaModel.Search(ruleset, new string('a', 1_000_000)));
+        Assert.Empty(PediaModel.Search(ruleset, "[lb]\u0000\uD800{}%$" + new string('\u202E', 1000)));
+        Assert.Empty(PediaModel.Search(ruleset, string.Concat(Enumerable.Repeat("\uFE0F", 100_000))));
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(20), "hostile search input must not blow up");
+    }
 }

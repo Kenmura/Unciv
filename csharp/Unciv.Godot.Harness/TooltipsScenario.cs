@@ -19,6 +19,8 @@ namespace Unciv.GodotHarness;
 /// </summary>
 public sealed class TooltipsScenario : Scenario
 {
+    private const double NeverReal = 1e9;
+
     public override string Name => "tooltips";
 
     public override bool Uses3D => true;
@@ -63,13 +65,15 @@ public sealed class TooltipsScenario : Scenario
 
         return
         [
+            // C055 review: the delay is served only by explicit Advance calls; a slow machine (software GL under load) used to let real frame time show the tip before the assertions
+            new Act("make the hover delay unreachable by real time", () => screen.Tooltips.Delay = NeverReal),
             new WaitFrames(3),
             new Act("dismiss the start banner", () => screen.Hud.HideBanner()),
             new Act("pointer onto the capital's tile", () => InputSimulator.SimulateMouseMove(viewport, screen.Map.ScreenPositionOf(capitalCoord))),
             new WaitFrames(4),
             new AssertQuery("the map follows the pointer: the capital tile is hovered and its tip is loaded, not yet shown", () =>
                 screen.HoveredTile == capitalCoord && screen.HoverTip.Length > 0 && !screen.Tooltips.IsShowing),
-            new Act("let the delay elapse", () => screen.Tooltips.Advance(1.0)),
+            new Act("let the delay elapse", () => screen.Tooltips.Advance(NeverReal)),
             new WaitFrames(2),
             new AssertQuery("the tooltip is the engine's description of the tile: city, terrain, yields and where they come from", () =>
             {
@@ -115,7 +119,7 @@ public sealed class TooltipsScenario : Scenario
             new Capture("unit", "Civilopedia, Units: the Archer's page as the engine words it, with its stats and links"),
             new Act("pointer onto the Bowman entry", () => InputSimulator.SimulateMouseMove(viewport, Entry("Bowman"))),
             new WaitFrames(2),
-            new Act("let the delay elapse", () => screen.Tooltips.Advance(1.0)),
+            new Act("let the delay elapse", () => screen.Tooltips.Advance(NeverReal)),
             new WaitFrames(2),
             new AssertQuery("the entry's tooltip is the ruleset's own short description with name and cost", () =>
             {
