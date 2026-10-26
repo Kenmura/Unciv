@@ -18,6 +18,7 @@
     "Unciv.Assets/MinimapRaster.cs": {"branch": 93.75, "line": 100.0},
     "Unciv.Assets/ModelSpecs.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/NotificationsModel.cs": {"branch": 97.06, "line": 100.0},
+    "Unciv.Assets/OverviewModel.cs": {"branch": 100.0, "line": 98.81},
     "Unciv.Assets/Packaging/ContentLocator.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PlaceholderPalette.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PolicyScreenModel.cs": {"branch": 100.0, "line": 100.0},
