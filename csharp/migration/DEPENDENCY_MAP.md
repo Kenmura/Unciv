@@ -192,7 +192,7 @@ flowchart TD
   class C040 prog
   class C045 waiting
   class C046 review
-  class C049 prog
+  class C049 review
   class C050 prog
   class C051 ready
   class C052 ready
@@ -291,7 +291,7 @@ xychart-beta
 | C040 | In-Progress [Claude] | C037, C011 | 0 | Run end-turn processing and AI turns off the UI thread with a next-turn progress overlay |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | C046 | Needs-Review [Claude] | C005, C037, T229 | 0 | Dev console UI: console popup with history and autocomplete |
-| C049 | In-Progress [Claude] | C025 | 0 | Translate PolicyScreen error and status messages through Tr() |
+| C049 | Needs-Review [Claude] | C025 | 0 | Translate PolicyScreen error and status messages through Tr() |
 | C050 | In-Progress [Claude] | C023 | 0 | Overview: global politics tab and espionage scenario coverage |
 | C055 | In-Progress [Claude] | C027 | 0 | Civilopedia hotkey and search, button visible under the unit panel |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
