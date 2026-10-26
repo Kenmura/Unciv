@@ -181,8 +181,8 @@ flowchart TD
   class C037 done
   class C045 waiting
   class C053 review
-  class C054 prog
-  class C059 prog
+  class C054 review
+  class C059 review
   class T012 done
   class T164 done
   class T169 review
@@ -264,8 +264,8 @@ xychart-beta
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | C053 | Needs-Review [Claude] | C038 | 0 | Diplomatic vote result screen: engine vote-breakdown query and acknowledge command, client screen |
-| C054 | In-Progress [Claude] | C026 | 0 | Tutorial tasks overlay (floating task card from ruleset Events) |
-| C059 | In-Progress [Claude] | C051 | 0 | Espionage screen: coup button clipped at 640px width |
+| C054 | Needs-Review [Claude] | C026 | 0 | Tutorial tasks overlay (floating task card from ruleset Events) |
+| C059 | Needs-Review [Claude] | C051 | 0 | Espionage screen: coup button clipped at 640px width |
 | T169 | Needs-Review [Claude] | C001, C042 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
