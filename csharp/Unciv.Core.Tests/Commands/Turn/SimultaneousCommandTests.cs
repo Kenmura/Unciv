@@ -805,6 +805,94 @@ public sealed class SimultaneousCommandTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => sequential.SetHumanController(sequential.GetCivilization("Greece"), false, ""));
     }
 
+    // ----- T202 review additions -----
+    // A defeated human of an earlier round is an auto civ and its turn has not begun; when the last living human then leaves, it becomes the one the round
+    // waits for, so the hand-over must begin its turn, or nobody could ever end the round.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TheLastLivingHumanLeavingDoesNotStallTheRoundBehindADefeatedHuman(bool resign)
+    {
+        var game = NewGame();
+        var session = Session(game);
+        var greece = game.GetCivilization("Greece");
+        foreach (var unit in greece.Units.GetCivUnits().ToList()) unit.Destroy();
+        Assert.True(greece.IsDefeated());
+        Ok(session.Submit("Babylon", new EndTurn()));
+        Pump(session);
+        Assert.False(game.IsTurnStarted(greece));
+
+        Ok(resign ? session.Submit("Babylon", new Resign()) : session.SubmitAsServer(new SetController { CivId = "Babylon", Controller = PlayerType.AI }));
+        Assert.True(game.IsTurnStarted(greece));
+        Assert.Equal(SimultaneousPhase.Playing, game.TurnState!.Phase);
+        var turn = game.Turns;
+        Ok(session.Submit("Greece", new EndTurn()));
+        Pump(session);
+        Assert.Equal(turn + 1, game.Turns);
+        Assert.Equal(game.Civilizations.Where(it => game.IsTurnStarted(it)).Select(it => it.CivId).ToList(), game.TurnState.Started);
+    }
+
+    // The resolved state is a function of the log order only where the order matters: two humans ending in either order, with or without a take-back, resolve identically.
+    [Fact]
+    public void TheOrderInWhichHumansEndDoesNotChangeTheResolvedState()
+    {
+        ulong Run(bool reverse, bool undoCycle)
+        {
+            var game = NewGame();
+            var session = new GameSession(game) { Clock = () => 9000L };
+            string[] order = reverse ? ["Greece", "Babylon"] : ["Babylon", "Greece"];
+            if (undoCycle)
+            {
+                Ok(session.Submit(order[0], new EndTurn()));
+                Ok(session.Submit(order[0], new UndoEndTurn()));
+            }
+            foreach (var civ in order) Ok(session.Submit(civ, new EndTurn()));
+            Pump(session);
+            return Hash(game);
+        }
+
+        var expected = Run(false, false);
+        Assert.Equal(expected, Run(true, false));
+        Assert.Equal(expected, Run(false, true));
+        Assert.Equal(expected, Run(true, true));
+    }
+
+    // Ending, taking back and ending again spends nothing: the turn counters and the end-of-turn work happen once per round, in the resolve steps.
+    [Fact]
+    public void EndOfRoundWorkHappensOncePerRoundNoMatterHowOftenTheTurnWasEnded()
+    {
+        var game = NewGame();
+        var session = Session(game);
+        var babylon = game.GetCivilization("Babylon");
+        var played = babylon.TurnsPlayedAsHuman;
+        var turn = game.Turns;
+        Ok(session.Submit("Babylon", new EndTurn()));
+        Ok(session.Submit("Babylon", new UndoEndTurn()));
+        Ok(session.Submit("Babylon", new EndTurn()));
+        Ok(session.Submit("Greece", new EndTurn()));
+        Assert.Equal((played, turn), (babylon.TurnsPlayedAsHuman, game.Turns));
+        var events = new List<GameEvent>();
+        Pump(session, events);
+        Assert.Equal((played + 1, turn + 1), (babylon.TurnsPlayedAsHuman, game.Turns));
+        Assert.Equal(1, events.OfType<TurnEnded>().Count(it => it.CivId == "Babylon"));
+    }
+
+    // A human handed to the AI with a decision still open is played by step 2 without a second StartTurn, and the round resolves.
+    [Fact]
+    public void LeavingWithAPendingDecisionStillResolvesTheRoundAndTheCivCanBeReclaimed()
+    {
+        var game = NewGame();
+        var session = Session(game);
+        Block(game, "Babylon");
+        Ok(session.SubmitAsServer(new SetController { CivId = "Babylon", Controller = PlayerType.AI }));
+        Ok(session.Submit("Greece", new EndTurn()));
+        Assert.Equal(SimultaneousPhase.Resolving, game.TurnState!.Phase);
+        Pump(session);
+        Ok(session.SubmitAsServer(new SetController { CivId = "Babylon", Controller = PlayerType.Human, PlayerId = "k" }));
+        Assert.True(game.IsActive(game.GetCivilization("Babylon")));
+        Assert.Equal(game.Civilizations.Where(it => game.IsTurnStarted(it)).Select(it => it.CivId).ToList(), game.TurnState.Started);
+    }
+
     // ----- property / fuzz -----
 
     // A tiny deterministic generator (the fuzz must not depend on System.Random's algorithm).

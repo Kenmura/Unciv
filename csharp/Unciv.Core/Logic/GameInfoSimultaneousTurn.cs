@@ -123,6 +123,10 @@ public partial class GameInfo
             civ.PlayerId = "";
             if (ClientState.AutoPlay is { } autoPlay && autoPlay.IsAutoPlayingFor(civ.CivId)) autoPlay.StopAutoPlay();
         }
+        // When the last living human leaves, the first (defeated) human takes over as the one the round waits for (see ActiveHumans); that civ has been
+        // played as an auto civ so far and its turn has not begun, so begin it now or nobody could ever end the round (found in the T202 review).
+        foreach (var active in ActiveHumans())
+            if (!IsTurnStarted(active)) StartCivTurn(active, null);
         UpdateSimultaneousCursor();
         SyncSimultaneousState();
     }
