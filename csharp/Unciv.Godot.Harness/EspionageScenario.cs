@@ -81,6 +81,18 @@ public sealed class EspionageScenario : Scenario
                 return rect.Position.X >= 0 && rect.End.X <= screen.GetViewportRect().Size.X && button.AutowrapMode != TextServer.AutowrapMode.Off
                     && button.GetCombinedMinimumSize().X <= rect.Size.X;
             }),
+            // C059 review: the English label is short, so also stretch it to a long translation: the row must stay inside the screen, wrap onto more lines and keep the label whole
+            new Act("give the coup button a long translated-length label", () => screen.Espionage.CoupButton(resident.Name).NotNull().Text =
+                "Stage a coup (35% chance) in this city-state, a long translated label that has to wrap onto several lines instead of widening the table past the screen"),
+            new WaitFrames(3),
+            new AssertQuery("a long coup label wraps onto several lines inside the 640px screen (the row grows taller, not wider)", () =>
+            {
+                var button = screen.Espionage.CoupButton(resident.Name).NotNull();
+                var rect = button.GetGlobalRect();
+                return rect.Position.X >= 0 && rect.End.X <= screen.GetViewportRect().Size.X && rect.Size.Y > 40f && button.GetCombinedMinimumSize().X <= rect.Size.X;
+            }),
+            new Act("restore the coup label", () => screen.Espionage.CoupButton(resident.Name).NotNull().Text = $"Stage a coup ({KotlinMath.RoundToInt(Entry(resident).CoupChance.NotNull() * 100f)}% chance)"),
+            new WaitFrames(3),
             new Capture("screen", "The espionage screen: the spies with rank, location and action, and the places they can be sent to"),
 
             new Act("remember the command log", () => logged = session.Log.Count),
