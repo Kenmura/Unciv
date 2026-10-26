@@ -435,6 +435,10 @@ public partial class GameScreen : Control
             case HotkeyAction.OpenConsole:
                 OpenConsole();
                 return true;
+            case HotkeyAction.OpenPedia:
+                if (Pedia.Visible) Pedia.Close();
+                else OpenPediaScreen();
+                return true;
             default:
                 return false;
         }
@@ -687,7 +691,8 @@ public partial class GameScreen : Control
             Policies.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
         OverviewButton.Position = new Vector2(PolicyButton.Position.X + PolicyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
-        PediaButton.Position = new Vector2(HudMargin, Size.Y - 2f * HudMargin - 24f - PediaButton.GetCombinedMinimumSize().Y); // bottom left above the status line: the top row is full
+        // C055: second row, right-aligned beside the minimap: the bottom left belongs to the unit panel, which used to cover the button
+        PediaButton.Position = new Vector2(Size.X - 2f * HudMargin - Minimap.Size.X - PediaButton.GetCombinedMinimumSize().X, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
         if (Pedia != null)
         {
             Pedia.Position = new Vector2(0f, Hud.TopBarHeight);

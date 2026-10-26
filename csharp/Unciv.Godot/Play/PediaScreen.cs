@@ -20,11 +20,14 @@ public partial class PediaScreen : PanelContainer
     private readonly HBoxContainer categoryRow = new() { Name = "PediaCategories" };
     private readonly HBoxContainer body = new() { SizeFlagsVertical = SizeFlags.ExpandFill };
     private readonly RichTextLabel page = new() { Name = "PediaPage", BbcodeEnabled = true, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill, SelectionEnabled = true };
+    private readonly LineEdit search = new() { Name = "PediaSearch", PlaceholderText = "Search".Tr(), ClearButtonEnabled = true, CustomMinimumSize = new Vector2(150, 0) };
     private readonly Button back = new() { Name = "PediaBack", Text = "Back".Tr(), Disabled = true };
     private readonly List<PediaEntry> shown = [];
     private readonly Stack<PediaEntry> history = new();
     private readonly Dictionary<CivilopediaCategories, Button> categoryButtons = [];
+    private readonly List<PediaEntry> found = [];
     private ListPanel? entryList;
+    private ListPanel? searchList;
     private PediaEntry? current;
 
     public PediaScreen(Ruleset gameRuleset, UiTheme uiTheme, TooltipHost tooltipHost)
@@ -44,6 +47,10 @@ public partial class PediaScreen : PanelContainer
         var heading = new Label { Text = "Civilopedia".Tr(), SizeFlagsHorizontal = SizeFlags.ExpandFill };
         heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
         head.AddChild(heading);
+        search.TextChanged += ShowSearch;
+        search.TextSubmitted += _ => OpenFirstResult();
+        search.GuiInput += OnSearchInput;
+        head.AddChild(search);
         back.Pressed += Back;
         head.AddChild(back);
         var close = new Button { Name = "PediaClose", Text = "Close".Tr() };
@@ -81,6 +88,18 @@ public partial class PediaScreen : PanelContainer
 
     public IReadOnlyCollection<CivilopediaCategories> CategoryKeys => categoryButtons.Keys;
 
+    /// <summary>C055: the search box (type to list the entries whose name contains the text, over every category).</summary>
+    public LineEdit SearchBox => search;
+
+    /// <summary>The entries the search lists now, best first (empty when the box is empty).</summary>
+    public IReadOnlyList<PediaEntry> SearchResults => found;
+
+    public Button? SearchResultButton(string name)
+    {
+        int index = found.FindIndex(it => it.Name == name);
+        return index < 0 ? null : searchList?.ItemAt(index);
+    }
+
     public bool CanGoBack => history.Count > 0;
 
     public event Action? Closed;
@@ -108,8 +127,62 @@ public partial class PediaScreen : PanelContainer
         else if (current == null) ShowCategory(categoryButtons.Keys.First());
     }
 
+    /// <summary>C055: sets the search text as typing would and lists the matches in place of the category's entries.</summary>
+    public void SearchFor(string text)
+    {
+        search.Text = text;
+        ShowSearch(text);
+    }
+
+    private void ShowSearch(string text)
+    {
+        found.Clear();
+        found.AddRange(PediaModel.Search(ruleset, text));
+        if (searchList != null)
+        {
+            if (searchList.GetParent() == body) body.RemoveChild(searchList);
+            searchList.QueueFree();
+            searchList = null;
+        }
+        if (text.Trim().Length == 0)
+        {
+            if (entryList != null) entryList.Visible = true;
+            return;
+        }
+        if (entryList != null) entryList.Visible = false;
+        searchList = new ListPanel(theme, found.Count == 0 ? "No results" : "Search", new Vector2(theme.Px(240), 0)) { Name = "PediaSearchResults" };
+        foreach (var entry in found) searchList.AddItem(entry.Name.Tr() + " (" + entry.Category.Label().Tr() + ")", entry.Icon); // the category tells same-named entries apart
+        searchList.Selected += index => OpenResult(found[index]);
+        body.AddChild(searchList);
+        body.MoveChild(searchList, 0);
+        if (body.GetChildCount() == 1) body.AddChild(page);
+    }
+
+    private void OpenFirstResult()
+    {
+        if (found.Count > 0) OpenResult(found[0]);
+    }
+
+    private void OpenResult(PediaEntry entry)
+    {
+        search.Text = "";
+        ShowSearch("");
+        Show(entry, remember: true);
+    }
+
+    /// <summary>Escape in the box clears it, or closes the Civilopedia when it is already empty (the line edit would otherwise swallow the key).</summary>
+    private void OnSearchInput(InputEvent @event)
+    {
+        if (@event is not InputEventKey { Pressed: true, Keycode: Key.Escape }) return;
+        search.AcceptEvent();
+        if (search.Text.Length > 0) SearchFor("");
+        else Close();
+    }
+
     public void Close()
     {
+        if (search.Text.Length > 0) SearchFor("");
+        search.ReleaseFocus();
         Visible = false;
         Closed?.Invoke();
     }

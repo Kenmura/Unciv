@@ -54,6 +54,30 @@ public static class PediaModel
             .Select(it => MakeEntry(ruleset, category, it.Entry, it.Name))
             .ToList();
 
+    /// <summary>The most entries a search lists (the list stays short enough to read; refine the text to narrow it).</summary>
+    public const int MaxSearchResults = 50;
+
+    /// <summary>
+    /// C055: the visible entries of every category whose translated name contains <paramref name="query"/> (case-insensitive, ordinal, surrounding spaces ignored), best first:
+    /// names that start with the query, then the others; within a group by category order and then by name. An empty query finds nothing. At most <see cref="MaxSearchResults"/>.
+    /// </summary>
+    public static IReadOnlyList<PediaEntry> Search(Ruleset ruleset, string? query)
+    {
+        string needle = (query ?? "").Trim();
+        if (needle.Length == 0) return [];
+        var hits = new List<(PediaEntry Entry, string Name, bool Prefix)>();
+        foreach (var category in Enum.GetValues<CivilopediaCategories>())
+        {
+            foreach (var entry in Entries(ruleset, category))
+            {
+                string name = entry.Name.Tr();
+                if (name.Contains(needle, StringComparison.OrdinalIgnoreCase)) hits.Add((entry, name, name.StartsWith(needle, StringComparison.OrdinalIgnoreCase)));
+            }
+        }
+        return hits.OrderByDescending(it => it.Prefix).ThenBy(it => it.Entry.Category).ThenBy(it => it.Name, StringComparer.Ordinal)
+            .Take(MaxSearchResults).Select(it => it.Entry).ToList();
+    }
+
     /// <summary>The page of one entry (null when the category has no visible entry of that name): the engine's assembled lines.</summary>
     public static PediaPage? Page(Ruleset ruleset, CivilopediaCategories category, string name)
     {

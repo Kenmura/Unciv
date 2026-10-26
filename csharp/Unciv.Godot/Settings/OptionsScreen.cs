@@ -27,6 +27,7 @@ public partial class OptionsScreen : ScrollContainer
         (HotkeyAction.PanLeft, "Pan left"),
         (HotkeyAction.PanRight, "Pan right"),
         (HotkeyAction.OpenConsole, "Developer Console"),
+        (HotkeyAction.OpenPedia, "Civilopedia"),
     ];
 
     private readonly ClientSettingsService service;

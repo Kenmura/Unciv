@@ -149,4 +149,56 @@ public class PediaModelTests
         Assert.Equal("", Bb(Line()));
         Assert.Equal("[lb]X]", Bb(Line("[x]")));
     }
+
+    [Fact]
+    public void Search_FindsNamesCaseInsensitivelyAcrossCategoriesPrefixFirst()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        var found = PediaModel.Search(ruleset, "  aRcH ");
+        Assert.Contains(found, it => it.Link == "Unit/Archer");
+        Assert.All(found, it => Assert.Contains("arch", it.Name, StringComparison.OrdinalIgnoreCase));
+        var prefixCount = found.TakeWhile(it => it.Name.StartsWith("arch", StringComparison.OrdinalIgnoreCase)).Count();
+        Assert.True(prefixCount > 0);
+        Assert.All(found.Skip(prefixCount), it => Assert.False(it.Name.StartsWith("arch", StringComparison.OrdinalIgnoreCase)));
+        Assert.True(found.Skip(prefixCount).Count() > 0, "Vanilla has names that only contain the text (Longbowman has no 'arch', Archery... )");
+        Assert.Equal(found.Count, found.Select(it => it.Link).Distinct().Count());
+    }
+
+    [Fact]
+    public void Search_OrdersByCategoryThenNameWithinAGroup()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        var found = PediaModel.Search(ruleset, "an");
+        var prefix = found.Where(it => it.Name.StartsWith("an", StringComparison.OrdinalIgnoreCase)).ToList();
+        Assert.Equal(prefix.OrderBy(it => it.Category).ThenBy(it => it.Name, StringComparer.Ordinal).Select(it => it.Link), prefix.Select(it => it.Link));
+        var rest = found.Except(prefix).ToList();
+        Assert.Equal(rest.OrderBy(it => it.Category).ThenBy(it => it.Name, StringComparer.Ordinal).Select(it => it.Link), rest.Select(it => it.Link));
+    }
+
+    [Fact]
+    public void Search_EmptyBlankNullOrUnknownFindsNothing()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        Assert.Empty(PediaModel.Search(ruleset, null));
+        Assert.Empty(PediaModel.Search(ruleset, ""));
+        Assert.Empty(PediaModel.Search(ruleset, "   "));
+        Assert.Empty(PediaModel.Search(ruleset, "zzzqqq-nothing"));
+    }
+
+    [Fact]
+    public void Search_IsCappedAtMaxResults()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        var found = PediaModel.Search(ruleset, "e");
+        Assert.Equal(PediaModel.MaxSearchResults, found.Count);
+        Assert.Equal(50, PediaModel.MaxSearchResults);
+    }
+
+    [Fact]
+    public void Search_DoesNotListHiddenEntries()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        var all = Enum.GetValues<CivilopediaCategories>().SelectMany(it => PediaModel.Entries(ruleset, it)).Select(it => it.Link).ToHashSet();
+        Assert.All(PediaModel.Search(ruleset, "a"), it => Assert.Contains(it.Link, all));
+    }
 }

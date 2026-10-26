@@ -774,6 +774,20 @@ Scenario `overview-espionage`.
 
 *Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line.* (`overview-espionage/politics.png`)
 
+## C055 (ticket not Done or unknown)
+
+Civilopedia button reachable under the unit panel, F1 hotkey, and the entry search box.
+
+Scenario `tooltips`.
+
+![With a unit selected the Civilopedia button sits beside the minimap, clear of the unit panel.](../Unciv.Godot.Harness/golden/tooltips/button.png)
+
+*With a unit selected the Civilopedia button sits beside the minimap, clear of the unit panel.* (`tooltips/button.png`)
+
+![Searching for 'arch': matching entries from every category, best matches first.](../Unciv.Godot.Harness/golden/tooltips/search.png)
+
+*Searching for 'arch': matching entries from every category, best matches first.* (`tooltips/search.png`)
+
 ## Missing screenshots
 
 Done tickets with nothing meaningful to show.

@@ -136,6 +136,7 @@ public partial class UnitPanelView : PanelContainer
         float menuHeight = theme?.Px(MenuHeight) ?? MenuHeight;
         scroll.CustomMinimumSize = new Vector2(width, menuHeight);
         question.CustomMinimumSize = new Vector2(width, 0f);
+        stats.CustomMinimumSize = new Vector2(width, 0f); // C055: an autowrapping label measured at width 0 is as tall as it has characters
         CustomMinimumSize = new Vector2(width, 0f);
         Size = Vector2.Zero; // shrink to the content
         float statusRoom = 36f;

@@ -43,6 +43,20 @@ public sealed class OptionsTests
     }
 
     [Fact]
+    public void PediaHotkeyDefaultsToF1AndIsRebindable()
+    {
+        Assert.Equal("F1", Hotkeys.Defaults[HotkeyAction.OpenPedia]);
+        Assert.Equal(HotkeyAction.OpenPedia, Hotkeys.Resolve(new Dictionary<string, string>(), "f1"));
+        var bound = Hotkeys.Rebind(new Dictionary<string, string>(), HotkeyAction.OpenPedia, "F2", out var swapped);
+        Assert.Null(swapped);
+        Assert.Equal(HotkeyAction.OpenPedia, Hotkeys.Resolve(bound!, "F2"));
+        Assert.Null(Hotkeys.Resolve(bound!, "F1"));
+        var steal = Hotkeys.Rebind(new Dictionary<string, string>(), HotkeyAction.EndTurn, "F1", out var other);
+        Assert.Equal(HotkeyAction.OpenPedia, other);
+        Assert.Equal("Space", Hotkeys.KeyFor(steal!, HotkeyAction.OpenPedia));
+    }
+
+    [Fact]
     public void ResolveUsesDefaultsAndNormalises()
     {
         Assert.Equal(HotkeyAction.EndTurn, Hotkeys.Resolve(NoBindings, "space"));

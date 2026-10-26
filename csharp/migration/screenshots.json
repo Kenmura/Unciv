@@ -762,5 +762,19 @@
         "caption": "After the turn: overlay gone, Turn 1, status line reports 11 civs played"
       }
     ]
+  },
+  "C055": {
+    "scenario": "tooltips",
+    "about": "Civilopedia button reachable under the unit panel, F1 hotkey, and the entry search box.",
+    "shots": [
+      {
+        "golden": "tooltips/button.png",
+        "caption": "With a unit selected the Civilopedia button sits beside the minimap, clear of the unit panel."
+      },
+      {
+        "golden": "tooltips/search.png",
+        "caption": "Searching for 'arch': matching entries from every category, best matches first."
+      }
+    ]
   }
 }

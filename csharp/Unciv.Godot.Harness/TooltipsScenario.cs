@@ -131,6 +131,48 @@ public sealed class TooltipsScenario : Scenario
             new PressKey(Key.Escape),
             new WaitFrames(2),
             new AssertQuery("Escape closes the Civilopedia and nothing was sent to the game", () => !screen.IsPediaVisible && session.Log.Count == logged),
+
+            .. ButtonAndSearchSteps(host, screen, session, ruleset, human, () => logged, Centre, ExpectedPage),
         ];
     }
+
+    /// <summary>C055: the button stays reachable with a unit selected, F1 toggles the pedia, the search box lists matches over every category.</summary>
+    private static ScenarioStep[] ButtonAndSearchSteps(Control host, GameScreen screen, GameSession session, Unciv.Models.Ruleset.Ruleset ruleset, Unciv.Logic.Civilization.Civilization human,
+        Func<int> logged, Func<Button?, Vector2> Centre, Func<CivilopediaCategories, string, string> ExpectedPage) =>
+    [
+            // C055: the button stays reachable with a unit selected, F1 toggles the pedia, the search box lists matches over every category
+            new Act("select the warrior", () => screen.SelectUnitById(human.Units.GetCivUnits().First(it => it.BaseUnit.Name == "Warrior").Id)),
+            new WaitFrames(10),
+            new AssertQuery("the unit panel is up and does not cover the Civilopedia button, which is on screen", () =>
+                screen.Panel.Visible && screen.PediaButton.Visible && !screen.Panel.GetGlobalRect().Intersects(screen.PediaButton.GetGlobalRect())
+                && new Rect2(Vector2.Zero, host.GetViewport().GetVisibleRect().Size).Encloses(screen.PediaButton.GetGlobalRect())),
+            new Capture("button", "With a unit selected the Civilopedia button sits beside the minimap, clear of the unit panel"),
+            new Click(() => Centre(screen.PediaButton)),
+            new WaitFrames(2),
+            new AssertQuery("clicking the button (not covered by the panel) opened the pedia", () => screen.IsPediaVisible),
+            new PressKey(Key.F1),
+            new WaitFrames(2),
+            new AssertQuery("F1 closes the open Civilopedia", () => !screen.IsPediaVisible),
+            new PressKey(Key.F1),
+            new WaitFrames(2),
+            new AssertQuery("F1 opens it", () => screen.IsPediaVisible),
+            new Act("type 'arch' into the search box", () => screen.Pedia.SearchFor("arch")),
+            new WaitFrames(3),
+            new AssertQuery("the results are the model's search: Archer first-ish, every name contains the text, over several categories", () =>
+                screen.Pedia.SearchResults.Select(it => it.Link).SequenceEqual(PediaModel.Search(ruleset, "arch").Select(it => it.Link))
+                && screen.Pedia.SearchResults.Any(it => it.Link == "Unit/Archer") && screen.Pedia.SearchResults.Select(it => it.Category).Distinct().Count() > 1
+                && screen.Pedia.SearchResultButton("Archer") != null),
+            new Capture("search", "Searching the Civilopedia for 'arch': matching entries from every category, best matches first"),
+            new Click(() => Centre(screen.Pedia.SearchResultButton("Archer"))),
+            new WaitFrames(3),
+            new AssertQuery("choosing a result opens its page and clears the search", () =>
+                screen.Pedia.Current?.Link == "Unit/Archer" && screen.Pedia.SearchBox.Text.Length == 0 && screen.Pedia.SearchResults.Count == 0 && screen.Pedia.PageBbcode == ExpectedPage(CivilopediaCategories.Unit, "Archer")),
+            new Act("search for nothing", () => screen.Pedia.SearchFor("zzzqq")),
+            new WaitFrames(2),
+            new AssertQuery("no match lists nothing", () => screen.Pedia.SearchResults.Count == 0),
+            new Act("clear the search", () => screen.Pedia.SearchFor("")),
+            new PressKey(Key.Escape),
+            new WaitFrames(2),
+            new AssertQuery("Escape closes the pedia; still nothing was sent to the game", () => !screen.IsPediaVisible && session.Log.Count == logged()),
+    ];
 }

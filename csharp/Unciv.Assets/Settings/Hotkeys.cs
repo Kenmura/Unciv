@@ -15,6 +15,9 @@ public enum HotkeyAction
 
     /// <summary>C046: opens the developer console (Kotlin <c>KeyboardBinding.DeveloperConsole</c>, the backtick).</summary>
     OpenConsole,
+
+    /// <summary>C055: opens (or closes) the Civilopedia (Kotlin <c>KeyboardBinding.Civilopedia</c>, F1).</summary>
+    OpenPedia,
 }
 
 /// <summary>
@@ -39,6 +42,7 @@ public static class Hotkeys
         [HotkeyAction.PanLeft] = "A",
         [HotkeyAction.PanRight] = "D",
         [HotkeyAction.OpenConsole] = "Quoteleft",
+        [HotkeyAction.OpenPedia] = "F1",
     };
 
     /// <summary>Keys that can never be bound (they close screens or are the always-on arrow pan keys).</summary>
