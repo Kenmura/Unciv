@@ -283,7 +283,7 @@ xychart-beta
 | C050 | Needs-Review [Claude] | C023 | 0 | Overview: global politics tab and espionage scenario coverage |
 | C051 | In-Progress [Claude] | C038 | 0 | Espionage overview screen and spy coup/action buttons |
 | C052 | In-Progress [Claude] | C038 | 0 | Scenario coverage for religion (found, enhance, reform), spy and vote pickers, and open pickers from notifications |
-| C055 | Needs-Review [Claude] | C027 | 0 | Civilopedia hotkey and search, button visible under the unit panel |
+| C055 | In-Review [Claude] | C027 | 0 | Civilopedia hotkey and search, button visible under the unit panel |
 | C056 | In-Progress [Claude] | C027 | 0 | Wire TooltipModel.StatBreakdown into city and tile screens |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
