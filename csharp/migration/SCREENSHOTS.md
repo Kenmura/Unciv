@@ -822,7 +822,7 @@ Scenario `decisions-religion`.
 
 *The reform picker with a free follower belief to choose: Choose beliefs is disabled and says to choose first.* (`decisions-reform/reform.png`)
 
-## C055 (ticket not Done or unknown)
+## C055 Civilopedia hotkey and search, button visible under the unit panel
 
 Civilopedia button reachable under the unit panel, F1 hotkey, and the entry search box.
 
@@ -836,6 +836,16 @@ Scenario `tooltips`.
 
 *Searching for 'arch': matching entries from every category, best matches first.* (`tooltips/search.png`)
 
+## C056 Wire TooltipModel.StatBreakdown into city and tile screens
+
+City stat and map tile tooltips show the shared per-source breakdown from the engine.
+
+Scenario `tooltips`.
+
+![Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources.](../Unciv.Godot.Harness/golden/tooltips/tile.png)
+
+*Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources.* (`tooltips/tile.png`)
+
 ## Missing screenshots
 
 Done tickets with nothing meaningful to show.
@@ -846,3 +856,4 @@ Done tickets with nothing meaningful to show.
 - **C037 IGameSession: client reads and writes only through a session interface; LocalHost implements it**: IGameSession is an engine/client interface with no UI of its own; it is exercised by every scenario above.
 - **C042 Client packaging: bundle rulesets and translations, user mods folder, export presets, third-party notices**: Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015.
 - **C049 Translate PolicyScreen error and status messages through Tr()**: Message strings only; no visible change in English, the policy scenario goldens are unchanged.
+- **C058 (ticket not Done or unknown)**: Harness-only change: scenarios no longer depend on real frame time; no new UI and no golden changed.

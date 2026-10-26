@@ -824,5 +824,18 @@
         "caption": "Searching for 'arch': matching entries from every category, best matches first."
       }
     ]
+  },
+  "C056": {
+    "scenario": "tooltips",
+    "about": "City stat and map tile tooltips show the shared per-source breakdown from the engine.",
+    "shots": [
+      {
+        "golden": "tooltips/tile.png",
+        "caption": "Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources."
+      }
+    ]
+  },
+  "C058": {
+    "none": "Harness-only change: scenarios no longer depend on real frame time; no new UI and no golden changed."
   }
 }
