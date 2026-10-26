@@ -185,7 +185,7 @@ flowchart TD
   class T173 done
   class T174 done
   class T175 done
-  class T176 prog
+  class T176 review
   class T177 waiting
   class T178 waiting
   class T179 waiting
@@ -244,7 +244,7 @@ xychart-beta
 | T226 | **On deck** (after T202) | T202 | 15 | Multiplayer game-over and forced-end rules: One More Turn authority, defeated humans, default resolution of blocking decisions on ForceEndTurn |
 | T203 | **On deck** (after T202) | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | T202 | In-Progress [Claude] | T200, T187 | 17 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
-| T176 | In-Progress [Claude] | T172, T164, T140, T194, T215, T208 | 14 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
+| T176 | Needs-Review [Claude] | T172, T164, T140, T194, T215, T208 | 14 | Game store: snapshot + append-only command log, hash checkpoints, crash recovery, resume (delta ring or snapshot) |
 | T177 | Available (waiting on T202, T226) | T172, T164, T184, T187, T200, T202, T226 | 14 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T224 | Needs-Review [Claude] | T174, T175, T220 | 14 | Client mirror correctness: per-recipient snapshot-diff deltas, popup alerts and pending decisions in ClientSnapshot |
 | T230 | In-Progress [Claude] | T174, T194, T200 | 14 | Host-secret salt for state-based randomness in hosted multiplayer (combat and other rolls not predictable by clients) |
