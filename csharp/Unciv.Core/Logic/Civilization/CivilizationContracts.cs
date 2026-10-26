@@ -79,7 +79,7 @@ public interface IGameInfoState : IConstructionGameInfo
     /// <summary><c>GUI.getSettings().alternateUnitCycleOrder</c> (client setting).</summary>
     bool AlternateUnitCycleOrder { get; }
     /// <summary><c>UncivGame.Current.settings.addCompletedTutorialTask(task)</c> (client setting; T066: Tile.doWorkerTurn).</summary>
-    void AddCompletedTutorialTask(string task);
+    void AddCompletedTutorialTask(string civId, string task);
     /// <summary><c>gameInfo.unitNamesTaken</c> (T052: OneTimeUnitGetsName)</summary>
     List<string> UnitNamesTaken { get; }
     // T070 (TurnManager)

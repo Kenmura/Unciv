@@ -292,7 +292,7 @@ public class UniqueTriggerTests
     public void MarkTutorialCompleteRecordsTheTask()
     {
         Assert.True(Trigger("Mark tutorial [Some_Task] complete"));
-        Assert.Contains("Some_Task", game.GameInfo.ClientState.TutorialTasksCompleted);
+        Assert.Contains("Some_Task", game.GameInfo.ClientState.TutorialTasksCompleted(civ.CivId));
     }
 
     private Event AddEvent(Event.PresentationType presentation, params string[] choiceUniques)

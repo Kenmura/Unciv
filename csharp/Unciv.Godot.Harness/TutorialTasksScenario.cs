@@ -89,7 +89,7 @@ public sealed class TutorialTasksScenario : Scenario
             new AssertQuery("the founded city completed Found city: Enter city screen follows", () => refusals.Count == 0 && human.Cities.Count == 1 && card.EventName == "Tutorial Task: [Enter city screen]"),
             new Act("open the city screen", () => screen.OpenCityScreen(localHost.Snapshot.Cities.First(it => it.Own != null))),
             new WaitFrames(6),
-            new AssertQuery("entering the city completed that task and Found city unlocked Pick technology", () => game.ClientState.TutorialTasksCompleted.Contains("Enter city screen") && card.EventName == "Tutorial Task: [Pick technology]"),
+            new AssertQuery("entering the city completed that task and Found city unlocked Pick technology", () => game.ClientState.TutorialTasksCompleted(human.CivId).Contains("Enter city screen") && card.EventName == "Tutorial Task: [Pick technology]"),
             new Act("close the city screen", () => screen.City.Close()),
             new WaitFrames(3),
             new Capture("pick-technology", "After founding the city and opening it: the card now asks to pick a technology"),

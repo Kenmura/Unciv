@@ -20,8 +20,8 @@ namespace Unciv.Core.Tests.Queries.Tutorial;
 [Collection("RulesetCache")]
 public class TutorialTaskTests
 {
-    private readonly TestGame testGame = new();
-    private readonly Civilization player;
+    internal readonly TestGame testGame = new();
+    internal readonly Civilization player;
     private readonly Civilization other;
     private readonly QueryRegistry registry = new(UncivJson.DefaultOptions);
 
@@ -39,7 +39,7 @@ public class TutorialTaskTests
     private readonly CityObject playerCity;
     private readonly CityObject otherCity;
 
-    private Event AddTask(string name, string choiceText = "", params string[] uniques)
+    internal Event AddTask(string name, string choiceText = "", params string[] uniques)
     {
         var task = new Event { Name = name, Presentation = Event.PresentationType.Floating, Text = "" };
         foreach (var unique in uniques) task.Uniques.Add(unique);
@@ -81,7 +81,7 @@ public class TutorialTaskTests
         var first = AddTask("A", "", TutorialsOn, "Unavailable <if tutorial [A] is completed>");
         AddTask("B", "", TutorialsOn);
         Assert.Equal("A", Ask().Event);
-        testGame.GameInfo.ClientState.AddCompletedTutorialTask("A");
+        testGame.GameInfo.ClientState.AddCompletedTutorialTask(player.CivName, "A");
         Assert.Equal("B", Ask().Event);
         Assert.Equal(Event.PresentationType.Floating, first.Presentation);
     }
@@ -180,7 +180,7 @@ public class TutorialTaskTests
         var second = testGame.AddCity(player, testGame.GetTile(0, 2));
         player.Cache.CitiesConnectedToCapitalToMediums[second] = [];
         Assert.Equal("", Ask().Event);
-        Assert.DoesNotContain(TutorialTasks.TradeRouteTask, testGame.GameInfo.ClientState.TutorialTasksCompleted); // a query does not write
+        Assert.DoesNotContain(TutorialTasks.TradeRouteTask, testGame.GameInfo.ClientState.TutorialTasksCompleted(player.CivName)); // a query does not write
     }
 
     [Fact]
@@ -201,7 +201,7 @@ public class TutorialTaskTests
         Ask();
         Ask(show: false);
         Assert.Equal(before, Hash(testGame.GameInfo));
-        Assert.Empty(testGame.GameInfo.ClientState.TutorialTasksCompleted);
+        Assert.Empty(testGame.GameInfo.ClientState.TutorialTasksCompleted(player.CivName));
     }
 
     [Fact]
@@ -252,7 +252,8 @@ public class TutorialTaskTests
         Assert.True(cmd.Validate(testGame.GameInfo, player.CivName).IsValid);
         var before = Hash(testGame.GameInfo);
         cmd.Apply(testGame.GameInfo, player.CivName);
-        Assert.Equal(["Known"], testGame.GameInfo.ClientState.TutorialTasksCompleted);
+        Assert.Equal(["Known"], testGame.GameInfo.ClientState.TutorialTasksCompleted(player.CivName));
+        Assert.Empty(testGame.GameInfo.ClientState.TutorialTasksCompleted(other.CivName)); // C060: per civ
         Assert.Equal(before, Hash(testGame.GameInfo)); // client state is not part of the game hash
         Assert.Equal(CommandErrors.InvalidTarget, new CompleteTutorialTask { Task = "Nope" }.Validate(testGame.GameInfo, player.CivName).Code);
         Assert.Equal(CommandErrors.InvalidTarget, new CompleteTutorialTask { Task = "" }.Validate(testGame.GameInfo, player.CivName).Code);
@@ -294,9 +295,9 @@ public class TutorialTaskTests
         var cmd = new ChooseTutorialTaskChoice { Event = "A", Choice = 0 };
         Assert.True(cmd.Validate(testGame.GameInfo, player.CivName).IsValid);
         cmd.Apply(testGame.GameInfo, player.CivName);
-        Assert.Contains("A", testGame.GameInfo.ClientState.TutorialTasksCompleted);
+        Assert.Contains("A", testGame.GameInfo.ClientState.TutorialTasksCompleted(player.CivName));
         Assert.Equal("", Ask().Event);
-        Assert.Equal(CommandErrors.StaleReference, cmd.Validate(testGame.GameInfo, player.CivName).Code);
+        Assert.True(cmd.Validate(testGame.GameInfo, player.CivName).IsValid); // C060: validity does not read the completed set, so a repeat is accepted (idempotent)
     }
 
     [Fact]
@@ -305,8 +306,8 @@ public class TutorialTaskTests
         AddTask("A", "Got it", TutorialsOn);
         AddTask("B", "Got it", TutorialsOn);
         var game = testGame.GameInfo;
-        Assert.Equal(CommandErrors.StaleReference, new ChooseTutorialTaskChoice { Event = "B", Choice = 0 }.Validate(game, player.CivName).Code);
-        Assert.Equal(CommandErrors.StaleReference, new ChooseTutorialTaskChoice { Event = "", Choice = 0 }.Validate(game, player.CivName).Code);
+        Assert.True(new ChooseTutorialTaskChoice { Event = "B", Choice = 0 }.Validate(game, player.CivName).IsValid); // any Floating Event's offered choice (C060)
+        Assert.Equal(CommandErrors.InvalidTarget, new ChooseTutorialTaskChoice { Event = "", Choice = 0 }.Validate(game, player.CivName).Code);
         Assert.Equal(CommandErrors.InvalidTarget, new ChooseTutorialTaskChoice { Event = "A", Choice = 1 }.Validate(game, player.CivName).Code);
         Assert.Equal(CommandErrors.InvalidTarget, new ChooseTutorialTaskChoice { Event = "A", Choice = -1 }.Validate(game, player.CivName).Code);
         Assert.False(new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(game, "server").IsValid);
@@ -322,7 +323,7 @@ public class TutorialTaskTests
     [Fact]
     public void ChoosingWithNoCurrentTaskIsRefused()
     {
-        Assert.Equal(CommandErrors.StaleReference, new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).Code);
+        Assert.Equal(CommandErrors.InvalidTarget, new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).Code);
     }
 
     [Fact]
@@ -330,6 +331,70 @@ public class TutorialTaskTests
     {
         var task = AddTask("A", "Got it", TutorialsOn);
         task.Choices[0].Uniques.Add("Only available <when number of [Cities] is more than [5]>");
-        Assert.Equal(CommandErrors.StaleReference, new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).Code);
+        Assert.Equal(CommandErrors.InvalidTarget, new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).Code);
+    }
+
+    // ---- C060: per viewer, replay safe
+
+    [Fact]
+    public void CompletedTasksArePerViewer()
+    {
+        AddTask("A", "", TutorialsOn, "Unavailable <if tutorial [A] is completed>");
+        testGame.GameInfo.ClientState.AddCompletedTutorialTask(player.CivName, "A");
+        Assert.Equal("", Ask().Event);
+        Assert.Equal("A", Ask(viewer: other).Event); // the next hotseat viewer does not inherit it
+        new CompleteTutorialTask { Task = "A" }.Apply(testGame.GameInfo, other.CivName);
+        Assert.Equal("", Ask(viewer: other).Event);
+    }
+
+    [Fact]
+    public void ChoosingDoesNotReadTheCompletedSet()
+    {
+        AddTask("A", "Got it", TutorialsOn, "Unavailable <if tutorial [A] is completed>");
+        var cmd = new ChooseTutorialTaskChoice { Event = "A", Choice = 0 };
+        Assert.True(cmd.Validate(testGame.GameInfo, player.CivName).IsValid);
+        testGame.GameInfo.ClientState.AddCompletedTutorialTask(player.CivName, "A"); // the host knows more than a log-tail replayer
+        Assert.True(cmd.Validate(testGame.GameInfo, player.CivName).IsValid);
+        var fresh = new TutorialTaskTests();
+        fresh.AddTask("A", "Got it", TutorialsOn, "Unavailable <if tutorial [A] is completed>");
+        Assert.True(cmd.Validate(fresh.testGame.GameInfo, fresh.player.CivName).IsValid); // a peer with an empty set agrees
+    }
+
+    [Fact]
+    public void OnlyFloatingEventsCanBeChosen()
+    {
+        var alert = AddTask("Alert", "Got it", TutorialsOn);
+        alert.Presentation = Event.PresentationType.Alert;
+        Assert.Equal(CommandErrors.InvalidTarget, new ChooseTutorialTaskChoice { Event = "Alert", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).Code);
+    }
+
+    [Fact]
+    public void QueryIndexesAddressTheEventsOwnChoiceList()
+    {
+        var task = AddTask("A", "", TutorialsOn);
+        var hidden = new EventChoice { Name = "h", Text = "hidden" };
+        hidden.Uniques.Add("Only available <when number of [Cities] is more than [5]>");
+        var shown = new EventChoice { Name = "s", Text = "shown" };
+        shown.Uniques.Add("Mark tutorial [A] complete");
+        task.Choices.Add(hidden);
+        task.Choices.Add(shown);
+        var result = Ask();
+        Assert.Equal(1, Assert.Single(result.Choices).Index);
+        Assert.False(new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).IsValid);
+        var choose = new ChooseTutorialTaskChoice { Event = "A", Choice = 1 };
+        Assert.True(choose.Validate(testGame.GameInfo, player.CivName).IsValid);
+        choose.Apply(testGame.GameInfo, player.CivName);
+        Assert.Contains("A", testGame.GameInfo.ClientState.TutorialTasksCompleted(player.CivName));
+    }
+
+    [Fact]
+    public void OnlyTheFirstAvailableChoiceCanBeChosenWhenTheEventSaysSo()
+    {
+        var task = AddTask("A", "One", TutorialsOn, "Only the first available choice is offered");
+        var second = new EventChoice { Name = "c2", Text = "Two" };
+        second.Uniques.Add("Mark tutorial [A] complete");
+        task.Choices.Add(second);
+        Assert.True(new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).IsValid);
+        Assert.False(new ChooseTutorialTaskChoice { Event = "A", Choice = 1 }.Validate(testGame.GameInfo, player.CivName).IsValid);
     }
 }

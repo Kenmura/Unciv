@@ -39,8 +39,15 @@ public sealed class GameClientState
     /// <summary><c>worldScreen?.autoPlay</c>: null when there is no client (headless simulation).</summary>
     public IAutoPlay? AutoPlay { get; set; }
 
-    /// <summary><c>settings.tutorialTasksCompleted</c></summary>
-    public LinkedHashSet<string> TutorialTasksCompleted { get; } = [];
+    private readonly Dictionary<string, LinkedHashSet<string>> tutorialTasksCompleted = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// <c>settings.tutorialTasksCompleted</c>, C060: per viewer (civ id), so a hotseat player does not inherit the previous player's completed tasks. Client state:
+    /// not saved, not hashed, and no command's outcome depends on it (see <c>ChooseTutorialTaskChoice</c>), so a peer that replays only a log tail agrees with the host.
+    /// An empty set when the civ has completed nothing.
+    /// </summary>
+    public IReadOnlyCollection<string> TutorialTasksCompleted(string civId) =>
+        tutorialTasksCompleted.TryGetValue(civId, out var set) ? set : [];
 
     /// <summary><c>settings.getCollatorFromLocale()</c>: the culture-sensitive name ordering. Defaults to the invariant culture.</summary>
     public IComparer<string> Collator { get; set; } = StringComparer.InvariantCulture;
@@ -52,8 +59,12 @@ public sealed class GameClientState
     /// </summary>
     public IClientAudio? Audio { get; set; } = SoundCueAudio.Instance;
 
-    /// <summary><c>settings.addCompletedTutorialTask(task)</c> without the settings file save and the UI flag.</summary>
-    public bool AddCompletedTutorialTask(string tutorialTask) => TutorialTasksCompleted.Add(tutorialTask);
+    /// <summary><c>settings.addCompletedTutorialTask(task)</c> for <paramref name="civId"/>, without the settings file save and the UI flag.</summary>
+    public bool AddCompletedTutorialTask(string civId, string tutorialTask)
+    {
+        if (!tutorialTasksCompleted.TryGetValue(civId, out var set)) tutorialTasksCompleted[civId] = set = [];
+        return set.Add(tutorialTask);
+    }
 }
 
 /// <summary>What <c>nextTurn</c> calls on <c>UncivGame.Current.worldScreen.autoPlay</c> (client state, set by the client).</summary>

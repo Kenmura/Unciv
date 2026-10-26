@@ -1071,7 +1071,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         ImprovementQueue.RemoveAt(0);
 
         if (worker.Civ.IsActive())
-            worker.Civ.GameInfo.AddCompletedTutorialTask("Construct an improvement");
+            worker.Civ.GameInfo.AddCompletedTutorialTask(worker.Civ.CivId, "Construct an improvement");
 
         SetImprovement(queueEntry.Improvement, worker.Civ, worker);
         return true;

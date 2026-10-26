@@ -837,7 +837,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
     IComparer<string> IGameInfoState.Collator => ClientState.Collator;
     bool IGameInfoState.IsFullAutoPlayAI => ClientState.IsFullAutoPlayAI;
     bool IGameInfoState.AlternateUnitCycleOrder => ClientState.AlternateUnitCycleOrder;
-    void IGameInfoState.AddCompletedTutorialTask(string task) => ClientState.AddCompletedTutorialTask(task);
+    void IGameInfoState.AddCompletedTutorialTask(string civId, string task) => ClientState.AddCompletedTutorialTask(civId, task);
 
     #endregion
 }

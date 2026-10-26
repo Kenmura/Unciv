@@ -5,7 +5,7 @@ namespace Unciv.Queries.Tutorial;
 // One paragraph of the card (a FormattedLine of the Event: its text, centered flag and optional ruleset image)
 public sealed record TutorialTaskLine(string Text, bool Centered, string ExtraImage, float ImageSize);
 
-// A button of the card (Event choice); Index addresses it in ChooseTutorialTaskChoice
+// A button of the card (Event choice); Index is its position in the Event's own choice list and addresses it in ChooseTutorialTaskChoice (C060)
 public sealed record TutorialTaskChoice(int Index, string Text);
 
 // Event: the ruleset Event's name; Lines: its text then its civilopedia lines; Choices: the choices that match now
@@ -28,6 +28,6 @@ public sealed record TutorialTaskQuery(bool ShowTutorials = true) : IQuery<Tutor
         var lines = new List<TutorialTaskLine>();
         if (task.Text.Length != 0) lines.Add(new TutorialTaskLine(task.Text, false, "", 0f));
         lines.AddRange(task.CivilopediaText.Select(it => new TutorialTaskLine(it.TextToDisplay, it.Centered, it.ExtraImage, float.IsNaN(it.ImageSize) ? 0f : it.ImageSize)));
-        return new TutorialTaskResult(task.Name, lines, choices.Select((it, i) => new TutorialTaskChoice(i, it.Text)).ToList());
+        return new TutorialTaskResult(task.Name, lines, choices.Select(it => new TutorialTaskChoice(task.Choices.IndexOf(it), it.Text)).ToList());
     }
 }

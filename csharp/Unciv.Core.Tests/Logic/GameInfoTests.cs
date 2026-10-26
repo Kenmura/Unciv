@@ -589,8 +589,9 @@ public sealed class GameInfoTests : IDisposable
         IGameInfoState state = game;
         Assert.False(state.IsFullAutoPlayAI);
         Assert.False(state.AlternateUnitCycleOrder);
-        state.AddCompletedTutorialTask("t");
-        Assert.Contains("t", game.ClientState.TutorialTasksCompleted);
+        state.AddCompletedTutorialTask("civ", "t");
+        Assert.Contains("t", game.ClientState.TutorialTasksCompleted("civ"));
+        Assert.Empty(game.ClientState.TutorialTasksCompleted("other"));
         Assert.Equal(6, ((IGameContextGameInfo)new GameInfo { Turns = 6 }).Turns);
     }
 

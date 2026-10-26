@@ -4,7 +4,7 @@ namespace Unciv.Commands.Turn;
 
 /// <summary>
 /// C054: the client reports that the player did what a tutorial task asked (Kotlin <c>settings.addCompletedTutorialTask</c> from the UI). Only changes
-/// <c>GameClientState.TutorialTasksCompleted</c>, which is not part of the saved game or the state hash; the command exists so every peer holding the game
+/// <c>GameClientState.TutorialTasksCompleted</c> of the actor (C060: per civ), which is not part of the saved game or the state hash; the command exists so every peer holding the game
 /// records it. Only task names some ruleset Event refers to are accepted.
 /// </summary>
 [CommandType("complete-tutorial-task")]
@@ -22,7 +22,7 @@ public sealed class CompleteTutorialTask : GameCommand
 
     protected override IReadOnlyList<GameEvent> ApplyCommand(CommandContext context)
     {
-        context.Game.ClientState.AddCompletedTutorialTask(Task);
+        context.Game.ClientState.AddCompletedTutorialTask(context.ActorId, Task);
         return [];
     }
 }

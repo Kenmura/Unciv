@@ -781,7 +781,7 @@ public static class Battle
         else AutomateCityConquer(attackerCiv, city);
 
         if (attackerCiv.IsActive())
-            clientState.AddCompletedTutorialTask("Conquer a city");
+            clientState.AddCompletedTutorialTask(attackerCiv.CivId, "Conquer a city");
 
         foreach (var unique in attackerCiv.GetTriggeredUniques(UniqueType.TriggerUponConqueringCity, gameContext)
                      .Concat(attacker.Unit.GetTriggeredUniques(UniqueType.TriggerUponConqueringCity, gameContext))) // lazy, like the Kotlin sequences

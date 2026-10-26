@@ -111,7 +111,7 @@ public static class UniqueTriggerActivation
             case UniqueType.MarkTutorialComplete:
                 return () =>
                 {
-                    civInfo.GameInfo.ClientState.AddCompletedTutorialTask(unique.Params[0]);
+                    civInfo.GameInfo.ClientState.AddCompletedTutorialTask(civInfo.CivId, unique.Params[0]);
                     return true;
                 };
 
