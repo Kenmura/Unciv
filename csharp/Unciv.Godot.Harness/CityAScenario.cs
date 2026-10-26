@@ -153,6 +153,11 @@ public sealed class CityAScenario : Scenario
                 screen.City.IsForeign && screen.City.Panel == null && screen.City.TitleText == "Thebes"
                 && screen.City.SideTexts.Contains("Wonders: Pyramids") && screen.City.SideTexts.Contains("Defence: 25/40") && screen.City.Cells.Count == 0 && !screen.City.HasFocusChoice),
             new AssertQuery("no city query was asked about it", () => recording.Queries.Count == 0),
+            new AssertQuery("a foreign city cannot be renamed: no Rename button, and the popup does not open (C048)", () =>
+            {
+                screen.City.OpenRename();
+                return !screen.City.RenameButton.Visible && !screen.City.RenamePopup.Visible;
+            }),
             new Capture("foreign", "A city of another civ: only what a stranger can see"),
             new Press("Close city"),
             new AssertQuery("the close button closes the screen and the hook", () => screen.OpenCity == null && !screen.IsCityPanelVisible),
