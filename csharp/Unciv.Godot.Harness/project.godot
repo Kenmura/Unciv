@@ -16,6 +16,11 @@ window/size/viewport_height=480
 
 project/assembly_name="Unciv.Godot.Harness"
 
+[gui]
+
+; C058: the engine's own control tooltips appear after a real-time delay; a scenario must not depend on frame speed, so they never do
+timers/tooltip_delay_sec=1000000.0
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

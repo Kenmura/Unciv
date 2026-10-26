@@ -32,10 +32,27 @@ case "$mode" in
     *) echo "unknown option $mode" >&2; exit 64 ;;
 esac
 
+# C058: own X server per run, display number chosen by Xvfb itself (-displayfd). `xvfb-run -a` picks a free number then starts the server, so two
+# runs starting together (several agents share this machine) could get the same display and kill each other's server mid-scenario.
 run() {
-    timeout "${HARNESS_TIMEOUT:-120}" xvfb-run -a -s "-screen 0 1280x720x24" \
+    local display_file xvfb_pid display="" status
+    display_file="$(mktemp)"
+    Xvfb -displayfd 3 -nolisten tcp -screen 0 1280x720x24 3>"$display_file" 2>/dev/null &
+    xvfb_pid=$!
+    for _ in $(seq 100); do
+        display="$(head -n1 "$display_file")"
+        [[ -n "$display" ]] && break
+        sleep 0.1
+    done
+    if [[ -z "$display" ]]; then kill "$xvfb_pid" 2>/dev/null || true; rm -f "$display_file"; echo "Xvfb did not start" >&2; return 1; fi
+    status=0
+    DISPLAY=":$display" timeout "${HARNESS_TIMEOUT:-120}" \
         "$godot" --path "$project" --rendering-driver opengl3 --resolution 640x480 res://ScenarioRunner.tscn \
-        -- --scenario="$name" --out="$out" --golden-dir="$golden" "${extra[@]}"
+        -- --scenario="$name" --out="$out" --golden-dir="$golden" "${extra[@]}" || status=$?
+    kill "$xvfb_pid" 2>/dev/null || true
+    wait "$xvfb_pid" 2>/dev/null || true
+    rm -f "$display_file"
+    return "$status"
 }
 
 if [[ "$mode" == "--expect-golden-failure" ]]; then

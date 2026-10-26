@@ -147,7 +147,9 @@ public sealed class TerrainBlendScenario : Scenario
             new AssertQuery("the chunk count equals the chunk plan",
                 () => view.ChunkCount == TerrainChunks.Group([.. big.Select(it => MapLayout.TileTop(it.X, it.Y, 0f)).Select(it => (it.X, it.Z))]).Count),
             new AssertQuery("the triangle count stays inside the budget", () => view.TriangleCount <= bigTiles * TrianglesPerTileBudget + view.VegetationCount * 3),
-            // Best of three batches: a load spike on a shared machine slows one batch, a real regression slows all of them.
+            // Best of five batches (C058): a load spike on a shared machine slows one batch, a real regression slows all of them.
+            .. MeasureBatch(),
+            .. MeasureBatch(),
             .. MeasureBatch(),
             .. MeasureBatch(),
             .. MeasureBatch(),

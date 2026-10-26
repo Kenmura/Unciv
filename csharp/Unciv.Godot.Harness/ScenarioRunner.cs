@@ -30,7 +30,25 @@ public partial class ScenarioRunner : Control
             else if (arg == "--update-golden") updateGolden = true;
         }
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        GetTree().NodeAdded += FreezeRealTime;
         _ = RunAsync();
+    }
+
+    /// <summary>
+    /// C058: a scenario's result must not depend on how fast the machine renders frames. Every node whose behaviour is driven by the real frame
+    /// time is switched to explicit stepping as soon as it enters the tree (so no frame ever runs with the real-time default): the hover delay
+    /// of <see cref="Unciv.GodotClient.Ui.TooltipHost"/> becomes unreachable (scenarios advance it by hand), the map camera stops panning from
+    /// held keys / the window edge. (The engine's own native tooltip delay is set in project.godot; <c>HarnessDeterminismTests</c> guards both.)
+    /// </summary>
+    public const double UnreachableDelay = 1e9;
+
+    private static void FreezeRealTime(Node node)
+    {
+        switch (node)
+        {
+            case Unciv.GodotClient.Ui.TooltipHost host: host.Delay = UnreachableDelay; break;
+            case Unciv.GodotClient.Map.MapView map: map.RealTimePanning = false; break;
+        }
     }
 
     private async Task RunAsync()
@@ -173,6 +191,7 @@ public partial class ScenarioRunner : Control
             last = now;
             FramesWaited++;
         }
+        GD.Print($"[scenario] waited {FramesWaited} frame(s), longest frame {LongestFrameMs:F0} ms: {wait.What}");
     }
 
     /// <summary>

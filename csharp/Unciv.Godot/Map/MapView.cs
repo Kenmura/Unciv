@@ -389,6 +389,9 @@ public partial class MapView : Node3D
     /// <summary>C028: pan when the mouse rests at the window edge.</summary>
     public bool EdgePan { get; set; }
 
+    /// <summary>C058: whether <see cref="_Process"/> moves the camera from held keys and the mouse at the window edge, scaled by the real frame time. On in the game; the scenario harness turns it off (it moves the camera with explicit <see cref="TickEdgePan"/>/<see cref="PanBy"/> calls instead).</summary>
+    public bool RealTimePanning { get; set; } = true;
+
     private bool showResources = true;
 
     /// <summary>C028: whether resource props are drawn (the settings' resource icon toggle).</summary>
@@ -418,6 +421,7 @@ public partial class MapView : Node3D
     public override void _Process(double delta)
     {
         if (Camera != null && Camera.IsInsideTree() && Camera.GetViewport().GetVisibleRect().Size != lastViewportSize) UpdateCulling();
+        if (!RealTimePanning) return;
         var direction = Vector3.Zero;
         // Typing into a text field must not pan the map behind it.
         bool typing = GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit;

@@ -54,6 +54,8 @@ A scenario (`Scenario` subclass registered in `ScenarioCatalog`, name listed in 
 `golden/<scenario>/<step>.png`). All state changes must go through `GameSession.Submit`; at the end the state hash must equal the hash of a
 headless replay of the recorded command log (`ScenarioReplay`, plain C#, tested in `Unciv.Core.Tests/Harness`). `--expect-golden-failure`
 proves a wrong golden fails. `review-sheet.sh` runs all scenarios and writes `out/review/contact-sheet.png` and `out/review/index.md`
+
+**Determinism under load (C058).** A scenario must not depend on how fast frames render. `ScenarioRunner` freezes every real-time node as it enters the tree (`TooltipHost.Delay` unreachable, `MapView.RealTimePanning` off; scenarios advance tooltips and pan with explicit calls), the harness `project.godot` sets the native `gui/timers/tooltip_delay_sec` to 1e6, `CombatPresenter` is stepped by hand, and each run gets its own Xvfb display (`-displayfd`, no `xvfb-run -a` race). Only two wall-clock checks remain, both with large headroom: next-turn's longest-frame bound (750 ms, about 100 ms measured under heavy load) and terrain-blend's best-of-five frame-time budget. `Unciv.Core.Tests/Harness/HarnessDeterminismTests` fails on any new clock/timer/tween use or unfrozen real-time `_Process`.
 (captions plus the owner checklist). The engine-only parts (`ScenarioGame`, `ScenarioReplay`, `ScenarioResult`, `ContactSheetLayout`,
 `ReviewIndex`) live in `Unciv.Harness` and run in the Standard checks.
 

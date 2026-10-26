@@ -1,0 +1,88 @@
+using System.Text.RegularExpressions;
+
+namespace Unciv.Tests.Harness;
+
+// C058: a scenario's outcome must not depend on wall-clock time (a loaded machine renders frames slowly: hover delays elapse, animations
+// advance, frame budgets blow). Source guard over the harness and the client: every real-time source is either frozen by the runner or listed here.
+public sealed partial class HarnessDeterminismTests
+{
+    private static readonly string Root = FindRoot();
+
+    private static string FindRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "Unciv.sln"))) dir = dir.Parent;
+        return dir?.FullName ?? throw new InvalidOperationException("Unciv.sln not found");
+    }
+
+    private static IEnumerable<(string Name, string Text)> Sources(string project) =>
+        Directory.GetFiles(Path.Combine(Root, project), "*.cs", SearchOption.AllDirectories)
+            .Where(it => !it.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) && !it.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Select(it => (Path.GetFileName(it), File.ReadAllText(it)));
+
+    // A scenario file may read the clock only where the ticket that owns the measurement says so (frame-time reporting, never a golden or an unbudgeted assertion).
+    private static readonly Dictionary<string, string> AllowedClockUsers = new(StringComparer.Ordinal)
+    {
+        ["ScenarioRunner.cs"] = "reports the wall time between frames of a WaitUntil (C040); asserted only by next-turn with a generous budget",
+        ["TerrainBlendScenario.cs"] = "frame-time budget of the Standard-size map (C040 follow-up), best of three batches",
+    };
+
+    [GeneratedRegex(@"Time\.GetTicks|OS\.GetTicks|DateTime(Offset)?\.(Utc)?Now|Stopwatch|CreateTween|CreateTimer|new\s+(Godot\.)?Timer\b|Task\.Delay|Thread\.Sleep|AnimationPlayer|\bTween\b|Engine\.TimeScale", RegexOptions.None)]
+    private static partial Regex ClockApi();
+
+    [Fact]
+    public void ScenariosDoNotReadTheWallClockOrStartTimers()
+    {
+        var offenders = Sources("Unciv.Godot.Harness")
+            .Where(it => ClockApi().IsMatch(it.Text) && !AllowedClockUsers.ContainsKey(it.Name))
+            .Select(it => it.Name)
+            .ToList();
+        Assert.True(offenders.Count == 0, "wall-clock/timer APIs in the harness (use WaitFrames/explicit stepping, or add the file to AllowedClockUsers with a reason): " + string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void ClientRealTimeNodesAreOnlyTheOnesTheRunnerFreezes()
+    {
+        // The client's own use of real time: frame deltas in _Process. Each must have a switch the runner turns (or be frame-counted/idle in scenarios).
+        var clientClock = Sources("Unciv.Godot")
+            .Where(it => ClockApi().IsMatch(it.Text))
+            .Select(it => it.Name)
+            .OrderBy(it => it, StringComparer.Ordinal)
+            .ToList();
+        Assert.True(clientClock.Count == 0, "new wall-clock/timer use in the client; freeze it in ScenarioRunner.FreezeRealTime and extend this test: " + string.Join(", ", clientClock));
+
+        var processUsers = Sources("Unciv.Godot")
+            .Where(it => it.Text.Contains("_Process(double delta)", StringComparison.Ordinal))
+            .Select(it => Path.GetFileNameWithoutExtension(it.Name))
+            .OrderBy(it => it, StringComparer.Ordinal)
+            .ToList();
+        // HudView/MinimapView count frames or redraw on change (no time); TooltipHost, MapView, CombatPresenter use the delta and are frozen/off in the harness
+        Assert.Equal(["CombatPresenter", "HudView", "MapView", "MinimapView", "TooltipHost"], processUsers);
+    }
+
+    [Fact]
+    public void RunnerFreezesTooltipDelayAndPanning()
+    {
+        string runner = File.ReadAllText(Path.Combine(Root, "Unciv.Godot.Harness", "ScenarioRunner.cs"));
+        Assert.Contains("NodeAdded += FreezeRealTime", runner, StringComparison.Ordinal);
+        Assert.Contains("host.Delay = UnreachableDelay", runner, StringComparison.Ordinal);
+        Assert.Contains("map.RealTimePanning = false", runner, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativeControlTooltipsNeverAppearInTheHarnessProject()
+    {
+        string project = File.ReadAllText(Path.Combine(Root, "Unciv.Godot.Harness", "project.godot"));
+        var match = Regex.Match(project, @"^timers/tooltip_delay_sec=([0-9.]+)\s*$", RegexOptions.Multiline);
+        Assert.True(match.Success, "project.godot must set gui timers/tooltip_delay_sec");
+        Assert.True(double.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) >= 3600, "native tooltip delay must be unreachable");
+    }
+
+    [Fact]
+    public void ScenariosThatPlayCombatAnimationStepItByHand()
+    {
+        foreach (var (name, text) in Sources("Unciv.Godot.Harness"))
+            if (text.Contains("Presenter.Enabled = true", StringComparison.Ordinal))
+                Assert.True(text.Contains("ManualStepping = true", StringComparison.Ordinal), $"{name} enables the combat presenter but does not step it by hand (real frame deltas)");
+    }
+}
