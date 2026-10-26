@@ -189,7 +189,7 @@ flowchart TD
   class C036 waiting
   class C037 done
   class C039 prog
-  class C040 prog
+  class C040 review
   class C045 waiting
   class C046 review
   class C049 review
@@ -288,7 +288,7 @@ xychart-beta
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C039 | In-Progress [Claude] | C005, C037, C022, T193 | 0 | Incoming proposal popups: trade, peace and friendship requests from AI (and other humans), proposer's pending/declined/withdrawn state |
-| C040 | In-Progress [Claude] | C037, C011 | 0 | Run end-turn processing and AI turns off the UI thread with a next-turn progress overlay |
+| C040 | Needs-Review [Claude] | C037, C011 | 0 | Run end-turn processing and AI turns off the UI thread with a next-turn progress overlay |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | C046 | Needs-Review [Claude] | C005, C037, T229 | 0 | Dev console UI: console popup with history and autocomplete |
 | C049 | Needs-Review [Claude] | C025 | 0 | Translate PolicyScreen error and status messages through Tr() |
