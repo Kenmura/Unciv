@@ -856,4 +856,5 @@ Done tickets with nothing meaningful to show.
 - **C037 IGameSession: client reads and writes only through a session interface; LocalHost implements it**: IGameSession is an engine/client interface with no UI of its own; it is exercised by every scenario above.
 - **C042 Client packaging: bundle rulesets and translations, user mods folder, export presets, third-party notices**: Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015.
 - **C049 Translate PolicyScreen error and status messages through Tr()**: Message strings only; no visible change in English, the policy scenario goldens are unchanged.
+- **C057 (ticket not Done or unknown)**: Sound cues have nothing to look at; scenario audio asserts the PlaySound trigger reaches the viewer as one cue and only the viewer, and the game screen plays it.
 - **C058 (ticket not Done or unknown)**: Harness-only change: scenarios no longer depend on real frame time; no new UI and no golden changed.
