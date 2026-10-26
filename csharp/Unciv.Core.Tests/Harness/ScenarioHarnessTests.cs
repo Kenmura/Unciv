@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Unciv.Commands.City;
 using Unciv.Harness;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Models.Ruleset;
 
 namespace Unciv.Core.Tests.Harness;
@@ -273,6 +274,43 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, espionage: true));
         Assert.True(ScenarioResult.FromJson(new ScenarioResult("e", 1, 2, "h", [], [], [], [], Espionage: true).ToJson()).Espionage);
         Assert.False(ScenarioResult.FromJson(new ScenarioResult("e", 1, 2, "h", [], [], [], []).ToJson()).Espionage);
+    }
+
+    [Fact]
+    public void ReligionGameHasAPantheonTwoProphetsInTwoCitiesSpiesAWorldCongressVoteAndTwoPickerNotificationsAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(religion: ScenarioGame.ReligionFoundEnhance);
+        var game = session.Game;
+        var human = game.GetCivilization(ScenarioGame.HumanA);
+        Assert.Equal("Civ V - Gods & Kings", game.GameParameters.BaseRuleset);
+        Assert.True(game.IsEspionageEnabled());
+        Assert.Equal(2, human.Cities.Count);
+        Assert.Equal(ReligionState.Pantheon, human.ReligionManager.ReligionState);
+        var prophets = human.Units.GetCivUnits().Where(it => it.BaseUnit.Name == "Great Prophet").ToList();
+        Assert.Equal(human.Cities.Select(it => (it.Location.X, it.Location.Y)).Order(), prophets.Select(it => (it.CurrentTile.Position.X, it.CurrentTile.Position.Y)).Order());
+        Assert.Equal(["MoveSpies", "DiplomaticVote"], Unciv.Logic.PendingDecisions.BlockingFor(human).Select(it => it.Kind.ToString()));
+        Assert.Equal(30, human.Units.GetCivUnits().First(it => it.BaseUnit.Name == "Warrior").Promotions.XP);
+        Assert.Equal(["MapUnitAction", "PromoteUnitAction"], human.Notifications[^2].Actions.Select(it => it.GetType().Name));
+        Assert.Equal(["EspionageAction"], human.Notifications[^1].Actions.Select(it => it.GetType().Name));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(religion: ScenarioGame.ReligionFoundEnhance)));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, religion: ScenarioGame.ReligionFoundEnhance));
+        Assert.Equal(ScenarioGame.ReligionFoundEnhance, ScenarioResult.FromJson(new ScenarioResult("r", 1, 2, "h", [], [], [], [], Religion: ScenarioGame.ReligionFoundEnhance).ToJson()).Religion);
+        Assert.Equal(0, ScenarioResult.FromJson(new ScenarioResult("r", 1, 2, "h", [], [], [], []).ToJson()).Religion);
+    }
+
+    [Fact]
+    public void ReformGameHasAFoundedReligionWithAFreeFollowerBeliefToChooseAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(religion: ScenarioGame.ReligionReform);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        var manager = human.ReligionManager;
+        Assert.Equal(ReligionState.Religion, manager.ReligionState);
+        Assert.NotNull(manager.Religion);
+        Assert.Equal(1, manager.FreeBeliefs.SumValues());
+        Assert.Equal(["ReformReligion"], Unciv.Logic.PendingDecisions.BlockingFor(human).Select(it => it.Kind.ToString()));
+        Assert.DoesNotContain(human.Units.GetCivUnits(), it => it.BaseUnit.Name == "Great Prophet");
+        Assert.Empty(session.Log);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, religion: ScenarioGame.ReligionReform));
     }
 
     [Fact]

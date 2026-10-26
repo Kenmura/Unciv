@@ -29,6 +29,8 @@ trade
 improvements
 menu
 decisions
+decisions-religion
+decisions-reform
 tutorial
 tooltips
 combat-presentation

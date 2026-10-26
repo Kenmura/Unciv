@@ -283,6 +283,9 @@ public static class SnapshotBuilder
                 CityAction a => Located("city", a.City),
                 MapUnitAction a => Located("unit", a.Location),
                 TechAction a => new NotificationActionDto { Kind = "tech", Name = a.TechName },
+                // C052: both belong to the recipient's own civ (its unit id; its spies), so they carry nothing another civ's view could not hold
+                PromoteUnitAction a => new NotificationActionDto { Kind = "promote", Id = a.Id },
+                EspionageAction => new NotificationActionDto { Kind = "espionage" },
                 _ => null
             };
             if (dto != null) actions.Add(dto);

@@ -5,6 +5,25 @@ namespace Unciv.Core.Tests.Assets;
 
 public class NotificationsModelTests
 {
+    [Fact]
+    public void APickerActionBeatsATileAndATechAndCarriesItsUnitId()
+    {
+        var promote = new NotificationActionDto { Kind = "promote", Id = 42 };
+        var espionage = new NotificationActionDto { Kind = "espionage" };
+        var tech = new NotificationActionDto { Kind = "tech", Name = "Mining" };
+        Assert.Equal(new NotificationTarget(NotificationTargetKind.Promotion, 0, 0, null, 42), NotificationsModel.TargetOf([At("unit", 1, 2), promote]));
+        Assert.Equal(new NotificationTarget(NotificationTargetKind.Spies, 0, 0, null), NotificationsModel.TargetOf([At("location", 1, 2), tech, espionage]));
+        Assert.Equal(NotificationTargetKind.Spies, NotificationsModel.TargetOf([espionage, promote])!.Kind); // the engine's order within the pickers
+        Assert.Equal(NotificationTargetKind.Promotion, NotificationsModel.TargetOf([promote, espionage])!.Kind);
+    }
+
+    [Fact]
+    public void APromoteActionWithoutAUnitIsIgnored()
+    {
+        Assert.Null(NotificationsModel.TargetOf([new NotificationActionDto { Kind = "promote" }]));
+        Assert.Equal(NotificationTargetKind.Tile, NotificationsModel.TargetOf([new NotificationActionDto { Kind = "promote" }, At("unit", 1, 2)])!.Kind);
+    }
+
     private static NotificationDto Note(string text, string category = "General", params NotificationActionDto[] actions) =>
         new() { Category = category, Text = text, Icons = [], Actions = [.. actions] };
 

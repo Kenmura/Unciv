@@ -10,10 +10,16 @@ public enum NotificationTargetKind
 
     /// <summary>Open the tech screen on <see cref="NotificationTarget.Name"/>.</summary>
     Tech,
+
+    /// <summary>C052: select the unit <see cref="NotificationTarget.Id"/> and open its promotion picker.</summary>
+    Promotion,
+
+    /// <summary>C052: open the move-spies picker.</summary>
+    Spies,
 }
 
 /// <summary>Where a click on a notification goes. A tile target only exists for a tile the snapshot builder let through (one the viewer can see).</summary>
-public sealed record NotificationTarget(NotificationTargetKind Kind, int X, int Y, string? Name);
+public sealed record NotificationTarget(NotificationTargetKind Kind, int X, int Y, string? Name, int Id = 0);
 
 /// <summary>One line of the notification list. <see cref="Index"/> is the position in the snapshot (oldest first); <see cref="Target"/> is null when a click has nowhere to go.</summary>
 public sealed record NotificationRow(int Index, string Category, string Text, IReadOnlyList<string> Icons, NotificationTarget? Target);
@@ -41,9 +47,18 @@ public static class NotificationsModel
         return rows;
     }
 
-    /// <summary>The first action that can be followed: a place on the map (location, city, unit) wins over a tech, in the order the engine listed them.</summary>
+    /// <summary>
+    /// The first action that can be followed. A picker (promote a unit, move the spies) wins over a place on the map, which wins over a tech; within a group the engine's order.
+    /// Deliberate deviation from Kotlin (C052): the original runs every action of a notification in turn (centre the camera, then open the picker), the client follows one, and a
+    /// picker is what the player asked for (the promoted unit is selected, so the map shows it anyway); Kotlin's espionage action opens the espionage screen, here the move-spies picker.
+    /// </summary>
     public static NotificationTarget? TargetOf(IReadOnlyList<NotificationActionDto> actions)
     {
+        foreach (var action in actions)
+        {
+            if (action.Kind == "promote" && action.Id is { } id) return new NotificationTarget(NotificationTargetKind.Promotion, 0, 0, null, id);
+            if (action.Kind == "espionage") return new NotificationTarget(NotificationTargetKind.Spies, 0, 0, null);
+        }
         foreach (var action in actions)
             if (action.Kind is "location" or "city" or "unit" && action.X is { } x && action.Y is { } y)
                 return new NotificationTarget(NotificationTargetKind.Tile, x, y, null);

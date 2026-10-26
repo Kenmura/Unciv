@@ -279,9 +279,14 @@ public sealed class NetVisibilityTests
         a.AddNotification("offmap", new HexCoord(900, 900), Notification.NotificationCategory.General);
         a.AddNotification("tech", new TechAction("Pottery"), Notification.NotificationCategory.General);
         a.AddNotification("link", new LinkAction("https://example.invalid"), Notification.NotificationCategory.General);
+        a.AddNotification("promote", [new PromoteUnitAction("Warrior", new HexCoord(900, 900), 17)], Notification.NotificationCategory.Units);
+        a.AddNotification("spies", new EspionageAction(), Notification.NotificationCategory.Espionage);
 
         var notifications = SnapshotFor(a).Notifications;
-        Assert.Equal(6, notifications.Count);
+        Assert.Equal(8, notifications.Count);
+        var promote = notifications.Single(it => it.Text == "promote").Actions.Single(); // the unit is the recipient's own, so its id is kept even though the tile is not visible
+        Assert.Equal(("promote", 17), (promote.Kind, promote.Id));
+        Assert.Equal("espionage", notifications.Single(it => it.Text == "spies").Actions.Single().Kind);
         Assert.Single(notifications.Single(it => it.Text == "seen").Actions);
         Assert.Empty(notifications.Single(it => it.Text == "fog").Actions);
         Assert.Empty(notifications.Single(it => it.Text == "unexplored").Actions);
@@ -401,7 +406,7 @@ public sealed class NetVisibilityTests
         [nameof(PendingTradeDto)] = "From To Offered Requested",
         [nameof(TradeOfferDto)] = "Name Type Amount Duration",
         [nameof(NotificationDto)] = "Category Text Icons Actions",
-        [nameof(NotificationActionDto)] = "Kind X Y Name"
+        [nameof(NotificationActionDto)] = "Kind X Y Name Id"
     };
 
     [Fact]

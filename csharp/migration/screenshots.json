@@ -629,6 +629,28 @@
       }
     ]
   },
+  "C052": {
+    "scenario": "decisions-religion",
+    "about": "Religion, spy and vote pickers: found and enhance a religion with the prophets' unit actions, the reform picker (scenario decisions-reform), the move-spies picker opened from a spy notification, the World Congress vote and the promotion picker opened from a notification.",
+    "shots": [
+      {
+        "golden": "decisions-religion/spies.png",
+        "caption": "The move-spies picker, opened by clicking the spy report in the notification list: one slot per spy; Move spies is disabled until a destination is chosen."
+      },
+      {
+        "golden": "decisions-religion/found.png",
+        "caption": "The found-religion picker: an icon, its name, a founder and a follower belief; Found religion is enabled."
+      },
+      {
+        "golden": "decisions-religion/enhance.png",
+        "caption": "The enhance picker: an enhancer and a follower belief chosen with its effects shown; Choose beliefs is enabled."
+      },
+      {
+        "golden": "decisions-reform/reform.png",
+        "caption": "The reform picker with a free follower belief to choose: Choose beliefs is disabled and says to choose first."
+      }
+    ]
+  },
   "C027": {
     "scenario": "tooltips",
     "about": "Tile hover tooltip and the Civilopedia: categories, entries with icons, engine-worded pages, links, unit tooltips in the list.",

@@ -1363,6 +1363,12 @@ public partial class GameScreen : Control
             case { Kind: NotificationTargetKind.Tech } tech:
                 OpenTechScreen(tech.Name);
                 break;
+            case { Kind: NotificationTargetKind.Promotion } promotion:
+                Run(PromoteFromNotification(promotion.Id));
+                break;
+            case { Kind: NotificationTargetKind.Spies }:
+                Run(OpenDecision(DecisionKind.MoveSpies));
+                break;
         }
     }
 
@@ -1469,6 +1475,18 @@ public partial class GameScreen : Control
                     _ => DecisionPickerModel.ChooseBeliefs(religion, kind == DecisionKind.ReformReligion, DescribeBelief),
                 };
         }
+    }
+
+    /// <summary>C052: a "can be promoted" notification selects its unit (when it is still ours) and opens the promotion picker.</summary>
+    private async Task PromoteFromNotification(int unitId)
+    {
+        if (!unitNodes.TryGetValue(unitId, out var node) || !node.IsOwn)
+        {
+            SetStatus("This unit cannot be promoted now.");
+            return;
+        }
+        SelectUnit(node);
+        await OpenPromotionPicker();
     }
 
     private async Task OpenPromotionPicker()

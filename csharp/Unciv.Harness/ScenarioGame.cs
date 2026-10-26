@@ -28,6 +28,12 @@ public static class ScenarioGame
     public const string Ai = "Rome";
     public const int RichGold = 500;
     public const int PolicyCulture = 50;
+
+    /// <summary>C052 <c>religion</c> game: a pantheon, two great prophets in two cities (found, then enhance), spies to move, a World Congress vote and two notifications that open pickers.</summary>
+    public const int ReligionFoundEnhance = 1;
+
+    /// <summary>C052 <c>religion</c> game: a founded religion with a free follower belief to choose (the reform picker).</summary>
+    public const int ReligionReform = 2;
     public const int CrowdAiCount = 10;
 
     /// <summary>Loads the Vanilla ruleset into <see cref="RulesetCache"/> (from the repository's jsons, no mods) unless it is already there.</summary>
@@ -54,13 +60,14 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false, bool proposals = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false, bool proposals = false, int religion = 0)
     {
+        espionage |= religion == ReligionFoundEnhance;
         diplomacy |= alerts | trade | espionage | proposals;
-        solo |= skirmish | diplomacy | policies | victory | defeat | decisions | crowd;
+        solo |= skirmish | diplomacy | policies | victory | defeat | decisions | crowd | religion > 0;
         var vanilla = LoadVanilla();
         // C038: religion needs Gods & Kings (Vanilla has no beliefs); every other scenario plays Vanilla
-        var ruleset = decisions ? RulesetCache.Get(BaseRuleset.Civ_V_GnK.FullName()).NotNull().Clone() : vanilla;
+        var ruleset = decisions || religion > 0 ? RulesetCache.Get(BaseRuleset.Civ_V_GnK.FullName()).NotNull().Clone() : vanilla;
         var game = GameStarter.StartNewGame(
             new GameSetupInfo(
                 new GameParameters
@@ -96,6 +103,8 @@ public static class ScenarioGame
         if (decisions) SetUpDecisions(game);
         if (espionage) SetUpEspionage(game);
         if (proposals) SetUpProposals(game);
+        if (religion == ReligionFoundEnhance) SetUpReligion(game);
+        if (religion == ReligionReform) SetUpReform(game);
         return new GameSession(game);
     }
 
@@ -290,6 +299,63 @@ public static class ScenarioGame
         resident.MoveTo(cityStateCity);
         resident.SetAction(SpyAction.Surveillance);
     }
+
+    /// <summary>
+    /// C052: on top of the espionage game (G&amp;K, so there are beliefs): Babylon has a pantheon and a second city, a Great Prophet stands in each city (found a religion with
+    /// one, enhance it with the other), the World Congress votes now (as when the United Nations was built and the countdown ran out), and two notifications open pickers: the
+    /// warrior (30 experience) can be promoted, and a spy report opens the move-spies picker. Set up directly on the state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpReligion(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var capital = human.Cities[0];
+        GivePantheon(human);
+        foreach (var settler in human.Units.GetCivUnits().Where(it => it.BaseUnit.IsCityFounder()).ToList()) settler.Destroy(); // the capital is founded, so its tile is free for a prophet
+        var site = game.TileMap.Values
+            .Where(it => it.IsLand && !it.IsImpassible() && !it.IsCityCenter() && it.GetOwner() == null && it.AerialDistanceTo(capital.GetCenterTile()) >= 4)
+            .OrderBy(it => it.Position.x).ThenBy(it => it.Position.y).First();
+        var second = human.AddCity(site.Position);
+        second.CityConstructions.AddToQueue("Warrior");
+        human.Units.PlaceUnitNearTile(capital.Location, "Great Prophet");
+        human.Units.PlaceUnitNearTile(second.Location, "Great Prophet");
+        human.AddFlag(CivFlags.TurnsTillNextDiplomaticVote.ToString(), 0);
+        var warrior = human.Units.GetCivUnits().OrderBy(it => it.Id).First(it => it.BaseUnit.Name == "Warrior");
+        warrior.Promotions.XP = 30;
+        human.AddNotification("[Warrior] can be promoted!", [new MapUnitAction(warrior.CurrentTile.Position, warrior.Id), new PromoteUnitAction(warrior.Name, warrior.CurrentTile.Position, warrior.Id)],
+            NotificationCategory.Units, warrior.Name);
+        human.AddNotification("Your spies are waiting for orders", new EspionageAction(), NotificationCategory.Espionage, NotificationIcon.Spy);
+    }
+
+    /// <summary>
+    /// C052: Babylon (solo, G&amp;K) has founded a religion (a pantheon, then a Great Prophet used in the capital, a founder and a follower belief) and has one free follower belief
+    /// to choose, as after a one-time free belief: the engine asks to reform the religion. The founding goes through the real commands on a throwaway session (its log is not
+    /// the scenario's), so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpReform(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var settler = human.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());
+        var capital = human.AddCity(settler.CurrentTile.Position, settler);
+        settler.Destroy(); // the city is founded, so the tile is free for the prophet
+        capital.CityConstructions.AddToQueue("Warrior");
+        human.Tech.TechsToResearch.Add("Agriculture");
+        GivePantheon(human);
+        var prophet = human.Units.PlaceUnitNearTile(capital.Location, "Great Prophet").NotNull();
+        human.ReligionManager.FoundReligion(prophet);
+        prophet.Destroy(); // used up, as the unit action does
+        var ruleset = game.Ruleset;
+        var taken = new List<string>();
+        foreach (var (type, count) in human.ReligionManager.GetBeliefsToChooseAtFounding())
+            taken.AddRange(ruleset.Beliefs.Values.Where(it => it.Type == type && !game.Religions.Values.Any(r => r.HasBelief(it.Name))).Select(it => it.Name).Order(StringComparer.Ordinal).Take(count));
+        string icon = ruleset.Religions.First(it => !game.Religions.ContainsKey(it));
+        var result = new GameSession(game).Submit(HumanA, new Commands.Empire.FoundReligion { ReligionName = icon, DisplayName = icon, Beliefs = taken });
+        if (!result.Accepted) throw new InvalidOperationException("Setting up the founded religion failed: " + result.Validation.Message);
+        human.ReligionManager.FreeBeliefs.Add(BeliefType.Follower.ToString(), 1);
+    }
+
+    /// <summary>The first pantheon belief by name, taken as a free belief (no faith spent).</summary>
+    private static void GivePantheon(Unciv.Logic.Civilization.Civilization human) =>
+        human.ReligionManager.ChooseBeliefs([human.GameInfo.Ruleset.Beliefs.Values.Where(it => it.Type == BeliefType.Pantheon).OrderBy(it => it.Name, StringComparer.Ordinal).First()], useFreeBeliefs: true);
 
     private static CityObject FoundWithSettler(Logic.Civilization.Civilization civ)
     {

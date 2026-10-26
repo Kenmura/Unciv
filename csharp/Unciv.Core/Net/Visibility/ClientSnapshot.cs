@@ -188,4 +188,7 @@ public sealed record NotificationActionDto
     public int? X { get; init; }
     public int? Y { get; init; }
     public string? Name { get; init; }
+
+    /// <summary>The recipient's own unit a <c>promote</c> action is about.</summary>
+    public int? Id { get; init; }
 }

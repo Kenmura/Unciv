@@ -774,6 +774,28 @@ Scenario `overview-espionage`.
 
 *Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line.* (`overview-espionage/politics.png`)
 
+## C052 (ticket not Done or unknown)
+
+Religion, spy and vote pickers: found and enhance a religion with the prophets' unit actions, the reform picker (scenario decisions-reform), the move-spies picker opened from a spy notification, the World Congress vote and the promotion picker opened from a notification.
+
+Scenario `decisions-religion`.
+
+![The move-spies picker, opened by clicking the spy report in the notification list: one slot per spy; Move spies is disabled until a destination is chosen.](../Unciv.Godot.Harness/golden/decisions-religion/spies.png)
+
+*The move-spies picker, opened by clicking the spy report in the notification list: one slot per spy; Move spies is disabled until a destination is chosen.* (`decisions-religion/spies.png`)
+
+![The found-religion picker: an icon, its name, a founder and a follower belief; Found religion is enabled.](../Unciv.Godot.Harness/golden/decisions-religion/found.png)
+
+*The found-religion picker: an icon, its name, a founder and a follower belief; Found religion is enabled.* (`decisions-religion/found.png`)
+
+![The enhance picker: an enhancer and a follower belief chosen with its effects shown; Choose beliefs is enabled.](../Unciv.Godot.Harness/golden/decisions-religion/enhance.png)
+
+*The enhance picker: an enhancer and a follower belief chosen with its effects shown; Choose beliefs is enabled.* (`decisions-religion/enhance.png`)
+
+![The reform picker with a free follower belief to choose: Choose beliefs is disabled and says to choose first.](../Unciv.Godot.Harness/golden/decisions-reform/reform.png)
+
+*The reform picker with a free follower belief to choose: Choose beliefs is disabled and says to choose first.* (`decisions-reform/reform.png`)
+
 ## C055 (ticket not Done or unknown)
 
 Civilopedia button reachable under the unit panel, F1 hotkey, and the entry search box.
