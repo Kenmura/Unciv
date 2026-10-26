@@ -176,7 +176,7 @@ flowchart TD
   class C036 waiting
   class C037 done
   class C045 waiting
-  class C060 prog
+  class C060 review
   class T012 done
   class T164 done
   class T172 done
@@ -198,7 +198,7 @@ flowchart TD
   class T194 done
   class T199 done
   class T200 done
-  class T201 prog
+  class T201 review
   class T202 review
   class T203 ondeck
   class T204 waiting
@@ -253,8 +253,8 @@ xychart-beta
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
-| C060 | In-Progress [Claude] | C054 | 0 | Tutorial task completed-set: per-viewer and replay-safe (C054 review follow-up) |
+| C060 | Needs-Review [Claude] | C054 | 0 | Tutorial task completed-set: per-viewer and replay-safe (C054 review follow-up) |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
-| T201 | In-Progress [Claude] | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
+| T201 | Needs-Review [Claude] | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
