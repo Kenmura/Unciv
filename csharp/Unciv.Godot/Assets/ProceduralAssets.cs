@@ -18,6 +18,15 @@ public static class ProceduralAssets
     public static ImageTexture ToTexture(PixelImage image, bool mipmaps = false) =>
         ImageTexture.CreateFromImage(Image.CreateFromData(image.Width, image.Height, mipmaps, Image.Format.Rgba8, image.Rgba));
 
+    /// <summary>The generated tones of a <c>sound/&lt;name&gt;</c> key as a 16-bit mono stream (C030).</summary>
+    public static AudioStreamWav Sound(AssetKey key) => new()
+    {
+        Format = AudioStreamWav.FormatEnum.Format16Bits,
+        MixRate = ProceduralSounds.SampleRate,
+        Stereo = false,
+        Data = ProceduralSounds.Pcm(key.Name),
+    };
+
     public static ArrayMesh ToMesh(MeshData data)
     {
         var positions = new Vector3[data.VertexCount];

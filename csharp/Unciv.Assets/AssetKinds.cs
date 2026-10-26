@@ -11,6 +11,7 @@ public enum AssetKind
     Theme,
     StyleBox,
     Font,
+    Sound,
 }
 
 public static class AssetKinds
@@ -22,6 +23,7 @@ public static class AssetKinds
         RulesetAssetKeys.Unit or RulesetAssetKeys.UnitType => AssetKind.UnitBlock,
         RulesetAssetKeys.Feature or RulesetAssetKeys.Resource or RulesetAssetKeys.ResourceType or RulesetAssetKeys.Improvement or RulesetAssetKeys.Building => AssetKind.Prop,
         "font" => AssetKind.Font,
+        ProceduralSounds.Category => AssetKind.Sound,
         RulesetAssetKeys.Ui when key.Name == "theme" => AssetKind.Theme,
         RulesetAssetKeys.Ui => AssetKind.StyleBox,
         _ => AssetKind.Icon,

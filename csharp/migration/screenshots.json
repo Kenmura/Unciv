@@ -676,5 +676,8 @@
         "caption": "Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI."
       }
     ]
+  },
+  "C030": {
+    "none": "Placeholder audio has nothing to look at; scenario audio asserts every UncivSound preset resolves to a non-empty generated stream."
   }
 }

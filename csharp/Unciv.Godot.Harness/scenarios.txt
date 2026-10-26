@@ -33,3 +33,4 @@ tooltips
 combat-presentation
 city-rename
 autoplay
+audio

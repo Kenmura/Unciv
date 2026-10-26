@@ -7,6 +7,7 @@ using Unciv.GodotClient.Saves;
 using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Setup;
 using Unciv.GodotClient.Ui;
+using Unciv.Models;
 using Unciv.Models.Translations;
 
 namespace Unciv.GodotClient;
@@ -23,6 +24,7 @@ public partial class App : Node
     private UiTheme theme = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private ClientSettingsService settings = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private ClientLocalization localization = null!; // JUSTIFY: C025 assigned in _Ready before any use
+    private SoundPlayer sounds = null!; // JUSTIFY: C030 assigned in _Ready before any use
     private SaveStore store = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private SaveController menuSaves = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private MainMenu menu = null!; // JUSTIFY: C015 assigned in _Ready before any use
@@ -37,6 +39,12 @@ public partial class App : Node
         localization = Loc.Init(settings, GetWindow());
         ClientSettingsApplier.Apply(settings.Current, GetWindow());
         settings.Changed += changed => ClientSettingsApplier.Apply(changed, GetWindow());
+        sounds = new SoundPlayer(AssetRegistry.ForRuleset(vanilla, OptionsModel.RegistryPack(settings.Current.AssetPack)));
+        AddChild(sounds);
+        GetTree().NodeAdded += node =>
+        {
+            if (node is BaseButton button) button.Pressed += () => sounds.Play(UncivSound.Click);
+        };
         store = new SaveStore(UserPaths.Saves);
         screens = new ScreenManager(theme);
         AddChild(screens);
