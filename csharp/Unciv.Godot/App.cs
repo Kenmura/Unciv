@@ -33,6 +33,8 @@ public partial class App : Node
         theme = new UiTheme(AssetRegistry.ForRuleset(vanilla));
         settings = new ClientSettingsService(new ClientSettingsStore(UserPaths.Settings));
         localization = Loc.Init(settings, GetWindow());
+        ClientSettingsApplier.Apply(settings.Current, GetWindow());
+        settings.Changed += changed => ClientSettingsApplier.Apply(changed, GetWindow());
         store = new SaveStore(UserPaths.Saves);
         screens = new ScreenManager(theme);
         AddChild(screens);
@@ -74,7 +76,8 @@ public partial class App : Node
     private void OpenOptions()
     {
         var page = new VBoxContainer();
-        page.AddChild(new SettingsPanel(settings, localization));
+        var options = new OptionsScreen(settings, localization) { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        page.AddChild(options);
         var back = new Button { Text = "Back".Tr() };
         back.Pressed += () => screens.Pop();
         page.AddChild(back);
@@ -84,16 +87,17 @@ public partial class App : Node
     // A new or loaded game takes over the screen; its own save controller keeps autosaving it.
     private void ShowGame(IGameSession session)
     {
-        var registry = AssetRegistry.ForRuleset(session.Ruleset);
+        var registry = AssetRegistry.ForRuleset(session.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack));
         var root = new Control { Name = "Play" };
         var screen = new GameScreen { Name = "GameScreen" };
         root.AddChild(screen);
         var saves = new SaveController(store, settings, new UiTheme(registry),
-            text => LocalHost.FromSave(text, WallClockMillis), loaded => screen.Start(loaded, AssetRegistry.ForRuleset(loaded.Ruleset)));
+            text => LocalHost.FromSave(text, WallClockMillis), loaded => screen.Start(loaded, AssetRegistry.ForRuleset(loaded.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack))));
         root.AddChild(saves);
         screens.Reset(root);
         screen.MainMenuRequested += () => ShowMenu(first: false);
         screen.Start(session, registry);
+        screen.BindSettings(settings);
         saves.Attach(session);
     }
 

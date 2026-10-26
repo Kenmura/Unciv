@@ -29,6 +29,30 @@ public sealed record ClientSettings
     [JsonPropertyName("uiScale")]
     public float UiScale { get; init; } = 1f;
 
+    /// <summary>C028: master volume, 0 (silent) to 1.</summary>
+    [JsonPropertyName("soundVolume")]
+    public float SoundVolume { get; init; } = 0.7f;
+
+    /// <summary>C028: one of <see cref="OptionsModel.WindowModes"/>.</summary>
+    [JsonPropertyName("windowMode")]
+    public string WindowMode { get; init; } = OptionsModel.WindowModes[0];
+
+    /// <summary>C028: map scroll speed multiplier (keys and edge-pan), <see cref="OptionsModel.MinScrollSpeed"/> to <see cref="OptionsModel.MaxScrollSpeed"/>.</summary>
+    [JsonPropertyName("scrollSpeed")]
+    public float ScrollSpeed { get; init; } = 1f;
+
+    /// <summary>C028: move the map when the mouse rests at the window edge.</summary>
+    [JsonPropertyName("edgePan")]
+    public bool EdgePan { get; init; }
+
+    /// <summary>C028: draw resource props on the map.</summary>
+    [JsonPropertyName("showResources")]
+    public bool ShowResources { get; init; } = true;
+
+    /// <summary>C028: draw tile yield icons (the in-world icons arrive with C032; the choice is stored now).</summary>
+    [JsonPropertyName("showYields")]
+    public bool ShowYields { get; init; } = true;
+
     [JsonPropertyName("assetPack")]
     public string AssetPack { get; init; } = "Default";
 
@@ -54,8 +78,11 @@ public sealed record ClientSettings
         return this with
         {
             Language = string.IsNullOrWhiteSpace(Language) ? Default.Language : Language,
-            KeyBindings = KeyBindings ?? [],
+            KeyBindings = Hotkeys.Sanitize(KeyBindings),
             UiScale = float.IsFinite(UiScale) ? Math.Clamp(UiScale, 0.5f, 4f) : Default.UiScale,
+            SoundVolume = float.IsFinite(SoundVolume) ? Math.Clamp(SoundVolume, 0f, 1f) : Default.SoundVolume,
+            WindowMode = OptionsModel.WindowModes.Contains(WindowMode) ? WindowMode : Default.WindowMode,
+            ScrollSpeed = float.IsFinite(ScrollSpeed) ? Math.Clamp(ScrollSpeed, OptionsModel.MinScrollSpeed, OptionsModel.MaxScrollSpeed) : Default.ScrollSpeed,
             AssetPack = string.IsNullOrWhiteSpace(AssetPack) ? Default.AssetPack : AssetPack,
             AutosaveTurns = Math.Max(0, AutosaveTurns),
             TutorialsSeen = TutorialsSeen?.Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal).ToList() ?? [],

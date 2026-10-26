@@ -436,6 +436,24 @@ Scenario `l10n-sheet`.
 
 *Arabic and Hebrew sample lines shaped and run right to left from their Noto fonts, each with a Latin word and digits inside (the settings page on the left is not mirrored here: the harness has no window to flip).* (`l10n-sheet/rtl.png`)
 
+## C028 (ticket not Done or unknown)
+
+Options screen: engine options, UI scale, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.
+
+Scenario `options`.
+
+![Options, top: engine options, UI scale buttons, then sound volume, window mode, scroll speed and the edge-scroll and map toggles](../Unciv.Godot.Harness/golden/options/top.png)
+
+*Options, top: engine options, UI scale buttons, then sound volume, window mode, scroll speed and the edge-scroll and map toggles* (`options/top.png`)
+
+![Bottom of the options while rebinding: the End turn key button shows ... and the message under the key list says to press a key or Escape](../Unciv.Godot.Harness/golden/options/listening.png)
+
+*Bottom of the options while rebinding: the End turn key button shows ... and the message under the key list says to press a key or Escape* (`options/listening.png`)
+
+![Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys](../Unciv.Godot.Harness/golden/options/rebound.png)
+
+*Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
+
 ## C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
 
 Flat-map cities, borders, roads and improvements.

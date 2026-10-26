@@ -28,8 +28,12 @@ public partial class SettingsPanel : VBoxContainer
         AddToggle("Cities auto bombard at end of turn", s => s.Player.CitiesAutoBombardAtEndOfTurn, (s, v) => s with { Player = s.Player with { CitiesAutoBombardAtEndOfTurn = v } });
         var scale = new Button();
         texts.Add((scale, "Bigger UI"));
-        scale.Pressed += () => service.Update(s => s with { UiScale = Math.Min(4f, s.UiScale + 0.25f) });
+        scale.Pressed += () => service.Update(s => s with { UiScale = OptionsModel.StepUiScale(s.UiScale, 1) });
         AddChild(scale);
+        var smaller = new Button();
+        texts.Add((smaller, "Smaller UI"));
+        smaller.Pressed += () => service.Update(s => s with { UiScale = OptionsModel.StepUiScale(s.UiScale, -1) });
+        AddChild(smaller);
         service.Changed += _ => Retranslate();
         Retranslate();
     }

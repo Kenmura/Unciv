@@ -6,6 +6,7 @@ using Unciv.Commands.Turn;
 using Unciv.Commands.Units;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Map;
+using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Ui;
 using Unciv.Logic;
 using Unciv.Logic.Map;
@@ -184,6 +185,62 @@ public partial class GameScreen : Control
         Deselect();
         SetStatus("Technology");
         Run(Tech.OpenAsync(tech));
+    }
+
+    private ClientSettingsService? boundSettings;
+
+    /// <summary>
+    /// C028: follows the client settings: key bindings (map pan keys and the screen's hotkeys), scroll speed, edge-pan and the resource toggle apply now and after every
+    /// change. Call after the screen entered the tree; calling it again replaces the earlier binding.
+    /// </summary>
+    public void BindSettings(ClientSettingsService settings)
+    {
+        if (boundSettings != null) boundSettings.Changed -= ApplySettings;
+        boundSettings = settings;
+        settings.Changed += ApplySettings;
+        ApplySettings(settings.Current);
+    }
+
+    private void ApplySettings(ClientSettings settings)
+    {
+        hotkeys = settings.KeyBindings;
+        Map.KeyBindings = settings.KeyBindings;
+        Map.ScrollSpeed = settings.ScrollSpeed;
+        Map.EdgePan = settings.EdgePan;
+        Map.ShowResources = settings.ShowResources;
+    }
+
+    private IReadOnlyDictionary<string, string> hotkeys = new Dictionary<string, string>();
+
+    /// <summary>C028: runs the action a hotkey text is bound to (true when it was one of the game screen's actions and ran). Ignored while a full screen (city, diplomacy, tech, policies) covers the map.</summary>
+    public bool TryHotkey(string keyText)
+    {
+        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Alerts.Visible) return false;
+        switch (Hotkeys.Resolve(hotkeys, keyText))
+        {
+            case HotkeyAction.EndTurn:
+                OnNextTurn();
+                return true;
+            case HotkeyAction.NextUnit:
+                SelectNextUnit();
+                return true;
+            case HotkeyAction.OpenTech:
+                OpenTechScreen();
+                return true;
+            case HotkeyAction.OpenPolicies:
+                OpenPolicyScreen();
+                return true;
+            case HotkeyAction.OpenDiplomacy:
+                OpenDiplomacyScreen();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public override void _UnhandledKeyInput(InputEvent @event)
+    {
+        if (@event is InputEventKey { Pressed: true, Echo: false } key && HotkeyInput.TextOf(key) is { } text && TryHotkey(text)) GetViewport().SetInputAsHandled();
     }
 
     /// <summary>Opens the city screen for a city of the snapshot (the viewer's own in full, any other from its snapshot entry), or closes it with null.</summary>

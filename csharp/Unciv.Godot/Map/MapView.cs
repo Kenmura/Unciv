@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.GodotClient.Settings;
 using Unciv.Assets;
 using Unciv.GodotClient.Assets;
 using Unciv.Logic.Map;
@@ -43,7 +44,6 @@ public partial class MapView : Node3D
     public const float DefaultZoom = 14f;
     private const float CameraDistance = 60f;
     private const float WheelStep = 1.12f;
-    private const float KeyPanPerSecond = 1.2f;
     private const float DragThresholdPixels = 4f;
     private const int CandidateRadius = 2;
     private const int PickSteps = 24;
@@ -154,6 +154,7 @@ public partial class MapView : Node3D
             AddProps(assets, node, tile, kind);
         }
         BuildVegetation(assets, tuftTransforms);
+        ApplyResourceVisibility();
         if (tiles.Count > 0 && !keepCamera) FocusOn(Centre());
     }
 
@@ -190,7 +191,7 @@ public partial class MapView : Node3D
         }
         foreach (var feature in tile.Features.Where(PropSpecs.HasFeatureProp))
             Place("Feature_" + feature, AssetKey.Of(RulesetAssetKeys.Feature, feature), TerrainRelief.SurfaceHeight(kind, FeatureRingFraction));
-        if (tile.Resource != null) Place("Resource", AssetKey.Of(RulesetAssetKeys.Resource, tile.Resource), TerrainRelief.TopHeight(kind));
+        if (tile.Resource != null) Place(ResourcePropName, AssetKey.Of(RulesetAssetKeys.Resource, tile.Resource), TerrainRelief.TopHeight(kind));
     }
 
     /// <summary>Where on a raised tile the feature ring stands (rim fraction of the ring radius), so forests on hills follow the slope instead of floating or sinking.</summary>
@@ -350,14 +351,60 @@ public partial class MapView : Node3D
 
     public void ClearSelection() => Select(null);
 
+    /// <summary>C028: the key bindings the pan keys are read from (the arrow keys always pan as well).</summary>
+    public IReadOnlyDictionary<string, string> KeyBindings { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>C028: scroll speed multiplier for key and edge panning.</summary>
+    public float ScrollSpeed { get; set; } = 1f;
+
+    /// <summary>C028: pan when the mouse rests at the window edge.</summary>
+    public bool EdgePan { get; set; }
+
+    private bool showResources = true;
+
+    /// <summary>C028: whether resource props are drawn (the settings' resource icon toggle).</summary>
+    public bool ShowResources
+    {
+        get => showResources;
+        set
+        {
+            showResources = value;
+            ApplyResourceVisibility();
+        }
+    }
+
+    private void ApplyResourceVisibility()
+    {
+        foreach (var node in tiles.Values)
+        {
+            if (node.GetNodeOrNull<Node3D>(ResourcePropName) is { } prop) prop.Visible = showResources;
+        }
+    }
+
+    private const string ResourcePropName = "Resource";
+
+    /// <summary>Resource props that are drawn right now (all of them, or none when the resource toggle is off).</summary>
+    public int VisibleResourcePropCount => tiles.Values.Count(it => it.GetNodeOrNull<Node3D>(ResourcePropName) is { Visible: true });
+
     public override void _Process(double delta)
     {
         var direction = Vector3.Zero;
-        if (Input.IsPhysicalKeyPressed(Key.A) || Input.IsPhysicalKeyPressed(Key.Left)) direction.X -= 1f;
-        if (Input.IsPhysicalKeyPressed(Key.D) || Input.IsPhysicalKeyPressed(Key.Right)) direction.X += 1f;
-        if (Input.IsPhysicalKeyPressed(Key.W) || Input.IsPhysicalKeyPressed(Key.Up)) direction.Z -= 1f;
-        if (Input.IsPhysicalKeyPressed(Key.S) || Input.IsPhysicalKeyPressed(Key.Down)) direction.Z += 1f;
-        if (direction != Vector3.Zero) PanBy(direction.Normalized() * (float)(KeyPanPerSecond * zoom * delta));
+        bool Held(HotkeyAction action, Key arrow) => Input.IsPhysicalKeyPressed(arrow) || HotkeyInput.IsHeld(Hotkeys.KeyFor(KeyBindings, action));
+        if (Held(HotkeyAction.PanLeft, Key.Left)) direction.X -= 1f;
+        if (Held(HotkeyAction.PanRight, Key.Right)) direction.X += 1f;
+        if (Held(HotkeyAction.PanUp, Key.Up)) direction.Z -= 1f;
+        if (Held(HotkeyAction.PanDown, Key.Down)) direction.Z += 1f;
+        if (direction != Vector3.Zero) PanBy(direction.Normalized() * OptionsModel.PanDistance(ScrollSpeed, zoom, delta));
+        var viewport = GetViewport();
+        if (EdgePan && viewport != null && GetWindow().HasFocus()) TickEdgePan(viewport.GetMousePosition(), viewport.GetVisibleRect().Size, delta);
+    }
+
+    /// <summary>C028: one frame of edge-panning for a mouse position inside a window of the given size (public so tests can drive it without a real mouse).</summary>
+    public void TickEdgePan(Vector2 mouse, Vector2 windowSize, double delta)
+    {
+        var (x, y) = OptionsModel.EdgePanDirection(EdgePan, mouse.X, mouse.Y, windowSize.X, windowSize.Y);
+        if (x == 0f && y == 0f) return;
+        PanBy(new Vector3(x, 0f, y) * OptionsModel.PanDistance(ScrollSpeed, zoom, delta));
     }
 
     public override void _UnhandledInput(InputEvent @event)

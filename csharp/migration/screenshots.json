@@ -442,5 +442,23 @@
         "caption": "The defeat screen (scenario defeat): the game goes on without you; keep watching or go to the main menu."
       }
     ]
+  },
+  "C028": {
+    "scenario": "options",
+    "about": "Options screen: engine options, UI scale, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.",
+    "shots": [
+      {
+        "golden": "options/top.png",
+        "caption": "Options, top: engine options, UI scale buttons, then sound volume, window mode, scroll speed and the edge-scroll and map toggles"
+      },
+      {
+        "golden": "options/listening.png",
+        "caption": "Bottom of the options while rebinding: the End turn key button shows ... and the message under the key list says to press a key or Escape"
+      },
+      {
+        "golden": "options/rebound.png",
+        "caption": "Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys"
+      }
+    ]
   }
 }
