@@ -635,7 +635,7 @@
     "shots": [
       {
         "golden": "tooltips/tile.png",
-        "caption": "Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields."
+        "caption": "Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields, each yield followed by its sources and total."
       },
       {
         "golden": "tooltips/unit.png",

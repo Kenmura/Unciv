@@ -53,8 +53,6 @@ public class CityScreenModelTests
     public void StatBlock_ListsTotalsAndBreakdownsBySource()
     {
         Assert.Equal(["Food +7", "Gold -1.5"], CityScreenModel.StatLines(Panel()));
-        Assert.Equal("Tile: +6\nPopulation: +1\nTotal Food: +7", CityScreenModel.StatBreakdown(Panel(), "Food"));
-        Assert.Equal("Total Science: +0", CityScreenModel.StatBreakdown(Panel(), "Science"));
     }
 
     [Fact]

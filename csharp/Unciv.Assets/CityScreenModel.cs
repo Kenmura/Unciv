@@ -61,20 +61,6 @@ public static class CityScreenModel
     public static IReadOnlyList<string> StatLines(CityPanelResult city) =>
         city.TotalStats.Select(it => $"{it.Stat} {Signed(it.Value)}").ToList();
 
-    /// <summary>Tooltip for a stat: each source that contributes to it (building, tile, population...) with its amount.</summary>
-    public static string StatBreakdown(CityPanelResult city, string stat)
-    {
-        var lines = new List<string>();
-        foreach (var source in city.StatSources)
-        {
-            var amount = source.Stats.FirstOrDefault(it => it.Stat == stat);
-            if (amount != null) lines.Add($"{source.Source}: {Signed(amount.Value)}");
-        }
-        float total = city.TotalStats.FirstOrDefault(it => it.Stat == stat)?.Value ?? 0f;
-        lines.Add($"Total {stat}: {Signed(total)}");
-        return string.Join("\n", lines);
-    }
-
     /// <summary>A short label of a tile's yields, e.g. <c>F2 P1 G1</c>.</summary>
     public static string YieldLabel(IReadOnlyList<Queries.Cities.StatAmount> stats) =>
         string.Join(" ", stats.Select(it => $"{StatLetter(it.Stat)}{Number(it.Value)}"));

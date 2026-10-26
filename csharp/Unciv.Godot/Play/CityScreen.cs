@@ -138,6 +138,9 @@ public partial class CityScreen : PanelContainer
 
     public IReadOnlyList<CityTileCell> Cells => cells;
 
+    /// <summary>C056: the hover tooltip of a stat in the stat block (its sources and total), null when the city has no such stat.</summary>
+    public string? StatTooltip(string stat) => AllLabels(side).FirstOrDefault(it => it.Name == "Stat_" + stat)?.TooltipText;
+
     public IReadOnlyList<string> SideTexts => AllLabels(side).Select(it => it.Text).ToList();
 
     /// <summary>Raised after the engine accepted a command made here, so the owner refreshes the world (the city is then opened again with the new snapshot entry).</summary>
@@ -250,7 +253,7 @@ public partial class CityScreen : PanelContainer
         foreach (var stat in panel.TotalStats)
         {
             var label = new Label { Name = "Stat_" + stat.Stat, Text = $"{stat.Stat.ToString().TrText()} {(stat.Value >= 0 ? "+" : "")}{stat.Value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}", MouseFilter = MouseFilterEnum.Stop };
-            label.TooltipText = CityScreenModel.StatBreakdown(panel, stat.Stat).TrText();
+            label.TooltipText = TooltipModel.ToPlain(TooltipModel.StatBreakdown(stat.Stat, panel.StatSources, stat.Value), text => text.Tr());
             label.AddThemeColorOverride("font_color", ToColour(PlaceholderPalette.ForStat(stat.Stat)));
             side.AddChild(label);
         }

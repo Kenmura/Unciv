@@ -15,9 +15,9 @@ public class TooltipModelTests
     private static TileInfoResult TileOf(
         string terrain = "Grassland", string[]? features = null, string? wonder = null, string? resource = null, int amount = 0, string? improvement = null, bool pillaged = false,
         string? inProgress = null, int turns = 0, string road = "None", bool roadPillaged = false, bool river = false, string? owner = null, string? city = null, string? worked = null,
-        bool centre = false, TileUnit[]? units = null, StatAmount[]? yields = null, bool visible = true) =>
+        bool centre = false, TileUnit[]? units = null, StatAmount[]? yields = null, bool visible = true, StatSource[]? breakdown = null) =>
         new(new TilePos(1, 2), terrain, features ?? [], wonder, resource, amount, improvement, pillaged, inProgress, turns, road, roadPillaged, river, owner, city, worked, false, centre, visible,
-            yields ?? [], [], units ?? [], null);
+            yields ?? [], breakdown ?? [], units ?? [], null);
 
     private static string[] Texts(IEnumerable<TipLine> lines) => lines.Select(it => it.Text).ToArray();
 
@@ -79,6 +79,38 @@ public class TooltipModelTests
         var lines = TooltipModel.Tile(TileOf("Plains", units: [new TileUnit(1, "Warrior", "Rome")], yields: [new StatAmount("Food", 1f), new StatAmount("Production", 1.5f)]), ruleset);
         Assert.Equal(["Plains", "Warrior - Rome", "{Food}: 1, {Production}: 1.5"], Texts(lines));
         Assert.All(lines, it => Assert.False(it.Final));
+    }
+
+    [Fact]
+    public void Tile_YieldsAreFollowedByTheirBreakdownOnlyOnSeenTiles()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        StatAmount[] yields = [new("Food", 3f), new("Gold", 1f)];
+        StatSource[] sources = [new("Base terrain", [new StatAmount("Food", 2f)]), new("Farm", [new StatAmount("Food", 1f)]), new("River", [new StatAmount("Gold", 1f)])];
+        Assert.Equal(["Plains", "{Food}: 3, {Gold}: 1", "{Food}", "{Base terrain}: +2", "{Farm}: +1", "{Total}: +3", "{Gold}", "{River}: +1", "{Total}: +1"],
+            Texts(TooltipModel.Tile(TileOf("Plains", yields: yields, breakdown: sources), ruleset)));
+        // the engine's own yield is shown as the total even when the sources do not add up to it
+        Assert.Equal("{Total}: +5", Texts(TooltipModel.Tile(TileOf("Plains", yields: [new StatAmount("Food", 5f)], breakdown: sources), ruleset))[^1]);
+        // a tile in the fog tells nothing of its yields or where they come from
+        Assert.Equal(["Plains"], Texts(TooltipModel.Tile(TileOf("Plains", yields: yields, breakdown: sources, visible: false), ruleset)));
+        // no breakdown known: just the yield line
+        Assert.Equal(["Plains", "{Food}: 3"], Texts(TooltipModel.Tile(TileOf("Plains", yields: [new StatAmount("Food", 3f)]), ruleset)));
+    }
+
+    [Fact]
+    public void StatBreakdown_ShowsTheEnginesTotalWhenGiven()
+    {
+        StatSource[] sources = [new("Tile", [new StatAmount("Food", 6f)]), new("Population", [new StatAmount("Food", 1f)])];
+        Assert.Equal(["{Food}", "{Tile}: +6", "{Population}: +1", "{Total}: +9.5"], Texts(TooltipModel.StatBreakdown("Food", sources, 9.5f)));
+        Assert.Equal("{Total}: +7", Texts(TooltipModel.StatBreakdown("Food", sources))[^1]);
+        Assert.Equal("{Total}: +0", Texts(TooltipModel.StatBreakdown("Food", sources, 0f))[^1]);
+    }
+
+    [Fact]
+    public void ToPlain_TranslatesOnlyNonFinalLinesAndDoesNotEscape()
+    {
+        Assert.Equal("A\nb [x]\n[C]", TooltipModel.ToPlain([new TipLine("a"), new TipLine("b [x]", true), new TipLine("[c]")], it => it.ToUpperInvariant()));
+        Assert.Equal("", TooltipModel.ToPlain([], it => it));
     }
 
     [Fact]

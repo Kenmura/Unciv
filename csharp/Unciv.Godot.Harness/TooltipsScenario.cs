@@ -71,16 +71,30 @@ public sealed class TooltipsScenario : Scenario
                 screen.HoveredTile == capitalCoord && screen.HoverTip.Length > 0 && !screen.Tooltips.IsShowing),
             new Act("let the delay elapse", () => screen.Tooltips.Advance(1.0)),
             new WaitFrames(2),
-            new AssertQuery("the tooltip is the engine's description of the tile: city, terrain and yields", () =>
+            new AssertQuery("the tooltip is the engine's description of the tile: city, terrain, yields and where they come from", () =>
             {
                 var info = recording.QueryAsync(new TileInfoQuery(capitalCoord.X, capitalCoord.Y)).GetAwaiter().GetResult().NotNull();
                 return screen.Tooltips.IsShowing && screen.Tooltips.ShownText == ExpectedTileTip() && info.IsCityCenter && info.OwningCity == capital.Name
-                    && screen.Tooltips.ShownText.StartsWith(capital.Name, StringComparison.Ordinal) && info.Yields.Count > 0 && info.BaseTerrain == capitalTile.BaseTerrain;
+                    && screen.Tooltips.ShownText.StartsWith(capital.Name, StringComparison.Ordinal) && info.Yields.Count > 0 && info.YieldBreakdown.Count > 0 && screen.Tooltips.ShownText.Contains("Total", StringComparison.Ordinal) && info.BaseTerrain == capitalTile.BaseTerrain;
             }),
-            new Capture("tile", "Tile tooltip beside the pointer: the capital, its terrain, owner and yields"),
+            new Capture("tile", "Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources"),
             new Act("pointer onto the top bar", () => InputSimulator.SimulateMouseMove(viewport, new Vector2(300, 8))),
             new WaitFrames(3),
             new AssertQuery("over the HUD the map tip goes away", () => screen.HoveredTile == null && !screen.Tooltips.IsShowing && screen.HoverTip.Length == 0),
+
+            new Act("open the capital's city screen", () => screen.OpenCityScreen(recording.Snapshot.Cities.First(it => it.Own?.Id == capital.Id))),
+            new WaitFrames(6),
+            new AssertQuery("each stat of the city has the shared breakdown as its tooltip: sources then the engine's total", () =>
+            {
+                var panel = screen.City.Panel.NotNull();
+                var foodSources = TooltipModel.StatBreakdown("Food", panel.StatSources, panel.TotalStats.First(it => it.Stat == "Food").Value);
+                string food = screen.City.StatTooltip("Food").NotNull();
+                return panel.TotalStats.Count > 0 && food == TooltipModel.ToPlain(foodSources, text => text.Tr()) && food.Contains("Food", StringComparison.Ordinal)
+                    && food.Contains("\n", StringComparison.Ordinal) && screen.City.StatTooltip("Nothing") == null
+                    && panel.TotalStats.All(stat => screen.City.StatTooltip(stat.Stat).NotNull().Contains(TooltipModel.ToPlain([TooltipModel.StatBreakdown(stat.Stat, panel.StatSources, stat.Value)[^1]], text => text.Tr()), StringComparison.Ordinal));
+            }),
+            new Press("Close city"),
+            new WaitFrames(2),
 
             new Act("remember the command log", () => logged = session.Log.Count),
             new Click(() => Centre(screen.PediaButton)),

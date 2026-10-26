@@ -482,9 +482,9 @@ Tile hover tooltip and the Civilopedia: categories, entries with icons, engine-w
 
 Scenario `tooltips`.
 
-![Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields.](../Unciv.Godot.Harness/golden/tooltips/tile.png)
+![Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields, each yield followed by its sources and total.](../Unciv.Godot.Harness/golden/tooltips/tile.png)
 
-*Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields.* (`tooltips/tile.png`)
+*Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields, each yield followed by its sources and total.* (`tooltips/tile.png`)
 
 ![Civilopedia, Units: the Archer's page with stats, requirements and links.](../Unciv.Godot.Harness/golden/tooltips/unit.png)
 

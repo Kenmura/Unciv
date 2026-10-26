@@ -42,7 +42,13 @@ public static class TooltipModel
         if (tile.Owner != null) lines.Add(new TipLine(tile.OwningCity != null ? $"Owned by [{tile.OwningCity}]" : tile.Owner));
         if (seen && tile.WorkedBy != null) lines.Add(new TipLine($"Worked by [{tile.WorkedBy}]"));
         foreach (var unit in tile.Units) lines.Add(new TipLine($"{unit.Name} - {unit.Civ}"));
-        if (seen && tile.Yields.Count > 0) lines.Add(new TipLine(string.Join(", ", tile.Yields.Select(Amount))));
+        if (seen && tile.Yields.Count > 0)
+        {
+            lines.Add(new TipLine(string.Join(", ", tile.Yields.Select(Amount))));
+            // C056: where each yield comes from, as the engine itemised it. Seen tiles only, like the yields themselves.
+            if (tile.YieldBreakdown.Count > 0)
+                foreach (var yield in tile.Yields) lines.AddRange(StatBreakdown(yield.Stat, tile.YieldBreakdown, yield.Value));
+        }
         return lines;
     }
 
@@ -70,20 +76,21 @@ public static class TooltipModel
 
     /// <summary>
     /// The sources of a stat, one line each, then the total of the sources. Only sources that contribute to <paramref name="stat"/> are listed; the total is the sum of the listed values,
-    /// so it equals the engine's figure whenever the engine's sources add up to it (a tile or city yield).
+    /// so it equals the engine's figure whenever the engine's sources add up to it (a tile or city yield). C056: a caller that has the engine's own figure passes it as
+    /// <paramref name="total"/> and that is shown instead of the sum, so a bonus the sources do not itemise cannot make the tooltip disagree with the screen.
     /// </summary>
-    public static IReadOnlyList<TipLine> StatBreakdown(string stat, IReadOnlyList<StatSource> sources)
+    public static IReadOnlyList<TipLine> StatBreakdown(string stat, IReadOnlyList<StatSource> sources, float? total = null)
     {
         var lines = new List<TipLine> { new($"{{{stat}}}") };
-        float total = 0f;
+        float sum = 0f;
         foreach (var source in sources)
         {
             var amount = source.Stats.FirstOrDefault(it => it.Stat == stat);
             if (amount == null || amount.Value == 0f) continue;
             lines.Add(new TipLine($"{{{source.Source}}}: {Signed(amount.Value)}"));
-            total += amount.Value;
+            sum += amount.Value;
         }
-        lines.Add(new TipLine($"{{Total}}: {Signed(total)}"));
+        lines.Add(new TipLine($"{{Total}}: {Signed(total ?? sum)}"));
         return lines;
     }
 
@@ -98,6 +105,10 @@ public static class TooltipModel
         }
         return text.ToString();
     }
+
+    /// <summary>The lines as plain text for a tooltip that does not render BBCode (a control's own tooltip): engine text kept, other text translated.</summary>
+    public static string ToPlain(IEnumerable<TipLine> lines, Func<string, string> translate) =>
+        string.Join('\n', lines.Select(line => line.Final ? line.Text : translate(line.Text)));
 
     /// <summary>BBCode treats a bracket as a tag; translated text may still contain one (a name such as "[x]"), so it is written as its entity.</summary>
     public static string Escape(string text) => text.Replace("[", "[lb]", StringComparison.Ordinal);
