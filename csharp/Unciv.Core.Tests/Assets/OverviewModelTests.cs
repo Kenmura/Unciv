@@ -153,15 +153,15 @@ public class OverviewModelTests
     [Fact]
     public void ReligionLinesCoverDisabledPantheonOwnReligionAndChoices()
     {
-        Assert.Equal(["Religion is not enabled in this game."], OverviewModel.ReligionLines(new ReligionResult(false, "None", 0, null, null, [], false, false, 0, new Dictionary<string, int>(), new Dictionary<string, IReadOnlyList<string>>())));
-        var pantheon = OverviewModel.ReligionLines(new ReligionResult(true, "None", 12, null, null, [], true, false, 25, new Dictionary<string, int>(), new Dictionary<string, IReadOnlyList<string>> { ["Pantheon"] = ["A", "B"] }));
+        Assert.Equal(["Religion is not enabled in this game."], OverviewModel.ReligionLines(new ReligionResult(false, "None", 0, null, null, [], false, false, 0, new Dictionary<string, int>(), new Dictionary<string, IReadOnlyList<string>>(), [], [])));
+        var pantheon = OverviewModel.ReligionLines(new ReligionResult(true, "None", 12, null, null, [], true, false, 25, new Dictionary<string, int>(), new Dictionary<string, IReadOnlyList<string>> { ["Pantheon"] = ["A", "B"] }, [], []));
         Assert.Contains("You hold no beliefs yet.", pantheon);
         Assert.Contains("You can found a pantheon (25 faith).", pantheon);
         Assert.Contains("Free Pantheon beliefs: 2", pantheon);
-        var expand = OverviewModel.ReligionLines(new ReligionResult(true, "Pantheon", 12, null, null, [], false, true, 40, new Dictionary<string, int>(), new Dictionary<string, IReadOnlyList<string>>()));
+        var expand = OverviewModel.ReligionLines(new ReligionResult(true, "Pantheon", 12, null, null, [], false, true, 40, new Dictionary<string, int>(), new Dictionary<string, IReadOnlyList<string>>(), [], []));
         Assert.Contains("You can add to your pantheon (40 faith).", expand);
         var own = OverviewModel.ReligionLines(new ReligionResult(true, "FoundingReligion", 5, "Zoro", "Zoroastrianism", [new BeliefEntry("Fire", "Pantheon")], false, false, 0,
-            new Dictionary<string, int> { ["Founder"] = 1 }, new Dictionary<string, IReadOnlyList<string>>()));
+            new Dictionary<string, int> { ["Founder"] = 1 }, new Dictionary<string, IReadOnlyList<string>>(), [], []));
         Assert.Contains("Religion: Zoroastrianism", own);
         Assert.Contains("Beliefs: Fire (Pantheon)", own);
         Assert.Contains("To choose: 1 Founder belief(s)", own);
