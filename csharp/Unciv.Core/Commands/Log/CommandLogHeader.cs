@@ -18,6 +18,9 @@ public sealed record CommandLogHeader
 
     public const string SequentialTurns = "Sequential";
 
+    /// <summary>T203: all humans play at once; replay switches the started game to simultaneous turns.</summary>
+    public const string SimultaneousTurns = "Simultaneous";
+
     [JsonPropertyName("formatVersion")]
     public int FormatVersion { get; init; } = CurrentFormatVersion;
 
@@ -48,7 +51,7 @@ public sealed record CommandLogHeader
     [JsonPropertyName("startClockMillis")]
     public long StartClockMillis { get; init; }
 
-    /// <summary>"Sequential" (the only path T194 replays itself); the simultaneous modes are carried for T203.</summary>
+    /// <summary>"Sequential" (the default) or "Simultaneous" (T203): the mode the game was started in, applied by <see cref="ReplayVerifier.StartGame"/>.</summary>
     [JsonPropertyName("turnMode")]
     public string TurnMode { get; init; } = SequentialTurns;
 

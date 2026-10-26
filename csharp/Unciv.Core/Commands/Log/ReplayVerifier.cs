@@ -31,6 +31,8 @@ public static class ReplayVerifier
             throw new CommandLogException("The ruleset differs from the one the log was played with");
         var game = GameStarter.StartNewGame(CommandLogHeader.Copy(header.GameSetup), header.GameSeed, header.StartClockMillis);
         foreach (var (civId, settings) in header.PlayerSettings) game.SetPlayerSettings(civId, settings);
+        if (header.TurnMode == CommandLogHeader.SimultaneousTurns) game.StartSimultaneousTurns();
+        else if (header.TurnMode != CommandLogHeader.SequentialTurns) throw new CommandLogException($"Unknown turn mode \"{header.TurnMode}\"");
         game.RandomSalt = header.HostSecret; // T230: set after the start, exactly like the host does
         return game;
     }
