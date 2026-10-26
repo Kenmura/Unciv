@@ -516,6 +516,20 @@ Scenario `options`.
 
 *Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
 
+## C031 (ticket not Done or unknown)
+
+Terrain blending, fog edge fade and chunked terrain meshes.
+
+Scenario `terrain-blend`.
+
+![Default tilt: grass, plains and desert melt into each other and into the coast; the ocean fades toward black at the edge of the explored area.](../Unciv.Godot.Harness/golden/terrain-blend/blend-default.png)
+
+*Default tilt: grass, plains and desert melt into each other and into the coast; the ocean fades toward black at the edge of the explored area.* (`terrain-blend/blend-default.png`)
+
+![Low oblique, zoomed in: blended edges between terrains while hills and mountains keep their cliff walls.](../Unciv.Godot.Harness/golden/terrain-blend/blend-low.png)
+
+*Low oblique, zoomed in: blended edges between terrains while hills and mountains keep their cliff walls.* (`terrain-blend/blend-low.png`)
+
 ## C032 Improvements, roads, cities, borders and in-world yield icons
 
 Improvement props, roads and rails, city models with civ flags, borders and in-world tile yield icons.
