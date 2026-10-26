@@ -618,6 +618,26 @@ public class BattleBranchTests
         Assert.Contains("Conquer a city", testGame.GameInfo.ClientState.TutorialTasksCompleted(attackerCiv.CivId));
     }
 
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void ConqueringACitySimultaneouslyCompletesTheTutorialTaskOnlyForAnActiveHuman(bool attackerHasEndedTurn, bool completed)
+    {
+        testGame.AddCity(defenderCiv, testGame.GetTile(-4, 0));
+        var city = testGame.AddCity(defenderCiv, testGame.GetTile(0, 1), initialPopulation: 5);
+        city.Health = 1;
+        testGame.GameInfo.CurrentPlayerCiv = defenderCiv; // T201: nobody is "the" current player, the attacker is not it
+        testGame.GameInfo.CurrentPlayer = defenderCiv.CivId;
+        var attacker = Melee(attackerCiv, 0, 2); // before the round starts, so the attacker is not defeated (no units) and joins it
+        testGame.GameInfo.StartSimultaneousTurns();
+        if (attackerHasEndedTurn) testGame.GameInfo.EndHumanTurn(attackerCiv);
+
+        BattleObject.Attack(C(attacker), new CityCombatant(city));
+
+        Assert.Equal(attackerCiv, city.Civ);
+        Assert.Equal(completed, testGame.GameInfo.ClientState.TutorialTasksCompleted.Contains("Conquer a city"));
+    }
+
     [Fact]
     public void ABarbarianKilledNextToACityStateMakesTheCityStateLikeTheKiller()
     {

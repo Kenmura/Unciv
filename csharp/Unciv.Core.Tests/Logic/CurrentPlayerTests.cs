@@ -59,6 +59,18 @@ public sealed class CurrentPlayerTests
     }
 
     [Fact]
+    public void Sequential_AnAiCurrentPlayerStillDefers()
+    {
+        var w = new World();
+        w.Game.GameInfo.CurrentPlayerCiv = w.Ai;
+        var city = w.Ai.Cities[0];
+        city.ShouldReassignPopulation = false;
+        city.ReassignPopulationDeferred();
+        Assert.True(w.Ai.IsActive());
+        Assert.True(city.ShouldReassignPopulation); // IsActive alone is not enough: only humans reassign at once
+    }
+
+    [Fact]
     public void Simultaneous_EveryActiveHumanReassignsImmediately_AiAndEndedHumansDefer()
     {
         var w = new World();
