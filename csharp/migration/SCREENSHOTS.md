@@ -908,3 +908,4 @@ Done tickets with nothing meaningful to show.
 - **C049 Translate PolicyScreen error and status messages through Tr()**: Message strings only; no visible change in English, the policy scenario goldens are unchanged.
 - **C057 Wire engine PlaySound triggers to the client SoundPlayer (IClientAudio)**: Sound cues have nothing to look at; scenario audio asserts the PlaySound trigger reaches the viewer as one cue and only the viewer, and the game screen plays it.
 - **C058 Harness: other scenarios can capture stray hover tooltips under load (real-time TooltipHost delay)**: Harness-only change: scenarios no longer depend on real frame time; no new UI and no golden changed.
+- **C059 Espionage screen: coup button clipped at 640px width**: Layout fix (wrapping coup button) of the espionage screen shown under C051; its re-recorded goldens espionage/*.png are listed there, with the wrapped coup row in screen.png.

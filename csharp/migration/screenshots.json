@@ -384,6 +384,9 @@
       }
     ]
   },
+  "C059": {
+    "none": "Layout fix (wrapping coup button) of the espionage screen shown under C051; its re-recorded goldens espionage/*.png are listed there, with the wrapped coup row in screen.png."
+  },
   "C053": {
     "scenario": "vote-result",
     "about": "World Congress vote result: each civ you know with its votes, the worth of its vote, whom it voted for, the verdict and Continue.",
