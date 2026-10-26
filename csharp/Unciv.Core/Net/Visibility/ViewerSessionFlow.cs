@@ -124,12 +124,12 @@ public sealed class ViewerSessionFlow
 
     /// <summary>
     /// C029: in a sequential (hotseat) game, the civ id of another human whose turn is next and has not begun, else null. A simultaneous game never hands over (everyone plays at once),
-    /// and a civ that is not human (or no longer alive) is played by the auto players instead.
+    /// and an AI civ is played by the auto players instead (the phase is then AutoPlayers, never AwaitingInput, so only a human can be named).
     /// </summary>
     public string? HandOverTarget =>
         session.Game.TurnMode == TurnMode.Sequential
         && session.Game.TurnPhase is TurnPhase.AwaitingInput(var next)
-        && next.CivId != viewerCivId && next.IsHuman() && !session.Game.IsTurnStarted(next)
+        && next.CivId != viewerCivId && !session.Game.IsTurnStarted(next)
             ? next.CivId
             : null;
 
