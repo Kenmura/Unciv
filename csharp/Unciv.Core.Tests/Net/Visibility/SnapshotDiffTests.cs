@@ -137,6 +137,73 @@ public sealed class SnapshotDiffTests
         Assert.Null(diff.Diplomacy);
     }
 
+    // ---- hostile or stale diffs (T224 review) ---------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public void ADiffAppliedToTheWrongBase_GivesAHashThatDiffersFromTheHostsHash()
+    {
+        var before = Snap(1, [Tile(0, 0)], [Unit(1)]);
+        var after = Snap(2, [Tile(0, 0), Tile(1, 0)], [Unit(1, 3, 3)]);
+        var staleMirror = Snap(1, [Tile(0, 0)], [Unit(1), Unit(7)]); // the mirror missed an earlier delta
+        var applied = SnapshotDiff.Compute(before, after).Apply(staleMirror);
+        Assert.NotEqual(SnapshotBuilder.ComputeViewHash(after), applied.ViewHash);
+        // A base too short for the insert positions is refused outright: the client resyncs either way.
+        Assert.Throws<InvalidDataException>(() => SnapshotDiff.Compute(before, after).Apply(Snap(1)));
+        // A changed item the mirror does not have is dropped, not invented: a mismatch.
+        var missing = SnapshotDiff.Compute(before, Snap(2, [Tile(0, 0, "Plains")], [Unit(1)])).Apply(Snap(1));
+        Assert.NotEqual(SnapshotBuilder.ComputeViewHash(Snap(2, [Tile(0, 0, "Plains")], [Unit(1)])), missing.ViewHash);
+    }
+
+    [Fact]
+    public void MalformedDiffs_ThrowInvalidData_InsteadOfCorruptingOrCrashing()
+    {
+        var mirror = Snap(1, [Tile(0, 0), Tile(1, 0)], [Unit(1), Unit(2)]);
+        KeyedDiff<UnitDto> Units(List<UnitDto>? changed = null, List<UnitDto>? added = null, List<int>? at = null, List<string>? removed = null, List<string>? order = null) =>
+            new() { Changed = changed ?? [], Added = added ?? [], AddedAt = at ?? [], Removed = removed ?? [], Order = order };
+        SnapshotDiff With(KeyedDiff<UnitDto> units) => new() { Seq = 2, Units = units };
+
+        Assert.Throws<InvalidDataException>(() => With(Units(added: [Unit(5)], at: [])).Apply(mirror)); // index list shorter
+        Assert.Throws<InvalidDataException>(() => With(Units(added: [Unit(5)], at: [99])).Apply(mirror)); // outside the list
+        Assert.Throws<InvalidDataException>(() => With(Units(added: [Unit(5)], at: [-1])).Apply(mirror));
+        Assert.Throws<InvalidDataException>(() => With(Units(added: [Unit(5), Unit(6)], at: [1, 1])).Apply(mirror)); // not strictly ascending
+        Assert.Throws<InvalidDataException>(() => With(Units(changed: [Unit(1), Unit(1)])).Apply(mirror)); // duplicate key
+        Assert.Throws<InvalidDataException>(() => With(Units(order: ["1", "9"])).Apply(mirror)); // order names an unknown key
+        Assert.Throws<InvalidDataException>(() => With(Units(order: ["1", "1"])).Apply(mirror)); // duplicate in the order
+        Assert.Throws<InvalidDataException>(() => With(Units(order: ["1"])).Apply(mirror)); // order drops a survivor
+        Assert.Throws<InvalidDataException>(() => With(Units(changed: new List<UnitDto?> { null }.Cast<UnitDto>().ToList())).Apply(mirror));
+        Assert.Throws<InvalidDataException>(() => With(new KeyedDiff<UnitDto> { Changed = null!, Added = [], AddedAt = [], Removed = [] }).Apply(mirror));
+        // The mirror itself is an immutable value: a refused diff leaves it as it was.
+        Assert.Equal(2, mirror.Units.Count);
+    }
+
+    [Fact]
+    public void AVeryLargeDiff_RoundTripsInLinearTime()
+    {
+        var tiles = Enumerable.Range(0, 60000).Select(i => Tile(i % 300, i / 300)).ToList();
+        var before = Snap(1, tiles.Where((_, i) => i % 2 == 0).ToList());
+        var after = Snap(2, tiles);
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        AssertSame(after, RoundTrip(before, after));
+        Assert.True(watch.ElapsedMilliseconds < 20000, $"{watch.ElapsedMilliseconds} ms");
+    }
+
+    [Fact]
+    public void ATileLeavingVision_BecomesTheSameFoggedTileAFreshSnapshotHas_AndRemovalsNameOnlyKnownItems()
+    {
+        var seen = Tile(0, 0) with { Visible = true, Owner = "B", Road = "Road" };
+        var fogged = Tile(0, 0) with { Visible = false };
+        var before = Snap(1, [seen], [Unit(1), Unit(2, 4, 4)]);
+        var after = Snap(2, [fogged], [Unit(1)]);
+        var diff = SnapshotDiff.Compute(before, after);
+        var changed = Assert.Single(diff.Tiles!.Changed);
+        Assert.Equal(fogged, changed);
+        Assert.Null(changed.Owner);
+        Assert.Null(changed.Road);
+        Assert.Equal(["2"], diff.Units!.Removed); // only an id the recipient already had
+        AssertSame(after, RoundTrip(before, after));
+        Assert.DoesNotContain(diff.Units.Removed, id => before.Units.All(it => it.Id.ToString() != id));
+    }
+
     // ---- alerts and pending decisions -----------------------------------------------------------------------------------------------------------
 
     [Fact]

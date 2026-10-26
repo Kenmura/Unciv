@@ -125,25 +125,47 @@ public sealed record SnapshotDiff
         };
     }
 
+    /// <summary>
+    /// Applies one keyed diff. A diff from a hostile or buggy host (null members, an index outside the list, an order that is not a permutation) throws
+    /// <see cref="InvalidDataException"/> instead of corrupting the mirror, and the work is linear in the sizes of the mirror and the diff: the caller treats
+    /// the exception like a hash mismatch and asks for a full snapshot. A diff that is well formed but made for another base state is caught by the hash.
+    /// </summary>
     private static List<T> Merge<T>(List<T> current, KeyedDiff<T>? diff, Func<T, string> key)
     {
         if (diff == null) return current;
+        if (diff.Changed == null || diff.Added == null || diff.AddedAt == null || diff.Removed == null || diff.Added.Count != diff.AddedAt.Count
+            || diff.Changed.Any(it => it is null) || diff.Added.Any(it => it is null) || diff.Removed.Any(it => it is null))
+            throw new InvalidDataException("Malformed snapshot diff");
         var removed = diff.Removed.ToHashSet();
-        var replacements = diff.Changed.ToDictionary(key);
-        var result = new List<T>(current.Count + diff.Added.Count);
+        var replacements = new Dictionary<string, T>();
+        foreach (var item in diff.Changed)
+            if (!replacements.TryAdd(key(item), item)) throw new InvalidDataException("Duplicate changed item in snapshot diff");
+        var survivors = new List<T>(current.Count);
         foreach (var item in current)
         {
             var itemKey = key(item);
-            if (!removed.Contains(itemKey)) result.Add(replacements.GetValueOrDefault(itemKey, item));
+            if (!removed.Contains(itemKey)) survivors.Add(replacements.GetValueOrDefault(itemKey, item));
         }
         if (diff.Order != null)
         {
-            result.AddRange(diff.Added);
-            var position = new Dictionary<string, int>();
-            for (var i = 0; i < diff.Order.Count; i++) position[diff.Order[i]] = i;
-            return [.. result.OrderBy(it => position[key(it)])];
+            if (diff.Order.Any(it => it is null)) throw new InvalidDataException("Malformed snapshot diff order");
+            var byKey = new Dictionary<string, T>();
+            foreach (var item in survivors.Concat(diff.Added))
+                if (!byKey.TryAdd(key(item), item)) throw new InvalidDataException("Duplicate key in snapshot diff");
+            if (diff.Order.Count != byKey.Count || diff.Order.ToHashSet().Count != byKey.Count || diff.Order.Any(it => !byKey.ContainsKey(it)))
+                throw new InvalidDataException("Snapshot diff order is not a permutation of the new list");
+            return [.. diff.Order.Select(it => byKey[it])];
         }
-        for (var i = 0; i < diff.Added.Count; i++) result.Insert(diff.AddedAt[i], diff.Added[i]);
+        var total = survivors.Count + diff.Added.Count;
+        var result = new List<T>(total);
+        int next = 0, nextSurvivor = 0;
+        for (var i = 0; i < total; i++)
+        {
+            if (next < diff.Added.Count && diff.AddedAt[next] == i) result.Add(diff.Added[next++]);
+            else if (nextSurvivor < survivors.Count) result.Add(survivors[nextSurvivor++]);
+            else throw new InvalidDataException("Snapshot diff insert positions are inconsistent");
+        }
+        if (next != diff.Added.Count) throw new InvalidDataException("Snapshot diff insert positions are not ascending positions in the new list");
         return result;
     }
 }
