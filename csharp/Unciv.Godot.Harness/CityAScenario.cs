@@ -151,18 +151,21 @@ public sealed class CityAScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("the foreign city shows only its snapshot entry: owner, size, defence, wonders", () =>
                 screen.City.IsForeign && screen.City.Panel == null && screen.City.TitleText == "Thebes"
-                && screen.City.SideTexts.Contains("Wonders: Pyramids") && screen.City.SideTexts.Contains("Defence: 25/40") && screen.City.Cells.Count == 0 && !screen.City.HasFocusChoice),
+                && screen.City.SideTexts.Contains("Wonders: Pyramids") && screen.City.SideTexts.Contains("Defence: 25/40") && screen.City.Cells.Count == 0 && !screen.City.HasFocusChoice
+                && !screen.City.RenameButton.Visible && NoRenamePopup(screen.City)),
             new AssertQuery("no city query was asked about it", () => recording.Queries.Count == 0),
-            new AssertQuery("a foreign city cannot be renamed: no Rename button, and the popup does not open (C048)", () =>
-            {
-                screen.City.OpenRename();
-                return !screen.City.RenameButton.Visible && !screen.City.RenamePopup.Visible;
-            }),
             new Capture("foreign", "A city of another civ: only what a stranger can see"),
             new Press("Close city"),
             new AssertQuery("the close button closes the screen and the hook", () => screen.OpenCity == null && !screen.IsCityPanelVisible),
             new AssertQuery("the whole scenario stayed on the command path: nothing was refused", () => refusals.Count == 0),
         ];
+    }
+
+    /// <summary>C048: a foreign city cannot be renamed, the popup does not open for it.</summary>
+    private static bool NoRenamePopup(CityScreen city)
+    {
+        city.OpenRename();
+        return !city.RenamePopup.Visible;
     }
 
     /// <summary>Forwards to a real session and remembers every query type asked since the last <see cref="Queries"/> clear.</summary>
