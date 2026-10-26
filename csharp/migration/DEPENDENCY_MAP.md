@@ -200,7 +200,7 @@ flowchart TD
   class C038 prog
   class C039 ready
   class C040 prog
-  class C044 prog
+  class C044 review
   class C045 waiting
   class C046 ready
   class C047 ready
@@ -301,7 +301,7 @@ xychart-beta
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C038 | In-Progress [Claude] | C005, C037, T220, T192, T197 | 0 | Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result |
 | C040 | In-Progress [Claude] | C037, C011 | 0 | Run end-turn processing and AI turns off the UI thread with a next-turn progress overlay |
-| C044 | In-Progress [Claude] | C005, C016 | 0 | In-game menu: save, load, new game, resign, victory status, options, main menu |
+| C044 | Needs-Review [Claude] | C005, C016 | 0 | In-game menu: save, load, new game, resign, victory status, options, main menu |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
