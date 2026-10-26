@@ -112,6 +112,7 @@ public partial class GameScreen : Control
     public void OpenPolicyScreen()
     {
         ShowCity(null);
+        if (Trade.Visible) Trade.Close();
         if (Diplomacy.Visible) Diplomacy.Close();
         if (Tech.Visible) Tech.Close();
         Deselect();
@@ -128,6 +129,7 @@ public partial class GameScreen : Control
         SetStatus("Diplomacy");
         if (Tech.Visible) Tech.Close();
         if (Overview.Visible) Overview.Close();
+        if (Trade.Visible) Trade.Close();
         Run(Diplomacy.OpenAsync(civId));
     }
 
@@ -145,6 +147,7 @@ public partial class GameScreen : Control
         if (Diplomacy.Visible) Diplomacy.Close();
         if (Tech.Visible) Tech.Close();
         Deselect();
+        if (Trade.Visible) Trade.Close();
         SetStatus("Overview");
         Run(Overview.OpenAsync(tab));
     }
@@ -168,6 +171,25 @@ public partial class GameScreen : Control
         Map.FocusOn(UnitPosition(new HexCoord(node.Unit.X, node.Unit.Y), 0));
     }
 
+    /// <summary>C022: the trade screen, opened by the Trade button.</summary>
+    public TradeScreen Trade { get; private set; } = null!; // JUSTIFY: C022 assigned in Start before any use
+
+    public bool IsTradeVisible => Trade.Visible;
+
+    public Button TradeButton { get; } = new() { Name = "TradeButton", Text = "Trade".Tr() };
+
+    /// <summary>Opens the trade screen on the civ with this id (the first met major civ when null), closing the other screens.</summary>
+    public void OpenTradeScreen(string? civId = null)
+    {
+        ShowCity(null);
+        if (Diplomacy.Visible) Diplomacy.Close();
+        if (Tech.Visible) Tech.Close();
+        if (Overview.Visible) Overview.Close();
+        Deselect();
+        SetStatus("Trade");
+        Run(Trade.OpenAsync(civId));
+    }
+
     /// <summary>C019: the tech screen, opened by the Technology button.</summary>
     public TechScreen Tech { get; private set; } = null!; // JUSTIFY: C019 assigned in Start before any use
 
@@ -182,6 +204,7 @@ public partial class GameScreen : Control
         if (Diplomacy.Visible) Diplomacy.Close();
         if (Policies.Visible) Policies.Close();
         if (Overview.Visible) Overview.Close();
+        if (Trade.Visible) Trade.Close();
         Deselect();
         SetStatus("Technology");
         Run(Tech.OpenAsync(tech));
@@ -280,6 +303,8 @@ public partial class GameScreen : Control
         AddChild(DiplomacyButton);
         DiplomacyButton.Pressed += () => OpenDiplomacyScreen();
         AddChild(TechButton);
+        AddChild(TradeButton);
+        TradeButton.Pressed += () => OpenTradeScreen();
         TechButton.Pressed += () => OpenTechScreen();
         AddChild(PolicyButton);
         PolicyButton.Pressed += OpenPolicyScreen;
@@ -336,6 +361,11 @@ public partial class GameScreen : Control
             Diplomacy.Position = new Vector2(0f, Hud.TopBarHeight);
             Diplomacy.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
+        if (Trade != null)
+        {
+            Trade.Position = new Vector2(0f, Hud.TopBarHeight);
+            Trade.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
+        }
         if (Tech != null)
         {
             Tech.Position = new Vector2(0f, Hud.TopBarHeight);
@@ -355,6 +385,7 @@ public partial class GameScreen : Control
             Policies.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
         OverviewButton.Position = new Vector2(PolicyButton.Position.X + PolicyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
+        TradeButton.Position = new Vector2(OverviewButton.Position.X + OverviewButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
         Notifications.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
@@ -410,6 +441,15 @@ public partial class GameScreen : Control
             RemoveChild(Tech);
             Tech.QueueFree();
         }
+        if (Trade != null)
+        {
+            RemoveChild(Trade);
+            Trade.QueueFree();
+        }
+        Trade = new TradeScreen(session, theme);
+        AddChild(Trade);
+        Trade.CommandAccepted += Refresh;
+        TradeButton.Theme = theme.Theme;
         Tech = new TechScreen(session, theme);
         AddChild(Tech);
         Tech.CommandAccepted += Refresh;
@@ -567,6 +607,7 @@ public partial class GameScreen : Control
         if (city != null && Tech.Visible) Tech.Close();
         if (city != null && Policies.Visible) Policies.Close();
         if (city != null && Overview.Visible) Overview.Close();
+        if (city != null && Trade.Visible) Trade.Close();
         if (city != null) Deselect(); // C012: the unit panel gives way to the city screen
         OpenCity = city;
         if (city == null)

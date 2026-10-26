@@ -32,6 +32,7 @@
     "Unciv.Assets/StableHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/TechScreenModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/TerrainRelief.cs": {"branch": 96.51, "line": 98.87},
+    "Unciv.Assets/TradeScreenModel.cs": {"branch": 97.73, "line": 99.44},
     "Unciv.Assets/UnitOrdersModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/UnitVisuals.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Cli/CliArgs.cs": {"branch": 100.0, "line": 100.0},
@@ -615,7 +616,7 @@
     "Unciv.Harness/PerceptualHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ReviewIndex.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Harness/ScenarioGame.cs": {"branch": 94.44, "line": 99.11},
+    "Unciv.Harness/ScenarioGame.cs": {"branch": 94.64, "line": 99.19},
     "Unciv.Harness/ScenarioReplay.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0}
   },

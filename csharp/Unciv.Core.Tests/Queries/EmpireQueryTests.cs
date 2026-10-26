@@ -190,6 +190,29 @@ public class EmpireQueryTests
     }
 
     [Fact]
+    public void TradeOptionsNameCitiesAndCivsForOffersWhoseNameIsAnId()
+    {
+        var ours = testGame.AddCity(player, testGame.GetTile(0, 4));
+        var theirs = testGame.AddCity(enemy, testGame.GetTile(6, 6));
+        player.DiplomacyFunctions.MakeCivilizationsMeet(stranger);
+        enemy.DiplomacyFunctions.MakeCivilizationsMeet(stranger);
+        enemy.GetDiplomacyManager(stranger)!.DeclareWar();
+        var result = Ask(new TradeOptionsQuery(enemy.CivName));
+        Assert.Equal(ours.Name, result.Ours.Single(it => it.Type == "City").DisplayName);
+        Assert.Equal(theirs.Name, result.Theirs.Where(it => it.Type == "City").Select(it => it.DisplayName).Single());
+        Assert.Equal(ours.Id, result.Ours.Single(it => it.Type == "City").Name);
+        foreach (var type in new[] { TradeOfferType.Introduction, TradeOfferType.WarDeclaration, TradeOfferType.PeaceProposal })
+        {
+            var offer = new TradeOffer(stranger.CivId, type, 1, testGame.GameInfo.Speed);
+            Assert.Equal(stranger.CivName, TradeOptionsQuery.DisplayNameOf(testGame.GameInfo, player, enemy, offer));
+        }
+        Assert.Null(TradeOptionsQuery.DisplayNameOf(testGame.GameInfo, player, enemy, new TradeOffer("nobody", TradeOfferType.Introduction, 1, testGame.GameInfo.Speed)));
+        Assert.Null(TradeOptionsQuery.DisplayNameOf(testGame.GameInfo, player, enemy, new TradeOffer("nobody", TradeOfferType.City, 1, testGame.GameInfo.Speed)));
+        Assert.Null(TradeOptionsQuery.DisplayNameOf(testGame.GameInfo, player, enemy, new TradeOffer(stranger.CivId, TradeOfferType.Treaty, 1, testGame.GameInfo.Speed)));
+        Assert.All(result.Ours.Concat(result.Theirs).Where(it => it.Type != "City"), it => Assert.Null(it.DisplayName));
+    }
+
+    [Fact]
     public void TradeHintIsOffByDefault()
     {
         Assert.Equal(EmpireQueryCodes.HintsDisabled, Fail(new TradeHintQuery(enemy.CivName, [], [])));

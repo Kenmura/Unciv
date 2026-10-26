@@ -52,9 +52,9 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false)
     {
-        diplomacy |= alerts;
+        diplomacy |= alerts | trade;
         solo |= skirmish | diplomacy | policies | victory | defeat;
         var ruleset = LoadVanilla();
         var game = GameStarter.StartNewGame(
@@ -86,6 +86,7 @@ public static class ScenarioGame
         if (alerts) SetUpAlerts(game);
         if (victory) SetUpVictory(game);
         if (defeat) SetUpDefeat(game);
+        if (trade) SetUpTrade(game);
         return new GameSession(game);
     }
 
@@ -189,6 +190,23 @@ public static class ScenarioGame
     private static void SetUpDefeat(GameInfo game)
     {
         foreach (var unit in game.GetCivilization(HumanA).Units.GetCivUnits().ToList()) unit.Destroy();
+    }
+
+    /// <summary>
+    /// C022: the diplomacy game plus a trade table. Trade hints are on (the screen shows the AI's likely answer), Rome has 500 gold and has sent the human a trade
+    /// (100 gold for 30 gold) and a demand (stop spreading its religion). Set up directly on the state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpTrade(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var rome = game.GetCivilization(Ai);
+        game.GameParameters.TradeHintsEnabled = true;
+        rome.AddGold(500 - rome.Gold);
+        var offer = new Unciv.Logic.Trade.Trade();
+        offer.OurOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.FlatGold, Unciv.Logic.Trade.TradeOfferType.Gold, 30, game.Speed));
+        offer.TheirOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.FlatGold, Unciv.Logic.Trade.TradeOfferType.Gold, 100, game.Speed));
+        human.TradeRequests.Add(new Unciv.Logic.Trade.TradeRequest(rome.CivId, offer));
+        human.AddPopupAlert(new Unciv.Logic.Civilization.PopupAlert(Unciv.Logic.Civilization.AlertType.DemandToStopSpreadingReligion, rome.CivId));
     }
 
     /// <summary>The 64-bit canonical hash of the whole game state (serialised form), as lowercase hex.</summary>

@@ -233,4 +233,29 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.True(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], [], Defeat: true).ToJson()).Defeat);
         Assert.False(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], []).ToJson()).Defeat);
     }
+
+    [Fact]
+    public void TradeGameHasHintsOnRomeRichAndATradeAndADemandWaitingAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(trade: true);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        var rome = session.Game.GetCivilization(ScenarioGame.Ai);
+        Assert.True(session.Game.GameParameters.TradeHintsEnabled);
+        Assert.True(human.Knows(rome));
+        Assert.Equal(500, rome.Gold);
+        var request = Assert.Single(human.TradeRequests);
+        Assert.Equal(rome.CivId, request.RequestingCiv);
+        Assert.Equal(30, request.Trade.OurOffers.Single().Amount);
+        Assert.Equal(100, request.Trade.TheirOffers.Single().Amount);
+        Assert.Contains(human.PopupAlerts, it => it.Type == Unciv.Logic.Civilization.AlertType.DemandToStopSpreadingReligion && it.Value == rome.CivId);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(trade: true)));
+        Assert.NotEqual(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(diplomacy: true)));
+        var accepted = session.Submit(ScenarioGame.HumanA, new Unciv.Commands.Diplomacy.RespondToTradeRequest { CivId = rome.CivId, Accept = true });
+        Assert.True(accepted.Accepted);
+        Assert.Equal(1070, human.Gold);
+        Assert.Equal(430, rome.Gold);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, trade: true));
+        var json = new ScenarioResult("t", 1, 2, "h", [], [], [], [], Trade: true).ToJson();
+        Assert.True(ScenarioResult.FromJson(json).Trade);
+    }
 }

@@ -366,6 +366,28 @@
       }
     ]
   },
+  "C022": {
+    "scenario": "trade",
+    "about": "Trade screen: offer builder for both sides, incoming trade and demand from an AI civ, the engine's hint, propose and retract.",
+    "shots": [
+      {
+        "golden": "trade/open.png",
+        "caption": "Rome's trade proposal and demand wait at the top with their answer buttons; the columns list everything each side could offer."
+      },
+      {
+        "golden": "trade/staged.png",
+        "caption": "A gift of 20 gold staged with plus and minus: the summary and the engine's hint about Rome's answer."
+      },
+      {
+        "golden": "trade/proposed.png",
+        "caption": "Our offer waits for Rome's turn: propose is off and retract is offered."
+      },
+      {
+        "golden": "trade/answered.png",
+        "caption": "The next turn: Rome answered the gift, nothing waits and the treasuries changed."
+      }
+    ]
+  },
   "C042": {
     "none": "Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015."
   },

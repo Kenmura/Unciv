@@ -55,6 +55,13 @@ public sealed class GameQueries(IGameSession session)
 
     public Task<SpyDestinationsResult?> Spies() => session.QueryAsync(new SpyDestinationsQuery());
 
+    /// <summary>C022: everything each side could put on the table with a met major civ.</summary>
+    public Task<TradeOptionsResult?> TradeOptions(string civName) => session.QueryAsync(new TradeOptionsQuery(civName));
+
+    /// <summary>C022: the AI's likely answer to the staged trade; null when the game has hints off or the trade is not one the engine can judge.</summary>
+    public Task<TradeHintResult?> TradeHint(string civName, IReadOnlyList<TradeOfferRequest> ours, IReadOnlyList<TradeOfferRequest> theirs) =>
+        session.QueryAsync(new TradeHintQuery(civName, ours, theirs));
+
     public Task<UnitActionsResult?> Actions(int unitId) => session.QueryAsync(new UnitActionsQuery(unitId));
 
     public Task<AttackableTargetsResult?> AttackTargets(int unitId) => session.QueryAsync(new AttackableTargetsQuery(unitId));

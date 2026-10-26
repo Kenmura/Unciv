@@ -366,6 +366,28 @@ Scenario `diplomacy`.
 
 *City-state under the player's protection.* (`diplomacy/protected.png`)
 
+## C022 (ticket not Done or unknown)
+
+Trade screen: offer builder for both sides, incoming trade and demand from an AI civ, the engine's hint, propose and retract.
+
+Scenario `trade`.
+
+![Rome's trade proposal and demand wait at the top with their answer buttons; the columns list everything each side could offer.](../Unciv.Godot.Harness/golden/trade/open.png)
+
+*Rome's trade proposal and demand wait at the top with their answer buttons; the columns list everything each side could offer.* (`trade/open.png`)
+
+![A gift of 20 gold staged with plus and minus: the summary and the engine's hint about Rome's answer.](../Unciv.Godot.Harness/golden/trade/staged.png)
+
+*A gift of 20 gold staged with plus and minus: the summary and the engine's hint about Rome's answer.* (`trade/staged.png`)
+
+![Our offer waits for Rome's turn: propose is off and retract is offered.](../Unciv.Godot.Harness/golden/trade/proposed.png)
+
+*Our offer waits for Rome's turn: propose is off and retract is offered.* (`trade/proposed.png`)
+
+![The next turn: Rome answered the gift, nothing waits and the treasuries changed.](../Unciv.Godot.Harness/golden/trade/answered.png)
+
+*The next turn: Rome answered the gift, nothing waits and the treasuries changed.* (`trade/answered.png`)
+
 ## C023 (ticket not Done or unknown)
 
 Empire overview: tabs for stats, cities, units, resources, ranking, religion and espionage; Go to buttons jump to a city or unit.
