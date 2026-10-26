@@ -184,7 +184,7 @@ Scenario `unit-orders`.
 
 *Disband confirmation prompt.* (`unit-orders/disband-confirm.png`)
 
-## C013 (ticket not Done or unknown)
+## C013 Notifications and popup alerts
 
 Notification list and popup alerts: demand, city conquered, review of informational alerts, clickable notifications.
 
@@ -314,7 +314,7 @@ Scenario `tech`.
 
 *Pottery researched instead: the queue is replaced and Pottery is the current research.* (`tech/replaced.png`)
 
-## C020 (ticket not Done or unknown)
+## C020 Policy screen
 
 Policy screen: branch columns, adopt with confirmation step, culture and golden-age lines, why a policy is locked or unaffordable.
 
@@ -384,7 +384,7 @@ Scenario `victory`.
 
 *The defeat screen (scenario defeat): the game goes on without you; keep watching or go to the main menu.* (`defeat/defeat.png`)
 
-## C025 (ticket not Done or unknown)
+## C025 Localization: translations in the client, language picker, non-Latin fonts
 
 Translations in the client: language picker, OFL fallback fonts for non-Latin scripts, right-to-left text.
 
