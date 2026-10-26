@@ -19,7 +19,7 @@ public sealed record OpenedGame(FileGameStore Store, GameSession Session, Recove
 /// <summary>
 /// <see cref="IGameStore"/> over a directory <c>games/&lt;gameId&gt;/</c> (SERVER.md 5.1):
 /// <c>game.json</c>, <c>commands.log</c> (JSON Lines in the T194 format, plus an optional <c>clientCmdId</c> member per command that readers of the T194 format ignore),
-/// <c>snapshot-&lt;seq&gt;.json.gz</c> (<see cref="UncivFiles"/> gzip+base64, so they open in single player), <c>host.secret</c>, the <c>clean</c> marker,
+/// <c>snapshot-&lt;seq&gt;.json.gz</c> (<see cref="UncivFiles"/> gzip+base64, so they open in single player), the <c>clean</c> marker,
 /// <c>history/</c> (rotated logs) and <c>corrupt/</c> (log tails recovery set aside). Paths inside are relative names only, so the directory can be zipped and opened elsewhere.
 /// Every file other than the log is replaced atomically (temp file, fsync, rename); the log is appended and fsynced before <see cref="Append"/> returns.
 /// </summary>
@@ -27,7 +27,6 @@ public sealed class FileGameStore : IGameStore
 {
     private const string LogName = "commands.log";
     private const string MetaName = "game.json";
-    private const string SecretName = "host.secret";
     private const string CleanName = "clean";
     private const string SnapshotPrefix = "snapshot-";
     private const string SnapshotSuffix = ".json.gz";
@@ -58,23 +57,12 @@ public sealed class FileGameStore : IGameStore
 
     public long LastSeq { get; private set; }
 
-    public string? HostSecret
+    public long HostSecret
     {
-        get
-        {
-            lock (gate)
-            {
-                var path = PathOf(SecretName);
-                return File.Exists(path) ? File.ReadAllText(path, Encoding.UTF8) : null;
-            }
-        }
+        get => ReadMeta().HostSecret;
         set
         {
-            lock (gate)
-            {
-                if (value == null) File.Delete(PathOf(SecretName));
-                else WriteAtomic(PathOf(SecretName), Encoding.UTF8.GetBytes(value));
-            }
+            lock (gate) WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(ReadMeta() with { HostSecret = value })));
         }
     }
 
@@ -88,7 +76,8 @@ public sealed class FileGameStore : IGameStore
 
     public void WriteMeta(GameMeta meta)
     {
-        lock (gate) WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = GameId })));
+        // The secret is not the lobby layer's to set or erase: it stays what the store holds (set it through HostSecret).
+        lock (gate) WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = GameId, HostSecret = ReadMeta().HostSecret })));
     }
 
     // ------------------------------------------------------------------ creating
@@ -101,7 +90,7 @@ public sealed class FileGameStore : IGameStore
         var logPath = Path.Combine(directory, LogName);
         WriteAtomic(logPath, Encoding.UTF8.GetBytes(UncivJson.Serialize(header) + "\n"));
         var store = new FileGameStore(directory, options ?? new StoreOptions(), OpenLog(logPath), gameId);
-        store.WriteMeta(meta);
+        WriteAtomic(Path.Combine(directory, MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = gameId, HostSecret = meta.HostSecret != 0 ? meta.HostSecret : header.HostSecret })));
         if (start != null) store.WriteSnapshot(start, 0);
         return store;
     }
@@ -376,6 +365,9 @@ public sealed class FileGameStore : IGameStore
         store.lastCheckpointSeq = scan.Lines.OfType<CommandLogLine.Checkpoint>().LastOrDefault()?.Seq ?? -1;
         store.lastSnapshotTurn = recovered.SnapshotTurn;
         foreach (var command in scan.Commands) store.Remember(command);
+        // T230: a snapshot does not carry the secret; every recovery path installs the host's before the first command.
+        var secret = meta.HostSecret != 0 ? meta.HostSecret : scan.Header.HostSecret;
+        Unciv.Utils.HostSecret.ApplyTo(recovered.Game, secret);
         var session = new GameSession(recovered.Game, lastSeq: scan.LastSeq);
         var report = new RecoveryReport(recovered.Outcome, wasClean, recovered.SnapshotSeq, scan.LastSeq, recovered.Replayed, recovered.Verified,
             scan.DroppedLines, recovered.DivergedAtSeq, notes);

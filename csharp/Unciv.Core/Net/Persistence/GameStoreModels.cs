@@ -17,7 +17,7 @@ public sealed record SlotBinding
 
 /// <summary>
 /// <c>game.json</c>: what the host remembers about a game that is not part of <see cref="GameInfo"/>. The directory is portable: another host that opens it keeps the
-/// bindings, so the clients reconnect with the same keys. The host secret (T230) is deliberately not here, see <see cref="IGameStore.HostSecret"/>.
+/// bindings, so the clients reconnect with the same keys. <see cref="HostSecret"/> is host-only.
 /// </summary>
 public sealed record GameMeta
 {
@@ -38,6 +38,10 @@ public sealed record GameMeta
     /// <summary>The join password hash (never the password), or null for an open game.</summary>
     [JsonPropertyName("passwordHash")]
     public string? PasswordHash { get; init; }
+
+    /// <summary>T230: the host secret salting state-based randomness (0 = none). Host only; <see cref="IGameStore.HostSecret"/> is how it is set.</summary>
+    [JsonPropertyName("hostSecret")]
+    public long HostSecret { get; init; }
 
     [JsonPropertyName("turnPolicy")]
     public string TurnPolicy { get; init; } = "Simultaneous";

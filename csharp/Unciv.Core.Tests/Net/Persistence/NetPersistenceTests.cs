@@ -10,6 +10,7 @@ using Unciv.Logic.Map;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Net.Persistence;
+using Unciv.Utils;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Core.Tests.Net.Persistence;
@@ -19,6 +20,7 @@ namespace Unciv.Core.Tests.Net.Persistence;
 public sealed class NetPersistenceTests : IDisposable
 {
     private const string Human = "Babylon";
+    private const long Secret = 0x5EC12E7A11CEL;
     private readonly RulesetClass ruleset;
     private readonly string root = Directory.CreateTempSubdirectory("unciv-store-").FullName;
     private int sequence;
@@ -70,8 +72,8 @@ public sealed class NetPersistenceTests : IDisposable
     private Live Start(StoreOptions? options = null)
     {
         var setup = Setup();
-        var header = CommandLogHeader.Create(setup, 9L, 1000L);
-        var game = GameStarter.StartNewGame(setup, 9L, 1000L);
+        var header = CommandLogHeader.Create(setup, 9L, 1000L, null, Secret);
+        var game = HostSecret.ApplyTo(GameStarter.StartNewGame(setup, 9L, 1000L), Secret);
         var dir = Path.Combine(root, "game" + sequence++);
         var store = FileGameStore.Create(dir, "g1", header, new GameMeta(), game, options);
         var session = new GameSession(game) { Clock = ScriptedHuman.DeterministicClock(2000L) };
@@ -587,13 +589,11 @@ public sealed class NetPersistenceTests : IDisposable
     }
 
     [Fact]
-    public void MetaRoundTripsAndTheHostSecretStaysOutOfEveryOtherFile()
+    public void MetaRoundTripsAndTheStoreKeepsTheHostSecretItself()
     {
         var live = Start();
         Play(live, 4, snapshot: true);
-        const string secret = "s3cr3t-host-value-xyz";
-        live.Store.HostSecret = secret;
-        Assert.Equal(secret, live.Store.HostSecret);
+        Assert.Equal(Secret, live.Store.HostSecret); // taken from the log header at Create
         var meta = new GameMeta
         {
             LobbySettings = JsonDocument.Parse("{\"maxPlayers\":4}").RootElement,
@@ -601,6 +601,7 @@ public sealed class NetPersistenceTests : IDisposable
             HostFingerprint = "AOIFR-RXSYD",
             PasswordHash = "hash",
             TurnPolicy = "Simultaneous",
+            HostSecret = 77, // the lobby layer cannot change it
         };
         live.Store.WriteMeta(meta with { GameId = "ignored" });
         var read = live.Store.ReadMeta();
@@ -608,12 +609,62 @@ public sealed class NetPersistenceTests : IDisposable
         Assert.Equal("KEY-2", read.Slots["Greece"].PlayerKey);
         Assert.Equal(4, read.LobbySettings!.Value.GetProperty("maxPlayers").GetInt32());
         Assert.Equal("hash", read.PasswordHash);
+        Assert.Equal(Secret, read.HostSecret);
 
-        foreach (var file in Directory.GetFiles(live.Directory, "*", SearchOption.AllDirectories).Where(it => Path.GetFileName(it) != "host.secret"))
-            Assert.DoesNotContain(secret, Encoding.Latin1.GetString(File.ReadAllBytes(file)), StringComparison.Ordinal);
+        live.Store.HostSecret = 123;
+        Assert.Equal(123, live.Store.HostSecret);
+        Assert.Equal("KEY-1", live.Store.ReadMeta().Slots["Babylon"].PlayerKey); // setting it keeps the rest
+    }
 
-        live.Store.HostSecret = null;
-        Assert.Null(live.Store.HostSecret);
+    // T230: a saved game does not carry the secret, so every way back to a running game has to install it before the first command.
+    [Fact]
+    public void EveryRecoveryPathInstallsTheHostSecretAndTheSnapshotsDoNotHoldIt()
+    {
+        var live = Start();
+        Play(live, 4, snapshot: true);
+        Assert.Equal(0, UncivFiles.GameInfoFromString(File.ReadAllText(Path.Combine(live.Directory, Snapshots(live).Last()))).RandomSalt);
+        Play(live, 2);
+        using (var recovered = Reopen(live))
+        {
+            Assert.Equal(RecoveryOutcome.Recovered, recovered.Report.Outcome);
+            Assert.Equal(Secret, recovered.Session.Game.RandomSalt);
+        }
+
+        foreach (var file in Directory.GetFiles(live.Directory, "snapshot-*")) File.Delete(file);
+        using (var rebuilt = FileGameStore.Open(live.Directory))
+        {
+            Assert.Equal(RecoveryOutcome.ReplayedFromStart, rebuilt.Report.Outcome);
+            Assert.Equal(Secret, rebuilt.Session.Game.RandomSalt);
+            Assert.Equal(Hash(live.Session.Game), Hash(rebuilt.Session.Game));
+        }
+    }
+
+    [Fact]
+    public void ResumeAfterCrashContinuesIdenticallyWithTheSecretAndTheFallbackInstallsItToo()
+    {
+        var live = Start();
+        Play(live, 4, snapshot: true);
+        var snapshotSeq = live.Session.LastSeq;
+        Play(live, 3);
+        using (var opened = Reopen(live))
+        {
+            var clock = ScriptedHuman.DeterministicClock(2000L);
+            for (var i = live.Session.Log.Count(it => it.Payload.TryGetProperty("now", out _)); i > 0; i--) clock();
+            var continued = new GameSession(opened.Session.Game, lastSeq: opened.Store.LastSeq) { Clock = clock };
+            Assert.Equal(Secret, continued.Game.RandomSalt);
+            Assert.Equal(8, live.Player.PlayTurns(8));
+            Assert.Equal(8, new ScriptedHuman(continued, Human).PlayTurns(8));
+            Assert.Equal(Hash(live.Session.Game), Hash(continued.Game));
+        }
+
+        var lines = File.ReadAllText(LogPath(live)).TrimEnd('\n').Split('\n');
+        var index = Array.FindLastIndex(lines, it => it.StartsWith("{\"checkpoint\":", StringComparison.Ordinal));
+        Assert.True(JsonDocument.Parse(lines[index]).RootElement.GetProperty("checkpoint").GetInt64() > snapshotSeq);
+        lines[index] = TamperHash(lines[index]);
+        File.WriteAllText(LogPath(live), string.Join('\n', lines) + "\n");
+        using var fallback = FileGameStore.Open(live.Directory);
+        Assert.Equal(RecoveryOutcome.FellBackToSnapshot, fallback.Report.Outcome);
+        Assert.Equal(Secret, fallback.Session.Game.RandomSalt);
     }
 
     [Fact]
@@ -622,7 +673,7 @@ public sealed class NetPersistenceTests : IDisposable
         var live = Start();
         Play(live, 4, snapshot: true);
         live.Store.WriteMeta(new GameMeta { Slots = new SortedDictionary<string, SlotBinding>(StringComparer.Ordinal) { ["Babylon"] = new() { PlayerKey = "KEY-1", DisplayName = "Ann" } } });
-        live.Store.HostSecret = "x";
+        live.Store.HostSecret = 42;
         live.Store.Dispose();
         var moved = Path.Combine(root, "elsewhere", "g1-copy");
         Directory.CreateDirectory(moved);
@@ -632,7 +683,8 @@ public sealed class NetPersistenceTests : IDisposable
         Assert.Equal("KEY-1", opened.Store.ReadMeta().Slots["Babylon"].PlayerKey);
         Assert.Equal("g1", opened.Store.GameId);
         Assert.Equal(Hash(live.Session.Game), Hash(opened.Session.Game));
-        Assert.Equal("x", opened.Store.HostSecret);
+        Assert.Equal(42, opened.Store.HostSecret);
+        Assert.Equal(42, opened.Session.Game.RandomSalt);
     }
 
     [Fact]

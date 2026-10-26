@@ -14,8 +14,8 @@ public interface IGameStore : IDisposable
     /// <summary>The seq of the last command in the log.</summary>
     long LastSeq { get; }
 
-    /// <summary>The host secret (T230). Kept beside the game, never in <c>game.json</c>, a snapshot or the log, so nothing sent to a client can carry it.</summary>
-    string? HostSecret { get; set; }
+    /// <summary>The host secret (T230, 0 = none): in <c>game.json</c> (and the log header) only, never in a snapshot, and never sent to a client. <see cref="FileGameStore.Open"/> applies it to the recovered game.</summary>
+    long HostSecret { get; set; }
 
     GameMeta ReadMeta();
 
