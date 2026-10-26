@@ -4,7 +4,7 @@ using Unciv.Queries;
 namespace Unciv.Net.Remote;
 
 /// <summary>Per-session token bucket (T223). <see cref="Capacity"/> tokens, refilled at <see cref="RefillPerSecond"/>; an expensive query costs several.</summary>
-public sealed record RemoteQueryLimits(int Capacity = 40, int RefillPerSecond = 20, int MaxCacheEntries = 256);
+public sealed record RemoteQueryLimits(int Capacity = 40, int RefillPerSecond = 20, int MaxCacheEntries = 256, int ViewerFactor = 2, int MaxCachedKeyChars = 1024, int MaxCachedResultBytes = 256 * 1024, int MaxCacheBytes = 8 * 1024 * 1024);
 
 /// <summary>
 /// Host-side dispatch of <see cref="Query"/> messages (T223). It is called on the game actor, so a query sees one consistent state and never runs
@@ -21,8 +21,11 @@ public sealed class RemoteQueryHost(QueryRegistry registry, RemoteQueryPolicy po
     private const long MilliTokens = 1000;
     private readonly RemoteQueryLimits limits = limits ?? new RemoteQueryLimits();
     private readonly Dictionary<string, Bucket> buckets = new(StringComparer.Ordinal);
+    // Per bound civ, so reconnecting (a fresh session bucket) does not reset the limit; ViewerFactor times the session limit so one session is governed by its own bucket.
+    private readonly Dictionary<string, Bucket> viewerBuckets = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Viewer, string Type, string Payload), QueryResult> cache = [];
     private long cacheSeq = long.MinValue;
+    private long cacheBytes;
 
     public int CachedResults => cache.Count;
 
@@ -40,7 +43,8 @@ public sealed class RemoteQueryHost(QueryRegistry registry, RemoteQueryPolicy po
     {
         long id = query.QueryId;
         var bucket = BucketFor(sessionId, nowMs);
-        if (!bucket.TryTake(MilliTokens)) return Fail(id, QueryWireCodes.RateLimited);
+        var viewerBucket = ViewerBucketFor(viewerCivName, nowMs);
+        if (!TryTake(bucket, viewerBucket, MilliTokens)) return Fail(id, QueryWireCodes.RateLimited);
         if (resolving) return Fail(id, QueryWireCodes.TurnResolving);
 
         string type = query.QueryType;
@@ -49,22 +53,51 @@ public sealed class RemoteQueryHost(QueryRegistry registry, RemoteQueryPolicy po
 
         if (viewSeq != cacheSeq)
         {
-            cache.Clear();
+            ClearCache();
             cacheSeq = viewSeq;
         }
         var key = (viewerCivName, type, query.Payload.ValueKind == System.Text.Json.JsonValueKind.Undefined ? "" : query.Payload.GetRawText());
         if (cache.TryGetValue(key, out var cached)) return cached with { QueryId = id };
 
-        if (!bucket.TryTake((exposure.Cost - 1) * MilliTokens)) return Fail(id, QueryWireCodes.RateLimited);
+        if (!TryTake(bucket, viewerBucket, (exposure.Cost - 1) * MilliTokens)) return Fail(id, QueryWireCodes.RateLimited);
 
         var response = registry.Execute(new QueryEnvelope(type, viewerCivName, query.Payload), context);
         var result = ToWire(id, response);
-        if (result.Code != QueryWireCodes.InternalError)
+        // Only small asks and answers are cached and the whole cache has a byte budget: the payload is client-controlled (up to a frame), so without these
+        // limits 256 distinct big asks (or answers) would pin hundreds of megabytes per view sequence.
+        int size = key.Item3.Length + key.Item2.Length + (result.Payload is { } p ? p.GetRawText().Length : 0);
+        if (result.Code != QueryWireCodes.InternalError && key.Item3.Length <= limits.MaxCachedKeyChars && size <= limits.MaxCachedResultBytes)
         {
-            if (cache.Count >= limits.MaxCacheEntries) cache.Clear();
+            if (cache.Count >= limits.MaxCacheEntries || cacheBytes + size > limits.MaxCacheBytes) ClearCache();
             cache[key] = result;
+            cacheBytes += size;
         }
         return result;
+    }
+
+    private void ClearCache()
+    {
+        cache.Clear();
+        cacheBytes = 0;
+    }
+
+    private static bool TryTake(Bucket session, Bucket viewer, long amount)
+    {
+        if (!session.Has(amount) || !viewer.Has(amount)) return false;
+        session.TryTake(amount);
+        viewer.TryTake(amount);
+        return true;
+    }
+
+    private Bucket ViewerBucketFor(string viewer, long nowMs)
+    {
+        if (!viewerBuckets.TryGetValue(viewer, out var bucket))
+        {
+            bucket = new Bucket((long)limits.Capacity * limits.ViewerFactor * MilliTokens, (long)limits.RefillPerSecond * limits.ViewerFactor, nowMs);
+            viewerBuckets[viewer] = bucket;
+        }
+        bucket.Refill(nowMs);
+        return bucket;
     }
 
     private static QueryResult ToWire(long id, QueryResponse response)
@@ -118,6 +151,8 @@ public sealed class RemoteQueryHost(QueryRegistry registry, RemoteQueryPolicy po
             if (nowMs > lastMs) lastMs = nowMs;
             tokens = Math.Min(capacity, tokens + elapsed * refillMilliTokensPerMs);
         }
+
+        public bool Has(long amount) => tokens >= amount;
 
         public bool TryTake(long amount)
         {

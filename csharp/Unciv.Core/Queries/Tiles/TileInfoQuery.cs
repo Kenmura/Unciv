@@ -29,18 +29,23 @@ public sealed record TileInfoQuery(int X, int Y, int? UnitId = null) : IQuery<Ti
     public TileInfoResult Run(GameView view)
     {
         var tile = UnitQueryHelpers.ExploredTile(view, X, Y);
-        var cityView = tile.GetWorkingCity()?.TryGetCityView();
-        var yields = tile.GetTileStats(view.CivView, cityView);
-        var breakdown = tile.GetTileStatsBreakdown(view.CivView, cityView)
+        // Fog: an explored tile that is not visible shows only what the viewer saw (terrain, resource, the shown improvement). Ownership, work, build progress,
+        // roads, pillaging and yields are live state that would reveal changes made out of sight, so they are withheld (as SnapshotBuilder.BuildTile does).
+        bool visible = tile.IsVisible();
+        var cityView = visible ? tile.GetWorkingCity()?.TryGetCityView() : null;
+        var yields = visible ? tile.GetTileStats(view.CivView, cityView) : new Models.StatTypes.Stats();
+        var breakdown = (visible ? tile.GetTileStatsBreakdown(view.CivView, cityView) : [])
             .Select(it => new StatSource(it.Cause, CityQueryHelpers.StatList(it.Stats))).ToList();
         var units = tile.GetVisibleUnits().Select(it => new TileUnit(it.Id, it.Name, it.CivName)).ToList();
-        bool locked = cityView != null && tile.IsLocked();
+        bool locked = visible && cityView != null && tile.IsLocked();
 
         IReadOnlyList<ImprovementOption>? options = null;
         if (UnitId != null)
         {
             var unit = UnitQueryHelpers.OwnUnit(view, UnitId.Value);
-            options = tile.GetRuleset().TileImprovements.Values.Select(improvement =>
+            if (visible) // building problems depend on live ownership and city state: not for a fogged tile
+            {
+                options = tile.GetRuleset().TileImprovements.Values.Select(improvement =>
                 {
                     var problems = tile.GetImprovementBuildingProblems(improvement, unit);
                     return (improvement, problems);
@@ -50,14 +55,16 @@ public sealed record TileInfoQuery(int X, int Y, int? UnitId = null) : IQuery<Ti
                     it.problems.Select(p => p.ToString()).OrderBy(p => p, StringComparer.Ordinal).ToList(),
                     it.problems.Count == 0 ? CityQueryHelpers.StatList(tile.GetStatDiffForImprovement(it.improvement, view.CivView)) : []))
                 .ToList();
+            }
         }
 
         var resource = tile.GetViewableResource(view.CivView);
         return new TileInfoResult(UnitQueryHelpers.Pos(tile.Position()), tile.BaseTerrain, tile.TerrainFeatures.ToList(), tile.NaturalWonder,
-            resource?.Name, resource == null ? 0 : tile.ResourceAmount, tile.GetShownImprovement(), tile.ImprovementIsPillaged,
-            tile.ImprovementInProgress, tile.TurnsToImprovement,
-            tile.RoadStatus.ToString(), tile.RoadIsPillaged, tile.HasBottomRiver || tile.HasBottomLeftRiver || tile.HasBottomRightRiver,
-            tile.GetOwner()?.CivName, tile.OwningCity()?.Name, tile.GetWorkingCity()?.Name, locked, tile.IsCityCenter(), tile.IsVisible(),
+            resource?.Name, resource == null ? 0 : tile.ResourceAmount, tile.GetShownImprovement(), visible && tile.ImprovementIsPillaged,
+            visible ? tile.ImprovementInProgress : null, visible ? tile.TurnsToImprovement : 0,
+            visible ? tile.RoadStatus.ToString() : nameof(Logic.Map.Tiles.RoadStatus.None), visible && tile.RoadIsPillaged, tile.HasBottomRiver || tile.HasBottomLeftRiver || tile.HasBottomRightRiver,
+            visible ? tile.GetOwner()?.CivName : null, visible ? tile.OwningCity()?.Name : null, visible ? tile.GetWorkingCity()?.Name : null, locked,
+            visible && tile.IsCityCenter(), visible,
             CityQueryHelpers.StatList(yields), breakdown, units, options);
     }
 }

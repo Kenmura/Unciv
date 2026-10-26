@@ -369,11 +369,38 @@ public class CityQueryTests
     public void TileInfoOfAForeignTileHasNoCityViewData()
     {
         var foreign = testGame.AddCity(enemy, testGame.GetTile(4, 0));
+        testGame.AddUnit("Warrior", player, testGame.GetTile(2, 0)); // so the tile is visible
+        player.Cache.UpdateViewableTiles();
         var info = AskPure(new TileInfoQuery(4, 0));
         Assert.Equal(enemy.CivName, info.Owner);
         Assert.False(info.IsLocked);
         Assert.True(info.IsCityCenter);
         Assert.Equal(foreign.Name, info.OwningCity);
+    }
+
+    [Fact]
+    public void TileInfoOfAFoggedTileWithholdsLiveState()
+    {
+        // T223 review: an explored tile the viewer cannot see shows no owner, city, work, build progress, roads or yields (as SnapshotBuilder.BuildTile).
+        var foreign = testGame.AddCity(enemy, testGame.GetTile(4, 0));
+        var fogged = testGame.GetTile(4, 1);
+        fogged.SetExplored(player, true);
+        fogged.RoadStatus = Unciv.Logic.Map.Tiles.RoadStatus.Road;
+        player.Cache.UpdateViewableTiles();
+        Assert.False(testGame.GameInfo.TileMap[fogged.Position].IsVisible(player));
+        var info = AskPure(new TileInfoQuery(4, 1));
+        Assert.False(info.IsVisible);
+        Assert.Null(info.Owner);
+        Assert.Null(info.OwningCity);
+        Assert.Null(info.WorkedBy);
+        Assert.Null(info.ImprovementInProgress);
+        Assert.Equal(0, info.TurnsToImprovement);
+        Assert.Equal("None", info.Road);
+        Assert.Empty(info.Yields);
+        Assert.Empty(info.YieldBreakdown);
+        Assert.False(info.IsCityCenter);
+        Assert.Null(AskPure(new TileInfoQuery(4, 1, testGame.AddUnit("Worker", player, testGame.GetTile(1, 0)).Id)).ImprovementOptions);
+        Assert.NotNull(foreign);
     }
 
     [Fact]

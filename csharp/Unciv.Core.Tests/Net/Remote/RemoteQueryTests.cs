@@ -276,14 +276,28 @@ public class RemoteQueryTests
     }
 
     [Fact]
-    public void RateLimitIsPerSessionAndResetsWhenTheSessionEnds()
+    public void RateLimitIsPerSessionAndReconnectingDoesNotResetIt()
     {
-        var host = NewHost(new RemoteQueryLimits(Capacity: 1, RefillPerSecond: 1));
+        var host = NewHost(new RemoteQueryLimits(Capacity: 1, RefillPerSecond: 1, ViewerFactor: 3));
         Assert.True(Handle(host, new EchoQuery(), session: "a").Ok);
-        Assert.False(Handle(host, new EchoQuery(), session: "a").Ok);
+        Assert.False(Handle(host, new EchoQuery(), session: "a").Ok); // the refused ask spent a viewer token too
         Assert.True(Handle(host, new EchoQuery(), session: "b").Ok);
         host.EndSession("a");
-        Assert.True(Handle(host, new EchoQuery(), session: "a").Ok);
+        Assert.True(Handle(host, new EchoQuery(), session: "a2").Ok); // a fresh session, third viewer token
+        Assert.False(Handle(host, new EchoQuery(), session: "a3").Ok); // review: reconnecting cannot beat the per-viewer limit
+        Assert.True(Handle(host, new EchoQuery(), session: "c", viewer: enemy).Ok); // another viewer is unaffected
+    }
+
+    [Fact]
+    public void BigAsksAndAnswersAreNotCachedAndTheCacheHasAByteBudget()
+    {
+        var host = NewHost(new RemoteQueryLimits(Capacity: 1000, RefillPerSecond: 1000, MaxCachedKeyChars: 64, MaxCachedResultBytes: 1000, MaxCacheBytes: 400));
+        var huge = new Query { QueryId = 1, QueryType = "t223.Echo", Payload = JsonDocument.Parse("{\"Value\":1,\"Pad\":\"" + new string('x', 200) + "\"}").RootElement.Clone() };
+        Assert.True(host.Handle("s", player.CivName, huge, context, 1, false, 0).Ok);
+        Assert.Equal(0, host.CachedResults); // the ask is too big to be a key
+        Assert.Equal(QueryWireCodes.ResultTooLarge, Handle(host, new BigQuery()).Code);
+        for (int i = 0; i < 20; i++) Handle(host, new EchoQuery(i));
+        Assert.InRange(host.CachedResults, 1, 10); // 400 bytes of budget, each entry ~80
     }
 
     [Fact]
