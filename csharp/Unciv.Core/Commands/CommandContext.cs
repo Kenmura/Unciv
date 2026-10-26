@@ -54,7 +54,8 @@ public sealed class CommandContext(GameInfo game, string actorId)
     /// sequential and simultaneous turns (T200/T202) differ in one spot and no command reads CurrentPlayerCiv itself.
     /// Sequential rule: the actor is a human civ, is the current player, and nobody has won yet (or the players chose one more turn).
     /// </summary>
-    public Resolved<CivilizationObject> RequireActive()
+    /// <param name="allowDefeated">True only for ending the turn: when every human is defeated the first one still controls the turn cycle (C024, Kotlin), so a spectating player must be able to go on.</param>
+    public Resolved<CivilizationObject> RequireActive(bool allowDefeated = false)
     {
         if (IsServer)
             return Resolved<CivilizationObject>.Fail(CommandErrors.NotHuman, "The server is not a player");
@@ -64,7 +65,7 @@ public sealed class CommandContext(GameInfo game, string actorId)
             return Resolved<CivilizationObject>.Fail(CommandErrors.NotHuman, $"{ActorId} is not a human player");
         if (Game.VictoryData != null && !Game.OneMoreTurnMode)
             return Resolved<CivilizationObject>.Fail(CommandErrors.GameOver, "The game is over");
-        if (civ.Value.IsDefeated())
+        if (civ.Value.IsDefeated() && !allowDefeated)
             return Resolved<CivilizationObject>.Fail(CommandErrors.NotAllowed, $"{ActorId} has been defeated");
         // TODO(T202): simultaneous turns replace this check (phase Playing, civ not ended).
         if (!civ.Value.IsCurrentPlayer())

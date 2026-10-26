@@ -302,4 +302,17 @@ public sealed class TurnFlowCommandTests : IDisposable
 
         Rejected(session.Submit("Babylon", new DismissMoveSpies()), CommandErrors.StaleReference);
     }
+
+    [Fact]
+    public void ADefeatedSoleHumanStillEndsTheTurnSoTheGameGoesOn()
+    {
+        // C024: the defeat screen offers "Keep watching"; with every human defeated the first one controls the turn (Kotlin), so its End turn must work.
+        var game = NewGame();
+        var session = Session(game);
+        var babylon = game.GetCivilization("Babylon");
+        babylon.HasEverOwnedOriginalCapital = true;
+        babylon.Cities = [];
+        Assert.True(babylon.IsDefeated());
+        Ok(session.Submit("Babylon", new EndTurn()));
+    }
 }

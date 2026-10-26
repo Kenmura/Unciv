@@ -14,7 +14,7 @@ public sealed class EndTurn : GameCommand, ITimedCommand
 
     protected override CommandValidation ValidateCommand(CommandContext context)
     {
-        if (!context.RequireActive().TryGet(out var actor, out var failure)) return failure;
+        if (!context.RequireActive(allowDefeated: true).TryGet(out var actor, out var failure)) return failure;
         failure = context.CanEndTurnOf(actor);
         if (!failure.IsValid) return failure;
         failure = context.CheckClock(Now);
