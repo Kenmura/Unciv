@@ -1,0 +1,544 @@
+using Unciv.Models.Ruleset;
+using Unciv.Net;
+using Unciv.Net.Identity;
+using Unciv.Net.Lobby;
+using Unciv.Server;
+
+namespace Unciv.Core.Tests.Net.Lobby;
+
+[Collection("RulesetCache")]
+public sealed class NetLobbyTests : IDisposable
+{
+    public NetLobbyTests()
+    {
+        var jsons = Path.Combine(RepoRoot(), "android", "assets", "jsons");
+        RulesetCache.LoadRulesets(new DirectoryRulesetFileSource(jsons, Path.Combine(jsons, "no mods here")), noMods: true);
+    }
+
+    public void Dispose() => RulesetCache.Clear();
+
+    private static string RepoRoot()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
+            if (Directory.Exists(Path.Combine(dir.FullName, "android", "assets", "jsons"))) return dir.FullName;
+        throw new DirectoryNotFoundException("android/assets/jsons not found above " + AppContext.BaseDirectory);
+    }
+
+    private static async Task<T> ReceiveMessageAsync<T>(ITransport transport, int timeoutMs = 2000) where T : Message
+    {
+        using var cts = new CancellationTokenSource(timeoutMs);
+        while (!cts.IsCancellationRequested)
+        {
+            var frame = await transport.ReceiveAsync(cts.Token);
+            if (frame == null) continue;
+            var msg = ProtocolCodec.Decode(frame);
+            if (msg is T typed) return typed;
+        }
+        throw new TimeoutException($"Did not receive expected message of type {typeof(T).Name}");
+    }
+
+    [Fact]
+    public async Task Hello_ValidHandshake_ReturnsWelcomeWithChallenge()
+    {
+        await using var lobby = new LobbyHost();
+        var (clientTransport, serverTransport) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverTransport);
+
+        var hello = new Hello
+        {
+            Protocol = ProtocolVersion.Current,
+            ClientVersion = "1.0.0",
+            RulesetHash = lobby.Settings.ComputeRulesetHash(),
+            ModList = []
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(hello));
+
+        var welcome = await ReceiveMessageAsync<Welcome>(clientTransport);
+        Assert.Equal(ProtocolVersion.Current, welcome.Protocol);
+        Assert.NotEmpty(welcome.SessionId);
+        Assert.NotEmpty(welcome.Challenge);
+        Assert.Equal(lobby.HostFingerprint, welcome.HostKeyFingerprint);
+        Assert.False(welcome.RequiresPassword);
+    }
+
+    [Fact]
+    public async Task Hello_ProtocolMismatch_RefusesWithProtocolMismatch()
+    {
+        await using var lobby = new LobbyHost();
+        var (clientTransport, serverTransport) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverTransport);
+
+        var hello = new Hello
+        {
+            Protocol = 999999,
+            ClientVersion = "1.0.0",
+            RulesetHash = lobby.Settings.ComputeRulesetHash(),
+            ModList = []
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(hello));
+
+        var refused = await ReceiveMessageAsync<JoinRefused>(clientTransport);
+        Assert.Equal(JoinRefusedCodes.ProtocolMismatch, refused.Code);
+    }
+
+    [Fact]
+    public async Task Hello_RulesetHashMismatch_RefusesWithRulesetMismatch()
+    {
+        await using var lobby = new LobbyHost();
+        var (clientTransport, serverTransport) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverTransport);
+
+        var hello = new Hello
+        {
+            Protocol = ProtocolVersion.Current,
+            ClientVersion = "1.0.0",
+            RulesetHash = "incompatible-hash-0123456789abcdef",
+            ModList = []
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(hello));
+
+        var refused = await ReceiveMessageAsync<JoinRefused>(clientTransport);
+        Assert.Equal(JoinRefusedCodes.RulesetMismatch, refused.Code);
+    }
+
+    [Fact]
+    public async Task Join_PasswordRequired_WrongPasswordRefusesAndRateLimits()
+    {
+        var settings = new LobbySettings { Password = "SecureLobbyPassword123" };
+        await using var lobby = new LobbyHost(settings: settings);
+        var (clientTransport, serverTransport) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverTransport);
+
+        using var identity = ClientIdentity.Generate();
+
+        var hello = new Hello
+        {
+            Protocol = ProtocolVersion.Current,
+            ClientVersion = "1.0.0",
+            RulesetHash = lobby.Settings.ComputeRulesetHash(),
+            ModList = []
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(hello));
+        var welcome = await ReceiveMessageAsync<Welcome>(clientTransport);
+        Assert.True(welcome.RequiresPassword);
+
+        // Send Join with wrong password
+        var join = new Join
+        {
+            Password = "WrongPassword",
+            PlayerKey = identity.PlayerKey,
+            DisplayName = "Alice"
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(join));
+
+        var refused = await ReceiveMessageAsync<JoinRefused>(clientTransport);
+        Assert.Equal(JoinRefusedCodes.BadCredentials, refused.Code);
+    }
+
+    [Fact]
+    public async Task Join_WithInviteToken_AdmittedWithoutPassword()
+    {
+        var settings = new LobbySettings { Password = "SecureLobbyPassword123" };
+        var random = SystemSecureRandom.Instance;
+        var tokens = new InviteTokens(TimeProvider.System, random);
+        var limiter = new AttemptLimiter(TimeProvider.System);
+        var password = JoinPassword.Create("SecureLobbyPassword123", random);
+        var admission = new LobbyAdmission(password, inviteOnly: false, tokens, limiter);
+
+        var token = tokens.Mint(TimeSpan.FromMinutes(10));
+        Assert.NotNull(token);
+
+        await using var lobby = new LobbyHost(settings: settings, admission: admission);
+        var (clientTransport, serverTransport) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverTransport);
+
+        using var identity = ClientIdentity.Generate();
+
+        var hello = new Hello
+        {
+            Protocol = ProtocolVersion.Current,
+            ClientVersion = "1.0.0",
+            RulesetHash = lobby.Settings.ComputeRulesetHash(),
+            ModList = []
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(hello));
+        var welcome = await ReceiveMessageAsync<Welcome>(clientTransport);
+
+        var join = new Join
+        {
+            InviteToken = token,
+            PlayerKey = identity.PlayerKey,
+            DisplayName = "Alice"
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(join));
+
+        var proof = identity.Sign(lobby.HostFingerprint, welcome.SessionId, welcome.Challenge);
+        await clientTransport.SendAsync(ProtocolCodec.Encode(new Auth { Proof = proof }));
+
+        var joinOk = await ReceiveMessageAsync<JoinOk>(clientTransport);
+        Assert.NotNull(joinOk);
+
+        var lobbyState = await ReceiveMessageAsync<LobbyState>(clientTransport);
+        Assert.Contains(lobbyState.Slots, s => s.PlayerName == "Alice" && s.PlayerKeyId == identity.PlayerKey);
+    }
+
+    [Fact]
+    public async Task Auth_InvalidProof_RefusedWithAuthFailed()
+    {
+        await using var lobby = new LobbyHost();
+        var (clientTransport, serverTransport) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverTransport);
+
+        using var identity = ClientIdentity.Generate();
+
+        var hello = new Hello
+        {
+            Protocol = ProtocolVersion.Current,
+            ClientVersion = "1.0.0",
+            RulesetHash = lobby.Settings.ComputeRulesetHash(),
+            ModList = []
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(hello));
+        var welcome = await ReceiveMessageAsync<Welcome>(clientTransport);
+
+        var join = new Join
+        {
+            PlayerKey = identity.PlayerKey,
+            DisplayName = "Alice"
+        };
+        await clientTransport.SendAsync(ProtocolCodec.Encode(join));
+
+        // Submit invalid proof
+        await clientTransport.SendAsync(ProtocolCodec.Encode(new Auth { Proof = "InvalidBase64ProofSignatureHere" }));
+
+        var refused = await ReceiveMessageAsync<JoinRefused>(clientTransport);
+        Assert.Equal(JoinRefusedCodes.AuthFailed, refused.Code);
+    }
+
+    [Fact]
+    public async Task LobbySet_PicksNationAndTogglesReady_EnforcesUniqueness()
+    {
+        await using var lobby = new LobbyHost();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        _ = lobby.AttachConnectionAsync(s2);
+
+        using var id1 = ClientIdentity.Generate();
+        using var id2 = ClientIdentity.Generate();
+
+        // Connect client 1
+        var hash = lobby.Settings.ComputeRulesetHash();
+        await c1.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w1 = await ReceiveMessageAsync<Welcome>(c1);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "Alice" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(lobby.HostFingerprint, w1.SessionId, w1.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c1);
+        await ReceiveMessageAsync<LobbyState>(c1);
+
+        // Connect client 2
+        await c2.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w2 = await ReceiveMessageAsync<Welcome>(c2);
+        await c2.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id2.PlayerKey, DisplayName = "Bob" }));
+        await c2.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id2.Sign(lobby.HostFingerprint, w2.SessionId, w2.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c2);
+        await ReceiveMessageAsync<LobbyState>(c2);
+        await ReceiveMessageAsync<LobbyState>(c1); // Drain Bob's join broadcast on c1
+
+        // Alice picks Rome and readies up
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        var stateAfterAlice = await ReceiveMessageAsync<LobbyState>(c1);
+        Assert.Equal("Rome", stateAfterAlice.Slots[0].Nation);
+        Assert.True(stateAfterAlice.Slots[0].Ready);
+
+        await ReceiveMessageAsync<LobbyState>(c2); // Drain Alice's state change broadcast on c2
+
+        // Bob tries to pick Rome too (duplicate) -> ignored
+        await c2.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 1, Nation = "Rome", Ready = false }));
+        // Bob picks Egypt instead
+        await c2.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 1, Nation = "Egypt", Ready = true }));
+        var stateAfterBob = await ReceiveMessageAsync<LobbyState>(c2);
+        Assert.Equal("Egypt", stateAfterBob.Slots[1].Nation);
+        Assert.True(stateAfterBob.Slots[1].Ready);
+    }
+
+    [Fact]
+    public async Task LobbyChat_BroadcastsToAllClients()
+    {
+        await using var lobby = new LobbyHost();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        _ = lobby.AttachConnectionAsync(s2);
+
+        using var id1 = ClientIdentity.Generate();
+        using var id2 = ClientIdentity.Generate();
+        var hash = lobby.Settings.ComputeRulesetHash();
+
+        // Connect both
+        await c1.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w1 = await ReceiveMessageAsync<Welcome>(c1);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "Alice" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(lobby.HostFingerprint, w1.SessionId, w1.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c1);
+
+        await c2.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w2 = await ReceiveMessageAsync<Welcome>(c2);
+        await c2.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id2.PlayerKey, DisplayName = "Bob" }));
+        await c2.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id2.Sign(lobby.HostFingerprint, w2.SessionId, w2.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c2);
+
+        // Alice sends chat message
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbyChat { Text = "Good luck everyone!" }));
+
+        // Bob receives the broadcast
+        var chatOnBob = await ReceiveMessageAsync<LobbyChat>(c2);
+        Assert.Equal("Good luck everyone!", chatOnBob.Text);
+        Assert.Equal("Alice", chatOnBob.Sender);
+    }
+
+    [Fact]
+    public async Task Kick_RemovesPlayerAndResetsSlot()
+    {
+        await using var lobby = new LobbyHost();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+
+        using var id1 = ClientIdentity.Generate();
+        var hash = lobby.Settings.ComputeRulesetHash();
+
+        await c1.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w1 = await ReceiveMessageAsync<Welcome>(c1);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "Alice" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(lobby.HostFingerprint, w1.SessionId, w1.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c1);
+
+        // Host kicks Alice
+        await lobby.KickAsync(0);
+
+        var kickNotice = await ReceiveMessageAsync<JoinRefused>(c1);
+        Assert.Equal(JoinRefusedCodes.Kicked, kickNotice.Code);
+
+        Assert.Equal(SlotKind.Open, lobby.Slots[0].Kind);
+        Assert.Null(lobby.Slots[0].PlayerKeyId);
+    }
+
+    [Fact]
+    public async Task StartGame_AiFillAndRandomNationResolution_ProducesGameAndBroadcasts()
+    {
+        await using var lobby = new LobbyHost();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+
+        using var id1 = ClientIdentity.Generate();
+        var hash = lobby.Settings.ComputeRulesetHash();
+
+        await c1.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w1 = await ReceiveMessageAsync<Welcome>(c1);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "Alice" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(lobby.HostFingerprint, w1.SessionId, w1.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c1);
+        await ReceiveMessageAsync<LobbyState>(c1); // Drain initial LobbyState from Auth
+
+        // Alice ready
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Ready = true }));
+        var stateAfterReady = await ReceiveMessageAsync<LobbyState>(c1);
+        Assert.True(stateAfterReady.Slots[0].Ready);
+
+        var result = await lobby.StartGameAsync(force: false, seed: 12345L, clockMillis: 1000L);
+        Assert.NotNull(result.Game);
+        Assert.True(result.Setup.GameParameters.IsOnlineMultiplayer);
+        Assert.False(result.Setup.GameParameters.GodMode);
+        Assert.False(result.Setup.GameParameters.TradeHintsEnabled);
+
+        // Open slots should have been AI filled
+        Assert.Contains(result.Slots, s => s.Kind == SlotKind.AI);
+        // Random nations resolved to non-random
+        Assert.DoesNotContain(result.Slots, s => s.Nation == "Random");
+
+        var gameStarting = await ReceiveMessageAsync<GameStarting>(c1);
+        Assert.NotNull(gameStarting);
+    }
+
+    [Fact]
+    public async Task ServerLobby_StartGame_TransitionsToGameHostWithInitialSnapshots()
+    {
+        await using var serverLobby = new ServerLobby();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = serverLobby.AttachConnectionAsync(s1);
+
+        using var id1 = ClientIdentity.Generate();
+        var hash = serverLobby.Lobby.Settings.ComputeRulesetHash();
+
+        await c1.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w1 = await ReceiveMessageAsync<Welcome>(c1);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "Alice" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(serverLobby.Lobby.HostFingerprint, w1.SessionId, w1.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c1);
+        await ReceiveMessageAsync<LobbyState>(c1); // Drain initial LobbyState from Auth
+
+        // Alice picks Rome and ready
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        var stateAfterRome = await ReceiveMessageAsync<LobbyState>(c1);
+        Assert.Equal("Rome", stateAfterRome.Slots[0].Nation);
+        Assert.True(stateAfterRome.Slots[0].Ready);
+
+        // Host starts game
+        var gameHost = await serverLobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+        Assert.NotNull(gameHost);
+
+        var gameStarting = await ReceiveMessageAsync<GameStarting>(c1);
+        Assert.NotNull(gameStarting);
+
+        // Client 1 should now receive initial full Snapshot from GameHost
+        var snapshot = await ReceiveMessageAsync<Snapshot>(c1);
+        Assert.NotNull(snapshot);
+        Assert.Equal("Rome", snapshot.You);
+        Assert.NotEmpty(snapshot.ViewHash);
+    }
+
+    [Fact]
+    public async Task CloseSlot_And_OpenSlot_UpdatesSlotKind()
+    {
+        await using var lobby = new LobbyHost();
+        Assert.Equal(SlotKind.Open, lobby.Slots[1].Kind);
+
+        await lobby.CloseSlotAsync(1);
+        Assert.Equal(SlotKind.Closed, lobby.Slots[1].Kind);
+
+        await lobby.OpenSlotAsync(1);
+        Assert.Equal(SlotKind.Open, lobby.Slots[1].Kind);
+    }
+
+    [Fact]
+    public async Task SetSlotKind_SetsAiAndOpen()
+    {
+        await using var lobby = new LobbyHost();
+
+        await lobby.SetSlotKindAsync(2, SlotKind.AI);
+        Assert.Equal(SlotKind.AI, lobby.Slots[2].Kind);
+        Assert.Equal("AI Player", lobby.Slots[2].DisplayName);
+        Assert.True(lobby.Slots[2].Ready);
+
+        await lobby.SetSlotKindAsync(2, SlotKind.Open);
+        Assert.Equal(SlotKind.Open, lobby.Slots[2].Kind);
+        Assert.Null(lobby.Slots[2].DisplayName);
+        Assert.False(lobby.Slots[2].Ready);
+    }
+
+    [Fact]
+    public async Task UpdateSettings_UpdatesSettingsAndBroadcasts()
+    {
+        await using var lobby = new LobbyHost();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+
+        using var id1 = ClientIdentity.Generate();
+        var hash = lobby.Settings.ComputeRulesetHash();
+
+        await c1.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w1 = await ReceiveMessageAsync<Welcome>(c1);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "Alice" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(lobby.HostFingerprint, w1.SessionId, w1.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c1);
+        await ReceiveMessageAsync<LobbyState>(c1);
+
+        var newSettings = new LobbySettings
+        {
+            GameName = "Updated Game Name",
+            TurnTimerSeconds = 60,
+            MaxMajorCivs = 6
+        };
+        await lobby.UpdateSettingsAsync(newSettings);
+
+        var updatedState = await ReceiveMessageAsync<LobbyState>(c1);
+        Assert.Equal(6, lobby.Slots.Count);
+        Assert.Equal("Updated Game Name", updatedState.Settings.GetProperty("gameName").GetString());
+        Assert.Equal(60, updatedState.Settings.GetProperty("turnTimerSeconds").GetInt32());
+    }
+
+    [Fact]
+    public async Task StartGame_NotAllHumansReady_ThrowsInvalidOperationException()
+    {
+        await using var lobby = new LobbyHost();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+
+        using var id1 = ClientIdentity.Generate();
+        var hash = lobby.Settings.ComputeRulesetHash();
+
+        await c1.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w1 = await ReceiveMessageAsync<Welcome>(c1);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "Alice" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(lobby.HostFingerprint, w1.SessionId, w1.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c1);
+        await ReceiveMessageAsync<LobbyState>(c1);
+
+        // Alice is NOT ready
+        await Assert.ThrowsAsync<InvalidOperationException>(() => lobby.StartGameAsync(force: false));
+    }
+
+    [Fact]
+    public async Task Auth_ReconnectsToExistingBoundSlot()
+    {
+        await using var lobby = new LobbyHost();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+
+        using var id1 = ClientIdentity.Generate();
+        var hash = lobby.Settings.ComputeRulesetHash();
+
+        // Initial connect
+        await c1.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w1 = await ReceiveMessageAsync<Welcome>(c1);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "Alice" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(lobby.HostFingerprint, w1.SessionId, w1.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c1);
+        await ReceiveMessageAsync<LobbyState>(c1);
+
+        // Pick Greece
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Greece", Ready = false }));
+        await ReceiveMessageAsync<LobbyState>(c1);
+
+        // Disconnect c1
+        await c1.CloseAsync();
+
+        // Reconnect with new transport pair
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s2);
+
+        await c2.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = hash, ModList = [] }));
+        var w2 = await ReceiveMessageAsync<Welcome>(c2);
+        await c2.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id1.PlayerKey, DisplayName = "AliceReborn" }));
+        await c2.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id1.Sign(lobby.HostFingerprint, w2.SessionId, w2.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(c2);
+        var stateAfterReconnect = await ReceiveMessageAsync<LobbyState>(c2);
+
+        // Slot 0 should still be Greece and owned by Alice
+        Assert.Equal("Greece", stateAfterReconnect.Slots[0].Nation);
+        Assert.Equal("AliceReborn", stateAfterReconnect.Slots[0].PlayerName);
+        Assert.Equal(id1.PlayerKey, stateAfterReconnect.Slots[0].PlayerKeyId);
+        Assert.True(stateAfterReconnect.Slots[0].Connected);
+    }
+
+    [Fact]
+    public void LobbySettings_ToGameSetupInfo_EnforcesAntiCheatRules()
+    {
+        var settings = new LobbySettings
+        {
+            GameName = "Competitive Tournament",
+            Ruleset = "Civ V - Gods & Kings",
+            CityStateCount = 8,
+            Speed = "Quick",
+            Difficulty = "Emperor"
+        };
+
+        var setup = settings.ToGameSetupInfo();
+        Assert.True(setup.GameParameters.IsOnlineMultiplayer);
+        Assert.False(setup.GameParameters.GodMode);
+        Assert.False(setup.GameParameters.TradeHintsEnabled);
+        Assert.Equal("Quick", setup.GameParameters.Speed);
+        Assert.Equal("Emperor", setup.GameParameters.Difficulty);
+        Assert.Equal(8, setup.GameParameters.NumberOfCityStates);
+    }
+}

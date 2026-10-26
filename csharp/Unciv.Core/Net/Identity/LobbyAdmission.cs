@@ -8,6 +8,11 @@ public static class JoinRefusedCodes
     public const string BadKey = "bad-key";
     public const string SlotTaken = "slot-taken";
     public const string AuthFailed = "auth-failed";
+    public const string RulesetMismatch = "ruleset-mismatch";
+    public const string ProtocolMismatch = "protocol-mismatch";
+    public const string LobbyFull = "lobby-full";
+    public const string GameAlreadyStarted = "game-started";
+    public const string Kicked = "kicked";
 }
 
 public enum AdmissionResult { Admitted, BadCredentials, RateLimited }

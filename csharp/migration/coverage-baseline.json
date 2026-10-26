@@ -541,6 +541,9 @@
     "Unciv.Core/Net/Identity/LobbyAdmission.cs": {"branch": 95.45, "line": 100.0},
     "Unciv.Core/Net/Identity/SecureRandom.cs": {"branch": 87.5, "line": 95.0},
     "Unciv.Core/Net/InMemoryTransport.cs": {"branch": 90.0, "line": 96.67},
+    "Unciv.Core/Net/Lobby/LobbyHost.cs": {"branch": 73.74, "line": 88.72},
+    "Unciv.Core/Net/Lobby/LobbySettings.cs": {"branch": 50.0, "line": 100.0},
+    "Unciv.Core/Net/Lobby/Slot.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Messages.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Persistence/FileGameStore.cs": {"branch": 91.55, "line": 97.48},
     "Unciv.Core/Net/Persistence/GameStoreModels.cs": {"branch": 100.0, "line": 96.3},
@@ -669,7 +672,8 @@
     "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Server/CommandGate.cs": {"branch": 89.66, "line": 91.49},
     "Unciv.Server/GameHost.cs": {"branch": 77.17, "line": 90.35},
-    "Unciv.Server/Program.cs": {"branch": 100.0, "line": 100.0}
+    "Unciv.Server/Program.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Server/ServerLobby.cs": {"branch": 100.0, "line": 98.11}
   },
   "excused": {
     "Unciv.Core/Logic/Battle/AirInterception.cs": "the interception damage/XP and notification tails sit behind Battle.takeDamage/addXp (BattleSeams, T083); T083 wires them and tests the rest",

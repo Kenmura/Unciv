@@ -55,6 +55,7 @@ public sealed record LobbySet : Message
 public sealed record LobbyChat : Message
 {
     public required string Text { get; init; }
+    public string? Sender { get; init; }
 }
 
 /// <summary>A game command: the <c>CommandEnvelope</c> minus Seq/ActorId. <c>CommandType</c> is the command registry name (the JSON key is not <c>type</c>, which is the message discriminator).</summary>
@@ -108,6 +109,9 @@ public sealed record LobbySlot
     public string? Nation { get; init; }
     public string? Color { get; init; }
     public required bool Ready { get; init; }
+    public string? Kind { get; init; }
+    public string? PlayerKeyId { get; init; }
+    public bool? Connected { get; init; }
 }
 
 public sealed record LobbyState : Message
