@@ -39,6 +39,7 @@
     "Unciv.Assets/Settings/OptionsModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/StableHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/TechScreenModel.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/TerrainBlend.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/TerrainRelief.cs": {"branch": 96.51, "line": 98.87},
     "Unciv.Assets/TileYieldModel.cs": {"branch": 97.06, "line": 100.0},
     "Unciv.Assets/TooltipModel.cs": {"branch": 100.0, "line": 100.0},
