@@ -119,12 +119,15 @@ def prune(root, keep):
 
 
 def is_newer(new_sha, old_sha):
-    """True when `latest` may move to new_sha: there is no latest, or old_sha is an ancestor of (or equal to) new_sha."""
+    """True when `latest` may move to new_sha: there is no latest, or new_sha is not strictly older than old_sha (an ancestor of it)."""
     if not old_sha:
         return True
     if git("cat-file", "-e", f"{old_sha}^{{commit}}", check=False).returncode:
         return True
-    return git("merge-base", "--is-ancestor", old_sha, new_sha, check=False).returncode == 0
+    if git("merge-base", "--is-ancestor", old_sha, new_sha, check=False).returncode == 0:
+        return True
+    # old is not an ancestor: keep it only when new is strictly older (an ancestor of old); an unrelated commit (rewritten history) moves latest
+    return git("merge-base", "--is-ancestor", new_sha, old_sha, check=False).returncode != 0
 
 
 def point_latest(root, name):
