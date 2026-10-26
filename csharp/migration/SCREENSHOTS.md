@@ -516,7 +516,7 @@ Scenario `options`.
 
 *Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
 
-## C031 (ticket not Done or unknown)
+## C031 Terrain blending, fog of war polish, chunked meshes
 
 Terrain blending, fog edge fade and chunked terrain meshes.
 
@@ -721,3 +721,4 @@ Done tickets with nothing meaningful to show.
 - **C030 (ticket not Done or unknown)**: Placeholder audio has nothing to look at; scenario audio asserts every UncivSound preset resolves to a non-empty generated stream.
 - **C037 IGameSession: client reads and writes only through a session interface; LocalHost implements it**: IGameSession is an engine/client interface with no UI of its own; it is exercised by every scenario above.
 - **C042 Client packaging: bundle rulesets and translations, user mods folder, export presets, third-party notices**: Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015.
+- **C049 (ticket not Done or unknown)**: Message strings only; no visible change in English, the policy scenario goldens are unchanged.

@@ -103,6 +103,24 @@ public class LocalizationTests : IDisposable
     }
 
     [Fact]
+    public void PolicyScreenMessagesAreTranslatedExceptComposedOrRawText()
+    {
+        File.WriteAllText(Path.Combine(dir, "German.properties"),
+            "Refused = Abgelehnt\nConnection problem = Verbindungsproblem\nThe engine would not show the policies. = Keine Politiken\nNot enough culture = Zu wenig Kultur\n");
+        File.WriteAllText(Path.Combine(dir, "English.properties"), "Refused = \n");
+        var l = new ClientLocalization(dir, new Translations());
+        Assert.Equal("Refused: Not enough culture", Unciv.Assets.PolicyScreenModel.RefusedLine("Not enough culture"));
+        Assert.Equal("Connection problem: Not enough culture", Unciv.Assets.PolicyScreenModel.ConnectionProblemLine("Not enough culture"));
+        Assert.Equal("The engine would not show the policies.", Unciv.Assets.PolicyScreenModel.UnavailableLine());
+        l.SetLanguage("German");
+        Assert.Equal("Abgelehnt: Zu wenig Kultur", Unciv.Assets.PolicyScreenModel.RefusedLine("Not enough culture"));
+        Assert.Equal("Abgelehnt: Needs 25 culture", Unciv.Assets.PolicyScreenModel.RefusedLine("Needs 25 culture")); // composed: left alone
+        Assert.Equal("Verbindungsproblem: Not enough culture", Unciv.Assets.PolicyScreenModel.ConnectionProblemLine("Not enough culture")); // raw error text
+        Assert.Equal("Keine Politiken", Unciv.Assets.PolicyScreenModel.UnavailableLine());
+        l.SetLanguage("English");
+    }
+
+    [Fact]
     public void RequiredCodePointsKeepSpacingVowelSigns() => Assert.Contains(0x093E, ScriptClassifier.RequiredCodePoints("\u0915\u093e").ToArray());
 
     [Theory]

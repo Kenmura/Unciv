@@ -146,7 +146,7 @@ public partial class PolicyScreen : PanelContainer
         if (ticket != generation) return;
         if (tree == null)
         {
-            SetMessage("The engine would not show the policies.");
+            SetMessage(PolicyScreenModel.UnavailableLine());
             return;
         }
         Tree = tree;
@@ -242,7 +242,7 @@ public partial class PolicyScreen : PanelContainer
         if (!result.Accepted)
         {
             await ReloadAsync();
-            SetMessage("Refused: " + result.Message);
+            SetMessage(PolicyScreenModel.RefusedLine(result.Message));
             return;
         }
         CommandAccepted?.Invoke();
@@ -260,7 +260,7 @@ public partial class PolicyScreen : PanelContainer
         catch (Exception e)
         {
             GD.PushError("Session call failed: " + e);
-            SetMessage("Connection problem: " + e.Message);
+            SetMessage(PolicyScreenModel.ConnectionProblemLine(e.Message));
         }
     }
 

@@ -1,6 +1,8 @@
 using System.Globalization;
 using Unciv.Commands;
+using Unciv.Assets.Localization;
 using Unciv.Commands.Empire;
+using Unciv.Models.Translations;
 using Unciv.Queries.Empire;
 
 namespace Unciv.Assets;
@@ -100,6 +102,17 @@ public static class PolicyScreenModel
         if (body.Count > 0) lines.Add(string.Join("\n", body));
         return string.Join("\n", lines);
     }
+
+    /// <summary>The line under the tree when the engine refuses a command: the fixed word is translated, the engine's reason is too unless it is composed output (digits or markers) that <c>Tr()</c> would re-format.</summary>
+    public static string RefusedLine(string reason) => "Refused".Tr() + ": " + Translated(reason);
+
+    /// <summary>The line under the tree when the session call itself failed; the exception text is not a translation key and is shown as it is.</summary>
+    public static string ConnectionProblemLine(string error) => "Connection problem".Tr() + ": " + error;
+
+    /// <summary>The line shown when the engine had no policy tree to give.</summary>
+    public static string UnavailableLine() => "The engine would not show the policies.".Tr();
+
+    private static string Translated(string text) => ComposedText.IsComposed(text) ? text : text.Tr();
 
     private static string Int(int value) => value.ToString(CultureInfo.InvariantCulture);
 }

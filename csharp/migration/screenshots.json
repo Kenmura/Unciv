@@ -697,5 +697,8 @@
         "caption": "A refused line stays in the input and the engine's reason is shown in red."
       }
     ]
+  },
+  "C049": {
+    "none": "Message strings only; no visible change in English, the policy scenario goldens are unchanged."
   }
 }
