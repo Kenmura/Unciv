@@ -258,6 +258,46 @@ public class EmpireQueryTests
         Assert.Equal(EmpireQueryCodes.UnknownCiv, Fail(new TradeHintQuery(stranger.CivName, [], [])));
     }
 
+    // T240 leak tests
+    [Fact]
+    public void TradeHintAnswersAnUnmetCivLikeOneThatDoesNotExist()
+    {
+        testGame.GameInfo.GameParameters.TradeHintsEnabled = true;
+        var offers = new TradeOfferRequest[] { new(Constants.FlatGold, "Gold", 1) };
+        var unmet = Execute(player, new TradeHintQuery(stranger.CivName, offers, []));
+        var missing = Execute(player, new TradeHintQuery("Atlantis", offers, []));
+        Assert.False(unmet.Ok);
+        Assert.Equal(missing.Code, unmet.Code);
+        Assert.Equal(missing.Message?.Replace("Atlantis", "X", StringComparison.Ordinal), unmet.Message?.Replace(stranger.CivName, "X", StringComparison.Ordinal));
+        testGame.AddCity(stranger, testGame.GetTile(-3, -3));
+        player.DiplomacyFunctions.MakeCivilizationsMeet(stranger);
+        Assert.False(Execute(player, new TradeHintQuery(stranger.CivName, offers, [])).Code == EmpireQueryCodes.UnknownCiv); // known now: not the unknown-civ answer
+    }
+
+    [Fact]
+    public void TradeHintRefusesADefeatedCivLikeAnUnknownOne()
+    {
+        testGame.GameInfo.GameParameters.TradeHintsEnabled = true;
+        enemy.HasEverOwnedOriginalCapital = true;
+        enemy.Cities = [];
+        testGame.GameInfo.Turns = 1;
+        Assert.True(enemy.IsDefeated());
+        Assert.Equal(EmpireQueryCodes.UnknownCiv, Fail(new TradeHintQuery(enemy.CivName, [new(Constants.FlatGold, "Gold", 1)], [])));
+    }
+
+    [Fact]
+    public void TradeHintResultNamesOnlyTheAskedKnownCivAndABucket()
+    {
+        testGame.GameInfo.GameParameters.TradeHintsEnabled = true;
+        player.AddGold(300);
+        testGame.AddCity(stranger, testGame.GetTile(-3, -3));
+        player.DiplomacyFunctions.MakeCivilizationsMeet(stranger);
+        player.DiplomacyFunctions.MakeCivilizationsMeet(enemy);
+        var json = JsonSerializer.Serialize(Ask(new TradeHintQuery(enemy.CivName, [new(Constants.FlatGold, "Gold", 10)], [])), UncivJson.DefaultOptions);
+        Assert.DoesNotContain(stranger.CivName, json);
+        Assert.Contains(enemy.CivName, json);
+    }
+
     // ---- notifications and overview
 
     [Fact]

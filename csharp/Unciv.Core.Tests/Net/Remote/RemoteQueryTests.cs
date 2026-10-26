@@ -318,8 +318,48 @@ public class RemoteQueryTests
         var host = new RemoteQueryHost(core, RemoteQueryPolicy.Default);
         var ok = host.Handle("s", player.CivName, new Query { QueryId = 5, QueryType = "empire.TopBar", Payload = JsonDocument.Parse("{}").RootElement }, context, 1, false, 0);
         Assert.True(ok.Ok);
-        var denied = host.Handle("s", player.CivName, new Query { QueryId = 6, QueryType = "victory.Progress", Payload = JsonDocument.Parse("{}").RootElement }, context, 1, false, 0);
+        var denied = host.Handle("s", player.CivName, new Query { QueryId = 6, QueryType = "console.Plan", Payload = JsonDocument.Parse("{}").RootElement }, context, 1, false, 0);
         Assert.Equal(QueryWireCodes.UnknownQuery, denied.Code);
+    }
+
+    [Fact]
+    public void AnAskBudgetedQueryRunsAtMostBudgetTimesThenRefillsSlowly()
+    {
+        var host = new RemoteQueryHost(registry, new RemoteQueryPolicy(new Dictionary<string, QueryExposure>
+        {
+            ["t223.Echo"] = QueryExposure.AllowBudgeted("test", QueryExposure.Cheap),
+        }), new RemoteQueryLimits(Capacity: 1000, RefillPerSecond: 1000, AskBudget: 3, AskRefillPerMinute: 6));
+        for (int i = 0; i < 3; i++) Assert.True(Handle(host, new EchoQuery(i), now: 0).Ok);
+        Assert.Equal(QueryWireCodes.RateLimited, Handle(host, new EchoQuery(3), now: 0).Code);
+        Assert.True(Handle(host, new EchoQuery(0), now: 0).Ok); // a cache hit gives no new information and is free
+        Assert.Equal(QueryWireCodes.RateLimited, Handle(host, new EchoQuery(3), now: 9_000).Code); // one ask per 10 s
+        Assert.True(Handle(host, new EchoQuery(3), now: 10_000).Ok);
+        Assert.Equal(QueryWireCodes.RateLimited, Handle(host, new EchoQuery(4), now: 10_000).Code);
+        Assert.True(Handle(host, new EchoQuery(4), session: "other", viewer: enemy, now: 10_000).Ok); // the budget is per bound civ
+        Assert.Equal(QueryWireCodes.RateLimited, Handle(host, new EchoQuery(5), session: "reconnect", now: 10_000).Code); // and survives a new session
+    }
+
+    [Fact]
+    public void TradeHintIsBudgetedThroughTheRealPolicy()
+    {
+        testGame.GameInfo.GameParameters.TradeHintsEnabled = true;
+        player.AddGold(500);
+        testGame.AddCity(player, testGame.GetTile(0, 0));
+        testGame.AddCity(enemy, testGame.GetTile(1, 1));
+        player.DiplomacyFunctions.MakeCivilizationsMeet(enemy);
+        var core = new QueryRegistry(UncivJson.DefaultOptions);
+        core.RegisterFromAssembly(typeof(QueryRegistry).Assembly);
+        var host = new RemoteQueryHost(core, RemoteQueryPolicy.Default, new RemoteQueryLimits(Capacity: 1000, RefillPerSecond: 1000, ViewerFactor: 100));
+        QueryResult AskHint(int gold) => host.Handle("s", player.CivName, new Query
+        {
+            QueryId = gold,
+            QueryType = "empire.TradeHint",
+            Payload = JsonDocument.Parse("{\"CivName\":\"" + enemy.CivName + "\",\"OurOffers\":[{\"Name\":\"Gold\",\"Type\":\"Gold\",\"Amount\":" + gold + "}],\"TheirOffers\":[]}").RootElement,
+        }, context, 1, false, 0);
+        var limits = new RemoteQueryLimits();
+        var codes = Enumerable.Range(1, limits.AskBudget + 2).Select(it => AskHint(it).Code).ToList();
+        Assert.True(limits.AskBudget == codes.Count(it => it == null), string.Join(",", codes));
+        Assert.All(codes.Skip(limits.AskBudget), it => Assert.Equal(QueryWireCodes.RateLimited, it));
     }
 
     // ---------------------------------------------------------------- client

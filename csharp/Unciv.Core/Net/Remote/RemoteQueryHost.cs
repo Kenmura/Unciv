@@ -3,8 +3,12 @@ using Unciv.Queries;
 
 namespace Unciv.Net.Remote;
 
-/// <summary>Per-session token bucket (T223). <see cref="Capacity"/> tokens, refilled at <see cref="RefillPerSecond"/>; an expensive query costs several.</summary>
-public sealed record RemoteQueryLimits(int Capacity = 40, int RefillPerSecond = 20, int MaxCacheEntries = 256, int ViewerFactor = 2, int MaxCachedKeyChars = 1024, int MaxCachedResultBytes = 256 * 1024, int MaxCacheBytes = 8 * 1024 * 1024);
+/// <summary>
+/// Per-session token bucket (T223). <see cref="Capacity"/> tokens, refilled at <see cref="RefillPerSecond"/>; an expensive query costs several.
+/// <see cref="AskBudget"/> (T240): how many times a bound civ may have a query marked <see cref="QueryExposure.AskBudget"/> actually run in a burst,
+/// refilled by <see cref="AskRefillPerMinute"/> asks per minute (cache hits are free).
+/// </summary>
+public sealed record RemoteQueryLimits(int Capacity = 40, int RefillPerSecond = 20, int MaxCacheEntries = 256, int ViewerFactor = 2, int MaxCachedKeyChars = 1024, int MaxCachedResultBytes = 256 * 1024, int MaxCacheBytes = 8 * 1024 * 1024, int AskBudget = 8, int AskRefillPerMinute = 4);
 
 /// <summary>
 /// Host-side dispatch of <see cref="Query"/> messages (T223). It is called on the game actor, so a query sees one consistent state and never runs
@@ -19,10 +23,13 @@ public sealed record RemoteQueryLimits(int Capacity = 40, int RefillPerSecond = 
 public sealed class RemoteQueryHost(QueryRegistry registry, RemoteQueryPolicy policy, RemoteQueryLimits? limits = null)
 {
     private const long MilliTokens = 1000;
+    private const long AskUnit = 60_000;
     private readonly RemoteQueryLimits limits = limits ?? new RemoteQueryLimits();
     private readonly Dictionary<string, Bucket> buckets = new(StringComparer.Ordinal);
     // Per bound civ, so reconnecting (a fresh session bucket) does not reset the limit; ViewerFactor times the session limit so one session is governed by its own bucket.
     private readonly Dictionary<string, Bucket> viewerBuckets = new(StringComparer.Ordinal);
+    // T240: per (bound civ, query type) ask budget for queries whose answers can be probed; a cache hit is free (same answer, no new information).
+    private readonly Dictionary<(string Viewer, string Type), Bucket> askBuckets = [];
     private readonly Dictionary<(string Viewer, string Type, string Payload), QueryResult> cache = [];
     private long cacheSeq = long.MinValue;
     private long cacheBytes;
@@ -61,6 +68,8 @@ public sealed class RemoteQueryHost(QueryRegistry registry, RemoteQueryPolicy po
 
         if (!TryTake(bucket, viewerBucket, (exposure.Cost - 1) * MilliTokens)) return Fail(id, QueryWireCodes.RateLimited);
 
+        if (exposure.AskBudget && !TryTakeAsk(viewerCivName, type, nowMs)) return Fail(id, QueryWireCodes.RateLimited);
+
         var response = registry.Execute(new QueryEnvelope(type, viewerCivName, query.Payload), context);
         var result = ToWire(id, response);
         // Only small asks and answers are cached and the whole cache has a byte budget: the payload is client-controlled (up to a frame), so without these
@@ -73,6 +82,17 @@ public sealed class RemoteQueryHost(QueryRegistry registry, RemoteQueryPolicy po
             cacheBytes += size;
         }
         return result;
+    }
+
+    private bool TryTakeAsk(string viewer, string type, long nowMs)
+    {
+        if (!askBuckets.TryGetValue((viewer, type), out var bucket))
+        {
+            bucket = new Bucket((long)limits.AskBudget * AskUnit, limits.AskRefillPerMinute, nowMs); // AskUnit units per ask, so one unit per ms is one ask a minute
+            askBuckets[(viewer, type)] = bucket;
+        }
+        bucket.Refill(nowMs);
+        return bucket.TryTake(AskUnit);
     }
 
     private void ClearCache()

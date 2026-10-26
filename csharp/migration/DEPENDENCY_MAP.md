@@ -193,7 +193,7 @@ flowchart TD
   class T226 prog
   class T230 done
   class T239 ready
-  class T240 prog
+  class T240 review
   class T241 ready
 ```
 
@@ -239,4 +239,4 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T240 | In-Progress [Claude] | T223 | 0 | Remote-safe victory.Progress, empire.TradeHint and console queries (View-based rewrite, then allow in RemoteQueryPolicy) |
+| T240 | Needs-Review [Claude] | T223 | 0 | Remote-safe victory.Progress, empire.TradeHint and console queries (View-based rewrite, then allow in RemoteQueryPolicy) |

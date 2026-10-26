@@ -22,13 +22,16 @@ public static class QueryWireCodes
 }
 
 /// <summary>The exposure decision for one query type: may a remote viewer run it, what it costs the rate limiter, and why.</summary>
-public sealed record QueryExposure(bool Allowed, int Cost, string Reason)
+public sealed record QueryExposure(bool Allowed, int Cost, string Reason, bool AskBudget = false)
 {
     public const int Cheap = 1;
     public const int Moderate = 3;
     public const int Heavy = 5;
 
     public static QueryExposure Allow(string reason, int cost = Cheap) => new(true, cost, reason);
+
+    /// <summary>Allow, and also cap how often one bound civ may have this query actually run (<see cref="RemoteQueryLimits.AskBudget"/>), for queries whose answers can be probed.</summary>
+    public static QueryExposure AllowBudgeted(string reason, int cost = Heavy) => new(true, cost, reason, AskBudget: true);
 
     public static QueryExposure Deny(string reason) => new(false, 0, reason);
 }
@@ -79,11 +82,11 @@ public sealed class RemoteQueryPolicy
         ["empire.SpyDestinations"] = QueryExposure.Allow("only explored cities; a city owner is named only when known (raw GetCities is filtered by the viewer's explored tiles)"),
         ["empire.TechTree"] = QueryExposure.Allow("viewer's own research; ruleset data", QueryExposure.Moderate),
         ["empire.TopBar"] = QueryExposure.Allow("viewer's own treasury and rates"),
-        ["empire.TradeHint"] = QueryExposure.Deny("probes the AI's valuation (TradeEvaluation) on raw civs and repeated asks reveal it; needs a View-based rewrite and a per-civ ask budget before it may be remote (follow-up ticket)"),
+        ["empire.TradeHint"] = QueryExposure.AllowBudgeted("only civs the viewer knows (KnownCiv, through the view's known civs), only offers TradeOptions lists, answer is a 3-way bucket and never the score; off unless the host enabled TradeHintsEnabled; a per-civ ask budget stops bisecting the AI's valuation with gold offers"),
         ["empire.TradeOptions"] = QueryExposure.Allow("only civs the viewer knows; offers are the viewer's and what the partner may trade", QueryExposure.Moderate),
         // ---- console
-        ["console.Autocomplete"] = QueryExposure.Deny("developer console: plans against the whole GameInfo (every civ, unit and tile name), a cheat tool that must never be remote-queryable"),
-        ["console.Plan"] = QueryExposure.Deny("developer console: runs the console runner on the whole GameInfo"),
+        ["console.Autocomplete"] = QueryExposure.Deny("T240, kept denied: the dev console is a host-side cheat (God mode) and completes against the whole GameInfo (every civ, unit, city and tile name, hidden ones included); a remote view cannot express that, so it is not remote-queryable"),
+        ["console.Plan"] = QueryExposure.Deny("T240, kept denied: the dev console is a host-side cheat (God mode); planning a line runs ConsoleRunner on the whole GameInfo, so its hints and errors name hidden civs, units and tiles"),
         // ---- tiles
         ["tiles.TileInfo"] = QueryExposure.Allow("TileMapView returns nothing for an unexplored tile and hides what fog hides"),
         // ---- tutorial
@@ -100,7 +103,7 @@ public sealed class RemoteQueryPolicy
         ["victory.Demographics"] = QueryExposure.Allow("standings of other civs only when the game lets the viewer see them (CanViewCivStats); unmet civs are anonymous", QueryExposure.Moderate),
         ["victory.GameOver"] = QueryExposure.Allow("answers only once the game has ended or for the viewer's own defeat"),
         ["victory.History"] = QueryExposure.Allow("series of other civs only when CanViewCivStats; unmet civs are anonymous", QueryExposure.Moderate),
-        ["victory.Progress"] = QueryExposure.Deny("iterates game.Civilizations and lists every major civ's milestone progress and civ counts, bypassing the views; needs a View-based rewrite (follow-up ticket)"),
+        ["victory.Progress"] = QueryExposure.Allow("rival rows only for civs the viewer knows, itself or defeated ones and only when CanViewCivStats; unmet civs are not listed, the hidden-civ-count rule uses the viewer's knowledge", QueryExposure.Moderate),
         ["victory.Rankings"] = QueryExposure.Allow("rows of other civs only when CanViewCivStats; unmet civs are anonymous", QueryExposure.Moderate),
         ["victory.Scores"] = QueryExposure.Allow("rows of other civs only when CanViewCivStats; unmet civs are anonymous", QueryExposure.Moderate),
     });

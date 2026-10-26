@@ -11,7 +11,9 @@ public sealed record TradeHintResult(string CivName, string Hint);
 // T197: NEW feature, Kotlin never shows a human whether the AI would accept (the AI answers on its turn). Wraps
 // TradeEvaluation.GetTradeAcceptability exactly as the AI's response to a trade request calls it (receiver's view, diplomatic gifts
 // included), but only reports a bucket, never the number. Off unless GameParameters.TradeHintsEnabled, since repeated asks probe the
-// AI valuation. Every offer must be in the available offers (TradeOptionsQuery) and within the amount available.
+// AI valuation. T240: remote use is allowed because the civ is looked up among the viewer's known civs (EmpireQueryHelpers.KnownCiv, checked again against the view's known civs), the offers
+// are the ones TradeOptionsQuery lists, the answer is only the bucket, and RemoteQueryHost gives the query an ask budget per bound civ
+// (QueryExposure.AskBudget) so it cannot be used to bisect the valuation. Every offer must be in the available offers (TradeOptionsQuery) and within the amount available.
 [QueryType("empire.TradeHint")]
 public sealed record TradeHintQuery(string CivName, IReadOnlyList<TradeOfferRequest> OurOffers, IReadOnlyList<TradeOfferRequest> TheirOffers)
     : IQuery<TradeHintResult>
@@ -24,6 +26,8 @@ public sealed record TradeHintQuery(string CivName, IReadOnlyList<TradeOfferRequ
         if (!civ.GameInfo.GameParameters.TradeHintsEnabled)
             throw new QueryException(EmpireQueryCodes.HintsDisabled, "Trade hints are not enabled in this game");
         var other = EmpireQueryHelpers.KnownCiv(view, CivName);
+        if (view.CivView.GetKnownCivs().All(it => it.GetCiv() != other)) // a defeated civ is not among the view's known civs: nobody left to trade with
+            throw new QueryException(EmpireQueryCodes.UnknownCiv, $"You do not know a civilization \"{CivName}\"");
         if (other.IsHuman() || other.IsCityState)
             throw new QueryException(EmpireQueryCodes.NotAvailable, "Only AI major civilizations can be asked");
         var logic = new TradeLogic(civ, other);

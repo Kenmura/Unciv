@@ -41,12 +41,29 @@ public class RemoteQueryPolicyTests
         }
     }
 
+    // T240: the dev console reads the whole GameInfo by design and stays host-only.
+    [Theory]
+    [InlineData("console.Plan")]
+    [InlineData("console.Autocomplete")]
+    public void TheDevConsoleIsDeniedRemotely(string type)
+    {
+        var exposure = RemoteQueryPolicy.Default.Get(type);
+        Assert.False(exposure.Allowed);
+        Assert.Contains("T240", exposure.Reason, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("victory.Progress")]
     [InlineData("empire.TradeHint")]
-    [InlineData("console.Plan")]
-    [InlineData("console.Autocomplete")]
-    public void QueriesThatBypassTheViewsAreDeniedRemotely(string type) => Assert.False(RemoteQueryPolicy.Default.Get(type).Allowed);
+    public void T240QueriesAreRemoteAllowed(string type) => Assert.True(RemoteQueryPolicy.Default.Get(type).Allowed);
+
+    [Fact]
+    public void OnlyTradeHintHasAnAskBudgetAndItIsHeavy()
+    {
+        var budgeted = RemoteQueryPolicy.Default.DecidedTypes.Where(it => RemoteQueryPolicy.Default.Get(it).AskBudget).ToList();
+        Assert.Equal(["empire.TradeHint"], budgeted);
+        Assert.Equal(QueryExposure.Heavy, RemoteQueryPolicy.Default.Get("empire.TradeHint").Cost);
+    }
 
     [Theory]
     [InlineData("units.ReachableTiles")]

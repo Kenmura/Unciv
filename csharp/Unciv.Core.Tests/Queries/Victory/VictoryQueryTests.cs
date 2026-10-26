@@ -138,17 +138,78 @@ public class VictoryQueryTests
     }
 
     [Fact]
-    public void ProgressGlobalListsMajorCivsWorstFirstAndHidesUnmetNames()
+    public void ProgressGlobalListsKnownMajorCivsWorstFirstAndOmitsUnmetOnes()
     {
         SetVictories("Domination");
         var entry = Assert.Single(Ask(new VictoryProgressQuery()).Victories);
-        Assert.Equal(3, entry.Civs.Count);
+        Assert.Equal(2, entry.Civs.Count); // T240: the unmet civ gets no anonymous row either (Kotlin shows one)
         Assert.Contains(entry.Civs, it => it.Civ.IsViewer && it.Civ.CivName == player.CivName);
         Assert.Contains(entry.Civs, it => it.Civ.CivName == enemy.CivName);
-        var unmet = Assert.Single(entry.Civs, it => it.Civ.CivName == null);
-        Assert.False(unmet.Civ.IsDefeated);
-        Assert.NotNull(unmet.Next);
+        Assert.DoesNotContain(entry.Civs, it => it.Civ.CivName == null);
         Assert.DoesNotContain(stranger.CivName, JsonSerializer.Serialize(entry, UncivJson.DefaultOptions));
+    }
+
+    // T240 leak tests: nothing about a civ the viewer has not met may depend on, or appear in, the answer.
+    [Fact]
+    public void ProgressDoesNotChangeWhenAnUnmetCivsStateChanges()
+    {
+        SetVictories("Domination", "Scientific");
+        var before = JsonSerializer.Serialize(Ask(new VictoryProgressQuery()), UncivJson.DefaultOptions);
+        stranger.VictoryManager.CurrentsSpaceshipParts.Add("Apollo Program", 3);
+        stranger.Policies.AdoptedPolicies.Add("Liberty");
+        Assert.Equal(before, JsonSerializer.Serialize(Ask(new VictoryProgressQuery()), UncivJson.DefaultOptions));
+    }
+
+    [Fact]
+    public void ProgressListsAnUnmetCivOnlyOnceItIsMet()
+    {
+        SetVictories("Domination");
+        Assert.Equal(2, Ask(new VictoryProgressQuery()).Victories[0].Civs.Count);
+        player.DiplomacyFunctions.MakeCivilizationsMeet(stranger);
+        var civs = Ask(new VictoryProgressQuery()).Victories[0].Civs;
+        Assert.Equal(3, civs.Count);
+        Assert.Contains(civs, it => it.Civ.CivName == stranger.CivName);
+    }
+
+    [Fact]
+    public void ProgressHidesRivalsWhenTheGameRestrictsToOwnStats()
+    {
+        SetVictories("Domination");
+        testGame.GameInfo.GameParameters.HideOtherCivilizationStats = true;
+        var civs = Assert.Single(Ask(new VictoryProgressQuery()).Victories).Civs;
+        var own = Assert.Single(civs);
+        Assert.True(own.Civ.IsViewer);
+    }
+
+    [Theory]
+    [InlineData("Capture all capitals")]
+    [InlineData("Destroy all players")]
+    [InlineData("Have more [Cities] than each player's [Cities]")]
+    public void ProgressHiddenCivCountFollowsTheViewerNotTheListedCiv(string milestone)
+    {
+        testGame.Ruleset.Victories["Custom"] = new Unciv.Models.Ruleset.Victory { Name = "Custom", Milestones = [milestone] };
+        SetVictories("Custom");
+        testGame.GameInfo.GameParameters.RandomNumberOfPlayers = true;
+        testGame.GameInfo.GameParameters.MaxNumberOfPlayers = 3;
+        enemy.DiplomacyFunctions.MakeCivilizationsMeet(stranger);
+        Assert.True(player.ShouldHideCivCount());
+        Assert.False(enemy.ShouldHideCivCount()); // the enemy knows every civ, the viewer does not
+        var civs = Assert.Single(Ask(new VictoryProgressQuery()).Victories).Civs;
+        var rival = Assert.Single(civs, it => it.Civ.CivName == enemy.CivName);
+        Assert.Null(rival.Next!.Total); // hidden for the viewer, so hidden in the rival's row too
+    }
+
+    [Fact]
+    public void ProgressRunsRemotelyAndLeaksNothingOfUnmetCivs()
+    {
+        SetVictories("Domination");
+        var host = new Unciv.Net.Remote.RemoteQueryHost(registry, Unciv.Net.Remote.RemoteQueryPolicy.Default);
+        var query = new Unciv.Net.Query { QueryId = 1, QueryType = "victory.Progress", Payload = JsonDocument.Parse("{}").RootElement };
+        var result = host.Handle("s", player.CivName, query, new QueryContext(testGame.GameInfo), 1, false, 0);
+        Assert.True(result.Ok);
+        var json = result.Payload!.Value.GetRawText();
+        Assert.DoesNotContain(stranger.CivName, json);
+        Assert.Equal(2, result.Payload.Value.GetProperty("Victories")[0].GetProperty("Civs").GetArrayLength());
     }
 
     [Fact]
@@ -174,7 +235,7 @@ public class VictoryQueryTests
         var spectator = testGame.AddCiv(testGame.Ruleset.Nations[Constants.Spectator]);
         var entry = Assert.Single(Ask(new VictoryProgressQuery(), spectator).Victories);
         Assert.Empty(entry.Own);
-        Assert.Equal(3, entry.Civs.Count);
+        Assert.Equal(3, entry.Civs.Count); // a spectator knows every civ
     }
 
     // ---- scores
