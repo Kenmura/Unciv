@@ -86,6 +86,9 @@ public sealed class GameQueries(IGameSession session)
 
     public Task<DiplomaticVoteResult?> DiplomaticVote() => session.QueryAsync(new DiplomaticVoteQuery());
 
+    /// <summary>C053: the World Congress result when it is due (Show), with the votes of the civs the viewer has met.</summary>
+    public Task<DiplomaticVoteBreakdownResult?> DiplomaticVoteResult() => session.QueryAsync(new DiplomaticVoteResultQuery());
+
     /// <summary>C046: what the dev console would answer to a line (error, usage, or OK) on the selection, before the line is sent.</summary>
     public Task<ConsolePlanResult?> ConsolePlan(string line, HexCoord? tile, int? unitId) => session.QueryAsync(new ConsolePlanQuery(line, tile, unitId));
 

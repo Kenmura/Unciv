@@ -6,6 +6,7 @@ using Unciv.Logic.Map;
 using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
@@ -60,10 +61,10 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false, bool proposals = false, int religion = 0)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false, bool proposals = false, int religion = 0, bool voteResult = false)
     {
         espionage |= religion == ReligionFoundEnhance;
-        diplomacy |= alerts | trade | espionage | proposals;
+        diplomacy |= alerts | trade | espionage | proposals | voteResult;
         solo |= skirmish | diplomacy | policies | victory | defeat | decisions | crowd | religion > 0;
         var vanilla = LoadVanilla();
         // C038: religion needs Gods & Kings (Vanilla has no beliefs); every other scenario plays Vanilla
@@ -105,6 +106,7 @@ public static class ScenarioGame
         if (proposals) SetUpProposals(game);
         if (religion == ReligionFoundEnhance) SetUpReligion(game);
         if (religion == ReligionReform) SetUpReform(game);
+        if (voteResult) SetUpVoteResult(game);
         return new GameSession(game);
     }
 
@@ -233,6 +235,27 @@ public static class ScenarioGame
         offer.TheirOffers.Add(new Unciv.Logic.Trade.TradeOffer(Constants.FlatGold, Unciv.Logic.Trade.TradeOfferType.Gold, 100, game.Speed));
         human.TradeRequests.Add(new Unciv.Logic.Trade.TradeRequest(rome.CivId, offer));
         human.AddPopupAlert(new Unciv.Logic.Civilization.PopupAlert(Unciv.Logic.Civilization.AlertType.DemandToStopSpreadingReligion, rome.CivId));
+    }
+
+    /// <summary>
+    /// C053: the diplomacy game where the World Congress has voted: Babylon (capital founded, production and research chosen) has the result to see. Rome owns the United
+    /// Nations; Babylon voted for Rome, Rome for Greece (a civ Babylon has not met) and Greece for Babylon. Set up directly on the state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpVoteResult(GameInfo game)
+    {
+        var human = game.GetCivilization(HumanA);
+        var capital = FoundWithSettler(human);
+        capital.CityConstructions.AddToQueue("Warrior");
+        human.Tech.TechsToResearch.Add("Agriculture");
+        var rome = game.GetCivilization(Ai);
+        var greece = game.GetCivilization(HumanB);
+        var romeCapital = FoundWithSettler(rome);
+        var building = game.Ruleset.Buildings.Values.First(it => ((IHasUniques)it).HasUnique(UniqueType.OneTimeTriggerVoting, GameContext.IgnoreConditionalsState));
+        romeCapital.CityConstructions.AddBuilding(building.Name);
+        game.DiplomaticVictoryVotesCast[human.CivId] = rome.CivId;
+        game.DiplomaticVictoryVotesCast[rome.CivId] = greece.CivId;
+        game.DiplomaticVictoryVotesCast[greece.CivId] = human.CivId;
+        human.AddFlag(nameof(Logic.Civilization.CivFlags.ShowDiplomaticVotingResults), 0);
     }
 
     /// <summary>

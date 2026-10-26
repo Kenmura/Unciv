@@ -12,7 +12,7 @@ internal static class EmpireSamples
     public static readonly string[] Types =
     [
         "set-research-queue", "pick-free-technology", "debug-add-technology", "adopt-policy", "found-pantheon", "choose-beliefs",
-        "found-religion", "choose-free-great-person", "move-spy", "vote-diplomatic", "set-gold-to-science",
+        "found-religion", "choose-free-great-person", "move-spy", "vote-diplomatic", "ack-diplomatic-vote-result", "set-gold-to-science",
     ];
 
     private static Belief FreeBelief(GameInfo game, BeliefType type) =>
@@ -78,6 +78,9 @@ internal static class EmpireSamples
             case "vote-diplomatic":
                 babylon.AddFlag(Unciv.Logic.Civilization.CivFlags.TurnsTillNextDiplomaticVote.ToString(), 0);
                 return new VoteDiplomatic();
+            case "ack-diplomatic-vote-result":
+                babylon.AddFlag(Unciv.Logic.Civilization.CivFlags.ShowDiplomaticVotingResults.ToString(), 0);
+                return new AckDiplomaticVoteResult();
             case "set-gold-to-science":
                 game.Ruleset.ModOptions = new ModOptions { Uniques = ["Can convert gold to science with sliders"] };
                 return new SetGoldToScience { Percent = 30 };

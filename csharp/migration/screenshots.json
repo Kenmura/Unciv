@@ -384,6 +384,20 @@
       }
     ]
   },
+  "C053": {
+    "scenario": "vote-result",
+    "about": "World Congress vote result: each civ you know with its votes, the worth of its vote, whom it voted for, the verdict and Continue.",
+    "shots": [
+      {
+        "golden": "vote-result/result.png",
+        "caption": "The result lists Babylon, Rome (two votes, owner of the United Nations, voted for an unnamed civ) and the city-state, then the verdict and Continue."
+      },
+      {
+        "golden": "vote-result/continued.png",
+        "caption": "After Continue the world is back and the result does not return."
+      }
+    ]
+  },
   "C050": {
     "scenario": "overview-espionage",
     "about": "Overview espionage and global politics tabs in a game with espionage on: spy moves, coup staging, and the relation with each met civ.",

@@ -288,6 +288,7 @@ public class QueryTests
         ["empire.SpyDestinations"] = () => new Unciv.Queries.Empire.SpyDestinationsQuery(),
         ["empire.CityStateQuests"] = () => new Unciv.Queries.Empire.CityStateQuestsQuery("Egypt"),
         ["empire.DiplomaticVote"] = () => new Unciv.Queries.Empire.DiplomaticVoteQuery(),
+        ["empire.DiplomaticVoteResult"] = () => new Unciv.Queries.Empire.DiplomaticVoteResultQuery(),
         ["units.PromotionChoices"] = () => new Unciv.Queries.Units.PromotionChoicesQuery(1),
         ["units.PromotableUnits"] = () => new Unciv.Queries.Units.PromotableUnitsQuery(),
         ["console.Plan"] = () => new Unciv.Queries.DevConsole.ConsolePlanQuery("civ addstat gold 5"),

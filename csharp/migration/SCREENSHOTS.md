@@ -822,6 +822,20 @@ Scenario `decisions-religion`.
 
 *The reform picker with a free follower belief to choose: Choose beliefs is disabled and says to choose first.* (`decisions-reform/reform.png`)
 
+## C053 (ticket not Done or unknown)
+
+World Congress vote result: each civ you know with its votes, the worth of its vote, whom it voted for, the verdict and Continue.
+
+Scenario `vote-result`.
+
+![The result lists Babylon, Rome (two votes, owner of the United Nations, voted for an unnamed civ) and the city-state, then the verdict and Continue.](../Unciv.Godot.Harness/golden/vote-result/result.png)
+
+*The result lists Babylon, Rome (two votes, owner of the United Nations, voted for an unnamed civ) and the city-state, then the verdict and Continue.* (`vote-result/result.png`)
+
+![After Continue the world is back and the result does not return.](../Unciv.Godot.Harness/golden/vote-result/continued.png)
+
+*After Continue the world is back and the result does not return.* (`vote-result/continued.png`)
+
 ## C055 Civilopedia hotkey and search, button visible under the unit panel
 
 Civilopedia button reachable under the unit panel, F1 hotkey, and the entry search box.

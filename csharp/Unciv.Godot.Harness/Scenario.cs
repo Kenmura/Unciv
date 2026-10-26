@@ -62,5 +62,8 @@ public abstract class Scenario
     /// <summary>C052: 0 none; <see cref="Unciv.Harness.ScenarioGame.ReligionFoundEnhance"/> the found/enhance religion game with spies and a vote; <see cref="Unciv.Harness.ScenarioGame.ReligionReform"/> the reform game (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
     public virtual int Religion => 0;
 
+    /// <summary>C053: the diplomacy game where the World Congress has voted and Babylon has the result to see: Rome owns the United Nations, Greece is not met (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
+    public virtual bool VoteResult => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

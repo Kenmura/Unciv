@@ -41,3 +41,4 @@ console
 next-turn
 proposals
 espionage
+vote-result

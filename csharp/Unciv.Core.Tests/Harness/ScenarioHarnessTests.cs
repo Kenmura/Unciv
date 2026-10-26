@@ -333,6 +333,21 @@ public sealed class ScenarioHarnessTests : IDisposable
     }
 
     [Fact]
+    public void VoteResultGameHasTheResultDueAndAcknowledgingItReplaysEqual()
+    {
+        var session = ScenarioGame.Create(voteResult: true);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        Assert.True(human.ShouldShowDiplomaticVotingResults());
+        Assert.Equal(3, session.Game.DiplomaticVictoryVotesCast.Count);
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(voteResult: true)));
+
+        Assert.True(session.Submit(ScenarioGame.HumanA, new Unciv.Commands.Empire.AckDiplomaticVoteResult()).Accepted);
+        Assert.False(human.ShouldShowDiplomaticVotingResults());
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, voteResult: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("p", 1, 2, "h", [], [], [], [], VoteResult: true).ToJson()).VoteResult);
+    }
+
+    [Fact]
     public void TradeGameHasHintsOnRomeRichAndATradeAndADemandWaitingAndReplaysEqual()
     {
         var session = ScenarioGame.Create(trade: true);

@@ -9,6 +9,7 @@ using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Files;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Queries;
 using Unciv.Queries.Empire;
 using Unciv.Queries.Units;
@@ -340,5 +341,151 @@ public class DecisionQueryTests
         Assert.Equal(player.DiplomacyFunctions.GetKnownCivsSorted(false).Select(it => it.CivId), result.Candidates);
         Assert.DoesNotContain(stranger.CivId, result.Candidates);
         Assert.Contains(enemy.CivId, result.Candidates);
+    }
+
+    // ---- world congress result (C053)
+
+    private JavaHashMap<string, string?> Votes => testGame.GameInfo.DiplomaticVictoryVotesCast;
+
+    private void ShowResult() => player.AddFlag(CivFlags.ShowDiplomaticVotingResults.ToString(), 0);
+
+    [Fact]
+    public void VoteResultIsEmptyUntilTheResultIsDue()
+    {
+        Votes[player.CivId] = enemy.CivId;
+        var none = Ask(new DiplomaticVoteResultQuery());
+        Assert.False(none.Show);
+        Assert.Empty(none.Rows);
+        Assert.Equal("", none.WinnerText);
+        Assert.Null(none.UnBuilding);
+        Assert.Null(none.UnOwner);
+        player.AddFlag(CivFlags.ShowDiplomaticVotingResults.ToString(), 1);
+        Assert.False(Ask(new DiplomaticVoteResultQuery()).Show);
+        ShowResult();
+        Assert.True(Ask(new DiplomaticVoteResultQuery()).Show);
+        player.AddFlag(CivFlags.ShowDiplomaticVotingResults.ToString(), -1); // acknowledged
+        Assert.False(Ask(new DiplomaticVoteResultQuery()).Show);
+    }
+
+    [Fact]
+    public void VoteResultListsTheViewerAndMetCivsWithTheirVotes()
+    {
+        ShowResult();
+        Votes[player.CivId] = enemy.CivId;
+        Votes[enemy.CivId] = null; // abstained
+        var result = Ask(new DiplomaticVoteResultQuery());
+        var expected = testGame.GameInfo.GetCivsSorted(civToSortFirst: player).Where(it => it == player || player.Knows(it)).Select(it => it.CivName).ToList();
+        Assert.Equal(expected, result.Rows.Select(it => it.CivName));
+        Assert.Equal(player.CivName, result.Rows[0].CivName);
+        Assert.DoesNotContain(stranger.CivName, result.Rows.Select(it => it.CivName));
+        Assert.Contains(cityState.CivName, result.Rows.Select(it => it.CivName));
+
+        var own = result.Rows.Single(it => it.CivName == player.CivName);
+        Assert.True(own.IsMajor);
+        Assert.False(own.Abstained);
+        Assert.Equal(enemy.CivName, own.VotedFor);
+        Assert.False(own.VotedForUnknown);
+        Assert.Equal(1, own.Weight);
+        Assert.Equal(0, own.Votes);
+        var other = result.Rows.Single(it => it.CivName == enemy.CivName);
+        Assert.Equal(1, other.Votes);
+        Assert.True(other.Abstained);
+        Assert.Null(other.VotedFor);
+        Assert.False(other.VotedForUnknown);
+        var minor = result.Rows.Single(it => it.CivName == cityState.CivName);
+        Assert.False(minor.IsMajor);
+        Assert.Equal(0, minor.Votes);
+        Assert.True(minor.Abstained); // it cast no vote
+    }
+
+    [Fact]
+    public void VoteResultCountsAVoteForADefeatedCivAsAbstainedAndHidesUnmetTargets()
+    {
+        ShowResult();
+        Votes[player.CivId] = stranger.CivId;
+        Votes[enemy.CivId] = stranger.CivId;
+        var result = Ask(new DiplomaticVoteResultQuery());
+        foreach (var row in result.Rows.Where(it => it.CivName != cityState.CivName))
+        {
+            Assert.False(row.Abstained);
+            Assert.Null(row.VotedFor);
+            Assert.True(row.VotedForUnknown);
+        }
+        Assert.DoesNotContain(stranger.CivName, JsonSerializer.Serialize(result, UncivJson.DefaultOptions));
+
+        // the viewer's own vote for a civ that has since been defeated reads as an abstention
+        Votes[player.CivId] = enemy.CivId;
+        Assert.False(Ask(new DiplomaticVoteResultQuery()).Rows[0].Abstained);
+        enemy.HasEverOwnedOriginalCapital = true;
+        enemy.Cities = [];
+        Assert.True(enemy.IsDefeated());
+        var afterwards = Ask(new DiplomaticVoteResultQuery());
+        Assert.True(afterwards.Rows[0].Abstained);
+        Assert.Null(afterwards.Rows[0].VotedFor);
+        Assert.False(afterwards.Rows[0].VotedForUnknown);
+        Assert.DoesNotContain(afterwards.Rows, it => it.CivName == enemy.CivName); // defeated civs are not listed
+    }
+
+    [Fact]
+    public void VoteResultWinnerTextNamesOnlyCivsTheViewerKnows()
+    {
+        ShowResult();
+        Votes[player.CivId] = stranger.CivId;
+        Votes[enemy.CivId] = stranger.CivId;
+        Votes[stranger.CivId] = stranger.CivId; // 3 votes elect a leader in this game (4 voting civs)
+        var unmet = Ask(new DiplomaticVoteResultQuery()).WinnerText;
+        Assert.Equal($"{{{DiplomaticVoteResultQuery.UnknownCiv} has been elected world leader!}}", unmet);
+
+        Votes[player.CivId] = enemy.CivId;
+        Votes[enemy.CivId] = enemy.CivId;
+        Votes[stranger.CivId] = enemy.CivId;
+        Assert.Equal($"{{{enemy.Nation.GetLeaderDisplayName()} has been elected world leader!}}", Ask(new DiplomaticVoteResultQuery()).WinnerText);
+
+        Votes[player.CivId] = player.CivId;
+        Votes[enemy.CivId] = player.CivId;
+        Votes[stranger.CivId] = player.CivId;
+        Assert.Equal("{You have been elected world leader!}", Ask(new DiplomaticVoteResultQuery()).WinnerText);
+
+        Votes[player.CivId] = stranger.CivId;
+        Votes[enemy.CivId] = enemy.CivId;
+        Votes[stranger.CivId] = null;
+        var tie = Ask(new DiplomaticVoteResultQuery()).WinnerText;
+        Assert.Contains("Tied in first position: [", tie);
+        Assert.Contains(DiplomaticVoteResultQuery.UnknownCiv, tie);
+        Assert.Contains(enemy.CivName, tie);
+        Assert.DoesNotContain(stranger.CivName, tie);
+        Votes.Clear();
+        Assert.Equal("No valid votes were cast.", Ask(new DiplomaticVoteResultQuery()).WinnerText);
+    }
+
+    [Fact]
+    public void VoteResultShowsTheUnitedNationsAndItsOwnerOnlyWhenTheOwnerIsKnown()
+    {
+        ShowResult();
+        var building = testGame.Ruleset.Buildings.Values.First(it => ((IHasUniques)it).HasUnique(UniqueType.OneTimeTriggerVoting, GameContext.IgnoreConditionalsState));
+        var city = enemy.Cities[0];
+        city.CityConstructions.AddBuilding(building.Name);
+        Votes[enemy.CivId] = player.CivId;
+        var known = Ask(new DiplomaticVoteResultQuery());
+        Assert.Equal(building.Name, known.UnBuilding);
+        Assert.Equal(enemy.CivName, known.UnOwner);
+        Assert.Equal(2, known.Rows.Single(it => it.CivName == enemy.CivName).Weight);
+        Assert.Equal(1, known.Rows.Single(it => it.CivName == player.CivName).Weight);
+        Assert.Equal(2, known.Rows.Single(it => it.CivName == player.CivName).Votes);
+
+        city.CityConstructions.RemoveBuilding(building.Name);
+        stranger.Cities[0].CityConstructions.AddBuilding(building.Name);
+        var hidden = Ask(new DiplomaticVoteResultQuery());
+        Assert.Null(hidden.UnBuilding);
+        Assert.Null(hidden.UnOwner);
+        Assert.All(hidden.Rows, it => Assert.Equal(1, it.Weight));
+    }
+
+    [Fact]
+    public void VoteResultIsAskedAsTheViewerNotTheCurrentPlayer()
+    {
+        ShowResult();
+        Assert.True(Ask(new DiplomaticVoteResultQuery()).Show);
+        Assert.False(Execute(new DiplomaticVoteResultQuery(), enemy.CivName).Result!.Value.Deserialize<DiplomaticVoteBreakdownResult>(UncivJson.DefaultOptions)!.Show);
     }
 }

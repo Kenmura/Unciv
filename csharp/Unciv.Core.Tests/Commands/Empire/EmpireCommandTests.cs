@@ -70,6 +70,7 @@ public sealed class EmpireCommandTests
         Assert.Equal(typeof(ChooseFreeGreatPerson), names["choose-free-great-person"]);
         Assert.Equal(typeof(MoveSpy), names["move-spy"]);
         Assert.Equal(typeof(VoteDiplomatic), names["vote-diplomatic"]);
+        Assert.Equal(typeof(AckDiplomaticVoteResult), names["ack-diplomatic-vote-result"]);
         Assert.Equal(typeof(SetGoldToScience), names["set-gold-to-science"]);
 
         var queue = JsonSerializer.Deserialize<SetResearchQueue>("""{"techs":["Agriculture","Pottery"]}""", UncivJson.DefaultOptions)!;
@@ -87,7 +88,7 @@ public sealed class EmpireCommandTests
         {
             new SetResearchQueue { Techs = ["Agriculture"] }, new PickFreeTechnology { Tech = "Agriculture" },
             new AdoptPolicy { Policy = "Tradition" }, new FoundPantheon(), new ChooseBeliefs(), new FoundReligion(),
-            new ChooseFreeGreatPerson(), new MoveSpy(), new VoteDiplomatic(), new SetGoldToScience(),
+            new ChooseFreeGreatPerson(), new MoveSpy(), new VoteDiplomatic(), new AckDiplomaticVoteResult(), new SetGoldToScience(),
         };
         foreach (var command in commands)
         {
@@ -371,6 +372,38 @@ public sealed class EmpireCommandTests
         Ok(new VoteDiplomatic { CivId = null });
         Assert.True(testGame.GameInfo.DiplomaticVictoryVotesCast.ContainsKey(a.CivId));
         Assert.Null(testGame.GameInfo.DiplomaticVictoryVotesCast[a.CivId]);
+    }
+
+    // --- vote result (C053)
+
+    [Fact]
+    public void AckDiplomaticVoteResultClearsTheResultAndNeedsOne()
+    {
+        AssertRejected(new AckDiplomaticVoteResult(), CommandErrors.StaleReference); // nothing to acknowledge
+        a.AddFlag(CivFlags.ShowDiplomaticVotingResults.ToString(), 1); // not due yet
+        AssertRejected(new AckDiplomaticVoteResult(), CommandErrors.StaleReference);
+        a.AddFlag(CivFlags.ShowDiplomaticVotingResults.ToString(), 0);
+        Assert.True(a.ShouldShowDiplomaticVotingResults());
+        Ok(new AckDiplomaticVoteResult());
+        Assert.False(a.ShouldShowDiplomaticVotingResults());
+        Assert.Equal(-1, a.FlagsCountdown[CivFlags.ShowDiplomaticVotingResults.ToString()]);
+        Assert.False(b.FlagsCountdown.ContainsKey(CivFlags.ShowDiplomaticVotingResults.ToString()));
+        AssertRejected(new AckDiplomaticVoteResult(), CommandErrors.StaleReference); // only once
+    }
+
+    [Fact]
+    public void AckDiplomaticVoteResultIsInTheLogAndReplaysToTheSameState()
+    {
+        a.AddFlag(CivFlags.ShowDiplomaticVotingResults.ToString(), 0);
+        var twin = new EmpireCommandTests();
+        twin.a.AddFlag(CivFlags.ShowDiplomaticVotingResults.ToString(), 0);
+        Assert.Equal(Hash(), twin.Hash());
+        Ok(new AckDiplomaticVoteResult());
+        var logged = Assert.Single(session.Log);
+        Assert.Equal("ack-diplomatic-vote-result", logged.Type);
+        Assert.NotEqual(Hash(), twin.Hash());
+        twin.session.Replay(JsonSerializer.Deserialize<CommandEnvelope>(JsonSerializer.Serialize(logged, UncivJson.DefaultOptions), UncivJson.DefaultOptions)!);
+        Assert.Equal(Hash(), twin.Hash());
     }
 
     // --- gold to science

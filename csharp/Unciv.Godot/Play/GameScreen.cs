@@ -85,6 +85,7 @@ public partial class GameScreen : Control
     public TutorialPopupView Tutorials { get; private set; } = null!; // JUSTIFY: C026 assigned in _Ready before any use
 
     /// <summary>C024: the victory/defeat screen, above everything else.</summary>
+    public VoteResultScreen VoteResult { get; private set; } = null!; // JUSTIFY: C053 assigned in _Ready before any use
     public GameOverScreen GameOver { get; private set; } = null!; // JUSTIFY: C024 assigned in _Ready before any use
 
     /// <summary>Raised when the player leaves the finished (or any) game from the game-over screen or the menu; the composition root shows the main menu.</summary>
@@ -388,7 +389,7 @@ public partial class GameScreen : Control
 
     private void CheckTutorials()
     {
-        if (!TutorialsEnabled || boundSettings == null || !boundSettings.Current.ShowTutorials || GameOver.Visible) return;
+        if (!TutorialsEnabled || boundSettings == null || !boundSettings.Current.ShowTutorials || GameOver.Visible || VoteResult.Visible) return;
         foreach (var trigger in TutorialModel.Detect(snapshot, session.Ruleset))
         {
             if (tutorialQueue.Enqueue(trigger, boundSettings.Current) == TutorialEnqueue.NothingToShow) MarkTutorialSeen(trigger);
@@ -452,7 +453,7 @@ public partial class GameScreen : Control
             return true;
         }
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
-        if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || Espionage.Visible || GameOver.Visible || Alerts.Visible || Proposals.Visible) return false;
+        if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || Espionage.Visible || GameOver.Visible || VoteResult.Visible || Alerts.Visible || Proposals.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
             case HotkeyAction.EndTurn:
@@ -504,7 +505,7 @@ public partial class GameScreen : Control
             VictoryStatus.Close();
             return true;
         }
-        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || Espionage.Visible || Alerts.Visible || Proposals.Visible || GameOver.Visible) return false;
+        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || Espionage.Visible || Alerts.Visible || Proposals.Visible || GameOver.Visible || VoteResult.Visible) return false;
         OpenGameMenu();
         return true;
     }
@@ -669,6 +670,9 @@ public partial class GameScreen : Control
         };
         TurnOverlay = new NextTurnProgressView();
         AddChild(TurnOverlay);
+        VoteResult = new VoteResultScreen();
+        AddChild(VoteResult);
+        VoteResult.Continued += () => Run(AcknowledgeVoteResult());
         GameOver = new GameOverScreen();
         AddChild(GameOver);
         Tutorials = new TutorialPopupView();
@@ -751,6 +755,7 @@ public partial class GameScreen : Control
         MenuButton.Position = new Vector2(TradeButton.Position.X + TradeButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         Alerts.LayoutIn(Size);
         Proposals.LayoutIn(Size);
+        VoteResult.LayoutIn(Size);
         GameOver.LayoutIn(Size);
         VictoryStatus.LayoutIn(Size);
         GameMenu.LayoutIn(Size);
@@ -798,6 +803,8 @@ public partial class GameScreen : Control
         Alerts.Init(theme);
         Proposals.Init(theme);
         Proposals.Close();
+        VoteResult.Init(theme);
+        VoteResult.Close();
         GameOver.Init(theme);
         Tutorials.Init(theme);
         Tutorials.Close();
@@ -911,6 +918,7 @@ public partial class GameScreen : Control
         MoveChild(Picker, -1);
         MoveChild(Proposals, -1);
         MoveChild(Alerts, -1); // the popups sit above every screen opened above
+        MoveChild(VoteResult, -1);
         MoveChild(GameOver, -1);
         MoveChild(VictoryStatus, -1);
         MoveChild(GameMenu, -1);
@@ -1292,8 +1300,33 @@ public partial class GameScreen : Control
         }
         ShowNextAlert(pending, reopen: false);
         ShowNextProposal(reopen: false);
+        await CheckVoteResult();
         await CheckGameOver();
         CheckTutorials();
+    }
+
+    /// <summary>
+    /// C053: opens the World Congress result when the engine says it is due (Kotlin shows it before the victory screen and the alerts, when no popup is open), and
+    /// closes it when it no longer is. The player's Continue sends <c>AckDiplomaticVoteResult</c>.
+    /// </summary>
+    private async Task CheckVoteResult()
+    {
+        if (resigned || Alerts.Visible || Picker.Visible) return;
+        var due = VoteResultModel.Build(await queries.DiplomaticVoteResult());
+        if (due == null)
+        {
+            VoteResult.Close();
+            return;
+        }
+        if (!VoteResult.Visible) VoteResult.Open(due, civ => OwnerColour(civ));
+    }
+
+    private async Task AcknowledgeVoteResult()
+    {
+        var result = await session.SubmitAsync(new Unciv.Commands.Empire.AckDiplomaticVoteResult());
+        if (!result.Accepted) SetStatus("Continue refused: " + result.Message);
+        VoteResult.Close();
+        Refresh();
     }
 
     /// <summary>
@@ -1373,7 +1406,7 @@ public partial class GameScreen : Control
         if (reopen) deferredProposals.Clear();
         Notifications.SetOffers(offerTracker.Update(snapshot));
         var next = TradeProposalModel.Next(snapshot, deferredProposals);
-        bool covered = Alerts.Visible || Picker.Visible || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || GameOver.Visible || Pedia.Visible;
+        bool covered = Alerts.Visible || Picker.Visible || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || GameOver.Visible || VoteResult.Visible || Pedia.Visible;
         if (next == null || covered) Proposals.Close();
         else if (Proposals.Current?.Key != next.Key || !Proposals.Visible) Proposals.Open(next);
     }
