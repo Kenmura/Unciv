@@ -102,6 +102,25 @@ public sealed class AlertCommandTests
     }
 
     [Fact]
+    public void ConqueringACityOfTheSameCivDoesNotMakeItMeetItself()
+    {
+        var city = ConqueredCity();
+        var alertsBefore = w.A.PopupAlerts.Count;
+        var knownBefore = w.A.Diplomacy.Count;
+        var modifiersBefore = w.Diplo(w.B, w.A).DiplomaticModifiers.Count;
+
+        w.Ok(Respond(AlertType.CityConquered, city.Id, "puppet"));
+
+        Assert.True(city.IsPuppet);
+        Assert.Equal(w.A, city.Civ);
+        Assert.False(w.A.Diplomacy.ContainsKey(w.A.CivId));
+        Assert.Equal(knownBefore, w.A.Diplomacy.Count);
+        Assert.DoesNotContain(w.A.PopupAlerts, it => it.Type == AlertType.FirstContact);
+        Assert.Equal(alertsBefore - 1, w.A.PopupAlerts.Count);
+        Assert.Equal(modifiersBefore, w.Diplo(w.B, w.A).DiplomaticModifiers.Count); // no WarMongerer for third parties
+    }
+
+    [Fact]
     public void CityConqueredAnnexRazeAndLiberate()
     {
         var annexed = ConqueredCity();

@@ -186,6 +186,10 @@ public class CityConquestFunctions(CityObject city)
 
     private void DiplomaticRepercussionsForConqueringCity(CivilizationObject oldCiv, CivilizationObject conqueringCiv)
     {
+        // Deviation from Kotlin (T238): a civ "conquering" its own city (only reachable from a fabricated
+        // CityConquered alert) has nobody to anger and must not meet itself.
+        if (oldCiv == conqueringCiv) return;
+
         var currentPopulation = city.Population.Population;
         var percentageOfCivPopulationInThatCity = currentPopulation * 100f /
                 oldCiv.Cities.Sum(it => it.Population.Population);
