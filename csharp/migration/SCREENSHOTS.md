@@ -366,7 +366,7 @@ Scenario `diplomacy`.
 
 *City-state under the player's protection.* (`diplomacy/protected.png`)
 
-## C022 (ticket not Done or unknown)
+## C022 Trade screen
 
 Trade screen: offer builder for both sides, incoming trade and demand from an AI civ, the engine's hint, propose and retract.
 
