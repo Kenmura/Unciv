@@ -4,6 +4,7 @@ v1-vertical
 minimap
 ui-kit
 terrain-3d
+terrain-blend
 settings
 props-3d
 hud

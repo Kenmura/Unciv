@@ -17,8 +17,8 @@ public enum TileFog
     Explored,
 }
 
-/// <summary>One drawn tile; remembers what it was drawn from so tests and later layers can ask the view instead of the engine.</summary>
-public partial class TileNode : MeshInstance3D
+/// <summary>One drawn tile (its surface is part of a chunk mesh, C031); remembers what it was drawn from so tests and later layers can ask the view instead of the engine.</summary>
+public partial class TileNode : Node3D
 {
     public HexCoord Coord { get; set; }
     public TileFog Fog { get; set; }
@@ -56,6 +56,8 @@ public partial class MapView : Node3D
     private float tilt = TiltDegrees;
     private float yaw;
     private MultiMeshInstance3D? vegetation;
+    private TerrainChunkLayer terrain = null!; // JUSTIFY: C031 assigned in _Ready before any use
+    private Vector2 lastViewportSize;
     private Vector2? pressAt;
     private bool dragging;
 
@@ -83,6 +85,18 @@ public partial class MapView : Node3D
 
     public Vector3 Focus => focus;
 
+    /// <summary>C031: merged terrain chunks drawn.</summary>
+    public int ChunkCount => terrain.ChunkCount;
+
+    /// <summary>C031: chunks inside the camera's ground footprint (the others are hidden).</summary>
+    public int VisibleChunkCount => terrain.VisibleChunkCount;
+
+    /// <summary>C031: the baked, blended vertex colour nearest to a world point on the terrain surface.</summary>
+    public Color? SurfaceColourNear(Vector3 ground) => terrain.ColourNear(ground);
+
+    /// <summary>C031: whether the terrain chunk under a world point is currently drawn.</summary>
+    public bool IsChunkVisibleAt(Vector3 ground) => terrain.IsChunkVisibleAt(ground);
+
     public int TileCount => tiles.Count;
 
     public int Count(TileFog fog) => tiles.Values.Count(it => it.Fog == fog);
@@ -97,6 +111,8 @@ public partial class MapView : Node3D
     {
         AddChild(new WorldEnvironment { Environment = MapMaterials.Backdrop() });
         AddChild(new DirectionalLight3D { LightEnergy = 0.8f, RotationDegrees = new Vector3(-60f, 30f, 0f) });
+        terrain = new TerrainChunkLayer { Name = "Terrain" };
+        AddChild(terrain);
         tileRoot = new Node3D { Name = "Tiles" };
         AddChild(tileRoot);
         highlight = new TileHighlight { Name = "Highlight" };
@@ -121,22 +137,23 @@ public partial class MapView : Node3D
         vegetation = null;
         TriangleCount = 0;
         var tuftTransforms = new List<(Transform3D Transform, Color Colour)>();
-        var tintCache = new Dictionary<(string Base, string? Feature, bool Visible), Material>();
+        var chunkTiles = new List<ChunkTile>();
+        var colourCache = new Dictionary<(string Base, string? Feature, bool Visible), Tint>();
         foreach (var tile in snapshotTiles)
         {
             var feature = OverlayOf(tile);
             var key = (tile.BaseTerrain, feature, tile.Visible);
-            if (!tintCache.TryGetValue(key, out var material))
+            if (!colourCache.TryGetValue(key, out var colour))
             {
                 var baseMaterial = assets.Get<Material>(AssetKey.Of(RulesetAssetKeys.Terrain, tile.BaseTerrain));
                 var overlay = feature == null ? null : assets.Get<Material>(AssetKey.Of(RulesetAssetKeys.Terrain, feature));
-                tintCache[key] = material = MapMaterials.Tinted(baseMaterial, overlay, tile.Visible);
+                colourCache[key] = colour = MapMaterials.TileColour(baseMaterial, overlay, tile.Visible);
             }
             var reliefName = ReliefTerrainOf(tile);
             var kind = TerrainRelief.KindOf(reliefName);
             var mesh = assets.Get<Mesh>(TerrainRelief.MeshKey(reliefName));
-            TriangleCount += (mesh.GetFaces().Length / 3);
             var coord = new HexCoord(tile.X, tile.Y);
+            chunkTiles.Add(new ChunkTile(coord, mesh, colour));
             var node = new TileNode
             {
                 Name = $"Tile_{tile.X}_{tile.Y}",
@@ -144,8 +161,6 @@ public partial class MapView : Node3D
                 Fog = tile.Visible ? TileFog.Visible : TileFog.Explored,
                 Elevation = TerrainRelief.Elevation(kind),
                 Relief = kind,
-                Mesh = mesh,
-                MaterialOverride = material,
                 Position = MapLayout.TileTop(tile.X, tile.Y, 0f),
             };
             tileRoot.AddChild(node);
@@ -153,9 +168,12 @@ public partial class MapView : Node3D
             if (feature == null && kind == ReliefKind.Flat) AddTufts(tuftTransforms, tile, node.Position);
             AddProps(assets, node, tile, kind);
         }
+        terrain.Build(chunkTiles);
+        TriangleCount += terrain.TriangleCount;
         BuildVegetation(assets, tuftTransforms);
         ApplyResourceVisibility();
         if (tiles.Count > 0 && !keepCamera) FocusOn(Centre());
+        UpdateCulling();
     }
 
     /// <summary>The feature or natural wonder drawn over the base terrain; hills are shown by height instead.</summary>
@@ -276,6 +294,17 @@ public partial class MapView : Node3D
         Camera.RotationDegrees = new Vector3(-tilt, yaw, 0f);
         Camera.Size = zoom;
         Camera.Position = focus + Camera.Basis.Z * CameraDistance;
+        UpdateCulling();
+    }
+
+    /// <summary>C031: hides the terrain chunks outside the camera's ground footprint (the four screen corners projected onto the ground).</summary>
+    private void UpdateCulling()
+    {
+        if (terrain == null || Camera == null || !Camera.IsInsideTree()) return;
+        var size = Camera.GetViewport().GetVisibleRect().Size;
+        lastViewportSize = size;
+        var corners = new[] { new Vector2(0f, 0f), new Vector2(size.X, 0f), new Vector2(size.X, size.Y), new Vector2(0f, size.Y) }.Select(it => PickGround(it, 0f)).ToList();
+        terrain.Cull(corners.Any(it => it == null) ? null : GroundRect.Around([.. corners.Select(it => (it!.Value.X, it.Value.Z))]));
     }
 
     /// <summary>
@@ -388,6 +417,7 @@ public partial class MapView : Node3D
 
     public override void _Process(double delta)
     {
+        if (Camera != null && Camera.IsInsideTree() && Camera.GetViewport().GetVisibleRect().Size != lastViewportSize) UpdateCulling();
         var direction = Vector3.Zero;
         // Typing into a text field must not pan the map behind it.
         bool typing = GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit;

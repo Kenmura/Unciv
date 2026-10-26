@@ -109,7 +109,7 @@ public sealed class Terrain3DScenario : Scenario
     /// A fixed gallery map (the seeded game's small explored area has no mountains or water): a mountain in the middle, hills, plains, grassland, a forest and
     /// a desert around it, then a ring of coast and a ring of deep ocean. The view is data-driven, so this exercises the same path as a real snapshot.
     /// </summary>
-    private static List<TileDto> Gallery()
+    internal static List<TileDto> Gallery()
     {
         (string Base, string[] Features)[] inner =
         [

@@ -26,6 +26,20 @@
       }
     ]
   },
+  "C031": {
+    "scenario": "terrain-blend",
+    "about": "Terrain blending, fog edge fade and chunked terrain meshes.",
+    "shots": [
+      {
+        "golden": "terrain-blend/blend-default.png",
+        "caption": "Default tilt: grass, plains and desert melt into each other and into the coast; the ocean fades toward black at the edge of the explored area."
+      },
+      {
+        "golden": "terrain-blend/blend-low.png",
+        "caption": "Low oblique, zoomed in: blended edges between terrains while hills and mountains keep their cliff walls."
+      }
+    ]
+  },
   "C003": {
     "scenario": "props-3d",
     "about": "Procedural feature and resource props: forests, jungle, marsh, livestock herds, crops, ore, sea resources.",

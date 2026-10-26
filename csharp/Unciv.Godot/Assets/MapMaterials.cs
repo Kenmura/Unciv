@@ -10,17 +10,29 @@ public static class MapMaterials
     public const float OverlayShare = 0.5f;
 
     /// <summary>
-    /// A copy of <paramref name="terrain"/> with <paramref name="overlay"/>'s colour blended in (a feature on a base terrain) and, when
-    /// <paramref name="visible"/> is false, the fog dimming multiplied in. The registry's cached material is never modified.
+    /// The colour of a tile (sRGB-encoded numbers): the terrain material's albedo with <paramref name="overlay"/>'s blended in (a feature on a base terrain)
+    /// and, when <paramref name="visible"/> is false, the fog dimming multiplied in. The registry's cached materials are never modified.
     /// </summary>
-    public static Material Tinted(Material terrain, Material? overlay, bool visible)
+    public static Tint TileColour(Material terrain, Material? overlay, bool visible)
     {
-        if (terrain is not StandardMaterial3D standard) return terrain;
-        var copy = (StandardMaterial3D)standard.Duplicate();
-        if (overlay is StandardMaterial3D feature) copy.AlbedoColor = standard.AlbedoColor.Lerp(feature.AlbedoColor, OverlayShare);
-        if (!visible) copy.AlbedoColor *= ProceduralAssets.ToColor(PlaceholderPalette.FogDim);
-        return copy;
+        if (terrain is not StandardMaterial3D standard) return new Tint(1f, 1f, 1f);
+        var colour = new Tint(standard.AlbedoColor.R, standard.AlbedoColor.G, standard.AlbedoColor.B);
+        if (overlay is StandardMaterial3D feature) colour = colour.Lerp(new Tint(feature.AlbedoColor.R, feature.AlbedoColor.G, feature.AlbedoColor.B), OverlayShare);
+        return visible ? colour : colour * Tint.Of(PlaceholderPalette.FogDim);
     }
+
+    /// <summary>Material of the merged terrain chunks (C031): the colours are baked into the vertex colours, a shared grain texture goes on top.</summary>
+    public static StandardMaterial3D TerrainChunks() => new()
+    {
+        AlbedoColor = new Color(1f, 1f, 1f),
+        AlbedoTexture = ProceduralAssets.ToTexture(ProceduralImages.Noise(AssetKey.Of("mesh", "terrain-chunk"))),
+        TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+        VertexColorUseAsAlbedo = true,
+        Roughness = 1f,
+    };
+
+    /// <summary>Baked vertex colour: linear tile colour times the mesh's relief shade.</summary>
+    public static Color VertexColour(Tint linear, float shade) => new(linear.R * shade, linear.G * shade, linear.B * shade);
 
     /// <summary>Multiplies the fog dimming into every mesh of a prop model (C003) so props on explored-but-unseen tiles darken with their tile; materials are copied, never edited in place.</summary>
     public static void Dim(Node3D model)
