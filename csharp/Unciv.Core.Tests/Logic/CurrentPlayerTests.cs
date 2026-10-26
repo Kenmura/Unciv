@@ -147,7 +147,7 @@ public sealed class CurrentPlayerTests
         var worker = w.Game.AddUnit("Worker", owner, tile);
         tile.ImprovementQueue.Add(new Tile.ImprovementQueueEntry("Farm", 1));
         tile.DoWorkerTurn(worker);
-        return w.Game.GameInfo.ClientState.TutorialTasksCompleted.Contains("Construct an improvement");
+        return w.Game.GameInfo.ClientState.TutorialTasksCompleted(owner.CivId).Contains("Construct an improvement");
     }
 
     [Fact]
