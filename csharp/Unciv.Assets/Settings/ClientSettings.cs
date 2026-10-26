@@ -60,6 +60,10 @@ public sealed record ClientSettings
     [JsonPropertyName("autosaveTurns")]
     public int AutosaveTurns { get; init; } = 1;
 
+    /// <summary>C026: show the tutorial popups at all (Kotlin <c>showTutorials</c>); the "seen" flags are in <see cref="TutorialsSeen"/>.</summary>
+    [JsonPropertyName("showTutorials")]
+    public bool ShowTutorials { get; init; } = true;
+
     [JsonPropertyName("tutorialsSeen")]
     public List<string> TutorialsSeen { get; init; } = [];
 

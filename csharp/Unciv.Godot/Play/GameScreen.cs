@@ -10,6 +10,7 @@ using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Ui;
 using Unciv.Logic;
 using Unciv.Logic.Map;
+using Unciv.Models;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Units;
 using Unciv.Utils;
@@ -74,6 +75,9 @@ public partial class GameScreen : Control
     public AlertPopupView Alerts { get; private set; } = null!; // JUSTIFY: C013 assigned in _Ready before any use
 
     /// <summary>C024: the victory/defeat screen, above everything else.</summary>
+    /// <summary>C026: the tutorial popup; it shows only while the screen follows client settings (<see cref="BindSettings"/>) that have tutorials on.</summary>
+    public TutorialPopupView Tutorials { get; private set; } = null!; // JUSTIFY: C026 assigned in _Ready before any use
+
     public GameOverScreen GameOver { get; private set; } = null!; // JUSTIFY: C024 assigned in _Ready before any use
 
     /// <summary>Raised when the player leaves the finished (or any) game from the game-over screen or the menu; the composition root shows the main menu.</summary>
@@ -149,6 +153,7 @@ public partial class GameScreen : Control
         Deselect();
         SetStatus("Policies");
         Run(Policies.OpenAsync());
+        ShowTutorial(TutorialTrigger.CultureAndPolicies);
     }
 
     /// <summary>Opens the diplomacy screen on the civ with this id (the first met civ when null), closing the city screen.</summary>
@@ -242,6 +247,46 @@ public partial class GameScreen : Control
     }
 
     private ClientSettingsService? boundSettings;
+    /// <summary>C026: false keeps tutorial popups away (scenarios that are about something else turn them off; the game never does).</summary>
+    public bool TutorialsEnabled { get; set; } = true;
+
+    private TutorialQueue tutorialQueue = null!; // JUSTIFY: C026 assigned in Start before any use
+
+    /// <summary>
+    /// C026: queues a tutorial (shown unless tutorials are off or it was seen) and shows the first waiting one. Tutorials appear only when the screen follows client
+    /// settings: without a binding there is nowhere to remember what was seen, so nothing is shown.
+    /// </summary>
+    public void ShowTutorial(TutorialTrigger trigger)
+    {
+        if (!TutorialsEnabled || boundSettings == null || tutorialQueue == null) return;
+        if (tutorialQueue.Enqueue(trigger, boundSettings.Current) == TutorialEnqueue.NothingToShow) MarkTutorialSeen(trigger);
+        OpenTutorialPage();
+    }
+
+    private void CheckTutorials()
+    {
+        if (!TutorialsEnabled || boundSettings == null || !boundSettings.Current.ShowTutorials || GameOver.Visible) return;
+        foreach (var trigger in TutorialModel.Detect(snapshot, session.Ruleset))
+        {
+            if (tutorialQueue.Enqueue(trigger, boundSettings.Current) == TutorialEnqueue.NothingToShow) MarkTutorialSeen(trigger);
+        }
+        OpenTutorialPage();
+    }
+
+    private void OpenTutorialPage()
+    {
+        if (Tutorials.Visible) return;
+        if (tutorialQueue.Current is { } page) Tutorials.Open(page);
+    }
+
+    private void DismissTutorial()
+    {
+        if (tutorialQueue.Dismiss() is { } finished) MarkTutorialSeen(finished);
+        if (tutorialQueue.Current is { } page) Tutorials.Open(page);
+        else Tutorials.Close();
+    }
+
+    private void MarkTutorialSeen(TutorialTrigger trigger) => boundSettings?.Update(s => s.WithTutorialSeen(TutorialModel.SeenKey(trigger)));
 
     /// <summary>
     /// C028: follows the client settings: key bindings (map pan keys and the screen's hotkeys), scroll speed, edge-pan and the resource toggle apply now and after every
@@ -253,6 +298,7 @@ public partial class GameScreen : Control
         boundSettings = settings;
         settings.Changed += ApplySettings;
         ApplySettings(settings.Current);
+        if (session != null) CheckTutorials(); // the first look at the game came before the settings were known
     }
 
     private void ApplySettings(ClientSettings settings)
@@ -270,6 +316,12 @@ public partial class GameScreen : Control
     /// <summary>C028: runs the action a hotkey text is bound to (true when it was one of the game screen's actions and ran). Ignored while a full screen (city, diplomacy, tech, policies, overview, game over) or an alert covers the map.</summary>
     public bool TryHotkey(string keyText)
     {
+        if (Tutorials.Visible)
+        {
+            if (keyText != "Space") return false;
+            Tutorials.OkButton.EmitSignal(BaseButton.SignalName.Pressed);
+            return true;
+        }
         if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
@@ -448,6 +500,9 @@ public partial class GameScreen : Control
         };
         GameOver = new GameOverScreen();
         AddChild(GameOver);
+        Tutorials = new TutorialPopupView();
+        AddChild(Tutorials);
+        Tutorials.Dismissed += DismissTutorial;
         GameOver.Chosen += kind => Run(OnGameOverChosen(kind));
         AddChild(MenuButton);
         MenuButton.Pressed += OpenGameMenu;
@@ -512,6 +567,7 @@ public partial class GameScreen : Control
         VictoryStatus.LayoutIn(Size);
         GameMenu.LayoutIn(Size);
         Picker.LayoutIn(Size);
+        Tutorials.LayoutIn(Size);
         Panel.LayoutIn(Size);
         PlacePromoteButton();
         CombatPreview.LayoutIn(Size);
@@ -541,6 +597,9 @@ public partial class GameScreen : Control
         Notifications.Init(theme);
         Alerts.Init(theme);
         GameOver.Init(theme);
+        Tutorials.Init(theme);
+        Tutorials.Close();
+        tutorialQueue = new TutorialQueue(session.Ruleset);
         GameOver.Close();
         VictoryStatus.Init(theme);
         VictoryStatus.Close();
@@ -611,6 +670,7 @@ public partial class GameScreen : Control
         MoveChild(GameOver, -1);
         MoveChild(VictoryStatus, -1);
         MoveChild(GameMenu, -1);
+        MoveChild(Tutorials, -1);
         ReachableOverlay.Setup(registry);
         AttackOverlay.Setup(registry);
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
@@ -979,6 +1039,7 @@ public partial class GameScreen : Control
         }
         ShowNextAlert(pending, reopen: false);
         await CheckGameOver();
+        CheckTutorials();
     }
 
     /// <summary>

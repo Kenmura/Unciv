@@ -1,5 +1,7 @@
 using Godot;
+using Unciv.Assets;
 using Unciv.Assets.Localization;
+using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Assets;
 using Unciv.Models.Translations;
 
@@ -36,10 +38,14 @@ public partial class OptionsScreen : ScrollContainer
     private readonly OptionButton windowMode = new() { Name = "WindowModePicker" };
     private readonly OptionButton packPicker = new() { Name = "AssetPackPicker" };
     private IReadOnlyList<string> packNames = [];
+    private readonly Unciv.Models.Ruleset.Ruleset? tutorialRuleset;
+    private readonly VBoxContainer tutorialList = new() { Name = "TutorialList", Visible = false };
+    private Button? tutorialsButton;
     private bool refreshing;
 
-    public OptionsScreen(ClientSettingsService service, ClientLocalization? localization = null, IEnumerable<string>? packDirectories = null)
+    public OptionsScreen(ClientSettingsService service, ClientLocalization? localization = null, IEnumerable<string>? packDirectories = null, Unciv.Models.Ruleset.Ruleset? tutorialRuleset = null)
     {
+        this.tutorialRuleset = tutorialRuleset;
         this.service = service;
         Name = "OptionsScreen";
         HorizontalScrollMode = ScrollMode.Disabled;
@@ -54,6 +60,9 @@ public partial class OptionsScreen : ScrollContainer
         AddToggle("Scroll the map at the window edge", s => s.EdgePan, (s, v) => s with { EdgePan = v });
         AddToggle("Show resources on the map", s => s.ShowResources, (s, v) => s with { ShowResources = v });
         AddToggle("Show tile yields", s => s.ShowYields, (s, v) => s with { ShowYields = v });
+
+        AddToggle("Show tutorials", s => s.ShowTutorials, (s, v) => s with { ShowTutorials = v });
+        if (tutorialRuleset != null) AddTutorialSection();
 
         packNames = OptionsModel.PackNames(packDirectories ?? GodotAssetFiles.ListDirectories("assets/packs"));
         foreach (var pack in packNames) packPicker.AddItem(pack);
@@ -140,6 +149,49 @@ public partial class OptionsScreen : ScrollContainer
         else messageLabel.Text = "That key cannot be used".Tr();
         GetViewport().SetInputAsHandled();
     }
+
+    /// <summary>C026: the tutorial texts of the ruleset, one expander per tutorial (marked when seen), and a button that forgets what was seen.</summary>
+    private void AddTutorialSection()
+    {
+        tutorialsButton = new Button { Name = "TutorialsButton", ToggleMode = true };
+        tutorialsButton.Toggled += on => tutorialList.Visible = on;
+        refreshers.Add(() =>
+        {
+            tutorialsButton.Text = "Tutorials".Tr();
+            RebuildTutorialList();
+        });
+        var reset = new Button { Name = "ResetTutorials" };
+        refreshers.Add(() => reset.Text = "Reset tutorials".Tr());
+        reset.Pressed += () => service.Update(s => s with { TutorialsSeen = [] });
+        var row = new HBoxContainer();
+        row.AddChild(tutorialsButton);
+        row.AddChild(reset);
+        column.AddChild(row);
+        column.AddChild(tutorialList);
+    }
+
+    private void RebuildTutorialList()
+    {
+        foreach (var child in tutorialList.GetChildren())
+        {
+            tutorialList.RemoveChild(child);
+            child.QueueFree();
+        }
+        foreach (var entry in TutorialModel.List(tutorialRuleset!, service.Current))
+        {
+            var text = new Label { Visible = false, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(360, 0), Text = entry.Text.TrText() };
+            var title = entry.Name.Tr();
+            var button = new Button { Name = "Tutorial_" + entry.Name, Text = entry.Seen ? title + " *" : title, Alignment = HorizontalAlignment.Left };
+            button.Pressed += () => text.Visible = !text.Visible;
+            tutorialList.AddChild(button);
+            tutorialList.AddChild(text);
+        }
+    }
+
+    /// <summary>The Tutorials expander, its list and the number of tutorials listed (for scenarios and tests).</summary>
+    public Button? TutorialsButton => tutorialsButton;
+
+    public int TutorialCount => tutorialList.GetChildCount() / 2;
 
     private static string LabelOf(HotkeyAction action) => ActionLabels.First(it => it.Action == action).Label;
 

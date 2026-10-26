@@ -41,6 +41,7 @@ public sealed class OptionsScenario : Scenario
         var screen = new GameScreen();
         host.AddChild(screen);
         screen.Start(new LocalHost(session, ScenarioGame.HumanA, () => 1000L), registry);
+        screen.TutorialsEnabled = false;
         screen.BindSettings(service);
 
         var backdrop = new PanelContainer { Name = "OptionsBackdrop", Theme = new UiTheme(registry).Theme };

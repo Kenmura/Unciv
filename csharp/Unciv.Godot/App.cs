@@ -27,9 +27,11 @@ public partial class App : Node
     private SaveController menuSaves = null!; // JUSTIFY: C015 assigned in _Ready before any use
     private MainMenu menu = null!; // JUSTIFY: C015 assigned in _Ready before any use
 
+    private Unciv.Models.Ruleset.Ruleset vanilla = null!; // JUSTIFY: C026 assigned in _Ready before any use
+
     public override void _Ready()
     {
-        var vanilla = RulesetLocator.LoadVanilla();
+        vanilla = RulesetLocator.LoadVanilla();
         theme = new UiTheme(AssetRegistry.ForRuleset(vanilla));
         settings = new ClientSettingsService(new ClientSettingsStore(UserPaths.Settings));
         localization = Loc.Init(settings, GetWindow());
@@ -76,7 +78,7 @@ public partial class App : Node
     private void OpenOptions()
     {
         var page = new VBoxContainer();
-        var options = new OptionsScreen(settings, localization) { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        var options = new OptionsScreen(settings, localization, null, vanilla) { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         page.AddChild(options);
         var back = new Button { Text = "Back".Tr() };
         back.Pressed += () => screens.Pop();

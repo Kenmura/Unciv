@@ -27,3 +27,4 @@ trade
 improvements
 menu
 decisions
+tutorial
