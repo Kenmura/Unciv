@@ -516,7 +516,7 @@ Scenario `options`.
 
 *The key bindings after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
 
-## C029 (ticket not Done or unknown)
+## C029 Hotseat player switch screen
 
 Hotseat hand-over: after a human ends the turn the map and UI are hidden behind an opaque pass-the-device cover until the next human presses Ready, then the game is shown as that player.
 
@@ -854,7 +854,7 @@ Scenario `vote-result`.
 
 *After Continue the world is back and the result does not return.* (`vote-result/continued.png`)
 
-## C054 (ticket not Done or unknown)
+## C054 Tutorial tasks overlay (floating task card from ruleset Events)
 
 Floating tutorial task card from the ruleset's Floating Events: shows the first available task under the top bar, folds to a ? button on a click, and moves on as the player does what it asks.
 
