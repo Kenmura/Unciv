@@ -107,6 +107,22 @@ public class TutorialTaskTests
     }
 
     [Fact]
+    public void TutorialsOffHidesEvenAnEventWithoutTheTutorialCondition()
+    {
+        AddTask("Plain");
+        Assert.Equal("Plain", Ask().Event);
+        Assert.Equal("", Ask(show: false).Event);
+    }
+
+    [Fact]
+    public void AnEventWithoutTextHasNoEmptyFirstLine()
+    {
+        var task = AddTask("A");
+        task.CivilopediaText.Add(new FormattedLine("Body"));
+        Assert.Equal(["Body"], Ask().Lines.Select(it => it.Text));
+    }
+
+    [Fact]
     public void ADefeatedViewerSeesNothing()
     {
         AddTask("A", "", TutorialsOn);
@@ -171,7 +187,9 @@ public class TutorialTaskTests
     public void ACityOfAnotherCivDoesNotCompleteTheTradeRouteTask()
     {
         AddTask("Route", "", TutorialsOn, $"Unavailable <if tutorial [{TutorialTasks.TradeRouteTask}] is completed>");
+        var foreignSecond = testGame.AddCity(other, testGame.GetTile(3, 0));
         player.Cache.CitiesConnectedToCapitalToMediums[otherCity] = [];
+        player.Cache.CitiesConnectedToCapitalToMediums[foreignSecond] = []; // not a capital, but not the viewer's either
         Assert.Equal("Route", Ask().Event);
     }
 
