@@ -186,7 +186,7 @@ flowchart TD
   class C053 prog
   class C054 prog
   class C057 prog
-  class C058 prog
+  class C058 review
   class T012 done
   class T164 done
   class T169 ready
@@ -272,7 +272,7 @@ xychart-beta
 | C053 | In-Progress [Claude] | C038 | 0 | Diplomatic vote result screen: engine vote-breakdown query and acknowledge command, client screen |
 | C054 | In-Progress [Claude] | C026 | 0 | Tutorial tasks overlay (floating task card from ruleset Events) |
 | C057 | In-Progress [Claude] | C030 | 0 | Wire engine PlaySound triggers to the client SoundPlayer (IClientAudio) |
-| C058 | In-Progress [Claude] | C055 | 0 | Harness: other scenarios can capture stray hover tooltips under load (real-time TooltipHost delay) |
+| C058 | Needs-Review [Claude] | C055 | 0 | Harness: other scenarios can capture stray hover tooltips under load (real-time TooltipHost delay) |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
