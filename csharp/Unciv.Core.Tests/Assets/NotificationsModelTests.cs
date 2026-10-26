@@ -30,6 +30,12 @@ public class NotificationsModelTests
     }
 
     [Fact]
+    public void TheOriginTileIsAValidTarget()
+    {
+        Assert.Equal(new NotificationTarget(NotificationTargetKind.Tile, 0, 0, null), NotificationsModel.TargetOf([At("location", 0, 0)]));
+    }
+
+    [Fact]
     public void ATileBeatsATechAndTheFirstTileWins()
     {
         var tech = new NotificationActionDto { Kind = "tech", Name = "Mining" };

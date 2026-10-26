@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 214/214 | 0 | 0 | 0 | complete |
+| Phase 1: CLI (headless engine) | 214/215 | 1 | 1 | 0 | [T238](backlog/T238.md) |
 | Phase 2: single player (Godot client) | 25/46 | 21 | 14 | 6 | [C013](backlog/C013.md) [C022](backlog/C022.md) [C023](backlog/C023.md) [C024](backlog/C024.md) [C026](backlog/C026.md) [C027](backlog/C027.md) [C028](backlog/C028.md) [C029](backlog/C029.md) [C030](backlog/C030.md) [C031](backlog/C031.md) [C032](backlog/C032.md) [C033](backlog/C033.md) [C038](backlog/C038.md) [C039](backlog/C039.md) [C040](backlog/C040.md) [C044](backlog/C044.md) [C046](backlog/C046.md) [C047](backlog/C047.md) [C048](backlog/C048.md) [C049](backlog/C049.md) [T169](backlog/T169.md) |
 | Phase 3: multiplayer | 6/29 | 23 | 6 | 0 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T176](backlog/T176.md) [T177](backlog/T177.md) [T178](backlog/T178.md) [T179](backlog/T179.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T201](backlog/T201.md) [T202](backlog/T202.md) [T203](backlog/T203.md) [T204](backlog/T204.md) [T205](backlog/T205.md) [T206](backlog/T206.md) [T207](backlog/T207.md) [T223](backlog/T223.md) [T224](backlog/T224.md) [T225](backlog/T225.md) [T226](backlog/T226.md) [T230](backlog/T230.md) |
 
@@ -59,6 +59,7 @@ flowchart TD
     T225["T225<br/>Network robustness: real TCP+TLS multi-client tests, backpre..."]
     T226["T226<br/>Multiplayer game-over and forced-end rules: One More Turn au..."]
     T230["T230<br/>Host-secret salt for state-based randomness in hosted multip..."]
+    T238["T238<br/>Engine: conquering a city of one's own civ makes the civ mee..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -253,6 +254,7 @@ flowchart TD
   class T225 waiting
   class T226 waiting
   class T230 ready
+  class T238 ready
 ```
 
 ## Remaining tickets over time
@@ -270,7 +272,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 03:00", "24 06:00", "24 09:00", "24 12:00", "24 15:00", "24 18:00", "24 21:00", "25 00:00", "25 03:00", "25 06:00", "25 09:00", "25 12:00", "25 15:00", "25 18:00", "25 21:00", "26 00:00", "26 03:00"]
     y-axis "Tickets" 0 --> 80
-    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 63, 55, 48, 39, 38]
+    line [30, 21, 21, 57, 56, 36, 19, 13, 71, 54, 54, 54, 63, 55, 48, 39, 39]
     line [3, 0, 0, 0, 1, 5, 2, 4, 4, 3, 2, 2, 6, 5, 6, 6, 6]
 ```
 
@@ -298,6 +300,7 @@ xychart-beta
 | C049 | **Ready to start** | C025 | 0 | Translate PolicyScreen error and status messages through Tr() |
 | T169 | **Ready to start** | C001, C042 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T201 | **Ready to start** | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
+| T238 | **Ready to start** | none | 0 | Engine: conquering a city of one's own civ makes the civ meet itself |
 | C039 | **On deck** (after C022) | C005, C037, C022, T193 | 0 | Incoming proposal popups: trade, peace and friendship requests from AI (and other humans), proposer's pending/declined/withdrawn state |
 | T226 | Available (waiting on T202) | T202 | 15 | Multiplayer game-over and forced-end rules: One More Turn authority, defeated humans, default resolution of blocking decisions on ForceEndTurn |
 | T177 | Available (waiting on T202, T226) | T172, T164, T184, T187, T200, T202, T226 | 14 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
