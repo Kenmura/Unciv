@@ -71,6 +71,8 @@ public sealed class HotseatScenario : Scenario
             new AssertQuery("the cover names Greece", () => cover.CivId == ScenarioGame.HumanB && cover.HeadingText.Contains("Greece", StringComparison.Ordinal) && !cover.HeadingText.Contains("Babylon", StringComparison.Ordinal)),
             new AssertQuery("the previous player's view is entirely hidden and takes no input", () => EverythingHidden() && screen.ProcessMode == Node.ProcessModeEnum.Disabled && hotseat.IsCovering),
             new AssertQuery("Greece's turn has not begun while the device changes hands", () => !Started(ScenarioGame.HumanB) && !babylonHost.IsRetired && refusals.Count == 0),
+            new AssertQuery("the game cannot be saved while the device changes hands (a save does not record whose turn is next)", () =>
+                !babylonHost.CanExportSave && babylonHost.ExportSaveAsync().GetAwaiter().GetResult() == null),
             new Capture("cover", "Pass the device to Greece: an opaque cover, no map, no panels, a Ready button"),
             new Act("Greece presses Ready", () => cover.ReadyButton.EmitSignal(BaseButton.SignalName.Pressed)),
             new WaitUntil("the game is handed to Greece", () => !cover.Visible && !screen.IsConcealed && Viewer() == ScenarioGame.HumanB),
@@ -81,6 +83,13 @@ public sealed class HotseatScenario : Scenario
                 && !babylonHost.EndTurnAsync().GetAwaiter().GetResult().Accepted),
             new AssertQuery("the screen shows the game as Greece: its turn began, only its own units are its own", () =>
                 screen.Visible && screen.Session.NotNull().Snapshot.You == ScenarioGame.HumanB && Started(ScenarioGame.HumanB) && OnlyOwnUnitsOf(ScenarioGame.HumanB) && screen.Map.IsVisibleInTree() && screen.ProcessMode != Node.ProcessModeEnum.Disabled),
+            new AssertQuery("saved again, the game resumes as Greece with its turn running", () =>
+            {
+                var text = screen.Session.NotNull().ExportSaveAsync().GetAwaiter().GetResult();
+                if (text == null) return false;
+                var resumed = LocalHost.FromSave(text, () => now += 1000);
+                return resumed.ViewerCivId == ScenarioGame.HumanB && !resumed.TurnNeedsBegin;
+            }),
             new Capture("greece", "Greece's turn: the game as Greece (its own units), Babylon's view is gone"),
             new Act("Greece answers its decisions and presses Next turn", () =>
             {

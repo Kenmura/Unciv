@@ -100,6 +100,12 @@ public partial class SaveController : Control
         lastTurn = gameSession.Snapshot.Turn;
         progress.Reset(gameSession.Snapshot.Seq);
         gameSession.SnapshotChanged += OnSnapshotChanged;
+        // C029: an autosave that fell into a hotseat hand-over (the game cannot be saved then) is made once the next player has taken over
+        if (deferredAutosave is { } due && gameSession.Snapshot.Turn >= due)
+        {
+            deferredAutosave = null;
+            Run(AutosaveAsync(due));
+        }
     }
 
     private void Detach()
@@ -115,11 +121,17 @@ public partial class SaveController : Control
         if (SaveStore.AutosaveDue(snapshot.Turn, settings.Current.AutosaveTurns)) Run(AutosaveAsync(snapshot.Turn));
     }
 
+    private int? deferredAutosave;
+
     private async Task AutosaveAsync(int turn)
     {
         long seq = session?.Snapshot.Seq ?? 0;
-        var text = await ExportAsync();
-        if (text == null) return;
+        var text = await ExportAsync(quiet: true);
+        if (text == null)
+        {
+            deferredAutosave = turn;
+            return;
+        }
         var result = store.Autosave(text, turn, MaxNumberedAutosaves);
         if (result.Ok) progress.MarkSaved(seq);
         Say(result.Ok ? $"Autosaved turn {turn.ToString(CultureInfo.InvariantCulture)}." : "Autosave failed: " + result.Error);
@@ -128,11 +140,11 @@ public partial class SaveController : Control
     /// <summary>How many numbered autosaves (one per autosaved turn) are kept besides the latest "Autosave".</summary>
     public const int MaxNumberedAutosaves = 10;
 
-    private async Task<string?> ExportAsync()
+    private async Task<string?> ExportAsync(bool quiet = false)
     {
         if (session == null) return null;
         var text = await session.ExportSaveAsync();
-        if (text == null) Say("This game cannot be saved from here.");
+        if (text == null && !quiet) Say("This game cannot be saved from here.");
         return text;
     }
 

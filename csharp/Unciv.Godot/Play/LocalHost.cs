@@ -255,11 +255,18 @@ public sealed class LocalHost : IGameSession
         foreach (var (seq, events) in batches) EventsReceived?.Invoke(new EventBatch(seq, events));
     }
 
+    /// <summary>
+    /// C029 (review): a sequential game between one human's End turn and the next human's turn begin cannot be saved: the save does not record whose turn comes next, so a loaded copy would resume as
+    /// the human who just ended the turn, with that turn running again. The export is refused (null) in that window; <see cref="TakeOverAsync"/> ends it.
+    /// </summary>
+    public bool CanExportSave => !retired && !flow.ViewerTurnPending && flow.HandOverTarget == null;
+
     public async Task<string?> ExportSaveAsync()
     {
         await gate.WaitAsync();
         try
         {
+            if (!CanExportSave) return null;
             return UncivFiles.GameInfoToString(session.Game, forceZip: true);
         }
         finally

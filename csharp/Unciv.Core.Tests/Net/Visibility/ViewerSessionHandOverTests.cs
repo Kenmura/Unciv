@@ -125,4 +125,39 @@ public sealed class ViewerSessionHandOverTests
         Assert.False(b.ViewerTurnPending);
         Assert.False(a.ViewerTurnPending);
     }
+
+    // Review of C029: the TurnMode.Sequential guard of HandOverTarget is not redundant. In a simultaneous round the phase is derived as AwaitingInput(CurrentPlayerCiv), and while the
+    // round resolves that civ's turn has ended but not begun again, so without the guard the other human would be told to pass the device. Every step of a round is checked for both viewers.
+    [Fact]
+    public void HandOverTarget_IsNull_ThroughoutASimultaneousRound()
+    {
+        var (session, a, b, _) = TwoHumans();
+        var game = session.Game;
+        game.StartSimultaneousTurns();
+        var sawUnstartedAwaiting = false;
+        void Check()
+        {
+            Assert.Null(a.HandOverTarget);
+            Assert.Null(b.HandOverTarget);
+            if (game.TurnPhase is TurnPhase.AwaitingInput(var civ) && !game.IsTurnStarted(civ)) sawUnstartedAwaiting = true;
+        }
+
+        Check();
+        game.EndHumanTurn(game.GetCivilization(ScenarioGame.HumanA));
+        game.EndHumanTurn(game.GetCivilization(ScenarioGame.HumanB));
+        game.BeginResolving();
+        Check();
+        while (game.NextResolveStep() is { } step)
+        {
+            switch (step)
+            {
+                case ResolveStep.ProcessEndTurn s: game.ProcessEndTurn(game.GetCivilization(s.CivId), 2000L); break;
+                case ResolveStep.RunAiTurn s: game.RunAiTurn(game.GetCivilization(s.CivId)); break;
+                case ResolveStep.StartNextTurn: game.StartNextTurn(); break;
+                case ResolveStep.BeginTurn s: game.BeginTurn(game.GetCivilization(s.CivId), 2000L); break;
+            }
+            Check();
+        }
+        Assert.True(sawUnstartedAwaiting); // the guard was exercised: some step reported a civ awaiting input whose turn had not begun
+    }
 }
