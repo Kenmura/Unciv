@@ -516,6 +516,24 @@ Scenario `options`.
 
 *The key bindings after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
 
+## C029 (ticket not Done or unknown)
+
+Hotseat hand-over: after a human ends the turn the map and UI are hidden behind an opaque pass-the-device cover until the next human presses Ready, then the game is shown as that player.
+
+Scenario `hotseat`.
+
+![Babylon's turn before ending it: its own map and units, no cover](../Unciv.Godot.Harness/golden/hotseat/babylon.png)
+
+*Babylon's turn before ending it: its own map and units, no cover* (`hotseat/babylon.png`)
+
+![Pass the device to Greece: opaque cover with a Ready button, nothing of Babylon's game visible](../Unciv.Godot.Harness/golden/hotseat/cover.png)
+
+*Pass the device to Greece: opaque cover with a Ready button, nothing of Babylon's game visible* (`hotseat/cover.png`)
+
+![After Ready: the game as Greece (its own units, 'Your turn, Greece' banner)](../Unciv.Godot.Harness/golden/hotseat/greece.png)
+
+*After Ready: the game as Greece (its own units, 'Your turn, Greece' banner)* (`hotseat/greece.png`)
+
 ## C031 Terrain blending, fog of war polish, chunked meshes
 
 Terrain blending, fog edge fade and chunked terrain meshes.

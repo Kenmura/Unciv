@@ -6,17 +6,17 @@ using Unciv.Commands.Events;
 using Unciv.Commands.Turn;
 using Unciv.Commands.Units;
 using Unciv.GodotClient.Assets;
+using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Map;
 using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Ui;
 using Unciv.Logic;
 using Unciv.Logic.Map;
 using Unciv.Models;
+using Unciv.Models.Translations;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Units;
 using Unciv.Utils;
-using Unciv.Models.Translations;
-using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
 
@@ -140,6 +140,56 @@ public partial class GameScreen : Control
     public bool IsEndingTurn => turnCancellation != null;
 
     private CancellationTokenSource? turnCancellation;
+
+    /// <summary>
+    /// C029: raised, with the civ id, when End turn finished and the next turn belongs to another human on this device (hotseat). The listener must <see cref="Conceal"/> the screen at once (nothing is
+    /// drawn from the finished turn first), show the pass-the-device cover and later <see cref="Start"/> the screen with the other human's session and <see cref="Reveal"/> it.
+    /// </summary>
+    public event Action<string>? HandOverRequested;
+
+    /// <summary>C029: the session the screen currently shows (a hotseat owner swaps it for the next human's with <see cref="Start"/>).</summary>
+    public IGameSession? Session => session;
+
+    /// <summary>C029: true between <see cref="Conceal"/> and <see cref="Reveal"/>: nothing of the game is drawn and no input reaches it.</summary>
+    public bool IsConcealed { get; private set; }
+
+    /// <summary>
+    /// C029: hides everything the previous player could see (map, units, overlays, HUD, panels, popups) and stops the screen taking input. Used while the device changes hands in a hotseat game;
+    /// the state itself is replaced by the next <see cref="Start"/>. Safe to call repeatedly.
+    /// </summary>
+    public void Conceal()
+    {
+        IsConcealed = true;
+        turnCancellation?.Cancel();
+        Alerts.Close();
+        Proposals.Close();
+        Picker.Close();
+        GameMenu.Close();
+        AutoPlayMenu.Close();
+        ConsolePopup.Close();
+        Tutorials.Close();
+        VictoryStatus.Close();
+        TurnOverlay.Close();
+        ClearPreview();
+        SelectedUnitId = null;
+        ClearSelectionUi();
+        SetStatus("");
+        Visible = false;
+        ProcessMode = ProcessModeEnum.Disabled;
+        foreach (var layer in WorldLayers()) layer.Visible = false;
+    }
+
+    /// <summary>C029: shows the screen again after <see cref="Conceal"/> (the caller started it with the next player's session first).</summary>
+    public void Reveal()
+    {
+        IsConcealed = false;
+        foreach (var layer in WorldLayers()) layer.Visible = true;
+        ProcessMode = ProcessModeEnum.Inherit;
+        Visible = true;
+    }
+
+    // The 3D parts do not follow the screen's own visibility (a Node3D under a Control is a separate branch), so they are hidden one by one.
+    private IEnumerable<Node3D> WorldLayers() => [Map, Overlays, unitLayer, dotLayer, ReachableOverlay, AttackOverlay];
 
     private bool watchingAfterDefeat;
     private int gameOverCheck;
@@ -1798,6 +1848,11 @@ public partial class GameScreen : Control
             if (IsInstanceValid(this) && IsInsideTree()) TurnOverlay.Close();
         }
         if (!IsInstanceValid(this) || !IsInsideTree() || session != turnSession) return; // the player left the game meanwhile
+        if (outcome is { Accepted: true, HandOverTo: { } next })
+        {
+            HandOverRequested?.Invoke(next); // before any redraw: the finished turn's view must never reach the screen again
+            return;
+        }
         Refresh();
         if (outcome == null) return;
         SetStatus(outcome.Accepted

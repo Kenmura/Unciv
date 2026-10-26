@@ -18,12 +18,15 @@ public sealed record StartOutcome(LocalHost? Host, IReadOnlyList<string> Errors)
 /// class issues the server commands the engine's turn flow needs (<see cref="RunAiTurn"/> per auto civ, then <see cref="BeginTurn"/> for the human),
 /// exactly the sequence a hosted game's turn controller will issue (T202/T204). Everything goes through <see cref="GameSession"/>, so the command log
 /// stays complete and replays headlessly. It reads no clock: the caller supplies one (wall time in the game, a counter in scenarios).
-/// A second human in the game is not handled here (hotseat is C029): the flow stops when it is that civ's turn.
+/// C029 hotseat: a second human is another viewer of the same game. When End turn reaches that human's turn the outcome names it (<see cref="TurnOutcome.HandOverTo"/>) and the flow stops;
+/// <see cref="TakeOverAsync"/> then retires this session (every later call is refused) and returns a fresh one for the other human, so the previous player's view and identity cannot be used again.
 /// </summary>
 public sealed class LocalHost : IGameSession
 {
     private readonly GameSession session;
     private readonly ViewerSessionFlow flow;
+    private readonly Func<long> clock;
+    private volatile bool retired;
 
     // C040: the engine is not thread safe and End turn runs on a worker, so every engine access (commands, queries, saving, snapshots) takes this gate.
     // Waiting for it is async, so the UI thread is never blocked by a running turn; an uncontended wait completes synchronously.
@@ -34,6 +37,7 @@ public sealed class LocalHost : IGameSession
     public LocalHost(GameSession session, string humanCivId, Func<long> clock)
     {
         this.session = session;
+        this.clock = clock;
         ViewerCivId = humanCivId;
         flow = new ViewerSessionFlow(session, humanCivId, clock, Publish);
         Snapshot = BuildSnapshot();
@@ -55,7 +59,8 @@ public sealed class LocalHost : IGameSession
             // any parse failure of a file the player picked is a damaged save, whatever the serializer threw
             throw new InvalidDataException("The save is damaged or from an incompatible version: " + e.Message, e);
         }
-        var human = game.Civilizations.FirstOrDefault(it => it.IsHuman());
+        // C029: a hotseat save resumes as the human whose turn it is (else as the first human)
+        var human = (game.TurnPhase is TurnPhase.AwaitingInput(var waiting) && waiting.IsHuman() ? waiting : null) ?? game.Civilizations.FirstOrDefault(it => it.IsHuman());
         if (human == null) throw new InvalidDataException("The save has no human player");
         return new LocalHost(new GameSession(game), human.CivName, clock);
     }
@@ -96,8 +101,41 @@ public sealed class LocalHost : IGameSession
     /// <summary>True while an End turn is being processed on the worker (commands and queries wait for it).</summary>
     public bool IsProcessingTurn => endingTurn;
 
+    /// <summary>C029: true once <see cref="TakeOverAsync"/> handed the game to another viewer; this session then refuses everything.</summary>
+    public bool IsRetired => retired;
+
+    /// <summary>C029: it is this viewer's turn but the turn has not begun (a hotseat player who has not taken over yet, or a loaded hotseat game); <see cref="TakeOverAsync"/> begins it.</summary>
+    public bool TurnNeedsBegin => flow.ViewerTurnPending;
+
+    /// <summary>The <see cref="SubmitResult.Message"/> / <see cref="TurnOutcome.Message"/> of a call on a session that was handed over.</summary>
+    public const string RetiredMessage = "This player's session was handed over";
+
+    /// <summary>
+    /// C029: hotseat. Gives <paramref name="civId"/>, the human whose turn is next (or this session's own viewer when its turn has not begun, as after loading a hotseat game), the game: its turn is begun,
+    /// and the returned session views the game as that civ. For another civ this session is retired first, so a screen that still holds it cannot read or command the game as the previous player.
+    /// Throws <see cref="InvalidOperationException"/> when it is nobody's turn to take over, the civ is not the human whose turn is next, or a turn is being processed.
+    /// </summary>
+    public async Task<LocalHost> TakeOverAsync(string civId)
+    {
+        if (retired) throw new InvalidOperationException(RetiredMessage);
+        if (endingTurn) throw new InvalidOperationException("The turn is still being processed");
+        var next = civId == ViewerCivId ? this : NextViewer(civId);
+        if (!next.TurnNeedsBegin) throw new InvalidOperationException("It is not " + civId + "'s turn to begin");
+        var began = await next.SubmitCommandAsync(next.flow.BeginPendingTurn);
+        if (!began.Accepted) throw new InvalidOperationException(began.Message);
+        if (next != this) retired = true;
+        return next;
+    }
+
+    private LocalHost NextViewer(string civId)
+    {
+        if (flow.HandOverTarget != civId) throw new InvalidOperationException(civId + " is not the human whose turn is next");
+        return new LocalHost(session, civId, clock);
+    }
+
     public async Task ResyncAsync()
     {
+        if (retired) return;
         await gate.WaitAsync();
         try
         {
@@ -112,6 +150,7 @@ public sealed class LocalHost : IGameSession
 
     public async Task<TResult?> QueryAsync<TResult>(IQuery<TResult> query) where TResult : class
     {
+        if (retired) return null;
         await gate.WaitAsync();
         try
         {
@@ -128,15 +167,18 @@ public sealed class LocalHost : IGameSession
         }
     }
 
-    public async Task<SubmitResult> SubmitAsync(GameCommand command)
+    public Task<SubmitResult> SubmitAsync(GameCommand command) => SubmitCommandAsync(() => flow.Submit(command));
+
+    private async Task<SubmitResult> SubmitCommandAsync(Func<SubmitResult> run)
     {
+        if (retired) return new SubmitResult(false, RetiredMessage, []);
         await gate.WaitAsync();
         var batches = new List<(long Seq, IReadOnlyList<GameEvent> Events)>();
         ClientSnapshot? fresh = null;
         try
         {
             collected = batches;
-            return flow.Submit(command);
+            return run();
         }
         finally
         {
@@ -168,6 +210,7 @@ public sealed class LocalHost : IGameSession
 
     private async Task<TurnOutcome> PumpTurnAsync(Func<TurnOutcome> run)
     {
+        if (retired) return new TurnOutcome(false, RetiredMessage, 0, false, []);
         if (endingTurn) return new TurnOutcome(false, "The turn is already being processed", 0, false, []);
         endingTurn = true;
         var batches = new List<(long Seq, IReadOnlyList<GameEvent> Events)>();

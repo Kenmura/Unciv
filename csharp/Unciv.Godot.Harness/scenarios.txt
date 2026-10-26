@@ -42,3 +42,4 @@ next-turn
 proposals
 espionage
 vote-result
+hotseat

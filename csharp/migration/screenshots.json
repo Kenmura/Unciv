@@ -854,5 +854,23 @@
   },
   "C058": {
     "none": "Harness-only change: scenarios no longer depend on real frame time; no new UI and no golden changed."
+  },
+  "C029": {
+    "scenario": "hotseat",
+    "about": "Hotseat hand-over: after a human ends the turn the map and UI are hidden behind an opaque pass-the-device cover until the next human presses Ready, then the game is shown as that player.",
+    "shots": [
+      {
+        "golden": "hotseat/babylon.png",
+        "caption": "Babylon's turn before ending it: its own map and units, no cover"
+      },
+      {
+        "golden": "hotseat/cover.png",
+        "caption": "Pass the device to Greece: opaque cover with a Ready button, nothing of Babylon's game visible"
+      },
+      {
+        "golden": "hotseat/greece.png",
+        "caption": "After Ready: the game as Greece (its own units, 'Your turn, Greece' banner)"
+      }
+    ]
   }
 }

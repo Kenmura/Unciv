@@ -7,8 +7,15 @@ namespace Unciv.Net.Visibility;
 /// <summary>What one submitted command did, as the client needs it: whether the host took it and, if not, why, plus the events the viewer may see.</summary>
 public sealed record SubmitResult(bool Accepted, string Message, IReadOnlyList<GameEvent> Events);
 
-/// <summary>What one End turn did. <see cref="AiTurnsRun"/> and <see cref="NextTurnBegun"/> are informational: a remote session that cannot tell reports 0 / false.</summary>
-public sealed record TurnOutcome(bool Accepted, string Message, int AiTurnsRun, bool NextTurnBegun, IReadOnlyList<GameEvent> Events);
+/// <summary>
+/// What one End turn did. <see cref="AiTurnsRun"/> and <see cref="NextTurnBegun"/> are informational: a remote session that cannot tell reports 0 / false.
+/// C029: <see cref="HandOverTo"/> is the civ id of another human whose turn is next in a hotseat game (sequential turns): the viewer's turn is over, the other human's has not begun,
+/// and the client must hide the viewer's view and pass the device (null in every other case).
+/// </summary>
+public sealed record TurnOutcome(bool Accepted, string Message, int AiTurnsRun, bool NextTurnBegun, IReadOnlyList<GameEvent> Events)
+{
+    public string? HandOverTo { get; init; }
+}
 
 /// <summary>C040: where an End turn is: <see cref="Played"/> of <see cref="Total"/> automatic civs are done, <see cref="CivId"/> is the one about to play (the total is an estimate when the round changes the set of civs).</summary>
 public sealed record TurnProgress(int Played, int Total, string CivId);
@@ -101,15 +108,39 @@ public sealed class ViewerSessionFlow
         }
 
         bool begun = false;
-        if (session.Game.TurnPhase is TurnPhase.AwaitingInput(var human) && human.CivId == viewerCivId && !session.Game.IsTurnStarted(human))
+        if (ViewerTurnPending)
         {
-            var began = ServerCommand(new BeginTurn { CivId = viewerCivId, Now = clock() });
+            var began = BeginPendingTurn();
             if (!began.Accepted) return new TurnOutcome(false, began.Message, aiTurns, false, events);
             events.AddRange(began.Events);
             begun = true;
         }
-        return new TurnOutcome(true, "", aiTurns, begun, events);
+        return new TurnOutcome(true, "", aiTurns, begun, events) { HandOverTo = HandOverTarget };
     }
+
+    /// <summary>C029: the viewer is the civ whose turn is next and that turn has not begun (a new turn after End turn, or a hotseat player taking over).</summary>
+    public bool ViewerTurnPending =>
+        session.Game.TurnPhase is TurnPhase.AwaitingInput(var human) && human.CivId == viewerCivId && !session.Game.IsTurnStarted(human);
+
+    /// <summary>
+    /// C029: in a sequential (hotseat) game, the civ id of another human whose turn is next and has not begun, else null. A simultaneous game never hands over (everyone plays at once),
+    /// and a civ that is not human (or no longer alive) is played by the auto players instead.
+    /// </summary>
+    public string? HandOverTarget =>
+        session.Game.TurnMode == TurnMode.Sequential
+        && session.Game.TurnPhase is TurnPhase.AwaitingInput(var next)
+        && next.CivId != viewerCivId && next.IsHuman() && !session.Game.IsTurnStarted(next)
+            ? next.CivId
+            : null;
+
+    /// <summary>C029: begins the viewer's pending turn (the server command the turn flow issues for the human whose turn it now is); a refusal when there is none.</summary>
+    public SubmitResult BeginPendingTurn() =>
+        ViewerTurnPending
+            ? ServerCommand(new BeginTurn { CivId = viewerCivId, Now = clock() })
+            : new SubmitResult(false, NoTurnToBeginMessage, []);
+
+    /// <summary>The <see cref="SubmitResult.Message"/> of <see cref="BeginPendingTurn"/> when it is not the viewer's turn to begin.</summary>
+    public const string NoTurnToBeginMessage = "It is not this player's turn to begin";
 
     /// <summary>The <see cref="TurnOutcome.Message"/> of an End turn stopped by its cancellation token.</summary>
     public const string CancelledMessage = "Turn processing was cancelled";

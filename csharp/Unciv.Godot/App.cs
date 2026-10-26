@@ -102,9 +102,17 @@ public partial class App : Node
         var screen = new GameScreen { Name = "GameScreen", PlaySound = sounds.PlaySound };
         screen.Presenter.Enabled = true;
         root.AddChild(screen);
+        // C029: hotseat. The cover sits above the game screen and everything it owns (the save dialog included), and the controller swaps the viewer.
+        var cover = new HandOverView();
+        cover.Init(new UiTheme(registry));
+        HotseatController hotseat = null!; // JUSTIFY: C029 assigned before any callback can run
         var saves = new SaveController(store, settings, new UiTheme(registry),
-            text => LocalHost.FromSave(text, WallClockMillis), loaded => screen.Start(loaded, AssetRegistry.ForRuleset(loaded.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack))));
+            text => LocalHost.FromSave(text, WallClockMillis), loaded => hotseat.Present(loaded));
         root.AddChild(saves);
+        root.AddChild(cover);
+        hotseat = new HotseatController(screen, cover, loaded => AssetRegistry.ForRuleset(loaded.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack)), id => id);
+        root.AddChild(hotseat);
+        hotseat.TookOver += next => saves.Attach(next);
         screens.Reset(root);
         screen.MainMenuRequested += () => ShowMenu(first: false);
         screen.SaveRequested += saves.OpenDialog;
@@ -112,7 +120,7 @@ public partial class App : Node
         screen.NewGameRequested += OpenNewGame;
         screen.OptionsRequested += OpenOptions;
         screen.HasUnsavedProgress = () => saves.HasUnsavedProgress;
-        screen.Start(session, registry);
+        hotseat.Present(session);
         screen.BindSettings(settings);
         saves.Attach(session);
     }
