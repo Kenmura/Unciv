@@ -516,7 +516,7 @@ Scenario `options`.
 
 *Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
 
-## C032 (ticket not Done or unknown)
+## C032 Improvements, roads, cities, borders and in-world yield icons
 
 Improvement props, roads and rails, city models with civ flags, borders and in-world tile yield icons.
 
@@ -534,7 +534,7 @@ Scenario `improvements`.
 
 *The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged.* (`improvements/yields-off.png`)
 
-## C038 (ticket not Done or unknown)
+## C038 Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result
 
 Decision pickers: free great person, pantheon and promotion (religion founding/enhancing, spies and the World Congress vote use the same picker, covered by model tests).
 
