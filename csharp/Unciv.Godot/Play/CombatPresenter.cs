@@ -83,6 +83,17 @@ public partial class CombatPresenter : Node3D
         Apply(timeline.Advance(0f));
     }
 
+    /// <summary>Drops the script and every node it made, for a screen that switches to another game (unit ids of the old game mean nothing in the new one).</summary>
+    public void Reset()
+    {
+        timeline.Clear();
+        foreach (var effect in visuals.Values) effect.QueueFree();
+        visuals.Clear();
+        foreach (var ghost in dying.Values) ghost.QueueFree();
+        dying.Clear();
+        numbers.Clear();
+    }
+
     public override void _Process(double delta)
     {
         if (Enabled && !ManualStepping) Step((float)delta);

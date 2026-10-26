@@ -138,6 +138,14 @@ public sealed class PresentationTimeline
     /// <summary>The cues of the beats that have not started, in script order.</summary>
     public IReadOnlyList<Cue> Upcoming => [.. beats.Skip(current + 1).SelectMany(it => it).Select(it => it.Cue)];
 
+    /// <summary>Drops the whole script, started or not.</summary>
+    public void Clear()
+    {
+        beats.Clear();
+        current = 0;
+        beatTime = 0f;
+    }
+
     public void Enqueue(IEnumerable<IReadOnlyList<Cue>> script)
     {
         if (IsIdle)
@@ -154,7 +162,7 @@ public sealed class PresentationTimeline
     {
         var updates = new List<CueUpdate>();
         if (IsIdle) return updates;
-        var remaining = Math.Max(0f, seconds) * Math.Max(1f, PendingSeconds / MaxBacklogSeconds);
+        var remaining = (seconds > 0f ? seconds : 0f) * Math.Max(1f, PendingSeconds / MaxBacklogSeconds); // NaN counts as no time, or the clock would stick forever
         while (!IsIdle)
         {
             var beat = beats[current];

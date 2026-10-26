@@ -654,6 +654,7 @@ public partial class GameScreen : Control
         {
             session.SnapshotChanged -= OnSnapshotChanged;
             session.EventsReceived -= OnEventsReceived;
+            Presenter.Reset();
             SelectedUnitId = null;
             mapLoaded = false;
             bannerTurn = -1;

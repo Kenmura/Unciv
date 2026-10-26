@@ -207,6 +207,28 @@ public sealed class CombatPresentationTests
     }
 
     [Fact]
+    public void A_step_that_is_not_a_number_moves_nothing_and_does_not_stick_the_clock()
+    {
+        var timeline = new PresentationTimeline();
+        timeline.Enqueue(CombatPresentation.Plan([new UnitDestroyed("A", 1, "Worker", new HexCoord(0, 0))]));
+        timeline.Advance(float.NaN);
+        Assert.False(timeline.IsIdle);
+        timeline.Advance(10f);
+        Assert.True(timeline.IsIdle);
+    }
+
+    [Fact]
+    public void Clear_drops_the_script()
+    {
+        var timeline = new PresentationTimeline();
+        timeline.Enqueue(CombatPresentation.Plan([new UnitDestroyed("A", 1, "Worker", new HexCoord(0, 0))]));
+        timeline.Advance(0.1f);
+        timeline.Clear();
+        Assert.True(timeline.IsIdle);
+        Assert.Empty(timeline.Advance(1f));
+    }
+
+    [Fact]
     public void A_cue_starts_after_its_delay_and_the_beat_lasts_until_the_last_cue_ends()
     {
         var timeline = new PresentationTimeline();
