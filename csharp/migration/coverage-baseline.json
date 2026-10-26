@@ -14,6 +14,7 @@
     "Unciv.Assets/GameMenuModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/GameOverModel.cs": {"branch": 100.0, "line": 97.96},
     "Unciv.Assets/GlyphFont.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/HotseatModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/ImprovementSpecs.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/LiteralLint.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Localization/ClientLocalization.cs": {"branch": 94.44, "line": 96.88},
