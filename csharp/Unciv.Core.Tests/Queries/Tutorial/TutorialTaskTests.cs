@@ -219,6 +219,23 @@ public class TutorialTaskTests
         Assert.False(Conditionals.Settings.IsTutorialTaskCompleted("x"));
     }
 
+    [Fact]
+    public async Task ScopedSettingsDoNotReachFlowsStartedOutsideTheScope()
+    {
+        var gate = new TaskCompletionSource();
+        var outside = Task.Run(async () =>
+        {
+            await gate.Task;
+            return Conditionals.Settings.ShowTutorials;
+        });
+        using (Conditionals.UseSettings(new Fixed(true)))
+        {
+            Assert.True(Conditionals.Settings.ShowTutorials);
+            gate.SetResult();
+            Assert.False(await outside); // the flow was started before the scope: it still sees the process-wide settings
+        }
+    }
+
     private sealed class Fixed(bool show) : IConditionalsSettings
     {
         public bool ShowTutorials => show;
