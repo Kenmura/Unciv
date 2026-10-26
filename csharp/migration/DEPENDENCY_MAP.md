@@ -322,4 +322,4 @@ xychart-beta
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T238 | Needs-Review [Claude] | none | 0 | Engine: conquering a city of one's own civ makes the civ meet itself |
+| T238 | In-Review [Claude] | none | 0 | Engine: conquering a city of one's own civ makes the civ meet itself |
