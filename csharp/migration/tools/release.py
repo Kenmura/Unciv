@@ -58,12 +58,30 @@ def in_container(cmd):
     return f"distrobox enter {CONTAINER} -- bash -c {shlex.quote(cmd)}"
 
 
-def run(name, cmd):
-    print(f"release: {name} ...", flush=True)
-    r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+CRASH_CODES = (139, 134, -11, -6)  # SIGSEGV / SIGABRT, as a shell reports them (128+n) or as a raw signal
+CRASH_RETRIES = 2
+
+
+def clear_import_cache():
+    """Drop Godot's imported/exported caches so a retry re-imports from the sources (a crash can leave them half written)."""
+    for sub in ("imported", "exported"):
+        shutil.rmtree(CSHARP / "Unciv.Godot" / ".godot" / sub, ignore_errors=True)
+
+
+def run(name, cmd, crash_retries=0):
+    """Run a shell command. A crash exit (segfault/abort) is retried up to `crash_retries` times after clearing the Godot import cache:
+    the headless export intermittently segfaults in Godot's threaded font import (~1 in 15 fresh imports, more under load)."""
+    for attempt in range(crash_retries + 1):
+        print(f"release: {name} ..." + (f" (retry {attempt} after a crash)" if attempt else ""), flush=True)
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        if r.returncode in CRASH_CODES and attempt < crash_retries:
+            print(f"release: {name} crashed (exit {r.returncode}); clearing the Godot import cache and retrying", file=sys.stderr)
+            clear_import_cache()
+            continue
+        break
     if r.returncode:
         print("\n".join((r.stdout + r.stderr).splitlines()[-30:]), file=sys.stderr)
-        die(f"{name} failed (exit {r.returncode})")
+        die(f"{name} failed (exit {r.returncode})" + (f" after {crash_retries + 1} attempts" if r.returncode in CRASH_CODES and crash_retries else ""))
 
 
 def smoke_cli(cli_dir):
@@ -157,7 +175,7 @@ def main(argv):
             built.append("cli")
         if client:
             for platform in ["linux"] + (["windows"] if windows else []):
-                run(f"package client ({platform})", in_container(f"cd {shlex.quote(str(CSHARP))} && Unciv.Godot/tools/package.sh {platform}"))
+                run(f"package client ({platform})", in_container(f"cd {shlex.quote(str(CSHARP))} && Unciv.Godot/tools/package.sh {platform}"), crash_retries=CRASH_RETRIES)
                 shutil.copytree(CSHARP / "Unciv.Godot" / "build" / platform, stage / f"client-{platform}", symlinks=True)
                 built.append(f"client-{platform}")
         manifest = {"ticket": tid, "commit": sha, "tree": tree, "built": int(time.time()), "contents": built}

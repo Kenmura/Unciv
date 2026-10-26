@@ -286,6 +286,34 @@ class ReleaseFolder(unittest.TestCase):
             self.make(root, "T1-a", 1)
             self.assertEqual(rel.prune(root, 5), [])
 
+    def run_with(self, rel, codes, retries):
+        from unittest import mock
+        calls = []
+
+        def fake(cmd, **kw):
+            calls.append(cmd)
+            return subprocess.CompletedProcess(cmd, codes[len(calls) - 1], "", "")
+        with mock.patch.object(rel.subprocess, "run", fake), mock.patch.object(rel, "clear_import_cache") as clear:
+            try:
+                rel.run("x", "true", crash_retries=retries)
+                ok = True
+            except SystemExit:
+                ok = False
+        return ok, len(calls), clear.call_count
+
+    def test_crashed_export_is_retried_with_a_cleared_cache(self):
+        rel = self.load()
+        self.assertEqual(self.run_with(rel, [139, 0], 2), (True, 2, 1))
+
+    def test_persistent_crash_gives_up_after_the_bound(self):
+        rel = self.load()
+        self.assertEqual(self.run_with(rel, [139, 139, 139], 2), (False, 3, 2))
+
+    def test_ordinary_failure_and_no_retry_budget_are_not_retried(self):
+        rel = self.load()
+        self.assertEqual(self.run_with(rel, [1], 2), (False, 1, 0))
+        self.assertEqual(self.run_with(rel, [139], 0), (False, 1, 0))
+
     def test_releases_folder_is_ignored_by_git(self):
         repo = Path(__file__).resolve().parents[3]
         r = subprocess.run(["git", "-C", str(repo), "check-ignore", "csharp-releases/T1-abc/client-linux/Unciv.x86_64"], capture_output=True, text=True)
