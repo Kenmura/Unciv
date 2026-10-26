@@ -126,7 +126,45 @@ public partial class GameScreen : Control
         Deselect();
         SetStatus("Diplomacy");
         if (Tech.Visible) Tech.Close();
+        if (Overview.Visible) Overview.Close();
         Run(Diplomacy.OpenAsync(civId));
+    }
+
+    /// <summary>C023: the empire overview, opened by the Overview button.</summary>
+    public OverviewScreen Overview { get; private set; } = null!; // JUSTIFY: C023 assigned in Start before any use
+
+    public bool IsOverviewVisible => Overview.Visible;
+
+    public Button OverviewButton { get; } = new() { Name = "OverviewButton", Text = "Overview".Tr() };
+
+    /// <summary>Opens the overview on a tab (the last shown when null), closing the other full screens.</summary>
+    public void OpenOverviewScreen(string? tab = null)
+    {
+        ShowCity(null);
+        if (Diplomacy.Visible) Diplomacy.Close();
+        if (Tech.Visible) Tech.Close();
+        Deselect();
+        SetStatus("Overview");
+        Run(Overview.OpenAsync(tab));
+    }
+
+    /// <summary>Closes the overview and shows a city of the viewer's: the camera goes to it and its screen opens.</summary>
+    private void JumpToCity(string name)
+    {
+        var city = snapshot.Cities.FirstOrDefault(it => it.Owner == session.ViewerCivId && it.Name == name);
+        if (city == null) return;
+        Overview.Close();
+        Map.FocusOn(MapLayout.TileTop(city.X, city.Y));
+        ShowCity(city);
+    }
+
+    /// <summary>Closes the overview, selects one of the viewer's units and centres the camera on it.</summary>
+    private void JumpToUnit(int id)
+    {
+        if (!unitNodes.TryGetValue(id, out var node) || !node.IsOwn) return;
+        Overview.Close();
+        SelectUnit(node);
+        Map.FocusOn(UnitPosition(new HexCoord(node.Unit.X, node.Unit.Y), 0));
     }
 
     /// <summary>C019: the tech screen, opened by the Technology button.</summary>
@@ -142,6 +180,7 @@ public partial class GameScreen : Control
         ShowCity(null);
         if (Diplomacy.Visible) Diplomacy.Close();
         if (Policies.Visible) Policies.Close();
+        if (Overview.Visible) Overview.Close();
         Deselect();
         SetStatus("Technology");
         Run(Tech.OpenAsync(tech));
@@ -187,6 +226,8 @@ public partial class GameScreen : Control
         TechButton.Pressed += () => OpenTechScreen();
         AddChild(PolicyButton);
         PolicyButton.Pressed += OpenPolicyScreen;
+        AddChild(OverviewButton);
+        OverviewButton.Pressed += () => OpenOverviewScreen();
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
         Notifications = new NotificationListView();
@@ -243,6 +284,11 @@ public partial class GameScreen : Control
             Tech.Position = new Vector2(0f, Hud.TopBarHeight);
             Tech.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
+        if (Overview != null)
+        {
+            Overview.Position = new Vector2(0f, Hud.TopBarHeight);
+            Overview.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
+        }
         DiplomacyButton.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight);
         TechButton.Position = new Vector2(HudMargin + DiplomacyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         PolicyButton.Position = new Vector2(TechButton.Position.X + TechButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
@@ -251,6 +297,7 @@ public partial class GameScreen : Control
             Policies.Position = new Vector2(0f, Hud.TopBarHeight);
             Policies.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
+        OverviewButton.Position = new Vector2(PolicyButton.Position.X + PolicyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
         Notifications.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
@@ -319,6 +366,17 @@ public partial class GameScreen : Control
         AddChild(Policies);
         Policies.CommandAccepted += Refresh;
         PolicyButton.Theme = theme.Theme;
+        if (Overview != null)
+        {
+            RemoveChild(Overview);
+            Overview.QueueFree();
+        }
+        Overview = new OverviewScreen(session, theme);
+        AddChild(Overview);
+        Overview.CommandAccepted += Refresh;
+        Overview.CityChosen += JumpToCity;
+        Overview.UnitChosen += JumpToUnit;
+        OverviewButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
         MoveChild(Alerts, -1); // the popup sits above every screen opened above
@@ -451,6 +509,7 @@ public partial class GameScreen : Control
         if (city != null && Diplomacy.Visible) Diplomacy.Close();
         if (city != null && Tech.Visible) Tech.Close();
         if (city != null && Policies.Visible) Policies.Close();
+        if (city != null && Overview.Visible) Overview.Close();
         if (city != null) Deselect(); // C012: the unit panel gives way to the city screen
         OpenCity = city;
         if (city == null)

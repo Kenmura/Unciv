@@ -344,6 +344,28 @@
       }
     ]
   },
+  "C023": {
+    "scenario": "overview",
+    "about": "Empire overview: tabs for stats, cities, units, resources, ranking, religion and espionage; Go to buttons jump to a city or unit.",
+    "shots": [
+      {
+        "golden": "overview/stats.png",
+        "caption": "Stats tab: the engine's per-turn numbers and the score breakdown."
+      },
+      {
+        "golden": "overview/cities.png",
+        "caption": "Cities tab: the capital and a puppet city with population, health, current build and a Go to button each."
+      },
+      {
+        "golden": "overview/units.png",
+        "caption": "Units tab: own units only, with position, health, moves and order."
+      },
+      {
+        "golden": "overview/ranking.png",
+        "caption": "Ranking tab: one table per category, best first; unmet civs are shown as Unknown civilization."
+      }
+    ]
+  },
   "C042": {
     "none": "Packaging only (export presets, bundled data, notices, scripts); the exported build opens the existing main menu, whose goldens belong to C015."
   },

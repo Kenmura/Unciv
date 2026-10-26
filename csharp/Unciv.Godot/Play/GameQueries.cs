@@ -48,6 +48,13 @@ public sealed class GameQueries(IGameSession session)
 
     public Task<HistoryResult?> History() => session.QueryAsync(new HistoryQuery());
 
+    /// <summary>C023: the overview screen's pages. A query the game refuses (rankings hidden, espionage off) answers null and the page says so.</summary>
+    public Task<EmpireOverviewResult?> Overview() => session.QueryAsync(new EmpireOverviewQuery());
+
+    public Task<ReligionResult?> Religion() => session.QueryAsync(new ReligionQuery());
+
+    public Task<SpyDestinationsResult?> Spies() => session.QueryAsync(new SpyDestinationsQuery());
+
     public Task<UnitActionsResult?> Actions(int unitId) => session.QueryAsync(new UnitActionsQuery(unitId));
 
     public Task<AttackableTargetsResult?> AttackTargets(int unitId) => session.QueryAsync(new AttackableTargetsQuery(unitId));

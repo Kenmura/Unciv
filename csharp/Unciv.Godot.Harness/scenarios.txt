@@ -21,3 +21,4 @@ l10n-sheet
 alerts
 victory
 defeat
+overview
