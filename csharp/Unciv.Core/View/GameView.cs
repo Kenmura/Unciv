@@ -30,6 +30,9 @@ public class GameView : View<GameInfo>
 
     protected override CivilizationClass Viewer => viewer;
 
+    /// <summary>T230: the host secret for state-based seeds. Internal on purpose: no view member, client or DTO exposes it.</summary>
+    internal long RandomSalt => gameInfo.RandomSalt;
+
     public CivView CivView { get; }
 
     public TileMapView TileMapView { get; }

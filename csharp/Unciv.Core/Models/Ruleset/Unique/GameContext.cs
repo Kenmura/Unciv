@@ -19,6 +19,8 @@ public partial interface IGameContextGameInfo
     string? GameId { get; }
     /// <summary><c>tileMap.mapParameters.seed</c>, or <c>null</c> when there is no tile map.</summary>
     long? MapSeed { get; }
+    /// <summary>T230: the host secret mixed into state-based random seeds; 0 when none is set. Never serialized, never sent to clients.</summary>
+    long RandomSalt => 0;
 }
 
 /// <summary>What <see cref="GameContext"/> reads from <c>Civilization</c>.</summary>
@@ -286,7 +288,7 @@ public sealed class GameContext : IEquatable<GameContext>
     public IGameContextCivilization? RelevantCiv => CivInfo ?? RelevantCity?.Civ ?? RelevantUnit?.Civ;
 
     public GameRandom StateBasedRandom(string caller, int seed = 31) =>
-        Randomness.StateBasedRandom(caller, seed, GetHashCode());
+        Randomness.StateBasedRandom(caller, seed, GetHashCode(), GameInfo?.RandomSalt ?? 0);
 
     public int GetResourceAmount(string resourceName)
     {

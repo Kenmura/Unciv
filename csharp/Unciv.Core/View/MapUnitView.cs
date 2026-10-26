@@ -327,8 +327,8 @@ public static class MapUnitViewExtensions
     public static GameRandom StateBasedRandom(this MapUnitView view, string caller, int seed = 31)
     {
         var position = view.GetTile().Position();
-        return new GameRandom(Randomness.HashOf(JavaHash.HashCode(caller), seed, JavaHash.HashCode(view.Civ().CivId), JavaHash.HashCode(view.Name),
-            position.X, position.Y, JavaHash.HashCode(unchecked(17 * view.CurrentMovement)), view.GameView.GetTurn()));
+        return Randomness.Salted(Randomness.HashOf(JavaHash.HashCode(caller), seed, JavaHash.HashCode(view.Civ().CivId), JavaHash.HashCode(view.Name),
+            position.X, position.Y, JavaHash.HashCode(unchecked(17 * view.CurrentMovement)), view.GameView.GetTurn()), view.GameView.RandomSalt);
     }
 
     // Unit state derived from MapUnitView.Action

@@ -442,7 +442,7 @@ public static class DiplomacyAutomation
             if (civInfo.GetStatForRanking(RankingType.Force) - 0.8f * ThreatManager.GetCombinedForceOfWarringCivs(ViewOf(civInfo).CivView) > 0)
             {
                 var randomSeed = unchecked(civInfo.GameInfo.Civilizations.ToList().IndexOf(enemy) + civInfo.GetCivsAtWarWith().Count() + 123 * civInfo.GameInfo.Turns);
-                if (new GameRandom(randomSeed).NextInt(100) > 80) continue;
+                if (civInfo.GameInfo.SeededRandom(randomSeed).NextInt(100) > 80) continue;
             }
 
             // pay for peace

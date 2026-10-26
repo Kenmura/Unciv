@@ -65,7 +65,7 @@ public class RuinsManager : IsPartOfGameInfoSerialization
             .ToList();
         // The resulting List now gets shuffled, using a tile-based random to thwart save-scumming.
         // Note both Sequence.shuffled and Iterable.shuffled (with a 'd') always pull an extra copy of a MutableList internally, even if you feed them one.
-        candidates.Shuffle(new GameRandom(triggeringUnit.GetTile().Position.ToVector2().GetHashCode()));
+        candidates.Shuffle(triggeringUnit.Civ.GameInfo.SeededRandom(triggeringUnit.GetTile().Position.ToVector2().GetHashCode()));
         return candidates;
     }
 

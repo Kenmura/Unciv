@@ -226,7 +226,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         int prophetCost = FaithForNextGreatProphet();
         float prophetSpawnChance = (5f + StoredFaith - prophetCost) / 100f;
 
-        if (new GameRandom(CivInfo.GameInfo.Turns).NextFloat() < prophetSpawnChance)
+        if (CivInfo.GameInfo.SeededRandom(CivInfo.GameInfo.Turns).NextFloat() < prophetSpawnChance)
         {
             CityObject? birthCity;
             if (ReligionState <= ReligionState.Pantheon) birthCity = CivInfo.GetCapital();

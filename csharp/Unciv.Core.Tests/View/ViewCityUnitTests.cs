@@ -645,6 +645,20 @@ public sealed class ViewCityUnitTests
         Assert.Equal(terrains, tile.Unwrap().AllTerrains.Count());
     }
 
+    // T230: the view's seed uses the host secret too (internal to the view layer), so an AI unit's choices are not predictable either.
+    [Fact]
+    public void MapUnitView_StateBasedRandom_DependsOnTheHostSecret()
+    {
+        var uv = OwnUnit();
+        var plain = uv.StateBasedRandom("caller").NextInt(1000000);
+        ((Unciv.Logic.GameInfo)uv.Unwrap().Civ.GameInfo).RandomSalt = 0x5EC0DEL;
+        var salted = uv.StateBasedRandom("caller").NextInt(1000000);
+        Assert.NotEqual(plain, salted);
+        Assert.Equal(salted, uv.StateBasedRandom("caller").NextInt(1000000));
+        ((Unciv.Logic.GameInfo)uv.Unwrap().Civ.GameInfo).RandomSalt = 0;
+        Assert.Equal(plain, uv.StateBasedRandom("caller").NextInt(1000000));
+    }
+
     [Fact]
     public void MapUnitView_StateBasedRandom_IsDeterministicPerState()
     {

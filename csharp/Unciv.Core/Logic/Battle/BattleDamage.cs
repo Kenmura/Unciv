@@ -260,7 +260,7 @@ public static class BattleDamage
     }
 
     public static float GetRandomness(ICombatant combatant) =>
-        new GameRandom(unchecked((long)combatant.GetCivInfo().GameInfo.Turns * combatant.GetTile().Position.ToVector2().GetHashCode())).NextFloat();
+        combatant.GetCivInfo().GameInfo.SeededRandom(unchecked((long)combatant.GetCivInfo().GameInfo.Turns * combatant.GetTile().Position.ToVector2().GetHashCode())).NextFloat();
 
     /// <summary>randomnessFactor: between 0 and 1, defaults to <see cref="GetRandomness"/> of the attacker.</summary>
     public static int CalculateDamageToAttacker(ICombatant attacker, ICombatant defender, TileClass? tileToAttackFrom = null, float? randomnessFactor = null)

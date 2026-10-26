@@ -1,3 +1,5 @@
+using Unciv.Models.Ruleset.Unique;
+
 namespace Unciv.Utils;
 
 // core/src/com/unciv/utils/Randomness.kt
@@ -15,8 +17,28 @@ public static class Randomness
 
     // GameContext.stateBasedRandom(caller, seed): Random(hashOf(caller.hashCode(), seed, this.hashCode())).
     // stateHash is GameContext.hashCode(), which the GameContext port computes (tile positions, civ ids, ...).
-    public static GameRandom StateBasedRandom(string caller, int seed, int stateHash) =>
-        new(HashOf(JavaHash.HashCode(caller), seed, stateHash));
+    public static GameRandom StateBasedRandom(string caller, int seed, int stateHash, long salt = 0) =>
+        Salted(HashOf(JavaHash.HashCode(caller), seed, stateHash), salt);
+
+    // T230: the per-game host secret mixed into every state-based seed. 0 means "no secret": the seed is returned unchanged
+    // (Kotlin parity, and every non-hosted game). Otherwise a splitmix64 finalizer over seed and secret, so a client that knows every
+    // public input (turn, tile, ids) still cannot reproduce a roll without the 64-bit secret.
+    public static long SaltedSeed(long seed, long salt)
+    {
+        if (salt == 0) return seed;
+        unchecked
+        {
+            ulong z = (ulong)salt ^ ((ulong)seed + 0x9E3779B97F4A7C15UL);
+            z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+            z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+            return (long)(z ^ (z >> 31));
+        }
+    }
+
+    public static GameRandom Salted(long seed, long salt) => new(SaltedSeed(seed, salt));
+
+    /// <summary>A <see cref="GameRandom"/> for <paramref name="seed"/>, salted with the game's host secret (identical to <c>new GameRandom(seed)</c> without one).</summary>
+    public static GameRandom SeededRandom(this IGameContextGameInfo game, long seed) => Salted(seed, game.RandomSalt);
 
     // pseudoRandomUuid(rng: Random). The SecureRandom overload is not ported: it is not deterministic.
     public static JavaUuid PseudoRandomUuid(GameRandom rng)

@@ -74,8 +74,8 @@ public static class UniqueTriggerActivation
         var chosenCity = RelevantCity() ?? civInfo.Cities.FirstOrDefault(it => it.IsCapital());
 
         var tileBasedRandom = tile != null
-            ? new GameRandom(tile.Position.GetHashCode())
-            : new GameRandom(-550); // Very random indeed
+            ? civInfo.GameInfo.SeededRandom(tile.Position.GetHashCode())
+            : civInfo.GameInfo.SeededRandom(-550); // Very random indeed
         var ruleset = civInfo.GameInfo.Ruleset;
 
         switch (unique.Type)

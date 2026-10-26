@@ -125,6 +125,14 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
     [JsonPropertyName("gameId")]
     public string GameId { get; set; } = "";
 
+    /// <summary>
+    /// T230: the host's per-game secret, mixed into every state-based random seed (see <see cref="Randomness.SaltedSeed"/>), so a client
+    /// cannot predict combat and other rolls from public state. 0 = none (Kotlin parity). Deliberately not serialized: it lives only
+    /// in the host's game store and command-log header and is re-applied after a load (<c>HostSecret</c>).
+    /// </summary>
+    [JsonIgnore]
+    public long RandomSalt { get; set; }
+
     [JsonPropertyName("checksum")]
     public string Checksum { get; set; } = "";
 
@@ -287,6 +295,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         toReturn.GameParameters.ShowVictoryStats = GameParameters.ShowVictoryStats;
         toReturn.GameParameters.ShowCivilizationStatsRaw = GameParameters.ShowCivilizationStatsRaw;
         toReturn.GameId = GameId;
+        toReturn.RandomSalt = RandomSalt;
         foreach (var vote in DiplomaticVictoryVotesCast) toReturn.DiplomaticVictoryVotesCast[vote.Key] = vote.Value;
         toReturn.OneMoreTurnMode = OneMoreTurnMode;
         toReturn.CustomSaveLocation = CustomSaveLocation;

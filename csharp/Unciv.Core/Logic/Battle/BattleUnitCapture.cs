@@ -54,7 +54,7 @@ public static class BattleUnitCapture
             0.1f + (float)attacker.GetAttackingStrength(defender) / (float)defender.GetDefendingStrength(attacker) * 0.4f);
         /* Between 0 and 1.  Defaults to turn and location-based random to avoid save scumming */
         // Kotlin: (turns * hashCode).toLong() multiplies as Int (wrapping) before widening
-        var random = new GameRandom(unchecked((long)unchecked(attacker.GetCivInfo().GameInfo.Turns * defender.GetTile().Position.ToVector2().GetHashCode())));
+        var random = attacker.GetCivInfo().GameInfo.SeededRandom(unchecked((long)unchecked(attacker.GetCivInfo().GameInfo.Turns * defender.GetTile().Position.ToVector2().GetHashCode())));
         return random.NextFloat() <= captureChance;
     }
 

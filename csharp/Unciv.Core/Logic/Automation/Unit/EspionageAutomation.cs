@@ -45,7 +45,7 @@ public class EspionageAutomation
         foreach (var spy in spiesToMove)
         {
             var randomSeed = spies.Count + spies.IndexOf(spy) + civInfo.GameInfo.Turns;
-            var randomAction = new GameRandom(randomSeed).NextInt(10);
+            var randomAction = civInfo.GameInfo.SeededRandom(randomSeed).NextInt(10);
 
             // Try each operation based on the random value and the success rate
             // If an operation was not successfull try the next one
@@ -114,7 +114,7 @@ public class EspionageAutomation
         if (allyCiv != null && civInfo.GetDiplomacyManager(allyCiv)?.IsRelationshipLevelGE(RelationshipLevel.Friend) == true) return;
         var spies = civInfo.EspionageManager.SpyList;
         var randomSeed = spies.Count + spies.IndexOf(spy) + civInfo.GameInfo.Turns;
-        var randomAction = new GameRandom(randomSeed).NextInt(100);
+        var randomAction = civInfo.GameInfo.SeededRandom(randomSeed).NextInt(100);
         if (randomAction < 20) spy.SetAction(SpyAction.Coup, 1);
     }
 }

@@ -91,7 +91,7 @@ public static class UnitActionsPillage
         // Accumulate the loot
         var pillageYield = new Stats();
         var stateForConditionals = unit.Cache.State;
-        var random = new GameRandom(unchecked(unit.Civ.GameInfo.Turns * (long)unit.GetTile().Position.GetHashCode()));
+        var random = unit.Civ.GameInfo.SeededRandom(unchecked(unit.Civ.GameInfo.Turns * (long)unit.GetTile().Position.GetHashCode()));
         improvementUniques.ForEachMatchingUnique(UniqueType.PillageYieldRandom, stateForConditionals, unique =>
         {
             foreach (var (stat, value) in unique.Stats)

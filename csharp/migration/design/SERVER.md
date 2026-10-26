@@ -125,8 +125,22 @@ serialized, so a newly added engine field cannot leak by omission.
 | Diplomacy | Only relationships involving the recipient plus public facts (wars and peace are public per Civ rules). |
 | Trade | Pending offers are visible only to the two parties. Declined/retracted offers are deleted from the other party's view. Trade-evaluation details (AI's willingness numbers) never leave the server. |
 | Espionage | Spies are private to the owner; foreign spies are not visible unless the ruleset reveals them. Steal results are delivered as private notifications to the owner only. |
-| RNG, seeds, `GameRandom` state, `gameId` seed, map seed | Never sent (a known seed predicts map-gen and combat). Snapshots carry no seed. |
+| RNG, seeds, `GameRandom` state, `gameId` seed, map seed, **host secret** | Never sent. Snapshots carry no seed and no secret. Withholding the seed alone is not enough (see "Host secret" below). |
 | Whole save | No client can request the full `GameInfo` file; "download save" exports the *client snapshot*, not the server save. Host-side admins can export the real save. |
+
+**Host secret (T230).** Engine rolls are *state-based*: the seed is a hash of public data (turn number, tile position, civ and unit ids,
+`gameId`), so hiding the map seed does not hide combat outcomes; a modified client could compute any attack's roll and pick the best tile.
+Every state-based seed (`GameContext.StateBasedRandom`, `BattleDamage.GetRandomness`, captures, espionage, pillage, ruins, religion, unique
+conditionals, `MapUnitView.StateBasedRandom`, ...) is therefore mixed with a per-game 64-bit secret (`GameInfo.RandomSalt`,
+`Randomness.SaltedSeed`, a splitmix64 finalizer). Rules: (1) the host generates it once at game start with `HostSecret.Generate()` (OS CSPRNG) and
+applies it right after `StartNewGame` (`HostSecret.ApplyTo`); (2) it is `[JsonIgnore]`: it is not in the save, the full-state hash, any
+`ClientSnapshot`/delta/DTO, and no view member exposes it (`GameView.RandomSalt` is `internal`); (3) it is persisted host-side only, in the game
+store's `game.json` (T176) and in the command-log header (`hostSecret`, omitted when 0), which replay needs; any log shared with a client must use
+`CommandLogHeader.WithoutSecret()`; (4) after every load, restore or crash recovery the host re-applies it from the store (a save alone does not carry it),
+and `ReplayVerifier` applies the header's secret on `StartGame`/`VerifyTail`; (5) secret 0 = unchanged Kotlin behaviour (single player, CLI, tests).
+Same secret gives identical rolls and hashes, so replay and resume stay deterministic; a different secret plays a different game.
+Not covered: map generation and the game starter run before the secret exists (the map is public once explored); the secret is 64 bits and not
+a cryptographic MAC, enough that rolls cannot be predicted or searched from outcomes by a client.
 
 **Command validation** (on top of T164's per-command `Validate`): the server layer adds, before the engine sees the
 envelope: (1) session is authenticated and bound to exactly one civ in this game (actor id is *injected*, never read from

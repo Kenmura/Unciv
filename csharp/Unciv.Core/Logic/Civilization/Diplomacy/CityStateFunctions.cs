@@ -95,7 +95,7 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
         var parties = new List<Spy?>(spies);
         parties.Add(null); // Null spy is a neuteral party in the election
         float randomSeed = (float)capital.Location.X * capital.Location.Y + 123f * civInfo.GameInfo.Turns;
-        Civilization? winner = parties.RandomWeighted(new GameRandom(KotlinMath.FloatToInt(randomSeed)), GetVotesFromSpy)?.CivInfo;
+        Civilization? winner = parties.RandomWeighted(civInfo.GameInfo.SeededRandom(KotlinMath.FloatToInt(randomSeed)), GetVotesFromSpy)?.CivInfo;
 
         // There may be no winner, in that case all spies will lose 5 influence
         if (winner == null)

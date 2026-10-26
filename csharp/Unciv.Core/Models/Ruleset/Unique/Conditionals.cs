@@ -64,7 +64,7 @@ public static class Conditionals
     private static float GetStateBasedRandom(GameContext state, Unique? unique)
     {
         int seed = Randomness.HashOf(state.GameInfo?.Turns ?? 0, unique == null ? 0 : UniqueHash(unique), state.GetHashCode());
-        return new GameRandom(seed).NextFloat();
+        return Randomness.Salted(seed, state.GameInfo?.RandomSalt ?? 0).NextFloat();
     }
 
     private static float ToFloat(string text) =>

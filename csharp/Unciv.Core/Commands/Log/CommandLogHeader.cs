@@ -34,6 +34,17 @@ public sealed record CommandLogHeader
     [JsonPropertyName("gameSeed")]
     public long GameSeed { get; init; }
 
+    /// <summary>
+    /// T230: the host's per-game secret for state-based randomness (0 = none). HOST-SIDE ONLY: it is the one place besides the game store
+    /// where it is kept, and replay needs it. Never hand a header to a client; use <see cref="WithoutSecret"/> for any export.
+    /// </summary>
+    [JsonPropertyName("hostSecret")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public long HostSecret { get; init; }
+
+    /// <summary>The same header with the host secret removed (it can no longer replay a salted game).</summary>
+    public CommandLogHeader WithoutSecret() => this with { HostSecret = 0 };
+
     [JsonPropertyName("startClockMillis")]
     public long StartClockMillis { get; init; }
 
@@ -50,13 +61,14 @@ public sealed record CommandLogHeader
 
     /// <summary>Copies <paramref name="setup"/> (the starter rewrites its parameters) and fingerprints the ruleset it names.</summary>
     public static CommandLogHeader Create(GameSetupInfo setup, long gameSeed, long startClockMillis,
-        IDictionary<string, PlayerSettings>? playerSettings = null) =>
+        IDictionary<string, PlayerSettings>? playerSettings = null, long hostSecret = 0) =>
         new()
         {
             RulesetHash = RulesetHashOf(setup.GameParameters),
             GameSetup = Copy(setup),
             GameSeed = gameSeed,
             StartClockMillis = startClockMillis,
+            HostSecret = hostSecret,
             PlayerSettings = new SortedDictionary<string, PlayerSettings>(playerSettings ?? new Dictionary<string, PlayerSettings>(), StringComparer.Ordinal),
         };
 

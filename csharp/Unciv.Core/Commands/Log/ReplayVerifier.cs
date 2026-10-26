@@ -31,6 +31,7 @@ public static class ReplayVerifier
             throw new CommandLogException("The ruleset differs from the one the log was played with");
         var game = GameStarter.StartNewGame(CommandLogHeader.Copy(header.GameSetup), header.GameSeed, header.StartClockMillis);
         foreach (var (civId, settings) in header.PlayerSettings) game.SetPlayerSettings(civId, settings);
+        game.RandomSalt = header.HostSecret; // T230: set after the start, exactly like the host does
         return game;
     }
 
@@ -39,8 +40,11 @@ public static class ReplayVerifier
     /// <summary>
     /// Continues from a snapshot taken after command <paramref name="snapshotSeq"/>: replays only the tail of the log and checks the checkpoints after it.
     /// </summary>
-    public static ReplayResult VerifyTail(GameInfo snapshot, long snapshotSeq, CommandLog log) =>
-        Run(new GameSession(snapshot, lastSeq: snapshotSeq), log, snapshotSeq);
+    public static ReplayResult VerifyTail(GameInfo snapshot, long snapshotSeq, CommandLog log)
+    {
+        snapshot.RandomSalt = log.Header.HostSecret; // T230: a saved game does not carry the secret; the log header does
+        return Run(new GameSession(snapshot, lastSeq: snapshotSeq), log, snapshotSeq);
+    }
 
     private static ReplayResult Run(GameSession session, CommandLog log, long after)
     {

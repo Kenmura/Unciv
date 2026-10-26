@@ -294,10 +294,10 @@ public class Spy : IsPartOfGameInfoSerialization
 
         // Could be improved to for example steal the most expensive tech or the tech that has the least progress as of yet
         var stolenTech = EspionageManager.GetTechsToSteal(GetCity().Civ)
-            .RandomOrNull(new GameRandom(randomSeedValue));
+            .RandomOrNull(CivInfo.GameInfo.SeededRandom(randomSeedValue));
 
         // Lower is better
-        int spyResult = new GameRandom(randomSeedValue).NextInt(300);
+        int spyResult = CivInfo.GameInfo.SeededRandom(randomSeedValue).NextInt(300);
         // Add our spies experience
         spyResult -= GetSkillModifierPercent();
         // Subtract the experience of the counter intelligence spies
@@ -367,7 +367,7 @@ public class Spy : IsPartOfGameInfoSerialization
         var allyCiv = cityState.AllyCiv;
 
         float successChance = GetCoupChanceOfSuccess(true);
-        float randomValue = new GameRandom(RandomSeed()).NextFloat();
+        float randomValue = CivInfo.GameInfo.SeededRandom(RandomSeed()).NextFloat();
         if (randomValue <= successChance)
         {
             // Success
