@@ -114,7 +114,7 @@ The headless export crashes intermittently (about 1 in 15 fresh imports, more un
 
 ## CI (T169)
 
-`.github/workflows/csharp.yml` is separate from the Kotlin/Gradle workflows and runs only for changes under `csharp/**`, `android/assets/jsons/**`
+**The workflow is parked at `csharp/ci/csharp-workflow.yml`** (GitHub refuses pushes that touch `.github/workflows/` from a token without the `workflow` scope). To activate it, `git mv csharp/ci/csharp-workflow.yml .github/workflows/csharp.yml` (and point `WORKFLOW` in `tools/test_ci.py` back) with a token that has that scope, then do T239. Once active it is separate from the Kotlin/Gradle workflows and runs only for changes under `csharp/**`, `android/assets/jsons/**`
 (the rulesets the engine reads) or the workflow itself, on pushes to `csharp-migration` and on pull requests; plus a weekly schedule for the soak.
 `permissions: contents: read`, no secrets, no `pull_request_target`, no artifact upload, every action pinned by commit SHA.
 

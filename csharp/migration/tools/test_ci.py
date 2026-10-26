@@ -9,7 +9,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-WORKFLOW = REPO / ".github" / "workflows" / "csharp.yml"
+WORKFLOW = REPO / "csharp" / "ci" / "csharp-workflow.yml"
 RETRY = REPO / "csharp" / "Unciv.Godot" / "tools" / "retry-on-crash.sh"
 
 spec = importlib.util.spec_from_file_location("ci_base", HERE / "ci_base.py")
