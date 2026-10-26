@@ -139,7 +139,7 @@ public sealed class NetPrivacyTests
         foreach (var gameEvent in new EngineEvent[]
         {
             new TradeRequested("A", "B", [], []), new TradeWithdrawn("A", "B"), new TradeAccepted("A", "B", [], []),
-            new NotificationAdded("A", "x", Notification.NotificationCategory.Espionage, [], []), new AlertAdded("A", AlertType.WarDeclaration, "x")
+            new NotificationAdded("A", "x", Notification.NotificationCategory.Espionage, [], []), new AlertAdded("A", AlertType.WarDeclaration, "x"), new SoundRequested("A", "click")
         })
         {
             Assert.Empty(EventFilter.Classify(gameEvent, "C", new OmniscientVisibility()));

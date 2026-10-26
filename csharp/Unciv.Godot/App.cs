@@ -99,7 +99,7 @@ public partial class App : Node
     {
         var registry = AssetRegistry.ForRuleset(session.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack));
         var root = new Control { Name = "Play" };
-        var screen = new GameScreen { Name = "GameScreen" };
+        var screen = new GameScreen { Name = "GameScreen", PlaySound = sounds.PlaySound };
         screen.Presenter.Enabled = true;
         root.AddChild(screen);
         var saves = new SaveController(store, settings, new UiTheme(registry),

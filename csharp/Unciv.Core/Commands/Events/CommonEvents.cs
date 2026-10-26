@@ -190,6 +190,16 @@ public sealed record AlertAdded(string CivId, AlertType AlertType, string Value)
     public override IEnumerable<string> Participants() => [CivId];
 }
 
+/// <summary>
+/// A "Play [sound] sound" unique fired for one human civ (C057). Derived from game state only, so replay produces the same cues. Participant-only: another civ never learns that
+/// the cue was requested. <paramref name="SoundName"/> is a sound file name (a generated placeholder in the client).
+/// </summary>
+[EventType("sound-requested", EventAudience.Participants)]
+public sealed record SoundRequested(string CivId, string SoundName) : EngineEvent
+{
+    public override IEnumerable<string> Participants() => [CivId];
+}
+
 [EventType("research-completed", EventAudience.Participants)]
 public sealed record ResearchCompleted(string CivId, string Tech) : EngineEvent
 {

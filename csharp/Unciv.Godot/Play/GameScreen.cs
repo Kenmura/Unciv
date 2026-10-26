@@ -2,6 +2,7 @@ using System.Globalization;
 using Godot;
 using Unciv.Assets;
 using Unciv.Commands;
+using Unciv.Commands.Events;
 using Unciv.Commands.Turn;
 using Unciv.Commands.Units;
 using Unciv.GodotClient.Assets;
@@ -1445,7 +1446,21 @@ public partial class GameScreen : Control
     }
 
     // Events arrive before the screen redraws from the new snapshot, so the presenter can still take the nodes of units that just died.
-    private void OnEventsReceived(EventBatch batch) => PresentEvents(batch.Events);
+    private void OnEventsReceived(EventBatch batch)
+    {
+        PresentEvents(batch.Events);
+        PlayCues(batch.Events);
+    }
+
+    /// <summary>C057: where the engine's sound cues are played (the app's sound player); null in scenarios that do not care, which then play nothing.</summary>
+    public Action<string>? PlaySound { get; set; }
+
+    /// <summary>Plays the sounds the batch asks of this viewer; a missing sound device never throws into the event stream.</summary>
+    public void PlayCues(IReadOnlyList<GameEvent> events)
+    {
+        if (PlaySound is not { } play) return;
+        foreach (string sound in SoundCues.For(events, session.ViewerCivId)) play(sound);
+    }
 
     /// <summary>Queues events for the presenter (C033). Call before <see cref="Refresh"/>, while the nodes of units the events destroy are still in the table.</summary>
     public bool PresentEvents(IReadOnlyList<GameEvent> events) => Presenter.Present(events, unitNodes);

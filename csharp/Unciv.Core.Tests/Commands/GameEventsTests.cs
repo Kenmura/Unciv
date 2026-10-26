@@ -51,6 +51,7 @@ public sealed class GameEventsTests
         "tile-owner-changed" => new TileOwnerChanged(P1, "", "Babylon"),
         "notification-added" => new NotificationAdded("Babylon", "Hello [x]", NotificationCategory.War, ["War"], [P1]),
         "alert-added" => new AlertAdded("Babylon", AlertType.WonderBuilt, "Pyramids"),
+        "sound-requested" => new SoundRequested("Babylon", "click"),
         "research-completed" => new ResearchCompleted("Babylon", "Agriculture"),
         "policy-adopted" => new PolicyAdopted("Babylon", "Tradition"),
         "war-declared" => new WarDeclared("Babylon", "Rome"),

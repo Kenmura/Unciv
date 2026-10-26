@@ -124,7 +124,7 @@ public static class UniqueTriggerActivation
                     if (audio == null || !audio.HasSound(soundName)) return null;
                     return () =>
                     {
-                        audio.PlaySound(soundName);
+                        audio.PlaySound(civInfo, soundName);
                         return true;
                     };
                 }

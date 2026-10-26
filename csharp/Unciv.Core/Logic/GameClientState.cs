@@ -1,5 +1,6 @@
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Utils;
+using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 
 namespace Unciv.Logic;
 
@@ -44,8 +45,12 @@ public sealed class GameClientState
     /// <summary><c>settings.getCollatorFromLocale()</c>: the culture-sensitive name ordering. Defaults to the invariant culture.</summary>
     public IComparer<string> Collator { get; set; } = StringComparer.InvariantCulture;
 
-    /// <summary>The client's sound and music players (<c>SoundPlayer</c>, <c>musicController</c>) for the PlaySound/ChooseMusic triggers. Null (headless) means "no audio".</summary>
-    public IClientAudio? Audio { get; set; }
+    /// <summary>
+    /// What the PlaySound/ChooseMusic triggers call (Kotlin: the client's <c>SoundPlayer</c> and <c>musicController</c>). C057 deliberate deviation: the default is
+    /// <see cref="SoundCueAudio"/>, which turns a sound into a <see cref="Commands.Events.SoundRequested"/> event the client plays from its event stream, so the engine never
+    /// touches a sound device and the trigger behaves the same headless, hosted and replayed. Null means "no audio" (the triggers do not fire).
+    /// </summary>
+    public IClientAudio? Audio { get; set; } = SoundCueAudio.Instance;
 
     /// <summary><c>settings.addCompletedTutorialTask(task)</c> without the settings file save and the UI flag.</summary>
     public bool AddCompletedTutorialTask(string tutorialTask) => TutorialTasksCompleted.Add(tutorialTask);
@@ -72,8 +77,26 @@ public interface IClientAudio
 {
     /// <summary><c>SoundPlayer.get(UncivSound(soundName)) != null</c></summary>
     bool HasSound(string soundName);
-    /// <summary><c>SoundPlayer.play(UncivSound(soundName))</c></summary>
-    void PlaySound(string soundName);
+    /// <summary><c>SoundPlayer.play(UncivSound(soundName))</c>, asked on behalf of <paramref name="civ"/> (the civ the trigger fired for).</summary>
+    void PlaySound(CivilizationObject civ, string soundName);
     /// <summary><c>musicController.chooseTrack(prefix, suffixes, flags)</c>; flags are the matched <c>MusicTrackChooserFlags</c> names.</summary>
     void ChooseMusic(string prefix, IReadOnlyList<string> suffixes, IReadOnlyList<string> flags);
+}
+
+/// <summary>
+/// C057: the engine's <see cref="IClientAudio"/>. A sound becomes a <see cref="Commands.Events.SoundRequested"/> event for the civ it was triggered for (nothing when no
+/// event sink listens), which the viewer filter delivers to that civ only. Music is not supported yet (C030: music none), so ChooseMusic does nothing.
+/// </summary>
+public sealed class SoundCueAudio : IClientAudio
+{
+    public static SoundCueAudio Instance { get; } = new();
+
+    public bool HasSound(string soundName) => soundName.Length > 0;
+
+    public void PlaySound(CivilizationObject civ, string soundName) => GameEventHooks.SoundRequested(civ, soundName);
+
+    public void ChooseMusic(string prefix, IReadOnlyList<string> suffixes, IReadOnlyList<string> flags)
+    {
+        // Music none (C030).
+    }
 }

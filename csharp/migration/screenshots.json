@@ -776,6 +776,9 @@
   "C030": {
     "none": "Placeholder audio has nothing to look at; scenario audio asserts every UncivSound preset resolves to a non-empty generated stream."
   },
+  "C057": {
+    "none": "Sound cues have nothing to look at; scenario audio asserts the PlaySound trigger reaches the viewer as one cue and only the viewer, and the game screen plays it."
+  },
   "C046": {
     "scenario": "console",
     "about": "Developer console popup (backtick) in a God-mode game: Tab completion, history with Up, the engine's response inline; a line that runs is one logged command.",

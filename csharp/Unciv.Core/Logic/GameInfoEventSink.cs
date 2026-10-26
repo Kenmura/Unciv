@@ -219,6 +219,12 @@ public static class GameEventHooks
         return next;
     }
 
+    /// <summary>A "Play [sound] sound" unique fired for <paramref name="civ"/> (C057).</summary>
+    public static void SoundRequested(CivilizationObject civ, string soundName)
+    {
+        if (civ.GameInfo.EventSink is { } sink) sink.Emit(new SoundRequested(civ.CivId, soundName));
+    }
+
     public static void ResearchCompleted(CivilizationObject civ, string tech)
     {
         if (civ.GameInfo.EventSink is { } sink) sink.Emit(new ResearchCompleted(civ.CivId, tech));

@@ -259,7 +259,7 @@ public class UniqueTriggerTests
     {
         public List<string> Calls { get; } = [];
         public bool HasSound(string soundName) => soundName != "missing";
-        public void PlaySound(string soundName) => Calls.Add("sound:" + soundName);
+        public void PlaySound(Civilization civ, string soundName) => Calls.Add($"sound:{civ.CivId}:{soundName}");
         public void ChooseMusic(string prefix, IReadOnlyList<string> suffixes, IReadOnlyList<string> flags) =>
             Calls.Add($"music:{prefix}:{string.Join('|', suffixes)}:{string.Join('|', flags)}");
     }
@@ -267,6 +267,7 @@ public class UniqueTriggerTests
     [Fact]
     public void SoundAndMusicNeedAClientAudio()
     {
+        game.GameInfo.ClientState.Audio = null;
         Assert.False(Trigger("Play [click] sound"));
         Assert.False(Trigger("Choose a music track for [Rome], [Calm, slowfade], [x]"));
         var audio = new FakeAudio();
@@ -275,7 +276,7 @@ public class UniqueTriggerTests
         Assert.False(Trigger("Play [missing] sound"));
         Assert.False(Trigger("Play [] sound"));
         Assert.True(Trigger("Choose a music track for [this civ], [Calm, slowfade], [x]"));
-        Assert.Equal("sound:click", audio.Calls[0]);
+        Assert.Equal($"sound:{civ.CivId}:click", audio.Calls[0]);
         Assert.Equal($"music:{civ.CivId}:Calm|slowfade:SlowFade", audio.Calls[1]);
     }
 

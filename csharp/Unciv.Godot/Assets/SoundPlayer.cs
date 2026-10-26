@@ -1,16 +1,15 @@
 using Godot;
 using Unciv.Assets;
-using Unciv.Logic;
 using Unciv.Models;
 
 namespace Unciv.GodotClient.Assets;
 
 /// <summary>
 /// C030: plays <see cref="UncivSound"/>s through a small pool of players on the master bus (whose level the options screen sets). The streams come from
-/// <see cref="AssetRegistry.Sound"/>, so a dropped-in <c>assets/override/sound/&lt;name&gt;.ogg</c> replaces the generated tones. It is also the client's
-/// <see cref="IClientAudio"/>: every non-empty sound name has a stream, music selection is ignored (no music yet).
+/// <see cref="AssetRegistry.Sound"/>, so a dropped-in <c>assets/override/sound/&lt;name&gt;.ogg</c> replaces the generated tones. C057: the game screen plays the engine's
+/// <c>SoundRequested</c> cues through it (<see cref="PlaySound"/>); every non-empty sound name has a stream, music is not played yet.
 /// </summary>
-public sealed partial class SoundPlayer : Node, IClientAudio
+public sealed partial class SoundPlayer : Node
 {
     public const int Voices = 8;
 
@@ -47,9 +46,4 @@ public sealed partial class SoundPlayer : Node, IClientAudio
     public int PlayingVoices => voices.Count(it => it.Playing);
 
     public void PlaySound(string soundName) => Play(new UncivSound(soundName));
-
-    public void ChooseMusic(string prefix, IReadOnlyList<string> suffixes, IReadOnlyList<string> flags)
-    {
-        // No music yet (C030 placeholder audio: music none).
-    }
 }
