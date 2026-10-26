@@ -189,7 +189,7 @@ flowchart TD
   class C015 done
   class C016 done
   class C026 review
-  class C027 prog
+  class C027 review
   class C029 ready
   class C030 ready
   class C031 prog
@@ -300,7 +300,7 @@ xychart-beta
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
-| C027 | In-Progress [Claude] | C005, C025 | 0 | Tooltips and Civilopedia |
+| C027 | In-Review [Claude] | C005, C025 | 0 | Tooltips and Civilopedia |
 | C031 | In-Progress [Claude] | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
 | C033 | In-Progress [Claude] | C004 | 0 | Unit animation and combat presentation |
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
