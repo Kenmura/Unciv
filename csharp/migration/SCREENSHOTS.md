@@ -618,7 +618,7 @@ Scenario `proposals`.
 
 *The next turn: the outcomes of our offers are reported (taken back, accepted by Greece).* (`proposals/answered.png`)
 
-## C040 (ticket not Done or unknown)
+## C040 Run end-turn processing and AI turns off the UI thread with a next-turn progress overlay
 
 End turn is processed off the UI thread with a progress overlay (civ n of m) that blocks input while the window keeps drawing.
 
@@ -686,7 +686,7 @@ Scenario `menu`.
 
 *After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
 
-## C046 (ticket not Done or unknown)
+## C046 Dev console UI: console popup with history and autocomplete
 
 Developer console popup (backtick) in a God-mode game: Tab completion, history with Up, the engine's response inline; a line that runs is one logged command.
 
