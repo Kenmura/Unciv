@@ -388,6 +388,17 @@ public class TutorialTaskTests
     }
 
     [Fact]
+    public void EveryOfferedChoiceCanBeChosenWithoutTheFirstOnlyUnique()
+    {
+        var task = AddTask("A", "One", TutorialsOn);
+        var second = new EventChoice { Name = "c2", Text = "Two" };
+        second.Uniques.Add("Mark tutorial [A] complete");
+        task.Choices.Add(second);
+        Assert.True(new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).IsValid);
+        Assert.True(new ChooseTutorialTaskChoice { Event = "A", Choice = 1 }.Validate(testGame.GameInfo, player.CivName).IsValid);
+    }
+
+    [Fact]
     public void OnlyTheFirstAvailableChoiceCanBeChosenWhenTheEventSaysSo()
     {
         var task = AddTask("A", "One", TutorialsOn, "Only the first available choice is offered");
