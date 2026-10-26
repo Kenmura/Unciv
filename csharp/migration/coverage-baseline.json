@@ -634,7 +634,7 @@
     "Unciv.Harness/PerceptualHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ReviewIndex.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Harness/ScenarioGame.cs": {"branch": 95.31, "line": 99.24},
+    "Unciv.Harness/ScenarioGame.cs": {"branch": 95.59, "line": 99.31},
     "Unciv.Harness/ScenarioReplay.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0}
   },
