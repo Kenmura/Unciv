@@ -37,6 +37,12 @@ public sealed class TurnTimer
 
     public bool AutoResolve { get; set; }
 
+    /// <summary>Optional interceptor for server commands (e.g. GameHost broadcasting view deltas).</summary>
+    public Func<GameCommand, Unciv.Commands.CommandResult>? ServerCommandSubmitter { get; set; }
+
+    private Unciv.Commands.CommandResult SubmitServer(GameCommand command) =>
+        ServerCommandSubmitter != null ? ServerCommandSubmitter(command) : session.SubmitAsServer(command);
+
     /// <summary>Absolute deadline (epoch milliseconds) for the current turn, or null when the turn timer is off.</summary>
     public long? TurnDeadline { get; private set; }
 
@@ -160,7 +166,7 @@ public sealed class TurnTimer
             {
                 if (state.DisconnectedAt.HasValue && now - state.DisconnectedAt.Value >= policy.DropGraceSeconds * 1000L)
                 {
-                    var result = session.SubmitAsServer(new ForceEndTurn { CivId = civ.CivId });
+                    var result = SubmitServer(new ForceEndTurn { CivId = civ.CivId });
                     if (result.Accepted)
                     {
                         state.ForceEndedByDisconnect = true;
@@ -191,7 +197,7 @@ public sealed class TurnTimer
 
             foreach (var civ in unended)
             {
-                session.SubmitAsServer(new ForceEndTurn { CivId = civ.CivId });
+                SubmitServer(new ForceEndTurn { CivId = civ.CivId });
             }
 
             if (AutoResolve && session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
@@ -251,7 +257,7 @@ public sealed class TurnTimer
                 // SetController refuses if this is the last human player
                 if (HasOtherHumans(civ))
                 {
-                    session.SubmitAsServer(new SetController
+                    SubmitServer(new SetController
                     {
                         CivId = civ.CivId,
                         Controller = PlayerType.AI,
