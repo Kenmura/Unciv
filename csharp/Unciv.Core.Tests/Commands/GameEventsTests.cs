@@ -38,6 +38,7 @@ public sealed class GameEventsTests
         "player-undid-end-turn" => new PlayerUndidEndTurn("Babylon", 3),
         "turn-resolving" => new TurnResolving(3),
         "controller-changed" => new ControllerChanged("Greece", true),
+        "decision-auto-resolved" => new DecisionAutoResolved("Babylon", "Technology", "", "research"),
         "events-truncated" => new EventsTruncated(7),
         "unit-moved" => new UnitMoved("Babylon", 12, "Warrior", [P1, P2]),
         "unit-attacked" => new UnitAttacked("Babylon", 12, null, P1, "Rome", null, "city-1", P2, 31, 10, false, true),

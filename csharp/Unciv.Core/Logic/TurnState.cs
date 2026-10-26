@@ -72,9 +72,28 @@ public sealed class TurnState
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool AutoPlayAllowed { get; set; }
 
+    /// <summary>
+    /// T226: the civ of the host player. Only it (or the server, for a vote the host tallied) may switch a won simultaneous game to one more turn
+    /// (<c>one-more-turn</c>). Null: only the server may.
+    /// </summary>
+    [JsonPropertyName("hostCiv")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? HostCivId { get; set; }
+
+    /// <summary>T226 (lobby setting): a defeated human spectates the whole map (true) or keeps only what it had explored and sees no more (false, default).</summary>
+    [JsonPropertyName("defeatedSeeFullMap")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool DefeatedSeeFullMap { get; set; }
+
+    /// <summary>T226: whether <paramref name="civ"/> is a defeated human of a simultaneous game whose lobby lets defeated players watch the whole map.</summary>
+    public static bool DefeatedSeesWholeMap(Civilization.Civilization civ) =>
+        civ.IsDefeated() && civ.IsHuman() && civ.GameInfo.Turns > 0 && civ.GameInfo is GameInfo { TurnState: { Mode: TurnMode.Simultaneous, DefeatedSeeFullMap: true } };
+
     public TurnState Clone() => new()
     {
         AutoPlayAllowed = AutoPlayAllowed,
+        HostCivId = HostCivId,
+        DefeatedSeeFullMap = DefeatedSeeFullMap,
         Mode = Mode,
         Phase = Phase,
         Ended = [.. Ended],

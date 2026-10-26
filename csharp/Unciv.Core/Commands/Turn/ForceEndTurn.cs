@@ -3,8 +3,9 @@ namespace Unciv.Commands.Turn;
 
 /// <summary>
 /// The server ends a human's turn without asking (timeouts, design/SERVER.md 4.2): <see cref="EndTurn"/> without the pending-decision check.
-/// Nothing else is cleared: the civ's open decisions stay in its state. Simultaneous turns (T202): marks the civ ended like <see cref="EndTurn"/>, the
-/// timer's order (civ index) is the host's.
+/// T226: first the blocking decisions the civ left open are settled the way the AI would, each reported with a <c>decision-auto-resolved</c> event
+/// (<see cref="DefaultDecisions"/>); one that cannot be settled stays in its state. Simultaneous turns (T202): marks the civ ended like <see cref="EndTurn"/>,
+/// the timer's order (civ index) is the host's.
 /// </summary>
 [CommandType("force-end-turn")]
 public sealed class ForceEndTurn : GameCommand, ITimedCommand
@@ -26,6 +27,7 @@ public sealed class ForceEndTurn : GameCommand, ITimedCommand
 
     protected override IReadOnlyList<GameEvent> ApplyCommand(CommandContext context)
     {
-        return context.EndTurnOf(context.Civ(CivId).Value.NotNull(), Now);
+        var civ = context.Civ(CivId).Value.NotNull();
+        return [.. DefaultDecisions.Resolve(civ), .. context.EndTurnOf(civ, Now)];
     }
 }

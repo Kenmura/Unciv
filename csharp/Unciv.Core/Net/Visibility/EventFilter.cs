@@ -69,6 +69,7 @@ public static class EventFilter
         [typeof(SoundRequested)] = ParticipantsOnly,
         [typeof(ResearchCompleted)] = ParticipantsOnly,
         [typeof(PolicyAdopted)] = ParticipantsOnly,
+        [typeof(DecisionAutoResolved)] = ParticipantsOnly,
 
         // Wars and peace are public facts for civs that know both parties (design/SERVER.md section 3); trades are private to the two parties.
         [typeof(WarDeclared)] = KnownToBothParties,

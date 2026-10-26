@@ -582,7 +582,7 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
     /// GameInfo.turns &gt; 0 guards against the setup phase, where every civ is briefly "defeated" (zero units) before starting units are placed.
     /// </summary>
     public bool HasSpectatorVision() => IsSpectator()
-        || (IsDefeated() && IsCurrentPlayer() && !GameInfo.GameParameters.IsOnlineMultiplayer && GameInfo.Turns > 0);
+        || (IsDefeated() && IsCurrentPlayer() && !GameInfo.GameParameters.IsOnlineMultiplayer && GameInfo.Turns > 0) || TurnState.DefeatedSeesWholeMap(this);
 
     public bool HasMetCivTerritory(Civilization otherCiv) =>
         otherCiv.GetCivTerritory().Any(it => GameInfo.TileMap[it].IsExplored(this));
@@ -1317,7 +1317,7 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
     /// <summary>Reveals the entire map to a human player defeated in a singleplayer game, so they can watch the game play out.</summary>
     public void RevealMapWhenDefeated()
     {
-        if (GameInfo.GameParameters.IsOnlineMultiplayer || !IsCurrentPlayer()) return;
+        if (!TurnState.DefeatedSeesWholeMap(this) && (GameInfo.GameParameters.IsOnlineMultiplayer || !IsCurrentPlayer())) return;
         foreach (var tile in GameInfo.TileMap.Values) tile.SetExplored(this, true);
     }
 

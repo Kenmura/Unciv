@@ -231,6 +231,8 @@ public sealed class SimultaneousCommandTests : IDisposable
         var session = Session(game);
         game.VictoryData = new VictoryData { WinningCiv = "Greece", VictoryType = "Scientific", VictoryTurn = 1 };
         Rejected(session, session.Submit("Babylon", new EndTurn()), CommandErrors.GameOver);
+        Rejected(session, session.Submit("Babylon", new OneMoreTurn()), CommandErrors.NotAllowed); // T226: only the host decides
+        game.TurnState!.HostCivId = "Babylon";
         Ok(session.Submit("Babylon", new OneMoreTurn()));
         Settle(game, "Babylon");
         Ok(session.Submit("Babylon", new EndTurn()));
