@@ -179,7 +179,7 @@ flowchart TD
   class T225 waiting
   class T230 done
   class T239 blocked
-  class T241 prog
+  class T241 review
   class T242 prog
   class T243 prog
 ```
@@ -223,6 +223,6 @@ xychart-beta
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
 | T239 | Blocked | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
-| T241 | In-Progress [Antigravity] | T223 | 0 | Remote query exposure residuals: live stats of unmet civs, fogged-city names, spectator reach |
+| T241 | Needs-Review [Antigravity] | T223 | 0 | Remote query exposure residuals: live stats of unmet civs, fogged-city names, spectator reach |
 | T242 | In-Progress [Claude] | T203 | 0 | Two-human conflict tests: one-per-game wonder race, ruins, religion founding and belief limits |
 | T243 | In-Progress [Claude] | T203 | 0 | Real-started-game visibility test for two humans: B's mirror never holds A-only tiles/units across a simultaneous round |

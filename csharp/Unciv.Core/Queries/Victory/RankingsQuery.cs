@@ -22,7 +22,7 @@ public sealed record RankingsQuery : IQuery<IReadOnlyList<RankingColumn>>
         VictoryQueryHelpers.RequireTab(game, viewer, game.GameParameters.ShowRankings, "Rankings");
         var civs = VictoryQueryHelpers.MajorCivs(game).Where(it => VictoryQueryHelpers.CanViewCivStats(game, viewer, it)).ToList();
         return VictoryQueryHelpers.Categories(game).Select(category => new RankingColumn(category.ToString(), category.Label(),
-            civs.Select(it => (Civ: it, Value: it.GetStatForRanking(category)))
+            civs.Select(it => (Civ: it, Value: VictoryQueryHelpers.StatForRanking(viewer, it, category)))
                 .OrderByDescending(it => it.Civ.IsDefeated() ? int.MinValue : it.Value)
                 .ThenBy(it => it.Civ.CivName, StringComparer.Ordinal)
                 .Select(it => new RankingEntry(VictoryQueryHelpers.Ref(viewer, it.Civ), it.Value)).ToList())).ToList();

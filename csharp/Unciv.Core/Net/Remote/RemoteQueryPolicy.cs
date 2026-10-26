@@ -72,14 +72,14 @@ public sealed class RemoteQueryPolicy
         ["empire.DiplomacyActions"] = QueryExposure.Allow("only civs the viewer knows (KnownCiv); " + ViewOnly),
         ["empire.DiplomacyPanel"] = QueryExposure.Allow("only civs the viewer knows (KnownCiv); " + ViewOnly),
         ["empire.DiplomaticVote"] = QueryExposure.Allow("viewer's own pending vote and the civs it knows"),
-        ["empire.DiplomaticVoteResult"] = QueryExposure.Allow("rows, vote targets, winner text and UN owner of unmet civs are dropped or anonymised"),
+        ["empire.DiplomaticVoteResult"] = QueryExposure.Allow("rows, vote targets, winner text and UN owner of unmet civs are dropped or anonymised; total votes received by candidates are public election totals"),
         ["empire.GreatPeople"] = QueryExposure.Allow("viewer's own great people; " + ViewOnly),
         ["empire.Notifications"] = QueryExposure.Allow("viewer's own notifications"),
         ["empire.Overview"] = QueryExposure.Allow("viewer's own empire; other civs only as the GameParameters.ShowRankings setting allows, as in Kotlin", QueryExposure.Moderate),
         ["empire.PendingDecisions"] = QueryExposure.Allow("viewer's own alerts and pending choices"),
         ["empire.PolicyTree"] = QueryExposure.Allow("viewer's own policies; ruleset data", QueryExposure.Moderate),
         ["empire.Religion"] = QueryExposure.Allow("viewer's own religion and the public founded religions", QueryExposure.Moderate),
-        ["empire.SpyDestinations"] = QueryExposure.Allow("only explored cities; a city owner is named only when known (raw GetCities is filtered by the viewer's explored tiles)"),
+        ["empire.SpyDestinations"] = QueryExposure.Allow("only explored cities (matches Spy.CanMoveTo: an explored tile is sufficient to send undercover spies even in fog of war); owner is omitted when unmet"),
         ["empire.TechTree"] = QueryExposure.Allow("viewer's own research; ruleset data", QueryExposure.Moderate),
         ["empire.TopBar"] = QueryExposure.Allow("viewer's own treasury and rates"),
         ["empire.TradeHint"] = QueryExposure.AllowBudgeted("only civs the viewer knows (KnownCiv, through the view's known civs), only offers TradeOptions lists, answer is a 3-way bucket and never the score; off unless the host enabled TradeHintsEnabled; a per-civ ask budget stops bisecting the AI's valuation with gold offers"),
@@ -102,9 +102,9 @@ public sealed class RemoteQueryPolicy
         // ---- victory
         ["victory.Demographics"] = QueryExposure.Allow("standings of other civs only when the game lets the viewer see them (CanViewCivStats); unmet civs are anonymous", QueryExposure.Moderate),
         ["victory.GameOver"] = QueryExposure.Allow("answers only once the game has ended or for the viewer's own defeat"),
-        ["victory.History"] = QueryExposure.Allow("series of other civs only when CanViewCivStats; unmet civs are anonymous", QueryExposure.Moderate),
+        ["victory.History"] = QueryExposure.Allow("series of other civs only when CanViewCivStats; other civs omit mid-turn points during an active game to prevent mid-turn probing; unmet civs are anonymous", QueryExposure.Moderate),
         ["victory.Progress"] = QueryExposure.Allow("rival rows only for civs the viewer knows, itself or defeated ones and only when CanViewCivStats; unmet civs are not listed, the hidden-civ-count rule uses the viewer's knowledge", QueryExposure.Moderate),
-        ["victory.Rankings"] = QueryExposure.Allow("rows of other civs only when CanViewCivStats; unmet civs are anonymous", QueryExposure.Moderate),
+        ["victory.Rankings"] = QueryExposure.Allow("rows of other civs only when CanViewCivStats; other civs use frozen turn-snapshot stats during an active game to prevent mid-turn probing; unmet civs are anonymous", QueryExposure.Moderate),
         ["victory.Scores"] = QueryExposure.Allow("rows of other civs only when CanViewCivStats; unmet civs are anonymous", QueryExposure.Moderate),
     });
 }

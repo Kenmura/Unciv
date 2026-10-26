@@ -288,6 +288,25 @@ public class VictoryQueryTests
     }
 
     [Fact]
+    public void RankingsUsesSnapshotForOtherCivsMidTurn()
+    {
+        testGame.GameInfo.Turns = 4;
+        player.StatsHistory[3] = Stats(10);
+        enemy.StatsHistory[3] = Stats(30);
+        stranger.StatsHistory[4] = Stats(20);
+        enemy.AddGold(9999 - enemy.Gold); // mid-turn change must not leak to viewer
+        player.AddGold(50 - player.Gold); // viewer sees own live value
+        var gold = Ask(new RankingsQuery()).Single(it => it.Type == "Gold");
+        Assert.Equal(30, gold.Entries.Single(it => it.Civ.CivName == enemy.CivName).Value);
+        Assert.Equal(50, gold.Entries.Single(it => it.Civ.CivName == player.CivName).Value);
+
+        // After game ends, live values are visible to all
+        testGame.GameInfo.VictoryData = new VictoryData(enemy, "Domination", 4);
+        var afterGame = Ask(new RankingsQuery()).Single(it => it.Type == "Gold");
+        Assert.Equal(9999, afterGame.Entries.Single(it => it.Civ.CivName == enemy.CivName).Value);
+    }
+
+    [Fact]
     public void RankingsAreNotAvailableWhenTheTabIsOff()
     {
         testGame.GameInfo.GameParameters.ShowRankings = false;
@@ -434,6 +453,50 @@ public class VictoryQueryTests
         player.StatsHistory[0] = Stats(1);
         enemy.StatsHistory[0] = Stats(1);
         Assert.True(Assert.Single(Ask(new HistoryQuery()).Series).Civ.IsViewer);
+    }
+
+    [Fact]
+    public void HistoryOmitsCurrentTurnLivePointForOtherCivsMidTurn()
+    {
+        testGame.GameInfo.Turns = 4;
+        player.StatsHistory[3] = Stats(10);
+        enemy.StatsHistory[3] = Stats(30);
+        enemy.AddGold(9999 - enemy.Gold);
+        player.AddGold(50 - player.Gold);
+
+        var result = Ask(new HistoryQuery("Gold"));
+        var enemySeries = result.Series.Single(it => it.Civ.CivName == enemy.CivName);
+        var playerSeries = result.Series.Single(it => it.Civ.CivName == player.CivName);
+
+        // Enemy points stop at turn 3 (value 30) - no live turn 4 point added mid-turn
+        Assert.DoesNotContain(enemySeries.Points, it => it.Turn == 4);
+        Assert.Equal(30, enemySeries.Points.Single(it => it.Turn == 3).Value);
+
+        // Player's own series includes the live turn 4 point
+        var playerTurn4 = Assert.Single(playerSeries.Points, it => it.Turn == 4);
+        Assert.Equal(50, playerTurn4.Value);
+
+        // For spectator or after game over, other civs also get the live turn 4 point
+        var spectator = testGame.AddCiv(testGame.Ruleset.Nations[Constants.Spectator]);
+        var specResult = Ask(new HistoryQuery("Gold"), spectator);
+        var specEnemySeries = specResult.Series.Single(it => it.Civ.CivName == enemy.CivName);
+        Assert.Contains(specEnemySeries.Points, it => it.Turn == 4 && it.Value == 9999);
+    }
+
+    [Fact]
+    public void SpectatorsBypassStatHidingAndTabHiding()
+    {
+        testGame.GameInfo.GameParameters.HideOtherCivilizationStats = true;
+        testGame.GameInfo.GameParameters.ShowRankings = false;
+        testGame.GameInfo.GameParameters.ShowCharts = false;
+        testGame.GameInfo.GameParameters.ShowDemographics = false;
+
+        player.StatsHistory[1] = Stats(1);
+        var spectator = testGame.AddCiv(testGame.Ruleset.Nations[Constants.Spectator]);
+        // Spectator can view all tabs even when disabled by game parameters
+        Assert.NotEmpty(Ask(new RankingsQuery(), spectator));
+        Assert.NotEmpty(Ask(new DemographicsQuery(), spectator));
+        Assert.NotEmpty(Ask(new HistoryQuery(), spectator).Series);
     }
 
     [Fact]

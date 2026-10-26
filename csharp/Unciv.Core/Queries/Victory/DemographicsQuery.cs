@@ -27,7 +27,7 @@ public sealed record DemographicsQuery : IQuery<IReadOnlyList<DemographicColumn>
         var columns = new List<DemographicColumn>();
         foreach (var category in VictoryQueryHelpers.Categories(game))
         {
-            var sorted = majors.Select(it => (Civ: it, Value: StatForDemographics(it, category))).OrderByDescending(it => it.Value).ToList();
+            var sorted = majors.Select(it => (Civ: it, Value: VictoryQueryHelpers.StatFromHistory(it, category))).OrderByDescending(it => it.Value).ToList();
             RankingEntry Entry((Civilization Civ, int Value) it) => new(VictoryQueryHelpers.Ref(viewer, it.Civ), it.Value);
             bool hasViewer = sorted.Any(it => ReferenceEquals(it.Civ, viewer));
             var own = hasViewer && !viewer.IsDefeated() && viewer.IsMajorCiv() ? Entry(sorted.First(it => ReferenceEquals(it.Civ, viewer))) : null;
@@ -37,15 +37,5 @@ public sealed record DemographicsQuery : IQuery<IReadOnlyList<DemographicColumn>
                 sorted.Count == 0 ? null : Entry(sorted[0]), average, sorted.Count == 0 ? null : Entry(sorted[^1])));
         }
         return columns;
-    }
-
-    // Kotlin Civilization.getStatForDemographics: this turn's snapshot, else the latest one, else the live value.
-    private static int StatForDemographics(Civilization civ, RankingType category)
-    {
-        var history = civ.StatsHistory;
-        IReadOnlyDictionary<RankingType, int>? snapshot = null;
-        if (history.TryGetValue(civ.GameInfo.Turns, out var current)) snapshot = current;
-        else if (history.Count > 0) snapshot = history.MaxBy(it => it.Key).Value;
-        return snapshot != null && snapshot.TryGetValue(category, out int value) ? value : civ.GetStatForRanking(category);
     }
 }

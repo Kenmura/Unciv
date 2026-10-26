@@ -37,7 +37,7 @@ public sealed record HistoryQuery(string Category = nameof(RankingType.Score), i
                 .OrderBy(it => it.Key)
                 .Select(it => new HistoryPoint(it.Key, it.Value[category])).ToList();
             if (points.Count == 0) continue;
-            if (!civ.IsDefeated() && InZoom(game.Turns))
+            if (!civ.IsDefeated() && InZoom(game.Turns) && (ReferenceEquals(civ, viewer) || viewer.IsSpectator() || game.VictoryData != null))
                 points.Add(new HistoryPoint(game.Turns, civ.GetStatForRanking(category)));
             series.Add(new HistorySeries(VictoryQueryHelpers.Ref(viewer, civ), points));
         }

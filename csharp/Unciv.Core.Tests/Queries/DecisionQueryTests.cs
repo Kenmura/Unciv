@@ -493,4 +493,22 @@ public class DecisionQueryTests
         Assert.True(Ask(new DiplomaticVoteResultQuery()).Show);
         Assert.False(Execute(new DiplomaticVoteResultQuery(), enemy.CivName).Result!.Value.Deserialize<DiplomaticVoteBreakdownResult>(UncivJson.DefaultOptions)!.Show);
     }
+
+    [Fact]
+    public void VoteResultIncludesVotesFromUnmetVotersForListedCivs()
+    {
+        ShowResult();
+        // Stranger is an unmet civ. Stranger votes for enemy.
+        Votes[stranger.CivId] = enemy.CivId;
+        Votes[player.CivId] = player.CivId;
+        Votes[enemy.CivId] = enemy.CivId;
+        var result = Ask(new DiplomaticVoteResultQuery());
+        // Stranger is not listed in Rows because viewer has not met stranger
+        Assert.DoesNotContain(result.Rows, it => it.CivName == stranger.CivName);
+        // Enemy received 2 votes (one from enemy self, one from stranger)
+        var enemyRow = result.Rows.Single(it => it.CivName == enemy.CivName);
+        Assert.Equal(2, enemyRow.Votes);
+        // Stranger is not leaked in winner text
+        Assert.DoesNotContain(stranger.CivName, result.WinnerText);
+    }
 }
