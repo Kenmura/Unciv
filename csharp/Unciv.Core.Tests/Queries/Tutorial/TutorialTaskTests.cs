@@ -408,4 +408,39 @@ public class TutorialTaskTests
         Assert.True(new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Validate(testGame.GameInfo, player.CivName).IsValid);
         Assert.False(new ChooseTutorialTaskChoice { Event = "A", Choice = 1 }.Validate(testGame.GameInfo, player.CivName).IsValid);
     }
+    [Fact]
+    public void ChoicesWithGameEffectsCannotBeChosenThroughTheTutorialCommand()
+    {
+        // review C060: a Floating Event is no pending offer the engine tracks, so a choice with real effects could be fired repeatedly by a forged request
+        var task = AddTask("Reward", "Take it", TutorialsOn, "Unavailable <if tutorial [Reward] is completed>");
+        task.Choices[0].Uniques.Add("Gain [100] [Gold]");
+        var cmd = new ChooseTutorialTaskChoice { Event = "Reward", Choice = 0 };
+        var gold = player.Gold;
+        Assert.Equal(CommandErrors.InvalidTarget, cmd.Validate(testGame.GameInfo, player.CivName).Code);
+        Assert.Equal(gold, player.Gold);
+    }
+
+    [Fact]
+    public void ReplayingTheSameChoiceOnAFreshGameGivesTheSameHash()
+    {
+        AddTask("A", "Got it", TutorialsOn, "Unavailable <if tutorial [A] is completed>").Choices[0].Uniques.Add("Mark tutorial [A] complete");
+        var cmd = new ChooseTutorialTaskChoice { Event = "A", Choice = 0 };
+        cmd.Apply(testGame.GameInfo, player.CivName);
+        var fresh = new TutorialTaskTests();
+        fresh.AddTask("A", "Got it", TutorialsOn, "Unavailable <if tutorial [A] is completed>").Choices[0].Uniques.Add("Mark tutorial [A] complete");
+        cmd.Apply(fresh.testGame.GameInfo, fresh.player.CivName);
+        Assert.Equal(Hash(testGame.GameInfo), Hash(fresh.testGame.GameInfo));
+    }
+
+    [Fact]
+    public void AppliedChoiceIgnoresTheHostsCompletedSet()
+    {
+        var task = AddTask("A", "Got it", TutorialsOn);
+        task.Choices[0].Uniques.Add("Mark tutorial [B] complete <if tutorial [Z] is completed>");
+        task.Choices[0].Uniques.Add("Mark tutorial [C] complete <if tutorials are enabled>");
+        testGame.GameInfo.ClientState.AddCompletedTutorialTask(player.CivName, "Z"); // only the host knows this
+        new ChooseTutorialTaskChoice { Event = "A", Choice = 0 }.Apply(testGame.GameInfo, player.CivName);
+        Assert.DoesNotContain("B", testGame.GameInfo.ClientState.TutorialTasksCompleted(player.CivName)); // judged as a fresh replayer would
+        Assert.Contains("C", testGame.GameInfo.ClientState.TutorialTasksCompleted(player.CivName)); // applied under the neutral settings (tutorials on), whatever the process-wide settings are
+    }
 }

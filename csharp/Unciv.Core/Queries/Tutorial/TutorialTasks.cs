@@ -41,7 +41,7 @@ internal static class TutorialTasks
 
     /// <summary>
     /// C060: the choice button <paramref name="index"/> (an index into <see cref="Event.Choices"/>) of the floating Event <paramref name="eventName"/>, or null when
-    /// there is no such floating Event or the choice is not offered. Unlike <see cref="Current"/> this reads no client state (the completed set is not hashed or
+    /// there is no such floating Event or the choice is not offered or has an effect other than marking a tutorial complete. Unlike <see cref="Current"/> this reads no client state (the completed set is not hashed or
     /// saved, so a peer replaying a log tail or a loaded save has none): choices are judged under <see cref="NeutralSettings"/>.
     /// </summary>
     public static EventChoice? ChoiceFor(Civilization actor, string eventName, int index)
@@ -52,7 +52,11 @@ internal static class TutorialTasks
         var context = new GameContext(actor);
         var matching = ev.Choices.Where(it => ((IHasUniques)it).IsAvailable(context)).ToList();
         if (matching.Count != 0 && ((IHasUniques)ev).HasUnique(UniqueType.OnlyFirstAvailableChoiceIsChosen, context)) matching = [matching[0]];
-        return matching.Contains(ev.Choices[index]) ? ev.Choices[index] : null;
+        var choice = ev.Choices[index];
+        // Review C060: nothing tracks that a Floating Event is still on offer (the completed set is client state), so a choice with real game effects would be
+        // repeatable by a forged request. The tutorial command may therefore only fire client-state triggers ("Mark tutorial [task] complete").
+        if (choice.UniqueObjects.Any(it => it.IsTriggerable && it.Type != UniqueType.MarkTutorialComplete)) return null;
+        return matching.Contains(choice) ? choice : null;
     }
 
     /// <summary>The settings under which a command is validated and applied: tutorials on, nothing completed. Constant, so every peer decides alike.</summary>
