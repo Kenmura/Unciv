@@ -592,7 +592,7 @@ Scenario `decisions`.
 
 *The promotion picker for the warrior: experience line, promotions it may take, the default-promotion checkbox and Take promotion.* (`decisions/promotion.png`)
 
-## C039 (ticket not Done or unknown)
+## C039 Incoming proposal popups: trade, peace and friendship requests from AI (and other humans), proposer's pending/declined/withdrawn state
 
 Incoming proposal popups: peace and trade proposals from AI civs with accept, decline, counter and decide later, and the status of our own outstanding offers.
 
@@ -800,7 +800,7 @@ Scenario `espionage`.
 
 *Assign spies: the multi-spy picker over the screen with the second spy chosen to return to the hideout.* (`espionage/assign.png`)
 
-## C052 (ticket not Done or unknown)
+## C052 Scenario coverage for religion (found, enhance, reform), spy and vote pickers, and open pickers from notifications
 
 Religion, spy and vote pickers: found and enhance a religion with the prophets' unit actions, the reform picker (scenario decisions-reform), the move-spies picker opened from a spy notification, the World Congress vote and the promotion picker opened from a notification.
 
