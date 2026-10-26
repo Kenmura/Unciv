@@ -218,4 +218,14 @@ public sealed class ViewerSessionFlowTests
         Assert.True(flow.EndTurn().Accepted);
         Assert.Equal(0, session.Game.PendingAutoPlayerCount());
     }
+
+    [Fact]
+    public void PendingAutoPlayerCount_IsAtMostOneFullRound()
+    {
+        // review C040: when every civ is processed automatically (a simulation) the count stops at one round instead of looping forever
+        var (session, flow) = NewFlow();
+        flow.EndTurn(null, new CancellationToken(true));
+        session.Game.EngineOptions.SimulateUntilTurn = session.Game.Turns + 5;
+        Assert.Equal(session.Game.Civilizations.Count, session.Game.PendingAutoPlayerCount());
+    }
 }
