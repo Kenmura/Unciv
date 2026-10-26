@@ -337,6 +337,7 @@ public sealed class NetPersistenceTests : IDisposable
         Assert.Equal(snapshotSeq, opened.Report.SnapshotSeq);
         Assert.Equal(snapshotSeq, opened.Store.LastSeq);
         Assert.NotNull(opened.Report.DivergedAtSeq);
+        Assert.Equal(live.Session.LastSeq - snapshotSeq, opened.Report.DiscardedCommands); // what the fallback threw away is reported, not silent
         Assert.Equal(atSnapshot, Hash(opened.Session.Game));
         Assert.Single(Directory.GetFiles(Path.Combine(live.Directory, "corrupt"), "diverged-after-*"));
         // A client that was ahead gets a fresh snapshot, and the game goes on from the snapshot.
@@ -767,5 +768,482 @@ public sealed class NetPersistenceTests : IDisposable
         Play(live, 3, snapshot: true);
         using var opened = Reopen(live, new StoreOptions { SnapshotEveryTurns = 5 });
         Assert.False(opened.Store.MaybeSnapshot(opened.Session.Game));
+    }
+
+    // ------------------------------------------------------------------ T176 review: crashes at every offset, hostile files, concurrency
+
+    private static void CopyDirectory(string from, string to)
+    {
+        Directory.CreateDirectory(to);
+        foreach (var file in Directory.GetFiles(from)) File.Copy(file, Path.Combine(to, Path.GetFileName(file)));
+    }
+
+    // The seq of the last complete, parseable line in the bytes (command or checkpoint), -1 when none: an independent reading of what survived a cut.
+    private static long SurvivingSeq(byte[] bytes, int headerLength)
+    {
+        var text = Encoding.UTF8.GetString(bytes[headerLength..]);
+        var complete = text[..(text.LastIndexOf('\n') + 1)];
+        long last = -1;
+        foreach (var line in complete.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            using var document = JsonDocument.Parse(line);
+            last = document.RootElement.TryGetProperty("seq", out var seq) ? seq.GetInt64() : document.RootElement.GetProperty("checkpoint").GetInt64();
+        }
+        return last;
+    }
+
+    [Fact]
+    public void ACrashAtAnyByteOffsetOfTheLogRecoversTheLongestVerifiedPrefix()
+    {
+        var live = Start();
+        Play(live, 4, snapshot: true);
+        Play(live, 5);
+        live.Store.Dispose();
+        var full = File.ReadAllBytes(LogPath(live));
+        var headerLength = Array.IndexOf(full, (byte)'\n') + 1;
+        var lineStarts = new List<int>();
+        for (var i = headerLength; i < full.Length; i++)
+            if (i == headerLength || full[i - 1] == (byte)'\n') lineStarts.Add(i);
+
+        var offsets = new SortedSet<int>();
+        for (var i = 0; i <= headerLength; i += 41) offsets.Add(i);
+        offsets.Add(headerLength - 1);
+        offsets.Add(headerLength);
+        foreach (var start in lineStarts)
+            foreach (var delta in new[] { -2, -1, 0, 1, 2 })
+                if (start + delta >= headerLength && start + delta <= full.Length) offsets.Add(start + delta);
+        for (var i = headerLength; i < full.Length; i += 53) offsets.Add(i);
+        offsets.Add(full.Length);
+
+        var referenceHashes = new Dictionary<long, ulong>();
+        var work = Path.Combine(root, "crash");
+        foreach (var offset in offsets)
+        {
+            if (Directory.Exists(work)) Directory.Delete(work, true);
+            CopyDirectory(live.Directory, work);
+            File.WriteAllBytes(Path.Combine(work, "commands.log"), full[..offset]);
+
+            if (offset <= headerLength - 1)
+            {
+                // The header is written atomically with the file, so a log without it is not a crash state: it must still fail cleanly.
+                Assert.Throws<GameStoreException>(() => FileGameStore.Open(work));
+                continue;
+            }
+
+            using var opened = FileGameStore.Open(work);
+            var expected = System.Math.Max(0, SurvivingSeq(full[..offset], headerLength));
+            Assert.Equal(expected, opened.Store.LastSeq);
+            Assert.Equal(RecoveryOutcome.Recovered, opened.Report.Outcome);
+            if (!referenceHashes.TryGetValue(expected, out var reference))
+            {
+                // Independent of snapshots: replay the surviving lines from the header.
+                var prefix = Encoding.UTF8.GetString(full[..offset]);
+                prefix = prefix[..(prefix.LastIndexOf('\n') + 1)];
+                reference = ReplayVerifier.Verify(CommandLogReader.Read(prefix)).FinalHash;
+                referenceHashes[expected] = reference;
+            }
+            Assert.Equal(reference, Hash(opened.Session.Game));
+            Assert.True(File.ReadAllBytes(Path.Combine(work, "commands.log")).Length <= offset);
+        }
+        Assert.True(offsets.Count > 60, "the survey must be wide: " + offsets.Count);
+    }
+
+    [Fact]
+    public void ACrashDuringACheckpointOrSnapshotWriteAtAnyOffsetNeverLosesTheGame()
+    {
+        var live = Start();
+        Play(live, 4, snapshot: true);
+        Play(live, 3, snapshot: true);
+        live.Store.Dispose();
+        var finalHash = Hash(live.Session.Game);
+        var work = Path.Combine(root, "hostile");
+        foreach (var name in Directory.GetFiles(live.Directory, "snapshot-*").Select(Path.GetFileName).OfType<string>())
+        {
+            var original = File.ReadAllBytes(Path.Combine(live.Directory, name));
+            var offsets = Enumerable.Range(0, 30).Select(i => i * (original.Length - 1) / 29).Concat([0, 1, original.Length - 1]).Distinct().ToList();
+            foreach (var offset in offsets)
+            {
+                foreach (var mode in new[] { "truncate", "flip", "zero-tail" })
+                {
+                    if (Directory.Exists(work)) Directory.Delete(work, true);
+                    CopyDirectory(live.Directory, work);
+                    var damaged = (byte[])original.Clone();
+                    var bytes = mode switch
+                    {
+                        "truncate" => damaged[..offset],
+                        "flip" => Flip(damaged, offset),
+                        _ => ZeroTail(damaged, offset),
+                    };
+                    File.WriteAllBytes(Path.Combine(work, name), bytes);
+
+                    using var opened = FileGameStore.Open(work);
+                    Assert.Equal(finalHash, Hash(opened.Session.Game));
+                    Assert.Equal(live.Session.LastSeq, opened.Store.LastSeq);
+                }
+            }
+        }
+
+        static byte[] Flip(byte[] bytes, int at)
+        {
+            bytes[at] ^= 0x55;
+            return bytes;
+        }
+
+        static byte[] ZeroTail(byte[] bytes, int at)
+        {
+            Array.Clear(bytes, at, bytes.Length - at);
+            return bytes;
+        }
+    }
+
+    [Fact]
+    public void ACorruptOrMissingGameJsonOrAJunkCleanMarkerFailsCleanlyOrIsIgnored()
+    {
+        var live = Start();
+        Play(live, 3, snapshot: true);
+        live.Store.Dispose();
+        var meta = File.ReadAllBytes(Path.Combine(live.Directory, "game.json"));
+        var work = Path.Combine(root, "meta");
+        for (var offset = 0; offset < meta.Length; offset += 11)
+        {
+            if (Directory.Exists(work)) Directory.Delete(work, true);
+            CopyDirectory(live.Directory, work);
+            File.WriteAllBytes(Path.Combine(work, "game.json"), meta[..offset]);
+            Assert.Throws<GameStoreException>(() => FileGameStore.Open(work));
+        }
+        File.Delete(Path.Combine(work, "game.json"));
+        Assert.Throws<GameStoreException>(() => FileGameStore.Open(work));
+
+        CopyDirectory(live.Directory, work + "2");
+        File.WriteAllBytes(Path.Combine(work + "2", "clean"), [0xFF, 0xFE, 0, 1]);
+        using var opened = FileGameStore.Open(work + "2");
+        Assert.False(opened.Report.WasCleanShutdown);
+        Assert.Equal(Hash(live.Session.Game), Hash(opened.Session.Game));
+    }
+
+    [Fact]
+    public void ACrashBetweenCreatingTheMetaAndTheLogLeavesADirectoryCreateAcceptsAgain()
+    {
+        var live = Start();
+        live.Store.Dispose();
+        File.Delete(Path.Combine(live.Directory, "commands.log")); // the log is the last thing Create writes
+        Assert.Throws<GameStoreException>(() => FileGameStore.Open(live.Directory)); // not a game yet, and says so cleanly
+        var setup = Setup();
+        using var again = FileGameStore.Create(live.Directory, "g1", CommandLogHeader.Create(setup, 9L, 1000L, null, Secret), new GameMeta());
+        Assert.Equal(0, again.LastSeq);
+    }
+
+    [Fact]
+    public void StoreFilesAreOwnerOnlyBecauseGameJsonAndTheLogHeaderHoldTheHostSecret()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        var live = Start(new StoreOptions { RotateLogBytes = 1 });
+        Play(live, 3, snapshot: true); // rotates: history/ holds a copy of the header too
+        File.AppendAllText(LogPath(live), "garbage\n");
+        live.Store.Dispose();
+        using var opened = FileGameStore.Open(live.Directory); // creates corrupt/
+        const UnixFileMode fileMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+        const UnixFileMode directoryMode = fileMode | UnixFileMode.UserExecute;
+        foreach (var file in Directory.GetFiles(live.Directory, "*", SearchOption.AllDirectories))
+            Assert.True(File.GetUnixFileMode(file) == fileMode, file + " is " + File.GetUnixFileMode(file));
+        Assert.Equal(directoryMode, File.GetUnixFileMode(live.Directory));
+        foreach (var dir in Directory.GetDirectories(live.Directory)) Assert.Equal(directoryMode, File.GetUnixFileMode(dir));
+        Assert.Contains(Directory.GetDirectories(live.Directory), it => it.EndsWith("history", StringComparison.Ordinal));
+        Assert.Contains(Directory.GetDirectories(live.Directory), it => it.EndsWith("corrupt", StringComparison.Ordinal));
+        opened.Store.HostSecret = Secret; // rewrites game.json: the mode survives
+        Assert.Equal(fileMode, File.GetUnixFileMode(Path.Combine(live.Directory, "game.json")));
+    }
+
+    // A stream that fails the way a full disk does: part of the write lands, then IOException.
+    private sealed class FlakyStream(Stream inner) : Stream
+    {
+        public bool FailNextWrite { get; set; }
+
+        public bool FailSetLength { get; set; }
+
+        public override bool CanRead => false;
+
+        public override bool CanSeek => true;
+
+        public override bool CanWrite => true;
+
+        public override long Length => inner.Length;
+
+        public override long Position
+        {
+            get => inner.Position;
+            set => inner.Position = value;
+        }
+
+        public override void Flush() => inner.Flush();
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
+
+        public override void SetLength(long value)
+        {
+            if (FailSetLength) throw new IOException("cannot truncate");
+            inner.SetLength(value);
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if (!FailNextWrite)
+            {
+                inner.Write(buffer, offset, count);
+                return;
+            }
+            FailNextWrite = false;
+            inner.Write(buffer, offset, count / 2);
+            inner.Flush();
+            throw new IOException("No space left on device");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) inner.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+
+    // A store that holds all but the last command of a three-turn game, with its log wrapped so a write can fail.
+    private (FileGameStore Store, FlakyStream Flaky, CommandEnvelope Next, string Path, Live Live) StoreMissingTheLastCommand()
+    {
+        var live = Start();
+        Assert.Equal(3, live.Player.PlayTurns(3));
+        var commands = CommandLogReader.Read(live.Text.ToString()).Lines.OfType<CommandLogLine.Command>().Select(it => it.Envelope).ToList();
+        foreach (var envelope in commands.SkipLast(1)) live.Store.Append(envelope);
+        FlakyStream? flaky = null;
+        live.Store.WrapLog(it => flaky = new FlakyStream(it));
+        return (live.Store, flaky!, commands[^1], LogPath(live), live);
+    }
+
+    [Fact]
+    public void AFailedAppendSurfacesAsAStoreExceptionAndLeavesNoHalfLineBehind()
+    {
+        var (store, flaky, next, path, live) = StoreMissingTheLastCommand();
+        var lengthBefore = new FileInfo(path).Length;
+        flaky.FailNextWrite = true;
+        Assert.Throws<GameStoreException>(() => store.Append(next));
+        Assert.Equal(lengthBefore, new FileInfo(path).Length); // the torn half is gone
+        Assert.Equal(next.Seq - 1, store.LastSeq);
+        store.Append(next, "retry-1"); // the log is still usable, and the retry is what the client does
+        Assert.Equal(next.Seq, store.LastSeq);
+        store.Dispose();
+        using var opened = FileGameStore.Open(live.Directory);
+        Assert.Equal(next.Seq, opened.Store.LastSeq);
+        Assert.Equal(0, opened.Report.DroppedLogLines);
+        Assert.Equal(next.Seq, opened.Store.FindOutcome(next.ActorId, "retry-1")?.Seq);
+    }
+
+    [Fact]
+    public void WhenTheHalfLineCannotBeUndoneTheStoreRefusesFurtherAppendsAndRecoveryCutsItOff()
+    {
+        var (store, flaky, next, path, live) = StoreMissingTheLastCommand();
+        flaky.FailNextWrite = true;
+        flaky.FailSetLength = true;
+        Assert.Throws<GameStoreException>(() => store.Append(next));
+        flaky.FailSetLength = false;
+        var refused = Assert.Throws<GameStoreException>(() => store.Append(next));
+        Assert.Contains("reopen", refused.Message, StringComparison.Ordinal);
+        store.Dispose();
+        Assert.False(File.ReadAllText(path).EndsWith('\n') && File.ReadAllText(path).Split('\n')[^2].Length < 5);
+        using var opened = FileGameStore.Open(live.Directory);
+        Assert.Equal(next.Seq - 1, opened.Store.LastSeq);
+        Assert.Equal(1, opened.Report.DroppedLogLines);
+    }
+
+    [Fact]
+    public void ASnapshotThatRecoveryRejectedIsSetAsideSoItCannotBeTakenForTheNewHistory()
+    {
+        var live = Start(new StoreOptions { KeepSnapshots = 2 });
+        Play(live, 3, snapshot: true);
+        var older = live.Session.LastSeq;
+        Play(live, 3, snapshot: true);
+        var newest = live.Session.LastSeq;
+        live.Store.Dispose();
+        // The log loses its end (a restored backup, a cut from bit rot) while the newest snapshot survives: that snapshot is ahead of the log.
+        var lines = File.ReadAllText(LogPath(live)).TrimEnd('\n').Split('\n');
+        var keep = Array.FindLastIndex(lines, it => it.StartsWith("{\"seq\":" + (older + 1) + ",", StringComparison.Ordinal));
+        File.WriteAllText(LogPath(live), string.Join('\n', lines[..(keep + 1)]) + "\n");
+
+        using var opened = FileGameStore.Open(live.Directory, new StoreOptions { KeepSnapshots = 2 });
+        Assert.Equal(older, opened.Report.SnapshotSeq);
+        Assert.DoesNotContain(Snapshots(live), it => it.Contains(newest.ToString("D12", CultureInfo.InvariantCulture), StringComparison.Ordinal));
+        Assert.Single(Directory.GetFiles(Path.Combine(live.Directory, "corrupt"), "rejected-snapshot-*.json.gz"));
+        Assert.Contains(opened.Report.Notes, it => it.Contains("Set aside rejected snapshot", StringComparison.Ordinal));
+        // The set-aside file is a real snapshot, not lost data: it still loads.
+        Assert.NotNull(UncivFiles.GameInfoFromString(File.ReadAllText(Directory.GetFiles(Path.Combine(live.Directory, "corrupt"), "rejected-snapshot-*").Single())));
+    }
+
+    [Fact]
+    public void ACorruptTailIsNeverOverwrittenByALaterOneAfterTheSameSeq()
+    {
+        var live = Start();
+        Play(live, 3, snapshot: true);
+        live.Store.Dispose();
+        File.AppendAllText(LogPath(live), "first-garbage");
+        FileGameStore.Open(live.Directory).Dispose();
+        File.AppendAllText(LogPath(live), "second-garbage");
+        FileGameStore.Open(live.Directory).Dispose();
+        var kept = Directory.GetFiles(Path.Combine(live.Directory, "corrupt")).Select(File.ReadAllText).Order(StringComparer.Ordinal).ToList();
+        Assert.Equal(["first-garbage", "second-garbage"], kept);
+    }
+
+    [Fact]
+    public void AGameIdIsOnlyEverRecordedNeverUsedAsAPathSoTraversalNamesStayInsideTheDirectory()
+    {
+        foreach (var id in new[] { "../escape", "/etc/passwd", "..\\..\\x", "CON", "a/../../b" })
+        {
+            var dir = Path.Combine(root, "id" + sequence++);
+            var before = Directory.GetFileSystemEntries(root).Length;
+            using var store = FileGameStore.Create(dir, id, CommandLogHeader.Create(Setup(), 9L, 1000L, null, Secret), new GameMeta());
+            Assert.Equal(id, store.ReadMeta().GameId);
+            Assert.Equal(before + 1, Directory.GetFileSystemEntries(root).Length); // only the game directory appeared
+            using var opened = FileGameStore.Open(dir);
+            Assert.Equal(id, opened.Store.GameId);
+        }
+    }
+
+    [Fact]
+    public void ConcurrentAppendsReadersAndMetaWritesStayConsistent()
+    {
+        var live = Start();
+        Assert.Equal(6, live.Player.PlayTurns(6));
+        var lines = CommandLogReader.Read(live.Text.ToString()).Lines;
+        live.Store.Dispose();
+        var dir = Path.Combine(root, "concurrent");
+        using var store = FileGameStore.Create(dir, "g1", CommandLogHeader.Create(Setup(), 9L, 1000L, null, Secret), new GameMeta());
+        var done = false;
+        var failures = new System.Collections.Concurrent.ConcurrentBag<Exception>();
+        var readers = Enumerable.Range(0, 4).Select(index => new Thread(() =>
+        {
+            try
+            {
+                while (!Volatile.Read(ref done))
+                {
+                    var last = store.LastSeq;
+                    var plan = store.Resume(System.Math.Max(0, last - 3));
+                    if (plan.Kind == ResumeKind.Deltas) Assert.Equal(Enumerable.Range((int)System.Math.Max(0, last - 3) + 1, plan.Commands.Count).Select(it => (long)it), plan.Commands.Select(it => it.Seq));
+                    _ = store.FindOutcome(Human, "cmd-1");
+                    if (index == 0) store.WriteMeta(new GameMeta { HostFingerprint = "fp" + last });
+                    if (index == 1) store.HostSecret = Secret;
+                    Assert.Equal(Secret, store.ReadMeta().HostSecret);
+                }
+            }
+            catch (Exception e)
+            {
+                failures.Add(e);
+            }
+        })).ToList();
+        foreach (var thread in readers) thread.Start();
+        foreach (var line in lines)
+        {
+            if (line is CommandLogLine.Command command) store.Append(command.Envelope, "cmd-" + command.Envelope.Seq);
+            else if (line is CommandLogLine.Checkpoint checkpoint) store.AppendCheckpoint(checkpoint.Seq, checkpoint.Turn, checkpoint.FullHash);
+        }
+        Volatile.Write(ref done, true);
+        foreach (var thread in readers) thread.Join();
+        Assert.Empty(failures);
+        store.Dispose();
+        using var opened = FileGameStore.Open(dir);
+        Assert.Equal(Hash(live.Session.Game), Hash(opened.Session.Game));
+        Assert.Equal(0, opened.Report.DroppedLogLines);
+    }
+
+    [Fact]
+    public void ARealSimultaneousGameSnapshotsMidRoundButNotWhileResolvingAndComesBackIdentical()
+    {
+        var setup = new GameSetupInfo(
+            new GameParameters
+            {
+                BaseRuleset = ruleset.Name,
+                NumberOfCityStates = 1,
+                VictoryTypes = ruleset.Victories.Keys.ToList(),
+                Players = [new Player(Human, PlayerType.Human), new Player("Greece", PlayerType.Human), new Player("Rome", PlayerType.AI)],
+            },
+            new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 5, MapSize = MapSize.Tiny });
+        var game = HostSecret.ApplyTo(GameStarter.StartNewGame(setup, 9L, 1000L), Secret);
+        game.StartSimultaneousTurns();
+        using var store = FileGameStore.Create(Path.Combine(root, "sim"), "g1", CommandLogHeader.Create(setup, 9L, 1000L, null, Secret), new GameMeta()); // no start snapshot: the first one is taken mid-round
+
+        game.EndHumanTurn(game.GetCivilization(Human)); // one human ended, the other still plays
+        Assert.True(store.TrySnapshot(game));
+        store.Dispose();
+        using (var opened = FileGameStore.Open(Path.Combine(root, "sim")))
+        {
+            Assert.Equal(Hash(game), Hash(opened.Session.Game));
+            Assert.Equal([Human], opened.Session.Game.TurnState!.Ended);
+            Assert.Equal(Secret, opened.Session.Game.RandomSalt);
+        }
+
+        game.EndHumanTurn(game.GetCivilization("Greece"));
+        game.BeginResolving();
+        using var again = FileGameStore.Open(Path.Combine(root, "sim"));
+        Assert.False(again.Store.TrySnapshot(game)); // Resolving: refused, nothing written
+        Assert.Single(Directory.GetFiles(Path.Combine(root, "sim"), "snapshot-*"));
+    }
+
+    [Fact]
+    public void ASnapshotThatDisagreesWithTheCheckpointTheLogAlreadyHoldsIsRefusedNotWrittenPoisoned()
+    {
+        var live = Start();
+        Play(live, 2, snapshot: true);
+        var before = File.ReadAllBytes(LogPath(live));
+        var snapshotsBefore = Snapshots(live).ToList();
+        live.Session.Game.Turns += 1; // the game moved without a logged command
+        var exception = Assert.Throws<GameStoreException>(() => live.Store.TrySnapshot(live.Session.Game));
+        Assert.Contains("without a logged command", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(before, File.ReadAllBytes(LogPath(live)));
+        Assert.Equal(snapshotsBefore, Snapshots(live));
+        live.Session.Game.Turns -= 1;
+        Assert.True(live.Store.TrySnapshot(live.Session.Game)); // the same state again is fine (idempotent)
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-4)]
+    public void RetentionNeverDeletesTheOnlyGoodSnapshotWhateverTheOptionsSay(int keep)
+    {
+        var live = Start(new StoreOptions { KeepSnapshots = keep });
+        Play(live, 2, snapshot: true);
+        Play(live, 2, snapshot: true);
+        var newest = live.Session.LastSeq;
+        Assert.Equal(["snapshot-" + newest.ToString("D12", CultureInfo.InvariantCulture) + ".json.gz"], Snapshots(live));
+        using var opened = Reopen(live);
+        Assert.Equal(Hash(live.Session.Game), Hash(opened.Session.Game));
+    }
+
+    [Fact]
+    public void ALogLineThatSkipsASeqEndsTheValidLogEvenWhenLaterLinesFollow()
+    {
+        var live = Start();
+        Play(live, 3, snapshot: true);
+        Play(live, 3);
+        live.Store.Dispose();
+        var lines = File.ReadAllText(LogPath(live)).TrimEnd('\n').Split('\n').ToList();
+        var index = lines.FindLastIndex(it => it.StartsWith("{\"seq\":", StringComparison.Ordinal));
+        while (!lines[index - 1].StartsWith("{\"seq\":", StringComparison.Ordinal)) index = lines.FindLastIndex(index - 1, it => it.StartsWith("{\"seq\":", StringComparison.Ordinal));
+        var lostSeq = JsonDocument.Parse(lines[index - 1]).RootElement.GetProperty("seq").GetInt64();
+        lines.RemoveAt(index - 1); // two commands in a row: take the first away, the second now skips a seq
+        File.WriteAllText(LogPath(live), string.Join('\n', lines) + "\n");
+
+        using var opened = FileGameStore.Open(live.Directory);
+        Assert.Equal(lostSeq - 1, opened.Store.LastSeq);
+        Assert.True(opened.Report.DroppedLogLines >= 1);
+    }
+
+    [Fact]
+    public void TheHostSecretComesFromTheLogHeaderWhenGameJsonHoldsNone()
+    {
+        var live = Start();
+        Play(live, 3, snapshot: true);
+        live.Store.Dispose();
+        var metaPath = Path.Combine(live.Directory, "game.json");
+        File.WriteAllText(metaPath, Unciv.Json.UncivJson.Serialize(Unciv.Json.UncivJson.Deserialize<GameMeta>(File.ReadAllText(metaPath))! with { HostSecret = 0 }));
+        using var opened = FileGameStore.Open(live.Directory);
+        Assert.Equal(Secret, opened.Session.Game.RandomSalt);
+        Assert.Equal(Hash(live.Session.Game), Hash(opened.Session.Game));
     }
 }

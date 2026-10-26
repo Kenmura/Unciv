@@ -37,12 +37,14 @@ public sealed class FileGameStore : IGameStore
     private readonly List<CommandEnvelope> ring = [];
     private readonly Dictionary<(string Actor, string CmdId), long> dedup = [];
     private readonly Queue<(string Actor, string CmdId)> dedupOrder = new();
-    private FileStream log;
+    private Stream log;
     private long lastCheckpointSeq = -1;
+    private ulong lastCheckpointHash;
     private int? lastSnapshotTurn;
     private bool closed;
+    private bool faulted;
 
-    private FileGameStore(string directory, StoreOptions options, FileStream log, string gameId)
+    private FileGameStore(string directory, StoreOptions options, Stream log, string gameId)
     {
         this.directory = directory;
         this.options = options;
@@ -70,7 +72,19 @@ public sealed class FileGameStore : IGameStore
     {
         lock (gate)
         {
-            return UncivJson.Deserialize<GameMeta>(File.ReadAllText(PathOf(MetaName), Encoding.UTF8)) ?? throw new GameStoreException("game.json is empty");
+            return ReadMetaFile(PathOf(MetaName));
+        }
+    }
+
+    private static GameMeta ReadMetaFile(string path)
+    {
+        try
+        {
+            return UncivJson.Deserialize<GameMeta>(File.ReadAllText(path, Encoding.UTF8)) ?? throw new GameStoreException("game.json is empty");
+        }
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            throw new GameStoreException("game.json cannot be read: " + e.Message);
         }
     }
 
@@ -86,11 +100,12 @@ public sealed class FileGameStore : IGameStore
     public static FileGameStore Create(string directory, string gameId, CommandLogHeader header, GameMeta meta, GameInfo? start = null, StoreOptions? options = null)
     {
         if (File.Exists(Path.Combine(directory, LogName))) throw new GameStoreException($"{directory} already holds a game");
-        Directory.CreateDirectory(directory);
+        CreatePrivateDirectory(directory);
+        // game.json first, the log last: a crash in between leaves a directory Create accepts again (the log is what makes it a game), never a log without its meta.
+        WriteAtomic(Path.Combine(directory, MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = gameId, HostSecret = meta.HostSecret != 0 ? meta.HostSecret : header.HostSecret })));
         var logPath = Path.Combine(directory, LogName);
         WriteAtomic(logPath, Encoding.UTF8.GetBytes(UncivJson.Serialize(header) + "\n"));
         var store = new FileGameStore(directory, options ?? new StoreOptions(), OpenLog(logPath), gameId);
-        WriteAtomic(Path.Combine(directory, MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = gameId, HostSecret = meta.HostSecret != 0 ? meta.HostSecret : header.HostSecret })));
         if (start != null) store.WriteSnapshot(start, 0);
         return store;
     }
@@ -132,7 +147,11 @@ public sealed class FileGameStore : IGameStore
         {
             ThrowIfClosed();
             if (seq != LastSeq) throw new GameStoreException($"A checkpoint for seq {seq} at seq {LastSeq}");
-            if (lastCheckpointSeq == seq) return; // already there (a snapshot writes one, so does the host's checkpoint after a turn change)
+            if (lastCheckpointSeq == seq)
+            {
+                if (lastCheckpointHash != fullHash) throw new GameStoreException($"The log already holds a different state hash for seq {seq}: the game changed without a logged command");
+                return; // already there (a snapshot writes one, so does the host's checkpoint after a turn change)
+            }
             var line = new JsonObject
             {
                 ["checkpoint"] = seq,
@@ -141,14 +160,34 @@ public sealed class FileGameStore : IGameStore
             };
             WriteDurably(line.ToJsonString());
             lastCheckpointSeq = seq;
+            lastCheckpointHash = fullHash;
         }
     }
 
     private void WriteDurably(string line)
     {
-        log.Seek(0, SeekOrigin.End);
-        log.Write(Encoding.UTF8.GetBytes(line + "\n"));
-        log.Flush(true); // flushed to the device before the host acknowledges
+        if (faulted) throw new GameStoreException("An earlier log write failed and could not be undone; reopen the game (recovery cuts the torn line off)");
+        var before = log.Length;
+        try
+        {
+            log.Seek(0, SeekOrigin.End);
+            log.Write(Encoding.UTF8.GetBytes(line + "\n"));
+            if (log is FileStream file) file.Flush(true); // flushed to the device before the host acknowledges
+            else log.Flush();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // A half-written line must not stay: the next append would be glued to it and recovery would cut off everything acknowledged after it.
+            try
+            {
+                log.SetLength(before);
+            }
+            catch (Exception undo) when (undo is IOException or UnauthorizedAccessException)
+            {
+                faulted = true;
+            }
+            throw new GameStoreException("The command log could not be written (disk full or I/O error): " + e.Message);
+        }
     }
 
     private void Remember(LoggedCommand command)
@@ -206,7 +245,8 @@ public sealed class FileGameStore : IGameStore
     private void WriteSnapshot(GameInfo game, long seq)
     {
         // The checkpoint at the snapshot's seq lets recovery check the snapshot itself against the log.
-        if (lastCheckpointSeq != seq) AppendCheckpoint(seq, game.Turns, ReplayVerifier.FullHash(game));
+        // A snapshot that disagrees with a checkpoint the log already has is refused: recovery would reject it, and the game could not come back from it.
+        AppendCheckpoint(seq, game.Turns, ReplayVerifier.FullHash(game));
         WriteAtomic(PathOf(SnapshotName(seq)), Encoding.UTF8.GetBytes(UncivFiles.GameInfoToString(game, forceZip: true)));
         lastSnapshotTurn = game.Turns;
         Retain(seq);
@@ -238,7 +278,7 @@ public sealed class FileGameStore : IGameStore
     {
         var all = File.ReadAllBytes(PathOf(LogName));
         var history = Path.Combine(directory, "history");
-        Directory.CreateDirectory(history);
+        CreatePrivateDirectory(history);
         WriteAtomic(Path.Combine(history, "commands-" + snapshotSeq.ToString("D12", CultureInfo.InvariantCulture) + ".log"), all);
 
         var (prefixLength, checkpointLine) = SplitAt(all, snapshotSeq);
@@ -307,12 +347,33 @@ public sealed class FileGameStore : IGameStore
 
     private string PathOf(string name) => Path.Combine(directory, name);
 
-    private static FileStream OpenLog(string path) => new(path, FileMode.Open, FileAccess.Write, FileShare.Read);
+    // Unbuffered: a failed write must not leave bytes in a .NET buffer that the next append would send after the line that was rolled back.
+    private static FileStream OpenLog(string path) => new(path, FileMode.Open, FileAccess.Write, FileShare.Read, 1);
+
+    /// <summary>Test seam: wraps the log stream (to inject I/O errors).</summary>
+    internal void WrapLog(Func<Stream, Stream> wrap)
+    {
+        lock (gate) log = wrap(log);
+    }
+
+    // The game directory holds the host secret (game.json, the log header): owner only where the platform has modes.
+    private static void CreatePrivateDirectory(string directory)
+    {
+        if (OperatingSystem.IsWindows()) Directory.CreateDirectory(directory);
+        else Directory.CreateDirectory(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+    }
+
+    private static FileStreamOptions PrivateCreate()
+    {
+        var options = new FileStreamOptions { Mode = FileMode.Create, Access = FileAccess.Write, Share = FileShare.None };
+        if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+        return options;
+    }
 
     internal static void WriteAtomic(string path, byte[] bytes)
     {
         var temp = path + ".tmp";
-        using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+        using (var stream = new FileStream(temp, PrivateCreate()))
         {
             stream.Write(bytes);
             stream.Flush(true);
@@ -331,7 +392,7 @@ public sealed class FileGameStore : IGameStore
     public static OpenedGame Open(string directory, StoreOptions? options = null)
     {
         options ??= new StoreOptions();
-        var meta = UncivJson.Deserialize<GameMeta>(File.ReadAllText(Path.Combine(directory, MetaName), Encoding.UTF8)) ?? throw new GameStoreException("game.json is empty");
+        var meta = ReadMetaFile(Path.Combine(directory, MetaName));
         var logPath = Path.Combine(directory, LogName);
         var scan = LogScan.Read(logPath);
         var notes = new List<string>();
@@ -348,6 +409,8 @@ public sealed class FileGameStore : IGameStore
         }
 
         var recovered = Recover(directory, scan, notes);
+        SetAsideNewerSnapshots(directory, recovered.SnapshotSeq, notes);
+        var discarded = recovered.Fallback ? scan.LastSeq - recovered.SnapshotSeq : 0;
         if (recovered.Fallback)
         {
             // Keep the log up to the snapshot only; the rest is kept for audit.
@@ -362,7 +425,9 @@ public sealed class FileGameStore : IGameStore
         {
             LastSeq = scan.LastSeq,
         };
-        store.lastCheckpointSeq = scan.Lines.OfType<CommandLogLine.Checkpoint>().LastOrDefault()?.Seq ?? -1;
+        var lastCheckpoint = scan.Lines.OfType<CommandLogLine.Checkpoint>().LastOrDefault();
+        store.lastCheckpointSeq = lastCheckpoint?.Seq ?? -1;
+        store.lastCheckpointHash = lastCheckpoint?.FullHash ?? 0;
         store.lastSnapshotTurn = recovered.SnapshotTurn;
         foreach (var command in scan.Commands) store.Remember(command);
         // T230: a snapshot does not carry the secret; every recovery path installs the host's before the first command.
@@ -370,8 +435,22 @@ public sealed class FileGameStore : IGameStore
         Unciv.Utils.HostSecret.ApplyTo(recovered.Game, secret);
         var session = new GameSession(recovered.Game, lastSeq: scan.LastSeq);
         var report = new RecoveryReport(recovered.Outcome, wasClean, recovered.SnapshotSeq, scan.LastSeq, recovered.Replayed, recovered.Verified,
-            scan.DroppedLines, recovered.DivergedAtSeq, notes);
+            scan.DroppedLines, recovered.DivergedAtSeq, notes)
+        { DiscardedCommands = discarded };
         return new OpenedGame(store, session, report);
+    }
+
+    // A snapshot newer than the one recovery settled on was rejected (ahead of the log, or disagreeing with it). It must not stay: once the log grows past its seq it would
+    // look like a snapshot of the new history, and it would crowd the good ones out of the retention window.
+    private static void SetAsideNewerSnapshots(string directory, long keptSeq, List<string> notes)
+    {
+        foreach (var (seq, path) in ListSnapshots(directory))
+        {
+            if (seq <= keptSeq) continue;
+            SetAside(directory, File.ReadAllBytes(path), "rejected-snapshot-" + seq.ToString("D12", CultureInfo.InvariantCulture), ".json.gz");
+            File.Delete(path);
+            notes.Add($"Set aside rejected snapshot {seq}");
+        }
     }
 
     private sealed record Recovered(GameInfo Game, RecoveryOutcome Outcome, bool Fallback, long SnapshotSeq, int SnapshotTurn, long Replayed, int Verified, long? DivergedAtSeq);
@@ -466,12 +545,14 @@ public sealed class FileGameStore : IGameStore
         }
     }
 
-    private static void SetAside(string directory, byte[] bytes, string name)
+    private static void SetAside(string directory, byte[] bytes, string name, string extension = ".log")
     {
         if (bytes.Length == 0) return;
         var folder = Path.Combine(directory, "corrupt");
-        Directory.CreateDirectory(folder);
-        WriteAtomic(Path.Combine(folder, name + ".log"), bytes);
+        CreatePrivateDirectory(folder);
+        var target = Path.Combine(folder, name + extension);
+        for (var n = 2; File.Exists(target); n++) target = Path.Combine(folder, name + "-" + n.ToString(CultureInfo.InvariantCulture) + extension); // never overwrite earlier evidence
+        WriteAtomic(target, bytes);
     }
 
     private static void Truncate(string path, long length)

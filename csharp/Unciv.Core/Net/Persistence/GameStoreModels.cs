@@ -92,7 +92,11 @@ public sealed record RecoveryReport(
     int CheckpointsVerified,
     int DroppedLogLines,
     long? DivergedAtSeq,
-    IReadOnlyList<string> Notes);
+    IReadOnlyList<string> Notes)
+{
+    /// <summary>Commands the log held (accepted, acknowledged) that a <see cref="RecoveryOutcome.FellBackToSnapshot"/> threw away; the host must tell the players. 0 otherwise.</summary>
+    public long DiscardedCommands { get; init; }
+}
 
 public enum ResumeKind
 {

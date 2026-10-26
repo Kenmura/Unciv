@@ -40,7 +40,15 @@ internal sealed class LogScan
 
     public static LogScan Read(string path)
     {
-        var bytes = File.ReadAllBytes(path);
+        byte[] bytes;
+        try
+        {
+            bytes = File.ReadAllBytes(path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            throw new GameStoreException("The command log cannot be read: " + e.Message);
+        }
         var headerEnd = Array.IndexOf(bytes, (byte)'\n');
         if (headerEnd < 0) throw new GameStoreException("The command log has no complete header line");
         var headerLine = Decode(bytes, 0, headerEnd) ?? throw new GameStoreException("The command log header is not text");
