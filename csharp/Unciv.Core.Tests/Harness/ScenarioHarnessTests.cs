@@ -232,6 +232,21 @@ public sealed class ScenarioHarnessTests : IDisposable
         Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, defeat: true));
         Assert.True(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], [], Defeat: true).ToJson()).Defeat);
         Assert.False(ScenarioResult.FromJson(new ScenarioResult("v", 1, 2, "h", [], [], [], []).ToJson()).Defeat);
+
+    public void DecisionsGamePlaysGnkWithEveryPickerPendingAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(decisions: true);
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        Assert.Single(human.Cities);
+        Assert.Equal(1, human.GreatPeople.FreeGreatPeople);
+        Assert.Equal(1, human.Tech.FreeTechs);
+        Assert.True(human.ReligionManager.CanFoundOrExpandPantheon());
+        Assert.Equal(["FreeGreatPerson", "Technology", "Pantheon"], Unciv.Logic.PendingDecisions.BlockingFor(human).Select(it => it.Kind.ToString()));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(decisions: true)));
+        var result = session.Submit(ScenarioGame.HumanA, new Unciv.Commands.Empire.ChooseFreeGreatPerson { Unit = "Great Scientist" });
+        Assert.True(result.Accepted, "rejected");
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, decisions: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("d", 1, 2, "h", [], [], [], [], Decisions: true).ToJson()).Decisions);
     }
 
     [Fact]

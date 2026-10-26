@@ -1,8 +1,10 @@
 using System.Text.Json;
+using Unciv.Commands;
 using Unciv.Core.Tests.Support;
 using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Logic.Trade;
@@ -309,6 +311,32 @@ public class EmpireQueryTests
         Assert.Equal(["Follower", "Follower"], result.Slots);
         Assert.NotNull(result.ReligionName);
         Assert.DoesNotContain(belief.Name, result.Available["Pantheon"]);
+    }
+
+    [Fact]
+    public void ReligionSlotsAreInTheOrderFoundReligionExpectsAndThePickerCommandIsAccepted()
+    {
+        var manager = player.ReligionManager;
+        manager.StoredFaith = 1000;
+        var pantheon = testGame.Ruleset.Beliefs.Values.First(it => it.Type == BeliefType.Pantheon);
+        manager.ChooseBeliefs([pantheon], manager.UsingFreeBeliefs());
+        var prophet = testGame.AddUnit("Great Prophet", player, player.Cities[0].GetCenterTile());
+        manager.FoundReligion(prophet);
+        var result = Ask(new ReligionQuery());
+        Assert.Equal("FoundingReligion", result.State);
+        Assert.Equal(manager.GetBeliefsToChooseAtFounding().SelectMany(it => Enumerable.Repeat(it.Key.ToString(), it.Value)), result.Slots);
+        Assert.NotEmpty(result.AvailableIcons);
+
+        var spec = Unciv.Assets.DecisionPickerModel.FoundReligion(result, _ => "")!;
+        var picked = new List<string?> { result.AvailableIcons[0] };
+        foreach (var slot in spec.Slots.Skip(1))
+            picked.Add(slot.Options.First(it => !picked.Contains(it.Id)).Id);
+        var commands = Unciv.Assets.DecisionPickerModel.Commands(spec, new Unciv.Assets.PickerChoice(picked, "Mine"));
+        testGame.GameInfo.CurrentPlayerCiv = player;
+        testGame.GameInfo.CurrentPlayer = player.CivId;
+        var submitted = new GameSession(testGame.GameInfo).Submit(player.CivId, Assert.Single(commands));
+        Assert.True(submitted.Accepted, submitted.Validation.Message);
+        Assert.Equal(ReligionState.Religion, manager.ReligionState);
     }
 
     [Fact]
