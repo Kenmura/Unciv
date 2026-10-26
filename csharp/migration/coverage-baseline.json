@@ -23,6 +23,7 @@
     "Unciv.Assets/MeshData.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/MinimapRaster.cs": {"branch": 93.75, "line": 100.0},
     "Unciv.Assets/ModelSpecs.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/NextTurnProgressModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/NotificationsModel.cs": {"branch": 97.06, "line": 100.0},
     "Unciv.Assets/OverviewModel.cs": {"branch": 100.0, "line": 98.81},
     "Unciv.Assets/Packaging/ContentLocator.cs": {"branch": 100.0, "line": 100.0},
@@ -633,7 +634,7 @@
     "Unciv.Harness/PerceptualHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ReviewIndex.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/RgbaImage.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Harness/ScenarioGame.cs": {"branch": 94.64, "line": 99.19},
+    "Unciv.Harness/ScenarioGame.cs": {"branch": 95.31, "line": 99.24},
     "Unciv.Harness/ScenarioReplay.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Harness/ScenarioResult.cs": {"branch": 100.0, "line": 100.0}
   },
