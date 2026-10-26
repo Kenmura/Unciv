@@ -19,7 +19,7 @@ public sealed class RespondToFriendship : GameCommand
 
     protected override CommandValidation ValidateCommand(CommandContext context)
     {
-        if (!context.RequireActive().TryGet(out var actor, out var failure)) return failure;
+        if (!context.RequireActive(allowEnded: true).TryGet(out var actor, out var failure)) return failure;
         if (DiplomacyCommandChecks.FindAlert(actor, AlertType.DeclarationOfFriendship, CivId) == null)
             return DiplomacyCommandChecks.NoSuchAlert("declaration of friendship offer from " + CivId);
         return CommandValidation.Ok;

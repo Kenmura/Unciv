@@ -146,6 +146,19 @@ public sealed class AutoPlayCommandTests : IDisposable
     }
 
     [Fact]
+    public void AutoPlayStopsWhenItsOwnTurnWinsTheGame()
+    {
+        var game = GameStarter.StartNewGame(Setup(), 1L, 1000L);
+        var session = new GameSession(game) { Clock = ScriptedHuman.DeterministicClock(2000L) };
+        Ok(session.Submit("Babylon", new StartAutoPlay { Turns = 5 }));
+        foreach (var rival in game.Civilizations.Where(it => it.CivId is "Greece" or "Rome"))
+            foreach (var unit in rival.Units.GetCivUnits().ToList()) unit.Destroy();
+        Ok(session.Submit("Babylon", new AutoPlayTurn()));
+        Assert.NotNull(game.VictoryData);
+        Assert.False(game.ClientState.AutoPlay!.IsAutoPlaying());
+    }
+
+    [Fact]
     public void AutoPlayStopsWhenTheGameIsWon()
     {
         var game = GameStarter.StartNewGame(Setup(), 1L, 1000L);
@@ -161,12 +174,15 @@ public sealed class AutoPlayCommandTests : IDisposable
     {
         var game = GameStarter.StartNewGame(Setup(), 1L, 1000L);
         var session = new GameSession(game);
-        game.TurnState = new TurnState { Mode = TurnMode.Simultaneous };
+        game.StartSimultaneousTurns();
         Rejected(session.Submit("Babylon", new StartAutoPlay()), CommandErrors.NotAllowed);
-        game.TurnState.AutoPlayAllowed = true;
+        game.TurnState!.AutoPlayAllowed = true;
         Ok(session.Submit("Babylon", new StartAutoPlay()));
-        Rejected(session.Submit("Babylon", new AutoPlayTurn()), CommandErrors.NotAllowed); // TODO(T202)
-        Assert.True(game.TurnState.Clone().AutoPlayAllowed);
+        // T202: an auto-played turn in a simultaneous round only marks the civ as ended
+        Ok(session.Submit("Babylon", new AutoPlayTurn { Now = 5000 }));
+        Assert.True(game.HasEndedTurn(game.GetCivilization("Babylon")));
+        Rejected(session.Submit("Babylon", new AutoPlayTurn { Now = 5000 }), CommandErrors.TurnResolving); // Babylon was the only human, so its end started the resolution
+        Assert.True(game.TurnState!.Clone().AutoPlayAllowed);
     }
 
     [Fact]

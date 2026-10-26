@@ -50,6 +50,10 @@ public sealed record TurnResolving(int Turn) : EngineEvent
     public override bool IsEssential() => true;
 }
 
+/// <summary>Simultaneous turns: a civ was handed to a human or to the AI (join, leave, AI takeover, reclaim, resign; T202). The lobby key of the player is never part of it.</summary>
+[EventType("controller-changed", EventAudience.Everyone)]
+public sealed record ControllerChanged(string CivId, bool IsHuman) : EngineEvent;
+
 /// <summary>The sink hit its bound and dropped <paramref name="Dropped"/> events; clients should resync from a snapshot.</summary>
 [EventType("events-truncated", EventAudience.Everyone)]
 public sealed record EventsTruncated(int Dropped) : EngineEvent;

@@ -53,9 +53,12 @@ public sealed class CommandContext(GameInfo game, string actorId)
     /// May the actor issue ordinary player commands now? The single place that answers "is it your turn", so that
     /// sequential and simultaneous turns (T200/T202) differ in one spot and no command reads CurrentPlayerCiv itself.
     /// Sequential rule: the actor is a human civ, is the current player, and nobody has won yet (or the players chose one more turn).
+    /// Simultaneous rule (T202): the round is Playing (else <c>turn-resolving</c>), the actor is one of the humans the round waits for and its
+    /// turn has begun (else <c>not-your-turn</c>), and it has not ended its turn (else <c>already-ended</c>, unless <paramref name="allowEnded"/>).
     /// </summary>
     /// <param name="allowDefeated">True only for ending the turn: when every human is defeated the first one still controls the turn cycle (C024, Kotlin), so a spectating player must be able to go on.</param>
-    public Resolved<CivilizationObject> RequireActive(bool allowDefeated = false)
+    /// <param name="allowEnded">True for answering incoming requests (trade offers, demands, friendship): that does not spend the turn, so a human who ended early stays reachable.</param>
+    public Resolved<CivilizationObject> RequireActive(bool allowDefeated = false, bool allowEnded = false)
     {
         if (IsServer)
             return Resolved<CivilizationObject>.Fail(CommandErrors.NotHuman, "The server is not a player");
@@ -67,7 +70,16 @@ public sealed class CommandContext(GameInfo game, string actorId)
             return Resolved<CivilizationObject>.Fail(CommandErrors.GameOver, "The game is over");
         if (civ.Value.IsDefeated() && !allowDefeated)
             return Resolved<CivilizationObject>.Fail(CommandErrors.NotAllowed, $"{ActorId} has been defeated");
-        // TODO(T202): simultaneous turns replace this check (phase Playing, civ not ended).
+        if (Game.TurnState is { Mode: TurnMode.Simultaneous } state)
+        {
+            if (state.Phase == SimultaneousPhase.Resolving)
+                return Resolved<CivilizationObject>.Fail(CommandErrors.TurnResolving, "The turn is being resolved");
+            if (!Game.IsActiveHuman(civ.Value) || !Game.IsTurnStarted(civ.Value))
+                return Resolved<CivilizationObject>.Fail(CommandErrors.NotYourTurn, $"{ActorId} is not playing this turn");
+            if (!allowEnded && Game.HasEndedTurn(civ.Value))
+                return Resolved<CivilizationObject>.Fail(CommandErrors.AlreadyEnded, $"{ActorId} has ended the turn");
+            return civ;
+        }
         if (!civ.Value.IsCurrentPlayer())
             return Resolved<CivilizationObject>.Fail(CommandErrors.NotYourTurn, $"It is not {ActorId}'s turn");
         return civ;

@@ -49,6 +49,7 @@ public static class EventFilter
         [typeof(PlayerEndedTurn)] = Everyone,
         [typeof(PlayerUndidEndTurn)] = Everyone,
         [typeof(TurnResolving)] = Everyone,
+        [typeof(ControllerChanged)] = Everyone,
         [typeof(EventsTruncated)] = Everyone,
 
         [typeof(UnitMoved)] = ClassifyUnitMoved,

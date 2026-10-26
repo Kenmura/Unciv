@@ -31,7 +31,7 @@ Existing skeleton (T012) [V]: `ICommand<TState>.Validate/Apply`, `CommandEnvelop
 
 - `GameCommand : ICommand<GameInfo>` with a `CommandContext` that resolves ids and returns stable failure codes:
   `unknown-civ`, `not-your-turn`, `not-human`, `game-over`, `unknown-unit`, `not-your-unit`, `unknown-city`, `not-your-city`, `unknown-tile`,
-  `pending-decisions`, `invalid-target`, `not-enough-<stat>`, `not-allowed` (UI predicate said no), `stale-reference` (alert/queue index no longer matches).
+  `pending-decisions`, `turn-resolving` (simultaneous: the round is being resolved), `already-ended` (simultaneous: the actor ended its turn), `out-of-sequence` (server step command that `NextResolveStep` does not name), `invalid-target`, `not-enough-<stat>`, `not-allowed` (UI predicate said no), `stale-reference` (alert/queue index no longer matches).
 - Registry built by scanning `[CommandType]` (unique names, JSON round-trip test per class, ruleset objects by name, ids not references, no floats that must round-trip exactly: use ints).
 - `GameSession` = `GameInfo` + `CommandProcessor<GameInfo>` + registry + the inputs a log needs (section 6).
 - Turn check helper `CommandContext.RequireActive(actor)`: Sequential mode: `ActorId` is `CurrentPlayerCiv` and human; Simultaneous mode (hosted games, `design/SIMULTANEOUS-TURNS.md`, T200/T202): phase Playing, actor human, alive, not in `TurnState.Ended`; both: no `VictoryData` (except the post-victory commands in 3.1). Never test `CurrentPlayerCiv` directly in a command. The actor id `server` is reserved for 3.1 server commands; a client envelope claiming it is `malformed-command`.

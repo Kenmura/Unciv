@@ -20,7 +20,7 @@ public sealed class RespondToDemand : GameCommand
 
     protected override CommandValidation ValidateCommand(CommandContext context)
     {
-        if (!context.RequireActive().TryGet(out var actor, out var failure)) return failure;
+        if (!context.RequireActive(allowEnded: true).TryGet(out var actor, out var failure)) return failure;
         var demand = MakeDemand.Find(Demand);
         if (demand == null)
             return CommandValidation.Fail(CommandErrors.InvalidTarget, $"\"{Demand}\" is not a demand");

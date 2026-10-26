@@ -840,7 +840,7 @@ Scenario `decisions-religion`.
 
 *The reform picker with a free follower belief to choose: Choose beliefs is disabled and says to choose first.* (`decisions-reform/reform.png`)
 
-## C053 (ticket not Done or unknown)
+## C053 Diplomatic vote result screen: engine vote-breakdown query and acknowledge command, client screen
 
 World Congress vote result: each civ you know with its votes, the worth of its vote, whom it voted for, the verdict and Continue.
 

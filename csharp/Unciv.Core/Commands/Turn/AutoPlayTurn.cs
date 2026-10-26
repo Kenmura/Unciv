@@ -16,13 +16,10 @@ public sealed class AutoPlayTurn : GameCommand, ITimedCommand
     protected override CommandValidation ValidateCommand(CommandContext context)
     {
         if (!context.RequireActive().TryGet(out var actor, out var failure)) return failure;
-        // TODO(T202): ending the turn of an auto-played civ in a simultaneous round (mark it ended instead of advancing the cycle).
-        if (context.Game.TurnState is { Mode: TurnMode.Simultaneous })
-            return CommandValidation.Fail(CommandErrors.NotAllowed, "Auto-play turns are not supported in simultaneous games yet");
         if (context.Game.ClientState.AutoPlay is not AutoPlayState { } state || state.CivId != actor.CivId || !state.ShouldContinueAutoPlaying())
             return CommandValidation.Fail(CommandErrors.NotAllowed, "Auto-play is not running for " + actor.CivId);
         failure = context.CanEndTurnOf(actor);
-        return failure.IsValid ? context.CheckClock(Now) : failure;
+        return failure.IsValid && !context.IsSimultaneous() ? context.CheckClock(Now) : failure;
     }
 
     protected override IReadOnlyList<GameEvent> ApplyCommand(CommandContext context)
@@ -33,10 +30,10 @@ public sealed class AutoPlayTurn : GameCommand, ITimedCommand
         state.AutoPlayTurnInProgress = true;
         new Logic.Civilization.Managers.TurnManager(actor).AutomateTurn();
         state.AutoPlayTurnInProgress = false;
-        game.EndPlayerTurn(Now, actor);
+        var events = context.EndTurnOf(actor, Now); // T202: in a simultaneous round the civ is only marked ended
         state.EndTurnMultiturnAutoPlay();
         if (actor.IsDefeated() || (game.VictoryData != null && !game.OneMoreTurnMode))
             state.StopAutoPlay();
-        return [];
+        return events;
     }
 }

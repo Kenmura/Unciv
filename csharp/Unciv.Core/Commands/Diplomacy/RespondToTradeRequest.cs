@@ -23,7 +23,7 @@ public sealed class RespondToTradeRequest : GameCommand
 
     protected override CommandValidation ValidateCommand(CommandContext context)
     {
-        if (!context.RequireActive().TryGet(out var actor, out var failure)) return failure;
+        if (!context.RequireActive(allowEnded: true).TryGet(out var actor, out var failure)) return failure;
         if (!context.Civ(CivId).TryGet(out var proposer, out failure)) return failure;
         var request = actor.TradeRequests.FirstOrDefault(it => it.RequestingCiv == CivId);
         if (request == null)

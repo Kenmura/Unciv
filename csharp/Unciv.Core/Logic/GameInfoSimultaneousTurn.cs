@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Utils;
 using CivilizationClass = Unciv.Logic.Civilization.Civilization;
@@ -29,7 +30,11 @@ public partial class GameInfo
 
     private bool IsSimultaneous => TurnState is { Mode: TurnMode.Simultaneous };
 
-    private bool IsActiveHuman(CivilizationClass civ) => ActiveHumans().Contains(civ);
+    /// <summary>Whether <paramref name="civ"/> is one of the humans the round waits for (human, not a spectator, not defeated unless every human is).</summary>
+    internal bool IsActiveHuman(CivilizationClass civ) => ActiveHumans().Contains(civ);
+
+    /// <summary>T202: whether <paramref name="civ"/> has ended its turn in the round being played.</summary>
+    public bool HasEndedTurn(CivilizationClass civ) => TurnState is { Mode: TurnMode.Simultaneous } state && state.Ended.Contains(civ.CivId);
 
     /// <summary>The active humans in civ-index order.</summary>
     private List<CivilizationClass> ActiveHumans()
@@ -79,6 +84,44 @@ public partial class GameInfo
     /// <summary>Whether every active human has ended its turn (the host may then, or on a timer after ending the rest, call <see cref="BeginResolving"/>).</summary>
     public bool AllHumansEnded() => TurnState is { Mode: TurnMode.Simultaneous, Phase: SimultaneousPhase.Playing } state
         && ActiveHumans().All(it => state.Ended.Contains(it.CivId));
+
+    /// <summary>
+    /// T202: <see cref="BeginResolving"/> when the round is Playing, has an active human and every one of them ended. Returns whether it did, so the
+    /// command that completed the set (EndTurn, ForceEndTurn, a controller change, Resign) logs the transition by itself and replay needs no extra entry.
+    /// </summary>
+    public bool BeginResolvingIfAllEnded()
+    {
+        if (!AllHumansEnded() || ActiveHumans().Count == 0) return false;
+        BeginResolving();
+        return true;
+    }
+
+    /// <summary>
+    /// T202: hands <paramref name="civ"/> to a human (<paramref name="human"/>, with the lobby key <paramref name="playerId"/>) or to the AI, Playing only.
+    /// To the AI: the civ leaves <see cref="TurnState.Ended"/> and is played in step 2 of the round (its begun turn is not started again). To a human:
+    /// its turn begins now (<c>StartTurn</c>, as <see cref="BeginTurn"/> does for the others) unless it already has, because an AI civ only runs its
+    /// <c>StartTurn</c> inside step 2, so a joiner would otherwise never be able to act or end the round.
+    /// </summary>
+    public void SetHumanController(CivilizationClass civ, bool human, string playerId)
+    {
+        var state = RequireSimultaneous();
+        if (state.Phase != SimultaneousPhase.Playing) throw new InvalidOperationException("The round is being resolved");
+        state.Ended.Remove(civ.CivId);
+        if (human)
+        {
+            civ.PlayerType = PlayerType.Human;
+            civ.PlayerId = playerId;
+            if (!IsTurnStarted(civ)) StartCivTurn(civ, null);
+        }
+        else
+        {
+            civ.PlayerType = PlayerType.AI;
+            civ.PlayerId = "";
+            if (ClientState.AutoPlay is { } autoPlay && autoPlay.IsAutoPlayingFor(civ.CivId)) autoPlay.StopAutoPlay();
+        }
+        UpdateSimultaneousCursor();
+        SyncSimultaneousState();
+    }
 
     /// <summary>Playing to Resolving. Every active human must have ended its turn.</summary>
     public void BeginResolving()
@@ -134,8 +177,9 @@ public partial class GameInfo
     public void RunAiTurn(CivilizationClass civ, Action? progressBar = null)
     {
         var state = Expect(new ResolveStep.RunAiTurn(civ.CivId));
-        turnStartedCivs.Remove(civ.CivId); // a human defeated during the round has no turn left to end
-        new TurnManager(civ).StartTurn(progressBar);
+        // T202: a civ whose turn already began (a human handed to the AI, or defeated, during Playing) must not run StartTurn a second time.
+        var alreadyStarted = turnStartedCivs.Remove(civ.CivId);
+        if (!alreadyStarted) new TurnManager(civ).StartTurn(progressBar);
         new TurnManager(civ).AutomateTurn();
         var autoPlay = ClientState.AutoPlay;
         if (autoPlay != null && autoPlay.IsAutoPlaying() && civ.VictoryManager.HasWon() && !OneMoreTurnMode)
@@ -197,14 +241,18 @@ public partial class GameInfo
             state.Ended.Clear();
             state.Stage = ResolveStage.EndTurns;
             state.Next = 0;
-            var first = ActiveHumans().FirstOrDefault();
-            if (first != null)
-            {
-                CurrentPlayer = first.CivId;
-                CurrentPlayerCiv = first;
-            }
+            UpdateSimultaneousCursor();
         }
         SyncSimultaneousState();
+    }
+
+    // CurrentPlayer is the nominal cursor of a simultaneous game: the lowest-index active human.
+    private void UpdateSimultaneousCursor()
+    {
+        var first = ActiveHumans().FirstOrDefault();
+        if (first == null) return;
+        CurrentPlayer = first.CivId;
+        CurrentPlayerCiv = first;
     }
 
     // turnStartedCivs is the runtime set; the saved list in civ-index order is what SetTransients restores it from.

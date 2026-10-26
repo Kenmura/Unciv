@@ -13,6 +13,7 @@ internal static class TurnSamples
         "end-turn", "force-end-turn", "run-ai-turn", "begin-turn", "move-automated-units", "set-player-settings", "ack-alert",
         "respond-to-alert", "dismiss-policy-picker", "dismiss-move-spies", "resign", "one-more-turn",
         "start-auto-play", "stop-auto-play", "auto-play-turn", "complete-tutorial-task", "choose-tutorial-task-choice",
+        "undo-end-turn", "process-end-turn", "start-next-turn", "set-controller",
     ];
 
     // A new game asks for a production and a research target; end-turn needs both settled.
@@ -27,6 +28,13 @@ internal static class TurnSamples
         var state = new AutoPlayState();
         state.StartMultiturnAutoPlay("Babylon", 3, true, false);
         return state;
+    }
+
+    private static void EndAllAndResolve(GameInfo game)
+    {
+        game.StartSimultaneousTurns();
+        foreach (var civ in game.Civilizations.Where(game.IsActive).ToList()) game.EndHumanTurn(civ);
+        game.BeginResolving();
     }
 
     public static (GameCommand Command, string Actor) Sample(string type, GameInfo game)
@@ -92,6 +100,22 @@ internal static class TurnSamples
             case "one-more-turn":
                 game.VictoryData = new VictoryData { WinningCiv = "Greece", VictoryType = "Scientific", VictoryTurn = 1 };
                 return (new OneMoreTurn(), "Babylon");
+            case "undo-end-turn":
+                game.StartSimultaneousTurns();
+                game.EndHumanTurn(babylon);
+                return (new UndoEndTurn(), "Babylon");
+            case "process-end-turn":
+                EndAllAndResolve(game);
+                return (new ProcessEndTurn { CivId = "Babylon", Now = 5000 }, CommandContext.ServerActor);
+            case "start-next-turn":
+                EndAllAndResolve(game);
+                game.ProcessEndTurn(babylon, 5000);
+                game.ProcessEndTurn(game.GetCivilization("Greece"), 5000);
+                while (game.NextResolveStep() is ResolveStep.RunAiTurn ai) game.RunAiTurn(game.GetCivilization(ai.CivId));
+                return (new StartNextTurn(), CommandContext.ServerActor);
+            case "set-controller":
+                game.StartSimultaneousTurns();
+                return (new SetController { CivId = "Greece", Controller = PlayerType.AI }, CommandContext.ServerActor);
             default:
                 throw new InvalidOperationException($"No sample for turn command \"{type}\"");
         }
