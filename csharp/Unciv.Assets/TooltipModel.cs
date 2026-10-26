@@ -22,6 +22,9 @@ public static class TooltipModel
     public static IReadOnlyList<TipLine> Tile(TileInfoResult tile, Ruleset ruleset)
     {
         var lines = new List<TipLine>();
+        // The engine's tile answer is the live state of any explored tile. A tile in the fog shows only what the viewer can still know of it (terrain, the
+        // improvement last seen, ownership); what is going on there now (work in progress, pillaging, who works it, the yields) would leak.
+        bool seen = tile.IsVisible;
         if (tile.IsCityCenter && tile.OwningCity != null) lines.Add(new TipLine(tile.OwningCity));
         lines.Add(new TipLine(tile.BaseTerrain));
         lines.AddRange(tile.TerrainFeatures.Select(it => new TipLine(it)));
@@ -29,17 +32,17 @@ public static class TooltipModel
         if (tile.Resource != null)
         {
             bool strategic = ruleset.TileResources.TryGetValue(tile.Resource, out var resource) && resource.ResourceType == ResourceType.Strategic;
-            lines.Add(new TipLine(strategic ? $"{{{tile.Resource}}} ({Number(tile.ResourceAmount)})" : tile.Resource));
+            lines.Add(new TipLine(strategic && seen ? $"{{{tile.Resource}}} ({Number(tile.ResourceAmount)})" : tile.Resource));
         }
-        if (tile.Improvement != null) lines.Add(new TipLine(tile.ImprovementIsPillaged ? $"[{tile.Improvement}] (Pillaged!)" : tile.Improvement));
-        if (tile.ImprovementInProgress != null)
+        if (tile.Improvement != null) lines.Add(new TipLine(seen && tile.ImprovementIsPillaged ? $"[{tile.Improvement}] (Pillaged!)" : tile.Improvement));
+        if (seen && tile.ImprovementInProgress != null)
             lines.Add(new TipLine(tile.TurnsToImprovement > 0 ? $"{{{tile.ImprovementInProgress}}} - {Number(tile.TurnsToImprovement)}" : $"{{{tile.ImprovementInProgress}}} ({{Under construction}})"));
-        if (tile.Road != "None" && !tile.IsCityCenter) lines.Add(new TipLine(tile.RoadIsPillaged ? $"[{tile.Road}] (Pillaged!)" : tile.Road));
+        if (tile.Road != "None" && !tile.IsCityCenter) lines.Add(new TipLine(seen && tile.RoadIsPillaged ? $"[{tile.Road}] (Pillaged!)" : tile.Road));
         if (tile.HasRiver) lines.Add(new TipLine("River"));
         if (tile.Owner != null) lines.Add(new TipLine(tile.OwningCity != null ? $"Owned by [{tile.OwningCity}]" : tile.Owner));
-        if (tile.WorkedBy != null) lines.Add(new TipLine($"Worked by [{tile.WorkedBy}]"));
+        if (seen && tile.WorkedBy != null) lines.Add(new TipLine($"Worked by [{tile.WorkedBy}]"));
         foreach (var unit in tile.Units) lines.Add(new TipLine($"{unit.Name} - {unit.Civ}"));
-        if (tile.Yields.Count > 0) lines.Add(new TipLine(string.Join(", ", tile.Yields.Select(Amount))));
+        if (seen && tile.Yields.Count > 0) lines.Add(new TipLine(string.Join(", ", tile.Yields.Select(Amount))));
         return lines;
     }
 

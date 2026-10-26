@@ -87,6 +87,8 @@ public class PediaModelTests
         Assert.Equal(20, lines.Single(it => it.Text == "sized").Size);
         var web = lines.Single(it => it.Link.StartsWith("https", StringComparison.Ordinal));
         Assert.True(web.IsExternal);
+        Assert.Equal("[url=https://example.org/x]WEB[/url]", Bb(web)); // text: the text is shown, not the URL
+        Assert.Equal("[url=https://example.org/x]HTTPS://EXAMPLE.ORG/X[/url]", Bb(web with { Text = "" })); // no text: the URL is shown
     }
 
     [Fact]

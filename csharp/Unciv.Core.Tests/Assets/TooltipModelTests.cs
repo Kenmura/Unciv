@@ -15,8 +15,8 @@ public class TooltipModelTests
     private static TileInfoResult TileOf(
         string terrain = "Grassland", string[]? features = null, string? wonder = null, string? resource = null, int amount = 0, string? improvement = null, bool pillaged = false,
         string? inProgress = null, int turns = 0, string road = "None", bool roadPillaged = false, bool river = false, string? owner = null, string? city = null, string? worked = null,
-        bool centre = false, TileUnit[]? units = null, StatAmount[]? yields = null) =>
-        new(new TilePos(1, 2), terrain, features ?? [], wonder, resource, amount, improvement, pillaged, inProgress, turns, road, roadPillaged, river, owner, city, worked, false, centre, true,
+        bool centre = false, TileUnit[]? units = null, StatAmount[]? yields = null, bool visible = true) =>
+        new(new TilePos(1, 2), terrain, features ?? [], wonder, resource, amount, improvement, pillaged, inProgress, turns, road, roadPillaged, river, owner, city, worked, false, centre, visible,
             yields ?? [], [], units ?? [], null);
 
     private static string[] Texts(IEnumerable<TipLine> lines) => lines.Select(it => it.Text).ToArray();
@@ -52,6 +52,15 @@ public class TooltipModelTests
         Assert.Equal(["Plains", "River"], Texts(TooltipModel.Tile(TileOf("Plains", river: true), ruleset)));
         Assert.Equal(["Plains", "Owned by [Ur]", "Worked by [Ur]"], Texts(TooltipModel.Tile(TileOf("Plains", owner: "Babylon", city: "Ur", worked: "Ur"), ruleset)));
         Assert.Equal(["Plains", "Babylon"], Texts(TooltipModel.Tile(TileOf("Plains", owner: "Babylon"), ruleset)));
+    }
+
+    [Fact]
+    public void Tile_InTheFogHidesWhatIsGoingOnNow()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        var lines = TooltipModel.Tile(TileOf("Plains", resource: "Iron", amount: 4, improvement: "Farm", pillaged: true, inProgress: "Mine", turns: 3, road: "Road", roadPillaged: true,
+            owner: "Babylon", city: "Ur", worked: "Ur", yields: [new StatAmount("Food", 2f)], visible: false), ruleset);
+        Assert.Equal(["Plains", "Iron", "Farm", "Road", "Owned by [Ur]"], Texts(lines));
     }
 
     [Fact]
@@ -95,6 +104,8 @@ public class TooltipModelTests
         var ruleset = new Unciv.Models.Ruleset.Ruleset();
         ruleset.Units["Plain"] = new Unciv.Models.Ruleset.Unit.BaseUnit { Name = "Plain", Movement = 2 };
         Assert.Equal(["Plain"], Texts(TooltipModel.Unit(ruleset, "Plain").NotNull()));
+        ruleset.Units["Free"] = new Unciv.Models.Ruleset.Unit.BaseUnit { Name = "Free", Movement = 2, Cost = 0 };
+        Assert.Equal(["Free"], Texts(TooltipModel.Unit(ruleset, "Free").NotNull()));
     }
 
     [Fact]
