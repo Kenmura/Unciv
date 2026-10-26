@@ -66,6 +66,7 @@ public static class RulesetAssetKeys
         keys.AddRange(ruleset.TileResources.Keys.Select(n => AssetKey.Of(Resource, n)));
         keys.AddRange(Enum.GetNames<Unciv.Models.Ruleset.Tile.ResourceType>().Select(n => AssetKey.Of(ResourceType, n)));
         keys.AddRange(ruleset.TileImprovements.Keys.Select(n => AssetKey.Of(Improvement, n)));
+        keys.AddRange(Enumerable.Range(2, CitySpecs.TierCount - 1).Select(CitySpecs.KeyForTier)); // C032: the larger city models
         keys.AddRange(ruleset.Buildings.Keys.Select(n => AssetKey.Of(Building, n)));
         keys.AddRange(Enum.GetNames<Stat>().Select(n => AssetKey.Of(StatIcon, n)));
         keys.AddRange(ruleset.Technologies.Keys.Select(n => AssetKey.Of(TechIcon, n)));

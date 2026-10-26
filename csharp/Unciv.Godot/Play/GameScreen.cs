@@ -231,6 +231,7 @@ public partial class GameScreen : Control
         Map.ScrollSpeed = settings.ScrollSpeed;
         Map.EdgePan = settings.EdgePan;
         Map.ShowResources = settings.ShowResources;
+        Overlays.ShowYields = settings.ShowYields;
     }
 
     private IReadOnlyDictionary<string, string> hotkeys = new Dictionary<string, string>();
@@ -495,7 +496,7 @@ public partial class GameScreen : Control
         mapLoaded = true;
         Minimap.Update(snapshot.Tiles, OwnerColour);
         Layout();
-        Overlays.Rebuild(Map, snapshot.Tiles, snapshot.Cities, OwnerColour);
+        Overlays.Rebuild(assets, session.Ruleset, Map, snapshot.Tiles, snapshot.Cities, OwnerColour);
         if (OpenCity != null) ShowCity(snapshot.Cities.FirstOrDefault(it => it.X == OpenCity.X && it.Y == OpenCity.Y));
         RebuildUnits();
         ClearPreview();

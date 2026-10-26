@@ -2,6 +2,7 @@ using Godot;
 using Unciv.Assets;
 using Unciv.GodotClient.Assets;
 using Unciv.Logic.Map;
+using Unciv.Models.Ruleset;
 using Unciv.Net.Visibility;
 
 namespace Unciv.GodotClient.Map;
@@ -16,8 +17,9 @@ public partial class CityNode : Node3D
 }
 
 /// <summary>
-/// C041: cities, territory borders, roads and improvements on the flat map, drawn from the viewer's snapshot only. What to draw comes from <see cref="MapOverlays"/>
-/// (Unciv.Assets, tested); this class only makes meshes of it, all from generated placeholders. Rebuilt in full after every snapshot change. C032 replaces it for the 3D chain.
+/// C041/C032: cities, territory borders, roads, improvements and in-world tile yields on the 3D map, drawn from the viewer's snapshot only. What to draw comes from <see cref="MapOverlays"/>,
+/// <see cref="ImprovementSpecs"/>, <see cref="CitySpecs"/> and <see cref="TileYieldModel"/> (Unciv.Assets, tested); this class only makes nodes of it. Improvements and cities are registry props
+/// (<c>improvement/&lt;name&gt;</c>, replaceable by key), borders and roads are ribbons in the owner's colour, yields are billboard icons with an amount. Rebuilt in full after every snapshot change.
 /// </summary>
 public partial class MapOverlayLayer : Node3D
 {
@@ -25,8 +27,17 @@ public partial class MapOverlayLayer : Node3D
     private const float BorderLift = 0.03f;
     private const float RoadWidth = 0.22f;
     private const float RoadLift = 0.02f;
-    private const float MarkerSize = 0.3f;
-    private const float CityDepthOffset = -0.3f;
+    private const float RoadLineWidth = 0.04f;
+    private const float RailWidth = 0.03f;
+    private const float RailGauge = 0.07f;
+    private const float CityScale = 0.85f;
+    private const float CrowdedScale = 0.5f;
+    private const float CrowdedOffsetX = 0.5f;
+    private const float CrowdedOffsetZ = 0.4f;
+    private const float PillagedLeanDegrees = 14f;
+    private const float YieldLift = 0.02f;
+    private const float YieldIconPixelSize = 0.0036f;
+    private const float YieldTextPixelSize = 0.0035f;
     private const float BannerPixelSize = 0.005f;
 
     private readonly Dictionary<HexCoord, CityNode> cities = [];
@@ -41,11 +52,48 @@ public partial class MapOverlayLayer : Node3D
 
     public int PillagedImprovementCount { get; private set; }
 
-    /// <summary>Replaces everything drawn. <paramref name="colourOf"/> gives a civ's own colour (borders, city blocks, banner outlines), null for an unknown civ.</summary>
-    public void Rebuild(MapView map, IReadOnlyList<TileDto> tiles, IReadOnlyList<CityDto> cityRows, Func<string, Rgb?> colourOf)
+    /// <summary>Yield icons drawn (one per stat per tile), whether or not they are shown right now.</summary>
+    public int YieldChipCount { get; private set; }
+
+    /// <summary>Tiles that have at least one yield icon.</summary>
+    public int YieldTileCount { get; private set; }
+
+    private Node3D? yieldRoot;
+    private bool showYields = true;
+
+    /// <summary>C032: whether the yield icons are shown (the "Show tile yields" setting).</summary>
+    public bool ShowYields
     {
-        foreach (var child in GetChildren()) child.QueueFree();
+        get => showYields;
+        set
+        {
+            showYields = value;
+            if (yieldRoot != null) yieldRoot.Visible = value;
+        }
+    }
+
+    /// <summary>Yield icons visible right now (zero when the setting is off).</summary>
+    public int VisibleYieldChipCount => showYields ? YieldChipCount : 0;
+
+    /// <summary>The improvement prop standing on a tile, or null.</summary>
+    public Node3D? ImprovementAt(HexCoord coord) => GetNodeOrNull<Node3D>($"Improvement_{coord.X}_{coord.Y}");
+
+    /// <summary>The yield chips drawn on a tile (stat and amount), empty when none.</summary>
+    public IReadOnlyList<YieldChip> YieldsAt(HexCoord coord) => yieldChips.GetValueOrDefault(coord) ?? [];
+
+    private readonly Dictionary<HexCoord, IReadOnlyList<YieldChip>> yieldChips = [];
+
+    /// <summary>Replaces everything drawn. <paramref name="colourOf"/> gives a civ's own colour (borders, city blocks, banner outlines), null for an unknown civ.</summary>
+    public void Rebuild(AssetRegistry assets, Ruleset ruleset, MapView map, IReadOnlyList<TileDto> tiles, IReadOnlyList<CityDto> cityRows, Func<string, Rgb?> colourOf)
+    {
+        foreach (var child in GetChildren())
+        {
+            RemoveChild(child); // out of the tree now, so the new nodes keep their names (lookups by name) while the old ones wait to be freed
+            child.QueueFree();
+        }
         cities.Clear();
+        yieldChips.Clear();
+        yieldRoot = null;
         float TopOf(int x, int y) => TerrainRelief.TopHeight(map.TileNodeAt(new HexCoord(x, y))?.Relief ?? ReliefKind.Flat);
         float RimOf(int x, int y) => TerrainRelief.RimHeight(map.TileNodeAt(new HexCoord(x, y))?.Relief ?? ReliefKind.Flat);
 
@@ -65,30 +113,105 @@ public partial class MapOverlayLayer : Node3D
 
         var links = MapOverlays.RoadLinks(tiles, cityRows);
         RoadLinkCount = links.Count;
-        foreach (var rail in new[] { false, true })
+        // A road is a brown strip with a light dashed-looking centre line; a railroad a dark bed with two light rails
+        var road = new Ribbon();
+        var roadLine = new Ribbon();
+        var railBed = new Ribbon();
+        var rails = new Ribbon();
+        foreach (var link in links)
         {
-            var ribbon = new Ribbon();
-            foreach (var link in links.Where(it => it.Railroad == rail))
+            var from = MapLayout.TileTop(link.X, link.Y, 0f) + new Vector3(0f, TopOf(link.X, link.Y) + RoadLift, 0f);
+            var to = link.Dx == 0 && link.Dy == 0
+                ? from + new Vector3(0.001f, 0f, 0.001f) // a stub: a dot the width of the road
+                : MapLayout.TileTop(link.X + link.Dx, link.Y + link.Dy, 0f) + new Vector3(0f, TopOf(link.X + link.Dx, link.Y + link.Dy) + RoadLift, 0f);
+            if (link.Railroad)
             {
-                var from = MapLayout.TileTop(link.X, link.Y, 0f) + new Vector3(0f, TopOf(link.X, link.Y) + RoadLift, 0f);
-                var to = link.Dx == 0 && link.Dy == 0
-                    ? from + new Vector3(0.001f, 0f, 0.001f) // a stub: a dot the width of the road
-                    : MapLayout.TileTop(link.X + link.Dx, link.Y + link.Dy, 0f) + new Vector3(0f, TopOf(link.X + link.Dx, link.Y + link.Dy) + RoadLift, 0f);
-                ribbon.Add(from, to, RoadWidth);
+                railBed.Add(from, to, RoadWidth);
+                rails.Add(from + new Vector3(0f, RoadLift / 2f, 0f), to + new Vector3(0f, RoadLift / 2f, 0f), RailWidth, RailGauge);
+                rails.Add(from + new Vector3(0f, RoadLift / 2f, 0f), to + new Vector3(0f, RoadLift / 2f, 0f), RailWidth, -RailGauge);
             }
-            AddChild(ribbon.ToNode(rail ? "Railroads" : "Roads", Unlit(ProceduralAssets.ToColor(rail ? PlaceholderPalette.RailGrey : PlaceholderPalette.RoadBrown))));
+            else
+            {
+                road.Add(from, to, RoadWidth);
+                roadLine.Add(from + new Vector3(0f, RoadLift / 2f, 0f), to + new Vector3(0f, RoadLift / 2f, 0f), RoadLineWidth);
+            }
         }
+        AddChild(road.ToNode("Roads", Unlit(ProceduralAssets.ToColor(PlaceholderPalette.RoadBrown))));
+        AddChild(roadLine.ToNode("RoadLines", Unlit(ProceduralAssets.ToColor(PlaceholderPalette.RoadBrown.Scale(125)))));
+        AddChild(railBed.ToNode("Railroads", Unlit(ProceduralAssets.ToColor(PlaceholderPalette.RailGrey))));
+        AddChild(rails.ToNode("Rails", Unlit(ProceduralAssets.ToColor(PlaceholderPalette.RailGrey.Scale(190)))));
 
         var improvements = MapOverlays.Improvements(tiles);
         ImprovementCount = improvements.Count;
         PillagedImprovementCount = improvements.Count(it => it.Pillaged);
-        foreach (var marker in improvements) AddChild(ImprovementNode(marker, TopOf(marker.X, marker.Y)));
+        var byCoord = tiles.ToDictionary(it => new HexCoord(it.X, it.Y));
+        foreach (var marker in improvements)
+            AddChild(ImprovementNode(assets, marker, byCoord[new HexCoord(marker.X, marker.Y)], TopOf(marker.X, marker.Y)));
 
         foreach (var city in cityRows)
         {
-            var node = CityNodeFor(city, TopOf(city.X, city.Y), colourOf(city.Owner));
+            var visible = byCoord.TryGetValue(new HexCoord(city.X, city.Y), out var cityTile) && cityTile.Visible;
+            var node = CityNodeFor(assets, city, TopOf(city.X, city.Y), colourOf(city.Owner), visible);
             AddChild(node);
             cities[new HexCoord(city.X, city.Y)] = node;
+        }
+
+        BuildYields(assets, ruleset, tiles, cityRows, TopOf);
+    }
+
+    private void BuildYields(AssetRegistry assets, Ruleset ruleset, IReadOnlyList<TileDto> tiles, IReadOnlyList<CityDto> cityRows, Func<int, int, float> topOf)
+    {
+        yieldRoot = new Node3D { Name = "Yields", Visible = showYields };
+        AddChild(yieldRoot);
+        YieldChipCount = 0;
+        YieldTileCount = 0;
+        var cityTiles = cityRows.Select(it => new HexCoord(it.X, it.Y)).ToHashSet();
+        var fog = ProceduralAssets.ToColor(PlaceholderPalette.FogDim);
+        foreach (var tile in tiles)
+        {
+            var coord = new HexCoord(tile.X, tile.Y);
+            if (cityTiles.Contains(coord)) continue; // the city model and banner stand there
+            var chips = TileYieldModel.Chips(ruleset, tile);
+            if (chips.Count == 0) continue;
+            yieldChips[coord] = chips;
+            YieldTileCount++;
+            var origin = MapLayout.TileTop(tile.X, tile.Y, 0f) + new Vector3(0f, topOf(tile.X, tile.Y) + YieldLift, 0f);
+            var row = new Node3D { Name = $"Yield_{tile.X}_{tile.Y}", Position = origin };
+            for (var i = 0; i < chips.Count; i++)
+            {
+                var (dx, dz) = TileYieldModel.ChipOffset(i, chips.Count);
+                var chip = new Sprite3D
+                {
+                    Name = "Chip" + i,
+                    Texture = assets.Get<Texture2D>(AssetKey.Of(RulesetAssetKeys.StatIcon, chips[i].Stat.ToString())),
+                    Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+                    PixelSize = YieldIconPixelSize,
+                    TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+                    NoDepthTest = true,
+                    Shaded = false,
+                    Position = new Vector3(dx, 0f, dz),
+                };
+                chip.AddChild(new Label3D
+                {
+                    Name = "Amount",
+                    Text = chips[i].Amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    PixelSize = YieldTextPixelSize,
+                    FontSize = 40,
+                    OutlineSize = 12,
+                    Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+                    NoDepthTest = true,
+                    Shaded = false,
+                    Position = new Vector3(0f, -0.17f, 0.001f),
+                });
+                if (!tile.Visible)
+                {
+                    chip.Modulate = fog;
+                    chip.GetNode<Label3D>("Amount").Modulate = fog;
+                }
+                row.AddChild(chip);
+                YieldChipCount++;
+            }
+            yieldRoot.AddChild(row);
         }
     }
 
@@ -107,33 +230,53 @@ public partial class MapOverlayLayer : Node3D
         MaterialOverride = new StandardMaterial3D { AlbedoColor = colour, Roughness = 1f },
     };
 
-    private static Node3D ImprovementNode(ImprovementMarker marker, float top)
+    /// <summary>
+    /// The improvement's registry prop (<c>improvement/&lt;name&gt;</c>) on the tile centre; beside a resource prop or a feature ring it is shrunk and pushed to the side so both read.
+    /// A pillaged one leans over and is darkened, a remembered one on a fogged tile dims like its terrain.
+    /// </summary>
+    private static Node3D ImprovementNode(AssetRegistry assets, ImprovementMarker marker, TileDto tile, float top)
     {
-        var colour = ProceduralAssets.ToColor(marker.Pillaged ? PlaceholderPalette.FromHash(marker.Name, 170, 220).Scale(35) : PlaceholderPalette.FromHash(marker.Name, 170, 220));
-        var root = new Node3D { Name = $"Improvement_{marker.X}_{marker.Y}", Position = MapLayout.TileTop(marker.X, marker.Y, 0f) + new Vector3(0.45f, top, 0.4f) };
-        root.AddChild(Block("Marker", new Vector3(MarkerSize, MarkerSize * 0.6f, MarkerSize), Vector3.Zero, colour));
-        root.AddChild(new Label3D
+        var model = assets.Get<Node3D>(AssetKey.Of(RulesetAssetKeys.Improvement, marker.Name));
+        model.Name = $"Improvement_{marker.X}_{marker.Y}";
+        var crowded = tile.Resource != null;
+        var scale = crowded ? CrowdedScale : 1f;
+        model.Scale = new Vector3(scale, scale, scale);
+        model.Position = MapLayout.TileTop(marker.X, marker.Y, 0f) + new Vector3(crowded ? CrowdedOffsetX : 0f, top, crowded ? CrowdedOffsetZ : 0f);
+        if (!tile.Visible) MapMaterials.Dim(model);
+        if (marker.Pillaged)
         {
-            Name = "Initial",
-            Text = marker.Name[..1] + (marker.Pillaged ? "!" : ""),
-            PixelSize = 0.006f,
-            FontSize = 48,
-            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-            NoDepthTest = true,
-            Shaded = false,
-            Position = new Vector3(0f, MarkerSize * 0.6f + 0.15f, 0f),
-        });
-        return root;
+            MapMaterials.Dim(model);
+            MapMaterials.Dim(model);
+            model.RotationDegrees = new Vector3(0f, 0f, PillagedLeanDegrees);
+        }
+        return model;
     }
 
-    private static CityNode CityNodeFor(CityDto city, float top, Rgb? ownerColour)
+    private static CityNode CityNodeFor(AssetRegistry assets, CityDto city, float top, Rgb? ownerColour, bool visible)
     {
         var civ = ProceduralAssets.ToColor(ownerColour ?? PlaceholderPalette.Light);
-        var height = MapOverlays.CityBlockHeight(city.Population);
+        var tier = CitySpecs.TierForPopulation(city.Population);
         var node = new CityNode { Name = $"City_{city.X}_{city.Y}", City = city, Position = MapLayout.TileTop(city.X, city.Y, 0f) + new Vector3(0f, top, 0f) };
-        var at = new Vector3(0f, 0f, CityDepthOffset);
-        node.AddChild(Block("Walls", new Vector3(0.9f, height, 0.55f), at, ProceduralAssets.ToColor(PlaceholderPalette.CityWall)));
-        node.AddChild(Block("Roof", new Vector3(1.0f, 0.12f, 0.65f), at + new Vector3(0f, height, 0f), civ));
+        var model = assets.Get<Node3D>(CitySpecs.KeyForTier(tier));
+        model.Name = "Model";
+        model.Scale = new Vector3(CityScale, CityScale, CityScale);
+        if (!visible) MapMaterials.Dim(model);
+        node.AddChild(model);
+        var flagHeight = CitySpecs.FlagHeight(tier);
+        node.AddChild(new MeshInstance3D
+        {
+            Name = "Pole",
+            Mesh = new BoxMesh { Size = new Vector3(0.025f, flagHeight, 0.025f) },
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = ProceduralAssets.ToColor(PlaceholderPalette.CityWall.Scale(60)), Roughness = 1f },
+            Position = new Vector3(0f, flagHeight / 2f, 0f),
+        });
+        node.AddChild(new MeshInstance3D
+        {
+            Name = "Flag",
+            Mesh = new BoxMesh { Size = new Vector3(0.3f, 0.18f, 0.02f) },
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = civ, Roughness = 1f },
+            Position = new Vector3(0.16f, flagHeight - 0.1f, 0f),
+        });
         var banner = new Label3D
         {
             Name = "Banner",
@@ -145,7 +288,7 @@ public partial class MapOverlayLayer : Node3D
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest = true,
             Shaded = false,
-            Position = new Vector3(0f, height + 0.9f, CityDepthOffset),
+            Position = new Vector3(0f, flagHeight + 0.3f, 0f),
         };
         node.AddChild(banner);
         return node;
@@ -157,11 +300,18 @@ public partial class MapOverlayLayer : Node3D
         private readonly List<Vector3> vertices = [];
         private readonly List<int> indices = [];
 
-        public void Add(Vector3 from, Vector3 to, float width)
+        public void Add(Vector3 from, Vector3 to, float width, float lateral = 0f)
         {
             var along = to - from;
             var side = new Vector3(-along.Z, 0f, along.X);
             side = side.LengthSquared() < 1e-12f ? new Vector3(0f, 0f, width / 2f) : side.Normalized() * (width / 2f);
+            if (lateral != 0f)
+            {
+                var shift = new Vector3(-along.Z, 0f, along.X);
+                shift = shift.LengthSquared() < 1e-12f ? new Vector3(0f, 0f, lateral) : shift.Normalized() * lateral;
+                from += shift;
+                to += shift;
+            }
             int at = vertices.Count;
             vertices.Add(from - side);
             vertices.Add(from + side);

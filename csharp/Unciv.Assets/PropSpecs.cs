@@ -85,6 +85,10 @@ public static class PropSpecs
             else if (Ores.TryGetValue(key.Name, out var ore)) parts = OreChunks(hash, ore);
             else if (Sea.TryGetValue(key.Name, out var sea)) parts = SeaShapes(hash, sea);
         }
+        else if (key.Category == RulesetAssetKeys.Improvement)
+        {
+            return ImprovementSpecs.TryBuild(key);
+        }
         return parts == null ? null : new ModelSpec(parts, "", 0f);
     }
 

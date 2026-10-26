@@ -298,7 +298,7 @@
       },
       {
         "golden": "flat-city/improvement.png",
-        "caption": "A road and a trading post marker on the tile next to the city."
+        "caption": "A road next to the city and a trading post on the worker's tile (yield icons now show on every tile)."
       }
     ]
   },
@@ -480,6 +480,24 @@
       {
         "golden": "options/rebound.png",
         "caption": "Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys"
+      }
+    ]
+  },
+  "C032": {
+    "scenario": "improvements",
+    "about": "Improvement props, roads and rails, city models with civ flags, borders and in-world tile yield icons.",
+    "shots": [
+      {
+        "golden": "improvements/gallery-default.png",
+        "caption": "Gallery at the default camera: a prop per improvement, brown roads and a dark railroad, a village and a larger town with flags, blue and gold borders, and small yield icons with amounts on each tile."
+      },
+      {
+        "golden": "improvements/village-close.png",
+        "caption": "Low close view of the village: its model and flag, road links, neighbouring farms, pasture and mine with their yields."
+      },
+      {
+        "golden": "improvements/yields-off.png",
+        "caption": "The same gallery with Show tile yields switched off: the icons are gone, everything else unchanged."
       }
     ]
   }
