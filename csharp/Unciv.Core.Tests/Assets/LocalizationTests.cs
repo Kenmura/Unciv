@@ -106,7 +106,7 @@ public class LocalizationTests : IDisposable
     public void PolicyScreenMessagesAreTranslatedExceptComposedOrRawText()
     {
         File.WriteAllText(Path.Combine(dir, "German.properties"),
-            "Refused = Abgelehnt\nConnection problem = Verbindungsproblem\nThe engine would not show the policies. = Keine Politiken\nNot enough culture = Zu wenig Kultur\n");
+            "Refused = Abgelehnt\nConnection problem = Verbindungsproblem\nThe engine would not show the policies. = Keine Politiken\nNot enough culture = Zu wenig Kultur\nNeeds 25 culture = Braucht 25 Kultur\n");
         File.WriteAllText(Path.Combine(dir, "English.properties"), "Refused = \n");
         var l = new ClientLocalization(dir, new Translations());
         Assert.Equal("Refused: Not enough culture", Unciv.Assets.PolicyScreenModel.RefusedLine("Not enough culture"));
