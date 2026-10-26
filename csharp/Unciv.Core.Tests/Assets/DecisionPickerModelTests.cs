@@ -152,4 +152,102 @@ public class DecisionPickerModelTests
         Assert.Null(DecisionPickerModel.Promotion(result with { Promotions = [] }, "Archer"));
         Assert.Equal("Choose: Promotion", DecisionPickerModel.Problem(spec, Pick("nonsense")));
     }
+
+    [Fact]
+    public void EveryRouteAndPickerIsTheOneTheClientOpens()
+    {
+        var routes = new Dictionary<DecisionKind, (DecisionRoute Route, PickerKind? Picker)>
+        {
+            [DecisionKind.FreeGreatPerson] = (DecisionRoute.Picker, PickerKind.FreeGreatPerson),
+            [DecisionKind.MoveSpies] = (DecisionRoute.Picker, PickerKind.MoveSpies),
+            [DecisionKind.Pantheon] = (DecisionRoute.Picker, PickerKind.Pantheon),
+            [DecisionKind.FoundReligion] = (DecisionRoute.Picker, PickerKind.FoundReligion),
+            [DecisionKind.EnhanceReligion] = (DecisionRoute.Picker, PickerKind.Beliefs),
+            [DecisionKind.ReformReligion] = (DecisionRoute.Picker, PickerKind.Beliefs),
+            [DecisionKind.DiplomaticVote] = (DecisionRoute.Picker, PickerKind.DiplomaticVote),
+            [DecisionKind.CityProduction] = (DecisionRoute.CityScreen, null),
+            [DecisionKind.Technology] = (DecisionRoute.TechScreen, null),
+            [DecisionKind.Policy] = (DecisionRoute.PolicyScreen, null),
+            [DecisionKind.DueUnits] = (DecisionRoute.NextUnit, null),
+            [DecisionKind.MoveAutomatedUnits] = (DecisionRoute.AutoCommand, null),
+            [DecisionKind.Alert] = (DecisionRoute.AlertPopup, null),
+            [DecisionKind.TradeRequest] = (DecisionRoute.DiplomacyScreen, null),
+        };
+        Assert.Equal(Enum.GetValues<DecisionKind>().Order(), routes.Keys.Order());
+        foreach (var (kind, expected) in routes)
+            Assert.Equal(expected, (DecisionPickerModel.RouteOf(kind), DecisionPickerModel.PickerOf(kind)));
+    }
+
+    [Fact]
+    public void ReligionNameLimitsAndForbiddenCharactersAreExact()
+    {
+        var spec = DecisionPickerModel.FoundReligion(Religion(), Describe)!;
+        PickerChoice Named(string name) => new(["Islam", "Tithe", "Feed"], name);
+        Assert.Null(DecisionPickerModel.Problem(spec, Named(new string('a', DecisionPickerModel.MaxReligionNameLength))));
+        foreach (char forbidden in "[]{}\"\\<>")
+            Assert.Contains("cannot contain", DecisionPickerModel.Problem(spec, Named("a" + forbidden))!, StringComparison.Ordinal);
+        Assert.Null(DecisionPickerModel.Problem(spec, Named("St. Mary's (the Great) / 2")));
+    }
+
+    [Fact]
+    public void ABeliefChosenInTwoSlotsIsRefusedButTheIconMayShareABeliefsName()
+    {
+        var founding = DecisionPickerModel.FoundReligion(Religion(slots: ["Founder", "Founder"]), Describe)!;
+        Assert.Equal("Tithe is chosen twice", DecisionPickerModel.Problem(founding, new PickerChoice(["Islam", "Tithe", "Tithe"], "x")));
+        var shared = Religion() with { AvailableIcons = ["Feed", "Tithe"] };
+        var spec = DecisionPickerModel.FoundReligion(shared, Describe)!;
+        Assert.Null(DecisionPickerModel.Problem(spec, new PickerChoice(["Feed", "Tithe", "Feed"], "x")));
+    }
+
+    [Fact]
+    public void ShortChoicesAreIncompleteNotACrashAndATextStartsFromANullChoiceAsEmpty()
+    {
+        var spec = DecisionPickerModel.FoundReligion(Religion(), Describe)!;
+        Assert.Equal("Choose: Religion", DecisionPickerModel.Problem(spec, new PickerChoice([])));
+        Assert.Equal("Choose: Founder belief", DecisionPickerModel.Problem(spec, new PickerChoice(["Islam"], "x")));
+        Assert.Equal("", DecisionPickerModel.DefaultText(spec, Pick(null, "Tithe", "Feed")));
+    }
+
+    [Fact]
+    public void BeliefsPromptNamesTheReligionByDisplayNameThenIdAndShowsFaith()
+    {
+        var spec = DecisionPickerModel.ChooseBeliefs(Religion("Religion", ["Follower"]), false, Describe)!;
+        Assert.Equal("My Faith, faith: 120", spec.Prompt);
+        var anon = Religion("Religion", ["Follower"]) with { DisplayName = null };
+        Assert.Equal("Hinduism, faith: 120", DecisionPickerModel.ChooseBeliefs(anon, false, Describe)!.Prompt);
+        var none = anon with { ReligionName = null };
+        Assert.Equal("Faith: 120", DecisionPickerModel.ChooseBeliefs(none, false, Describe)!.Prompt);
+        Assert.Equal("Faith: 120", DecisionPickerModel.Pantheon(Religion("Pantheon"), true, Describe)!.Prompt);
+    }
+
+    [Fact]
+    public void SpyAndVoteAndPromotionOptionsAreWordedForThePlayer()
+    {
+        var spies = new SpyDestinationsResult(
+        [
+            new SpyEntry("Ann", 3, "Idle", "Hideout", true, true, [new SpyDestination("c1", "Rome", "Rome", false), new SpyDestination("c2", "Sparta", "", true)], false, null),
+        ]);
+        var spec = DecisionPickerModel.MoveSpies(spies);
+        Assert.Equal("Choose where to send each spy; a spy left alone stays.", spec.Prompt);
+        Assert.Equal("Ann (rank 3, Hideout)", spec.Slots[0].Title);
+        Assert.Equal(["Back to the hideout", "", "A city-state"], spec.Slots[0].Options.Select(it => it.Detail));
+        Assert.Equal("Vote for nobody", DecisionPickerModel.DiplomaticVote(new DiplomaticVoteResult(true, ["Rome"]), it => it)!.Slots[0].Options[^1].Detail);
+        var result = new PromotionChoicesResult(7, 15, 30, true, true,
+        [
+            new PromotionChoice("Accuracy I", true, [], ["+25% vs ranged", "extra"]),
+            new PromotionChoice("Accuracy II", false, ["Accuracy I"], ["more", "again"]),
+        ]);
+        var options = DecisionPickerModel.Promotion(result, "Archer")!.Slots[0].Options;
+        Assert.Equal("+25% vs ranged\nextra", options[0].Detail);
+        Assert.Equal("Requires: Accuracy I\nmore\nagain", options[1].Detail);
+        Assert.Null(options[0].Reason);
+        Assert.Equal("Not enough experience", options[1].Reason);
+    }
+
+    [Fact]
+    public void ADisabledOptionWithoutAReasonIsNamedInTheProblem()
+    {
+        var spec = new PickerSpec(PickerKind.Promotion, "t", "p", [new PickerSlot("s", "S", [new PickerOption("a", "Alpha", "", false)])], "ok", _ => []);
+        Assert.Equal("Alpha cannot be chosen", DecisionPickerModel.Problem(spec, Pick("a")));
+    }
 }
