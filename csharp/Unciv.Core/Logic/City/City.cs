@@ -543,7 +543,7 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
     /// <seealso cref="ShouldReassignPopulation"/>
     public void ReassignPopulationDeferred()
     {
-        if (Civ.IsCurrentPlayer() && Civ.IsHuman()) ReassignPopulation();
+        if (Civ.IsActive() && Civ.IsHuman()) ReassignPopulation();
         else ShouldReassignPopulation = true;
     }
 

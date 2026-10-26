@@ -72,6 +72,9 @@ public class CivView(CivilizationClass civ, CivilizationClass viewer, bool spect
 
     public bool IsCurrentPlayer() => Civ.IsCurrentPlayer();
 
+    /// <summary>Whether this civ may act now (sequential: the current player; simultaneous: any human still playing the round).</summary>
+    public bool IsActive() => Civ.IsActive();
+
     public bool IsHuman() => Civ.IsHuman();
 
     public List<ForeignCivView> GetKnownCivs() => Civ.GetKnownCivs().Select(it => GameView.GetForeignCivView(it)).ToList();

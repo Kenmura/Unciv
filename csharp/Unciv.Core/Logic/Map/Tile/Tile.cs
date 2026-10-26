@@ -1070,7 +1070,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         var queueEntry = ImprovementQueue[0];
         ImprovementQueue.RemoveAt(0);
 
-        if (worker.Civ.IsCurrentPlayer())
+        if (worker.Civ.IsActive())
             worker.Civ.GameInfo.AddCompletedTutorialTask("Construct an improvement");
 
         SetImprovement(queueEntry.Improvement, worker.Civ, worker);

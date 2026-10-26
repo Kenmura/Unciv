@@ -780,7 +780,7 @@ public static class Battle
         }
         else AutomateCityConquer(attackerCiv, city);
 
-        if (attackerCiv.IsCurrentPlayer())
+        if (attackerCiv.IsActive())
             clientState.AddCompletedTutorialTask("Conquer a city");
 
         foreach (var unique in attackerCiv.GetTriggeredUniques(UniqueType.TriggerUponConqueringCity, gameContext)

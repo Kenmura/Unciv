@@ -30,6 +30,10 @@ public interface IGameInfoState : IConstructionGameInfo
     new IReadOnlyList<Civilization> Civilizations { get; }
     /// <summary><c>gameInfo.currentPlayerCiv</c></summary>
     Civilization? CurrentPlayerCiv { get; }
+    /// <summary>T201: whether turns are simultaneous (<see cref="GameInfo.TurnMode"/>); a game state without turn modes is Sequential.</summary>
+    bool IsSimultaneousTurns => false;
+    /// <summary>T201: <see cref="GameInfo.IsActive"/>; only asked in simultaneous games.</summary>
+    bool IsCivActive(Civilization civ) => false;
     /// <summary><c>gameInfo.isSimulation()</c></summary>
     bool IsSimulation();
     /// <summary><c>gameInfo.getGlobalUniques()</c></summary>

@@ -184,7 +184,7 @@ public class CityView(CityClass city, CivilizationClass viewer, bool spectatorMo
     private static Tile GetTile(TileView tileView) => tileView.Unwrap();
 
     // ACTIONS
-    private bool CanChangeState() => City.Civ == Viewer && Viewer.IsCurrentPlayer();
+    private bool CanChangeState() => City.Civ == Viewer && Viewer.IsActive();
 
     public bool TryLockTile(TileView tileView)
     {

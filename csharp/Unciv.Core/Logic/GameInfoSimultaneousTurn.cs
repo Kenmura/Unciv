@@ -28,6 +28,10 @@ public partial class GameInfo
     [JsonIgnore]
     public TurnMode TurnMode => TurnState?.Mode ?? TurnMode.Sequential;
 
+    bool Unciv.Logic.Civilization.IGameInfoState.IsSimultaneousTurns => IsSimultaneous;
+
+    bool Unciv.Logic.Civilization.IGameInfoState.IsCivActive(CivilizationClass civ) => IsActive(civ);
+
     private bool IsSimultaneous => TurnState is { Mode: TurnMode.Simultaneous };
 
     /// <summary>Whether <paramref name="civ"/> is one of the humans the round waits for (human, not a spectator, not defeated unless every human is).</summary>

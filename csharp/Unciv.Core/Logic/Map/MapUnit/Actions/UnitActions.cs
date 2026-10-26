@@ -231,7 +231,9 @@ public static class UnitActions
     {
         var recipient = (CivilizationObject?)tile.GetOwner();
         // We need to be in another civs territory.
-        if (recipient == null || recipient.IsCurrentPlayer()) yield break;
+        if (recipient == null || ReferenceEquals(recipient, unit.Civ)) yield break;
+        // Sequential keeps the Kotlin rule (no gift in the current player's territory); simultaneous play has no single current player.
+        if (!unit.Civ.GameInfo.IsSimultaneousTurns && recipient.IsCurrentPlayer()) yield break;
 
         if (recipient.IsCityState)
         {
