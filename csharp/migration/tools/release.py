@@ -6,8 +6,8 @@ Usage: release.py T### [--cli-only | --client-only] [--windows] [--keep N] [--fo
 ticket.py runs this after every `state T### Done`. The folder sits next to `csharp/` in the main checkout (never inside a worktree, which is
 removed when its agent finishes):
 
-    csharp-releases/<ticket>-<shortsha>/cli/        dotnet publish of Unciv.Cli (framework-dependent: run `dotnet Unciv.Cli.dll`, or ./Unciv.Cli)
-    csharp-releases/<ticket>-<shortsha>/client-linux/   Unciv.Godot/tools/package.sh linux (executable, data/jsons, fonts, LICENSE, notices)
+    csharp-releases/<ticket>-<shortsha>/cli/        dotnet publish of Unciv.Cli, self-contained linux-x64 (runtime and data/jsons bundled: ./Unciv.Cli works with no dotnet installed)
+    csharp-releases/<ticket>-<shortsha>/client-linux/   Unciv.Godot/tools/package.sh linux (self-contained: Godot export with the .NET runtime, data/jsons, fonts, LICENSE, notices)
     csharp-releases/<ticket>-<shortsha>/manifest.json   ticket, commit, tree, build time, what was built
     csharp-releases/latest -> newest version (only moves forward: a build of a commit older than the current latest never replaces it)
     csharp-releases/releases.log                         one line per release
@@ -22,6 +22,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -29,6 +30,7 @@ HERE = Path(__file__).resolve().parent.parent  # csharp/migration
 CSHARP = HERE.parent
 CONTAINER = "dotnet-dev"
 KEEP_DEFAULT = 5
+RID = "linux-x64"
 
 
 def git(*args, check=True):
@@ -62,6 +64,17 @@ def run(name, cmd):
     if r.returncode:
         print("\n".join((r.stdout + r.stderr).splitlines()[-30:]), file=sys.stderr)
         die(f"{name} failed (exit {r.returncode})")
+
+
+def smoke_cli(cli_dir):
+    """The published CLI must run with no dotnet on PATH, from a folder outside any checkout: start a tiny game with it."""
+    with tempfile.TemporaryDirectory() as work:
+        env = {"PATH": "/usr/bin:/bin", "HOME": work, "DOTNET_ROOT": "", "DOTNET_gcServer": "0"}
+        save = Path(work) / "smoke.json"
+        r = subprocess.run([str(cli_dir / "Unciv.Cli"), "new", "--out", str(save), "--map-size", "Tiny"], cwd=work, env=env, capture_output=True, text=True)
+        if r.returncode or not save.exists():
+            print((r.stdout + r.stderr)[-1500:], file=sys.stderr)
+            die(f"the published CLI does not run on its own (exit {r.returncode})")
 
 
 def versions(root):
@@ -138,7 +151,9 @@ def main(argv):
     try:
         if cli:
             out = stage / "cli"
-            run("publish Unciv.Cli", in_container(f"cd {shlex.quote(str(CSHARP))} && dotnet publish Unciv.Cli -c Release -o {shlex.quote(str(out))}"))
+            run("publish Unciv.Cli", in_container(f"cd {shlex.quote(str(CSHARP))} && dotnet publish Unciv.Cli -c Release -r {RID} --self-contained true -o {shlex.quote(str(out))}"))
+            shutil.copytree(CSHARP.parent / "android" / "assets" / "jsons", out / "data" / "jsons")
+            smoke_cli(out)
             built.append("cli")
         if client:
             for platform in ["linux"] + (["windows"] if windows else []):

@@ -52,7 +52,7 @@ public static class CliRunner
           hash  --in FILE                        Print the state hash (StateHasher over the plain JSON save).
           info  --in FILE                        Print the game's turn, map and civilizations.
         new/record also take [--ruleset NAME] [--mods A,B] [--map FILE] (a saved map; not with record); every command takes [--mods-dir DIR] (the folder of mods, needed by --mods
-        and by saves/logs that use mods) and [--jsons DIR]: the android/assets/jsons folder (default: searched upwards from the working directory).
+        and by saves/logs that use mods) and [--jsons DIR]: the android/assets/jsons folder (default: data/jsons next to the executable in a release build, else searched upwards from the working directory).
         exit codes: 0 ok, 1 failure while running, 2 bad command line.
         """;
 
@@ -117,6 +117,9 @@ public static class CliRunner
 
     private static string FindJsons()
     {
+        // A release build ships the rulesets in data/jsons next to the executable (tools/release.py), so it runs from any folder.
+        var bundled = Path.Combine(AppContext.BaseDirectory, "data", "jsons");
+        if (Directory.Exists(bundled)) return bundled;
         foreach (var start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
             for (var dir = new DirectoryInfo(start); dir != null; dir = dir.Parent)
             {
