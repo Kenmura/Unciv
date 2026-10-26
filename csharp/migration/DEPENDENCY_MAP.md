@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 215/215 | 0 | 0 | 0 | complete |
+| Phase 1: CLI (headless engine) | 215/216 | 1 | 0 | 0 | [T239](backlog/T239.md) |
 | Phase 2: single player (Godot client) | 51/56 | 5 | 0 | 5 | [C029](backlog/C029.md) [C053](backlog/C053.md) [C054](backlog/C054.md) [C059](backlog/C059.md) [T169](backlog/T169.md) |
 | Phase 3: multiplayer | 6/29 | 23 | 5 | 1 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T176](backlog/T176.md) [T177](backlog/T177.md) [T178](backlog/T178.md) [T179](backlog/T179.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T201](backlog/T201.md) [T202](backlog/T202.md) [T203](backlog/T203.md) [T204](backlog/T204.md) [T205](backlog/T205.md) [T206](backlog/T206.md) [T207](backlog/T207.md) [T223](backlog/T223.md) [T224](backlog/T224.md) [T225](backlog/T225.md) [T226](backlog/T226.md) [T230](backlog/T230.md) |
 
@@ -59,6 +59,7 @@ flowchart TD
     T225["T225<br/>Network robustness: real TCP+TLS multi-client tests, backpre..."]
     T226["T226<br/>Multiplayer game-over and forced-end rules: One More Turn au..."]
     T230["T230<br/>Host-secret salt for state-based randomness in hosted multip..."]
+    T239["T239<br/>Observe first green CI run after the workflow scope is grant..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -130,6 +131,7 @@ flowchart TD
   T179 --> T225
   T180 --> T225
   T202 --> T226
+  T169 --> T239
   T012 --> C006
   C001 --> C006
   T164 --> C006
@@ -217,6 +219,7 @@ flowchart TD
   class T225 waiting
   class T226 ondeck
   class T230 ready
+  class T239 ondeck
 ```
 
 ## Remaining tickets over time
@@ -234,7 +237,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 06:00", "24 12:00", "24 18:00", "25 00:00", "25 06:00", "25 12:00", "25 18:00", "26 00:00", "26 06:00", "26 12:00"]
     y-axis "Tickets" 0 --> 65
-    line [21, 57, 36, 13, 54, 54, 55, 39, 33, 22]
+    line [21, 57, 36, 13, 54, 54, 55, 39, 33, 23]
     line [0, 0, 5, 4, 3, 2, 5, 6, 6, 6]
 ```
 
@@ -249,6 +252,7 @@ xychart-beta
 | T201 | **Ready to start** | T183, T200 | 0 | Current-player readers: make rules civ-explicit (ReassignPopulationDeferred, gift action, CityView/CivView gating, tutorial hooks) |
 | T226 | **On deck** (after T202) | T202 | 15 | Multiplayer game-over and forced-end rules: One More Turn authority, defeated humans, default resolution of blocking decisions on ForceEndTurn |
 | T203 | **On deck** (after T202) | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
+| T239 | **On deck** (after T169) | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T202 | In-Progress [Claude] | T200, T187 | 17 | Simultaneous-turn commands: EndTurn/UndoEndTurn/ForceEndTurn semantics, ProcessEndTurn/StartNextTurn server commands, SetController, RequireActive gate and codes |
 | T177 | Available (waiting on T202, T226) | T172, T164, T184, T187, T200, T202, T226 | 14 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
 | T178 | Available (waiting on T176, T177, T202, T223, T224, T230) | T172, T173, T174, T175, T176, T177, T202, T223, T224, T230 | 13 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
@@ -257,6 +261,7 @@ xychart-beta
 | T180 | Available (waiting on T179, T204, T223, T224) | T172, T173, T174, T175, T179, T204, T223, T224 | 6 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C036 | Available (waiting on T180, T202) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | C035 | Available (waiting on T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
+| T169 | Needs-Review [Claude] | C001, C042 | 1 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T205 | Available (waiting on T178, T179, T204, T176) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
@@ -266,7 +271,6 @@ xychart-beta
 | C053 | Needs-Review [Claude] | C038 | 0 | Diplomatic vote result screen: engine vote-breakdown query and acknowledge command, client screen |
 | C054 | Needs-Review [Claude] | C026 | 0 | Tutorial tasks overlay (floating task card from ruleset Events) |
 | C059 | Needs-Review [Claude] | C051 | 0 | Espionage screen: coup button clipped at 640px width |
-| T169 | Needs-Review [Claude] | C001, C042 | 0 | CI for the C# solution and Unciv.Godot (headless build, format, tests, coverage check); export/packaging notes |
 | T182 | Available (waiting on T178, T180, T204, T203) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T206 | Available (waiting on T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | Available (waiting on T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
