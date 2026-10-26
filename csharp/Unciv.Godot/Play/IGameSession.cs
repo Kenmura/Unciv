@@ -54,6 +54,9 @@ public interface IGameSession
     /// <summary>Ends the viewer's turn and completes when the host has the viewer's next turn ready (or the end of the game, or a refusal).</summary>
     Task<TurnOutcome> EndTurnAsync();
 
+    /// <summary>C047: plays the viewer's turn with the AI (the engine's AutoPlayTurn, after a StartAutoPlay) and completes like <see cref="EndTurnAsync"/>; a refusal (no auto-play running, or it ended) is a result.</summary>
+    Task<TurnOutcome> AutoPlayTurnAsync();
+
     /// <summary>
     /// C016: the whole game as save-file text (what <c>LocalHost.FromSave</c> reads back), or null when this session does not hold the game (a network client: the host saves).
     /// Faults only on a real failure to serialize.

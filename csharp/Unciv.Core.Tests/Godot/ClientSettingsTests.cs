@@ -309,4 +309,35 @@ public sealed class ClientSettingsTests : IDisposable
         service.Update(s => s with { Player = s.Player with { AutoAssignCityProduction = true } });
         service.ApplyToNewGame();
     }
+
+    [Fact]
+    public void AutoPlayOptions_AreSavedAndLoadedBack()
+    {
+        var store = new ClientSettingsStore(FilePath);
+        var settings = ClientSettings.Default with { AutoPlay = new AutoPlaySettings { ShowButton = true, UntilEnd = true, MaxTurns = 33, FullAutoPlayAI = false } };
+        Assert.True(store.Save(settings));
+        Assert.Contains("\"autoPlay\"", File.ReadAllText(FilePath));
+        Assert.Equal(settings.AutoPlay, new ClientSettingsStore(FilePath).Load().AutoPlay);
+    }
+
+    [Fact]
+    public void AutoPlayOptions_OfAnOlderFileAreTheDefaults_AndHandEditedValuesAreMadeSafe()
+    {
+        Assert.Equal(new AutoPlaySettings(), LoadText("{\"version\":1}").AutoPlay);
+        Assert.Equal(new AutoPlaySettings(), LoadText("{\"version\":1,\"autoPlay\":null}").AutoPlay);
+        Assert.Equal(200, LoadText("{\"version\":1,\"autoPlay\":{\"maxTurns\":99999}}").AutoPlay.MaxTurns);
+        Assert.Equal(1, LoadText("{\"version\":1,\"autoPlay\":{\"maxTurns\":-4,\"showButton\":true}}").AutoPlay.MaxTurns);
+        Assert.True(LoadText("{\"version\":1,\"autoPlay\":{\"maxTurns\":-4,\"showButton\":true}}").AutoPlay.ShowButton);
+    }
+
+    [Fact]
+    public void AutoPlayOptions_ChangeThroughTheServiceWithoutTouchingTheEngineOptions()
+    {
+        var submitted = new List<GameCommand>();
+        var service = new ClientSettingsService(new ClientSettingsStore(FilePath), c => { submitted.Add(c); return true; });
+        service.Update(s => s with { AutoPlay = s.AutoPlay with { MaxTurns = 500 } });
+        Assert.Equal(200, service.Current.AutoPlay.MaxTurns);
+        Assert.Empty(submitted); // AutoPlay options are client settings, only the explicit StartAutoPlay carries them
+        Assert.Equal(200, new ClientSettingsStore(FilePath).Load().AutoPlay.MaxTurns);
+    }
 }

@@ -111,6 +111,8 @@ public sealed class LocalHost : IGameSession
 
     public Task<TurnOutcome> EndTurnAsync() => Task.FromResult(flow.EndTurn());
 
+    public Task<TurnOutcome> AutoPlayTurnAsync() => Task.FromResult(flow.AutoPlayTurn());
+
     public Task<string?> ExportSaveAsync() => Task.FromResult<string?>(UncivFiles.GameInfoToString(session.Game, forceZip: true));
 
     private ClientSnapshot BuildSnapshot()

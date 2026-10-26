@@ -35,6 +35,7 @@ public partial class OptionsScreen : ScrollContainer
     private readonly List<Action> refreshers = [];
     private readonly HSlider volume = new() { Name = "VolumeSlider", MinValue = 0, MaxValue = 1, Step = 0.05, CustomMinimumSize = new Vector2(160, 0) };
     private readonly HSlider scroll = new() { Name = "ScrollSpeedSlider", MinValue = OptionsModel.MinScrollSpeed, MaxValue = OptionsModel.MaxScrollSpeed, Step = 0.25, CustomMinimumSize = new Vector2(160, 0) };
+    private readonly HSlider autoPlayTurns = new() { Name = "AutoPlayTurnsSlider", MinValue = AutoPlaySettings.MinTurns, MaxValue = AutoPlaySettings.MaxTurnsLimit, Step = 1, CustomMinimumSize = new Vector2(160, 0) };
     private readonly OptionButton windowMode = new() { Name = "WindowModePicker" };
     private readonly OptionButton packPicker = new() { Name = "AssetPackPicker" };
     private IReadOnlyList<string> packNames = [];
@@ -60,6 +61,12 @@ public partial class OptionsScreen : ScrollContainer
         AddToggle("Scroll the map at the window edge", s => s.EdgePan, (s, v) => s with { EdgePan = v });
         AddToggle("Show resources on the map", s => s.ShowResources, (s, v) => s with { ShowResources = v });
         AddToggle("Show tile yields", s => s.ShowYields, (s, v) => s with { ShowYields = v });
+
+        column.AddChild(Heading("AutoPlay"));
+        AddToggle("Show AutoPlay button", s => s.AutoPlay.ShowButton, (s, v) => s with { AutoPlay = s.AutoPlay with { ShowButton = v } });
+        AddToggle("AutoPlay until victory", s => s.AutoPlay.UntilEnd, (s, v) => s with { AutoPlay = s.AutoPlay with { UntilEnd = v } });
+        AddSlider("Multi-turn AutoPlay amount", autoPlayTurns, (s, v) => s with { AutoPlay = s.AutoPlay with { MaxTurns = (int)Math.Round(v, MidpointRounding.AwayFromZero) } }, s => s.AutoPlay.MaxTurns);
+        AddToggle("Full AutoPlay AI", s => s.AutoPlay.FullAutoPlayAI, (s, v) => s with { AutoPlay = s.AutoPlay with { FullAutoPlayAI = v } });
 
         AddToggle("Show tutorials", s => s.ShowTutorials, (s, v) => s with { ShowTutorials = v });
         if (tutorialRuleset != null) AddTutorialSection();
@@ -97,6 +104,8 @@ public partial class OptionsScreen : ScrollContainer
     public HSlider VolumeSlider => volume;
 
     public HSlider ScrollSlider => scroll;
+
+    public HSlider AutoPlayTurnsSlider => autoPlayTurns;
 
     public OptionButton WindowModePicker => windowMode;
 

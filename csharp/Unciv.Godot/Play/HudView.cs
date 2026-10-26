@@ -23,6 +23,7 @@ public partial class HudView : Control
     private readonly Label banner = new() { Name = "Banner", Visible = false, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
     private readonly Button actionButton = new() { Name = "NextAction" };
     private readonly Button endTurnButton = new() { Name = "EndTurn", Text = HudModel.EndTurnLabel.TrText(), Visible = false };
+    private readonly Button autoPlayButton = new() { Name = "AutoPlayButton", Text = AutoPlayModel.ButtonLabel.TrText(), Visible = false };
     private readonly Dictionary<string, Control> entries = [];
     private UiTheme theme = null!; // JUSTIFY: C011 assigned by Init before the HUD is updated
     private IReadOnlyList<HudStat> stats = [];
@@ -38,6 +39,28 @@ public partial class HudView : Control
         endTurnButton.Pressed += () => EndTurnRequested?.Invoke();
         AddChild(endTurnButton);
         AddChild(actionButton);
+        autoPlayButton.Pressed += () => AutoPlayRequested?.Invoke();
+        AddChild(autoPlayButton);
+    }
+
+    /// <summary>C047: whether a run is going; the next-action button stays disabled meanwhile (Kotlin disables the next turn button during AutoPlay).</summary>
+    public bool AutoPlayRunning { get; private set; }
+
+    public Button AutoPlayButton => autoPlayButton;
+
+    public event Action? AutoPlayRequested;
+
+    /// <summary>C047: shows or hides the AutoPlay button (the "Show AutoPlay button" option).</summary>
+    public void ShowAutoPlayButton(bool shown) => autoPlayButton.Visible = shown;
+
+    /// <summary>C047: words the AutoPlay button for the run (null = idle) and locks the next-action button while it runs.</summary>
+    public void SetAutoPlay(AutoPlayRun? run)
+    {
+        AutoPlayRunning = run != null;
+        autoPlayButton.Text = AutoPlayModel.ButtonText(run).TrText();
+        actionButton.Disabled = AutoPlayRunning || !Action.Enabled;
+        if (AutoPlayRunning) endTurnButton.Visible = false;
+        LayoutIn(Size);
     }
 
     /// <summary>What the next-action button currently means.</summary>
@@ -46,6 +69,8 @@ public partial class HudView : Control
     public IReadOnlyList<HudStat> Stats => stats;
 
     public string ActionText => actionButton.Text;
+
+    public bool ActionDisabled => actionButton.Disabled;
 
     public bool EndTurnShown => endTurnButton.Visible;
 
@@ -74,6 +99,7 @@ public partial class HudView : Control
         banner.AddThemeConstantOverride("outline_size", uiTheme.Px(8));
         actionButton.CustomMinimumSize = new Vector2(uiTheme.Px(180), uiTheme.Px(44));
         endTurnButton.CustomMinimumSize = new Vector2(uiTheme.Px(110), uiTheme.Px(44));
+        autoPlayButton.CustomMinimumSize = new Vector2(uiTheme.Px(180), uiTheme.Px(36));
         uiTheme.ScaleChanged += () => LayoutIn(Size);
     }
 
@@ -87,6 +113,8 @@ public partial class HudView : Control
         actionButton.Position = screen - actionButton.CustomMinimumSize - new Vector2(Margin, Margin);
         actionButton.Size = actionButton.CustomMinimumSize;
         endTurnButton.Size = endTurnButton.CustomMinimumSize;
+        autoPlayButton.Size = new Vector2(Math.Max(autoPlayButton.CustomMinimumSize.X, autoPlayButton.GetCombinedMinimumSize().X), autoPlayButton.CustomMinimumSize.Y);
+        autoPlayButton.Position = new Vector2(screen.X - Margin - autoPlayButton.Size.X, actionButton.Position.Y - Margin / 2f - autoPlayButton.Size.Y);
         endTurnButton.Position = actionButton.Position - new Vector2(endTurnButton.CustomMinimumSize.X + Margin, 0f);
         banner.Size = new Vector2(screen.X, banner.GetCombinedMinimumSize().Y);
         banner.Position = new Vector2(0f, screen.Y * 0.28f);
@@ -101,8 +129,8 @@ public partial class HudView : Control
         Rebuild();
         Action = action;
         actionButton.Text = action.Label.TrText();
-        actionButton.Disabled = !action.Enabled;
-        endTurnButton.Visible = action.Kind != HudActionKind.EndTurn && canEndTurn && action.Enabled;
+        actionButton.Disabled = !action.Enabled || AutoPlayRunning;
+        endTurnButton.Visible = action.Kind != HudActionKind.EndTurn && canEndTurn && action.Enabled && !AutoPlayRunning;
     }
 
     public void ShowBanner(string text)

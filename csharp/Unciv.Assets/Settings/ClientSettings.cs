@@ -74,6 +74,10 @@ public sealed record ClientSettings
     [JsonPropertyName("player")]
     public PlayerSettings Player { get; init; } = PlayerSettings.Default;
 
+    /// <summary>C047: the AutoPlay options (button, number of turns, until the game ends, full AI).</summary>
+    [JsonPropertyName("autoPlay")]
+    public AutoPlaySettings AutoPlay { get; init; } = new();
+
     public static ClientSettings Default { get; } = new();
 
     /// <summary>The settings made safe: values a hand-edited or damaged file could hold that would break the UI are replaced by the default.</summary>
@@ -91,6 +95,7 @@ public sealed record ClientSettings
             AutosaveTurns = Math.Max(0, AutosaveTurns),
             TutorialsSeen = TutorialsSeen?.Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal).ToList() ?? [],
             PlayerName = string.IsNullOrWhiteSpace(PlayerName) ? Default.PlayerName : PlayerName,
+            AutoPlay = AutoPlay?.Sanitized() ?? new AutoPlaySettings(),
             Player = Player is null ? PlayerSettings.Default : Player with { NotificationsLogMaxTurns = Math.Max(0, Player.NotificationsLogMaxTurns) },
         };
     }
@@ -121,6 +126,32 @@ public sealed record ClientSettings
             HumanConquestPrompt = Changed(now.HumanConquestPrompt, before?.HumanConquestPrompt),
         };
     }
+}
+
+/// <summary>
+/// C047: the Kotlin <c>GameSettingsAutoPlay</c> members that drive the AutoPlay button: show the button, play until the game ends instead of a number of turns, the
+/// number of turns, and full AutoPlay AI. Deliberate deviations: the per-area switches (military, civilian, economy, technology, policies, religion, diplomacy) are not
+/// stored because Kotlin never reads them (they are commented out in its options tab and the engine automation has no such switches).
+/// </summary>
+public sealed record AutoPlaySettings
+{
+    public const int MinTurns = 1;
+    public const int MaxTurnsLimit = 200;
+
+    [JsonPropertyName("showButton")]
+    public bool ShowButton { get; init; }
+
+    [JsonPropertyName("untilEnd")]
+    public bool UntilEnd { get; init; }
+
+    [JsonPropertyName("maxTurns")]
+    public int MaxTurns { get; init; } = 10;
+
+    [JsonPropertyName("fullAutoPlayAI")]
+    public bool FullAutoPlayAI { get; init; } = true;
+
+    /// <summary>The number of turns kept inside <see cref="MinTurns"/> to <see cref="MaxTurnsLimit"/> (a hand-edited file could hold anything).</summary>
+    public AutoPlaySettings Sanitized() => this with { MaxTurns = Math.Clamp(MaxTurns, MinTurns, MaxTurnsLimit) };
 }
 
 /// <summary>Reads and writes <see cref="ClientSettings"/> as indented JSON at one path (in the game: the globalized <c>user://settings.json</c>).</summary>

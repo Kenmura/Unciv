@@ -61,10 +61,18 @@ public sealed class ViewerSessionFlow
     }
 
     /// <summary>Ends the human's turn and plays everything up to the human's next turn (or the end of the game).</summary>
-    public TurnOutcome EndTurn()
+    public TurnOutcome EndTurn() => FinishTurn(new EndTurn { Now = clock() });
+
+    /// <summary>
+    /// C047: lets the AI play the human's turn (the engine's <see cref="AutoPlayTurn"/>, which needs a running <see cref="StartAutoPlay"/>) and then plays everything up to
+    /// the human's next turn exactly as <see cref="EndTurn"/> does. Refused (not accepted) when no auto-play is running, which is how a client sees that it has finished.
+    /// </summary>
+    public TurnOutcome AutoPlayTurn() => FinishTurn(new AutoPlayTurn { Now = clock() });
+
+    private TurnOutcome FinishTurn(GameCommand endCommand)
     {
         var events = new List<GameEvent>();
-        var ended = Submit(new EndTurn { Now = clock() });
+        var ended = Submit(endCommand);
         if (!ended.Accepted) return new TurnOutcome(false, ended.Message, 0, false, events);
         events.AddRange(ended.Events);
 

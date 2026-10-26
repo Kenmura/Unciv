@@ -81,4 +81,61 @@ public sealed class ViewerSessionFlowTests
         flow.Submit(other); // refused (no longer a human), but the explicit value must stay untouched
         Assert.Equal(12345, other.Now);
     }
+
+    [Fact]
+    public void AutoPlayTurn_WithoutARunIsRefused_AndChangesNothing()
+    {
+        var session = ScenarioGame.Create(solo: true);
+        long clock = ScenarioGame.FixedClockMillis;
+        var flow = new ViewerSessionFlow(session, ScenarioGame.HumanA, () => clock++, (_, _) => { });
+        int turn = session.Game.Turns;
+        int logged = session.Log.Count;
+        var outcome = flow.AutoPlayTurn();
+        Assert.False(outcome.Accepted);
+        Assert.Contains("Auto-play is not running", outcome.Message);
+        Assert.Equal(0, outcome.AiTurnsRun);
+        Assert.False(outcome.NextTurnBegun);
+        Assert.Equal(turn, session.Game.Turns);
+        Assert.Equal(logged, session.Log.Count);
+    }
+
+    [Fact]
+    public void AutoPlayTurn_PlaysTheRequestedTurnsThenHandsControlBack_AndTheFilterStillApplies()
+    {
+        var published = new List<GameEvent>();
+        var session = ScenarioGame.Create(solo: true);
+        long clock = ScenarioGame.FixedClockMillis;
+        var flow = new ViewerSessionFlow(session, ScenarioGame.HumanA, () => clock++, (_, events) => published.AddRange(events));
+        int startTurn = session.Game.Turns;
+        Assert.True(flow.Submit(new StartAutoPlay { Turns = 3 }).Accepted);
+
+        for (int i = 0; i < 3; i++)
+        {
+            var outcome = flow.AutoPlayTurn();
+            Assert.True(outcome.Accepted, outcome.Message);
+            Assert.True(outcome.NextTurnBegun);
+            Assert.True(outcome.AiTurnsRun >= 1);
+            Assert.DoesNotContain(outcome.Events, IsAiOnly);
+        }
+
+        Assert.DoesNotContain(published, IsAiOnly);
+        Assert.Equal(startTurn + 3, session.Game.Turns);
+        Assert.False(session.Game.ClientState.AutoPlay!.IsAutoPlaying());
+        Assert.False(flow.AutoPlayTurn().Accepted); // out of turns: refused, control is the player's
+        Assert.True(flow.EndTurn().Accepted);
+        Assert.Equal(startTurn + 4, session.Game.Turns);
+    }
+
+    [Fact]
+    public void AutoPlayTurn_StopsAtOnceAfterStopAutoPlay()
+    {
+        var session = ScenarioGame.Create(solo: true);
+        long clock = ScenarioGame.FixedClockMillis;
+        var flow = new ViewerSessionFlow(session, ScenarioGame.HumanA, () => clock++, (_, _) => { });
+        Assert.True(flow.Submit(new StartAutoPlay { Turns = 50 }).Accepted);
+        Assert.True(flow.AutoPlayTurn().Accepted);
+        Assert.True(flow.Submit(new StopAutoPlay()).Accepted);
+        Assert.False(flow.AutoPlayTurn().Accepted);
+        Assert.False(flow.Submit(new StopAutoPlay()).Accepted);
+    }
 }

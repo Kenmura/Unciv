@@ -111,6 +111,20 @@ public partial class GameScreen : Control
 
     private bool resigned;
 
+    /// <summary>C047: the menu of the AutoPlay button.</summary>
+    public AutoPlayMenuView AutoPlayMenu { get; private set; } = null!; // JUSTIFY: C047 assigned in _Ready before any use
+
+    /// <summary>C047: the running AutoPlay as the client tracks it, null while idle.</summary>
+    public AutoPlayRun? AutoPlay { get; private set; }
+
+    /// <summary>C047: the last finished run's status line (also shown in the status label).</summary>
+    public string? AutoPlayResult { get; private set; }
+
+    /// <summary>C047: frames to wait between two auto-played turns, so the player sees each turn and can press Stop; scenarios raise it to capture a run midway.</summary>
+    public int AutoPlayFramesPerTurn { get; set; } = 1;
+
+    private int autoPlayGeneration;
+
     private bool watchingAfterDefeat;
     private int gameOverCheck;
     private int gameOverTurn = -1;
@@ -364,6 +378,12 @@ public partial class GameScreen : Control
         Map.EdgePan = settings.EdgePan;
         Map.ShowResources = settings.ShowResources;
         Overlays.ShowYields = settings.ShowYields;
+        Hud.ShowAutoPlayButton(settings.AutoPlay.ShowButton);
+        if (!settings.AutoPlay.ShowButton)
+        {
+            AutoPlayMenu.Close();
+            if (AutoPlay != null) Run(StopAutoPlayAsync());
+        }
     }
 
     private IReadOnlyDictionary<string, string> hotkeys = new Dictionary<string, string>();
@@ -409,6 +429,11 @@ public partial class GameScreen : Control
     /// <summary>C044: Escape closes the menu or the victory page when one is open, else opens the menu unless a screen or popup already covers the map (those take Escape themselves).</summary>
     private bool TryEscape()
     {
+        if (AutoPlayMenu.Visible)
+        {
+            AutoPlayMenu.Close();
+            return true;
+        }
         if (GameMenu.Visible) return GameMenu.Cancel();
         if (VictoryStatus.Visible)
         {
@@ -526,6 +551,10 @@ public partial class GameScreen : Control
         PediaButton.Pressed += () => OpenPediaScreen();
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
+        Hud.AutoPlayRequested += OnAutoPlayButton;
+        AutoPlayMenu = new AutoPlayMenuView();
+        AddChild(AutoPlayMenu);
+        AutoPlayMenu.Chosen += kind => Run(StartAutoPlayAsync(kind));
         Notifications = new NotificationListView();
         AddChild(Notifications);
         Notifications.Chosen += OnNotificationChosen;
@@ -630,6 +659,8 @@ public partial class GameScreen : Control
         GameOver.LayoutIn(Size);
         VictoryStatus.LayoutIn(Size);
         GameMenu.LayoutIn(Size);
+        AutoPlayMenu.Size = AutoPlayMenu.GetCombinedMinimumSize();
+        AutoPlayMenu.Position = new Vector2(Hud.AutoPlayButton.Position.X + Hud.AutoPlayButton.Size.X - AutoPlayMenu.Size.X, Hud.AutoPlayButton.Position.Y - AutoPlayMenu.Size.Y - HudMargin / 2f);
         Picker.LayoutIn(Size);
         Tutorials.LayoutIn(Size);
         Panel.LayoutIn(Size);
@@ -675,6 +706,11 @@ public partial class GameScreen : Control
         VictoryStatus.Close();
         GameMenu.Init(theme);
         GameMenu.Close();
+        AutoPlayMenu.Init(theme);
+        AutoPlayMenu.Close();
+        autoPlayGeneration++; // a run of the previous game ends with it
+        AutoPlay = null;
+        Hud.SetAutoPlay(null);
         MenuButton.Theme = theme.Theme;
         resigned = false;
         watchingAfterDefeat = false;
@@ -756,6 +792,7 @@ public partial class GameScreen : Control
         MoveChild(GameOver, -1);
         MoveChild(VictoryStatus, -1);
         MoveChild(GameMenu, -1);
+        MoveChild(AutoPlayMenu, -1);
         MoveChild(Tutorials, -1);
         AddChild(Tooltips); // above everything, so a tip is never covered by a screen
         ReachableOverlay.Setup(registry);
@@ -1380,7 +1417,95 @@ public partial class GameScreen : Control
 
     private async Task ReviewAlerts() => ShowNextAlert(await queries.Pending(), reopen: true);
 
-    private void OnNextTurn() => Run(EndTurn());
+    private void OnNextTurn()
+    {
+        if (AutoPlay != null)
+        {
+            SetStatus("Stop AutoPlay first.");
+            return;
+        }
+        Run(EndTurn());
+    }
+
+    /// <summary>C047: the AutoPlay button stops a running run, otherwise opens its menu (or closes it when open).</summary>
+    private void OnAutoPlayButton()
+    {
+        if (AutoPlay != null)
+        {
+            Run(StopAutoPlayAsync());
+            return;
+        }
+        if (AutoPlayMenu.Visible)
+        {
+            AutoPlayMenu.Close();
+            return;
+        }
+        var settings = (boundSettings?.Current ?? ClientSettings.Default).AutoPlay;
+        AutoPlayMenu.Open(AutoPlayModel.Entries(settings, AutoPlayModel.CanStart(Hud.Action.Kind, GameOver.Visible || resigned)));
+        Layout();
+    }
+
+    /// <summary>
+    /// C047: starts the engine's auto-play with the stored options and then plays one turn per <see cref="AutoPlayFramesPerTurn"/> frames through the session
+    /// until the run is out of turns, the engine refuses the next one (the game ended, the civ was defeated) or the player stops it. Stopping (the button, hiding the
+    /// button in the options, leaving the game) sends the engine's StopAutoPlay so the log and a replay agree.
+    /// </summary>
+    public async Task StartAutoPlayAsync(AutoPlayKind kind)
+    {
+        AutoPlayMenu.Close();
+        if (AutoPlay != null) return;
+        var settings = (boundSettings?.Current ?? ClientSettings.Default).AutoPlay;
+        var started = await session.SubmitAsync(AutoPlayModel.StartCommand(settings, kind));
+        if (!started.Accepted)
+        {
+            SetStatus("Cannot start AutoPlay: " + started.Message);
+            return;
+        }
+        int generation = ++autoPlayGeneration;
+        AutoPlay = AutoPlayModel.StartRun(settings, kind);
+        AutoPlayResult = null;
+        Hud.SetAutoPlay(AutoPlay);
+        string refusal = "";
+        while (AutoPlay is { Active: true } && generation == autoPlayGeneration)
+        {
+            var outcome = await session.AutoPlayTurnAsync();
+            if (generation != autoPlayGeneration) return; // stopped (or the game replaced) while the turn was played
+            if (!outcome.Accepted)
+            {
+                refusal = outcome.Message;
+                break;
+            }
+            AutoPlay = AutoPlay.AfterTurn();
+            Hud.SetAutoPlay(AutoPlay);
+            Refresh();
+            for (int i = 0; i < AutoPlayFramesPerTurn && AutoPlay.Active; i++)
+            {
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                if (generation != autoPlayGeneration) return;
+            }
+        }
+        FinishAutoPlay(stoppedByPlayer: false, refusal);
+    }
+
+    /// <summary>C047: the Stop control. Ends the run at once and tells the engine, so the next turn is the player's.</summary>
+    public async Task StopAutoPlayAsync()
+    {
+        if (AutoPlay == null) return;
+        autoPlayGeneration++;
+        var result = await session.SubmitAsync(new Unciv.Commands.Turn.StopAutoPlay());
+        FinishAutoPlay(stoppedByPlayer: true, result.Accepted ? "" : result.Message);
+        Refresh();
+    }
+
+    private void FinishAutoPlay(bool stoppedByPlayer, string refusal)
+    {
+        if (AutoPlay == null) return;
+        AutoPlayResult = AutoPlayModel.FinishedText(AutoPlay, stoppedByPlayer, refusal);
+        AutoPlay = null;
+        Hud.SetAutoPlay(null);
+        SetStatus(AutoPlayResult);
+        Run(RefreshHud());
+    }
 
     private async Task EndTurn()
     {

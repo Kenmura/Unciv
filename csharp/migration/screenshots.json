@@ -632,5 +632,35 @@
         "caption": "The overview's Cities tab lists the capital under its new name, Ur of the Chaldees."
       }
     ]
+  },
+  "C047": {
+    "scenario": "autoplay",
+    "about": "AutoPlay: an optional button with a menu (start N turns, AutoPlay End Turn), a Stop control with the turns left, and the AutoPlay options.",
+    "shots": [
+      {
+        "golden": "autoplay/button.png",
+        "caption": "The game screen with the AutoPlay option on: an AutoPlay button above Next turn."
+      },
+      {
+        "golden": "autoplay/menu.png",
+        "caption": "The AutoPlay menu above the button: Start AutoPlay (5 turns) and AutoPlay End Turn (1 turn)."
+      },
+      {
+        "golden": "autoplay/running.png",
+        "caption": "AutoPlay running: the button reads Stop AutoPlay (4 left), Next unit is greyed and the turn counter has moved on."
+      },
+      {
+        "golden": "autoplay/finished.png",
+        "caption": "After the five turns: the status line says AutoPlay finished after 5 turns, the button is idle again."
+      },
+      {
+        "golden": "autoplay/stopped.png",
+        "caption": "After pressing Stop: the status line says AutoPlay stopped, the button is idle and the turn is the player's."
+      },
+      {
+        "golden": "autoplay/options.png",
+        "caption": "Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI."
+      }
+    ]
   }
 }
