@@ -334,7 +334,9 @@ public sealed class SimultaneousTurnConflictTests
         };
         var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
         var goldBefore = second.Gold;
+        var firstGoldBefore = first.Gold;
         arena.Ok(first, buys[first]);
+        Assert.True(first.Gold < firstGoldBefore); // the winner paid
         Assert.Equal(first.CivId, arena.Game.GetTile(tile).GetOwner()!.CivId);
         arena.Rejected(second, buys[second], CommandErrors.InvalidTarget);
         Assert.Equal(goldBefore, second.Gold);
@@ -481,6 +483,7 @@ public sealed class SimultaneousTurnConflictTests
         var (win, lose) = bAcceptsFirst ? (acceptOfA, acceptOfB) : (acceptOfB, acceptOfA);
         w.Ok(win.Cmd, win.Actor);
         Assert.Equal((100, 250), (w.A.Gold, w.B.Gold)); // A paid once
+        Assert.DoesNotContain(win.Actor == w.B.CivId ? w.B.TradeRequests : w.A.TradeRequests, it => it.RequestingCiv == (win.Actor == w.B.CivId ? w.A.CivId : w.B.CivId)); // the answered request is consumed
         w.Rejected(lose.Cmd, CommandErrors.StaleReference, lose.Actor); // A cannot pay again
         w.Rejected(lose.Cmd, CommandErrors.StaleReference, lose.Actor);
         Assert.Equal((100, 250), (w.A.Gold, w.B.Gold));

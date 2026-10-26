@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 215/218 | 3 | 2 | 1 | [T239](backlog/T239.md) [T240](backlog/T240.md) [T241](backlog/T241.md) |
+| Phase 1: CLI (headless engine) | 215/220 | 5 | 2 | 1 | [T239](backlog/T239.md) [T240](backlog/T240.md) [T241](backlog/T241.md) [T242](backlog/T242.md) [T243](backlog/T243.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 12/29 | 17 | 0 | 2 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T177](backlog/T177.md) [T178](backlog/T178.md) [T179](backlog/T179.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T203](backlog/T203.md) [T204](backlog/T204.md) [T205](backlog/T205.md) [T206](backlog/T206.md) [T207](backlog/T207.md) [T225](backlog/T225.md) [T226](backlog/T226.md) |
 
@@ -56,6 +56,8 @@ flowchart TD
     T239["T239<br/>Observe first green CI run after the workflow scope is grant..."]
     T240["T240<br/>Remote-safe victory.Progress, empire.TradeHint and console q..."]
     T241["T241<br/>Remote query exposure residuals: live stats of unmet civs, f..."]
+    T242["T242<br/>Two-human conflict tests: one-per-game wonder race, ruins, r..."]
+    T243["T243<br/>Real-started-game visibility test for two humans: B's mirror..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C001["C001<br/>Godot project skeleton"]
@@ -115,6 +117,8 @@ flowchart TD
   T179 --> T207
   T179 --> T225
   T180 --> T225
+  T203 --> T242
+  T203 --> T243
   T012 --> C006
   C001 --> C006
   T164 --> C006
@@ -195,6 +199,8 @@ flowchart TD
   class T239 ready
   class T240 review
   class T241 ready
+  class T242 ondeck
+  class T243 ondeck
 ```
 
 ## Remaining tickets over time
@@ -212,7 +218,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 06:00", "24 12:00", "24 18:00", "25 00:00", "25 06:00", "25 12:00", "25 18:00", "26 00:00", "26 06:00", "26 12:00", "26 18:00"]
     y-axis "Tickets" 0 --> 65
-    line [21, 57, 36, 13, 54, 54, 55, 39, 33, 19, 17]
+    line [21, 57, 36, 13, 54, 54, 55, 39, 33, 19, 19]
     line [0, 0, 5, 4, 3, 2, 5, 6, 6, 6, 3]
 ```
 
@@ -223,14 +229,16 @@ xychart-beta
 | T239 | **Ready to start** | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T241 | **Ready to start** | T223 | 0 | Remote query exposure residuals: live stats of unmet civs, fogged-city names, spectator reach |
 | T177 | **On deck** (after T226) | T172, T164, T184, T187, T200, T202, T226 | 14 | Turn policy for simultaneous turns: injected clock, turn timer, ForceEndTurn order, disconnect grace, AI takeover opt-in, resolve pump |
+| T242 | **On deck** (after T203) | T203 | 0 | Two-human conflict tests: one-per-game wonder race, ruins, religion founding and belief limits |
+| T243 | **On deck** (after T203) | T203 | 0 | Real-started-game visibility test for two humans: B's mirror never holds A-only tiles/units across a simultaneous round |
 | T226 | Needs-Review [Claude] | T202 | 15 | Multiplayer game-over and forced-end rules: One More Turn authority, defeated humans, default resolution of blocking decisions on ForceEndTurn |
 | T178 | Available (waiting on T177) | T172, T173, T174, T175, T176, T177, T202, T223, T224, T230 | 13 | Headless host core: Unciv.Server project, GameHost actor, sessions bound to civs, command gate (RequireActive, rate, size, dedup, existence-oracle-safe errors) |
 | T179 | Available (waiting on T178) | T172, T173, T178 | 11 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
 | T204 | Available (waiting on T178) | T172, T173, T178, T199 | 9 | Lobby: slots, nation pick, ready-up, host settings (LobbySettings to GameSetupInfo), AI fill, ruleset hash check, join password, start game |
 | T180 | Available (waiting on T179, T204) | T172, T173, T174, T175, T179, T204, T223, T224 | 6 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
+| T203 | Needs-Review [Claude] | T202, T188, T191, T192, T193, T194, T174 | 3 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | C036 | Available (waiting on T180) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | C035 | Available (waiting on T180, T204) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
-| T203 | Needs-Review [Claude] | T202, T188, T191, T192, T193, T194, T174 | 1 | Two-human determinism and conflict tests: interleaved ScriptedHumans, same-tile move/attack/found-city, war vs peace, trade races, replay and visibility |
 | T205 | Available (waiting on T178, T179, T204) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
