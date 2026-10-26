@@ -84,8 +84,10 @@ public partial class GameScreen : Control
     /// <summary>C026: the tutorial popup; it shows only while the screen follows client settings (<see cref="BindSettings"/>) that have tutorials on.</summary>
     public TutorialPopupView Tutorials { get; private set; } = null!; // JUSTIFY: C026 assigned in _Ready before any use
 
-    /// <summary>C024: the victory/defeat screen, above everything else.</summary>
+    /// <summary>C053: the World Congress result, above the world and below the victory screen.</summary>
     public VoteResultScreen VoteResult { get; private set; } = null!; // JUSTIFY: C053 assigned in _Ready before any use
+
+    /// <summary>C024: the victory/defeat screen, above everything else.</summary>
     public GameOverScreen GameOver { get; private set; } = null!; // JUSTIFY: C024 assigned in _Ready before any use
 
     /// <summary>Raised when the player leaves the finished (or any) game from the game-over screen or the menu; the composition root shows the main menu.</summary>

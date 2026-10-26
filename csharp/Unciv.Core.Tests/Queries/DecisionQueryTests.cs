@@ -454,6 +454,11 @@ public class DecisionQueryTests
         Assert.Contains(DiplomaticVoteResultQuery.UnknownCiv, tie);
         Assert.Contains(enemy.CivName, tie);
         Assert.DoesNotContain(stranger.CivName, tie);
+        Votes[player.CivId] = player.CivId; // the viewer itself in a tie is named
+        Votes[enemy.CivId] = enemy.CivId;
+        var ownTie = Ask(new DiplomaticVoteResultQuery()).WinnerText;
+        Assert.Contains(player.CivName, ownTie);
+        Assert.DoesNotContain(DiplomaticVoteResultQuery.UnknownCiv, ownTie);
         Votes.Clear();
         Assert.Equal("No valid votes were cast.", Ask(new DiplomaticVoteResultQuery()).WinnerText);
     }
