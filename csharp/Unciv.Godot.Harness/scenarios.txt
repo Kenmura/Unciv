@@ -23,6 +23,7 @@ alerts
 victory
 defeat
 overview
+overview-espionage
 options
 trade
 improvements

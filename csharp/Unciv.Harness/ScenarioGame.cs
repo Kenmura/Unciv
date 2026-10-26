@@ -3,6 +3,7 @@ using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
+using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Utils;
@@ -53,9 +54,9 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false)
     {
-        diplomacy |= alerts | trade;
+        diplomacy |= alerts | trade | espionage;
         solo |= skirmish | diplomacy | policies | victory | defeat | decisions | crowd;
         var vanilla = LoadVanilla();
         // C038: religion needs Gods & Kings (Vanilla has no beliefs); every other scenario plays Vanilla
@@ -93,6 +94,7 @@ public static class ScenarioGame
         if (defeat) SetUpDefeat(game);
         if (trade) SetUpTrade(game);
         if (decisions) SetUpDecisions(game);
+        if (espionage) SetUpEspionage(game);
         return new GameSession(game);
     }
 
@@ -238,6 +240,37 @@ public static class ScenarioGame
         human.Tech.FreeTechs = 1;
         human.ReligionManager.StoredFaith = human.ReligionManager.FaithForPantheon();
         human.Units.GetCivUnits().OrderBy(it => it.Id).First(it => it.BaseUnit.Name == "Warrior").Promotions.XP = 30;
+    }
+
+    /// <summary>
+    /// C050: the diplomacy game with espionage switched on, Babylon's capital founded (production and research chosen), Rome's capital founded and the city-state's capital
+    /// (if it has none) explored by Babylon, and two Babylon spies: one idle in the hideout, one set up (surveillance) in the city-state, so it can stage a coup. Set up
+    /// directly on the state, so a headless replay builds the same game.
+    /// </summary>
+    private static void SetUpEspionage(GameInfo game)
+    {
+        game.GameParameters.EspionageEnabled = true;
+        var human = game.GetCivilization(HumanA);
+        var settler = human.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());
+        var capital = human.AddCity(settler.CurrentTile.Position, settler);
+        capital.CityConstructions.AddToQueue("Warrior");
+        human.Tech.TechsToResearch.Add("Agriculture");
+        var rome = game.GetCivilization(Ai);
+        var romeCapital = FoundWithSettler(rome);
+        var cityState = game.Civilizations.First(it => it.IsCityState);
+        var cityStateCity = cityState.Cities.FirstOrDefault() ?? FoundWithSettler(cityState);
+        romeCapital.GetCenterTile().SetExplored(human, true);
+        cityStateCity.GetCenterTile().SetExplored(human, true);
+        human.EspionageManager.AddSpy();
+        var resident = human.EspionageManager.AddSpy();
+        resident.MoveTo(cityStateCity);
+        resident.SetAction(SpyAction.Surveillance);
+    }
+
+    private static CityObject FoundWithSettler(Logic.Civilization.Civilization civ)
+    {
+        var settler = civ.Units.GetCivUnits().First(it => it.BaseUnit.IsCityFounder());
+        return civ.AddCity(settler.CurrentTile.Position, settler);
     }
 
     /// <summary>The 64-bit canonical hash of the whole game state (serialised form), as lowercase hex.</summary>

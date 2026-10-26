@@ -660,24 +660,6 @@ Scenario `menu`.
 
 *After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
 
-## C046 (ticket not Done or unknown)
-
-Developer console popup (backtick) in a God-mode game: Tab completion, history with Up, the engine's response inline; a line that runs is one logged command.
-
-Scenario `console`.
-
-![Tab on the ambiguous word "ci" lists the matching completions (city, civ) in gold under the input.](../Unciv.Godot.Harness/golden/console/choices.png)
-
-*Tab on the ambiguous word "ci" lists the matching completions (city, civ) in gold under the input.* (`console/choices.png`)
-
-![After "civ addstat gold 777": the response says Done in green and the top bar shows 777 gold.](../Unciv.Godot.Harness/golden/console/ran.png)
-
-*After "civ addstat gold 777": the response says Done in green and the top bar shows 777 gold.* (`console/ran.png`)
-
-![A refused line stays in the input and the engine's reason is shown in red.](../Unciv.Godot.Harness/golden/console/error.png)
-
-*A refused line stays in the input and the engine's reason is shown in red.* (`console/error.png`)
-
 ## C047 AutoPlay UI: auto-play status button, turn count and stop, options
 
 AutoPlay: an optional button with a menu (start N turns, AutoPlay End Turn), a Stop control with the turns left, and the AutoPlay options.
@@ -725,6 +707,28 @@ Scenario `city-rename`.
 ![The overview's Cities tab lists the capital under its new name, Ur of the Chaldees.](../Unciv.Godot.Harness/golden/city-rename/overview.png)
 
 *The overview's Cities tab lists the capital under its new name, Ur of the Chaldees.* (`city-rename/overview.png`)
+
+## C050 (ticket not Done or unknown)
+
+Overview espionage and global politics tabs in a game with espionage on: spy moves, coup staging, and the relation with each met civ.
+
+Scenario `overview-espionage`.
+
+![Espionage tab: two spies with the destinations the engine offers and a coup button for the spy in the city-state.](../Unciv.Godot.Harness/golden/overview-espionage/espionage.png)
+
+*Espionage tab: two spies with the destinations the engine offers and a coup button for the spy in the city-state.* (`overview-espionage/espionage.png`)
+
+![The first spy was sent to Rome's capital; the page shows its new location.](../Unciv.Godot.Harness/golden/overview-espionage/moved.png)
+
+*The first spy was sent to Rome's capital; the page shows its new location.* (`overview-espionage/moved.png`)
+
+![The resident spy is staging a coup; its button now calls the coup off.](../Unciv.Godot.Harness/golden/overview-espionage/coup.png)
+
+*The resident spy is staging a coup; its button now calls the coup off.* (`overview-espionage/coup.png`)
+
+![Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line.](../Unciv.Godot.Harness/golden/overview-espionage/politics.png)
+
+*Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line.* (`overview-espionage/politics.png`)
 
 ## Missing screenshots
 

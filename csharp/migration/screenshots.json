@@ -358,6 +358,28 @@
       }
     ]
   },
+  "C050": {
+    "scenario": "overview-espionage",
+    "about": "Overview espionage and global politics tabs in a game with espionage on: spy moves, coup staging, and the relation with each met civ.",
+    "shots": [
+      {
+        "golden": "overview-espionage/espionage.png",
+        "caption": "Espionage tab: two spies with the destinations the engine offers and a coup button for the spy in the city-state."
+      },
+      {
+        "golden": "overview-espionage/moved.png",
+        "caption": "The first spy was sent to Rome's capital; the page shows its new location."
+      },
+      {
+        "golden": "overview-espionage/coup.png",
+        "caption": "The resident spy is staging a coup; its button now calls the coup off."
+      },
+      {
+        "golden": "overview-espionage/politics.png",
+        "caption": "Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line."
+      }
+    ]
+  },
   "C023": {
     "scenario": "overview",
     "about": "Empire overview: tabs for stats, cities, units, resources, ranking, religion and espionage; Go to buttons jump to a city or unit.",

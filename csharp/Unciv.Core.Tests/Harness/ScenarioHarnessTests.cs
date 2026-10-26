@@ -252,6 +252,30 @@ public sealed class ScenarioHarnessTests : IDisposable
     }
 
     [Fact]
+    public void EspionageGameHasTwoSpiesOneHiddenOneSetUpInTheCityStateAndReplaysEqual()
+    {
+        var session = ScenarioGame.Create(espionage: true);
+        var game = session.Game;
+        var human = game.GetCivilization(ScenarioGame.HumanA);
+        Assert.True(game.IsEspionageEnabled());
+        Assert.Single(human.Cities);
+        Assert.Single(game.GetCivilization(ScenarioGame.Ai).Cities);
+        var cityState = game.Civilizations.Single(it => it.IsCityState);
+        Assert.Single(cityState.Cities);
+        Assert.All(new[] { game.GetCivilization(ScenarioGame.Ai).Cities[0], cityState.Cities[0] }, city => Assert.True(city.GetCenterTile().IsExplored(human)));
+        var spies = human.EspionageManager.SpyList;
+        Assert.Equal(2, spies.Count);
+        Assert.Null(spies[0].GetCityOrNull());
+        Assert.Equal(Unciv.Models.SpyAction.None, spies[0].Action);
+        Assert.Same(cityState.Cities[0], spies[1].GetCityOrNull());
+        Assert.True(spies[1].CanDoCoup());
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioGame.StateHash(ScenarioGame.Create(espionage: true)));
+        Assert.Equal(ScenarioGame.StateHash(session), ScenarioReplay.ReplayHash(ScenarioGame.GameSeed, ScenarioGame.MapSeed, session.Log, espionage: true));
+        Assert.True(ScenarioResult.FromJson(new ScenarioResult("e", 1, 2, "h", [], [], [], [], Espionage: true).ToJson()).Espionage);
+        Assert.False(ScenarioResult.FromJson(new ScenarioResult("e", 1, 2, "h", [], [], [], []).ToJson()).Espionage);
+    }
+
+    [Fact]
     public void TradeGameHasHintsOnRomeRichAndATradeAndADemandWaitingAndReplaysEqual()
     {
         var session = ScenarioGame.Create(trade: true);

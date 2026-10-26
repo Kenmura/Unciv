@@ -15,6 +15,9 @@ public sealed record OverviewTable(IReadOnlyList<string> Columns, IReadOnlyList<
 
 public sealed record OverviewRow(string Key, IReadOnlyList<string> Cells, int X = -1, int Y = -1);
 
+/// <summary>A civ of the global politics tab with the engine's diplomacy panel for it; the panel is null when the engine refused it.</summary>
+public sealed record PoliticsEntry(OverviewCiv Civ, DiplomacyPanelResult? Panel);
+
 /// <summary>One option of a spy's destination menu and the command that picks it.</summary>
 public sealed record SpyMove(string Label, MoveSpy Command);
 
@@ -36,7 +39,9 @@ public static class OverviewModel
     public const string Religion = "Religion";
     public const string Espionage = "Espionage";
 
-    public static IReadOnlyList<string> Tabs { get; } = [Stats, Cities, Units, Resources, Ranking, Religion, Espionage];
+    public const string Politics = "Politics";
+
+    public static IReadOnlyList<string> Tabs { get; } = [Stats, Cities, Units, Resources, Ranking, Religion, Espionage, Politics];
 
     private static string N(int value) => value.ToString(CultureInfo.InvariantCulture);
 
@@ -146,4 +151,32 @@ public static class OverviewModel
             : "";
         return new SpyRow(spy.Name, summary, moves, spy.CanDoCoup ? new SetSpyCoup { Spy = spy.Name, Stage = !staging } : null, coupLabel);
     }).ToList();
+
+    /// <summary>
+    /// C050: the global politics tab's table, one row per civ the viewer has met (the engine's known civs, in its order) with its relation to the viewer as the diplomacy panel
+    /// answers it: status, how that civ sees the viewer, a city-state's influence, open borders and the peace treaty. Relations between two other civs are not shown (no query
+    /// answers them, so the client cannot leak them); a civ the engine would not describe shows dashes.
+    /// </summary>
+    public static OverviewTable PoliticsTable(IReadOnlyList<PoliticsEntry> entries) => new(["Civilization", "Kind", "Status", "Attitude", "Influence", "Borders", "Peace treaty"],
+        entries.Select(entry =>
+        {
+            var civ = entry.Civ;
+            var panel = entry.Panel;
+            string status = civ.IsDefeated ? "Defeated" : panel == null ? (civ.AtWar ? "War" : "Peace") : panel.Status == "DefensivePact" ? "Defensive pact" : panel.Status;
+            string influence = panel is { Influence: { } value } ? F(value) + (panel.IsAlly ? " (ally)" : "") : "-";
+            string borders = panel == null ? "-" : panel.HasOpenBorders && panel.TheyHaveOpenBordersWithUs ? "Both ways" : panel.HasOpenBorders ? "You may enter" : panel.TheyHaveOpenBordersWithUs ? "They may enter" : "-";
+            string treaty = panel is { TurnsToPeaceTreaty: > 0 } ? $"{N(panel.TurnsToPeaceTreaty)} turns" : "-";
+            return new OverviewRow(civ.CivName, [civ.CivName, civ.IsCityState ? "City-state" : "Major", status, panel?.Relationship ?? "-", influence, borders, treaty]);
+        }).ToList(), "You have met nobody yet.");
+
+    /// <summary>
+    /// C050: the World Congress vote under the politics table. <paramref name="vote"/> is null when the engine refuses the query; candidates are civ ids that
+    /// <paramref name="civName"/> turns into display names. Abstaining is always possible, as in the Kotlin vote picker.
+    /// </summary>
+    public static IReadOnlyList<string> VoteLines(DiplomaticVoteResult? vote, Func<string, string> civName)
+    {
+        if (vote == null) return ["The engine would not show the diplomatic vote."];
+        if (!vote.CanVote) return ["No diplomatic vote is open for you now."];
+        return ["A diplomatic vote is open for you.", "You can vote for: " + string.Join(", ", vote.Candidates.Select(civName)) + ".", "You may also abstain."];
+    }
 }

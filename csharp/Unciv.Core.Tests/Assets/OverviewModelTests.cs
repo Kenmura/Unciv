@@ -192,4 +192,72 @@ public class OverviewModelTests
         Assert.True(staging[0].Coup!.Stage);
         Assert.Equal("Stage a coup (50% chance)", staging[0].CoupLabel);
     }
+
+    private static OverviewCiv Civ(string name, bool cityState = false, bool defeated = false, bool atWar = false) => new(name, cityState, defeated, atWar, new Dictionary<string, int>());
+
+    private static DiplomacyPanelResult Panel(string status = "Peace", string relationship = "Neutral", float? influence = null, bool ally = false, bool ours = false, bool theirs = false, int treaty = 0) =>
+        new("X", influence != null, false, status, relationship, [], [], influence, ally, treaty, false, ours, theirs, false, false, false, false, false, 0);
+
+    [Fact]
+    public void PoliticsIsTheLastTab()
+    {
+        Assert.Equal(OverviewModel.Politics, OverviewModel.Tabs[^1]);
+        Assert.Equal("Politics", OverviewModel.Politics);
+    }
+
+    [Fact]
+    public void PoliticsTableHasOneRowPerMetCivInTheEnginesOrderWithItsPanelWorded()
+    {
+        var table = OverviewModel.PoliticsTable([
+            new PoliticsEntry(Civ("Rome"), Panel("War", "Enemy")),
+            new PoliticsEntry(Civ("Athens", cityState: true), Panel("Protector", "Friend", influence: 42.5f, ally: true)),
+            new PoliticsEntry(Civ("Greece"), Panel("DefensivePact", "Ally", ours: true, theirs: true, treaty: 7)),
+        ]);
+        Assert.Equal(["Civilization", "Kind", "Status", "Attitude", "Influence", "Borders", "Peace treaty"], table.Columns);
+        Assert.Equal(["Rome", "Athens", "Greece"], table.Rows.Select(it => it.Key));
+        Assert.Equal(["Rome", "Major", "War", "Enemy", "-", "-", "-"], table.Rows[0].Cells);
+        Assert.Equal(["Athens", "City-state", "Protector", "Friend", "42.5 (ally)", "-", "-"], table.Rows[1].Cells);
+        Assert.Equal(["Greece", "Major", "Defensive pact", "Ally", "-", "Both ways", "7 turns"], table.Rows[2].Cells);
+        Assert.Equal("You have met nobody yet.", table.Empty);
+    }
+
+    [Fact]
+    public void PoliticsInfluenceOfANonAllyHasNoAllyMarkAndBordersNameTheDirection()
+    {
+        var table = OverviewModel.PoliticsTable([
+            new PoliticsEntry(Civ("Athens", cityState: true), Panel(influence: 10f, ours: true)),
+            new PoliticsEntry(Civ("Rome"), Panel(theirs: true)),
+        ]);
+        Assert.Equal("10", table.Rows[0].Cells[4]);
+        Assert.Equal("You may enter", table.Rows[0].Cells[5]);
+        Assert.Equal("They may enter", table.Rows[1].Cells[5]);
+    }
+
+    [Fact]
+    public void PoliticsDefeatedCivIsDefeatedAndACivWithoutPanelShowsDashesAndTheWarFlag()
+    {
+        var table = OverviewModel.PoliticsTable([
+            new PoliticsEntry(Civ("Rome", defeated: true, atWar: true), Panel("War")),
+            new PoliticsEntry(Civ("Greece", atWar: true), null),
+            new PoliticsEntry(Civ("Egypt"), null),
+        ]);
+        Assert.Equal("Defeated", table.Rows[0].Cells[2]);
+        Assert.Equal(["Greece", "Major", "War", "-", "-", "-", "-"], table.Rows[1].Cells);
+        Assert.Equal("Peace", table.Rows[2].Cells[2]);
+    }
+
+    [Fact]
+    public void PoliticsTableOfNobodyIsEmpty()
+    {
+        Assert.Equal(0, OverviewModel.PoliticsTable([]).Count);
+    }
+
+    [Fact]
+    public void VoteLinesSayRefusedClosedOrListTheCandidatesByName()
+    {
+        Assert.Equal(["The engine would not show the diplomatic vote."], OverviewModel.VoteLines(null, it => it));
+        Assert.Equal(["No diplomatic vote is open for you now."], OverviewModel.VoteLines(new DiplomaticVoteResult(false, ["x"]), it => it));
+        Assert.Equal(["A diplomatic vote is open for you.", "You can vote for: Rome, Greece.", "You may also abstain."],
+            OverviewModel.VoteLines(new DiplomaticVoteResult(true, ["id1", "id2"]), id => id == "id1" ? "Rome" : "Greece"));
+    }
 }

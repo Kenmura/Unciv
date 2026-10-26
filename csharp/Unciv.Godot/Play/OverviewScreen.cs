@@ -123,6 +123,10 @@ public partial class OverviewScreen : PanelContainer
         var rankings = await queries.Rankings();
         var religion = await queries.Religion();
         var spies = await queries.Spies();
+        var vote = await queries.DiplomaticVote();
+        var politics = new List<PoliticsEntry>();
+        if (overview != null)
+            foreach (var civ in overview.KnownCivs) politics.Add(new PoliticsEntry(civ, await queries.DiplomacyPanel(civ.CivName)));
         if (ticket != generation) return; // closed or refreshed meanwhile
         jumpButtons.Clear();
         spyButtons.Clear();
@@ -151,6 +155,12 @@ public partial class OverviewScreen : PanelContainer
         else AddLines(OverviewModel.Religion, OverviewModel.ReligionLines(religion));
         if (spies == null) ShowNotice(OverviewModel.Espionage, "Espionage is not enabled in this game.");
         else BuildSpies(OverviewModel.SpyRows(spies));
+        if (overview == null) ShowNotice(OverviewModel.Politics, "The engine would not show the empire overview.");
+        else
+        {
+            AddTable(OverviewModel.Politics, OverviewModel.PoliticsTable(politics), "Relations with the civilizations you have met");
+            AddLines(OverviewModel.Politics, OverviewModel.VoteLines(vote, id => snapshot.Civs.FirstOrDefault(it => it.CivId == id)?.Name ?? id));
+        }
         SetMessage("");
     }
 
