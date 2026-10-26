@@ -98,7 +98,10 @@ public sealed class MenuScenario : Scenario
 
             new Press("Next turn"),
             new WaitFrames(3),
-            new AssertQuery("ending the turn is unsaved progress", () => controller.HasUnsavedProgress),
+            // C040: the turn is processed on a worker and published when it is over, so the autosave of the new turn captures its final state (before, it was taken part way)
+            new AssertQuery("the autosave of the new turn holds everything so far", () => !controller.HasUnsavedProgress),
+            new Act("order a unit", () => localHost.SubmitAsync(new Unciv.Commands.Units.SetUnitDue { UnitId = session.Game.GetCivilization(ScenarioGame.HumanA).Units.GetCivUnits().First().Id, Due = false }).GetAwaiter().GetResult()),
+            new AssertQuery("a command after the autosave is unsaved progress", () => controller.HasUnsavedProgress),
             new Press("Menu"),
             new Press("Start new game"),
             new AssertQuery("New game asks first because of the unsaved progress", () => newGame == 0 && screen.GameMenu.Asking != null),

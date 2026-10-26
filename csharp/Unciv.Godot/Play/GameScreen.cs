@@ -408,8 +408,11 @@ public partial class GameScreen : Control
             Tutorials.OkButton.EmitSignal(BaseButton.SignalName.Pressed);
             return true;
         }
+<<<<<<< HEAD
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
         if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
+=======
+>>>>>>> 1415a8612 (migration: C040 fix merge (overlay layout, menu scenario autosave, Escape while processing))
         if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
@@ -445,6 +448,7 @@ public partial class GameScreen : Control
     /// <summary>C044: Escape closes the menu or the victory page when one is open, else opens the menu unless a screen or popup already covers the map (those take Escape themselves).</summary>
     private bool TryEscape()
     {
+        if (IsEndingTurn) return false; // C040: nothing opens while the turn is processed
         if (AutoPlayMenu.Visible)
         {
             AutoPlayMenu.Close();
@@ -693,6 +697,7 @@ public partial class GameScreen : Control
         ConsolePopup.LayoutIn(Size);
         Picker.LayoutIn(Size);
         Tutorials.LayoutIn(Size);
+        TurnOverlay.LayoutIn(Size);
         Panel.LayoutIn(Size);
         PlacePromoteButton();
         CombatPreview.LayoutIn(Size);
