@@ -83,6 +83,13 @@ public class ConsoleModelTests
         Assert.Single(ConsoleModel.SanitizeHistory([new string('x', ConsoleRunner.MaxLineLength)]));
     }
 
+    [Fact]
+    public void SanitizeDropsNullAndControlCharacterLinesAndTrimsTheRest()
+    {
+        var clean = ConsoleModel.SanitizeHistory(["bad\nline", "esc\u001b[31m", "nul\0", null!, "  civ addstat gold 5  ", "tab\there", "ünï ok"]);
+        Assert.Equal(["civ addstat gold 5", "ünï ok"], clean);
+    }
+
     [Theory]
     [InlineData(0, 0, -1, -1)]
     [InlineData(0, 0, 1, -1)]

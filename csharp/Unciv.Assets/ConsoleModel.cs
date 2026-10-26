@@ -37,9 +37,10 @@ public static class ConsoleModel
         return result;
     }
 
-    /// <summary>A stored history made safe: blank and over-long lines are dropped and only the newest <see cref="MaxHistory"/> lines stay.</summary>
+    /// <summary>A stored history made safe: null, blank, over-long and control-character lines (a one-line input cannot hold them) are dropped, the rest is trimmed, and only
+    /// the newest <see cref="MaxHistory"/> lines stay.</summary>
     public static List<string> SanitizeHistory(IEnumerable<string>? stored) =>
-        stored?.Where(it => !string.IsNullOrWhiteSpace(it) && it.Length <= ConsoleRunner.MaxLineLength).TakeLast(MaxHistory).ToList() ?? [];
+        stored?.Where(it => !string.IsNullOrWhiteSpace(it) && it.Length <= ConsoleRunner.MaxLineLength && !it.Any(char.IsControl)).Select(it => it.Trim()).TakeLast(MaxHistory).ToList() ?? [];
 
     /// <summary>The history position after pressing up (<paramref name="delta"/> -1) or down (+1): clamped into the list, -1 for an empty history (Kotlin <c>navigateHistory</c>).
     /// <paramref name="current"/> may be <paramref name="count"/>, the "new line" position past the last entry.</summary>

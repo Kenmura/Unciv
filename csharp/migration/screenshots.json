@@ -511,11 +511,11 @@
       },
       {
         "golden": "options/listening.png",
-        "caption": "Bottom of the options while rebinding: the End turn key button shows ... and the message under the key list says to press a key or Escape"
+        "caption": "The key bindings while rebinding: the End turn key button shows ... and the other actions keep their keys"
       },
       {
         "golden": "options/rebound.png",
-        "caption": "Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys"
+        "caption": "The key bindings after rebinding: End turn now shows E, the other actions keep their default keys"
       }
     ]
   },

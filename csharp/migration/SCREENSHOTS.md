@@ -508,13 +508,13 @@ Scenario `options`.
 
 *Options, top: engine options, UI scale buttons, then sound volume, window mode, scroll speed and the edge-scroll and map toggles* (`options/top.png`)
 
-![Bottom of the options while rebinding: the End turn key button shows ... and the message under the key list says to press a key or Escape](../Unciv.Godot.Harness/golden/options/listening.png)
+![The key bindings while rebinding: the End turn key button shows ... and the other actions keep their keys](../Unciv.Godot.Harness/golden/options/listening.png)
 
-*Bottom of the options while rebinding: the End turn key button shows ... and the message under the key list says to press a key or Escape* (`options/listening.png`)
+*The key bindings while rebinding: the End turn key button shows ... and the other actions keep their keys* (`options/listening.png`)
 
-![Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys](../Unciv.Godot.Harness/golden/options/rebound.png)
+![The key bindings after rebinding: End turn now shows E, the other actions keep their default keys](../Unciv.Godot.Harness/golden/options/rebound.png)
 
-*Bottom of the options after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
+*The key bindings after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
 
 ## C031 Terrain blending, fog of war polish, chunked meshes
 

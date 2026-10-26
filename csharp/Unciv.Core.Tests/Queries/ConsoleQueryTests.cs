@@ -43,7 +43,7 @@ public class ConsoleQueryTests
 
     private ConsolePlanResult Plan(string line, HexCoord? tile = null) => Ask(new ConsolePlanQuery(line, tile));
 
-    private ConsoleAutocompleteResult Complete(string line) => Ask(new ConsoleAutocompleteQuery(line));
+    private ConsoleAutocompleteResult Complete(string line, HexCoord? tile = null) => Ask(new ConsoleAutocompleteQuery(line, tile));
 
     [Fact]
     public void AGoodLinePlansAsOkWithoutRunningIt()
@@ -112,6 +112,39 @@ public class ConsoleQueryTests
         var emptyLine = Complete("");
         Assert.False(emptyLine.IsError);
         Assert.Equal(0, emptyLine.ReplaceLength);
+    }
+
+    [Fact]
+    public void AutocompleteUsesTheSelectedTile()
+    {
+        var tile = testGame.TileMap[0, 0];
+        testGame.AddUnit("Warrior", player, tile);
+        var without = Complete("unit addpromotion ");
+        Assert.Equal(new ConsoleAutocompleteResult(0, null, "Select tile", true), without);
+        var with = Complete("unit addpromotion ", tile.Position);
+        Assert.False(with.IsError);
+        Assert.NotNull(with.Text);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("x")]
+    [InlineData("1")]
+    [InlineData("Germany")]
+    [InlineData("Warrior")]
+    public void PlanningAndCompletingEveryCommandNeverChangesTheGame(string argument)
+    {
+        var tile = testGame.TileMap[0, 0];
+        testGame.AddUnit("Warrior", player, tile);
+        int asked = 0;
+        foreach (var (nodes, _) in ConsoleRunner.EnumerateCommands())
+        {
+            string line = string.Join(' ', nodes) + " " + argument + " " + argument;
+            Ask(new ConsolePlanQuery(line, tile.Position));
+            Ask(new ConsoleAutocompleteQuery(line, tile.Position));
+            asked++;
+        }
+        Assert.True(asked > 20);
     }
 
     [Fact]
