@@ -358,6 +358,32 @@
       }
     ]
   },
+  "C051": {
+    "scenario": "espionage",
+    "about": "Espionage screen: the spies and the places they can go, Move/Cancel/Move here, the coup button, and the multi-spy assignment picker.",
+    "shots": [
+      {
+        "golden": "espionage/screen.png",
+        "caption": "The espionage screen: each spy with rank, location and action, a Move button and a coup button for the spy in the city-state, then the places with the spies present."
+      },
+      {
+        "golden": "espionage/selecting.png",
+        "caption": "Move was pressed on the first spy: Move became Cancel and the places the engine offers it show Move here."
+      },
+      {
+        "golden": "espionage/moved.png",
+        "caption": "The first spy was sent to Rome's capital: its row and the city's Spy present column show it."
+      },
+      {
+        "golden": "espionage/coup.png",
+        "caption": "The spy in the city-state is staging a coup; its button now calls the coup off."
+      },
+      {
+        "golden": "espionage/assign.png",
+        "caption": "Assign spies: the multi-spy picker over the screen with the second spy chosen to return to the hideout."
+      }
+    ]
+  },
   "C050": {
     "scenario": "overview-espionage",
     "about": "Overview espionage and global politics tabs in a game with espionage on: spy moves, coup staging, and the relation with each met civ.",

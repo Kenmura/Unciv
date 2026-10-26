@@ -774,6 +774,32 @@ Scenario `overview-espionage`.
 
 *Politics tab: status, attitude and influence for each civ met (the unmet civ is absent) and the diplomatic vote line.* (`overview-espionage/politics.png`)
 
+## C051 (ticket not Done or unknown)
+
+Espionage screen: the spies and the places they can go, Move/Cancel/Move here, the coup button, and the multi-spy assignment picker.
+
+Scenario `espionage`.
+
+![The espionage screen: each spy with rank, location and action, a Move button and a coup button for the spy in the city-state, then the places with the spies present.](../Unciv.Godot.Harness/golden/espionage/screen.png)
+
+*The espionage screen: each spy with rank, location and action, a Move button and a coup button for the spy in the city-state, then the places with the spies present.* (`espionage/screen.png`)
+
+![Move was pressed on the first spy: Move became Cancel and the places the engine offers it show Move here.](../Unciv.Godot.Harness/golden/espionage/selecting.png)
+
+*Move was pressed on the first spy: Move became Cancel and the places the engine offers it show Move here.* (`espionage/selecting.png`)
+
+![The first spy was sent to Rome's capital: its row and the city's Spy present column show it.](../Unciv.Godot.Harness/golden/espionage/moved.png)
+
+*The first spy was sent to Rome's capital: its row and the city's Spy present column show it.* (`espionage/moved.png`)
+
+![The spy in the city-state is staging a coup; its button now calls the coup off.](../Unciv.Godot.Harness/golden/espionage/coup.png)
+
+*The spy in the city-state is staging a coup; its button now calls the coup off.* (`espionage/coup.png`)
+
+![Assign spies: the multi-spy picker over the screen with the second spy chosen to return to the hideout.](../Unciv.Godot.Harness/golden/espionage/assign.png)
+
+*Assign spies: the multi-spy picker over the screen with the second spy chosen to return to the hideout.* (`espionage/assign.png`)
+
 ## C052 (ticket not Done or unknown)
 
 Religion, spy and vote pickers: found and enhance a religion with the prophets' unit actions, the reform picker (scenario decisions-reform), the move-spies picker opened from a spy notification, the World Congress vote and the promotion picker opened from a notification.

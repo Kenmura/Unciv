@@ -198,6 +198,7 @@ public partial class GameScreen : Control
         SetStatus("Diplomacy");
         if (Tech.Visible) Tech.Close();
         if (Overview.Visible) Overview.Close();
+        if (Espionage.Visible) Espionage.Close();
         if (Trade.Visible) Trade.Close();
         Run(Diplomacy.OpenAsync(civId));
     }
@@ -217,6 +218,7 @@ public partial class GameScreen : Control
         if (Tech.Visible) Tech.Close();
         Deselect();
         if (Trade.Visible) Trade.Close();
+        if (Espionage.Visible) Espionage.Close();
         SetStatus("Overview");
         Run(Overview.OpenAsync(tab));
     }
@@ -254,6 +256,7 @@ public partial class GameScreen : Control
         if (Diplomacy.Visible) Diplomacy.Close();
         if (Tech.Visible) Tech.Close();
         if (Overview.Visible) Overview.Close();
+        if (Espionage.Visible) Espionage.Close();
         Deselect();
         SetStatus("Trade");
         Run(Trade.OpenAsync(civId, stageFrom));
@@ -271,6 +274,39 @@ public partial class GameScreen : Control
     {
         Tooltips.Unpoint();
         Pedia.Open(link);
+    }
+
+    /// <summary>C051: the espionage screen, opened by the Espionage button.</summary>
+    public EspionageScreen Espionage { get; private set; } = null!; // JUSTIFY: C051 assigned in Start before any use
+
+    public bool IsEspionageVisible => Espionage.Visible;
+
+    public Button EspionageButton { get; } = new() { Name = "EspionageButton", Text = "Espionage".Tr() };
+
+    /// <summary>Opens the espionage screen, closing the other full screens.</summary>
+    public void OpenEspionageScreen()
+    {
+        ShowCity(null);
+        if (Diplomacy.Visible) Diplomacy.Close();
+        if (Tech.Visible) Tech.Close();
+        if (Policies.Visible) Policies.Close();
+        if (Overview.Visible) Overview.Close();
+        if (Trade.Visible) Trade.Close();
+        Deselect();
+        SetStatus("Espionage");
+        Run(Espionage.OpenAsync());
+    }
+
+    /// <summary>"Assign spies" on the espionage screen: the multi-spy picker over it, built from the engine's answer. The screen is refreshed once the picker is answered.</summary>
+    private async Task OpenSpyAssignment()
+    {
+        var spies = await queries.SpyDestinations();
+        if (spies == null)
+        {
+            SetStatus("Espionage is not enabled in this game.");
+            return;
+        }
+        Picker.Open(DecisionPickerModel.MoveSpies(spies));
     }
 
     /// <summary>C027: the one tooltip of the game screen; the map feeds it the tile under the pointer.</summary>
@@ -325,6 +361,7 @@ public partial class GameScreen : Control
         if (Diplomacy.Visible) Diplomacy.Close();
         if (Policies.Visible) Policies.Close();
         if (Overview.Visible) Overview.Close();
+        if (Espionage.Visible) Espionage.Close();
         if (Trade.Visible) Trade.Close();
         Deselect();
         SetStatus("Technology");
@@ -414,7 +451,7 @@ public partial class GameScreen : Control
             return true;
         }
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
-        if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible || Proposals.Visible) return false;
+        if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || Espionage.Visible || GameOver.Visible || Alerts.Visible || Proposals.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
             case HotkeyAction.EndTurn:
@@ -466,7 +503,7 @@ public partial class GameScreen : Control
             VictoryStatus.Close();
             return true;
         }
-        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || Alerts.Visible || Proposals.Visible || GameOver.Visible) return false;
+        if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Trade.Visible || Overview.Visible || Espionage.Visible || Alerts.Visible || Proposals.Visible || GameOver.Visible) return false;
         OpenGameMenu();
         return true;
     }
@@ -582,6 +619,8 @@ public partial class GameScreen : Control
         OverviewButton.Pressed += () => OpenOverviewScreen();
         AddChild(PediaButton);
         PediaButton.Pressed += () => OpenPediaScreen();
+        AddChild(EspionageButton);
+        EspionageButton.Pressed += OpenEspionageScreen;
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
         Hud.AutoPlayRequested += OnAutoPlayButton;
@@ -693,10 +732,16 @@ public partial class GameScreen : Control
         OverviewButton.Position = new Vector2(PolicyButton.Position.X + PolicyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         // C055: second row, right-aligned beside the minimap: the bottom left belongs to the unit panel, which used to cover the button
         PediaButton.Position = new Vector2(Size.X - 2f * HudMargin - Minimap.Size.X - PediaButton.GetCombinedMinimumSize().X, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
+        EspionageButton.Position = new Vector2(PediaButton.Position.X - HudMargin - EspionageButton.GetCombinedMinimumSize().X, PediaButton.Position.Y);
         if (Pedia != null)
         {
             Pedia.Position = new Vector2(0f, Hud.TopBarHeight);
             Pedia.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
+        }
+        if (Espionage != null)
+        {
+            Espionage.Position = new Vector2(0f, Hud.TopBarHeight);
+            Espionage.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
         TradeButton.Position = new Vector2(OverviewButton.Position.X + OverviewButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
@@ -850,6 +895,16 @@ public partial class GameScreen : Control
         Pedia = new PediaScreen(session.Ruleset, theme, Tooltips);
         AddChild(Pedia);
         PediaButton.Theme = theme.Theme;
+        if (Espionage != null)
+        {
+            RemoveChild(Espionage);
+            Espionage.QueueFree();
+        }
+        Espionage = new EspionageScreen(session, theme);
+        AddChild(Espionage);
+        Espionage.CommandAccepted += Refresh;
+        Espionage.AssignRequested += () => Run(OpenSpyAssignment());
+        EspionageButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
         MoveChild(Picker, -1);
@@ -1006,6 +1061,7 @@ public partial class GameScreen : Control
         if (city != null && Tech.Visible) Tech.Close();
         if (city != null && Policies.Visible) Policies.Close();
         if (city != null && Overview.Visible) Overview.Close();
+        if (city != null && Espionage.Visible) Espionage.Close();
         if (city != null && Trade.Visible) Trade.Close();
         if (city != null) Deselect(); // C012: the unit panel gives way to the city screen
         OpenCity = city;
@@ -1528,6 +1584,7 @@ public partial class GameScreen : Control
         }
         Picker.Close();
         Refresh();
+        if (Espionage.Visible) Run(Espionage.RefreshAsync());
         SetStatus($"{spec.Title}: done.");
     }
 
@@ -1536,6 +1593,7 @@ public partial class GameScreen : Control
         if (spec.Dismiss != null) await session.SubmitAsync(spec.Dismiss);
         Picker.Close();
         Refresh();
+        if (Espionage.Visible) await Espionage.RefreshAsync();
     }
 
     /// <summary>The snapshot does not say which unit is "due" (the engine decides that), so the cycle visits the viewer's units that could still act: movement left, no standing order, not fortified.</summary>

@@ -40,3 +40,4 @@ audio
 console
 next-turn
 proposals
+espionage
