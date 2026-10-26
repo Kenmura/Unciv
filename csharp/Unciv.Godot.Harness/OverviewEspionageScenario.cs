@@ -70,7 +70,7 @@ public sealed class OverviewEspionageScenario : Scenario
             new AssertQuery("only the spy in the city-state can stage a coup, and its button shows the engine's odds", () =>
             {
                 var entry = Entry(resident);
-                string expected = $"Stage a coup ({KotlinMath.RoundToInt(entry.CoupChance!.Value * 100f)}% chance)";
+                string expected = $"Stage a coup ({KotlinMath.RoundToInt(entry.CoupChance.NotNull() * 100f)}% chance)";
                 return screen.Overview.SpyButton(hidden.Name, -1) == null && screen.Overview.SpyButton(resident.Name, -1)?.Text == expected;
             }),
             new Capture("espionage", "Espionage tab: two spies with their moves, and a coup button for the spy in the city-state"),
