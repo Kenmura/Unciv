@@ -43,3 +43,4 @@ proposals
 espionage
 vote-result
 hotseat
+tutorial-tasks

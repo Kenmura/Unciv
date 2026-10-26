@@ -424,6 +424,17 @@ public partial class GameScreen : Control
     /// <summary>C026: false keeps tutorial popups away (scenarios that are about something else turn them off; the game never does).</summary>
     public bool TutorialsEnabled { get; set; } = true;
 
+    /// <summary>
+    /// C054: shows the floating tutorial task card (needs <see cref="BindSettings"/> with Show tutorials on). The game turns it on; scenarios that are about
+    /// something else leave it off so their pictures do not change.
+    /// </summary>
+    public bool TaskCardEnabled { get; set; }
+
+    /// <summary>C054: the floating card of the current tutorial task.</summary>
+    public TutorialTaskCard TaskCard { get; private set; } = null!; // JUSTIFY: C054 assigned in _Ready before any use
+
+    private readonly HashSet<string> reportedTasks = [];
+
     private TutorialQueue tutorialQueue = null!; // JUSTIFY: C026 assigned in Start before any use
 
     /// <summary>
@@ -477,6 +488,7 @@ public partial class GameScreen : Control
 
     private void ApplySettings(ClientSettings settings)
     {
+        if (session != null && snapshot != null) Run(RefreshTaskCard()); // C054: Show tutorials may have changed
         hotkeys = settings.KeyBindings;
         Map.KeyBindings = settings.KeyBindings;
         Map.ScrollSpeed = settings.ScrollSpeed;
@@ -592,6 +604,7 @@ public partial class GameScreen : Control
                 NewGameRequested?.Invoke();
                 break;
             case GameMenuKind.Options:
+                ReportTaskDone(TutorialTaskModel.OpenOptions);
                 OptionsRequested?.Invoke();
                 break;
             case GameMenuKind.MainMenu:
@@ -683,6 +696,9 @@ public partial class GameScreen : Control
         AddChild(Notifications);
         Notifications.Chosen += OnNotificationChosen;
         Notifications.ReviewRequested += () => Run(ReviewAlerts());
+        TaskCard = new TutorialTaskCard();
+        AddChild(TaskCard);
+        TaskCard.ChoiceChosen += (eventName, index) => Run(ChooseTaskChoice(eventName, index));
         Panel = new UnitPanelView();
         AddChild(Panel);
         Panel.EntryChosen += OnMenuEntry;
@@ -814,6 +830,7 @@ public partial class GameScreen : Control
         ConsolePopup.LayoutIn(Size);
         Picker.LayoutIn(Size);
         Tutorials.LayoutIn(Size);
+        TaskCard.LayoutIn(Size, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
         TurnOverlay.LayoutIn(Size);
         Panel.LayoutIn(Size);
         PlacePromoteButton();
@@ -858,6 +875,8 @@ public partial class GameScreen : Control
         GameOver.Init(theme);
         Tutorials.Init(theme);
         Tutorials.Close();
+        TaskCard.Init(theme);
+        reportedTasks.Clear();
         tutorialQueue = new TutorialQueue(session.Ruleset);
         GameOver.Close();
         VictoryStatus.Init(theme);
@@ -887,6 +906,10 @@ public partial class GameScreen : Control
         City = new CityScreen(session, theme);
         AddChild(City);
         City.CommandAccepted += Refresh;
+        City.CommandSent += command =>
+        {
+            if (TutorialTaskModel.FromCommand(command) is { } task) ReportTaskDone(task);
+        };
         City.Closed += () => ShowCity(null);
         if (Diplomacy != null)
         {
@@ -1130,6 +1153,7 @@ public partial class GameScreen : Control
             return;
         }
         SetStatus("City: " + city.Name);
+        ReportTaskDone(TutorialTaskModel.EnterCityScreen);
         Run(City.OpenAsync(city));
     }
 
@@ -1328,6 +1352,7 @@ public partial class GameScreen : Control
             SetStatus("Move refused: " + result.Message);
             return;
         }
+        ReportTaskDone(TutorialTaskModel.MoveUnitTask);
         Refresh();
         SetStatus(DescribeSelected());
     }
@@ -1353,6 +1378,49 @@ public partial class GameScreen : Control
         await CheckVoteResult();
         await CheckGameOver();
         CheckTutorials();
+        await RefreshTaskCard();
+    }
+
+    private bool TaskCardActive => TaskCardEnabled && boundSettings != null && boundSettings.Current.ShowTutorials && !GameOver.Visible;
+
+    /// <summary>
+    /// C054: reports what the snapshot proves the player has done, then asks the engine for the current task and shows it (or hides the card).
+    /// </summary>
+    private async Task RefreshTaskCard()
+    {
+        if (!TaskCardActive)
+        {
+            TaskCard.Show(null);
+            return;
+        }
+        foreach (var task in TutorialTaskModel.FromSnapshot(snapshot)) await ReportTask(task);
+        TaskCard.Show(await queries.TutorialTask(showTutorials: true));
+        Layout();
+    }
+
+    /// <summary>C054: tells the engine once per game screen that the player did <paramref name="task"/> (a refusal means the ruleset has no such task: harmless).</summary>
+    private async Task ReportTask(string task)
+    {
+        if (!TaskCardActive || !reportedTasks.Add(task)) return;
+        await session.SubmitAsync(new CompleteTutorialTask { Task = task });
+    }
+
+    private void ReportTaskDone(string task)
+    {
+        if (TaskCardActive && !reportedTasks.Contains(task)) Run(ReportTaskThenRefresh(task));
+    }
+
+    private async Task ReportTaskThenRefresh(string task)
+    {
+        await ReportTask(task);
+        TaskCard.Show(await queries.TutorialTask(showTutorials: true));
+        Layout();
+    }
+
+    private async Task ChooseTaskChoice(string eventName, int index)
+    {
+        await session.SubmitAsync(new ChooseTutorialTaskChoice { Event = eventName, Choice = index });
+        await RefreshTaskCard();
     }
 
     /// <summary>

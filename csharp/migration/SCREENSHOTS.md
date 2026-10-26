@@ -854,6 +854,24 @@ Scenario `vote-result`.
 
 *After Continue the world is back and the result does not return.* (`vote-result/continued.png`)
 
+## C054 (ticket not Done or unknown)
+
+Floating tutorial task card from the ruleset's Floating Events: shows the first available task under the top bar, folds to a ? button on a click, and moves on as the player does what it asks.
+
+Scenario `tutorial-tasks`.
+
+![Game start: the floating task card under the top bar asks to move a unit.](../Unciv.Godot.Harness/golden/tutorial-tasks/move-unit.png)
+
+*Game start: the floating task card under the top bar asks to move a unit.* (`tutorial-tasks/move-unit.png`)
+
+![The same card folded to its small ? button.](../Unciv.Godot.Harness/golden/tutorial-tasks/collapsed.png)
+
+*The same card folded to its small ? button.* (`tutorial-tasks/collapsed.png`)
+
+![After founding the city and opening it: the card now asks to pick a technology.](../Unciv.Godot.Harness/golden/tutorial-tasks/pick-technology.png)
+
+*After founding the city and opening it: the card now asks to pick a technology.* (`tutorial-tasks/pick-technology.png`)
+
 ## C055 Civilopedia hotkey and search, button visible under the unit panel
 
 Civilopedia button reachable under the unit panel, F1 hotkey, and the entry search box.

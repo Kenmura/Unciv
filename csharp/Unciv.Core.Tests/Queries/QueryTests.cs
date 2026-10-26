@@ -304,6 +304,7 @@ public class QueryTests
         ["victory.Rankings"] = () => new Unciv.Queries.Victory.RankingsQuery(),
         ["victory.Demographics"] = () => new Unciv.Queries.Victory.DemographicsQuery(),
         ["victory.History"] = () => new Unciv.Queries.Victory.HistoryQuery(),
+        ["tutorial.Task"] = () => new Unciv.Queries.Tutorial.TutorialTaskQuery(),
         ["victory.GameOver"] = () => new Unciv.Queries.Victory.GameOverQuery(),
     };
 

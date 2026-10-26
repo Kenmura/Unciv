@@ -3,6 +3,7 @@ using Unciv.Queries.Cities;
 using Unciv.Queries.DevConsole;
 using Unciv.Queries.Empire;
 using Unciv.Queries.Tiles;
+using Unciv.Queries.Tutorial;
 using Unciv.Queries.Units;
 using Unciv.Queries.Victory;
 
@@ -16,6 +17,9 @@ public sealed class GameQueries(IGameSession session)
 {
     /// <summary>The policy screen's tree: branches, states with reasons, culture and free policies (the viewer's own).</summary>
     public Task<PolicyTreeResult?> PolicyTree() => session.QueryAsync(new PolicyTreeQuery());
+
+    /// <summary>C054: the floating tutorial task card's current task (an empty Event name when none); <paramref name="showTutorials"/> is the viewer's client setting.</summary>
+    public Task<TutorialTaskResult?> TutorialTask(bool showTutorials) => session.QueryAsync(new TutorialTaskQuery(showTutorials));
 
     public Task<EmpireTopBarResult?> TopBar() => session.QueryAsync(new EmpireTopBarQuery());
 

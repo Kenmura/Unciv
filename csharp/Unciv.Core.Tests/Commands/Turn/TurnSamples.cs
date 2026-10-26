@@ -12,7 +12,7 @@ internal static class TurnSamples
     [
         "end-turn", "force-end-turn", "run-ai-turn", "begin-turn", "move-automated-units", "set-player-settings", "ack-alert",
         "respond-to-alert", "dismiss-policy-picker", "dismiss-move-spies", "resign", "one-more-turn",
-        "start-auto-play", "stop-auto-play", "auto-play-turn",
+        "start-auto-play", "stop-auto-play", "auto-play-turn", "complete-tutorial-task", "choose-tutorial-task-choice",
     ];
 
     // A new game asks for a production and a research target; end-turn needs both settled.
@@ -75,6 +75,17 @@ internal static class TurnSamples
             case "stop-auto-play":
                 game.ClientState.AutoPlay = StartedAutoPlay();
                 return (new StopAutoPlay(), "Babylon");
+            case "complete-tutorial-task":
+                return (new CompleteTutorialTask { Task = "Conquer a city" }, "Babylon");
+            case "choose-tutorial-task-choice":
+                // the ruleset may be shared with other tests: a uniquely named task whose choice is only available to this sample
+                var task = new Unciv.Models.Ruleset.Event { Name = "Sample tutorial task", Presentation = Unciv.Models.Ruleset.Event.PresentationType.Floating };
+                task.Uniques.Add("Only available <if tutorials are enabled>");
+                var choice = new Unciv.Models.Ruleset.EventChoice { Name = "ok", Text = "OK" };
+                choice.Uniques.Add("Mark tutorial [Sample tutorial task] complete");
+                task.Choices.Add(choice);
+                game.Ruleset.Events[task.Name] = task;
+                return (new ChooseTutorialTaskChoice { Event = task.Name, Choice = 0 }, "Babylon");
             case "auto-play-turn":
                 game.ClientState.AutoPlay = StartedAutoPlay();
                 return (new AutoPlayTurn { Now = 5000 }, "Babylon");

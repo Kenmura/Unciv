@@ -146,6 +146,9 @@ public partial class CityScreen : PanelContainer
     /// <summary>Raised after the engine accepted a command made here, so the owner refreshes the world (the city is then opened again with the new snapshot entry).</summary>
     public event Action? CommandAccepted;
 
+    /// <summary>C054: raised with each accepted command (the tutorial tasks learn from what the player did).</summary>
+    public event Action<GameCommand>? CommandSent;
+
     public event Action? Closed;
 
     public Button? TileButton(int x, int y) => tileButtons.GetValueOrDefault((x, y));
@@ -343,6 +346,7 @@ public partial class CityScreen : PanelContainer
             SetMessage("Refused: " + result.Message);
             return;
         }
+        CommandSent?.Invoke(command);
         CommandAccepted?.Invoke();
     }
 

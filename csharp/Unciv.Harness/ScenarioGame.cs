@@ -61,14 +61,14 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false, bool proposals = false, int religion = 0, bool voteResult = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false, bool espionage = false, bool proposals = false, int religion = 0, bool voteResult = false, bool tutorialTasks = false)
     {
         espionage |= religion == ReligionFoundEnhance;
         diplomacy |= alerts | trade | espionage | proposals | voteResult;
-        solo |= skirmish | diplomacy | policies | victory | defeat | decisions | crowd | religion > 0;
+        solo |= skirmish | diplomacy | policies | victory | defeat | decisions | crowd | religion > 0 | tutorialTasks;
         var vanilla = LoadVanilla();
-        // C038: religion needs Gods & Kings (Vanilla has no beliefs); every other scenario plays Vanilla
-        var ruleset = decisions || religion > 0 ? RulesetCache.Get(BaseRuleset.Civ_V_GnK.FullName()).NotNull().Clone() : vanilla;
+        // C038: religion needs Gods & Kings (Vanilla has no beliefs); C054: so do the tutorial task Events; every other scenario plays Vanilla
+        var ruleset = decisions || religion > 0 || tutorialTasks ? RulesetCache.Get(BaseRuleset.Civ_V_GnK.FullName()).NotNull().Clone() : vanilla;
         var game = GameStarter.StartNewGame(
             new GameSetupInfo(
                 new GameParameters

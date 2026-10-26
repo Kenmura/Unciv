@@ -621,6 +621,24 @@
       }
     ]
   },
+  "C054": {
+    "scenario": "tutorial-tasks",
+    "about": "Floating tutorial task card from the ruleset's Floating Events: shows the first available task under the top bar, folds to a ? button on a click, and moves on as the player does what it asks.",
+    "shots": [
+      {
+        "golden": "tutorial-tasks/move-unit.png",
+        "caption": "Game start: the floating task card under the top bar asks to move a unit."
+      },
+      {
+        "golden": "tutorial-tasks/collapsed.png",
+        "caption": "The same card folded to its small ? button."
+      },
+      {
+        "golden": "tutorial-tasks/pick-technology.png",
+        "caption": "After founding the city and opening it: the card now asks to pick a technology."
+      }
+    ]
+  },
   "C044": {
     "scenario": "menu",
     "about": "In-game menu (Escape or the Menu button): save, load, new game, victory status, options, resign and main menu, with confirmations before destructive actions.",

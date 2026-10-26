@@ -59,6 +59,9 @@ public abstract class Scenario
     /// <summary>C039: the diplomacy game where the human has met Greece too, Rome (at war) proposes peace and Greece proposes a trade (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
     public virtual bool Proposals => false;
 
+    /// <summary>C054: the solo game played with Gods &amp; Kings, whose Events hold the floating tutorial tasks (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
+    public virtual bool TutorialTasks => false;
+
     /// <summary>C052: 0 none; <see cref="Unciv.Harness.ScenarioGame.ReligionFoundEnhance"/> the found/enhance religion game with spies and a vote; <see cref="Unciv.Harness.ScenarioGame.ReligionReform"/> the reform game (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
     public virtual int Religion => 0;
 

@@ -101,6 +101,7 @@ public partial class App : Node
         var root = new Control { Name = "Play" };
         var screen = new GameScreen { Name = "GameScreen", PlaySound = sounds.PlaySound };
         screen.Presenter.Enabled = true;
+        screen.TaskCardEnabled = true;
         root.AddChild(screen);
         // C029: hotseat. The cover sits above the game screen and everything it owns (the save dialog included), and the controller swaps the viewer.
         var cover = new HandOverView();

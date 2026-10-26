@@ -31,12 +31,29 @@ public static class Conditionals
     }
 
     private static volatile IConditionalsSettings CurrentSettings = new NoSettings();
+    private static readonly AsyncLocal<IConditionalsSettings?> ScopedSettings = new();
 
-    /// <summary>Stands in for <c>UncivGame.Current.settings</c>.</summary>
+    /// <summary>Stands in for <c>UncivGame.Current.settings</c>. A <see cref="UseSettings"/> scope of the running call chain wins over the global value.</summary>
     public static IConditionalsSettings Settings
     {
-        get => CurrentSettings;
+        get => ScopedSettings.Value ?? CurrentSettings;
         set => CurrentSettings = value;
+    }
+
+    private sealed class SettingsScope(IConditionalsSettings? previous) : IDisposable
+    {
+        public void Dispose() => ScopedSettings.Value = previous;
+    }
+
+    /// <summary>
+    /// C054: makes <paramref name="settings"/> the settings of the calling flow only (a query evaluating the viewer's tutorial conditionals must not touch the
+    /// process-wide value other hosts in the same process read). Dispose restores the previous scope.
+    /// </summary>
+    public static IDisposable UseSettings(IConditionalsSettings settings)
+    {
+        var previous = ScopedSettings.Value;
+        ScopedSettings.Value = settings;
+        return new SettingsScope(previous);
     }
 
     // Deterministic stand-in for Unique.hashCode() (JVM identity hash in Kotlin).
