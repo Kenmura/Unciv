@@ -410,7 +410,7 @@ Scenario `overview`.
 
 *Ranking tab: one table per category, best first; unmet civs are shown as Unknown civilization.* (`overview/ranking.png`)
 
-## C024 (ticket not Done or unknown)
+## C024 Victory and defeat screen, game over
 
 Victory and defeat screens: a forced one-turn Domination conquest, the ranking and score history, One more turn, and the defeat screen with keep watching.
 
