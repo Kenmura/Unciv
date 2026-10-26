@@ -25,6 +25,12 @@ public sealed class LocalHost : IGameSession
     private readonly GameSession session;
     private readonly ViewerSessionFlow flow;
 
+    // C040: the engine is not thread safe and End turn runs on a worker, so every engine access (commands, queries, saving, snapshots) takes this gate.
+    // Waiting for it is async, so the UI thread is never blocked by a running turn; an uncontended wait completes synchronously.
+    private readonly SemaphoreSlim gate = new(1, 1);
+    private volatile bool endingTurn;
+    private List<(long Seq, IReadOnlyList<GameEvent> Events)>? collected; // only touched while the gate is held
+
     public LocalHost(GameSession session, string humanCivId, Func<long> clock)
     {
         this.session = session;
@@ -87,33 +93,125 @@ public sealed class LocalHost : IGameSession
         remove { }
     }
 
-    public Task ResyncAsync()
+    /// <summary>True while an End turn is being processed on the worker (commands and queries wait for it).</summary>
+    public bool IsProcessingTurn => endingTurn;
+
+    public async Task ResyncAsync()
     {
-        Snapshot = BuildSnapshot();
+        await gate.WaitAsync();
+        try
+        {
+            Snapshot = BuildSnapshot();
+        }
+        finally
+        {
+            gate.Release();
+        }
         SnapshotChanged?.Invoke(Snapshot);
-        return Task.CompletedTask;
     }
 
-    public Task<TResult?> QueryAsync<TResult>(IQuery<TResult> query) where TResult : class
+    public async Task<TResult?> QueryAsync<TResult>(IQuery<TResult> query) where TResult : class
     {
+        await gate.WaitAsync();
         try
         {
             var game = session.Game;
-            return Task.FromResult<TResult?>(query.Run(new GameView(game, game.GetCivilization(ViewerCivId))));
+            return query.Run(new GameView(game, game.GetCivilization(ViewerCivId)));
         }
         catch (QueryException)
         {
-            return Task.FromResult<TResult?>(null);
+            return null;
+        }
+        finally
+        {
+            gate.Release();
         }
     }
 
-    public Task<SubmitResult> SubmitAsync(GameCommand command) => Task.FromResult(flow.Submit(command));
+    public async Task<SubmitResult> SubmitAsync(GameCommand command)
+    {
+        await gate.WaitAsync();
+        var batches = new List<(long Seq, IReadOnlyList<GameEvent> Events)>();
+        ClientSnapshot? fresh = null;
+        try
+        {
+            collected = batches;
+            return flow.Submit(command);
+        }
+        finally
+        {
+            collected = null;
+            if (batches.Count > 0) fresh = BuildSnapshot();
+            gate.Release();
+            Raise(fresh, batches); // after the gate is released: a handler may call back into the session
+        }
+    }
 
-    public Task<TurnOutcome> EndTurnAsync() => Task.FromResult(flow.EndTurn());
+    /// <summary>
+    /// C040: the whole End turn (the human's end, every automatic civ, the human's next begin) runs on a worker thread holding the engine gate; the caller's thread only awaits.
+    /// Batches published meanwhile are kept and raised, with the final snapshot, on the caller's context once the turn is over (also when it was cancelled or failed
+    /// part way, because the commands that did run changed the game). A second End turn while one runs is refused. The worker releases the gate itself, so nothing
+    /// the turn needs depends on the caller's thread being free.
+    /// </summary>
+    public Task<TurnOutcome> EndTurnAsync(IProgress<TurnProgress>? progress = null, CancellationToken cancellation = default) =>
+        PumpTurnAsync(() => flow.EndTurn(progress, cancellation));
 
-    public Task<TurnOutcome> AutoPlayTurnAsync() => Task.FromResult(flow.AutoPlayTurn());
+    /// <summary>C047: the AI plays the viewer's turn; the automatic civs after it are processed off the UI thread exactly like <see cref="EndTurnAsync"/>.</summary>
+    public Task<TurnOutcome> AutoPlayTurnAsync(IProgress<TurnProgress>? progress = null, CancellationToken cancellation = default) =>
+        PumpTurnAsync(() => flow.AutoPlayTurn(progress, cancellation));
 
-    public Task<string?> ExportSaveAsync() => Task.FromResult<string?>(UncivFiles.GameInfoToString(session.Game, forceZip: true));
+    private async Task<TurnOutcome> PumpTurnAsync(Func<TurnOutcome> run)
+    {
+        if (endingTurn) return new TurnOutcome(false, "The turn is already being processed", 0, false, []);
+        endingTurn = true;
+        var batches = new List<(long Seq, IReadOnlyList<GameEvent> Events)>();
+        ClientSnapshot? fresh = null;
+        try
+        {
+            await gate.WaitAsync(CancellationToken.None);
+            return await Task.Run(() =>
+            {
+                collected = batches;
+                try
+                {
+                    return run();
+                }
+                finally
+                {
+                    collected = null;
+                    fresh = BuildSnapshot();
+                    endingTurn = false;
+                    gate.Release();
+                }
+            }, CancellationToken.None);
+        }
+        finally
+        {
+            endingTurn = false;
+            Raise(fresh, batches);
+        }
+    }
+
+    private void Raise(ClientSnapshot? fresh, List<(long Seq, IReadOnlyList<GameEvent> Events)> batches)
+    {
+        if (fresh == null) return;
+        Snapshot = fresh;
+        SnapshotChanged?.Invoke(fresh);
+        foreach (var (seq, events) in batches) EventsReceived?.Invoke(new EventBatch(seq, events));
+    }
+
+    public async Task<string?> ExportSaveAsync()
+    {
+        await gate.WaitAsync();
+        try
+        {
+            return UncivFiles.GameInfoToString(session.Game, forceZip: true);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
 
     private ClientSnapshot BuildSnapshot()
     {
@@ -123,10 +221,7 @@ public sealed class LocalHost : IGameSession
     }
 
     // TODO(T180): a full snapshot is rebuilt after every accepted command; the network session applies ViewDeltas to its mirror instead.
-    private void Publish(long seq, IReadOnlyList<GameEvent> visible)
-    {
-        Snapshot = BuildSnapshot();
-        SnapshotChanged?.Invoke(Snapshot);
-        EventsReceived?.Invoke(new EventBatch(seq, visible));
-    }
+    // Every command runs inside SubmitAsync or EndTurnAsync under the gate, which collect what is published; nothing is raised from inside the engine call.
+    private void Publish(long seq, IReadOnlyList<GameEvent> visible) =>
+        (collected ?? throw new InvalidOperationException("A command ran outside the session gate")).Add((seq, visible));
 }

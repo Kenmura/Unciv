@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.GodotClient.Play;
 using Unciv.Harness;
 
 namespace Unciv.GodotHarness;
@@ -62,13 +63,13 @@ public partial class ScenarioRunner : Control
         GetViewport().TransparentBg = false;
         MouseFilter = MouseFilterEnum.Ignore; // keep mouse events flowing to scenarios that handle them in the 3D world
         if (!scenario.Uses3D) AddChild(new ColorRect { Color = new Color(0.12f, 0.14f, 0.2f), AnchorRight = 1, AnchorBottom = 1 });
-        var session = ScenarioGame.Create(solo: scenario.Solo, godMode: scenario.GodMode, skirmish: scenario.Skirmish, diplomacy: scenario.Diplomacy, rich: scenario.Rich, policies: scenario.Policies, alerts: scenario.Alerts, victory: scenario.Victory, defeat: scenario.Defeat, trade: scenario.Trade, decisions: scenario.Decisions);
+        var session = ScenarioGame.Create(solo: scenario.Solo, godMode: scenario.GodMode, skirmish: scenario.Skirmish, diplomacy: scenario.Diplomacy, rich: scenario.Rich, policies: scenario.Policies, alerts: scenario.Alerts, victory: scenario.Victory, defeat: scenario.Defeat, trade: scenario.Trade, decisions: scenario.Decisions, crowd: scenario.Crowd);
         var script = scenario.Build(this, session);
 
         foreach (var step in script) await Execute(step, scenario.Name, scenarioOut);
 
         string stateHash = ScenarioGame.StateHash(session);
-        var result = new ScenarioResult(scenario.Name, ScenarioGame.GameSeed, ScenarioGame.MapSeed, stateHash, session.Log, captures, scenario.Checklist, failures, scenario.Solo, scenario.GodMode, scenario.Skirmish, scenario.Diplomacy, scenario.Rich, scenario.Policies, scenario.Alerts, scenario.Victory, scenario.Defeat, scenario.Trade, scenario.Decisions);
+        var result = new ScenarioResult(scenario.Name, ScenarioGame.GameSeed, ScenarioGame.MapSeed, stateHash, session.Log, captures, scenario.Checklist, failures, scenario.Solo, scenario.GodMode, scenario.Skirmish, scenario.Diplomacy, scenario.Rich, scenario.Policies, scenario.Alerts, scenario.Victory, scenario.Defeat, scenario.Trade, scenario.Decisions, scenario.Crowd);
         string? replayFailure = ScenarioReplay.Verify(result);
         if (replayFailure != null) failures.Add(replayFailure);
         result = result with { Failures = failures.ToList() };
@@ -87,19 +88,25 @@ public partial class ScenarioRunner : Control
             case Click click:
                 InputSimulator.SimulateMouseClick(GetViewport(), click.At());
                 await NextFrame();
+                await SettleTurnProcessing();
                 break;
             case PressKey key:
                 InputSimulator.SimulateKey(GetViewport(), key.Code, key.Shift, key.Ctrl, key.Alt);
                 await NextFrame();
+                await SettleTurnProcessing();
                 break;
             case Press press:
                 var button = FindButton(this, press.ButtonText);
                 if (button == null) failures.Add($"Press: no enabled visible button \"{press.ButtonText}\"");
                 else InputSimulator.SimulateMouseClick(GetViewport(), button.GetGlobalRect().GetCenter());
                 await NextFrame();
+                await SettleTurnProcessing();
                 break;
             case WaitFrames wait:
                 for (int i = 0; i < wait.Frames; i++) await NextFrame();
+                break;
+            case WaitUntil wait:
+                await WaitUntilDone(wait);
                 break;
             case Act act:
                 act.Run();
@@ -140,6 +147,57 @@ public partial class ScenarioRunner : Control
         var compared = GoldenComparer.Compare(image, ViewportCapture.LoadPng(golden));
         GD.Print($"[scenario] {capture.Step}: {compared.Message} (hash {compared.HashDistance}, mean {compared.MeanAbsoluteDifference:F4}, px {compared.DifferingPixelFraction:P2})");
         if (!compared.Passed) failures.Add($"golden mismatch at {capture.Step}: {compared.Message}");
+    }
+
+    /// <summary>C040: the longest wall time between two consecutive frames during the last <see cref="WaitUntil"/> (milliseconds).</summary>
+    public static double LongestFrameMs { get; private set; }
+
+    /// <summary>C040: how many frames the last <see cref="WaitUntil"/> took.</summary>
+    public static int FramesWaited { get; private set; }
+
+    private async Task WaitUntilDone(WaitUntil wait)
+    {
+        LongestFrameMs = 0;
+        FramesWaited = 0;
+        var last = Time.GetTicksUsec();
+        while (!wait.Done())
+        {
+            if (FramesWaited >= wait.MaxFrames)
+            {
+                failures.Add($"WaitUntil: never became true within {wait.MaxFrames} frames: {wait.What}");
+                return;
+            }
+            await NextFrame();
+            var now = Time.GetTicksUsec();
+            LongestFrameMs = Math.Max(LongestFrameMs, (now - last) / 1000.0);
+            last = now;
+            FramesWaited++;
+        }
+    }
+
+    /// <summary>
+    /// C040: End turn is processed on a worker, so after an input the script waits until no game screen is still processing a turn (scripts written before it assume the turn is over when
+    /// the input step returns). A scenario that tests the processing itself presses through an <see cref="Act"/>, which does not settle.
+    /// </summary>
+    private async Task SettleTurnProcessing()
+    {
+        for (int frames = 0; AnyEndingTurn(this); frames++)
+        {
+            if (frames >= 3000)
+            {
+                failures.Add("a turn was still being processed after 3000 frames");
+                return;
+            }
+            await NextFrame();
+        }
+    }
+
+    private static bool AnyEndingTurn(Node node)
+    {
+        if (node is GameScreen { IsEndingTurn: true }) return true;
+        foreach (var child in node.GetChildren())
+            if (AnyEndingTurn(child)) return true;
+        return false;
     }
 
     private async Task NextFrame() => await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

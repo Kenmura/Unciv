@@ -35,3 +35,4 @@ city-rename
 autoplay
 audio
 console
+next-turn

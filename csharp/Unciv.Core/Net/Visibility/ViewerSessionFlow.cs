@@ -10,6 +10,9 @@ public sealed record SubmitResult(bool Accepted, string Message, IReadOnlyList<G
 /// <summary>What one End turn did. <see cref="AiTurnsRun"/> and <see cref="NextTurnBegun"/> are informational: a remote session that cannot tell reports 0 / false.</summary>
 public sealed record TurnOutcome(bool Accepted, string Message, int AiTurnsRun, bool NextTurnBegun, IReadOnlyList<GameEvent> Events);
 
+/// <summary>C040: where an End turn is: <see cref="Played"/> of <see cref="Total"/> automatic civs are done, <see cref="CivId"/> is the one about to play (the total is an estimate when the round changes the set of civs).</summary>
+public sealed record TurnProgress(int Played, int Total, string CivId);
+
 /// <summary>
 /// C037: the single-player command pipeline between a <see cref="GameSession"/> and one viewing human. Every command and every server command the turn
 /// flow needs (<see cref="RunAiTurn"/> per auto civ, then <see cref="BeginTurn"/>) goes through <see cref="GameSession"/>, and every event leaving it
@@ -60,25 +63,37 @@ public sealed class ViewerSessionFlow
         return Publish(session.SubmitAsServer(command), before);
     }
 
-    /// <summary>Ends the human's turn and plays everything up to the human's next turn (or the end of the game).</summary>
-    public TurnOutcome EndTurn() => FinishTurn(new EndTurn { Now = clock() });
+    /// <summary>
+    /// Ends the human's turn and plays everything up to the human's next turn (or the end of the game).
+    /// C040: <paramref name="progress"/> is told before each automatic civ plays; <paramref name="cancellation"/> is honoured between civs (never inside one), so the game is always at a command boundary.
+    /// A cancelled call is a refusal ("cancelled") that keeps what was already played; calling again continues with the civ that was next, without ending the human's turn a second time.
+    /// </summary>
+    public TurnOutcome EndTurn(IProgress<TurnProgress>? progress = null, CancellationToken cancellation = default) =>
+        FinishTurn(() => new EndTurn { Now = clock() }, progress, cancellation);
 
     /// <summary>
     /// C047: lets the AI play the human's turn (the engine's <see cref="AutoPlayTurn"/>, which needs a running <see cref="StartAutoPlay"/>) and then plays everything up to
-    /// the human's next turn exactly as <see cref="EndTurn"/> does. Refused (not accepted) when no auto-play is running, which is how a client sees that it has finished.
+    /// the human's next turn exactly as <see cref="EndTurn"/> does (progress and cancellation included). Refused (not accepted) when no auto-play is running, which is how a client sees that it has finished.
     /// </summary>
-    public TurnOutcome AutoPlayTurn() => FinishTurn(new AutoPlayTurn { Now = clock() });
+    public TurnOutcome AutoPlayTurn(IProgress<TurnProgress>? progress = null, CancellationToken cancellation = default) =>
+        FinishTurn(() => new AutoPlayTurn { Now = clock() }, progress, cancellation);
 
-    private TurnOutcome FinishTurn(GameCommand endCommand)
+    private TurnOutcome FinishTurn(Func<GameCommand> endCommand, IProgress<TurnProgress>? progress, CancellationToken cancellation)
     {
         var events = new List<GameEvent>();
-        var ended = Submit(endCommand);
-        if (!ended.Accepted) return new TurnOutcome(false, ended.Message, 0, false, events);
-        events.AddRange(ended.Events);
+        if (session.Game.TurnPhase is not TurnPhase.AutoPlayers) // else a cancelled turn is being continued
+        {
+            var ended = Submit(endCommand());
+            if (!ended.Accepted) return new TurnOutcome(false, ended.Message, 0, false, events);
+            events.AddRange(ended.Events);
+        }
 
         int aiTurns = 0;
+        int total = session.Game.PendingAutoPlayerCount();
         while (session.Game.TurnPhase is TurnPhase.AutoPlayers(var next))
         {
+            if (cancellation.IsCancellationRequested) return new TurnOutcome(false, CancelledMessage, aiTurns, false, events);
+            progress?.Report(new TurnProgress(aiTurns, total, next.CivId));
             var ran = ServerCommand(new RunAiTurn { CivId = next.CivId });
             if (!ran.Accepted) return new TurnOutcome(false, ran.Message, aiTurns, false, events);
             events.AddRange(ran.Events);
@@ -95,4 +110,7 @@ public sealed class ViewerSessionFlow
         }
         return new TurnOutcome(true, "", aiTurns, begun, events);
     }
+
+    /// <summary>The <see cref="TurnOutcome.Message"/> of an End turn stopped by its cancellation token.</summary>
+    public const string CancelledMessage = "Turn processing was cancelled";
 }

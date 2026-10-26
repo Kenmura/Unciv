@@ -50,5 +50,8 @@ public abstract class Scenario
     /// <summary>C038: the solo game with a capital and every blocking picker pending (free great person, free technology, pantheon) and a warrior ready for a promotion (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
     public virtual bool Decisions => false;
 
+    /// <summary>C040: the solo game with <see cref="Unciv.Harness.ScenarioGame.CrowdAiCount"/> AI civs on a larger map, so one End turn runs many automatic civs.</summary>
+    public virtual bool Crowd => false;
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

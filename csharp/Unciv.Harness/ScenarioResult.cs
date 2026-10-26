@@ -30,7 +30,8 @@ public sealed record ScenarioResult(
     bool Victory = false,
     bool Defeat = false,
     bool Trade = false,
-    bool Decisions = false)
+    bool Decisions = false,
+    bool Crowd = false)
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 

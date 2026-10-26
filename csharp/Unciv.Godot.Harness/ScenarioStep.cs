@@ -21,6 +21,12 @@ public sealed record Press(string ButtonText) : ScenarioStep;
 public sealed record WaitFrames(int Frames) : ScenarioStep;
 
 /// <summary>
+/// C040: let frames pass until <paramref name="Done"/> is true (fails the scenario after <paramref name="MaxFrames"/>). While it waits the runner measures the
+/// wall time between frames: <c>ScenarioRunner.LongestFrameMs</c> / <c>FramesWaited</c> describe the last wait, so a scenario can assert the window stayed responsive.
+/// </summary>
+public sealed record WaitUntil(string What, Func<bool> Done, int MaxFrames = 3000) : ScenarioStep;
+
+/// <summary>
 /// A state assertion from the engine's query API (unit position, turn number, queue contents), not from pixels. Scenarios assert
 /// state before they capture, so a wrong state is reported as such rather than as a picture mismatch.
 /// </summary>

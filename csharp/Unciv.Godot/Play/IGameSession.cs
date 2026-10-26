@@ -51,11 +51,15 @@ public interface IGameSession
     /// <summary>Submits one command as the viewer. Rejection is a result, not an exception.</summary>
     Task<SubmitResult> SubmitAsync(GameCommand command);
 
-    /// <summary>Ends the viewer's turn and completes when the host has the viewer's next turn ready (or the end of the game, or a refusal).</summary>
-    Task<TurnOutcome> EndTurnAsync();
+    /// <summary>
+    /// Ends the viewer's turn and completes when the host has the viewer's next turn ready (or the end of the game, or a refusal).
+    /// C040: the host may work off the calling thread, so the UI stays responsive; <paramref name="progress"/> is told before each automatic civ plays (it is called on the
+    /// caller's synchronization context), and <paramref name="cancellation"/> stops between civs (a refusal "cancelled"; calling again continues). Faults on a real failure.
+    /// </summary>
+    Task<TurnOutcome> EndTurnAsync(IProgress<TurnProgress>? progress = null, CancellationToken cancellation = default);
 
-    /// <summary>C047: plays the viewer's turn with the AI (the engine's AutoPlayTurn, after a StartAutoPlay) and completes like <see cref="EndTurnAsync"/>; a refusal (no auto-play running, or it ended) is a result.</summary>
-    Task<TurnOutcome> AutoPlayTurnAsync();
+    /// <summary>C047: plays the viewer's turn with the AI (the engine's AutoPlayTurn, after a StartAutoPlay) and completes like <see cref="EndTurnAsync"/> (same progress and cancellation); a refusal (no auto-play running, or it ended) is a result.</summary>
+    Task<TurnOutcome> AutoPlayTurnAsync(IProgress<TurnProgress>? progress = null, CancellationToken cancellation = default);
 
     /// <summary>
     /// C016: the whole game as save-file text (what <c>LocalHost.FromSave</c> reads back), or null when this session does not hold the game (a network client: the host saves).

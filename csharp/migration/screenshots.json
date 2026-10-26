@@ -700,5 +700,19 @@
   },
   "C049": {
     "none": "Message strings only; no visible change in English, the policy scenario goldens are unchanged."
+  },
+  "C040": {
+    "scenario": "next-turn",
+    "about": "End turn is processed off the UI thread with a progress overlay (civ n of m) that blocks input while the window keeps drawing.",
+    "shots": [
+      {
+        "golden": "next-turn/overlay.png",
+        "caption": "Next turn in progress: dimmed screen, heading 'Processing the other civilizations', 'Rome - 3 of 10' and a progress bar"
+      },
+      {
+        "golden": "next-turn/after.png",
+        "caption": "After the turn: overlay gone, Turn 1, status line reports 11 civs played"
+      }
+    ]
   }
 }

@@ -128,6 +128,14 @@ public partial class GameScreen : Control
 
     private int autoPlayGeneration;
 
+    /// <summary>C040: the overlay shown while End turn is processed off the UI thread.</summary>
+    public NextTurnProgressView TurnOverlay { get; private set; } = null!; // JUSTIFY: C040 assigned in _Ready before any use
+
+    /// <summary>C040: True from pressing Next turn until the host answered; input is ignored meanwhile.</summary>
+    public bool IsEndingTurn => turnCancellation != null;
+
+    private CancellationTokenSource? turnCancellation;
+
     private bool watchingAfterDefeat;
     private int gameOverCheck;
     private int gameOverTurn = -1;
@@ -402,6 +410,7 @@ public partial class GameScreen : Control
         }
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
         if (City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
+        if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || GameOver.Visible || Alerts.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
             case HotkeyAction.EndTurn:
@@ -600,6 +609,8 @@ public partial class GameScreen : Control
             Alerts.Close();
             Run(RefreshHud());
         };
+        TurnOverlay = new NextTurnProgressView();
+        AddChild(TurnOverlay);
         GameOver = new GameOverScreen();
         AddChild(GameOver);
         Tutorials = new TutorialPopupView();
@@ -690,6 +701,7 @@ public partial class GameScreen : Control
     public override void _ExitTree()
     {
         GetViewport().SizeChanged -= Layout;
+        turnCancellation?.Cancel(); // a turn still being processed stops after the civ it is playing; nothing waits for it
         if (session != null)
         {
             session.SnapshotChanged -= OnSnapshotChanged;
@@ -705,6 +717,7 @@ public partial class GameScreen : Control
             session.SnapshotChanged -= OnSnapshotChanged;
             session.EventsReceived -= OnEventsReceived;
             Presenter.Reset();
+            turnCancellation?.Cancel();
             SelectedUnitId = null;
             mapLoaded = false;
             bannerTurn = -1;
@@ -736,6 +749,8 @@ public partial class GameScreen : Control
         ConsolePopup.LayoutIn(Size);
         MenuButton.Theme = theme.Theme;
         resigned = false;
+        TurnOverlay.Init(theme);
+        TurnOverlay.Close();
         watchingAfterDefeat = false;
         Picker.Init(theme);
         PromoteButton.Theme = theme.Theme;
@@ -819,6 +834,7 @@ public partial class GameScreen : Control
         MoveChild(ConsolePopup, -1);
         MoveChild(Tutorials, -1);
         AddChild(Tooltips); // above everything, so a tip is never covered by a screen
+        MoveChild(TurnOverlay, -1); // above every screen: while the turn is processed nothing underneath may be used
         ReachableOverlay.Setup(registry);
         AttackOverlay.Setup(registry);
         session.EventsReceived += OnEventsReceived;
@@ -1534,12 +1550,40 @@ public partial class GameScreen : Control
 
     private async Task EndTurn()
     {
-        var outcome = await session.EndTurnAsync();
+        if (turnCancellation != null) return; // already processing: a second press (or hotkey) must not end the next turn too
+        using var cancellation = new CancellationTokenSource();
+        turnCancellation = cancellation;
+        var turnSession = session;
+        TurnOverlay.Show(NextTurnProgressModel.Begin());
+        var progress = new Progress<TurnProgress>(report =>
+        {
+            // reports arrive posted to this thread, so one can land after the turn ended or the screen left the tree
+            if (turnCancellation == cancellation && IsInsideTree()) TurnOverlay.Show(NextTurnProgressModel.Of(report, DisplayName));
+        });
+        TurnOutcome? outcome = null;
+        try
+        {
+            outcome = await turnSession.EndTurnAsync(progress, cancellation.Token);
+        }
+        catch (Exception e)
+        {
+            GD.PushError("End turn failed: " + e);
+            if (IsInsideTree()) SetStatus("The turn could not be processed: " + e.Message);
+        }
+        finally
+        {
+            if (turnCancellation == cancellation) turnCancellation = null;
+            if (IsInstanceValid(this) && IsInsideTree()) TurnOverlay.Close();
+        }
+        if (!IsInstanceValid(this) || !IsInsideTree() || session != turnSession) return; // the player left the game meanwhile
         Refresh();
+        if (outcome == null) return;
         SetStatus(outcome.Accepted
             ? $"Turn {snapshot.Turn.ToString(CultureInfo.InvariantCulture)}: {outcome.AiTurnsRun.ToString(CultureInfo.InvariantCulture)} civ(s) played, {outcome.Events.Count.ToString(CultureInfo.InvariantCulture)} event(s)."
             : "Cannot end the turn: " + outcome.Message);
     }
+
+    private string DisplayName(string civId) => civId;
 
     /// <summary>Observes a UI-triggered Task: a transport failure of the session (IGameSession error contract) is logged and shown instead of vanishing.</summary>
     private async void Run(Task task)

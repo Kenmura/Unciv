@@ -138,4 +138,84 @@ public sealed class ViewerSessionFlowTests
         Assert.False(flow.AutoPlayTurn().Accepted);
         Assert.False(flow.Submit(new StopAutoPlay()).Accepted);
     }
+
+    private sealed class Recorder : IProgress<TurnProgress>
+    {
+        public List<TurnProgress> Reports { get; } = [];
+        public Action<TurnProgress>? OnReport { get; init; }
+
+        public void Report(TurnProgress value)
+        {
+            Reports.Add(value);
+            OnReport?.Invoke(value);
+        }
+    }
+
+    private static (GameSession Session, ViewerSessionFlow Flow) NewFlow()
+    {
+        var session = ScenarioGame.Create(solo: true);
+        long clock = ScenarioGame.FixedClockMillis;
+        return (session, new ViewerSessionFlow(session, ScenarioGame.HumanA, () => clock++, (_, _) => { }));
+    }
+
+    [Fact]
+    public void EndTurn_ReportsEachAutoCivBeforeItPlays_WithAConsistentTotal()
+    {
+        var (_, flow) = NewFlow();
+        var recorder = new Recorder();
+        var outcome = flow.EndTurn(recorder);
+        Assert.True(outcome.Accepted, outcome.Message);
+        Assert.Equal(outcome.AiTurnsRun, recorder.Reports.Count);
+        Assert.NotEmpty(recorder.Reports);
+        for (int i = 0; i < recorder.Reports.Count; i++)
+        {
+            Assert.Equal(i, recorder.Reports[i].Played);
+            Assert.True(recorder.Reports[i].Total > i);
+            Assert.False(string.IsNullOrEmpty(recorder.Reports[i].CivId));
+        }
+        Assert.Equal(recorder.Reports[0].Total, recorder.Reports.Count);
+    }
+
+    [Fact]
+    public void EndTurn_CancelledBetweenCivs_KeepsWhatWasPlayed_AndContinuingEndsInTheSameStateAsAnUninterruptedTurn()
+    {
+        var (whole, wholeFlow) = NewFlow();
+        for (int i = 0; i < 3; i++) Assert.True(wholeFlow.EndTurn().Accepted);
+
+        var (split, splitFlow) = NewFlow();
+        for (int i = 0; i < 3; i++)
+        {
+            using var cts = new CancellationTokenSource();
+            var cancelAtFirst = new Recorder { OnReport = r => { if (r.Played == 0) cts.Cancel(); } };
+            var first = splitFlow.EndTurn(cancelAtFirst, cts.Token);
+            if (first.Accepted) continue; // a round without an automatic civ cannot be interrupted
+            Assert.Equal(ViewerSessionFlow.CancelledMessage, first.Message);
+            Assert.False(first.NextTurnBegun);
+            Assert.IsType<TurnPhase.AutoPlayers>(split.Game.TurnPhase); // stopped at a command boundary, resumable
+            var rest = splitFlow.EndTurn();
+            Assert.True(rest.Accepted, rest.Message);
+            Assert.True(rest.NextTurnBegun);
+        }
+        Assert.Equal(ScenarioGame.StateHash(whole), ScenarioGame.StateHash(split));
+    }
+
+    [Fact]
+    public void EndTurn_AlreadyCancelled_StillEndsTheHumanTurnThenStopsBeforeTheFirstAutoCiv()
+    {
+        var (session, flow) = NewFlow();
+        var outcome = flow.EndTurn(null, new CancellationToken(true));
+        Assert.False(outcome.Accepted);
+        Assert.Equal(0, outcome.AiTurnsRun);
+        Assert.IsType<TurnPhase.AutoPlayers>(session.Game.TurnPhase);
+        Assert.True(session.Game.PendingAutoPlayerCount() > 0);
+    }
+
+    [Fact]
+    public void PendingAutoPlayerCount_IsZeroBetweenRounds()
+    {
+        var (session, flow) = NewFlow();
+        Assert.Equal(0, session.Game.PendingAutoPlayerCount());
+        Assert.True(flow.EndTurn().Accepted);
+        Assert.Equal(0, session.Game.PendingAutoPlayerCount());
+    }
 }

@@ -39,6 +39,15 @@ public partial class GameInfo
         }
     }
 
+    /// <summary>C040: how many civs the auto players will process from here before a civ that needs input (at most one full round); 0 when none is pending. Read-only: for a progress display.</summary>
+    public int PendingAutoPlayerCount()
+    {
+        if (pendingPlayerIndex is not { } start) return 0;
+        var count = 0;
+        while (count < Civilizations.Count && ShouldAutoProcess(Civilizations[(start + count) % Civilizations.Count])) count++;
+        return count;
+    }
+
     /// <summary>Whether the turn of <paramref name="civ"/> has begun (<see cref="BeginPlayerTurn"/>) and not ended yet.</summary>
     public bool IsTurnStarted(CivilizationClass civ) => turnStartedCivs.Contains(civ.CivId);
 

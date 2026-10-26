@@ -592,6 +592,20 @@ Scenario `decisions`.
 
 *The promotion picker for the warrior: experience line, promotions it may take, the default-promotion checkbox and Take promotion.* (`decisions/promotion.png`)
 
+## C040 (ticket not Done or unknown)
+
+End turn is processed off the UI thread with a progress overlay (civ n of m) that blocks input while the window keeps drawing.
+
+Scenario `next-turn`.
+
+![Next turn in progress: dimmed screen, heading 'Processing the other civilizations', 'Rome - 3 of 10' and a progress bar](../Unciv.Godot.Harness/golden/next-turn/overlay.png)
+
+*Next turn in progress: dimmed screen, heading 'Processing the other civilizations', 'Rome - 3 of 10' and a progress bar* (`next-turn/overlay.png`)
+
+![After the turn: overlay gone, Turn 1, status line reports 11 civs played](../Unciv.Godot.Harness/golden/next-turn/after.png)
+
+*After the turn: overlay gone, Turn 1, status line reports 11 civs played* (`next-turn/after.png`)
+
 ## C041 Flat-map cities, borders, roads and improvements (before the 3D chain)
 
 Flat-map cities, borders, roads and improvements.

@@ -207,8 +207,8 @@ public sealed class CityAScenario : Scenario
 
         public Task<SubmitResult> SubmitAsync(GameCommand command) => inner.SubmitAsync(command);
 
-        public Task<TurnOutcome> EndTurnAsync() => inner.EndTurnAsync();
-        public Task<TurnOutcome> AutoPlayTurnAsync() => inner.AutoPlayTurnAsync();
+        public Task<TurnOutcome> EndTurnAsync(IProgress<TurnProgress>? progress = null, CancellationToken cancellation = default) => inner.EndTurnAsync(progress, cancellation);
+        public Task<TurnOutcome> AutoPlayTurnAsync(IProgress<TurnProgress>? progress = null, CancellationToken cancellation = default) => inner.AutoPlayTurnAsync(progress, cancellation);
 
         public Task<string?> ExportSaveAsync() => inner.ExportSaveAsync();
     }

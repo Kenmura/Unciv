@@ -27,6 +27,7 @@ public static class ScenarioGame
     public const string Ai = "Rome";
     public const int RichGold = 500;
     public const int PolicyCulture = 50;
+    public const int CrowdAiCount = 10;
 
     /// <summary>Loads the Vanilla ruleset into <see cref="RulesetCache"/> (from the repository's jsons, no mods) unless it is already there.</summary>
     public static RulesetClass LoadVanilla()
@@ -52,10 +53,10 @@ public static class ScenarioGame
     /// <paramref name="rich"/> (C018): every human civ starts with <see cref="RichGold"/> gold, so a scenario can buy for real (God mode makes purchases free), and Babylon owns a puppet city (<see cref="SetUpRich"/>).
     /// <paramref name="godMode"/> (C041): the game setup's God mode switch, so a scenario can use the debug commands (free purchases, DebugAddTechnology) to reach a state quickly. The switch is part of the setup, not a command, so the replay passes it too.
     /// </summary>
-    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false)
+    public static GameSession Create(long gameSeed = GameSeed, int mapSeed = MapSeed, bool solo = false, bool godMode = false, bool skirmish = false, bool diplomacy = false, bool rich = false, bool policies = false, bool alerts = false, bool victory = false, bool defeat = false, bool trade = false, bool decisions = false, bool crowd = false)
     {
         diplomacy |= alerts | trade;
-        solo |= skirmish | diplomacy | policies | victory | defeat | decisions;
+        solo |= skirmish | diplomacy | policies | victory | defeat | decisions | crowd;
         var vanilla = LoadVanilla();
         // C038: religion needs Gods & Kings (Vanilla has no beliefs); every other scenario plays Vanilla
         var ruleset = decisions ? RulesetCache.Get(BaseRuleset.Civ_V_GnK.FullName()).NotNull().Clone() : vanilla;
@@ -67,13 +68,15 @@ public static class ScenarioGame
                     NumberOfCityStates = diplomacy ? 1 : 0,
                     GodMode = godMode,
                     VictoryTypes = ruleset.Victories.Keys.ToList(),
-                    Players = solo
+                    Players = crowd
+                        ? CrowdPlayers(ruleset)
+                        : solo
                         ? diplomacy
                             ? [new Player(HumanA, PlayerType.Human), new Player(Ai), new Player(HumanB)]
                             : [new Player(HumanA, PlayerType.Human), new Player(Ai)]
                         : [new Player(HumanA, PlayerType.Human), new Player(HumanB, PlayerType.Human), new Player(Ai)],
                 },
-                new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = mapSeed, MapSize = MapSize.Tiny }),
+                new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = mapSeed, MapSize = crowd ? MapSize.Medium : MapSize.Tiny }),
             gameSeed, FixedClockMillis);
         foreach (string name in solo ? Array.Empty<string>() : new[] { HumanA, HumanB })
         {
@@ -92,6 +95,14 @@ public static class ScenarioGame
         if (decisions) SetUpDecisions(game);
         return new GameSession(game);
     }
+
+    /// <summary>C040: the human and <see cref="CrowdAiCount"/> AI civs (Rome and the first other major nations in name order), so ending the turn has many civs to play.</summary>
+    private static List<Player> CrowdPlayers(RulesetClass ruleset) =>
+    [
+        new Player(HumanA, PlayerType.Human),
+        new Player(Ai),
+        .. ruleset.Nations.Values.Where(it => it.IsMajorCiv && it.Name != HumanA && it.Name != Ai).Select(it => it.Name).Order(StringComparer.Ordinal).Take(CrowdAiCount - 1).Select(it => new Player(it)),
+    ];
 
     /// <summary>
     /// C018: every human civ has <see cref="RichGold"/> gold and Babylon owns a second, puppet city (the first land tile at least 5 tiles from its capital, in coordinate
