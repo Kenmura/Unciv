@@ -131,13 +131,25 @@ public sealed record Snapshot : Message
     public required List<JsonElement> Diplomacy { get; init; }
     public required List<JsonElement> PendingTrades { get; init; }
     public required List<JsonElement> Notifications { get; init; }
+
+    /// <summary>T224: the recipient's own popup alerts and pending decisions (empty for a message from a host that predates them).</summary>
+    public List<JsonElement> PopupAlerts { get; init; } = [];
+    public List<JsonElement> PendingDecisions { get; init; } = [];
     public required string ViewHash { get; init; }
 }
 
 public sealed record ViewDelta : Message
 {
     public required long Seq { get; init; }
+
+    /// <summary>The recipient's filtered engine events, for animation and sound. T224: they are NOT what updates the mirror, <see cref="Diff"/> is.</summary>
     public required List<JsonElement> Events { get; init; }
+
+    /// <summary>T224: the change from the recipient's previous filtered snapshot to this one (a serialized <c>SnapshotDiff</c>), null when the host sends events only.</summary>
+    public JsonElement? Diff { get; init; }
+
+    /// <summary>T224: the <c>ViewHash</c> the mirror must have after applying <see cref="Diff"/>.</summary>
+    public string? ViewHash { get; init; }
 }
 
 public sealed record CommandResult : Message

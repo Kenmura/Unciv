@@ -32,6 +32,13 @@ public sealed record ClientSnapshot
     public required List<DiplomacyDto> Diplomacy { get; init; }
     public required List<PendingTradeDto> PendingTrades { get; init; }
     public required List<NotificationDto> Notifications { get; init; }
+
+    /// <summary>T224: the recipient's own popup alerts, in the engine's order (the index is what <c>ack-alert</c> and friends take). Empty for everyone else's alerts and for spectators.</summary>
+    public List<PopupAlertDto> PopupAlerts { get; init; } = [];
+
+    /// <summary>T224: what the recipient still has to decide (the engine's <c>PendingDecisions</c> query), so a reconnecting player sees what blocks End turn.</summary>
+    public List<PendingDecisionDto> PendingDecisions { get; init; } = [];
+
     public string? ViewHash { get; init; }
 }
 
@@ -191,4 +198,26 @@ public sealed record NotificationActionDto
 
     /// <summary>The recipient's own unit a <c>promote</c> action is about.</summary>
     public int? Id { get; init; }
+}
+
+/// <summary>T224: one of the recipient's own popup alerts. The value is the alert's subject (a civ, city id, wonder or tech name) exactly as the engine stores it.</summary>
+public sealed record PopupAlertDto
+{
+    public required string Type { get; init; }
+    public required string Value { get; init; }
+}
+
+/// <summary>T224: one pending decision of the recipient, mirroring the engine's <c>Decision</c>.</summary>
+public sealed record PendingDecisionDto
+{
+    public required string Kind { get; init; }
+    public required string Subject { get; init; }
+
+    /// <summary>The command type that resolves it.</summary>
+    public required string ResolvedBy { get; init; }
+
+    public required bool Blocking { get; init; }
+
+    /// <summary>The position in the alert or trade request list for those kinds, else -1.</summary>
+    public required int Index { get; init; }
 }

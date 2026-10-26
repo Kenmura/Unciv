@@ -79,10 +79,23 @@ public static class SnapshotBuilder
             Units = units,
             Diplomacy = BuildDiplomacy(gameView, gameInfo, viewer, known),
             PendingTrades = BuildPendingTrades(gameView, gameInfo, viewer, known),
-            Notifications = viewer.Notifications.Select(it => BuildNotification(it, gameInfo, gameView)).ToList()
+            Notifications = viewer.Notifications.Select(it => BuildNotification(it, gameInfo, gameView)).ToList(),
+            PopupAlerts = viewer.PopupAlerts.Select(it => new PopupAlertDto { Type = it.Type.ToString(), Value = it.Value }).ToList(),
+            PendingDecisions = PendingDecisions.For(viewer)
+                .Select(it => new PendingDecisionDto { Kind = it.Kind.ToString(), Subject = it.Subject, ResolvedBy = it.ResolvedBy, Blocking = it.Blocking, Index = it.Index }).ToList()
         };
         return snapshot with { ViewHash = ComputeViewHash(snapshot) };
     }
+
+    /// <summary>Canonical JSON of one DTO (the form hashes and diffs compare).</summary>
+    public static string ToJson<T>(T value) => JsonSerializer.Serialize(value, CanonicalOptions);
+
+    /// <summary>The canonical JSON of one DTO as a wire element.</summary>
+    public static JsonElement ToElement<T>(T value) => JsonSerializer.SerializeToElement(value, CanonicalOptions);
+
+    /// <summary>Reads a DTO written by <see cref="ToElement{T}"/> (a client turning the <see cref="ViewDelta.Diff"/> element back into a <see cref="SnapshotDiff"/>).</summary>
+    public static T FromElement<T>(JsonElement element) =>
+        element.Deserialize<T>(CanonicalOptions) ?? throw new JsonException($"Not a {typeof(T).Name}");
 
     /// <summary>Canonical JSON of the snapshot with <see cref="ClientSnapshot.ViewHash"/> unset (property order is declaration order, camelCase, nulls omitted).</summary>
     public static string ToCanonicalJson(ClientSnapshot snapshot) => JsonSerializer.Serialize(snapshot with { ViewHash = null }, CanonicalOptions);
@@ -109,6 +122,8 @@ public static class SnapshotBuilder
             Diplomacy = Elements(snapshot.Diplomacy),
             PendingTrades = Elements(snapshot.PendingTrades),
             Notifications = Elements(snapshot.Notifications),
+            PopupAlerts = Elements(snapshot.PopupAlerts),
+            PendingDecisions = Elements(snapshot.PendingDecisions),
             ViewHash = snapshot.ViewHash ?? ComputeViewHash(snapshot)
         };
     }

@@ -116,6 +116,20 @@ public static class ViewDeltaBuilder
             .Select(it => JsonSerializer.SerializeToElement(GameEventRegistry.ToEnvelope(it), UncivJson.DefaultOptions)).ToList()
     };
 
+    /// <summary>
+    /// T224: the recipient's delta for one accepted command. <see cref="ViewDelta.Diff"/> is the change between the recipient's snapshot before the command
+    /// (<paramref name="before"/>, the host keeps it from the previous call) and the fresh one after it, so the mirror cannot miss a field that has no event;
+    /// <see cref="ViewDelta.Events"/> are the filtered events for animation. Returns the new snapshot to pass as <paramref name="before"/> next time.
+    /// </summary>
+    public static (ViewDelta Delta, ClientSnapshot After) BuildWithDiff(GameInfo gameInfo, CivilizationClass viewer, ClientSnapshot before, ViewMark mark,
+        IEnumerable<EngineEvent> events, long seq, TurnStatusDto turnStatus)
+    {
+        var after = SnapshotBuilder.Build(gameInfo, viewer, seq, turnStatus);
+        var diff = SnapshotDiff.Compute(before, after);
+        var delta = Build(gameInfo, viewer, mark, events, seq) with { Diff = SnapshotBuilder.ToElement(diff), ViewHash = after.ViewHash };
+        return (delta, after);
+    }
+
     private static TilesRevealed? RevealedSince(GameInfo gameInfo, CivilizationClass viewer, ViewMark before)
     {
         var gameView = new GameView(gameInfo, viewer);

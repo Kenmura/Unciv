@@ -93,6 +93,12 @@ the actor's own civ data). Rule: *no event type may be added without its classif
 like the ViewPurityTest idea). Recommendation: events plus server-computed reveals, not a generic object diff, because
 a generic diff of `GameInfo` JSON would encode hidden state in its shape.
 
+**Amended by T224 (mirror correctness).** Events alone cannot keep the mirror equal to a fresh snapshot (many fields have no event, and events can be
+truncated). The mirror is therefore moved by `ViewDelta.Diff`: after every accepted command the host builds the recipient's filtered `ClientSnapshot`
+again and sends `SnapshotDiff.Compute(previous, fresh)` (`ViewDeltaBuilder.BuildWithDiff`), plus the `viewHash` the mirror must reach. The diff is
+computed from the whitelisted DTOs only, never from `GameInfo`, so it cannot carry more than the snapshot could. Events stay in the delta for animation
+and sound only. `ClientSnapshot` also carries `PopupAlerts` and `PendingDecisions` (the recipient's own), so a reconnecting player sees what blocks End turn.
+
 ### 2.5 Notifications [V model, I delivery]
 `Notification { Category, Text, Icons, Actions }` with `NotificationAction`s (location, tile, civ, city...) exists and is
 `IsPartOfGameInfoSerialization`; each `Civilization.Notifications` is per civ already. Delivery: each civ's new

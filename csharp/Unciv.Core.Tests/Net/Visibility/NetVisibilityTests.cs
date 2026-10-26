@@ -392,7 +392,7 @@ public sealed class NetVisibilityTests
     // Default-deny: the exact member list of every DTO is pinned. Adding a field forces an edit here, i.e. a conscious review of what leaks.
     private static readonly Dictionary<string, string> Whitelist = new()
     {
-        [nameof(ClientSnapshot)] = "Seq Turn Phase TurnStatus You Civs Tiles Cities Units Diplomacy PendingTrades Notifications ViewHash",
+        [nameof(ClientSnapshot)] = "Seq Turn Phase TurnStatus You Civs Tiles Cities Units Diplomacy PendingTrades Notifications PopupAlerts PendingDecisions ViewHash",
         [nameof(TurnStatusDto)] = "Ended Deadline Phase",
         [nameof(CivDto)] = "CivId Name IsCityState IsMajor IsBarbarian IsDefeated Own",
         [nameof(OwnCivDto)] = "Gold Happiness CurrentTech Techs Policies Spies",
@@ -406,7 +406,9 @@ public sealed class NetVisibilityTests
         [nameof(PendingTradeDto)] = "From To Offered Requested",
         [nameof(TradeOfferDto)] = "Name Type Amount Duration",
         [nameof(NotificationDto)] = "Category Text Icons Actions",
-        [nameof(NotificationActionDto)] = "Kind X Y Name Id"
+        [nameof(NotificationActionDto)] = "Kind X Y Name Id",
+        [nameof(PopupAlertDto)] = "Type Value",
+        [nameof(PendingDecisionDto)] = "Kind Subject ResolvedBy Blocking Index"
     };
 
     [Fact]
