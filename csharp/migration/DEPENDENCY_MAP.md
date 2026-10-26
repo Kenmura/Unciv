@@ -188,7 +188,7 @@ flowchart TD
   class C016 done
   class C029 ready
   class C030 prog
-  class C031 prog
+  class C031 review
   class C034 waiting
   class C035 waiting
   class C036 waiting
@@ -296,7 +296,7 @@ xychart-beta
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | C006 | Available (waiting on T180, T179, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C030 | In-Progress [Claude] | C007, T049 | 0 | Placeholder audio: UncivSound to generated tones |
-| C031 | In-Progress [Claude] | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
+| C031 | Needs-Review [Claude] | C002 | 0 | Terrain blending, fog of war polish, chunked meshes |
 | C034 | Available (waiting on T204, T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C040 | In-Progress [Claude] | C037, C011 | 0 | Run end-turn processing and AI turns off the UI thread with a next-turn progress overlay |
 | C045 | Available (waiting on C036, T178, T204) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
