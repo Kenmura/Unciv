@@ -502,6 +502,7 @@ public sealed class NetLobbyTests : IDisposable
 
         // Disconnect c1
         await c1.CloseAsync();
+        await Task.Delay(50);
 
         // Reconnect with new transport pair
         var (c2, s2) = InMemoryTransport.CreatePair();
