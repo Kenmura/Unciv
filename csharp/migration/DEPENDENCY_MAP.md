@@ -128,7 +128,7 @@ flowchart TD
   class T203 done
   class T204 done
   class T205 ready
-  class T206 prog
+  class T206 review
   class T225 waiting
   class T239 blocked
   class T242 prog
@@ -167,7 +167,7 @@ xychart-beta
 | C034 | Available (waiting on T205) | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C045 | Available (waiting on C036) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | T182 | Available (waiting on T180) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
-| T206 | In-Progress [Antigravity] | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
+| T206 | Needs-Review [Antigravity] | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T239 | Blocked | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T242 | In-Progress [Claude] | T203 | 0 | Two-human conflict tests: one-per-game wonder race, ruins, religion founding and belief limits |
 | T243 | In-Progress [Claude] | T203 | 0 | Real-started-game visibility test for two humans: B's mirror never holds A-only tiles/units across a simultaneous round |
