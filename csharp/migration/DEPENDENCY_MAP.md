@@ -141,7 +141,7 @@ flowchart TD
   class T175 done
   class T176 done
   class T178 done
-  class T179 prog
+  class T179 review
   class T180 ondeck
   class T182 waiting
   class T194 done
@@ -186,7 +186,7 @@ xychart-beta
 | T205 | **On deck** (after T179) | T178, T179, T204, T176 | 1 | In-process host: run GameHost inside the client (Host button), loopback + TCP listener, clean shutdown saves the game, resume saved game |
 | T206 | **On deck** (after T179) | T179 | 0 | Optional: LAN discovery (UDP broadcast beacon, 'Games on your network') |
 | T207 | **On deck** (after T179) | T179 | 0 | Optional: UPnP/NAT-PMP automatic port mapping for the host |
-| T179 | In-Progress [Antigravity] | T172, T173, T178 | 11 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
+| T179 | Needs-Review [Antigravity] | T172, T173, T178 | 11 | Direct-connect transport: TCP + TLS 1.3 frames behind ITransport, self-signed host key, invite code (host:port, fingerprint, token), TOFU known-hosts, port-forward and overlay-VPN docs |
 | C036 | Available (waiting on T180) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | C035 | Available (waiting on T180) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
 | T225 | Available (waiting on T179, T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
