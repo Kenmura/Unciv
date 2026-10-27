@@ -61,6 +61,7 @@
     "Unciv.Cli/CliRunner.cs": {"branch": 93.41, "line": 98.49},
     "Unciv.Cli/PathFileHandle.cs": {"branch": 93.75, "line": 100.0},
     "Unciv.Cli/Program.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Client.Net/Transport/TcpTlsClientTransport.cs": {"branch": 81.82, "line": 84.09},
     "Unciv.Core/AI/Civ5AiDriver.cs": {"branch": 91.49, "line": 98.91},
     "Unciv.Core/AI/Civ5AiState.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/AI/Civ5AiStateSanitizer.cs": {"branch": 100.0, "line": 100.0},
@@ -536,6 +537,7 @@
     "Unciv.Core/Net/Identity/AttemptLimiter.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Identity/ClientIdentity.cs": {"branch": 95.83, "line": 93.75},
     "Unciv.Core/Net/Identity/HostChallenge.cs": {"branch": 97.06, "line": 98.39},
+    "Unciv.Core/Net/Identity/InviteCode.cs": {"branch": 86.36, "line": 91.38},
     "Unciv.Core/Net/Identity/InviteTokens.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Identity/JoinPassword.cs": {"branch": 96.67, "line": 100.0},
     "Unciv.Core/Net/Identity/LobbyAdmission.cs": {"branch": 95.45, "line": 100.0},
@@ -553,6 +555,7 @@
     "Unciv.Core/Net/Remote/RemoteQueryClient.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Remote/RemoteQueryHost.cs": {"branch": 92.86, "line": 98.65},
     "Unciv.Core/Net/Remote/RemoteQueryPolicy.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Core/Net/Transport/LengthPrefixedFraming.cs": {"branch": 72.22, "line": 91.67},
     "Unciv.Core/Net/Turns/IClock.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Net/Turns/ResolvePump.cs": {"branch": 78.57, "line": 90.32},
     "Unciv.Core/Net/Turns/TurnPolicy.cs": {"branch": 100.0, "line": 100.0},
@@ -673,7 +676,10 @@
     "Unciv.Server/CommandGate.cs": {"branch": 89.66, "line": 91.49},
     "Unciv.Server/GameHost.cs": {"branch": 77.17, "line": 90.35},
     "Unciv.Server/Program.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Server/ServerLobby.cs": {"branch": 100.0, "line": 98.11}
+    "Unciv.Server/ServerLobby.cs": {"branch": 100.0, "line": 98.11},
+    "Unciv.Server/Transport/HostCertificate.cs": {"branch": 66.67, "line": 86.36},
+    "Unciv.Server/Transport/TcpTlsListener.cs": {"branch": 75.0, "line": 97.78},
+    "Unciv.Server/Transport/TcpTlsTransport.cs": {"branch": 100.0, "line": 86.21}
   },
   "excused": {
     "Unciv.Core/Logic/Battle/AirInterception.cs": "the interception damage/XP and notification tails sit behind Battle.takeDamage/addXp (BattleSeams, T083); T083 wires them and tests the rest",

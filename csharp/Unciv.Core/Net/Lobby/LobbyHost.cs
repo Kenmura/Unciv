@@ -664,7 +664,7 @@ public sealed class LobbyHost : IAsyncDisposable
         lock (gate)
         {
             targets = sessions.Values
-                .Where(s => s.Transport.IsOpen)
+                .Where(s => s.IsAuthenticated && s.Transport.IsOpen)
                 .Select(s => s.Transport)
                 .ToList();
         }
