@@ -63,7 +63,7 @@ public sealed class SetupScenario : Scenario
                 started = hosted;
                 backdrop.Visible = false; // the 3D map must show through
                 gameScreen = new GameScreen { Name = "GameScreen" };
-                var playRoot = new Control { Name = "Play" };
+                var playRoot = new Control { Name = "Play", MouseFilter = Control.MouseFilterEnum.Ignore };
                 playRoot.AddChild(gameScreen);
                 manager.Reset(playRoot);
                 gameScreen.Start(hosted, AssetRegistry.ForRuleset(hosted.Ruleset));

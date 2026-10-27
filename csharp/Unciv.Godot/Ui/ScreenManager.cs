@@ -16,6 +16,7 @@ public partial class ScreenManager : Control
         UiTheme = theme;
         Theme = theme.Theme;
         this.Fill();
+        MouseFilter = MouseFilterEnum.Ignore;
         screenLayer.Fill();
         screenLayer.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(screenLayer);

@@ -98,7 +98,7 @@ public partial class App : Node
     private void ShowGame(IGameSession session)
     {
         var registry = AssetRegistry.ForRuleset(session.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack));
-        var root = new Control { Name = "Play" };
+        var root = new Control { Name = "Play", MouseFilter = Control.MouseFilterEnum.Ignore };
         var screen = new GameScreen { Name = "GameScreen", PlaySound = sounds.PlaySound };
         screen.Presenter.Enabled = true;
         screen.TaskCardEnabled = true;
