@@ -43,7 +43,7 @@ public sealed record TileInfoQuery(int X, int Y, int? UnitId = null) : IQuery<Ti
         if (UnitId != null)
         {
             var unit = UnitQueryHelpers.OwnUnit(view, UnitId.Value);
-            if (visible) // building problems depend on live ownership and city state: not for a fogged tile
+            if (visible && (unit.HasUniqueToBuildImprovements() || unit.HasUniqueToCreateWaterImprovements())) // only workers/workboats can build improvements
             {
                 options = tile.GetRuleset().TileImprovements.Values.Select(improvement =>
                 {

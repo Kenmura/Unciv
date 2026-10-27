@@ -416,6 +416,10 @@ public class CityQueryTests
         Assert.Empty(options["Trading post"].StatDiff);
         Assert.DoesNotContain("Barbarian encampment", options.Keys);
         Assert.DoesNotContain(info.ImprovementOptions!, it => it.Problems.Contains("Unbuildable"));
+
+        var warrior = testGame.AddUnit("Warrior", player, tile);
+        var warriorInfo = AskPure(new TileInfoQuery(1, 0, warrior.Id));
+        Assert.Null(warriorInfo.ImprovementOptions);
     }
 
     [Fact]
