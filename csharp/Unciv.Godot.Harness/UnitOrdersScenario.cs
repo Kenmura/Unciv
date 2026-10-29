@@ -152,6 +152,7 @@ public sealed class UnitOrdersScenario : Scenario
                 new AssertQuery("the warrior's menu equals the unit-actions query, with Disband last", () => MenuEqualsQuery(warrior.Id) && screen.Panel.Entries[^1].Kind == MenuEntryKind.Disband),
                 new AssertQuery("the reachable overlay equals the reachable query and the attack overlay is the enemy's tile", () =>
                     OverlaysEqualQueries(warrior.Id) && screen.AttackOverlay.Tiles.SequenceEqual([enemyTile]) && screen.ReachableOverlay.Tiles.Count > 0),
+                new AssertQuery("T257: no city-site radius or tip lingers from the settler clicked first on that tile", () => screen.SiteOverlay.Tiles.Count == 0 && !screen.HoverTip.Contains("City site".Tr(), StringComparison.Ordinal)),
                 new Capture("warrior-selected", "Warrior selected: unit panel with its action menu, blue reachable tiles, red attack tile"),
                 new Act("pick the farthest reachable tile", () =>
                 {

@@ -1395,7 +1395,14 @@ public partial class GameScreen : Control
         var menu = UnitOrdersModel.Menu(actions ?? new UnitActionsResult(id, []), tile, promotions, unit.Own?.CurrentMovement > 0f);
         Panel.Show(UnitOrdersModel.Panel(unit, baseUnit), menu);
         PromoteButton.Visible = promotions is { Promotions.Count: > 0 };
+        bool wasFounding = foundsCities;
         foundsCities = actions?.Actions.Any(it => it.Descriptor.ActionType == UnitActionType.FoundCity) == true;
+        if (wasFounding && !foundsCities)
+        {
+            // T257: switching from a settler to another unit; the settler's site answer may have landed in between, so its radius and tip must not outlive the settler
+            SiteOverlay.Clear();
+            if (HoveredTile is { } hovered) Run(LoadHoverTip(hovered));
+        }
         if (foundsCities && HoveredTile is { } under) Run(LoadHoverTip(under)); // the pointer already rests on a tile: show its site now
         attackTiles = targets == null ? [] : [.. UnitOrdersModel.AttackTiles(targets)];
         ReachableOverlay.Show(reach == null ? [] : [.. UnitOrdersModel.ReachableTiles(reach).Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
