@@ -871,7 +871,7 @@
 		"strength": 21,
 		"cost": 120,
 		"requiredTech": "Steel",
-		"upgradesTo": "Musketman",
+		"upgradesTo": "Rifleman",
 		"obsoleteTech": "Rifling",
 		"requiredResource": "Iron",
 		"promotions": ["Shock I", "Great Generals II"],
@@ -1296,17 +1296,6 @@
 		"attackSound": "nonmetalhit"
 	},
 	{
-		"name": "Brute",
-		"unitType": "Sword",
-		"uniqueTo": "Barbarians",
-		"replaces": "Warrior",
-		"movement": 2,
-		"strength": 8,
-		"cost": 20,
-		"upgradesTo": "Swordsman",
-		"attackSound": "nonmetalhit"
-	},
-	{
 		"name": "Galley",
 		"unitType": "Melee Water",
 		"uniqueTo": "Barbarians",
@@ -1316,42 +1305,6 @@
 		"uniques": ["Cannot enter ocean tiles"],
 		"upgradesTo": "Trireme",
 		"attackSound": "nonmetalhit"
-	},
-	{
-		"name": "Archer",
-		"unitType": "Archery",
-		"movement": 2,
-		"strength": 4,
-		"rangedStrength": 7,
-		"cost": 40,
-		"requiredTech": "Archery",
-		"upgradesTo": "Composite Bowman",
-		"attackSound": "arrow"
-	},
-	{
-		"name": "Spearman",
-		"unitType": "Sword",
-		"movement": 2,
-		"strength": 10,
-		"cost": 56,
-		"requiredTech": "Bronze Working",
-		"obsoleteTech": "Civil Service",
-		"upgradesTo": "Pikeman",
-		"uniques": ["[+50]% Strength <vs [Mounted] units>"],
-		"attackSound": "metalhit"
-	},
-	{
-		"name": "Swordsman",
-		"unitType": "Sword",
-		"movement": 2,
-		"strength": 14,
-		"cost": 75,
-		"requiredTech": "Iron Working",
-		"upgradesTo": "Longswordsman",
-		"obsoleteTech": "Gunpowder",
-		"requiredResource": "Iron",
-		"hurryCostModifier": 20,
-		"attackSound": "metalhit"
 	},
 	{
 		"name": "Keshik",
@@ -1950,6 +1903,7 @@
 		"uniques": ["[+50]% Strength <vs [Mounted] units>"],
 		"attackSound": "metalhit",
 		"obsoleteTech": "Rifling",
+		"upgradesTo": "Rifleman",
 		"uniqueTo": "The Zulus",
 		"replaces": "Pikeman"
 	},
@@ -1986,6 +1940,7 @@
 		"promotions": ["Formation I"],
 		"attackSound": "horse",
 		"obsoleteTech": "Combined Arms",
+		"upgradesTo": "Anti-Tank Gun",
 		"uniqueTo": "Poland",
 		"replaces": "Lancer"
 	},
@@ -2054,6 +2009,7 @@
 		"promotions": ["Cover I"],
 		"attackSound": "throw",
 		"obsoleteTech": "Physics",
+		"upgradesTo": "Trebuchet",
 		"uniqueTo": "Assyria",
 		"replaces": "Catapult"
 	},
@@ -2066,6 +2022,7 @@
 		"requiredTech": "Plastics",
 		"attackSound": "shot",
 		"obsoleteTech": "Mobile Tactics",
+		"upgradesTo": "Mechanized Infantry",
 		"uniqueTo": "Brazil",
 		"replaces": "Infantry"
 	},
@@ -2080,6 +2037,7 @@
 		"hurryCostModifier": 30,
 		"attackSound": "cannon",
 		"obsoleteTech": "Steam Power",
+		"upgradesTo": "Ironclad",
 		"uniqueTo": "Portugal",
 		"replaces": "Caravel"
 	},
@@ -2099,6 +2057,7 @@
 		],
 		"attackSound": "cavalry",
 		"obsoleteTech": "Combustion",
+		"upgradesTo": "Landship",
 		"uniqueTo": "Morocco",
 		"replaces": "Cavalry"
 	},
@@ -2113,6 +2072,7 @@
 		"uniques": ["Cannot enter ocean tiles"],
 		"attackSound": "arrow",
 		"obsoleteTech": "Navigation",
+		"upgradesTo": "Frigate",
 		"uniqueTo": "Venice",
 		"replaces": "Galleass"
 	},
@@ -2146,6 +2106,7 @@
 		],
 		"attackSound": "cavalry",
 		"obsoleteTech": "Combustion",
+		"upgradesTo": "Landship",
 		"uniqueTo": "The Shoshone",
 		"replaces": "Cavalry"
 	},
@@ -2160,26 +2121,21 @@
 		"hurryCostModifier": 20,
 		"attackSound": "metalhit",
 		"obsoleteTech": "Steel",
+		"upgradesTo": "Longswordsman",
 		"uniqueTo": "Indonesia",
 		"replaces": "Swordsman"
 	},
 	{
-		"name": "Horseman",
-		"unitType": "Mounted",
-		"movement": 4,
-		"strength": 12,
-		"cost": 75,
-		"requiredTech": "Horseback Riding",
-		"requiredResource": "Horses",
-		"upgradesTo": "Knight",
-		"obsoleteTech": "Chivalry",
-		"uniques": [
-			"Can move after attacking",
-			"No defensive terrain bonus",
-			"[-33]% Strength <vs cities> <when attacking>"
-		],
-		"hurryCostModifier": 20,
-		"attackSound": "horse"
+		"name": "Brute",
+		"unitType": "Sword",
+		"uniqueTo": "Barbarians",
+		"replaces": "Warrior",
+		"movement": 2,
+		"strength": 8,
+		"cost": 20,
+		"obsoleteTech": "Metal Casting",
+		"upgradesTo": "Swordsman",
+		"attackSound": "nonmetalhit"
 	},
 	{
 		"name": "Skirmisher",

@@ -103,8 +103,22 @@
   Buildings.json/all: Tourism, Great Work, trade route and league columns of SPEC 3.2 (B003 declares the UniqueTypes, feature tickets B020-B062 wire them)
   Units.json/Caravan, Cargo Ship, Archaeologist: made Unbuildable until B021/B040 give them behaviour
   Beliefs.json/16 BNW beliefs: added by B010 together with their effects (a belief without its unique would be dead content)
+  TileResources.json/Antiquity Site, Hidden Antiquity Site: artifact resources need the archaeology subsystem (B040)
+  Units.json/upgrades: upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture
   Policies.json: BNW policy tree is B050 (branches, ideologies and tenets need Level/branch fields B003 declares)
   Personalities.json/Maria I: copied from Maria Theresa: derive from Leaders.tsv / Leader_Flavors.tsv in B010
+
+== renamed
+  Railroads -> Railroad
+  Pharmaceuticals -> Penicillin
+  Persian Immortal -> Immortal
+  Work Boats -> Work Boat
+  Theatre -> Zoo
+  National Treasury -> East India Company
+  M'Banza-Kongo -> M'banza-Kongo
+  Divine inspiration -> Divine Inspiration
+  God of craftsmen -> God of Craftsmen
+  Swords into Ploughshares -> Swords into Plowshares
 
 == techs
   Optics: cost 85 differs from column 3 (105), per-tech cost set
@@ -112,6 +126,10 @@
   The Internet: new (column 16, row 1)
 
 == units
+  UNIT_BARBARIAN_WARRIOR: skipped (barbarian variant shares the name Brute with the normal unit)
+  UNIT_BARBARIAN_ARCHER: skipped (barbarian variant shares the name Archer with the normal unit)
+  UNIT_BARBARIAN_SPEARMAN: skipped (barbarian variant shares the name Spearman with the normal unit)
+  UNIT_BARBARIAN_SWORDSMAN: skipped (barbarian variant shares the name Swordsman with the normal unit)
   Impi: new (see overrides.json for type and uniques)
   Merchant of Venice: new (see overrides.json for type and uniques)
   Winged Hussar: new (see overrides.json for type and uniques)
@@ -129,8 +147,20 @@
   Comanche Riders: new (see overrides.json for type and uniques)
   Bazooka: skipped (scenario-only BNW unit, SPEC 3.3)
   Kris Swordsman: new (see overrides.json for type and uniques)
-  Hand-Axe: skipped (scenario-only BNW unit, SPEC 3.3)
+  UNIT_BARBARIAN_HORSEMAN: skipped (barbarian variant shares the name Horseman with the normal unit)
+  UNIT_BARBARIAN_AXMAN: skipped (barbarian variant shares the name Hand-Axe with the normal unit)
   XCOM Squad: skipped (scenario-only BNW unit, SPEC 3.3)
+  Samurai: upgradesTo Musketman -> Rifleman
+  Impi: upgradesTo None -> Rifleman
+  Winged Hussar: upgradesTo None -> Anti-Tank Gun
+  Siege Tower: upgradesTo None -> Trebuchet
+  Pracinha: upgradesTo None -> Mechanized Infantry
+  Nau: upgradesTo None -> Ironclad
+  Berber Cavalry: upgradesTo None -> Landship
+  Great Galleass: upgradesTo None -> Frigate
+  Comanche Riders: upgradesTo None -> Landship
+  Kris Swordsman: upgradesTo None -> Longswordsman
+  Brute: kept (Unciv-only object, not in the BNW tables)
   Skirmisher: kept (Unciv-only object, not in the BNW tables)
   Marauder: kept (Unciv-only object, not in the BNW tables)
 

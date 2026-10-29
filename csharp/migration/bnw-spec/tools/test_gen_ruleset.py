@@ -25,6 +25,23 @@ class GeneratorTests(unittest.TestCase):
         for name, text in g.render(g.generate()[0]).items():
             json.loads(text)
 
+    def test_no_duplicate_names_and_spot_values(self):
+        files = g.generate()[0]
+        for name, data in files.items():
+            if isinstance(data, list) and data and "name" in data[0]:
+                names = [o["name"] for o in data]
+                self.assertEqual(len(names), len(set(names)), name)
+        units = {u["name"]: u for u in files["Units.json"]}
+        self.assertEqual((units["Archer"]["strength"], units["Spearman"]["strength"]), (5, 11))
+        self.assertEqual(units["Impi"]["upgradesTo"], "Rifleman")
+        self.assertEqual(units["Impi"]["strength"], 16)
+        buildings = {b["name"]: b for b in files["Buildings.json"]}
+        self.assertEqual(buildings["Caravansary"]["cost"], 120)
+        self.assertEqual(buildings["Zoo"]["maintenance"], 2)
+        techs = {t["name"]: t for c in files["Techs.json"] for t in c["techs"]}
+        self.assertEqual(techs["Optics"]["cost"], 85)
+        self.assertEqual(sorted(techs["Ballistics"]["prerequisites"]), ["Flight", "Railroad"])
+
     def test_lenient_loads(self):
         self.assertEqual(g.lenient_loads('{"a": [1, 2,], // c\n "b": "x//y" /* z */}'), {"a": [1, 2], "b": "x//y"})
 

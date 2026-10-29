@@ -114,7 +114,7 @@ Two routes, in order of preference:
   (4) the new Caravan, Cargo Ship, Archaeologist and International Space Station are `Unbuildable` until B021/B040/B062; (5) Machine Gun has no
   obsolete tech (BNW's Nuclear Fission contradicts its upgrade prerequisites); (6) civ abilities, tourism/trade/league columns, the 16 BNW beliefs,
   Hand-Axe/Bazooka/XCOM Squad (scenario-only) and the BNW policy tree are not emitted: they need the B003 `UniqueType`s and are listed under
-  `pending` in the report/overrides for B010, B050 and the feature tickets; (7) Maria I's personality is a copy of Maria Theresa's. No decompiler
+  `pending` in the report/overrides for B010, B050 and the feature tickets; (7) Maria I's personality is a copy of Maria Theresa's; (8) the Antiquity Site resources wait for B040; (9) barbarian unit rows are skipped (same names as the normal units), `upgradesTo` comes from `Unit_ClassUpgrades.tsv`, Settler/Worker/Scout/Warrior keep the Unciv requiredTech Agriculture, and `minorLiberationFriendship` relies on its 105 default being the BNW value. No decompiler
   output was available, so no [K]/[?] item was resolved by this ticket.
 
 ### 2.2 New state (all JSON-serialized, saved and loaded, included in `Checksum`)

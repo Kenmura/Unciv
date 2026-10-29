@@ -2,13 +2,7 @@
 	{
 		"name": "Tradition",
 		"era": "Ancient era",
-		"priorities": {
-			"Neutral": 5,
-			"Cultural": 5,
-			"Diplomatic": 5,
-			"Domination": 5,
-			"Scientific": 5
-		},
+		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
 		"uniques": ["[+3 Culture] [in capital]", "[-25]% Culture cost of natural border growth [in all cities]"],
 		"policies": [
 			{
@@ -63,13 +57,7 @@
 	{
 		"name": "Liberty",
 		"era": "Ancient era",
-		"priorities": {
-			"Neutral": 10,
-			"Cultural": 10,
-			"Diplomatic": 10,
-			"Domination": 10,
-			"Scientific": 10
-		},
+		"priorities": {"Neutral": 10, "Domination": 10, "Scientific": 10},
 		"uniques": ["[+1 Culture] [in all cities]"],
 		"policies": [
 			{
@@ -128,13 +116,7 @@
 	{
 		"name": "Honor",
 		"era": "Ancient era",
-		"priorities": {
-			"Neutral": 5,
-			"Cultural": 5,
-			"Diplomatic": 5,
-			"Domination": 5,
-			"Scientific": 5
-		},
+		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
 		"uniques": [
 			"[+33]% Strength <vs [Barbarian] units>",
 			"Earn [100]% of killed [Barbarian] unit's [Strength] as [Culture]",
@@ -195,13 +177,7 @@
 	{
 		"name": "Piety",
 		"era": "Classical era",
-		"priorities": {
-			"Neutral": 0,
-			"Cultural": 0,
-			"Diplomatic": 0,
-			"Domination": 0,
-			"Scientific": 0
-		},
+		"priorities": {"Neutral": 0, "Domination": 0, "Scientific": 0},
 		"uniques": [
 			"[+100]% Production when constructing [Shrine] buildings [in all cities]",
 			"[+100]% Production when constructing [Temple] buildings [in all cities]",
@@ -255,13 +231,7 @@
 	{
 		"name": "Patronage",
 		"era": "Medieval era",
-		"priorities": {
-			"Neutral": 5,
-			"Cultural": 5,
-			"Diplomatic": 10,
-			"Domination": 5,
-			"Scientific": 5
-		},
+		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
 		"uniques": [
 			"[-25]% City-State Influence degradation",
 			"[-100]% weight to this choice for AI decisions <when number of [Remaining [City-State] Civilizations] is less than [2]>"
@@ -316,13 +286,7 @@
 	{
 		"name": "Commerce",
 		"era": "Medieval era",
-		"priorities": {
-			"Neutral": 5,
-			"Cultural": 5,
-			"Diplomatic": 5,
-			"Domination": 5,
-			"Scientific": 5
-		},
+		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
 		"uniques": ["[+25]% [Gold] [in capital]"],
 		"policies": [
 			{
@@ -387,13 +351,7 @@
 	{
 		"name": "Rationalism",
 		"era": "Renaissance era",
-		"priorities": {
-			"Neutral": 10,
-			"Cultural": 10,
-			"Diplomatic": 10,
-			"Domination": 10,
-			"Scientific": 10
-		},
+		"priorities": {"Neutral": 10, "Domination": 10, "Scientific": 10},
 		"uniques": ["[+15]% [Science] <while the empire is happy>", "Only available <before adopting [Piety]>"],
 		"policies": [
 			{
@@ -450,13 +408,7 @@
 	{
 		"name": "Freedom",
 		"era": "Industrial era",
-		"priorities": {
-			"Neutral": 5,
-			"Cultural": 10,
-			"Diplomatic": 5,
-			"Domination": 5,
-			"Scientific": 10
-		},
+		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 10},
 		"uniques": [
 			"[+25]% Great Person generation [in all cities]",
 			"Only available <before adopting [Autocracy]>",
@@ -509,13 +461,7 @@
 	{
 		"name": "Autocracy",
 		"era": "Industrial era",
-		"priorities": {
-			"Neutral": 5,
-			"Cultural": 5,
-			"Diplomatic": 5,
-			"Domination": 10,
-			"Scientific": 5
-		},
+		"priorities": {"Neutral": 5, "Domination": 10, "Scientific": 5},
 		"uniques": [
 			"[-33]% maintenance costs <for [All] units>",
 			"Upon capturing a city, receive [10] times its [Culture] production as [Culture] immediately",
@@ -576,13 +522,7 @@
 	{
 		"name": "Order",
 		"era": "Industrial era",
-		"priorities": {
-			"Neutral": 10,
-			"Cultural": 5,
-			"Diplomatic": 10,
-			"Domination": 5,
-			"Scientific": 5
-		},
+		"priorities": {"Neutral": 10, "Domination": 5, "Scientific": 5},
 		"uniques": [
 			"[+1 Happiness] [in all cities]",
 			"Only available <before adopting [Autocracy]>",

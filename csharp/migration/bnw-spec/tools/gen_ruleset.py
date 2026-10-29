@@ -373,6 +373,9 @@ def build_units(gk, lk, report):
     out, seen = [], set()
     for r in tsv("Units"):
         name = r["Name"]
+        if r["Type"].startswith("UNIT_BARBARIAN_"):  # same English names as the normal units, would shadow them
+            report.add("units", f"{r['Type']}: skipped (barbarian variant shares the name {name} with the normal unit)")
+            continue
         if name in SCENARIO_ONLY_UNITS:
             report.add("units", f"{name}: skipped (scenario-only BNW unit, SPEC 3.3)")
             continue
@@ -405,13 +408,26 @@ def build_units(gk, lk, report):
             u["obsoleteTech"] = obs
         elif r["ObsoleteTech"] == "" and not is_new and name in old:
             u.pop("obsoleteTech", None)
-        if cost > 0 and u.get("cost") not in (None, cost) or (cost > 0 and "cost" not in u and not (name.startswith("Great ") or name in ("Missionary", "Inquisitor"))):
-            u["cost"] = cost
-        elif cost > 0 and is_new:
+        no_cost_unit = name.startswith("Great ") or name in ("Missionary", "Inquisitor")
+        if cost > 0 and (is_new or u.get("cost") not in (None, cost) or ("cost" not in u and not no_cost_unit)):
             u["cost"] = cost
         out.append(u)
         if is_new:
             report.add("units", f"{name}: new (see overrides.json for type and uniques)")
+    # Upgrades: unit type -> upgrade class -> default unit of that class (Unit_ClassUpgrades.tsv).
+    class_default = {c["Type"]: lk.unit_by_type[c["DefaultUnit"]]["Name"] for c in tsv("UnitClasses") if c["DefaultUnit"] in lk.unit_by_type}
+    upgrade_of = {}
+    for r in tsv("Unit_ClassUpgrades"):
+        if r["UnitType"].startswith("UNIT_BARBARIAN_") or r["UnitType"] not in lk.unit_by_type:
+            continue
+        target = class_default.get(r["UnitClassType"])
+        upgrade_of.setdefault(lk.unit_by_type[r["UnitType"]]["Name"], target)
+    for u in out:
+        target = upgrade_of.get(u["name"])
+        if target in seen and target != u["name"]:
+            if u.get("upgradesTo") != target:
+                report.add("units", f"{u['name']}: upgradesTo {u.get('upgradesTo')} -> {target}")
+            u["upgradesTo"] = target
     for name, u in old.items():
         if name in seen:
             continue
@@ -496,6 +512,8 @@ def generate():
     report = Report()
     files = {p.name: lenient_loads(p.read_text(encoding="utf-8")) for p in sorted(GK_DIR.glob("*.json"))}
     files = {n: apply_renames(v, RENAMES) for n, v in files.items()}
+    for old_name, new_name in RENAMES.items():
+        report.add("renamed", f"{old_name} -> {new_name}")
     lk = Lookups()
     files["Techs.json"] = build_techs(files["Techs.json"], report)
     files["Buildings.json"] = build_buildings(files["Buildings.json"], files["Techs.json"], lk, report)
@@ -507,6 +525,9 @@ def generate():
             report.add(fname, f"{n}: removed")
         files[fname] = [o for o in files[fname] if o.get("name") not in names]
     removed_victories = REMOVED["VictoryTypes.json"]
+    for p in files["Policies.json"]:
+        for v in removed_victories:
+            p.get("priorities", {}).pop(v, None)
     for n in files["Nations.json"]:
         if n.get("preferredVictoryType") in removed_victories:
             report.add("Nations.json", f"{n['name']}: preferredVictoryType {n['preferredVictoryType']} -> Neutral (victory type removed until B032/B063)")

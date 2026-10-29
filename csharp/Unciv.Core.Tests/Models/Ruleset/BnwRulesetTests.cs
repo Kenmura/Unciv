@@ -34,7 +34,6 @@ public sealed class BnwRulesetTests : IDisposable
     public void BnwValidatesWithoutAnyMessage()
     {
         var messages = LoadBnw().GetErrorList(tryFixUnknownUniques: true).Select(it => $"{it.ErrorSeverityToReport}: {it.Text}").ToList();
-        if (Environment.GetEnvironmentVariable("BNW_DUMP") is { } dump) File.WriteAllLines(dump, messages);
         Assert.Empty(messages);
     }
 

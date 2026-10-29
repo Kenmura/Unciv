@@ -1005,6 +1005,8 @@
   "Beliefs.json/16 BNW beliefs": [
    "added by B010 together with their effects (a belief without its unique would be dead content)"
   ],
+  "TileResources.json/Antiquity Site, Hidden Antiquity Site": ["artifact resources need the archaeology subsystem (B040)"],
+  "Units.json/upgrades": ["upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture"],
   "Policies.json": [
    "BNW policy tree is B050 (branches, ideologies and tenets need Level/branch fields B003 declares)"
   ],
