@@ -106,6 +106,9 @@ public static class UiTokens
     public static TypeStyle Small { get; } = new("Small", 13, false, 400);
     public static TypeStyle Overline { get; } = new("Overline", 11, false, 700, 1);
 
+    /// <summary>C065: values, costs and table numbers: BodyStrong with tabular figures so columns of digits line up. Not a step of the scale.</summary>
+    public static TypeStyle Number { get; } = new("Number", 15, false, 600, 0, true);
+
     /// <summary>Every step of the scale, largest first.</summary>
     public static IReadOnlyList<TypeStyle> TypeScale { get; } = [Display, Title, Heading, Body, BodyStrong, Small, Overline];
 

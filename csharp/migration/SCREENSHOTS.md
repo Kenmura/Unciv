@@ -1060,6 +1060,24 @@ Scenario `ui-kit`.
 
 *The city screen under the same top bar.* (`city-a/open.png`)
 
+## C065 (ticket not Done or unknown)
+
+Shared UI components in every state: icon buttons with badges, steppers, segmented control, stat chips and bars, inline stat icons, key hints, underline tab bar with overflow arrows, list rows, data table and empty state. The tab bar of every screen now uses underline tabs.
+
+Scenario `ui-kit`.
+
+![Control components: a close icon button, a bell with a red count badge, a disabled undo button and a gold Next unit button with a count badge; two steppers (the second at its minimum, so its minus is dimmed); a segmented control with Medium chosen; stat chips with green +5, red -2 and muted 0 deltas; a thin and a labelled stat bar with captions; inline stat icons; T and Esc key hints; a tab bar that shows scroll arrows because its tabs do not fit.](../Unciv.Godot.Harness/golden/ui-kit/components.png)
+
+*Control components: a close icon button, a bell with a red count badge, a disabled undo button and a gold Next unit button with a count badge; two steppers (the second at its minimum, so its minus is dimmed); a segmented control with Medium chosen; stat chips with green +5, red -2 and muted 0 deltas; a thin and a labelled stat bar with captions; inline stat icons; T and Esc key hints; a tab bar that shows scroll arrows because its tabs do not fit.* (`ui-kit/components.png`)
+
+![List rows (Warrior selected with the accent bar, Settler, and a greyed Galleon showing Requires Navigation), a data table with right-aligned City, Pop and Net columns and zebra rows, and an empty state with its Save game action.](../Unciv.Godot.Harness/golden/ui-kit/components-data.png)
+
+*List rows (Warrior selected with the accent bar, Settler, and a greyed Galleon showing Requires Navigation), a data table with right-aligned City, Pop and Net columns and zebra rows, and an empty state with its Save game action.* (`ui-kit/components-data.png`)
+
+![The same components at 1280x720: the control page on the left and the data page on the right.](../Unciv.Godot.Harness/golden/ui-kit/wide.png)
+
+*The same components at 1280x720: the control page on the left and the data page on the right.* (`ui-kit/wide.png`)
+
 ## T252 (ticket not Done or unknown)
 
 Host screen dynamic turn timer: checkbox and shortest-turn choice under the turn timer; the host runs with the chosen policy.

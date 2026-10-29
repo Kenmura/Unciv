@@ -59,6 +59,9 @@ public sealed class UiKitScenario : Scenario
         list.Selected += index => selectedUnit = index;
         PopupSpec Popup(string title) => new(title, "Body of " + title, [new PopupChoice("OK " + title, () => log.Add("ok " + title)), new PopupChoice("Cancel " + title, () => log.Add("cancel " + title))]);
 
+        // C065: the shared components in every state, built once per page (a control has one parent, so the wide capture builds them again)
+        var gallery = new UiKitGallery(theme, log);
+
         return
         [
             new WaitFrames(2),
@@ -113,6 +116,7 @@ public sealed class UiKitScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("font size follows the scale", () => theme.Theme.DefaultFontSize == 23 && theme.Px(10) == 15),
             new Capture("scaled", "The same screen at 150% UI scale"),
+            .. gallery.Steps(manager, host),
         ];
     }
 }

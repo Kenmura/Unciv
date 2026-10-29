@@ -15,6 +15,7 @@ public static class UiVariants
     public const string ButtonTab = "ButtonTab";
     public const string ButtonChip = "ButtonChip";
     public const string ButtonSegment = "ButtonSegment";
+    public const string ButtonRow = "ButtonRow";
 
     // Panels
     public const string PanelCard = "PanelCard";
@@ -24,12 +25,18 @@ public static class UiVariants
     public const string PanelHeader = "PanelHeader";
     public const string PanelDock = "PanelDock";
     public const string PanelSegmentTrack = "PanelSegmentTrack";
+    public const string PanelBadge = "PanelBadge";
+    public const string PanelBadgeAccent = "PanelBadgeAccent";
+    public const string PanelKeyHint = "PanelKeyHint";
+    public const string PanelCellEven = "PanelCellEven";
+    public const string PanelCellOdd = "PanelCellOdd";
 
     // Labels: the type scale (Body is the default) and the two text tones
     public const string LabelDisplay = "LabelDisplay";
     public const string LabelTitle = "LabelTitle";
     public const string LabelHeading = "LabelHeading";
     public const string LabelBodyStrong = "LabelBodyStrong";
+    public const string LabelNumber = "LabelNumber";
     public const string LabelSmall = "LabelSmall";
     public const string LabelOverline = "LabelOverline";
     public const string LabelSecondary = "LabelSecondary";
@@ -44,10 +51,11 @@ public static class UiVariants
     public static IReadOnlyList<(string Name, string Base)> All { get; } =
     [
         (ButtonPrimary, "Button"), (ButtonSecondary, "Button"), (ButtonGhost, "Button"), (ButtonDanger, "Button"),
-        (ButtonIcon, "Button"), (ButtonTab, "Button"), (ButtonChip, "Button"), (ButtonSegment, "Button"),
+        (ButtonIcon, "Button"), (ButtonTab, "Button"), (ButtonChip, "Button"), (ButtonSegment, "Button"), (ButtonRow, "Button"),
         (PanelCard, "PanelContainer"), (PanelInset, "PanelContainer"), (PanelModal, "PanelContainer"), (PanelTooltip, "PanelContainer"),
         (PanelHeader, "PanelContainer"), (PanelDock, "PanelContainer"), (PanelSegmentTrack, "PanelContainer"),
-        (LabelDisplay, "Label"), (LabelTitle, "Label"), (LabelHeading, "Label"), (LabelBodyStrong, "Label"),
+        (PanelBadge, "PanelContainer"), (PanelBadgeAccent, "PanelContainer"), (PanelKeyHint, "PanelContainer"), (PanelCellEven, "PanelContainer"), (PanelCellOdd, "PanelContainer"),
+        (LabelDisplay, "Label"), (LabelTitle, "Label"), (LabelHeading, "Label"), (LabelBodyStrong, "Label"), (LabelNumber, "Label"),
         (LabelSmall, "Label"), (LabelOverline, "Label"), (LabelSecondary, "Label"), (LabelMuted, "Label"),
         (ToggleSwitch, "CheckButton"), (StatBarThin, "ProgressBar"), (StatBarLabelled, "ProgressBar"),
     ];

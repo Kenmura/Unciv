@@ -119,6 +119,13 @@ public static class ThemeBuilder
         dock.CornerRadiusBottomLeft = dock.CornerRadiusBottomRight = 0;
         theme.SetTypeVariation(UiVariants.PanelDock, "PanelContainer");
         theme.SetStylebox("panel", UiVariants.PanelDock, dock);
+        // C065: the count pill of a Badge, the key chip of a KeyHint and the two zebra cells of a DataTable
+        int pill = m.Px(UiTokens.S1);
+        Variation(UiVariants.PanelBadge, new Box { Fill = C(UiTokens.Danger), Border = C(UiTokens.Danger), Radius = UiTokens.RadiusPill, BorderWidth = 0, PadX = pill, PadY = 0 });
+        Variation(UiVariants.PanelBadgeAccent, new Box { Fill = C(UiTokens.Accent), Border = C(UiTokens.Accent), Radius = UiTokens.RadiusPill, BorderWidth = 0, PadX = pill, PadY = 0 });
+        Variation(UiVariants.PanelKeyHint, new Box { Fill = C(UiTokens.Inset), Border = C(UiTokens.BorderSubtle), Radius = UiTokens.RadiusControl, PadX = pill, PadY = 0 });
+        Variation(UiVariants.PanelCellEven, new Box { Fill = C(UiTokens.Surface1), Border = C(UiTokens.Surface1), Radius = 0, BorderWidth = 0, PadX = m.Px(UiTokens.S2), PadY = m.Px(UiTokens.S1) });
+        Variation(UiVariants.PanelCellOdd, new Box { Fill = C(UiTokens.Surface2), Border = C(UiTokens.Surface2), Radius = 0, BorderWidth = 0, PadX = m.Px(UiTokens.S2), PadY = m.Px(UiTokens.S1) });
         Variation(UiVariants.PanelSegmentTrack, new Box { Fill = C(UiTokens.Inset), Border = C(UiTokens.BorderSubtle), Radius = UiTokens.RadiusControl, PadX = m.Border(UiTokens.RingWidth), PadY = m.Border(UiTokens.RingWidth) });
     }
 
@@ -184,11 +191,24 @@ public static class ThemeBuilder
             Transparent(), Transparent(UiTokens.Surface2), Fill(UiTokens.AccentLo, UiTokens.AccentLo), Transparent(),
             UiTokens.TextSecondary, UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextDisabled));
 
+        // row: a list row; hover and the selected (pressed) state lift to Surface3, the selection bar is drawn by ListRow
+        Variation(UiVariants.ButtonRow, new ButtonLook(
+            Transparent(radius: 0), Transparent(UiTokens.Surface3, radius: 0), Transparent(UiTokens.Surface3, radius: 0), Transparent(radius: 0),
+            UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextDisabled));
+
         void Variation(string name, ButtonLook look)
         {
             theme.SetTypeVariation(name, "Button");
             ApplyButton(theme, m, name, look);
         }
+    }
+
+    /// <summary>C065: the filled part of a stat bar in <paramref name="colour"/> (a theme override of the bar's <c>fill</c>, so no view builds a stylebox).</summary>
+    public static StyleBoxFlat BarFill(Rgb colour, bool labelled, float scale)
+    {
+        var m = new Metrics(scale, false);
+        int height = labelled ? UiTokens.BarLabelled : UiTokens.BarThin;
+        return Make(m, new Box { Fill = C(colour), Border = C(colour), Radius = height / 2, BorderWidth = 0 });
     }
 
     private static void ApplyButton(Theme theme, Metrics m, string type, ButtonLook look)
@@ -231,6 +251,7 @@ public static class ThemeBuilder
         Style(UiVariants.LabelTitle, UiTokens.Title, UiTokens.TextPrimary);
         Style(UiVariants.LabelHeading, UiTokens.Heading, UiTokens.TextPrimary);
         Style(UiVariants.LabelBodyStrong, UiTokens.BodyStrong, UiTokens.TextPrimary);
+        Style(UiVariants.LabelNumber, UiTokens.Number, UiTokens.TextPrimary);
         Style(UiVariants.LabelSmall, UiTokens.Small, UiTokens.TextSecondary);
         Style(UiVariants.LabelOverline, UiTokens.Overline, UiTokens.TextMuted);
         // tones keep the default face and size

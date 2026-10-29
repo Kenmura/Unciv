@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Ui;
 using Unciv.Harness;
 
 namespace Unciv.GodotHarness;
@@ -241,12 +242,12 @@ public partial class ScenarioRunner : Control
     private async Task NextFrame() => await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
     /// <summary>The metadata key (C061) a button carries to be pressable by label although it shows no text (an icon-only button).</summary>
-    public const string LabelMeta = "ui_label";
+    public const string LabelMeta = IconButton.LabelMeta;
 
     private static Button? FindButton(Node node, string text)
     {
         if (node is Button { Disabled: false } button && button.IsVisibleInTree()
-            && (button.Text == text || (button.HasMeta(LabelMeta) && button.GetMeta(LabelMeta).AsString() == text))) return button;
+            && (button.Text == text || (button is IconButton { Label: var label } && label == text) || (button.HasMeta(LabelMeta) && button.GetMeta(LabelMeta).AsString() == text))) return button;
         foreach (var child in node.GetChildren())
             if (FindButton(child, text) is { } found) return found;
         return null;

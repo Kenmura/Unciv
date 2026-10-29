@@ -1073,5 +1073,23 @@
   },
   "C064": {
     "none": "Model-level text fix (unique display text, hidden uniques filtered); the decisions, tooltips and policy scenario goldens are pixel-unchanged."
+  },
+  "C065": {
+    "scenario": "ui-kit",
+    "about": "Shared UI components in every state: icon buttons with badges, steppers, segmented control, stat chips and bars, inline stat icons, key hints, underline tab bar with overflow arrows, list rows, data table and empty state. The tab bar of every screen now uses underline tabs.",
+    "shots": [
+      {
+        "golden": "ui-kit/components.png",
+        "caption": "Control components: a close icon button, a bell with a red count badge, a disabled undo button and a gold Next unit button with a count badge; two steppers (the second at its minimum, so its minus is dimmed); a segmented control with Medium chosen; stat chips with green +5, red -2 and muted 0 deltas; a thin and a labelled stat bar with captions; inline stat icons; T and Esc key hints; a tab bar that shows scroll arrows because its tabs do not fit."
+      },
+      {
+        "golden": "ui-kit/components-data.png",
+        "caption": "List rows (Warrior selected with the accent bar, Settler, and a greyed Galleon showing Requires Navigation), a data table with right-aligned City, Pop and Net columns and zebra rows, and an empty state with its Save game action."
+      },
+      {
+        "golden": "ui-kit/wide.png",
+        "caption": "The same components at 1280x720: the control page on the left and the data page on the right."
+      }
+    ]
   }
 }
