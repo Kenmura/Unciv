@@ -1274,7 +1274,7 @@ Scenario `combat-presentation`.
 
 *The hit lands at the swing's marker: the defender plays its hit clip and the damage number floats up.* (`combat-presentation/impact.png`)
 
-## C083 (ticket not Done or unknown)
+## C083 Unit art pipeline
 
 Unit art pipeline: a units pack of CC0 humanoids on one shared skeleton, a rider seated on a generated horse rig, and code-driven rigid motion for siege, armour, ships and aircraft.
 
@@ -1291,6 +1291,24 @@ Scenario `unit-visuals`.
 ![The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.](../Unciv.Godot.Harness/golden/unit-visuals/gallery.png)
 
 *The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.* (`unit-visuals/gallery.png`)
+
+## C087 (ticket not Done or unknown)
+
+Rival stats ribbon in the world HUD: a collapsible block under the research pill with each known major rival's science (technologies), culture, gold and military strength; luxuries it could trade on hover.
+
+Scenario `rival-ribbon`.
+
+![Collapsed ribbon: a small Rivals 1 header under the research pill, the rest of the map free.](../Unciv.Godot.Harness/golden/rival-ribbon/collapsed.png)
+
+*Collapsed ribbon: a small Rivals 1 header under the research pill, the rest of the map free.* (`rival-ribbon/collapsed.png`)
+
+![Open ribbon at 640x480: Rome with science, culture, gold and military strength in a two-by-two grid.](../Unciv.Godot.Harness/golden/rival-ribbon/open.png)
+
+*Open ribbon at 640x480: Rome with science, culture, gold and military strength in a two-by-two grid.* (`rival-ribbon/open.png`)
+
+![1280x720: the same ribbon with the four figures in one row.](../Unciv.Godot.Harness/golden/rival-ribbon/wide.png)
+
+*1280x720: the same ribbon with the four figures in one row.* (`rival-ribbon/wide.png`)
 
 ## T252 (ticket not Done or unknown)
 

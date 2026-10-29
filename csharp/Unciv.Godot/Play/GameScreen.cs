@@ -16,6 +16,7 @@ using Unciv.Logic.Map;
 using Unciv.Models;
 using Unciv.Models.Translations;
 using Unciv.Net.Visibility;
+using Unciv.Queries.Empire;
 using Unciv.Queries.Units;
 using Unciv.Utils;
 
@@ -47,6 +48,7 @@ public partial class GameScreen : Control
     private int statusFrames;
     private const int StatusFrames = 240; // frames, not seconds: captures must not depend on machine speed
     private int bannerTurn = -1;
+    private int rivalsTurn = -1;
     private ClientSnapshot snapshot = null!; // JUSTIFY: C010 assigned by Refresh in Start
     private int previewRequest;
     private PathPreviewResult? preview;
@@ -711,6 +713,7 @@ public partial class GameScreen : Control
         World = new WorldHud();
         AddChild(World);
         World.Requested += OnNav;
+        World.Rivals.ExpandedChanged += _ => Run(RefreshRivals(snapshot.Turn, force: true));
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
         Hud.AutoPlayRequested += OnAutoPlayButton;
@@ -883,6 +886,7 @@ public partial class GameScreen : Control
             SelectedUnitId = null;
             mapLoaded = false;
             bannerTurn = -1;
+            rivalsTurn = -1;
         }
         session = gameSession;
         assets = registry;
@@ -1385,6 +1389,7 @@ public partial class GameScreen : Control
         var action = HudModel.NextAction(pending, snapshot.TurnStatus, session.ViewerCivId);
         Hud.Update(bar, action, HudModel.CanEndTurn(pending));
         World.SetTechnologyAvailable(pending?.Decisions.Any(it => it.Kind == "Technology") == true);
+        await RefreshRivals(bar.Turn, force: false);
         Layout();
         var rows = NotificationsModel.Rows(snapshot.Notifications);
         Notifications.Update(bar.Turn, rows);
@@ -1399,6 +1404,22 @@ public partial class GameScreen : Control
         await CheckGameOver();
         CheckTutorials();
         await RefreshTaskCard();
+    }
+
+    /// <summary>
+    /// C087: the rival stats ribbon's rows from the engine's overview (the known major civs and the rankings the game shows) and, while the ribbon is open, from each rival's trade
+    /// options (the luxuries it could trade). Collapsed, it asks once per turn (the header counts the rivals); open, on every refresh.
+    /// </summary>
+    private async Task RefreshRivals(int turn, bool force)
+    {
+        var ribbon = World.Rivals;
+        if (!force && !ribbon.Expanded && rivalsTurn == turn) return;
+        rivalsTurn = turn;
+        var overview = await queries.Overview();
+        var trade = new Dictionary<string, TradeOptionsResult?>();
+        if (ribbon.Expanded)
+            foreach (var rival in RivalRibbonModel.Rivals(overview)) trade[rival.CivName] = await queries.TradeOptions(rival.CivName);
+        ribbon.Show(RivalRibbonModel.Rows(overview, trade));
     }
 
     private bool TaskCardActive => TaskCardEnabled && boundSettings != null && boundSettings.Current.ShowTutorials && !GameOver.Visible;

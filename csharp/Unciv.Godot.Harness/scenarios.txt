@@ -50,3 +50,4 @@ mp-turn
 mp-social
 join
 viewport
+rival-ribbon

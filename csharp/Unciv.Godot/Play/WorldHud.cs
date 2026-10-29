@@ -21,7 +21,7 @@ public enum NavTarget
 /// <summary>
 /// C067: the layout of the world screen's heads-up display (design/ui-redesign.md 3.1). It owns the top bar, the nav strip with the research pill, the notification column,
 /// the minimap dock, the next-action dock and the turn toast, and places them with containers and anchors only (no absolute position): the top bar along the top, the
-/// nav row under it (research and policy pills left, icon buttons right), the notification column on the right, and the minimap above the next-action dock at the bottom right.
+/// nav row under it (research and policy pills left, icon buttons right), the notification column on the right, the rival stats ribbon (C087) at the left under the nav row, and the minimap above the next-action dock at the bottom right.
 /// The bottom left is left to the unit panel. The map stays uncovered between the bar and the docks. The content comes from <see cref="HudView"/>,
 /// <see cref="NotificationListView"/> and <see cref="MinimapView"/> (<see cref="Mount"/>); pressing a nav button raises <see cref="Requested"/>.
 /// The structure is rebuilt when the UI theme's breakpoint changes (<see cref="UiTheme.LayoutChanged"/>), not every frame.
@@ -73,11 +73,18 @@ public partial class WorldHud : Control
         navRow.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
         navRow.AddChild(navRight);
         bodyColumn.AddChild(navRow);
-        bodyColumn.AddChild(new Control { Name = "HudMiddle", MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ExpandFill });
+        // the middle of the map stays free: only the rival ribbon sits in its left edge, under the research pills
+        var middle = new HBoxContainer { Name = "HudMiddle", MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ExpandFill };
+        middle.AddChild(Rivals);
+        middle.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        bodyColumn.AddChild(middle);
         bottom.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
         bottom.AddChild(rightDock);
         bodyColumn.AddChild(bottom);
     }
+
+    /// <summary>C087: the collapsible rival stats ribbon, under the research pills.</summary>
+    public RivalRibbonView Rivals { get; } = new();
 
     public IconButton Diplomacy { get; private set; } = null!; // JUSTIFY: C067 built by Init
 
@@ -137,6 +144,7 @@ public partial class WorldHud : Control
         builtFor = uiTheme.Breakpoint;
         hud.Init(uiTheme);
         notifications.Init(uiTheme);
+        Rivals.Init(uiTheme);
         int gap = theme.Px(UiTokens.S2);
         foreach (string side in new[] { "left", "top", "right", "bottom" }) body.AddThemeConstantOverride("margin_" + side, side == "top" ? 0 : gap);
         bodyColumn.AddThemeConstantOverride("separation", gap);
@@ -183,6 +191,7 @@ public partial class WorldHud : Control
         foreach (var button in new[] { Technology, Policies, Diplomacy, Trade, Espionage, Civilopedia, Overview, Players }) Add(button.Label, button);
         Add("Notifications", notifications.ToggleButton);
         Add("ReviewAlerts", notifications.ReviewButton);
+        Add("Rivals", Rivals);
         Add("Minimap", minimapDock);
         Add("AutoPlay", hud.AutoPlayButton);
         Add("NextTurn", hud.EndTurnButton);

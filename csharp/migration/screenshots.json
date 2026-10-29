@@ -410,6 +410,24 @@
   "C060": {
     "none": "Per-viewer, replay-safe tutorial-task state (no layout change); the card itself is shown under C054 (tutorial-tasks scenario) and the hotseat hand-over under C029."
   },
+  "C087": {
+    "scenario": "rival-ribbon",
+    "about": "Rival stats ribbon in the world HUD: a collapsible block under the research pill with each known major rival's science (technologies), culture, gold and military strength; luxuries it could trade on hover.",
+    "shots": [
+      {
+        "golden": "rival-ribbon/collapsed.png",
+        "caption": "Collapsed ribbon: a small Rivals 1 header under the research pill, the rest of the map free."
+      },
+      {
+        "golden": "rival-ribbon/open.png",
+        "caption": "Open ribbon at 640x480: Rome with science, culture, gold and military strength in a two-by-two grid."
+      },
+      {
+        "golden": "rival-ribbon/wide.png",
+        "caption": "1280x720: the same ribbon with the four figures in one row."
+      }
+    ]
+  },
   "C061": {
     "scenario": "viewport",
     "about": "Harness only (no game screen): a 1280x720 scenario that presses a text-less button by its ui_label metadata.",
