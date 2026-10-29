@@ -239,15 +239,16 @@ STYLES = {  # kind -> (class name, mermaid style)
 STATE_LINE = re.compile(r"^(?:### ([A-Z]\d+)\b|- State:[ \t]*(\S*))", re.M)
 CHART_POINTS = 16
 NICE_STEPS = [3600, 7200, 10800, 21600, 43200, 86400, 172800, 604800]
-NEW_COLOUR, ACTIVE_COLOUR = "#1a7f37", "#b58900"
+NEW_COLOUR, BLOCKED_COLOUR, ACTIVE_COLOUR = "#0969da", "#cf222e", "#d29922"
+DONE_COLOUR, TOTAL_COLOUR = "#1a7f37", "#8c959f"
 
 
 def count_remaining(text):
-    """(new, active) ticket counts in one version of a backlog file (or of the old single backlog.md). Done and Won't are not counted.
+    """(new, blocked, active, done) ticket counts in one version of a backlog file (or of the old single backlog.md).
 
-    new = Available or Blocked (not started); active = In-Progress, Needs-Review or In-Review.
+    new = Available (not started); blocked = Blocked; active = In-Progress, Needs-Review or In-Review; done = Done or Won't port.
     """
-    new = active = 0
+    new = blocked = active = done = 0
     seen = None
     for m in STATE_LINE.finditer(text):
         if m.group(1):
@@ -255,15 +256,19 @@ def count_remaining(text):
         elif seen:
             seen = None
             k = kind(m.group(2))
-            if k in ("Available", "Blocked"):
+            if k == "Available":
                 new += 1
+            elif k == "Blocked":
+                blocked += 1
             elif k in ("In-Progress", "Needs-Review", "In-Review"):
                 active += 1
-    return new, active
+            elif k in ("Done", "Won't"):
+                done += 1
+    return new, blocked, active, done
 
 
 def backlog_history():
-    """[(unix time, new, active)] oldest first: every commit that touched the backlog (the old single backlog.md,
+    """[(unix time, new, blocked, active, done)] oldest first: every commit that touched the backlog (the old single backlog.md,
     then the backlog/ folder), plus the live state if it differs."""
     log = git("log", "--reverse", "--no-renames", "--no-abbrev", "--relative", "--raw", "--format=%x01%H %at",
               "--", "backlog.md", "backlog", check=False)
@@ -305,45 +310,50 @@ def backlog_history():
                 legacy = c
             else:
                 folder[path] = c
-        cur = legacy or (sum(c[0] for c in folder.values() if c), sum(c[1] for c in folder.values() if c))
+        cur = legacy or tuple(sum(c[n] for c in folder.values() if c) for n in range(4))
         points.append((max(at, points[-1][0] if points else 0), *cur))
-    live = (sum(1 for _, _, s, _, _ in tickets() if kind(s) in ("Available", "Blocked")),
-            sum(1 for _, _, s, _, _ in tickets() if kind(s) in ("In-Progress", "Needs-Review", "In-Review")))
+    live = tuple(sum(1 for _, _, s, _, _ in tickets() if kind(s) in ks) for ks in
+                 (("Available",), ("Blocked",), ("In-Progress", "Needs-Review", "In-Review"), ("Done", "Won't")))
     if points and live != points[-1][1:]:
         points.append((max(int(datetime.now(timezone.utc).timestamp()), points[-1][0]), *live))
     return points
 
 
 def render_chart():
-    """Mermaid xychart of remaining (not Done) tickets over time: new vs active, built from the git history of the backlog."""
+    """Two mermaid xycharts built from the git history of the backlog: remaining tickets by state, and cumulative Done vs total scope."""
     pts = backlog_history()
     if len(pts) < 2:
         return []
     t0, t1 = pts[0][0], pts[-1][0]
-    # Bin edges sit on round clock times (a "nice" step giving at most CHART_POINTS bins), so labels read 14:00, 16:00, ...
+    # Bin edges sit on round clock times (a "nice" step giving at most CHART_POINTS bins), starting at or before the first commit.
     step = next((x for x in NICE_STEPS if (t1 - t0) / x <= CHART_POINTS), NICE_STEPS[-1])
-    edges = list(range((t0 // step + 1) * step, (t1 // step + 1) * step + 1, step)) or [t1]
-    bins = [(e, *[p for p in pts if p[0] <= e][-1][1:]) for e in edges]  # last known value at each edge
-    stamp = datetime.fromtimestamp
-    multi_day = stamp(edges[0], timezone.utc).date() != stamp(edges[-1], timezone.utc).date()
-    fmt = "%m-%d" if step >= 86400 else "%d %H:00" if multi_day else "%H:00"
-    labels = [stamp(t, timezone.utc).strftime(fmt) for t, _, _ in bins]
-    top = max(n + a for _, n, a in bins)
+    edges = list(range(t0 // step * step, (t1 // step + 1) * step + 1, step))
+    last = lambda e: ([p for p in pts if p[0] <= e] or pts[:1])[-1][1:]  # last known counts at each edge
+    bins = [(e, *last(e), sum(last(e))) for e in edges]  # (edge, new, blocked, active, done, total)
+    labels = ", ".join('"' + datetime.fromtimestamp(t, timezone.utc).strftime("%b %d %H:%M") + '"' for t, *_ in bins)
+    series = lambda n: ", ".join(str(b[n]) for b in bins)
+
+    def chart(title, colours, lines):
+        top = max(max(b[n] for b in bins) for n in lines)
+        return ["```mermaid",
+                '%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "' + ", ".join(colours) + '"}}}}%%',
+                "xychart-beta", f'    title "{title}"', f"    x-axis [{labels}]",
+                f'    y-axis "Tickets" 0 --> {(top // 5 + 1) * 5}',
+                *[f"    line [{series(n)}]" for n in lines], "```", ""]
+
     return ["## Remaining tickets over time", "",
-            "Generated from the git history of `backlog/` (UTC; each point is the backlog as of that time, the last one the current backlog). "
-            "Completed tickets (Done, Won't port) are not counted.", "",
+            "Generated from the git history of `backlog/` (times are UTC; each point is the backlog as of that time, the last one the current backlog). "
+            "Completed tickets (Done, Won't port) are not counted in this chart.", "",
             "| Line | Meaning |", "|---|---|",
-            f"| green | New: Available or Blocked, not started yet |",
-            f"| yellow | Active: In-Progress, Needs-Review or In-Review |", "",
-            "```mermaid",
-            '%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "' + f"{NEW_COLOUR}, {ACTIVE_COLOUR}" + '"}}}}%%',
-            "xychart-beta",
-            '    title "Remaining tickets"',
-            "    x-axis [" + ", ".join(f'"{l}"' for l in labels) + "]",
-            f'    y-axis "Tickets" 0 --> {top + 5}',
-            "    line [" + ", ".join(str(n) for _, n, _ in bins) + "]",
-            "    line [" + ", ".join(str(a) for _, _, a in bins) + "]",
-            "```", ""]
+            f"| blue ({NEW_COLOUR}) | New: Available, not started yet |",
+            f"| red ({BLOCKED_COLOUR}) | Blocked |",
+            f"| amber ({ACTIVE_COLOUR}) | Active: In-Progress, Needs-Review or In-Review |", "",
+            *chart("Remaining tickets", (NEW_COLOUR, BLOCKED_COLOUR, ACTIVE_COLOUR), (1, 2, 3)),
+            "## Progress and scope over time", "",
+            "| Line | Meaning |", "|---|---|",
+            f"| green ({DONE_COLOUR}) | Done: Done or Won't port, cumulative |",
+            f"| grey ({TOTAL_COLOUR}) | Total scope: every ticket that existed at that time; a rise here is new tickets, not lost progress |", "",
+            *chart("Done vs total scope", (DONE_COLOUR, TOTAL_COLOUR), (4, 5))]
 
 
 def render_map():

@@ -177,7 +177,7 @@ class GreenGate(unittest.TestCase):
         git(self.root, "add", "-A")
         git(self.root, "commit", "-qm", "add")
         pts = self.t.backlog_history()
-        self.assertEqual(pts[-1][1:], (1, 2))
+        self.assertEqual(pts[-1][1:], (1, 0, 2, 0))
         self.assertEqual(self.t.cmd_archive(), None)
 
     def test_history_reads_old_single_file_layout(self):
@@ -194,7 +194,7 @@ class GreenGate(unittest.TestCase):
         git(self.root, "commit", "-qm", "split")
         self.t._cache.clear()
         pts = self.t.backlog_history()
-        self.assertEqual([p[1:] for p in pts][-2:], [(1, 0), (0, 1)])
+        self.assertEqual([p[1:] for p in pts][-2:], [(1, 0, 0, 1), (0, 0, 1, 0)])
 
 
 if __name__ == "__main__":
