@@ -80,6 +80,7 @@
 - [C093 Unit art by era: medieval and renaissance](#c093-unit-art-by-era-medieval-and-renaissance)
 - [C094 Unit art by era: industrial, modern and naval/air](#c094-unit-art-by-era-industrial-modern-and-navalair)
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
+- [C097 (ticket not Done or unknown)](#c097-ticket-not-done-or-unknown)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
@@ -1624,6 +1625,28 @@ Scenario `unit-visuals`.
 ![Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract.](../Unciv.Godot.Harness/golden/unit-visuals/elephants.png)
 
 *Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract.* (`unit-visuals/elephants.png`)
+
+## C097 (ticket not Done or unknown)
+
+Graphics quality picker (Low, High, Ultra) on the Display tab with the Ultra restart flow and the fallback note.
+
+Scenario `settings-graphics`.
+
+![Display tab with Graphics quality on Low, the default: no note and no restart button.](../Unciv.Godot.Harness/golden/settings-graphics/low.png)
+
+*Display tab with Graphics quality on Low, the default: no note and no restart button.* (`settings-graphics/low.png`)
+
+![Graphics quality on High: nothing more to say, High works on every renderer.](../Unciv.Godot.Harness/golden/settings-graphics/high.png)
+
+*Graphics quality on High: nothing more to say, High works on every renderer.* (`settings-graphics/high.png`)
+
+![Graphics quality on Ultra while the compatibility renderer runs: a note says Ultra needs a restart and Restart to apply is offered.](../Unciv.Godot.Harness/golden/settings-graphics/ultra-restart.png)
+
+*Graphics quality on Ultra while the compatibility renderer runs: a note says Ultra needs a restart and Restart to apply is offered.* (`settings-graphics/ultra-restart.png`)
+
+![After a failed Ultra attempt: Ultra stays chosen, the note says it needs a Vulkan or Direct3D 12 GPU and that High is shown.](../Unciv.Godot.Harness/golden/settings-graphics/ultra-fallback.png)
+
+*After a failed Ultra attempt: Ultra stays chosen, the note says it needs a Vulkan or Direct3D 12 GPU and that High is shown.* (`settings-graphics/ultra-fallback.png`)
 
 ## T252 (ticket not Done or unknown)
 

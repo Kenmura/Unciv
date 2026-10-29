@@ -15,7 +15,7 @@ namespace Unciv.GodotClient.Settings;
 public sealed record ClientSettings
 {
     /// <summary>The newest layout this build writes; a file with an older number is migrated on load, a newer one is not trusted.</summary>
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     [JsonPropertyName("version")]
     public int Version { get; init; } = CurrentVersion;
@@ -53,6 +53,18 @@ public sealed record ClientSettings
     /// <summary>C028: draw tile yield icons (the in-world icons arrive with C032; the choice is stored now).</summary>
     [JsonPropertyName("showYields")]
     public bool ShowYields { get; init; } = true;
+
+    /// <summary>C097: the chosen <see cref="GraphicsQuality"/> by name (Low, High, Ultra); the level actually drawn can be lower (see <see cref="GraphicsModel.Effective"/>).</summary>
+    [JsonPropertyName("graphicsQuality")]
+    public string GraphicsLevel { get; init; } = nameof(GraphicsQuality.Low);
+
+    /// <summary>C097: an Ultra attempt did not end on Forward+ (or on a real adapter); Ultra then shows High and is not tried again until the player picks it again.</summary>
+    [JsonPropertyName("ultraFailed")]
+    public bool UltraFailed { get; init; }
+
+    /// <summary>C097: the rendering method a restart was started for (empty when none); the loop guard of <see cref="GraphicsModel.Startup"/>.</summary>
+    [JsonPropertyName("rendererPending")]
+    public string RendererPending { get; init; } = "";
 
     [JsonPropertyName("assetPack")]
     public string AssetPack { get; init; } = "Default";
@@ -108,6 +120,8 @@ public sealed record ClientSettings
             SoundVolume = float.IsFinite(SoundVolume) ? Math.Clamp(SoundVolume, 0f, 1f) : Default.SoundVolume,
             WindowMode = OptionsModel.WindowModes.Contains(WindowMode) ? WindowMode : Default.WindowMode,
             ScrollSpeed = float.IsFinite(ScrollSpeed) ? Math.Clamp(ScrollSpeed, OptionsModel.MinScrollSpeed, OptionsModel.MaxScrollSpeed) : Default.ScrollSpeed,
+            GraphicsLevel = GraphicsModel.Parse(GraphicsLevel).ToString(),
+            RendererPending = RendererPending is GraphicsModel.Compatibility or GraphicsModel.ForwardPlus ? RendererPending : "",
             AssetPack = string.IsNullOrWhiteSpace(AssetPack) ? Default.AssetPack : AssetPack,
             AutosaveTurns = Math.Max(0, AutosaveTurns),
             TutorialsSeen = TutorialsSeen?.Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal).ToList() ?? [],
@@ -119,6 +133,10 @@ public sealed record ClientSettings
             Player = Player is null ? PlayerSettings.Default : Player with { NotificationsLogMaxTurns = Math.Max(0, Player.NotificationsLogMaxTurns) },
         };
     }
+
+    /// <summary>C097: the chosen level as the enum.</summary>
+    [JsonIgnore]
+    public GraphicsQuality Quality => GraphicsModel.Parse(GraphicsLevel);
 
     public ClientSettings WithTutorialSeen(string id) =>
         TutorialsSeen.Contains(id, StringComparer.Ordinal) ? this : this with { TutorialsSeen = [.. TutorialsSeen, id] };
@@ -241,7 +259,7 @@ public sealed class ClientSettingsStore(string path)
         }
     }
 
-    // Version 1 is the first layout; the next layout change adds its step here.
+    // Version 1 is the first layout; version 2 (C097) added graphicsQuality, ultraFailed and rendererPending, whose defaults are exactly what a version 1 file means (Low), so only the number changes.
     private static ClientSettings Migrate(ClientSettings loaded) => loaded;
 }
 

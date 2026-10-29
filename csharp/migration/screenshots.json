@@ -1595,5 +1595,27 @@
         "caption": "Next turn: the escort pair took its next step toward the target without any click."
       }
     ]
+  },
+  "C097": {
+    "scenario": "settings-graphics",
+    "about": "Graphics quality picker (Low, High, Ultra) on the Display tab with the Ultra restart flow and the fallback note.",
+    "shots": [
+      {
+        "golden": "settings-graphics/low.png",
+        "caption": "Display tab with Graphics quality on Low, the default: no note and no restart button."
+      },
+      {
+        "golden": "settings-graphics/high.png",
+        "caption": "Graphics quality on High: nothing more to say, High works on every renderer."
+      },
+      {
+        "golden": "settings-graphics/ultra-restart.png",
+        "caption": "Graphics quality on Ultra while the compatibility renderer runs: a note says Ultra needs a restart and Restart to apply is offered."
+      },
+      {
+        "golden": "settings-graphics/ultra-fallback.png",
+        "caption": "After a failed Ultra attempt: Ultra stays chosen, the note says it needs a Vulkan or Direct3D 12 GPU and that High is shown."
+      }
+    ]
   }
 }

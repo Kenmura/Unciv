@@ -83,6 +83,8 @@ public partial class ScenarioRunner : Control
             return 1;
         }
 
+        Unciv.GodotClient.Settings.GraphicsRuntime.Pin(Unciv.GodotClient.Settings.GraphicsQuality.Low); // C097: no scenario draws anything but Low, so the goldens (taken on the compatibility renderer) never move
+
         string scenarioOut = Path.Combine(outDir, scenario.Name);
         Directory.CreateDirectory(scenarioOut);
         foreach (string stale in Directory.GetFiles(scenarioOut)) File.Delete(stale);

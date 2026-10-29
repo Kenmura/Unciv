@@ -571,6 +571,7 @@ public partial class GameScreen : Control
         Map.ScrollSpeed = settings.ScrollSpeed;
         Map.EdgePan = settings.EdgePan;
         Map.ShowResources = settings.ShowResources;
+        ApplyGraphics(settings);
         Overlays.ShowYields = settings.ShowYields;
         Hud.ShowAutoPlayButton(settings.AutoPlay.ShowButton);
         if (!settings.AutoPlay.ShowButton)
@@ -578,6 +579,15 @@ public partial class GameScreen : Control
             AutoPlayMenu.Close();
             if (AutoPlay != null) Run(StopAutoPlayAsync());
         }
+    }
+
+    /// <summary>C097: the graphics level in effect follows the setting (Ultra only where the renderer shows it; harness scenarios pin Low, see <see cref="GraphicsRuntime"/>); the unit level of detail follows its caps.</summary>
+    private void ApplyGraphics(ClientSettings settings)
+    {
+        var preset = GraphicsModel.Preset(GraphicsRuntime.EffectiveFor(settings));
+        if (preset == Map.Graphics) return;
+        Map.ApplyGraphics(preset);
+        if (session != null && snapshot != null) ApplyUnitLod();
     }
 
     private IReadOnlyDictionary<string, string> hotkeys = new Dictionary<string, string>();
@@ -1263,7 +1273,7 @@ public partial class GameScreen : Control
     /// <summary>C085: reduced formations when the camera is far out, no units outside its footprint (<see cref="UnitLod"/>).</summary>
     private void ApplyUnitLod()
     {
-        var far = UnitLod.IsFar(Map.Zoom);
+        var far = UnitLod.IsFar(Map.Zoom, Map.Graphics.FarZoom);
         foreach (var node in unitNodes.Values)
         {
             node.ApplyLod(far);

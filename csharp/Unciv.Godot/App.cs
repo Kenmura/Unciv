@@ -41,6 +41,7 @@ public partial class App : Node
         vanilla = RulesetLocator.LoadVanilla();
         theme = new UiTheme(AssetRegistry.ForRuleset(vanilla));
         settings = new ClientSettingsService(new ClientSettingsStore(UserPaths.Settings));
+        if (GraphicsRuntime.StartupCheck(settings)) return; // C097: restarting into the renderer the graphics setting wants; nothing else is built in this process
         localization = Loc.Init(settings, GetWindow());
         ClientSettingsApplier.Apply(settings.Current, GetWindow());
         settings.Changed += changed => ClientSettingsApplier.Apply(changed, GetWindow());

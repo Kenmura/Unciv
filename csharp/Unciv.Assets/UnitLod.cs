@@ -17,6 +17,9 @@ public static class UnitLod
     /// <summary>Whether a camera of size <paramref name="zoom"/> is far enough out for the reduced level; NaN counts as near.</summary>
     public static bool IsFar(float zoom) => zoom >= FarZoom;
 
+    /// <summary>C097: <see cref="IsFar(float)"/> with the quality level's own threshold (<c>GraphicsPreset.FarZoom</c>).</summary>
+    public static bool IsFar(float zoom, float farZoom) => zoom >= farZoom;
+
     /// <summary>Figures a formation of <paramref name="count"/> draws: all of them near, the lead only when far (at least one for any real unit, none for a count of zero or less).</summary>
     public static int FiguresDrawn(int count, bool far) => count <= 0 ? 0 : far ? 1 : count;
 

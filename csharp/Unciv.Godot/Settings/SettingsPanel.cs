@@ -91,6 +91,9 @@ public partial class SettingsPanel : HBoxContainer
     private readonly HSlider scroll = new() { Name = "ScrollSpeedSlider", MinValue = OptionsModel.MinScrollSpeed, MaxValue = OptionsModel.MaxScrollSpeed, Step = 0.25 };
     private readonly HSlider autoPlayTurns = new() { Name = "AutoPlayTurnsSlider", MinValue = AutoPlaySettings.MinTurns, MaxValue = AutoPlaySettings.MaxTurnsLimit, Step = 1 };
     private readonly OptionButton windowMode = new() { Name = "WindowModePicker" };
+    private readonly OptionButton graphicsPicker = new() { Name = "GraphicsQualityPicker" };
+    private readonly Label graphicsNote = new() { Name = "GraphicsNote", AutowrapMode = TextServer.AutowrapMode.WordSmart, Visible = false };
+    private readonly Button graphicsRestart = new() { Name = "GraphicsRestartButton", Visible = false, SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
     private readonly OptionButton packPicker = new() { Name = "AssetPackPicker" };
     private readonly Unciv.Models.Ruleset.Ruleset? tutorialRuleset;
     private readonly VBoxContainer tutorialList = new() { Name = "TutorialList", Visible = false };
@@ -147,6 +150,13 @@ public partial class SettingsPanel : HBoxContainer
     public OptionButton WindowModePicker => windowMode;
 
     public OptionButton PackPicker => packPicker;
+
+    /// <summary>C097: the graphics quality picker (Low, High, Ultra), the note under it and the restart button that shows when the choice needs another renderer.</summary>
+    public OptionButton GraphicsPicker => graphicsPicker;
+
+    public Label GraphicsNote => graphicsNote;
+
+    public Button GraphicsRestartButton => graphicsRestart;
 
     /// <summary>The UI scale stepper (percent).</summary>
     public Stepper ScaleStepper => scaleStepper;
@@ -270,6 +280,25 @@ public partial class SettingsPanel : HBoxContainer
             if (!refreshing) service.Update(s => s with { WindowMode = OptionsModel.WindowModes[(int)index] });
         };
         AddRow(page, "Window mode", windowMode);
+        foreach (var level in Enum.GetValues<GraphicsQuality>()) graphicsPicker.AddItem(level.ToString().Tr());
+        graphicsPicker.ItemSelected += index =>
+        {
+            if (refreshing) return;
+            var level = (GraphicsQuality)(int)index;
+            // picking Ultra is a fresh try: it forgets an earlier failure (one attempt per choice, never a loop: see GraphicsModel.Startup)
+            service.Update(s => s with { GraphicsLevel = level.ToString(), UltraFailed = level == GraphicsQuality.Ultra ? false : s.UltraFailed, RendererPending = "" });
+        };
+        AddRow(page, "Graphics quality", graphicsPicker);
+        graphicsNote.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.Warning));
+        page.AddChild(graphicsNote);
+        graphicsRestart.Pressed += () =>
+        {
+            var wanted = GraphicsModel.WantedRenderer(service.Current.Quality, service.Current.UltraFailed);
+            service.Update(s => s with { RendererPending = wanted });
+            if (!GraphicsRuntime.Restart(wanted)) service.Update(s => s with { RendererPending = "" });
+        };
+        refreshers.Add(() => graphicsRestart.Text = "Restart to apply".Tr());
+        page.AddChild(graphicsRestart);
     }
 
     private void BuildGameplay()
@@ -479,6 +508,12 @@ public partial class SettingsPanel : HBoxContainer
         scaleStepper.Value = (int)MathF.Round(s.UiScale * 100f, MidpointRounding.AwayFromZero);
         windowMode.Select(Math.Max(0, IndexOf(OptionsModel.WindowModes, s.WindowMode)));
         packPicker.Select(Math.Max(0, IndexOf(packNames, s.AssetPack)));
+        graphicsPicker.Select((int)s.Quality);
+        for (int i = 0; i < graphicsPicker.ItemCount; i++) graphicsPicker.SetItemText(i, ((GraphicsQuality)i).ToString().Tr());
+        var note = GraphicsRuntime.NoteFor(s);
+        graphicsNote.Text = note.Tr();
+        graphicsNote.Visible = note != "";
+        graphicsRestart.Visible = GraphicsRuntime.NeedsRestart(s);
         foreach (var (action, button) in keyButtons)
             button.Text = Listening == action ? "..." : Hotkeys.KeyFor(s.KeyBindings, action);
         foreach (var (tab, _) in tabs) tab.Retranslate();

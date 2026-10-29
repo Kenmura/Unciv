@@ -36,7 +36,7 @@ public sealed class ClientSettingsTests : IDisposable
     [InlineData("{\"version\":1,\"uiScale\":\"big\"}")]
     [InlineData("{\"version\":1,\"autosaveTurns\":true}")]
     [InlineData("{\"version\":1,\"tutorialsSeen\":5}")]
-    [InlineData("{\"version\":2,\"language\":\"German\"}")]
+    [InlineData("{\"version\":3,\"language\":\"German\"}")]
     [InlineData("{\"version\":0,\"language\":\"German\"}")]
     [InlineData("{\"version\":-3,\"language\":\"German\"}")]
     public void UnusableFileGivesDefaults(string text) => Assert.Equal(ClientSettings.Default, LoadText(text));

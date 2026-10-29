@@ -6,6 +6,7 @@ ui-kit
 terrain-3d
 terrain-blend
 settings
+settings-graphics
 props-3d
 hud
 flat-city

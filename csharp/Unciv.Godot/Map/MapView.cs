@@ -113,10 +113,46 @@ public partial class MapView : Node3D
 
     public Vector3 HighlightPosition => highlight.Position;
 
+    private Godot.Environment environment = null!; // JUSTIFY: C097 assigned in _Ready before any use
+    private DirectionalLight3D sun = null!; // JUSTIFY: C097 assigned in _Ready before any use
+
+    /// <summary>C097: the preset in effect (Low until <see cref="ApplyGraphics"/> is given another).</summary>
+    public Unciv.GodotClient.Settings.GraphicsPreset Graphics { get; private set; } = Unciv.GodotClient.Settings.GraphicsModel.Preset(Unciv.GodotClient.Settings.GraphicsQuality.Low);
+
+    /// <summary>
+    /// C097: puts a graphics preset into effect on the map's environment, sun and viewport. Low is exactly the look before the setting existed (flat ambient, linear tone map,
+    /// no shadows, no glow, no anti-aliasing), so applying it changes nothing. SSAO and SSR are Forward+ features: the renderer ignores them elsewhere, and the preset
+    /// asks for them only at Ultra, which is only drawn on Forward+.
+    /// </summary>
+    public void ApplyGraphics(Unciv.GodotClient.Settings.GraphicsPreset preset)
+    {
+        Graphics = preset;
+        environment.TonemapMode = preset.Tonemap ? Godot.Environment.ToneMapper.Filmic : Godot.Environment.ToneMapper.Linear;
+        environment.TonemapExposure = preset.Exposure;
+        environment.AmbientLightEnergy = preset.AmbientEnergy;
+        environment.GlowEnabled = preset.Glow;
+        if (preset.Glow)
+        {
+            environment.GlowIntensity = 0.6f;
+            environment.GlowBloom = 0.1f;
+        }
+        environment.SsaoEnabled = preset.Ssao;
+        environment.SsrEnabled = preset.Ssr;
+        sun.ShadowEnabled = preset.Shadows;
+        var viewport = GetViewport();
+        if (viewport != null)
+        {
+            viewport.Msaa3D = preset.Msaa switch { >= 4 => Viewport.Msaa.Msaa4X, >= 2 => Viewport.Msaa.Msaa2X, _ => Viewport.Msaa.Disabled };
+        }
+    }
+
     public override void _Ready()
     {
-        AddChild(new WorldEnvironment { Environment = MapMaterials.Backdrop() });
-        AddChild(new DirectionalLight3D { LightEnergy = 0.8f, RotationDegrees = new Vector3(-60f, 30f, 0f) });
+        environment = MapMaterials.Backdrop();
+        sun = new DirectionalLight3D { LightEnergy = 0.8f, RotationDegrees = new Vector3(-60f, 30f, 0f), DirectionalShadowMode = DirectionalLight3D.ShadowMode.Parallel4Splits };
+        AddChild(new WorldEnvironment { Environment = environment });
+        AddChild(sun);
+        ApplyGraphics(Unciv.GodotClient.Settings.GraphicsModel.Preset(Unciv.GodotClient.Settings.GraphicsQuality.Low));
         terrain = new TerrainChunkLayer { Name = "Terrain" };
         AddChild(terrain);
         tileRoot = new Node3D { Name = "Tiles" };
