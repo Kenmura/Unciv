@@ -61,7 +61,7 @@ flowchart TD
   class C089 ondeck
   class C090 waiting
   class C091 ondeck
-  class C094 prog
+  class C094 review
   class C095 prog
   class T247 waiting
 ```
@@ -115,7 +115,7 @@ xychart-beta
 | C086 | **On deck** (after C094) | C094 | 0 | Unit combat polish: effects and sounds |
 | C091 | **On deck** (after C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C078 | Needs-Review [Claude] | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
-| C094 | In-Progress [Claude-C094] | C093 | 2 | Unit art by era: industrial, modern and naval/air |
+| C094 | Needs-Review [Claude-C094] | C093 | 2 | Unit art by era: industrial, modern and naval/air |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | C095 | In-Progress [Claude-C095] | C084 | 0 | Battering Ram rigid siege kind and chariot/elephant art |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
