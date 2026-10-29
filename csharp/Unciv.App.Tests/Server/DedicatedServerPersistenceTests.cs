@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Unciv.Commands.Log;
 using Unciv.Json;
+using Unciv.Logic;
 using Unciv.Logic.Map;
 using Unciv.Net.Identity;
 using Unciv.Net.Lobby;
@@ -248,6 +249,37 @@ public sealed partial class DedicatedServerTests
             Assert.Equal(2, lobby.Lobby.Slots.Count);
             Assert.Equal(bobKey, lobby.Lobby.Slots.Single(x => x.Nation == "Babylon").PlayerKeyId);
         }
+
+        // A stop in the middle of a resolve (both humans ended the turn, the server steps were not applied): the resume continues the round.
+        var crashed = CopyOf(gameDirectory);
+        using (var half = FileGameStore.Open(crashed))
+        {
+            var session = new Unciv.Commands.GameSession(half.Session.Game, lastSeq: half.Session.LastSeq) { Clock = () => 1_000_000_000_000L };
+            foreach (var civ in new[] { "Rome", "Babylon" }) Assert.True(session.Submit(civ, new Unciv.Commands.Turn.EndTurn()).Accepted);
+            half.Store.Sync(session);
+            Assert.Equal(SimultaneousPhase.Resolving, session.Game.TurnState!.Phase);
+        }
+        var resolving = FileGameStore.Open(crashed);
+        await using (var lobby = new ServerLobby(TwoPlayerSettings()))
+        {
+            var warnings = new List<string>();
+            var host = await lobby.ResumeGameAsync(resolving, warn: warnings.Add);
+            Assert.NotEqual(SimultaneousPhase.Resolving, host.Game.TurnState!.Phase);
+            Assert.Equal(2, host.Game.Turns);
+        }
+
+        // Two seats with one key cannot be bound: the saved game cannot be resumed, which is exit code 3 (not a restart loop).
+        var duplicate = Path.Combine(root, "data", "games", "dup");
+        CopyDirectory(gameDirectory, duplicate);
+        using (var edit = FileGameStore.Open(duplicate))
+        {
+            var dupMeta = edit.Store.ReadMeta();
+            dupMeta.Slots["Babylon"] = dupMeta.Slots["Rome"];
+            edit.Store.WriteMeta(dupMeta);
+        }
+        var error = new StringWriter();
+        Assert.Equal(3, await ServerRunner.RunAsync(["--port", "0", "--data-dir", Path.Combine(root, "data"), "--jsons", RulesetsFolder, "--game-id", "dup"], new StringWriter(), error, CancellationToken.None));
+        Assert.Contains("cannot be resumed", error.ToString());
 
         var kicked = FileGameStore.Open(CopyOf(gameDirectory));
         var meta = kicked.Store.ReadMeta();
