@@ -119,5 +119,12 @@ Finds the clips and maps each presenter cue to one, falling back to today's proc
 - A unique unit gets its own key (the fallback chain goes by unit type, not `replaces`), so each one is a variant of its base: another body, attachments or attack clip. KayKit has no spear or bow, so spearmen use the sword with the stab clip, bowmen the crossbow and throwers the `Throw` clip: placeholders for art that arrives as a pack.
 - Elephants are the horse rig with a `mount` entry (`scale` 1.12 and a grey `colour`, limited by the contract's 0.65 radius); a real elephant model replaces them with no code change. A mounted unit's `attack` clip must be about one second (Chop, Slice_Horizontal) or the horse's stretched clip no longer matches the rider's; the infantry may use longer ones (Stab, 2H Chop).
 - Not covered, still generated blocks: Trireme, Quinquereme, Dromon, Galley, Work Boats, Catapult, Ballista (code-driven rigid motion) and the Battering Ram (a `Sword` type with no rigid kind: a follow-up gives it a rigid siege kind).
-- `UnitModelContractTests.EveryAncientAndClassicalHumanoidAndMountedUnitHasAModel` fails when a Gods & Kings unit of eras 0 and 1 (or a barbarian) that is not a ship, siege unit or the ram has no key.
+- `UnitModelContractTests.EveryPreIndustrialHumanoidAndMountedUnitHasAModel` fails when a Gods & Kings unit of eras 0 to 3 (or a barbarian) that is not a ship, siege unit or the ram has no key.
 - The chariots (Chariot Archer, War Chariot) are riders on the horse rig: there is no chariot or wheel model yet. Scope: units with a required tech of the ancient or classical era plus the barbarians; Great People, Missionary and Inquisitor (other than the Great Scientist) stay generated blocks.
+
+## C093 status: medieval and renaissance art
+
+- 19 more `unit/*` keys, data only (`attachments.json` plus `build-unit-models.py`, same pipeline as C084): infantry Pikeman, Landsknecht, Samurai, Berserker; bowmen Longbowman, Chu-Ko-Nu; gunpowder Musketman, Musketeer, Janissary, Minuteman, Tercio; mounted Camel Archer (sand-coloured mount), Keshik, Conquistador, Naresuan's Elephant (the grey elephant mount), Mandekalu Cavalry, Lancer, Sipahi, Hakkapeliitta.
+- Placeholders as before: KayKit has no musket, pike or bow, so gunpowder units hold the crossbow (distinguished by body, cape and knife) and use the two-handed stab as their melee clip; pikemen use sword, spike shield and the stab clip. Distinct unit art arrives as a pack.
+- Still generated blocks: Trebuchet, Hwach'a, Cannon (siege) and all ships, as in C084.
+- The roster contract test now covers eras 0 to 3 (and the barbarians). `unit-visuals` adds `medieval` and `medieval-mounts` captures.

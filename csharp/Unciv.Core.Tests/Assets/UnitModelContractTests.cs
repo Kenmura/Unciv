@@ -93,9 +93,9 @@ public sealed class UnitModelContractTests
         }
     }
 
-    /// <summary>The ancient and classical eras (the G&amp;K techs of eras 0 and 1, and the barbarian units) have art for every humanoid and mounted unit; ships, siege and the ram stay generated blocks.</summary>
+    /// <summary>The ancient, classical, medieval and renaissance eras (the G&amp;K techs of eras 0 to 3, and the barbarian units; C084, C093) have art for every humanoid and mounted unit; ships, siege and the ram stay generated blocks.</summary>
     [Fact]
-    public void EveryAncientAndClassicalHumanoidAndMountedUnitHasAModel()
+    public void EveryPreIndustrialHumanoidAndMountedUnitHasAModel()
     {
         RulesetCache.Clear();
         var jsons = Path.Combine(ClientFolder, "..", "..", "android", "assets", "jsons");
@@ -105,11 +105,14 @@ public sealed class UnitModelContractTests
             var ruleset = RulesetCache.Get("Civ V - Gods & Kings")!;
             var keys = UnitsManifestKeys().EnumerateObject().Select(it => it.Name).ToHashSet();
             string[] generated = ["Siege", "Melee Water", "Ranged Water", "Civilian Water"];
-            var wanted = ruleset.Units.Values.Where(it => (it.RequiredTech != null && it.GetSortGroup(ruleset) <= 1) || it.UniqueTo == "Barbarians")
+            var wanted = ruleset.Units.Values.Where(it => (it.RequiredTech != null && it.GetSortGroup(ruleset) <= 3) || it.UniqueTo == "Barbarians")
                 .Where(it => !generated.Contains(it.UnitType) && it.Name != "Battering Ram").Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
             Assert.Contains("Settler", wanted);
             Assert.Contains("War Elephant", wanted);
             Assert.Contains("Marauder", wanted);
+            Assert.Contains("Samurai", wanted);
+            Assert.Contains("Hakkapeliitta", wanted);
+            Assert.Contains("Naresuan's Elephant", wanted);
             Assert.Equal(wanted, wanted.Where(it => keys.Contains("unit/" + it)).ToList());
         }
         finally

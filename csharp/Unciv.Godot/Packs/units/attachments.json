@@ -40,7 +40,18 @@
     "Slinger": { "body": "Rogue_Hooded", "keep": ["Throwable", "Rogue_Cape"], "clips": { "attack_ranged": "Throw" } },
     "Atlatlist": { "body": "Rogue", "keep": ["Throwable", "Knife"], "clips": { "attack_ranged": "Throw" } },
     "Skirmisher": { "body": "Rogue_Hooded", "keep": ["Throwable", "Knife"], "clips": { "attack_ranged": "Throw" } },
-    "Composite Bowman": { "body": "Rogue", "keep": ["1H_Crossbow", "Rogue_Cape"] }
+    "Composite Bowman": { "body": "Rogue", "keep": ["1H_Crossbow", "Rogue_Cape"] },
+    "Pikeman": { "body": "Knight", "keep": ["1H_Sword", "Spike_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Stab" } },
+    "Landsknecht": { "body": "Knight", "keep": ["2H_Sword", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "2H_Melee_Attack_Chop" } },
+    "Samurai": { "body": "Knight", "keep": ["2H_Sword", "Badge_Shield", "Knight_Helmet"], "clips": { "attack": "2H_Melee_Attack_Slice" } },
+    "Berserker": { "body": "Barbarian", "keep": ["1H_Axe", "1H_Axe_Offhand", "Barbarian_Hat"], "clips": { "attack": "Dualwield_Melee_Attack_Slice" } },
+    "Longbowman": { "body": "Rogue_Hooded", "keep": ["2H_Crossbow", "Rogue_Cape"], "clips": { "attack_ranged": "2H_Ranged_Shoot" } },
+    "Chu-Ko-Nu": { "body": "Rogue", "keep": ["1H_Crossbow", "Knife_Offhand"] },
+    "Musketman": { "body": "Rogue", "keep": ["2H_Crossbow", "Rogue_Cape"], "clips": { "attack": "2H_Melee_Attack_Stab", "attack_ranged": "2H_Ranged_Shoot" } },
+    "Musketeer": { "body": "Rogue_Hooded", "keep": ["2H_Crossbow", "Rogue_Cape"], "clips": { "attack": "2H_Melee_Attack_Stab", "attack_ranged": "2H_Ranged_Shoot" } },
+    "Janissary": { "body": "Rogue", "keep": ["2H_Crossbow", "Knife"], "clips": { "attack": "2H_Melee_Attack_Stab", "attack_ranged": "2H_Ranged_Shoot" } },
+    "Minuteman": { "body": "Rogue_Hooded", "keep": ["2H_Crossbow"], "clips": { "attack": "2H_Melee_Attack_Stab", "attack_ranged": "2H_Ranged_Shoot" } },
+    "Tercio": { "body": "Rogue", "keep": ["2H_Crossbow"], "clips": { "attack": "2H_Melee_Attack_Stab", "attack_ranged": "2H_Ranged_Shoot" } }
   },
   "mounted": {
     "about": "A mounted unit is a rider (body + attachments as above, scaled to 'riderHeight', own skeleton) following the root and body joints of the generated horse rig (build-unit-models.py builds the horse: rigid boxes on a 10-joint skeleton with the six contract clips, stretched to the rider's clip lengths); 'saddleHeight' is the rider's feet height above the ground. Per clip the rider's upper body follows 'clips' and its legs and hips hold the Sit_Chair_Idle pose, so he sits the horse whatever he does with his arms.",
@@ -56,7 +67,15 @@
       "War Elephant": { "body": "Rogue", "keep": ["2H_Crossbow", "Rogue_Cape"], "mount": { "scale": 1.12, "colour": [0.5, 0.48, 0.45, 1.0] } },
       "Companion Cavalry": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
       "African Forest Elephant": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield"], "clips": { "attack": "1H_Melee_Attack_Chop" }, "mount": { "scale": 1.12, "colour": [0.5, 0.48, 0.45, 1.0] } },
-      "Cataphract": { "body": "Knight", "keep": ["1H_Sword", "Rectangle_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } }
+      "Cataphract": { "body": "Knight", "keep": ["1H_Sword", "Rectangle_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
+      "Camel Archer": { "body": "Rogue", "keep": ["2H_Crossbow"], "mount": { "scale": 1.0, "colour": [0.72, 0.6, 0.38, 1.0] } },
+      "Keshik": { "body": "Rogue_Hooded", "keep": ["1H_Crossbow", "Knife"] },
+      "Conquistador": { "body": "Knight", "keep": ["1H_Sword", "Badge_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
+      "Naresuan's Elephant": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Chop" }, "mount": { "scale": 1.12, "colour": [0.5, 0.48, 0.45, 1.0] } },
+      "Mandekalu Cavalry": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
+      "Lancer": { "body": "Knight", "keep": ["1H_Sword", "Rectangle_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
+      "Sipahi": { "body": "Knight", "keep": ["1H_Sword", "Badge_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
+      "Hakkapeliitta": { "body": "Knight", "keep": ["1H_Sword", "1H_Sword_Offhand", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } }
     }
   }
 }

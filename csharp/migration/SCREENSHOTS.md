@@ -1304,7 +1304,7 @@ Scenario `unit-visuals`.
 
 *The gallery (its first 20 units in frame, the ancient roster below it): humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.* (`unit-visuals/gallery.png`)
 
-## C084 (ticket not Done or unknown)
+## C084 Unit art by era: ancient and classical
 
 Ancient and classical unit art: 23 more units (axe, spear and sword infantry, throwers and bowmen, chariots, cavalry and elephants) from the units pack, built from data in attachments.json.
 
@@ -1345,6 +1345,20 @@ Scenario `unit-orders`.
 ![Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius.](../Unciv.Godot.Harness/golden/unit-orders/city-site.png)
 
 *Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius.* (`unit-orders/city-site.png`)
+
+## C093 (ticket not Done or unknown)
+
+Medieval and renaissance unit art: 19 more units (pikemen, samurai, longbowmen, musketeers, lancers, camel archers and elephants) from the units pack, built from data in attachments.json.
+
+Scenario `unit-visuals`.
+
+![The medieval and renaissance roster (the gallery's lower rows): infantry, bowmen, musketeers, and mounted units in the red and blue civ colours.](../Unciv.Godot.Harness/golden/unit-visuals/medieval.png)
+
+*The medieval and renaissance roster (the gallery's lower rows): infantry, bowmen, musketeers, and mounted units in the red and blue civ colours.* (`unit-visuals/medieval.png`)
+
+![Close view, side on: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount.](../Unciv.Godot.Harness/golden/unit-visuals/medieval-mounts.png)
+
+*Close view, side on: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount.* (`unit-visuals/medieval-mounts.png`)
 
 ## T252 (ticket not Done or unknown)
 

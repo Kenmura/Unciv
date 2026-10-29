@@ -40,6 +40,13 @@ public sealed class UnitVisualsScenario : Scenario
         "Bowman", "Slinger", "Atlatlist", "Skirmisher", "Composite Bowman", "Horse Archer", "Chariot Archer", "War Chariot", "Companion Cavalry", "Cataphract", "War Elephant", "African Forest Elephant",
     ];
 
+    // C093: the medieval and renaissance units that are not already in the gallery's first rows (Knight, Crossbowman, Longswordsman and Musketman are)
+    private static readonly string[] LaterRoster =
+    [
+        "Pikeman", "Landsknecht", "Samurai", "Berserker", "Longbowman", "Chu-Ko-Nu", "Musketeer", "Janissary", "Minuteman", "Tercio",
+        "Camel Archer", "Keshik", "Conquistador", "Naresuan's Elephant", "Mandekalu Cavalry", "Lancer", "Sipahi", "Hakkapeliitta",
+    ];
+
     private static readonly Slot[] Slots =
     [
         new("Settler", Rome, 100), new("Warrior", Rome, 100), new("Horseman", Rome, 100), new("Archer", Rome, 60), new("Catapult", Rome, 100),
@@ -50,11 +57,13 @@ public sealed class UnitVisualsScenario : Scenario
         new("Swordsman", Rome, 100), new("Knight", Egypt, 100), new("Crossbowman", Rome, 100), new("Great Scientist", Rome, 100), new("Scout", Egypt, 100),
         // C084: the ancient and classical roster (rows 5 to 9 of the grid; the last has three), all model files; owners alternate so both civ colours show
         .. EraRoster.Select((unit, i) => new Slot(unit, i % 2 == 0 ? Rome : Egypt, 100)),
+        // C093: the medieval and renaissance roster (rows 8 to 12)
+        .. LaterRoster.Select((unit, i) => new Slot(unit, i % 2 == 0 ? Egypt : Rome, 100)),
     ];
 
     // C080/C083: the units of the bundled units pack are model files (TeamColor material, animation player, humanoid bodies and riders on a generated horse); every other unit is a generated block with a Banner
-    private static readonly string[] ModelUnits = [.. EraRoster, "Warrior", "Longswordsman", "Swordsman", "Archer", "Crossbowman", "Scout", "Worker", "Great Scientist", "Horseman", "Knight"];
-    private static readonly string[] MountedUnits = ["Horseman", "Knight", "Horse Archer", "Chariot Archer", "War Chariot", "Companion Cavalry", "Cataphract", "War Elephant", "African Forest Elephant"];
+    private static readonly string[] ModelUnits = [.. EraRoster, .. LaterRoster, "Musketman", "Warrior", "Longswordsman", "Swordsman", "Archer", "Crossbowman", "Scout", "Worker", "Great Scientist", "Horseman", "Knight"];
+    private static readonly string[] MountedUnits = ["Horseman", "Knight", "Horse Archer", "Chariot Archer", "War Chariot", "Companion Cavalry", "Cataphract", "War Elephant", "African Forest Elephant", "Camel Archer", "Keshik", "Conquistador", "Naresuan's Elephant", "Mandekalu Cavalry", "Lancer", "Sipahi", "Hakkapeliitta"];
     private static bool IsModel(UnitNode n) => ModelUnits.Contains(n.Unit.Name);
     private static IEnumerable<Node3D> FigureModels(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => f.GetChild<Node3D>(0));
     private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
@@ -169,6 +178,7 @@ public sealed class UnitVisualsScenario : Scenario
             new WaitFrames(2),
             new Capture("gallery", "Unit gallery: civilian, land units by era (1 to 4 figures), ships and plane; red and blue civs; health bars and status marks"),
             .. EraSteps(view, Coord, Node),
+            .. LaterSteps(view, Coord, Node),
             .. RigidSteps(view, nodes, Node, Coord),
             CloseView("close view of the formations", view, Coord(8), new Vector3(-1.5f, 0f, 0f), 5f),
             new WaitFrames(2),
@@ -199,9 +209,32 @@ public sealed class UnitVisualsScenario : Scenario
                 node("Catapult", null).Rigid == RigidKind.Siege && node("Tank", null).Rigid == RigidKind.Armor && node("Destroyer", null).Rigid == RigidKind.Ship && node("Fighter", null).Rigid == RigidKind.Air
                 && nodes.Where(n => n.Rigid != RigidKind.None).Select(n => n.Unit.Name).Order().SequenceEqual(new[] { "Catapult", "Cannon", "Destroyer", "Fighter", "Tank", "Trireme" }.Order())
                 && nodes.Where(IsModel).All(n => n.Rigid == RigidKind.None)),
+            new AssertQuery("C093: the 18 medieval and renaissance units (and the Musketman) are all model files with the six clips, none a generated block; Naresuan's Elephant stands on the taller mount", () =>
+                LaterRoster.Append("Musketman").All(u => nodes.Where(n => n.Unit.Name == u).All(n => IsModel(n) && HasClips(n) && n.Rigid == RigidKind.None))
+                && SaddleHeight(node("Naresuan's Elephant", null)) > SaddleHeight(node("Knight", null)) * 1.08f),
             new AssertQuery("C084: the 23 ancient and classical units are all model files with the six clips, none a generated block; the elephants stand on a taller, wider mount than the horses", () =>
                 EraRoster.All(u => nodes.Where(n => n.Unit.Name == u).All(n => IsModel(n) && HasClips(n) && n.Rigid == RigidKind.None))
                 && SaddleHeight(node("War Elephant", null)) > SaddleHeight(node("Horseman", null)) * 1.08f && SaddleHeight(node("African Forest Elephant", null)) > SaddleHeight(node("Cataphract", null)) * 1.08f),
+    ];
+
+    private static IEnumerable<ScenarioStep> LaterSteps(MapView view, Func<int, HexCoord> coord, Func<string, string?, UnitNode> node) =>
+    [
+            new Act("frame the medieval and renaissance roster", () =>
+            {
+                view.FocusOn(MapLayout.TileTop(coord(52).X, coord(52).Y, 0f));
+                view.SetZoom(13f);
+            }),
+            new WaitFrames(2),
+            new Capture("medieval", "Medieval and renaissance roster (the bottom rows of the gallery): pikemen, landsknechts, samurai and berserkers, longbowmen and chu-ko-nu, musketeers, camel archers, keshiks, conquistadors, lancers and elephants; red and blue civs"),
+            new Act("close view of the medieval mounts", () =>
+            {
+                foreach (var name in new[] { "Camel Archer", "Naresuan's Elephant", "Hakkapeliitta" }) node(name, null).Face(MathF.PI / 2f);
+                view.FocusOn(MapLayout.TileTop(coord(58).X, coord(58).Y, 0f));
+                view.SetView(40f);
+                view.SetZoom(3.5f);
+            }),
+            new WaitFrames(2),
+            new Capture("medieval-mounts", "Close view, side on: the Camel Archer, Naresuan's Elephant and Hakkapeliitta, riders on the generated mount; the camel's is sand-coloured, the elephant's larger and grey (placeholder shapes)"),
     ];
 
     private static IEnumerable<ScenarioStep> EraSteps(MapView view, Func<int, HexCoord> coord, Func<string, string?, UnitNode> node) =>

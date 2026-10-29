@@ -869,6 +869,20 @@
       }
     ]
   },
+  "C093": {
+    "scenario": "unit-visuals",
+    "about": "Medieval and renaissance unit art: 19 more units (pikemen, samurai, longbowmen, musketeers, lancers, camel archers and elephants) from the units pack, built from data in attachments.json.",
+    "shots": [
+      {
+        "golden": "unit-visuals/medieval.png",
+        "caption": "The medieval and renaissance roster (the gallery's lower rows): infantry, bowmen, musketeers, and mounted units in the red and blue civ colours."
+      },
+      {
+        "golden": "unit-visuals/medieval-mounts.png",
+        "caption": "Close view, side on: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount."
+      }
+    ]
+  },
   "C084": {
     "scenario": "unit-visuals",
     "about": "Ancient and classical unit art: 23 more units (axe, spear and sword infantry, throwers and bowmen, chariots, cavalry and elephants) from the units pack, built from data in attachments.json.",
