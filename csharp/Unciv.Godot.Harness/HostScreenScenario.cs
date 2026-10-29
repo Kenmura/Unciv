@@ -184,7 +184,9 @@ public sealed class HostScreenScenario : Scenario
                     Lobby() is { GameName: "Friday night", Difficulty: "King", Speed: "Epic", MaxMajorCivs: 3, TurnTimerSeconds: 300, Ruleset: "Civ V - Vanilla" }
                     && screen.Session.NotNull().Lobby.NotNull().Lobby.Admission.RequiresPassword),
                 new AssertQuery("the invite parses back to the chosen address, the port and the host key", () => InvitePointsAt(Wan) && Parsed().Token == null),
-                new Act("scroll to Copy invite", () => screen.Reveal(screen.CopyInviteButton)),
+                new WaitFrames(6),
+                new Act("scroll down to Stop hosting", () => screen.Reveal(screen.StopButton)),
+                new WaitFrames(3),
                 new Press("Copy invite"),
                 new AssertQuery("Copy invite put exactly the invite on the clipboard", () => clipboard == screen.Invite && clipboard.StartsWith("unciv://" + Wan + ":", StringComparison.Ordinal) && screen.Message.StartsWith("Invite copied", StringComparison.Ordinal)),
                 new Capture("hosting", "Hosting: the host in slot 1, open slots, the address the invite uses, the invite and Copy invite, and the port-forward hint"),
@@ -213,7 +215,7 @@ public sealed class HostScreenScenario : Scenario
     
                 new Act("the friend leaves", () => _ = friend.NotNull().DisposeAsync().AsTask()),
                 new Press("Stop hosting"),
-                new WaitUntil("hosting stopped and the settings are back", () => !screen.IsHosting && screen.Tabs.Visible && !screen.StartButton.Disabled),
+                new WaitUntil("hosting stopped and the settings are back", () => !screen.IsHosting && screen.Message == "Hosting stopped." && screen.Tabs.IsVisibleInTree() && !screen.StartButton.Disabled),
                 new AssertQuery("the port is free again", () =>
                 {
                     var probe = new TcpListener(IPAddress.IPv6Any, Port) { };
