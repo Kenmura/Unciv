@@ -44,7 +44,7 @@ public sealed class UnitVisualsScenario : Scenario
     private static readonly string[] LaterRoster =
     [
         "Pikeman", "Landsknecht", "Samurai", "Berserker", "Longbowman", "Chu-Ko-Nu", "Musketeer", "Janissary", "Minuteman", "Tercio",
-        "Camel Archer", "Keshik", "Conquistador", "Naresuan's Elephant", "Mandekalu Cavalry", "Lancer", "Sipahi", "Hakkapeliitta",
+        "Keshik", "Conquistador", "Mandekalu Cavalry", "Camel Archer", "Naresuan's Elephant", "Hakkapeliitta", "Lancer", "Sipahi", // the three mounts of the close view are adjacent (slots 56 to 58)
     ];
 
     private static readonly Slot[] Slots =
@@ -221,15 +221,15 @@ public sealed class UnitVisualsScenario : Scenario
     [
             new Act("frame the medieval and renaissance roster", () =>
             {
-                view.FocusOn(MapLayout.TileTop(coord(52).X, coord(52).Y, 0f));
-                view.SetZoom(13f);
+                view.FocusOn(MapLayout.TileTop(coord(50).X, coord(50).Y, 0f));
+                view.SetZoom(10f);
             }),
             new WaitFrames(2),
             new Capture("medieval", "Medieval and renaissance roster (the bottom rows of the gallery): pikemen, landsknechts, samurai and berserkers, longbowmen and chu-ko-nu, musketeers, camel archers, keshiks, conquistadors, lancers and elephants; red and blue civs"),
             new Act("close view of the medieval mounts", () =>
             {
                 foreach (var name in new[] { "Camel Archer", "Naresuan's Elephant", "Hakkapeliitta" }) node(name, null).Face(MathF.PI / 2f);
-                view.FocusOn(MapLayout.TileTop(coord(58).X, coord(58).Y, 0f));
+                view.FocusOn(MapLayout.TileTop(coord(57).X, coord(57).Y, 0f));
                 view.SetView(40f);
                 view.SetZoom(3.5f);
             }),

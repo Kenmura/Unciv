@@ -1336,7 +1336,7 @@ Scenario `rival-ribbon`.
 
 *1280x720: the same ribbon with the four figures in one row.* (`rival-ribbon/wide.png`)
 
-## C088 (ticket not Done or unknown)
+## C088 City-site preview: yields at a candidate settle tile
 
 City-site preview: with a settler selected, hovering a tile shows what a city founded there would work (yields, resources, natural wonders, unexplored count, or why it cannot be founded) and marks the work radius.
 
@@ -1352,13 +1352,13 @@ Medieval and renaissance unit art: 19 more units (pikemen, samurai, longbowmen, 
 
 Scenario `unit-visuals`.
 
-![The medieval and renaissance roster (the gallery's lower rows): infantry, bowmen, musketeers, and mounted units in the red and blue civ colours.](../Unciv.Godot.Harness/golden/unit-visuals/medieval.png)
+![The lower rows of the gallery, the medieval and renaissance roster (the last rows are cut off by the frame): infantry, bowmen, musketeers and mounted units in the red and blue civ colours.](../Unciv.Godot.Harness/golden/unit-visuals/medieval.png)
 
-*The medieval and renaissance roster (the gallery's lower rows): infantry, bowmen, musketeers, and mounted units in the red and blue civ colours.* (`unit-visuals/medieval.png`)
+*The lower rows of the gallery, the medieval and renaissance roster (the last rows are cut off by the frame): infantry, bowmen, musketeers and mounted units in the red and blue civ colours.* (`unit-visuals/medieval.png`)
 
-![Close view, side on: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount.](../Unciv.Godot.Harness/golden/unit-visuals/medieval-mounts.png)
+![Close view, side on, left to right: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount; front-on figures below are other roster units.](../Unciv.Godot.Harness/golden/unit-visuals/medieval-mounts.png)
 
-*Close view, side on: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount.* (`unit-visuals/medieval-mounts.png`)
+*Close view, side on, left to right: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount; front-on figures below are other roster units.* (`unit-visuals/medieval-mounts.png`)
 
 ## T252 (ticket not Done or unknown)
 
@@ -1391,4 +1391,4 @@ Done tickets with nothing meaningful to show.
 - **C074 Overview and espionage on DataTable**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.
 - **C075 Game menu, save/load and options**: Game menu, save/load and options redesign: the redesigned screens are shown under C044 (menu/*), the save/load, options and settings entries, whose goldens were re-recorded.
 - **C077 Victory, defeat and vote result screens**: Victory, defeat, resigned, victory status and World Congress result as Modals: shown under C024 (victory/*, defeat/*), C044 (menu/victory-status, menu/resigned) and C053 (vote-result/*), whose captions and goldens were re-recorded.
-- **C092 (ticket not Done or unknown)**: Bulk city actions on the overview cities tab: shown under C023 (overview/cities, overview/cities-bulk).
+- **C092 City management at scale: bulk actions and reusable build queues**: Bulk city actions on the overview cities tab: shown under C023 (overview/cities, overview/cities-bulk).
