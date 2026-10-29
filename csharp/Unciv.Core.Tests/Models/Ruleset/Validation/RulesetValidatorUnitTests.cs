@@ -236,6 +236,25 @@ public sealed class RulesetValidatorUnitTests : IDisposable
     }
 
     [Fact]
+    public void AResourceMayBeRevealedByATechOrAPolicyButNotByNothing()
+    {
+        var resource = new Unciv.Models.Ruleset.Tile.TileResource { Name = "Test Relic", RevealedBy = "Missing Reveal" };
+        resource.SetTransients(game.Ruleset);
+        game.Ruleset.TileResources.Put(resource.Name, resource);
+        Assert.Contains(Errors(), it => it.Text == "Test Relic revealed by tech Missing Reveal which does not exist!");
+        resource.RevealedBy = game.Ruleset.Policies.Values.First().Name;
+        Assert.DoesNotContain(Errors(), it => it.Text.StartsWith("Test Relic revealed by", StringComparison.Ordinal));
+
+        resource.Improvement = "Missing Improvement";
+        resource.ImprovedBy = ["Missing Improver"];
+        resource.TerrainsCanBeFoundOn = ["Missing Terrain"];
+        var errors = Errors().Select(it => it.Text).ToList();
+        Assert.Contains("Test Relic improved by improvement Missing Improvement which does not exist!", errors);
+        Assert.Contains("Test Relic improved by improvement Missing Improver which does not exist!", errors);
+        Assert.Contains("Test Relic can be found on terrain Missing Terrain which does not exist!", errors);
+    }
+
+    [Fact]
     public void ReferencesToMissingObjectsAreErrorsOnlyInABaseRuleset()
     {
         var building = game.CreateBuilding();

@@ -303,6 +303,36 @@ public sealed class ArchaeologyTests
     }
 
     [Fact]
+    public void ArtifactClassesNameTheirGreatWorkClass()
+    {
+        Assert.Equal(["Battle Ranged", "Battle Melee", "Barbarian Camp", "Ancient Ruin", "Razed City", "Writing"],
+            Enum.GetValues<ArtifactClass>().Select(it => it.GreatWorkClassName()));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ((ArtifactClass)99).GreatWorkClassName());
+    }
+
+    [Fact]
+    public void APendingDigCloneIsIndependent()
+    {
+        var dig = new PendingDig { X = 1, Y = -2, Civ = "A" };
+        var clone = dig.Clone();
+        clone.X = 5;
+        Assert.Equal((1, -2, "A"), (dig.X, dig.Y, dig.Civ));
+        Assert.Equal((5, -2, "A"), (clone.X, clone.Y, clone.Civ));
+    }
+
+    [Fact]
+    public void AResourceCanBeRevealedByAPolicy()
+    {
+        var ruleset = W.Game.Ruleset;
+        var policy = ruleset.Policies.Values.First();
+        var resource = ruleset.TileResources[ArchaeologyRules.HiddenAntiquitySite];
+        resource.RevealedBy = policy.Name;
+        Assert.False(W.A.Tech.IsRevealed(resource));
+        W.A.Policies.AdoptedPolicies.Add(policy.Name);
+        Assert.True(W.A.Tech.IsRevealed(resource));
+    }
+
+    [Fact]
     public void AGameWithoutArchaeologySerialisesWithoutItsFields()
     {
         var off = new ArchaeologyWorld(enabled: false);
