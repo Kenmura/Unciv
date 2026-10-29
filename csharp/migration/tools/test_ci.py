@@ -215,5 +215,207 @@ class CheckPackage(unittest.TestCase):
             self.assertTrue(any("expected at least" in p for p in mod.check("windows", archive)))
             self.assertTrue(any("does not exist" in p for p in mod.check("windows", Path(t) / "none.zip")))
 
+RELEASE_WORKFLOW = REPO / ".github" / "workflows" / "csharp-release.yml"
+
+
+class ReleaseWorkflowShape(unittest.TestCase):
+    """T279: the release workflow runs on a version tag only, creates a draft with minimal permissions and uses nothing but github.token."""
+
+    text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    code = re.sub(r"(?m)(^|\s)#.*$", "", text)
+
+    def jobs(self):
+        body = re.search(r"(?ms)^jobs:\n(.*)", self.text).group(1)
+        parts = re.split(r"(?m)^  (?=[a-z][\w-]*:\n)", body)
+        return {re.match(r"([\w-]+):", p).group(1): p for p in parts if p.strip() and re.match(r"[\w-]+:\n", p)}
+
+    def test_triggered_by_version_tags_only(self):
+        on = re.search(r"^on:\n(.*?)(?=^\S)", self.text, re.S | re.M).group(1)
+        self.assertEqual(re.findall(r"^  (\w+):", on, re.M), ["push"])
+        self.assertRegex(on, r"(?m)^    tags: \['csharp-v\*'\]$")
+        self.assertNotIn("branches", on)
+        self.assertNotIn("pull_request", self.code)
+        self.assertNotIn("schedule", self.code)
+        self.assertNotIn("workflow_dispatch", self.code)
+
+    def test_write_permission_only_on_the_publish_job(self):
+        self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read\n(?=\n)")
+        jobs = self.jobs()
+        self.assertEqual(sorted(jobs), ["cli", "client", "publish", "verify"])
+        for name, body in jobs.items():
+            if name == "publish":
+                self.assertRegex(body, r"(?m)^    permissions:\n      contents: write\n(?!      )")
+            else:
+                self.assertNotIn("permissions:", body, name)
+        self.assertEqual(len(re.findall(r"(?m)^\s*contents: write", self.code)), 1)
+        self.assertNotRegex(self.code, r"(?m)^\s*(?!contents)\w[\w-]*: write")
+
+    def test_no_secrets_but_github_token_and_no_dangerous_triggers(self):
+        self.assertNotIn("pull_request_target", self.text)
+        self.assertNotRegex(self.code, r"(?i)\bsecrets\b")
+        self.assertEqual(set(re.findall(r"\$\{\{\s*(github\.token)\s*\}\}", self.code)), {"github.token"})
+        self.assertNotRegex(self.code, r"GITHUB_TOKEN")
+        for env in re.findall(r"(?m)^\s+(GH_TOKEN|GITHUB_TOKEN): (.*)$", self.code):
+            self.assertEqual(env, ("GH_TOKEN", "${{ github.token }}"))
+
+    def test_release_is_a_draft_created_with_gh_and_never_edited_or_published(self):
+        self.assertEqual(len(re.findall(r"gh release create", self.code)), 1)
+        self.assertRegex(self.code, r"gh release create [^\n]*--draft")
+        self.assertIn("--verify-tag", self.code)
+        self.assertNotRegex(self.code, r"gh release (edit|upload|delete)|--draft=false|--latest|gh api -X|--clobber")
+        self.assertNotRegex(self.code, r"git push")
+        self.assertNotIn("softprops", self.code)
+        self.assertNotIn("create-release", self.code)
+
+    def test_every_action_is_pinned_by_full_commit_sha_and_publish_needs_all_builds(self):
+        uses = re.findall(r"uses:\s*(\S+)", self.text)
+        self.assertTrue(uses)
+        for u in uses:
+            self.assertRegex(u, r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$", u)
+        self.assertRegex(self.jobs()["publish"], r"needs: \[verify, cli, client\]")
+        for name in ("cli", "client"):
+            self.assertRegex(self.jobs()[name], r"needs: verify")
+
+    def test_checkouts_do_not_persist_credentials(self):
+        self.assertEqual(self.text.count("actions/checkout@"), self.text.count("persist-credentials: false"))
+
+    def test_the_workflow_builds_exactly_the_archives_the_release_expects(self):
+        mod = ClientPlatforms().load("release_assets")
+        packaged = re.findall(r"Unciv\.Godot/tools/package\.sh (\w+)", self.text)
+        self.assertEqual(packaged, ClientPlatforms().load("release").CLIENT_PLATFORMS)
+        self.assertEqual(re.findall(r"check_package\.py (\w+)", self.text), packaged)
+        for name in mod.client_archive_names().values():
+            self.assertIn(name, self.text)
+        rids = re.search(r"for rid in ([\w\- ]+); do", self.text).group(1).split()
+        self.assertEqual(rids, mod.CLI_RIDS)
+        self.assertIn("python3 -I csharp/migration/tools/release_assets.py verify", self.text)
+        self.assertIn("T280", self.text)  # the marked place for the Android job
+
+    def test_csharp_yml_is_untouched_by_the_release(self):
+        self.assertNotIn("csharp-v", WORKFLOW.read_text(encoding="utf-8"))
+
+
+class ReleaseAssets(unittest.TestCase):
+    """T279: release_assets.py (tag check, CLI archives, checksums, completeness, notes)."""
+
+    mod = ClientPlatforms().load("release_assets")
+
+    def test_tag_names(self):
+        for tag, version in (("csharp-v1.2.3", "1.2.3"), ("csharp-v0.0.1", "0.0.1"), ("csharp-v1.2.3-rc.1", "1.2.3-rc.1")):
+            self.assertEqual(self.mod.check_tag(tag), version, tag)
+        for tag in ("csharp-v1.2", "v1.2.3", "csharp-1.2.3", "csharp-v01.2.3", "csharp-v1.2.3-", "csharp-v1.2.3 x", "csharp-v1.2.3\n", "csharp-vfoo", "xcsharp-v1.2.3", "T279-abc"):
+            self.assertIsNone(self.mod.check_tag(tag), tag)
+
+    def test_expected_assets_are_the_stable_names(self):
+        self.assertEqual(
+            self.mod.expected_assets(),
+            ["Unciv-client-linux.tar.gz", "Unciv-client-windows.zip", "Unciv-client-macos.zip",
+             "Unciv-cli-linux-x64.tar.gz", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz"],
+        )
+
+    def fake_publish(self, tmp, rid):
+        d = Path(tmp) / f"pub-{rid}"
+        d.mkdir(parents=True)
+        exe = "Unciv.Cli.exe" if rid.startswith("win-") else "Unciv.Cli"
+        (d / exe).write_bytes(b"x")
+        (d / exe).chmod(0o755)
+        (d / "Unciv.Cli.pdb").write_bytes(b"debug")
+        (d / "lib.dll").write_bytes(b"y")
+        jsons = Path(tmp) / "jsons"
+        (jsons / "sub").mkdir(parents=True, exist_ok=True)
+        (jsons / "ModCategories.json").write_text("[]")
+        (jsons / "sub" / "a.json").write_text("{}")
+        lic = Path(tmp) / "LICENSE"
+        lic.write_text("MPL")
+        return d, jsons, lic
+
+    def test_pack_cli_layout_modes_and_refusals(self):
+        import tarfile
+        import zipfile
+
+        with tempfile.TemporaryDirectory() as t:
+            for rid in self.mod.CLI_RIDS:
+                d, jsons, lic = self.fake_publish(t, rid)
+                out = self.mod.pack_cli(rid, d, Path(t) / "out", jsons, lic)
+                self.assertEqual(out.name, self.mod.cli_archive_name(rid))
+                exe = "Unciv.Cli.exe" if rid.startswith("win-") else "Unciv.Cli"
+                top = f"Unciv-cli-{rid}/"
+                if out.suffix == ".zip":
+                    names = zipfile.ZipFile(out).namelist()
+                else:
+                    with tarfile.open(out) as tf:
+                        names = tf.getnames()
+                        self.assertEqual(tf.getmember(top + exe).mode, 0o755)
+                        self.assertEqual(tf.getmember(top + "LICENSE").mode, 0o644)
+                self.assertEqual(sorted(names), sorted(top + n for n in (exe, "lib.dll", "LICENSE", "data/jsons/ModCategories.json", "data/jsons/sub/a.json")))
+            with self.assertRaises(SystemExit):
+                self.mod.pack_cli("linux-arm", d, Path(t) / "out", jsons, lic)
+            with self.assertRaises(SystemExit):
+                self.mod.pack_cli("win-x64", self.fake_publish(Path(t) / "other", "linux-x64")[0], Path(t) / "out", jsons, lic)  # a Linux publish folder is not a win-x64 one
+            (jsons / "ModCategories.json").unlink()
+            with self.assertRaises(SystemExit):
+                self.mod.pack_cli("linux-x64", d, Path(t) / "out", jsons, lic)
+
+    def complete_dir(self, tmp):
+        import zipfile
+
+        out = Path(tmp) / "assets"
+        out.mkdir()
+        check = self.mod._load("check_package")
+        for platform, (name, exe, minimum, required) in check.PLATFORMS.items():
+            if name.endswith(".zip"):
+                with zipfile.ZipFile(out / name, "w") as z:
+                    for p, size in {exe: minimum, **{r.replace("\\", ""): 1 for r in required}}.items():
+                        z.writestr(f"Unciv-{platform}/{p}", b"\0" * size)
+        return out, check
+
+    def test_sums_and_verify(self):
+        import tarfile
+
+        with tempfile.TemporaryDirectory() as t:
+            out, check = self.complete_dir(t)
+            self.assertTrue(self.mod.verify(out))  # incomplete: the linux client and the CLIs are missing
+            linux = check.PLATFORMS["linux"]
+            name, exe, minimum, required = linux
+            src = Path(t) / "src"
+            for p, size in {exe: minimum, **{r.replace("\\", ""): 1 for r in required}}.items():
+                p = p + "f" if p.endswith("/") else p
+                (src / "Unciv-linux" / p).parent.mkdir(parents=True, exist_ok=True)
+                (src / "Unciv-linux" / p).write_bytes(b"\0" * size)
+            with tarfile.open(out / name, "w:gz") as tf:
+                tf.add(src / "Unciv-linux", "Unciv-linux")
+            for n in self.mod.expected_assets():
+                if not (out / n).exists():
+                    (out / n).write_bytes(n.encode())
+            lines = self.mod.write_sums(out)
+            self.assertEqual(len(lines), 6)
+            self.assertEqual(lines, sorted(lines, key=lambda l: l.split("  ")[1]))
+            self.assertEqual(self.mod.verify(out), [])
+            self.assertEqual(self.mod.write_sums(out), lines)  # SHA256SUMS does not hash itself
+            subprocess.run(["sha256sum", "-c", "SHA256SUMS"], cwd=out, check=True, capture_output=True)
+            (out / "Unciv-cli-win-x64.zip").write_bytes(b"tampered")
+            self.assertTrue(any("checksum" in p for p in self.mod.verify(out)))
+            (out / "extra.txt").write_text("x")
+            self.assertTrue(any("unexpected" in p for p in self.mod.verify(out)))
+
+    def test_notes_mark_windows_and_macos_unverified_and_name_the_commit(self):
+        text = self.mod.notes("csharp-v1.2.3", "a" * 40, "2026-01-02T03:04:05")
+        self.assertIn("a" * 40, text)
+        self.assertIn("1.2.3", text)
+        rows = {r.split("|")[1].strip(" `"): r for r in text.splitlines() if r.startswith("| `")}
+        for name in ("Unciv-client-windows.zip", "Unciv-client-macos.zip", "Unciv-cli-win-x64.zip", "Unciv-cli-osx-arm64.tar.gz"):
+            self.assertIn("**UNVERIFIED.**", rows[name], name)
+        for name in ("Unciv-client-linux.tar.gz", "Unciv-cli-linux-x64.tar.gz"):
+            self.assertNotIn("UNVERIFIED", rows[name], name)
+        self.assertIn("not notarised", rows["Unciv-client-macos.zip"])
+        with self.assertRaises(SystemExit):
+            self.mod.notes("v1.2.3", "a", "d")
+
+    def test_cli_entry_points(self):
+        self.assertEqual(self.mod.main(["check-tag", "csharp-v1.0.0"]), 0)
+        self.assertEqual(self.mod.main(["check-tag", "main"]), 1)
+        self.assertEqual(self.mod.main(["bogus"]), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
