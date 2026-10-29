@@ -184,17 +184,17 @@ public partial class CombatPresenter : Node3D
         var parts = new MeshInstance3D[CombatEffects.ParticleCount(kind)];
         for (var i = 0; i < parts.Length; i++)
         {
-            parts[i] = Ball(kind == EffectKind.Muzzle ? FlashRadius * 0.6f : kind == EffectKind.Dust ? 0.14f : 0.07f, colour);
+            parts[i] = Ball(kind == EffectKind.Muzzle ? FlashRadius * 0.9f : kind == EffectKind.Dust ? 0.14f : 0.12f, colour);
             root.AddChild(parts[i]);
         }
         AddChild(root);
         BurstsStarted++;
         var burst = new Burst(root, parts, kind);
         bursts.Add(burst);
-        AgeBurstsInitial(burst);
+        PoseBurst(burst);
     }
 
-    private static void AgeBurstsInitial(Burst burst)
+    private static void PoseBurst(Burst burst)
     {
         for (var part = 0; part < burst.Parts.Length; part++)
         {

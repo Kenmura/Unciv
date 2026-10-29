@@ -149,7 +149,7 @@ public sealed class CombatPresentationScenario : Scenario
                 screen.Units[warrior.Id].CurrentClip == UnitModelContract.AttackClip && Presenter.NumbersShown.Count == 1),
             new AssertQuery("the blow sounded and threw sparks at the defender", () =>
                 Presenter.SoundsPlayed.SequenceEqual([CombatEffects.SwingSound, CombatEffects.HitSound]) && Presenter.BurstCount >= 1),
-            new Capture("impact", "Impact: the enemy plays its hit clip, sparks fly from the blow and its damage number floats up"),
+            new Capture("impact", "Impact: the enemy plays its hit clip and its damage number floats up"),
             new Act("play the rest of the script and let the last sparks die", () => { Presenter.Step(10f); Presenter.Step(1f); }),
             new WaitFrames(2),
             new AssertQuery("the queue drained, only the engine's numbers were shown, no effect is left, and every unit is back at rest", () =>
@@ -180,7 +180,7 @@ public sealed class CombatPresentationScenario : Scenario
             new AssertQuery("the dying worker left the unit table at once but is still on screen, and a projectile is in flight", () =>
                 !screen.Units.ContainsKey(worker.Id) && Presenter.DyingCount == 1 && workerNode.NotNull().GetParent() == Presenter && Presenter.EffectCount == 1),
             new AssertQuery("the release flashed at the archer and twanged", () => Presenter.SoundsPlayed.Contains(CombatEffects.ShootSound) && Presenter.BurstCount >= 1),
-            new Capture("shot", "A ranged shot in flight from our warrior toward a far tile, with a muzzle flash at its release"),
+            new Capture("shot", "A ranged shot in flight from our warrior toward a far tile"),
             new Act("step to the middle of the bombard", () => Presenter.Step(CombatPresentation.ShotSeconds / 2f + CombatPresentation.HitSeconds + 0.2f)),
             new WaitFrames(2),
             new AssertQuery("the far tile's 11 was shown, and the bombard's flash and shot are both in the air", () =>

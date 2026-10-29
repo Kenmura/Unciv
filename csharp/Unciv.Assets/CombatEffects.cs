@@ -37,10 +37,11 @@ public static class CombatEffects
     /// <summary>Every sound name <see cref="For"/> can produce.</summary>
     public static IReadOnlyList<string> SoundNames { get; } = [SwingSound, ShootSound, HitSound, DeathSound, BombardSound];
 
-    /// <summary>Particles of a burst, and how long it lives (seconds).</summary>
+    /// <summary>Particles in a burst.</summary>
     public static int ParticleCount(EffectKind kind) => kind switch { EffectKind.Spark => 7, EffectKind.Dust => 4, _ => 1 };
 
-    public static float Lifetime(EffectKind kind) => kind switch { EffectKind.Spark => 0.35f, EffectKind.Dust => 0.7f, _ => 0.12f };
+    /// <summary>How long a burst lives, in seconds.</summary>
+    public static float Lifetime(EffectKind kind) => kind switch { EffectKind.Spark => 0.35f, EffectKind.Dust => 0.7f, _ => 0.25f };
 
     /// <summary>The moments of one cue, in time order. A blow that does no damage makes no sparks.</summary>
     public static IReadOnlyList<CueMoment> For(Cue cue)
