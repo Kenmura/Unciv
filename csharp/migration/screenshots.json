@@ -1486,7 +1486,7 @@
       },
       {
         "golden": "combat-presentation/shot.png",
-        "caption": "A ranged shot in flight between the two units."
+        "caption": "A ranged shot: the projectile just leaving the shooter toward a far tile."
       }
     ]
   }

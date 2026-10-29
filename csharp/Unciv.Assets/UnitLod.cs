@@ -11,8 +11,8 @@ public static class UnitLod
     /// <summary>Camera size (<c>MapView.Zoom</c>, larger = further out) from which formations draw a single figure. The default view is 14, the farthest 40.</summary>
     public const float FarZoom = 22f;
 
-    /// <summary>How far outside the camera's ground footprint (world units) a unit still draws, so one at the screen edge, its health bar and a lunge never pop.</summary>
-    public const float ViewMargin = 3f;
+    /// <summary>How far outside the camera's ground footprint (world units) a unit still draws: the footprint is the view on the ground plane, and at the lowest tilt (25 degrees) a point 1.9 above it (status marks over a hill) shows 4 further out, so a unit at the screen edge, its marks and a lunge never pop.</summary>
+    public const float ViewMargin = 5f;
 
     /// <summary>Whether a camera of size <paramref name="zoom"/> is far enough out for the reduced level; NaN counts as near.</summary>
     public static bool IsFar(float zoom) => zoom >= FarZoom;

@@ -425,7 +425,7 @@ public sealed class UnitVisualsScenario : Scenario
 
     private const int MeasuredFrames = 20;
 
-    /// <summary>C085: level of detail and culling of the whole gallery (130 units, about 230 figures), with a report-only frame time comparison of the reduced level against the full one.</summary>
+    /// <summary>C085: level of detail and culling of the whole gallery (125 units, 219 figures), with a report-only frame time comparison of the reduced level against the full one.</summary>
     private static IEnumerable<ScenarioStep> LodSteps(MapView view, List<UnitNode> nodes, Func<string, string?, UnitNode> node, Func<int, HexCoord> coord)
     {
         var lodOn = true;

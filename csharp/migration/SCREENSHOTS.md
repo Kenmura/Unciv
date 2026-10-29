@@ -1420,9 +1420,9 @@ Scenario `combat-presentation`.
 
 *A melee strike at impact: the struck unit shows its damage number (-31).* (`combat-presentation/impact.png`)
 
-![A ranged shot in flight between the two units.](../Unciv.Godot.Harness/golden/combat-presentation/shot.png)
+![A ranged shot: the projectile just leaving the shooter toward a far tile.](../Unciv.Godot.Harness/golden/combat-presentation/shot.png)
 
-*A ranged shot in flight between the two units.* (`combat-presentation/shot.png`)
+*A ranged shot: the projectile just leaving the shooter toward a far tile.* (`combat-presentation/shot.png`)
 
 ## C087 Rival stats ribbon in the HUD
 
