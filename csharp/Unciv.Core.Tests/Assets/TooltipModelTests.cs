@@ -21,6 +21,26 @@ public class TooltipModelTests
 
     private static string[] Texts(IEnumerable<TipLine> lines) => lines.Select(it => it.Text).ToArray();
 
+    // C088
+    [Fact]
+    public void CitySite_ValidSiteListsYieldsResourcesWondersAndTheUnexploredCount()
+    {
+        var site = new CitySiteResult(new TilePos(1, 2), true, [], 3, [], [new StatAmount("Food", 12f), new StatAmount("Production", 7f)], [new NamedAmount("Wheat", 2)], ["Krakatoa"], 5);
+        var lines = TooltipModel.CitySite(site);
+        Assert.Equal(["City site", "{Food}: 12", "{Production}: 7", "{Wheat} (2)", "Krakatoa", "[5] unexplored tiles"], Texts(lines));
+        Assert.Equal(TipKind.Heading, lines[0].Kind);
+        Assert.Equal(TipKind.Footer, lines[^1].Kind);
+    }
+
+    [Fact]
+    public void CitySite_InvalidSiteSaysWhyAndNamesTheNearCity()
+    {
+        var site = new CitySiteResult(new TilePos(1, 2), false,
+            [new CitySiteProblem(CitySiteProblemCodes.Water, null), new CitySiteProblem(CitySiteProblemCodes.TooCloseToCity, "Berlin"),
+             new CitySiteProblem(CitySiteProblemCodes.Impassable, null), new CitySiteProblem(CitySiteProblemCodes.ForeignTerritory, null), new CitySiteProblem("FutureProblem", null)], 3, [], [], [], [], 0);
+        Assert.Equal(["Cannot found a city here", "Cannot found a city on water", "Too close to [Berlin]", "Cannot found a city on impassable terrain", "In foreign territory", "FutureProblem"], Texts(TooltipModel.CitySite(site)));
+    }
+
     [Fact]
     public void Tile_ListsTerrainFirstAndOnlyWhatIsThere()
     {

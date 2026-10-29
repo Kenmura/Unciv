@@ -1318,6 +1318,16 @@ Scenario `rival-ribbon`.
 
 *1280x720: the same ribbon with the four figures in one row.* (`rival-ribbon/wide.png`)
 
+## C088 (ticket not Done or unknown)
+
+City-site preview: with a settler selected, hovering a tile shows what a city founded there would work (yields, resources, natural wonders, unexplored count, or why it cannot be founded) and marks the work radius.
+
+Scenario `unit-orders`.
+
+![Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius.](../Unciv.Godot.Harness/golden/unit-orders/city-site.png)
+
+*Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius.* (`unit-orders/city-site.png`)
+
 ## T252 (ticket not Done or unknown)
 
 Host screen dynamic turn timer: checkbox and shortest-turn choice under the turn timer; the host runs with the chosen policy.
@@ -1344,7 +1354,7 @@ Done tickets with nothing meaningful to show.
 - **C060 Tutorial task completed-set: per-viewer and replay-safe (C054 review follow-up)**: Per-viewer, replay-safe tutorial-task state (no layout change); the card itself is shown under C054 (tutorial-tasks scenario) and the hotseat hand-over under C029.
 - **C064 Unique display text and hidden uniques in UI models**: Model-level text fix (unique display text, hidden uniques filtered); the decisions, tooltips and policy scenario goldens are pixel-unchanged.
 - **C070 Tech tree redesign**: Tech tree redesign: shown under C019 (tech/*), whose captions and goldens were re-recorded in C070.
-- **C071 (ticket not Done or unknown)**: Policies redesign: shown under C020 (policy/*), whose captions and goldens were re-recorded in C071.
+- **C071 Policies screen redesign**: Policies redesign: shown under C020 (policy/*), whose captions and goldens were re-recorded in C071.
 - **C073 Diplomacy and trade redesign**: Diplomacy and trade redesign: the redesigned screens are shown under C021 (diplomacy/*), C022 (trade/*) and C039 (proposals/*), whose goldens were re-recorded.
 - **C074 Overview and espionage on DataTable**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.
 - **C075 Game menu, save/load and options**: Game menu, save/load and options redesign: the redesigned screens are shown under C044 (menu/*), the save/load, options and settings entries, whose goldens were re-recorded.

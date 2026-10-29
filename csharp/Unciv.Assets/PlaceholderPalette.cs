@@ -83,6 +83,8 @@ public static class PlaceholderPalette
     public static Rgb PanelFill => UiTokens.Surface1;
     public static Rgb PanelBorder => UiTokens.BorderSubtle;
     public static Rgb Accent => UiTokens.Accent;
+    /// <summary>C088: the work radius of the city site under the pointer.</summary>
+    public static Rgb SiteTint { get; } = new(230, 190, 70);
     /// <summary>C012: overlay on the tiles the selected unit can move to.</summary>
     public static Rgb ReachableTint { get; } = new(70, 130, 220);
     /// <summary>C012: overlay on the tiles the selected unit can attack.</summary>

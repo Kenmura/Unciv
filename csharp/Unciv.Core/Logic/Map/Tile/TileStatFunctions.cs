@@ -44,12 +44,16 @@ public class TileStatFunctions(Tile tile)
 
     public Stats GetTileStats(IGameContextCivilization? observingCiv) => GetTileStats(Tile.GetCity(), observingCiv);
 
-    public Stats GetTileStats(CityClass? city, IGameContextCivilization? observingCiv)
+    /// <summary>The tile's yield for <paramref name="observingCiv"/> as worked by <paramref name="city"/>.</summary>
+    /// <param name="city">The working city, if any.</param>
+    /// <param name="observingCiv">The civ whose techs decide which resources show.</param>
+    /// <param name="ignoreImprovements">C088: the yield of the land itself, as if no improvement or road stood on it (a city-site preview must not depend on what was built out of sight).</param>
+    public Stats GetTileStats(CityClass? city, IGameContextCivilization? observingCiv, bool ignoreImprovements = false)
     {
-        var statsBreakdown = GetTileStatsBreakdown(city, observingCiv);
+        var statsBreakdown = GetTileStatsBreakdown(city, observingCiv, ignoreImprovements);
 
-        var improvement = Tile.GetUnpillagedImprovement();
-        var road = Tile.GetUnpillagedRoad();
+        var improvement = ignoreImprovements ? null : Tile.GetUnpillagedImprovement();
+        var road = ignoreImprovements ? RoadStatus.None : Tile.GetUnpillagedRoad();
 
         var percentageStats = GetTilePercentageStats(observingCiv, city);
         foreach (var (cause, stats) in statsBreakdown)
@@ -65,18 +69,18 @@ public class TileStatFunctions(Tile tile)
         return statsBreakdown.ToStats();
     }
 
-    public List<(string Cause, Stats Stats)> GetTileStatsBreakdown(CityClass? city, IGameContextCivilization? observingCiv)
+    public List<(string Cause, Stats Stats)> GetTileStatsBreakdown(CityClass? city, IGameContextCivilization? observingCiv, bool ignoreImprovements = false)
     {
         var gameContext = new GameContext(civInfo: observingCiv, city: city, tile: Tile);
         var listOfStats = GetTerrainStatsBreakdown(gameContext);
 
         var otherYieldsIgnored = Tile.AllTerrains.Any(it => ((IHasUniques)it).HasUnique(UniqueType.NullifyYields, gameContext));
 
-        var improvement = otherYieldsIgnored ? null // Treat it as if there is no improvement
+        var improvement = otherYieldsIgnored || ignoreImprovements ? null // Treat it as if there is no improvement
             : Tile.GetUnpillagedTileImprovement();
         var improvementStats = improvement?.CloneStats() ?? Stats.ZERO; // If improvement==null, will never be added to
 
-        var road = otherYieldsIgnored ? null
+        var road = otherYieldsIgnored || ignoreImprovements ? null
             : Tile.GetUnpillagedRoadImprovement();
         var roadStats = road?.CloneStats() ?? Stats.ZERO;
 
@@ -176,7 +180,7 @@ public class TileStatFunctions(Tile tile)
         return list;
     }
 
-    /// <summary>Gets basic stats to start off <see cref="GetTileStats(CityClass?, IGameContextCivilization?)"/> or the start yield, independently mutable result</summary>
+    /// <summary>Gets basic stats to start off <see cref="GetTileStats(CityClass?, IGameContextCivilization?, bool)"/> or the start yield, independently mutable result</summary>
     public List<(string Cause, Stats Stats)> GetTerrainStatsBreakdown(GameContext? gameContext = null)
     {
         gameContext ??= new GameContext();

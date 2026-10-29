@@ -73,6 +73,29 @@ public static class TooltipModel
         return lines;
     }
 
+    /// <summary>
+    /// C088: the city-site tooltip of a settler's hover: whether a city could stand there and why not, then what its work radius holds: yields, resources, natural wonders and
+    /// how much of the radius is still unexplored. All of it is the engine's answer, which already holds only what the viewer may know.
+    /// </summary>
+    public static IReadOnlyList<TipLine> CitySite(CitySiteResult site)
+    {
+        var lines = new List<TipLine> { new(site.CanSettle ? "City site" : "Cannot found a city here", Kind: TipKind.Heading) };
+        foreach (var problem in site.Problems)
+            lines.Add(new TipLine(problem.Code switch
+            {
+                CitySiteProblemCodes.Water => "Cannot found a city on water",
+                CitySiteProblemCodes.Impassable => "Cannot found a city on impassable terrain",
+                CitySiteProblemCodes.TooCloseToCity => $"Too close to [{problem.Subject}]",
+                CitySiteProblemCodes.ForeignTerritory => "In foreign territory",
+                _ => problem.Code,
+            }));
+        lines.AddRange(site.Yields.Select(it => new TipLine(Amount(it), Kind: TipKind.Stat, Stat: it.Stat)));
+        foreach (var resource in site.Resources) lines.Add(new TipLine($"{{{resource.Name}}} ({Number(resource.Amount)})"));
+        foreach (var wonder in site.NaturalWonders) lines.Add(new TipLine(wonder));
+        if (site.UnexploredTiles > 0) lines.Add(new TipLine($"[{Number(site.UnexploredTiles)}] unexplored tiles", Kind: TipKind.Footer));
+        return lines;
+    }
+
     /// <summary>The name, the cost and the ruleset's own short description of a unit (null for an unknown name).</summary>
     public static IReadOnlyList<TipLine>? Unit(Ruleset ruleset, string name)
     {

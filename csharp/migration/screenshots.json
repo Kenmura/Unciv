@@ -1349,5 +1349,15 @@
   },
   "C071": {
     "none": "Policies redesign: shown under C020 (policy/*), whose captions and goldens were re-recorded in C071."
+  },
+  "C088": {
+    "scenario": "unit-orders",
+    "about": "City-site preview: with a settler selected, hovering a tile shows what a city founded there would work (yields, resources, natural wonders, unexplored count, or why it cannot be founded) and marks the work radius.",
+    "shots": [
+      {
+        "golden": "unit-orders/city-site.png",
+        "caption": "Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius."
+      }
+    ]
   }
 }

@@ -82,6 +82,9 @@ public sealed class GameQueries(IGameSession session)
 
     public Task<TileInfoResult?> TileInfo(int x, int y, int unitId) => session.QueryAsync(new TileInfoQuery(x, y, unitId));
 
+    /// <summary>C088: what a city founded on the tile would hold (null for a tile the viewer has not explored).</summary>
+    public Task<CitySiteResult?> CitySite(int x, int y) => session.QueryAsync(new CitySiteQuery(x, y));
+
     public Task<PromotionChoicesResult?> Promotions(int unitId) => session.QueryAsync(new PromotionChoicesQuery(unitId));
 
     public Task<GreatPeopleResult?> GreatPeople() => session.QueryAsync(new GreatPeopleQuery());

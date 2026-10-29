@@ -7,6 +7,7 @@ using Unciv.GodotClient.Play;
 using Unciv.Harness;
 using Unciv.Logic.Map;
 using Unciv.Models;
+using Unciv.Models.Translations;
 using Unciv.Queries.Units;
 using Unciv.Utils;
 
@@ -211,6 +212,8 @@ public sealed class UnitOrdersScenario : Scenario
             return steps;
         }
 
+        private Unciv.Logic.Map.Tiles.Tile SiteTile() => settler.CurrentTile.Neighbors.First(it => it.IsLand);
+
         private List<ScenarioStep> SettlerSteps()
         {
             var steps = new List<ScenarioStep>();
@@ -221,6 +224,21 @@ public sealed class UnitOrdersScenario : Scenario
                     screen.SelectedUnitId == settler.Id && MenuEqualsQuery(settler.Id)
                     && screen.Panel.Entries.Any(it => it.Action?.Descriptor.ActionType == UnitActionType.FoundCity && it.Enabled)),
                 new Capture("settler-selected", "Settler selected: Found city in the menu"),
+                new AssertQuery("C088: no site is shown before the pointer moves", () => screen.SiteOverlay.Tiles.Count == 0),
+                new Act("C088: pointer onto a land tile next to the settler", () => InputSimulator.SimulateMouseMove(screen.GetViewport(), screen.Map.ScreenPositionOf(SiteTile().Position))),
+                new WaitFrames(6),
+                new AssertQuery("C088: the work radius is marked and the tooltip words the engine's city-site answer", () =>
+                {
+                    var site = queries.CitySite(SiteTile().Position.X, SiteTile().Position.Y).GetAwaiter().GetResult().NotNull();
+                    return screen.HoveredTile == SiteTile().Position && site.Tiles.Count > 0 && screen.SiteOverlay.Tiles.Select(it => (it.X, it.Y)).ToHashSet().SetEquals(site.Tiles.Select(it => (it.X, it.Y)))
+                        && screen.HoverTip == TooltipModel.ToBbcode(TooltipModel.CitySite(site), text => text.Tr()) && site.Yields.Count > 0;
+                }),
+                new Act("C088: let the tooltip delay elapse", () => screen.Tooltips.Advance(ScenarioRunner.UnreachableDelay)),
+                new WaitFrames(2),
+                new Capture("city-site", "Settler selected, pointer on a nearby tile: the tooltip lists the site's yields and resources, the gold hexes mark its work radius"),
+                new Act("C088: pointer back onto the settler", () => InputSimulator.SimulateMouseMove(screen.GetViewport(), screen.Map.ScreenPositionOf(settlerTile))),
+                new WaitFrames(4),
+                new AssertQuery("C088: the radius goes away when the pointer moves on", () => screen.SiteOverlay.Tiles.Count > 0 == (screen.HoveredTile == settlerTile && screen.HoverTip.Contains("City site", StringComparison.Ordinal))),
                 new Act("choose Found city", () => ChooseMenu(FoundCityLabel())),
                 new WaitFrames(1),
                 new AssertQuery("a city now stands on the settler's tile and the settler is gone", () =>

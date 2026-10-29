@@ -305,6 +305,7 @@ public sealed partial class SimultaneousTurnTests
                 foreach (var p in onlyOther.Where((_, i) => i % 5 == 0).Take(12))
                 {
                     SameAsNothing(viewer, seq, new TileInfoQuery(p.x, p.y), new TileInfoQuery(nobody.Value.x, nobody.Value.y), "TileInfo of an unexplored tile");
+                    SameAsNothing(viewer, seq, new CitySiteQuery(p.x, p.y), new CitySiteQuery(nobody.Value.x, nobody.Value.y), "CitySite of an unexplored tile");
                     stats.HiddenTileQueries++;
                 }
             var explored = game.TileMap.TileList.Where(it => it.IsExplored(viewer)).Select(it => it.Position).ToList();

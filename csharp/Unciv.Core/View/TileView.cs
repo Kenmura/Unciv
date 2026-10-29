@@ -264,6 +264,9 @@ public class TileView : View<Tile>
         return tile.Stats.GetTileStats(city, viewingCiv?.Unwrap());
     }
 
+    /// <summary>C088: the yield of the bare land (terrain, features, river, the resource the viewer can see), no improvement or road, no city bonuses: it does not change with what is built out of sight.</summary>
+    public Stats GetLandStats(CivView? viewingCiv) => tile.Stats.GetTileStats(null, viewingCiv?.Unwrap(), ignoreImprovements: true);
+
     public List<(string Cause, Stats Stats)> GetTileStatsBreakdown(CivView? viewingCiv, CityView? cityView = null)
     {
         var city = cityView?.Unwrap() ?? tile.GetCity();

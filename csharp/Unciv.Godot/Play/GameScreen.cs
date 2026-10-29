@@ -75,6 +75,11 @@ public partial class GameScreen : Control
 
     public TileOverlay ReachableOverlay { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
 
+    /// <summary>C088: the work radius of the city site under the pointer while a unit that can found a city is selected.</summary>
+    public TileOverlay SiteOverlay { get; private set; } = null!; // JUSTIFY: C088 assigned in _Ready before any use
+
+    private bool foundsCities;
+
     public TileOverlay AttackOverlay { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
 
     /// <summary>C033: plays the movement and combat events of every command on the map. Off until a host turns <see cref="CombatPresenter.Enabled"/> on.</summary>
@@ -222,7 +227,7 @@ public partial class GameScreen : Control
     }
 
     // The 3D parts do not follow the screen's own visibility (a Node3D under a Control is a separate branch), so they are hidden one by one.
-    private IEnumerable<Node3D> WorldLayers() => [Map, Overlays, unitLayer, dotLayer, ReachableOverlay, AttackOverlay];
+    private IEnumerable<Node3D> WorldLayers() => [Map, Overlays, unitLayer, dotLayer, ReachableOverlay, AttackOverlay, SiteOverlay];
 
     private bool watchingAfterDefeat;
     private int gameOverCheck;
@@ -416,6 +421,7 @@ public partial class GameScreen : Control
         if (tile == HoveredTile) return;
         HoveredTile = tile;
         HoverTip = "";
+        SiteOverlay.Clear();
         Tooltips.Restart();
         if (tile is not { } coord)
         {
@@ -431,6 +437,12 @@ public partial class GameScreen : Control
         var info = await queries.TileInfo(coord.X, coord.Y);
         if (HoveredTile != coord || info == null) return; // the pointer moved on, or the engine would not describe an unexplored tile
         HoverTip = TooltipModel.ToBbcode(TooltipModel.Tile(info, session.Ruleset), text => text.Tr());
+        if (!foundsCities) return;
+        // C088: with a settler selected the tooltip says what a city here would get (it replaces the tile's own text, which would cover the map), and the overlay marks its work radius
+        var site = await queries.CitySite(coord.X, coord.Y);
+        if (HoveredTile != coord || !foundsCities || site == null) return;
+        HoverTip = TooltipModel.ToBbcode(TooltipModel.CitySite(site), text => text.Tr());
+        SiteOverlay.Show([.. site.Tiles.Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
     }
 
     /// <summary>C019: the tech screen, opened by the Technology button.</summary>
@@ -702,8 +714,10 @@ public partial class GameScreen : Control
         AddChild(dotLayer);
         ReachableOverlay = new TileOverlay(PlaceholderPalette.ReachableTint) { Name = "ReachableOverlay" };
         AttackOverlay = new TileOverlay(PlaceholderPalette.AttackTint) { Name = "AttackOverlay" };
+        SiteOverlay = new TileOverlay(PlaceholderPalette.SiteTint) { Name = "SiteOverlay" };
         AddChild(ReachableOverlay);
         AddChild(AttackOverlay);
+        AddChild(SiteOverlay);
 
         statusLabel = new Label { Name = "StatusLabel" };
         statusPanel = new PanelContainer { Name = "StatusPanel", Visible = false, MouseFilter = MouseFilterEnum.Ignore, ThemeTypeVariation = UiVariants.PanelTooltip };
@@ -1028,6 +1042,7 @@ public partial class GameScreen : Control
         MoveChild(TurnOverlay, -1); // above every screen: while the turn is processed nothing underneath may be used
         ReachableOverlay.Setup(registry);
         AttackOverlay.Setup(registry);
+        SiteOverlay.Setup(registry);
         session.EventsReceived += OnEventsReceived;
         Presenter.Bind(id => unitNodes.GetValueOrDefault(id), coord => UnitPosition(coord, 0));
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
@@ -1264,6 +1279,8 @@ public partial class GameScreen : Control
         PromoteButton.Visible = false;
         ReachableOverlay.Clear();
         AttackOverlay.Clear();
+        SiteOverlay.Clear();
+        foundsCities = false;
         ClearAttackPreview();
     }
 
@@ -1295,6 +1312,7 @@ public partial class GameScreen : Control
         var menu = UnitOrdersModel.Menu(actions ?? new UnitActionsResult(id, []), tile, promotions, unit.Own?.CurrentMovement > 0f);
         Panel.Show(UnitOrdersModel.Panel(unit, baseUnit), menu);
         PromoteButton.Visible = promotions is { Promotions.Count: > 0 };
+        foundsCities = actions?.Actions.Any(it => it.Descriptor.ActionType == UnitActionType.FoundCity) == true;
         attackTiles = targets == null ? [] : [.. UnitOrdersModel.AttackTiles(targets)];
         ReachableOverlay.Show(reach == null ? [] : [.. UnitOrdersModel.ReachableTiles(reach).Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
         AttackOverlay.Show([.. attackTiles.Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
