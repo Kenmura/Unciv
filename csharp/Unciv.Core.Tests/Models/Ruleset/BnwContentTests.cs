@@ -195,7 +195,7 @@ public sealed class BnwContentTests
     }
 
     [Fact]
-    public void ReformationBeliefsAreReadBackAndGrantTheirPurchases()
+    public void ReformationBeliefsAreReadBackFromTheReligion()
     {
         var game2 = new TestGame();
         var belief = game2.CreateBelief(BeliefType.Reformation, "May buy [University] buildings with [Faith] [in cities following this religion]");

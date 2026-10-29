@@ -47,9 +47,13 @@ public sealed record ReligionQuery : IQuery<ReligionResult>
         var available = new SortedDictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         if (civView.IsReligionEnabled())
             foreach (var type in new[] { BeliefType.Pantheon, BeliefType.Founder, BeliefType.Follower, BeliefType.Enhancer, BeliefType.Reformation })
+            {
+                // Rulesets without a Reformation tier (G&K) get no key, so their overview is unchanged
+                if (type == BeliefType.Reformation && !civ.GameInfo.Ruleset.Beliefs.Values.Any(it => it.Type == type)) continue;
                 available[type.ToString()] = civ.GameInfo.Ruleset.Beliefs.Values
                     .Where(it => it.Type == type && manager.GetReligionWithBelief(it) == null)
                     .Select(it => it.Name).ToList();
+            }
 
         var slotCounters = manager.ReligionState switch
         {

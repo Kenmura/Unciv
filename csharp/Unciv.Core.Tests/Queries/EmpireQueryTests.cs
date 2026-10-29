@@ -340,6 +340,15 @@ public class EmpireQueryTests
     }
 
     [Fact]
+    public void ReligionListsReformationBeliefsOnlyWhenTheRulesetHasThem()
+    {
+        Assert.DoesNotContain(testGame.Ruleset.Beliefs.Values, it => it.Type == BeliefType.Reformation);
+        Assert.False(Ask(new ReligionQuery()).Available.ContainsKey("Reformation"));
+        var belief = testGame.CreateBelief(BeliefType.Reformation, "May buy [University] buildings with [Faith] [in cities following this religion]");
+        Assert.Equal([belief.Name], Ask(new ReligionQuery()).Available["Reformation"]);
+    }
+
+    [Fact]
     public void ReligionShowsOwnBeliefsAndFreeBeliefsToChoose()
     {
         var belief = testGame.Ruleset.Beliefs.Values.First(it => it.Type == BeliefType.Pantheon);
