@@ -191,6 +191,18 @@ public sealed class InProcessHostTests : IDisposable
     }
 
     [Fact]
+    public async Task InProcessHost_BackgroundTickLoop_RunsAndStopsCleanly_AndExposesItsParts()
+    {
+        var host = StartHost("ticking", new InProcessHostOptions { TickInterval = TimeSpan.FromMilliseconds(10) });
+        Assert.Equal(Path.Combine(root, "ticking"), host.Directory);
+        Assert.NotNull(host.Host.Gate);
+        Assert.NotNull(host.Host.RemoteQueries);
+        Assert.NotNull(host.Host.Clock);
+        await host.Host.EnqueueAsync(() => Task.CompletedTask); // the actor answers while the loop ticks beside it
+        await host.StopAsync();
+    }
+
+    [Fact]
     public async Task InProcessHost_TurnPolicyOption_ReachesTheTurnTimer()
     {
         var policy = new LobbySettings { TurnTimerSeconds = 240, TurnTimerMinSeconds = 45, DynamicTurnTimer = true }.ToTurnPolicy();

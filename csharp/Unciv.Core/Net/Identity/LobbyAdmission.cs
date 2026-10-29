@@ -56,6 +56,9 @@ public sealed class LobbyAdmission
     /// </summary>
     public AdmissionResult AdmitForModSync(string remoteKey, string? passwordAttempt, string? inviteToken) => AdmitCore(remoteKey, passwordAttempt, inviteToken, redeem: false);
 
+    /// <summary>T265: mints a single-use invite token for a printed invite (null when too many are outstanding).</summary>
+    public string? MintInviteToken(TimeSpan lifetime) => tokens.Mint(lifetime);
+
     public AdmissionResult Admit(string remoteKey, string? passwordAttempt, string? inviteToken) => AdmitCore(remoteKey, passwordAttempt, inviteToken, redeem: true);
 
     private AdmissionResult AdmitCore(string remoteKey, string? passwordAttempt, string? inviteToken, bool redeem)

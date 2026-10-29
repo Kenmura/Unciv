@@ -283,6 +283,8 @@ Default port `47821` (configurable). IPv4 and IPv6 dual-stack listen.
 ### 6.5 Hosting, lobby and NAT
 **Who hosts.** Either a dedicated headless `Unciv.Server` (a friend's always-on PC, a home server, a cheap VPS if someone *chooses* one: nothing here depends on it) or the **Host** button in the client, which starts the same `GameHost` in-process, listening on the port, with the host player connected through the in-memory/loopback transport (one code path, 7). The host's save directory is the game (5).
 
+**Dedicated executable (T265).** `dotnet run --project Unciv.Server -- --port 47821 --max-players 4 --auto-start --min-humans 2 --print-invite` opens a `ServerLobby` on a TCP+TLS port (host key in `--data-dir/host-key.pfx`, the fingerprint players pin), prints `LISTENING <port>` and `INVITE unciv://...` on stdout and logs the rest as levelled lines. There is no host player: friends join, pick a seat and ready up like in any lobby, and `--auto-start` starts the game once every seated human is ready and `--min-humans` have joined (without it the lobby waits for an admin; there is no remote admin console). `--settings FILE` is the `LobbySettings` JSON (`UncivJson`), the command line overrides it. `ServerLobby` now makes the started game simultaneous (`LobbySettings.TurnMode`) and gives it the host clock, as the other host paths always did. Persistence, resume, signals and exit codes of a running game are T270.
+
 **Reaching the host (MVP scope).**
 | Path | MVP | Notes |
 |---|---|---|

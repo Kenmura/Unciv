@@ -319,7 +319,8 @@ public sealed partial class GameHost : IAsyncDisposable
         while (session.Game.NextResolveStep() is { } step)
         {
             var cmd = ResolvePump.StepCommand(step);
-            ApplyServerCommand(cmd);
+            // A refused step would come back as the same step forever and freeze the actor at full speed: stop; the round stays Resolving and the next tick tries again.
+            if (!ApplyServerCommand(cmd).Accepted) break;
             steps++;
         }
         if (steps > 0 && store != null)
@@ -342,6 +343,26 @@ public sealed partial class GameHost : IAsyncDisposable
             PumpResolving();
             turnTimer.Tick();
         }
+    }
+
+    /// <summary>Ticks the turn timer on the host actor every <paramref name="interval"/> until <paramref name="token"/> is cancelled or the host stops (shared by the in-process host and the dedicated server). <paramref name="afterTick"/> runs on the actor after each tick.</summary>
+    public async Task RunTickLoopAsync(TimeSpan interval, CancellationToken token, Action? afterTick = null)
+    {
+        using var timer = new PeriodicTimer(interval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
+            {
+                await EnqueueAsync(() =>
+                {
+                    Tick();
+                    afterTick?.Invoke(); // on the actor, so it may read the game
+                    return Task.CompletedTask;
+                }).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (InvalidOperationException) { } // mailbox closed by a concurrent stop
     }
 
     /// <summary>Closes all sessions, writes clean marker if store is configured, and stops actor.</summary>

@@ -151,9 +151,12 @@ public sealed class ServerLobby : IAsyncDisposable
         GameHost? gameHost = null;
         try
         {
+            // T265: the lobby's NewGame.Start makes a Sequential game; the MVP plays simultaneous rounds (SIMULTANEOUS-TURNS.md), as every other host path does.
+            if (string.Equals(lobbyHost.Settings.TurnMode, "Simultaneous", StringComparison.OrdinalIgnoreCase) && startResult.Game.TurnState == null)
+                startResult.Game.StartSimultaneousTurns();
             var policy = lobbyHost.Settings.ToTurnPolicy();
             if (store != null) store.WriteMeta(store.ReadMeta() with { TimerPolicy = policy }); // a resume must run the same turn rules
-            gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock, turnPolicy: policy, standby: lobbyHost.Standby); // the designation made in the lobby carries over
+            gameHost = new GameHost(new GameSession(startResult.Game) { Clock = () => clock.NowMillis }, store, clock: clock, turnPolicy: policy, standby: lobbyHost.Standby); // the designation made in the lobby carries over
             foreach (var slot in startResult.Slots)
             {
                 if (slot.Kind != SlotKind.Human) continue;

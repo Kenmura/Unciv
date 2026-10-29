@@ -62,7 +62,7 @@ public sealed class InProcessHost : IAsyncDisposable
         Report = report;
         if (options.TickInterval is { } interval && interval > TimeSpan.Zero)
         {
-            background.Add(RunTickLoopAsync(interval, cts.Token));
+            background.Add(host.RunTickLoopAsync(interval, cts.Token));
         }
     }
 
@@ -192,24 +192,6 @@ public sealed class InProcessHost : IAsyncDisposable
     }
 
     public ValueTask DisposeAsync() => new(StopAsync());
-
-    private async Task RunTickLoopAsync(TimeSpan interval, CancellationToken token)
-    {
-        using var timer = new PeriodicTimer(interval);
-        try
-        {
-            while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
-            {
-                await host.EnqueueAsync(() =>
-                {
-                    host.Tick();
-                    return Task.CompletedTask;
-                }).ConfigureAwait(false);
-            }
-        }
-        catch (OperationCanceledException) { }
-        catch (InvalidOperationException) { } // mailbox closed by a concurrent stop
-    }
 
     private async Task RunAcceptLoopAsync(TcpTlsListener tcp, CancellationToken token)
     {

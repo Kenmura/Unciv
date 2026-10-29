@@ -451,10 +451,10 @@ public sealed class GameHostTests : IDisposable
     }
 
     [Fact]
-    public void Program_Main_ReturnsZeroForHelpAndDefault()
+    public void Program_Main_ReturnsZeroForHelp()
     {
         Assert.Equal(0, Program.Main(["--help"]));
         Assert.Equal(0, Program.Main(["-h"]));
-        Assert.Equal(0, Program.Main([]));
+        Assert.Equal(2, Program.Main(["--nope"])); // T265: a bare Main([]) now serves forever on the default port
     }
 }
