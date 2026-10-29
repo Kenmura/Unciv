@@ -97,6 +97,13 @@ public sealed class TurnTimer
         state.DisconnectedAt = clock.NowMillis;
     }
 
+    /// <summary>C045: the seat of <paramref name="civId"/> changed hands (kick or rebind): drops a queued reclaim and the remembered key of the old player.</summary>
+    public void ForgetPlayer(string civId)
+    {
+        pendingReclaims.Remove(civId);
+        if (playerStates.TryGetValue(civId, out var state)) state.PlayerKeyId = null;
+    }
+
     /// <summary>Reclaims an AI-controlled civ back to human control.</summary>
     public bool Reclaim(string civId, string? playerKeyId = null)
     {

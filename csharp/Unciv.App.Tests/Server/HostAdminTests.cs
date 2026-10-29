@@ -206,6 +206,12 @@ public sealed class HostAdminTests : IDisposable
 
         Assert.Equal(JoinRefusedCodes.Kicked, (await ReadUntilAsync<JoinRefused>(friend)).Code);
         Assert.Equal(PlayerType.AI, host.Host.Game.GetCivilization("Greece").PlayerType);
+        await host.Host.EnqueueAsync(() =>
+        {
+            host.Host.Tick();
+            return Task.CompletedTask;
+        });
+        Assert.Equal(PlayerType.AI, host.Host.Game.GetCivilization("Greece").PlayerType); // no queued reclaim hands it back
         Assert.Equal("", host.Host.Store!.ReadMeta().Slots["Greece"].PlayerKey);
         Assert.DoesNotContain(host.Host.Sessions.Values, s => s.BoundCivId == "Greece");
         var roster = await LastRosterAsync(hostEnd, r => r.Slots.Any(s => s.Nation == "Greece" && s.Kind == "AI"));

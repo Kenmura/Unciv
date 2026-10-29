@@ -516,12 +516,14 @@ public sealed class GameHost : IAsyncDisposable
         turnTimer.Disconnect(hostSession.BoundCivId);
         remoteQueries.EndSession(sessionId);
         gate.EndSession(sessionId);
+        // The roster is built before the first await (still on the actor even when a caller does not wait for this method), then sent while the transport closes.
+        var announced = AnnounceRosterAsync();
         try
         {
             await hostSession.Transport.CloseAsync();
         }
         catch { }
-        await AnnounceRosterAsync();
+        await announced;
     }
 
     // ------------------------------------------------------------ C045: chat, roster and host administration
@@ -582,7 +584,8 @@ public sealed class GameHost : IAsyncDisposable
     {
         if (!announceRoster || sessions.Count == 0) return;
         var roster = BuildRoster();
-        foreach (var target in sessions.Values.ToList()) await SafeSendAsync(target, roster);
+        var targets = sessions.Values.ToList();
+        foreach (var target in targets) await SafeSendAsync(target, roster);
     }
 
     /// <summary>
@@ -630,6 +633,7 @@ public sealed class GameHost : IAsyncDisposable
             if (!handed.Accepted) return handed.Validation.Code;
         }
 
+        turnTimer.ForgetPlayer(civId); // no pending reclaim or remembered key of the old player may hand the civ back to them
         var slots = new SortedDictionary<string, SlotBinding>(meta.Slots, StringComparer.Ordinal)
         {
             [civId] = new SlotBinding { PlayerKey = newKey ?? "", DisplayName = newKey == null ? binding.DisplayName : "" },

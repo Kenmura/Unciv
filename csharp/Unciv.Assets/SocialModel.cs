@@ -77,7 +77,7 @@ public static class SocialModel
         "unchanged" => "that is already this seat's key",
         "own-seat" => "you cannot do that to your own seat",
         "not-bound" or "unknown-civ" => "that seat has no player",
-        "not-allowed" => "the game needs at least one human player",
+        "not-allowed" => "that is not possible right now (the game needs at least one human player)",
         _ => code,
     };
 }

@@ -1702,7 +1702,15 @@ public partial class GameScreen : Control
     private async Task Admin(string civId, string? newKey)
     {
         if (social == null) return;
-        var refused = newKey == null ? await social.KickAsync(civId) : await social.RebindAsync(civId, newKey);
+        string? refused;
+        try
+        {
+            refused = newKey == null ? await social.KickAsync(civId) : await social.RebindAsync(civId, newKey);
+        }
+        catch (Exception e) when (e is InvalidOperationException or IOException)
+        {
+            refused = "host-error";
+        }
         if (!IsInstanceValid(this) || !IsInsideTree()) return;
         Social.SetNotice(refused == null ? (newKey == null ? "Seat released." : "Seat rebound: the new device can join now.").Tr() : "Not done: ".Tr() + SocialModel.Describe(refused));
     }
