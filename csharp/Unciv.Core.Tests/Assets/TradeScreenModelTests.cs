@@ -292,6 +292,10 @@ public class TradeScreenModelTests
         Assert.Equal("Rome proposes a trade", incoming.Title);
         Assert.Equal(["100 gold", "Introduction to Egypt"], incoming.Gives);
         Assert.Equal(["Open Borders (30 turns)", "Peace with Rome"], incoming.Asks);
+        Assert.Equal(incoming.Gives, incoming.GiveItems.Select(it => it.Text));
+        Assert.Equal([AssetKey.Of("icon/stat", "Gold"), AssetKey.Of("icon/ui", "Nations")], incoming.GiveItems.Select(it => it.Icon));
+        Assert.Equal(incoming.Asks, incoming.AskItems.Select(it => it.Text));
+        Assert.Equal(AssetKey.Of("icon/ui", "Checkmark"), incoming.AskItems[1].Icon);
         Assert.Equal(("rome", true), (incoming.Accept.CivId, incoming.Accept.Accept));
         Assert.Equal(("rome", false), (incoming.Decline.CivId, incoming.Decline.Accept));
         Assert.Equal("rome", incoming.Counter.CivId);
@@ -347,6 +351,36 @@ public class TradeScreenModelTests
         Assert.Equal(("rome", "DoNotSpreadReligion", true), (demands[0].Accept.CivId, demands[0].Accept.Demand, demands[0].Accept.Accept));
         Assert.False(demands[0].Refuse.Accept);
         Assert.Equal("stop spying on us", TradeScreenModel.Demands(new PendingDecisionsResult([Alert("DemandToStopSpyingOnUs", "rome")]), Snapshot())[0].Text);
+    }
+
+    [Fact]
+    public void AcceptanceIsAnEnumOfTheHintAndOnlyThenWorded()
+    {
+        Assert.Equal(TradeAcceptance.Likely, TradeScreenModel.Acceptance(new TradeHintResult("Rome", "accept")));
+        Assert.Equal(TradeAcceptance.NeedsMore, TradeScreenModel.Acceptance(new TradeHintResult("Rome", "counter-needed")));
+        Assert.Equal(TradeAcceptance.Refused, TradeScreenModel.Acceptance(new TradeHintResult("Rome", "refuse")));
+        Assert.Equal(TradeAcceptance.None, TradeScreenModel.Acceptance(new TradeHintResult("Rome", "???")));
+        Assert.Equal(TradeAcceptance.None, TradeScreenModel.Acceptance(null));
+        foreach (var value in Enum.GetValues<TradeAcceptance>())
+        {
+            Assert.Equal(value == TradeAcceptance.None, TradeScreenModel.AcceptanceText(value) == "");
+            Assert.Equal(value == TradeAcceptance.None, TradeScreenModel.AcceptanceBadge(value) == "");
+        }
+    }
+
+    [Theory]
+    [InlineData("Gold", "Gold", "icon/stat", "Gold")]
+    [InlineData("Gold_Per_Turn", "Gold", "icon/stat", "Gold")]
+    [InlineData("Luxury_Resource", "Silk", "icon/resource", "Silk")]
+    [InlineData("Strategic_Resource", "Iron", "icon/resource", "Iron")]
+    [InlineData("Technology", "Pottery", "icon/tech", "Pottery")]
+    [InlineData("City", "Paris", "icon/ui", "Cities")]
+    [InlineData("Treaty", "Peace Treaty", "icon/ui", "Diplomacy")]
+    [InlineData("WarDeclaration", "Rome", "icon/ui", "Fire")]
+    [InlineData("Something", "x", "icon/ui", "Question")]
+    public void EveryOfferTypeHasAnIcon(string type, string name, string category, string icon)
+    {
+        Assert.Equal(AssetKey.Of(category, icon), TradeScreenModel.IconOf(type, name));
     }
 
     [Fact]

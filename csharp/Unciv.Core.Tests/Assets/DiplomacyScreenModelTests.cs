@@ -66,6 +66,25 @@ public class DiplomacyScreenModelTests
     }
 
     [Fact]
+    public void RowsDrawAsFlagNameAndStatusLine()
+    {
+        var snapshot = Snapshot([Civ("Me"), Civ("Zulu"), Civ("Aksum", cityState: true)], [Rel("Me", "Zulu", war: true, status: "War"), Rel("Me", "Aksum")]);
+        var rows = DiplomacyScreenModel.Rows(snapshot);
+        Assert.Equal(AssetKey.Of("icon/nation", "Aksum"), rows[1].Icon);
+        Assert.Equal(["Peace", "War"], new[] { rows[0].Subtitle, rows[1].Subtitle }.Select(it => it.Replace("City-state - ", "", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
+        Assert.True(rows.Single(it => it.CivId == "Zulu").AtWar);
+        Assert.StartsWith("City-state - ", rows.Single(it => it.IsCityState).Subtitle, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OnlyConfirmedStepsAreDangerButtons()
+    {
+        var buttons = DiplomacyScreenModel.Buttons(RomeRow(), Panel(), Actions(war: true, denounce: true));
+        Assert.All(buttons, it => Assert.Equal(it.NeedsConfirm, it.Danger));
+        Assert.Contains(buttons, it => it.Danger);
+    }
+
+    [Fact]
     public void RowStatusIsTheSnapshotsOrDerivedFromWar()
     {
         var snapshot = Snapshot([Civ("Me"), Civ("A"), Civ("B"), Civ("C"), Civ("D")],

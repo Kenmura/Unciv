@@ -4,6 +4,7 @@ using Unciv.Utils;
 using Unciv.Assets;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Ui;
 using Unciv.Harness;
 using Unciv.Net.Visibility;
 using Unciv.Queries;
@@ -79,7 +80,7 @@ public sealed class DiplomacyScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("the screen is open and lists exactly the met civs: Rome, then the city-state; never the unmet Greece", () =>
                 screen.IsDiplomacyVisible && screen.Diplomacy.Rows.Select(it => it.CivId).SequenceEqual([rome.CivId, cityState.CivId])
-                && screen.Diplomacy.CivButton(ScenarioGame.HumanB) == null && screen.Diplomacy.CivButton(rome.CivId).NotNull().Text == "Rome - Peace"
+                && screen.Diplomacy.CivButton(ScenarioGame.HumanB) == null && screen.Diplomacy.CivButton(rome.CivId).NotNull() is { Title: "Rome", ShownSubtitle: "Peace" }
                 && screen.Diplomacy.Rows[1].IsCityState && screen.Diplomacy.SelectedCivId == rome.CivId),
             new AssertQuery("the engine was never asked about Greece or about the viewer", () =>
                 recording.Queries.All(it => it is not DiplomacyPanelQuery p || (p.CivName != ScenarioGame.HumanB && p.CivName != ScenarioGame.HumanA))
@@ -88,6 +89,13 @@ public sealed class DiplomacyScenario : Scenario
                 screen.Diplomacy.Panel is { Status: "Peace", IsCityState: false } && screen.Diplomacy.InfoText.Contains("Status: Peace", StringComparison.Ordinal)
                 && screen.Diplomacy.TitleText == "Rome" && screen.Diplomacy.Buttons.Select(it => it.Id).SequenceEqual(["DeclareWar", "Denounce"])),
             new AssertQuery("every button is enabled exactly as the engine's legal set says", () => ButtonsEqualQuery(rome.CivId) && Legal(rome.CivId).DeclareWar && Legal(rome.CivId).Denounce),
+            new AssertQuery("the screen is a frame (titled, close button), the civ rows are list rows with a flag and the chosen one is pressed, the status pill shows Peace", () =>
+                screen.Diplomacy.Frame.TitleText == "Diplomacy" && screen.Diplomacy.Frame.CloseButton.Visible && screen.Diplomacy.CivButton(rome.CivId).NotNull().ButtonPressed
+                && !screen.Diplomacy.CivButton(cityState.CivId).NotNull().ButtonPressed && screen.Diplomacy.CivButton(cityState.CivId).NotNull().ShownSubtitle == "City-state - Peace"
+                && screen.Diplomacy.StatusPill.Visible && screen.Diplomacy.StatusText == "Peace"),
+            new AssertQuery("war and denounce are danger buttons (they need a second press) and the detail column fits the screen", () =>
+                screen.Diplomacy.ActionButton("DeclareWar").NotNull().ThemeTypeVariation == UiVariants.ButtonDanger && screen.Diplomacy.ActionButton("Denounce").NotNull().ThemeTypeVariation == UiVariants.ButtonDanger
+                && screen.Diplomacy.DetailColumn.GetGlobalRect().End.X <= screen.GetViewportRect().Size.X + 0.5f && screen.Diplomacy.ActionButton("DeclareWar").NotNull().GetGlobalRect().End.X <= screen.GetViewportRect().Size.X),
             new Capture("peace", "Rome at peace: the met civs on the left, war and denounce offered"),
 
             new Act("remember the command log", () => logged = session.Log.Count),
@@ -100,7 +108,7 @@ public sealed class DiplomacyScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("the second press declared war in the engine, and the screen follows", () =>
                 human.IsAtWarWith(rome) && session.Log.Count == logged + 1 && screen.Diplomacy.Panel is { Status: "War" } && screen.Diplomacy.ArmedButton == null
-                && screen.Diplomacy.CivButton(rome.CivId).NotNull().Text == "Rome - War"),
+                && screen.Diplomacy.CivButton(rome.CivId).NotNull().ShownSubtitle == "War" && screen.Diplomacy.StatusText == "War"),
             new AssertQuery("at war the screen offers peace instead of war, enabled as the engine says", () =>
                 screen.Diplomacy.Buttons.Select(it => it.Id).SequenceEqual(["OfferPeace"]) && ButtonsEqualQuery(rome.CivId)),
             new Capture("war", "At war with Rome: peace is offered instead"),
@@ -109,11 +117,14 @@ public sealed class DiplomacyScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("the city-state's table shows influence and quests, and its buttons equal the engine's legal set", () =>
                 screen.Diplomacy.SelectedCivId == cityState.CivId && screen.Diplomacy.TitleText.EndsWith("(city-state)", StringComparison.Ordinal)
-                && screen.Diplomacy.InfoText.Contains("Influence:", StringComparison.Ordinal) && screen.Diplomacy.QuestText.StartsWith("Quests", StringComparison.Ordinal)
+                && screen.Diplomacy.InfoText.Contains("Influence:", StringComparison.Ordinal) && screen.Diplomacy.QuestText.Length > 0
                 && screen.Diplomacy.QuestList != null && ButtonsEqualQuery(cityState.CivName)),
             new AssertQuery("with 1000 gold every gift is open, bullying and the pledge are as the engine says", () =>
                 Legal(cityState.CivName).Gifts.SequenceEqual([250, 500, 1000]) && screen.Diplomacy.Buttons.Count(it => it.Kind == DiplomacyActionKind.Gift && it.Enabled) == 3
                 && screen.Diplomacy.ActionButton("TributeGold") != null && screen.Diplomacy.ActionButton("PledgeProtection") != null),
+            new AssertQuery("a button the engine refuses shows its reason under it, not only as a tooltip", () =>
+                screen.Diplomacy.Buttons.Where(it => !it.Enabled).All(it => screen.Diplomacy.ActionCells.Any(cell => cell.FindChild("Reason_" + it.Id, true, false) is Label { Text.Length: > 0 }))
+                && screen.Diplomacy.Buttons.Where(it => it.Enabled).All(it => screen.Diplomacy.ActionCells.All(cell => cell.FindChild("Reason_" + it.Id, true, false) == null))),
             new Capture("city-state", "The city-state's table: influence, quests, gifts, bullying and protection"),
             new Act("remember gold and influence", () =>
             {

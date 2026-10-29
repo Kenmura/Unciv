@@ -275,27 +275,27 @@
     "shots": [
       {
         "golden": "diplomacy/confirm.png",
-        "caption": "Declare war armed: first press asks to press again to confirm."
+        "caption": "Declare war armed (C073 redesign): the red danger button now reads Confirm: Declare war, with a hint line at the top."
       },
       {
         "golden": "diplomacy/war.png",
-        "caption": "State after war is declared."
+        "caption": "At war with Rome: the status pill and the list row say War and peace is offered instead."
       },
       {
         "golden": "diplomacy/peace.png",
-        "caption": "Peace status with another civilization."
+        "caption": "Diplomacy in its screen frame: list rows with flag and status on the left, Rome's name, a status pill, attitude and the danger-styled declare war and denounce buttons."
       },
       {
         "golden": "diplomacy/city-state.png",
-        "caption": "City-state panel: influence, gifts, bullying, pledge to protect."
+        "caption": "City-state panel: influence, quests, gift buttons and bullying, with the reason shown under each button the engine refuses."
       },
       {
         "golden": "diplomacy/gifted.png",
-        "caption": "After gifting gold to the city-state."
+        "caption": "After gifting 250 gold to the city-state: its influence went up."
       },
       {
         "golden": "diplomacy/protected.png",
-        "caption": "City-state under the player's protection."
+        "caption": "The player now protects the city-state; revoking protection is offered (a danger, confirm step)."
       }
     ]
   },
@@ -476,15 +476,15 @@
     "shots": [
       {
         "golden": "trade/open.png",
-        "caption": "Rome's trade proposal and demand wait at the top with their answer buttons; the columns list everything each side could offer."
+        "caption": "Trade in its screen frame: Rome's proposal as a card with icon lines for what they give and ask and Accept / Decline / Counter, its demand beneath, then the partner list and both offer columns with icon rows."
       },
       {
         "golden": "trade/staged.png",
-        "caption": "A gift of 20 gold staged with plus and minus: the summary and the engine's hint about Rome's answer."
+        "caption": "A gift of 20 gold staged (the row is selected, less and more buttons beside it): the summary, a gold Likely pill from the engine's hint and the full sentence; Propose trade is the primary footer button."
       },
       {
         "golden": "trade/proposed.png",
-        "caption": "Our offer waits for Rome's turn: propose is off and retract is offered."
+        "caption": "Our offer waits for Rome's turn: propose is off and a red Retract offer button appears in the footer."
       },
       {
         "golden": "trade/answered.png",
@@ -498,11 +498,11 @@
     "shots": [
       {
         "golden": "proposals/peace.png",
-        "caption": "Rome's peace proposal as a popup: what they give and ask, with accept, decline, ask for something else and decide later."
+        "caption": "Rome's peace proposal as a popup: They give and They ask sections of icon lines, with accept, decline, ask for something else and decide later."
       },
       {
         "golden": "proposals/trade.png",
-        "caption": "Greece's trade proposal after the peace was accepted: they give 50 gold and ask 20 gold."
+        "caption": "Greece's trade proposal after the peace was accepted: 50 gold and 20 gold, each with the gold icon."
       },
       {
         "golden": "proposals/counter.png",
@@ -1263,5 +1263,8 @@
         "caption": "Rules tab inside the frame: Vanilla chosen as the base ruleset with the section headers as overlines."
       }
     ]
+  },
+  "C073": {
+    "none": "Diplomacy and trade redesign: the redesigned screens are shown under C021 (diplomacy/*), C022 (trade/*) and C039 (proposals/*), whose goldens were re-recorded."
   }
 }

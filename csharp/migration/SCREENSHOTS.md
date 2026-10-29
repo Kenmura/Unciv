@@ -380,29 +380,29 @@ Diplomacy screen: civ list, status and attitude, treaty and city-state actions.
 
 Scenario `diplomacy`.
 
-![Declare war armed: first press asks to press again to confirm.](../Unciv.Godot.Harness/golden/diplomacy/confirm.png)
+![Declare war armed (C073 redesign): the red danger button now reads Confirm: Declare war, with a hint line at the top.](../Unciv.Godot.Harness/golden/diplomacy/confirm.png)
 
-*Declare war armed: first press asks to press again to confirm.* (`diplomacy/confirm.png`)
+*Declare war armed (C073 redesign): the red danger button now reads Confirm: Declare war, with a hint line at the top.* (`diplomacy/confirm.png`)
 
-![State after war is declared.](../Unciv.Godot.Harness/golden/diplomacy/war.png)
+![At war with Rome: the status pill and the list row say War and peace is offered instead.](../Unciv.Godot.Harness/golden/diplomacy/war.png)
 
-*State after war is declared.* (`diplomacy/war.png`)
+*At war with Rome: the status pill and the list row say War and peace is offered instead.* (`diplomacy/war.png`)
 
-![Peace status with another civilization.](../Unciv.Godot.Harness/golden/diplomacy/peace.png)
+![Diplomacy in its screen frame: list rows with flag and status on the left, Rome's name, a status pill, attitude and the danger-styled declare war and denounce buttons.](../Unciv.Godot.Harness/golden/diplomacy/peace.png)
 
-*Peace status with another civilization.* (`diplomacy/peace.png`)
+*Diplomacy in its screen frame: list rows with flag and status on the left, Rome's name, a status pill, attitude and the danger-styled declare war and denounce buttons.* (`diplomacy/peace.png`)
 
-![City-state panel: influence, gifts, bullying, pledge to protect.](../Unciv.Godot.Harness/golden/diplomacy/city-state.png)
+![City-state panel: influence, quests, gift buttons and bullying, with the reason shown under each button the engine refuses.](../Unciv.Godot.Harness/golden/diplomacy/city-state.png)
 
-*City-state panel: influence, gifts, bullying, pledge to protect.* (`diplomacy/city-state.png`)
+*City-state panel: influence, quests, gift buttons and bullying, with the reason shown under each button the engine refuses.* (`diplomacy/city-state.png`)
 
-![After gifting gold to the city-state.](../Unciv.Godot.Harness/golden/diplomacy/gifted.png)
+![After gifting 250 gold to the city-state: its influence went up.](../Unciv.Godot.Harness/golden/diplomacy/gifted.png)
 
-*After gifting gold to the city-state.* (`diplomacy/gifted.png`)
+*After gifting 250 gold to the city-state: its influence went up.* (`diplomacy/gifted.png`)
 
-![City-state under the player's protection.](../Unciv.Godot.Harness/golden/diplomacy/protected.png)
+![The player now protects the city-state; revoking protection is offered (a danger, confirm step).](../Unciv.Godot.Harness/golden/diplomacy/protected.png)
 
-*City-state under the player's protection.* (`diplomacy/protected.png`)
+*The player now protects the city-state; revoking protection is offered (a danger, confirm step).* (`diplomacy/protected.png`)
 
 ## C022 Trade screen
 
@@ -410,17 +410,17 @@ Trade screen: offer builder for both sides, incoming trade and demand from an AI
 
 Scenario `trade`.
 
-![Rome's trade proposal and demand wait at the top with their answer buttons; the columns list everything each side could offer.](../Unciv.Godot.Harness/golden/trade/open.png)
+![Trade in its screen frame: Rome's proposal as a card with icon lines for what they give and ask and Accept / Decline / Counter, its demand beneath, then the partner list and both offer columns with icon rows.](../Unciv.Godot.Harness/golden/trade/open.png)
 
-*Rome's trade proposal and demand wait at the top with their answer buttons; the columns list everything each side could offer.* (`trade/open.png`)
+*Trade in its screen frame: Rome's proposal as a card with icon lines for what they give and ask and Accept / Decline / Counter, its demand beneath, then the partner list and both offer columns with icon rows.* (`trade/open.png`)
 
-![A gift of 20 gold staged with plus and minus: the summary and the engine's hint about Rome's answer.](../Unciv.Godot.Harness/golden/trade/staged.png)
+![A gift of 20 gold staged (the row is selected, less and more buttons beside it): the summary, a gold Likely pill from the engine's hint and the full sentence; Propose trade is the primary footer button.](../Unciv.Godot.Harness/golden/trade/staged.png)
 
-*A gift of 20 gold staged with plus and minus: the summary and the engine's hint about Rome's answer.* (`trade/staged.png`)
+*A gift of 20 gold staged (the row is selected, less and more buttons beside it): the summary, a gold Likely pill from the engine's hint and the full sentence; Propose trade is the primary footer button.* (`trade/staged.png`)
 
-![Our offer waits for Rome's turn: propose is off and retract is offered.](../Unciv.Godot.Harness/golden/trade/proposed.png)
+![Our offer waits for Rome's turn: propose is off and a red Retract offer button appears in the footer.](../Unciv.Godot.Harness/golden/trade/proposed.png)
 
-*Our offer waits for Rome's turn: propose is off and retract is offered.* (`trade/proposed.png`)
+*Our offer waits for Rome's turn: propose is off and a red Retract offer button appears in the footer.* (`trade/proposed.png`)
 
 ![The next turn: Rome answered the gift, nothing waits and the treasuries changed.](../Unciv.Godot.Harness/golden/trade/answered.png)
 
@@ -736,13 +736,13 @@ Incoming proposal popups: peace and trade proposals from AI civs with accept, de
 
 Scenario `proposals`.
 
-![Rome's peace proposal as a popup: what they give and ask, with accept, decline, ask for something else and decide later.](../Unciv.Godot.Harness/golden/proposals/peace.png)
+![Rome's peace proposal as a popup: They give and They ask sections of icon lines, with accept, decline, ask for something else and decide later.](../Unciv.Godot.Harness/golden/proposals/peace.png)
 
-*Rome's peace proposal as a popup: what they give and ask, with accept, decline, ask for something else and decide later.* (`proposals/peace.png`)
+*Rome's peace proposal as a popup: They give and They ask sections of icon lines, with accept, decline, ask for something else and decide later.* (`proposals/peace.png`)
 
-![Greece's trade proposal after the peace was accepted: they give 50 gold and ask 20 gold.](../Unciv.Godot.Harness/golden/proposals/trade.png)
+![Greece's trade proposal after the peace was accepted: 50 gold and 20 gold, each with the gold icon.](../Unciv.Godot.Harness/golden/proposals/trade.png)
 
-*Greece's trade proposal after the peace was accepted: they give 50 gold and ask 20 gold.* (`proposals/trade.png`)
+*Greece's trade proposal after the peace was accepted: 50 gold and 20 gold, each with the gold icon.* (`proposals/trade.png`)
 
 ![How about something else: the trade screen opens on Greece with its offer staged the other way round for us to change.](../Unciv.Godot.Harness/golden/proposals/counter.png)
 
@@ -1206,7 +1206,7 @@ Scenario `city-b`.
 
 *At 1280x720 the city screen keeps its structure: buildable list rows spread over the extra width, with cost and Buy chips at the right edge.* (`city-b/wide.png`)
 
-## C072 (ticket not Done or unknown)
+## C072 Setup, nation picker and main menu redesign
 
 Setup and main menu redesign: dark backdrop with logo and a primary/ghost button column; new-game screen in a ScreenFrame with Steppers for the counts, emblem slots and grid, a nation detail card and a summary footer.
 
@@ -1270,4 +1270,5 @@ Done tickets with nothing meaningful to show.
 - **C060 Tutorial task completed-set: per-viewer and replay-safe (C054 review follow-up)**: Per-viewer, replay-safe tutorial-task state (no layout change); the card itself is shown under C054 (tutorial-tasks scenario) and the hotseat hand-over under C029.
 - **C064 Unique display text and hidden uniques in UI models**: Model-level text fix (unique display text, hidden uniques filtered); the decisions, tooltips and policy scenario goldens are pixel-unchanged.
 - **C070 Tech tree redesign**: Tech tree redesign: shown under C019 (tech/*), whose captions and goldens were re-recorded in C070.
+- **C073 (ticket not Done or unknown)**: Diplomacy and trade redesign: the redesigned screens are shown under C021 (diplomacy/*), C022 (trade/*) and C039 (proposals/*), whose goldens were re-recorded.
 - **C074 Overview and espionage on DataTable**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.

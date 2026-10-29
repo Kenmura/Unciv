@@ -4,6 +4,7 @@ using Unciv.Commands;
 using Unciv.Commands.Empire;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Ui;
 using Unciv.Harness;
 using Unciv.Queries.Empire;
 using Unciv.Utils;
@@ -94,6 +95,7 @@ public sealed class TradeScenario : Scenario
                 screen.Trade.IncomingTrades.Count == 1 && screen.Trade.IncomingTrades[0].Gives.SequenceEqual(["100 gold"]) && screen.Trade.IncomingTrades[0].Asks.SequenceEqual(["30 gold"])
                 && screen.Trade.IncomingDemands.Count == 1 && screen.Trade.Control("Accept_" + rome.CivId) != null && screen.Trade.Control("Counter_" + rome.CivId) != null
                 && screen.Trade.Control("DemandRefuse_" + rome.CivId) != null),
+            new AssertQuery("the screen is a frame with the primary Propose button last in its footer, rows with icons for partners, offers and the incoming trade", () => FramedWithIcons(screen, rome.CivId) && OffersAreRows(screen)),
             new Capture("open", "Rome's trade proposal and demand wait at the top; the columns list everything each side could offer"),
             new Click(() => Centre(screen.Trade.Control("DemandRefuse_" + rome.CivId))),
             new WaitFrames(2),
@@ -114,8 +116,9 @@ public sealed class TradeScenario : Scenario
                 screen.Trade.Builder.NotNull().StagedChoices(TradeSide.Give).Single().StagedAmount == 20 && screen.Trade.SummaryText == "You give: 20 gold\nYou ask: nothing"
                 && screen.Trade.Builder.Command() is { CivId: var civ } command && civ == rome.CivId && command.OurOffers.Single().Amount == 20 && command.TheirOffers.Count == 0),
             new AssertQuery("the hint is the engine's answer for exactly this trade", () =>
-                screen.Trade.HintText == TradeScreenModel.HintText(localHost.QueryAsync(new TradeHintQuery(rome.CivName, [new TradeOfferRequest("Gold", "Gold", 20)], [])).GetAwaiter().GetResult())
-                && screen.Trade.HintText.Length > 0),
+                screen.Trade.Acceptance == TradeScreenModel.Acceptance(localHost.QueryAsync(new TradeHintQuery(rome.CivName, [new TradeOfferRequest("Gold", "Gold", 20)], [])).GetAwaiter().GetResult())
+                && screen.Trade.Acceptance != TradeAcceptance.None && screen.Trade.HintText == TradeScreenModel.AcceptanceText(screen.Trade.Acceptance)
+                && screen.Trade.HintPill.Visible && screen.Trade.HintBadgeText == TradeScreenModel.AcceptanceBadge(screen.Trade.Acceptance)),
             new Capture("staged", "A gift of 20 gold staged: the summary and the engine's hint about their answer"),
             new Act("remember the command log", () => logged = session.Log.Count),
             new Click(() => Centre(screen.Trade.ProposeButton)),
@@ -150,5 +153,24 @@ public sealed class TradeScenario : Scenario
             new PressKey(Key.Escape),
             new AssertQuery("Escape closes the screen", () => !screen.IsTradeVisible),
         ];
+    }
+
+    private static bool FramedWithIcons(GameScreen screen, string rome)
+    {
+        var trade = screen.Trade;
+        var labels = IconLabels(trade.FindChild("Incoming_" + rome, true, false).NotNull()).Select(it => it.Text);
+        return trade.Frame.TitleText == "Trade" && trade.Frame.FooterActions[^1] == trade.ProposeButton && trade.ProposeButton.ThemeTypeVariation == UiVariants.ButtonPrimary
+            && trade.PartnerButton(rome).NotNull().ButtonPressed && trade.Control("Accept_" + rome).NotNull().ThemeTypeVariation == UiVariants.ButtonPrimary
+            && labels.SequenceEqual(["100 gold", "30 gold"]) && trade.IncomingTrades[0].GiveItems.Single().Icon == AssetKey.Of(RulesetAssetKeys.StatIcon, "Gold");
+    }
+
+    private static IEnumerable<IconLabel> IconLabels(Node node) => node.GetChildren().SelectMany(it => it is IconLabel label ? [label] : IconLabels(it));
+
+    private static bool OffersAreRows(GameScreen screen)
+    {
+        var trade = screen.Trade;
+        var choices = trade.Builder.NotNull().Groups(TradeSide.Give).SelectMany(it => it.Choices).ToList();
+        return choices.Count > 0 && choices.All(it => trade.Control(it.Id) is ListRow row && (row.DisabledReason == null) == it.Entry.Tradable)
+            && trade.Frame.ContentRect.End.X <= screen.GetViewportRect().Size.X + 0.5f;
     }
 }

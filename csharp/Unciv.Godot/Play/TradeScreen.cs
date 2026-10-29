@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Assets;
 using Unciv.Commands;
 using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
@@ -20,20 +21,24 @@ public partial class TradeScreen : PanelContainer
 {
     private readonly IGameSession session;
     private readonly GameQueries queries;
-    private readonly Label message = new() { Name = "Message" };
-    private readonly VBoxContainer partnerList = new() { Name = "PartnerList" };
-    private readonly VBoxContainer incoming = new() { Name = "Incoming" };
-    private readonly Label title = new() { Name = "Title" };
-    private readonly VBoxContainer giveColumn = new() { Name = "GiveColumn" };
-    private readonly VBoxContainer askColumn = new() { Name = "AskColumn" };
-    private readonly Label summary = new() { Name = "Summary", AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f) };
-    private readonly Label hint = new() { Name = "Hint" };
-    private readonly Label pending = new() { Name = "Pending", AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f) };
-    private readonly Button propose = new() { Name = "Propose", Text = "Propose trade".Tr() };
-    private readonly Button clear = new() { Name = "ClearTrade", Text = "Clear".Tr() };
-    private readonly Button retract = new() { Name = "Retract", Text = "Retract offer".Tr() };
-    private readonly Dictionary<string, Button> partnerButtons = [];
+    private readonly UiTheme theme;
+    private readonly Dictionary<string, ListRow> partnerButtons = [];
     private readonly Dictionary<string, Button> controls = [];
+    private ScreenFrame frame = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label message = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private VBoxContainer partnerList = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private VBoxContainer incoming = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private VBoxContainer giveColumn = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private VBoxContainer askColumn = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label summary = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label hint = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private PanelContainer hintPill = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label hintPillText = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label pending = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Button propose = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Button clear = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Button retract = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private string messageText = "";
     private int generation;
     private int hintRequest;
 
@@ -41,45 +46,92 @@ public partial class TradeScreen : PanelContainer
     {
         session = gameSession;
         queries = new GameQueries(gameSession);
+        theme = uiTheme;
         Name = "TradePanel";
         Visible = false;
         MouseFilter = MouseFilterEnum.Stop;
         Theme = uiTheme.Theme;
+        BuildFrame();
+    }
+
+    public override void _EnterTree() => theme.LayoutChanged += OnLayoutChanged;
+
+    public override void _ExitTree() => theme.LayoutChanged -= OnLayoutChanged;
+
+    /// <summary>Sizes are fixed when a view is built, so a change of scale or breakpoint builds the frame again and fills it from the current state while the screen is open.</summary>
+    private void OnLayoutChanged()
+    {
+        BuildFrame();
+        if (!Visible) return;
+        RebuildPartners();
+        Redraw();
+    }
+
+    private void BuildFrame()
+    {
+        if (frame != null)
+        {
+            RemoveChild(frame); // at once: a queued free would leave the old frame in the layout until the frame ends
+            frame.QueueFree();
+        }
+        partnerButtons.Clear(); // the controls of the old frame are gone; the next redraw fills them again
+        controls.Clear();
+        frame = new ScreenFrame(theme, "Trade", closeLabel: "Close trade");
+        frame.CloseRequested += Close;
+        AddChild(frame);
+        int gap = theme.Px(UiTokens.S2);
 
         var column = new VBoxContainer();
-        AddChild(column);
-        var head = new HBoxContainer();
-        column.AddChild(head);
-        var heading = new Label { Text = "Trade".Tr(), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
-        head.AddChild(heading);
-        message.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        message.ClipText = true;
-        message.HorizontalAlignment = HorizontalAlignment.Right;
-        head.AddChild(message);
-        var close = new Button { Name = "TradeClose", Text = "Close trade".Tr() };
-        close.Pressed += Close;
-        head.AddChild(close);
-
-        column.AddChild(incoming);
+        column.AddThemeConstantOverride("separation", gap);
+        message = new Label { Name = "Message", ThemeTypeVariation = UiVariants.LabelSecondary, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, Text = messageText, Visible = messageText.Length > 0 };
+        column.AddChild(message);
+        incoming = new VBoxContainer { Name = "Incoming" };
+        incoming.AddThemeConstantOverride("separation", gap);
+        // a small window cannot hold the cards and both columns: the body scrolls and the footer actions stay in view
+        var body = new ScrollContainer { Name = "Body", SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        var stack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        stack.AddThemeConstantOverride("separation", gap);
+        body.AddChild(stack);
+        column.AddChild(body);
+        stack.AddChild(incoming);
         var middle = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
-        column.AddChild(middle);
-        partnerList.CustomMinimumSize = new Vector2(uiTheme.Px(130), 0f);
-        partnerList.AddThemeConstantOverride("separation", 2);
-        middle.AddChild(partnerList);
+        middle.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
+        stack.AddChild(middle);
+
+        var partnerScroll = new ScrollContainer { CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 150 : 220), 0f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        partnerList = new VBoxContainer { Name = "PartnerList", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        partnerList.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        partnerScroll.AddChild(partnerList);
+        middle.AddChild(partnerScroll);
+
         var detail = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        detail.AddThemeConstantOverride("separation", gap);
         middle.AddChild(detail);
-        title.AddThemeFontSizeOverride("font_size", uiTheme.Px(18));
-        detail.AddChild(title);
         var columns = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        columns.AddThemeConstantOverride("separation", gap);
         detail.AddChild(columns);
-        columns.AddChild(Scrolling("You give".Tr(), giveColumn));
-        columns.AddChild(Scrolling("You ask for".Tr(), askColumn));
+        giveColumn = new VBoxContainer { Name = "GiveColumn" };
+        askColumn = new VBoxContainer { Name = "AskColumn" };
+        columns.AddChild(Scrolling("You give", giveColumn));
+        columns.AddChild(Scrolling("You ask for", askColumn));
+        pending = new Label { Name = "Pending", ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f) };
         detail.AddChild(pending);
-        detail.AddChild(summary);
+        var verdict = new HBoxContainer { Name = "Verdict" };
+        verdict.AddThemeConstantOverride("separation", gap);
+        summary = new Label { Name = "Summary", AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        verdict.AddChild(summary);
+        hintPillText = new Label { Name = "HintBadge", HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = UiVariants.LabelSmall };
+        hintPill = new PanelContainer { Name = "HintPill", Visible = false, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        hintPill.AddChild(hintPillText);
+        verdict.AddChild(hintPill);
+        detail.AddChild(verdict);
+        hint = new Label { Name = "Hint", ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f) };
         detail.AddChild(hint);
-        var buttons = new HBoxContainer();
-        detail.AddChild(buttons);
+        frame.SetContent(column);
+
+        propose = new Button { Name = "Propose", Text = "Propose trade".Tr() };
+        clear = new Button { Name = "ClearTrade", Text = "Clear".Tr() };
+        retract = new Button { Name = "Retract", Text = "Retract offer".Tr() };
         propose.Pressed += () => Fire(ProposeAsync());
         clear.Pressed += () =>
         {
@@ -92,17 +144,16 @@ public partial class TradeScreen : PanelContainer
             Retracting?.Invoke(partner);
             Fire(SendAsync(new Commands.Diplomacy.RetractTrade { CivId = partner }));
         };
-        buttons.AddChild(propose);
-        buttons.AddChild(clear);
-        buttons.AddChild(retract);
+        frame.SetFooter([(retract, ChoiceRole.Danger), (clear, ChoiceRole.Ghost), (propose, ChoiceRole.Primary)]);
     }
 
-    private static VBoxContainer Scrolling(string heading, VBoxContainer content)
+    private VBoxContainer Scrolling(string heading, VBoxContainer content)
     {
         var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(100f, 0f) };
-        box.AddChild(new Label { Text = heading });
-        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(0f, 70f), SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        box.AddChild(new Label { Text = heading.Tr(), ThemeTypeVariation = UiVariants.LabelBodyStrong });
+        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(0f, theme.Px(96)), SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        content.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
         scroll.AddChild(content);
         box.AddChild(scroll);
         return box;
@@ -124,11 +175,23 @@ public partial class TradeScreen : PanelContainer
 
     public string HintText => hint.Text;
 
+    /// <summary>C073: the AI's likely answer to the staged trade as the enum the pill is drawn from.</summary>
+    public TradeAcceptance Acceptance { get; private set; }
+
+    /// <summary>The pill that shows <see cref="Acceptance"/>; hidden when there is no hint.</summary>
+    public Control HintPill => hintPill;
+
+    public string HintBadgeText => hintPillText.Text;
+
+    /// <summary>The frame of the screen (title, close button, footer actions).</summary>
+    public ScreenFrame Frame => frame;
+
     public string PendingText => pending.Text;
 
-    public string MessageText => message.Text;
+    public string MessageText => messageText;
 
-    public string TitleText => title.Text;
+    /// <summary>The name of the civ being traded with (the pressed row of the list).</summary>
+    public string TitleText => Partners.FirstOrDefault(it => it.CivId == SelectedCivId)?.Name ?? "";
 
     public Button ProposeButton => propose;
 
@@ -144,7 +207,7 @@ public partial class TradeScreen : PanelContainer
     /// <summary>C039: the player takes back its offer to this civ (the engine tells only the recipient, so the owner learns of it here).</summary>
     public event Action<string>? Retracting;
 
-    public Button? PartnerButton(string civId) => partnerButtons.GetValueOrDefault(civId);
+    public ListRow? PartnerButton(string civId) => partnerButtons.GetValueOrDefault(civId);
 
     /// <summary>A button of the screen by node name: <c>Give_...</c>/<c>Ask_...</c> offers (see <see cref="TradeChoice.Id"/>), <c>Plus_</c>/<c>Minus_</c> of those, <c>Accept_&lt;civ&gt;</c>, <c>Decline_&lt;civ&gt;</c>, <c>Counter_&lt;civ&gt;</c>, <c>DemandAccept_&lt;civ&gt;</c>, <c>DemandRefuse_&lt;civ&gt;</c>.</summary>
     public Button? Control(string id) => controls.GetValueOrDefault(id);
@@ -200,9 +263,10 @@ public partial class TradeScreen : PanelContainer
     {
         Clear(partnerList);
         partnerButtons.Clear();
+        var group = new ButtonGroup { AllowUnpress = false };
         foreach (var row in Partners)
         {
-            var button = new Button { Name = "Partner_" + row.CivId, Text = row.Label, Alignment = HorizontalAlignment.Left, ToggleMode = true };
+            var button = new ListRow(theme, row.Name, row.Subtitle, icon: row.Icon, group: group) { Name = "Partner_" + row.CivId, TooltipText = row.Label.TrText() };
             string id = row.CivId;
             button.Pressed += () => Fire(SelectAsync(id));
             partnerButtons[row.CivId] = button;
@@ -222,7 +286,6 @@ public partial class TradeScreen : PanelContainer
         controls.Clear();
         foreach (var (id, button) in partnerButtons) button.SetPressedNoSignal(id == SelectedCivId);
         var row = Partners.FirstOrDefault(it => it.CivId == SelectedCivId);
-        title.Text = row?.Name ?? "";
         RebuildIncoming();
         Clear(giveColumn);
         Clear(askColumn);
@@ -241,7 +304,7 @@ public partial class TradeScreen : PanelContainer
         propose.TooltipText = waiting ? "Retract your offer first".Tr() : "";
         clear.Disabled = builder == null || builder.IsEmpty;
         retract.Visible = waiting;
-        hint.Text = "";
+        ShowAcceptance(TradeAcceptance.None);
         SetMessage("");
         Fire(RefreshHintAsync());
     }
@@ -252,22 +315,12 @@ public partial class TradeScreen : PanelContainer
     {
         foreach (var group in builder.Groups(side))
         {
-            var heading = new Label { Text = "- " + group.Title + " -" };
-            column.AddChild(heading);
+            column.AddChild(new SectionHeader(group.Title));
             foreach (var choice in group.Choices)
             {
                 var line = new HBoxContainer();
-                var offer = new Button
-                {
-                    Name = choice.Id,
-                    Text = choice.Label,
-                    Alignment = HorizontalAlignment.Left,
-                    ToggleMode = true,
-                    ClipText = true, // a long offer must not widen the column past the screen
-                    TooltipText = choice.Label,
-                    Disabled = !choice.Entry.Tradable,
-                    SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                };
+                line.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+                var offer = new ListRow(theme, choice.Text, icon: choice.Icon, disabledReason: choice.Entry.Tradable ? null : "Not possible") { Name = choice.Id, TooltipText = choice.Label, SizeFlagsHorizontal = SizeFlags.ExpandFill };
                 offer.SetPressedNoSignal(choice.Staged);
                 var chosen = choice;
                 offer.Pressed += () =>
@@ -279,18 +332,18 @@ public partial class TradeScreen : PanelContainer
                 line.AddChild(offer);
                 if (choice.Staged && choice.Quantity)
                 {
-                    AddStep(line, "Minus_" + choice.Id, "-", chosen, -1);
-                    AddStep(line, "Plus_" + choice.Id, "+", chosen, 1);
+                    AddStep(line, "Minus_" + choice.Id, "Reduce", "Less", chosen, -1);
+                    AddStep(line, "Plus_" + choice.Id, "Increase", "More", chosen, 1);
                 }
                 column.AddChild(line);
             }
         }
-        if (builder.Groups(side).Count == 0) column.AddChild(new Label { Text = "Nothing to offer".Tr() });
+        if (builder.Groups(side).Count == 0) column.AddChild(new EmptyState(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "Diplomacy"), "Nothing to offer") { Name = "Empty" });
     }
 
-    private void AddStep(HBoxContainer line, string name, string text, TradeChoice choice, int steps)
+    private void AddStep(HBoxContainer line, string name, string icon, string label, TradeChoice choice, int steps)
     {
-        var button = new Button { Name = name, Text = text };
+        var button = new IconButton(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, icon), label) { Name = name, SizeFlagsVertical = SizeFlags.ShrinkCenter };
         button.Pressed += () =>
         {
             Builder?.Adjust(choice.Side, choice.Entry.Type, choice.Entry.Name, steps);
@@ -307,35 +360,54 @@ public partial class TradeScreen : PanelContainer
         foreach (var trade in IncomingTrades)
         {
             string id = trade.FromId;
-            var box = Boxed("Incoming_" + id, $"{trade.Title}: they give {Join(trade.Gives)}; they ask {Join(trade.Asks)}", out var buttons);
-            AddControl(buttons, "Accept_" + id, "Sounds good!".Tr(), () => Fire(SendAsync(trade.Accept)));
-            AddControl(buttons, "Decline_" + id, "Not this time.".Tr(), () => Fire(SendAsync(trade.Decline)));
-            AddControl(buttons, "Counter_" + id, "Counter...".Tr(), () => Fire(CounterAsync(id)));
-            incoming.AddChild(box);
+            var texts = Card("Incoming_" + id, trade.Title, out var buttons);
+            var flow = new HFlowContainer { Name = "Offers" };
+            flow.AddThemeConstantOverride("h_separation", theme.Px(UiTokens.S3));
+            AddItems(flow, "They give", trade.GiveItems);
+            AddItems(flow, "They ask", trade.AskItems);
+            texts.AddChild(flow);
+            AddControl(buttons, "Accept_" + id, "Sounds good!", ChoiceRole.Primary, () => Fire(SendAsync(trade.Accept)));
+            AddControl(buttons, "Decline_" + id, "Not this time.", ChoiceRole.Secondary, () => Fire(SendAsync(trade.Decline)));
+            AddControl(buttons, "Counter_" + id, "Counter...", ChoiceRole.Ghost, () => Fire(CounterAsync(id)));
         }
         foreach (var demand in IncomingDemands)
         {
             string id = demand.FromId;
-            var box = Boxed("Demand_" + id, demand.Title, out var buttons);
-            AddControl(buttons, "DemandAccept_" + id, "Very well.".Tr(), () => Fire(SendAsync(demand.Accept)));
-            AddControl(buttons, "DemandRefuse_" + id, "Never!".Tr(), () => Fire(SendAsync(demand.Refuse)));
-            incoming.AddChild(box);
+            Card("Demand_" + id, demand.Title, out var buttons);
+            AddControl(buttons, "DemandAccept_" + id, "Very well.", ChoiceRole.Secondary, () => Fire(SendAsync(demand.Accept)));
+            AddControl(buttons, "DemandRefuse_" + id, "Never!", ChoiceRole.Danger, () => Fire(SendAsync(demand.Refuse)));
         }
     }
 
-    // A wrapped text with its answer buttons beside it: a long offer wraps instead of pushing the buttons off the screen.
-    private static HBoxContainer Boxed(string name, string text, out HBoxContainer buttons)
+    // A card with its wrapped text and its answer buttons beside it: a long offer wraps instead of pushing the buttons off the screen.
+    private VBoxContainer Card(string name, string text, out HBoxContainer buttons)
     {
-        var box = new HBoxContainer { Name = name };
-        box.AddChild(new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        buttons = new HBoxContainer();
+        var card = new PanelContainer { Name = name, ThemeTypeVariation = UiVariants.PanelCard };
+        var box = new HBoxContainer();
+        box.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
+        card.AddChild(box);
+        var texts = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        texts.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        texts.AddChild(new Label { Text = text.TrText(), ThemeTypeVariation = UiVariants.LabelBodyStrong, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f) });
+        box.AddChild(texts);
+        buttons = new HBoxContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        buttons.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
         box.AddChild(buttons);
-        return box;
+        incoming.AddChild(card);
+        return texts;
     }
 
-    private void AddControl(HBoxContainer box, string name, string text, Action pressed)
+    // "They give" followed by the offers with their icons, wrapping onto further lines.
+    private void AddItems(HFlowContainer flow, string heading, IReadOnlyList<TradeItem> items)
     {
-        var button = new Button { Name = name, Text = text };
+        flow.AddChild(new Label { Text = heading.Tr() + ":", ThemeTypeVariation = UiVariants.LabelSecondary });
+        if (items.Count == 0) flow.AddChild(new Label { Text = "nothing".Tr(), ThemeTypeVariation = UiVariants.LabelSecondary });
+        foreach (var item in items) flow.AddChild(new IconLabel(theme, item.Icon, item.Text.TrText()));
+    }
+
+    private void AddControl(HBoxContainer box, string name, string text, ChoiceRole role, Action pressed)
+    {
+        var button = new Button { Name = name, Text = text.Tr(), ThemeTypeVariation = Modal.VariationOf(role) };
         button.Pressed += pressed;
         controls[name] = button;
         box.AddChild(button);
@@ -349,7 +421,19 @@ public partial class TradeScreen : PanelContainer
         if (builder == null || row == null || builder.IsEmpty) return;
         var answer = await queries.TradeHint(row.Name, builder.HintRequests(TradeSide.Give), builder.HintRequests(TradeSide.Ask));
         if (ticket != hintRequest || builder != Builder) return;
-        hint.Text = TradeScreenModel.HintText(answer);
+        ShowAcceptance(TradeScreenModel.Acceptance(answer));
+    }
+
+    // The hint is drawn from the enum: a pill with a short word (gold for good news, red for a refusal) and the full sentence beside it.
+    private void ShowAcceptance(TradeAcceptance acceptance)
+    {
+        Acceptance = acceptance;
+        hint.Text = TradeScreenModel.AcceptanceText(acceptance).TrText();
+        hint.Visible = acceptance != TradeAcceptance.None;
+        hintPillText.Text = TradeScreenModel.AcceptanceBadge(acceptance).TrText();
+        hintPill.Visible = acceptance != TradeAcceptance.None;
+        hintPill.ThemeTypeVariation = acceptance == TradeAcceptance.Refused ? UiVariants.PanelBadge : UiVariants.PanelBadgeAccent;
+        hintPillText.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(acceptance == TradeAcceptance.Refused ? UiTokens.TextPrimary : UiTokens.OnAccent));
     }
 
     private async Task ProposeAsync()
@@ -408,5 +492,10 @@ public partial class TradeScreen : PanelContainer
         }
     }
 
-    private void SetMessage(string text) => message.Text = text;
+    private void SetMessage(string text)
+    {
+        messageText = text;
+        message.Text = text;
+        message.Visible = text.Length > 0;
+    }
 }

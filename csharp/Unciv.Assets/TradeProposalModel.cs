@@ -11,6 +11,12 @@ public sealed record TradeProposal(IncomingTrade Trade, string Title, string Bod
 {
     public string FromId => Trade.FromId;
 
+    /// <summary>C073: what they give, with icons.</summary>
+    public IReadOnlyList<TradeItem> GiveItems => Trade.GiveItems;
+
+    /// <summary>C073: what they ask, with icons.</summary>
+    public IReadOnlyList<TradeItem> AskItems => Trade.AskItems;
+
     /// <summary>Identifies this proposal (who and what) for "decide later" bookkeeping; a changed proposal from the same civ is a new one.</summary>
     public string Key => Trade.FromId + ":" + Body;
 }

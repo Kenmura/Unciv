@@ -12,7 +12,7 @@ public partial class SectionHeader : HBoxContainer
     {
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         Title = title;
-        label.Text = title.TrText().ToUpperInvariant();
+        label.Text = title.TrText().TrimStart('¤', '~').ToUpperInvariant(); // C073: a stat name translates with its icon marker ("¤Gold"), which the overline cannot draw
         AddChild(label);
         AddChild(new HSeparator { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter });
     }

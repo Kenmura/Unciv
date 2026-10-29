@@ -13,7 +13,7 @@ namespace Unciv.GodotClient.Play;
 /// </summary>
 public partial class TradeProposalView : Modal
 {
-    private readonly Label body = new() { Name = "ProposalBody", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private readonly VBoxContainer body = new() { Name = "ProposalBody" };
     private readonly Dictionary<string, Button> byId = [];
     private readonly List<string> ids = [];
 
@@ -28,7 +28,10 @@ public partial class TradeProposalView : Modal
 
     public string TitleText => TitleLabel.Text;
 
-    public string BodyText => body.Text;
+    public string BodyText => Current?.Body ?? "";
+
+    /// <summary>C073: the offer lines as drawn, in order: what they give, then what they ask (each a <see cref="IconLabel"/>).</summary>
+    public IReadOnlyList<IconLabel> ItemLines => body.GetChildren().OfType<VBoxContainer>().SelectMany(it => it.GetChildren().OfType<IconLabel>()).ToList();
 
     /// <summary>The ids of the answers in the order the popup lists them ("DecideLater" last), not the order they are laid out in.</summary>
     public IReadOnlyList<string> ButtonIds => ids;
@@ -44,7 +47,13 @@ public partial class TradeProposalView : Modal
         Current = popup;
         SetHeader(popup.Title);
         body.CustomMinimumSize = new Vector2(Fit(440), 0f);
-        body.Text = popup.Body.TrText();
+        foreach (var child in body.GetChildren())
+        {
+            body.RemoveChild(child); // at once: a queued free would leave the old lines in the layout until the frame ends
+            child.QueueFree();
+        }
+        AddSection("They give", popup.GiveItems);
+        AddSection("They ask", popup.AskItems);
         byId.Clear();
         ids.Clear();
         var actions = new List<(Button, ChoiceRole)>();
@@ -64,6 +73,16 @@ public partial class TradeProposalView : Modal
         ids.Add("DecideLater");
         SetActions(actions);
         Visible = true;
+    }
+
+    private void AddSection(string heading, IReadOnlyList<TradeItem> items)
+    {
+        var section = new VBoxContainer { Name = "Section_" + heading.Replace(' ', '_') };
+        section.AddThemeConstantOverride("separation", Ui.Px(UiTokens.S1));
+        section.AddChild(new SectionHeader(heading));
+        if (items.Count == 0) section.AddChild(new Label { Text = "Nothing".Tr(), ThemeTypeVariation = UiVariants.LabelSecondary });
+        foreach (var item in items) section.AddChild(new IconLabel(Ui, item.Icon, item.Text.TrText()));
+        body.AddChild(section);
     }
 
     public void Close()

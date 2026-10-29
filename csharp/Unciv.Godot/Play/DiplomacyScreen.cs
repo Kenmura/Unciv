@@ -1,9 +1,9 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Assets;
 using Unciv.Commands;
 using Unciv.GodotClient.Ui;
 using Unciv.Queries.Empire;
-using Unciv.Models.Translations;
 using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Play;
@@ -18,16 +18,27 @@ public partial class DiplomacyScreen : PanelContainer
 {
     private readonly IGameSession session;
     private readonly GameQueries queries;
-    private readonly Label message = new() { Name = "Message" };
-    private readonly VBoxContainer civList = new() { Name = "CivList" };
-    private readonly Label title = new() { Name = "Title" };
-    private readonly Label info = new() { Name = "Info", AutowrapMode = TextServer.AutowrapMode.WordSmart };
-    private readonly Label modifiers = new() { Name = "Modifiers", AutowrapMode = TextServer.AutowrapMode.WordSmart };
-    private readonly VBoxContainer actions = new() { Name = "Actions" };
-    private readonly Label quests = new() { Name = "Quests", AutowrapMode = TextServer.AutowrapMode.WordSmart };
-    private readonly Dictionary<string, Button> civButtons = [];
+    private readonly UiTheme theme;
+    private readonly Dictionary<string, ListRow> civButtons = [];
     private readonly Dictionary<string, Button> actionButtons = [];
+    private ScreenFrame frame = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label message = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private VBoxContainer civList = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label title = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label status = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private PanelContainer statusPill = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private TextureRect flag = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label info = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label modifiers = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Label quests = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private VBoxContainer detail = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private Container actions = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private SectionHeader modifierHeader = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private SectionHeader questHeader = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private SectionHeader actionHeader = null!; // JUSTIFY: C073 assigned by BuildFrame in the constructor
+    private EmptyState? empty;
     private IReadOnlyList<DiplomacyButton> buttons = [];
+    private string messageText = "";
     private string? armed;
     private int generation;
 
@@ -35,41 +46,116 @@ public partial class DiplomacyScreen : PanelContainer
     {
         session = gameSession;
         queries = new GameQueries(gameSession);
+        theme = uiTheme;
         Name = "DiplomacyPanel";
         Visible = false;
         MouseFilter = MouseFilterEnum.Stop;
         Theme = uiTheme.Theme;
+        BuildFrame();
+    }
+
+    public override void _EnterTree() => theme.LayoutChanged += OnLayoutChanged;
+
+    public override void _ExitTree() => theme.LayoutChanged -= OnLayoutChanged;
+
+    /// <summary>Sizes are fixed when a view is built, so a change of scale or breakpoint builds the frame again and asks the engine again while the screen is open.</summary>
+    private void OnLayoutChanged()
+    {
+        BuildFrame();
+        if (Visible) Fire(OpenAsync());
+    }
+
+    private void BuildFrame()
+    {
+        if (frame != null)
+        {
+            RemoveChild(frame); // at once: a queued free would leave the old frame in the layout until the frame ends
+            frame.QueueFree();
+        }
+        civButtons.Clear(); // the controls of the old frame are gone; the next open fills them again
+        actionButtons.Clear();
+        empty = null;
+        frame = new ScreenFrame(theme, "Diplomacy", closeLabel: "Close diplomacy");
+        frame.CloseRequested += Close;
+        AddChild(frame);
+        int gap = theme.Px(UiTokens.S2);
 
         var column = new VBoxContainer();
-        AddChild(column);
-        var head = new HBoxContainer();
-        column.AddChild(head);
-        var heading = new Label { Text = "Diplomacy".Tr(), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
-        head.AddChild(heading);
-        message.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        message.ClipText = true;
-        message.HorizontalAlignment = HorizontalAlignment.Right;
-        head.AddChild(message);
-        var close = new Button { Name = "DiplomacyClose", Text = "Close diplomacy".Tr() };
-        close.Pressed += Close;
-        head.AddChild(close);
-
+        column.AddThemeConstantOverride("separation", gap);
+        message = new Label { Name = "Message", ThemeTypeVariation = UiVariants.LabelSecondary, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, Text = messageText, Visible = messageText.Length > 0 };
+        column.AddChild(message);
         var middle = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        middle.AddThemeConstantOverride("separation", theme.Px(UiTokens.S4));
         column.AddChild(middle);
-        civList.CustomMinimumSize = new Vector2(uiTheme.Px(220), 0f);
-        civList.AddThemeConstantOverride("separation", 2);
-        middle.AddChild(civList);
-        var detail = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        middle.AddChild(detail);
-        title.AddThemeFontSizeOverride("font_size", uiTheme.Px(18));
-        detail.AddChild(title);
+
+        var listScroll = new ScrollContainer { CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 190 : 240), 0f), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        civList = new VBoxContainer { Name = "CivList", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        civList.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        listScroll.AddChild(civList);
+        middle.AddChild(listScroll);
+
+        var detailScroll = new ScrollContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        detail = new VBoxContainer { Name = "Detail", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        detail.AddThemeConstantOverride("separation", gap);
+        detailScroll.AddChild(detail);
+        middle.AddChild(detailScroll);
+
+        var head = new HBoxContainer { Name = "DetailHead" };
+        head.AddThemeConstantOverride("separation", gap);
+        flag = new TextureRect
+        {
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            TextureFilter = TextureFilterEnum.LinearWithMipmaps,
+            CustomMinimumSize = new Vector2(theme.Px(UiTokens.S8), theme.Px(UiTokens.S8)),
+            Visible = false,
+        };
+        head.AddChild(flag);
+        title = new Label { Name = "Title", ThemeTypeVariation = UiVariants.LabelHeading, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center };
+        head.AddChild(title);
+        status = new Label { Name = "StatusText", HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = UiVariants.LabelSmall };
+        statusPill = new PanelContainer { Name = "StatusPill", Visible = false, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        statusPill.AddChild(status);
+        head.AddChild(statusPill);
+        detail.AddChild(head);
+        info = Wrapped("Info", UiVariants.LabelBodyStrong);
         detail.AddChild(info);
+        modifierHeader = new SectionHeader("Modifiers") { Visible = false };
+        detail.AddChild(modifierHeader);
+        modifiers = Wrapped("Modifiers", UiVariants.LabelSecondary);
         detail.AddChild(modifiers);
-        actions.AddThemeConstantOverride("separation", 2);
-        detail.AddChild(actions);
+        questHeader = new SectionHeader("Quests") { Visible = false };
+        detail.AddChild(questHeader);
+        quests = Wrapped("Quests", UiVariants.LabelSecondary);
         detail.AddChild(quests);
+        actionHeader = new SectionHeader("Actions") { Visible = false };
+        detail.AddChild(actionHeader);
+        actions = new HFlowContainer { Name = "Actions", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        actions.AddThemeConstantOverride("h_separation", gap);
+        actions.AddThemeConstantOverride("v_separation", gap);
+        detail.AddChild(actions);
+        frame.SetContent(column);
     }
+
+    private static Label Wrapped(string name, string variation) =>
+        new() { Name = name, ThemeTypeVariation = variation, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+
+    /// <summary>The frame of the screen (title, close button).</summary>
+    public ScreenFrame Frame => frame;
+
+    /// <summary>The status pill beside the title (red at war), or hidden while no civ is shown.</summary>
+    public Control StatusPill => statusPill;
+
+    public string StatusText => status.Text;
+
+    /// <summary>The empty state shown when there is no civ to show, or null.</summary>
+    public EmptyState? Empty => empty;
+
+    /// <summary>The detail column (the harness checks that it fits the screen).</summary>
+    public Control DetailColumn => detail;
+
+    /// <summary>The cells of the action area, in order: each a column of the button and, when it is disabled, the reason under it.</summary>
+    public IReadOnlyList<Control> ActionCells => actions.GetChildren().OfType<Control>().ToList();
 
     /// <summary>The civs on the list (the met ones).</summary>
     public IReadOnlyList<DiplomacyRow> Rows { get; private set; } = [];
@@ -93,7 +179,7 @@ public partial class DiplomacyScreen : PanelContainer
 
     public string QuestText => quests.Text;
 
-    public string MessageText => message.Text;
+    public string MessageText => messageText;
 
     /// <summary>The button that is armed for confirmation (its next press sends), or null.</summary>
     public string? ArmedButton => armed;
@@ -103,7 +189,7 @@ public partial class DiplomacyScreen : PanelContainer
 
     public event Action? Closed;
 
-    public Button? CivButton(string civId) => civButtons.GetValueOrDefault(civId);
+    public ListRow? CivButton(string civId) => civButtons.GetValueOrDefault(civId);
 
     public Button? ActionButton(string id) => actionButtons.GetValueOrDefault(id);
 
@@ -169,9 +255,10 @@ public partial class DiplomacyScreen : PanelContainer
         Rows = DiplomacyScreenModel.Rows(session.Snapshot);
         Clear(civList);
         civButtons.Clear();
+        var group = new ButtonGroup { AllowUnpress = false };
         foreach (var row in Rows)
         {
-            var button = new Button { Name = "Civ_" + row.CivId, Text = row.Label.TrText(), Alignment = HorizontalAlignment.Left, ToggleMode = true };
+            var button = new ListRow(theme, row.Name, row.Subtitle, icon: row.Icon, group: group) { Name = "Civ_" + row.CivId, TooltipText = row.Label.TrText() };
             string id = row.CivId;
             button.Pressed += () => Fire(SelectAsync(id));
             civButtons[row.CivId] = button;
@@ -182,33 +269,81 @@ public partial class DiplomacyScreen : PanelContainer
     private void ShowNothing(string text)
     {
         title.Text = "";
-        info.Text = text.TrText();
+        flag.Visible = false;
+        statusPill.Visible = false;
+        info.Text = "";
         modifiers.Text = "";
         quests.Text = "";
+        modifierHeader.Visible = false;
+        questHeader.Visible = false;
+        actionHeader.Visible = false;
         buttons = [];
         Clear(actions);
         actionButtons.Clear();
+        DropEmpty();
+        if (text.Length > 0)
+        {
+            empty = new EmptyState(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "Diplomacy"), text) { Name = "Empty" };
+            detail.AddChild(empty);
+        }
         foreach (var (id, button) in civButtons) button.SetPressedNoSignal(id == SelectedCivId);
         SetMessage("");
+    }
+
+    private void DropEmpty()
+    {
+        if (empty == null) return;
+        detail.RemoveChild(empty);
+        empty.QueueFree();
+        empty = null;
     }
 
     private void Rebuild(DiplomacyRow row, DiplomacyPanelResult panel, DiplomacyActionsResult legal, CityStateQuestsResult? questList)
     {
         foreach (var (id, button) in civButtons) button.SetPressedNoSignal(id == row.CivId);
+        DropEmpty();
         title.Text = DiplomacyScreenModel.Title(panel).TrText();
+        flag.Texture = theme.Icon(row.Icon);
+        flag.Visible = true;
+        status.Text = panel.Status.TrText();
+        statusPill.ThemeTypeVariation = panel.Status == DiplomacyScreenModel.WarStatus ? UiVariants.PanelBadge : UiVariants.PanelBadgeAccent;
+        status.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(panel.Status == DiplomacyScreenModel.WarStatus ? UiTokens.TextPrimary : UiTokens.OnAccent));
+        statusPill.Visible = true;
         info.Text = string.Join("\n", DiplomacyScreenModel.InfoLines(panel).Select(it => it.TrText()));
-        modifiers.Text = string.Join("\n", DiplomacyScreenModel.ModifierLines(panel).Select(it => it.TrText()));
-        quests.Text = questList == null ? "" : "Quests".Tr() + "\n" + string.Join("\n", DiplomacyScreenModel.QuestLines(questList).Select(it => it.TrText()));
+        var modifierLines = DiplomacyScreenModel.ModifierLines(panel);
+        modifiers.Text = string.Join("\n", modifierLines.Select(it => it.TrText()));
+        modifierHeader.Visible = modifierLines.Count > 0;
+        modifiers.Visible = modifierLines.Count > 0;
+        quests.Text = questList == null ? "" : string.Join("\n", DiplomacyScreenModel.QuestLines(questList).Select(it => it.TrText()));
+        questHeader.Visible = questList != null;
+        quests.Visible = questList != null;
         Clear(actions);
         actionButtons.Clear();
         buttons = DiplomacyScreenModel.Buttons(row, panel, legal);
+        actionHeader.Visible = buttons.Count > 0;
         foreach (var entry in buttons)
         {
-            var button = new Button { Name = entry.Id, Text = entry.Label.TrText(), Disabled = !entry.Enabled, TooltipText = entry.Enabled ? "" : entry.Hint.TrText(), Alignment = HorizontalAlignment.Left };
+            var button = new Button
+            {
+                Name = entry.Id,
+                Text = entry.Label.TrText(),
+                Disabled = !entry.Enabled,
+                TooltipText = entry.Enabled ? "" : entry.Hint.TrText(),
+                ThemeTypeVariation = entry.Danger ? UiVariants.ButtonDanger : UiVariants.ButtonSecondary,
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            };
             var chosen = entry;
             button.Pressed += () => OnPressed(chosen);
             actionButtons[entry.Id] = button;
-            actions.AddChild(button);
+            var cell = new VBoxContainer { Name = "Cell_" + entry.Id, CustomMinimumSize = new Vector2(theme.Px(150), 0f) };
+            cell.AddThemeConstantOverride("separation", 0);
+            cell.AddChild(button);
+            if (!entry.Enabled)
+            {
+                // the reason a button is off is shown, not only hovered (design 4: disabled-with-reason)
+                cell.AddChild(new Label { Name = "Reason_" + entry.Id, Text = entry.Hint.TrText(), ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(100f, 0f) });
+            }
+            actions.AddChild(cell);
         }
         SetMessage("");
     }
@@ -264,5 +399,10 @@ public partial class DiplomacyScreen : PanelContainer
         }
     }
 
-    private void SetMessage(string text) => message.Text = text.TrText();
+    private void SetMessage(string text)
+    {
+        messageText = text.TrText();
+        message.Text = messageText;
+        message.Visible = messageText.Length > 0;
+    }
 }

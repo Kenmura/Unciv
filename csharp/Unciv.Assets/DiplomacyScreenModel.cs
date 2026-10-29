@@ -10,6 +10,14 @@ namespace Unciv.Assets;
 public sealed record DiplomacyRow(string CivId, string Name, bool IsCityState, string Status)
 {
     public string Label => $"{Name}{(IsCityState ? " (city-state)" : "")} - {Status}";
+
+    /// <summary>C073: the civ's flag.</summary>
+    public AssetKey Icon => AssetKey.Of(RulesetAssetKeys.NationIcon, Name);
+
+    /// <summary>C073: the second line of the list row: the status, preceded by "City-state" for a city-state.</summary>
+    public string Subtitle => IsCityState ? "City-state - " + Status : Status;
+
+    public bool AtWar => Status == DiplomacyScreenModel.WarStatus;
 }
 
 public enum DiplomacyActionKind
@@ -33,6 +41,9 @@ public enum DiplomacyActionKind
 public sealed record DiplomacyButton(string Id, DiplomacyActionKind Kind, string Label, bool Enabled, bool NeedsConfirm, GameCommand Command, string Hint)
 {
     public string ConfirmLabel => "Confirm: " + Label;
+
+    /// <summary>C073: a step that needs a second press is drawn as a danger button (declare war, denounce, revoke protection).</summary>
+    public bool Danger => NeedsConfirm;
 }
 
 /// <summary>

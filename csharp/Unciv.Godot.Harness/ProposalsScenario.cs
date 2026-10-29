@@ -73,6 +73,8 @@ public sealed class ProposalsScenario : Scenario
                 screen.Proposals.Visible && screen.Proposals.TitleText == "Rome proposes peace" && screen.Proposals.BodyText == "They give: Peace Treaty (10 turns)\nThey ask: Peace Treaty (10 turns)"
                 && screen.Proposals.ButtonIds.SequenceEqual(["Accept", "Decline", "Counter", "DecideLater"]) && human.IsAtWarWith(rome) && human.TradeRequests.Count == 2 && refusals.Count == 0),
             new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(screen.Proposals)),
+            new AssertQuery("the offers are listed as icon lines under They give and They ask", () =>
+                screen.Proposals.ItemLines.Select(it => it.Text).SequenceEqual(["Peace Treaty (10 turns)", "Peace Treaty (10 turns)"]) && screen.Proposals.ItemLines.All(it => it.IconKey.Category == RulesetAssetKeys.UiIcon)),
             new Capture("peace", "Rome's peace proposal as a popup: accept, decline, ask for something else, or decide later"),
             new Click(() => Centre(screen.Proposals.ButtonById("Accept"))),
             new WaitFrames(2),
@@ -80,6 +82,8 @@ public sealed class ProposalsScenario : Scenario
                 session.Log.Count == logged + 1 && session.Log[^1].Type == "respond-trade-request" && !human.IsAtWarWith(rome) && human.TradeRequests.Count == 1),
             new AssertQuery("Greece's trade proposal took its place", () =>
                 screen.Proposals.Visible && screen.Proposals.TitleText == "Greece proposes a trade" && screen.Proposals.BodyText == "They give: 50 gold\nThey ask: 20 gold"),
+            new AssertQuery("the trade lists gold with the gold stat icon on both sides", () =>
+                screen.Proposals.ItemLines.Select(it => it.Text).SequenceEqual(["50 gold", "20 gold"]) && screen.Proposals.ItemLines.All(it => it.IconKey == AssetKey.Of(RulesetAssetKeys.StatIcon, "Gold"))),
             new Capture("trade", "Greece's trade proposal: what they give and what they ask"),
             new Act("remember the command log", () => logged = session.Log.Count),
             new PressKey(Key.Escape),

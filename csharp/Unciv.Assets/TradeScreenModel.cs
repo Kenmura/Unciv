@@ -23,6 +23,24 @@ public sealed record TradeChoice(TradeSide Side, TradeOfferEntry Entry, bool Sta
     public bool Quantity => TradeScreenModel.IsQuantity(Entry.Type);
 
     public string Label => TradeScreenModel.ChoiceLabel(Entry, Staged, StagedAmount);
+
+    /// <summary>C073: the icon of the offer (a stat, resource, technology or interface icon).</summary>
+    public AssetKey Icon => TradeScreenModel.IconOf(Entry.Type, Entry.Name);
+
+    /// <summary>C073: the label without the "[x]" mark (the staged state is the row's own check), for a row that shows an icon.</summary>
+    public string Text => Entry.Tradable ? TradeScreenModel.OfferText(Entry, Staged ? StagedAmount : Entry.Amount) : Label;
+}
+
+/// <summary>C073: one offer of a proposal ready to draw: its icon and its words.</summary>
+public sealed record TradeItem(AssetKey Icon, string Text);
+
+/// <summary>C073: what the AI is likely to answer to the staged trade, from the engine's hint. <see cref="None"/> when the game shows no hints.</summary>
+public enum TradeAcceptance
+{
+    None,
+    Likely,
+    NeedsMore,
+    Refused,
 }
 
 /// <summary>A titled run of choices (all gold offers, all luxuries, ...).</summary>
@@ -31,6 +49,12 @@ public sealed record TradeGroup(string Title, IReadOnlyList<TradeChoice> Choices
 /// <summary>A trade another civ sent the viewer (from the snapshot): what it gives and what it asks.</summary>
 public sealed record IncomingTrade(string FromId, string FromName, IReadOnlyList<string> Gives, IReadOnlyList<string> Asks, bool IsPeace = false)
 {
+    /// <summary>C073: the offers with icons, in the order of <see cref="Gives"/>; empty when the creator did not give types.</summary>
+    public IReadOnlyList<TradeItem> GiveItems { get; init; } = [];
+
+    /// <summary>C073: the offers with icons, in the order of <see cref="Asks"/>.</summary>
+    public IReadOnlyList<TradeItem> AskItems { get; init; } = [];
+
     public string Title => $"{FromName} proposes a trade";
 
     public RespondToTradeRequest Accept => new() { CivId = FromId, Accept = true };
@@ -261,8 +285,13 @@ public static class TradeScreenModel
     {
         var names = snapshot.Civs.GroupBy(it => it.CivId, StringComparer.Ordinal).ToDictionary(it => it.Key, it => it.First().Name, StringComparer.Ordinal);
         string Text(TradeOfferDto offer) => OfferText(nameOf?.Invoke(offer.Type, offer.Name) ?? NameIfCiv(names, offer), offer.Type, offer.Amount, offer.Duration);
+        TradeItem Item(TradeOfferDto offer) => new(IconOf(offer.Type, offer.Name), Text(offer));
         return snapshot.PendingTrades.Where(it => it.To == snapshot.You)
-            .Select(it => new IncomingTrade(it.From, names.GetValueOrDefault(it.From, it.From), it.Offered.Select(Text).ToList(), it.Requested.Select(Text).ToList(), IsPeaceDeal(it)))
+            .Select(it => new IncomingTrade(it.From, names.GetValueOrDefault(it.From, it.From), it.Offered.Select(Text).ToList(), it.Requested.Select(Text).ToList(), IsPeaceDeal(it))
+            {
+                GiveItems = it.Offered.Select(Item).ToList(),
+                AskItems = it.Requested.Select(Item).ToList(),
+            })
             .ToList();
     }
 
@@ -278,9 +307,14 @@ public static class TradeScreenModel
     {
         var names = snapshot.Civs.GroupBy(it => it.CivId, StringComparer.Ordinal).ToDictionary(it => it.Key, it => it.First().Name, StringComparer.Ordinal);
         string Text(TradeOfferDto offer) => OfferText(nameOf?.Invoke(offer.Type, offer.Name) ?? NameIfCiv(names, offer), offer.Type, offer.Amount, offer.Duration);
+        TradeItem Item(TradeOfferDto offer) => new(IconOf(offer.Type, offer.Name), Text(offer));
         var pending = snapshot.PendingTrades.FirstOrDefault(it => it.From == snapshot.You && it.To == partnerId);
         // the proposal is stored from the receiver's side: Offered is what we give, Requested what we ask
-        return pending == null ? null : new IncomingTrade(partnerId, names.GetValueOrDefault(partnerId, partnerId), pending.Offered.Select(Text).ToList(), pending.Requested.Select(Text).ToList());
+        return pending == null ? null : new IncomingTrade(partnerId, names.GetValueOrDefault(partnerId, partnerId), pending.Offered.Select(Text).ToList(), pending.Requested.Select(Text).ToList())
+        {
+            GiveItems = pending.Offered.Select(Item).ToList(),
+            AskItems = pending.Requested.Select(Item).ToList(),
+        };
     }
 
     /// <summary>The demands made of the viewer that it can still answer, from the pending decisions.</summary>
@@ -308,12 +342,47 @@ public static class TradeScreenModel
         _ => demand,
     };
 
-    /// <summary>What the AI is likely to answer, from <see cref="TradeHintResult.Hint"/>; empty when the engine gave no hint.</summary>
-    public static string HintText(TradeHintResult? hint) => hint?.Hint switch
+    /// <summary>C073: the icon of an offer by its type and name: stat icons for gold, the resource's own icon, a technology's icon, interface icons for the rest.</summary>
+    public static AssetKey IconOf(string type, string name) => type switch
     {
-        "accept" => "They would likely accept.",
-        "counter-needed" => "They want more; adding gold from your treasury could do.",
-        "refuse" => "They would refuse.",
+        "Gold" or "Gold_Per_Turn" => AssetKey.Of(RulesetAssetKeys.StatIcon, "Gold"),
+        "Luxury_Resource" or "Strategic_Resource" or "Stockpiled_Resource" => AssetKey.Of(RulesetAssetKeys.ResourceIcon, name),
+        "Technology" => AssetKey.Of(RulesetAssetKeys.TechIcon, name),
+        "City" => AssetKey.Of(RulesetAssetKeys.UiIcon, "Cities"),
+        "Treaty" or "Agreement" or "Embassy" => AssetKey.Of(RulesetAssetKeys.UiIcon, "Diplomacy"),
+        "Introduction" => AssetKey.Of(RulesetAssetKeys.UiIcon, "Nations"),
+        "WarDeclaration" => AssetKey.Of(RulesetAssetKeys.UiIcon, "Fire"),
+        "PeaceProposal" => AssetKey.Of(RulesetAssetKeys.UiIcon, "Checkmark"),
+        _ => AssetKey.Of(RulesetAssetKeys.UiIcon, "Question"),
+    };
+
+    /// <summary>What the AI is likely to answer, from <see cref="TradeHintResult.Hint"/>; <see cref="TradeAcceptance.None"/> when the engine gave no (or an unknown) hint.</summary>
+    public static TradeAcceptance Acceptance(TradeHintResult? hint) => hint?.Hint switch
+    {
+        "accept" => TradeAcceptance.Likely,
+        "counter-needed" => TradeAcceptance.NeedsMore,
+        "refuse" => TradeAcceptance.Refused,
+        _ => TradeAcceptance.None,
+    };
+
+    /// <summary>The words for an acceptance hint (the one place where the enum becomes prose); empty for none.</summary>
+    public static string AcceptanceText(TradeAcceptance acceptance) => acceptance switch
+    {
+        TradeAcceptance.Likely => "They would likely accept.",
+        TradeAcceptance.NeedsMore => "They want more; adding gold from your treasury could do.",
+        TradeAcceptance.Refused => "They would refuse.",
         _ => "",
     };
+
+    /// <summary>The short word on the hint's badge.</summary>
+    public static string AcceptanceBadge(TradeAcceptance acceptance) => acceptance switch
+    {
+        TradeAcceptance.Likely => "Likely",
+        TradeAcceptance.NeedsMore => "Wants more",
+        TradeAcceptance.Refused => "Refused",
+        _ => "",
+    };
+
+    /// <summary>The prose of the engine's hint; empty when there is none.</summary>
+    public static string HintText(TradeHintResult? hint) => AcceptanceText(Acceptance(hint));
 }
