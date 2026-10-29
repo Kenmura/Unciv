@@ -98,6 +98,9 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     public string? Religion { get; set; }
     public int ReligiousStrengthLost { get; set; }
 
+    /// <summary>BNW (B006): loads of exotic goods this unit has already sold (see <see cref="Unciv.Logic.Trade.Routes.ExoticGoods"/>).</summary>
+    public int ExoticGoodsSold { get; set; }
+
     /// <summary>
     /// FIFO list of this unit's past positions. Should never exceed two items in length. New item added once at end of turn and once at start,
     /// to allow rare between-turn movements like melee withdrawal to be distinguished. Used in movement arrow overlay.
@@ -306,6 +309,7 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
         toReturn.AbilityToTimesUsed = new JavaHashMap<string, int>(AbilityToTimesUsed);
         toReturn.Religion = Religion;
         toReturn.ReligiousStrengthLost = ReligiousStrengthLost;
+        toReturn.ExoticGoodsSold = ExoticGoodsSold;
         toReturn.MovementMemories = CopyMemories(MovementMemories);
         // Kotlin sizes the copy with `(size * 4 + 2) / 3`
         var newStatusMap = new JavaHashMap<string, UnitStatus>((StatusMap.Count * 4 + 2) / 3);

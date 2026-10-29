@@ -169,7 +169,7 @@ public static class TradeRouteRules
     /// owners that meet and are not at war, a domestic route only with the enabling building, a path within range (bnw-spec 4.1.6 step 1).
     /// Embargoes belong to the World Congress (B060).
     /// </summary>
-    public static RouteRefusal? Check(CivilizationObject civ, CityObject origin, CityObject dest, TradeDomain domain, TradeRouteKind kind, out RoutePlan? plan)
+    public static RouteRefusal? Check(CivilizationObject civ, CityObject origin, CityObject dest, TradeDomain domain, TradeRouteKind kind, out RoutePlan? plan, bool requireSlot = true)
     {
         plan = null;
         var game = civ.GameInfo;
@@ -196,12 +196,75 @@ public static class TradeRouteRules
         if (!dest.GetCenterTile().IsExplored(civ)) return new RouteRefusal(CommandErrors.InvalidTarget, $"{dest.Name} is not explored");
         if (Routes(game).Any(it => it.OriginCityId == origin.Id && it.DestCityId == dest.Id))
             return new RouteRefusal(CommandErrors.NotAllowed, "There is already a route between these cities");
-        if (SlotsUsed(civ) >= Slots(civ)) return new RouteRefusal(CommandErrors.NotAllowed, "No free trade route slot");
+        if (requireSlot && SlotsUsed(civ) >= Slots(civ)) return new RouteRefusal(CommandErrors.NotAllowed, "No free trade route slot");
         int range = Range(civ, origin, domain);
         var path = FindPath(origin.GetCenterTile(), dest.GetCenterTile(), domain, range);
         if (path == null) return new RouteRefusal(CommandErrors.InvalidTarget, $"{dest.Name} is out of range or cannot be reached");
         plan = new RoutePlan(origin, dest, domain, kind, path);
         return null;
+    }
+
+    // ---- trade units (B006): build restrictions and rebasing
+
+    /// <summary>Trade units the civ owns right now: each one is a slot spoken for, whether or not it has started its route yet.</summary>
+    public static int TradeUnitsAlive(CivilizationObject civ) =>
+        civ.Units.GetCivUnits().Count(it => it.HasUnique(UniqueType.CanEstablishTradeRoutes));
+
+    /// <summary>
+    /// Slots neither used by a route nor held by a trade unit that is still on the map. A trade unit cannot be built when this is not
+    /// positive (the "NO_EXTRA_SLOTS" text key of @10152ed0; counting the idle units is [X], B006).
+    /// </summary>
+    public static int SlotsFree(CivilizationObject civ) => Slots(civ) - SlotsUsed(civ) - TradeUnitsAlive(civ);
+
+    /// <summary>
+    /// Could a trade unit of <paramref name="domain"/> built in <paramref name="origin"/> be sent anywhere, slots aside: some other city within
+    /// range that <see cref="Check"/> accepts for an international route, or for a domestic one when the city has the enabling building
+    /// (the "NONE_OF_TYPE_LAND/SEA" text keys of @10152ed0, B006). Cities farther away by air than the range are skipped without a path search.
+    /// </summary>
+    public static bool HasTarget(CivilizationObject civ, CityObject origin, TradeDomain domain)
+    {
+        int range = Range(civ, origin, domain);
+        var from = origin.GetCenterTile();
+        foreach (var dest in civ.GameInfo.GetCities())
+        {
+            if (dest == origin || from.AerialDistanceTo(dest.GetCenterTile()) > range) continue;
+            if (dest.Civ != civ)
+            {
+                if (Check(civ, origin, dest, domain, TradeRouteKind.International, out _, requireSlot: false) == null) return true;
+            }
+            else if (Check(civ, origin, dest, domain, TradeRouteKind.Food, out _, requireSlot: false) == null
+                || Check(civ, origin, dest, domain, TradeRouteKind.Production, out _, requireSlot: false) == null) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Why <paramref name="unit"/> (standing in one of its owner's cities) cannot move its home to <paramref name="target"/> (spec 4.1.2,
+    /// <c>ChangeTradeUnitHome</c>): another own city that the unit's domain can serve from here, within the range of its current city.
+    /// A unit that has started a route is not on the map, so only idle units can rebase. The move uses up the unit's movement. [X] (B006).
+    /// </summary>
+    public static RouteRefusal? CheckRebase(MapUnit unit, CityObject target)
+    {
+        if (CheckUnitReady(unit, out var origin) is { } refusal) return refusal;
+        var civ = unit.Civ;
+        if (target.Civ != civ) return new RouteRefusal(CommandErrors.NotYourCity, $"{target.Name} is not yours");
+        if (target == origin) return new RouteRefusal(CommandErrors.InvalidTarget, "The unit is already based in that city");
+        var domain = DomainOf(unit);
+        if (domain == TradeDomain.Sea && !target.IsNaval())
+            return new RouteRefusal(CommandErrors.InvalidTarget, $"{target.Name} is not a port");
+        if (FindPath(origin.NotNull().GetCenterTile(), target.GetCenterTile(), domain, Range(civ, origin, domain)) == null)
+            return new RouteRefusal(CommandErrors.InvalidTarget, $"{target.Name} is out of range or cannot be reached");
+        if (!unit.Movement.CanMoveTo(target.GetCenterTile()))
+            return new RouteRefusal(CommandErrors.InvalidTarget, $"The unit cannot be placed in {target.Name}");
+        return null;
+    }
+
+    /// <summary>Moves the idle trade unit to its new home; <see cref="CheckRebase"/> must have passed.</summary>
+    public static void Rebase(MapUnit unit, CityObject target)
+    {
+        unit.RemoveFromTile();
+        unit.PutInTile(target.GetCenterTile());
+        unit.CurrentMovement = 0f;
     }
 
     // ---- establishing

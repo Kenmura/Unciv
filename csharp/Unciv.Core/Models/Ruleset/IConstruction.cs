@@ -273,6 +273,8 @@ public class RejectionReason(RejectionReasonType type, string? errorMessage = nu
         RejectionReasonType.Unbuildable,
         RejectionReasonType.CannotBeBuilt,
         RejectionReasonType.CanOnlyBeBuiltInSpecificCities,
+        RejectionReasonType.NoTradeRouteSlot,
+        RejectionReasonType.NoTradeRouteTarget,
     }.ToFrozenSet();
 
     private static readonly FrozenSet<RejectionReasonType> NeverVisible =
@@ -344,6 +346,11 @@ public enum RejectionReasonType
 
     NoSettlerForOneCityPlayers,
     NoPlaceToPutUnit,
+
+    /// <summary>BNW (B006): every trade route slot is used or held by a trade unit.</summary>
+    NoTradeRouteSlot,
+    /// <summary>BNW (B006): no city could be the target of this trade unit.</summary>
+    NoTradeRouteTarget,
 }
 
 public static class RejectionReasonTypeExtensions
@@ -400,6 +407,8 @@ public static class RejectionReasonTypeExtensions
 
         [RejectionReasonType.NoSettlerForOneCityPlayers] = (false, "No settlers for city-states or one-city challengers"),
         [RejectionReasonType.NoPlaceToPutUnit] = (true, "No space to place this unit"),
+        [RejectionReasonType.NoTradeRouteSlot] = (true, "No free trade route slot"),
+        [RejectionReasonType.NoTradeRouteTarget] = (true, "No city this unit could trade with"),
     }.ToFrozenDictionary();
 
     /// <summary>Kotlin <c>defaultInstance</c></summary>

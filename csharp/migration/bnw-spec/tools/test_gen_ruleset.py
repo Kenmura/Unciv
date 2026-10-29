@@ -43,6 +43,14 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(sorted(techs["Ballistics"]["prerequisites"]), ["Flight", "Railroad"])
         self.assertIn("Triggers the creation of archaeological sites", techs["Archaeology"]["uniques"])
         self.assertIn("[+100]% influence spread from Tourism", techs["The Internet"]["uniques"])
+        # B006: trade units are buildable and the trade columns of techs and buildings are emitted
+        self.assertEqual(units["Caravan"]["uniques"], ["Can establish trade routes"])
+        self.assertEqual(units["Cargo Ship"]["uniques"], ["Can establish trade routes"])
+        self.assertIn("Carries [1] exotic goods", units["Nau"]["uniques"])
+        self.assertIn("[+1] trade route slots", techs["Animal Husbandry"]["uniques"])
+        self.assertIn("[+10] sea trade route range", techs["Compass"]["uniques"])
+        self.assertIn("[+50]% land trade route range [in this city]", buildings["Caravansary"]["uniques"])
+        self.assertIn("[+1] trade route slots", buildings["Colossus"]["uniques"])
 
     def test_trade_hooks_are_emitted_and_every_tech_column_is_classified(self):
         files = g.generate()[0]

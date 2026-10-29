@@ -91,6 +91,9 @@ public partial class MapUnit
                     case "religiousStrengthLost":
                         unit.ReligiousStrengthLost = JsonValueReader.ReadInt(ref reader, "MapUnit.religiousStrengthLost");
                         break;
+                    case "exoticGoodsSold":
+                        unit.ExoticGoodsSold = JsonValueReader.ReadInt(ref reader, "MapUnit.exoticGoodsSold");
+                        break;
                     case "movementMemories":
                         unit.MovementMemories = isNull ? [] : ReadList(ref reader, options, ReadMovementMemory);
                         break;
@@ -263,6 +266,7 @@ public partial class MapUnit
             }
             if (value.Religion != null) writer.WriteString("religion", value.Religion);
             if (value.ReligiousStrengthLost != 0) writer.WriteNumber("religiousStrengthLost", value.ReligiousStrengthLost);
+            if (value.ExoticGoodsSold != 0) writer.WriteNumber("exoticGoodsSold", value.ExoticGoodsSold);
             if (value.MovementMemories.Count > 0)
             {
                 writer.WriteStartArray("movementMemories");

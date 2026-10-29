@@ -111,7 +111,7 @@ Two routes, in order of preference:
   Deliberate deviations: (1) matched buildings keep Unciv's flat `culture` (it stands in for Great Work slots until B030); (2) the resource keeps the
   name `Gold Ore` (a resource named `Gold` collides with the stat in unique parameters); (3) the Cultural and Diplomatic victory types are removed and
   nations preferring them get `Neutral` until B032/B063 add milestone kinds (Utopia Project and United Nations are dropped, SPEC 3.3);
-  (4) the new Caravan, Cargo Ship, Archaeologist and International Space Station are `Unbuildable` until B021/B040/B062; (5) Machine Gun has no
+  (4) the new Archaeologist and International Space Station are `Unbuildable` until B040/B062 (Caravan and Cargo Ship became buildable in B006); (5) Machine Gun has no
   obsolete tech (BNW's Nuclear Fission contradicts its upgrade prerequisites); (6) civ abilities, tourism/trade/league columns, the 16 BNW beliefs,
   Hand-Axe/Bazooka/XCOM Squad (scenario-only) and the BNW policy tree are not emitted: they need the B003 `UniqueType`s and are listed under
   `pending` in the report/overrides for B010, B050 and the feature tickets; (7) Maria I's personality is a copy of Maria Theresa's; (8) the Antiquity Site resources wait for B040; (9) barbarian unit rows are skipped (same names as the normal units), `upgradesTo` comes from `Unit_ClassUpgrades.tsv`, Settler/Worker/Scout/Warrior keep the Unciv requiredTech Agriculture, and `minorLiberationFriendship` relies on its 105 default being the BNW value. No decompiler
@@ -475,6 +475,25 @@ gated by the ModOptions unique `Enables international trade routes`, never by ru
 - **Still open** (seams in the code): `TODO(B031)` influence science bonus, `TODO(B051)` shared ideology gold, tourism / religion /
   quest / Hanse effects of §4.1.5 (B021 and later), `[stats] for each international trade route [cityFilter]` and
   `[relativeAmount]% Production for each trade route to a city-state` (declared by B003, not yet read).
+
+#### 4.1.6b As built (B006)
+Code: `TradeRouteRules` (`SlotsFree`, `HasTarget`, `CheckRebase`, `Rebase`), `ExoticGoods`, commands `rebase-trade-unit` and `sell-exotic-goods`,
+rejection reasons `NoTradeRouteSlot` and `NoTradeRouteTarget` in `BaseUnit.GetRejectionReasons`. All of it is behind the ModOptions gate.
+- **Generator**: `gen_ruleset.py` (`add_trade_data`) now emits the tech and building trade columns that B003 only declared and B020 never saw on the real
+  ruleset: `[+1] trade route slots` (8 techs, Colossus, Petra), `[+10] land/sea trade route range` (Combustion, Compass, Refrigeration), the building
+  range percent and land/sea gold, recipient/target gold, domestic enablers and Hanse's city-state Production. Caravan and Cargo Ship lose `Unbuildable`
+  and carry `Can establish trade routes`; the Nau carries `Carries [1] exotic goods`. Policy and trait columns were already in the overrides.
+- **Build restrictions** [O names, X rule]: a trade unit is rejected with `NoTradeRouteSlot` when `Slots - used routes - trade units on the map <= 0`
+  (idle units hold a slot [X]) and, when built in a city, with `NoTradeRouteTarget` when no other city within the air distance of the range passes
+  `Check` (international for another civ's city, Food or Production for an own city with the enabling building; slots ignored). Both are construction
+  rejections, so spawning or gifting such a unit is not blocked. Water units keep the coastal-city rule.
+- **Rebasing** [X]: `ChangeTradeUnitHome` is the command `rebase-trade-unit {unitId, targetCityId}`: an idle trade unit standing in an own city moves to
+  another own city that its domain can reach within the range of its current city (a ship needs a port) and whose centre tile can hold it; it has no
+  movement left afterwards. A unit that already runs a route is not on the map, so it cannot rebase.
+- **Exotic goods** [K, X scale]: `sell-exotic-goods {unitId, targetCityId}`. A unit with `Carries [n] exotic goods` that has movement, is adjacent to a
+  city of another civ (a city-state counts) that its owner has met and is not at war with, and has a load left (`n` minus the saved `exoticGoodsSold`)
+  sells one load: gold `min + (max - min) * min(d, 40) / 40` with `d` the air distance from the seller's capital to the city (`min` without a capital),
+  experience the same way between `exoticGoodsXpMin/Max`; min/max are the ruleset constants (BNW 100..400 and 10..30). The unit stays and has no movement left.
 
 #### 4.1.7 AI scoring of an international route (`@101fa1e0`) [O]
 `danger = 1 + Σ over path plots (1 if the plot is not visible to us, +1000 if it is owned by a civ we are at war with)`.

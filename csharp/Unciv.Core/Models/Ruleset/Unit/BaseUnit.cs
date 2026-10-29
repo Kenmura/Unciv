@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Unciv.Logic;
 using Unciv.Logic.City;
 using Unciv.Logic.Map.MapUnits;
+using Unciv.Logic.Trade.Routes;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Components.Extensions;
@@ -528,6 +529,15 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
             {
                 yield return RejectionReasonType.CannotBeBuilt.ToInstance();
             }
+
+        // BNW (B006, spec 4.1.2): a trade unit needs a free slot and a city to go to. Nothing here runs without the trade-route gate.
+        if (TradeRouteRules.IsEnabled(civ.GameInfo) && self.HasUnique(UniqueType.CanEstablishTradeRoutes, stateForConditionals))
+        {
+            if (TradeRouteRules.SlotsFree(civ) <= 0)
+                yield return RejectionReasonType.NoTradeRouteSlot.ToInstance();
+            else if (city != null && !TradeRouteRules.HasTarget(civ, city, IsWaterUnit ? TradeDomain.Sea : TradeDomain.Land))
+                yield return RejectionReasonType.NoTradeRouteTarget.ToInstance();
+        }
 
         if (city != null && IsAirUnit() && !CanUnitEnterTile(city))
         {

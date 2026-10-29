@@ -145,7 +145,7 @@
   Nations.json/The Zulus: Iklwa XP modifier is wired (existing unique); the Ikanda promotion stays open for B074
   Nations.json/Venice: Serenissima: no annexing, no Settlers and the free Merchant of Venice at Optics are wired; the double trade slots are declared data only (B020)
   Buildings.json/all: Tourism, Great Work, trade route and league columns of SPEC 3.2 (B003 declares the UniqueTypes, feature tickets B020-B062 wire them)
-  Units.json/Caravan, Cargo Ship: made Unbuildable until B021 gives them behaviour
+  Units.json/Caravan, Cargo Ship: B006: buildable trade units (Can establish trade routes; the build restrictions are engine rules)
   Beliefs.json/13 new BNW beliefs: added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Evangelism, Heathen Conversion, Underground Sect, Unity of the Prophets (B073), To the Glory of God (B041)
   TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp: added by B004. Feitoria luxury siphon (B072) is not wired yet
   Units.json/upgrades: upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture
@@ -195,6 +195,31 @@
   Optics: cost 85 differs from column 3 (105), per-tech cost set
   Compass: cost 375 differs from column 6 (485), per-tech cost set
   The Internet: new (column 16, row 1)
+
+== trade
+  tech Animal Husbandry: [+1] trade route slots
+  tech Sailing: [+1] trade route slots
+  tech Engineering: [+1] trade route slots
+  tech Compass: [+1] trade route slots, [+10] sea trade route range
+  tech Banking: [+1] trade route slots
+  tech Biology: [+1] trade route slots
+  tech Railroad: [+1] trade route slots
+  tech Penicillin: [+1] trade route slots
+  tech Refrigeration: [+10] sea trade route range
+  tech Combustion: [+10] land trade route range
+  building Longhouse: Allows domestic [Production] trade routes from this city
+  building Bazaar: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city
+  building Satrap's Court: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city
+  building Harbor: [+50]% sea trade route range [in this city], [+100] Gold (x1/100) from sea trade routes [in this city]
+  building Granary: Allows domestic [Food] trade routes from this city
+  building Workshop: Allows domestic [Production] trade routes from this city
+  building Market: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city
+  building Bank: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city
+  building East India Company: [+4] Gold to the owner of an international trade route from this city, [+2] Gold to the owner of an international trade route to this city
+  building Colossus: [+2] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city, [+1] trade route slots
+  building Petra: [+1] trade route slots
+  building Hanse: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city, [+5]% Production for each trade route to a city-state
+  building Caravansary: [+50]% land trade route range [in this city], [+200] Gold (x1/100) from land trade routes [in this city]
 
 == unitNames
   Artist: 93 names from the works named after a Great Person
@@ -563,5 +588,5 @@
   Units.OneShotTourism: Great Musician: the tourism blast unique
   Units.OneShotTourismPercentOthers: Great Musician: the tourism blast unique
   Units.BaseCultureTurnsToCount: Great Writer: the Great Work culture turns
-  Units.Trade: Caravan, Cargo Ship: 'Can establish trade routes' (they stay Unbuildable until B006)
+  Units.Trade: Caravan, Cargo Ship: 'Can establish trade routes' (buildable since B006)
 

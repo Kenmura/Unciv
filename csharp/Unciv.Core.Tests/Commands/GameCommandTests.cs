@@ -258,6 +258,10 @@ public sealed class GameCommandTests : IDisposable
             {
                 (game, actor, command) = Logic.WorldCongress.LeagueTests.CommandSample(name);
             }
+            else if (name is "rebase-trade-unit" or "sell-exotic-goods")
+            {
+                (game, actor, command) = Logic.TradeRoutes.TradeUnitTests.CommandSample(name);
+            }
             else if (name == "establish-trade-route")
             {
                 var (world, sample) = Logic.TradeRoutes.TradeRouteTests.NewCommandSample();

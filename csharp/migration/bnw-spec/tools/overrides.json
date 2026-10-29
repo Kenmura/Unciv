@@ -1090,7 +1090,8 @@
     "Nau": {
      "copyFrom": "Caravel",
      "uniqueTo": "Portugal",
-     "replaces": "Caravel"
+     "replaces": "Caravel",
+     "uniques+": ["Carries [1] exotic goods"]
     },
     "Pathfinder": {
      "copyFrom": "Scout",
@@ -1147,7 +1148,6 @@
     "Caravan": {
      "copyFrom": "Worker",
      "uniques": [
-      "Unbuildable",
       "Can establish trade routes"
      ]
     },
@@ -1155,7 +1155,6 @@
      "copyFrom": "Work Boat",
      "unitType": "Civilian Water",
      "uniques": [
-      "Unbuildable",
       "Can establish trade routes"
      ]
     },
@@ -1315,7 +1314,7 @@
    "Tourism, Great Work, trade route and league columns of SPEC 3.2 (B003 declares the UniqueTypes, feature tickets B020-B062 wire them)"
   ],
   "Units.json/Caravan, Cargo Ship": [
-   "made Unbuildable until B021 gives them behaviour"
+   "B006: buildable trade units (Can establish trade routes; the build restrictions are engine rules)"
   ],
   "Beliefs.json/13 new BNW beliefs": [
    "added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Evangelism, Heathen Conversion, Underground Sect, Unity of the Prophets (B073), To the Glory of God (B041)"

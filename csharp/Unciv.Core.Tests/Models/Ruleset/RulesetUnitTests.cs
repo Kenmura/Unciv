@@ -166,7 +166,7 @@ public class RulesetUnitTests
         Assert.Equal(0, RejectionReasonType.ShouldNotBeDisplayed.ToInstance().GetRejectionPrecedence());
         Assert.Equal(11, RejectionReasonType.NoPlaceToPutUnit.ToInstance().GetRejectionPrecedence());
         Assert.Equal(-1, RejectionReasonType.AlreadyBuilt.ToInstance().GetRejectionPrecedence());
-        Assert.Equal(39, Enum.GetValues<RejectionReasonType>().Length);
+        Assert.Equal(41, Enum.GetValues<RejectionReasonType>().Length);
     }
 
     // endregion

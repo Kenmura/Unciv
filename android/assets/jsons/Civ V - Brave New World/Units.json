@@ -1950,14 +1950,14 @@
 		"movement": 1,
 		"cost": 100,
 		"requiredTech": "Sailing",
-		"uniques": ["Unbuildable", "Can establish trade routes"]
+		"uniques": ["Can establish trade routes"]
 	},
 	{
 		"name": "Caravan",
 		"unitType": "Civilian",
 		"movement": 1,
 		"requiredTech": "Animal Husbandry",
-		"uniques": ["Unbuildable", "Can establish trade routes"],
+		"uniques": ["Can establish trade routes"],
 		"cost": 75
 	},
 	{
@@ -2038,7 +2038,7 @@
 		"strength": 20,
 		"cost": 120,
 		"requiredTech": "Astronomy",
-		"uniques": ["[+1] Sight", "Withdraws before melee combat <with [80]% chance>"],
+		"uniques": ["[+1] Sight", "Withdraws before melee combat <with [80]% chance>", "Carries [1] exotic goods"],
 		"hurryCostModifier": 30,
 		"attackSound": "cannon",
 		"obsoleteTech": "Steam Power",
