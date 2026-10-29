@@ -91,3 +91,6 @@ public sealed record StandbyRevoked : ClientEvent;
 
 /// <summary>T281: the host's backup-host announcement changed (who, where, whether ready, the roster).</summary>
 public sealed record SuccessorChanged(HostSuccessor Successor) : ClientEvent;
+
+/// <summary>T272: a frame of the standby replication stream was refused (<c>Reason</c> is the store's rejection: a tampered or out-of-order snapshot chunk, a bad log line, a gap, an unusable disk). The session asks the host to restart from a snapshot, a few times; the copy already on disk is kept.</summary>
+public sealed record StandbyRejected(string Reason) : ClientEvent;

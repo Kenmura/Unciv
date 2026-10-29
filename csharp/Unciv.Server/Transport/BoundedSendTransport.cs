@@ -40,7 +40,15 @@ public sealed class BoundedSendTransport : ITransport
         pump = PumpAsync();
     }
 
-    /// <summary>True once the peer was disconnected for not reading fast enough.</summary>
+    /// <summary>Frames accepted by <see cref="SendAsync"/> that the inner transport has not finished writing (T272: standby replication paces itself on this).</summary>
+    public int QueuedFrames
+    {
+        get
+        {
+            lock (gate) return queuedFrames;
+        }
+    }
+
     /// <summary>True once the peer was disconnected for not reading fast enough.</summary>
     public bool DisconnectedAsSlowReader => slowReader;
 

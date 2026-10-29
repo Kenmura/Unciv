@@ -30,6 +30,9 @@ public static class ErrorCodes
 
     /// <summary>T281: the probe reached a listener whose certificate is not the announced fingerprint.</summary>
     public const string ProbeFingerprint = "probe-fingerprint";
+
+    /// <summary>T272: the designated candidate broke the replication stream rules (an ack going backwards or beyond the host's log, a subscription for another game): the subscription is closed, no state flows until it subscribes again.</summary>
+    public const string StandbyViolation = "standby-protocol";
 }
 
 /// <summary>Base of every wire message. The JSON frame is the record's fields plus a <c>type</c> discriminator (see <see cref="ProtocolCodec"/>).</summary>
@@ -330,11 +333,68 @@ public sealed record StandbyDecline : Message;
 /// <summary>Host to candidate: the designation ended (the host revoked it, or the seat changed hands). The candidate's copy on its own disk is not erased.</summary>
 public sealed record StandbyRevoke : Message;
 
-/// <summary>Host to the candidate: where the standby stands (<see cref="Unciv.Net.Standby.StandbyStates"/>). Counters only. <c>LagEntries</c> is 0 until replication exists (T272).</summary>
+/// <summary>Host to the candidate: where the standby stands (<see cref="Unciv.Net.Standby.StandbyStates"/>). Counters only. <c>LagEntries</c> is how many log entries the successor is behind the host (0 before it subscribes).</summary>
 public sealed record StandbyStatus : Message
 {
     public required string State { get; init; }
     public required int LagEntries { get; init; }
+
+    /// <summary>T272: the game the host runs (set by a running game, absent in the lobby). The candidate subscribes to the replication stream of this game, and keeps its standby store under it.</summary>
+    public string? GameId { get; init; }
+}
+
+// ---------------------------------------------------------------- standby replication (T272, design/HOST-MIGRATION.md section 1)
+
+/// <summary>
+/// Candidate to host: starts (or resumes) the replication stream on the authenticated session. <c>HaveSeq</c> is the last log seq the candidate's standby store holds (-1: none) and <c>HaveLineSha256</c> the
+/// sha256 (lower-case hex) of its last command line, so the host can tell a store that continues its log from one that diverged. Accepted only from the designated key that consented
+/// (<see cref="ErrorCodes.NotDesignated"/> otherwise); the host answers with <see cref="StandbyMeta"/>, a <see cref="StandbySnapshot"/> when it cannot continue from <c>HaveSeq</c>, then <see cref="StandbyEntry"/> frames.
+/// </summary>
+public sealed record StandbySubscribe : Message
+{
+    public required string GameId { get; init; }
+    public required long HaveSeq { get; init; }
+    public string? HaveLineSha256 { get; init; }
+}
+
+/// <summary>
+/// Host to the subscribed candidate only: <c>game.json</c> (without the host's own epoch bookkeeping and designation) as the successor must keep it, and, when the stream restarts from a snapshot
+/// (<see cref="StandbySnapshot.Reset"/>), the command log's header line. Sent again whenever <c>game.json</c> changes (a seat rebinding).
+/// </summary>
+public sealed record StandbyMeta : Message
+{
+    public required int Epoch { get; init; }
+    public string? Header { get; init; }
+    public required string Meta { get; init; }
+}
+
+/// <summary>
+/// Host to the subscribed candidate only: one chunk of a snapshot file (the <c>snapshot-&lt;seq&gt;.json.gz</c> bytes, base64) with the sha256 (hex) of the whole file. <c>Reset</c> replaces the successor's whole
+/// store (the stream could not continue from its seq); without it the snapshot only adds to the store. The successor assembles chunks in order and keeps the file only when size and sha256 match.
+/// </summary>
+public sealed record StandbySnapshot : Message
+{
+    public required int Epoch { get; init; }
+    public required long Seq { get; init; }
+    public required int Part { get; init; }
+    public required int Parts { get; init; }
+    public required string Sha256 { get; init; }
+    public required string Data { get; init; }
+    public bool Reset { get; init; }
+}
+
+/// <summary>Host to the subscribed candidate only: the verbatim <c>commands.log</c> line (a command or a checkpoint) of log position <c>Seq</c>, in log order. The successor appends it durably, then acks.</summary>
+public sealed record StandbyEntry : Message
+{
+    public required int Epoch { get; init; }
+    public required long Seq { get; init; }
+    public required string Line { get; init; }
+}
+
+/// <summary>Candidate to host: every entry up to <c>Seq</c> is durable in the standby store. Never decreasing and never above the host's last seq, otherwise the subscription is closed.</summary>
+public sealed record StandbyAck : Message
+{
+    public required long Seq { get; init; }
 }
 
 /// <summary>Where a successor can be reached: <c>Endpoints</c> are <c>host:port</c> strings (the same form as the client's known-hosts keys) and <c>Fingerprint</c> the certificate the host's probe saw there.</summary>

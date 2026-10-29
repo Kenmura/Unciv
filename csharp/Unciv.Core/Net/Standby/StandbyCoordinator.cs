@@ -12,7 +12,7 @@ public sealed class StandbyCoordinator
 {
     private readonly Lock gate = new();
     private readonly IClock clock;
-    private readonly StandbyLimits limits;
+    private StandbyLimits limits;
     private string? keyId;
     private bool accepted;
     private bool reachable;
@@ -21,12 +21,21 @@ public sealed class StandbyCoordinator
     private int probeCursor;
     private long lastProbeMillis = long.MinValue;
     private int generation;
+    private string? replication;
+    private int lagEntries;
 
     public StandbyCoordinator(IClock? clock = null, IEndpointProber? prober = null, StandbyLimits? limits = null)
     {
         this.clock = clock ?? SystemClock.Instance;
         Prober = prober ?? new NullEndpointProber();
         this.limits = limits ?? new StandbyLimits();
+    }
+
+    /// <summary>The tunables this coordinator (and the replication stream that reports to it) runs with.</summary>
+    public StandbyLimits Limits
+    {
+        get => limits;
+        set => limits = value;
     }
 
     /// <summary>How an endpoint is dialled; set by the network layer that owns the host.</summary>
@@ -43,7 +52,34 @@ public sealed class StandbyCoordinator
         get { lock (gate) return StateLocked(); }
     }
 
-    private string StateLocked() => keyId == null ? StandbyStates.None : !accepted ? StandbyStates.Offered : reachable ? StandbyStates.Ready : StandbyStates.Unreachable;
+    private string StateLocked() => keyId == null ? StandbyStates.None : !accepted ? StandbyStates.Offered : !reachable ? StandbyStates.Unreachable : replication ?? StandbyStates.Ready;
+
+    /// <summary>How many log entries the subscribed successor is behind the host (0 while it is not subscribed).</summary>
+    public int LagEntries
+    {
+        get { lock (gate) return keyId == null ? 0 : lagEntries; }
+    }
+
+    /// <summary>True when <paramref name="key"/> is the designated key and it consented (it may subscribe to the replication stream).</summary>
+    public bool IsAcceptedCandidate(string? key)
+    {
+        lock (gate) return keyId != null && accepted && key != null && string.Equals(keyId, key, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// T272: the host's replication stream reports where it stands: <see cref="StandbyStates.Syncing"/>, <see cref="StandbyStates.Ready"/> (caught up) or <see cref="StandbyStates.Lagging"/>, or null when
+    /// there is no stream (the state then only reflects the probe). Returns true when the visible state changed, so the host can tell the candidate and the clients.
+    /// </summary>
+    public bool SetReplication(string? state, int lag)
+    {
+        lock (gate)
+        {
+            var before = StateLocked();
+            replication = state;
+            lagEntries = state == null ? 0 : Math.Max(0, lag);
+            return !string.Equals(before, StateLocked(), StringComparison.Ordinal);
+        }
+    }
 
     /// <summary>True when <paramref name="key"/> is the designated key (constant-time not needed: the key id is public in the lobby).</summary>
     public bool IsDesignated(string? key)
@@ -182,7 +218,7 @@ public sealed class StandbyCoordinator
     }
 
     /// <summary>The wire status for the candidate (and the host screen).</summary>
-    public StandbyStatus Status() => new() { State = State, LagEntries = 0 };
+    public StandbyStatus Status() => new() { State = State, LagEntries = LagEntries };
 
     /// <summary>The announcement for every client. The successor is named only while ready.</summary>
     public HostSuccessor Announcement(int epoch, IEnumerable<SuccessorSeat> roster)
@@ -246,6 +282,8 @@ public sealed class StandbyCoordinator
 
     private void ResetLocked()
     {
+        replication = null;
+        lagEntries = 0;
         keyId = null;
         accepted = false;
         reachable = false;

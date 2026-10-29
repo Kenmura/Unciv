@@ -128,6 +128,7 @@ public sealed partial class GameHost : IAsyncDisposable
         this.remoteQueries = remoteQueries ?? CreateDefaultRemoteQueryHost();
         this.gate = gate ?? new CommandGate(store, null, this.clock);
         Standby = InitStandby(standby);
+        InitReplication();
 
         if (startActor)
         {
@@ -291,6 +292,12 @@ public sealed partial class GameHost : IAsyncDisposable
                 case StandbyDecline:
                     await ProcessStandbyDeclineAsync(hostSession);
                     break;
+                case StandbySubscribe subscribe:
+                    await ProcessStandbySubscribeAsync(hostSession, subscribe);
+                    break;
+                case StandbyAck ack:
+                    await ProcessStandbyAckAsync(hostSession, ack);
+                    break;
                 case Error err:
                     await SafeSendAsync(hostSession, err);
                     break;
@@ -337,6 +344,7 @@ public sealed partial class GameHost : IAsyncDisposable
     {
         DropIdleSessions();
         SendDueResyncs();
+        if (standbyStream != null) PostStandbyStep(); // T272: lag and resync decisions that wait on time, not on a store write
         turnTimer.Tick();
         if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
         {
@@ -378,6 +386,7 @@ public sealed partial class GameHost : IAsyncDisposable
             {
                 PumpResolving();
             }
+            StopStandbyStream();
             foreach (var s in sessions.Values.ToList())
             {
                 await SafeSendAsync(s, new HostClosing());
@@ -573,6 +582,7 @@ public sealed partial class GameHost : IAsyncDisposable
     private async Task DetachSessionAsync(string sessionId, bool explicitLeave = false)
     {
         if (!sessions.Remove(sessionId, out var hostSession)) return;
+        if (standbyStream is { } streaming && ReferenceEquals(streaming.Target, hostSession)) StopStandbyStream(); // the successor reconnects and subscribes again, resuming from what it holds
         if (explicitLeave) turnTimer.Depart(hostSession.BoundCivId); // T267: the AI takes over at the next boundary, not now
         else turnTimer.Disconnect(hostSession.BoundCivId);
         remoteQueries.EndSession(sessionId);

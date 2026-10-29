@@ -23,7 +23,7 @@ public sealed record OpenedGame(FileGameStore Store, GameSession Session, Recove
 /// <c>history/</c> (rotated logs) and <c>corrupt/</c> (log tails recovery set aside). Paths inside are relative names only, so the directory can be zipped and opened elsewhere.
 /// Every file other than the log is replaced atomically (temp file, fsync, rename); the log is appended and fsynced before <see cref="Append"/> returns.
 /// </summary>
-public sealed class FileGameStore : IGameStore
+public sealed class FileGameStore : IGameStore, IReplicationSource
 {
     private const string LogName = "commands.log";
     private const string MetaName = "game.json";
@@ -43,6 +43,7 @@ public sealed class FileGameStore : IGameStore
     private int? lastSnapshotTurn;
     private bool closed;
     private bool faulted;
+    private long logGeneration;
 
     private FileGameStore(string directory, StoreOptions options, Stream log, string gameId)
     {
@@ -95,6 +96,7 @@ public sealed class FileGameStore : IGameStore
         {
             var held = ReadMeta();
             WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = GameId, HostSecret = held.HostSecret, HostEpoch = held.HostEpoch, SeenEpoch = held.SeenEpoch })));
+            Changed?.Invoke(ReplicationChange.Meta);
         }
     }
 
@@ -108,6 +110,114 @@ public sealed class FileGameStore : IGameStore
             var seen = Math.Max(held.SeenEpoch, seenEpoch);
             if (host == held.HostEpoch && seen == held.SeenEpoch) return;
             WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(held with { HostEpoch = host, SeenEpoch = seen })));
+        }
+    }
+
+    // ------------------------------------------------------------------ replication source (T272)
+
+    /// <inheritdoc />
+    public event Action<ReplicationChange>? Changed;
+
+    /// <inheritdoc />
+    public long LogGeneration
+    {
+        get
+        {
+            lock (gate) return logGeneration;
+        }
+    }
+
+    /// <inheritdoc />
+    public string ReadHeaderLine()
+    {
+        lock (gate)
+        {
+            using var stream = new FileStream(PathOf(LogName), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var bytes = new byte[Math.Min(stream.Length, 1 << 20)];
+            var read = stream.Read(bytes, 0, bytes.Length);
+            var end = Array.IndexOf(bytes, (byte)'\n', 0, read);
+            if (end < 0) throw new GameStoreException("The command log has no complete header line");
+            return Encoding.UTF8.GetString(bytes, 0, end);
+        }
+    }
+
+    /// <inheritdoc />
+    public (long Seq, byte[] Bytes)? ReadNewestSnapshot()
+    {
+        lock (gate)
+        {
+            foreach (var (seq, path) in ListSnapshots(directory))
+            {
+                try
+                {
+                    return (seq, File.ReadAllBytes(path));
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    // retention removed it between listing and reading: try the next one
+                }
+            }
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public ReplicationBatch ReadReplicationBatch(long afterSeq, long offset, long generation, int maxLines)
+    {
+        lock (gate)
+        {
+            var lines = new List<ReplicationLine>();
+            using var stream = new FileStream(PathOf(LogName), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var length = stream.Length;
+            var position = offset > 0 && generation == logGeneration && offset <= length ? offset : 0;
+            if (position == 0)
+            {
+                var head = new byte[Math.Min(length, 1 << 20)];
+                var read = stream.Read(head, 0, head.Length);
+                var headerEnd = Array.IndexOf(head, (byte)'\n', 0, read);
+                if (headerEnd < 0) return new ReplicationBatch(lines, 0, logGeneration);
+                position = headerEnd + 1;
+            }
+
+            // Windows of 1 MiB; a single line longer than the window (or nothing complete in it) doubles it until the rest of the file is in view.
+            var window = 1L << 20;
+            while (lines.Count < maxLines && position < length)
+            {
+                var chunk = new byte[Math.Min(length - position, window)];
+                stream.Seek(position, SeekOrigin.Begin);
+                stream.ReadExactly(chunk);
+                var consumed = 0;
+                while (lines.Count < maxLines)
+                {
+                    var end = Array.IndexOf(chunk, (byte)'\n', consumed);
+                    if (end < 0) break;
+                    var entry = ParseLine(Encoding.UTF8.GetString(chunk, consumed, end - consumed));
+                    consumed = end + 1;
+                    if (entry != null && (entry.IsCheckpoint ? entry.Seq >= afterSeq : entry.Seq > afterSeq)) lines.Add(entry);
+                }
+                if (consumed == 0)
+                {
+                    if (chunk.Length >= length - position) break; // a torn last line: the next read picks it up once complete
+                    window *= 2;
+                }
+                position += consumed;
+            }
+            return new ReplicationBatch(lines, position, logGeneration);
+        }
+    }
+
+    private static ReplicationLine? ParseLine(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            var root = document.RootElement;
+            if (root.TryGetProperty("checkpoint", out var checkpoint)) return new ReplicationLine(checkpoint.GetInt64(), true, text);
+            return root.TryGetProperty("seq", out var seq) ? new ReplicationLine(seq.GetInt64(), false, text) : null;
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException)
+        {
+            return null;
         }
     }
 
@@ -146,6 +256,7 @@ public sealed class FileGameStore : IGameStore
             WriteDurably(line.ToJsonString());
             LastSeq = envelope.Seq;
             Remember(new LoggedCommand(envelope, clientCmdId));
+            Changed?.Invoke(ReplicationChange.Log);
         }
     }
 
@@ -180,6 +291,7 @@ public sealed class FileGameStore : IGameStore
             WriteDurably(line.ToJsonString());
             lastCheckpointSeq = seq;
             lastCheckpointHash = fullHash;
+            Changed?.Invoke(ReplicationChange.Log);
         }
     }
 
@@ -269,6 +381,7 @@ public sealed class FileGameStore : IGameStore
         WriteAtomic(PathOf(SnapshotName(seq)), Encoding.UTF8.GetBytes(UncivFiles.GameInfoToString(game, forceZip: true)));
         lastSnapshotTurn = game.Turns;
         Retain(seq);
+        Changed?.Invoke(ReplicationChange.Snapshot);
     }
 
     private static string SnapshotName(long seq) => SnapshotPrefix + seq.ToString("D12", CultureInfo.InvariantCulture) + SnapshotSuffix;
@@ -309,6 +422,7 @@ public sealed class FileGameStore : IGameStore
         log.Dispose();
         WriteAtomic(PathOf(LogName), rotated.ToArray());
         log = OpenLog(PathOf(LogName));
+        logGeneration++;
         foreach (var (seq, path) in ListSnapshots(directory))
             if (seq < snapshotSeq) File.Delete(path);
     }

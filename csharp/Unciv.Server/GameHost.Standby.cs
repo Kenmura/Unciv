@@ -43,6 +43,8 @@ public sealed partial class GameHost
         return result;
     }
 
+    private StandbyStatus StatusMessage() => Standby.Status() with { GameId = session.Game.GameId };
+
     private List<SuccessorSeat> SuccessorRoster()
     {
         var roster = new List<SuccessorSeat>();
@@ -76,6 +78,7 @@ public sealed partial class GameHost
             if (hostPlayerKey != null && string.Equals(binding.PlayerKey, hostPlayerKey, StringComparison.Ordinal)) { refusal = "own-key"; return; }
             if (Standby.Designate(binding.PlayerKey, out var previous))
             {
+                StopStandbyStream();
                 PersistStandby(Standby);
                 if (previous != null) await SendToKeyAsync(previous, new StandbyRevoke());
                 await SendToKeyAsync(binding.PlayerKey, new StandbyOffer { KeyId = binding.PlayerKey });
@@ -90,6 +93,7 @@ public sealed partial class GameHost
 
     private async Task RevokeBackupCoreAsync()
     {
+        StopStandbyStream();
         var previous = Standby.Revoke();
         if (previous == null) return;
         PersistStandby(Standby);
@@ -102,7 +106,7 @@ public sealed partial class GameHost
     {
         if (!Standby.IsDesignated(attached.PlayerKeyId)) return;
         if (Standby.State == StandbyStates.Offered) await SafeSendAsync(attached, new StandbyOffer { KeyId = attached.PlayerKeyId! });
-        else await SafeSendAsync(attached, Standby.Status());
+        else await SafeSendAsync(attached, StatusMessage());
     }
 
     // Judged by the key the host authenticated for this session, never by a field of the frame. The probe can take seconds, so it must not hold the actor.
@@ -119,7 +123,7 @@ public sealed partial class GameHost
                 if (code != null) await SafeSendAsync(from, new Error { Code = code });
                 if (code != ErrorCodes.NotDesignated)
                 {
-                    await SafeSendAsync(from, Standby.Status());
+                    await SafeSendAsync(from, StatusMessage());
                     await AnnounceSuccessorAsync();
                 }
             }).ConfigureAwait(false);
@@ -135,8 +139,9 @@ public sealed partial class GameHost
             await SafeSendAsync(from, new Error { Code = code });
             return;
         }
+        StopStandbyStream();
         PersistStandby(Standby);
-        await SafeSendAsync(from, Standby.Status());
+        await SafeSendAsync(from, StatusMessage());
         await AnnounceSuccessorAsync();
     }
 

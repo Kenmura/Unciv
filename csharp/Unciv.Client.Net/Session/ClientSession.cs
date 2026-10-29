@@ -55,6 +55,13 @@ public sealed class ClientSessionOptions
     /// <summary>T269: tell the host this client understands host migration (a host that cannot hand off sends the plain <c>HostClosing</c> to a client that did not).</summary>
     public bool AdvertiseHostMigration { get; init; } = true;
 
+    /// <summary>
+    /// T272: the data directory under which this player keeps the standby copy (<c>standby/&lt;gameId&gt;/</c>) when it is the backup host. Null (the default) never stores replicated state. The UI sets it
+    /// only for a player who can be a backup host; the copy is created only after this process called <c>AcceptStandbyAsync</c> (or already exists from an earlier accept), never because a host asked.
+    /// It holds full game state and must never feed the client's rendering.
+    /// </summary>
+    public string? StandbyRoot { get; init; }
+
     public int MaxReconnectAttempts { get; init; } = 5;
 
     /// <summary>How long connecting plus the join handshake may take (the TOFU prompt does not count) before the attempt is abandoned.</summary>
@@ -132,6 +139,19 @@ public sealed class ClientSession : IAsyncDisposable
     private string connectedHostFingerprint = "";
     private int connectionEpoch;
     private TaskCompletionSource? resyncWaiter;
+
+    // T272: standby replication (receive-loop state; one connection at a time).
+    private StandbyStore? standbyStore;
+    private string? standbyGameId;
+    private bool standbyConsented;
+    private bool standbyBroken;
+    private bool standbyRestarting;
+    private int standbyRestarts;
+    private long standbyLastAck = long.MinValue;
+    private long standbyHave = -1;
+
+    /// <summary>T272: the last log seq of this player's standby copy (-1 when it holds none or is not a backup host). Counters only: the copy itself is never exposed.</summary>
+    public long StandbyHaveSeq => Interlocked.Read(ref standbyHave);
 
     private sealed class PendingCommand(Command message, long ordinal)
     {
@@ -286,21 +306,28 @@ public sealed class ClientSession : IAsyncDisposable
     public HostSuccessor? Successor { get; private set; }
 
     /// <summary>Consents to the backup-host role offered by <see cref="StandbyOffered"/>: <paramref name="endpoints"/> are the addresses this player can be reached on, <paramref name="port"/> and <paramref name="fingerprint"/> those of its own listener. The host probes one endpoint before the standby counts as ready.</summary>
-    public ValueTask AcceptStandbyAsync(IReadOnlyList<string> endpoints, int port, string fingerprint) =>
-        SendAsync(new StandbyAccept { Endpoints = [.. endpoints], Port = port, Fingerprint = fingerprint });
+    public ValueTask AcceptStandbyAsync(IReadOnlyList<string> endpoints, int port, string fingerprint)
+    {
+        standbyConsented = true; // from here the host's replication stream may be stored under StandbyRoot
+        return SendAsync(new StandbyAccept { Endpoints = [.. endpoints], Port = port, Fingerprint = fingerprint });
+    }
 
     /// <summary>Declines the offer, or withdraws an accepted standby.</summary>
-    public ValueTask DeclineStandbyAsync() => SendAsync(new StandbyDecline());
+    public ValueTask DeclineStandbyAsync()
+    {
+        standbyConsented = false;
+        return SendAsync(new StandbyDecline());
+    }
 
     /// <summary>
-    /// Takes the host's announcement. It came over the authenticated host channel; one from a lower epoch than this client already knows is ignored. A ready successor is pinned in <see cref="KnownHosts"/>
+    /// Takes the host's announcement. It came over the authenticated host channel; one from a lower epoch than this client already knows is ignored. A reachable successor (the host names one only while its probe passes, whatever the replication state) is pinned in <see cref="KnownHosts"/>
     /// under each announced endpoint, vouched for by the host this session trusts, so a later reconnect there has no first-use prompt (design/HOST-MIGRATION.md section 3).
     /// </summary>
     private void HandleSuccessor(HostSuccessor successor)
     {
         if (successor.Epoch != connectionEpoch) return; // the connected host speaks for its own epoch only
         Successor = successor;
-        if (successor.Status == StandbyStates.Ready && successor.Successor is { } info && options.KnownHosts is { } known && connectedHostFingerprint.Length > 0)
+        if (successor.Successor is { } info && options.KnownHosts is { } known && connectedHostFingerprint.Length > 0)
         {
             var added = false;
             foreach (var endpoint in info.Endpoints.Take(8).Where(it => it.Length is > 2 and <= 260 && it[0] != '$' && it.Contains(':')))
@@ -311,6 +338,105 @@ public sealed class ClientSession : IAsyncDisposable
             if (added) options.PersistKnownHosts?.Invoke(known);
         }
         Emit(new SuccessorChanged(successor));
+    }
+
+    // ------------------------------------------------------------ T272: standby replication
+
+    private void EndStandbyReplication()
+    {
+        standbyConsented = false;
+        CloseStandbyStore();
+    }
+
+    private void CloseStandbyStore()
+    {
+        standbyStore?.Dispose();
+        standbyStore = null;
+        standbyGameId = null;
+        standbyBroken = false;
+        standbyRestarting = false;
+        standbyRestarts = 0;
+        standbyLastAck = long.MinValue;
+    }
+
+    /// <summary>
+    /// Subscribes to the host's replication stream, once per connection, resuming from what the standby copy holds. Only for a player that consented in this process or already keeps a copy of this game,
+    /// and only for a game id that is a safe directory name (it comes from the host).
+    /// </summary>
+    private async Task SubscribeStandbyAsync(string? statusGameId, CancellationToken token)
+    {
+        if (standbyStore != null || options.StandbyRoot == null) return;
+        var id = statusGameId ?? gameId;
+        if (id == null) return;
+        var path = StandbyStore.DirectoryFor(options.StandbyRoot, id);
+        if (path == null || (!standbyConsented && !Directory.Exists(path))) return;
+        try
+        {
+            standbyStore = StandbyStore.Open(options.StandbyRoot, id);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Emit(new StandbyRejected("store-unavailable"));
+            return;
+        }
+        standbyGameId = id;
+        Interlocked.Exchange(ref standbyHave, standbyStore.HaveSeq);
+        await SendAsync(new StandbySubscribe { GameId = id, HaveSeq = standbyStore.HaveSeq, HaveLineSha256 = standbyStore.HaveLineSha256 }, token).ConfigureAwait(false);
+    }
+
+    private async Task HandleStandbyFrameAsync(Message frame, CancellationToken token)
+    {
+        var store = standbyStore;
+        if (store == null || standbyBroken) return; // never subscribed on this connection: a host cannot push a copy onto a player who did not ask
+        var epoch = frame switch { StandbyMeta m => m.Epoch, StandbySnapshot p => p.Epoch, StandbyEntry e => e.Epoch, _ => -1 };
+        if (epoch != connectionEpoch) return;
+        // After a restart request the frames already on the wire belong to the old stream: they are skipped up to the new stream's first frame (the meta with the log header).
+        if (standbyRestarting)
+        {
+            if (frame is not StandbyMeta { Header: not null }) return;
+            standbyRestarting = false;
+        }
+
+        StandbyApply result;
+        try
+        {
+            result = frame switch
+            {
+                StandbyMeta m => store.Apply(m),
+                StandbySnapshot p => store.Apply(p),
+                StandbyEntry e => store.Apply(e),
+                _ => StandbyApply.Rejected,
+            };
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            standbyBroken = true; // the disk cannot take the copy: nothing further is acked, the host's stream turns lagging
+            Emit(new StandbyRejected("store-io"));
+            return;
+        }
+
+        if (result == StandbyApply.Rejected)
+        {
+            Emit(new StandbyRejected(store.LastRejection ?? "rejected"));
+            if (++standbyRestarts > 3)
+            {
+                standbyBroken = true;
+                return;
+            }
+            standbyRestarting = true;
+            standbyLastAck = long.MinValue;
+            await SendAsync(new StandbySubscribe { GameId = standbyGameId!, HaveSeq = -1 }, token).ConfigureAwait(false);
+            return;
+        }
+
+        Interlocked.Exchange(ref standbyHave, store.HaveSeq);
+        // Acked: every stored log line, and a snapshot that restarted the store (the host ignores acks until the one for that snapshot's seq).
+        var resetDone = frame is StandbySnapshot { Reset: true } && result == StandbyApply.Applied;
+        if (resetDone || (frame is StandbyEntry && result == StandbyApply.Applied && store.HaveSeq != standbyLastAck))
+        {
+            standbyLastAck = store.HaveSeq;
+            await SendAsync(new StandbyAck { Seq = store.HaveSeq }, token).ConfigureAwait(false);
+        }
     }
 
     // ------------------------------------------------------------ lobby actions
@@ -409,6 +535,7 @@ public sealed class ClientSession : IAsyncDisposable
         transport = current;
         connectionSettled = false;
         awaitingSnapshot = false;
+        CloseStandbyStore(); // each connection subscribes anew, resuming from what is on disk
         var token = timer.Token;
         using var keepAlive = CancellationTokenSource.CreateLinkedTokenSource(token);
         Task keepAliveTask = Task.CompletedTask;
@@ -453,6 +580,7 @@ public sealed class ClientSession : IAsyncDisposable
         finally
         {
             transport = null;
+            CloseStandbyStore();
             await keepAlive.CancelAsync().ConfigureAwait(false);
             try { await keepAliveTask.ConfigureAwait(false); } catch (OperationCanceledException) { }
             try { await current.CloseAsync().ConfigureAwait(false); } catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException) { }
@@ -488,9 +616,15 @@ public sealed class ClientSession : IAsyncDisposable
                 return true;
             case StandbyStatus standby:
                 Emit(new StandbyStatusChanged(standby));
+                if (string.Equals(standby.State, StandbyStates.None, StringComparison.Ordinal) || string.Equals(standby.State, StandbyStates.Offered, StringComparison.Ordinal)) EndStandbyReplication();
+                else await SubscribeStandbyAsync(standby.GameId, token).ConfigureAwait(false);
                 return true;
             case StandbyRevoke:
+                EndStandbyReplication();
                 Emit(new StandbyRevoked());
+                return true;
+            case StandbyMeta or StandbySnapshot or StandbyEntry:
+                await HandleStandbyFrameAsync(message, token).ConfigureAwait(false);
                 return true;
             case JoinRefused refused:
                 await EndAsync(refused.Code, refused: true).ConfigureAwait(false);

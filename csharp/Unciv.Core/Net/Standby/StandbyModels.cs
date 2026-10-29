@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Unciv.Net.Standby;
 
-/// <summary>The <see cref="StandbyStatus.State"/> values of a backup host designation (T281). Replication states (syncing, lagging) come with T272.</summary>
+/// <summary>The <see cref="StandbyStatus.State"/> values of a backup host designation (T281, replication states T272).</summary>
 public static class StandbyStates
 {
     /// <summary>No backup host designated.</summary>
@@ -14,8 +14,14 @@ public static class StandbyStates
     /// <summary>The candidate accepted but the endpoint probe has not succeeded (never run, rate-limited, or failed): promotion would not reach the clients.</summary>
     public const string Unreachable = "unreachable";
 
-    /// <summary>Accepted and the host saw the announced certificate at the announced endpoint. No state is replicated yet (T272).</summary>
+    /// <summary>Accepted and the host saw the announced certificate at the announced endpoint. Once the candidate subscribed, <c>ready</c> also means its store caught up with the host.</summary>
     public const string Ready = "ready";
+
+    /// <summary>T272: reachable and subscribed, the host is sending the snapshot or the log tail the standby store is missing.</summary>
+    public const string Syncing = "syncing";
+
+    /// <summary>T272: reachable and subscribed but too far behind (too many unacked entries, no ack for too long, or a backed-up connection): entries are dropped and a snapshot resync follows once it catches up.</summary>
+    public const string Lagging = "lagging";
 }
 
 /// <summary>The fixed trust notice every player sees before joining (design/HOST-MIGRATION.md section 1).</summary>
@@ -58,6 +64,27 @@ public sealed record StandbyLimits
     public int MaxEndpoints { get; init; } = 4;
 
     public int MaxEndpointLength { get; init; } = 253;
+
+    /// <summary>T272: unacked log entries beyond which the standby is lagging (design: 2000).</summary>
+    public int MaxLagEntries { get; init; } = 2000;
+
+    /// <summary>T272: no ack for this long while entries are outstanding marks the standby lagging (design: 30 s).</summary>
+    public long MaxLagMillis { get; init; } = 30_000;
+
+    /// <summary>T272: raw bytes of one <c>StandbySnapshot</c> chunk (well under the frame limit once base64 encoded).</summary>
+    public int SnapshotChunkBytes { get; init; } = 256 * 1024;
+
+    /// <summary>T272: largest snapshot a successor stores (and a host sends); bounds the successor's disk and memory use.</summary>
+    public long MaxSnapshotBytes { get; init; } = 64L * 1024 * 1024;
+
+    /// <summary>T272: log lines the host sends per step before it checks the connection's backlog again.</summary>
+    public int BatchLines { get; init; } = 64;
+
+    /// <summary>T272: the stream stops sending while this many frames wait in the session's outbound queue, so replication never fills the queue a slow-reader disconnect is judged on.</summary>
+    public int MaxQueuedFrames { get; init; } = 96;
+
+    /// <summary>T272: a successor refuses a single command or checkpoint line longer than this.</summary>
+    public int MaxLineChars { get; init; } = 4 * 1024 * 1024;
 }
 
 /// <summary>Dials one endpoint for the standby probe: a TLS handshake and nothing else (no payload is sent, so it is no amplifier). Returns the fingerprint the listener presented, or null when nothing usable answered.</summary>
