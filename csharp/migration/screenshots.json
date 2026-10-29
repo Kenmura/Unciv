@@ -185,7 +185,7 @@
       },
       {
         "golden": "setup/players.png",
-        "caption": "Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, start preference), the emblem grid below, and the summary line in the footer above Back and the gold Start game."
+        "caption": "Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, avoided start terrain), the emblem grid below, and the summary line in the footer above Back and the gold Start game."
       },
       {
         "golden": "setup/bad-seed.png",

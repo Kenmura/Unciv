@@ -264,9 +264,9 @@ Scenario `setup`.
 
 *Main menu on the dark backdrop: the Unciv logo over a brass rule, New game as the gold primary button, Resume last disabled, Load game, Multiplayer, Host game, Options, and Quit as a quiet ghost button.* (`setup/menu.png`)
 
-![Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, start preference), the emblem grid below, and the summary line in the footer above Back and the gold Start game.](../Unciv.Godot.Harness/golden/setup/players.png)
+![Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, avoided start terrain), the emblem grid below, and the summary line in the footer above Back and the gold Start game.](../Unciv.Godot.Harness/golden/setup/players.png)
 
-*Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, start preference), the emblem grid below, and the summary line in the footer above Back and the gold Start game.* (`setup/players.png`)
+*Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, avoided start terrain), the emblem grid below, and the summary line in the footer above Back and the gold Start game.* (`setup/players.png`)
 
 ![Map tab with a non-numeric seed: the reason is shown in red under the tabs, above the summary line, and nothing starts.](../Unciv.Godot.Harness/golden/setup/bad-seed.png)
 
