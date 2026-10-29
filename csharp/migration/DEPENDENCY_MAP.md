@@ -140,7 +140,7 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class B006 ready
-  class B008 prog
+  class B008 review
   class B009 ondeck
   class B010 prog
   class B011 ondeck
@@ -256,7 +256,7 @@ xychart-beta
 | B013 | In-Progress [Claude] | B012 | 9 | BNW: Ideologies: unlock, adopter bonuses, tenet levels |
 | C068 | In-Progress [Claude] | C066, C067 | 7 | Unit panel and action bar |
 | C070 | Available (waiting on C069) | C066, C069 | 7 | Tech tree redesign |
-| B008 | In-Progress [Claude] | B007, B005 | 6 | BNW: Tourism and influence: city tourism, modifiers, influence, levels, trend, blast, level bonuses |
+| B008 | Needs-Review [Claude] | B007, B005 | 6 | BNW: Tourism and influence: city tourism, modifiers, influence, levels, trend, blast, level bonuses |
 | C071 | Available (waiting on C070) | C066, C070 | 6 | Policies screen redesign |
 | C078 | Available (waiting on C068, C069, C070, C071, C072, C073, C074, C075, C076, C077) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
 | C084 | Available (waiting on C083) | C083 | 4 | Unit art by era: ancient and classical |
