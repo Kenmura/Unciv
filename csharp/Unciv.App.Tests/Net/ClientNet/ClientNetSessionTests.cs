@@ -595,6 +595,58 @@ public sealed class ClientNetSessionTests
     }
 
     [Fact]
+    public async Task Join_ConnectFactoryHangs_TimesOutWithHandshakeTimeout()
+    {
+        using var identity = ClientIdentity.Generate();
+        var options = new ClientSessionOptions
+        {
+            Identity = identity,
+            DisplayName = "A",
+            RulesetHash = "h",
+            AllowUnpinnedHost = true,
+            HandshakeTimeout = TimeSpan.FromMilliseconds(150)
+        };
+        var session = new ClientSession(async token => { await Task.Delay(Timeout.Infinite, token); return null!; }, options);
+        Assert.Equal(new JoinResult(false, ClientCodes.HandshakeTimeout), await session.JoinAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+        await session.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Reconnect_DelayFunctionThrows_EndsWithInternalErrorInsteadOfFaultingTheLoop()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            ReconnectDelay = (_, _) => throw new InvalidOperationException("delay bug")
+        });
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        await host.CloseAsync();
+        Assert.Equal(ClientCodes.InternalError, (await rig.NextAsync<SessionEnded>()).Reason);
+        Assert.Equal(ClientSessionState.Disconnected, rig.Session.State);
+    }
+
+    [Fact]
+    public async Task Leave_WhileReconnecting_EndsTheSessionAndCancelsTheBackoff()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            ReconnectDelay = (_, token) => Task.Delay(Timeout.Infinite, token)
+        });
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        await host.CloseAsync();
+        await rig.NextAsync(it => it is StateChanged { State: ClientSessionState.Reconnecting });
+        await rig.Session.LeaveAsync().WaitAsync(TimeSpan.FromSeconds(10)); // the Leave message cannot be sent: not an error
+        Assert.Equal("left", (await rig.NextAsync<SessionEnded>()).Reason);
+    }
+
+    [Fact]
     public async Task Events_AreBoundedWhenNobodyReads_AndTheEndIsKept()
     {
         await using var rig = new ClientNetRig();
