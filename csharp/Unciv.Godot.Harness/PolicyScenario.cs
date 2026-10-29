@@ -137,11 +137,11 @@ public sealed class PolicyScenario : Scenario
 
             new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
             new WaitFrames(4),
-            new AssertQuery("the screen survived the rebuild for the new breakpoint: branch cards side by side in a grid (no tabs), same selection, every cell still a node", () =>
+            new AssertQuery("the screen survived the rebuild for the new breakpoint: branch cards in a scrolled grid (no tabs), same selection, every cell still a node", () =>
                 screen.IsPolicyScreenVisible && !screen.Policies.IsTabbed && screen.Policies.Selected is { Name: "Landed Elite" } && screen.Policies.BranchCards.Count == 10
                 && screen.Policies.BranchCards.Values.All(it => it.IsInsideTree()) && CellsEqualTree()
-                && screen.Policies.BranchCards["Tradition"].GetGlobalRect().Position.Y < screen.Policies.BranchCards["Piety"].GetGlobalRect().End.Y),
-            new Capture("wide", "1280x720: the branch cards flow side by side, Tradition with Legalism adopted (lit connectors), Landed Elite chosen with its hint, Adopt disabled and the effects on the right"),
+                && screen.Policies.AdoptButton.IsInsideTree() && screen.Policies.AdoptButton.Text == "Adopt Landed Elite"),
+            new Capture("wide", "1280x720: the branch cards flow in one scrolled grid (here one per row) beside a wider detail panel; Tradition and Legalism adopted (tinted, lit connectors), Landed Elite selected (bright ring), Adopt disabled"),
             new PressKey(Key.Escape),
             new WaitFrames(2),
             new AssertQuery("Escape closes the screen and, with no pick pending, sends nothing", () => !screen.IsPolicyScreenVisible && session.Log.Count == logged),

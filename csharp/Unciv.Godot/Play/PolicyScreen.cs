@@ -79,7 +79,7 @@ public partial class PolicyScreen : PanelContainer
         if (Tree == null) return;
         FillSummary();
         Build();
-        Select(selected?.Name);
+        Select(selected?.Name, reveal: false);
         ApplySearch(false);
     }
 
@@ -144,7 +144,7 @@ public partial class PolicyScreen : PanelContainer
     }
 
     /// <summary>Selects a policy by name (as pressing it does); an unknown name selects nothing.</summary>
-    public void Select(string? name)
+    public void Select(string? name, bool reveal = true)
     {
         selected = null;
         string? branch = null;
@@ -155,7 +155,7 @@ public partial class PolicyScreen : PanelContainer
                     selected = cell;
                     branch = view.Name;
                 }
-        if (branch != null) ShowBranch(branch);
+        if (branch != null && reveal) ShowBranch(branch);
         ShowSelection();
     }
 
@@ -292,7 +292,7 @@ public partial class PolicyScreen : PanelContainer
         FillSummary();
         string? keep = selected?.Name;
         Build();
-        Select(keep);
+        Select(keep, reveal: false);
         ApplySearch(false);
     }
 
@@ -306,6 +306,7 @@ public partial class PolicyScreen : PanelContainer
         policyButtons.Clear();
         branchCards.Clear();
         cardOrder.Clear();
+        int activeTab = tabs?.SelectedIndex ?? 0; // a reload or a rebuild keeps the branch the player was looking at
         tabs = null;
         branchScroll = null;
         var cards = Branches.Select(Card).ToList();
@@ -324,6 +325,7 @@ public partial class PolicyScreen : PanelContainer
                 tabs.AddTab(Branches[i].Name, scroll);
             }
             branchHost.AddChild(tabs);
+            tabs.Select(Math.Clamp(activeTab, 0, Math.Max(0, cards.Count - 1)));
             return;
         }
         var frameBox = new PanelContainer { ThemeTypeVariation = UiVariants.PanelInset, SizeFlagsVertical = Control.SizeFlags.ExpandFill, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
@@ -343,7 +345,7 @@ public partial class PolicyScreen : PanelContainer
     /// <summary>One branch as a card: header, opener, members on the grid with their connectors, completion strip.</summary>
     private PanelContainer Card(PolicyBranchView view)
     {
-        bool compact = uiTheme.Breakpoint == UiBreakpoint.Compact; // smaller nodes, so a four-column branch fits next to the detail panel at 640x480
+        bool compact = uiTheme.Breakpoint == UiBreakpoint.Compact; // smaller nodes: most of a four-column branch fits next to the detail panel at 640x480, the rest scrolls
         int w = uiTheme.Px(compact ? CompactNodeWidth : NodeWidth), h = uiTheme.Px(compact ? CompactNodeHeight : NodeHeight);
         int gx = uiTheme.Px(compact ? CompactGapX : GapX), gy = uiTheme.Px(compact ? CompactGapY : GapY);
         var card = new PanelContainer { Name = "Branch_" + view.Name, ThemeTypeVariation = UiVariants.PanelCard, SizeFlagsVertical = Control.SizeFlags.ShrinkBegin };
@@ -419,8 +421,11 @@ public partial class PolicyScreen : PanelContainer
     {
         bool active = searchText.Trim().Length > 0;
         string? firstBranch = null;
-        foreach (var view in Branches)
+        bool currentHasHit = false;
+        int shown = tabs?.SelectedIndex ?? -1;
+        for (int index = 0; index < Branches.Count; index++)
         {
+            var view = Branches[index];
             int hits = 0;
             foreach (var cell in view.Cells)
             {
@@ -439,8 +444,9 @@ public partial class PolicyScreen : PanelContainer
                 }
             }
             if (active && hits > 0 && firstBranch == null) firstBranch = view.Name;
+            if (hits > 0 && index == shown) currentHasHit = true;
         }
-        if (reveal && firstBranch != null) ShowBranch(firstBranch);
+        if (reveal && firstBranch != null && !currentHasHit) ShowBranch(firstBranch);
     }
 
     private static string Int(int value) => value.ToString(CultureInfo.InvariantCulture);
@@ -463,6 +469,8 @@ public partial class PolicyScreen : PanelContainer
             adopt.Text = "Adopt".Tr();
             adopt.Disabled = true;
             detail.AddChild(new EmptyState(uiTheme, AssetKey.Of(RulesetAssetKeys.UiIcon, "Policies"), "Choose a policy to see what it does."));
+            adopt.Visible = false; // kept in the tree, so it is freed with the panel
+            detail.AddChild(adopt);
             detail.AddChild(message);
             return;
         }
@@ -476,6 +484,7 @@ public partial class PolicyScreen : PanelContainer
         detail.AddChild(new Label { Name = "State", Text = cell.Hint.TrText(), ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart });
         adopt.Text = PolicyScreenModel.AdoptLabel(cell).TrText();
         adopt.Disabled = PolicyScreenModel.AdoptCommand(cell) == null;
+        adopt.Visible = true;
         detail.AddChild(adopt);
         detail.AddChild(new SectionHeader("Effects"));
         foreach (var effect in cell.Effects) detail.AddChild(EffectRow(effect));

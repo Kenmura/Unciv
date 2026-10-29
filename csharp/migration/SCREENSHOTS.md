@@ -366,21 +366,21 @@ Scenario `policy`.
 
 *Searching 'legal': Legalism stays bright and the other policies are dimmed.* (`policy/search.png`)
 
-![Tradition chosen (gold ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed.](../Unciv.Godot.Harness/golden/policy/selected.png)
+![Tradition selected (bright ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed.](../Unciv.Godot.Harness/golden/policy/selected.png)
 
-*Tradition chosen (gold ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed.* (`policy/selected.png`)
+*Tradition selected (bright ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed.* (`policy/selected.png`)
 
-![Tradition and Legalism adopted (gold rings, lit connectors); Legalism's detail shows 'Adopted' with a disabled button.](../Unciv.Godot.Harness/golden/policy/adopted.png)
+![Tradition and Legalism adopted (accent-tinted, lit connectors); Legalism is selected and its detail shows 'Adopted' with a disabled button.](../Unciv.Godot.Harness/golden/policy/adopted.png)
 
-*Tradition and Legalism adopted (gold rings, lit connectors); Legalism's detail shows 'Adopted' with a disabled button.* (`policy/adopted.png`)
+*Tradition and Legalism adopted (accent-tinted, lit connectors); Legalism is selected and its detail shows 'Adopted' with a disabled button.* (`policy/adopted.png`)
 
 ![Not enough culture (15 / 40): Landed Elite is open but Adopt is disabled and the hint gives the price.](../Unciv.Godot.Harness/golden/policy/short.png)
 
 *Not enough culture (15 / 40): Landed Elite is open but Adopt is disabled and the hint gives the price.* (`policy/short.png`)
 
-![1280x720: branch cards flow in a grid with a wider detail panel; Landed Elite chosen, Adopt disabled, Tradition's connectors lit.](../Unciv.Godot.Harness/golden/policy/wide.png)
+![1280x720: branch cards flow in one scrolled grid (one per row here) beside a wider detail panel; Landed Elite selected, Adopt disabled, Tradition's connectors lit.](../Unciv.Godot.Harness/golden/policy/wide.png)
 
-*1280x720: branch cards flow in a grid with a wider detail panel; Landed Elite chosen, Adopt disabled, Tradition's connectors lit.* (`policy/wide.png`)
+*1280x720: branch cards flow in one scrolled grid (one per row here) beside a wider detail panel; Landed Elite selected, Adopt disabled, Tradition's connectors lit.* (`policy/wide.png`)
 
 ## C021 Diplomacy screen
 
@@ -1300,7 +1300,7 @@ Scenario `unit-visuals`.
 
 *The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.* (`unit-visuals/gallery.png`)
 
-## C087 (ticket not Done or unknown)
+## C087 Rival stats ribbon in the HUD
 
 Rival stats ribbon in the world HUD: a collapsible block under the research pill with each known major rival's science (technologies), culture, gold and military strength; luxuries it could trade on hover.
 

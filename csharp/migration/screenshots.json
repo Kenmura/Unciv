@@ -261,11 +261,11 @@
       },
       {
         "golden": "policy/selected.png",
-        "caption": "Tradition chosen (gold ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed."
+        "caption": "Tradition selected (bright ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed."
       },
       {
         "golden": "policy/adopted.png",
-        "caption": "Tradition and Legalism adopted (gold rings, lit connectors); Legalism's detail shows 'Adopted' with a disabled button."
+        "caption": "Tradition and Legalism adopted (accent-tinted, lit connectors); Legalism is selected and its detail shows 'Adopted' with a disabled button."
       },
       {
         "golden": "policy/short.png",
@@ -273,7 +273,7 @@
       },
       {
         "golden": "policy/wide.png",
-        "caption": "1280x720: branch cards flow in a grid with a wider detail panel; Landed Elite chosen, Adopt disabled, Tradition's connectors lit."
+        "caption": "1280x720: branch cards flow in one scrolled grid (one per row here) beside a wider detail panel; Landed Elite selected, Adopt disabled, Tradition's connectors lit."
       }
     ]
   },

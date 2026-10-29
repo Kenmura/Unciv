@@ -224,8 +224,8 @@ public static class ThemeBuilder
         TechNode(UiVariants.TechNodeResearchable, UiTokens.Surface2, UiTokens.BorderStrong, UiTokens.TextPrimary);
         TechNode(UiVariants.TechNodeLocked, UiTokens.Surface1, UiTokens.BorderSubtle, UiTokens.TextMuted);
 
-        // policy node cards (C071): same look as the tech cards; adopted rings in the accent, one that can be adopted now in the info colour
-        TechNode(UiVariants.PolicyNodeAdopted, UiTokens.Surface2, UiTokens.Accent, UiTokens.TextPrimary, UiTokens.RingWidth);
+        // policy node cards (C071): same look as the tech cards; adopted is tinted in the accent (the bright ring is only the selection), one that can be adopted now in the info colour
+        TechNode(UiVariants.PolicyNodeAdopted, UiTokens.AccentLo.Scale(40), UiTokens.Accent, UiTokens.TextPrimary);
         TechNode(UiVariants.PolicyNodeAvailable, UiTokens.Surface2, UiTokens.Info, UiTokens.TextPrimary, UiTokens.RingWidth);
         TechNode(UiVariants.PolicyNodeOpen, UiTokens.Surface2, UiTokens.BorderStrong, UiTokens.TextSecondary);
         TechNode(UiVariants.PolicyNodeLocked, UiTokens.Surface1, UiTokens.BorderSubtle, UiTokens.TextMuted);
