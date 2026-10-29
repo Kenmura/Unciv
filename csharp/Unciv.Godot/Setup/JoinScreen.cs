@@ -276,7 +276,7 @@ public partial class JoinScreen : Control
             ShowPanel(trustPanel);
             messageLabel.Text = "";
         }
-        if (context == null) Show();
+        if (context == null) Callable.From(Show).CallDeferred();
         else context.Post(static state => ((Action)state!)(), (Action)Show);
         return answer.Task;
     }

@@ -30,10 +30,19 @@ public static class JoinFiles
 
     public static void SaveKnownHosts(string path, KnownHosts known)
     {
-        var directory = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
         var sorted = new SortedDictionary<string, string>(known.Pins.ToDictionary(it => it.Key, it => it.Value), StringComparer.Ordinal);
-        File.WriteAllText(path, JsonSerializer.Serialize(sorted, new JsonSerializerOptions { WriteIndented = true }));
+        try
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+            var temp = path + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(sorted, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temp, path, overwrite: true);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // the pin stays in memory for this run; the next trust prompt asks again after a restart
+        }
     }
 
     public static string LoadLastAddress(string path)

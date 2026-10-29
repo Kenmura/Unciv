@@ -79,4 +79,14 @@ public sealed class JoinFilesTests : IDisposable
         JoinFiles.SaveLastAddress(Path.Combine(blocker, "inside", "last-join.txt"), "a:1"); // the parent is a file: must not throw
         Assert.Equal("", JoinFiles.LoadLastAddress(Path.Combine(blocker, "inside", "last-join.txt")));
     }
+
+    [Fact]
+    public void SaveKnownHosts_UnwritableLocation_DoesNotThrow()
+    {
+        var blocker = Path.Combine(root, "file");
+        File.WriteAllText(blocker, "x");
+        var known = new KnownHosts();
+        known.Pin("h:1", Fingerprint);
+        JoinFiles.SaveKnownHosts(Path.Combine(blocker, "inside", "known-hosts.json"), known);
+    }
 }

@@ -28,6 +28,7 @@ public static class JoinModel
     // The client-side codes of Unciv.Client.Net.Session.ClientCodes, spelled out here because this project must not reference the client library.
     private const string ConnectFailed = "connect-failed";
     private const string ConnectionLost = "connection-lost";
+    private const string ReconnectFailed = "reconnect-failed";
     private const string HostKeyChanged = "host-key-changed";
     private const string HostKeyMismatch = "host-key-mismatch";
     private const string HostUntrusted = "host-untrusted";
@@ -88,6 +89,7 @@ public static class JoinModel
         ConnectFailed => "Could not reach the host. Check the address and port, that the host is hosting, and that the port is forwarded if you are not on the same network.",
         HandshakeTimeout => "The host did not answer in time. It may be busy or the address may be wrong.",
         ConnectionLost => "The connection to the host was lost.",
+        ReconnectFailed => "Could not get back to the host after several tries.",
         SessionClosed => "You left the game.",
         HostUntrusted => "You did not trust this host, so nothing was sent to it.",
         HostKeyMismatch => "The host's key does not match the invite. Someone may be pretending to be the host. Ask the host for a fresh invite over a channel you trust.",
@@ -112,7 +114,7 @@ public static class JoinModel
     {
         if (endedReason != null)
         {
-            string detail = endedReason is ConnectionLost or ConnectFailed
+            string detail = endedReason is ConnectionLost or ConnectFailed or ReconnectFailed
                 ? "Could not get back to the host. Your seat is kept: join the same address again later with the same key and you continue where you were."
                 : RefusalText(endedReason);
             return new ConnectionView(true, "Disconnected", detail, true);

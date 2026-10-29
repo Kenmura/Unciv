@@ -109,6 +109,15 @@ public sealed class JoinModelTests
         Assert.Equal("The host went away", JoinModel.Connection(true, true, null).Title);
     }
 
+    [Fact]
+    public void Connection_ReconnectFailed_SaysTheSeatIsKept()
+    {
+        var view = JoinModel.Connection(false, false, "reconnect-failed");
+        Assert.Contains("seat is kept", view.Detail, StringComparison.Ordinal);
+        Assert.DoesNotContain("refused", view.Detail, StringComparison.Ordinal);
+        Assert.DoesNotContain("refused", JoinModel.RefusalText("reconnect-failed"), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("reconnect-failed")]
     [InlineData("connection-lost")]
