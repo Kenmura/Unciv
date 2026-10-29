@@ -110,9 +110,9 @@ public sealed partial class GameHost
 
     private async Task AcceptStandbyAsync(HostSession from, StandbyAccept accept)
     {
-        var code = await Standby.AcceptAsync(from.PlayerKeyId, accept, cts.Token).ConfigureAwait(false); // suspends at the dial, so the actor keeps running
         try
         {
+            var code = await Standby.AcceptAsync(from.PlayerKeyId, accept, cts.Token).ConfigureAwait(false); // suspends at the dial, so the actor keeps running
             await EnqueueAsync(async () =>
             {
                 if (code != ErrorCodes.NotDesignated) PersistStandby(Standby);
@@ -124,7 +124,7 @@ public sealed partial class GameHost
                 }
             }).ConfigureAwait(false);
         }
-        catch (InvalidOperationException) { /* the host closed meanwhile */ }
+        catch (Exception e) when (e is InvalidOperationException or ObjectDisposedException or OperationCanceledException) { /* the host closed meanwhile */ }
     }
 
     private async Task ProcessStandbyDeclineAsync(HostSession from)

@@ -298,12 +298,12 @@ public sealed class ClientSession : IAsyncDisposable
     /// </summary>
     private void HandleSuccessor(HostSuccessor successor)
     {
-        if (successor.Epoch < Math.Max(knownEpoch, connectionEpoch)) return;
+        if (successor.Epoch != connectionEpoch) return; // the connected host speaks for its own epoch only
         Successor = successor;
         if (successor.Status == StandbyStates.Ready && successor.Successor is { } info && options.KnownHosts is { } known && connectedHostFingerprint.Length > 0)
         {
             var added = false;
-            foreach (var endpoint in info.Endpoints.Take(8))
+            foreach (var endpoint in info.Endpoints.Take(8).Where(it => it.Length is > 2 and <= 260 && it[0] != '$' && it.Contains(':')))
             {
                 var had = known.Pins.ContainsKey(endpoint);
                 if (known.PinVouched(endpoint, info.Fingerprint, connectedHostFingerprint, successor.Epoch) && !had) added = true;

@@ -135,8 +135,10 @@ public sealed class KnownHosts
     public bool PinVouched(string hostAddress, string fingerprint, string voucherFingerprint, int epoch)
     {
         var voucher = HostKey.Normalize(voucherFingerprint);
-        if (voucher == null || !Pin(hostAddress, fingerprint)) return false;
-        vouches.TryAdd(hostAddress, new Vouch(voucher, epoch));
+        if (voucher == null) return false;
+        var existed = pins.ContainsKey(hostAddress);
+        if (!Pin(hostAddress, fingerprint)) return false;
+        if (!existed) vouches[hostAddress] = new Vouch(voucher, epoch); // a pin the user trusted on first use is not a vouched one
         return true;
     }
 

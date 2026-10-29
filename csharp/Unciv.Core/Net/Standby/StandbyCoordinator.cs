@@ -100,12 +100,21 @@ public sealed class StandbyCoordinator
             var normalized = Normalize(accept);
             var normalizedFingerprint = HostKey.Normalize(accept.Fingerprint);
             if (normalized == null || normalizedFingerprint == null) return ErrorCodes.InvalidEndpoint;
-            endpoints = normalized;
-            fingerprint = normalizedFingerprint;
-            accepted = true;
-            reachable = false;
-            probeCursor = 0;
-            gen = ++generation;
+            if (accepted && endpoints.SequenceEqual(normalized, StringComparer.Ordinal) && string.Equals(fingerprint, normalizedFingerprint, StringComparison.Ordinal))
+            {
+                // A repeated accept (client retry) changes nothing: it must not cancel a probe in flight or undo a ready standby.
+                if (reachable) return null;
+                gen = generation;
+            }
+            else
+            {
+                endpoints = normalized;
+                fingerprint = normalizedFingerprint;
+                accepted = true;
+                reachable = false;
+                probeCursor = 0;
+                gen = ++generation;
+            }
         }
         return await ProbeCoreAsync(gen, cancellationToken).ConfigureAwait(false);
     }
@@ -131,10 +140,7 @@ public sealed class StandbyCoordinator
             if (gen != generation || keyId == null || !accepted) return ErrorCodes.NotDesignated;
             var now = clock.NowMillis;
             if (lastProbeMillis != long.MinValue && now - lastProbeMillis < limits.ProbeMinIntervalMillis)
-            {
-                reachable = false;
-                return ErrorCodes.ProbeRateLimited;
-            }
+                return ErrorCodes.ProbeRateLimited; // never downgrades a ready standby: a refused probe says nothing about reachability
             lastProbeMillis = now;
             endpoint = endpoints[probeCursor % endpoints.Count];
             probeCursor++;
@@ -222,12 +228,20 @@ public sealed class StandbyCoordinator
             keyId = record.KeyId;
             var normalizedFingerprint = HostKey.Normalize(record.Fingerprint);
             accepted = record.Accepted && record.Endpoints.Count > 0 && normalizedFingerprint != null;
+            if (accepted && record.Endpoints.Any(e => !ValidStoredEndpoint(e))) accepted = false; // a hand-edited file must not reach the dialler
             if (accepted && normalizedFingerprint != null)
             {
                 endpoints = [.. record.Endpoints];
                 fingerprint = normalizedFingerprint;
             }
         }
+    }
+
+    private static bool ValidStoredEndpoint(string endpoint)
+    {
+        var separator = endpoint.LastIndexOf(':');
+        return separator > 0 && int.TryParse(endpoint[(separator + 1)..], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var port) && port is >= 1024 and <= 65535
+            && endpoint.Length <= 260 && endpoint[..separator].Trim('[', ']').All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or ':');
     }
 
     private void ResetLocked()

@@ -111,7 +111,33 @@ public sealed class StandbyCoordinatorTests
         clock.AdvanceSeconds(2);
         prober.Answer = (_, _) => Fp;
         Assert.Null(await c.ReprobeAsync());
-        Assert.Equal(["a.example:47821", "a.example:47821"], prober.Dialled); // a fresh accept restarts at the first endpoint
+        Assert.Equal(["a.example:47821", "b.example:47821"], prober.Dialled); // the repeated identical accept did not restart the rotation
+    }
+
+    [Fact]
+    public async Task RepeatedAcceptAndRateLimitedReprobe_NeverUndoAReadyStandby()
+    {
+        var (c, prober, clock) = Make();
+        c.Designate("candidate", out _);
+        Assert.Null(await c.AcceptAsync("candidate", Accept(Fp)));
+        Assert.Null(await c.AcceptAsync("candidate", Accept(Fp))); // a client retry
+        Assert.Equal(ErrorCodes.ProbeRateLimited, await c.ReprobeAsync());
+        Assert.Equal(StandbyStates.Ready, c.State);
+        Assert.Single(prober.Dialled);
+        clock.AdvanceSeconds(61);
+        prober.Answer = (_, _) => null;
+        Assert.Equal(ErrorCodes.ProbeFailed, await c.ReprobeAsync());
+        Assert.Equal(StandbyStates.Unreachable, c.State);
+    }
+
+    [Fact]
+    public void Restore_DropsAnAcceptedRecordWithAnUndialableEndpoint()
+    {
+        var c = new StandbyCoordinator(new ManualClock(0), new FakeProber());
+        c.Restore(new StandbyRecord { KeyId = "k", Accepted = true, Endpoints = ["nocolon"], Fingerprint = Fp });
+        Assert.Equal(StandbyStates.Offered, c.State);
+        c.Restore(new StandbyRecord { KeyId = "k", Accepted = true, Endpoints = ["a.example:80"], Fingerprint = Fp });
+        Assert.Equal(StandbyStates.Offered, c.State);
     }
 
     [Fact]
@@ -410,6 +436,8 @@ public sealed class StandbyClientTests
         var known = new KnownHosts();
         known.Pin("old.example:1", HostFp);
         Assert.True(known.PinVouched("new.example:2", SuccessorFp, HostFp, 4));
+        Assert.True(known.PinVouched("old.example:1", HostFp, HostFp, 9)); // already trusted on first use: no vouch recorded
+        Assert.False(known.Vouches.ContainsKey("old.example:1"));
         Assert.False(known.PinVouched("bad.example:3", SuccessorFp, "not-a-fingerprint", 4));
         JoinFiles.SaveKnownHosts(path, known);
 
