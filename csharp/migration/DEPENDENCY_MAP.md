@@ -92,7 +92,7 @@ flowchart TD
   class T282 ready
   class T283 ready
   class T285 ready
-  class T286 prog
+  class T286 review
   class T287 prog
   class T288 ready
   class T289 ready
@@ -161,6 +161,6 @@ xychart-beta
 | T275 | Available (waiting on T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T278 | Available (waiting on T260) | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T280 | Available (waiting on T260, T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
-| T286 | In-Progress [Claude-T286] | C101 | 0 | Phone layout: City and production screens (C101 follow-up) |
+| T286 | Needs-Review [Claude-T286] | C101 | 0 | Phone layout: City and production screens (C101 follow-up) |
 | T287 | In-Progress [Claude-T287] | T271 | 0 | Far-zoom draw-call reduction |
 | T291 | In-Progress [Claude-shots] | none | 0 | Publish curated real-GPU Ultra graphics screenshots as docs images (not goldens) |
