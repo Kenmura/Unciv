@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(UncivTfm)</TargetFramework>
+    <!-- The Godot client references this Exe (via Unciv.Client.Net): without this its export (dotnet publish -r linux-x64) builds it twice and fails with NETSDK1152 (test_ci.py guards it). -->
+    <IsRidAgnostic>true</IsRidAgnostic>
   </PropertyGroup>
 
   <ItemGroup>

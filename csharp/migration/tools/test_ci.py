@@ -431,6 +431,22 @@ class ProjectSettings(unittest.TestCase):
         text = (REPO / "csharp" / "Unciv.Godot" / "project.godot").read_text(encoding="utf-8")
         self.assertIn("textures/vram_compression/import_etc2_astc=true", text)
 
+    def test_executable_projects_stay_rid_agnostic_for_the_godot_export(self):
+        # T265 made Unciv.Server an Exe; Godot's `dotnet publish -r linux-x64` of the client then built it twice (with and without the RID) and failed with
+        # NETSDK1152, so every client export ("export produced no .NET assemblies folder") broke. Any Exe the client references must set IsRidAgnostic.
+        root = REPO / "csharp"
+        texts = {c.parent.name: c.read_text(encoding="utf-8") for c in root.glob("*/*.csproj")}
+        refs = lambda n: re.findall(r"\.\.\\([\w.]+)\\[\w.]+\.csproj", texts.get(n, ""))
+        referenced, todo = set(), ["Unciv.Godot"]  # the transitive closure of what the client publishes
+        while todo:
+            for m in refs(todo.pop()):
+                if m not in referenced:
+                    referenced.add(m)
+                    todo.append(m)
+        for name in sorted(referenced):
+            if "<OutputType>Exe</OutputType>" in texts.get(name, ""):
+                self.assertIn("<IsRidAgnostic>true</IsRidAgnostic>", texts[name], name)
+
 
 if __name__ == "__main__":
     unittest.main()
