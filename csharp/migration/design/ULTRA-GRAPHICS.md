@@ -81,7 +81,7 @@ Soft link only. The Android build uses `gl_compatibility`; Ultra is unavailable 
 Levels:
 
 - **Low** (default; harness scenarios): today's look, compat renderer, no shadows.
-- **High** (compat-safe, can ship on every platform including Android if T259 allows): directional shadows, tone mapping plus glow, MSAA 2x, water and terrain shader polish.
+- **High** (compat-safe, can ship on every platform including Android if T259 allows): directional shadows, tone mapping plus glow, MSAA 2x, water and terrain shader polish (shader polish ended up Ultra-only, see the C098 outcome in section 6).
 - **Ultra** (Forward+ only): everything in High, plus SSAO, MSAA 4x or TAA, SSR on water. Not included: volumetric fog, SDFGI/VoxelGI, ray tracing.
 
 Renderer switch: Godot picks the renderer once at start, so choosing Ultra saves the setting and offers a **restart** (`OS.SetRestartOnExit` with `--rendering-method forward_plus`); picking Low/High restarts back to `gl_compatibility`. The `Main` scene must read the setting before building the scene; first-run behaviour is unchanged.

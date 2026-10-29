@@ -109,7 +109,7 @@ public partial class MapView : Node3D
     public bool IsChunkVisibleAt(Vector3 ground) => terrain.IsChunkVisibleAt(ground);
 
     /// <summary>C098: the material the terrain chunks wear (a ShaderMaterial at Ultra, else the plain chunk material); null before the first Load.</summary>
-    public Material? TerrainMaterial => terrain.ChunkMaterial;
+    public Material? TerrainMaterial => terrain?.ChunkMaterial;
 
     public int TileCount => tiles.Count;
 

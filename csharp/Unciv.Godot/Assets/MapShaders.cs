@@ -59,7 +59,7 @@ public static class MapShaders
 
         void fragment() {
             vec3 base = COLOR.rgb * texture(grain, UV).rgb;
-            bool up = world_normal.y > flat_normal_y;
+            bool up = normalize(world_normal).y > flat_normal_y;
             if (up && world_pos.y < water_ceiling) {
                 // Water: two noise layers drifting in different directions tilt the normal; the colour keeps the baked depth and shore shading.
                 float t = TIME * wave_speed;
