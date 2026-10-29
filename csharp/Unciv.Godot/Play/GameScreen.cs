@@ -1038,7 +1038,7 @@ public partial class GameScreen : Control
             SelectedUnitId = null;
             extraGroupIds = [];
             escorts.Clear();
-            escortsDue = false;
+            escortTurnHandled.Clear();
             mapLoaded = false;
             bannerTurn = -1;
             rivalsTurn = -1;
@@ -1651,7 +1651,7 @@ public partial class GameScreen : Control
         session.Ruleset.Units.TryGetValue(unit.Name, out var baseUnit);
         List<MenuEntry> menu = [.. UnitOrdersModel.Menu(actions ?? new UnitActionsResult(id, []), tile, promotions, unit.Own?.CurrentMovement > 0f)];
         bool paired = GroupPair() != null;
-        if (paired || GroupMoveModel.Offer([.. GroupUnitIds.Select(it => unitNodes[it].Unit)], name => session.Ruleset.Units.GetValueOrDefault(name)) != null)
+        if (paired || GroupMoveModel.Offer([.. GroupUnitIds.Where(unitNodes.ContainsKey).Select(it => unitNodes[it].Unit)], name => session.Ruleset.Units.GetValueOrDefault(name)) != null)
             menu.Insert(menu.Count > 0 && menu[^1].Kind == MenuEntryKind.Disband ? menu.Count - 1 : menu.Count, GroupMoveModel.Entry(paired));
         Panel.Show(UnitOrdersModel.Panel(unit, baseUnit), menu);
         PromoteButton.Visible = promotions is { Promotions.Count: > 0 };
@@ -1736,6 +1736,7 @@ public partial class GameScreen : Control
             SetStatus($"{entry.Label} refused: {result.Message}");
             return;
         }
+        DropEscortTarget(id);
         Refresh();
         SetStatus($"{entry.Label}: done.");
     }
@@ -1745,8 +1746,9 @@ public partial class GameScreen : Control
         var group = GroupUnitIds;
         string viewer = session.ViewerCivId ?? "";
         if (!escorts.TryGetValue(viewer, out var list)) escorts[viewer] = list = [];
+        escortTurnHandled[viewer] = snapshot.Turn;
         list.RemoveAll(it => group.Contains(it.CivilianId) || group.Contains(it.MilitaryId));
-        if (make && GroupMoveModel.Offer([.. group.Select(it => unitNodes[it].Unit)], name => session.Ruleset.Units.GetValueOrDefault(name)) is { } pair) list.Add(pair);
+        if (make && GroupMoveModel.Offer([.. group.Where(unitNodes.ContainsKey).Select(it => unitNodes[it].Unit)], name => session.Ruleset.Units.GetValueOrDefault(name)) is { } pair) list.Add(pair);
         SetStatus(make ? "Escort pair formed: it moves together." : "Escort ended.");
         Run(RefreshSelection());
     }
@@ -1770,6 +1772,7 @@ public partial class GameScreen : Control
     private async Task MoveGroupTo(HexCoord target)
     {
         var ids = GroupUnitIds;
+        escortTurnHandled[session.ViewerCivId ?? ""] = snapshot.Turn;
         var report = await GroupMoveModel.MoveGroupAsync(new GroupEnvironment(this), ids, Escorts, target);
         string viewer = session.ViewerCivId ?? "";
         if (escorts.TryGetValue(viewer, out var list))
@@ -1787,7 +1790,16 @@ public partial class GameScreen : Control
         SetStatus(GroupMoveModel.Summary(report, UnitName));
     }
 
-    private bool escortsDue;
+    // The last turn whose start was handled for each viewer (escorts continue once per turn, when the viewer's units can move again); a player who already acted this turn counts as handled
+    private readonly Dictionary<string, int> escortTurnHandled = [];
+
+    /// <summary>A command given to one unit of a pair on its own ends the pair's standing move.</summary>
+    private void DropEscortTarget(int unitId)
+    {
+        if (!escorts.TryGetValue(session.ViewerCivId ?? "", out var list)) return;
+        for (int i = 0; i < list.Count; i++)
+            if (list[i].Target != null && (list[i].CivilianId == unitId || list[i].MilitaryId == unitId)) list[i] = list[i] with { Target = null };
+    }
 
     private bool EscortsCanMove() =>
         Escorts.Any(pair => pair.Target != null && snapshot.Units.Any(it => it.Id == pair.MilitaryId && it.Own?.CurrentMovement > 0f));
@@ -1798,13 +1810,13 @@ public partial class GameScreen : Control
         if (!escorts.TryGetValue(session.ViewerCivId ?? "", out var list)) return;
         var env = new GroupEnvironment(this);
         bool any = false;
-        for (int i = 0; i < list.Count; i++)
+        foreach (var pair in list.ToArray()) // the list can change while a step awaits (the player may end an escort), so entries are found again by value
         {
-            var pair = list[i];
             if (pair.Target is not { } target) continue;
             var outcome = await GroupMoveModel.EscortStepAsync(env, pair, target);
             any |= outcome.Status == GroupMoveStatus.Moved;
-            if (outcome.Status != GroupMoveStatus.Moved) list[i] = pair with { Target = null };
+            int at = list.IndexOf(pair);
+            if (outcome.Status != GroupMoveStatus.Moved && at >= 0) list[at] = pair with { Target = null };
         }
         if (any) Refresh();
     }
@@ -1824,6 +1836,7 @@ public partial class GameScreen : Control
             SetStatus("Move refused: " + result.Message);
             return;
         }
+        DropEscortTarget(unitId);
         ReportTaskDone(TutorialTaskModel.MoveUnitTask);
         Refresh();
         SetStatus(DescribeSelected(), quiet: true);
@@ -1844,13 +1857,14 @@ public partial class GameScreen : Control
         Notifications.Update(bar.Turn, rows);
         if (bar.Turn != bannerTurn)
         {
-            if (bannerTurn >= 0) escortsDue = true;
             bannerTurn = bar.Turn;
             Hud.ShowBanner(HudModel.Banner(bar.Turn, bar.Year, session.ViewerCivId));
         }
-        if (escortsDue && EscortsCanMove())
+        string viewer = session.ViewerCivId ?? "";
+        if (!escortTurnHandled.TryGetValue(viewer, out int handled)) escortTurnHandled[viewer] = bar.Turn; // the first sight of a game: nothing to continue
+        else if (bar.Turn > handled && EscortsCanMove())
         {
-            escortsDue = false; // the new turn has begun for the viewer (its units have movement again)
+            escortTurnHandled[viewer] = bar.Turn; // the new turn has begun for the viewer (its units have movement again)
             await ContinueEscorts();
         }
         ShowNextAlert(pending, reopen: false);
