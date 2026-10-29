@@ -6,6 +6,7 @@ using Unciv.Models.Translations;
 using Unciv.Net;
 using Unciv.Models.Ruleset;
 using Unciv.Net.Identity;
+using Unciv.Net.Mods;
 
 namespace Unciv.GodotClient.Setup;
 
