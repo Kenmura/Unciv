@@ -781,15 +781,21 @@ public sealed class ModSyncTests : IDisposable
     }
 
     [Fact]
-    public async Task Host_NothingToOffer_IsNotCached_SoFixingTheModHelpsTheNextJoiner()
+    public async Task Host_NothingToOffer_IsRememberedBrieflyThenRechecked()
     {
         var folders = new Dictionary<string, string>();
-        await using var lobby = NewLobby(folders: folders);
+        var clock = new ManualClock(1000);
+        await using var lobby = new LobbyHost(settings: Settings(), hostFingerprint: ClientNetFingerprint, clock: clock) { ModFolders = new FixedFolders(folders) };
         var (c1, w1) = await HelloAsync(lobby, clientHash, modSync: true);
         await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "Mallory" }));
         await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = identity.Sign(w1.HostKeyFingerprint, w1.SessionId, w1.Challenge) }));
         Assert.Equal(JoinRefusedCodes.ModSyncUnavailable, (await ReceiveAsync<JoinRefused>(c1)).Code);
         folders["TestMod"] = Path.Combine(hostMods, "TestMod");
+        var (cx, wx) = await HelloAsync(lobby, clientHash, modSync: true);
+        await cx.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "Mallory" }));
+        await cx.SendAsync(ProtocolCodec.Encode(new Auth { Proof = identity.Sign(wx.HostKeyFingerprint, wx.SessionId, wx.Challenge) }));
+        Assert.Equal(JoinRefusedCodes.ModSyncUnavailable, (await ReceiveAsync<JoinRefused>(cx)).Code); // still remembered
+        clock.Advance(6000);
         var (c2, w2) = await HelloAsync(lobby, clientHash, modSync: true);
         Assert.Single((await ManifestAsync(c2, w2)).Entries);
     }
