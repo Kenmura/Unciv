@@ -444,9 +444,13 @@ Scenario `overview`.
 
 *Stats tab (redesigned in C074): a two-column grid of cards (Empire, Economy, Progress, Score) with stat icons and the indented score breakdown, inside the screen frame with underline tabs.* (`overview/stats.png`)
 
-![Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row.](../Unciv.Godot.Harness/golden/overview/cities.png)
+![Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row, and the bulk actions panel below it (nothing selected, so its actions are disabled).](../Unciv.Godot.Harness/golden/overview/cities.png)
 
-*Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row.* (`overview/cities.png`)
+*Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row, and the bulk actions panel below it (nothing selected, so its actions are disabled).* (`overview/cities.png`)
+
+![C092: both city rows selected (accent text, Selected: 2); the bulk panel offers a citizen focus with Set focus, a build item with Add to queue and Buy current production, and the build templates kept in the client settings (none yet).](../Unciv.Godot.Harness/golden/overview/cities-bulk.png)
+
+*C092: both city rows selected (accent text, Selected: 2); the bulk panel offers a citizen focus with Set focus, a build item with Add to queue and Buy current production, and the build templates kept in the client settings (none yet).* (`overview/cities-bulk.png`)
 
 ![Units tab: own units only in a sortable table with position, health, moves (numbers right-aligned), order and a Go to button per row.](../Unciv.Godot.Harness/golden/overview/units.png)
 
@@ -1359,3 +1363,4 @@ Done tickets with nothing meaningful to show.
 - **C074 Overview and espionage on DataTable**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.
 - **C075 Game menu, save/load and options**: Game menu, save/load and options redesign: the redesigned screens are shown under C044 (menu/*), the save/load, options and settings entries, whose goldens were re-recorded.
 - **C077 Victory, defeat and vote result screens**: Victory, defeat, resigned, victory status and World Congress result as Modals: shown under C024 (victory/*, defeat/*), C044 (menu/victory-status, menu/resigned) and C053 (vote-result/*), whose captions and goldens were re-recorded.
+- **C092 (ticket not Done or unknown)**: Bulk city actions on the overview cities tab: shown under C023 (overview/cities, overview/cities-bulk).

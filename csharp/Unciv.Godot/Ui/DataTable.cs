@@ -13,6 +13,7 @@ public readonly record struct DataColumn(string Header, bool Numeric = false, in
 /// right-aligned in tabular figures and rows alternate Surface1 and Surface2. The order comes from <see cref="TableSorter"/>; the rows keep their input order when equal.
 /// C074: with <c>actions</c> the table has one more, header-less column at the right that holds a control per row (a "go to" icon button, a row's Move and Coup buttons);
 /// <see cref="SetRows"/> takes the factory, which is called once per input row, so the control stays the same object when the table is sorted.
+/// C092: with <c>multiSelect</c> a click on a row toggles it in <see cref="SelectedRows"/> (shown in the accent colour) instead of choosing the one <see cref="SelectedRow"/>.
 /// </summary>
 public partial class DataTable : PanelContainer
 {
@@ -24,13 +25,16 @@ public partial class DataTable : PanelContainer
     private IReadOnlyList<int> order = [];
     private readonly bool hasActions;
     private readonly bool selectable;
+    private readonly bool multiSelect;
+    private readonly SortedSet<int> selectedRows = [];
     private IReadOnlyList<Control?> actionControls = [];
 
-    public DataTable(IReadOnlyList<DataColumn> columns, bool actions = false, bool selectable = false)
+    public DataTable(IReadOnlyList<DataColumn> columns, bool actions = false, bool selectable = false, bool multiSelect = false)
     {
         this.columns = columns;
         hasActions = actions;
-        this.selectable = selectable;
+        this.multiSelect = multiSelect;
+        this.selectable = selectable || multiSelect;
         ThemeTypeVariation = UiVariants.PanelInset;
         grid.Columns = Math.Max(1, columns.Count + (actions ? 1 : 0));
         grid.AddThemeConstantOverride("h_separation", 0);
@@ -42,6 +46,12 @@ public partial class DataTable : PanelContainer
 
     /// <summary>C075: the selected input row (a selectable table; a click on any cell of a row selects it), or -1.</summary>
     public int SelectedRow { get; private set; } = -1;
+
+    /// <summary>C092: the toggled input rows of a <c>multiSelect</c> table, in input order.</summary>
+    public IReadOnlyCollection<int> SelectedRows => selectedRows;
+
+    /// <summary>C092: <see cref="SelectedRows"/> changed (by a click, <see cref="Toggle"/> or <see cref="SetSelectedRows"/> with notify).</summary>
+    public event Action? SelectionChanged;
 
     /// <summary>C075: a row was selected by a click or by <see cref="Select"/>.</summary>
     public event Action<int>? RowSelected;
@@ -77,6 +87,7 @@ public partial class DataTable : PanelContainer
         ReleaseActions();
         foreach (var control in actionControls) control?.QueueFree();
         rows = newRows;
+        selectedRows.RemoveWhere(it => it >= newRows.Count);
         actionControls = hasActions && rowAction != null ? Enumerable.Range(0, newRows.Count).Select(rowAction).ToList() : [];
         Rebuild();
     }
@@ -94,6 +105,24 @@ public partial class DataTable : PanelContainer
         SelectedRow = inputRow;
         Rebuild();
         if (notify && inputRow >= 0) RowSelected?.Invoke(inputRow);
+    }
+
+    /// <summary>C092: toggles an input row of a <c>multiSelect</c> table.</summary>
+    public void Toggle(int inputRow)
+    {
+        if (inputRow < 0 || inputRow >= rows.Count) return;
+        if (!selectedRows.Remove(inputRow)) selectedRows.Add(inputRow);
+        Rebuild();
+        SelectionChanged?.Invoke();
+    }
+
+    /// <summary>C092: replaces the selection by the given input rows (rows outside the table are ignored).</summary>
+    public void SetSelectedRows(IEnumerable<int> inputRows, bool notify = false)
+    {
+        selectedRows.Clear();
+        foreach (int row in inputRows.Where(it => it >= 0 && it < rows.Count)) selectedRows.Add(row);
+        Rebuild();
+        if (notify) SelectionChanged?.Invoke();
     }
 
     /// <summary>Sorts by a column in the given direction.</summary>
@@ -151,14 +180,14 @@ public partial class DataTable : PanelContainer
                 if (columns[c].MinWidth > 0) label.CustomMinimumSize = new Vector2(columns[c].MinWidth, 0f);
                 if (columns[c].Numeric) label.ThemeTypeVariation = UiVariants.LabelNumber;
                 int inputRow = order[r];
-                if (inputRow == SelectedRow) label.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.Accent));
+                if (inputRow == SelectedRow || selectedRows.Contains(inputRow)) label.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.Accent));
                 else if (RowTone?.Invoke(inputRow) is { } tone) label.AddThemeColorOverride("font_color", tone);
                 var cell = new PanelContainer { ThemeTypeVariation = r % 2 == 0 ? UiVariants.PanelCellEven : UiVariants.PanelCellOdd, SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = selectable ? MouseFilterEnum.Pass : MouseFilterEnum.Stop };
                 if (selectable)
                 {
                     cell.GuiInput += input =>
                     {
-                        if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Callable.From(() => Select(inputRow)).CallDeferred(); // rebuilding frees the cell whose event is being handled, so the selection runs after it
+                        if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Callable.From(() => { if (multiSelect) Toggle(inputRow); else Select(inputRow); }).CallDeferred(); // rebuilding frees the cell whose event is being handled, so the selection runs after it
                     };
                 }
                 cell.AddChild(label);

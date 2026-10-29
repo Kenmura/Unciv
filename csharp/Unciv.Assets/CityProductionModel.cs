@@ -165,7 +165,8 @@ public static class CityProductionModel
         return entry == null ? [] : entry.BuyCosts.Select(it => Buy(city, entry, it, gold)).ToList();
     }
 
-    private static string QueueWhy(CityPanelResult city, ConstructionEntry entry)
+    /// <summary>C092: why the engine would refuse to queue <paramref name="entry"/> in the city; empty when it would accept.</summary>
+    public static string QueueWhy(CityPanelResult city, ConstructionEntry entry)
     {
         if (city.IsPuppet) return PuppetWhy;
         if (entry.State == "buildable") return "";

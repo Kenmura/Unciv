@@ -528,6 +528,7 @@ public partial class GameScreen : Control
         if (boundSettings != null) boundSettings.Changed -= ApplySettings;
         boundSettings = settings;
         settings.Changed += ApplySettings;
+        Overview?.BindSettings(settings);
         ApplySettings(settings.Current);
         if (session != null) CheckTutorials(); // the first look at the game came before the settings were known
     }
@@ -1002,6 +1003,7 @@ public partial class GameScreen : Control
         Overview.CommandAccepted += Refresh;
         Overview.CityChosen += JumpToCity;
         Overview.UnitChosen += JumpToUnit;
+        if (boundSettings != null) Overview.BindSettings(boundSettings);
         if (Tooltips != null)
         {
             RemoveChild(Tooltips);

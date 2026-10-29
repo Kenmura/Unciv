@@ -492,7 +492,11 @@
       },
       {
         "golden": "overview/cities.png",
-        "caption": "Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row."
+        "caption": "Cities tab: a DataTable of the capital and a puppet city, numbers right-aligned, with a Go to arrow button at the end of each row, and the bulk actions panel below it (nothing selected, so its actions are disabled)."
+      },
+      {
+        "golden": "overview/cities-bulk.png",
+        "caption": "C092: both city rows selected (accent text, Selected: 2); the bulk panel offers a citizen focus with Set focus, a build item with Add to queue and Buy current production, and the build templates kept in the client settings (none yet)."
       },
       {
         "golden": "overview/units.png",
@@ -1317,6 +1321,9 @@
         "caption": "At 1280x720 the city screen keeps its structure: buildable list rows spread over the extra width, with cost and Buy chips at the right edge."
       }
     ]
+  },
+  "C092": {
+    "none": "Bulk city actions on the overview cities tab: shown under C023 (overview/cities, overview/cities-bulk)."
   },
   "C074": {
     "none": "Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded."

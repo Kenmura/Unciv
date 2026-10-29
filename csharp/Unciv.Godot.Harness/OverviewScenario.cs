@@ -15,6 +15,7 @@ namespace Unciv.GodotHarness;
 /// C023: the empire overview through the real game screen and the real engine, in the rich two-human game (Babylon with its capital and a puppet city; Greece, the other human, and Rome are not met). The numbers on the
 /// stats page are the engine's overview answer; the cities and units tables list exactly the viewer's own cities and units; the resource and ranking tables equal their queries;
 /// espionage is off in this game and the page says so. The jump buttons close the overview and open the city screen (puppet city) / select the unit.
+/// C092: the cities table selects rows and the bulk actions send one ordinary city command per selected city (set focus, queue an item, buy the current production, apply a build template stored in the client settings); the puppet city is skipped with the reason.
 /// </summary>
 public sealed class OverviewScenario : Scenario
 {
@@ -53,7 +54,7 @@ public sealed class OverviewScenario : Scenario
         List<string> EngineUnits() => human.Units.GetCivUnits().OrderBy(it => it.Name, StringComparer.Ordinal).ThenBy(it => it.Id).Select(it => it.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToList();
         string puppet = human.Cities.Single(it => it.IsPuppet).Name;
         int unitId = human.Units.GetCivUnits().OrderBy(it => it.Id).First().Id;
-
+        var bulk = new OverviewBulkSteps(screen, session, human, puppet, Centre, Tab, EngineCities);
         return
         [
             new WaitFrames(3),
@@ -94,6 +95,8 @@ public sealed class OverviewScenario : Scenario
                     && data.HeaderButton(0).Text.EndsWith('▼');
                 return ascending && descending && screen.Overview.JumpButton(OverviewModel.Cities, puppet)?.GetParent().GetIndex() == data.Cell(names.Count - 1 - names.IndexOf(puppet), 0).GetParent().GetIndex() + 6;
             }),
+
+            .. bulk.Steps(),
 
             new Click(() => Tab(OverviewModel.Units)),
             new WaitFrames(2),

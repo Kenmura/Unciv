@@ -87,6 +87,10 @@ public sealed record ClientSettings
     [JsonPropertyName("autoPlay")]
     public AutoPlaySettings AutoPlay { get; init; } = new();
 
+    /// <summary>C092: the named build queues the overview applies to selected cities (see <see cref="CityBulkModel"/>).</summary>
+    [JsonPropertyName("buildTemplates")]
+    public List<BuildTemplate> BuildTemplates { get; init; } = [];
+
     public static ClientSettings Default { get; } = new();
 
     /// <summary>The settings made safe: values a hand-edited or damaged file could hold that would break the UI are replaced by the default.</summary>
@@ -105,6 +109,7 @@ public sealed record ClientSettings
             TutorialsSeen = TutorialsSeen?.Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal).ToList() ?? [],
             ConsoleHistory = ConsoleModel.SanitizeHistory(ConsoleHistory),
             PlayerName = string.IsNullOrWhiteSpace(PlayerName) ? Default.PlayerName : PlayerName,
+            BuildTemplates = CityBulkModel.SanitizeTemplates(BuildTemplates),
             AutoPlay = AutoPlay?.Sanitized() ?? new AutoPlaySettings(),
             Player = Player is null ? PlayerSettings.Default : Player with { NotificationsLogMaxTurns = Math.Max(0, Player.NotificationsLogMaxTurns) },
         };
