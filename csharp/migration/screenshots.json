@@ -1507,5 +1507,75 @@
         "caption": "A ranged shot: the projectile just leaving the shooter toward a far tile."
       }
     ]
+  },
+  "C079": {
+    "scenario": "hud",
+    "about": "Responsive and localization pass: the HUD, city, tech, setup and options screens at 1280x720 and 1920x1080 and in German and Russian, each asserted for text that is cut off, leaves the window or overlaps (harness rect checks); right-to-left mirroring from the ScreenManager root.",
+    "shots": [
+      {
+        "golden": "hud/fhd.png",
+        "caption": "1920x1080: the HUD at full HD, every element in its own place, the bar as high as the screens below reckon with."
+      },
+      {
+        "golden": "hud/de.png",
+        "caption": "German at 640x480: the next-action button reads Nächste Einheit, no overlap or clipping."
+      },
+      {
+        "golden": "hud/ru.png",
+        "caption": "Russian at 640x480: Cyrillic on the next-action button, same layout."
+      },
+      {
+        "golden": "city-a/wide.png",
+        "caption": "1280x720: the city screen with the tile grid and stats."
+      },
+      {
+        "golden": "city-a/fhd.png",
+        "caption": "1920x1080: the same city screen scaled up."
+      },
+      {
+        "golden": "city-b/fhd.png",
+        "caption": "1920x1080: the city Production tab scaled up."
+      },
+      {
+        "golden": "city-b/de.png",
+        "caption": "German at 640x480: the city screen's tab strip (a long tab name is cut with an ellipsis) and headings."
+      },
+      {
+        "golden": "tech/fhd.png",
+        "caption": "1920x1080: the tech tree at full HD with selection and queue kept."
+      },
+      {
+        "golden": "tech/de.png",
+        "caption": "German at 640x480: the tech screen's era heading, details and footer buttons."
+      },
+      {
+        "golden": "setup/wide.png",
+        "caption": "1280x720: the New game screen, Players tab."
+      },
+      {
+        "golden": "setup/fhd.png",
+        "caption": "1920x1080: the New game screen at full HD."
+      },
+      {
+        "golden": "setup/de.png",
+        "caption": "German at 640x480: tabs, player rows and buttons fit."
+      },
+      {
+        "golden": "options/wide.png",
+        "caption": "1280x720: the Options Display tab."
+      },
+      {
+        "golden": "options/fhd.png",
+        "caption": "1920x1080: the Options Display tab at full HD."
+      },
+      {
+        "golden": "options/de.png",
+        "caption": "German at 640x480: the options tab strip and labels (Tastenzuordnung is cut with an ellipsis)."
+      },
+      {
+        "golden": "l10n-sheet/rtl-layout.png",
+        "caption": "Right to left: the settings panel mirrored by the ScreenManager root, the tab column on the right."
+      }
+    ]
   }
 }

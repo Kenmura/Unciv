@@ -65,6 +65,7 @@
 - [C069 City screen redesign](#c069-city-screen-redesign)
 - [C072 Setup, nation picker and main menu redesign](#c072-setup-nation-picker-and-main-menu-redesign)
 - [C076 Civilopedia and tooltip content](#c076-civilopedia-and-tooltip-content)
+- [C079 (ticket not Done or unknown)](#c079-ticket-not-done-or-unknown)
 - [C080 Unit model loader and contract](#c080-unit-model-loader-and-contract)
 - [C081 UnitAnimator, facing and re-timed combat cues](#c081-unitanimator-facing-and-re-timed-combat-cues)
 - [C083 Unit art pipeline](#c083-unit-art-pipeline)
@@ -1344,6 +1345,76 @@ Scenario `tooltips`.
 ![The Bowman's tooltip: heading, production-coloured cost, description and a muted Requires footer.](../Unciv.Godot.Harness/golden/tooltips/entry-tip.png)
 
 *The Bowman's tooltip: heading, production-coloured cost, description and a muted Requires footer.* (`tooltips/entry-tip.png`)
+
+## C079 (ticket not Done or unknown)
+
+Responsive and localization pass: the HUD, city, tech, setup and options screens at 1280x720 and 1920x1080 and in German and Russian, each asserted for text that is cut off, leaves the window or overlaps (harness rect checks); right-to-left mirroring from the ScreenManager root.
+
+Scenario `hud`.
+
+![1920x1080: the HUD at full HD, every element in its own place, the bar as high as the screens below reckon with.](../Unciv.Godot.Harness/golden/hud/fhd.png)
+
+*1920x1080: the HUD at full HD, every element in its own place, the bar as high as the screens below reckon with.* (`hud/fhd.png`)
+
+![German at 640x480: the next-action button reads Nächste Einheit, no overlap or clipping.](../Unciv.Godot.Harness/golden/hud/de.png)
+
+*German at 640x480: the next-action button reads Nächste Einheit, no overlap or clipping.* (`hud/de.png`)
+
+![Russian at 640x480: Cyrillic on the next-action button, same layout.](../Unciv.Godot.Harness/golden/hud/ru.png)
+
+*Russian at 640x480: Cyrillic on the next-action button, same layout.* (`hud/ru.png`)
+
+![1280x720: the city screen with the tile grid and stats.](../Unciv.Godot.Harness/golden/city-a/wide.png)
+
+*1280x720: the city screen with the tile grid and stats.* (`city-a/wide.png`)
+
+![1920x1080: the same city screen scaled up.](../Unciv.Godot.Harness/golden/city-a/fhd.png)
+
+*1920x1080: the same city screen scaled up.* (`city-a/fhd.png`)
+
+![1920x1080: the city Production tab scaled up.](../Unciv.Godot.Harness/golden/city-b/fhd.png)
+
+*1920x1080: the city Production tab scaled up.* (`city-b/fhd.png`)
+
+![German at 640x480: the city screen's tab strip (a long tab name is cut with an ellipsis) and headings.](../Unciv.Godot.Harness/golden/city-b/de.png)
+
+*German at 640x480: the city screen's tab strip (a long tab name is cut with an ellipsis) and headings.* (`city-b/de.png`)
+
+![1920x1080: the tech tree at full HD with selection and queue kept.](../Unciv.Godot.Harness/golden/tech/fhd.png)
+
+*1920x1080: the tech tree at full HD with selection and queue kept.* (`tech/fhd.png`)
+
+![German at 640x480: the tech screen's era heading, details and footer buttons.](../Unciv.Godot.Harness/golden/tech/de.png)
+
+*German at 640x480: the tech screen's era heading, details and footer buttons.* (`tech/de.png`)
+
+![1280x720: the New game screen, Players tab.](../Unciv.Godot.Harness/golden/setup/wide.png)
+
+*1280x720: the New game screen, Players tab.* (`setup/wide.png`)
+
+![1920x1080: the New game screen at full HD.](../Unciv.Godot.Harness/golden/setup/fhd.png)
+
+*1920x1080: the New game screen at full HD.* (`setup/fhd.png`)
+
+![German at 640x480: tabs, player rows and buttons fit.](../Unciv.Godot.Harness/golden/setup/de.png)
+
+*German at 640x480: tabs, player rows and buttons fit.* (`setup/de.png`)
+
+![1280x720: the Options Display tab.](../Unciv.Godot.Harness/golden/options/wide.png)
+
+*1280x720: the Options Display tab.* (`options/wide.png`)
+
+![1920x1080: the Options Display tab at full HD.](../Unciv.Godot.Harness/golden/options/fhd.png)
+
+*1920x1080: the Options Display tab at full HD.* (`options/fhd.png`)
+
+![German at 640x480: the options tab strip and labels (Tastenzuordnung is cut with an ellipsis).](../Unciv.Godot.Harness/golden/options/de.png)
+
+*German at 640x480: the options tab strip and labels (Tastenzuordnung is cut with an ellipsis).* (`options/de.png`)
+
+![Right to left: the settings panel mirrored by the ScreenManager root, the tab column on the right.](../Unciv.Godot.Harness/golden/l10n-sheet/rtl-layout.png)
+
+*Right to left: the settings panel mirrored by the ScreenManager root, the tab column on the right.* (`l10n-sheet/rtl-layout.png`)
 
 ## C080 Unit model loader and contract
 
