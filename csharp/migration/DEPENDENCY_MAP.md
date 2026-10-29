@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 217/220 | 3 | 1 | 1 | [T239](backlog/T239.md) [T242](backlog/T242.md) [T243](backlog/T243.md) |
+| Phase 1: CLI (headless engine) | 217/220 | 3 | 0 | 2 | [T239](backlog/T239.md) [T242](backlog/T242.md) [T243](backlog/T243.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 20/29 | 9 | 0 | 2 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T205](backlog/T205.md) [T225](backlog/T225.md) |
 
@@ -130,7 +130,7 @@ flowchart TD
   class T225 ondeck
   class T239 blocked
   class T242 prog
-  class T243 ready
+  class T243 prog
 ```
 
 ## Remaining tickets over time
@@ -148,15 +148,14 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["24 12:00", "25 00:00", "25 12:00", "26 00:00", "26 12:00", "27 00:00", "27 12:00", "28 00:00", "28 12:00", "29 00:00", "29 12:00"]
     y-axis "Tickets" 0 --> 62
-    line [57, 13, 54, 39, 19, 12, 10, 10, 10, 10, 9]
-    line [0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3]
+    line [57, 13, 54, 39, 19, 12, 10, 10, 10, 10, 8]
+    line [0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 4]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T243 | **Ready to start** | T203 | 0 | Real-started-game visibility test for two humans: B's mirror never holds A-only tiles/units across a simultaneous round |
 | C036 | **On deck** (after T180) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | C035 | **On deck** (after T180) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
 | T225 | **On deck** (after T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
@@ -168,3 +167,4 @@ xychart-beta
 | C045 | Available (waiting on C036) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | T239 | Blocked | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T242 | In-Progress [Claude] | T203 | 0 | Two-human conflict tests: one-per-game wonder race, ruins, religion founding and belief limits |
+| T243 | In-Progress [Claude] | T203 | 0 | Real-started-game visibility test for two humans: B's mirror never holds A-only tiles/units across a simultaneous round |
