@@ -156,7 +156,7 @@ xychart-beta
 | C096 | Available (waiting on T259) | T259, C043 | 0 | Touch and small-screen client UI: gestures, hit targets, layout for phone and tablet |
 | C097 | Available (waiting on T264) | T264, C043, C002 | 0 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
-| T257 | Needs-Review [Claude-T257] | none | 0 | Fix stale scenario goldens: unit-orders/warrior-selected and tutorial/second-step |
+| T257 | In-Review [Claude-T257] | none | 0 | Fix stale scenario goldens: unit-orders/warrior-selected and tutorial/second-step |
 | T258 | Available (waiting on ) | C042, T169 | 0 | Windows and macOS client release builds (packaged, smoke-tested, released) |
 | T260 | Available (waiting on T259) | T259 | 0 | Android APK build: export preset, debug-signed APK in CI, smoke on an emulator or device |
 | T262 | Available (waiting on T261) | T261 | 0 | Optimise the top turn-time hotspots with proof of identical game state |
