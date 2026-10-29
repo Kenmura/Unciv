@@ -12,12 +12,10 @@ public partial class Badge : PanelContainer
 
     public Badge(int count, bool accent = false)
     {
-        ThemeTypeVariation = accent ? UiVariants.PanelBadgeAccent : UiVariants.PanelBadge;
         MouseFilter = MouseFilterEnum.Ignore;
         label.MouseFilter = MouseFilterEnum.Ignore;
-        // the pill is red or gold: the text on it is the dark OnAccent colour on gold, light on red
-        label.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(accent ? UiTokens.OnAccent : UiTokens.TextPrimary));
         AddChild(label);
+        Accent = accent;
         Count = count;
     }
 
@@ -29,6 +27,17 @@ public partial class Badge : PanelContainer
             count = value;
             label.Text = UiText.BadgeText(value);
             Visible = value > 0;
+        }
+    }
+
+    /// <summary>Gold pill with dark text (available picks) instead of the red pill with light text (alerts).</summary>
+    public bool Accent
+    {
+        get => ThemeTypeVariation == UiVariants.PanelBadgeAccent;
+        set
+        {
+            ThemeTypeVariation = value ? UiVariants.PanelBadgeAccent : UiVariants.PanelBadge;
+            label.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(value ? UiTokens.OnAccent : UiTokens.TextPrimary));
         }
     }
 

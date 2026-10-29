@@ -70,7 +70,7 @@ public partial class TabBar : VBoxContainer
 
     private void UpdateArrows()
     {
-        bool overflow = strip.GetCombinedMinimumSize().X > scroller.Size.X + 0.5f;
+        bool overflow = strip.GetCombinedMinimumSize().X > scroller.Size.X + (left.Visible ? left.Size.X + right.Size.X : 0f) + 0.5f;
         left.Visible = right.Visible = overflow;
     }
 }

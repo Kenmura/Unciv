@@ -55,6 +55,7 @@ public partial class IconButton : Button
         else
         {
             badge.Count = count;
+            badge.Accent = accent;
         }
     }
 }

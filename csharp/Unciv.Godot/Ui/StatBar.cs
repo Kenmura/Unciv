@@ -29,7 +29,6 @@ public partial class StatBar : HBoxContainer
         Caption = caption;
         SetProgress(value, max);
         Restyle();
-        theme.ScaleChanged += Restyle;
     }
 
     public string Stat { get; }
@@ -51,8 +50,14 @@ public partial class StatBar : HBoxContainer
 
     public void SetProgress(double value, double max)
     {
-        bar.MaxValue = Math.Max(max, 0);
-        bar.Value = Math.Clamp(value, 0, bar.MaxValue);
+        bar.MaxValue = double.IsFinite(max) ? Math.Max(max, 0) : 0;
+        bar.Value = double.IsFinite(value) ? Math.Clamp(value, 0, bar.MaxValue) : 0;
+    }
+
+    public override void _EnterTree()
+    {
+        theme.ScaleChanged += Restyle;
+        Restyle();
     }
 
     public override void _ExitTree() => theme.ScaleChanged -= Restyle;
