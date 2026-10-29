@@ -100,11 +100,10 @@ public sealed class ServerLobby : IAsyncDisposable
     {
         var startResult = await lobbyHost.StartGameAsync(force, seed, clockMillis).ConfigureAwait(false);
 
-        var gameSession = new GameSession(startResult.Game);
-        var gameHost = new GameHost(gameSession, store, clock: clock);
-
+        GameHost? gameHost = null;
         try
         {
+            gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock);
             foreach (var slot in startResult.Slots)
             {
                 if (slot.Kind != SlotKind.Human || !slot.Connected || slot.SessionId == null) continue;
@@ -118,11 +117,26 @@ public sealed class ServerLobby : IAsyncDisposable
                 }
                 await AttachIfCurrentAsync(gameHost, slot.SessionId, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
             }
+
+            if (disposed.IsCancellationRequested) throw new ObjectDisposedException(nameof(ServerLobby));
         }
         catch (Exception ex)
         {
             gameHostReady.TrySetException(ex); // late seats waiting for the game must fail (and drop their connection), not hang
-            await gameHost.DisposeAsync().ConfigureAwait(false);
+            if (gameHost != null)
+            {
+                try { await gameHost.DisposeAsync().ConfigureAwait(false); }
+                catch (Exception) { /* the start failure is the news, not the cleanup */ }
+            }
+            // Seats that were handed over but never attached have no reader: close them so their clients see the drop.
+            foreach (var slot in startResult.Slots)
+            {
+                if (slot.SessionId == null) continue;
+                var orphan = lobbyHost.GameTransportFor(slot.SessionId);
+                if (orphan == null) continue;
+                try { await orphan.CloseAsync().ConfigureAwait(false); }
+                catch (Exception) { /* already gone */ }
+            }
             throw;
         }
 
@@ -134,11 +148,17 @@ public sealed class ServerLobby : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await disposed.CancelAsync().ConfigureAwait(false);
-        if (activeGameHost != null)
+        try
         {
-            // The game first: it can still tell its players the host is closing before the lobby closes the sockets.
-            await activeGameHost.DisposeAsync().ConfigureAwait(false);
+            if (activeGameHost != null)
+            {
+                // The game first: it can still tell its players the host is closing before the lobby closes the sockets.
+                await activeGameHost.DisposeAsync().ConfigureAwait(false);
+            }
         }
-        await lobbyHost.DisposeAsync().ConfigureAwait(false);
+        finally
+        {
+            await lobbyHost.DisposeAsync().ConfigureAwait(false);
+        }
     }
 }

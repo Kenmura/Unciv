@@ -679,14 +679,16 @@ public sealed class NetLobbyTests : IDisposable
             Assert.True(await await Task.WhenAny(seatedSecond, seatedThird));
             var outcomes = await Task.WhenAll(TrySubmitAsync(second), TrySubmitAsync(third));
             Assert.Contains(true, outcomes);
-            Assert.Single(lobby.ActiveGameHost!.Sessions.Values, x => x.BoundCivId == "Rome");
+            var romeSessions = 0;
+            await lobby.ActiveGameHost!.EnqueueAsync(() => { romeSessions = lobby.ActiveGameHost.Sessions.Values.Count(x => x.BoundCivId == "Rome"); return Task.CompletedTask; });
+            Assert.Equal(1, romeSessions);
         }
     }
 
     /// <summary>True when the host answered the command (accepted or not): the connection is seated and its reader works.</summary>
     private static async Task<bool> TrySubmitAsync(ClientSession session)
     {
-        for (var i = 0; i < 40 && session.State != ClientSessionState.InGame; i++) await Task.Delay(50);
+        for (var i = 0; i < 20 && session.State != ClientSessionState.InGame; i++) await Task.Delay(50);
         try
         {
             return !string.IsNullOrEmpty((await session.SubmitAsync(new EndTurn()).WaitAsync(TimeSpan.FromSeconds(2))).ClientCmdId);
@@ -708,6 +710,70 @@ public sealed class NetLobbyTests : IDisposable
         return false;
     }
 
+    private static async Task RawJoinAsync(ServerLobby lobby, ITransport clientEnd, ClientIdentity id)
+    {
+        await clientEnd.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = lobby.Lobby.Settings.ComputeRulesetHash(), ModList = [] }));
+        var welcome = await ReceiveMessageAsync<Welcome>(clientEnd);
+        await clientEnd.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id.PlayerKey, DisplayName = "Alice" }));
+        await clientEnd.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id.Sign(lobby.Lobby.HostFingerprint, welcome.SessionId, welcome.Challenge) }));
+        await ReceiveMessageAsync<JoinOk>(clientEnd);
+    }
+
+    [Fact]
+    public async Task ServerLobby_OlderReconnectSeatedLate_NeverReplacesTheNewerOne_AndEachSeatKeepsItsOwnIdentity()
+    {
+        await using var lobby = new ServerLobby();
+        using var id = ClientIdentity.Generate();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        await using var first = NewClient(lobby, id, "Alice", c1);
+        Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
+        await first.SetLobbySlotAsync(0, "Rome", null, true);
+        await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+
+        // Seating of the first reconnect is held back until the second one has been fully seated.
+        var real = lobby.Lobby.LateSeated!;
+        var seats = new List<LobbyHost.LateSeat>();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var olderEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        lobby.Lobby.LateSeated = async seat =>
+        {
+            bool isOlder;
+            lock (seats) { seats.Add(seat); isOlder = seats.Count == 1; }
+            if (isOlder)
+            {
+                olderEntered.SetResult();
+                await release.Task;
+            }
+            await real(seat);
+        };
+
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s2);
+        await RawJoinAsync(lobby, c2, id);
+        await olderEntered.Task.WaitAsync(Bound);
+        var (c3, s3) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s3);
+        await RawJoinAsync(lobby, c3, id);
+        await ReceiveMessageAsync<Snapshot>(c3, 10000); // the newer connection is seated while the older one is still waiting
+
+        release.SetResult();
+        Assert.Equal(2, seats.Count);
+        Assert.NotEqual(seats[0].SessionId, seats[1].SessionId);
+        Assert.Null(lobby.Lobby.GameTransportFor(seats[0].SessionId)); // superseded
+        Assert.Same(seats[1].Transport, lobby.Lobby.GameTransportFor(seats[1].SessionId));
+
+        // The late older seat must not have detached the newer one.
+        await Task.Delay(300);
+        var sessionIds = await ((Func<Task<string[]>>)(async () =>
+        {
+            string[] ids = [];
+            await lobby.ActiveGameHost!.EnqueueAsync(() => { ids = [.. lobby.ActiveGameHost.Sessions.Keys]; return Task.CompletedTask; });
+            return ids;
+        }))();
+        Assert.Equal([seats[1].SessionId], sessionIds);
+    }
+
     private sealed class FailingSendTransport(ITransport inner) : ITransport
     {
         private volatile bool dead;
@@ -719,7 +785,7 @@ public sealed class NetLobbyTests : IDisposable
             return result;
         }
         public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => inner.ReceiveAsync(cancellationToken);
-        public ValueTask CloseAsync() => inner.CloseAsync();
+        public ValueTask CloseAsync() => dead ? throw new IOException("socket gone") : inner.CloseAsync();
         public ValueTask DisposeAsync() => inner.DisposeAsync();
     }
 
