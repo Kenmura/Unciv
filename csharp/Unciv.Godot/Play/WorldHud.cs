@@ -52,6 +52,7 @@ public partial class WorldHud : Control
     private UiTheme theme = null!; // JUSTIFY: C067 assigned by Init before the layout is read
     private UiBreakpoint builtFor;
     private bool playersShown;
+    private bool technologyAsking;
 
     public WorldHud()
     {
@@ -219,9 +220,13 @@ public partial class WorldHud : Control
         Players.Visible = playersShown;
         foreach (var button in new Control[] { Diplomacy, Trade, Espionage, Civilopedia, Overview, Players }) navRight.AddChild(button);
         foreach (var button in new[] { Technology, Policies, Diplomacy, Trade, Espionage, Civilopedia, Overview, Players, Menu }) button.Theme = theme.Theme;
-        Technology.SetBadge(0, accent: true);
+        Technology.SetBadge(technologyAsking ? 1 : 0, accent: true); // a rebuild (breakpoint change) keeps the dot
     }
 
     /// <summary>The Accent dot on the Technology pill while the engine asks for a technology.</summary>
-    public void SetTechnologyAvailable(bool asking) => Technology?.SetBadge(asking ? 1 : 0, accent: true);
+    public void SetTechnologyAvailable(bool asking)
+    {
+        technologyAsking = asking;
+        Technology?.SetBadge(asking ? 1 : 0, accent: true);
+    }
 }

@@ -36,6 +36,7 @@ public partial class MinimapView : Control
     public void SetSlot(Vector2 size)
     {
         slot = size;
+        ClipContents = true; // a map too big even for one-pixel cells is cropped to the dock, not drawn over the HUD
         CustomMinimumSize = size;
         Size = size;
         if (lastTiles != null) Update(lastTiles, lastOwnerColour!);

@@ -172,7 +172,7 @@ public static class AlertPopupModel
     /// game starts with it, and a standing "Review alerts (1)" would sit on every screen; it is still opened by a review.
     /// </summary>
     public static int WaitingCount(PendingDecisionsResult? pending, ClientSnapshot snapshot, IReadOnlySet<string> deferred) =>
-        pending == null ? 0 : pending.Decisions.Count(it => Describe(it, snapshot) is { } popup && (deferred.Contains(popup.Key) || (IsInformational(popup) && popup.Type != AlertType.StartIntro)));
+        pending == null ? 0 : pending.Decisions.Count(it => Describe(it, snapshot) is { } popup && (deferred.Contains(popup.Key) || (KindOf(popup) == AlertKind.Ambient && popup.Type != AlertType.StartIntro)));
 
     private static AlertButton Ok(int index, AlertType type, string value) => new("Ok", "OK", new AckAlert { Index = index, AlertType = type, Value = value });
 

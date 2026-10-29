@@ -216,6 +216,7 @@ public class AlertPopupModelTests
         var friendship = AlertPopupModel.Describe(pending.Decisions[1], snapshot)!;
         Assert.Equal(1, AlertPopupModel.WaitingCount(pending, snapshot, new HashSet<string> { friendship.Key }));
         Assert.Equal(0, AlertPopupModel.WaitingCount(null, snapshot, new HashSet<string>()));
+        Assert.Equal(0, AlertPopupModel.WaitingCount(Pending(Entry(AlertType.WarDeclaration, "rome-id")), snapshot, new HashSet<string>())); // blocking: it is a popup, not a waiting alert
         Assert.Equal("Review alerts (3)", AlertPopupModel.ReviewLabel(3));
     }
 
