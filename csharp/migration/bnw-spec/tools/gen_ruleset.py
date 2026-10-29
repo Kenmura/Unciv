@@ -194,6 +194,9 @@ def build_techs(gk_techs, report):
         if spread:
             unique = f"[{spread:+d}]% influence spread from Tourism"
             t["uniques"] = [u for u in t.get("uniques", []) if u != unique] + [unique]
+        archaeology = "Triggers the creation of archaeological sites"  # Archaeology: spawns the antiquity sites (SPEC 4.4.2, B010)
+        if int(r["TriggersArchaeologicalSites"] or 0):
+            t["uniques"] = [u for u in t.get("uniques", []) if u != archaeology] + [archaeology]
         if is_new:
             report.add("techs", f"{name}: new (column {col}, row {t['row']})")
         grouped.setdefault(col, []).append(t)

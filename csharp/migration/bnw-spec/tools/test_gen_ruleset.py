@@ -41,6 +41,8 @@ class GeneratorTests(unittest.TestCase):
         techs = {t["name"]: t for c in files["Techs.json"] for t in c["techs"]}
         self.assertEqual(techs["Optics"]["cost"], 85)
         self.assertEqual(sorted(techs["Ballistics"]["prerequisites"]), ["Flight", "Railroad"])
+        self.assertIn("Triggers the creation of archaeological sites", techs["Archaeology"]["uniques"])
+        self.assertIn("[+100]% influence spread from Tourism", techs["The Internet"]["uniques"])
 
     def test_lenient_loads(self):
         self.assertEqual(g.lenient_loads('{"a": [1, 2,], // c\n "b": "x//y" /* z */}'), {"a": [1, 2], "b": "x//y"})

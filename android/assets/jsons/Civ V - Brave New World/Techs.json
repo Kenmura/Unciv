@@ -381,7 +381,7 @@
 				"name": "Archaeology",
 				"row": 2,
 				"prerequisites": ["Navigation", "Architecture"],
-				"uniques": ["[+50]% weight to this choice for AI decisions"],
+				"uniques": ["[+50]% weight to this choice for AI decisions", "Triggers the creation of archaeological sites"],
 				"quote": "'Those who cannot remember the past are condemned to repeat it.' - George Santayana"
 			},
 			{
