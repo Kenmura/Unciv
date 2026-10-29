@@ -12,7 +12,7 @@ using Unciv.Logic.Map.MapUnits;
 namespace Unciv.GodotHarness;
 
 /// <summary>
-/// C100: the interactions a desktop does with a mouse button, a hover or a key, done by synthetic touch on the 2400x1080 400 ppi phone profile of C096. A tap on a tile shows its tip above the finger
+/// C100: the interactions a desktop does with a mouse button, a hover or a key, done by synthetic touch on the 2400x1080 400 ppi phone profile of C096. A tap on a tile shows its tip beside the finger
 /// and the next press hides it; a long press on a button shows its tip and does not press it; a tap on a unit panel chip shows its tip; the Group select toggle stands in for Shift+click; a long
 /// press with a unit selected is the right click that moves it; a finger dragged over the minimap moves the camera and not the map; a long press on a city tile locks and unlocks it.
 /// Real finger events and Android's emulation order are not covered (see the ticket notes).
@@ -33,7 +33,7 @@ public sealed class TouchOrdersScenario : Scenario
 
     public override IReadOnlyList<string> Checklist =>
     [
-        "Is the tile tip above the finger and readable, and does it leave when you touch elsewhere?",
+        "Is the tile tip beside the finger and readable, and does it leave when you touch elsewhere?",
         "Can you tell the Group select toggle is on, and is it big enough for a thumb?",
     ];
 
@@ -91,17 +91,17 @@ public sealed class TouchOrdersScenario : Scenario
                 otherTile = around[1];
                 InputSimulator.SimulateTap(viewport, Pointer(tapTile));
             }),
-            new WaitUntil("the tile's tooltip is up above the finger", () => tips.IsShowing && tips.ShownText.Length > 0 && screen.HoveredTile == tapTile, 600),
+            new WaitUntil("the tile's tooltip is up", () => tips.IsShowing && tips.ShownText.Length > 0 && screen.HoveredTile == tapTile, 600),
             new WaitFrames(4),
             new AssertQuery("the tip does not cover the finger and is the engine's tile text", () =>
                 !tips.PanelRect.HasPoint(Pointer(tapTile)) && screen.HoverTip.Length > 0 && tips.ShownText == screen.HoverTip),
-            new Capture("tile-tip", "A tap on a tile shows its tooltip above the finger (a touch build has no hover); it goes at the next touch or after four seconds"),
+            new Capture("tile-tip", "A tap on a tile shows its tooltip beside the finger (a touch build has no hover); it goes at the next touch or after four seconds"),
             new Act("put a finger down on the map", () => InputSimulator.SimulateTouchDown(viewport, 0, Pointer(otherTile))),
             new AssertQuery("the next press hid the tip", () => !tips.IsShowing),
             new Act("lift", () => InputSimulator.SimulateTouchUp(viewport, 0, Pointer(otherTile))),
             new WaitUntil("the tap showed a tip again", () => tips.IsShowing, 600),
             new Act("let it time out", () => tips.Advance(TooltipHostSeconds())),
-            new AssertQuery("the tip went by itself", () => !tips.IsShowing),
+            new AssertQuery("the tip went by itself and the screen forgot the tile it described", () => !tips.IsShowing && screen.HoveredTile == null && screen.HoverTip.Length == 0),
             new Act("long press the Group select toggle", () =>
             {
                 toggledBefore = screen.Panel.GroupToggle.ButtonPressed;

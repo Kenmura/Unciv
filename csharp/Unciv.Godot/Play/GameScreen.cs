@@ -1178,6 +1178,13 @@ public partial class GameScreen : Control
             Tooltips.QueueFree();
         }
         Tooltips = new TooltipHost(theme) { Name = "Tooltips", TopInset = () => World.BarBottom };
+        Tooltips.PointEnded += () =>
+        {
+            // C100: a touch tile tip ended by itself (next press, timeout): the tile it described and the site overlay go with it
+            HoveredTile = null;
+            HoverTip = "";
+            SiteOverlay.Clear();
+        };
         HoveredTile = null;
         HoverTip = "";
         if (Pedia != null)

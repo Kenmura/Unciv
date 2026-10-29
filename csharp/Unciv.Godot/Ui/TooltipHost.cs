@@ -131,6 +131,7 @@ public partial class TooltipHost : Control
 
     private void TouchDown(Vector2 at)
     {
+        ReleaseHeldButton(); // a release that never came must not leave the button disabled
         var found = Resolve(GetViewport().GuiGetHoveredControl());
         bool toggleOff = found != null && touchOwner == found.Value.Owner;
         if (hovered != null) Leave(); // the next press anywhere hides the tip
@@ -149,6 +150,12 @@ public partial class TooltipHost : Control
                 if (GodotObject.IsInstanceValid(button)) button.Disabled = false;
             }).CallDeferred(); // after the release has gone by: a long press showed the tip, it must not also press the button
         }
+    }
+
+    private void ReleaseHeldButton()
+    {
+        if (heldButton is { } button && GodotObject.IsInstanceValid(button)) button.Disabled = false;
+        heldButton = null;
     }
 
     private void ShowTouch(TouchPress press)
@@ -232,13 +239,18 @@ public partial class TooltipHost : Control
         panel.Visible = false;
     }
 
+    /// <summary>C100: raised when a tip that <see cref="Point"/> showed ends (touch: the next press or the timeout), so its owner drops what it keeps for it.</summary>
+    public event Action? PointEnded;
+
     private void Leave()
     {
+        bool pointed = hovered == this;
         anchor = null;
         touchOwner = null;
         hovered = null;
         textOf = null;
         HideTip();
+        if (pointed) PointEnded?.Invoke();
     }
 
     private void HideTip()

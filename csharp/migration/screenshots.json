@@ -1518,7 +1518,7 @@
       },
       {
         "golden": "hud/de.png",
-        "caption": "German at 640x480: the next-action button reads N\u00e4chste Einheit, no overlap or clipping."
+        "caption": "German at 640x480: the next-action button reads Nächste Einheit, no overlap or clipping."
       },
       {
         "golden": "hud/ru.png",

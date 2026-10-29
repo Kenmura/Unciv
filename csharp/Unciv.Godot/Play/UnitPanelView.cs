@@ -88,7 +88,6 @@ public partial class UnitPanelView : PanelContainer
         popoverBox.AddChild(promoteBox);
         popover.AddChild(popoverBox);
         AddChild(popover);
-        groupToggle.Toggled += on => GroupModeChanged?.Invoke(on);
         yes.Pressed += () =>
         {
             if (asking is { } entry) Confirmed?.Invoke(entry);
@@ -131,8 +130,6 @@ public partial class UnitPanelView : PanelContainer
 
     /// <summary>The group select toggle (null never; it is hidden unless a touch build shows an own unit).</summary>
     public Button GroupToggle => groupToggle;
-
-    public event Action<bool>? GroupModeChanged;
 
     public event Action<MenuEntry>? EntryChosen;
 
