@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 223/228 | 5 | 1 | 2 | [T239](backlog/T239.md) [T246](backlog/T246.md) [T251](backlog/T251.md) [T253](backlog/T253.md) [T254](backlog/T254.md) |
+| Phase 1: CLI (headless engine) | 224/228 | 4 | 2 | 1 | [T239](backlog/T239.md) [T246](backlog/T246.md) [T253](backlog/T253.md) [T254](backlog/T254.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 29/29 | 0 | 0 | 0 | complete |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 4/63 | 59 | 0 | 2 | [B001](backlog/B001.md) [B002](backlog/B002.md) [B003](backlog/B003.md) [B004](backlog/B004.md) [B005](backlog/B005.md) [B006](backlog/B006.md) [B007](backlog/B007.md) [B008](backlog/B008.md) [B009](backlog/B009.md) [B010](backlog/B010.md) [B011](backlog/B011.md) [B012](backlog/B012.md) [B013](backlog/B013.md) [B014](backlog/B014.md) [B015](backlog/B015.md) [B016](backlog/B016.md) [B017](backlog/B017.md) [B018](backlog/B018.md) [B019](backlog/B019.md) [B020](backlog/B020.md) [B021](backlog/B021.md) [B022](backlog/B022.md) [B023](backlog/B023.md) [B024](backlog/B024.md) [B025](backlog/B025.md) [B026](backlog/B026.md) [C063](backlog/C063.md) [C064](backlog/C064.md) [C065](backlog/C065.md) [C066](backlog/C066.md) [C067](backlog/C067.md) [C068](backlog/C068.md) [C069](backlog/C069.md) [C070](backlog/C070.md) [C071](backlog/C071.md) [C072](backlog/C072.md) [C073](backlog/C073.md) [C074](backlog/C074.md) [C075](backlog/C075.md) [C076](backlog/C076.md) [C077](backlog/C077.md) [C078](backlog/C078.md) [C079](backlog/C079.md) [C080](backlog/C080.md) [C081](backlog/C081.md) [C082](backlog/C082.md) [C083](backlog/C083.md) [C084](backlog/C084.md) [C085](backlog/C085.md) [C086](backlog/C086.md) [C087](backlog/C087.md) [C088](backlog/C088.md) [C089](backlog/C089.md) [C090](backlog/C090.md) [C091](backlog/C091.md) [C092](backlog/C092.md) [C093](backlog/C093.md) [C094](backlog/C094.md) [T247](backlog/T247.md) |
@@ -28,7 +28,6 @@ flowchart TD
     T239["T239<br/>Observe first green CI run after the workflow scope is grant..."]
     T246["T246<br/>CI client-scenarios: goldens recorded on Fedora llvmpipe mis..."]
     T247["T247<br/>Mod sync in the lobby: checksum diff, transfer and hot-load"]
-    T251["T251<br/>ServerLobby late-seat races and hand-off leftovers (T250/T18..."]
     T253["T253<br/>ServerLobby post-start leftovers (T251 follow-up)"]
     T254["T254<br/>Persist hosted-game turn timer policy so a resumed game keep..."]
   end
@@ -96,7 +95,6 @@ flowchart TD
   end
   T246 --> T239
   C090 --> T247
-  T251 --> T253
   C063 --> C065
   C064 --> C065
   C065 --> C066
@@ -270,8 +268,7 @@ flowchart TD
   class T239 blocked
   class T246 prog
   class T247 waiting
-  class T251 review
-  class T253 ondeck
+  class T253 ready
   class T254 ready
 ```
 
@@ -293,7 +290,7 @@ xychart-beta
     y-axis "Tickets" 0 --> 60
     line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 59]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 1]
-    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 4]
+    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3]
 ```
 
 ## Progress and scope over time
@@ -309,7 +306,7 @@ xychart-beta
     title "Done vs total scope"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00"]
     y-axis "Tickets" 0 --> 385
-    line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 316]
+    line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 317]
     line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 380]
 ```
 
@@ -317,9 +314,9 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T253 | **Ready to start** | T251 | 0 | ServerLobby post-start leftovers (T251 follow-up) |
 | T254 | **Ready to start** | T252 | 0 | Persist hosted-game turn timer policy so a resumed game keeps it (T252 follow-up) |
 | C065 | **On deck** (after C063, C064) | C062, C063, C064 | 21 | UI shared components |
-| T253 | **On deck** (after T251) | T251 | 0 | ServerLobby post-start leftovers (T251 follow-up) |
 | B001 | Available (waiting on ) | none | 25 | BNW: BaseRuleset.Civ_V_BNW, ModOptions gates, ModConstants, CompatibilityVersion bump |
 | C063 | In-Progress [Claude] | C062 | 22 | Unciv icon pack and icon keys |
 | C064 | In-Progress [Claude] | C062 | 22 | Unique display text and hidden uniques in UI models |
@@ -369,7 +366,6 @@ xychart-beta
 | B025 | Available (waiting on B007, B013) | B007, B013 | 1 | BNW: Score changes |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | T246 | In-Progress [Claude] | none | 1 | CI client-scenarios: goldens recorded on Fedora llvmpipe mismatch on ubuntu-24.04 (all rendered scenarios fail); make scenarios CI-stable |
-| T251 | Needs-Review [Claude] | T250 | 1 | ServerLobby late-seat races and hand-off leftovers (T250/T182 re-review) |
 | B026 | Available (waiting on B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
 | C082 | Available (waiting on C081) | C081 | 0 | Articulated placeholder unit with code-built clips |
