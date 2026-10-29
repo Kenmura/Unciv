@@ -55,8 +55,7 @@ public sealed class OptionsScenario : Scenario
         float focusBefore = 0f;
         float slowStep = 0f;
         int resourcesBefore = 0;
-        ClientSettingsService? restarted = null;
-        OptionsScreen? german = null;
+        ClientSettingsService? restarted = null; OptionsScreen? german = null;
 
         Vector2 Centre(Control control) => control.GetGlobalRect().GetCenter();
         ScenarioStep[] Reveal(HotkeyAction action) =>
