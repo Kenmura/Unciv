@@ -29,6 +29,8 @@ case "$mode" in
     --expect-golden-failure)
         # Every golden of the scenario replaced by one unrelated image: a comparison that cannot fail would pass here
         golden="$(mktemp -d)"; cleanup_golden="$golden"
+        # T255: its own output folder, so the self-test never overwrites the renders of the real run (CI uploads them when a scenario fails)
+        out="$(mktemp -d)"; cleanup_out="$out"
         mkdir -p "$golden/$name"
         for g in "$project/golden/$name"/*.png; do cp "$project/golden/smoke.png" "$golden/$name/$(basename "$g")"; done ;;
     *) echo "unknown option $mode" >&2; exit 64 ;;
@@ -36,12 +38,13 @@ esac
 
 # C058: own X server per run, display number chosen by Xvfb itself (-displayfd). `xvfb-run -a` picks a free number then starts the server, so two
 # runs starting together (several agents share this machine) could get the same display and kill each other's server mid-scenario.
-xvfb_pid=""; godot_pid=""; display_file=""; cleanup_golden=""
+xvfb_pid=""; godot_pid=""; display_file=""; cleanup_golden=""; cleanup_out=""
 cleanup() {
     [[ -n "$godot_pid" ]] && { kill "$godot_pid" 2>/dev/null || true; wait "$godot_pid" 2>/dev/null || true; }
     [[ -n "$xvfb_pid" ]] && { kill "$xvfb_pid" 2>/dev/null || true; wait "$xvfb_pid" 2>/dev/null || true; }
     [[ -n "$display_file" ]] && rm -f "$display_file"
     [[ -n "$cleanup_golden" ]] && rm -rf "$cleanup_golden"
+    [[ -n "$cleanup_out" ]] && rm -rf "$cleanup_out"
     return 0
 }
 # also on Ctrl-C / kill of the script alone (the signal would otherwise leave the Xvfb it started running)
