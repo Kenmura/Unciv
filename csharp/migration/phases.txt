@@ -1,6 +1,7 @@
 # Delivery phases. Work is completed phase by phase: `ticket.py ready` / `next` order implementation
 # earlier phases first (reviews always first); a later phase's ready tickets are still offered after them, so idle capacity is never wasted.
-#   1 = headless engine + CLI    2 = single-player client    3 = multiplayer
+#   1 = headless engine + CLI    2 = single-player client    3 = multiplayer    4 = queued plans, start only once phases 1-3 are clear
 # Format: `<phase>: <ids or ranges>`. Unlisted tickets default to phase 1 (T and A tracks) or 2 (C track).
 2: T169
 3: T172-T182 T200-T207 T223-T226 T230 C006 C034-C036 C045
+4: C061-C086 B001-B026

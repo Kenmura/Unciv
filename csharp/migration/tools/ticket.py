@@ -6,7 +6,7 @@ READ
   list [STATE]              one line per open ticket: id, state, deps, title
   show T027 [Field]         whole ticket (backlog/T027.md) or one field
   ready                     everything workable now: Needs-Review first, then Available with deps all Done
-                            ordered by delivery phase first (phases.txt: 1 CLI, 2 single player, 3 multiplayer),
+                            ordered by delivery phase first (phases.txt: 1 CLI, 2 single player, 3 multiplayer, 4 queued plans),
                             most downstream-unblocking first (direct + transitive incomplete dependents)
   next [AGENT]              the single pick of the Work Loop (review, else the ready ticket that unblocks most)
   blockers T033             for each dependency not Done: its id, state and title
@@ -36,7 +36,7 @@ WRITE (each touches only the named ticket's block, verified before the file is w
   note T033 TEXT|-          append an indented bullet to Notes (- reads stdin, one bullet per call)
   set T033 FIELD VALUE|-    FIELD: Depends Source Fixtures Deliverables Gate Scope Title (not State, not Notes)
   add --title T [--depends "T1, T2"] [--source S] [--fixtures F] [--deliverables D] [--gate G]
-      [--notes N] [--prefix T|C|A]
+      [--notes N] [--prefix T|C|A|B]
                             new Available ticket with the next free id, appended to its track; prints the id
   section [TEXT]            print non-ticket prose: every heading-delimited chunk (no ticket header) whose heading
                             contains TEXT (case-insens.), e.g. section Planned / section Non-goals; no TEXT lists headings
@@ -222,7 +222,7 @@ def write_backlog(path, lines):
     refresh_map()
 
 
-TRACKS = {"T": "Engine track", "C": "Client track (Godot)", "A": "Game AI track"}
+TRACKS = {"T": "Engine track", "C": "Client track (Godot)", "A": "Game AI track", "B": "Brave New World track"}
 STYLES = {  # kind -> (class name, mermaid style)
     "Available": ("waiting", "fill:#f3faf3,stroke:#9bc49b,color:#555,stroke-dasharray:2 2"),
     "OnDeck": ("ondeck", "fill:#ffe8cc,stroke:#e8590c,stroke-width:3px,color:#000"),
@@ -432,7 +432,7 @@ def render_map():
     return "\n".join(out) + "\n"
 
 
-PHASE_NAMES = {1: "Phase 1: CLI (headless engine)", 2: "Phase 2: single player (Godot client)", 3: "Phase 3: multiplayer"}
+PHASE_NAMES = {1: "Phase 1: CLI (headless engine)", 2: "Phase 2: single player (Godot client)", 3: "Phase 3: multiplayer", 4: "Phase 4: queued plans (UI redesign, unit models, BNW)"}
 
 
 def backlog_link(tid, title):

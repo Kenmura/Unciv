@@ -1,6 +1,6 @@
 # Unit models and attack animations (plan)
 
-Status: plan only, no tickets yet (written 2026-10-28). Goal: every unit gets a proper 3D model (eventually high-quality art) and units play
+Status: tickets filed as C080-C086 (phase 4, root C080 held Blocked until phases 1-3 are clear; written 2026-10-28). Goal: every unit gets a proper 3D model (eventually high-quality art) and units play
 an attack animation when they fight. Builds on the placeholder asset system (CLIENT-SLICES.md, C003/C004) and the combat presenter (C033).
 
 ## What exists today

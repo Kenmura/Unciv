@@ -1,6 +1,6 @@
 # UI/UX redesign plan (Godot client)
 
-Status: plan only, no tickets filed yet. Written 2026-10-28 from a review of every golden in
+Status: tickets filed 2026-10-28 as C061-C079 (phase 4, held Blocked at the root C061 until phases 1-3 are clear). Written 2026-10-28 from a review of every golden in
 `Unciv.Godot.Harness/golden/`. The full expert plan (diagnosis, tokens, wireframes, ticket details, risks) follows the summary.
 
 ## Summary
