@@ -95,7 +95,7 @@ public static class MapMaterials
         BackgroundColor = ProceduralAssets.ToColor(PlaceholderPalette.Unexplored),
         AmbientLightSource = Godot.Environment.AmbientSource.Color,
         AmbientLightColor = ProceduralAssets.ToColor(PlaceholderPalette.Light),
-        AmbientLightEnergy = 0.55f,
+        AmbientLightEnergy = Unciv.GodotClient.Settings.GraphicsModel.LowAmbientEnergy,
     };
 
     /// <summary>

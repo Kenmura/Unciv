@@ -188,6 +188,26 @@ public sealed class GraphicsModelTests : IDisposable
         Assert.Equal(needs, GraphicsModel.NeedsRestart(requested, false, renderer, Gpu));
 
     [Fact]
+    public void FailedUltraOnSoftwareForwardPlusReturnsToCompatibility()
+    {
+        var start = GraphicsModel.Startup(GraphicsQuality.Ultra, false, "", Plus, "llvmpipe");
+        Assert.Equal(Compat, start.RestartInto);
+        Assert.True(start.UltraFailed);
+        Assert.Equal(GraphicsQuality.High, start.Effective);
+    }
+
+    [Fact]
+    public void StaleOrUnknownMarkerNeverRestarts()
+    {
+        Assert.Null(GraphicsModel.Startup(GraphicsQuality.Ultra, false, "mobile", Compat, Gpu).RestartInto);
+        Assert.Null(GraphicsModel.Startup(GraphicsQuality.High, false, "mobile", "mobile", Gpu).RestartInto);
+        Assert.Null(GraphicsModel.Startup(GraphicsQuality.Ultra, false, null!, Plus, Gpu).RestartInto);
+    }
+
+    [Fact]
+    public void LowAmbientIsTheBackdropsConstant() => Assert.Equal(GraphicsModel.LowAmbientEnergy, GraphicsModel.Preset(GraphicsQuality.Low).AmbientEnergy);
+
+    [Fact]
     public void NoteSaysWhatIsHappening()
     {
         Assert.Equal("", GraphicsModel.Note(GraphicsQuality.Low, false, Compat, Gpu));

@@ -44,6 +44,9 @@ public static class GraphicsModel
     public const string Compatibility = "gl_compatibility";
     public const string ForwardPlus = "forward_plus";
 
+    /// <summary>The flat ambient light energy of today's look; <c>MapMaterials.Backdrop</c> and the Low preset share it so Low cannot drift from the old picture.</summary>
+    public const float LowAmbientEnergy = 0.55f;
+
     private static readonly string[] SoftwareAdapters = ["llvmpipe", "lavapipe", "swiftshader", "software", "softpipe"];
 
     /// <summary>The level table. Low is today's look (exposure and ambient exactly as <c>MapMaterials.Backdrop</c> has them) and must stay identity so goldens do not move.
@@ -52,7 +55,7 @@ public static class GraphicsModel
     {
         GraphicsQuality.High => new GraphicsPreset(Shadows: true, Tonemap: true, Glow: true, Msaa: 2, Ssao: false, Ssr: false, ShaderTier: 0, FarZoom: 26f, Exposure: 1f, AmbientEnergy: 0.6f),
         GraphicsQuality.Ultra => new GraphicsPreset(Shadows: true, Tonemap: true, Glow: true, Msaa: 4, Ssao: true, Ssr: true, ShaderTier: 0, FarZoom: 30f, Exposure: 0.9f, AmbientEnergy: 0.5f),
-        _ => new GraphicsPreset(Shadows: false, Tonemap: false, Glow: false, Msaa: 0, Ssao: false, Ssr: false, ShaderTier: 0, FarZoom: Unciv.Assets.UnitLod.FarZoom, Exposure: 1f, AmbientEnergy: 0.55f),
+        _ => new GraphicsPreset(Shadows: false, Tonemap: false, Glow: false, Msaa: 0, Ssao: false, Ssr: false, ShaderTier: 0, FarZoom: Unciv.Assets.UnitLod.FarZoom, Exposure: 1f, AmbientEnergy: LowAmbientEnergy),
     };
 
     /// <summary>The stored name as a level; anything unknown (hand-edited file) is Low.</summary>

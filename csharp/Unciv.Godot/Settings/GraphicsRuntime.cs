@@ -46,11 +46,14 @@ public static class GraphicsRuntime
     {
         var current = settings.Current;
         var decision = GraphicsModel.Startup(current.Quality, current.UltraFailed, current.RendererPending, Renderer, Adapter);
+        if (DisplayServer.GetName() == "headless" && RendererOverride == null) return false; // no window, no renderer to choose
+        bool saved = true;
         if (decision.Pending != current.RendererPending || decision.UltraFailed != current.UltraFailed)
         {
-            settings.Update(s => s with { RendererPending = decision.Pending, UltraFailed = decision.UltraFailed });
+            saved = settings.Update(s => s with { RendererPending = decision.Pending, UltraFailed = decision.UltraFailed });
         }
         if (decision.RestartInto is not { } method) return false;
+        if (!saved) return false; // the marker is the loop guard: never restart when it could not be written
         if (Restart(method)) return true;
         settings.Update(s => s with { RendererPending = "" }); // could not restart: no attempt is under way
         return false;
@@ -65,8 +68,9 @@ public static class GraphicsRuntime
             return true;
         }
         var args = GraphicsModel.RestartArgs(OS.GetCmdlineArgs(), method);
+        if (Engine.GetMainLoop() is not SceneTree tree) return false;
         OS.SetRestartOnExit(true, [.. args]);
-        (Engine.GetMainLoop() as SceneTree)?.Quit();
+        tree.Quit();
         return true;
     }
 }
