@@ -8,7 +8,7 @@ Original work for this project (MPL-2.0), code-generated, no third-party art and
 outlines, ellipsoids) with flat normals, faces +Z, stands on y = 0 and keeps to the unit model contract (design/UNIT-MODELS.md section 1, checked here and by `UnitModelContractTests`):
 
 * materials: `TeamColor` (sails, flags, stripes, painted parts, tinted with the civ colour at load) and a few fixed ones. No skeleton and no clips: `RigidMotion` moves the whole model.
-* Armour: the turret is the top-level node `Part1` and the gun `Part2` (`UnitNode` turns them on the target); both sit on the model's vertical axis.
+* Armour: the turret is the top-level node `Part1` and the gun `Part2` (`UnitNode` turns them on the target); both turn about the vertical axis through the model origin (the turret sits on it).
 * Aircraft hover on a pole above a shadow disc (the contract wants feet at y = 0), the helicopter lands on skids.
 * `manifest.json` gets (or keeps) the `unit/<name>` keys of the rigid units; `build-unit-models.py` keeps them too.
 """

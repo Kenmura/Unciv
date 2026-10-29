@@ -203,18 +203,25 @@ public sealed class UnitModelContractTests
         {
             var ruleset = RulesetCache.Get("Civ V - Gods & Kings")!;
             var rigid = GeneratedRigidUnits();
-            Assert.True(rigid.Count >= 44);
+            Assert.Equal(44, rigid.Count);
             foreach (var name in rigid)
             {
                 var type = ruleset.Units[name].UnitType;
                 var kind = RigidMotion.KindOf(type);
-                Assert.True(kind != RigidKind.None || name == "Great Admiral", name + " (" + type + ") is not rigid");
+                Assert.True(kind != RigidKind.None, name + " (" + type + ") is not rigid");
                 var doc = Glb(File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", "models", "unit", name + ".glb")));
                 Assert.False(doc.TryGetProperty("animations", out _), name);
                 Assert.False(doc.TryGetProperty("skins", out _), name);
                 Assert.Contains("TeamColor", doc.GetProperty("materials").EnumerateArray().Select(it => it.GetProperty("name").GetString()));
                 var top = doc.GetProperty("scenes")[0].GetProperty("nodes").EnumerateArray().Select(it => doc.GetProperty("nodes")[it.GetInt32()].GetProperty("name").GetString()).ToList();
                 Assert.Equal(kind == RigidKind.Armor, top.Contains("Part1") && top.Contains("Part2"));
+                if (kind != RigidKind.Armor) continue;
+                // the turret and the gun turn about the vertical axis through the model origin (UnitNode.ShowRigid orbits a part's translation about it): the turret sits on it
+                var part1 = doc.GetProperty("nodes").EnumerateArray().Single(it => it.GetProperty("name").GetString() == "Part1").GetProperty("translation");
+                var part2 = doc.GetProperty("nodes").EnumerateArray().Single(it => it.GetProperty("name").GetString() == "Part2").GetProperty("translation");
+                Assert.Equal(0f, part1[0].GetSingle());
+                Assert.Equal(0f, part1[2].GetSingle());
+                Assert.Equal(0f, part2[0].GetSingle());
             }
         }
         finally
