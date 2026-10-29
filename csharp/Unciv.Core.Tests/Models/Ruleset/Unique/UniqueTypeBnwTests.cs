@@ -12,7 +12,7 @@ public class UniqueTypeBnwTests
     [Fact]
     public void HooksFollowTheGatesAndKeepOrdinalsContiguous()
     {
-        Assert.Equal(106, Hooks.Length);
+        Assert.Equal(105, Hooks.Length);
         Assert.Equal(UniqueType.BnwHappinessRules + 1, Hooks[0]);
         for (int i = 1; i < Hooks.Length; i++) Assert.Equal((int)Hooks[i - 1] + 1, (int)Hooks[i]);
         Assert.Equal(UniqueType.IsArchaeologicalDig, Hooks[^1]);
@@ -55,6 +55,19 @@ public class UniqueTypeBnwTests
     [InlineData(UniqueType.AllowsWorldCongress, UniqueTarget.Tech, true)]
     public void TargetsMatchTheSpecColumns(UniqueType type, UniqueTarget target, bool accepted) =>
         Assert.Equal(accepted, type.CanAcceptUniqueTarget(target));
+
+    [Theory]
+    [InlineData(UniqueType.ContainsGreatWorkWhenBuilt, "Contains the Great Work [param] when built")]
+    [InlineData(UniqueType.TradeRouteSlots, "[relativeAmount] trade route slots")]
+    [InlineData(UniqueType.WorldCongressDelegates, "[relativeAmount] Delegates in the World Congress")]
+    [InlineData(UniqueType.TourismOpenBorders, "[relativeAmount]% Tourism toward civs with open borders with you")]
+    [InlineData(UniqueType.GoldFromCityConnectionsPercent, "[relativeAmount]% Gold from city connections")]
+    [InlineData(UniqueType.TechFromCityConquest, "Receive a free technology from conquered cities")]
+    [InlineData(UniqueType.CanEstablishTradeRoutes, "Can establish trade routes")]
+    [InlineData(UniqueType.PostCombatPromotion, "Can randomly gain [promotion] after combat")]
+    [InlineData(UniqueType.AllowsWorldCongress, "Allows founding the World Congress")]
+    [InlineData(UniqueType.IsArchaeologicalDig, "Is an Archaeological Dig")]
+    public void NamesStayPinnedToTheirText(UniqueType type, string text) => Assert.Equal(text, type.Text());
 
     [Fact]
     public void SpecExamplesParse()

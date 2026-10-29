@@ -253,16 +253,16 @@ Chateau (`AdjacentLuxury`, `NoTwoAdjacent`), Kasbah, Brazilwood Camp, Terrace Fa
 **Eras / Speeds** [D]: `Eras.LeaguePercent`, `TradeRouteFoodBonusTimes100`, `TradeRouteProductionBonusTimes100`,
 `WarmongerPercent`, and `GameSpeeds.LeaguePercent` → JSON fields on `Era`/`Speed`.
 
-**B003 result (declared hooks).** 106 `UniqueType` rows (ordinals 644..749, `UniqueTypeDataBnw.cs`, enum members after `BnwHappinessRules`),
+**B003 result (declared hooks).** 105 `UniqueType` rows (ordinals 644..748, `UniqueTypeDataBnw.cs`, enum members after `BnwHappinessRules`),
 declarations, parameter types and docs only; no effect is wired. Deliberate deviations from the proposed texts above: (1) the `[Land/Sea]`
 and `[+amount]` forms are split into `Land`/`Sea` rows (`LandTradeRouteRange`, `SeaTradeRouteRange`, `GoldFromLandTradeRoutes`,
 `GoldFromSeaTradeRoutes`) and use `[relativeAmount]`, because no new `UniqueParameterType` was added; (2) Great Work names use the
 untyped `[param]` until B030 adds a Great Work parameter type; (3) the unit-XP domain uses `[mapUnitFilter]`. JSON-field columns
 (theming bonuses, slots, `requiredPolicyBranch`, era/speed percents, branch adopter fields), `Level`, `NotWithUpgrade`,
 `PromotionPrereqOr7..9`, `PolicyType`, `FreeUnit`@tech, `DisplacePillager` and `PromptWhenComplete` get no unique (fields, existing
-conditionals or UI only). Reuse instead of new rows: Great Person rate per era (conditional), `Ignores Zone of Control`,
+conditionals or UI only; `RequiresImprovement`, `Improvement_ValidImprovements` and the 5th `Reformation` belief tier are JSON fields). Reuse instead of new rows: Great Person rate per era (conditional), `Ignores Zone of Control`,
 `Cannot build [baseUnitFilter] units`, `[relativeAmount]% construction time for [improvementFilter] improvements` (Worker speed),
-`[relativeAmount]% maintenance costs`. Open [K]/[?] items are not resolved (no decompiler output in the repo); the spec values stand.
+`[relativeAmount]% maintenance costs` (Trait_MaintenanceModifierUnitCombats, Trait_NoTrain), `May not annex cities` (Venice NoAnnexing), `Can move immediately once bought` (MoveAfterPurchase), `Can be purchased with [stat] [cityFilter]` (Belief_BuildingClassFaithPurchase, Belief_EraFaithUnitPurchase with `<starting from the [era]>`); the golden-age trait rates use `<during a Golden Age>` with `[relativeAmount]% [greatPerson] generation` and `[relativeAmount]% Tourism`. Rows kept next to a similar Kotlin unique are deliberate (per-class, per-promotion or per-city scope). Open [K]/[?] items are not resolved (no decompiler output in the repo); the spec values stand.
 
 ### 3.3 Object diff vs Unciv G&K (`data/derived/objects_unciv_gk_vs_bnw.txt`)
 - **Renames only** (same object, keep the Unciv name): The Pyramids, The Oracle, The Great Library, The Great
