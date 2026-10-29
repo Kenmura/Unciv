@@ -142,6 +142,9 @@ public sealed class HostAdminTests : IDisposable
         foreach (var text in new[] { "a", "b", "c" }) await SayAsync(friend, text);
         Assert.Equal("a", (await ReadUntilAsync<LobbyChat>(friend)).Text);
         Assert.Equal("b", (await ReadUntilAsync<LobbyChat>(friend)).Text);
+        // the reader handles frames in order and waits for each: once the Pong is back, "c" has been seen (and dropped) on the old clock
+        await friend.SendAsync(ProtocolCodec.Encode(new Ping()));
+        await ReadUntilAsync<Pong>(friend);
 
         clock.Advance(10_001);
         await SayAsync(friend, "d");
