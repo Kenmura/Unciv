@@ -23,8 +23,9 @@ public enum GraphicsQuality
 /// <param name="ShaderTier">0 = today's materials; 1 = the C098 water and terrain shader (Ultra only; the design lists it under High too, deliberately held back to Ultra so Low and High pictures stay as they are); 2 is reserved.</param>
 /// <param name="FarZoom">C085: camera size from which unit formations draw a single figure (see <see cref="Unciv.Assets.UnitLod.FarZoom"/>); looser (further out) at the higher levels.</param>
 /// <param name="Exposure">Per-level colour calibration: tone-map exposure that keeps the palette near the Low look.</param>
+/// <param name="Saturation">Per-level colour calibration: colour saturation adjustment (1 = none); the Forward+ picture is paler than the compatibility one for the same scene.</param>
 /// <param name="AmbientEnergy">Per-level colour calibration: ambient light energy.</param>
-public sealed record GraphicsPreset(bool Shadows, bool Tonemap, bool Glow, int Msaa, bool Ssao, bool Ssr, int ShaderTier, float FarZoom, float Exposure, float AmbientEnergy);
+public sealed record GraphicsPreset(bool Shadows, bool Tonemap, bool Glow, int Msaa, bool Ssao, bool Ssr, int ShaderTier, float FarZoom, float Exposure, float AmbientEnergy, float Saturation = 1f);
 
 /// <summary>What a start (or a settings change) has to do about the renderer; produced by <see cref="GraphicsModel.Startup"/>.</summary>
 /// <param name="Effective">The level to draw with now.</param>
@@ -50,11 +51,11 @@ public static class GraphicsModel
     private static readonly string[] SoftwareAdapters = ["llvmpipe", "lavapipe", "swiftshader", "software", "softpipe"];
 
     /// <summary>The level table. Low is today's look (exposure and ambient exactly as <c>MapMaterials.Backdrop</c> has them) and must stay identity so goldens do not move.
-    /// Exposure and ambient for High and Ultra are provisional: the Forward+ colour shift was measured only on a software rasterizer, so they are to be re-tuned from real-GPU renders.</summary>
+    /// Ultra's exposure, ambient and saturation were calibrated on a real GPU (T271, design/ULTRA-GRAPHICS.md section 7): Forward+ renders the same scene about 40% brighter and paler than the compatibility renderer, so Ultra is pulled down to the brightness of High (within about 6% at the mid and coast views) and its saturation raised. High's own values are the uncalibrated first guess: on the compatibility renderer it is about 45% brighter than Low by design of the film tone map.</summary>
     public static GraphicsPreset Preset(GraphicsQuality level) => level switch
     {
         GraphicsQuality.High => new GraphicsPreset(Shadows: true, Tonemap: true, Glow: true, Msaa: 2, Ssao: false, Ssr: false, ShaderTier: 0, FarZoom: 26f, Exposure: 1f, AmbientEnergy: 0.6f),
-        GraphicsQuality.Ultra => new GraphicsPreset(Shadows: true, Tonemap: true, Glow: true, Msaa: 4, Ssao: true, Ssr: true, ShaderTier: 1, FarZoom: 30f, Exposure: 0.9f, AmbientEnergy: 0.5f),
+        GraphicsQuality.Ultra => new GraphicsPreset(Shadows: true, Tonemap: true, Glow: true, Msaa: 4, Ssao: true, Ssr: true, ShaderTier: 1, FarZoom: 30f, Exposure: 0.6f, AmbientEnergy: 0.3f, Saturation: 1.3f),
         _ => new GraphicsPreset(Shadows: false, Tonemap: false, Glow: false, Msaa: 0, Ssao: false, Ssr: false, ShaderTier: 0, FarZoom: Unciv.Assets.UnitLod.FarZoom, Exposure: 1f, AmbientEnergy: LowAmbientEnergy),
     };
 

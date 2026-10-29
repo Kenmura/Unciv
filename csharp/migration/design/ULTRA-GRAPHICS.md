@@ -13,6 +13,13 @@
 - [4. Recommended minimum-scope Ultra preset and fallback](#4-recommended-minimum-scope-ultra-preset-and-fallback)
 - [5. Prototype evidence](#5-prototype-evidence)
 - [6. Go/no-go and provisional ticket scope](#6-gono-go-and-provisional-ticket-scope)
+- [7. Real-GPU pass (T271)](#7-real-gpu-pass-t271)
+  - [Method](#method)
+  - [Frame time per level](#frame-time-per-level)
+  - [Cost per effect](#cost-per-effect)
+  - [Look, colour calibration and animation](#look-colour-calibration-and-animation)
+  - [Conclusions and follow-ups](#conclusions-and-follow-ups)
+  - [Windows, macOS and Android (UNVERIFIED)](#windows-macos-and-android-unverified)
 <!-- /toc -->
 
 Source: GitHub issue #3 ("rtx on feature", owner unsure how feasible). This is a spike: it states what Godot 4.7.2 offers, what we could and could not verify, and recommends a minimum-scope preset. Ticket C097 implements it.
@@ -119,3 +126,93 @@ C097 scope after this spike (also updated in the backlog):
 Follow-ups worth filing: shader polish ticket; a real-GPU measurement pass (frame time per effect on Linux, Windows and macOS, and a mid-range Android phone with T259); optional Ultra-look lavapipe render outside CI.
 
 C098 outcome (shader polish): implemented as `ShaderTier` 1, drawn at **Ultra only** (the level table in section 4 lists it under High too; held back so Low and High pictures stay exactly as they are). One spatial shader (`Unciv.Godot/Assets/MapShaders.cs`) replaces the terrain chunk material: land gets world-space noise detail and a slope-to-rock blend; water (recognised as an upward-facing surface below the coast height, so the meshes and baked colours are unchanged) gets an animated normal, a sky fresnel tint and a specular glint. Not done: shoreline foam (needs a distance-to-land signal the merged meshes do not carry), wind on vegetation. Verified only that it compiles and draws on llvmpipe OpenGL (`tools/run-scenario.sh terrain-ultra`, not in CI); look, colour match and cost on a real GPU are unverified (T271).
+
+## 7. Real-GPU pass (T271)
+
+Everything above was verified on Mesa software rasterizers only. T271 ran the client on real hardware on this Linux machine and measured. Not measured: Windows, macOS and an Android phone (no such hardware here, see the last subsection).
+
+### Method
+
+- Tool: harness scenario `gpu-bench` (`Unciv.Godot.Harness/GpuBenchScenario.cs`, deliberately not in `scenarios.txt`, never in CI; output is never a golden) run by `Unciv.Godot.Harness/tools/gpu-bench.sh <forward_plus|gl_compatibility> <out-dir> [gpu-index|nvidia|intel]` on the host (the dotnet-dev container has no NVIDIA userspace; Godot .NET needs a dotnet runtime, `DOTNET_ROOT` pointing at a copy of the container's `/usr/lib64/dotnet`). Build first inside dotnet-dev.
+- Scene: the real `GameScreen` over a generated Large Pangaea map (2838 tiles, 11 civs plus 4 city-states, 24 cities, 84 units, whole map explored for the human, yield chips on), window 1920x1080, the three levels applied with `MapView.ApplyGraphics` using the preset table (Ultra on the compatibility renderer drops SSAO and SSR, which that renderer rejects, and is labelled `Ultra-no-ssao-ssr`).
+- Views: `overview` (camera size 40 = the whole map in view, the stress case), `mid` (14, the default), `close` (6, tilt 60), `coast` (9) and `coastlow` (5, tilt 28, over a shoreline), `pan` (mid zoom, the camera pans every frame). 45 warm-up frames, then 300 frames per measurement.
+- Per frame: wall time = Godot's process delta with `--disable-vsync` (so it includes everything the frame does, not only rendering); GPU time and CPU render time = `RenderingServer.ViewportGetMeasuredRenderTimeGpu/Cpu` (timestamp queries; on the compatibility renderer the GPU figure includes driver stalls, treat it as an upper bound); draw calls = `Performance.RenderTotalDrawCallsInFrame`. The renderer and adapter are read back from Godot (`info.txt`).
+- Noise: the machine is shared (20 cores, other agents running builds; load average 5-12 during the quoted runs, 40-120 during discarded ones, which inflated CPU time up to 2x and made wall time useless). GPU time is stable under load (spread under 0.1 ms on the NVIDIA runs); wall and CPU time vary, so each cell is the mean of N runs with the min-max range. The NVIDIA numbers are 3 runs, Intel 2 runs.
+- Hardware: NVIDIA GeForce RTX 5060 Ti (proprietary driver 615.71.09, Vulkan 1.4.351, OpenGL 3.3.0 NVIDIA); Intel Arrow Lake iGPU (Mesa 26.2.4, Vulkan 1.4.354, OpenGL 4.6 Core). Wayland session with XWayland (`DISPLAY=:0`).
+
+### Frame time per level
+
+Forward+ (Vulkan), ms, mean [min-max] over runs. wall / GPU / CPU render. Draw calls per frame are the same on every GPU.
+
+| View | Draws L/H/U | RTX 5060 Ti Low | High | Ultra |
+|---|---|---|---|---|
+| overview (zoom 40) | 13.3k / 26.1k / 26.1k | 21.0 [19.9-22.7] / 2.65 / 12.6 | 26.3 [25.3-27.4] / 4.8 / 16.6 | 28.2 [27.8-28.6] / 5.9 / 18.1 |
+| mid (zoom 14) | 2.0k / 6.2k / 6.2k | 3.9 [3.4-4.6] / 0.64 / 1.3 | 5.2 [4.9-5.6] / 1.7 / 2.7 | 7.5 [5.3-11.2] / 2.5 / 3.8 |
+| close (zoom 6) | 0.4k / 2.0k / 2.0k | 2.1 / 0.39 / 0.3 | 3.1 / 0.99 / 0.8 | 5.8 [2.4-12.4] / 1.6 / 1.4 |
+| coast | 1.0k / 3.4k / 3.4k | 3.0 / 0.48 / 0.6 | 3.9 / 1.3 / 1.4 | 4.9 / 1.8 / 1.7 |
+| pan | 2.0k / 1.7k / 5.8k | 4.4 / 0.67 / 1.5 | 3.5 / 0.78 / 0.9 | 6.9 / 2.5 / 3.3 |
+
+| View | Intel iGPU Low | High | Ultra |
+|---|---|---|---|
+| overview | 59.4 / 56.4 / 24.1 | 60.3 / 57.8 / 24.5 | 73.2 / 70.4 / 36.4 |
+| mid | 9.9 / 9.2 / 3.4 | 21.0 / 20.2 / 7.7 | 31.7 / 31.3 / 10.1 |
+| close | 6.7 / 6.1 / 0.9 | 14.0 / 13.2 / 2.8 | 21.7 / 21.2 / 4.1 |
+| coast | 7.0 / 6.6 / 1.8 | 18.3 / 17.5 / 4.6 | 26.4 / 25.7 / 6.7 |
+| pan | 10.0 / 9.4 / 2.9 | 11.3 / 10.8 / 2.8 | 33.2 / 32.7 / 10.3 |
+
+Compatibility renderer (OpenGL 3), the path Low and High ship on, wall / GPU / CPU ms:
+
+| View | RTX 5060 Ti Low | High | Ultra-no-ssao-ssr | Intel iGPU Low | High |
+|---|---|---|---|---|---|
+| overview | 32.7 [28.8-40.4] / 23.0 / 31.6 | 39.3 / 34.0 / 38.2 | 43.9 / 38.0 / 42.7 | 80.8 / 73.3 / 77.5 | 116.9 / - / 124.2 |
+| mid | 4.8 / 0.42 / 3.5 | 6.9 / 3.6 / 6.2 | 6.9 / 3.6 / 6.0 | 24.2 / 21.3 / 16.2 | 33.4 / 32.6 / 25.9 |
+| close | 3.2 / 0.19 / 0.8 | 3.7 / 0.72 / 1.7 | 4.4 / 0.78 / 2.0 | 16.3 / 12.1 / 4.5 | 17.3 / 16.6 / 8.9 |
+
+(The Intel compatibility runs shared the machine with heavy builds; their spread is 20-30%. Intel High overview GPU has one run with a timer glitch and is left out.)
+
+Reading:
+- On the discrete GPU every level runs far above 30 fps in every view, including the Large map zoomed all the way out: the slowest cell is 28 ms (35 fps, Forward+ Ultra, overview) and the typical play view (mid) is 4-8 ms. Nothing needs its default adjusted; Low stays the default and nothing is too slow there.
+- The cost is **CPU/draw-call bound**, not GPU bound, on the discrete card. The overview view issues 13.3k draw calls at Low (yield chips and their labels, prop models, unit bars) and the sun shadow pass doubles that to 26.1k, so the CPU render time goes from 12.6 to 16.6-18 ms and Forward+ GPU time stays under 6 ms. The compatibility renderer is about 1.5-2x slower on CPU for the same scene and its GPU timer shows 23-38 ms at overview (driver cost per draw). Follow-up T### (far-zoom draw-call reduction) is filed.
+- On the Intel iGPU (integrated, shared memory) the picture is GPU bound: at 1080p Low is 10 ms at the default zoom, High 21 ms, Ultra 32 ms (about 31 fps); at overview Ultra is 73 ms (14 fps). Ultra is a discrete-GPU level; the note the settings screen shows when Ultra cannot run does not cover "runs but slowly on an integrated GPU" (follow-up filed).
+
+### Cost per effect
+
+GPU ms added by each effect alone to Low on the RTX 5060 Ti, Forward+, 1080p, one ablation run (GPU time is stable under load; the CPU effect of the shadow pass is in the draw-call figures above). Views overview / mid / coast, Low = 2.64 / 0.65 / 0.49 ms.
+
+| Effect | overview | mid | coast |
+|---|---|---|---|
+| shadows (4 splits) | +1.7 | +0.7 | +0.4 |
+| tone map | 0.0 | 0.0 | 0.0 |
+| glow | +0.2 | +0.2 | +0.2 |
+| MSAA 2x / 4x | +0.3 / +0.5 | +0.2 / +0.4 | +0.2 / +0.2 |
+| SSAO | +0.4 | +0.15 | +0.1 |
+| SSR | +0.5 | +0.2 | +0.2 |
+| C098 shader | +0.05 | +0.05 | +0.03 |
+| all of High / of Ultra | +2.2 / +3.4 | +1.0 / +1.6 | +0.8 / +1.5 |
+
+On this card no single effect costs more than the shadows, and the whole of Ultra is under 4 ms of GPU time. Shadows are the only effect with a visible CPU cost (they re-submit every shadow caster for each of the 4 splits).
+
+### Look, colour calibration and animation
+
+Pictures were rendered and viewed for all three levels at five views (kept outside the repository: real-GPU output must not become a golden). Findings:
+
+- **Forward+ is much brighter and paler than the compatibility renderer for the same scene and settings** (measured as mean pixel value over the map area, 0-255): compatibility Low 56, High 80 (mid view); Forward+ Low 86, High 108, Ultra with the old provisional constants (0.9 / 0.5) 111. Ultra was about 38% brighter than High, with washed-out blue-grey water. Compatibility Low draws the deep ocean nearly black (the palette the CI goldens were tuned on) and High is neon-saturated; both are today's behaviour and were left alone.
+- **Calibration applied** (`GraphicsModel.Preset(Ultra)`): exposure 0.9 -> 0.6, ambient 0.5 -> 0.3, and a new `Saturation` 1.3 (Environment adjustment, Ultra only; Low and High keep 1.0 so they are untouched). Result, mean pixel value Ultra versus compatibility High: mid 85 vs 80, coast 89 vs 84, close 103 vs 105, overview 73 vs 62 (the overview gap is the near-black compatibility forests). The picture keeps natural, saturated land and blue water. Ultra is therefore matched to High, not to Low: Low is deliberately the old dark look, and High/Ultra are the "film look" levels.
+- **Ultra water/terrain shader (C098)**: compiles and draws on both NVIDIA (Vulkan) and Intel (Vulkan); no artefacts on shorelines, hills, or under SSAO/SSR (viewed at full resolution at `coast` and `coastlow`). The water animates (frame-to-frame mean difference 0.1-0.5 per channel between two shots 40 frames apart, zero at High) and shows a soft depth tint; the ripples and fresnel are subtle at the game's steep camera angles and there is no visible sun glint (the sun is at -60 degrees). It reads as "clean, slightly lit water", not as a strong effect; judged acceptable, a stronger ripple is a tuning follow-up. Not verified: shoreline foam, vegetation wind (not implemented).
+- **SSAO / SSR on Forward+**: SSAO grounds the tree and figure props (contact darkening) with no halos; SSR shows nothing visible on the shader water at the usual tilt (the cost is small, +0.2-0.5 ms). No interaction artefacts with the shader's animated normals were seen.
+- **C085 LOD and C086 combat effects**: the `unit-visuals` (including `far`) and `combat-presentation` scenarios were run on the RTX 5060 Ti compatibility renderer against the committed llvmpipe goldens with the cross-renderer tolerance: all 17 + 5 captures match with a mean difference of 0.0001-0.0004 (hash distance 0-2), i.e. the CI goldens are what a real GPU draws; the pictures were viewed (one figure per formation at far zoom, damage number, shot flash, bombard burst, death marker all present). On Forward+ the same scenarios differ from the goldens (mean 0.03-0.14), the known renderer colour shift. The scenarios pin the Low level, so C085/C086 under High and Ultra (shadows, glow on the effect sprites) were not exercised.
+
+### Conclusions and follow-ups
+
+1. The C097 defaults stand: Low default, High and Ultra opt-in; no level is too slow on a discrete GPU.
+2. Ultra's colour constants are calibrated (above); the tests pin the calibration direction, not the exact numbers.
+3. Follow-ups filed in the backlog: far-zoom draw-call reduction (13.3k draw calls at the maximum zoom-out, the CPU bound on every GPU); an integrated-GPU note for Ultra; stronger water ripples/glint tuning; real-device passes on Windows, macOS and a mid-range Android phone.
+
+### Windows, macOS and Android (UNVERIFIED)
+
+No such hardware was available; nothing below was run. Procedure for whoever has it (about 20 minutes per device):
+
+1. Build the client for the platform (`Unciv.Godot/tools/package.sh <windows|macos|android>`, GODOT.md) or open `Unciv.Godot.Harness` in the matching Godot 4.7.2 .NET editor.
+2. Desktop (Windows, macOS): run `Godot --path Unciv.Godot.Harness --rendering-method <forward_plus|gl_compatibility> --disable-vsync res://ScenarioRunner.tscn -- --scenario=gpu-bench --out=<dir> --golden-dir=<dir>/none` with `UNCIV_BENCH_OUT=<dir>` set, once per renderer (Forward+ is D3D12/Vulkan on Windows, Metal on macOS), once with `UNCIV_BENCH_MODE=ablation`; copy `results.csv`, `info.txt` and the PNGs. Check the renderer and adapter in `info.txt`.
+3. Phone: Android is compatibility only. Export the harness with the Android template (T260), start the `gpu-bench` scenario with `UNCIV_BENCH_RES=1080x2400` or the device's own, set the `UNCIV_BENCH_*` variables through the app's launch intent or a `bench.env` read at start (a small change to `GpuBenchScenario` is needed: environment variables are not settable on a stock phone), pull the CSV with `adb pull`. Record the device model, SoC, thermal state and battery saver. Phones throttle: repeat three times with a cool-down and report the spread.
+4. Record in this section: hardware, driver, renderer reported, the three tables above for that device, and whether Low/High hold 30 fps at `mid`.

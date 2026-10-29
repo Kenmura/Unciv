@@ -55,6 +55,19 @@ public sealed class GraphicsModelTests : IDisposable
     }
 
     [Fact]
+    public void UltraIsCalibratedDarkerAndRicherThanForwardPlusDefaults()
+    {
+        // T271: measured on a real GPU, Forward+ with High's constants came out about 40% brighter and paler than the compatibility High; Ultra compensates
+        var high = GraphicsModel.Preset(GraphicsQuality.High);
+        var ultra = GraphicsModel.Preset(GraphicsQuality.Ultra);
+        Assert.True(ultra.Exposure < high.Exposure);
+        Assert.True(ultra.AmbientEnergy < high.AmbientEnergy);
+        Assert.True(ultra.Saturation > 1f);
+        Assert.Equal(1f, GraphicsModel.Preset(GraphicsQuality.Low).Saturation); // Low stays the identity look
+        Assert.Equal(1f, high.Saturation);
+    }
+
+    [Fact]
     public void OnlyUltraDrawsTheShaderPolish() => Assert.All(Enum.GetValues<GraphicsQuality>(), it => Assert.Equal(it == GraphicsQuality.Ultra ? 1 : 0, GraphicsModel.Preset(it).ShaderTier));
 
     [Fact]

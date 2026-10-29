@@ -141,6 +141,8 @@ public partial class MapView : Node3D
         environment.TonemapMode = preset.Tonemap ? Godot.Environment.ToneMapper.Filmic : Godot.Environment.ToneMapper.Linear;
         environment.TonemapExposure = preset.Exposure;
         environment.AmbientLightEnergy = preset.AmbientEnergy;
+        environment.AdjustmentEnabled = preset.Saturation != 1f;
+        environment.AdjustmentSaturation = preset.Saturation;
         environment.GlowEnabled = preset.Glow;
         if (preset.Glow)
         {
