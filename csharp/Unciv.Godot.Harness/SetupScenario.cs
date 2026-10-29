@@ -31,7 +31,7 @@ public sealed class SetupScenario : Scenario
 
     public override IReadOnlyList<string> Checklist =>
     [
-        "Is the main menu clear about what is available (Resume disabled, Multiplayer disabled)?",
+        "Is the main menu clear about what is available (Resume disabled)?",
         "Can you tell which option of each row is chosen, and which player slot is selected?",
         "Are the nation colours readable and the taken nations visibly unavailable?",
         "Is the error for a bad seed visible and understandable?",
@@ -80,8 +80,8 @@ public sealed class SetupScenario : Scenario
         return new ScenarioStep[]
         {
             new WaitFrames(3),
-            new AssertQuery("the menu is the only screen; Resume last and Multiplayer are disabled", () => manager.Depth == 1 && !menu.CanResume),
-            new Capture("menu", "Main menu: New game, Resume last (disabled), Load game, Multiplayer, Options, Quit"),
+            new AssertQuery("the menu is the only screen; Resume last is disabled", () => manager.Depth == 1 && !menu.CanResume),
+            new Capture("menu", "Main menu: New game, Resume last (disabled), Load game, Multiplayer, Host game, Options, Quit"),
             new Press("New game"),
             new WaitFrames(2),
             new AssertQuery("the setup screen opened with the defaults: four players, one human", () => manager.Depth == 2 && Screen().Form.Slots.Count == 4 && Screen().Form.Humans == 1),
@@ -108,7 +108,7 @@ public sealed class SetupScenario : Scenario
             new AssertQuery("and back to slot 1", () => Screen().Form.Slots.Select(it => it.IsHuman).SequenceEqual([true, false])),
             new Act("no city-states", () => { while (Screen().Form.CityStates > 0) Screen().Form.SetCityStates(Screen().Form.CityStates - 1); Screen().Refresh(); }),
             new AssertQuery("the footer summarises the choices and the detail pane describes Rome", () => Screen().Summary.StartsWith("2 players, 0 city-states", StringComparison.Ordinal) && Screen().FindChild("NationDetail", true, false) != null),
-            new Capture("players", "Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the grid"),
+            new Capture("players", "Players tab: Babylon (human) and Rome (AI), no city-states, the detail card showing Rome"),
 
             new Press("Game"),
             Show(() => Screen().ChoiceButton("Difficulty", "King")), ClickChoice("Difficulty", "King"),

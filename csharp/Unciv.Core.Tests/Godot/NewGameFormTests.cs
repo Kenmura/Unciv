@@ -580,7 +580,7 @@ public sealed class NewGameFormTests
     }
 
     [Fact]
-    public void NationDetailAndSummaryDescribeTheChoices()
+    public void NationDetailDescribesTheNation()
     {
         var form = VanillaForm();
         var babylon = form.DescribeNation("Babylon");
@@ -590,9 +590,10 @@ public sealed class NewGameFormTests
         Assert.False(string.IsNullOrEmpty(babylon.UniqueName));
         Assert.Null(form.DescribeNation("Random"));
         Assert.Null(form.DescribeNation("Atlantis"));
-        Assert.Equal($"{form.Slots.Count} players, {form.CityStates} city-states, {form.Difficulty}, {form.Speed}, {form.MapType} {form.Size}", form.Summary);
-        Assert.Null(form.SetPlayerCount(2));
-        Assert.StartsWith("2 players", form.Summary, StringComparison.Ordinal);
+        var rome = form.DescribeNation("Rome");
+        Assert.NotNull(rome);
+        Assert.Contains("Tundra", rome.Avoids);
+        Assert.DoesNotContain(rome.Avoids.Concat(rome.Prefers), it => it.Contains('[', StringComparison.Ordinal) || it.StartsWith("Avoid", StringComparison.Ordinal));
     }
 
     // Review additions (C015 r1): swapped fields, exact boundaries, argument passing and cache invalidation, each of which mutation survey found unpinned.

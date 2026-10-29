@@ -135,7 +135,8 @@ public partial class NewGameScreen : Control
 
     private void ShowProblems()
     {
-        summaryLabel.Text = Form.Summary;
+        summaryLabel.Text = string.Join(", ", $"{Form.Slots.Count.ToString(CultureInfo.InvariantCulture)} {"players".Tr()}", $"{Form.CityStates.ToString(CultureInfo.InvariantCulture)} {"city-states".Tr()}",
+            Form.Difficulty.TrText(), Form.Speed.TrText(), $"{Form.MapType.TrText()} {Form.Size.TrText()}");
         var problems = Form.Problems();
         SetMessage(string.Join("\n", problems), problems.Count > 0);
     }
@@ -341,7 +342,8 @@ public partial class NewGameScreen : Control
             if (detail.Leader.Length > 0) box.AddChild(new Label { Text = detail.Leader.TrText(), ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart });
             if (detail.UniqueName.Length > 0) box.AddChild(new Label { Text = detail.UniqueName.TrText(), ThemeTypeVariation = UiVariants.LabelBodyStrong, AutowrapMode = TextServer.AutowrapMode.WordSmart });
             if (detail.UniqueText.Length > 0) box.AddChild(new Label { Text = detail.UniqueText.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart });
-            if (detail.StartBias.Count > 0) box.AddChild(new Label { Text = $"{"Starts near".Tr()}: {string.Join(", ", detail.StartBias.Select(it => it.TrText()))}", ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+            if (detail.Prefers.Count > 0) box.AddChild(new Label { Text = $"{"Starts near".Tr()}: {string.Join(", ", detail.Prefers.Select(it => it.TrText()))}", ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+            if (detail.Avoids.Count > 0) box.AddChild(new Label { Text = $"{"Avoids".Tr()}: {string.Join(", ", detail.Avoids.Select(it => it.TrText()))}", ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = TextServer.AutowrapMode.WordSmart });
         }
         else
         {
