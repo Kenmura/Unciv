@@ -53,6 +53,61 @@ public sealed class NetGameSessionTests
         Assert.Equal([("Rome", "Alice", true), ("Greece", "Greece", false)], net.Roster.Select(it => (it.CivId, it.Name, it.Connected)));
     }
 
+    // C006: the connection state the reconnect overlay follows.
+    [Fact]
+    public async Task Connection_FollowsDropReconnectAndResync()
+    {
+        await using var rig = new ClientNetRig();
+        var (net, host) = await StartAsync(rig, ClientNetRig.Snap(5, 1));
+        await using var _ = net;
+        Assert.Equal(Unciv.Client.Net.Session.ClientSessionState.InGame, net.Connection);
+        var seen = new List<Unciv.Client.Net.Session.ClientSessionState>();
+        var back = new TaskCompletionSource();
+        var down = new TaskCompletionSource();
+        net.ConnectionChanged += () =>
+        {
+            seen.Add(net.Connection);
+            if (net.Connection == Unciv.Client.Net.Session.ClientSessionState.Reconnecting) down.TrySetResult();
+            if (net.Connection == Unciv.Client.Net.Session.ClientSessionState.InGame) back.TrySetResult();
+        };
+        var next = rig.NewConnection();
+        await host.CloseAsync();
+        await down.Task.WaitAsync(Limit);
+        await rig.HandshakeAsync(next);
+        await next.ReceiveAsync<ResyncRequest>();
+        await next.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(6, 1)));
+        await back.Task.WaitAsync(Limit);
+        Assert.Contains(Unciv.Client.Net.Session.ClientSessionState.Reconnecting, seen);
+        Assert.Null(net.EndedReason);
+        Assert.False(net.HostClosing);
+    }
+
+    [Fact]
+    public async Task Connection_HostClosingIsFlaggedUntilTheSessionIsBackInGame()
+    {
+        await using var rig = new ClientNetRig();
+        var (net, host) = await StartAsync(rig, ClientNetRig.Snap(5, 1));
+        await using var _ = net;
+        var flagged = new TaskCompletionSource();
+        net.ConnectionChanged += () => { if (net.HostClosing) flagged.TrySetResult(); };
+        await host.SendAsync(new HostClosing());
+        await flagged.Task.WaitAsync(Limit);
+        Assert.True(net.HostClosing);
+    }
+
+    [Fact]
+    public async Task Connection_EndOfSessionIsReportedWithItsReason()
+    {
+        await using var rig = new ClientNetRig();
+        var (net, _) = await StartAsync(rig, ClientNetRig.Snap(5, 1));
+        await using var __ = net;
+        var ended = new TaskCompletionSource();
+        net.ConnectionChanged += () => { if (net.EndedReason != null) ended.TrySetResult(); };
+        await rig.Session.LeaveAsync();
+        await ended.Task.WaitAsync(Limit);
+        Assert.Equal("left", net.EndedReason);
+    }
+
     [Fact]
     public async Task Constructor_WithoutSnapshot_Throws()
     {

@@ -98,6 +98,32 @@ Scenario `ui-kit`.
 
 *Popup A over the dimmed screen (B and C are queued behind it).* (`ui-kit/popup.png`)
 
+## C006 (ticket not Done or unknown)
+
+Join screen (address or invite, password, known hosts), fingerprint prompt, host-key-changed hard stop and the reconnect overlay.
+
+Scenario `join`.
+
+![The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet.](../Unciv.Godot.Harness/golden/join/empty.png)
+
+*The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet.* (`join/empty.png`)
+
+![First time at an address: the host's key fingerprint is shown with the advice to continue only if the host told you that fingerprint; nothing has been sent yet.](../Unciv.Godot.Harness/golden/join/trust.png)
+
+*First time at an address: the host's key fingerprint is shown with the advice to continue only if the host told you that fingerprint; nothing has been sent yet.* (`join/trust.png`)
+
+![After trusting, the host refused the wrong password with a plain sentence; the address is now listed under known hosts with Forget.](../Unciv.Godot.Harness/golden/join/wrong-password.png)
+
+*After trusting, the host refused the wrong password with a plain sentence; the address is now listed under known hosts with Forget.* (`join/wrong-password.png`)
+
+![The host's key differs from the pinned one: a hard stop explaining what it may mean and that nothing was sent; only Back and Forget the old key.](../Unciv.Godot.Harness/golden/join/key-changed.png)
+
+*The host's key differs from the pinned one: a hard stop explaining what it may mean and that nothing was sent; only Back and Forget the old key.* (`join/key-changed.png`)
+
+![Connection lost: the game is covered by a panel saying it retries with the same key and keeps commands; no buttons.](../Unciv.Godot.Harness/golden/join/reconnecting.png)
+
+*Connection lost: the game is covered by a panel saying it retries with the same key and keeps commands; no buttons.* (`join/reconnecting.png`)
+
 ## C008 Client scenario runner and owner review sheet
 
 Scenario runner demo: a trivial screen driven through real clicks and keys, golden per step.
@@ -782,7 +808,7 @@ Scenario `menu`.
 
 *After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
 
-## C045 (ticket not Done or unknown)
+## C045 In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key
 
 In-game players and chat panel of a hosted game, host view: chat, host-only Kick and Rebind.
 

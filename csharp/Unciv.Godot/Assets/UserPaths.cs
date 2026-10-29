@@ -15,6 +15,12 @@ public static class UserPaths
     /// <summary>C034: the host key (self-signed certificate) friends pin; created on first hosting so invites keep the same fingerprint.</summary>
     public static string HostKey => ProjectSettings.GlobalizePath("user://host-key.pfx");
 
+    /// <summary>C006: the host fingerprints this player pinned (address to fingerprint), so a changed key is noticed.</summary>
+    public static string KnownHosts => ProjectSettings.GlobalizePath("user://known-hosts.json");
+
+    /// <summary>C006: the address typed on the join screen last time.</summary>
+    public static string LastJoin => ProjectSettings.GlobalizePath("user://last-join.txt");
+
     /// <summary>C034: one folder per saved hosted game.</summary>
     public static string HostedGames => ProjectSettings.GlobalizePath("user://hosted");
 

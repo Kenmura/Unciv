@@ -992,5 +992,31 @@
         "caption": "A rebind with a malformed key was refused: the notice under the chat reads 'Not done: that is not a player key' and Bob is still Online."
       }
     ]
+  },
+  "C006": {
+    "scenario": "join",
+    "about": "Join screen (address or invite, password, known hosts), fingerprint prompt, host-key-changed hard stop and the reconnect overlay.",
+    "shots": [
+      {
+        "golden": "join/empty.png",
+        "caption": "The join screen as it opens: an address-or-invite field, a password field, Join and Back; no known hosts yet."
+      },
+      {
+        "golden": "join/trust.png",
+        "caption": "First time at an address: the host's key fingerprint is shown with the advice to continue only if the host told you that fingerprint; nothing has been sent yet."
+      },
+      {
+        "golden": "join/wrong-password.png",
+        "caption": "After trusting, the host refused the wrong password with a plain sentence; the address is now listed under known hosts with Forget."
+      },
+      {
+        "golden": "join/key-changed.png",
+        "caption": "The host's key differs from the pinned one: a hard stop explaining what it may mean and that nothing was sent; only Back and Forget the old key."
+      },
+      {
+        "golden": "join/reconnecting.png",
+        "caption": "Connection lost: the game is covered by a panel saying it retries with the same key and keeps commands; no buttons."
+      }
+    ]
   }
 }

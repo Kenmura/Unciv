@@ -60,6 +60,7 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IGameSocial, IAs
         Ruleset = ruleset;
         snapshot = session.Game.Snapshot ?? throw new InvalidOperationException("The game has not started: there is no snapshot yet");
         ViewerCivId = snapshot.You;
+        if (session.State == ClientSessionState.Reconnecting) Connection = ClientSessionState.Reconnecting;
         context = SynchronizationContext.Current;
         pump = PumpAsync();
     }
@@ -80,6 +81,16 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IGameSocial, IAs
     public IReadOnlyList<TurnRosterEntry> Roster => RosterOf(session.Lobby);
 
     public event Action? RosterChanged;
+
+    /// <summary>C006: where the connection is (<see cref="ClientSessionState.Reconnecting"/> while it is down), whether the host announced it is closing, and why the session ended for good (null while it lives).
+    /// Read these from the main thread; <see cref="ConnectionChanged"/> follows every change there.</summary>
+    public ClientSessionState Connection { get; private set; } = ClientSessionState.InGame;
+
+    public bool HostClosing { get; private set; }
+
+    public string? EndedReason { get; private set; }
+
+    public event Action? ConnectionChanged;
 
     public IReadOnlyList<ChatLine> Chat
     {
@@ -142,10 +153,30 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IGameSocial, IAs
                         lock (gate) chat = SocialModel.Append(chat, line);
                         Raise(() => ChatReceived?.Invoke(line));
                         break;
+                    case StateChanged moved:
+                        Raise(() =>
+                        {
+                            Connection = moved.State;
+                            if (moved.State == ClientSessionState.InGame) HostClosing = false;
+                            ConnectionChanged?.Invoke();
+                        });
+                        break;
+                    case HostClosed:
+                        Raise(() =>
+                        {
+                            HostClosing = true;
+                            ConnectionChanged?.Invoke();
+                        });
+                        break;
                     case Unciv.Client.Net.Session.Desynchronized lost:
                         Raise(() => Desynchronized?.Invoke(lost.Reason));
                         break;
                     case SessionEnded ended:
+                        Raise(() =>
+                        {
+                            EndedReason = ended.Reason;
+                            ConnectionChanged?.Invoke();
+                        });
                         Fail(new InvalidOperationException(ended.Reason));
                         return;
                 }

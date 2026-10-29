@@ -6,7 +6,7 @@ using Unciv.GodotClient.Localization;
 namespace Unciv.GodotClient.Setup;
 
 /// <summary>
-/// C015: the first screen. New game, Resume last, Load game, Multiplayer (not available yet: C006), Host game (C034), Options and Quit. It only raises events; the composition root decides what each does.
+/// C015: the first screen. New game, Resume last, Load game, Multiplayer (C006: join a hosted game), Host game (C034), Options and Quit. It only raises events; the composition root decides what each does.
 /// Resume last is disabled while there is nothing to resume (<see cref="SetCanResume"/>).
 /// </summary>
 public partial class MainMenu : Control
@@ -26,9 +26,7 @@ public partial class MainMenu : Control
         resume = Add(column, "Resume last", () => ResumeRequested?.Invoke());
         resume.Disabled = true;
         Add(column, "Load game", () => LoadRequested?.Invoke());
-        var multiplayer = Add(column, "Multiplayer", () => { });
-        multiplayer.Disabled = true;
-        multiplayer.TooltipText = "Not available yet".Tr();
+        Add(column, "Multiplayer", () => JoinRequested?.Invoke());
         Add(column, "Host game", () => HostRequested?.Invoke());
         Add(column, "Options", () => OptionsRequested?.Invoke());
         Add(column, "Quit", () => QuitRequested?.Invoke());
@@ -41,6 +39,8 @@ public partial class MainMenu : Control
     public event Action? ResumeRequested;
 
     public event Action? LoadRequested;
+
+    public event Action? JoinRequested;
 
     public event Action? HostRequested;
 

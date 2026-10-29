@@ -1,6 +1,8 @@
 using Godot;
 using Unciv.Assets.Localization;
 using Unciv.Client.Net.Hosting;
+using Unciv.Client.Net.Session;
+using Unciv.Client.Net.Transport;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Play;
@@ -9,6 +11,9 @@ using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Setup;
 using Unciv.GodotClient.Ui;
 using Unciv.Models;
+using Unciv.Net.Identity;
+using Unciv.Net.Lobby;
+using Unciv.Utils;
 using Unciv.Models.Translations;
 
 namespace Unciv.GodotClient;
@@ -66,6 +71,7 @@ public partial class App : Node
         menu.NewGameRequested += OpenNewGame;
         menu.ResumeRequested += () => _ = menuSaves.ResumeLastAsync();
         menu.LoadRequested += menuSaves.OpenDialog;
+        menu.JoinRequested += OpenJoin;
         menu.HostRequested += OpenHost;
         menu.OptionsRequested += OpenOptions;
         menu.QuitRequested += () => GetTree().Quit();
@@ -113,6 +119,66 @@ public partial class App : Node
         screens.Push(lobby);
     }
 
+    // C006: the join screen; a joined session gets the lobby screen (the same one the host sees, without host controls) and, once the host starts, the game.
+    private void OpenJoin()
+    {
+        var identity = HostFiles.LoadIdentity(UserPaths.Identity);
+        var form = NewGameForm.FromRulesetCache();
+        var environment = new JoinScreenEnvironment
+        {
+            Identity = identity,
+            DisplayName = System.Environment.UserName is { Length: > 0 } user ? user : "Player",
+            RulesetHash = () => new LobbySettings { Ruleset = form.BaseRuleset, Mods = [.. form.Mods] }.ComputeRulesetHash(),
+            KnownHosts = JoinFiles.LoadKnownHosts(UserPaths.KnownHosts),
+            PersistKnownHosts = known => JoinFiles.SaveKnownHosts(UserPaths.KnownHosts, known),
+            LastAddress = JoinFiles.LoadLastAddress(UserPaths.LastJoin),
+            RememberAddress = address => JoinFiles.SaveLastAddress(UserPaths.LastJoin, address),
+            Connect = async (target, token) => await TcpTlsClientTransport.ConnectAsync(target.Host, target.Port, cancellationToken: token),
+        };
+        var screen = new JoinScreen(theme, environment);
+        screen.BackRequested += () => screens.Pop();
+        screen.Joined += session => OpenJoinedLobby(session, identity, form);
+        screens.Push(screen);
+    }
+
+    private void OpenJoinedLobby(ClientSession session, ClientIdentity identity, NewGameForm form)
+    {
+        var lobby = new LobbyScreen(theme, form, session, identity.PlayerKey);
+        lobby.LeaveRequested += () =>
+        {
+            _ = session.LeaveAsync();
+            screens.Pop();
+        };
+        lobby.GameStarting += () => _ = StartJoinedGameAsync(session, lobby, form);
+        screens.Push(lobby);
+    }
+
+    // The host announced the start: the snapshot follows within moments. The lobby stops reading the event channel first (it has one reader), then the network session takes over.
+    private async Task StartJoinedGameAsync(ClientSession session, LobbyScreen lobby, NewGameForm form)
+    {
+        lobby.SetProcess(false);
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        try
+        {
+            while (session.Game.Snapshot == null) await Task.Delay(50, limit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            GD.PushWarning("The host started the game but sent no snapshot");
+            await session.DisposeAsync();
+            ShowMenu(first: false);
+            return;
+        }
+        var ruleset = Unciv.Models.Ruleset.RulesetCache.GetComplexRuleset(new LinkedHashSet<string>(form.Mods), form.BaseRuleset);
+        var net = new NetGameSession(session, ruleset);
+        ShowGame(net, async () =>
+        {
+            await net.DisposeAsync();
+            await session.LeaveAsync();
+            await session.DisposeAsync();
+        });
+    }
+
     private void OpenOptions()
     {
         var page = new VBoxContainer();
@@ -125,7 +191,9 @@ public partial class App : Node
     }
 
     // A new or loaded game takes over the screen; its own save controller keeps autosaving it.
-    private void ShowGame(IGameSession session)
+    private void ShowGame(IGameSession session) => ShowGame(session, null);
+
+    private void ShowGame(IGameSession session, Func<Task>? leaveNetwork)
     {
         var registry = AssetRegistry.ForRuleset(session.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack));
         var root = new Control { Name = "Play", MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -141,6 +209,18 @@ public partial class App : Node
             text => LocalHost.FromSave(text, WallClockMillis), loaded => hotseat.Present(loaded));
         root.AddChild(saves);
         root.AddChild(cover);
+        // C006: a networked game gets the reconnect cover above everything; Leave there ends the network session and returns to the menu.
+        if (session is NetGameSession netSession)
+        {
+            var reconnect = new ReconnectOverlay(theme);
+            reconnect.LeaveRequested += () =>
+            {
+                _ = leaveNetwork?.Invoke();
+                ShowMenu(first: false);
+            };
+            root.AddChild(reconnect);
+            reconnect.Attach(netSession);
+        }
         hotseat = new HotseatController(screen, cover, loaded => AssetRegistry.ForRuleset(loaded.Ruleset, OptionsModel.RegistryPack(settings.Current.AssetPack)), id => id);
         root.AddChild(hotseat);
         hotseat.TookOver += next => saves.Attach(next);
