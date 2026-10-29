@@ -1172,6 +1172,88 @@
   "Enables the World Congress",
   "BNW happiness rules"
  ],
+ // B050: uniques of the social policy tree (SPEC 4.6.1). The generator owns the structure (branches, eras, grid, prerequisites, order, finisher
+ // position) from PolicyBranchTypes.tsv / Policies.tsv / Policy_PrereqPolicies.tsv; this table owns the effects, keyed by the BNW policy name
+ // ('<Branch> Complete' is the finisher). G&K-worded uniques are reused where the BNW column has the same meaning; rows whose subsystem is a later
+ // ticket use the B003-declared uniques (data only until then). Effects with no unique yet are listed under policyPending.
+ "policyUniques": {
+  "Tradition": ["[+3 Culture] [in capital]", "[-25]% Culture cost of natural border growth [in all cities]"],
+  "Aristocracy": ["[+15]% Production when constructing [All] wonders [in all cities]", "[+1 Happiness] per [10] population [in all cities]"],
+  "Oligarchy": ["Units in cities cost no Maintenance", "[+50]% Strength for cities <with a garrison> <when attacking>", "[-100]% weight to this choice for AI decisions"],
+  "Legalism": ["Provides the cheapest [Culture] building in your first [4] cities for free"],
+  "Landed Elite": ["[+10]% growth [in capital]", "[+2 Food] [in capital]"],
+  "Monarchy": ["[+1 Gold, +1 Happiness] per [2] population [in capital]"],
+  "Tradition Complete": ["[+15]% growth [in all cities]", "Provides a [Aqueduct] in your first [4] cities for free", "Get the leader title of [Lord [leaderName]]"],
+  "Liberty": ["[+1 Culture] [in all cities]"],
+  "Republic": ["[+1 Production] [in all cities]", "[+5]% Production when constructing [All] buildings [in all cities]"],
+  "Citizenship": ["Can build [all] improvements at a [+25]% rate", "Free [Worker] appears", "[-100]% weight to this choice for AI decisions"],
+  "Collective Rule": ["[+50]% Production when constructing [Settler] units [in capital]", "Free [Settler] appears"],
+  "Representation": ["Each city founded increases culture cost of policies [33]% less than normal", "Empire enters golden age"],
+  "Meritocracy": ["[+1 Happiness] [in all cities connected to capital]", "[-5]% Unhappiness from [Population] [in all non-occupied cities]", "[-100]% weight to this choice for AI decisions"],
+  "Liberty Complete": ["Free Great Person", "Get the leader title of [Consul [leaderName]]"],
+  "Honor": ["[+33]% Strength <vs [Barbarian] units>", "Earn [100]% of killed [Barbarian] unit's [Strength] as [Culture]", "Notified of new Barbarian encampments"],
+  "Warrior Code": ["[+15]% Production when constructing [Melee] units [in all cities]", "Free [Great General] appears"],
+  "Discipline": ["[+15]% Strength <for [Melee] units> <when adjacent to a [Melee] unit>"],
+  "Military Tradition": ["[+50]% XP gained from combat <for [Military] units>"],
+  "Military Caste": ["[+1 Happiness, +2 Culture] [in all cities with a garrison]"],
+  "Professional Army": ["[-33]% Gold cost of upgrading <for [Military] units>", "[+50]% Production when constructing [Barracks] buildings [in all cities]", "[+50]% Production when constructing [Armory] buildings [in all cities]", "[+50]% Production when constructing [Military Academy] buildings [in all cities]"],
+  "Honor Complete": ["Earn [10]% of killed [Military] unit's [Cost] as [Gold]", "Get the leader title of [[leaderName] the Great]"],
+  "Piety": ["[+100]% Production when constructing [Shrine] buildings [in all cities]", "[+100]% Production when constructing [Temple] buildings [in all cities]", "Only available <when religion is enabled>", "[-100]% weight to this choice for AI decisions <when religion is disabled>"],
+  "Organized Religion": ["[+1 Faith] from every [Shrine]", "[+1 Faith] from every [Temple]"],
+  "Mandate of Heaven": ["[Faith] cost of purchasing items in cities [-20]%"],
+  "Theocracy": ["[+25]% [Gold] from every [Temple]", "[+3 Gold] from every [Holy site]"],
+  "Reformation": ["Allows choosing a Reformation belief when founding a religion"],
+  "Religious Tolerance": ["Allows adopting a second Pantheon belief"],
+  "Piety Complete": ["Free [Great Prophet] appears", "[+3 Culture] from every [Holy site]", "Get the leader title of [[leaderName] the Pious]"],
+  "Patronage": ["[-25]% City-State Influence degradation", "[-100]% weight to this choice for AI decisions <when number of [Remaining [City-State] Civilizations] is less than [2]>"],
+  "Philanthropy": ["Gifts of Gold to City-States generate [25]% more Influence"],
+  "Consulates": ["Resting point for Influence with City-States is increased by [20]"],
+  "Scholasticism": ["Allied City-States provide [Science] equal to [25]% of what they produce for themselves"],
+  "Cultural Diplomacy": ["[+100]% resources gifted by City-States", "[+50]% Happiness from luxury resources gifted by City-States"],
+  "Merchant Confederacy": ["[+2] Gold from trade routes with city-states"],
+  "Patronage Complete": ["Allied City-States will occasionally gift Great People", "Get the leader title of [[leaderName] the Enlightened]"],
+  "Aesthetics": ["[+25]% [Great Writer] generation", "[+25]% [Great Artist] generation", "[+25]% [Great Musician] generation"],
+  "Cultural Centers": ["[+50]% Production when constructing [Monument] buildings [in all cities]", "[+50]% Production when constructing [Amphitheater] buildings [in all cities]", "[+50]% Production when constructing [Opera House] buildings [in all cities]", "[+50]% Production when constructing [Museum] buildings [in all cities]", "[+50]% Production when constructing [Broadcast Tower] buildings [in all cities]"],
+  "Fine Arts": ["[50]% of excess happiness converted to [Culture]"],
+  "Flourishing of the Arts": ["[+33]% [Culture] [in all cities with a world wonder]", "Empire enters golden age"],
+  "Artistic Genius": ["Free [Great Artist] appears"],
+  "Cultural Exchange": ["[+15]% Tourism toward civs with open borders with you", "[+15]% Tourism toward civs you have a trade route with", "[+15]% Tourism toward civs following your religion"],
+  "Aesthetics Complete": ["[+100]% theming bonuses [in all cities]"],
+  "Commerce": ["[+25]% [Gold] [in capital]"],
+  "Mercenary Army": [],
+  "Wagon Trains": ["[-50]% maintenance on road & railroads", "[+200] Gold (x1/100) from land trade routes [in all cities]"],
+  "Entrepreneurship": ["[+100]% Gold from Great Merchant trade missions", "[+25]% [Great Merchant] generation"],
+  "Mercantilism": ["[Gold] cost of purchasing items in cities [-25]%", "[+1 Science] from every [Mint]", "[+1 Science] from every [Market]", "[+1 Science] from every [Bank]", "[+1 Science] from every [Stock Exchange]"],
+  "Protectionism": ["[+2] Happiness from each type of luxury resource"],
+  "Commerce Complete": ["[+1 Gold] from every [Trading post]", "Get the leader title of [Doge [leaderName]]"],
+  "Exploration": ["[+1] Movement <for [{Military} {Water}] units>", "[+1] Sight <for [{Military} {Water}] units>"],
+  "Maritime Infrastructure": ["[+3 Production] [in all coastal cities]"],
+  "Naval Tradition": ["[+1 Happiness] from every [Harbor]", "[+1 Happiness] from every [Seaport]", "[+1 Happiness] from every [Lighthouse]"],
+  "Merchant Navy": ["[+1 Gold] from every [Harbor]", "[+1 Gold] from every [Seaport]", "[+1 Gold] from every [Lighthouse]", "[+4 Production, +4 Culture] from every [East India Company]"],
+  "Navigation School": ["Free [Great Admiral] appears", "[+50]% [Great Admiral] generation"],
+  "Treasure Fleets": ["[+200] Gold (x1/100) from sea trade routes [in all cities]"],
+  "Exploration Complete": [],
+  "Rationalism": ["[+15]% [Science] <while the empire is happy>"],
+  "Secularism": ["[+2 Science] from every specialist [in all cities]"],
+  "Humanism": ["[+25]% [Great Scientist] generation"],
+  "Free Thought": ["[+1 Science] from every [Trading post]", "[+17]% [Science] from every [University]"],
+  "Sovereignty": ["[+1 Gold] from all [Science] buildings"],
+  "Scientific Revolution": ["[-100]% weight to this choice for AI decisions"],
+  "Rationalism Complete": ["[1] Free Technologies", "Get the leader title of [[leaderName] the Wise]"]
+ },
+ "policyPending": [
+  "Tradition: Palace +3 culture (BuildingClassCultureChanges) is approximated by the opener's capital culture",
+  "Monarchy, Aristocracy, Meritocracy, Representation, Citizenship, Collective Rule, Warrior Code, Discipline, Military Caste, Mandate of Heaven, Theocracy, Free Thought, Sovereignty: BNW stat columns differ from the G&K wording kept here; B010 retunes them",
+  "Reformation: AddReformationBelief is declared; the Reformation belief tier is B073. Religious Tolerance: SecondReligionPantheon is declared; the second pantheon pick is B073",
+  "Consulates: MinorFriendshipMinimum 20 is read as the G&K 'resting point' unique. Merchant Confederacy: CityStateTradeChange 200 is read as +2 Gold per city-state route (B020 settles the scale)",
+  "Patronage Complete: allied city-states gifting Great People reuses the G&K wording (MinorGreatPeopleAllies)",
+  "Mercenary Army: no stat column; it only unlocks the Landsknecht unit (not in the generated units yet) and is a prerequisite of Mercantilism",
+  "Wagon Trains: RouteGoldMaintenanceMod -50 is read as road/rail maintenance; Entrepreneurship: EmbarkedExtraMoves 1 has no unique yet",
+  "Scientific Revolution: MedianTechPercentChange 25 (one-shot) has no unique yet; Rationalism Complete keeps the G&K free-tech wording with the BNW count (1)",
+  "Exploration Complete: reveals Antiquity Sites (Resources.PolicyReveal), wired by B040; Aesthetics Complete has no leader title",
+  "Exploration opener: the Naval Tradition free promotion is read as +1 Movement and +1 Sight for naval units [?]",
+  "Cultural Exchange: ethics tourism modifiers are declared data only (B030)"
+ ],
  "pending": {
   "Nations.json/Assyria": [
    "TechFromCityConquer is approximated by 'Free Technology <upon conquering a city>' (BNW: a stolen/random tech per conquest)"
@@ -1183,7 +1265,7 @@
    "Gateway to Africa uniques are declared data only: trade partners and incoming routes are B020; the Kasbah is B004"
   ],
   "Nations.json/Poland": [
-   "Solidarity is wired by B004 (a free policy per era, for any policy branch: BNW limits it to the social branches, B050 refines it)"
+   "Solidarity is wired by B004 (a free policy per era, for any policy branch: BNW limits it to the social branches, B051 refines it once the ideology branches are marked)"
   ],
   "Nations.json/Portugal": [
    "Mare Nostrum is declared data only (B020); the Feitoria rules are B004, its luxury siphon is B072"
@@ -1211,8 +1293,8 @@
   ],
   "TileResources.json/Antiquity Site, Hidden Antiquity Site": ["artifact resources need the archaeology subsystem (B040)"],
   "Units.json/upgrades": ["upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture"],
-  "Policies.json": [
-   "BNW policy tree is B050 (branches, ideologies and tenets need Level/branch fields B003 declares)"
+  "Policies.json/ideologies": [
+   "Freedom, Order and Autocracy are kept as the G&K branches: the ideology tree (3 tenet levels, Level/adopter fields) is B051"
   ],
   "Personalities.json/Maria I": [
    "copied from Maria Theresa: derive from Leaders.tsv / Leader_Flavors.tsv in B010"

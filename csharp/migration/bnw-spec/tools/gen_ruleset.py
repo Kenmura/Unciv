@@ -508,6 +508,73 @@ def mod_constants(report):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+# Policy tree (B050, SPEC 4.6.1)
+# ----------------------------------------------------------------------------------------------------------------------
+IDEOLOGY_BRANCHES = ("Freedom", "Order", "Autocracy")  # kept as in G&K until B051
+PRIORITY_ANALOG = {"Aesthetics": "Patronage", "Exploration": "Commerce"}  # AI weights of the two new branches
+
+
+def era_name(code):
+    return code[len("ERA_"):].capitalize() + " era" if code else "Ancient era"
+
+
+def build_policies(gk, overrides, report):
+    """The nine social branches from the BNW tables; the three ideology branches stay as in G&K (B051)."""
+    uniques = overrides["policyUniques"]
+    gk_by_name = {b["name"]: b for b in gk}
+    policies = tsv("Policies")
+    branch_rows = [r for r in tsv("PolicyBranchTypes") if r["Name"] not in IDEOLOGY_BRANCHES]
+    type_name = {r["Type"]: r["Name"] for r in policies}
+    prereqs = {}
+    for r in tsv("Policy_PrereqPolicies"):
+        prereqs.setdefault(r["PolicyType"], []).append(type_name[r["PrereqPolicy"]])
+    used = set()
+
+    def take(name):
+        if name not in uniques:
+            raise SystemExit(f"overrides.policyUniques has no entry for {name}")
+        used.add(name)
+        return list(uniques[name])
+
+    out = []
+    for br in branch_rows:
+        name = br["Name"]
+        members = sorted((r for r in policies if r["PolicyBranchType"] == br["Type"]),
+                         key=lambda r: (int(r["GridY"]), int(r["GridX"])))
+        gk_branch = gk_by_name.get(name) or gk_by_name[PRIORITY_ANALOG[name]]
+        branch = {"name": name, "era": era_name(br["EraPrereq"]),
+                  "priorities": dict(gk_branch["priorities"]), "uniques": take(name), "policies": []}
+        for r in members:
+            p = {"name": r["Name"], "uniques": take(r["Name"]), "row": int(r["GridY"]), "column": int(r["GridX"])}
+            if r["Type"] in prereqs:
+                p["requires"] = prereqs[r["Type"]]
+            branch["policies"].append(p)
+        branch["policies"].append({"name": name + " Complete", "uniques": take(name + " Complete")})
+        report.add("policies", f"{name}: {branch['era']}, {len(members)} policies + finisher")
+        out.append(branch)
+    unused = sorted(set(uniques) - used)
+    if unused:
+        raise SystemExit(f"overrides.policyUniques has unused entries: {unused}")
+    for b in gk:
+        if b["name"] in IDEOLOGY_BRANCHES:
+            out.append(b)
+    return out
+
+
+def gate_wonders_by_branch(buildings, report):
+    """Buildings.PolicyBranchType (SPEC 4.6.1): the wonder needs its branch adopted ([K] adopted, not merely open)."""
+    branch_of = {r["Type"]: r["Name"] for r in tsv("PolicyBranchTypes")}
+    by_name = {b["name"]: b for b in buildings}
+    for r in tsv("Buildings"):
+        if not r["PolicyBranchType"]:
+            continue
+        name = KEEP_UNCIV_NAME.get(r["Name"], r["Name"])
+        branch = branch_of[r["PolicyBranchType"]]
+        by_name[name].setdefault("uniques", []).append(f"Only available <after adopting [{branch}]>")
+        report.add("policies", f"{name}: needs the {branch} branch adopted")
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 def generate():
     report = Report()
     files = {p.name: lenient_loads(p.read_text(encoding="utf-8")) for p in sorted(GK_DIR.glob("*.json"))}
@@ -533,6 +600,10 @@ def generate():
             report.add("Nations.json", f"{n['name']}: preferredVictoryType {n['preferredVictoryType']} -> Neutral (victory type removed until B032/B063)")
             n["preferredVictoryType"] = "Neutral"
     overrides = lenient_loads(OVERRIDES.read_text(encoding="utf-8"))
+    files["Policies.json"] = build_policies(files["Policies.json"], overrides, report)
+    gate_wonders_by_branch(files["Buildings.json"], report)
+    for text in overrides.get("policyPending", []):
+        report.add("pending policy effects (not emitted)", text)
     files = apply_overrides(files, overrides, report)
     for key, texts in overrides.get("pending", {}).items():
         for t in texts:

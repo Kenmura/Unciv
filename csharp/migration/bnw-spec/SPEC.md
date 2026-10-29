@@ -285,14 +285,31 @@ the golden-age trait rates use `<during a Golden Age>` on the new rows `GreatPer
 **B004 result (content that needs no new subsystem).** Wired in the engine, with tests (`BnwContentTests`): the improvement rules
 `Can only be built in City-State territory` (replaces the own-border rule), `Can be built in any civ's territory`, `Must be built adjacent to a
 luxury resource`, `Cannot be built adjacent to another [improvementFilter]`, `Requires [n] adjacent land tiles` and `Removes the resource from the
-tile when built`; the Poland unique `[n] free Policies each time you enter a new era` (one per era passed; every policy branch, B050 narrows it
-to the social branches); the Shoshone unique `Founded cities claim [n] extra tiles of radius`, **read as n extra tiles** (the nearest unowned tiles
+tile when built`; the Poland unique `[n] free Policies each time you enter a new era` (one per era passed; every policy branch, narrowed to the social branches by B051); the Shoshone unique `Founded cities claim [n] extra tiles of radius`, **read as n extra tiles** (the nearest unowned tiles
 after the radius-1 ring, deterministic ring order). Zulu (`[-25]% XP required for promotions`) and Venice (`May not annex cities`,
 `Cannot build [Settler] units`, free Merchant of Venice at Optics) use existing Kotlin uniques. New content in the generated ruleset: the
 fifth belief tier `BeliefType.Reformation` (a founder-style tier appended after `Any`), the 13 beliefs BNW adds (the other 3 of the 16 exist in
 G&K), and the improvements Feitoria, Chateau, Kasbah and Brazilwood Camp. [K] items kept at their spec values (no decompiler output in the repo):
 the Religious Fervor purchase (land military units from the Industrial era at the Holy Warriors price), the Feitoria's one siphoned copy.
 Still declared data only: tourism, trade route, spy, inquisitor, barbarian-conversion and Great People purchase effects (their subsystems).
+
+**B050 result (the social policy tree, §4.6.1).** `gen_ruleset.py` now builds `Policies.json` from `PolicyBranchTypes.tsv`, `Policies.tsv` and
+`Policy_PrereqPolicies.tsv` (structure: branch order, era prerequisite, grid, prerequisites, finisher last) plus the hand-kept effect table
+`policyUniques` of `overrides.json`. Nine social branches: Tradition, Liberty, Honor, Piety (no era, `Only available <when religion is enabled>` is the
+`LockedWithoutReligion` lock), Patronage and Aesthetics (Classical), Commerce and Exploration (Medieval), Rationalism (Renaissance); the G&K
+exclusivity uniques (`Only available <before adopting [...]>`) of Piety/Rationalism are gone. Names follow the TSV (Mandate of Heaven, Religious
+Tolerance, Philanthropy, Mercenary Army, Wagon Trains, Cultural Exchange; the G&K Educated Elite, Aesthetics-in-Patronage, Naval Tradition-in-Commerce
+are replaced by the BNW membership). The 12 `Buildings.PolicyBranchType` wonders get `Only available <after adopting [Branch]>` (the branch policy is
+adopted when the branch is opened; the rule reads "adopted" per [K], so it is a plain G&K unique, no engine change). Finishers: Tradition (growth,
+free Aqueducts), Liberty (Great Person), Honor (gold from kills), Piety (free Great Prophet, +3 culture on Holy Sites), Patronage (allied
+city-states gift Great People), Commerce (+1 gold on Trading Posts), Rationalism (1 free technology), Aesthetics (+100% theming bonuses, declared
+data), Exploration (Antiquity Site reveal: B040, no effect yet). The G&K Great-Person-for-Faith purchases on the finishers are dropped; they return as
+`Can purchase all Great People with Faith` (B073). Tests: `BnwPolicyTreeTests`.
+**Deliberate deviations / open items.** Freedom, Order and Autocracy stay the G&K branches (B051: tenet levels, adopters, switching); the Poland unique
+`[n] free Policies each time you enter a new era` is still not restricted to social branches, because "social" is only decidable once B051 marks
+the ideology branches. Many stat columns keep the G&K wording where it matches the BNW meaning; the rest are listed in `policyPending` (report section
+"pending policy effects"). The Exploration opener (`PROMOTION_NAVAL_TRADITION`) is read as +1 Movement and +1 Sight for naval units [?]. No decompiler
+output is in the repo, so the [K]/[?] items of §4.6.1 stand at their spec values.
 
 ### 3.3 Object diff vs Unciv G&K (`data/derived/objects_unciv_gk_vs_bnw.txt`)
 - **Renames only** (same object, keep the Unciv name): The Pyramids, The Oracle, The Great Library, The Great

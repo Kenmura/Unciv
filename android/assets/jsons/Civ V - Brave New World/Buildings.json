@@ -662,7 +662,11 @@
 		"culture": 1,
 		"greatPersonPoints": {"Great Engineer": 1},
 		"isWonder": true,
-		"uniques": ["Can build [all] improvements at a [+25]% rate", "[2] free [Worker] units appear"],
+		"uniques": [
+			"Can build [all] improvements at a [+25]% rate",
+			"[2] free [Worker] units appear",
+			"Only available <after adopting [Liberty]>"
+		],
 		"requiredTech": "Masonry",
 		"quote": "'O, let not the pains of death which come upon thee enter into my body. I am the god Tem, and I am the foremost part of the sky, and the power which protecteth me is that which is with all the gods forever.' - The Book of the Dead, translated by Sir Ernest Alfred Wallis Budge"
 	},
@@ -693,7 +697,7 @@
 		"culture": 1,
 		"isWonder": true,
 		"requiredTech": "Mathematics",
-		"uniques": ["Gain a free [Garden] [in this city]"],
+		"uniques": ["Gain a free [Garden] [in this city]", "Only available <after adopting [Tradition]>"],
 		"quote": "'I think that if ever a mortal heard the word of God it would be in a garden at the cool of the day.' - F. Frankfort Moore"
 	},
 	{
@@ -770,7 +774,11 @@
 		"culture": 1,
 		"greatPersonPoints": {"Great Scientist": 2},
 		"isWonder": true,
-		"uniques": ["Free [Great Scientist] appears", "Science gained from research agreements [+50]%"],
+		"uniques": [
+			"Free [Great Scientist] appears",
+			"Science gained from research agreements [+50]%",
+			"Only available <after adopting [Rationalism]>"
+		],
 		"requiredTech": "Architecture",
 		"quote": "'Things always seem fairer when we look back at them, and it is out of that inaccessible tower of the past that Longing leans and beckons.' - James Russell Lowell"
 	},
@@ -801,7 +809,7 @@
 		"cityStrength": 12,
 		"greatPersonPoints": {"Great Scientist": 1},
 		"isWonder": true,
-		"uniques": ["[+25]% City Strength from defensive buildings"],
+		"uniques": ["[+25]% City Strength from defensive buildings", "Only available <after adopting [Order]>"],
 		"requiredTech": "Railroad",
 		"quote": "'The Kremlin is constantly changing the rules of the game to suit its purposes. We are not playing chess, we're playing roulette.' - Garry Kasparov"
 	},
@@ -810,7 +818,10 @@
 		"culture": 1,
 		"isWonder": true,
 		"greatPersonPoints": {"Great Artist": 1},
-		"uniques": ["[-10]% Unhappiness from [Population] [in all non-occupied cities]"],
+		"uniques": [
+			"[-10]% Unhappiness from [Population] [in all non-occupied cities]",
+			"Only available <after adopting [Patronage]>"
+		],
 		"requiredTech": "Banking",
 		"quote": "'Most of us can, as we choose, make of this world either a palace or a prison' - John Lubbock"
 	},
@@ -830,7 +841,7 @@
 		"gold": 4,
 		"greatPersonPoints": {"Great Merchant": 2},
 		"isWonder": true,
-		"uniques": ["[Gold] cost of purchasing items in cities [-15]%"],
+		"uniques": ["[Gold] cost of purchasing items in cities [-15]%", "Only available <after adopting [Commerce]>"],
 		"requiredTech": "Industrialization",
 		"quote": "'To achieve great things, two things are needed: a plan, and not quite enough time.' - Leonard Bernstein"
 	},
@@ -839,7 +850,7 @@
 		"culture": 4,
 		"greatPersonPoints": {"Great Artist": 2},
 		"isWonder": true,
-		"uniques": ["[2] free [Great Artist] units appear"],
+		"uniques": ["[2] free [Great Artist] units appear", "Only available <after adopting [Exploration]>"],
 		"requiredTech": "Archaeology",
 		"quote": "'Every genuine work of art has as much reason for being as the earth and the sun' - Ralph Waldo Emerson"
 	},
@@ -857,7 +868,10 @@
 		"culture": 1,
 		"isWonder": true,
 		"greatPersonPoints": {"Great Engineer": 2},
-		"uniques": ["[+1 Production] from every specialist [in all cities]"],
+		"uniques": [
+			"[+1 Production] from every specialist [in all cities]",
+			"Only available <after adopting [Freedom]>"
+		],
 		"requiredTech": "Replaceable Parts",
 		"quote": "'Give me your tired, your poor, your huddled masses yearning to breathe free, the wretched refuse of your teeming shore. Send these, the homeless, tempest-tossed to me, I lift my lamp beside the golden door!' - Emma Lazarus"
 	},
@@ -921,7 +935,10 @@
 		"name": "Statue of Zeus",
 		"culture": 1,
 		"isWonder": true,
-		"uniques": ["[+15]% Strength <for [All] units> <vs cities> <when attacking>"],
+		"uniques": [
+			"[+15]% Strength <for [All] units> <vs cities> <when attacking>",
+			"Only available <after adopting [Honor]>"
+		],
 		"requiredTech": "Bronze Working",
 		"quote": "'He spoke, the son of Kronos, and nodded his head with the dark brows, and the immortally anointed hair of the great god swept from his divine head, and all Olympos was shaken' - The Iliad"
 	},
@@ -1124,7 +1141,8 @@
 			"Gain a free [Mosque] [in this city]",
 			"Only available <when religion is enabled>",
 			"All newly-trained [Missionary] units [in this city] receive the [Devout] promotion",
-			"All newly-trained [Great Prophet] units [in this city] receive the [Devout] promotion"
+			"All newly-trained [Great Prophet] units [in this city] receive the [Devout] promotion",
+			"Only available <after adopting [Piety]>"
 		],
 		"requiredTech": "Theology",
 		"quote": "'With the magnificence of eternity before us, let time, with all its fluctuations, dwindle into its own littleness.' - Thomas Chalmers"
@@ -1324,7 +1342,8 @@
 		"name": "Uffizi",
 		"isWonder": true,
 		"requiredTech": "Architecture",
-		"culture": 2
+		"culture": 2,
+		"uniques": ["Only available <after adopting [Aesthetics]>"]
 	},
 	{
 		"name": "Globe Theatre",
@@ -1349,7 +1368,8 @@
 		"name": "Prora",
 		"isWonder": true,
 		"happiness": 2,
-		"requiredTech": "Flight"
+		"requiredTech": "Flight",
+		"uniques": ["Only available <after adopting [Autocracy]>"]
 	},
 	{
 		"name": "Borobudur",
