@@ -21,7 +21,7 @@ mkdir -p "$out"
 
 if [[ -z "${HARNESS_SKIP_BUILD:-}" ]]; then (cd "$project" && dotnet build -warnaserror); fi
 
-extra=()
+extra=(); cleanup_golden=""; cleanup_out=""
 [[ -n "${HARNESS_GOLDEN_TOLERANCE:-}" ]] && extra+=("--golden-tolerance=$HARNESS_GOLDEN_TOLERANCE")
 case "$mode" in
     "") ;;
@@ -38,7 +38,7 @@ esac
 
 # C058: own X server per run, display number chosen by Xvfb itself (-displayfd). `xvfb-run -a` picks a free number then starts the server, so two
 # runs starting together (several agents share this machine) could get the same display and kill each other's server mid-scenario.
-xvfb_pid=""; godot_pid=""; display_file=""; cleanup_golden=""; cleanup_out=""
+xvfb_pid=""; godot_pid=""; display_file=""
 cleanup() {
     [[ -n "$godot_pid" ]] && { kill "$godot_pid" 2>/dev/null || true; wait "$godot_pid" 2>/dev/null || true; }
     [[ -n "$xvfb_pid" ]] && { kill "$xvfb_pid" 2>/dev/null || true; wait "$xvfb_pid" 2>/dev/null || true; }
