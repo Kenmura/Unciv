@@ -146,7 +146,8 @@ jobs:
   # green on the runner image and removes that line.
   client-scenarios:
     name: Client scenarios (Xvfb, software GL)
-    if: github.event_name != 'schedule'
+    # needs: engine only orders the jobs; a failing unit test must not hide the scenario result (T246), hence !cancelled()
+    if: ${{ !cancelled() && github.event_name != 'schedule' }}
     needs: engine
     runs-on: ubuntu-24.04
     timeout-minutes: 60
