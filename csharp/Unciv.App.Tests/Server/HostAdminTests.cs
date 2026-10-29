@@ -254,6 +254,19 @@ public sealed class HostAdminTests : IDisposable
     }
 
     [Fact]
+    public async Task Kick_OfTheLastLivingHumanIsRefused()
+    {
+        await using var host = StartHost("kick-last");
+        Assert.True(host.Host.ApplyServerCommand(new SetController { CivId = "Babylon", Controller = PlayerType.AI }).Accepted);
+
+        Assert.Equal("not-allowed", await host.KickAsync("Greece"));
+
+        Assert.Equal(PlayerType.Human, host.Host.Game.GetCivilization("Greece").PlayerType);
+        Assert.False(host.Host.TurnTimer.HasPendingTakeover("Greece"));
+        Assert.Equal(greece.PlayerKey, host.Host.Store!.ReadMeta().Slots["Greece"].PlayerKey);
+    }
+
+    [Fact]
     public async Task Kick_WhileTheRoundResolvesChangesNothing()
     {
         await using var host = StartHost("kick-resolving");
