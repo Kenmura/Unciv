@@ -257,7 +257,7 @@ public sealed class ClientNetSessionTests
             var host = rig.NewConnection();
             var join = rig.Session.JoinAsync();
             await host.ReceiveAsync<Hello>();
-            await host.SendAsync(new Welcome { Protocol = 1, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+            await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
             Assert.Equal(ClientCodes.HostUntrusted, (await join).Code);
             Assert.Empty(known.Pins);
         }
@@ -281,7 +281,7 @@ public sealed class ClientNetSessionTests
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
         await host.ReceiveAsync<Hello>();
-        await host.SendAsync(new Welcome { Protocol = 1, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
         Assert.Equal(ClientCodes.HostKeyChanged, (await join).Code);
         Assert.False(prompted);
     }
@@ -293,7 +293,7 @@ public sealed class ClientNetSessionTests
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
         await host.ReceiveAsync<Hello>();
-        await host.SendAsync(new Welcome { Protocol = 1, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
         Assert.Equal(ClientCodes.HostUntrusted, (await join).Code);
     }
 
@@ -323,7 +323,7 @@ public sealed class ClientNetSessionTests
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
         await host.ReceiveAsync<Hello>();
-        await host.SendAsync(new Welcome { Protocol = 1, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = true });
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = true });
         var message = await host.ReceiveAsync<Join>();
         Assert.Equal("pw", message.Password);
         Assert.Equal("tok", message.InviteToken);
@@ -593,7 +593,7 @@ public sealed class ClientNetSessionTests
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
         await host.ReceiveAsync<Hello>();
-        await host.SendAsync(new Welcome { Protocol = 1, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
         Assert.Equal(ClientCodes.HostUntrusted, (await join.WaitAsync(TimeSpan.FromSeconds(10))).Code);
     }
 

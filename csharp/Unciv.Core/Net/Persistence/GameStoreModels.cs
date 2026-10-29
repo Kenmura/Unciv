@@ -53,6 +53,11 @@ public sealed record GameMeta
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int SeenEpoch { get; init; }
 
+    /// <summary>T281: the designated backup host and what it announced (null: none; not written then, so a game without a backup host keeps its file).</summary>
+    [JsonPropertyName("standby")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Unciv.Net.Standby.StandbyRecord? Standby { get; init; }
+
     [JsonPropertyName("turnPolicy")]
     public string TurnPolicy { get; init; } = "Simultaneous";
 

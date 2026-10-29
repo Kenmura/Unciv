@@ -5,8 +5,10 @@ using Unciv.Logic.Civilization;
 using Unciv.Models.Metadata;
 using Unciv.Net.Identity;
 using Unciv.Net.Mods;
+using Unciv.Net.Standby;
 using Unciv.Net.Turns;
 using Unciv.Queries.Setup;
+using Unciv.Utils;
 
 namespace Unciv.Net.Lobby;
 
@@ -53,6 +55,7 @@ public sealed class LobbyHost : IAsyncDisposable
         this.clock = clock ?? SystemClock.Instance;
         HostFingerprint = hostFingerprint ?? "ABCDE-FGHIJ-KLMNO-PQRST-UVWXY-Z";
         HostName = hostName;
+        Standby = new StandbyCoordinator(this.clock);
 
         Admission = admission ?? CreateDefaultAdmission(Settings, this.random);
 
@@ -60,6 +63,9 @@ public sealed class LobbyHost : IAsyncDisposable
     }
 
     public LobbySettings Settings { get; private set; }
+
+    /// <summary>T281: the designated backup host's state (shared with the <c>GameHost</c> once the game starts). Network layers set <see cref="StandbyCoordinator.Prober"/>.</summary>
+    public StandbyCoordinator Standby { get; }
     public SlotBindings Bindings { get; }
     public LobbyAdmission Admission { get; }
     public string HostFingerprint { get; }
@@ -344,6 +350,12 @@ public sealed class LobbyHost : IAsyncDisposable
             case ModFileRequest request:
                 await HandleModFileRequestAsync(session, request).ConfigureAwait(false);
                 break;
+            case StandbyAccept accept:
+                await HandleStandbyAcceptAsync(session, accept).ConfigureAwait(false);
+                break;
+            case StandbyDecline:
+                await HandleStandbyDeclineAsync(session).ConfigureAwait(false);
+                break;
             case Leave:
                 await HandleDisconnectAsync(session).ConfigureAwait(false);
                 break;
@@ -397,7 +409,8 @@ public sealed class LobbyHost : IAsyncDisposable
             Challenge = challenge.Challenge,
             HostKeyFingerprint = HostFingerprint,
             RequiresPassword = Admission.RequiresPassword,
-            Epoch = 0
+            Epoch = 0,
+            BackupHostNotice = Settings.BackupHost != null ? StandbyNotice.Generic : null,
         }).ConfigureAwait(false);
     }
 
@@ -643,7 +656,10 @@ public sealed class LobbyHost : IAsyncDisposable
             }
         }
 
-        await SendAsync(session.Transport, new JoinOk()).ConfigureAwait(false);
+        await SendAsync(session.Transport, new JoinOk { Successor = Standby.AnnouncementForJoin(0, SuccessorRoster()) }).ConfigureAwait(false);
+        var backupChanged = await SyncBackupHostAsync().ConfigureAwait(false);
+        await SendStandbyHelloAsync(session).ConfigureAwait(false);
+        stateChanged |= backupChanged;
 
         if (lateSeat != null)
         {
@@ -783,6 +799,7 @@ public sealed class LobbyHost : IAsyncDisposable
             }
 
             Bindings.Clear(slotIndex);
+            if (Settings.BackupHost == slotIndex) Settings.BackupHost = null; // the designated player was removed: the host picks again
             slot.Kind = SlotKind.Open;
             slot.DisplayName = null;
             slot.PlayerKeyId = null;
@@ -804,6 +821,7 @@ public sealed class LobbyHost : IAsyncDisposable
             catch { }
         }
 
+        await SyncBackupHostAsync().ConfigureAwait(false);
         await BroadcastLobbyStateAsync().ConfigureAwait(false);
     }
 
@@ -848,6 +866,7 @@ public sealed class LobbyHost : IAsyncDisposable
             if (slot.Kind == SlotKind.Human && slot.Connected) return; // Must kick first
 
             Bindings.Clear(slotIndex);
+            if (Settings.BackupHost == slotIndex) Settings.BackupHost = null;
             slot.Kind = kind;
             if (kind == SlotKind.AI)
             {
@@ -862,6 +881,7 @@ public sealed class LobbyHost : IAsyncDisposable
                 slot.Ready = false;
             }
         }
+        await SyncBackupHostAsync().ConfigureAwait(false);
         await BroadcastLobbyStateAsync().ConfigureAwait(false);
     }
 
@@ -882,6 +902,7 @@ public sealed class LobbyHost : IAsyncDisposable
                 });
             }
         }
+        await SyncBackupHostAsync().ConfigureAwait(false);
         await BroadcastLobbyStateAsync().ConfigureAwait(false);
     }
 
@@ -1058,13 +1079,113 @@ public sealed class LobbyHost : IAsyncDisposable
                 allowJoinInProgress = Settings.AllowJoinInProgress
             });
 
+            var backup = Settings.BackupHost is int idx && idx >= 0 && idx < slots.Count && Standby.KeyId != null && slots[idx].PlayerKeyId == Standby.KeyId ? slots[idx] : null;
             return new LobbyState
             {
                 Settings = settingsElement,
                 Slots = slots.Select(s => s.ToWire()).ToList(),
-                HostName = HostName
+                HostName = HostName,
+                BackupHost = backup?.Index,
+                BackupHostState = backup == null ? null : Standby.State,
+                BackupHostNotice = backup == null ? null : StandbyNotice.For(string.IsNullOrEmpty(backup.DisplayName) ? $"Player {backup.Index + 1}" : backup.DisplayName),
             };
         }
+    }
+
+    // ------------------------------------------------------------ T281: backup host
+
+    private List<SuccessorSeat> SuccessorRoster()
+    {
+        lock (gate)
+        {
+            return slots.Where(s => s.Kind == SlotKind.Human && !string.IsNullOrEmpty(s.PlayerKeyId))
+                .Select(s => new SuccessorSeat { KeyId = s.PlayerKeyId.NotNull(), Connected = s.Connected }).ToList();
+        }
+    }
+
+    private ITransport? TransportOfKey(string keyId)
+    {
+        lock (gate)
+        {
+            return sessions.Values.FirstOrDefault(s => s.IsAuthenticated && s.Handoff == null && string.Equals(s.PlayerKey, keyId, StringComparison.Ordinal) && s.Transport.IsOpen)?.Transport;
+        }
+    }
+
+    private async Task SendToKeyAsync(string keyId, Message message)
+    {
+        if (TransportOfKey(keyId) is { } transport)
+        {
+            try { await SendAsync(transport, message).ConfigureAwait(false); }
+            catch (Exception) { /* a dead connection learns the offer when it reconnects */ }
+        }
+    }
+
+    /// <summary>
+    /// Makes the designation match <see cref="LobbySettings.BackupHost"/>: the player seated in that slot is offered the role (and told when it ends), nobody is designated for an empty or non-human slot.
+    /// Sends the offer or revoke and the new announcement; the caller broadcasts the lobby state. Returns true when the designation changed.
+    /// </summary>
+    private async Task<bool> SyncBackupHostAsync()
+    {
+        string? desired = null;
+        lock (gate)
+        {
+            if (Status != LobbyStatus.InLobby) return false;
+            if (Settings.BackupHost is int idx && idx >= 0 && idx < slots.Count && slots[idx].Kind == SlotKind.Human && !string.IsNullOrEmpty(slots[idx].PlayerKeyId))
+                desired = slots[idx].PlayerKeyId;
+        }
+        string? previous;
+        if (desired == null)
+        {
+            previous = Standby.Revoke();
+            if (previous == null) return false;
+        }
+        else if (!Standby.Designate(desired, out previous)) return false;
+
+        if (previous != null) await SendToKeyAsync(previous, new StandbyRevoke()).ConfigureAwait(false);
+        if (desired != null) await SendToKeyAsync(desired, new StandbyOffer { KeyId = desired }).ConfigureAwait(false);
+        await BroadcastAsync(Standby.Announcement(0, SuccessorRoster())).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <summary>The designated candidate (re)connected: offered the role again, or told where it stands.</summary>
+    private async Task SendStandbyHelloAsync(LobbySession session)
+    {
+        if (session.PlayerKey is not { } key || !Standby.IsDesignated(key)) return;
+        Message message = Standby.State == StandbyStates.Offered ? new StandbyOffer { KeyId = key } : Standby.Status();
+        await SendAsync(session.Transport, message).ConfigureAwait(false);
+    }
+
+    private async Task HandleStandbyAcceptAsync(LobbySession session, StandbyAccept accept)
+    {
+        // Judged by the key this connection proved with Auth; an unauthenticated connection has none.
+        var key = session.IsAuthenticated ? session.PlayerKey : null;
+        var code = await Standby.AcceptAsync(key, accept).ConfigureAwait(false);
+        if (code == ErrorCodes.NotDesignated)
+        {
+            await SendAsync(session.Transport, new Error { Code = code }).ConfigureAwait(false);
+            return;
+        }
+        if (code != null) await SendAsync(session.Transport, new Error { Code = code }).ConfigureAwait(false);
+        await SendAsync(session.Transport, Standby.Status()).ConfigureAwait(false);
+        await BroadcastAsync(Standby.Announcement(0, SuccessorRoster())).ConfigureAwait(false);
+        await BroadcastLobbyStateAsync().ConfigureAwait(false);
+    }
+
+    private async Task HandleStandbyDeclineAsync(LobbySession session)
+    {
+        var code = Standby.Decline(session.IsAuthenticated ? session.PlayerKey : null);
+        if (code != null)
+        {
+            await SendAsync(session.Transport, new Error { Code = code }).ConfigureAwait(false);
+            return;
+        }
+        lock (gate)
+        {
+            Settings.BackupHost = null; // declined: the game runs without a backup host
+        }
+        await SendAsync(session.Transport, Standby.Status()).ConfigureAwait(false);
+        await BroadcastAsync(Standby.Announcement(0, SuccessorRoster())).ConfigureAwait(false);
+        await BroadcastLobbyStateAsync().ConfigureAwait(false);
     }
 
     /// <summary>Broadcasts LobbyState to all connected sessions.</summary>

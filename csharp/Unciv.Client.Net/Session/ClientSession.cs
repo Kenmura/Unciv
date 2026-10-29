@@ -8,6 +8,7 @@ using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Mods;
 using Unciv.Net.Remote;
+using Unciv.Net.Standby;
 using Unciv.Queries;
 using CommandResult = Unciv.Net.CommandResult;
 
@@ -128,6 +129,8 @@ public sealed class ClientSession : IAsyncDisposable
     private string? gameId;
     private int knownEpoch;
     private int pendingEpoch;
+    private string connectedHostFingerprint = "";
+    private int connectionEpoch;
     private TaskCompletionSource? resyncWaiter;
 
     private sealed class PendingCommand(Command message, long ordinal)
@@ -275,6 +278,39 @@ public sealed class ClientSession : IAsyncDisposable
         }
         await RequestResyncAsync("requested").ConfigureAwait(false);
         await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    // ------------------------------------------------------------ T281: backup host
+
+    /// <summary>The latest backup-host announcement from the host this session is connected to (null until one arrives).</summary>
+    public HostSuccessor? Successor { get; private set; }
+
+    /// <summary>Consents to the backup-host role offered by <see cref="StandbyOffered"/>: <paramref name="endpoints"/> are the addresses this player can be reached on, <paramref name="port"/> and <paramref name="fingerprint"/> those of its own listener. The host probes one endpoint before the standby counts as ready.</summary>
+    public ValueTask AcceptStandbyAsync(IReadOnlyList<string> endpoints, int port, string fingerprint) =>
+        SendAsync(new StandbyAccept { Endpoints = [.. endpoints], Port = port, Fingerprint = fingerprint });
+
+    /// <summary>Declines the offer, or withdraws an accepted standby.</summary>
+    public ValueTask DeclineStandbyAsync() => SendAsync(new StandbyDecline());
+
+    /// <summary>
+    /// Takes the host's announcement. It came over the authenticated host channel; one from a lower epoch than this client already knows is ignored. A ready successor is pinned in <see cref="KnownHosts"/>
+    /// under each announced endpoint, vouched for by the host this session trusts, so a later reconnect there has no first-use prompt (design/HOST-MIGRATION.md section 3).
+    /// </summary>
+    private void HandleSuccessor(HostSuccessor successor)
+    {
+        if (successor.Epoch < Math.Max(knownEpoch, connectionEpoch)) return;
+        Successor = successor;
+        if (successor.Status == StandbyStates.Ready && successor.Successor is { } info && options.KnownHosts is { } known && connectedHostFingerprint.Length > 0)
+        {
+            var added = false;
+            foreach (var endpoint in info.Endpoints.Take(8))
+            {
+                var had = known.Pins.ContainsKey(endpoint);
+                if (known.PinVouched(endpoint, info.Fingerprint, connectedHostFingerprint, successor.Epoch) && !had) added = true;
+            }
+            if (added) options.PersistKnownHosts?.Invoke(known);
+        }
+        Emit(new SuccessorChanged(successor));
     }
 
     // ------------------------------------------------------------ lobby actions
@@ -439,8 +475,22 @@ public sealed class ClientSession : IAsyncDisposable
         {
             case Welcome welcome:
                 return await HandleWelcomeAsync(welcome, token).ConfigureAwait(false);
-            case JoinOk:
+            case JoinOk ok:
+                if (ok.Successor != null) HandleSuccessor(ok.Successor); // before the join completes, so a caller that awaited the join sees it
                 await HandleJoinOkAsync(token).ConfigureAwait(false);
+                return true;
+            case HostSuccessor successor:
+                HandleSuccessor(successor);
+                return true;
+            case StandbyOffer offer:
+                // Only an offer addressed to this player's own key counts, and nothing is accepted without the UI's answer.
+                if (string.Equals(offer.KeyId, options.Identity.PlayerKey, StringComparison.Ordinal)) Emit(new StandbyOffered(offer.KeyId));
+                return true;
+            case StandbyStatus standby:
+                Emit(new StandbyStatusChanged(standby));
+                return true;
+            case StandbyRevoke:
+                Emit(new StandbyRevoked());
                 return true;
             case JoinRefused refused:
                 await EndAsync(refused.Code, refused: true).ConfigureAwait(false);
@@ -592,6 +642,8 @@ public sealed class ClientSession : IAsyncDisposable
             await EndAsync(ClientCodes.StaleEpoch, refused: true).ConfigureAwait(false);
             return false;
         }
+        connectedHostFingerprint = welcome.HostKeyFingerprint;
+        connectionEpoch = epoch;
         pendingEpoch = epoch; // remembered only once the host accepted our seat (JoinOk), so a refused join or a wrong game cannot move the stored epoch
 
         await SendAsync(new Join

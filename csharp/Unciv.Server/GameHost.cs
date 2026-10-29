@@ -88,7 +88,7 @@ public sealed record HostLimits
 /// Distributes ViewDelta with SnapshotDiff and ViewHash after every accepted command
 /// and server command to all connected human/spectator sessions.
 /// </summary>
-public sealed class GameHost : IAsyncDisposable
+public sealed partial class GameHost : IAsyncDisposable
 {
     private readonly GameSession session;
     private readonly IGameStore? store;
@@ -114,7 +114,8 @@ public sealed class GameHost : IAsyncDisposable
         bool startActor = true,
         HostLimits? limits = null,
         bool announceRoster = false,
-        TurnPolicy? turnPolicy = null)
+        TurnPolicy? turnPolicy = null,
+        Unciv.Net.Standby.StandbyCoordinator? standby = null)
     {
         this.announceRoster = announceRoster;
         this.limits = limits ?? HostLimits.Default;
@@ -126,6 +127,7 @@ public sealed class GameHost : IAsyncDisposable
         this.turnTimer.ServerCommandSubmitter = ApplyServerCommand;
         this.remoteQueries = remoteQueries ?? CreateDefaultRemoteQueryHost();
         this.gate = gate ?? new CommandGate(store, null, this.clock);
+        Standby = InitStandby(standby);
 
         if (startActor)
         {
@@ -205,6 +207,7 @@ public sealed class GameHost : IAsyncDisposable
                 }
 
                 _ = RunSessionReaderAsync(hostSession, cts.Token);
+                await SendStandbyHelloAsync(hostSession);
                 await AnnounceRosterAsync();
                 completion.SetResult(true);
             }
@@ -281,6 +284,12 @@ public sealed class GameHost : IAsyncDisposable
                     break;
                 case Leave:
                     await DetachSessionAsync(sessionId, explicitLeave: true);
+                    break;
+                case StandbyAccept accept:
+                    ProcessStandbyAccept(hostSession, accept);
+                    break;
+                case StandbyDecline:
+                    await ProcessStandbyDeclineAsync(hostSession);
                     break;
                 case Error err:
                     await SafeSendAsync(hostSession, err);
@@ -651,6 +660,7 @@ public sealed class GameHost : IAsyncDisposable
     /// <summary>Sends the current roster to every open session when the host was created with <c>announceRoster</c>; otherwise nothing is sent.</summary>
     public async Task AnnounceRosterAsync()
     {
+        if (Standby.KeyId != null) await AnnounceSuccessorAsync(); // T281: the roster rides with the backup-host announcement
         if (!announceRoster || sessions.Count == 0) return;
         var roster = BuildRoster();
         var targets = sessions.Values.ToList();
@@ -719,6 +729,7 @@ public sealed class GameHost : IAsyncDisposable
             [civId] = new SlotBinding { PlayerKey = newKey ?? "", DisplayName = newKey == null ? binding.DisplayName : "" },
         };
         store.WriteMeta(meta with { Slots = slots });
+        if (Standby.IsDesignated(binding.PlayerKey)) await RevokeBackupCoreAsync(); // the seat changed hands: the old player is no longer a backup host
 
         foreach (var old in sessions.Values.Where(it => string.Equals(it.BoundCivId, civId, StringComparison.Ordinal)).ToList())
         {

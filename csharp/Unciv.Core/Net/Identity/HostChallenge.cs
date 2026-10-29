@@ -97,12 +97,20 @@ public enum HostTrust
     Mismatch,
 }
 
+/// <summary>T281: who vouched for a pin (the fingerprint of the host that announced it) and at which host epoch.</summary>
+public sealed record Vouch(string VouchedBy, int Epoch);
+
 /// <summary>The client's <c>known-hosts.json</c> content: host address to pinned fingerprint.</summary>
 public sealed class KnownHosts
 {
     private readonly Dictionary<string, string> pins = new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly Dictionary<string, Vouch> vouches = new(StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlyDictionary<string, string> Pins => pins;
+
+    /// <summary>T281: pins that were vouched for by an already-trusted host (a backup host announced over the pinned channel) instead of trusted on first use, by address.</summary>
+    public IReadOnlyDictionary<string, Vouch> Vouches => vouches;
 
     public HostTrust Check(string hostAddress, string presentedFingerprint)
     {
@@ -120,6 +128,28 @@ public sealed class KnownHosts
         return true;
     }
 
+    /// <summary>
+    /// T281: pins <paramref name="fingerprint"/> for <paramref name="hostAddress"/> because the already-trusted host <paramref name="voucherFingerprint"/> announced it at host epoch <paramref name="epoch"/>
+    /// (no first-use prompt: the announcement came over the authenticated, pinned channel). Refuses to overwrite a different pin; an equal pin keeps its first vouch.
+    /// </summary>
+    public bool PinVouched(string hostAddress, string fingerprint, string voucherFingerprint, int epoch)
+    {
+        var voucher = HostKey.Normalize(voucherFingerprint);
+        if (voucher == null || !Pin(hostAddress, fingerprint)) return false;
+        vouches.TryAdd(hostAddress, new Vouch(voucher, epoch));
+        return true;
+    }
+
+    /// <summary>Loading <c>known-hosts.json</c>: puts a stored vouch back. Ignored when <paramref name="hostAddress"/> has no pin.</summary>
+    public void RestoreVouch(string hostAddress, Vouch vouch)
+    {
+        if (pins.ContainsKey(hostAddress) && HostKey.Normalize(vouch.VouchedBy) != null) vouches[hostAddress] = vouch;
+    }
+
     /// <summary>Explicit user action after a verified key change.</summary>
-    public void Forget(string hostAddress) => pins.Remove(hostAddress);
+    public void Forget(string hostAddress)
+    {
+        pins.Remove(hostAddress);
+        vouches.Remove(hostAddress);
+    }
 }

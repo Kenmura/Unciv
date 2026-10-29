@@ -48,6 +48,17 @@ public class NetProtocolTests
         { new HostClosing(), """{"type":"HostClosing"}""" },
         { new Error { Code = "unknown-type", Detail = "x" }, """{"type":"Error","code":"unknown-type","detail":"x"}""" },
         { new Pong(), """{"type":"Pong"}""" },
+        { new StandbyOffer { KeyId = "k" }, """{"type":"StandbyOffer","keyId":"k"}""" },
+        { new StandbyAccept { Endpoints = ["a.example"], Port = 47821, Fingerprint = "fp" }, """{"type":"StandbyAccept","endpoints":["a.example"],"port":47821,"fingerprint":"fp"}""" },
+        { new StandbyDecline(), """{"type":"StandbyDecline"}""" },
+        { new StandbyRevoke(), """{"type":"StandbyRevoke"}""" },
+        { new StandbyStatus { State = "ready", LagEntries = 0 }, """{"type":"StandbyStatus","state":"ready","lagEntries":0}""" },
+        { new HostSuccessor { Epoch = 0, Status = "none", Roster = [] }, """{"type":"HostSuccessor","epoch":0,"status":"none","roster":[]}""" },
+        { new HostSuccessor { Epoch = 1, Status = "ready", Successor = new SuccessorInfo { KeyId = "k", Endpoints = ["a.example:47821"], Fingerprint = "fp" }, Roster = [new SuccessorSeat { KeyId = "k", Connected = true }] },
+            """{"type":"HostSuccessor","epoch":1,"successor":{"keyId":"k","endpoints":["a.example:47821"],"fingerprint":"fp"},"status":"ready","roster":[{"keyId":"k","connected":true}]}""" },
+        { new JoinOk { Successor = new HostSuccessor { Epoch = 0, Status = "offered", Roster = [] } }, """{"type":"JoinOk","successor":{"epoch":0,"status":"offered","roster":[]}}""" },
+        { new LobbyState { Settings = J("{}"), Slots = [], HostName = "Bob", BackupHost = 1, BackupHostState = "offered", BackupHostNotice = "n" }, """{"type":"LobbyState","settings":{},"slots":[],"hostName":"Bob","backupHost":1,"backupHostState":"offered","backupHostNotice":"n"}""" },
+        { new Welcome { Protocol = 2, SessionId = "s", Challenge = "ch", HostKeyFingerprint = "fp", RequiresPassword = false, BackupHostNotice = "n" }, """{"type":"Welcome","protocol":2,"sessionId":"s","challenge":"ch","hostKeyFingerprint":"fp","requiresPassword":false,"backupHostNotice":"n"}""" },
     };
 
     [Theory]

@@ -10,16 +10,24 @@ namespace Unciv.Client.Net.Hosting;
 /// </summary>
 public static class JoinFiles
 {
+    private const string VouchesKey = "$vouches";
+
     public static KnownHosts LoadKnownHosts(string path)
     {
         var known = new KnownHosts();
         try
         {
             if (!File.Exists(path)) return known;
-            var pins = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path));
-            if (pins != null)
-                foreach (var (address, fingerprint) in pins.OrderBy(it => it.Key, StringComparer.Ordinal))
-                    known.Pin(address, fingerprint);
+            var entries = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(File.ReadAllText(path));
+            if (entries != null)
+            {
+                foreach (var (address, value) in entries.OrderBy(it => it.Key, StringComparer.Ordinal))
+                    if (value.ValueKind == JsonValueKind.String && value.GetString() is { } fingerprint) known.Pin(address, fingerprint);
+                // T281: who vouched for a pin (a backup host announced by the pinned host), kept beside the pins under a key no address can have.
+                if (entries.TryGetValue(VouchesKey, out var vouches) && vouches.ValueKind == JsonValueKind.Object)
+                    foreach (var vouch in vouches.EnumerateObject())
+                        if (vouch.Value.Deserialize<Vouch>() is { } restored) known.RestoreVouch(vouch.Name, restored);
+            }
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
         {
@@ -30,7 +38,8 @@ public static class JoinFiles
 
     public static void SaveKnownHosts(string path, KnownHosts known)
     {
-        var sorted = new SortedDictionary<string, string>(known.Pins.ToDictionary(it => it.Key, it => it.Value), StringComparer.Ordinal);
+        var sorted = new SortedDictionary<string, object>(known.Pins.ToDictionary(it => it.Key, it => (object)it.Value), StringComparer.Ordinal);
+        if (known.Vouches.Count > 0) sorted[VouchesKey] = new SortedDictionary<string, Vouch>(known.Vouches.ToDictionary(it => it.Key, it => it.Value), StringComparer.Ordinal);
         try
         {
             var directory = Path.GetDirectoryName(path);

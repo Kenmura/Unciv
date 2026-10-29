@@ -35,6 +35,9 @@ public sealed class LobbySettings
     /// <summary>T267: what the host does with a player who stays away: <c>"ai"</c> (default) hands the civ to the AI after <see cref="TurnPolicy.AbsentTurnsBeforeAiTakeover"/> absent turns, at a turn boundary, never mid-turn; <c>"wait"</c> only force-ends its turns. An explicit leave or kick always hands over at the next boundary.</summary>
     public string OnDisconnect { get; set; } = "ai";
 
+    /// <summary>T281: the slot index of the designated backup host (null: none, the default). Only the host sets it; the player in that slot must still accept, and every player sees the trust notice (<c>LobbyState.BackupHostNotice</c>) before joining.</summary>
+    public int? BackupHost { get; set; }
+
     public string? Password { get; set; }
     public int MaxPlayers { get; set; } = 8;
     public bool AllowJoinInProgress { get; set; } = true;

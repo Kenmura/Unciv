@@ -46,6 +46,7 @@ public sealed class ServerLobby : IAsyncDisposable
             hostName
         );
         lobbyHost.LateSeated = SeatLateAsync;
+        lobbyHost.Standby.Prober = new Transport.TlsEndpointProber(); // T281: a backup host's endpoint is probed with a real TLS handshake
     }
 
     /// <summary>A known player reconnects after the start: their connection joins the running game (the lobby reader stays its only reader).</summary>
@@ -152,7 +153,7 @@ public sealed class ServerLobby : IAsyncDisposable
         {
             var policy = lobbyHost.Settings.ToTurnPolicy();
             if (store != null) store.WriteMeta(store.ReadMeta() with { TimerPolicy = policy }); // a resume must run the same turn rules
-            gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock, turnPolicy: policy);
+            gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock, turnPolicy: policy, standby: lobbyHost.Standby); // the designation made in the lobby carries over
             foreach (var slot in startResult.Slots)
             {
                 if (slot.Kind != SlotKind.Human) continue;

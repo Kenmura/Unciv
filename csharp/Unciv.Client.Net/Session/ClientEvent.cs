@@ -79,3 +79,15 @@ public sealed record ProtocolError(string Code) : ClientEvent;
 
 /// <summary>The session ended for good (left, refused, or reconnect attempts exhausted).</summary>
 public sealed record SessionEnded(string Reason) : ClientEvent;
+
+/// <summary>T281: the host offers this player the backup-host role (the UI asks, then <c>AcceptStandbyAsync</c> or <c>DeclineStandbyAsync</c>). Nothing is replicated or shared before an accept.</summary>
+public sealed record StandbyOffered(string KeyId) : ClientEvent;
+
+/// <summary>T281: where this player's own standby stands (the host's <c>StandbyStatus</c>).</summary>
+public sealed record StandbyStatusChanged(StandbyStatus Status) : ClientEvent;
+
+/// <summary>T281: the host ended this player's backup-host designation (the copy already on disk is not erased).</summary>
+public sealed record StandbyRevoked : ClientEvent;
+
+/// <summary>T281: the host's backup-host announcement changed (who, where, whether ready, the roster).</summary>
+public sealed record SuccessorChanged(HostSuccessor Successor) : ClientEvent;

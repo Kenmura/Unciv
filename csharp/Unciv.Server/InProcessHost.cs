@@ -287,7 +287,7 @@ public sealed class InProcessHost : IAsyncDisposable
                 return;
             }
 
-            await transport.SendAsync(ProtocolCodec.Encode(new JoinOk()), timeout.Token);
+            await transport.SendAsync(ProtocolCodec.Encode(new JoinOk { Successor = await host.SuccessorForJoinAsync().ConfigureAwait(false) }), timeout.Token);
             await host.AttachSessionAsync(challenge.SessionId, civ, transport, join.PlayerKey).ConfigureAwait(false);
         }
         catch (Exception)

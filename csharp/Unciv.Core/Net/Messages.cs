@@ -15,6 +15,21 @@ public static class ErrorCodes
 
     /// <summary>T269: the peer has seen a newer host epoch than this host's (or the host is older than the client's stored epoch): another host took over, never silently accepted.</summary>
     public const string StaleEpoch = "stale-epoch";
+
+    /// <summary>T281: a standby message from a key that is not the designated, offered backup host (or no backup host is designated). One code for every case, so it is no oracle for who is designated.</summary>
+    public const string NotDesignated = "not-designated";
+
+    /// <summary>T281: the designated key sent an unusable endpoint list or port.</summary>
+    public const string InvalidEndpoint = "invalid-endpoint";
+
+    /// <summary>T281: the endpoint probe ran too recently (at most one per minute).</summary>
+    public const string ProbeRateLimited = "probe-rate-limited";
+
+    /// <summary>T281: the probe found nothing listening (closed port, timeout, no TLS).</summary>
+    public const string ProbeFailed = "probe-failed";
+
+    /// <summary>T281: the probe reached a listener whose certificate is not the announced fingerprint.</summary>
+    public const string ProbeFingerprint = "probe-fingerprint";
 }
 
 /// <summary>Base of every wire message. The JSON frame is the record's fields plus a <c>type</c> discriminator (see <see cref="ProtocolCodec"/>).</summary>
@@ -135,9 +150,16 @@ public sealed record Welcome : Message
 
     /// <summary>T269: the host epoch of this game (0 = original host). Absent from a host that predates host migration, which a client reads as 0.</summary>
     public int? Epoch { get; init; }
+
+    /// <summary>T281: the name-free trust notice, present while the host intends a backup host, so a client can show it before it sends <c>Join</c> (the player is named in <c>LobbyState.BackupHostNotice</c> after joining).</summary>
+    public string? BackupHostNotice { get; init; }
 }
 
-public sealed record JoinOk : Message;
+public sealed record JoinOk : Message
+{
+    /// <summary>T281: the current backup-host announcement (public information: an address and a fingerprint), absent while no backup host is designated.</summary>
+    public HostSuccessor? Successor { get; init; }
+}
 
 public sealed record JoinRefused : Message
 {
@@ -161,6 +183,15 @@ public sealed record LobbyState : Message
     public required JsonElement Settings { get; init; }
     public required List<LobbySlot> Slots { get; init; }
     public required string HostName { get; init; }
+
+    /// <summary>T281: the slot index of the designated backup host (absent: none).</summary>
+    public int? BackupHost { get; init; }
+
+    /// <summary>T281: the <see cref="Unciv.Net.Standby.StandbyStates"/> of that designation (absent while none).</summary>
+    public string? BackupHostState { get; init; }
+
+    /// <summary>T281: the fixed trust notice naming the backup host ("X holds a complete copy of this game..."), present while one is designated. Part of the message so a player cannot miss it.</summary>
+    public string? BackupHostNotice { get; init; }
 }
 
 public sealed record GameStarting : Message;
@@ -273,6 +304,65 @@ public sealed record ModFileData : Message
 }
 
 public sealed record HostClosing : Message;
+
+// ---------------------------------------------------------------- backup host (T281, design/HOST-MIGRATION.md sections 1 and 3)
+
+/// <summary>Host to the designated candidate only: asks it to become the backup host. Nothing flows until it answers <see cref="StandbyAccept"/>. A client ignores it unless it was addressed to its own key.</summary>
+public sealed record StandbyOffer : Message
+{
+    public required string KeyId { get; init; }
+}
+
+/// <summary>
+/// Candidate to host: consent. <c>Endpoints</c> are the addresses (host names or IPs) the candidate can be reached on and <c>Port</c> its listener, <c>Fingerprint</c> the host key fingerprint of that listener.
+/// Accepted only from the designated key after <c>Auth</c> (otherwise <see cref="ErrorCodes.NotDesignated"/>); the host probes one endpoint (a TLS handshake, nothing else) before it counts as ready.
+/// </summary>
+public sealed record StandbyAccept : Message
+{
+    public required List<string> Endpoints { get; init; }
+    public required int Port { get; init; }
+    public required string Fingerprint { get; init; }
+}
+
+/// <summary>Candidate to host: refuses the offer, or later withdraws. The host runs without a backup host.</summary>
+public sealed record StandbyDecline : Message;
+
+/// <summary>Host to candidate: the designation ended (the host revoked it, or the seat changed hands). The candidate's copy on its own disk is not erased.</summary>
+public sealed record StandbyRevoke : Message;
+
+/// <summary>Host to the candidate: where the standby stands (<see cref="Unciv.Net.Standby.StandbyStates"/>). Counters only. <c>LagEntries</c> is 0 until replication exists (T272).</summary>
+public sealed record StandbyStatus : Message
+{
+    public required string State { get; init; }
+    public required int LagEntries { get; init; }
+}
+
+/// <summary>Where a successor can be reached: <c>Endpoints</c> are <c>host:port</c> strings (the same form as the client's known-hosts keys) and <c>Fingerprint</c> the certificate the host's probe saw there.</summary>
+public sealed record SuccessorInfo
+{
+    public required string KeyId { get; init; }
+    public required List<string> Endpoints { get; init; }
+    public required string Fingerprint { get; init; }
+}
+
+/// <summary>One human seat of the roster a <see cref="HostSuccessor"/> carries (what a later election counts).</summary>
+public sealed record SuccessorSeat
+{
+    public required string KeyId { get; init; }
+    public required bool Connected { get; init; }
+}
+
+/// <summary>
+/// Host to every client: the backup-host announcement, in <see cref="JoinOk"/> and whenever it or the roster changes (public: addresses and a fingerprint, no game state). <c>Successor</c> is set only once
+/// the standby is <c>ready</c>; <c>Status</c> is the <see cref="Unciv.Net.Standby.StandbyStates"/> value. A client takes it only from its authenticated host channel at an epoch it accepts.
+/// </summary>
+public sealed record HostSuccessor : Message
+{
+    public required int Epoch { get; init; }
+    public SuccessorInfo? Successor { get; init; }
+    public required string Status { get; init; }
+    public required List<SuccessorSeat> Roster { get; init; }
+}
 
 public sealed record Error : Message
 {
