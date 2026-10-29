@@ -74,11 +74,11 @@ public static class TradeRouteYields
         // --- destination side
         int destMultiplier = 100 + domainPercent + River(domain, dest);
         int destTradeBuildings = 100 + SumCivPercent(destCiv, UniqueType.TradeBuildingModifier);
-        // [I] (B020): a building's "from this city" gold applies to the owner of the route's origin only, so the destination's own term is 0
+        int destBuildings = SumBuildings(dest, sea ? UniqueType.GoldFromSeaTradeRoutes : UniqueType.GoldFromLandTradeRoutes, filtered: true) * destTradeBuildings / 100;
         int destTheirBuildings = anyCityState ? 0 : SumBuildings(dest, UniqueType.TradeRouteTargetGold, filtered: false) * 100 * destTradeBuildings / 100;
         var incomingStats = destCiv.GetMatchingUniques(UniqueType.YieldFromIncomingTradeRoutes).Select(it => it.Stats).ToList();
         int incoming = AddTraitYields(destYields, incomingStats);
-        destYields[TradeYield.Gold] = (100 + destTheirBuildings + incoming) * destMultiplier / 100;
+        destYields[TradeYield.Gold] = (100 + destBuildings + destTheirBuildings + incoming) * destMultiplier / 100;
         destYields[TradeYield.Science] += ScienceBase(Techs(originCiv) - Techs(destCiv)) * 100;
 
         return new Pair(originYields, destYields);
@@ -109,8 +109,18 @@ public static class TradeRouteYields
     public static int ScienceBase(int techLead) => techLead > 0 ? Math.Max((int)MathF.Ceiling(techLead / 2.0f), 1) : 0;
 
     /// <summary>(@101f8dd0) the city's gold per turn in hundredths over <paramref name="divisor"/>; 0 where the ruleset has no divisor (G&amp;K).</summary>
-    private static int CityGpt(CityObject city, int divisor) =>
-        divisor <= 0 ? 0 : KotlinMath.RoundToInt(city.CityStats.CurrentCityStats.Gold * 100f) / divisor;
+    private static int CityGpt(CityObject city, int divisor)
+    {
+        if (divisor <= 0) return 0;
+        // [I] (B020): the city's gold without the trade routes' own gold, so a route's value does not feed back into itself
+        int own = 0;
+        foreach (var route in TradeRouteRules.Routes(city.Civ.GameInfo))
+        {
+            if (route.OriginCityId == city.Id) own += route.OriginYields[TradeYield.Gold];
+            else if (route.DestCityId == city.Id) own += route.DestYields[TradeYield.Gold];
+        }
+        return (KotlinMath.RoundToInt(city.CityStats.CurrentCityStats.Gold * 100f) - own) / divisor;
+    }
 
     /// <summary>(@101f9680) +25 when a land route's city sits on a river. [I]: the city of the side being computed.</summary>
     private static int River(TradeDomain domain, CityObject city) =>

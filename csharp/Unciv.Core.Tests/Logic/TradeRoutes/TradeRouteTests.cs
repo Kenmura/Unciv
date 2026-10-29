@@ -178,6 +178,27 @@ public class TradeRouteTests
     }
 
     [Fact]
+    public void DestinationBuildingsWithRouteGoldBonusPayTheDestinationOwner()
+    {
+        var w = NewWorld();
+        var building = w.Game.CreateBuilding("[+40] Gold (x1/100) from land trade routes [in this city]");
+        CityOf(w.B).CityConstructions.AddBuilding(building);
+        SetGold(CityOf(w.B), 0);
+        Assert.Equal(140, Yields(w, CityOf(w.A), CityOf(w.B)).Dest[TradeYield.Gold]);
+        Assert.Equal(100, Yields(w, CityOf(w.A), CityOf(w.B)).Origin[TradeYield.Gold]);
+    }
+
+    [Fact]
+    public void ACitysOwnRouteGoldDoesNotFeedBackIntoItsRouteValue()
+    {
+        var (w, route, _) = Established();
+        SetGold(CityOf(w.A), 4 + route.OriginYields[TradeYield.Gold] / 100f); // 4 of its own plus the route's 1
+        SetGold(CityOf(w.B), route.DestYields[TradeYield.Gold] / 100f);
+        TradeRouteTurns.StartTurn(w.A);
+        Assert.Equal(120, route.OriginYields[TradeYield.Gold]);
+    }
+
+    [Fact]
     public void CityStateRoutesGetPolicyGoldAndNoBuildingGold()
     {
         var w = NewWorld(["[+1] trade route slots", "[+2] Gold from trade routes with city-states"]);
@@ -361,6 +382,7 @@ public class TradeRouteTests
         w.Rejected(Cmd(unit, far), CommandErrors.InvalidTarget); // 12 steps, range 10
         w.Rejected(new EstablishTradeRoute { UnitId = unit.Id, TargetCityId = "nowhere" }, CommandErrors.UnknownCity);
         w.Rejected(Cmd(unit, CityOf(w.A)), CommandErrors.InvalidTarget);
+        w.Rejected(Cmd(unit, CityOf(w.B), (TradeRouteKind)7), CommandErrors.InvalidTarget);
         w.Rejected(Cmd(unit, CityOf(w.B), TradeRouteKind.Food), CommandErrors.InvalidTarget);
         w.Rejected(Cmd(unit, CityOf(w.B)), CommandErrors.NotYourTurn, actor: w.B.CivId);
         var plain = w.Game.CreateBaseUnit("Civilian");
@@ -493,7 +515,8 @@ public class TradeRouteTests
     public void YieldsAreRecomputedAtTheStartOfEachTurn()
     {
         var (w, route, _) = Established();
-        SetGold(CityOf(w.A), 4);
+        SetGold(CityOf(w.A), 5); // 4 of its own plus the route's 1
+        SetGold(CityOf(w.B), 1);
         TradeRouteTurns.StartTurn(w.A);
         Assert.Equal(120, route.OriginYields[TradeYield.Gold]);
         AddTechs(w.B, 3);

@@ -175,6 +175,7 @@ public static class TradeRouteRules
         var game = civ.GameInfo;
         if (!IsEnabled(game)) return new RouteRefusal(CommandErrors.NotAllowed, "Trade routes are not enabled in this ruleset");
         if (origin.Civ != civ) return new RouteRefusal(CommandErrors.NotYourCity, $"{origin.Name} is not yours");
+        if (!Enum.IsDefined(kind)) return new RouteRefusal(CommandErrors.InvalidTarget, "Unknown route kind");
         if (dest == origin) return new RouteRefusal(CommandErrors.InvalidTarget, "A route needs two different cities");
         if (dest.Civ.IsBarbarian) return new RouteRefusal(CommandErrors.InvalidTarget, "Barbarians do not trade");
         if (dest.Civ != civ)
@@ -188,7 +189,7 @@ public static class TradeRouteRules
         {
             if (kind == TradeRouteKind.International)
                 return new RouteRefusal(CommandErrors.InvalidTarget, "A route between your own cities is a domestic route");
-            string stat = kind == TradeRouteKind.Food ? "Food" : "Production";
+            string stat = kind == TradeRouteKind.Food ? "Food" : "Production"; // kind is Food or Production here
             if (!BuildingUniques(origin, UniqueType.AllowsDomesticTradeRoutes).Any(it => it.Params[0] == stat))
                 return new RouteRefusal(CommandErrors.NotAllowed, $"{origin.Name} has no building for domestic {stat} routes");
         }
@@ -244,7 +245,7 @@ public static class TradeRouteRules
 
         plan.Origin.Civ.UpdateStatsForNextTurn();
         if (plan.Dest.Civ != plan.Origin.Civ) plan.Dest.Civ.UpdateStatsForNextTurn();
-        TradeRouteTurns.Announce(game, route, established: true);
+        TradeRouteTurns.Announce(game, route);
         return route;
     }
 

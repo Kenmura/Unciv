@@ -443,7 +443,11 @@ gated by the ModOptions unique `Enables international trade routes`, never by ru
   `[relativeAmount] land trade route range` and `[relativeAmount] sea trade route range` (UniqueType 749 and 750).
 - **Resource term** [X]: a city "has" a resource when a tile it owns carries it (local, worked and owned collapse to owned).
 - **River** [I]: the +25 applies per side, to the city whose centre tile is next to a river, land routes only.
-- **Destination building gold** [I]: `TradeRouteTargetGold` pays the destination owner only; the origin side never receives it.
+- **Destination side** [I]: the destination city's own land/sea route gold bonus (`yourBldg`) and `TradeRouteTargetGold` pay the destination owner only;
+  the Morocco-style `[stats] from incoming trade routes` unique (declared by B003) is the destination counterpart of the origin trait term.
+- **City gold per turn** [I]: `gptOrigin` / `gptDest` use the city's gold without the trade routes' own gold, so the value does not feed back into itself.
+- **Capture** [X]: a captured city's routes end at the next turn start of any civ (no hook in conquest); until then the new owner sees the yields.
+- **Plunder** [X]: only a unit entering the route unit's tile plunders; the route unit walking onto a standing enemy does not.
 - **Domestic yields** [X]: food uses the speed's `modifier`, production its `productionCostModifier` (Unciv has no growth percent); the era
   fields `tradeRouteFoodBonusTimes100` / `tradeRouteProductionBonusTimes100` default to 0.
 - **Range and path** [X]: breadth first over passable land (land unit) or water (sea unit), counted in steps, borders, fog and units ignored.

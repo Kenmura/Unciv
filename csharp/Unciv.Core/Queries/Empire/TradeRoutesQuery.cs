@@ -39,7 +39,9 @@ public sealed record TradeRoutesQuery : IQuery<TradeRoutesResult>
             var origin = TradeRouteRules.FindCity(game, route.OriginCityId);
             var dest = TradeRouteRules.FindCity(game, route.DestCityId);
             string Owner(string id) => id == civ.CivId || civ.Knows(id) ? game.GetCivilization(id).CivName : "";
-            return new TradeRouteRow(route.Id, route.OriginCityId, origin?.Name ?? "", route.DestCityId, dest?.Name ?? "", Owner(route.OriginOwner),
+            // a city the viewer has not explored is not named (only the destination of a route to you can be unexplored)
+            bool originKnown = yours || origin != null && origin.GetCenterTile().IsExplored(civ);
+            return new TradeRouteRow(route.Id, originKnown ? route.OriginCityId : "", originKnown ? origin?.Name ?? "" : "", route.DestCityId, dest?.Name ?? "", Owner(route.OriginOwner),
                 Owner(route.DestOwner), route.Domain, route.Kind, Math.Max(0, route.TurnRouteComplete - game.Turns), route.CircuitsCompleted,
                 route.CircuitsToComplete, yours ? route.OriginYields : route.DestYields);
         }

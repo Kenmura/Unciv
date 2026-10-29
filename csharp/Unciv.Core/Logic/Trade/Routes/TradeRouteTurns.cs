@@ -72,15 +72,18 @@ public static class TradeRouteTurns
         Remember(game, route, plundered: false);
         var origin = TradeRouteRules.FindCity(game, route.OriginCityId);
         var originCiv = game.GetCivilization(route.OriginOwner);
-        if (origin != null) originCiv.Units.AddUnit(route.UnitName, origin);
-        var text = $"Your trade route from [{origin?.Name}] to [{TradeRouteRules.FindCity(game, route.DestCityId)?.Name}] is complete";
+        var returned = origin == null ? null : originCiv.Units.AddUnit(route.UnitName, origin);
+        var text = $"Your trade route from [{origin?.Name}] to [{TradeRouteRules.FindCity(game, route.DestCityId)?.Name}] is complete"
+            + (returned == null ? " but its unit could not be placed and is lost" : "");
         if (origin != null) originCiv.AddNotification(text, origin.Location.ToHexCoord(), NotificationCategory.Trade, NotificationIcon.Trade);
+        originCiv.UpdateStatsForNextTurn();
+        var destCiv = game.GetCivilizationOrNull(route.DestOwner);
+        if (destCiv != null && destCiv != originCiv && !destCiv.IsDefeated()) destCiv.UpdateStatsForNextTurn();
         game.EventSink?.Emit(new TradeRouteCompleted(route.Id, route.OriginOwner, route.DestOwner, route.OriginCityId, route.DestCityId));
     }
 
-    internal static void Announce(IGameInfoState game, TradeRoute route, bool established)
+    internal static void Announce(IGameInfoState game, TradeRoute route)
     {
-        if (!established) return;
         var origin = TradeRouteRules.FindCity(game, route.OriginCityId).NotNull();
         var dest = TradeRouteRules.FindCity(game, route.DestCityId).NotNull();
         if (route.OriginOwner != route.DestOwner)

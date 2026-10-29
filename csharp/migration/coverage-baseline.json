@@ -442,7 +442,7 @@
     "Unciv.Core/Logic/Simulation/MutableInt.cs": {"branch": 100.0, "line": 85.71},
     "Unciv.Core/Logic/Simulation/Simulation.cs": {"branch": 88.3, "line": 96.91},
     "Unciv.Core/Logic/Simulation/SimulationStep.cs": {"branch": 81.25, "line": 100.0},
-    "Unciv.Core/Logic/Trade/Routes/TradeRouteRules.cs": {"branch": 86.54, "line": 97.32},
+    "Unciv.Core/Logic/Trade/Routes/TradeRouteRules.cs": {"branch": 86.79, "line": 97.33},
     "Unciv.Core/Logic/Trade/Routes/TradeRouteTurns.cs": {"branch": 83.87, "line": 100.0},
     "Unciv.Core/Logic/Trade/Routes/TradeRouteYields.cs": {"branch": 96.43, "line": 100.0},
     "Unciv.Core/Logic/Trade/Trade.cs": {"branch": 86.96, "line": 98.48},
