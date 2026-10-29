@@ -292,7 +292,15 @@ class ReleaseWorkflowShape(unittest.TestCase):
         self.assertIn("T280", self.text)  # the marked place for the Android job
 
     def test_csharp_yml_is_untouched_by_the_release(self):
-        self.assertNotIn("csharp-v", WORKFLOW.read_text(encoding="utf-8"))
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertNotIn("csharp-v", text)
+        self.assertNotRegex(re.search(r"^on:\n(.*?)(?=^\S)", text, re.S | re.M).group(1), r"(?m)^    tags:")
+
+    def test_no_expression_is_interpolated_into_a_shell_script(self):
+        # a tag name must only reach the shell through env vars ($GITHUB_REF_NAME), never through ${{ }} inside run: (script injection)
+        for run in re.findall(r"(?ms)^\s+run: (.*?)(?=^\s+(?:- |\w[\w-]*:)|\Z)", self.code):
+            for expr in re.findall(r"\$\{\{\s*([^}]*?)\s*\}\}", run):
+                self.assertIn(expr, ("runner.temp", "github.token"), run)
 
 
 class ReleaseAssets(unittest.TestCase):
