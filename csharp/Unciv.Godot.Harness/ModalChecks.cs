@@ -21,7 +21,7 @@ internal static class ModalChecks
         bool size = window.Encloses(frame) && frame.Size.X >= min && frame.Size.X <= max;
         bool centred = Math.Abs(frame.GetCenter().X - window.GetCenter().X) <= 1f;
         var line = modal.HairlineRect;
-        bool hairline = line.Size.X > 0 && line.Size.Y >= 1 && Math.Abs(line.Position.Y - frame.Position.Y) <= 0.5f && frame.Encloses(line) && modal.Frame.LineColour == Godot.Color.FromHtml("#D6AA3C");
+        bool hairline = line.Size.X > 0 && line.Size.Y >= 1 && Math.Abs(line.Position.Y - frame.Position.Y) <= 0.5f && frame.Encloses(line) && modal.Frame.LineColour == Unciv.GodotClient.Assets.ProceduralAssets.ToColor(Unciv.Assets.UiTokens.Accent);
         var actions = modal.Actions;
         bool footer = actions.Count > 0 && actions.All(it => it.Visible && frame.Encloses(it.GetGlobalRect()));
         bool primaryLast = modal.Stacked || actions.Any(it => it.ThemeTypeVariation == UiVariants.ButtonPrimary) == (actions[^1].ThemeTypeVariation == UiVariants.ButtonPrimary);

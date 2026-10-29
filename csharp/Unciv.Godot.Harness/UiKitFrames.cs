@@ -64,7 +64,7 @@ internal sealed class UiKitFrames(UiTheme theme, List<string> log)
             new WaitFrames(2),
             new AssertQuery("second screen on top, first hidden", () => manager.Depth == 2 && !rootScreen.Visible),
             new AssertQuery("the frame has its hairline on the header, the close button at the right end and the footer actions right-aligned with the primary last", () =>
-                frame is { } f && f.TitleText == "Second screen" && f.TitleLabel.Size.X > 80 && f.TitleLabel.Size.Y > 10 && f.Header.LineRect.Size.X > 0 && f.Header.LineColour == Godot.Color.FromHtml("#D6AA3C")
+                frame is { } f && f.TitleText == "Second screen" && f.TitleLabel.Size.X > 80 && f.TitleLabel.Size.Y > 10 && f.Header.LineRect.Size.X > 0 && f.Header.LineColour == Unciv.GodotClient.Assets.ProceduralAssets.ToColor(Unciv.Assets.UiTokens.Accent)
                 && f.CloseButton.GetGlobalRect().End.X >= f.Header.GetGlobalRect().End.X - 24 && f.CloseButton.Label == "Close" && f.CloseButton.TooltipText == "Close (Esc)"
                 && f.FooterActions.Select(it => it.Text).SequenceEqual(["Reset", "Apply"]) && f.Footer.Visible && f.FooterActions[1].GetGlobalRect().End.X > f.FooterActions[0].GetGlobalRect().End.X
                 && f.ContentRect.Position.Y >= f.Header.GetGlobalRect().End.Y && f.ContentRect.End.Y <= f.Footer.GetGlobalRect().Position.Y + 0.5f),

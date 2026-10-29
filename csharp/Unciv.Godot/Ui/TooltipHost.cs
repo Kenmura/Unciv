@@ -16,6 +16,7 @@ public partial class TooltipHost : Control
     public const int MaxWidth = 340;
 
     private const int MinTextWidth = 120;
+    private const float BoldSlack = 1.08f;
 
     private readonly PanelContainer panel = new() { Visible = false, ThemeTypeVariation = UiVariants.PanelTooltip };
     private readonly RichTextLabel text = new() { BbcodeEnabled = true, FitContent = true, ScrollActive = false };
@@ -139,7 +140,7 @@ public partial class TooltipHost : Control
         float padding = 2 * theme.Px(UiTokens.S3) + 2 * theme.Px(UiTokens.BorderWidth);
         float most = theme.Px(MaxWidth) - padding;
         // a little slack for bold runs, which measure wider than the regular face the parsed text is measured in
-        return Math.Clamp(widest * 1.08f + 2f, theme.Px(MinTextWidth), most);
+        return Math.Clamp(widest * BoldSlack + 2f, theme.Px(MinTextWidth), most);
     }
 
     private void Follow()
