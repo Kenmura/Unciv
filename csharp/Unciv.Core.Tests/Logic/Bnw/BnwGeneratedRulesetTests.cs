@@ -326,7 +326,6 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         "CreatesGreatWork",
         "DomesticTradeRouteYield",
         "ElectionRiggingModifier",
-        "ExoticGoodsCarried",
         "FaithFromKills",
         "FreeBuildingOnConquest",
         "FreePoliciesWhenExpended",
