@@ -83,7 +83,7 @@
 - [C096 Touch map input and density-derived UI scale: pinch/pan, tap and long-press, 48 dp targets, phone-world scenario](#c096-touch-map-input-and-density-derived-ui-scale-pinchpan-tap-and-long-press-48-dp-targets-phone-world-scenario)
 - [C097 Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike)](#c097-graphics-quality-setting-with-an-ultra-preset-effects-chosen-by-the-ultra-graphics-spike)
 - [C100 Touch replacements for mouse-only interaction: right-click move/attack, tap tooltips, modifier toggles, queue reorder](#c100-touch-replacements-for-mouse-only-interaction-right-click-moveattack-tap-tooltips-modifier-toggles-queue-reorder)
-- [C101 (ticket not Done or unknown)](#c101-ticket-not-done-or-unknown)
+- [C101 Phone layouts of the full screens (split by screen group when claimed): HUD and menus, city, tech and policy, tables, pedia](#c101-phone-layouts-of-the-full-screens-split-by-screen-group-when-claimed-hud-and-menus-city-tech-and-policy-tables-pedia)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
@@ -1679,7 +1679,7 @@ Scenario `touch-orders`.
 
 *A long press on a worked tile of the city screen locked it (padlock on the tile, tile tip shown) and the hint line says Long press: lock.* (`touch-orders/tile-locked.png`)
 
-## C101 (ticket not Done or unknown)
+## C101 Phone layouts of the full screens (split by screen group when claimed): HUD and menus, city, tech and policy, tables, pedia
 
 The menu screens on a 2400x1080 400 ppi phone profile: the app theme is bound to the density scale (2.5, 48 dp targets), so the main menu, new game, host, lobby, join and options screens and a modal are touch sized and fit.
 
