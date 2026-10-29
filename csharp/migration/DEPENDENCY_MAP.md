@@ -255,7 +255,7 @@ flowchart TD
   class C092 waiting
   class C093 waiting
   class C094 waiting
-  class T239 prog
+  class T239 review
   class T247 waiting
 ```
 
@@ -357,5 +357,5 @@ xychart-beta
 | C088 | Available (waiting on C068) | C068 | 0 | City-site preview: yields at a candidate settle tile |
 | C091 | Available (waiting on C068, C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C092 | Available (waiting on C074) | C074 | 0 | City management at scale: bulk actions and reusable build queues |
-| T239 | In-Progress [Claude] | T169, T246 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
+| T239 | Needs-Review [Claude] | T169, T246 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
