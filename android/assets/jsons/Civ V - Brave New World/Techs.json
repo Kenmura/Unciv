@@ -316,7 +316,7 @@
 				"name": "Printing Press",
 				"row": 8,
 				"prerequisites": ["Machinery", "Physics", "Chivalry"],
-				"uniques": ["[+100]% weight to this choice for AI decisions"],
+				"uniques": ["[+100]% weight to this choice for AI decisions", "Allows founding the World Congress"],
 				"quote": "'It is a newspaper's duty to print the news and raise hell.' - The Chicago Times"
 			},
 			{
@@ -667,7 +667,7 @@
 				"name": "Globalization",
 				"row": 2,
 				"prerequisites": ["Telecommunications"],
-				"uniques": ["[-100]% weight to this choice for AI decisions"],
+				"uniques": ["[-100]% weight to this choice for AI decisions", "[+1] votes per Diplomat in the World Congress"],
 				"quote": "'The new electronic interdependence recreates the world in the image of a global village.' - Marshall McLuhan"
 			},
 			{

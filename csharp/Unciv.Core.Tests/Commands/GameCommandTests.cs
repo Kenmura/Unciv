@@ -254,6 +254,10 @@ public sealed class GameCommandTests : IDisposable
                 game = fresh.Game;
                 command = EmpireSamples.Sample(name, game);
             }
+            else if (Logic.WorldCongress.LeagueTests.CommandTypes.Contains(name))
+            {
+                (game, actor, command) = Logic.WorldCongress.LeagueTests.CommandSample(name);
+            }
             else if (name == "establish-trade-route")
             {
                 var (world, sample) = Logic.TradeRoutes.TradeRouteTests.NewCommandSample();

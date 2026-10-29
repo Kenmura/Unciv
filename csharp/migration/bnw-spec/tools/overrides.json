@@ -1186,6 +1186,10 @@
      "uniques": [
       "Unbuildable"
      ]
+    },
+    // B015: ExtraLeagueVotes 2 (Buildings.tsv)
+    "Forbidden Palace": {
+     "uniques+": ["[+2] Delegates in the World Congress"]
     }
    }
   }

@@ -595,7 +595,7 @@ turn of a game with tourism). Influence accumulates in `TurnManager.StartTurn` a
 - "[x]% Tourism" is one unique; a city counts all that apply, and 4.3.2 step 7 counts the golden-age ones once more (spec lists both).
 - Culture from wonders/landmarks/natural wonders = own stats of built world wonders + tile culture of Landmark and natural wonder tiles [I].
 - Influence per turn is clamped at 0; percentage and trend use 64-bit products; the blast uses `Speed.Modifier * 100` as "speed%".
-- Not applied (still open): league/holy-city tourism modifier (B015), diplomat bonus (B020, seam), ideology choice (B013; `PolicyManager.Ideology`
+- Not applied (still open): diplomat bonus (B020, seam), ideology choice (B013; `PolicyManager.Ideology`
   is only a field), (InfluenceSpreadModifier/NullifiesForeignInfluence: see 4.3.4a), city-state spy rank, conquest resistance and revolt
   benefits of 4.3.5, one-shot tourism of a Great Person's birth (B011). Level benefits kept at the [K] values: Familiar +1 route science
   (wired into `TradeRouteYields`, origin side), Exotic +1 spy rank. The blast is an engine function (`ApplyBlast`); the unit action is B011.
@@ -869,6 +869,27 @@ included). Rewards [D]:
 - Games: T1 +3 Happiness; T2 +3 Happiness and +30 influence with all city-states; T3 +1 free policy and +20 turns of
   +100% tourism.
 - ISS: T1 +4 turns of science (`BaseBeakersTurnsToCount`); T2 a free Great Scientist; T3 the ISS building.
+
+#### 4.7.8 As built (B015)
+`Logic/WorldCongress/` (`League` state, `LeagueData` tables, `LeagueRules`, the minimal `LeagueAi`), `GameInfo.League` (null and omitted from the save until
+founded), commands `propose-resolution`, `propose-repeal`, `commit-votes`, query `empire.League`, events `league-founded`, `special-session-started`,
+`resolution-proposed/enacted/repealed/failed`. The league turn runs in `GameInfo` where `Turns++` happens (sequential wrap and simultaneous `StartNextTurn`).
+The tech hook (`Allows founding the World Congress` on Printing Press, `[+1] votes per Diplomat` on Globalization) and `[+2] Delegates` (Forbidden Palace) are
+generated. Deliberate choices, none verified against the binary (no decompile available):
+- Resolutions and special sessions are engine tables (`LeagueData`), not ruleset objects; resolutions use the 4.7.5 names.
+- Session shape [K]: a session opens at the end of a round (AI votes at once), humans commit delegates during the next round, it is decided at the end of
+  that round; unspent delegates abstain. The gap to the next session is `TurnsBetweenSessions x Speed.Modifier` percent (the speed has no LeaguePercent field; the
+  values coincide). A special session holds the automatic proposals (Change League Host; in the UN also Diplomatic Victory) plus proposals already made.
+- Delegates are spent per proposal, one choice per proposal and civ, from the pool of the delegates the civ had when the session opened. Yes/No passes with
+  Yes > No; a vote on a civ takes the plurality and a tie or no vote fails [K]. Members are the major civs alive at founding.
+- Proposers: the host and the member with the most delegates (next one if that is the host); `LEAGUE_MEMBER_PROPOSALS_BASE` proposals each per session gap.
+  A resolution needs a tech known by any living member, must not be in force or proposed (same choice), and its choice must be valid (another member, a luxury,
+  a founded religion, an ideology of the ruleset; World Ideology also needs a living member with an ideology).
+- World Religion's holy-city tourism (+50%) is added to the city tourism modifier (4.3.1); the other effects of resolutions are B016, projects B017.
+- Diplomatic Victory: the vote is held and recorded as failed; votes needed (4.7.6), the victory and `LeadersVoteBonusOnFail` (`AddExtraVotes`) are B018.
+  Delegates per diplomat in a capital is B020 (seam in `StartingVotes`).
+- The AI proposes a choice-free resolution (picked by turn and civ index) and backs its own and its friends' proposals, opposes its enemies'.
+- No pending-decision kind: the client reads `empire.League` (`CanPropose`, `Left`).
 
 ### 4.8 Happiness (BNW) [O]
 - `IsEmpireUnhappy` = excess happiness < 0 (@10150dc0). **While unhappy**: production and gold get

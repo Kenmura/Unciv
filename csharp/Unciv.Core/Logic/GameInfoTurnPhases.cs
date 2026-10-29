@@ -249,6 +249,7 @@ public partial class GameInfo
         {
             RefreshTransientCaches(); // T218: the stats the ranking history reads are canonical (a mid-round reload recomputes them)
             RecordRankingStats();
+            ProcessLeagueTurn();
             Turns++;
             if (EngineOptions.SimulateUntilTurn != 0)
                 Log.Debug("Starting simulation of turn %s", Turns);

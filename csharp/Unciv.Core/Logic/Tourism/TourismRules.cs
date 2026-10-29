@@ -1,6 +1,7 @@
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.GreatWorks;
 using Unciv.Logic.Trade.Routes;
+using Unciv.Logic.WorldCongress;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
@@ -16,7 +17,7 @@ namespace Unciv.Logic.Tourism;
 // - "[x]% Tourism" is one unique (TourismDuringGoldenAge). A city counts every one whose conditionals hold (the player tourism modifier and the
 //   Brazil Golden Age modifier of 4.3.1); toward a civ (4.3.2 step 7) the ones that carry the "during a Golden Age" conditional count once more,
 //   as the spec lists both places.
-// - The league/holy-city tourism modifier of 4.3.1 (World Religion resolution) is not applied: the league does not exist yet (B015).
+// - The league/holy-city tourism modifier of 4.3.1 is the World Religion resolution (B015): +50% in the holy city of the chosen religion, added to the modifier.
 // - Culture from "Wonders, Landmarks and Natural Wonders": the Culture of the built wonders of the city (their own stats), plus the Culture
 //   of the city's tiles that hold a Landmark improvement (unique "Landmark") or a natural wonder. Spec [I].
 // - Diplomats (step 3, B020) and ideologies (steps 3 and 6, B013) do not exist yet: no civ has a diplomat, and the ideology is a plain field on its PolicyManager.
@@ -78,6 +79,7 @@ public static class TourismRules
         var civ = city.Civ;
         int percent = Math.Max(0, civ.GetMatchingUniques(UniqueType.TourismDuringGoldenAge).Sum(it => it.Params[0].ToInt()));
         if ((civ.Culture?.TourismBonusTurns ?? 0) > 0) percent = unchecked(percent + Constants(civ).TemporaryTourismBoostMod);
+        percent = unchecked(percent + LeagueRules.HolyCityTourismModifier(city)); // B015: World Religion
         var built = city.CityConstructions.GetBuiltBuildings().ToList();
         foreach (var unique in city.GetMatchingUniques(UniqueType.TourismFromBuildings))
             if (built.Any(it => it.MatchesFilter(unique.Params[1], city.State))) percent = unchecked(percent + unique.Params[0].ToInt());

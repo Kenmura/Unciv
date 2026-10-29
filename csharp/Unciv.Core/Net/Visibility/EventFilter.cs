@@ -78,6 +78,12 @@ public static class EventFilter
         [typeof(GreatWorkMoved)] = ParticipantsOnly,
         [typeof(GreatWorkSwapped)] = ParticipantsOnly,
         [typeof(DecisionAutoResolved)] = ParticipantsOnly,
+        [typeof(LeagueFounded)] = Everyone,
+        [typeof(SpecialSessionStarted)] = Everyone,
+        [typeof(ResolutionProposed)] = Everyone,
+        [typeof(ResolutionEnacted)] = Everyone,
+        [typeof(ResolutionRepealed)] = Everyone,
+        [typeof(ResolutionFailed)] = Everyone,
 
         // Wars and peace are public facts for civs that know both parties (design/SERVER.md section 3); trades are private to the two parties.
         [typeof(WarDeclared)] = KnownToBothParties,

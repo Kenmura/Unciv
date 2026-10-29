@@ -202,6 +202,7 @@ public partial class GameInfo
         var state = Expect(new ResolveStep.StartNextTurn());
         RefreshTransientCaches(); // T218: as AdvancePlayerIndex does at the wrap of the sequential cycle
         RecordRankingStats();
+        ProcessLeagueTurn();
         Turns++;
         if (EngineOptions.SimulateUntilTurn != 0)
             Log.Debug("Starting simulation of turn %s", Turns);

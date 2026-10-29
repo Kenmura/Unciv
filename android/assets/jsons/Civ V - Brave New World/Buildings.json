@@ -895,7 +895,8 @@
 		"greatPersonPoints": {"Great Artist": 1},
 		"uniques": [
 			"[-10]% Unhappiness from [Population] [in all non-occupied cities]",
-			"Only available <after adopting [Patronage]>"
+			"Only available <after adopting [Patronage]>",
+			"[+2] Delegates in the World Congress"
 		],
 		"requiredTech": "Banking",
 		"quote": "'Most of us can, as we choose, make of this world either a palace or a prison' - John Lubbock"

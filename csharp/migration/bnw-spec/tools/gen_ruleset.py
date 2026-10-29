@@ -180,6 +180,11 @@ def build_techs(gk_techs, report):
         is_new = name not in old
         t["name"] = name
         t["row"] = int(r["GridY"]) + 1
+        # B015: the World Congress hooks of SPEC 3.2 (AllowsWorldCongress, ExtraVotesPerDiplomat)
+        if num(r.get("AllowsWorldCongress")):
+            t["uniques"] = list(t.get("uniques", [])) + ["Allows founding the World Congress"]
+        if num(r.get("ExtraVotesPerDiplomat")):
+            t["uniques"] = list(t.get("uniques", [])) + [f"[+{num(r['ExtraVotesPerDiplomat'])}] votes per Diplomat in the World Congress"]
         if prereqs.get(r["Type"]):
             t["prerequisites"] = prereqs[r["Type"]]
         else:
