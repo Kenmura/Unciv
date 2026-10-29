@@ -143,8 +143,7 @@ public sealed class SaveLoadScenario : Scenario
             new AssertQuery("the save is gone after the confirmation", () => store.List().All(it => it.Name != "Alpha")),
             new Capture("deleted", "After deleting Alpha: gone from the list"),
 
-            new PressKey(Key.Escape),
-            new WaitFrames(2),
+            new PressKey(Key.Escape), new WaitFrames(2),
             new AssertQuery("Escape closed the dialog and did not open the game menu behind it", () => !controller.IsDialogOpen && !screen.GameMenu.Visible),
             new Press("Saves"),
             new Press("Resume last"),
