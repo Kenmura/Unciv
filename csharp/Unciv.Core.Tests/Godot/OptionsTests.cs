@@ -196,6 +196,15 @@ public sealed class OptionsTests
     }
 
     [Fact]
+    public void ARebindSwapSurvivesSanitize()
+    {
+        var swapped = Hotkeys.Rebind(NoBindings, HotkeyAction.EndTurn, "Period", out _)!;
+        Assert.Equal(2, swapped.Count);
+        Assert.Equal(swapped, Hotkeys.Sanitize(swapped));
+        Assert.Equal(swapped, Hotkeys.Sanitize(Hotkeys.Sanitize(swapped)));
+    }
+
+    [Fact]
     public void AUnitActionCanReturnToItsOwnDefaultOnAScreenKey()
     {
         var moved = Hotkeys.Rebind(NoBindings, HotkeyAction.AirSweep, "Q", out _)!;

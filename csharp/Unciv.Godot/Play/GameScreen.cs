@@ -564,13 +564,13 @@ public partial class GameScreen : Control
             Tutorials.OkButton.EmitSignal(BaseButton.SignalName.Pressed);
             return true;
         }
-        if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return false; // keys belong to a text field being typed in (Ctrl and F keys are not swallowed by it)
         if (Pedia.Visible) // only its own key (toggle) works over the Civilopedia
         {
             if (Hotkeys.Resolve(hotkeys, keyText) != HotkeyAction.OpenPedia) return false;
             Pedia.Close();
             return true;
         }
+        if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return false; // keys belong to a text field being typed in (Ctrl and F keys are not swallowed by it)
         if (!IsVisibleInTree() || GameMenu.Visible || VictoryStatus.Visible || Trade.Visible || Picker.Visible || AutoPlayMenu.Visible) return false; // covered or hidden (the options screen hides this one)
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
         if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || Espionage.Visible || GameOver.Visible || VoteResult.Visible || Alerts.Visible || Proposals.Visible) return false;

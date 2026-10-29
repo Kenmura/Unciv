@@ -219,13 +219,21 @@ public static class Hotkeys
         var result = new SortedDictionary<string, string>(StringComparer.Ordinal);
         if (raw == null) return result;
         var effective = new Dictionary<HotkeyAction, string>(Defaults);
+        var overridden = new List<HotkeyAction>();
         foreach (var action in Enum.GetValues<HotkeyAction>())
         {
             if (!raw.TryGetValue(action.ToString(), out var value) || Normalize(value) is not { } key) continue;
-            // a screen action on a key another screen action holds is dropped (it keeps its default), not the whole map: an older file written against the pre-C078 defaults
-            // keeps its other bindings
-            if (!IsUnitAction(action) && effective.Any(it => it.Key != action && !IsUnitAction(it.Key) && it.Value == key)) continue;
             effective[action] = key;
+            overridden.Add(action);
+        }
+        // while two screen actions share a key, the last bound one among them goes back to its default (a dropped binding can free or take a key, hence the loop); a swap that
+        // Rebind made has no duplicate in the end and passes through, and an older file written against the pre-C078 defaults keeps its other bindings
+        while (true)
+        {
+            var clashing = overridden.Where(a => !IsUnitAction(a) && effective.Any(it => it.Key != a && !IsUnitAction(it.Key) && it.Value == effective[a])).ToList();
+            if (clashing.Count == 0) break;
+            effective[clashing[^1]] = Defaults[clashing[^1]];
+            overridden.Remove(clashing[^1]);
         }
         return FromEffective(effective);
     }
