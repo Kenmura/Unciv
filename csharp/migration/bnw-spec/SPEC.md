@@ -471,7 +471,7 @@ gated by the ModOptions unique `Enables international trade routes`, never by ru
   The unit walks `movement` path steps at the start of its owner's turn.
 - **Plunder** [X]: an enemy military unit entering a non-city tile with the route's unit takes `100 + (origin gold per turn) * (turns left)`.
 - **Breaking** [X]: war between the owners (at once on declaration, and rechecked at turn start), a city that changed owner, or a defeated owner.
-  The unit is lost. "Loss of path" is not checked. Embargoes are B060.
+  The unit is lost. "Loss of path" is not checked. Embargoes end routes too (B016, 4.7.9).
 - **Still open** (seams in the code): `TODO(B031)` influence science bonus, `TODO(B051)` shared ideology gold, tourism / religion /
   quest / Hanse effects of §4.1.5 (B021 and later), `[stats] for each international trade route [cityFilter]` and
   `[relativeAmount]% Production for each trade route to a city-state` (declared by B003, not yet read).
@@ -723,7 +723,7 @@ Code: `Unciv.Core/Logic/Archaeology/ArchaeologyRules.cs` (header lists every cho
 - **Birth tourism** (`[amount] Tourism when a [greatPerson] is born`): the summed amounts (negatives count 0) are added as influence over every met living major civ when a Great Person is born from points or chosen as a free Great Person [K].
 - **Guilds**: Writer, Artist and Musician specialists give 3 culture and 3 points of their Great Person (Specialists.tsv); the guilds hold 2 each (already in the generated data). Name groups Artist/Writer/Musician are now generated from the people the works are named after.
 - **Faith purchase**: the Great Scientist, Merchant and Engineer cost 1000 Faith from the Industrial era for everybody (global uniques) [K, base list not decoded]; the belief To the Glory of God (`Can purchase all Great People with Faith <starting from the [Industrial era]>`) widens it to every Great Person except the Prophet. Price and count follow the engine's increasing price (1000 + 250 x (n^2 + n), the Unciv formula; BNW adds 500 per purchase [?]), counted per unit kind.
-- Not done (open, not in the title): the per-type born-rate modifiers (`GreatPersonRateByType`, resolution `Artsy/ScienceyGreatPersonRateMod`), GP improvement culture under Historical Landmarks (B028/B010).
+- Not done (open, not in the title): the per-type born-rate modifiers (`GreatPersonRateByType`); the resolution rates and Historical Landmarks culture are done (B016, 4.7.9).
 
 ### 4.6 Social policies and ideologies
 
@@ -811,7 +811,7 @@ goes stale. Saved (only when set, G&K saves stay identical): `PolicyManager.Anar
 - AI (`NextTurnAutomation.SwitchIdeology`, @1018d360): switches when happiness <= `superUnhappyThreshold`, opinion unhappiness >= 10 and
   `(preferred priority - current priority) + unhappiness >= 10`. The scores are the branch `PriorityMap` values (the `IDEOLOGY_SCORE_*` defines
   are not in the ruleset); the grand-strategy veto (`IDEOLOGY_PERCENT_CLEAR_VICTORY_PREF`) is not ported.
-- Not done: the World Ideology resolution pressure (4.6.4 step 1) is a constant 0 seam until the World Congress (B015); the pressure tooltip (step 5)
+- Not done: the World Ideology resolution pressure is done (B016, 4.7.9); the pressure tooltip (step 5)
   is available as `PublicOpinion.Pressures` but no query/UI exposes it yet; uprisings, rebels and city revolt (4.8) are B070. The tie order Freedom,
   Autocracy, Order is kept as the spec's observed order ([?] stays open).
 
@@ -922,11 +922,30 @@ generated. Deliberate choices, none verified against the binary (no decompile av
 - Proposers: the host and the member with the most delegates (next one if that is the host); `LEAGUE_MEMBER_PROPOSALS_BASE` proposals each per session gap.
   A resolution needs a tech known by any living member, must not be in force or proposed (same choice), and its choice must be valid (another member, a luxury,
   a founded religion, an ideology of the ruleset; World Ideology also needs a living member with an ideology).
-- World Religion's holy-city tourism (+50%) is added to the city tourism modifier (4.3.1); the other effects of resolutions are B016, projects B017.
+- World Religion's holy-city tourism (+50%) is added to the city tourism modifier (4.3.1); the other effects of resolutions are B016 (4.7.9), projects B017.
 - Diplomatic Victory: the vote is held and recorded as failed; votes needed (4.7.6), the victory and `LeadersVoteBonusOnFail` (`AddExtraVotes`) are B018.
   Delegates per diplomat in a capital is B020 (seam in `StartingVotes`).
 - The AI proposes a choice-free resolution (picked by turn and civ index) and backs its own and its friends' proposals, opposes its enemies'.
 - No pending-decision kind: the client reads `empire.League` (`CanPropose`, `Left`).
+
+#### 4.7.9 Resolution effects as built (B016)
+`LeagueEffects` (`Logic/WorldCongress/LeagueEffects.cs`) is `League.GetEffects(civ)`: the numbers of the enacted resolutions for one league member (no effects for
+a non-member, a city-state or a game without a league); each system asks it, nothing else reads the table, so a repeal restores the state. After a decided
+proposal `LeagueEffects.OnChanged` ends forbidden trade routes and refreshes the city and civ stats of the members. Effects, one per row of 4.7.5, with the
+readings of the open [K] items (no decompile available, all deliberate):
+- Change League Host: done in B015. World's Fair / International Games / ISS: `EnabledProjects(game)` lists the enabled project names (B017 builds them).
+- Embargoes: `IsEmbargoed(a, b)` is true when one side is the embargoed civ, or one side is a city-state under All City-States Embargo. It refuses a new route
+  (`TradeRouteRules.Check`) and ends an existing one (`BreakInvalid`). Trade deals are not covered [K].
+- Ban Luxury: the luxury is removed from the own, city-state-ally and traded luxury happiness lines.
+- Standing Army Tax: unit maintenance gold x (1 + 25/100) in float before the Int conversion. Scholars in Residence: a tech some other living member knows costs
+  x (1 - 20/100) (after the other tech cost modifiers).
+- Cultural / Natural Heritage Sites: +3 culture per World Wonder in a city, +5 per Natural Wonder tile the city owns, in the city's base stats ("World Congress" line).
+- Nuclear Non-Proliferation: nuclear units get a `DisabledBySetting` rejection (cannot be built or bought); existing ones stay usable.
+- World Religion: spread pressure of cities and of Missionary / Prophet actions of the chosen religion x 1.25 (tourism +50% and the delegates were B015).
+- World Ideology: `OtherIdeologyRebellionMod` (2) is the league pressure toward the chosen ideology in 4.6.4 step 1, for every member [K reading of @1024be50].
+- Arts / Sciences Funding: +33 / -33 percent in the Great Person points breakdown of the Writer, Artist, Musician (artsy) and Scientist, Engineer, Merchant (sciencey).
+- Historical Landmarks: +2 culture on each worked tile with an unpillaged Great Person improvement, +4 on each worked Landmark.
+- Diplomatic Victory is B018.
 
 ### 4.8 Happiness (BNW) [O]
 - `IsEmpireUnhappy` = excess happiness < 0 (@10150dc0). **While unhappy**: production and gold get

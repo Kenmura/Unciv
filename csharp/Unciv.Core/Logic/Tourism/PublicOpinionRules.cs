@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Unciv.Logic.WorldCongress;
 using Unciv.Models.Ruleset;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 
@@ -9,7 +10,7 @@ namespace Unciv.Logic.Tourism;
 // Public opinion of a civ that follows an ideology: the cultural pressure of other civs' ideologies, the unhappiness it causes, the ideology it
 // would rather follow. State is derived (nothing is saved): it only reads the ideologies and the influence levels, which change once per turn.
 // Deliberate deviations and unresolved spec items (no decompiler output is available, so [K]/[?] items keep the spec value):
-// - The World Ideology resolution pressure (step 1, @1024be50) is a seam (<see cref="LeaguePressure"/>) fixed at 0 until the World Congress exists.
+// - The World Ideology resolution pressure (step 1, @1024be50) is <see cref="LeagueEffects.IdeologyPressure"/> (B016).
 // - Ties between two other ideologies follow the observed comparison order Freedom, Autocracy, Order ([?] in the spec); an ideology outside that list
 //   (a mod) comes after them in ruleset order. A strictly larger pressure wins.
 // - The D thresholds (below 3, 3 to 4, 5 and more) and the unhappiness table (per city, population divisor) are the spec's hard-coded numbers.
@@ -35,9 +36,6 @@ public sealed record PublicOpinion(PublicOpinionLevel Level, int Dissatisfaction
 
 public static class PublicOpinionRules
 {
-    /// <summary>Pressure of the World Ideology resolution toward an ideology (@1024be50). To be read from the active resolution once the World Congress exists (B015).</summary>
-    private const int LeaguePressure = 0;
-
     /// <summary>The comparison order of ties between two other ideologies (spec 4.6.4 step 3 [?]).</summary>
     private static readonly ImmutableArray<string> TieOrder = ["Freedom", "Autocracy", "Order"];
 
@@ -48,7 +46,7 @@ public static class PublicOpinionRules
         if (mine == null || !TourismRules.IsEnabled(civ) || !civ.IsMajorCiv() || !civ.IsAlive()) return PublicOpinion.Content;
 
         var ideologies = Ordered(civ.Policies.IdeologyBranches);
-        var pressure = ideologies.ToDictionary(it => it.Name, _ => LeaguePressure);
+        var pressure = ideologies.ToDictionary(it => it.Name, it => LeagueEffects.IdeologyPressure(civ, it.Name));
         var pressures = new List<IdeologyPressure>();
         foreach (var other in civ.GameInfo.Civilizations)
         {

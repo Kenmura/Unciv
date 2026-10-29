@@ -1,5 +1,6 @@
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Transients;
+using Unciv.Logic.WorldCongress;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
@@ -130,6 +131,15 @@ public class GreatPersonPointsBreakdown
             foreach (var name in AllNames)
                 bonusEntry.Counter.Add(name, item.Bonus);
             PercentBonuses.Add(bonusEntry);
+        }
+
+        // B016: Arts and Sciences Funding
+        foreach (var (name, percent) in LeagueEffects.For(city.Civ).GreatPersonRates())
+        {
+            if (!AllNames.Contains(name)) continue;
+            var leagueEntry = new Entry("World Congress");
+            leagueEntry.Counter.Add(name, percent);
+            PercentBonuses.Add(leagueEntry);
         }
 
         // And last, the GPP-type-specific GreatPersonEarnedFaster Unique

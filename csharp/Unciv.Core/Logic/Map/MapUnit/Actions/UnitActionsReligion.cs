@@ -84,6 +84,9 @@ public static class UnitActionsReligion
             pressureAdded *= unique.Params[0].ToPercent();
         });
 
+        if (unit.Civ.GameInfo.LeagueReligionSpreadPercent(unit.Religion) is var leagueSpread and not 0)
+            pressureAdded *= 1 + leagueSpread / 100f; // B016: World Religion
+
         return KotlinMath.FloatToInt(pressureAdded);
     }
 

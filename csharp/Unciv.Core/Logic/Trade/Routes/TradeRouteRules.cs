@@ -4,6 +4,7 @@ using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.WorldCongress;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.Utils;
@@ -167,7 +168,7 @@ public static class TradeRouteRules
     /// <summary>
     /// Can <paramref name="civ"/> open a route from <paramref name="origin"/> to <paramref name="dest"/> now: not a duplicate, a free slot,
     /// owners that meet and are not at war, a domestic route only with the enabling building, a path within range (bnw-spec 4.1.6 step 1).
-    /// Embargoes belong to the World Congress (B060).
+    /// An embargo of the World Congress forbids it as well (B016).
     /// </summary>
     public static RouteRefusal? Check(CivilizationObject civ, CityObject origin, CityObject dest, TradeDomain domain, TradeRouteKind kind, out RoutePlan? plan, bool requireSlot = true)
     {
@@ -184,6 +185,7 @@ public static class TradeRouteRules
                 return new RouteRefusal(CommandErrors.InvalidTarget, "Only international routes go to another civilization");
             if (!civ.Knows(dest.Civ)) return new RouteRefusal(CommandErrors.InvalidTarget, $"You have not met the owner of {dest.Name}");
             if (civ.IsAtWarWith(dest.Civ)) return new RouteRefusal(CommandErrors.NotAllowed, "You are at war with the owner of that city");
+            if (LeagueEffects.IsEmbargoed(game, civ, dest.Civ)) return new RouteRefusal(CommandErrors.NotAllowed, "The World Congress has placed an embargo on this trade");
         }
         else
         {

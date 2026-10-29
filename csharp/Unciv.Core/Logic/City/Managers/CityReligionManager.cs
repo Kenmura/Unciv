@@ -453,6 +453,9 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
             });
         }
 
+        if (majorityReligion != null && City.Civ.GameInfo.LeagueReligionSpreadPercent(majorityReligion.Name) is var leagueSpread and not 0)
+            pressure *= 1 + leagueSpread / 100f; // B016: World Religion
+
         return KotlinMath.FloatToInt(pressure);
     }
 

@@ -3,6 +3,7 @@ using Unciv.Logic;
 using Unciv.Logic.City;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Trade.Routes;
+using Unciv.Logic.WorldCongress;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.UI.Components.Extensions;
@@ -489,6 +490,9 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
 
         if (civ.GameInfo.IsUnavailableBySettingsCached(this))
             yield return RejectionReasonType.DisabledBySetting.ToInstance();
+
+        if (LeagueEffects.For(civ).NoNuclearWeapons && IsNuclearWeapon())
+            yield return RejectionReasonType.DisabledBySetting.ToInstance("Nuclear Non-Proliferation"); // B016
 
         if (self.HasUnique(UniqueType.Unbuildable, stateForConditionals))
             yield return RejectionReasonType.Unbuildable.ToInstance();

@@ -2,6 +2,7 @@ using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Logic.Tourism;
+using Unciv.Logic.WorldCongress;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
@@ -84,6 +85,9 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
 
         if (!CivInfo.IsHuman())
             cost *= CivInfo.GameInfo.GetDifficulty().AiUnitMaintenanceModifier;
+
+        int armyTax = LeagueEffects.For(CivInfo).UnitMaintenancePercent; // B016: Standing Army Tax
+        if (armyTax != 0) cost *= 1 + armyTax / 100f;
 
         return KotlinMath.FloatToInt(cost);
     }
@@ -266,13 +270,14 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
             happinessPerUniqueLuxury += unique.Params[0].ToInt();
         });
 
+        var bannedLuxuries = LeagueEffects.For(CivInfo); // B016: Ban Luxury
         var ownedLuxuries = CivInfo.GetCivResourceSupply().Select(it => it.Resource)
-            .Where(it => it.ResourceType == ResourceType.Luxury)
+            .Where(it => it.ResourceType == ResourceType.Luxury && !bannedLuxuries.IsLuxuryBanned(it.Name))
             .ToList();
 
         var relevantLuxuries = CivInfo.GetCivResourceSupply()
             .Select(it => it.Resource)
-            .Count(it => it.ResourceType == ResourceType.Luxury
+            .Count(it => it.ResourceType == ResourceType.Luxury && !bannedLuxuries.IsLuxuryBanned(it.Name)
                          && !((IHasUniques)it).GetMatchingUniques(UniqueType.ObsoleteWith)
                              .Any(unique => CivInfo.Tech.IsResearched(unique.Params[0])));
         statMap["Luxury resources"] = relevantLuxuries * happinessPerUniqueLuxury;
@@ -293,7 +298,7 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
             .Where(it => it.Amount < 0 && it.Resource.ResourceType == ResourceType.Luxury
                          && (it.Origin == "Trade" || it.Origin == "Trade request"))
             .Select(it => it.Resource)
-            .Where(it => !ownedLuxuries.Contains(it))
+            .Where(it => !ownedLuxuries.Contains(it) && !bannedLuxuries.IsLuxuryBanned(it.Name))
             .ToList();
 
         statMap["Traded Luxuries"] =

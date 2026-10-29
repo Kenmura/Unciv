@@ -141,6 +141,8 @@ public class TechManager : IsPartOfGameInfoSerialization
         CivInfo.ForEachMatchingUnique(UniqueType.LessTechCostFromCities, unique => cityModifier *= 1 - ParseFloat(unique.Params[0]) / 100);
         CivInfo.ForEachMatchingUnique(UniqueType.LessTechCost, unique => techCost *= unique.Params[0].ToPercent());
         techCost *= 1 + cityModifier;
+        int memberDiscount = CivInfo.GameInfo.LeagueTechDiscountPercent(CivInfo, techName); // B016: Scholars in Residence
+        if (memberDiscount != 0) techCost *= 1 - memberDiscount / 100f;
         return KotlinMath.FloatToInt(techCost);
     }
 

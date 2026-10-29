@@ -2,6 +2,7 @@ using Unciv.Commands.Events;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.WorldCongress;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
@@ -101,7 +102,7 @@ public static class TradeRouteTurns
         game.EndedTradeRoutes?.Any(it => it.OriginCityId == originCityId && it.DestCityId == destCityId && game.Turns - it.Turn < TradeRouteRules.RouteMemoryTurns) ?? false;
 
     /// <summary>
-    /// Ends the routes whose cities are gone or changed owner, whose owner is defeated, or whose two owners are at war (spec 4.1.6 item 4).
+    /// Ends the routes whose cities are gone or changed owner, whose owner is defeated, or whose two owners are at war (spec 4.1.6 item 4) or that a World Congress embargo forbids (B016).
     /// [X] (B020): the unit of a broken route is lost; "loss of path" is not checked, the path is fixed when the route starts.
     /// </summary>
     public static void BreakInvalid(IGameInfoState game)
@@ -112,7 +113,7 @@ public static class TradeRouteTurns
             var origin = TradeRouteRules.FindCity(game, route.OriginCityId);
             var dest = TradeRouteRules.FindCity(game, route.DestCityId);
             bool broken = origin == null || dest == null || origin.Civ.CivId != route.OriginOwner || dest.Civ.CivId != route.DestOwner
-                || origin.Civ.IsDefeated() || dest.Civ.IsDefeated() || (origin.Civ != dest.Civ && origin.Civ.IsAtWarWith(dest.Civ));
+                || origin.Civ.IsDefeated() || dest.Civ.IsDefeated() || (origin.Civ != dest.Civ && (origin.Civ.IsAtWarWith(dest.Civ) || LeagueEffects.IsEmbargoed(game, origin.Civ, dest.Civ)));
             if (!broken) continue;
             game.TradeRoutes.Remove(route);
             Remember(game, route, plundered: false);

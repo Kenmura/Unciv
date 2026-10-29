@@ -31,10 +31,18 @@ public enum ProposerDecision
 /// One row of <c>Resolutions.tsv</c> (spec 4.7.5). TechPrereq: a tech any member must know before it can be proposed (or empty). NoProposalByPlayer: only a session
 /// proposes it. LeadersVoteBonusOnFail: extra delegates for the top vote-getters of a failed vote (applied by B018). VotesForFollowingReligion: delegates for the
 /// founder of the chosen religion. HolyCityTourism: percent tourism of that religion's holy city. VotesForFollowingIdeology: delegates for each civ following the chosen ideology.
+/// The remaining columns are the effects of B016 (applied through <see cref="LeagueEffects"/>): Project: the league project the resolution enables (B017 builds it);
+/// the embargoes, NoResourceHappiness (the proposer's luxury), UnitMaintenanceGoldPercent, MemberDiscoveredTechMod (percent off techs a member knows), the culture
+/// per World Wonder and Natural Wonder, NoTrainingNuclearWeapons, ReligionSpreadStrengthMod (percent, the chosen religion), OtherIdeologyRebellionMod (public opinion
+/// pressure toward the chosen ideology), the artsy and sciencey Great Person rate percents and the culture of Great Person improvements and Landmarks.
 /// </summary>
 public sealed record LeagueResolution(string Name, VoterDecision Voter = VoterDecision.YesNo, ProposerDecision Proposer = ProposerDecision.None,
     string TechPrereq = "", bool NoProposalByPlayer = false, int LeadersVoteBonusOnFail = 0, bool DiplomaticVictory = false, bool ChangeLeagueHost = false,
-    int VotesForFollowingReligion = 0, int HolyCityTourism = 0, int VotesForFollowingIdeology = 0);
+    int VotesForFollowingReligion = 0, int HolyCityTourism = 0, int VotesForFollowingIdeology = 0,
+    string Project = "", bool EmbargoCityStates = false, bool EmbargoPlayer = false, bool NoResourceHappiness = false, int UnitMaintenanceGoldPercent = 0,
+    int MemberDiscoveredTechMod = 0, int CulturePerWonder = 0, int CulturePerNaturalWonder = 0, bool NoTrainingNuclearWeapons = false,
+    int ReligionSpreadStrengthMod = 0, int OtherIdeologyRebellionMod = 0, int ArtsyGreatPersonRateMod = 0, int ScienceyGreatPersonRateMod = 0,
+    int GreatPersonTileImprovementCulture = 0, int LandmarkCulture = 0);
 
 /// <summary>
 /// One row of <c>LeagueSpecialSessions.tsv</c> (spec 4.7.2). Era: the era (by name) that triggers it. Immediate: the resolution proposed when it starts.
@@ -54,22 +62,22 @@ public static class LeagueData
     [
         new(DiplomaticVictory, VoterDecision.MajorCiv, NoProposalByPlayer: true, LeadersVoteBonusOnFail: 2, DiplomaticVictory: true),
         new(ChangeLeagueHost, VoterDecision.MajorCiv, NoProposalByPlayer: true, ChangeLeagueHost: true),
-        new("All City-States Embargo"),
-        new("Player Embargo", Proposer: ProposerDecision.OtherMajorCiv),
-        new("Ban Luxury", Proposer: ProposerDecision.Luxury),
-        new("Standing Army Tax"),
-        new("Scholars in Residence"),
-        new("World's Fair"),
-        new("International Games", TechPrereq: "Radio"),
-        new("International Space Station", TechPrereq: "Satellites"),
-        new("Cultural Heritage Sites"),
-        new("Natural Heritage Sites"),
-        new("Nuclear Non-Proliferation", TechPrereq: "Advanced Ballistics"),
-        new(WorldReligion, Proposer: ProposerDecision.Religion, VotesForFollowingReligion: 2, HolyCityTourism: 50),
-        new(WorldIdeology, Proposer: ProposerDecision.Ideology, TechPrereq: "Radio", VotesForFollowingIdeology: 2),
-        new("Arts Funding"),
-        new("Sciences Funding"),
-        new("Historical Landmarks", TechPrereq: "Archaeology"),
+        new("All City-States Embargo", EmbargoCityStates: true),
+        new("Player Embargo", Proposer: ProposerDecision.OtherMajorCiv, EmbargoPlayer: true),
+        new("Ban Luxury", Proposer: ProposerDecision.Luxury, NoResourceHappiness: true),
+        new("Standing Army Tax", UnitMaintenanceGoldPercent: 25),
+        new("Scholars in Residence", MemberDiscoveredTechMod: 20),
+        new("World's Fair", Project: "World's Fair"),
+        new("International Games", TechPrereq: "Radio", Project: "International Games"),
+        new("International Space Station", TechPrereq: "Satellites", Project: "International Space Station"),
+        new("Cultural Heritage Sites", CulturePerWonder: 3),
+        new("Natural Heritage Sites", CulturePerNaturalWonder: 5),
+        new("Nuclear Non-Proliferation", TechPrereq: "Advanced Ballistics", NoTrainingNuclearWeapons: true),
+        new(WorldReligion, Proposer: ProposerDecision.Religion, VotesForFollowingReligion: 2, HolyCityTourism: 50, ReligionSpreadStrengthMod: 25),
+        new(WorldIdeology, Proposer: ProposerDecision.Ideology, TechPrereq: "Radio", VotesForFollowingIdeology: 2, OtherIdeologyRebellionMod: 2),
+        new("Arts Funding", ArtsyGreatPersonRateMod: 33, ScienceyGreatPersonRateMod: -33),
+        new("Sciences Funding", ArtsyGreatPersonRateMod: -33, ScienceyGreatPersonRateMod: 33),
+        new("Historical Landmarks", TechPrereq: "Archaeology", GreatPersonTileImprovementCulture: 2, LandmarkCulture: 4),
     ];
 
     public static IReadOnlyList<LeagueSession> Sessions { get; } =

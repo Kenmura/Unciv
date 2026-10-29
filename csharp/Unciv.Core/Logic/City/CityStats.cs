@@ -1,5 +1,6 @@
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.WorldCongress;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
@@ -520,6 +521,8 @@ public class CityStats(City city)
         newBaseStatList["Trade routes"] = GetStatsFromTradeRoute();
         var statsFromGreatWorks = City.GetGreatWorkStats(); // B007
         if (!statsFromGreatWorks.IsEmpty()) newBaseStatList["Great Works"] = statsFromGreatWorks;
+        var statsFromLeague = LeagueEffects.CityStats(City); // B016: Heritage Sites, Historical Landmarks
+        if (!statsFromLeague.IsEmpty()) newBaseStatList["World Congress"] = statsFromLeague;
         var bnwRoutes = GetStatsFromBnwTradeRoutes();
         if (bnwRoutes != null) newBaseStatList["Trade route yields"] = bnwRoutes; // B020: its own line, only where a route touches the city
         newBaseStatTree.Children.Put("Buildings", statsFromBuildings);

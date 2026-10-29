@@ -206,6 +206,7 @@ public static class LeagueRules
         else if (passed && !proposal.IsRepeal)
             league.Active.Add(new ActiveResolution { Id = league.NextId++, Resolution = proposal.Resolution, Choice = proposal.Choice, Proposer = proposal.Proposer, Turn = game.Turns });
 
+        if (passed) LeagueEffects.OnChanged(game, league);
         string shownChoice = winner.Length > 0 ? winner : proposal.Choice;
         EngineEvent result = !passed ? new ResolutionFailed(proposal.Resolution, shownChoice)
             : proposal.IsRepeal ? new ResolutionRepealed(proposal.Resolution, proposal.RepealId)

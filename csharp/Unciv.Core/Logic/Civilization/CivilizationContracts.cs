@@ -22,6 +22,10 @@ public interface IGameInfoState : IConstructionGameInfo
 {
     /// <summary>T186: where the engine reports events; <c>null</c> (the default) when nobody listens.</summary>
     GameInfoEventSink? EventSink => null;
+    /// <summary>B016: the percent off the cost of a tech for <paramref name="civ"/> from the enacted Scholars in Residence resolution (0 without a league).</summary>
+    int LeagueTechDiscountPercent(Civilization civ, string techName) => 0;
+    /// <summary>B016: the percent added to the spread strength of a religion by the enacted World Religion resolutions (0 without a league).</summary>
+    int LeagueReligionSpreadPercent(string? religion) => 0;
     /// <summary><c>gameInfo.ruleset</c></summary>
     new Ruleset Ruleset { get; }
     /// <summary><c>gameInfo.speed</c></summary>

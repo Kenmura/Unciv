@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Unciv.Logic.WorldCongress;
+using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 
 namespace Unciv.Logic;
 
@@ -10,6 +11,10 @@ public partial class GameInfo
     [JsonPropertyName("league")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public League? League { get; set; }
+
+    public int LeagueTechDiscountPercent(CivilizationObject civ, string techName) => LeagueEffects.TechDiscountPercent(civ, techName);
+
+    public int LeagueReligionSpreadPercent(string? religion) => LeagueEffects.ReligionSpreadPercent(this, religion);
 
     private void CloneLeagueTo(GameInfo target) => target.League = League?.Clone();
 
