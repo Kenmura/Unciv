@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: read
+  actions: read   # the throttle job lists this workflow's recent runs
 
 concurrency:
   group: csharp-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -36,10 +37,40 @@ defaults:
     shell: bash
 
 jobs:
+  # At most one full run per hour on push: a run that starts while a real run (engine job not skipped, not cancelled) from the last
+  # hour exists is skipped entirely, so frequent pushes do not queue or cancel each other. Manual dispatch and PRs always run.
+  # (A schedule trigger cannot do this: it only fires from the default branch, and this file lives on csharp-migration.)
+  throttle:
+    name: Throttle (one push run per hour)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [[ "$EVENT" != push ]]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          since=$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)
+          recent=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/csharp.yml/runs?event=push&branch=${GITHUB_REF_NAME}&created=%3E%3D${since}&per_page=50" \
+            --jq ".workflow_runs[] | select(.id != ${GITHUB_RUN_ID}) | .id")
+          for id in $recent; do
+            ran=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/jobs" \
+              --jq '[.jobs[] | select(.name | startswith("Build, format")) | select(.conclusion != "skipped" and .conclusion != "cancelled")] | length')
+            if [[ "$ran" != 0 ]]; then
+              echo "A full run ($id) started within the last hour: skipping this one."
+              echo "run=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          done
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
   # The Green gate. Needs only the .NET SDK (Unciv.Godot builds with the Godot.NET.Sdk NuGet package, no Godot binary).
   engine:
     name: Build, format, test, coverage
-    if: github.event_name != 'schedule'
+    needs: throttle
+    if: github.event_name != 'schedule' && needs.throttle.outputs.run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -146,8 +177,8 @@ jobs:
   client-scenarios:
     name: Client scenarios (Xvfb, software GL)
     # needs: engine only orders the jobs; an unrelated failing unit test must not hide the scenario result (T246), hence !cancelled()
-    if: ${{ !cancelled() && github.event_name != 'schedule' }}
-    needs: engine
+    if: ${{ !cancelled() && github.event_name != 'schedule' && needs.throttle.outputs.run == 'true' }}
+    needs: [throttle, engine]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:

@@ -112,11 +112,14 @@ class WorkflowShape(unittest.TestCase):
         self.assertRegex(on, r"(?m)^    branches: \[csharp-migration\]$")
 
     def test_read_only_without_secrets_or_publishing(self):
-        self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read\n(?=\n)")  # nothing else may follow in the block
+        # nothing else may follow in the block; actions: read only lets the throttle job list this workflow's runs
+        self.assertRegex(self.text, r"(?m)^permissions:\n  contents: read\n  actions: read[^\n]*\n(?=\n)")
         self.assertEqual(len(re.findall(r"(?m)^\s*permissions:", self.text)), 1, "no job-level permissions")
         code = re.sub(r"(?m)(^|\s)#.*$", "", self.text)  # comments may say "no secrets"
         self.assertNotRegex(code, r"(?i)\bsecrets\b")  # secrets.X, secrets['X'], toJSON(secrets), secrets: inherit
-        self.assertNotRegex(code, r"(?i)github\.token|GITHUB_TOKEN")
+        # the throttle job passes the read-only token to `gh api` and nothing else may use it
+        self.assertEqual(len(re.findall(r"(?i)github\.token|GITHUB_TOKEN", code)), 1)
+        self.assertRegex(code, r"GH_TOKEN: \$\{\{ github\.token \}\}")
         self.assertNotIn("pull_request_target", self.text)
         for word in ("upload-artifact", "gh release", "git push", "nuget push", "docker push"):
             self.assertNotIn(word, self.text)
@@ -135,8 +138,12 @@ class WorkflowShape(unittest.TestCase):
 
     def test_soak_only_on_schedule_or_dispatch_and_nothing_else_on_schedule(self):
         self.assertRegex(self.text, r"if: github\.event_name == 'schedule' \|\| github\.event_name == 'workflow_dispatch'")
-        self.assertEqual(self.text.count("if: github.event_name != 'schedule'"), 2)
-        self.assertEqual(self.text.count("if: ${{ !cancelled() && github.event_name != 'schedule' }}"), 1)  # client-scenarios (T246)
+        # engine and client-scenarios also wait for the throttle verdict; the throttle job itself is harmless on a schedule (it exits at once)
+        self.assertEqual(self.text.count("if: github.event_name != 'schedule'"), 2)  # client-export, plus the engine line (prefix match)
+        self.assertEqual(self.text.count("if: github.event_name != 'schedule' && needs.throttle.outputs.run == 'true'"), 1)  # engine
+        self.assertEqual(
+            self.text.count("if: ${{ !cancelled() && github.event_name != 'schedule' && needs.throttle.outputs.run == 'true' }}"), 1
+        )  # client-scenarios (T246)
 
 
 if __name__ == "__main__":
