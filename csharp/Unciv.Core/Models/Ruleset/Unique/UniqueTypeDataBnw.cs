@@ -455,5 +455,15 @@ internal static class UniqueTypeDataBnw
             [UniqueTarget.Improvement],
             [],
             null),
+
+        // Added by B020: the flat range additions of spec section 4.1.3 that B003 left out (the percent rows above are the building column).
+        new("[relativeAmount] land trade route range",
+            [UniqueTarget.Global],
+            [],
+            "Flat addition to the path length of land trade routes: Technology_TradeRouteDomainExtraRange (Combustion 10) and the trait column LandTradeRouteRangeBonus."),
+        new("[relativeAmount] sea trade route range",
+            [UniqueTarget.Global],
+            [],
+            "Flat addition to the path length of sea trade routes: Technology_TradeRouteDomainExtraRange (Compass 10, Refrigeration 10)."),
     ];
 }

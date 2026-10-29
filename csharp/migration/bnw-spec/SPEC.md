@@ -433,6 +433,29 @@ line ("Food/Production/Gold/Science from Trade Routes", @1003ec70 text keys) [O]
    `TRADE_ROUTE_ESTABLISHED/BROKEN` [O].
 5. Civs remember plundered/expired connections for 30 turns (@101f7e40) [O]; this feeds the AI scorer.
 
+#### 4.1.6a As built (B020)
+Code: `Unciv.Core/Logic/Trade/Routes` (`TradeRouteRules`, `TradeRouteYields`, `TradeRouteTurns`), command `establish-trade-route`,
+queries `empire.TradeRoutes` and `empire.TradeRouteOptions`, events `trade-route-established/completed/plundered/broken`. Everything is
+gated by the ModOptions unique `Enables international trade routes`, never by ruleset name. Decisions where this section left a term open:
+- **Policy columns** ([I]): `LandTradeRouteGoldChange` / `SeaTradeRouteGoldChange` are hundredths of Gold (the unique reads `Gold (x1/100)`);
+  `GoldFromCityStateTradeRoutes` and `GoldFromIdeologyTradeRoutes` are whole Gold (x100 here). The generator (B002) must emit
+  `CityStateTradeChange` divided by 100 as whole Gold; it was found stored in hundredths. B003 had no flat range uniques, so B020 adds
+  `[relativeAmount] land trade route range` and `[relativeAmount] sea trade route range` (UniqueType 749 and 750).
+- **Resource term** [X]: a city "has" a resource when a tile it owns carries it (local, worked and owned collapse to owned).
+- **River** [I]: the +25 applies per side, to the city whose centre tile is next to a river, land routes only.
+- **Destination building gold** [I]: `TradeRouteTargetGold` pays the destination owner only; the origin side never receives it.
+- **Domestic yields** [X]: food uses the speed's `modifier`, production its `productionCostModifier` (Unciv has no growth percent); the era
+  fields `tradeRouteFoodBonusTimes100` / `tradeRouteProductionBonusTimes100` default to 0.
+- **Range and path** [X]: breadth first over passable land (land unit) or water (sea unit), counted in steps, borders, fog and units ignored.
+- **Circuits** [X]: `ceil(max(1, 30 * speed.productionCostModifier) / turnsPerCircuit)` with `turnsPerCircuit = ceil(2 * steps / movement)`.
+  The unit walks `movement` path steps at the start of its owner's turn.
+- **Plunder** [X]: an enemy military unit entering a non-city tile with the route's unit takes `100 + (origin gold per turn) * (turns left)`.
+- **Breaking** [X]: war between the owners (at once on declaration, and rechecked at turn start), a city that changed owner, or a defeated owner.
+  The unit is lost. "Loss of path" is not checked. Embargoes are B060.
+- **Still open** (seams in the code): `TODO(B031)` influence science bonus, `TODO(B051)` shared ideology gold, tourism / religion /
+  quest / Hanse effects of §4.1.5 (B021 and later), `[stats] for each international trade route [cityFilter]` and
+  `[relativeAmount]% Production for each trade route to a city-state` (declared by B003, not yet read).
+
 #### 4.1.7 AI scoring of an international route (`@101fa1e0`) [O]
 `danger = 1 + Σ over path plots (1 if the plot is not visible to us, +1000 if it is owned by a civ we are at war with)`.
 `score = ((techDiff(dest−origin) × 3 + (originGold − destGold) + religionPressureDelta × 2) × 10) / danger`. Here

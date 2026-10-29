@@ -66,6 +66,10 @@ public static class EventFilter
 
         [typeof(NotificationAdded)] = ClassifyNotification,
         [typeof(AlertAdded)] = ParticipantsOnly,
+        [typeof(TradeRouteEstablished)] = ParticipantsOnly,
+        [typeof(TradeRouteCompleted)] = ParticipantsOnly,
+        [typeof(TradeRoutePlundered)] = ParticipantsOnly,
+        [typeof(TradeRouteBroken)] = ParticipantsOnly,
         [typeof(SoundRequested)] = ParticipantsOnly,
         [typeof(ResearchCompleted)] = ParticipantsOnly,
         [typeof(PolicyAdopted)] = ParticipantsOnly,

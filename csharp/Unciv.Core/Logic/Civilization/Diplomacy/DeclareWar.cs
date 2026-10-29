@@ -1,3 +1,4 @@
+using Unciv.Logic.Trade.Routes;
 using Unciv.Models.Ruleset.Nation;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
@@ -36,6 +37,8 @@ public static class DeclareWar
         ChangeOpinions(diplomacyManager, declareWarReason);
 
         BreakTreaties(diplomacyManager);
+
+        TradeRouteTurns.OnWarDeclared(civInfo.GameInfo); // B020: routes between the two sides end now; a no-op without routes
 
         TriggerUniques(otherCiv, civInfo);
     }

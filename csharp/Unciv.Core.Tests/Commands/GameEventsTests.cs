@@ -70,6 +70,10 @@ public sealed class GameEventsTests
         "stats-changed" => new StatsChanged("Babylon", 100, 5),
         "tiles-revealed" => new TilesRevealed("Babylon",
             [new TileDto { X = 1, Y = 2, Visible = false, BaseTerrain = "Grassland", Features = [], RiverBottom = false, RiverBottomLeft = false, RiverBottomRight = false }], []),
+        "trade-route-established" => new TradeRouteEstablished(1, "Babylon", "Rome", "city-1", "city-2", TradeDomain.Sea, TradeRouteKind.International),
+        "trade-route-completed" => new TradeRouteCompleted(1, "Babylon", "Rome", "city-1", "city-2"),
+        "trade-route-plundered" => new TradeRoutePlundered(1, "Babylon", "Rome", "Greece", P1, 120),
+        "trade-route-broken" => new TradeRouteBroken(1, "Babylon", "Babylon", "city-1", "city-2"),
         _ => throw new InvalidOperationException($"No sample for event type \"{type}\"; add one to GameEventsTests.Sample"),
     };
 

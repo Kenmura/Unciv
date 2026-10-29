@@ -1,6 +1,7 @@
 using System.Collections;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.Trade.Routes;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
@@ -606,6 +607,7 @@ public class UnitMovement
                 Unit.RemoveFromTile();
                 Unit.PutInTile(tile); // Required for ruins,
                 enteredTiles?.Add(tile);
+                TradeRouteTurns.TryPlunder(Unit, tile); // B020: BNW trade routes; a no-op without routes
 
                 if (escortUnit != null)
                 {

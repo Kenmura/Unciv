@@ -80,6 +80,8 @@ public sealed class RemoteQueryPolicy
         ["empire.PolicyTree"] = QueryExposure.Allow("viewer's own policies; ruleset data", QueryExposure.Moderate),
         ["empire.Religion"] = QueryExposure.Allow("viewer's own religion and the public founded religions", QueryExposure.Moderate),
         ["empire.SpyDestinations"] = QueryExposure.Allow("only explored cities (matches Spy.CanMoveTo: an explored tile is sufficient to send undercover spies even in fog of war); owner is omitted when unmet"),
+        ["empire.TradeRoutes"] = QueryExposure.Allow("B020: the viewer's own routes and the routes of others that end in the viewer's cities; owners of unmet civs are omitted; the unit's position is not part of it"),
+        ["empire.TradeRouteOptions"] = QueryExposure.Allow("B020: only explored cities and only targets the viewer's own trade unit could be sent to; owner omitted when unmet; the target side's yields reveal the partner's tech lead and building bonuses, as the Civ V route screen does", QueryExposure.Moderate),
         ["empire.TechTree"] = QueryExposure.Allow("viewer's own research; ruleset data", QueryExposure.Moderate),
         ["empire.TopBar"] = QueryExposure.Allow("viewer's own treasury and rates"),
         ["empire.TradeHint"] = QueryExposure.AllowBudgeted("only civs the viewer knows (KnownCiv, through the view's known civs), only offers TradeOptions lists, answer is a 3-way bucket and never the score; off unless the host enabled TradeHintsEnabled; a per-civ ask budget stops bisecting the AI's valuation with gold offers"),

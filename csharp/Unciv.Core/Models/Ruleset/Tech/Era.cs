@@ -82,6 +82,12 @@ public class Era : RulesetObject, ICivilopediaText
     public int BaseUnitBuyCost { get; set; } = 200;
     public int EmbarkDefense { get; set; } = 3;
     public int StartPercent { get; set; }
+
+    /// <summary>B020 (bnw-spec 4.1.4): the era's share of a domestic food route, hundredths of a food point added to the 300 base.</summary>
+    public int TradeRouteFoodBonusTimes100 { get; set; }
+
+    /// <summary>B020 (bnw-spec 4.1.4): the production counterpart of <see cref="TradeRouteFoodBonusTimes100"/>.</summary>
+    public int TradeRouteProductionBonusTimes100 { get; set; }
     public string CitySound { get; set; } = "cityClassical";
 
     public Dictionary<string, List<string>> FriendBonus { get; set; } = [];

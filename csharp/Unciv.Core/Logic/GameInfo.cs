@@ -189,6 +189,24 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
     [JsonPropertyName("unitNamesTaken")]
     public List<string> UnitNamesTaken { get; set; } = [];
 
+    /// <summary>
+    /// B020 (bnw-spec 2.2): every active trade route, global, in creation order. Null until the first route exists, so a save of a game
+    /// without routes (every Kotlin save, every G&amp;K game) serialises exactly as before.
+    /// </summary>
+    [JsonPropertyName("tradeRoutes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<TradeRoute>? TradeRoutes { get; set; }
+
+    /// <summary>B020: the id the next trade route gets (ids are monotonic). 0 is omitted from the save.</summary>
+    [JsonPropertyName("lastTradeRouteId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int LastTradeRouteId { get; set; }
+
+    /// <summary>B020: routes that ended in the last <see cref="Trade.Routes.TradeRouteRules.RouteMemoryTurns"/> turns. Null while empty, like <see cref="TradeRoutes"/>.</summary>
+    [JsonPropertyName("endedTradeRoutes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<EndedTradeRoute>? EndedTradeRoutes { get; set; }
+
     #endregion
     #region Fields - Transient
 
@@ -303,6 +321,9 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         toReturn.HistoryStartTurn = HistoryStartTurn;
         toReturn.lastUnitId = lastUnitId;
         toReturn.UnitNamesTaken.AddRange(UnitNamesTaken);
+        toReturn.TradeRoutes = TradeRoutes?.Select(it => it.Clone()).ToList();
+        toReturn.LastTradeRouteId = LastTradeRouteId;
+        toReturn.EndedTradeRoutes = EndedTradeRoutes?.ToList();
         toReturn.EngineOptions = EngineOptions.Clone();
         CloneGreatWorksTo(toReturn);
         if (PlayerSettingsByCiv != null) toReturn.PlayerSettingsByCiv = new Dictionary<string, PlayerSettings>(PlayerSettingsByCiv);

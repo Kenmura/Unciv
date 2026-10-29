@@ -91,6 +91,13 @@ public interface IGameInfoState : IConstructionGameInfo
     void ProcessDiplomaticVictory();
     /// <summary>The client settings and hooks that stand in for <c>UncivGame.Current</c> (T046).</summary>
     GameClientState ClientState { get; }
+    // B020 (BNW trade routes): not in Kotlin; a state that is not a real game has no routes and ignores writes
+    /// <summary><see cref="GameInfo.TradeRoutes"/></summary>
+    List<TradeRoute>? TradeRoutes { get => null; set { } }
+    /// <summary><see cref="GameInfo.LastTradeRouteId"/></summary>
+    int LastTradeRouteId { get => 0; set { } }
+    /// <summary><see cref="GameInfo.EndedTradeRoutes"/></summary>
+    List<EndedTradeRoute>? EndedTradeRoutes { get => null; set { } }
 }
 
 /// <summary>What Civilization reads from <c>CityStateFunctions</c>.</summary>

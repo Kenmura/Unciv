@@ -247,6 +247,13 @@ public sealed class GameCommandTests : IDisposable
                 game = fresh.Game;
                 command = EmpireSamples.Sample(name, game);
             }
+            else if (name == "establish-trade-route")
+            {
+                var (world, sample) = Logic.TradeRoutes.TradeRouteTests.NewCommandSample();
+                game = world.Game.GameInfo;
+                actor = world.A.CivId;
+                command = sample;
+            }
             else if (name == "run-console-command")
             {
                 var (fresh, _, _) = NewSession();

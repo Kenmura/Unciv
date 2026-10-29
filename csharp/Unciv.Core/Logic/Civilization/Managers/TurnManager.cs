@@ -3,6 +3,7 @@ using Unciv.Logic.City.Managers;
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.Trade.Routes;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.UI.Components;
 using Unciv.Utils;
@@ -34,6 +35,8 @@ public class TurnManager(Civilization civInfo)
         GameEventHooks.TurnStarted(civInfo);
 
         foreach (var city in civInfo.Cities) city.HasSoldBuildingThisTurn = false;
+
+        TradeRouteTurns.StartTurn(civInfo); // B020: BNW trade routes advance before the stats are updated; a no-op without routes
 
         if (civInfo.Cities.Count != 0 && civInfo.GameInfo.Ruleset.Technologies.Count != 0)
             civInfo.Tech.UpdateResearchProgress();

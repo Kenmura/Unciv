@@ -12,10 +12,10 @@ public class UniqueTypeBnwTests
     [Fact]
     public void HooksFollowTheGatesAndKeepOrdinalsContiguous()
     {
-        Assert.Equal(105, Hooks.Length);
+        Assert.Equal(107, Hooks.Length);
         Assert.Equal(UniqueType.BnwHappinessRules + 1, Hooks[0]);
         for (int i = 1; i < Hooks.Length; i++) Assert.Equal((int)Hooks[i - 1] + 1, (int)Hooks[i]);
-        Assert.Equal(UniqueType.IsArchaeologicalDig, Hooks[^1]);
+        Assert.Equal(UniqueType.SeaTradeRouteRangeFlat, Hooks[^1]);
     }
 
     [Fact]
@@ -67,6 +67,8 @@ public class UniqueTypeBnwTests
     [InlineData(UniqueType.PostCombatPromotion, "Can randomly gain [promotion] after combat")]
     [InlineData(UniqueType.AllowsWorldCongress, "Allows founding the World Congress")]
     [InlineData(UniqueType.IsArchaeologicalDig, "Is an Archaeological Dig")]
+    [InlineData(UniqueType.LandTradeRouteRangeFlat, "[relativeAmount] land trade route range")]
+    [InlineData(UniqueType.SeaTradeRouteRangeFlat, "[relativeAmount] sea trade route range")]
     public void NamesStayPinnedToTheirText(UniqueType type, string text) => Assert.Equal(text, type.Text());
 
     [Fact]

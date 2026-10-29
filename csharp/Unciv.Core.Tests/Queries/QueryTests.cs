@@ -286,6 +286,8 @@ public class QueryTests
         ["empire.TradeHint"] = () => new Unciv.Queries.Empire.TradeHintQuery("Egypt", [], []),
         ["empire.PendingDecisions"] = () => new Unciv.Queries.Empire.PendingDecisionsQuery(),
         ["empire.SpyDestinations"] = () => new Unciv.Queries.Empire.SpyDestinationsQuery(),
+        ["empire.TradeRoutes"] = () => new Unciv.Queries.Empire.TradeRoutesQuery(),
+        ["empire.TradeRouteOptions"] = () => new Unciv.Queries.Empire.TradeRouteOptionsQuery(1),
         ["empire.CityStateQuests"] = () => new Unciv.Queries.Empire.CityStateQuestsQuery("Egypt"),
         ["empire.DiplomaticVote"] = () => new Unciv.Queries.Empire.DiplomaticVoteQuery(),
         ["empire.DiplomaticVoteResult"] = () => new Unciv.Queries.Empire.DiplomaticVoteResultQuery(),

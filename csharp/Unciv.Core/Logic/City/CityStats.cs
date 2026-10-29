@@ -144,6 +144,27 @@ public class CityStats(City city)
         return stats;
     }
 
+    /// <summary>B020 (bnw-spec 4.1.4): the stored yields of the BNW trade routes that start or end in this city; null when there are none.</summary>
+    private Stats? GetStatsFromBnwTradeRoutes()
+    {
+        var routes = City.Civ.GameInfo.TradeRoutes;
+        if (routes == null) return null;
+        Stats? stats = null;
+        foreach (var route in routes)
+        {
+            var yields = route.OriginCityId == City.Id ? route.OriginYields : route.DestCityId == City.Id ? route.DestYields : null;
+            if (yields == null) continue;
+            stats ??= new Stats();
+            stats.Food += yields[TradeYield.Food] / 100f;
+            stats.Production += yields[TradeYield.Production] / 100f;
+            stats.Gold += yields[TradeYield.Gold] / 100f;
+            stats.Science += yields[TradeYield.Science] / 100f;
+            stats.Culture += yields[TradeYield.Culture] / 100f;
+            stats.Faith += yields[TradeYield.Faith] / 100f;
+        }
+        return stats;
+    }
+
     private Stats? GetStatsFromProduction(float production)
     {
         if (StatExtensions.IsStat(City.CityConstructions.CurrentConstructionName()))
@@ -499,6 +520,8 @@ public class CityStats(City city)
         newBaseStatList["Trade routes"] = GetStatsFromTradeRoute();
         var statsFromGreatWorks = City.GetGreatWorkStats(); // B007
         if (!statsFromGreatWorks.IsEmpty()) newBaseStatList["Great Works"] = statsFromGreatWorks;
+        var bnwRoutes = GetStatsFromBnwTradeRoutes();
+        if (bnwRoutes != null) newBaseStatList["Trade route yields"] = bnwRoutes; // B020: its own line, only where a route touches the city
         newBaseStatTree.Children.Put("Buildings", statsFromBuildings);
 
         foreach (var (source, stats) in newBaseStatList)

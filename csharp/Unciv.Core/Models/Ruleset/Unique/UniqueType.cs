@@ -760,4 +760,6 @@ public enum UniqueType
     RemovesResourceWhenBuilt = 746,
     IsLandmark = 747,
     IsArchaeologicalDig = 748,
+    LandTradeRouteRangeFlat = 749,
+    SeaTradeRouteRangeFlat = 750,
 }
