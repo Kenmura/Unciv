@@ -218,7 +218,6 @@ public partial class TechScreen : PanelContainer
         body.AddChild(side);
         frame.SetContent(body);
 
-        message = NewMessage();
     }
 
     private async Task ReloadAsync(string? choose)
@@ -328,9 +327,10 @@ public partial class TechScreen : PanelContainer
     {
         int scrolled = scroll.ScrollHorizontal;
         int height = theme.Px(BandHeight);
+        float inset = scroll.GetGlobalRect().Position.X - bandRow.GetGlobalRect().Position.X; // the tree sits inside a framed panel
         foreach (var band in eraBands)
         {
-            float x = Pad + (int)band.GetMeta("first") * ColumnWidth - scrolled;
+            float x = inset + Pad + (int)band.GetMeta("first") * ColumnWidth - scrolled;
             float width = (int)band.GetMeta("columns") * ColumnWidth - theme.Px(GapX);
             band.Position = new Vector2(x, 0f);
             band.Size = new Vector2(width, height);

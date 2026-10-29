@@ -141,7 +141,7 @@ public static class TechScreenModel
         if (needle.Length == 0) return true;
         bool Has(string text) => text.Contains(needle, StringComparison.OrdinalIgnoreCase);
         bool HasName(string name) => Has(name) || (translate != null && Has(translate(name)));
-        return HasName(node.Name) || node.Unlocks.Any(it => HasName(it.Name)) || UnlockLines(node).Any(it => !it.StartsWith('•') && Has(it));
+        return HasName(node.Name) || node.Unlocks.Any(it => HasName(it.Name)) || UnlockLines(node).Any(it => !it.StartsWith('•') && !it.EndsWith(':') && Has(it));
     }
 
     /// <summary>Two lines: the name, then the research state (cost, progress and turns).</summary>

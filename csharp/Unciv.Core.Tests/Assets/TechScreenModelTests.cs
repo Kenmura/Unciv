@@ -333,7 +333,8 @@ public class TechScreenModelTests
         var unlocks = TechScreenModel.Unlocks(ruleset, "Bronze Working");
         Assert.Contains(unlocks, it => it.Kind == "Unit" && it.Name == "Spearman");
         Assert.All(unlocks, it => Assert.Contains(it.Kind, new[] { "Unit", "Building", "Wonder", "Improvement" }));
-        Assert.Equal(unlocks.Select(it => it.Kind).Order(StringComparer.Ordinal).Distinct().Count(), unlocks.Select(it => it.Kind).Distinct().Count());
+        string[] kinds = ["Unit", "Building", "Wonder", "Improvement"];
+        Assert.Equal(unlocks.OrderBy(it => Array.IndexOf(kinds, it.Kind)).ThenBy(it => it.Name, StringComparer.Ordinal).Select(it => it.Name), unlocks.Select(it => it.Name));
         var pottery = TechScreenModel.Unlocks(ruleset, "Pottery");
         Assert.Contains(pottery, it => it.Kind == "Building" && it.Name == "Granary");
         Assert.Empty(TechScreenModel.Unlocks(ruleset, "No such tech"));
@@ -357,6 +358,7 @@ public class TechScreenModelTests
         Assert.False(TechScreenModel.Matches(node, "archery"));
         var bullets = TechScreenModel.Layout(Tree([Tech("Farming", 1, 1, description: "Units enabled: \n • Warrior (upgrades to Spearman)\n+1 Food")])).Nodes[0];
         Assert.False(TechScreenModel.Matches(bullets, "spearman"));
+        Assert.False(TechScreenModel.Matches(bullets, "units enabled"));
         Assert.True(TechScreenModel.Matches(bullets, "food"));
         Assert.True(TechScreenModel.Matches(node, "Topf", text => text == "Pottery" ? "Topferei" : text));
         Assert.False(TechScreenModel.Matches(node, "Topf"));

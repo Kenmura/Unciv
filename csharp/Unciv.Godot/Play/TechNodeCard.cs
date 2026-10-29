@@ -112,8 +112,8 @@ public partial class TechNodeCard : Button
     {
         if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } click)
         {
-            if (click.DoubleClick) Activated?.Invoke();
-            else if (click.ShiftPressed) QueueRequested?.Invoke();
+            if (click.ShiftPressed) QueueRequested?.Invoke();
+            else if (click.DoubleClick) Activated?.Invoke();
         }
     }
 
