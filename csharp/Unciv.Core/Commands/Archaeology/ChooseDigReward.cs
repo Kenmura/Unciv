@@ -23,8 +23,7 @@ public sealed class ChooseDigReward : GameCommand
         if (!ArchaeologyRules.IsEnabled(context.Game.Ruleset))
             return CommandValidation.Fail(CommandErrors.NotAllowed, "This ruleset has no archaeology");
         if (!context.TileAt(Site).TryGet(out var tile, out failure)) return failure;
-        if (ArchaeologyRules.FindPending(context.Game, actor, Site.x, Site.y) == null
-            || !ArchaeologyRules.PendingOf(context.Game, actor).Any(it => it.X == Site.x && it.Y == Site.y))
+        if (ArchaeologyRules.FindPending(context.Game, actor, Site.x, Site.y) == null)
             return CommandValidation.Fail(CommandErrors.InvalidTarget, "There is no finished dig of yours there");
         if (!TakeArtifact)
             return ArchaeologyRules.LandmarkImprovement(context.Game.Ruleset) != null

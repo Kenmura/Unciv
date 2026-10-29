@@ -253,6 +253,68 @@ public sealed class ArchaeologyTests
     }
 
     [Fact]
+    public void ALandmarkKeepsItsDiscoveryEraWhenSomethingHappensOnIt()
+    {
+        var tile = a.Site(ArtifactClass.RazedCity, era: "Ancient era");
+        a.FinishDig(tile);
+        ArchaeologyRules.BuildLandmark(W.A, tile);
+        ArchaeologyRules.RecordCombatDeath(tile, false, W.A, W.B);
+        Assert.Equal(ArtifactClass.RazedCity, tile.ArchaeologyRecord!.ArtifactClass);
+    }
+
+    [Fact]
+    public void ADigThatNoLongerExistsOrIsPillagedCannotBeClaimedAndIsPruned()
+    {
+        var game = W.Game.GameInfo;
+        var pillaged = a.Site();
+        a.FinishDig(pillaged);
+        pillaged.ImprovementIsPillaged = true;
+        Assert.Null(ArchaeologyRules.FindPending(game, W.A, pillaged.Position.x, pillaged.Position.y));
+
+        var gone = a.Site(ArtifactClass.Writing);
+        a.FinishDig(gone);
+        gone.RemoveImprovement();
+        Assert.Single(game.PendingDigs!); // the pillaged one was dropped when this dig finished
+        a.FinishDig(a.Site(ArtifactClass.AncientRuin)); // the next finished dig drops the removed one
+        Assert.Single(game.PendingDigs!);
+    }
+
+    [Fact]
+    public void TheGameEraFollowsTheCivsAndNamesPastTheEndOfTheListAreTheLastEra()
+    {
+        var game = W.Game.GameInfo;
+        W.B.Tech.AddTechnology(W.Game.Ruleset.Technologies.Values.First(it => it.Era() == "Classical era").Name);
+        W.B.Tech.AddTechnology(W.Game.Ruleset.Technologies.Values.First(it => it.Era() == "Medieval era").Name);
+        int b = W.B.GetEraNumber();
+        Assert.True(b >= 2);
+        var majors = game.GetAliveMajorCivs();
+        Assert.Equal(majors.Sum(it => it.GetEraNumber()) / majors.Count, ArchaeologyRules.GameEraNumber(game));
+        Assert.True(ArchaeologyRules.GameEraNumber(game) >= 1);
+    }
+
+    [Fact]
+    public void FinishingTheQueuedDigThroughTheWorkerTurnConsumesTheArchaeologistAndOpensTheChoice()
+    {
+        var tile = a.Site();
+        var digger = W.Game.CreateBaseUnit("Civilian", $"Can build [{a.Dig.Name}] improvements on tiles");
+        var unit = W.Game.AddUnit(digger.Name, W.A, tile);
+        tile.StartWorkingOnImprovement(a.Dig, W.A, unit);
+        for (int turn = 0; turn < 10 && W.Game.GameInfo.PendingDigs == null; turn++) tile.DoWorkerTurn(unit);
+        Assert.Equal(a.Dig.Name, tile.Improvement);
+        Assert.True(unit.IsDestroyed);
+        var pending = Assert.Single(W.Game.GameInfo.PendingDigs!);
+        Assert.Equal((tile.Position.x, tile.Position.y), (pending.X, pending.Y));
+    }
+
+    [Fact]
+    public void CloneKeepsTheChecksum()
+    {
+        a.FinishDig(a.Site(ArtifactClass.Writing));
+        var game = W.Game.GameInfo;
+        Assert.Equal(game.CalculateChecksum(), game.Clone().CalculateChecksum());
+    }
+
+    [Fact]
     public void ALandmarkOnCityStateLandGivesInfluence()
     {
         W.Game.Ruleset.ModOptions.Constants.LandmarkMinorFriendshipChange = 50;

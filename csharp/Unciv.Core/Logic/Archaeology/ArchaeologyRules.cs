@@ -77,7 +77,7 @@ public static class ArchaeologyRules
     public static void RecordEvent(TileObject tile, ArtifactClass artifactClass, string player1, string player2)
     {
         var ruleset = tile.Ruleset;
-        if (!IsEnabled(ruleset) || IsSite(tile)) return; // a site keeps the record it was created with
+        if (!IsEnabled(ruleset) || IsSite(tile) || IsLandmarkOf(tile)) return; // a site keeps its record, and a Landmark keeps the discovery era its yield counts from
         if (tile.TileMap.GameInfo is not GameInfo game) return;
         tile.ArchaeologyRecord = new ArchaeologyRecord
         {
@@ -125,7 +125,7 @@ public static class ArchaeologyRules
         var rng = new Models.Ruleset.Unique.GameContext(gameInfo: game).StateBasedRandom("ArchaeologyRules.SpawnSites", game.Turns);
 
         int majors = game.Civilizations.Count(it => it.IsMajorCiv());
-        int count = unchecked(MinSitesPerMajorCiv * majors);
+        int count = MinSitesPerMajorCiv * majors;
         int spread = (MaxSitesPerMajorCiv * majors - MinSitesPerMajorCiv * majors) / 2;
         if (spread > 0) count += rng.NextInt(spread) + rng.NextInt(spread);
         int writingsLeft = count * PercentSitesHidden / 100 * PercentHiddenSitesWriting / 100;
@@ -220,6 +220,7 @@ public static class ArchaeologyRules
             AutoResolve(civ, tile);
             return;
         }
+        game.PendingDigs?.RemoveAll(it => game.TileMap.GetOrNull(it.X, it.Y) is not { } other || !IsDigOf(other) || game.GetCivilization(it.Civ).IsDefeated()); // drop digs that no longer exist
         (game.PendingDigs ??= []).Add(new PendingDig { X = tile.Position.x, Y = tile.Position.y, Civ = civ.CivId });
         civ.AddNotification("Our archaeologist has finished the dig! Choose what to do with the site.", tile.Position,
             NotificationCategory.General, NotificationIcon.Culture);
@@ -233,14 +234,17 @@ public static class ArchaeologyRules
 
     /// <summary>The finished dig of <paramref name="civ"/> at this position, or null.</summary>
     public static PendingDig? FindPending(GameInfo game, CivilizationObject civ, int x, int y) =>
-        game.PendingDigs?.FirstOrDefault(it => it.Civ == civ.CivId && it.X == x && it.Y == y);
+        PendingOf(game, civ).FirstOrDefault(it => it.X == x && it.Y == y);
 
     /// <summary>The finished digs of the civ whose site is still a dig, in completion order.</summary>
     public static IEnumerable<PendingDig> PendingOf(GameInfo game, CivilizationObject civ) =>
         (game.PendingDigs ?? []).Where(it => it.Civ == civ.CivId && game.TileMap.GetOrNull(it.X, it.Y) is { } tile && IsDigOf(tile));
 
     private static bool IsDigOf(TileObject tile) =>
-        tile.TileImprovement is { } improvement && ((IHasUniques)improvement).HasUnique(UniqueType.IsArchaeologicalDig);
+        !tile.ImprovementIsPillaged && tile.TileImprovement is { } improvement && ((IHasUniques)improvement).HasUnique(UniqueType.IsArchaeologicalDig);
+
+    private static bool IsLandmarkOf(TileObject tile) =>
+        tile.TileImprovement is { } improvement && ((IHasUniques)improvement).HasUnique(UniqueType.IsLandmark);
 
     public static void RemovePending(GameInfo game, PendingDig pending)
     {
