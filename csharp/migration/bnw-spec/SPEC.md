@@ -786,7 +786,7 @@ goes stale. Saved (only when set, G&K saves stay identical): `PolicyManager.Anar
 - B013's "first adopter" now counts the civs that **ever** followed the ideology (history), so a civ that switched away or died still counts.
 - Switching goes to the preferred ideology and needs opinion unhappiness > 0. Tenets (and unspent free tenets) are lost; `max(0, adoptedTenets - 2)` free
   tenets are granted in the new ideology and **no** first/second adopter bonus; `switchPolicyBranchesAnarchyTurns` (2) turns of anarchy start.
-  Costs no culture and refunds none.
+  Costs no culture and refunds none. A second switch (or a new choice) is refused while anarchy runs.
 - **Anarchy** (the spec only gives the duration; the effects are a deliberate choice, [?] in the binary): no policy, tenet or ideology can be adopted,
   and the civ's culture and science per turn are 0 (gold, faith and the cities' own yields are unchanged). It counts down in `PolicyManager.EndTurn`,
   so it covers the rest of the switching turn and the next full turn.

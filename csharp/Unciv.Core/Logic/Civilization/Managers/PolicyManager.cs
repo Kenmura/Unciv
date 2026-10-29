@@ -370,7 +370,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     /// </summary>
     public bool CanChooseIdeology()
     {
-        if (Ideology != null || !IdeologiesEnabled || CivInfo.IsSpectator() || !CivInfo.IsMajorCiv() || !IdeologyBranches.Any()) return false;
+        if (Ideology != null || InAnarchy || !IdeologiesEnabled || CivInfo.IsSpectator() || !CivInfo.IsMajorCiv() || !IdeologyBranches.Any()) return false;
         return IdeologyBranches.Any(IdeologyUnlockedByEra) || IdeologyUnlockedByBuildings();
     }
 
@@ -484,8 +484,8 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         var constants = CivInfo.GameInfo.Ruleset.ModOptions.Constants;
         int tenets = old.Policies.Count(it => IsAdopted(it.Name));
         RemovePolicy(old);
+        AnarchyTurns = Math.Max(0, constants.SwitchPolicyBranchesAnarchyTurns); // before the adoption, which refreshes the stats
         AdoptIdeology(target, Math.Max(0, tenets - constants.SwitchPolicyBranchesTenetsLost));
-        AnarchyTurns = Math.Max(0, constants.SwitchPolicyBranchesAnarchyTurns);
         CivInfo.AddNotification($"Our people switched to [{target.Name}]; [{AnarchyTurns}] turns of anarchy begin!", NotificationCategory.General, NotificationIcon.Culture);
     }
 

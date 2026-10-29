@@ -35,10 +35,10 @@ public sealed record PublicOpinion(PublicOpinionLevel Level, int Dissatisfaction
 
 public static class PublicOpinionRules
 {
-    /// <summary>The comparison order of ties between two other ideologies (spec 4.6.4 step 3 [?]).</summary>
     /// <summary>Pressure of the World Ideology resolution toward an ideology (@1024be50). To be read from the active resolution once the World Congress exists (B015).</summary>
     private const int LeaguePressure = 0;
 
+    /// <summary>The comparison order of ties between two other ideologies (spec 4.6.4 step 3 [?]).</summary>
     private static readonly ImmutableArray<string> TieOrder = ["Freedom", "Autocracy", "Order"];
 
     /// <summary>The civ's public opinion: <see cref="PublicOpinion.Content"/> unless it follows an ideology in a ruleset with tourism and ideologies.</summary>
