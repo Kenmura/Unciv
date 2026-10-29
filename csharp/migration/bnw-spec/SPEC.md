@@ -479,10 +479,8 @@ gated by the ModOptions unique `Enables international trade routes`, never by ru
 #### 4.1.6b As built (B006)
 Code: `TradeRouteRules` (`SlotsFree`, `HasTarget`, `CheckRebase`, `Rebase`), `ExoticGoods`, commands `rebase-trade-unit` and `sell-exotic-goods`,
 rejection reasons `NoTradeRouteSlot` and `NoTradeRouteTarget` in `BaseUnit.GetRejectionReasons`. All of it is behind the ModOptions gate.
-- **Generator**: `gen_ruleset.py` (`add_trade_data`) now emits the tech and building trade columns that B003 only declared and B020 never saw on the real
-  ruleset: `[+1] trade route slots` (8 techs, Colossus, Petra), `[+10] land/sea trade route range` (Combustion, Compass, Refrigeration), the building
-  range percent and land/sea gold, recipient/target gold, domestic enablers and Hanse's city-state Production. Caravan and Cargo Ship lose `Unbuildable`
-  and carry `Can establish trade routes`; the Nau carries `Carries [1] exotic goods`. Policy and trait columns were already in the overrides.
+- **Generator**: the tech and building trade columns come from B033's sweep (slots, ranges, building gold, domestic enablers). B006 only turns Caravan and
+  Cargo Ship into buildable units (`Can establish trade routes`, no `Unbuildable`) and gives the Nau `Carries [1] exotic goods`.
 - **Build restrictions** [O names, X rule]: a trade unit is rejected with `NoTradeRouteSlot` when `Slots - used routes - trade units on the map <= 0`
   (idle units hold a slot [X]) and, when built in a city, with `NoTradeRouteTarget` when no other city within the air distance of the range passes
   `Check` (international for another civ's city, Food or Production for an own city with the enabling building; slots ignored). Both are construction

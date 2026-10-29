@@ -834,44 +834,6 @@ def unread_columns_report(report):
                     report.add("unread columns", f"{key}: {count} non-empty row(s)")
 
 
-def add_trade_data(files, report):
-    """B006: the trade route columns of SPEC 3.2 that techs and buildings carry (slots, range, building gold, domestic enablers)."""
-    tech_by_type = {r["Type"]: r["Name"] for r in tsv("Technologies")}
-    techs = {t["name"]: t for c in files["Techs.json"] for t in c["techs"]}
-    extra = {}  # tech name -> uniques
-    for r in tsv("Technologies"):
-        n = num(r["InternationalTradeRoutesChange"])
-        if n:
-            extra.setdefault(r["Name"], []).append(f"[{n:+d}] trade route slots")
-    for r in tsv("Technology_TradeRouteDomainExtraRange"):
-        domain = "land" if r["DomainType"] == "DOMAIN_LAND" else "sea"
-        extra.setdefault(tech_by_type[r["TechType"]], []).append(f"[{num(r['Range']):+d}] {domain} trade route range")
-    for name, uniques in extra.items():
-        techs[name].setdefault("uniques", []).extend(uniques)
-        report.add("trade", f"tech {name}: {', '.join(uniques)}")
-    buildings = {b["name"]: b for b in files["Buildings.json"]}
-    for r in tsv("Buildings"):
-        name = KEEP_UNCIV_NAME.get(r["Name"], r["Name"])
-        uniques = []
-        if num(r["AllowsFoodTradeRoutes"]):
-            uniques.append("Allows domestic [Food] trade routes from this city")
-        if num(r["AllowsProductionTradeRoutes"]):
-            uniques.append("Allows domestic [Production] trade routes from this city")
-        for col, text in (("TradeRouteLandDistanceModifier", "[{:+d}]% land trade route range [in this city]"),
-                          ("TradeRouteSeaDistanceModifier", "[{:+d}]% sea trade route range [in this city]"),
-                          ("TradeRouteLandGoldBonus", "[{:+d}] Gold (x1/100) from land trade routes [in this city]"),
-                          ("TradeRouteSeaGoldBonus", "[{:+d}] Gold (x1/100) from sea trade routes [in this city]"),
-                          ("TradeRouteRecipientBonus", "[{:+d}] Gold to the owner of an international trade route from this city"),
-                          ("TradeRouteTargetBonus", "[{:+d}] Gold to the owner of an international trade route to this city"),
-                          ("NumTradeRouteBonus", "[{:+d}] trade route slots"),
-                          ("CityStateTradeRouteProductionModifier", "[{:+d}]% Production for each trade route to a city-state")):
-            if num(r[col]):
-                uniques.append(text.format(num(r[col])))
-        if uniques:
-            buildings[name].setdefault("uniques", []).extend(uniques)
-            report.add("trade", f"building {name}: {', '.join(uniques)}")
-
-
 def generate():
     report = Report()
     READ_COLUMNS.clear()
@@ -884,7 +846,6 @@ def generate():
     files["GreatWorks.json"], work_names = build_great_works(report)
     files["Buildings.json"] = build_buildings(files["Buildings.json"], files["Techs.json"], lk, work_names, report)
     files["Units.json"] = build_units(files["Units.json"], lk, report)
-    add_trade_data(files, report)
     for fname, names in REMOVED.items():
         if fname == "Buildings.json":
             continue

@@ -196,31 +196,6 @@
   Compass: cost 375 differs from column 6 (485), per-tech cost set
   The Internet: new (column 16, row 1)
 
-== trade
-  tech Animal Husbandry: [+1] trade route slots
-  tech Sailing: [+1] trade route slots
-  tech Engineering: [+1] trade route slots
-  tech Compass: [+1] trade route slots, [+10] sea trade route range
-  tech Banking: [+1] trade route slots
-  tech Biology: [+1] trade route slots
-  tech Railroad: [+1] trade route slots
-  tech Penicillin: [+1] trade route slots
-  tech Refrigeration: [+10] sea trade route range
-  tech Combustion: [+10] land trade route range
-  building Longhouse: Allows domestic [Production] trade routes from this city
-  building Bazaar: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city
-  building Satrap's Court: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city
-  building Harbor: [+50]% sea trade route range [in this city], [+100] Gold (x1/100) from sea trade routes [in this city]
-  building Granary: Allows domestic [Food] trade routes from this city
-  building Workshop: Allows domestic [Production] trade routes from this city
-  building Market: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city
-  building Bank: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city
-  building East India Company: [+4] Gold to the owner of an international trade route from this city, [+2] Gold to the owner of an international trade route to this city
-  building Colossus: [+2] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city, [+1] trade route slots
-  building Petra: [+1] trade route slots
-  building Hanse: [+1] Gold to the owner of an international trade route from this city, [+1] Gold to the owner of an international trade route to this city, [+5]% Production for each trade route to a city-state
-  building Caravansary: [+50]% land trade route range [in this city], [+200] Gold (x1/100) from land trade routes [in this city]
-
 == unitNames
   Artist: 93 names from the works named after a Great Person
   Writer: 70 names from the works named after a Great Person

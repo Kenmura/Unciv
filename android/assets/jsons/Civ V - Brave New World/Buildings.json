@@ -60,7 +60,6 @@
 		"hurryCostModifier": 25,
 		"uniques": [
 			"[+1 Production] from [Forest] tiles [in this city]",
-			"Allows domestic [Production] trade routes from this city",
 			"Allows domestic [Production] trade routes from this city"
 		],
 		"requiredTech": "Metal Casting"
@@ -78,8 +77,6 @@
 			"[+2 Gold] from [Oil] tiles [in this city]",
 			"[+2 Gold] from [Oasis] tiles [in this city]",
 			"[+1] Gold to the owner of an international trade route from this city",
-			"[+1] Gold to the owner of an international trade route to this city",
-			"[+1] Gold to the owner of an international trade route from this city",
 			"[+1] Gold to the owner of an international trade route to this city"
 		],
 		"requiredTech": "Currency"
@@ -96,8 +93,6 @@
 		"requiredBuilding": "Market",
 		"requiredTech": "Banking",
 		"uniques": [
-			"[+1] Gold to the owner of an international trade route from this city",
-			"[+1] Gold to the owner of an international trade route to this city",
 			"[+1] Gold to the owner of an international trade route from this city",
 			"[+1] Gold to the owner of an international trade route to this city"
 		]
@@ -279,8 +274,6 @@
 			"Connects trade routes over water",
 			"Must be next to [Coast]",
 			"[+50]% sea trade route range [in this city]",
-			"[+100] Gold (x1/100) from sea trade routes [in this city]",
-			"[+50]% sea trade route range [in this city]",
 			"[+100] Gold (x1/100) from sea trade routes [in this city]"
 		],
 		"requiredTech": "Compass"
@@ -458,7 +451,6 @@
 			"[+1 Food] from [Deer] tiles [in this city]",
 			"[+1 Food] from [Bananas] tiles [in this city]",
 			"[+1 Food] from [Wheat] tiles [in this city]",
-			"Allows domestic [Food] trade routes from this city",
 			"Allows domestic [Food] trade routes from this city"
 		],
 		"requiredTech": "Pottery"
@@ -485,10 +477,7 @@
 		"hurryCostModifier": 25,
 		"percentStatBonus": {"production": 10},
 		"requiredTech": "Metal Casting",
-		"uniques": [
-			"Allows domestic [Production] trade routes from this city",
-			"Allows domestic [Production] trade routes from this city"
-		]
+		"uniques": ["Allows domestic [Production] trade routes from this city"]
 	},
 	{
 		"name": "Factory",
@@ -531,8 +520,6 @@
 		"requiredTech": "Currency",
 		"uniques": [
 			"[+1] Gold to the owner of an international trade route from this city",
-			"[+1] Gold to the owner of an international trade route to this city",
-			"[+1] Gold to the owner of an international trade route from this city",
 			"[+1] Gold to the owner of an international trade route to this city"
 		]
 	},
@@ -545,8 +532,6 @@
 		"requiredBuilding": "Market",
 		"requiredTech": "Banking",
 		"uniques": [
-			"[+1] Gold to the owner of an international trade route from this city",
-			"[+1] Gold to the owner of an international trade route to this city",
 			"[+1] Gold to the owner of an international trade route from this city",
 			"[+1] Gold to the owner of an international trade route to this city"
 		]
@@ -671,8 +656,6 @@
 			"Only available <if [Market] is constructed in all [non-[Puppeted]] cities>",
 			"Cost increases by [30] per owned city",
 			"[+4] Gold to the owner of an international trade route from this city",
-			"[+2] Gold to the owner of an international trade route to this city",
-			"[+4] Gold to the owner of an international trade route from this city",
 			"[+2] Gold to the owner of an international trade route to this city"
 		],
 		"requiredTech": "Guilds"
@@ -789,9 +772,6 @@
 		"uniques": [
 			"Must be next to [Coast]",
 			"[+1 Gold] from [Water] tiles [in this city]",
-			"[+2] Gold to the owner of an international trade route from this city",
-			"[+1] Gold to the owner of an international trade route to this city",
-			"[+1] trade route slots",
 			"[+2] Gold to the owner of an international trade route from this city",
 			"[+1] Gold to the owner of an international trade route to this city",
 			"[+1] trade route slots"
@@ -1318,7 +1298,6 @@
 			"[+1 Food, +1 Production, +1 Gold] from [Desert] tiles without [Flood plains] [in this city]",
 			"Gain a free [Amphitheater] [in this city]",
 			"[+6 Culture] [in this city] <after discovering [Archaeology]>",
-			"[+1] trade route slots",
 			"[+1] trade route slots"
 		],
 		"requiredTech": "Currency",
@@ -1460,9 +1439,6 @@
 		"uniques": [
 			"[+1] Gold to the owner of an international trade route from this city",
 			"[+1] Gold to the owner of an international trade route to this city",
-			"[+5]% Production for each trade route to a city-state",
-			"[+1] Gold to the owner of an international trade route from this city",
-			"[+1] Gold to the owner of an international trade route to this city",
 			"[+5]% Production for each trade route to a city-state"
 		],
 		"specialistSlots": {"Merchant": 1},
@@ -1512,8 +1488,6 @@
 		"hurryCostModifier": 25,
 		"requiredTech": "Horseback Riding",
 		"uniques": [
-			"[+50]% land trade route range [in this city]",
-			"[+200] Gold (x1/100) from land trade routes [in this city]",
 			"[+50]% land trade route range [in this city]",
 			"[+200] Gold (x1/100) from land trade routes [in this city]"
 		],
