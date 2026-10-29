@@ -18,8 +18,8 @@ MB = 1024 * 1024
 # (archive file name, executable path inside the top folder, minimum executable size in bytes, extra required entries as regexes on the path inside the top folder)
 COMMON = [r"LICENSE", r"THIRD_PARTY_NOTICES\.md", r"Assets/fonts/NotoSans\.ttf", r"Packs/unciv/", r"Packs/units/", r"data/jsons/Civ V - Vanilla/Techs\.json", r"data/jsons/translations/"]
 PLATFORMS = {
-    "linux": ("Unciv-client-linux.tar.gz", "Unciv.x86_64", 40 * MB, COMMON + [r"Unciv\.pck", r"data_Unciv\.Godot_linuxbsd_x86_64/Unciv\.Godot\.dll"]),
-    "windows": ("Unciv-client-windows.zip", "Unciv.exe", 40 * MB, COMMON + [r"Unciv\.pck", r"data_Unciv\.Godot_windows_x86_64/Unciv\.Godot\.dll"]),
+    "linux": ("Unciv-client-linux.tar.gz", "Unciv.x86_64", 60 * MB, COMMON + [r"Unciv\.pck", r"data_Unciv\.Godot_linuxbsd_x86_64/Unciv\.Godot\.dll"]),
+    "windows": ("Unciv-client-windows.zip", "Unciv.exe", 80 * MB, COMMON + [r"Unciv\.pck", r"data_Unciv\.Godot_windows_x86_64/Unciv\.Godot\.dll"]),
     "macos": (
         "Unciv-client-macos.zip",
         "Unciv.app/Contents/MacOS/Unciv",

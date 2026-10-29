@@ -181,8 +181,14 @@ def main(argv):
             built.append("cli")
         if client:
             for platform in platforms:
-                run(f"package client ({platform})", in_container(f"cd {shlex.quote(str(CSHARP))} && Unciv.Godot/tools/package.sh {platform}"), crash_retries=CRASH_RETRIES)
-                run(f"check {platform} archive", f"python3 -I {shlex.quote(str(HERE / 'tools' / 'check_package.py'))} {platform}")
+                try:
+                    run(f"package client ({platform})", in_container(f"cd {shlex.quote(str(CSHARP))} && Unciv.Godot/tools/package.sh {platform}"), crash_retries=CRASH_RETRIES)
+                    run(f"check {platform} archive", f"python3 -I {shlex.quote(str(HERE / 'tools' / 'check_package.py'))} {platform}")
+                except SystemExit:
+                    if platform == "linux":
+                        raise  # the Linux client is the only one we run: its failure fails the release
+                    print(f"release: WARNING {platform} client failed and is left out of this release (linux and the CLI are unaffected)", file=sys.stderr)
+                    continue
                 shutil.copytree(CSHARP / "Unciv.Godot" / "build" / platform, stage / f"client-{platform}", symlinks=True)
                 built.append(f"client-{platform}")
         manifest = {"ticket": tid, "commit": sha, "tree": tree, "built": int(time.time()), "contents": built}

@@ -109,7 +109,7 @@ Releases are built **locally** and never by CI: `csharp-releases/` is git-ignore
 - `python3 -I tools/release.py T### [--cli-only | --client-only] [--linux-only] [--keep N] [--force] [--dry-run]` (run automatically by `ticket.py` after
   `state T### Done`) builds the tree it is run on into `<main checkout>/csharp-releases/<ticket>-<shortsha>/`:
   `cli/` (`dotnet publish Unciv.Cli`, self-contained linux-x64, so `./Unciv.Cli` runs with no dotnet installed), `client-linux/`,
-  `client-windows/`, `client-macos/` (T258: the `package.sh` output below; `--linux-only` builds just the first) and `manifest.json`. `csharp-releases/latest` only ever moves forward, the newest 5 versions are kept, and a tree
+  `client-windows/`, `client-macos/` (T258: the `package.sh` output below; `--linux-only` builds just the first; a failing Windows or macOS build only warns and is left out, a Linux failure fails the release) and `manifest.json`. `csharp-releases/latest` only ever moves forward, the newest 5 versions are kept, and a tree
   already released (same git tree id) is not rebuilt without `--force`. After building, the CLI is smoke-run with an empty `PATH`.
 - `Unciv.Godot/tools/package.sh [linux|windows|macos]` does the client: `dotnet build -c Release`, `godot --headless --export-release` with the presets in
   `export_presets.cfg`, then copies `data/jsons`, fonts, `LICENSE` and `THIRD_PARTY_NOTICES.md` next to the executable. Output is
@@ -135,8 +135,8 @@ macOS preset has `codesign/codesign=0` and `notarization/notarization=0`), a Win
 
 macOS specifics and manual steps (to be run by someone with a Mac, then recorded here):
 
-- The export is one universal binary; enabling that needed `textures/vram_compression/import_etc2_astc=true` in `project.godot` (Godot refuses a
-  universal/arm64 export otherwise). The only template Godot ships for macOS is universal.
+- The export is one universal binary; enabling that needed `textures/vram_compression/import_etc2_astc=true` in `project.godot` (without it Godot's export
+  reports a configuration error for universal/arm64). The only template Godot ships for macOS is universal.
 - Content (`data/`, `Assets/`, `Packs/`) is placed in `Unciv.app/Contents/MacOS` next to the executable, because the client resolves it relative to
   the executable. It is unconventional for an app bundle (Apple expects `Contents/Resources`) and is harmless only while the app is unsigned; signing
   later means moving the content or adding a resource lookup.

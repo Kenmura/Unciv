@@ -148,9 +148,6 @@ class WorkflowShape(unittest.TestCase):
         )  # client-scenarios (T246)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class ClientPlatforms(unittest.TestCase):
     """T258: release.py, CI, package.sh, the export presets and the archive checker agree on the platform list (T279 builds the same archives)."""
@@ -217,3 +214,6 @@ class CheckPackage(unittest.TestCase):
             mod, archive = self.build(t, "windows", exe_size=10)
             self.assertTrue(any("expected at least" in p for p in mod.check("windows", archive)))
             self.assertTrue(any("does not exist" in p for p in mod.check("windows", Path(t) / "none.zip")))
+
+if __name__ == "__main__":
+    unittest.main()
