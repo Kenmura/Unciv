@@ -1334,7 +1334,7 @@
   "Exploration Complete: reveals Hidden Antiquity Sites through the resource's revealedBy (B040); Aesthetics Complete has no leader title",
   "Exploration opener: the Naval Tradition free promotion is read as +1 Movement and +1 Sight for naval units [?]",
   "Cultural Exchange: ethics tourism modifiers are declared data only (B030)",
-  "B030 tenets without a unique: Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Resettlement (NewCityExtraPopulation 3), Patriotic War, Lightning Warfare (free promotions), Elite Forces (WoundedUnitDamageMod -25), Double Agents (CatchSpiesModifier 100), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus) have no declared unique yet",
+  "B030 tenets without a unique: Resettlement (NewCityExtraPopulation 3), Patriotic War, Lightning Warfare (free promotions), Elite Forces (WoundedUnitDamageMod -25), Double Agents (CatchSpiesModifier 100), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus) have no declared unique yet. Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Iron Curtain's free Courthouse and the city-state, espionage, spaceship and purchase-cost rows are declared data only",
   "B030 scales [I]: Economic Union reads SharedIdeologyTradeGoldChange 3 as +3 whole Gold per route (the city-state row is whole Gold too), Treaty Organization reads ProtectedMinorPerTurnInfluence 400 as +4 and Gunboat Diplomacy AfraidMinorPerTurnInfluence 600 as +6 (hundredths); Iron Curtain's InternalTradeRouteYieldModifier 50 applies to Food and Production routes"
  ],
  "pending": {

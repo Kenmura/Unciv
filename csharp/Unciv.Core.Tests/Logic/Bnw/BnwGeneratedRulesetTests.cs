@@ -490,7 +490,52 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         civ.Policies.Adopt(game.Ruleset.Policies["Party Leadership"]);
         capital.CityStats.Update(updateCivStats: true);
         var after = capital.CityStats.CurrentCityStats;
-        Assert.True(after.Food >= before.Food + 1f && after.Science >= before.Science + 1f && after.Gold >= before.Gold + 1f && after.Culture >= before.Culture + 1f);
+        Assert.True(after.Food >= before.Food + 1f && after.Production >= before.Production + 1f && after.Science >= before.Science + 1f && after.Gold >= before.Gold + 1f && after.Culture >= before.Culture + 1f);
+    }
+
+    [Fact]
+    public void BuildingClassTenetsReachTheCityStats()
+    {
+        var (game, civ, capital) = NewCapital();
+        float Stat(Func<Unciv.Models.StatTypes.Stats, float> pick)
+        {
+            capital.CityStats.Update(updateCivStats: true);
+            return pick(capital.CityStats.CurrentCityStats);
+        }
+        // Happiness from a building class (Universal Healthcare: the Palace of the capital; Socialist Realism: the Monument)
+        Follow(civ, "Order");
+        float happiness = Stat(it => it.Happiness);
+        civ.Policies.Adopt(game.Ruleset.Policies["Universal Healthcare (Order)"]);
+        Assert.Equal(happiness + 1f, Stat(it => it.Happiness));
+        capital.CityConstructions.AddBuilding("Monument");
+        happiness = Stat(it => it.Happiness);
+        civ.Policies.Adopt(game.Ruleset.Policies["Socialist Realism"]);
+        Assert.Equal(happiness + 2f, Stat(it => it.Happiness));
+        // Yield of a building class: Workers' Faculties, +25% Science from the Factory
+        capital.CityConstructions.AddBuilding("Factory");
+        float science = Stat(it => it.Science);
+        civ.Policies.Adopt(game.Ruleset.Policies["Workers' Faculties"]);
+        Assert.True(Stat(it => it.Science) >= science);
+        Assert.Contains("[+25]% [Science] from every [Factory]", game.Ruleset.Policies["Workers' Faculties"].Uniques);
+        // Capital yields: Third Alternative
+        float food = Stat(it => it.Food);
+        science = Stat(it => it.Science);
+        civ.Policies.Adopt(game.Ruleset.Policies["Third Alternative"]);
+        Assert.True(Stat(it => it.Food) >= food + 5f);
+        Assert.True(Stat(it => it.Science) >= science + 5f);
+    }
+
+    [Fact]
+    public void EconomicUnionPaysOnlyTheCivThatHasTheTenet()
+    {
+        var game = NewGameOf(2);
+        var (a, b, _) = Majors(game);
+        var (from, to) = (FoundCity(a), FoundCity(b));
+        Follow(a, "Freedom", "Economic Union");
+        Follow(b, "Freedom");
+        int fromB = TradeRouteYields.Compute(to, from, TradeDomain.Land, TradeRouteKind.International).Origin[TradeYield.Gold];
+        b.Policies.Ideology = "Order";
+        Assert.Equal(fromB, TradeRouteYields.Compute(to, from, TradeDomain.Land, TradeRouteKind.International).Origin[TradeYield.Gold]);
     }
 
     // ---- the generic guard B027 and B032 lacked
@@ -533,6 +578,7 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         "YieldPerTradeRoute",
     ];
 
+    // BuildingPurchaseCostModifier stays pending on purpose: Skyscrapers uses the generic '[stat] cost of purchasing [buildingFilter] buildings' unique.
     [Fact]
     public void EveryBnwUniqueTypeIsEmittedByTheRulesetOrListedAsPending()
     {
