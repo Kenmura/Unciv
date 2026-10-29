@@ -106,7 +106,7 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class B006 review
-  class B016 prog
+  class B016 review
   class B017 ready
   class B018 ready
   class B019 ready
@@ -217,8 +217,8 @@ xychart-beta
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
-| B006 | In-Review [Claude] | B005 | 1 | BNW: Trade units: Caravan, Cargo Ship, rebasing, build restrictions, exotic goods |
-| B016 | In-Progress [Claude] | B015 | 1 | BNW: Resolution effects (all 18) |
+| B006 | Needs-Review [Claude] | B005 | 1 | BNW: Trade units: Caravan, Cargo Ship, rebasing, build restrictions, exotic goods |
+| B016 | Needs-Review [Claude] | B015 | 1 | BNW: Resolution effects (all 18) |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | B026 | Available (waiting on B006, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
 | B030 | In-Progress [Claude] | B013 | 0 | BNW: Ideology tenet effects (48 tenets) |
