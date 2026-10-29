@@ -12,7 +12,7 @@ All dotnet commands run in the `dotnet-dev` distrobox, from the `csharp/` folder
 
 (or run `Unciv.Cli/bin/Debug/net10.0/Unciv.Cli` directly after building). The runner finds the rulesets in `android/assets/jsons` by searching upwards
 from the working directory; pass `--jsons DIR` to name the folder. The project is part of `Unciv.sln`, so the usual
-`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` covers it (its tests are `Unciv.Core.Tests/Cli`).
+`dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test` covers it (its tests are `Unciv.App.Tests/Cli`).
 
 ## Commands
 

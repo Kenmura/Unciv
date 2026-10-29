@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Tests of the app-layer projects (Cli, Server, Client.Net). Split from Unciv.Core.Tests so that a change to one of them rebuilds
+       and reruns only these, not the whole engine suite. Namespaces stayed Unciv.Core.Tests.* so no test code and no timing key changed. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Unciv.Core.Tests</RootNamespace>
+    <BannedSymbolsFile>$(MSBuildThisFileDirectory)..\BannedSymbols.Tests.txt</BannedSymbolsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Unciv.Core\Unciv.Core.csproj" />
+    <ProjectReference Include="..\Unciv.Cli\Unciv.Cli.csproj" />
+    <ProjectReference Include="..\Unciv.Server\Unciv.Server.csproj" />
+    <ProjectReference Include="..\Unciv.Client.Net\Unciv.Client.Net.csproj" />
+  </ItemGroup>
+
+</Project>

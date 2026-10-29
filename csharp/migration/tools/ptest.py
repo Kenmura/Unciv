@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sharded parallel test runner for Unciv.Core.Tests. Run from anywhere: python3 -I tools/ptest.py ...
+"""Sharded parallel test runner for Unciv.Core.Tests and Unciv.App.Tests. Run from anywhere: python3 -I tools/ptest.py ...
 
 Why processes, not xunit parallelism: ~190 test classes share the static RulesetCache (plus Log/Translations) and clear and
 reload it in their constructors, so xunit has to run them as one serial collection. Instead of untangling the statics, the
@@ -7,7 +7,7 @@ unchanged suite is split by test class into N shards and each shard runs in its 
 (statics stay safe), parallel across processes. Shards are balanced from per-class timings (LPT), a final "remainder" shard
 runs every class that has no timing yet, so a new test class can never be skipped.
 
-  (no args)            build Unciv.Core.Tests, run every test in N shards
+  (no args)            build both test projects, run every test: Core in N shards, App as one more process
   --no-build           skip the build (the gate has just built)
   --shards N           number of shards (default: min(6, cpu/3); env UNCIV_TEST_SHARDS)
   --coverage           collect cobertura per shard under --results (default migration/.coverage/raw); a FULL run also stores
@@ -35,7 +35,9 @@ import xml.etree.ElementTree as ET
 HERE = os.path.dirname(os.path.abspath(__file__))
 MIGRATION = os.path.dirname(HERE)
 CSHARP = os.path.dirname(MIGRATION)
-TESTS = "Unciv.Core.Tests"
+CORE = "Unciv.Core.Tests"
+APP = "Unciv.App.Tests"  # tests of Cli, Server and Client.Net; small, so it runs as one process next to the Core shards
+PROJECTS = [CORE, APP]
 SEED = os.path.join(MIGRATION, "test-timings.json")
 CONTAINER = "dotnet-dev"
 DEFAULT_RAW = os.path.join(MIGRATION, ".coverage", "raw")
@@ -124,16 +126,27 @@ def changed_since(since=None):
 
 
 def test_sources():
-    """-> {relative path: (declared types, all identifiers, namespace)} for every .cs under Unciv.Core.Tests."""
+    """-> {relative path: (declared types, all identifiers, namespace)} for every .cs under the test projects."""
     out = {}
-    for root, dirs, files in os.walk(os.path.join(CSHARP, TESTS)):
-        dirs[:] = [d for d in dirs if d not in ("bin", "obj")]
-        for f in files:
-            if f.endswith(".cs"):
-                p = os.path.join(root, f)
-                text = read(p)
-                ns = NS.search(text)
-                out[os.path.relpath(p, CSHARP)] = (set(DECL.findall(text)), set(TOKEN.findall(text)), ns.group(1) if ns else "")
+    for project in PROJECTS:
+        for root, dirs, files in os.walk(os.path.join(CSHARP, project)):
+            dirs[:] = [d for d in dirs if d not in ("bin", "obj")]
+            for f in files:
+                if f.endswith(".cs"):
+                    p = os.path.join(root, f)
+                    text = read(p)
+                    ns = NS.search(text)
+                    out[os.path.relpath(p, CSHARP)] = (set(DECL.findall(text)), set(TOKEN.findall(text)), ns.group(1) if ns else "")
+    return out
+
+
+def class_projects():
+    """-> {fully qualified class name: test project} for every class that carries tests (namespaces are shared by the projects,
+    so the folder is what tells them apart)."""
+    out = {}
+    for rel in test_sources():
+        for fqn in test_classes_in(rel):
+            out[fqn] = rel.split(os.sep)[0]
     return out
 
 
@@ -200,37 +213,37 @@ def parse_trx(path):
     return counts, seconds, failures
 
 
-def output_dir():
-    """The newest built bin/<config>/<tfm> folder of the test project."""
+def output_dir(project):
+    """The newest built bin/<config>/<tfm> folder of a test project."""
     cands = []
-    for root, _dirs, files in os.walk(os.path.join(CSHARP, TESTS, "bin")):
-        if TESTS + ".dll" in files:
+    for root, _dirs, files in os.walk(os.path.join(CSHARP, project, "bin")):
+        if project + ".dll" in files:
             cands.append(root)
     if not cands:
-        sys.exit("ptest: %s has not been built (run without --no-build)" % TESTS)
-    return max(cands, key=lambda d: os.path.getmtime(os.path.join(d, TESTS + ".dll")))
+        sys.exit("ptest: %s has not been built (run without --no-build)" % project)
+    return max(cands, key=lambda d: os.path.getmtime(os.path.join(d, project + ".dll")))
 
 
-def private_copy(index):
+def private_copy(index, project):
     """Coverlet rewrites the assemblies it instruments IN PLACE (and restores them afterwards), so concurrent coverage shards
     must not share the output folder. The copy stays under csharp/ because tests find android/assets/jsons by walking up
     from AppContext.BaseDirectory."""
     dest = os.path.join(MIGRATION, ".coverage", "bin", "shard%d" % index)
     shutil.rmtree(dest, ignore_errors=True)
     os.makedirs(os.path.dirname(dest), exist_ok=True)
-    subprocess.run(["cp", "-r", "--reflink=auto", output_dir(), dest], check=True)
+    subprocess.run(["cp", "-r", "--reflink=auto", output_dir(project), dest], check=True)
     return dest
 
 
-def run_shard(index, flt, results, coverage):
+def run_shard(index, project, flt, results, coverage):
     d = os.path.join(results, "shard%d" % index)
     shutil.rmtree(d, ignore_errors=True)
     os.makedirs(d)
-    args = ["test", TESTS, "--no-build", "--filter", flt, "--results-directory", d,
+    args = ["test", project, "--no-build", "--filter", flt, "--results-directory", d,
             "--logger", "trx;LogFileName=shard%d.trx" % index, "--verbosity", "quiet"]
     if coverage:
         # a project run (not a bare dll) keeps the coverlet adapter wiring; OutDir points it at this shard's private copy
-        args += ["-p:OutDir=" + private_copy(index) + os.sep]
+        args += ["-p:OutDir=" + private_copy(index, project) + os.sep]
         args += ["--collect:XPlat Code Coverage", "--",
                  "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura",
                  "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.SingleHit=true"]
@@ -275,38 +288,50 @@ def main():
 
     t0 = time.time()
     if not a.no_build:
-        argv, cwd = dotnet_cmd(["build", TESTS, "-warnaserror", "-v", "q", "--nologo"])
-        r = subprocess.run(argv, cwd=cwd, capture_output=True, text=True)
-        if r.returncode:
-            print("\n".join((r.stdout + r.stderr).splitlines()[-40:]))
-            print("ptest: build failed", file=sys.stderr)
-            return 1
+        for project in PROJECTS:
+            argv, cwd = dotnet_cmd(["build", project, "-warnaserror", "-v", "q", "--nologo"])
+            r = subprocess.run(argv, cwd=cwd, capture_output=True, text=True)
+            if r.returncode:
+                print("\n".join((r.stdout + r.stderr).splitlines()[-40:]))
+                print("ptest: build of %s failed" % project, file=sys.stderr)
+                return 1
         print("ptest: built in %.0fs" % (time.time() - t0), flush=True)
 
     n = a.shards or default_shards()
-    jobs = []  # (label, filter)
+    owner = class_projects()
+    jobs = []  # (label, project, filter, tolerates zero tests)
     if selected is None:
-        parts = [p for p in partition(known, timings, n) if p]
-        jobs = [("shard%d" % i, class_filter(p)) for i, p in enumerate(parts)]
-        if known:
-            jobs.append(("remainder", remainder_filter(known)))
+        app_classes = {c for c, proj in owner.items() if proj == APP}
+        core_known = [c for c in known if c not in app_classes]
+        parts = [p for p in partition(core_known, timings, n) if p]
+        jobs = [("shard%d" % i, CORE, class_filter(p), False) for i, p in enumerate(parts)]
+        if core_known:
+            jobs.append(("remainder", CORE, remainder_filter(known), True))
         else:
-            jobs = [("all", "FullyQualifiedName~.")]
+            jobs = [("core", CORE, "FullyQualifiedName~.", False)]
+        jobs.append(("app", APP, "FullyQualifiedName~.", False))
     else:
-        parts = [p for p in partition(sorted(selected), timings, n) if p]
-        jobs = [("shard%d" % i, class_filter(p)) for i, p in enumerate(parts)]
-        jobs += [("term:" + t, "FullyQualifiedName~" + t) for t in raw_terms]
+        by_project = {CORE: [], APP: []}
+        for c in sorted(selected):
+            by_project[owner.get(c, CORE)].append(c)
+        parts = [p for p in partition(by_project[CORE], timings, n) if p]
+        jobs = [("shard%d" % i, CORE, class_filter(p), False) for i, p in enumerate(parts)]
+        if by_project[APP]:
+            jobs.append(("app", APP, class_filter(by_project[APP]), False))
+        for t in raw_terms:
+            jobs += [("term:" + t, proj, "FullyQualifiedName~" + t, True) for proj in PROJECTS]
 
     results = os.path.abspath(a.results)
     shutil.rmtree(results, ignore_errors=True)
     os.makedirs(results)
     t1 = time.time()
-    running = [(label, *run_shard(i, flt, results, a.coverage)) for i, (label, flt) in enumerate(jobs)]
+    running = [(label, tolerant, *run_shard(i, project, flt, results, a.coverage))
+               for i, (label, project, flt, tolerant) in enumerate(jobs)]
     print("ptest: %d process(es) started" % len(running), flush=True)
 
     totals = {"passed": 0, "failed": 0, "skipped": 0}
     seconds, failures, bad = {}, [], False
-    for i, (label, proc, d, log) in enumerate(running):
+    for i, (label, tolerant, proc, d, log) in enumerate(running):
         rc = proc.wait()
         log.close()
         counts, secs, fails = parse_trx(os.path.join(d, "shard%d.trx" % i))
@@ -317,10 +342,10 @@ def main():
         failures += fails
         ran = sum(counts.values())
         print("ptest: %-9s %5d passed %3d failed %3d skipped (exit %d)" % (label, counts["passed"], counts["failed"], counts["skipped"], rc))
-        if rc != 0 or (ran == 0 and label != "remainder"):
+        if rc != 0 or (ran == 0 and not tolerant):
             if rc != 0 and not fails:
                 print("\n".join(open(os.path.join(d, "output.log")).read().splitlines()[-25:]))
-            bad = bad or rc != 0 or ran == 0
+            bad = bad or rc != 0 or (ran == 0 and not tolerant)
 
     for name, msg in failures[:30]:
         print("FAILED %s\n    %s" % (name, "\n    ".join(msg.splitlines()[:6])))

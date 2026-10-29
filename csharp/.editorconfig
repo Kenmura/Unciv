@@ -91,7 +91,7 @@ dotnet_diagnostic.CA1720.severity = suggestion
 dotnet_diagnostic.CA1000.severity = suggestion
 dotnet_diagnostic.CA1822.severity = suggestion
 
-[Unciv.Core.Tests/**.cs]
+[Unciv.{Core,App}.Tests/**.cs]
 # Test names often use underscores; xunit tests need no accessibility fuss.
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.IDE0060.severity = suggestion

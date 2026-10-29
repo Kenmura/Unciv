@@ -86,7 +86,7 @@ public partial class MarkerOwnershipTests
     {
         var states = LoadTicketStates();
         var offenders = new List<string>();
-        foreach (var file in CoreFiles("Unciv.Core", "Unciv.Core.Tests"))
+        foreach (var file in CoreFiles("Unciv.Core", "Unciv.Core.Tests", "Unciv.App.Tests"))
         {
             var lines = File.ReadAllLines(file);
             for (var i = 0; i < lines.Length; i++)

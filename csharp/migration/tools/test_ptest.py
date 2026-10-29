@@ -72,6 +72,16 @@ class Affected(unittest.TestCase):
         self.assertIsNone(ptest.affected_classes(["Unciv.Core/Unciv.Core.csproj"])[0])
         self.assertIsNone(ptest.affected_classes(["../android/assets/jsons/Buildings.json"])[0])
 
+    def test_classes_are_assigned_to_the_project_whose_folder_declares_them(self):
+        (self.root / "Unciv.App.Tests" / "Server").mkdir(parents=True)
+        (self.root / "Unciv.App.Tests" / "Server" / "HostTests.cs").write_text(
+            "namespace Unciv.Core.Tests.Server;\npublic class HostTests { [Fact] public void A() { new Widget(); } }\n")
+        owners = ptest.class_projects()
+        self.assertEqual(owners["Unciv.Core.Tests.Server.HostTests"], "Unciv.App.Tests")
+        self.assertEqual(owners["Unciv.Core.Tests.Logic.GadgetTests"], "Unciv.Core.Tests")
+        # and a change to the type it mentions selects it as well
+        self.assertIn("Unciv.Core.Tests.Server.HostTests", ptest.affected_classes(["Unciv.Core/Logic/Widget.cs"])[0])
+
     def test_docs_and_migration_files_select_nothing(self):
         self.assertEqual(ptest.affected_classes(["migration/backlog/T001.md", "README.md"])[0], set())
 
