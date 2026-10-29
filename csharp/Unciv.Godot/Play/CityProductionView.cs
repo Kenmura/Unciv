@@ -20,7 +20,7 @@ namespace Unciv.GodotClient.Play;
 /// </summary>
 public partial class CityProductionView : HBoxContainer
 {
-    private readonly Func<GameCommand, Task> send;
+    private readonly Func<GameCommand, Task<bool>> send;
     private readonly Action<string> report;
     private readonly Action<CityStateAction> confirm;
     private readonly UiTheme theme;
@@ -36,7 +36,7 @@ public partial class CityProductionView : HBoxContainer
     private int refocus = -1;
     private string stateText = "";
 
-    public CityProductionView(Func<GameCommand, Task> sendCommand, Action<string> reportMessage, Action<CityStateAction> confirmAction, UiTheme uiTheme)
+    public CityProductionView(Func<GameCommand, Task<bool>> sendCommand, Action<string> reportMessage, Action<CityStateAction> confirmAction, UiTheme uiTheme)
     {
         send = sendCommand;
         report = reportMessage;
@@ -90,6 +90,9 @@ public partial class CityProductionView : HBoxContainer
         if (keepFocus) refocus = to;
         Run(commands);
     }
+
+    /// <summary>Forgets a pending focus request (the city closed).</summary>
+    public void ClearPendingFocus() => refocus = -1;
 
     public void Show(CityPanelResult panel, ConstructionListResult list, int gold, Ruleset ruleset)
     {
@@ -260,10 +263,17 @@ public partial class CityProductionView : HBoxContainer
     {
         try
         {
-            foreach (var command in commands) await send(command);
+            // a later step names an index that only holds if the earlier ones moved the entry, so the run stops at the first refusal
+            foreach (var command in commands)
+            {
+                if (await send(command)) continue;
+                refocus = -1;
+                return;
+            }
         }
         catch (Exception e)
         {
+            refocus = -1;
             GD.PushError("Session call failed: " + e);
             report("Connection problem: " + e.Message);
         }

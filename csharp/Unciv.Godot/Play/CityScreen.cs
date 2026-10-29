@@ -225,6 +225,7 @@ public partial class CityScreen : PanelContainer
     {
         generation++;
         confirmView.Cancel();
+        productionView.ClearPendingFocus();
         Visible = false;
         renameView.Cancel();
         renameButton.Visible = false;
@@ -387,16 +388,18 @@ public partial class CityScreen : PanelContainer
         Fire(Send(command));
     }
 
-    private async Task Send(GameCommand command)
+    /// <summary>Submits a command; true when the engine accepted it (a refusal is shown in the message line).</summary>
+    private async Task<bool> Send(GameCommand command)
     {
         var result = await session.SubmitAsync(command);
         if (!result.Accepted)
         {
             SetMessage("Refused: " + result.Message);
-            return;
+            return false;
         }
         CommandSent?.Invoke(command);
         CommandAccepted?.Invoke();
+        return true;
     }
 
     /// <summary>Observes a UI-triggered Task: a transport failure is shown instead of vanishing (IGameSession error contract).</summary>

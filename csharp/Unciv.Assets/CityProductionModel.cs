@@ -94,7 +94,7 @@ public static class CityProductionModel
         {
             var entry = city.Queue[i];
             bool perpetual = entry.Cost == null;
-            string progress = perpetual ? "perpetual" : $"{Turns(entry.Turns)}, {I(entry.WorkDone)}/{I(entry.Cost ?? 0)}";
+            string progress = perpetual ? "perpetual" : $"{TurnsText(entry.Turns)}, {I(entry.WorkDone)}/{I(entry.Cost ?? 0)}";
             rows.Add(new QueueRow(i, entry.Name, $"{I(i + 1)}. {entry.Name} ({progress})", perpetual,
                 changeable && !perpetual && i > 0, changeable && i > 0, changeable && i != last, changeable, BuyOptions(city, list, entry.Name, gold))
             {
@@ -148,7 +148,7 @@ public static class CityProductionModel
             string why = QueueWhy(city, entry);
             string detail = entry.State == "rejected"
                 ? entry.Rejections.FirstOrDefault(it => it.ShouldShow)?.Message ?? "cannot be built"
-                : entry.Cost != null ? $"{Turns(entry.Turns)}, {I(entry.Cost.Value)}" : "perpetual";
+                : entry.Cost != null ? $"{TurnsText(entry.Turns)}, {I(entry.Cost.Value)}" : "perpetual";
             rows.Add(new BuildableRow(entry.Name, entry.Category, entry.State, entry.Name + " - " + detail, detail, Tooltip(entry), why.Length == 0, why, BuyOptions(city, list, entry.Name, gold))
             {
                 Icon = IconFor(entry.Category, entry.Name),
@@ -187,7 +187,7 @@ public static class CityProductionModel
     private static string Tooltip(ConstructionEntry entry)
     {
         var lines = new List<string> { entry.Name + " (" + CategoryHeading(entry.Category).TrimEnd('s') + ")" };
-        if (entry.Cost != null) lines.Add($"Cost {I(entry.Cost.Value)} production, {Turns(entry.Turns)}");
+        if (entry.Cost != null) lines.Add($"Cost {I(entry.Cost.Value)} production, {TurnsText(entry.Turns)}");
         if (entry.WorkDone > 0) lines.Add($"Already {I(entry.WorkDone)} production invested");
         foreach (var rejection in entry.Rejections.Where(it => it.ShouldShow)) lines.Add(rejection.Message);
         foreach (var cost in entry.BuyCosts) lines.Add($"Buy: {I(cost.Cost)} {cost.Stat}");
@@ -245,9 +245,7 @@ public static class CityProductionModel
     }
 
     /// <summary>"never", "1 turn" or "N turns".</summary>
-    public static string TurnsText(int? turns) => Turns(turns);
-
-    private static string Turns(int? turns) => turns == null ? "never" : turns == 1 ? "1 turn" : $"{I(turns.Value)} turns";
+    public static string TurnsText(int? turns) => turns == null ? "never" : turns == 1 ? "1 turn" : $"{I(turns.Value)} turns";
 
     private static string I(int value) => value.ToString(CultureInfo.InvariantCulture);
 }
