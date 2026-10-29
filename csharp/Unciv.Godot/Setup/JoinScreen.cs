@@ -265,6 +265,7 @@ public partial class JoinScreen : Control
                 KnownHosts = env.KnownHosts,
                 PersistKnownHosts = env.PersistKnownHosts,
                 TrustPrompt = (address, fingerprint) => AskTrustAsync(address, fingerprint, cancellation),
+                ModChecksums = round == 0 ? sync?.LocalChecksums() : null,
                 ModSync = round == 0 ? sync : null, // one download per attempt: a host that still disagrees afterwards is refused, never looped on
             });
             connecting = session;

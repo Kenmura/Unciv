@@ -19,6 +19,7 @@ public class NetProtocolTests
         { new LobbySet { Slot = 2, Nation = "Rome", Color = "red", Ready = true }, """{"type":"LobbySet","slot":2,"nation":"Rome","color":"red","ready":true}""" },
         { new LobbyChat { Text = "hi" }, """{"type":"LobbyChat","text":"hi"}""" },
         { new Hello { Protocol = 1, ClientVersion = "0.1", RulesetHash = "abc", ModList = [], ModSync = true }, """{"type":"Hello","protocol":1,"clientVersion":"0.1","rulesetHash":"abc","modList":[],"modSync":true}""" },
+        { new Hello { Protocol = 1, ClientVersion = "0.1", RulesetHash = "abc", ModList = [], ModSync = true, ModChecksums = new() { ["M"] = "cc" } }, """{"type":"Hello","protocol":1,"clientVersion":"0.1","rulesetHash":"abc","modList":[],"modSync":true,"modChecksums":{"M":"cc"}}""" },
         { new ModFileRequest { Mod = "M", Path = "Units.json" }, """{"type":"ModFileRequest","mod":"M","path":"Units.json"}""" },
         { new ModManifest { BaseRuleset = "B", Mods = ["M"], RulesetHash = "ab", Entries = [new ModEntry { Name = "M", Checksum = "cc", Files = [new ModFileEntry { Path = "Units.json", Size = 2, Sha256 = "dd" }] }] },
             """{"type":"ModManifest","baseRuleset":"B","mods":["M"],"rulesetHash":"ab","entries":[{"name":"M","checksum":"cc","files":[{"path":"Units.json","size":2,"sha256":"dd"}]}]}""" },

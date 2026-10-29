@@ -148,7 +148,7 @@ public sealed class JoinModelTests
     {
         var text = JoinModel.ModSyncText([("Alpha", "Missing", 500), ("Beta", "Different", 3 * 1024), ("Gamma", "Missing", 5 * 1024 * 1024)]);
         Assert.Contains("- Alpha: not installed, 500 B", text, StringComparison.Ordinal);
-        Assert.Contains("- Beta: installed, but different (your copy is kept as a backup), 3 KB", text, StringComparison.Ordinal);
+        Assert.Contains("- Beta: installed, but different (your copy is kept as a backup, with any images or sounds it has), 3 KB", text, StringComparison.Ordinal);
         Assert.Contains("- Gamma: not installed, 5 MB", text, StringComparison.Ordinal);
         Assert.Contains("trust this host", text, StringComparison.Ordinal);
     }

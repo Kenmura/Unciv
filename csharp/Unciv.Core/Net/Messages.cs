@@ -28,6 +28,9 @@ public sealed record Hello : Message
 
     /// <summary>T247: true when this client can take the host's mod files. A ruleset mismatch then continues the handshake into a <see cref="ModManifest"/> instead of an immediate refusal. Absent (null) for a client that cannot.</summary>
     public bool? ModSync { get; init; }
+
+    /// <summary>T247: with <see cref="ModSync"/>, the checksums (<c>ModEntry.Checksum</c>) of the mods installed on the client by name. A mod of the host that is missing or different here triggers the mod sync even when the ruleset hash is equal (the hash only covers rule names, not their values).</summary>
+    public Dictionary<string, string>? ModChecksums { get; init; }
 }
 
 public sealed record Join : Message

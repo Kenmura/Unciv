@@ -592,9 +592,9 @@ public sealed class ModSyncTests : IDisposable
         var good = Encoding.UTF8.GetBytes(UnitsJson);
         var one = ManifestOf("A", "Units.json", good);
         Assert.Null(ModManifestBuilder.Validate(one));
-        var many = one with { Entries = [.. Enumerable.Range(0, ModSyncRules.MaxMods + 1).Select(i => one.Entries[0] with { Name = "M" + i })] };
+        var many = one with { Mods = [.. Enumerable.Range(0, ModSyncRules.MaxMods + 1).Select(i => "M" + i)], Entries = [.. Enumerable.Range(0, ModSyncRules.MaxMods + 1).Select(i => one.Entries[0] with { Name = "M" + i })] };
         Assert.Equal("too many mods", ModManifestBuilder.Validate(many));
-        var dup = one with { Entries = [one.Entries[0], one.Entries[0] with { Name = "a" }] };
+        var dup = one with { Mods = ["A", "a"], Entries = [one.Entries[0], one.Entries[0] with { Name = "a" }] };
         Assert.Equal("duplicate mod", ModManifestBuilder.Validate(dup));
         var dupFile = one.Entries[0] with { Files = [one.Entries[0].Files[0], one.Entries[0].Files[0]] };
         Assert.Equal("duplicate file", ModManifestBuilder.Validate(one with { Entries = [dupFile] }));
@@ -609,9 +609,9 @@ public sealed class ModSyncTests : IDisposable
             var files = ModSyncRules.AllowedFiles.Take(8).Select(name => new ModFileEntry { Path = name, Size = ModSyncRules.MaxFileBytes, Sha256 = new string('a', 64) }).ToList();
             return new ModEntry { Name = "Big" + i, Files = files, Checksum = ModManifestBuilder.ChecksumOf(files) };
         }).ToList();
-        Assert.Equal("download too large", ModManifestBuilder.Validate(one with { Entries = big }));
+        Assert.Equal("download too large", ModManifestBuilder.Validate(one with { Mods = [.. big.Select(it => it.Name)], Entries = big }));
         var bigOne = big[0] with { Files = [.. ModSyncRules.AllowedFiles.Take(9).Select(name => new ModFileEntry { Path = name, Size = ModSyncRules.MaxFileBytes, Sha256 = new string('a', 64) })] };
-        Assert.Equal("mod too large", ModManifestBuilder.Validate(one with { Entries = [bigOne] }));
+        Assert.Equal("mod too large", ModManifestBuilder.Validate(one with { Mods = ["Big0"], Entries = [bigOne] }));
     }
 
     [Fact]
@@ -741,5 +741,75 @@ public sealed class ModSyncTests : IDisposable
         public ValueTask CloseAsync() => inner.CloseAsync();
 
         public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Host_SameHashButDifferentModContent_OffersTheSyncOnlyWhenTheClientReportsChecksums()
+    {
+        await using var lobby = NewLobby();
+        var checksum = ModManifestBuilder.Build("TestMod", new DirectoryRulesetFolder(Path.Combine(hostMods, "TestMod")))!.Checksum;
+
+        async Task<Message> HelloReplyAsync(Dictionary<string, string>? sums, bool? modSync)
+        {
+            var (client, host) = InMemoryTransport.CreatePair();
+            _ = lobby.AttachConnectionAsync(host);
+            await client.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "t", RulesetHash = hostHash, ModList = [], ModSync = modSync, ModChecksums = sums }));
+            var welcome = await ReceiveAsync<Welcome>(client);
+            await client.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "Mallory" }));
+            await client.SendAsync(ProtocolCodec.Encode(new Auth { Proof = identity.Sign(welcome.HostKeyFingerprint, welcome.SessionId, welcome.Challenge) }));
+            return await ReceiveAsync<Message>(client);
+        }
+
+        Assert.IsType<ModManifest>(await HelloReplyAsync(new() { ["TestMod"] = new string('0', 64) }, true)); // same name, different content
+        Assert.IsType<ModManifest>(await HelloReplyAsync([], true)); // missing
+        Assert.IsType<JoinOk>(await HelloReplyAsync(new() { ["TestMod"] = checksum }, true)); // identical
+        Assert.IsType<JoinOk>(await HelloReplyAsync(null, true)); // no checksums reported: plain join
+        Assert.IsType<JoinOk>(await HelloReplyAsync(new() { ["TestMod"] = new string('0', 64) }, null)); // no sync wanted
+    }
+
+    [Fact]
+    public async Task Host_ModSyncSession_IsNeverSeated_AndGetsOneManifestPerConnection()
+    {
+        await using var lobby = NewLobby();
+        var (client, welcome) = await HelloAsync(lobby, clientHash, modSync: true);
+        await ManifestAsync(client, welcome);
+        // Joining and authenticating again on the same connection yields no second manifest.
+        await client.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "Mallory" }));
+        await client.SendAsync(ProtocolCodec.Encode(new Auth { Proof = identity.Sign(welcome.HostKeyFingerprint, welcome.SessionId, welcome.Challenge) }));
+        Assert.IsNotType<ModManifest>(await ReceiveAsync<Message>(client));
+        Assert.All(lobby.Slots, slot => Assert.Equal(SlotKind.Open, slot.Kind));
+    }
+
+    [Fact]
+    public async Task Host_NothingToOffer_IsNotCached_SoFixingTheModHelpsTheNextJoiner()
+    {
+        var folders = new Dictionary<string, string>();
+        await using var lobby = NewLobby(folders: folders);
+        var (c1, w1) = await HelloAsync(lobby, clientHash, modSync: true);
+        await c1.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "Mallory" }));
+        await c1.SendAsync(ProtocolCodec.Encode(new Auth { Proof = identity.Sign(w1.HostKeyFingerprint, w1.SessionId, w1.Challenge) }));
+        Assert.Equal(JoinRefusedCodes.ModSyncUnavailable, (await ReceiveAsync<JoinRefused>(c1)).Code);
+        folders["TestMod"] = Path.Combine(hostMods, "TestMod");
+        var (c2, w2) = await HelloAsync(lobby, clientHash, modSync: true);
+        Assert.Single((await ManifestAsync(c2, w2)).Entries);
+    }
+
+    [Fact]
+    public async Task Hostile_ManifestOfferingAnUnrelatedMod_IsRejected()
+    {
+        var good = Encoding.UTF8.GetBytes(UnitsJson);
+        var manifest = ManifestOf("Unrelated", "Units.json", good) with { Mods = ["SomethingElse"] };
+        Assert.Equal(ModSyncCodes.BadManifest, (await AgainstScriptedHostAsync(manifest, request => Data(request, good), Service())).Code);
+        AssertNothingInstalled();
+    }
+
+    [Fact]
+    public void LocalChecksums_ListsInstalledComparableMods()
+    {
+        WriteMod(clientMods, "Mine", UnitsJson);
+        Directory.CreateDirectory(Path.Combine(clientMods, ".hidden", "jsons"));
+        var sums = Service().LocalChecksums();
+        Assert.Equal(["Mine"], sums.Keys);
+        Assert.Equal(ModManifestBuilder.Build("TestMod", new DirectoryRulesetFolder(Path.Combine(hostMods, "TestMod")))!.Checksum, sums["Mine"]);
     }
 }

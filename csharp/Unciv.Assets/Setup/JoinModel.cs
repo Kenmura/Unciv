@@ -105,7 +105,7 @@ public static class JoinModel
     /// <summary>The prompt before a mod download: what is missing or different and how big it is. Nothing is fetched before the player says yes; a mod that is already installed is kept as a backup.</summary>
     public static string ModSyncText(IReadOnlyList<(string Name, string Status, long Bytes)> mods)
     {
-        var lines = mods.Select(it => $"- {it.Name}: {(it.Status == "Missing" ? "not installed" : "installed, but different (your copy is kept as a backup)")}, {FormatBytes(it.Bytes)}");
+        var lines = mods.Select(it => $"- {it.Name}: {(it.Status == "Missing" ? "not installed" : "installed, but different (your copy is kept as a backup, with any images or sounds it has)")}, {FormatBytes(it.Bytes)}");
         return "The host plays with mods you do not have in the same version:\n\n" + string.Join("\n", lines)
             + "\n\nOnly the rules data of these mods is downloaded (no images, sounds or programs) and it is checked before it is installed. Only continue if you trust this host.";
     }

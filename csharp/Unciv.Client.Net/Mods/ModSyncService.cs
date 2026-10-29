@@ -51,6 +51,15 @@ public sealed class ModSyncService(IRulesetFileSource files, string modsDirector
     private const string StagingPrefix = ".sync-staging-";
     private const string BackupPrefix = ".sync-backup-";
 
+    /// <summary>The checksum of every installed mod that can be compared (valid name, allowed files within the caps), by name: sent in the Hello.</summary>
+    public Dictionary<string, string> LocalChecksums()
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var folder in files.ModsFolder.List().Where(it => it.IsDirectory && !it.Name.StartsWith('.')).Take(256))
+            if (ModManifestBuilder.Build(folder.Name, folder) is { } entry) result[entry.Name] = entry.Checksum;
+        return result;
+    }
+
     /// <summary>What a manifest needs from this client. Fails with <see cref="ModSyncException"/> for a manifest that is not acceptable or a name that collides with an installed mod of another spelling.</summary>
     public ModSyncPlan Plan(ModManifest manifest)
     {

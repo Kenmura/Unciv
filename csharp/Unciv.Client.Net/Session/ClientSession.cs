@@ -66,6 +66,9 @@ public sealed class ClientSessionOptions
     /// <summary>T247: takes the host's mod files when the rules differ (the host answers a mismatched join with a manifest). Without it a mismatch is refused as before.</summary>
     public IModSyncHandler? ModSync { get; init; }
 
+    /// <summary>T247: the checksums of the mods installed here, sent with the Hello so the host can spot a same-named but different mod.</summary>
+    public IReadOnlyDictionary<string, string>? ModChecksums { get; init; }
+
     /// <summary>T247: how long the host may take to answer one mod file request.</summary>
     public TimeSpan ModFileTimeout { get; init; } = TimeSpan.FromSeconds(30);
 }
@@ -370,7 +373,8 @@ public sealed class ClientSession : IAsyncDisposable
                 ClientVersion = options.ClientVersion,
                 RulesetHash = options.RulesetHash,
                 ModList = options.ModList,
-                ModSync = options.ModSync != null ? true : null
+                ModSync = options.ModSync != null ? true : null,
+                ModChecksums = options.ModSync != null && options.ModChecksums != null ? new Dictionary<string, string>(options.ModChecksums) : null
             }, token).ConfigureAwait(false);
 
             keepAliveTask = RunKeepAliveAsync(keepAlive.Token);

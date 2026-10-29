@@ -375,6 +375,14 @@ public sealed class LobbyHost : IAsyncDisposable
                 session.ModSync = true;
             }
         }
+        else if (hello.ModSync == true && hello.ModChecksums != null && ModsDifferFrom(hello.ModChecksums))
+        {
+            // The rule names agree but a mod's content does not (the hash covers names only): same path as a mismatch.
+            lock (gate)
+            {
+                session.ModSync = true;
+            }
+        }
 
         var challenge = new HostChallenge(HostFingerprint, random);
         lock (gate)
@@ -394,6 +402,11 @@ public sealed class LobbyHost : IAsyncDisposable
 
     /// <summary>The folders the host serves mods from (the loaded mods' own folders); tests replace it.</summary>
     public IModFolders ModFolders { get; set; } = RulesetCacheModFolders.Instance;
+
+    /// <summary>True when a downloadable mod of the host is missing from, or differs from, the client's reported mods.</summary>
+    private bool ModsDifferFrom(Dictionary<string, string> clientChecksums) =>
+        CurrentModManifest() is { } manifest
+        && manifest.Entries.Any(it => !clientChecksums.TryGetValue(it.Name, out var theirs) || !string.Equals(theirs, it.Checksum, StringComparison.Ordinal));
 
     private (string Key, ModManifest? Manifest)? modManifestCache;
 
@@ -435,13 +448,15 @@ public sealed class LobbyHost : IAsyncDisposable
         }
         lock (gate)
         {
-            modManifestCache = (key, manifest);
+            // Only a usable manifest is kept: "nothing to offer" is re-checked next time (the host may have fixed a mod meanwhile).
+            modManifestCache = manifest == null ? null : (key, manifest);
         }
         return manifest;
     }
 
     private async Task SendModManifestAsync(LobbySession session)
     {
+        if (session.ModManifestSent != null) return; // one manifest per connection
         var manifest = CurrentModManifest();
         if (manifest == null)
         {
@@ -471,6 +486,14 @@ public sealed class LobbyHost : IAsyncDisposable
         var bytes = first && folder != null ? ModManifestBuilder.ReadFile(folder, request.Path) : null;
         if (listed == null || bytes == null || bytes.Length != listed.Size || !string.Equals(ModManifestBuilder.HashOf(bytes), listed.Sha256, StringComparison.Ordinal))
         {
+            if (listed != null)
+            {
+                // The files changed after the manifest was built: drop it so the next joiner gets a fresh one.
+                lock (gate)
+                {
+                    modManifestCache = null;
+                }
+            }
             await SendAsync(session.Transport, new Error { Code = ErrorCodes.ModFileRefused }).ConfigureAwait(false);
             return;
         }

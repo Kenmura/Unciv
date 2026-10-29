@@ -81,6 +81,8 @@ public static class ModManifestBuilder
         foreach (var entry in manifest.Entries)
         {
             if (!ModSyncRules.IsValidModName(entry.Name)) return "bad mod name";
+            // A host may only offer the mods of its own lobby: it cannot make the client replace an unrelated installed mod.
+            if (entry.Name != manifest.BaseRuleset && !manifest.Mods.Contains(entry.Name, StringComparer.Ordinal)) return "mod not in the lobby";
             if (!names.Add(entry.Name)) return "duplicate mod";
             if (entry.Files.Count is 0 || entry.Files.Count > ModSyncRules.AllowedFiles.Count) return "bad file count";
             var paths = new HashSet<string>(StringComparer.Ordinal);
