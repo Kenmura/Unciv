@@ -262,9 +262,8 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         Assert.Equal(0, Xp("Warrior"));
         PlaceWork(game, capital, "Royal Library", 0, "Odyssey", "Ancient era");
         Assert.Equal(10, Xp("Warrior"));
-        PlaceWork(game, capital, "Parthenon", 0, "Fables", "Ancient era"); // a second work anywhere in the city counts too
         capital.CityConstructions.AddBuilding("Amphitheater");
-        PlaceWork(game, capital, "Amphitheater", 0, "Oedipus the King", "Ancient era");
+        PlaceWork(game, capital, "Amphitheater", 0, "Oedipus the King", "Ancient era"); // a second work in another building counts too
         Assert.Equal(20, Xp("Warrior"));
     }
 
