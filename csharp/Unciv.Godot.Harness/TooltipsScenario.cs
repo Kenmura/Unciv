@@ -75,13 +75,12 @@ public sealed class TooltipsScenario : Scenario
                 screen.HoveredTile == capitalCoord && screen.HoverTip.Length > 0 && !screen.Tooltips.IsShowing),
             new Act("let the delay elapse", () => screen.Tooltips.Advance(NeverReal)),
             new WaitFrames(2),
-            new AssertQuery("the tooltip is the engine's description of the tile: city, terrain, yields and where they come from", () =>
+            new AssertQuery("the tooltip is the engine's description of the tile (city, terrain, yields and where they come from) and never overlaps the HUD's top bar", () =>
             {
                 var info = recording.QueryAsync(new TileInfoQuery(capitalCoord.X, capitalCoord.Y)).GetAwaiter().GetResult().NotNull();
-                return screen.Tooltips.IsShowing && screen.Tooltips.ShownText == ExpectedTileTip() && info.IsCityCenter && info.OwningCity == capital.Name
+                return screen.Tooltips.IsShowing && screen.Tooltips.PanelRect.Position.Y >= screen.Hud.BarRect.End.Y && !screen.Tooltips.PanelRect.Intersects(screen.Hud.BarRect) && screen.Tooltips.ShownText == ExpectedTileTip() && info.IsCityCenter && info.OwningCity == capital.Name
                     && screen.Tooltips.ShownText.StartsWith(capital.Name, StringComparison.Ordinal) && info.Yields.Count > 0 && info.YieldBreakdown.Count > 0 && screen.Tooltips.ShownText.Contains("Total", StringComparison.Ordinal) && info.BaseTerrain == capitalTile.BaseTerrain;
             }),
-            new AssertQuery("the tip never overlaps the HUD's top bar", () => screen.Tooltips.PanelRect.Position.Y >= screen.Hud.BarRect.End.Y && !screen.Tooltips.PanelRect.Intersects(screen.Hud.BarRect)),
             new Capture("tile", "Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources"),
             new Act("pointer onto the top bar", () => InputSimulator.SimulateMouseMove(viewport, new Vector2(300, 8))),
             new WaitFrames(3),
