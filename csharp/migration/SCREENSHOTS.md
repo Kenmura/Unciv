@@ -1380,9 +1380,13 @@ Battering Ram as a rigid siege model, a cart-and-wheels chariot and a trunked el
 
 Scenario `unit-visuals`.
 
-![Close view, side on: the Chariot Archer and War Chariot (a rider standing on a two-wheeled cart behind a horse), the Battering Ram top left (wooden frame, team-coloured roof, iron-headed log, posed mid-strike) and a War Elephant (placeholder shapes).](../Unciv.Godot.Harness/golden/unit-visuals/chariots.png)
+![Close view, side on: the Chariot Archer and War Chariot, a rider standing on a two-wheeled cart with a pole to the horse (placeholder shapes; the horse is hard to tell apart), and a War Elephant beside them.](../Unciv.Godot.Harness/golden/unit-visuals/chariots.png)
 
-*Close view, side on: the Chariot Archer and War Chariot (a rider standing on a two-wheeled cart behind a horse), the Battering Ram top left (wooden frame, team-coloured roof, iron-headed log, posed mid-strike) and a War Elephant (placeholder shapes).* (`unit-visuals/chariots.png`)
+*Close view, side on: the Chariot Archer and War Chariot, a rider standing on a two-wheeled cart with a pole to the horse (placeholder shapes; the horse is hard to tell apart), and a War Elephant beside them.* (`unit-visuals/chariots.png`)
+
+![Close view, side on: the Battering Ram posed mid-strike by the rigid motion: a wooden frame on four wheels, a team-coloured roof and an iron-headed log, kicked back along its facing (placeholder shapes).](../Unciv.Godot.Harness/golden/unit-visuals/ram.png)
+
+*Close view, side on: the Battering Ram posed mid-strike by the rigid motion: a wooden frame on four wheels, a team-coloured roof and an iron-headed log, kicked back along its facing (placeholder shapes).* (`unit-visuals/ram.png`)
 
 ![Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract.](../Unciv.Godot.Harness/golden/unit-visuals/elephants.png)
 

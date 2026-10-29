@@ -335,17 +335,27 @@ public sealed class UnitVisualsScenario : Scenario
                 && Bones(node("African Forest Elephant", null), "ear_l") > 0 && Bones(node("Cataphract", null), "trunk") == 0 && Bones(node("Horseman", null), "wheel_l") == 0
                 && node("Battering Ram", null) is { Rigid: RigidKind.Siege, Players.Count: 0 } ram && FigureModels(ram).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 0)
                 && FigureModels(ram).All(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).Count > 0)),
-            new Act("pose the ram mid-strike and turn the chariots and the ram side on", () =>
+            new Act("turn the chariots side on", () =>
             {
-                node("Battering Ram", null).ShowRigid(RigidMotion.Pose(RigidKind.Siege, CueKind.Strike, 0.5f, 0.5f));
-                foreach (var name in new[] { "War Chariot", "Chariot Archer", "Battering Ram" }) node(name, null).Face(MathF.PI / 2f);
+                foreach (var name in new[] { "War Chariot", "Chariot Archer" }) node(name, null).Face(MathF.PI / 2f);
                 view.FocusOn(MapLayout.TileTop(coord(38).X, coord(38).Y, 0f));
+                view.SetView(40f);
+                view.SetZoom(3.5f);
+            }),
+            new WaitFrames(2),
+            new Capture("chariots", "Close view of the Chariot Archer and War Chariot, side on: a rider standing on a two-wheeled cart with a pole to the horse (placeholder shapes), the horse hard to tell apart; a War Elephant beside them"),
+            new Act("pose the ram mid-strike, side on, and frame its own tile", () =>
+            {
+                var ram = node("Battering Ram", null);
+                ram.ShowRigid(RigidMotion.Pose(RigidKind.Siege, CueKind.Strike, 0.5f, 0.5f));
+                ram.Face(MathF.PI / 2f);
+                view.FocusOn(MapLayout.TileTop(ram.Unit.X, ram.Unit.Y, 0f));
                 view.SetView(40f);
                 view.SetZoom(3.5f);
             }),
             new AssertQuery("the posed ram recoiled off its slot", () => node("Battering Ram", null).RigidPose.Recoil > 0.1f),
             new WaitFrames(2),
-            new Capture("chariots", "Close view of the Chariot Archer, War Chariot and Battering Ram, side on: riders standing on a two-wheeled cart behind a horse, and a wheeled wooden ram with a team-coloured roof posed mid-strike by the rigid motion (placeholder shapes)"),
+            new Capture("ram", "Close view of the Battering Ram, side on, posed mid-strike by the rigid motion: a wooden frame on four wheels, a team-coloured roof and an iron-headed log, kicked back along its facing (placeholder shapes)"),
             new Act("the ram back to rest", () => node("Battering Ram", null).RestRigid()),
     ];
 
