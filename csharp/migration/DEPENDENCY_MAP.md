@@ -134,7 +134,7 @@ flowchart TD
   class B006 ready
   class B009 ready
   class B010 review
-  class B011 prog
+  class B011 review
   class B013 review
   class B014 ondeck
   class B015 ondeck
@@ -253,7 +253,7 @@ xychart-beta
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
 | B010 | Needs-Review [Claude] | B007 | 1 | BNW: Archaeology: historical records, site spawning, Archaeologist, dig choices, Landmark |
-| B011 | In-Progress [Claude] | B007, B008 | 1 | BNW: Great Writer/Musician/Artist actions, guild specialists, GP faith purchase |
+| B011 | Needs-Review [Claude] | B007, B008 | 1 | BNW: Great Writer/Musician/Artist actions, guild specialists, GP faith purchase |
 | B016 | Available (waiting on B015) | B015 | 1 | BNW: Resolution effects (all 18) |
 | B017 | Available (waiting on B015) | B015 | 1 | BNW: League projects and rewards |
 | B018 | Available (waiting on B015) | B015 | 1 | BNW: Diplomatic victory (UN) |
