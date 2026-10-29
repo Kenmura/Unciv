@@ -120,7 +120,7 @@ Finds the clips and maps each presenter cue to one, falling back to today's proc
 - Elephants are the horse rig with a `mount` entry (`scale` 1.12 and a grey `colour`, limited by the contract's 0.65 radius); a real elephant model replaces them with no code change. A mounted unit's `attack` clip must be about one second (Chop, Slice_Horizontal) or the horse's stretched clip no longer matches the rider's; the infantry may use longer ones (Stab, 2H Chop).
 - Not covered, still generated blocks: Trireme, Quinquereme, Dromon, Galley, Work Boats, Catapult, Ballista (code-driven rigid motion) and the Battering Ram (a `Sword` type with no rigid kind: a follow-up gives it a rigid siege kind).
 - `UnitModelContractTests.EveryHumanoidAndMountedUnitHasAModel` (C094; was era-limited) fails when a Gods & Kings unit that is not a ship, siege unit, the ram, aircraft, missile, helicopter, armour or spaceship part has no key.
-- The chariots (Chariot Archer, War Chariot) are riders on the horse rig: there is no chariot or wheel model yet. Scope: units with a required tech of the ancient or classical era plus the barbarians; Great People, Missionary and Inquisitor (other than the Great Scientist) stay generated blocks.
+- The chariots (Chariot Archer, War Chariot) are riders on the horse rig: there is no chariot or wheel model yet. Scope: units with a required tech of the ancient or classical era plus the barbarians; Great People, Missionary and Inquisitor got models in C094.
 
 ## C093 status: medieval and renaissance art
 

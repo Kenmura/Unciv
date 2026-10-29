@@ -1362,7 +1362,7 @@ Scenario `unit-visuals`.
 
 ## C094 (ticket not Done or unknown)
 
-Industrial and modern unit art: 25 more units (riflemen, marines, paratroopers, gun crews, cavalry, great people) from the units pack, built from data in attachments.json; ships, aircraft and armour stay generated blocks.
+Industrial and modern unit art: 25 more units (26 with Infantry) (riflemen, marines, paratroopers, gun crews, cavalry, great people) from the units pack, built from data in attachments.json; ships, aircraft and armour stay generated blocks.
 
 Scenario `unit-visuals`.
 

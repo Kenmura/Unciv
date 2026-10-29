@@ -871,7 +871,7 @@
   },
   "C094": {
     "scenario": "unit-visuals",
-    "about": "Industrial and modern unit art: 25 more units (riflemen, marines, paratroopers, gun crews, cavalry, great people) from the units pack, built from data in attachments.json; ships, aircraft and armour stay generated blocks.",
+    "about": "Industrial and modern unit art: 25 more units (26 with Infantry) (riflemen, marines, paratroopers, gun crews, cavalry, great people) from the units pack, built from data in attachments.json; ships, aircraft and armour stay generated blocks.",
     "shots": [
       {
         "golden": "unit-visuals/modern.png",
