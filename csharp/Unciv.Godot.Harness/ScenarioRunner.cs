@@ -93,7 +93,7 @@ public partial class ScenarioRunner : Control
             await NextFrame();
             if ((Vector2I)GetViewport().GetVisibleRect().Size != scenario.Viewport)
             {
-                failures.Add($"the window could not be resized to {scenario.Viewport.X}x{scenario.Viewport.Y} (is {GetViewport().GetVisibleRect().Size})");
+                GD.PrintErr($"[scenario] FAIL: the window could not be resized to {scenario.Viewport.X}x{scenario.Viewport.Y} (is {GetViewport().GetVisibleRect().Size})");
                 return 1;
             }
         }
