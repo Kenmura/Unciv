@@ -1,4 +1,5 @@
 using Unciv.Commands;
+using Unciv.Commands.Log;
 using Unciv.Commands.Turn;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
@@ -283,6 +284,124 @@ public sealed class NetTurnPolicyTests : IDisposable
         Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType);
         Assert.Equal("new-greece-key", game.GetCivilization("Greece").PlayerId);
         Assert.Equal(0, timer.GetAbsentTurns("Greece"));
+    }
+
+    private static (GameInfo Game, GameSession Session, TurnTimer Timer, ManualClock Clock) ThreeHumans(NetTurnPolicyTests t, TurnPolicy policy)
+    {
+        var clock = new ManualClock(10_000L);
+        var game = t.NewGame(1L,
+            new Player("Babylon", PlayerType.Human),
+            new Player("Greece", PlayerType.Human),
+            new Player("Rome", PlayerType.Human));
+        var session = Session(game, clock);
+        return (game, session, new TurnTimer(session, policy, clock, autoResolve: true), clock);
+    }
+
+    [Fact]
+    public void BaselineDropMidTurnChangesNothingAndNoAiActsUntilKAbsentTurns()
+    {
+        // T267 baseline (T177): a drop keeps the civ human; ForceEndTurn after the grace is the only effect; takeover only at a boundary after K absent turns.
+        var (game, session, timer, clock) = ThreeHumans(this, new TurnPolicy { DropGraceSeconds = 30, OnDisconnect = DisconnectAction.AiTakeover, AbsentTurnsBeforeAiTakeover = 2 });
+        var before = ReplayVerifier.FullHash(game);
+
+        timer.Disconnect("Greece");
+        timer.Tick();
+        Assert.Equal(before, ReplayVerifier.FullHash(game));
+
+        clock.AdvanceSeconds(35);
+        timer.Tick();
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType);
+        Assert.True(timer.WasForceEndedByDisconnect("Greece"));
+        Assert.False(timer.HasPendingTakeover("Greece"));
+
+        session.Submit("Babylon", new EndTurn());
+        session.Submit("Rome", new EndTurn());
+        timer.Tick();
+        Assert.Equal(1, game.Turns);
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType); // one absent turn < K
+    }
+
+    [Theory]
+    [InlineData(DisconnectAction.ForceEndTurn)]
+    [InlineData(DisconnectAction.AiTakeover)]
+    public void DepartIsHandedToTheAiAtTheNextBoundaryRegardlessOfKAndPolicy(DisconnectAction action)
+    {
+        var (game, session, timer, _) = ThreeHumans(this, new TurnPolicy { DropGraceSeconds = 30, OnDisconnect = action, AbsentTurnsBeforeAiTakeover = 3 });
+        var before = ReplayVerifier.FullHash(game);
+
+        timer.Depart("Greece");
+
+        // Mid-turn: nothing changes, no AI acts.
+        Assert.Equal(before, ReplayVerifier.FullHash(game));
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType);
+        Assert.True(timer.HasPendingTakeover("Greece"));
+
+        // Nobody is there to play, so the turn is force-ended at once (not after the grace), the civ is still human.
+        timer.Tick();
+        Assert.Contains("Greece", game.TurnState!.Ended);
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType);
+        Assert.Equal(0, game.Turns);
+
+        session.Submit("Babylon", new EndTurn());
+        session.Submit("Rome", new EndTurn());
+        timer.Tick();
+
+        Assert.Equal(1, game.Turns);
+        Assert.Equal(PlayerType.AI, game.GetCivilization("Greece").PlayerType);
+        Assert.False(timer.HasPendingTakeover("Greece"));
+        Assert.Equal(1, timer.GetAbsentTurns("Greece")); // K is 3: only the explicit leave made this takeover
+    }
+
+    [Fact]
+    public void ReturningBeforeTheBoundaryCancelsThePendingTakeover()
+    {
+        var (game, session, timer, _) = ThreeHumans(this, TurnPolicy.Default);
+        timer.Depart("Greece");
+        timer.Tick();
+        Assert.Contains("Greece", game.TurnState!.Ended);
+
+        timer.Connect("Greece", game.GetCivilization("Greece").PlayerId);
+        Assert.False(timer.HasPendingTakeover("Greece"));
+        Assert.DoesNotContain("Greece", game.TurnState.Ended); // the forced end is undone as for any drop
+
+        session.Submit("Babylon", new EndTurn());
+        session.Submit("Rome", new EndTurn());
+        session.Submit("Greece", new EndTurn());
+        timer.Tick();
+        Assert.Equal(1, game.Turns);
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType);
+    }
+
+    [Fact]
+    public void ForgettingThePlayerCancelsThePendingTakeoverAndTheLastHumanStays()
+    {
+        var (game, session, timer, _) = ThreeHumans(this, TurnPolicy.Default);
+        timer.Depart("Greece");
+        timer.ForgetPlayer("Greece");
+        Assert.False(timer.HasPendingTakeover("Greece"));
+
+        // Two of three leave: the last human cannot be handed over, the request is dropped.
+        timer.Depart("Greece");
+        timer.Depart("Rome");
+        timer.Tick();
+        session.Submit("Babylon", new EndTurn());
+        timer.Tick();
+        Assert.Equal(1, game.Turns);
+        Assert.Equal(PlayerType.AI, game.GetCivilization("Greece").PlayerType);
+        Assert.Equal(PlayerType.AI, game.GetCivilization("Rome").PlayerType);
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Babylon").PlayerType);
+
+        timer.Depart("Babylon");
+        timer.Tick();
+        timer.Tick();
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Babylon").PlayerType);
+    }
+
+    [Fact]
+    public void LobbyDefaultHandsAbsentPlayersToTheAiAndWaitKeepsForceEnding()
+    {
+        Assert.Equal(DisconnectAction.AiTakeover, new Unciv.Net.Lobby.LobbySettings().ToTurnPolicy().OnDisconnect);
+        Assert.Equal(DisconnectAction.ForceEndTurn, new Unciv.Net.Lobby.LobbySettings { OnDisconnect = "wait" }.ToTurnPolicy().OnDisconnect);
     }
 
     [Fact]

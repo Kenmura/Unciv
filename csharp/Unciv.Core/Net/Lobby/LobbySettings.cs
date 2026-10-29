@@ -31,7 +31,10 @@ public sealed class LobbySettings
     public bool DynamicTurnTimer { get; set; }
 
     public int TurnTimerMinSeconds { get; set; } = 30;
-    public string OnDisconnect { get; set; } = "wait";
+
+    /// <summary>T267: what the host does with a player who stays away: <c>"ai"</c> (default) hands the civ to the AI after <see cref="TurnPolicy.AbsentTurnsBeforeAiTakeover"/> absent turns, at a turn boundary, never mid-turn; <c>"wait"</c> only force-ends its turns. An explicit leave or kick always hands over at the next boundary.</summary>
+    public string OnDisconnect { get; set; } = "ai";
+
     public string? Password { get; set; }
     public int MaxPlayers { get; set; } = 8;
     public bool AllowJoinInProgress { get; set; } = true;
@@ -70,6 +73,7 @@ public sealed class LobbySettings
         TurnTimerSeconds = Math.Max(0, TurnTimerSeconds),
         DynamicTurnTimer = DynamicTurnTimer,
         TurnTimerMinSeconds = Math.Max(0, TurnTimerMinSeconds),
+        OnDisconnect = string.Equals(OnDisconnect, "wait", StringComparison.OrdinalIgnoreCase) ? DisconnectAction.ForceEndTurn : DisconnectAction.AiTakeover,
     };
 
     /// <summary>

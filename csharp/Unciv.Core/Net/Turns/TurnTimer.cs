@@ -15,6 +15,7 @@ public sealed class TurnTimer
     private readonly IClock clock;
     private readonly Dictionary<string, PlayerTurnState> playerStates = new(StringComparer.Ordinal);
     private readonly HashSet<string> pendingReclaims = new(StringComparer.Ordinal);
+    private readonly HashSet<string> pendingDepartures = new(StringComparer.Ordinal);
     private int currentTurn;
 
     public TurnTimer(GameSession session, TurnPolicy? policy = null, IClock? clock = null, bool autoResolve = true)
@@ -54,6 +55,9 @@ public sealed class TurnTimer
     public int GetAbsentTurns(string civId) =>
         playerStates.TryGetValue(civId, out var state) ? state.AbsentTurns : 0;
 
+    /// <summary>T267: whether an explicit leave or kick of <paramref name="civId"/> waits for the next turn boundary to hand the civ to the AI.</summary>
+    public bool HasPendingTakeover(string civId) => pendingDepartures.Contains(civId);
+
     /// <summary>Whether <paramref name="civId"/> had its turn force-ended due to disconnect grace expiry this turn.</summary>
     public bool WasForceEndedByDisconnect(string civId) =>
         playerStates.TryGetValue(civId, out var state) && state.ForceEndedByDisconnect;
@@ -64,6 +68,7 @@ public sealed class TurnTimer
         var state = GetOrCreateState(civId);
         state.IsConnected = true;
         state.DisconnectedAt = null;
+        pendingDepartures.Remove(civId); // T267: the player came back before the boundary, nothing is taken over
         if (!string.IsNullOrEmpty(playerKeyId))
             state.PlayerKeyId = playerKeyId;
 
@@ -98,10 +103,25 @@ public sealed class TurnTimer
         state.DisconnectedAt = clock.NowMillis;
     }
 
+    /// <summary>
+    /// T267: <paramref name="civId"/>'s player left explicitly or was kicked. Nothing changes mid-turn: the civ stays human (nobody is there to act, so its turn is force-ended
+    /// at once instead of after the drop grace) and the AI takes it over with the logged <see cref="SetController"/> at the next turn boundary, whatever K is.
+    /// A mere drop (<see cref="Disconnect"/>) keeps the grace period and the K absent turns. Connecting again (the same player) cancels the takeover.
+    /// </summary>
+    public void Depart(string civId)
+    {
+        Disconnect(civId);
+        var state = GetOrCreateState(civId);
+        state.DisconnectedAt ??= clock.NowMillis;
+        state.DisconnectedAt = Math.Min(state.DisconnectedAt.Value, clock.NowMillis - policy.DropGraceSeconds * 1000L);
+        pendingDepartures.Add(civId);
+    }
+
     /// <summary>C045: the seat of <paramref name="civId"/> changed hands (kick or rebind): drops a queued reclaim and the remembered key of the old player.</summary>
     public void ForgetPlayer(string civId)
     {
         pendingReclaims.Remove(civId);
+        pendingDepartures.Remove(civId);
         if (playerStates.TryGetValue(civId, out var state)) state.PlayerKeyId = null;
     }
 
@@ -260,6 +280,21 @@ public sealed class TurnTimer
                 }
             }
             state.ForceEndedByDisconnect = false;
+        }
+
+        // 2a. T267: explicit leaves and kicks are handed to the AI now, at the boundary, regardless of K (the last human stays; a refusal drops the request)
+        if (pendingDepartures.Count > 0)
+        {
+            var departed = session.Game.Civilizations
+                .Where(c => pendingDepartures.Contains(c.CivId))
+                .OrderBy(c => session.Game.Civilizations.IndexOf(c))
+                .ToList();
+            pendingDepartures.Clear();
+            foreach (var civ in departed)
+            {
+                if (civ.IsHuman() && !civ.IsDefeated() && HasOtherHumans(civ))
+                    SubmitServer(new SetController { CivId = civ.CivId, Controller = PlayerType.AI });
+            }
         }
 
         // 2. Process AI takeover for civs that exceeded absent turns threshold

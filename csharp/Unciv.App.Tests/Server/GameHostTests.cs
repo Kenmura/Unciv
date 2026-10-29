@@ -418,6 +418,8 @@ public sealed class GameHostTests : IDisposable
 
         Assert.False(host.TurnTimer.IsConnected("Babylon"));
         Assert.False(host.Sessions.ContainsKey("sess-1"));
+        Assert.True(host.TurnTimer.HasPendingTakeover("Babylon")); // T267: an explicit Leave schedules the AI takeover for the boundary
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Babylon").PlayerType);
     }
 
     [Fact]

@@ -208,12 +208,22 @@ public sealed class HostAdminTests : IDisposable
         Assert.Null(await host.KickAsync("Greece"));
 
         Assert.Equal(JoinRefusedCodes.Kicked, (await ReadUntilAsync<JoinRefused>(friend)).Code);
-        Assert.Equal(PlayerType.AI, host.Host.Game.GetCivilization("Greece").PlayerType);
+        // T267: nothing changes mid-turn; the AI takes the civ at the next boundary.
+        Assert.Equal(PlayerType.Human, host.Host.Game.GetCivilization("Greece").PlayerType);
+        Assert.True(host.Host.TurnTimer.HasPendingTakeover("Greece"));
         await host.Host.EnqueueAsync(() =>
         {
             host.Host.Tick();
             return Task.CompletedTask;
         });
+        Assert.Equal(PlayerType.Human, host.Host.Game.GetCivilization("Greece").PlayerType);
+        Assert.True(host.Host.Session.Submit("Babylon", new EndTurn()).Accepted);
+        await host.Host.EnqueueAsync(() =>
+        {
+            host.Host.Tick();
+            return Task.CompletedTask;
+        });
+        Assert.Equal(1, host.Host.Game.Turns);
         Assert.Equal(PlayerType.AI, host.Host.Game.GetCivilization("Greece").PlayerType); // no queued reclaim hands it back
         Assert.Equal("", host.Host.Store!.ReadMeta().Slots["Greece"].PlayerKey);
         Assert.DoesNotContain(host.Host.Sessions.Values, s => s.BoundCivId == "Greece");

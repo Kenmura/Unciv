@@ -280,7 +280,7 @@ public sealed class GameHost : IAsyncDisposable
                     await ProcessMapPingAsync(hostSession, ping);
                     break;
                 case Leave:
-                    await DetachSessionAsync(sessionId);
+                    await DetachSessionAsync(sessionId, explicitLeave: true);
                     break;
                 case Error err:
                     await SafeSendAsync(hostSession, err);
@@ -298,6 +298,7 @@ public sealed class GameHost : IAsyncDisposable
             store?.Sync(session);
             turnTimer.RefreshDeadline();
             BroadcastDelta(marks, result);
+            if (command is SetController) _ = AnnounceRosterAsync(); // T267: a takeover at the boundary changes a slot's kind
         }
         return result;
     }
@@ -539,10 +540,11 @@ public sealed class GameHost : IAsyncDisposable
         await SafeSendAsync(hostSession, msg);
     }
 
-    private async Task DetachSessionAsync(string sessionId)
+    private async Task DetachSessionAsync(string sessionId, bool explicitLeave = false)
     {
         if (!sessions.Remove(sessionId, out var hostSession)) return;
-        turnTimer.Disconnect(hostSession.BoundCivId);
+        if (explicitLeave) turnTimer.Depart(hostSession.BoundCivId); // T267: the AI takes over at the next boundary, not now
+        else turnTimer.Disconnect(hostSession.BoundCivId);
         remoteQueries.EndSession(sessionId);
         gate.EndSession(sessionId);
         // The roster is built before the first await (still on the actor even when a caller does not wait for this method), then sent while the transport closes.
@@ -657,7 +659,7 @@ public sealed class GameHost : IAsyncDisposable
 
     /// <summary>
     /// Host administration (called by the host player's process, never reachable from a client frame): the player of <paramref name="civId"/> is disconnected with <c>kicked</c>, the seat
-    /// binding is cleared so nobody can come back with the old key, and the civ is handed to the AI (<see cref="SetController"/>). Null on success, otherwise a refusal code:
+    /// binding is cleared so nobody can come back with the old key, and the AI takes the civ over at the next turn boundary (T267: <see cref="SetController"/> then, never mid-turn). Null on success, otherwise a refusal code:
     /// <c>unknown-civ</c>, <c>not-bound</c>, <c>no-store</c> or the command's own (<c>turn-resolving</c> while the round resolves).
     /// </summary>
     public Task<string?> KickCivAsync(string civId) => AdminAsync(civId, null);
@@ -693,14 +695,25 @@ public sealed class GameHost : IAsyncDisposable
             if (meta.Slots.Any(it => string.Equals(it.Value.PlayerKey, newKey, StringComparison.Ordinal))) return "key-in-use";
         }
 
-        // First the engine: refused (resolving, last human) means nothing else changes.
+        // First the checks: refused (resolving, last human) means nothing else changes.
+        // A kick hands nothing over now (T267: the AI takes the civ at the next turn boundary); a rebind hands it over at once, and the new key takes it straight back.
         if (civ.IsHuman())
         {
-            var handed = ApplyServerCommand(new SetController { CivId = civId, Controller = Unciv.Logic.Civilization.PlayerType.AI });
-            if (!handed.Accepted) return handed.Validation.Code;
+            if (newKey == null)
+            {
+                if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving }) return CommandErrors.TurnResolving;
+                if (!session.Game.Civilizations.Any(it => it != civ && it.IsHuman() && !it.IsSpectator()))
+                    return CommandErrors.NotAllowed;
+            }
+            else
+            {
+                var handed = ApplyServerCommand(new SetController { CivId = civId, Controller = Unciv.Logic.Civilization.PlayerType.AI });
+                if (!handed.Accepted) return handed.Validation.Code;
+            }
         }
 
-        turnTimer.ForgetPlayer(civId); // no pending reclaim or remembered key of the old player may hand the civ back to them
+        turnTimer.ForgetPlayer(civId); // no pending reclaim, takeover or remembered key of the old player may act on the seat
+        if (newKey == null && civ.IsHuman()) turnTimer.Depart(civId);
         var slots = new SortedDictionary<string, SlotBinding>(meta.Slots, StringComparer.Ordinal)
         {
             [civId] = new SlotBinding { PlayerKey = newKey ?? "", DisplayName = newKey == null ? binding.DisplayName : "" },
