@@ -648,4 +648,27 @@ public sealed class NetLobbyTests : IDisposable
         using var cts = new CancellationTokenSource(Bound);
         while (await c1.ReceiveAsync(cts.Token) != null) { }
     }
+
+    private sealed class ThrowingTransport : ITransport
+    {
+        public bool IsOpen => true;
+        public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => throw new IOException("reset");
+        public ValueTask CloseAsync() => ValueTask.CompletedTask;
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    [Fact]
+    public async Task LobbyReader_EndsCleanly_OnTransportErrorAndOnCancellation()
+    {
+        await using var lobby = new ServerLobby();
+        await lobby.AttachConnectionAsync(new ThrowingTransport()).WaitAsync(Bound);
+
+        var (client, server) = InMemoryTransport.CreatePair();
+        using var cts = new CancellationTokenSource();
+        var attach = lobby.AttachConnectionAsync(server, cts.Token);
+        await cts.CancelAsync();
+        await attach.WaitAsync(Bound);
+        Assert.NotNull(client);
+    }
 }
