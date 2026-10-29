@@ -69,7 +69,7 @@ public class CityFounder
         {
             city.Religion.AddPressure(
                 civInfo.ReligionManager.Religion.NotNull().Name,
-                200 * city.Population.Population
+                200 * civInfo.GameInfo.Ruleset.ModOptions.Constants.ReligionMissionaryPressureMultiplier * city.Population.Population
             );
         }
 

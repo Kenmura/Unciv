@@ -626,9 +626,7 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         "TradeBuildingModifier",
         "TradeMissionGoldModifier",
         "TradeMissionInfluenceModifier",
-        "TradeReligionPressureModifier",
         "UnresearchedTechFromKills",
-        "YieldPerTradeRoute",
     ];
 
     // BuildingPurchaseCostModifier stays pending on purpose: Skyscrapers uses the generic '[stat] cost of purchasing [buildingFilter] buildings' unique.

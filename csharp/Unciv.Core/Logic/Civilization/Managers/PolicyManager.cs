@@ -541,6 +541,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         });
 
         CivInfo.Cache.UpdateCivResources();
+        CivInfo.ReligionManager.GrantPolicyBeliefs(); // B022: Reformation, Religious Tolerance
 
         // This ALSO has the side-effect of updating the CivInfo statForNextTurn so we don't need to call it explicitly
         foreach (var city in CivInfo.Cities)

@@ -396,7 +396,7 @@ internal static class UniqueTypeDataBnw
             [],
             null),
         new("[stats] for each international trade route [cityFilter]",
-            [UniqueTarget.Global],
+            [UniqueTarget.Global, UniqueTarget.FollowerBelief],
             [],
             null),
         new("Allows founding the World Congress",

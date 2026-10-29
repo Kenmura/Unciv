@@ -97,9 +97,37 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         Religion = civInfo.GameInfo.Religions.Values.FirstOrDefault(it => ReferenceEquals(it.FoundingCiv, civInfo));
     }
 
+    /// <summary>B022: the ruleset's religious pressure scale (BNW 10, G&amp;K 1), <c>RELIGION_MISSIONARY_PRESSURE_MULTIPLIER</c>.</summary>
+    private int PressureScale => CivInfo.GameInfo.Ruleset.ModOptions.Constants.ReligionMissionaryPressureMultiplier;
+
     public void StartTurn()
     {
         if (CanGenerateProphet()) GenerateProphet();
+        GrantPolicyBeliefs();
+    }
+
+    /// <summary>
+    /// B022 (bnw-spec 4.11): the beliefs the Reformation policy (<see cref="UniqueType.AddsReformationBelief"/>, one Reformation-tier belief) and
+    /// Religious Tolerance (<see cref="UniqueType.SecondPantheon"/>, a second Pantheon belief) allow once a religion is founded. They are granted as
+    /// free beliefs, so they reach the player as the usual choose-beliefs decision. Nothing is granted without the unique, so G&amp;K is unchanged.
+    /// [K] The spec leaves the timing open: here the belief is offered as soon as the policy is adopted (or the religion founded) and again after a
+    /// choice that cleared the free beliefs, until the religion owns it.
+    /// </summary>
+    public void GrantPolicyBeliefs()
+    {
+        var religion = Religion;
+        if (religion == null || ReligionState is not (ReligionState.Religion or ReligionState.EnhancedReligion)) return;
+        GrantIfMissing(UniqueType.AddsReformationBelief, BeliefType.Reformation, religion.GetBeliefs(BeliefType.Reformation).Count() < 1);
+        GrantIfMissing(UniqueType.SecondPantheon, BeliefType.Pantheon, religion.GetBeliefs(BeliefType.Pantheon).Count() < 2);
+    }
+
+    private void GrantIfMissing(UniqueType unique, BeliefType type, bool religionLacksIt)
+    {
+        if (!religionLacksIt || FreeBeliefs[type.ToString()] > 0 || !CivInfo.HasUnique(unique)) return;
+        // the same eligibility the pickers apply, so a grant is never an unanswerable (or endlessly re-granted) decision
+        if (!CivInfo.GameInfo.Ruleset.Beliefs.Values.Any(it => it.Type == type && GetReligionWithBelief(it) == null && Commands.Empire.ReligionCommandChecks.BeliefIsAllowed(it, CivInfo))) return;
+        FreeBeliefs.Add(type.ToString(), 1);
+        CivInfo.AddNotification($"You may choose a {type} belief", Notification.NotificationCategory.Religion, NotificationIcon.Faith);
     }
 
     public void EndTurn(int faithFromNewTurn)
@@ -168,7 +196,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
         Religion = religion;
         CivInfo.GameInfo.Religions[beliefName] = religion;
         foreach (var city in CivInfo.Cities)
-            city.Religion.AddPressure(beliefName, 200 * city.Population.Population);
+            city.Religion.AddPressure(beliefName, 200 * PressureScale * city.Population.Population);
 
         var humanPlayers = CivInfo.GameInfo.Civilizations.Where(it => it.IsHuman() && !ReferenceEquals(it, CivInfo)).ToList();
         foreach (var civ in humanPlayers)
@@ -519,6 +547,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
             }
         }
 
+        GrantPolicyBeliefs();
         CivInfo.UpdateStatsForNextTurn(); // a belief can have an immediate effect on stats
     }
 
@@ -563,7 +592,7 @@ public class ReligionManager : IsPartOfGameInfoSerialization
 
         var holyCity = CivInfo.Cities.First(it => it.Id == foundingCityId);
         holyCity.Religion.ReligionThisIsTheHolyCityOf = newReligion.Name;
-        holyCity.Religion.AddPressure(name, holyCity.Population.Population * 500);
+        holyCity.Religion.AddPressure(name, holyCity.Population.Population * CivInfo.GameInfo.Ruleset.ModOptions.Constants.ReligionInitialFoundingCityPressure);
 
         foundingCityId = null;
         shouldChoosePantheonBelief = false;

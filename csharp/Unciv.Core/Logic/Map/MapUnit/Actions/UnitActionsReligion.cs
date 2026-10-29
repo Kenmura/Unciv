@@ -77,7 +77,8 @@ public static class UnitActionsReligion
 
     private static int GetPressureAddedFromSpread(MapUnitClass unit)
     {
-        float pressureAdded = unit.BaseUnit.ReligiousStrength;
+        // B022: RELIGION_MISSIONARY_PRESSURE_MULTIPLIER (BNW 10, G&K 1) scales the strength to the ruleset's pressure scale
+        float pressureAdded = unit.BaseUnit.ReligiousStrength * unit.Civ.GameInfo.Ruleset.ModOptions.Constants.ReligionMissionaryPressureMultiplier;
 
         unit.ForEachMatchingUnique(UniqueType.SpreadReligionStrength, null, true, unique =>
         {
@@ -163,7 +164,7 @@ public static class UnitActionsReligion
             action: UnitActionModifiers.CanActivateSideEffects(unit, newStyleUnique.NotNull())
                 ? () =>
                 {
-                    city.Religion.RemoveAllPressuresExceptFor(unit.Religion.NotNull());
+                    city.Religion.RemoveAllPressuresExceptFor(unit.Religion.NotNull(), byInquisitor: true);
                     if (city.Religion.ReligionThisIsTheHolyCityOf != null)
                     {
                         var holyCityReligion = unit.Civ.GameInfo.Religions[city.Religion.ReligionThisIsTheHolyCityOf];

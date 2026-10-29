@@ -52,7 +52,7 @@ public static class ReligionAutomation
             var (city, pressureDifference) = citiesWithoutOurReligion.Select(city =>
                 (City: city, PressureDeficit: city.Religion.GetPressureDeficit(civInfo.ReligionManager.Religion?.Name)))
                 .MaxBy(it => it.PressureDeficit);
-            if (pressureDifference >= Constants.AiPreferInquisitorOverMissionaryPressureDifference)
+            if (pressureDifference >= Constants.AiPreferInquisitorOverMissionaryPressureDifference * civInfo.GameInfo.Ruleset.ModOptions.Constants.ReligionMissionaryPressureMultiplier)
                 BuyInquisitorNear(civInfo, city);
             BuyMissionaryInAnyCity(civInfo);
             return;

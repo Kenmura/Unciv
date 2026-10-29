@@ -1074,11 +1074,11 @@ Station is also a building) and each turn put `round(production) + overflow` int
   pantheon's per-citizen pressure (200), the per-turn city-to-city pressure (speed value, holy city 5x) and spy pressure, and the AI's
   inquisitor threshold, so every pressure stays on one scale (G&K multiplier 1: unchanged). Trade routes [?, documented choice]: each
   active international route adds, every turn and without range limit, the other end's majority (major) religion to a city at the strength of
-  a nearby city, times `100 + TradeReligionPressureModifier` (Arabia, +100, by the route owner) percent. Reformation: with
+  a nearby city (it stacks with the range pressure of a partner that is also nearby), times `100 + TradeReligionPressureModifier` (Arabia, +100, by the route owner) percent. Reformation: with
   `AddReformationBelief` (policy Reformation) a founded religion gets one free Reformation belief; `SecondPantheon` (Religious Tolerance) one free
   Pantheon belief (the usual choose-beliefs decision). Beliefs: Messenger of the Gods = `[stats] for each international trade route [cityFilter]`
   (origin city side [K]); Evangelism (`OtherReligionPressureErosion` [?]) cuts the pressure of other religions into the owner's cities by N%;
-  Unity of the Prophets (`InquisitorPressureRetention` [?]) lets that religion keep N% of its pressure when an Inquisitor cleans a city;
+  Unity of the Prophets (`InquisitorPressureRetention` [?]) lets the religion whose founder has it keep N% of its own pressure when someone's Inquisitor cleans a city;
   Underground Sect: each set-up spy in a city adds N (x scale) pressure per turn for its civ's religion. Faith purchases use the existing
   `May buy ... with Faith` and `Can purchase all Great People with Faith` uniques (tested on the real ruleset). Not done: Heathen Conversion
   (`ConvertsBarbarians`, no rule in the spec), Charitable Missions (city-states), Sacred Sites (tourism, B031).

@@ -4,6 +4,7 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map;
 using Unciv.Logic.Map.MapUnits;
+using Unciv.Logic.Trade.Routes;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.UI.Components.Extensions;
@@ -49,7 +50,9 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
     private readonly Counter<string> followers = new();
 
     private int? pressureFromAdjacentCitiesCache; // Kotlin `by lazy`
-    private int PressureFromAdjacentCities => pressureFromAdjacentCitiesCache ??= City.Civ.GameInfo.Speed.ReligiousPressureAdjacentCity;
+    // B022: the speed's per-turn pressure on the ruleset's pressure scale (BNW 10, G&K 1: RELIGION_MISSIONARY_PRESSURE_MULTIPLIER)
+    private int PressureFromAdjacentCities => pressureFromAdjacentCitiesCache ??=
+        City.Civ.GameInfo.Speed.ReligiousPressureAdjacentCity * City.Civ.GameInfo.Ruleset.ModOptions.Constants.ReligionMissionaryPressureMultiplier;
 
     [JsonPropertyName("religionThisIsTheHolyCityOf")]
     public string? ReligionThisIsTheHolyCityOf { get; set; }
@@ -148,15 +151,35 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
         if (shouldUpdateFollowers) UpdateNumberOfFollowers();
     }
 
-    public void RemoveAllPressuresExceptFor(string religion)
+    /// <param name="religion">The religion that stays.</param>
+    /// <param name="byInquisitor">B022: an Inquisitor removes the heresy; a religion whose founder has "[N]% of religious pressure is retained when
+    /// Inquisitors remove other religions" (Unity of the Prophets) keeps N percent of its pressure here.</param>
+    public void RemoveAllPressuresExceptFor(string religion, bool byInquisitor = false)
     {
         var pressureFromThisReligion = pressures[religion];
         // Atheism is never removed
         var pressureFromAtheism = pressures[Constants.NoReligionName];
+        var retained = byInquisitor ? RetainedPressures(religion) : [];
         ClearAllPressures();
         pressures.Add(religion, pressureFromThisReligion);
+        foreach (var (name, amount) in retained) pressures.Add(name, amount);
         if (pressureFromAtheism != 0) pressures[Constants.NoReligionName] = pressureFromAtheism;
         UpdateNumberOfFollowers();
+    }
+
+    private List<(string Religion, int Amount)> RetainedPressures(string keptReligion)
+    {
+        var result = new List<(string, int)>();
+        foreach (var (name, amount) in pressures)
+        {
+            if (name == keptReligion || name == Constants.NoReligionName || amount <= 0) continue;
+            if (!City.Civ.GameInfo.Religions.TryGetValue(name, out var other)) continue;
+            int percent = 0;
+            other.FoundingCiv.ForEachMatchingUnique(UniqueType.InquisitorPressureRetention, unique => percent += unique.Params[0].ToInt());
+            int kept = (int)((long)amount * Math.Min(percent, 100) / 100);
+            if (kept > 0) result.Add((name, kept));
+        }
+        return result;
     }
 
     public void UpdatePressureOnPopulationChange(int populationChangeAmount)
@@ -167,7 +190,7 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
 
         if (populationChangeAmount > 0)
         {
-            AddPressure(majorityReligion, 100 * populationChangeAmount);
+            AddPressure(majorityReligion, City.Civ.GameInfo.Ruleset.ModOptions.Constants.ReligionAtheismPressurePerPop * populationChangeAmount);
         }
         else
         {
@@ -365,8 +388,10 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
             if (!City.Civ.GameInfo.Religions[majorityReligionOfCity].IsMajorReligion()) continue;
             if (otherCity.GetCenterTile().AerialDistanceTo(City.GetCenterTile())
                     > otherCity.Religion.GetSpreadRange()) continue;
-            AddPressure(majorityReligionOfCity, otherCity.Religion.PressureAmountToAdjacentCities(City), false);
+            AddPressure(majorityReligionOfCity, Eroded(majorityReligionOfCity, otherCity.Religion.PressureAmountToAdjacentCities(City)), false);
         }
+        foreach (var (name, amount) in TradeRouteAndSpyPressures())
+            AddPressure(name, Eroded(name, amount), false);
 
         UpdateNumberOfFollowers();
     }
@@ -410,9 +435,59 @@ public class CityReligionManager : IsPartOfGameInfoSerialization
             var majorityReligionOfCity = otherCity.Religion.GetMajorityReligion();
             if (majorityReligionOfCity == null) continue;
             if (!majorityReligionOfCity.IsMajorReligion()) continue;
-            addedPressure.Add(majorityReligionOfCity.Name, otherCity.Religion.PressureAmountToAdjacentCities(City));
+            addedPressure.Add(majorityReligionOfCity.Name, Eroded(majorityReligionOfCity.Name, otherCity.Religion.PressureAmountToAdjacentCities(City)));
         }
+        foreach (var (name, amount) in TradeRouteAndSpyPressures())
+            addedPressure.Add(name, Eroded(name, amount));
         return addedPressure;
+    }
+
+    /// <summary>
+    /// B022 (bnw-spec 4.1.5, 4.11): the pressure this city receives besides the nearby cities. Every active international trade route that ends here
+    /// carries the other end's majority religion at the strength of a nearby city (no range limit), plus <see cref="UniqueType.TradeReligionPressureModifier"/>
+    /// of the route's owner. A spy of a civ whose religion has <see cref="UniqueType.ReligiousPressureFromSpies"/> adds that much for its civ's religion.
+    /// [?] The spec leaves the trade-route amount open (<c>GetNumTradeRoutesAddingPressure</c> @101abeb0): this is the documented choice.
+    /// </summary>
+    private List<(string Religion, int Amount)> TradeRouteAndSpyPressures()
+    {
+        var result = new List<(string, int)>();
+        var game = City.Civ.GameInfo;
+        foreach (var route in game.TradeRoutes ?? [])
+        {
+            if (route.Kind != TradeRouteKind.International || route.OriginOwner == route.DestOwner) continue;
+            var otherId = route.OriginCityId == City.Id ? route.DestCityId : route.DestCityId == City.Id ? route.OriginCityId : null;
+            if (otherId == null) continue;
+            var other = TradeRouteRules.FindCity(game, otherId);
+            var religion = other?.Religion.GetMajorityReligion();
+            if (other == null || religion == null || !religion.IsMajorReligion()) continue;
+            int percent = 100;
+            game.GetCivilization(route.OriginOwner).ForEachMatchingUnique(UniqueType.TradeReligionPressureModifier, unique => percent += unique.Params[0].ToInt());
+            int amount = (int)((long)other.Religion.PressureAmountToAdjacentCities(City) * Math.Max(percent, 0) / 100);
+            if (amount > 0) result.Add((religion.Name, amount));
+        }
+        foreach (var civ in game.Civilizations)
+        {
+            var religion = civ.ReligionManager.Religion;
+            if (religion == null || !civ.IsMajorCiv() || !religion.IsMajorReligion()) continue;
+            int perSpy = 0;
+            civ.ForEachMatchingUnique(UniqueType.ReligiousPressureFromSpies, unique => perSpy += unique.Params[0].ToInt());
+            if (perSpy <= 0) continue;
+            int spies = civ.EspionageManager.SpyList.Count(it => it.IsSetUp() && ReferenceEquals(it.GetCityOrNull(), City));
+            if (spies > 0) result.Add((religion.Name, spies * perSpy * game.Ruleset.ModOptions.Constants.ReligionMissionaryPressureMultiplier));
+        }
+        return result;
+    }
+
+    /// <summary>B022: "[N]% religious pressure erosion for other religions [cityFilter]" (Evangelism) of this city's owner cuts the pressure other religions than the owner's add.</summary>
+    private int Eroded(string religionName, int amount)
+    {
+        if (amount <= 0 || religionName == City.Civ.ReligionManager.Religion?.Name) return amount;
+        int percent = 0;
+        City.ForEachMatchingUnique(UniqueType.OtherReligionPressureErosion, unique =>
+        {
+            if (City.MatchesFilter(unique.Params[1])) percent += unique.Params[0].ToInt();
+        });
+        return percent <= 0 ? amount : (int)((long)amount * (100 - Math.Min(percent, 100)) / 100);
     }
 
     public virtual bool IsProtectedByInquisitor(string? fromReligion = null)

@@ -152,11 +152,24 @@ public class CityStats(City city)
         var routes = City.Civ.GameInfo.TradeRoutes;
         if (routes == null) return null;
         Stats? stats = null;
+        List<Stats>? perRoute = null; // B022: "[stats] for each international trade route [cityFilter]" (Messenger of the Gods)
         foreach (var route in routes)
         {
             var yields = route.OriginCityId == City.Id ? route.OriginYields : route.DestCityId == City.Id ? route.DestYields : null;
             if (yields == null) continue;
             stats ??= new Stats();
+            if (route.OriginCityId == City.Id && route.Kind == TradeRouteKind.International)
+            {
+                if (perRoute == null)
+                {
+                    perRoute = [];
+                    City.ForEachMatchingUnique(UniqueType.YieldPerTradeRoute, unique =>
+                    {
+                        if (City.MatchesFilter(unique.Params[1])) perRoute.Add(unique.Stats);
+                    });
+                }
+                foreach (var each in perRoute) stats.Add(each);
+            }
             stats.Food += yields[TradeYield.Food] / 100f;
             stats.Production += yields[TradeYield.Production] / 100f;
             stats.Gold += yields[TradeYield.Gold] / 100f;

@@ -98,7 +98,7 @@ public static class ReligiousUnitAutomation
         CityObject? destinationCity;
         if (cityToConvert != null
             && (cityToConvert == holyCity
-                || pressureDeficit > Constants.AiPreferInquisitorOverMissionaryPressureDifference
+                || pressureDeficit > Constants.AiPreferInquisitorOverMissionaryPressureDifference * unit.Civ.GameInfo.Ruleset.ModOptions.Constants.ReligionMissionaryPressureMultiplier
                 || (cityToConvert.Religion.IsBlockedHolyCity && cityToConvert.Religion.ReligionThisIsTheHolyCityOf == civReligion?.Name))
             && unitView.HasUnique(UniqueType.CanRemoveHeresy))
             destinationCity = cityToConvert;
