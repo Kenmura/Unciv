@@ -77,8 +77,8 @@ public sealed class SetupScenario : Scenario
         Click ClickSlotNation(int slot) => new(() => Centre(() => Screen().SlotNationButton(slot)));
 
         // The pages are rebuilt after every change, and a new button has no layout until a frame has passed: wait after each input.
-        return new ScenarioStep[]
-        {
+        ScenarioStep[] script =
+        [
             new WaitFrames(3),
             new AssertQuery("the menu is the only screen; Resume last is disabled", () => manager.Depth == 1 && !menu.CanResume),
             new Capture("menu", "Main menu: New game, Resume last (disabled), Load game, Multiplayer, Host game, Options, Quit"),
@@ -86,30 +86,8 @@ public sealed class SetupScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("the setup screen opened with the defaults: four players, one human", () => manager.Depth == 2 && Screen().Form.Slots.Count == 4 && Screen().Form.Humans == 1),
             new Capture("defaults", "New game screen, Players tab, with the defaults"),
-            LayoutChecks.Assert("at 640x480 no setup text is cut off, leaves the window or overlaps another", host, () => Screen()),
-            new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
-            new WaitFrames(6),
-            LayoutChecks.Assert("at 1280x720 no setup text is cut off, leaves the window or overlaps another", host, () => Screen()),
-            new Capture("wide", "1280x720: the Players tab with the nation grid and the detail card using the extra width"),
-            new Act("widen the window to 1920x1080", () => host.GetWindow().Size = new Vector2I(1920, 1080)),
-            new WaitFrames(6),
-            LayoutChecks.Assert("at 1920x1080 no setup text is cut off, leaves the window or overlaps another", host, () => Screen()),
-            new Capture("fhd", "1920x1080: the same screen at full HD"),
-            new Act("back to 640x480", () => host.GetWindow().Size = new Vector2I(640, 480)),
-            new WaitFrames(8),
-            LayoutChecks.Assert("back at 640x480 no setup text is cut off, leaves the window or overlaps another", host, () => Screen()),
-            // C079: the same screen in German: a fresh setup screen (text is built with the screen), then back to English for the rest of the script
-            new Act("close the setup screen", () => manager.Pop()),
-            LocaleSteps.Use("German"),
-            new Press("New game"),
-            new WaitFrames(3),
-            new AssertQuery("German: the setup screen is open again", () => manager.Depth == 2),
-            LayoutChecks.Assert("German: no setup text is cut off, leaves the window or overlaps another", host, () => Screen()),
-            new Capture("de", "German at 640x480: the tabs, the player rows and the buttons fit without clipping or overlap"),
-            new Act("close the setup screen", () => manager.Pop()),
-            LocaleSteps.Use("English"),
-            new Press("New game"),
-            new WaitFrames(3),
+            .. LayoutChecks.Widths(host, "setup screen", () => Screen(), "1280x720: the Players tab with the nation grid and the detail card using the extra width", "1920x1080: the same screen at full HD"),
+            .. GermanSteps(host, manager, () => Screen()),
 
             new Press("Rules"),
             new Click(() => Centre(() => Screen().ChoiceButton("Base ruleset", "Civ V - Vanilla"))),
@@ -179,7 +157,8 @@ public sealed class SetupScenario : Scenario
             new AssertQuery("the civ list is Babylon and Rome (no barbarians)", () => started.NotNull().Session.Game.Civilizations.Select(it => it.CivName).Order(StringComparer.Ordinal).SequenceEqual(["Babylon", "Rome"])),
             new AssertQuery("state hash equals a headless GameStarter run of the same setup, seed and clock", () => ScenarioGame.StateHash(started.NotNull().Session) == ScenarioGame.StateHash(new GameSession(GameStarter.StartNewGame(ExpectedSetup(), 3, Clock)))),
             new Capture("started", "The new game, started from the setup screen"),
-        }.SelectMany(step => step is Press or Click or Act ? new[] { step, new WaitFrames(2) } : [step]).ToList();
+        ];
+        return script.SelectMany(step => step is Press or Click or Act ? new[] { step, new WaitFrames(2) } : [step]).ToList();
     }
 
     private static void Reveal(NewGameScreen screen, string buttonText)
@@ -194,6 +173,22 @@ public sealed class SetupScenario : Scenario
         screen.SeedField.Text = text;
         screen.SeedField.EmitSignal(LineEdit.SignalName.TextChanged, text);
     }
+
+    /// <summary>C079: the setup screen in German: a fresh screen (text is built with the screen), then back to English with a fresh screen for the rest of the script.</summary>
+    private static ScenarioStep[] GermanSteps(Control host, ScreenManager manager, Func<NewGameScreen> screen) =>
+    [
+        new Act("close the setup screen", () => manager.Pop()),
+        LocaleSteps.Use("German"),
+        new Press("New game"),
+        new WaitFrames(3),
+        new AssertQuery("German: the setup screen is open again", () => manager.Depth == 2),
+        LayoutChecks.Assert("German: no setup text is cut off, leaves the window or overlaps another", host, () => screen()),
+        new Capture("de", "German at 640x480: the tabs, the player rows and the buttons fit without clipping or overlap"),
+        new Act("close the setup screen", () => manager.Pop()),
+        LocaleSteps.Use("English"),
+        new Press("New game"),
+        new WaitFrames(3),
+    ];
 
     // The same choices written out by hand, independent of the form
     private static GameSetupInfo ExpectedSetup() => new(

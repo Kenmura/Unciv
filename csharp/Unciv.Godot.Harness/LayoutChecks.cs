@@ -20,6 +20,30 @@ internal static class LayoutChecks
         return problems.Count == 0;
     });
 
+    /// <summary>
+    /// The steps that run a screen through the window sizes: from 640x480 (only when <paramref name="wideCaption"/> is given; otherwise the screen is already at 1280x720) to 1280x720 and 1920x1080, each with the rectangle asserts (and <paramref name="extra"/>
+    /// when given) and a golden (<c>wide</c> unless <paramref name="wideCaption"/> is null, <c>fhd</c>), then back to 640x480 where the screen must still fit.
+    /// </summary>
+    public static IEnumerable<ScenarioStep> Widths(Control host, string screen, Func<Node> root, string? wideCaption, string fhdCaption, Func<bool>? extra = null)
+    {
+        ScenarioStep Check(string size) => Assert($"at {size} no {screen} text is cut off, leaves the window or overlaps another", host, root);
+        ScenarioStep More(string size) => new AssertQuery($"at {size} the {screen} is intact", extra ?? (() => true));
+        ScenarioStep[] Resize(Vector2I size) => [new Act($"resize the window to {size.X}x{size.Y}", () => host.GetWindow().Size = size), new WaitFrames(size.X < 1000 ? 8 : 6)];
+        var steps = new List<ScenarioStep>();
+        if (wideCaption != null)
+        {
+            steps.Add(Check("640x480"));
+            steps.AddRange(Resize(new Vector2I(1280, 720)));
+            steps.AddRange([More("1280x720"), Check("1280x720"), new Capture("wide", wideCaption)]);
+        }
+        else steps.AddRange([More("1280x720"), Check("1280x720")]);
+        steps.AddRange(Resize(new Vector2I(1920, 1080)));
+        steps.AddRange([More("1920x1080"), Check("1920x1080"), new Capture("fhd", fhdCaption)]);
+        steps.AddRange(Resize(new Vector2I(640, 480)));
+        steps.AddRange([More("640x480"), Check("640x480 again")]);
+        return steps;
+    }
+
     /// <summary>The problems found under <paramref name="root"/> inside a window of <paramref name="window"/> (empty when the layout is sound).</summary>
     public static List<string> Problems(Node root, Rect2 window)
     {
