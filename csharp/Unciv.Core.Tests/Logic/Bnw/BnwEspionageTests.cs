@@ -113,6 +113,31 @@ public sealed class BnwEspionageTests
     }
 
     [Fact]
+    public void TheDiplomatFlagSurvivesSavingAndAnOlderSaveLoadsAsFalse()
+    {
+        var spy = Diplomat(a, capitalB);
+        string json = JsonSerializer.Serialize(a.EspionageManager, UncivJson.DefaultOptions);
+        Assert.True(JsonSerializer.Deserialize<EspionageManager>(json, UncivJson.DefaultOptions)!.SpyList.Single(it => it.Name == spy.Name).IsDiplomat);
+        var old = JsonSerializer.Deserialize<EspionageManager>(json.Replace("\"isDiplomat\":true", "\"x\":1"), UncivJson.DefaultOptions)!;
+        Assert.False(old.SpyList.Single(it => it.Name == spy.Name).IsDiplomat);
+        Assert.True(spy.IsDiplomat);
+    }
+
+    [Fact]
+    public void ADiplomatWhoseCityStopsBeingACapitalBecomesAPlainSpyAndMayThenSteal()
+    {
+        b.Tech.AddTechnology("Pottery");
+        capitalB.CityStats.CurrentCityStats[Stat.Science] = 10f;
+        var spy = Diplomat(a, capitalB);
+        capitalB.CityConstructions.RemoveBuilding("Palace");
+        spy.EndTurn();
+        Assert.False(spy.IsDiplomat);
+        Assert.Contains(a.Notifications, it => it.Text.Contains("no longer in a capital"));
+        Assert.Equal(SpyAction.StealingTech, spy.Action);
+        Assert.Equal(0, a.EspionageManager.CountDiplomats());
+    }
+
+    [Fact]
     public void ADiplomatOnlyObservesAndNeverStealsTechnology()
     {
         b.Tech.AddTechnology("Pottery"); // a tech A could steal
@@ -259,10 +284,12 @@ public sealed class BnwEspionageTests
         var constants = game.Ruleset.ModOptions.Constants;
         constants.MaxSpyRank = 6; // so that rank 5 and 6 exist
         Assert.Equal((20f + 28f) / 100f, CoupSpy(5).GetCoupChanceOfSuccess(false), 4); // 150 percent over zero ranks: difference 5 counts as 4 (2.8)
-        constants.EspionageCoupSpyLevelDeltaFour = 0f;
         constants.SpyRankSkillPercentBonus = 0; // a ruleset without rank skill: no division by zero, no bonus
         Assert.Equal(20f / 100f, CoupSpy(1).GetCoupChanceOfSuccess(false), 4);
         constants.SpyRankSkillPercentBonus = 30;
+        constants.EspionageCoupSpyLevelDeltaFour = 0f; // an incomplete table is ignored: the linear Kotlin rule (rank 3 is 45 percent)
+        Assert.Equal(65f / 100f, CoupSpy(3).GetCoupChanceOfSuccess(false), 4);
+        constants.EspionageCoupSpyLevelDeltaFour = 2.8f;
         // the defender (the city-state's ally) is better: a negative difference lowers the chance
         var defender = b.EspionageManager.AddSpy();
         defender.LevelUpSpy(2); // rank 3: 90 percent
@@ -270,9 +297,12 @@ public sealed class BnwEspionageTests
         s.GetDiplomacyManager(b)!.SetInfluence(100f);
         s.CityStateFunctions.UpdateAllyCivForCityState();
         var weak = CoupSpy(1);
-        // influence difference 100 - 0: 50 - 50 = 0; difference of 30 - 90 = -60: two ranks, -22.5
-        Assert.Equal(0f, weak.GetCoupChanceOfSuccess(true)); // clamped at 0
-        Assert.Equal(0f, weak.GetCoupChanceOfSuccess(false) - (50f - 50f + 15f) / 100f); // without the unknown defender it is the plain +15
+        // influence difference 100 - 0: 50 - 50 = 0; skill 30 - 90 = -60: two ranks, -22.5, clamped at 0
+        Assert.Equal(0f, weak.GetCoupChanceOfSuccess(true));
+        Assert.Equal(0.15f, weak.GetCoupChanceOfSuccess(false), 4); // without the unknown defender it is the plain +15
+        s.GetDiplomacyManager(b)!.SetInfluence(70f);
+        s.GetDiplomacyManager(a)!.SetInfluence(40f); // 70 - 40 = 30: 50 - 15 = 35 percent
+        Assert.Equal((35f - 22.5f) / 100f, weak.GetCoupChanceOfSuccess(true), 4);
     }
 
     [Fact]

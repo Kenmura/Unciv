@@ -570,7 +570,7 @@
     "Unciv.Core/Models/Ruleset/Validation/UniqueAutoUpdater.cs": {"branch": 86.36, "line": 97.78},
     "Unciv.Core/Models/Ruleset/Validation/UniqueValidator.cs": {"branch": 72.63, "line": 72.6},
     "Unciv.Core/Models/Ruleset/Victory.cs": {"branch": 61.93, "line": 76.35},
-    "Unciv.Core/Models/Spy.cs": {"branch": 76.1, "line": 89.23},
+    "Unciv.Core/Models/Spy.cs": {"branch": 79.07, "line": 90.24},
     "Unciv.Core/Models/Stats/NamedStats.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Models/Stats/Stat.cs": {"branch": 64.29, "line": 82.76},
     "Unciv.Core/Models/Stats/Stats.cs": {"branch": 96.43, "line": 98.38},

@@ -102,7 +102,7 @@ public class Spy : IsPartOfGameInfoSerialization
 
     /// <summary>
     /// BNW (bnw-spec 4.9, B020): a diplomat is a spy placed in the capital of another major civ. It never steals technology and is never
-    /// killed (it takes part in no theft and no coup), counts for delegates and tourism, and shows the target's votes. Absent from G&amp;K saves.
+    /// killed (it takes part in no theft and no coup), counts for delegates and tourism, and shows the target's votes. Saved as false in every save; older saves lack it and load as false.
     /// </summary>
     [JsonPropertyName("isDiplomat")]
     [JsonInclude]
@@ -190,6 +190,12 @@ public class Spy : IsPartOfGameInfoSerialization
                     break;
                 }
             case SpyAction.Surveillance:
+                if (IsDiplomat && !CanBeDiplomatIn(GetCity()))
+                {
+                    // The capital moved (or the ruleset changed): a plain spy from now on
+                    IsDiplomat = false;
+                    AddNotification($"Your diplomat [{Name}] is no longer in a capital and works as a spy again.");
+                }
                 if (IsDiplomat || !GetCity().Civ.IsMajorCiv()) return;
                 if (CanStealTech() != CanStealTechResult.Yes) return; // nope
                 SetAction(SpyAction.StealingTech); // There are new techs to steal!
@@ -455,14 +461,16 @@ public class Spy : IsPartOfGameInfoSerialization
     /// <summary>
     /// The coup chance a skill difference (spy minus defender, in percent) adds. Kotlin: half of it (15% per rank). BNW (B020, deliberate): when the ruleset
     /// states the ESPIONAGE_COUP_SPY_LEVEL_DELTA table (0, 1.5, 2.25, 2.6, 2.8, a rank difference of 1 is worth the Kotlin 15%), the rank difference
-    /// indexes it with diminishing returns, 10% per table unit [I]; a difference beyond 4 counts as 4.
+    /// (rounded to the nearest rank) indexes it with diminishing returns, 10% per table unit [I]; a difference beyond 4 counts as 4.
     /// </summary>
     private float CoupRankBonus(int skillDifferencePercent)
     {
         var constants = CivInfo.GameInfo.Ruleset.ModOptions.Constants;
-        if (constants.EspionageCoupSpyLevelDeltaOne <= 0f) return skillDifferencePercent / 2f;
+        if (constants.EspionageCoupSpyLevelDeltaOne <= 0f || constants.EspionageCoupSpyLevelDeltaTwo <= 0f
+            || constants.EspionageCoupSpyLevelDeltaThree <= 0f || constants.EspionageCoupSpyLevelDeltaFour <= 0f)
+            return skillDifferencePercent / 2f; // no complete table in the ruleset
         int perRank = constants.SpyRankSkillPercentBonus;
-        int rankDifference = perRank == 0 ? 0 : skillDifferencePercent / perRank;
+        int rankDifference = perRank == 0 ? 0 : (int)MathF.Round(skillDifferencePercent / (float)perRank, MidpointRounding.AwayFromZero);
         float[] table = [0f, constants.EspionageCoupSpyLevelDeltaOne, constants.EspionageCoupSpyLevelDeltaTwo, constants.EspionageCoupSpyLevelDeltaThree, constants.EspionageCoupSpyLevelDeltaFour];
         float value = table[Math.Min(Math.Abs(rankDifference), table.Length - 1)] * 10f;
         return rankDifference < 0 ? -value : value;

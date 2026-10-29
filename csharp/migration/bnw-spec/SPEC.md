@@ -1028,7 +1028,7 @@ Station is also a building) and each turn put `round(production) + overflow` int
   `GetPolicyEspionage*`) [D]. The engine already has `EspionageManager`; extend it, do not replace it.
 
 #### 4.9a As built (B020, spec id B071)
-- **Diplomat** (`Spy.IsDiplomat`, saved as `isDiplomat`, absent in G&K saves): `MoveSpy { Diplomat = true }` stations a spy as a diplomat when the World Congress is enabled in the
+- **Diplomat** (`Spy.IsDiplomat`, saved as `isDiplomat`, false in every save, missing in older saves): `MoveSpy { Diplomat = true }` stations a spy as a diplomat when the World Congress is enabled in the
   ruleset and the target is the capital of another major civ. [K]: the rule "when it may be a diplomat" is not decoded; this is the conservative reading. After the 3 turns of
   establishing a network a diplomat stays in surveillance: it never steals and, since it takes part in neither theft nor coup, is never killed. `EspionageManager.GetDiplomats`
   counts only diplomats that finished moving (set up) in a living major civ's capital.
