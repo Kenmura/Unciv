@@ -2,6 +2,7 @@ using Godot;
 using Unciv.Commands;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Ui;
 using Unciv.Harness;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Map.MapUnits;
@@ -71,8 +72,10 @@ public sealed class DecisionsReligionScenario : Scenario
 
         private string FirstEnabled(int slot) => screen.Picker.Spec.NotNull().Slots[slot].Options.First(it => it.Enabled && screen.Picker.Selected.All(sel => sel != it.Id)).Id;
 
-        // the engine's action titles end in the faith icon, so the unit panel's buttons are found by their first words
-        private Button? ActionButton(string start) => Buttons(host).FirstOrDefault(it => it.IsVisibleInTree() && !it.Disabled && it.Text.StartsWith(start, StringComparison.Ordinal));
+        // the engine's action titles end in the faith icon, so the unit panel's buttons are found by their first words; the panel's grid cells show the icon alone (T255), so the
+        // label is read from the button's ui_label metadata when it has no text
+        private Button? ActionButton(string start) => Buttons(host).FirstOrDefault(it => it.IsVisibleInTree() && !it.Disabled
+            && (it.HasMeta(IconButton.LabelMeta) ? it.GetMeta(IconButton.LabelMeta).AsString() : it.Text).StartsWith(start, StringComparison.Ordinal));
 
         private Vector2 Row(string start)
         {

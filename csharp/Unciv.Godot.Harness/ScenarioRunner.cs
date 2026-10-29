@@ -151,7 +151,11 @@ public partial class ScenarioRunner : Control
                 await NextFrame();
                 break;
             case AssertQuery assert:
-                if (!assert.Check()) failures.Add("AssertQuery: " + assert.What);
+                if (!assert.Check())
+                {
+                    failures.Add("AssertQuery: " + assert.What);
+                    GD.PrintErr("[scenario] assertion failed: " + assert.What); // at once: a later crash in the script would otherwise lose the list
+                }
                 break;
             case Capture capture:
                 await CaptureStep(capture, scenario, scenarioOut);
