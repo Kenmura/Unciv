@@ -101,6 +101,8 @@ public sealed class UnitVisualsScenario : Scenario
     /// <summary>The model's meshes' box in the model's own frame (its parts are direct children of the root).</summary>
     private static Aabb Extent(Node3D model) => model.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>()
         .Select(mi => mi.Transform * mi.Mesh.GetAabb()).Aggregate((a, b) => a.Merge(b));
+    private static bool RigidModelsAreClipless(List<UnitNode> nodes) =>
+        nodes.Where(IsRigidModel).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 0 && MapMaterials.TeamColourOf(m) != null));
     private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
     private static bool HoldsIdle(AnimationPlayer p) => p.AssignedAnimation == UnitModelContract.IdleClip && !p.IsPlaying() && p.CurrentAnimationPosition > 0f;
     private static bool Textured(UnitNode n) => FigureModels(n).SelectMany(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
@@ -185,8 +187,7 @@ public sealed class UnitVisualsScenario : Scenario
             new AssertQuery("a generated group has one initials billboard whatever its size; a model file carries none (its art identifies it)", () => nodes.All(n => Glyphs(n) == (IsModel(n) || IsRigidModel(n) ? 0 : 1))),
             new AssertQuery("every figure of a unit carries its civ's colour", () => nodes.All(CivColoured)),
             new AssertQuery("the units pack's units are CC0 model files: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player; the rigid models (T256) are model files with the TeamColor material but neither a player nor a skeleton", () =>
-                nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n))
-                && nodes.Where(IsRigidModel).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 0 && MapMaterials.TeamColourOf(m) != null))),
+                nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n)) && RigidModelsAreClipless(nodes)),
             new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for (nearly) every unit", () =>
                 nodes.Where(IsModel).SelectMany(n => n.Players).All(HoldsIdle)
                 && nodes.Where(IsModel).Select(n => n.Players[0].CurrentAnimationPosition).Distinct().Count() >= nodes.Count(IsModel) * 9 / 10), // 1000 phases: a few of the 33 model units may collide
