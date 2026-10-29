@@ -1771,9 +1771,9 @@ The city screen (citizens and production views) on a 2400x1080 400 ppi phone pro
 
 Scenario `phone-city`.
 
-![City screen on a phone: food and border meters, stat chips, specialists and focus in the side column (scrolls), and the tile grid at about 29 dp per hexagon (seven rows share the height).](../Unciv.Godot.Harness/golden/phone-city/citizens.png)
+![City screen on a phone: food and border meters, stat chips and specialists in the side column (it scrolls to the focus choice), and the tile grid at about 31 dp per hexagon (seven rows share the height).](../Unciv.Godot.Harness/golden/phone-city/citizens.png)
 
-*City screen on a phone: food and border meters, stat chips, specialists and focus in the side column (scrolls), and the tile grid at about 29 dp per hexagon (seven rows share the height).* (`phone-city/citizens.png`)
+*City screen on a phone: food and border meters, stat chips and specialists in the side column (it scrolls to the focus choice), and the tile grid at about 31 dp per hexagon (seven rows share the height).* (`phone-city/citizens.png`)
 
 ![City production on a phone: the queue with 48 dp Top/Up/Down/Remove and buy chips, the buildable list, and the built buildings with Sell buttons; each column scrolls.](../Unciv.Godot.Harness/golden/phone-city/production.png)
 

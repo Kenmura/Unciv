@@ -1711,7 +1711,7 @@
     "shots": [
       {
         "golden": "phone-city/citizens.png",
-        "caption": "City screen on a phone: food and border meters, stat chips, specialists and focus in the side column (scrolls), and the tile grid at about 29 dp per hexagon (seven rows share the height)."
+        "caption": "City screen on a phone: food and border meters, stat chips and specialists in the side column (it scrolls to the focus choice), and the tile grid at about 31 dp per hexagon (seven rows share the height)."
       },
       {
         "golden": "phone-city/production.png",

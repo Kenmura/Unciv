@@ -336,8 +336,13 @@ public partial class CityScreen : PanelContainer
             meters.RemoveChild(child);
             child.QueueFree();
         }
+        if (Phone)
+        {
+            meters.Visible = false; // the meters are in the side column
+            return;
+        }
         meters.AddChild(MeterColumns(panel));
-        meters.Visible = !showProduction && !Phone;
+        meters.Visible = !showProduction;
     }
 
     /// <summary>The food and border meters: side by side in the header strip, stacked in the side column on a phone.</summary>

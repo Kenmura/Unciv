@@ -74,7 +74,7 @@ public sealed class PhoneCityScenario : Scenario
                 screen.OpenCityScreen(local.Snapshot.Cities.First(it => it.Own?.Id == city.Id));
             }),
             new WaitFrames(6),
-            new AssertQuery("the setup commands were accepted and the city screen shows the engine's numbers", () =>
+            new AssertQuery("the setup commands were accepted and the city screen is open on the capital", () =>
             {
                 foreach (string refusal in refusals) GD.PrintErr("[phone-city] refused " + refusal);
                 return refusals.Count == 0 && screen.IsCityPanelVisible && screen.City.Panel != null;
@@ -82,7 +82,7 @@ public sealed class PhoneCityScenario : Scenario
             new AssertQuery("the theme derived scale 2.5 and 120 px targets", () => screen.SharedTheme is { } theme && theme.Scale == 2.5f && theme.MinTargetPx == minTarget && minTarget == 120),
             .. Check("citizens view", () => screen.City),
             new AssertQuery("the tile hexagons (exempt from 48 dp: seven rows of them have to fit one screen) are at least 72 px tall (about 29 dp: seven rows share the height)", () => screen.City.Cells.All(it => screen.City.TileButton(it.X, it.Y) is { Size.Y: >= 72f })),
-            new Capture("citizens", "City screen on a 2400x1080 400 ppi phone: stat chips, specialists and focus in the side column, the tile grid beside it"),
+            new Capture("citizens", "City screen on a 2400x1080 400 ppi phone: meters, stat chips and specialists in the side column (it scrolls), the tile grid beside it"),
             new Act("show the production tab", () => screen.City.SetProduction(true)),
             new WaitFrames(6),
             .. Check("production view", () => screen.City),
