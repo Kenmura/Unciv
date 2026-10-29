@@ -141,6 +141,7 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
             {
                 case BeliefType.Founder:
                 case BeliefType.Enhancer:
+                case BeliefType.Reformation:
                     founderBeliefs.Add(belief.Name);
                     break;
                 case BeliefType.Pantheon:

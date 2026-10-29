@@ -141,6 +141,17 @@ public class TileImprovementFunctions(Tile tile)
                 .Any(it => !Tile.IsAdjacentTo(it.Params[0])))
             return false;
 
+        // B004 (bnw-spec 3.2): Chateau must touch a luxury and no other improvement of its kind; some improvements need land neighbours.
+        if (((IHasUniques)improvement).HasUnique(UniqueType.MustBeAdjacentToLuxury, context)
+                && !Tile.Neighbors.Any(it => it.TileResource is { ResourceType: ResourceType.Luxury }))
+            return false;
+        if (((IHasUniques)improvement).GetMatchingUniques(UniqueType.NoTwoAdjacent, context)
+                .Any(it => Tile.Neighbors.Any(neighbor => neighbor.TileImprovement is { } other && other.MatchesFilter(it.Params[0], context))))
+            return false;
+        if (((IHasUniques)improvement).GetMatchingUniques(UniqueType.RequiresAdjacentLand, context)
+                .Any(it => Tile.Neighbors.Count(neighbor => neighbor.IsLand) < int.Parse(it.Params[0], System.Globalization.CultureInfo.InvariantCulture)))
+            return false;
+
         // Can't build it if it is only allowed to improve resources and it doesn't improve this resource
         if (((IHasUniques)improvement).HasUnique(UniqueType.CanOnlyImproveResource, context)
                 && (!visible || !Tile.TileResource.NotNull().IsImprovedBy(improvement.Name)))
@@ -268,6 +279,12 @@ public class TileImprovementFunctions(Tile tile)
 
         if (improvementFieldHasChanged)
             UpdateVisibility();
+
+        if (((IHasUniques)improvement).HasUnique(UniqueType.RemovesResourceWhenBuilt))
+        {
+            Tile.SetTileResource((string?)null);
+            Tile.ResourceAmount = 0;
+        }
 
         if (((IHasUniques)improvement).HasUnique(UniqueType.RemovesFeaturesIfBuilt))
         {

@@ -282,6 +282,18 @@ conditionals or UI only; `RequiresImprovement`, `Improvement_ValidImprovements` 
 the golden-age trait rates use `<during a Golden Age>` on the new rows `GreatPersonRateByType` (`[relativeAmount]% [greatPerson] generation`, per class; Kotlin only has the per-city `Great Person generation`) and `TourismDuringGoldenAge`.
  Rows kept next to a similar Kotlin unique are deliberate (per-class, per-promotion or per-city scope). Open [K]/[?] items are not resolved (no decompiler output in the repo); the spec values stand.
 
+**B004 result (content that needs no new subsystem).** Wired in the engine, with tests (`BnwContentTests`): the improvement rules
+`Can only be built in City-State territory` (replaces the own-border rule), `Can be built in any civ's territory`, `Must be built adjacent to a
+luxury resource`, `Cannot be built adjacent to another [improvementFilter]`, `Requires [n] adjacent land tiles` and `Removes the resource from the
+tile when built`; the Poland unique `[n] free Policies each time you enter a new era` (one per era passed; every policy branch, B050 narrows it
+to the social branches); the Shoshone unique `Founded cities claim [n] extra tiles of radius`, **read as n extra tiles** (the nearest unowned tiles
+after the radius-1 ring, deterministic ring order). Zulu (`[-25]% XP required for promotions`) and Venice (`May not annex cities`,
+`Cannot build [Settler] units`, free Merchant of Venice at Optics) use existing Kotlin uniques. New content in the generated ruleset: the
+fifth belief tier `BeliefType.Reformation` (a founder-style tier appended after `Any`), the 13 beliefs BNW adds (the other 3 of the 16 exist in
+G&K), and the improvements Feitoria, Chateau, Kasbah and Brazilwood Camp. [K] items kept at their spec values (no decompiler output in the repo):
+the Religious Fervor purchase (land military units from the Industrial era at the Holy Warriors price), the Feitoria's one siphoned copy.
+Still declared data only: tourism, trade route, spy, inquisitor, barbarian-conversion and Great People purchase effects (their subsystems).
+
 ### 3.3 Object diff vs Unciv G&K (`data/derived/objects_unciv_gk_vs_bnw.txt`)
 - **Renames only** (same object, keep the Unciv name): The Pyramids, The Oracle, The Great Library, The Great
   Lighthouse, The Louvre (Unciv prefixes "The"); Railroads→Railroad and Pharmaceuticals→Penicillin (BNW tech names; take

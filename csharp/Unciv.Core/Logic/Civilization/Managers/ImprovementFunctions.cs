@@ -50,7 +50,15 @@ public static class ImprovementFunctions
 
             if (tile != null)
             {
-                if (tile.GetOwner() != civInfo
+                // B004 (bnw-spec 3.2): "Can only be built in City-State territory" (Feitoria) replaces the own-border rule,
+                // "Can be built in any civ's territory" (Landmark, Archaeological Dig) lifts it.
+                if (improvementUniques.HasUnique(UniqueType.OnlyInCityStateTerritory, gameContext))
+                {
+                    if (tile.GetOwner() is not { IsCityState: true })
+                        yield return ImprovementBuildingProblem.OutsideBorders;
+                }
+                else if (tile.GetOwner() != civInfo
+                    && !improvementUniques.HasUnique(UniqueType.IgnoresTileOwnership, gameContext)
                     && !improvementUniques.HasUnique(UniqueType.CanBuildOutsideBorders, gameContext)
                     && (!improvementUniques.HasUnique(UniqueType.CanBuildJustOutsideBorders, gameContext)
                         || tile.Neighbors.All(it => it.GetOwner() != civInfo)))

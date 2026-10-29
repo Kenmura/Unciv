@@ -47,6 +47,7 @@ public class CityFounder
         var startingEra = civInfo.GameInfo.GameParameters.StartingEra;
 
         city.Expansion.Reset();
+        ClaimExtraTiles(city, civInfo);
 
         city.TryUpdateRoadStatus();
 
@@ -109,6 +110,28 @@ public class CityFounder
                 UniqueTriggerActivation.TriggerUnique(unique, civInfo, city, unit, triggerNotificationText: "due to founding a city");
 
         return city;
+    }
+
+    /// <summary>
+    /// B004 deviation (bnw-spec 3.2 ExtraFoundedCityTerritoryClaimRange, Shoshone): "Founded cities claim [N] extra tiles of radius" is read as
+    /// N extra tiles. After the usual ring of radius 1 the nearest unowned tiles (ring 2, then 3, in the map's fixed ring order) are claimed.
+    /// </summary>
+    private static void ClaimExtraTiles(CityObject city, CivilizationObject civInfo)
+    {
+        int extra = 0;
+        foreach (var unique in civInfo.GetMatchingUniques(UniqueType.FoundedCityClaimRange, city.State))
+            extra += int.Parse(unique.Params[0], System.Globalization.CultureInfo.InvariantCulture);
+        var center = city.GetCenterTile();
+        for (int distance = 2; extra > 0 && distance <= 4; distance++)
+        {
+            foreach (var tile in center.GetTilesAtDistance(distance))
+            {
+                if (extra <= 0) break;
+                if (tile.GetCity() != null) continue;
+                city.Expansion.TakeOwnership(tile);
+                extra--;
+            }
+        }
     }
 
     private static class NamingConstants

@@ -246,8 +246,8 @@ public class RulesetObjectTests
         Assert.Null(BeliefType.None.GetSubCategory());
         Assert.Null(BeliefType.Any.GetSubCategory());
         Assert.Equal("Founder", BeliefType.Founder.GetSubCategory());
-        // The enum order is the Civilopedia sort group
-        Assert.Equal([0, 1, 2, 3, 4, 5], Enum.GetValues<BeliefType>().Select(it => (int)it));
+        // The enum order is the Civilopedia sort group; Reformation (B004) is appended after the Kotlin entries
+        Assert.Equal([0, 1, 2, 3, 4, 5, 6], Enum.GetValues<BeliefType>().Select(it => (int)it));
     }
 
     [Fact]

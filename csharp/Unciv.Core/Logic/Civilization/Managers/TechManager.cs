@@ -543,6 +543,13 @@ public class TechManager : IsPartOfGameInfoSerialization
                     UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: $"due to entering the [{era.Name}]");
             }
 
+            // B004 (bnw-spec 3.2 FreeSocialPoliciesPerEra, Poland): free policies for every era entered, also when several are skipped at once.
+            foreach (var unique in CivInfo.GetMatchingUniques(UniqueType.FreePoliciesPerEra, CivInfo.State))
+            {
+                CivInfo.Policies.FreePolicies += int.Parse(unique.Params[0], System.Globalization.CultureInfo.InvariantCulture);
+                CivInfo.Policies.ShouldOpenPolicyPicker = true;
+            }
+
             CivInfo.ForEachTriggeredUnique(UniqueType.TriggerUponEnteringEra, CivInfo.State, it => it.Params[0] == era.Name, unique =>
             {
                 UniqueTriggerActivation.TriggerUnique(unique, CivInfo, triggerNotificationText: $"due to entering the [{era.Name}]");

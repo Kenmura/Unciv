@@ -376,5 +376,62 @@
 		"civilopediaText": [
 			{"text": "Home to uncivilized barbarians, will spawn a hostile unit from time to time"}
 		]
+	},
+	{
+		"name": "Brazilwood Camp",
+		"uniqueTo": "Brazil",
+		"terrainsCanBeBuiltOn": ["Jungle"],
+		"gold": 2,
+		"turnsToBuild": 7,
+		"techRequired": "Machinery",
+		"uniques": [
+			"[+2 Culture] <after discovering [Acoustics]>",
+			"Pillaging this improvement yields approximately [+10 Gold]"
+		],
+		"shortcutKey": "B"
+	},
+	{
+		"name": "Kasbah",
+		"uniqueTo": "Morocco",
+		"terrainsCanBeBuiltOn": ["Desert"],
+		"food": 1,
+		"production": 1,
+		"gold": 1,
+		"turnsToBuild": 8,
+		"techRequired": "Chivalry",
+		"uniques": ["Gives a defensive bonus of [50]%", "Pillaging this improvement yields approximately [+10 Gold]"],
+		"shortcutKey": "K"
+	},
+	{
+		"name": "Feitoria",
+		"uniqueTo": "Portugal",
+		"terrainsCanBeBuiltOn": ["Grassland", "Plains", "Desert", "Tundra", "Snow"],
+		"turnsToBuild": 8,
+		"techRequired": "Navigation",
+		"uniques": [
+			"Can only be built in City-State territory",
+			"Can only be built on [Coastal] tiles",
+			"Gains [1] copies of the luxury resource from the City-State",
+			"Gives a defensive bonus of [50]%",
+			"Pillaging this improvement yields approximately [+20 Gold]"
+		],
+		"shortcutKey": "Z"
+	},
+	{
+		"name": "Chateau",
+		"uniqueTo": "France",
+		"terrainsCanBeBuiltOn": ["Grassland", "Plains", "Desert", "Tundra", "Snow"],
+		"culture": 2,
+		"gold": 1,
+		"turnsToBuild": 8,
+		"techRequired": "Chivalry",
+		"uniques": [
+			"Must be built adjacent to a luxury resource",
+			"Cannot be built adjacent to another [Chateau]",
+			"[+1 Culture, +2 Gold] <after discovering [Flight]>",
+			"Gives a defensive bonus of [50]%",
+			"Pillaging this improvement yields approximately [+30 Gold]"
+		],
+		"shortcutKey": "H"
 	}
 ]

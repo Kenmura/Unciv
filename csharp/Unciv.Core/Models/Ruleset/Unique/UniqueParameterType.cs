@@ -345,7 +345,7 @@ public static class UniqueParameterTypeExtensions
 
     // BeliefType.entries in declaration order (ported as enum in T030).
     private static readonly IReadOnlySet<string> BeliefTypeNameStatic = SetOf(
-        "None", "Pantheon", "Founder", "Follower", "Enhancer", "Any");
+        "None", "Pantheon", "Founder", "Follower", "Enhancer", "Any", "Reformation");
 
     // SpyAction.entries.map { it.displayString } in declaration order.
     private static readonly IReadOnlySet<string> SpyActionStatic = SetOf(

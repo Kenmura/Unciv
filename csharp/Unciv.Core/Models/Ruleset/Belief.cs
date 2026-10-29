@@ -128,6 +128,8 @@ public enum BeliefType
     Follower,
     Enhancer,
     Any,
+    /// <summary>Brave New World (B004): the fifth, Reformation-tier belief. Appended after <c>Any</c> so the Kotlin ordinals stay; it acts like a founder belief (global, for the founding civ).</summary>
+    Reformation,
 }
 
 public static class BeliefTypeExtensions
@@ -138,12 +140,13 @@ public static class BeliefTypeExtensions
         BeliefType.Founder => "#c00000",
         BeliefType.Follower => "#ccaa44",
         BeliefType.Enhancer => "#72cc45",
+        BeliefType.Reformation => "#cc72cc",
         _ => "",
     };
 
     public static bool IsFollower(this BeliefType type) => type is BeliefType.Pantheon or BeliefType.Follower;
 
-    public static bool IsFounder(this BeliefType type) => type is BeliefType.Founder or BeliefType.Enhancer;
+    public static bool IsFounder(this BeliefType type) => type is BeliefType.Founder or BeliefType.Enhancer or BeliefType.Reformation;
 
     public static string? GetSubCategory(this BeliefType type) => type is BeliefType.None or BeliefType.Any ? null : type.ToString();
 }

@@ -290,7 +290,7 @@ internal static class UniqueTypeDataBnw
         new("Founded cities claim [positiveAmount] extra tiles of radius",
             [UniqueTarget.Nation],
             [],
-            "Shoshone."),
+            "Shoshone. Read as a tile count: after the radius-1 ring, the nearest unowned tiles are claimed (B004)."),
         new("Rivers connect cities like roads",
             [UniqueTarget.Nation],
             [],

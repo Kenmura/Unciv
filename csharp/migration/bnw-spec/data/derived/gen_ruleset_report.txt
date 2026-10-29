@@ -80,6 +80,23 @@
   Nations.json: added Vilnius
   Nations.json: added Ife
   Nations.json: added Sofia
+  TileImprovements.json: added Brazilwood Camp
+  TileImprovements.json: added Kasbah
+  TileImprovements.json: added Feitoria
+  TileImprovements.json: added Chateau
+  Beliefs.json: added Earth Mother
+  Beliefs.json: added Sun God
+  Beliefs.json: added Tears of the Gods
+  Beliefs.json: added God-King
+  Beliefs.json: added Jesuit Education
+  Beliefs.json: added Religious Fervor
+  Beliefs.json: added Sacred Sites
+  Beliefs.json: added Charitable Missions
+  Beliefs.json: added Evangelism
+  Beliefs.json: added Heathen Conversion
+  Beliefs.json: added To the Glory of God
+  Beliefs.json: added Underground Sect
+  Beliefs.json: added Unity of the Prophets
   Specialists.json: added Writer
   Specialists.json: added Musician
   UnitNameGroups.json: added Writer
@@ -93,16 +110,17 @@
 
 == pending uniques (not emitted: need B003 UniqueTypes, wired by B010 or the feature ticket)
   Nations.json/Assyria: TechFromCityConquer is approximated by 'Free Technology <upon conquering a city>' (BNW: a stolen/random tech per conquest)
-  Nations.json/Indonesia: UniqueLuxuryCities / UniqueLuxuryQuantity / UniqueLuxuryRequiresNewArea (Spice Islanders)
-  Nations.json/Morocco: Trait_YieldChangesIncomingTradeRoute, Trait_YieldChangesPerTradePartner (Gateway to Africa)
-  Nations.json/Poland: FreeSocialPoliciesPerEra (Solidarity)
-  Nations.json/Portugal: TradeRouteResourceModifier (Mare Nostrum)
-  Nations.json/The Shoshone: ExtraFoundedCityTerritoryClaimRange (Great Expanse)
-  Nations.json/The Zulus: LevelExperienceModifier (Iklwa), Ikanda promotion
-  Nations.json/Venice: NumTradeRoutesModifier, NoAnnexing, FreeUnit @ FreeUnitPrereqTech (Serenissima)
+  Nations.json/Indonesia: Spice Islanders uniques are declared data only: the luxury placement is B080
+  Nations.json/Morocco: Gateway to Africa uniques are declared data only: trade partners and incoming routes are B020; the Kasbah is B004
+  Nations.json/Poland: Solidarity is wired by B004 (a free policy per era, for any policy branch: BNW limits it to the social branches, B050 refines it)
+  Nations.json/Portugal: Mare Nostrum is declared data only (B020); the Feitoria rules are B004, its luxury siphon is B072
+  Nations.json/The Shoshone: Great Expanse is wired by B004 (read as 8 extra tiles after the radius-1 ring, see UniqueTypeDataBnw)
+  Nations.json/The Zulus: Iklwa XP modifier is wired (existing unique); the Ikanda promotion stays open for B074
+  Nations.json/Venice: Serenissima: no annexing, no Settlers and the free Merchant of Venice at Optics are wired; the double trade slots are declared data only (B020)
   Buildings.json/all: Tourism, Great Work, trade route and league columns of SPEC 3.2 (B003 declares the UniqueTypes, feature tickets B020-B062 wire them)
   Units.json/Caravan, Cargo Ship, Archaeologist: made Unbuildable until B021/B040 give them behaviour
-  Beliefs.json/16 BNW beliefs: added by B010 together with their effects (a belief without its unique would be dead content)
+  Beliefs.json/13 new BNW beliefs: added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Evangelism, Heathen Conversion, Underground Sect, Unity of the Prophets (B073), To the Glory of God (B041)
+  TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp: added by B004. Feitoria luxury siphon (B072) and the Landmark / Archaeological Dig improvements (B040) are not wired yet
   TileResources.json/Antiquity Site, Hidden Antiquity Site: artifact resources need the archaeology subsystem (B040)
   Units.json/upgrades: upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture
   Policies.json: BNW policy tree is B050 (branches, ideologies and tenets need Level/branch fields B003 declares)

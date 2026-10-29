@@ -110,7 +110,10 @@
       245
      ],
      "uniqueName": "Spice Islanders",
-     "uniques": [],
+     "uniques": [
+      "Your first [3] cities each receive a unique luxury resource with [2] copies",
+      "Unique luxury cities must be founded in a new area"
+     ],
      "cities": [
       "Majapahit",
       "Singosari",
@@ -149,7 +152,10 @@
       108
      ],
      "uniqueName": "Gateway to Africa",
-     "uniques": [],
+     "uniques": [
+      "[+3 Gold, +1 Culture] for each trade partner",
+      "[+2 Gold] from incoming trade routes"
+     ],
      "cities": [
       "Marrakesh",
       "Fez",
@@ -188,7 +194,9 @@
       250
      ],
      "uniqueName": "Solidarity",
-     "uniques": [],
+     "uniques": [
+      "[1] free Policies each time you enter a new era"
+     ],
      "cities": [
       "Warsaw",
       "Krakow",
@@ -227,7 +235,9 @@
       240
      ],
      "uniqueName": "Mare Nostrum",
-     "uniques": [],
+     "uniques": [
+      "[+100]% resources received from trade routes"
+     ],
      "cities": [
       "Lisbon",
       "Porto",
@@ -266,7 +276,9 @@
       160
      ],
      "uniqueName": "Great Expanse",
-     "uniques": [],
+     "uniques": [
+      "Founded cities claim [8] extra tiles of radius"
+     ],
      "cities": [
       "Boise",
       "Fort Hall",
@@ -305,7 +317,9 @@
       40
      ],
      "uniqueName": "Iklwa",
-     "uniques": [],
+     "uniques": [
+      "[-25]% XP required for promotions"
+     ],
      "cities": [
       "Ulundi",
       "Bulawayo",
@@ -344,7 +358,12 @@
       100
      ],
      "uniqueName": "Serenissima",
-     "uniques": [],
+     "uniques": [
+      "May not annex cities",
+      "Cannot build [Settler] units",
+      "Free [Merchant of Venice] appears <upon discovering [Optics] technology>",
+      "[+100]% trade route slots"
+     ],
      "cities": [
       "Venice",
       "Chioggia",
@@ -698,7 +717,189 @@
     }
    ]
   },
-  "Specialists.json": {
+  "TileImprovements.json": {
+  "add": [
+   {
+    "name": "Brazilwood Camp",
+    "uniqueTo": "Brazil",
+    "terrainsCanBeBuiltOn": [
+     "Jungle"
+    ],
+    "gold": 2,
+    "turnsToBuild": 7,
+    "techRequired": "Machinery",
+    "uniques": [
+     "[+2 Culture] <after discovering [Acoustics]>",
+     "Pillaging this improvement yields approximately [+10 Gold]"
+    ],
+    "shortcutKey": "B"
+   },
+   {
+    "name": "Kasbah",
+    "uniqueTo": "Morocco",
+    "terrainsCanBeBuiltOn": [
+     "Desert"
+    ],
+    "food": 1,
+    "production": 1,
+    "gold": 1,
+    "turnsToBuild": 8,
+    "techRequired": "Chivalry",
+    "uniques": [
+     "Gives a defensive bonus of [50]%",
+     "Pillaging this improvement yields approximately [+10 Gold]"
+    ],
+    "shortcutKey": "K"
+   },
+   {
+    "name": "Feitoria",
+    "uniqueTo": "Portugal",
+    "terrainsCanBeBuiltOn": [
+     "Grassland",
+     "Plains",
+     "Desert",
+     "Tundra",
+     "Snow"
+    ],
+    "turnsToBuild": 8,
+    "techRequired": "Navigation",
+    "uniques": [
+     "Can only be built in City-State territory",
+     "Can only be built on [Coastal] tiles",
+     "Gains [1] copies of the luxury resource from the City-State",
+     "Gives a defensive bonus of [50]%",
+     "Pillaging this improvement yields approximately [+20 Gold]"
+    ],
+    "shortcutKey": "Z"
+   },
+   {
+    "name": "Chateau",
+    "uniqueTo": "France",
+    "terrainsCanBeBuiltOn": [
+     "Grassland",
+     "Plains",
+     "Desert",
+     "Tundra",
+     "Snow"
+    ],
+    "culture": 2,
+    "gold": 1,
+    "turnsToBuild": 8,
+    "techRequired": "Chivalry",
+    "uniques": [
+     "Must be built adjacent to a luxury resource",
+     "Cannot be built adjacent to another [Chateau]",
+     "[+1 Culture, +2 Gold] <after discovering [Flight]>",
+     "Gives a defensive bonus of [50]%",
+     "Pillaging this improvement yields approximately [+30 Gold]"
+    ],
+    "shortcutKey": "H"
+   }
+  ]
+ },
+ "Beliefs.json": {
+  "add": [
+   {
+    "name": "Earth Mother",
+    "type": "Pantheon",
+    "uniques": [
+     "[+1 Faith] from every [Copper]",
+     "[+1 Faith] from every [Iron]",
+     "[+1 Faith] from every [Salt]"
+    ]
+   },
+   {
+    "name": "Sun God",
+    "type": "Pantheon",
+    "uniques": [
+     "[+1 Food] from every [Bananas]",
+     "[+1 Food] from every [Citrus]",
+     "[+1 Food] from every [Wheat]"
+    ]
+   },
+   {
+    "name": "Tears of the Gods",
+    "type": "Pantheon",
+    "uniques": [
+     "[+2 Faith] from every [Pearls]",
+     "[+2 Faith] from every [Gems]"
+    ]
+   },
+   {
+    "name": "God-King",
+    "type": "Pantheon",
+    "uniques": [
+     "[+1 Production, +1 Gold, +1 Science, +1 Faith, +1 Culture] from every [Palace]"
+    ]
+   },
+   {
+    "name": "Jesuit Education",
+    "type": "Reformation",
+    "uniques": [
+     "May buy [University] buildings with [Faith] [in cities following this religion]",
+     "May buy [Public School] buildings with [Faith] [in cities following this religion]",
+     "May buy [Research Lab] buildings with [Faith] [in cities following this religion]"
+    ]
+   },
+   {
+    "name": "Religious Fervor",
+    "type": "Reformation",
+    "uniques": [
+     "May buy [{Military} {Land}] units with [Faith] for [2] times their normal Production cost <starting from the [Industrial era]>"
+    ]
+   },
+   {
+    "name": "Sacred Sites",
+    "type": "Reformation",
+    "uniques": [
+     "[+2] Tourism from [Faith] buildings [in all cities]"
+    ]
+   },
+   {
+    "name": "Charitable Missions",
+    "type": "Reformation",
+    "uniques": [
+     "[+30]% Influence gained with City-States"
+    ]
+   },
+   {
+    "name": "Evangelism",
+    "type": "Reformation",
+    "uniques": [
+     "[100]% religious pressure erosion for other religions [in all cities]"
+    ]
+   },
+   {
+    "name": "Heathen Conversion",
+    "type": "Reformation",
+    "uniques": [
+     "Allows converting barbarian units"
+    ]
+   },
+   {
+    "name": "To the Glory of God",
+    "type": "Reformation",
+    "uniques": [
+     "Can purchase all Great People with Faith"
+    ]
+   },
+   {
+    "name": "Underground Sect",
+    "type": "Reformation",
+    "uniques": [
+     "Spies add [5] religious pressure"
+    ]
+   },
+   {
+    "name": "Unity of the Prophets",
+    "type": "Reformation",
+    "uniques": [
+     "[50]% of religious pressure is retained when Inquisitors remove other religions"
+    ]
+   }
+  ]
+ },
+ "Specialists.json": {
    "add": [
     {
      "name": "Writer",
@@ -976,25 +1177,25 @@
    "TechFromCityConquer is approximated by 'Free Technology <upon conquering a city>' (BNW: a stolen/random tech per conquest)"
   ],
   "Nations.json/Indonesia": [
-   "UniqueLuxuryCities / UniqueLuxuryQuantity / UniqueLuxuryRequiresNewArea (Spice Islanders)"
+   "Spice Islanders uniques are declared data only: the luxury placement is B080"
   ],
   "Nations.json/Morocco": [
-   "Trait_YieldChangesIncomingTradeRoute, Trait_YieldChangesPerTradePartner (Gateway to Africa)"
+   "Gateway to Africa uniques are declared data only: trade partners and incoming routes are B020; the Kasbah is B004"
   ],
   "Nations.json/Poland": [
-   "FreeSocialPoliciesPerEra (Solidarity)"
+   "Solidarity is wired by B004 (a free policy per era, for any policy branch: BNW limits it to the social branches, B050 refines it)"
   ],
   "Nations.json/Portugal": [
-   "TradeRouteResourceModifier (Mare Nostrum)"
+   "Mare Nostrum is declared data only (B020); the Feitoria rules are B004, its luxury siphon is B072"
   ],
   "Nations.json/The Shoshone": [
-   "ExtraFoundedCityTerritoryClaimRange (Great Expanse)"
+   "Great Expanse is wired by B004 (read as 8 extra tiles after the radius-1 ring, see UniqueTypeDataBnw)"
   ],
   "Nations.json/The Zulus": [
-   "LevelExperienceModifier (Iklwa), Ikanda promotion"
+   "Iklwa XP modifier is wired (existing unique); the Ikanda promotion stays open for B074"
   ],
   "Nations.json/Venice": [
-   "NumTradeRoutesModifier, NoAnnexing, FreeUnit @ FreeUnitPrereqTech (Serenissima)"
+   "Serenissima: no annexing, no Settlers and the free Merchant of Venice at Optics are wired; the double trade slots are declared data only (B020)"
   ],
   "Buildings.json/all": [
    "Tourism, Great Work, trade route and league columns of SPEC 3.2 (B003 declares the UniqueTypes, feature tickets B020-B062 wire them)"
@@ -1002,8 +1203,11 @@
   "Units.json/Caravan, Cargo Ship, Archaeologist": [
    "made Unbuildable until B021/B040 give them behaviour"
   ],
-  "Beliefs.json/16 BNW beliefs": [
-   "added by B010 together with their effects (a belief without its unique would be dead content)"
+  "Beliefs.json/13 new BNW beliefs": [
+   "added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Evangelism, Heathen Conversion, Underground Sect, Unity of the Prophets (B073), To the Glory of God (B041)"
+  ],
+  "TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp": [
+   "added by B004. Feitoria luxury siphon (B072) and the Landmark / Archaeological Dig improvements (B040) are not wired yet"
   ],
   "TileResources.json/Antiquity Site, Hidden Antiquity Site": ["artifact resources need the archaeology subsystem (B040)"],
   "Units.json/upgrades": ["upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture"],

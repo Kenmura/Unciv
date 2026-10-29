@@ -304,5 +304,76 @@
 		"name": "Reliquary",
 		"type": "Enhancer",
 		"uniques": ["Gain [50] [Faith] <upon expending a [Great Person] unit> <(modified by game speed)>"]
+	},
+	{
+		"name": "Earth Mother",
+		"type": "Pantheon",
+		"uniques": ["[+1 Faith] from every [Copper]", "[+1 Faith] from every [Iron]", "[+1 Faith] from every [Salt]"]
+	},
+	{
+		"name": "Sun God",
+		"type": "Pantheon",
+		"uniques": ["[+1 Food] from every [Bananas]", "[+1 Food] from every [Citrus]", "[+1 Food] from every [Wheat]"]
+	},
+	{
+		"name": "Tears of the Gods",
+		"type": "Pantheon",
+		"uniques": ["[+2 Faith] from every [Pearls]", "[+2 Faith] from every [Gems]"]
+	},
+	{
+		"name": "God-King",
+		"type": "Pantheon",
+		"uniques": ["[+1 Production, +1 Gold, +1 Science, +1 Faith, +1 Culture] from every [Palace]"]
+	},
+	{
+		"name": "Jesuit Education",
+		"type": "Reformation",
+		"uniques": [
+			"May buy [University] buildings with [Faith] [in cities following this religion]",
+			"May buy [Public School] buildings with [Faith] [in cities following this religion]",
+			"May buy [Research Lab] buildings with [Faith] [in cities following this religion]"
+		]
+	},
+	{
+		"name": "Religious Fervor",
+		"type": "Reformation",
+		"uniques": [
+			"May buy [{Military} {Land}] units with [Faith] for [2] times their normal Production cost <starting from the [Industrial era]>"
+		]
+	},
+	{
+		"name": "Sacred Sites",
+		"type": "Reformation",
+		"uniques": ["[+2] Tourism from [Faith] buildings [in all cities]"]
+	},
+	{
+		"name": "Charitable Missions",
+		"type": "Reformation",
+		"uniques": ["[+30]% Influence gained with City-States"]
+	},
+	{
+		"name": "Evangelism",
+		"type": "Reformation",
+		"uniques": ["[100]% religious pressure erosion for other religions [in all cities]"]
+	},
+	{
+		"name": "Heathen Conversion",
+		"type": "Reformation",
+		"uniques": ["Allows converting barbarian units"]
+	},
+	{
+		"name": "To the Glory of God",
+		"type": "Reformation",
+		"uniques": ["Can purchase all Great People with Faith"]
+	},
+	{
+		"name": "Underground Sect",
+		"type": "Reformation",
+		"uniques": ["Spies add [5] religious pressure"]
+	},
+	{
+		"name": "Unity of the Prophets",
+		"type": "Reformation",
+		"uniques": ["[50]% of religious pressure is retained when Inquisitors remove other religions"]
 	}
 ]
