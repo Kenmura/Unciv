@@ -68,7 +68,7 @@ public class GoldenComparerTests
     [Fact]
     public void RendererProfileToleratesBlendingDriftButStillRejectsWrongScreens()
     {
-        var drifted = Scene(shade: 240);
+        var drifted = Scene(shade: 225);
         Assert.False(GoldenComparer.Compare(drifted, Scene(shade: 200)).Passed);
         Assert.True(GoldenComparer.Compare(drifted, Scene(shade: 200), GoldenTolerance.Renderer).Passed);
         Assert.False(GoldenComparer.Compare(RgbaImage.Solid(64, 48, 200, 160, 40), Scene(), GoldenTolerance.Renderer).Passed);

@@ -8,13 +8,14 @@ namespace Unciv.Harness;
 public sealed record GoldenTolerance(int MaxHashDistance = 6, double MaxMeanAbsoluteDifference = 0.02, int PixelTolerance = 16, double MaxDifferingPixelFraction = 0.05)
 {
     /// <summary>
-    /// Cross-renderer profile (T246): the goldens were recorded with Fedora's Mesa llvmpipe, the ubuntu-24.04 runner's differs in blending/dithering
-    /// (observed: up to 0.062 mean difference, 85% of pixels off by more than 16, hash distance up to 30 on dimmed modal screens, where the hash
-    /// is noise). The hash is therefore not used, and the mean, per-pixel and fraction limits are widened to about twice the observed drift; a
-    /// missing or wrong screen (other layout, blank) still differs far more, which <c>run-scenario.sh --expect-golden-failure</c> proves in CI.
-    /// Selected with <c>HARNESS_GOLDEN_TOLERANCE=renderer</c>; the default stays strict so the developer machine keeps its precise check.
+    /// Cross-renderer profile (T246): the goldens were recorded with Fedora's Mesa llvmpipe, the ubuntu-24.04 runner's differs slightly in
+    /// blending/dithering. Measured over all 221 captures of the first green CI run against the Fedora goldens: perceptual-hash distance at most 9,
+    /// mean difference at most 0.0191, at most 8.3% of the pixels off by more than 16. The limits sit between that drift and what a wrong screen
+    /// scores (the CI self-test <c>run-scenario.sh --expect-golden-failure</c> compares every capture with an unrelated image: hash 19-30, mean
+    /// 0.045-0.121): hash 12, mean 0.04, per-pixel 32, fraction 0.15. Selected with <c>HARNESS_GOLDEN_TOLERANCE=renderer</c>; the default stays strict
+    /// so the developer machine keeps its precise check.
     /// </summary>
-    public static GoldenTolerance Renderer { get; } = new(MaxHashDistance: 64, MaxMeanAbsoluteDifference: 0.12, PixelTolerance: 48, MaxDifferingPixelFraction: 0.6);
+    public static GoldenTolerance Renderer { get; } = new(MaxHashDistance: 12, MaxMeanAbsoluteDifference: 0.04, PixelTolerance: 32, MaxDifferingPixelFraction: 0.15);
 
     /// <summary>The profile named by <paramref name="name"/> (<c>strict</c>, the default, or <c>renderer</c>); null for an unknown name.</summary>
     public static GoldenTolerance? FromName(string? name) => string.IsNullOrEmpty(name) || name == "strict" ? new GoldenTolerance() : name == "renderer" ? Renderer : null;

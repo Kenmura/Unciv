@@ -146,8 +146,7 @@ jobs:
   # green on the runner image and removes that line.
   client-scenarios:
     name: Client scenarios (Xvfb, software GL)
-    # needs: engine only orders the jobs; a failing unit test must not hide the scenario result (T246), hence !cancelled()
-    if: ${{ !cancelled() && github.event_name != 'schedule' }}
+    if: github.event_name != 'schedule'
     needs: engine
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -192,12 +191,6 @@ jobs:
           # A comparison that cannot fail would pass everything: a wrong golden must be rejected
           tools/run-scenario.sh menu --expect-golden-failure || failed+=("menu --expect-golden-failure")
           if (( ${#failed[@]} )); then echo "FAILED: ${failed[*]}" >&2; exit 1; fi
-      # T246 TEMPORARY diagnostic (removed in the same ticket): the runner's frames, to measure the renderer drift against the goldens
-      - name: Dump frames (T246 diagnostic)
-        if: always()
-        working-directory: csharp/Unciv.Godot.Harness
-        run: |
-          ls -la out/menu || true; for f in $(find out -name hud.png | head -3); do echo "FRAME-BEGIN $f"; base64 -w 200 "$f" | sed "s/^/B64 /"; echo "FRAME-END"; done
 
   # Long AI-only games (T167). Env-gated, skipped by every other run.
   soak:

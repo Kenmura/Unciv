@@ -129,10 +129,12 @@ The headless export crashes intermittently (about 1 in 15 fresh imports, more un
 System packages for the Godot jobs on ubuntu-24.04: `xvfb xauth libgl1-mesa-dri libglx-mesa0 libxcursor1 libxinerama1 libxi6 libxrandr2 fontconfig libasound2t64`.
 Caches: `~/.nuget/packages` (keyed on csproj/`Directory.Packages.props`) and the Godot editor/templates (keyed on the two install scripts).
 
-`client-scenarios` has `continue-on-error: true`: the goldens were recorded on Fedora's Mesa llvmpipe, and ubuntu's llvmpipe differs in blending (first CI run:
-up to 0.062 mean difference, 85% of pixels off by more than 16, perceptual-hash distance up to 30 on dimmed modal screens). T246 therefore runs the job with
-`HARNESS_GOLDEN_TOLERANCE=renderer` (`GoldenTolerance.Renderer`: hash ignored, mean 0.12, per-pixel 48, fraction 0.6; the self-test `--expect-golden-failure`
-proves a wrong screen is still rejected). Local runs keep the strict default, so the goldens stay valid on Fedora. When it has been seen green, delete the
+`client-scenarios` has `continue-on-error: true`: the goldens were recorded on Fedora's Mesa llvmpipe and ubuntu's llvmpipe differs slightly in blending.
+Measured over the 221 captures of a CI run: perceptual-hash distance at most 9, mean difference at most 0.019, at most 8.3% of pixels off by more than 16,
+which the strict default (hash 6, 5% of pixels) rejects. T246 therefore runs the job with `HARNESS_GOLDEN_TOLERANCE=renderer`
+(`GoldenTolerance.Renderer`: hash 12, mean 0.04, per-pixel 32, fraction 0.15, between that drift and the 19-30 hash / 0.045-0.12 mean of a wrong screen; the
+self-test `--expect-golden-failure` proves a wrong screen is still rejected). Local runs keep the strict default, so the goldens stay valid on Fedora. Note that
+`continue-on-error` makes a failed job show as green: read the step result, not the job badge. When the scenarios step has been seen passing, delete the
 `continue-on-error` line so it gates merges (T239). A
 scenario that fails there is reproduced locally with `run-scenario.sh <name>`. GitHub Actions cannot be run locally: the workflow was checked with
 `actionlint`, `test_ci.py` (shape: paths, permissions, pinning, no publishing) and by running each of its commands in `dotnet-dev`.

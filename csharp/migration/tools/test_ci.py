@@ -135,8 +135,7 @@ class WorkflowShape(unittest.TestCase):
 
     def test_soak_only_on_schedule_or_dispatch_and_nothing_else_on_schedule(self):
         self.assertRegex(self.text, r"if: github\.event_name == 'schedule' \|\| github\.event_name == 'workflow_dispatch'")
-        self.assertEqual(self.text.count("if: github.event_name != 'schedule'"), 2)
-        self.assertEqual(self.text.count("if: ${{ !cancelled() && github.event_name != 'schedule' }}"), 1)  # client-scenarios (T246)
+        self.assertEqual(self.text.count("if: github.event_name != 'schedule'"), 3)
 
 
 if __name__ == "__main__":
