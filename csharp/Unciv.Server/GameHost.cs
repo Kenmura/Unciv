@@ -119,6 +119,12 @@ public sealed class GameHost : IAsyncDisposable
                     PreviousSnapshot = initialSnapshot
                 };
 
+                // A reconnect replaces the civ's older session (its late detach must not mark the new one disconnected).
+                foreach (var stale in sessions.Values.Where(x => string.Equals(x.BoundCivId, boundCivId, StringComparison.Ordinal)).ToList())
+                {
+                    await DetachSessionAsync(stale.SessionId);
+                }
+
                 sessions[sessionId] = hostSession;
                 turnTimer.Connect(boundCivId, playerKeyId);
 
@@ -241,6 +247,11 @@ public sealed class GameHost : IAsyncDisposable
 
         await EnqueueAsync(async () =>
         {
+            // Finish a half-resolved round first so the final snapshot is taken at a safe point (SERVER.md 5.3).
+            if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
+            {
+                PumpResolving();
+            }
             foreach (var s in sessions.Values.ToList())
             {
                 await SafeSendAsync(s, new HostClosing());
