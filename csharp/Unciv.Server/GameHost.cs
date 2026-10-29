@@ -571,7 +571,7 @@ public sealed class GameHost : IAsyncDisposable
                 if (frame == null) break;
 
                 hostSession.LastInboundMillis = clock.NowMillis;
-                var message = ProtocolCodec.Decode(frame);
+                var message = ProtocolCodec.Decode(frame, ProtocolVersion.MaxFrameBytes);
                 if (message is Ping)
                 {
                     // Answered here, not on the actor: a long actor job (an AI turn, a big resolve) must not make a live client look dead.

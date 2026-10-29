@@ -36,7 +36,7 @@ public sealed class TcpTlsTransport : ITransport
         if (!IsOpen) return null;
         try
         {
-            return await LengthPrefixedFraming.ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
+            return await LengthPrefixedFraming.ReadFrameAsync(stream, cancellationToken, ProtocolVersion.MaxFrameBytes).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is EndOfStreamException or IOException)
         {

@@ -49,9 +49,11 @@ public static class ProtocolCodec
         return text;
     }
 
-    public static Message Decode(string frame)
+    /// <param name="frame"></param>
+    /// <param name="maxBytes">Cap on the frame; the host passes <see cref="ProtocolVersion.MaxFrameBytes"/> for what clients send.</param>
+    public static Message Decode(string frame, int maxBytes = ProtocolVersion.MaxMessageBytes)
     {
-        if (Encoding.UTF8.GetByteCount(frame) > ProtocolVersion.MaxMessageBytes)
+        if (Encoding.UTF8.GetByteCount(frame) > maxBytes)
             return Fail(ErrorCodes.FrameTooLarge);
 
         JsonObject? node;

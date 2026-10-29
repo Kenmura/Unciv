@@ -25,17 +25,20 @@ public static class LengthPrefixedFraming
         {
             var count = Math.Min(ProtocolVersion.MaxFrameBytes, bytes.Length - offset);
             var more = offset + count < bytes.Length;
-            var header = new byte[4];
-            BinaryPrimitives.WriteInt32BigEndian(header, more ? count | ContinuationBit : count);
-            await stream.WriteAsync(header, cancellationToken).ConfigureAwait(false);
-            await stream.WriteAsync(bytes.AsMemory(offset, count), cancellationToken).ConfigureAwait(false);
+            var buffer = new byte[4 + count]; // header and payload in one write: one TLS record, and a frame is never interleaved by two writers
+            BinaryPrimitives.WriteInt32BigEndian(buffer, more ? count | ContinuationBit : count);
+            bytes.AsSpan(offset, count).CopyTo(buffer.AsSpan(4));
+            await stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
             offset += count;
         }
         while (offset < bytes.Length);
         await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public static async ValueTask<string?> ReadFrameAsync(Stream stream, CancellationToken cancellationToken = default)
+    /// <param name="stream"></param>
+
+    /// <param name="cancellationToken"></param>    /// <param name="maxMessageBytes">Cap on the reassembled message. Peers that only ever send small messages (the host reading from unauthenticated clients) pass <see cref="ProtocolVersion.MaxFrameBytes"/> so a stranger cannot make them buffer a large snapshot-sized message.</param>
+    public static async ValueTask<string?> ReadFrameAsync(Stream stream, CancellationToken cancellationToken = default, int maxMessageBytes = ProtocolVersion.MaxMessageBytes)
     {
         MemoryStream? assembled = null;
         var header = new byte[4];
@@ -57,7 +60,7 @@ public static class LengthPrefixedFraming
             var more = (prefix & ContinuationBit) != 0;
             var length = prefix & ~ContinuationBit;
             if (length > ProtocolVersion.MaxFrameBytes
-                || (assembled?.Length ?? 0) + length > ProtocolVersion.MaxMessageBytes)
+                || (assembled?.Length ?? 0) + length > maxMessageBytes)
                 throw new InvalidOperationException($"Frame length {length} exceeds allowed maximum of {ProtocolVersion.MaxFrameBytes} bytes");
 
             var payload = new byte[length];

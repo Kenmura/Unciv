@@ -77,7 +77,7 @@ public sealed class NetRobustnessTests : IDisposable
     // ------------------------------------------------------------------ chunked frames
 
     [Fact]
-    public async Task LargeMessage_OverRealTls_IsChunkedAndReassembledBothWays()
+    public async Task LargeMessage_OverRealTls_IsChunkedAndReassembledByTheClient()
     {
         await using var listener = new TcpTlsListener(HostCertificate.Generate(), port: 0);
         listener.Start();
@@ -91,18 +91,30 @@ public sealed class NetRobustnessTests : IDisposable
             Assert.True(Encoding.UTF8.GetByteCount(text) > 2 * ProtocolVersion.MaxFrameBytes);
             var frame = ProtocolCodec.Encode(new LobbyChat { Text = text });
 
-            var send = client.SendAsync(frame).AsTask();
-            var received = Assert.IsType<LobbyChat>(await ReceiveAsync(server));
+            // Snapshots are host to client: the client accepts the large message, the host does not (see HostRejectsChunkedMessageAboveItsInboundCap).
+            var send = server.SendAsync(frame).AsTask(); // not awaited first: 8 MiB exceeds the socket buffers until the peer reads
+            var received = Assert.IsType<LobbyChat>(await ReceiveAsync(client));
             await send.WaitAsync(Bound);
             Assert.Equal(text, received.Text);
-
-            var back = server.SendAsync(frame).AsTask(); // not awaited first: 8 MiB exceeds the socket buffers until the peer reads
-            Assert.Equal(text, Assert.IsType<LobbyChat>(await ReceiveAsync(client)).Text);
-            await back.WaitAsync(Bound);
 
             // Ordinary frames still work on the same connection afterwards.
             await client.SendAsync(ProtocolCodec.Encode(new Ping()));
             Assert.IsType<Ping>(await ReceiveAsync(server));
+        }
+    }
+
+    [Fact]
+    public async Task HostRejectsChunkedMessageAboveItsInboundCap()
+    {
+        await using var listener = new TcpTlsListener(HostCertificate.Generate(), port: 0);
+        listener.Start();
+        var (client, server) = await ConnectAsync(listener);
+        await using (client)
+        await using (server)
+        {
+            var frame = ProtocolCodec.Encode(new LobbyChat { Text = new string('x', ProtocolVersion.MaxFrameBytes + 1) });
+            _ = client.SendAsync(frame).AsTask().ContinueWith(_ => { }, TaskScheduler.Default); // the host stops reading, the write may fail or stall
+            await Assert.ThrowsAsync<InvalidOperationException>(() => server.ReceiveAsync().AsTask().WaitAsync(Bound));
         }
     }
 
@@ -190,6 +202,43 @@ public sealed class NetRobustnessTests : IDisposable
         Assert.True(inner.Closed);
         Assert.False(bounded.IsOpen);
         await Assert.ThrowsAsync<InvalidOperationException>(() => bounded.SendAsync("late").AsTask());
+    }
+
+    private sealed class DyingTransport : ITransport
+    {
+        public bool Closed { get; private set; }
+        public bool IsOpen => !Closed;
+        public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default) => throw new IOException("connection reset");
+        public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => new((string?)null);
+
+        public ValueTask CloseAsync()
+        {
+            Closed = true;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask DisposeAsync() => CloseAsync();
+    }
+
+    [Fact]
+    public async Task BoundedSend_WhenTheInnerWriteFails_ClosesTheInnerTransport()
+    {
+        var inner = new DyingTransport();
+        var bounded = new BoundedSendTransport(inner);
+        await bounded.SendAsync("x");
+        await Task.Run(async () => { while (inner.IsOpen) await Task.Yield(); }).WaitAsync(Bound); // the pump closes it itself, no CloseAsync needed
+        Assert.False(bounded.IsOpen);
+        await bounded.CloseAsync().AsTask().WaitAsync(Bound);
+        await bounded.CloseAsync().AsTask().WaitAsync(Bound); // idempotent
+    }
+
+    [Fact]
+    public async Task BoundedSend_ByteLimit_CountsUtf8Bytes()
+    {
+        var inner = new StuckTransport();
+        var bounded = new BoundedSendTransport(inner, maxFrames: 100, maxBytes: 100);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => bounded.SendAsync(new string('€', 40)).AsTask()); // 40 chars, 120 bytes
+        Assert.True(bounded.DisconnectedAsSlowReader);
     }
 
     [Fact]

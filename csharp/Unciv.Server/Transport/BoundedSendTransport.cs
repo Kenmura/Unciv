@@ -1,3 +1,4 @@
+using System.Text;
 using System.Threading.Channels;
 
 using Unciv.Net;
@@ -20,11 +21,15 @@ public sealed class BoundedSendTransport : ITransport
     private readonly TimeSpan drainGrace;
     private readonly Channel<string> queue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions { SingleReader = true });
     private readonly CancellationTokenSource pumpStop = new();
+    private readonly CancellationTokenSource graceCancel = new();
     private readonly Task pump;
     private readonly Lock gate = new();
     private int queuedFrames;
     private long queuedBytes;
+    private readonly TaskCompletionSource closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private volatile bool closing;
+    private volatile bool slowReader;
+    private int closeStarted;
 
     public BoundedSendTransport(ITransport inner, int maxFrames = 256, long maxBytes = 64L * 1024 * 1024, TimeSpan? drainGrace = null)
     {
@@ -36,14 +41,15 @@ public sealed class BoundedSendTransport : ITransport
     }
 
     /// <summary>True once the peer was disconnected for not reading fast enough.</summary>
-    public bool DisconnectedAsSlowReader { get; private set; }
+    /// <summary>True once the peer was disconnected for not reading fast enough.</summary>
+    public bool DisconnectedAsSlowReader => slowReader;
 
     public bool IsOpen => !closing && inner.IsOpen;
 
     public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var size = frame.Length; // chars, a cheap lower bound of the UTF-8 size that avoids encoding twice
+        var size = Encoding.UTF8.GetByteCount(frame);
         bool overflow;
         lock (gate)
         {
@@ -62,32 +68,40 @@ public sealed class BoundedSendTransport : ITransport
 
     public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => inner.ReceiveAsync(cancellationToken);
 
+    /// <summary>Stops accepting sends, lets queued frames drain for up to the grace period, then closes the inner transport. Idempotent; concurrent callers wait for the close to finish.</summary>
     public async ValueTask CloseAsync()
     {
-        lock (gate)
+        if (Interlocked.Exchange(ref closeStarted, 1) != 0)
         {
-            if (closing) return;
-            closing = true;
-            queue.Writer.TryComplete();
+            await closed.Task.ConfigureAwait(false);
+            return;
         }
-        if (!DisconnectedAsSlowReader)
+        try
         {
-            var drained = await Task.WhenAny(pump, Task.Delay(drainGrace)).ConfigureAwait(false);
-            if (drained != pump) await pumpStop.CancelAsync().ConfigureAwait(false);
-        }
-        else
-        {
+            lock (gate)
+            {
+                closing = true;
+                queue.Writer.TryComplete();
+            }
+            // A slow reader or a dead pump is not drained; otherwise wait (bounded) for what is already queued.
+            if (!slowReader && !pump.IsCompleted) await Task.WhenAny(pump, Task.Delay(drainGrace, graceCancel.Token)).ConfigureAwait(false);
+            await graceCancel.CancelAsync().ConfigureAwait(false);
             await pumpStop.CancelAsync().ConfigureAwait(false);
+            // The pump normally ends at once (its write was cancelled); an inner transport that ignores the token must not hang the caller.
+            try { await pump.WaitAsync(drainGrace).ConfigureAwait(false); } catch (Exception) { /* the pump's own failure was already handled; closing is all that is left */ }
+            await inner.CloseAsync().ConfigureAwait(false);
         }
-        try { await pump.ConfigureAwait(false); } catch (OperationCanceledException) { }
-        await inner.CloseAsync().ConfigureAwait(false);
+        finally
+        {
+            closed.TrySetResult();
+        }
     }
 
     public ValueTask DisposeAsync() => CloseAsync();
 
     private async ValueTask DisconnectSlowReaderAsync()
     {
-        DisconnectedAsSlowReader = true;
+        slowReader = true;
         await CloseAsync().ConfigureAwait(false);
         throw new InvalidOperationException("Peer disconnected: outbound queue full");
     }
@@ -104,16 +118,18 @@ public sealed class BoundedSendTransport : ITransport
                     lock (gate)
                     {
                         queuedFrames--;
-                        queuedBytes -= frame.Length;
+                        queuedBytes -= Encoding.UTF8.GetByteCount(frame);
                     }
                 }
             }
         }
-        catch (Exception e) when (e is OperationCanceledException or InvalidOperationException or IOException or ObjectDisposedException)
+        catch (Exception)
         {
-            // The inner transport died or we were told to stop: nothing more will be sent.
+            // The peer's socket died (reset, half-open) or we were told to stop: nothing more will be sent. Close the inner transport so
+            // its reader unblocks and the session is detached instead of leaking the socket.
             lock (gate) { closing = true; }
             queue.Writer.TryComplete();
+            try { await inner.CloseAsync().ConfigureAwait(false); } catch (Exception) { /* already dead */ }
         }
     }
 }
