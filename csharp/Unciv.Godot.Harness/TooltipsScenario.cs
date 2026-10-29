@@ -22,6 +22,11 @@ public sealed class TooltipsScenario : Scenario
     /// <summary>C055 review: the hover delay is served only by explicit Advance calls; a slow machine (software GL under load) used to let real frame time show the tip before the assertions. C058: the runner makes every TooltipHost's delay unreachable.</summary>
     private const double NeverReal = ScenarioRunner.UnreachableDelay;
 
+    /// <summary>C076: a tooltip's heading is bold in the primary text colour.</summary>
+    private static readonly string HeadingOpen = "[b][color=" + UiText.Hex(UiTokens.TextPrimary) + "]";
+
+    private static string StatColour(string stat) => UiText.Hex(PlaceholderPalette.ForStat(stat));
+
     public override string Name => "tooltips";
 
     public override bool Uses3D => true;
@@ -79,7 +84,7 @@ public sealed class TooltipsScenario : Scenario
             {
                 var info = recording.QueryAsync(new TileInfoQuery(capitalCoord.X, capitalCoord.Y)).GetAwaiter().GetResult().NotNull();
                 return screen.Tooltips.IsShowing && screen.Tooltips.PanelRect.Position.Y >= screen.Hud.BarRect.End.Y && !screen.Tooltips.PanelRect.Intersects(screen.Hud.BarRect) && screen.Tooltips.ShownText == ExpectedTileTip() && info.IsCityCenter && info.OwningCity == capital.Name
-                    && screen.Tooltips.ShownText.StartsWith(capital.Name, StringComparison.Ordinal) && info.Yields.Count > 0 && info.YieldBreakdown.Count > 0 && screen.Tooltips.ShownText.Contains("Total", StringComparison.Ordinal) && info.BaseTerrain == capitalTile.BaseTerrain;
+                    && screen.Tooltips.ShownText.StartsWith(HeadingOpen + capital.Name, StringComparison.Ordinal) && info.Yields.Count > 0 && info.YieldBreakdown.Count > 0 && screen.Tooltips.ShownText.Contains("Total", StringComparison.Ordinal) && info.BaseTerrain == capitalTile.BaseTerrain;
             }),
             new Capture("tile", "Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources"),
             new Act("pointer onto the top bar", () => InputSimulator.SimulateMouseMove(viewport, new Vector2(300, 8))),
@@ -116,6 +121,7 @@ public sealed class TooltipsScenario : Scenario
             new WaitFrames(3),
             new AssertQuery("the Archer's page is the engine's assembled civilopedia text", () =>
                 screen.Pedia.Current?.Link == "Unit/Archer" && screen.Pedia.PageBbcode == ExpectedPage(CivilopediaCategories.Unit, "Archer") && PageIsEngineText(CivilopediaCategories.Unit, "Archer") && screen.Pedia.PageText.Contains("Archer", StringComparison.Ordinal)),
+            new AssertQuery("the page sits on a frame: the sidebar lists every category (the open one pressed), the card names the Archer with its production cost, links are info-coloured and nothing is a row of dashes", () => ArcherPageIsFramed(screen, ruleset)),
             new Capture("unit", "Civilopedia, Units: the Archer's page as the engine words it, with its stats and links"),
             new Act("pointer onto the Bowman entry", () => InputSimulator.SimulateMouseMove(viewport, Entry("Bowman"))),
             new WaitFrames(2),
@@ -126,7 +132,8 @@ public sealed class TooltipsScenario : Scenario
                 var warrior = ruleset.Units["Bowman"];
                 string description = BaseUnitDescriptions.GetShortDescription(warrior);
                 return screen.Tooltips.IsShowing && screen.Tooltips.ShownText == TooltipModel.ToBbcode(TooltipModel.Unit(ruleset, "Bowman").NotNull(), text => text.Tr())
-                    && screen.Tooltips.ShownText.Contains(TooltipModel.Escape(description), StringComparison.Ordinal) && screen.Tooltips.ShownText.StartsWith("Bowman", StringComparison.Ordinal);
+                    && screen.Tooltips.ShownText.Contains(TooltipModel.Escape(description), StringComparison.Ordinal) && screen.Tooltips.ShownText.StartsWith(HeadingOpen + "Bowman", StringComparison.Ordinal)
+                    && screen.Tooltips.ShownText.Contains("Requires", StringComparison.Ordinal) && ruleset.Units["Bowman"].RequiredTech != null && screen.Tooltips.ShownText.Contains(StatColour("Production"), StringComparison.Ordinal);
             }),
             new Capture("entry-tip", "The Bowman entry's tooltip: name, cost and the ruleset's short description"),
             new Act("pointer away", () => InputSimulator.SimulateMouseMove(viewport, new Vector2(600, 460))),
@@ -139,13 +146,8 @@ public sealed class TooltipsScenario : Scenario
             new Press("Back"),
             new WaitFrames(3),
             new AssertQuery("Back returned to the Archer", () => screen.Pedia.Current?.Link == "Unit/Archer" && screen.Pedia.Category == CivilopediaCategories.Unit && !screen.Pedia.CanGoBack),
-            new Click(() => Category(CivilopediaCategories.Building)),
-            new WaitFrames(3),
-            new Click(() => Entry("Granary")),
-            new WaitFrames(3),
-            new AssertQuery("the Granary's page is the engine's assembled text", () =>
-                screen.Pedia.Current?.Link == "Building/Granary" && screen.Pedia.PageBbcode == ExpectedPage(CivilopediaCategories.Building, "Granary") && PageIsEngineText(CivilopediaCategories.Building, "Granary")),
-            new Capture("building", "Civilopedia, Buildings: the Granary's page"),
+            .. BuildingSteps(screen, Category, Entry, ExpectedPage, PageIsEngineText),
+            .. WonderSteps(screen, Category, Entry),
             new PressKey(Key.Escape),
             new WaitFrames(2),
             new AssertQuery("Escape closes the Civilopedia and nothing was sent to the game", () => !screen.IsPediaVisible && session.Log.Count == logged),
@@ -153,6 +155,44 @@ public sealed class TooltipsScenario : Scenario
             .. ButtonAndSearchSteps(host, screen, session, ruleset, human, () => logged, Centre, ExpectedPage),
         ];
     }
+
+    /// <summary>C076: the Archer's page on the Civilopedia frame (sidebar, header card, links, no dashes).</summary>
+    private static bool ArcherPageIsFramed(GameScreen screen, Unciv.Models.Ruleset.Ruleset ruleset)
+    {
+        var archer = ruleset.Units["Archer"];
+        var pedia = screen.Pedia;
+        return pedia.Frame.TitleText == "Civilopedia".Tr() && PediaModel.Categories(ruleset).All(it => pedia.CategoryButton(it.Category) != null) && pedia.CategoryButton(CivilopediaCategories.Unit).NotNull().ButtonPressed
+            && !pedia.CategoryButton(CivilopediaCategories.Building).NotNull().ButtonPressed
+            && pedia.CardName == "Archer".Tr() && pedia.CardCategory == "Units".Tr() && pedia.CardChips.SequenceEqual([("Production", archer.Cost.ToString(System.Globalization.CultureInfo.InvariantCulture))])
+            && pedia.TextBlocks.Count > 0 && !pedia.PageText.Contains("----", StringComparison.Ordinal)
+            && pedia.PageBbcode.Contains("[color=" + UiText.Hex(UiTokens.Info).ToLowerInvariant() + "][url=Technology/", StringComparison.Ordinal) && !pedia.TextBlocks[0].MetaUnderlined
+            && pedia.Frame.ContentRect.Encloses(pedia.HeaderCard.GetGlobalRect()) && pedia.Frame.ContentRect.Encloses(pedia.EntryButton("Archer").NotNull().GetGlobalRect());
+    }
+
+    /// <summary>C027: the Granary's page is the engine's assembled text.</summary>
+    private static ScenarioStep[] BuildingSteps(GameScreen screen, Func<CivilopediaCategories, Vector2> Category, Func<string, Vector2> Entry,
+        Func<CivilopediaCategories, string, string> ExpectedPage, Func<CivilopediaCategories, string, bool> PageIsEngineText) =>
+    [
+            new Click(() => Category(CivilopediaCategories.Building)),
+            new WaitFrames(3),
+            new Click(() => Entry("Granary")),
+            new WaitFrames(3),
+            new AssertQuery("the Granary's page is the engine's assembled text", () =>
+                screen.Pedia.Current?.Link == "Building/Granary" && screen.Pedia.PageBbcode == ExpectedPage(CivilopediaCategories.Building, "Granary") && PageIsEngineText(CivilopediaCategories.Building, "Granary")),
+            new Capture("building", "Civilopedia, Buildings: the Granary's page"),
+    ];
+
+    /// <summary>C076: a wonder's heading line is a section header.</summary>
+    private static ScenarioStep[] WonderSteps(GameScreen screen, Func<CivilopediaCategories, Vector2> Category, Func<string, Vector2> Entry) =>
+    [
+            new Click(() => Category(CivilopediaCategories.Wonder)),
+            new WaitFrames(3),
+            new Click(() => Entry("Stonehenge")),
+            new WaitFrames(3),
+            new AssertQuery("a wonder's heading line is drawn as a section header, not as bold text in the body", () =>
+                screen.Pedia.SectionHeaders.Any(it => it.Title == "Wonder") && screen.Pedia.SectionHeaders.All(it => it.GetGlobalRect().Size.X > 0) && screen.Pedia.CardCategory == "Wonders".Tr()),
+            new Capture("wonder", "Civilopedia, Wonders: Stonehenge's page with its Wonder section header"),
+    ];
 
     /// <summary>C055: the button stays reachable with a unit selected, F1 toggles the pedia, the search box lists matches over every category.</summary>
     private static ScenarioStep[] ButtonAndSearchSteps(Control host, GameScreen screen, GameSession session, Unciv.Models.Ruleset.Ruleset ruleset, Unciv.Logic.Civilization.Civilization human,

@@ -524,17 +524,21 @@ Scenario `tooltips`.
 
 *Tile tooltip beside the pointer: the capital's name, terrain, owner, units and yields, each yield followed by its sources and total.* (`tooltips/tile.png`)
 
-![Civilopedia, Units: the Archer's page with stats, requirements and links.](../Unciv.Godot.Harness/golden/tooltips/unit.png)
+![Civilopedia, Units (640x480): category icon sidebar, entry list with era heading, and the Archer's header card (icon, name, category, production cost chip) over the engine's text with info-coloured links.](../Unciv.Godot.Harness/golden/tooltips/unit.png)
 
-*Civilopedia, Units: the Archer's page with stats, requirements and links.* (`tooltips/unit.png`)
+*Civilopedia, Units (640x480): category icon sidebar, entry list with era heading, and the Archer's header card (icon, name, category, production cost chip) over the engine's text with info-coloured links.* (`tooltips/unit.png`)
 
-![Hovering the Bowman entry shows its name, cost and short description.](../Unciv.Godot.Harness/golden/tooltips/entry-tip.png)
+![Hovering the Bowman entry: bold heading, the cost as a production-coloured stat line, the short description and a muted Requires footer.](../Unciv.Godot.Harness/golden/tooltips/entry-tip.png)
 
-*Hovering the Bowman entry shows its name, cost and short description.* (`tooltips/entry-tip.png`)
+*Hovering the Bowman entry: bold heading, the cost as a production-coloured stat line, the short description and a muted Requires footer.* (`tooltips/entry-tip.png`)
 
-![Civilopedia, Buildings: the Granary's page.](../Unciv.Godot.Harness/golden/tooltips/building.png)
+![Civilopedia, Buildings: the Granary's header card with its cost chip and the engine's page text.](../Unciv.Godot.Harness/golden/tooltips/building.png)
 
-*Civilopedia, Buildings: the Granary's page.* (`tooltips/building.png`)
+*Civilopedia, Buildings: the Granary's header card with its cost chip and the engine's page text.* (`tooltips/building.png`)
+
+![Civilopedia, Wonders: Stonehenge's page, its Wonder heading drawn as a section header.](../Unciv.Godot.Harness/golden/tooltips/wonder.png)
+
+*Civilopedia, Wonders: Stonehenge's page, its Wonder heading drawn as a section header.* (`tooltips/wonder.png`)
 
 ## C028 Options screen, hotkeys, edge-pan
 
@@ -1028,9 +1032,9 @@ Scenario `tooltips`.
 
 *With a unit selected the Civilopedia button sits beside the minimap, clear of the unit panel.* (`tooltips/button.png`)
 
-![Searching for 'arch': matching entries from every category, best matches first.](../Unciv.Godot.Harness/golden/tooltips/search.png)
+![Searching for 'arch': result rows with the category as subtitle, matches from every category, best matches first.](../Unciv.Godot.Harness/golden/tooltips/search.png)
 
-*Searching for 'arch': matching entries from every category, best matches first.* (`tooltips/search.png`)
+*Searching for 'arch': result rows with the category as subtitle, matches from every category, best matches first.* (`tooltips/search.png`)
 
 ## C056 Wire TooltipModel.StatBreakdown into city and tile screens
 
@@ -1227,6 +1231,24 @@ Scenario `setup`.
 ![Rules tab inside the frame: Vanilla chosen as the base ruleset with the section headers as overlines.](../Unciv.Godot.Harness/golden/setup/rules.png)
 
 *Rules tab inside the frame: Vanilla chosen as the base ruleset with the section headers as overlines.* (`setup/rules.png`)
+
+## C076 (ticket not Done or unknown)
+
+Civilopedia on a ScreenFrame (category sidebar, list rows, header card with cost chips, section headers, info-coloured links) and structured tooltip content (heading, stat lines, muted footer).
+
+Scenario `tooltips`.
+
+![Civilopedia, Units: the Archer's header card with its production cost over the engine's text; links are blue without underline.](../Unciv.Godot.Harness/golden/tooltips/unit.png)
+
+*Civilopedia, Units: the Archer's header card with its production cost over the engine's text; links are blue without underline.* (`tooltips/unit.png`)
+
+![Civilopedia, Wonders: Stonehenge's page with its Wonder heading as a section header.](../Unciv.Godot.Harness/golden/tooltips/wonder.png)
+
+*Civilopedia, Wonders: Stonehenge's page with its Wonder heading as a section header.* (`tooltips/wonder.png`)
+
+![The Bowman's tooltip: heading, production-coloured cost, description and a muted Requires footer.](../Unciv.Godot.Harness/golden/tooltips/entry-tip.png)
+
+*The Bowman's tooltip: heading, production-coloured cost, description and a muted Requires footer.* (`tooltips/entry-tip.png`)
 
 ## C080 Unit model loader and contract
 

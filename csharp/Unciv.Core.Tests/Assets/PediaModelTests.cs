@@ -145,7 +145,8 @@ public class PediaModelTests
     public void Bbcode_WordsEachKindOfLine()
     {
         Assert.Equal("PLAIN", Bb(Line("plain")));
-        Assert.Equal("[url=Unit/Warrior]WARRIOR[/url]", Bb(Line("Warrior", "Unit/Warrior")));
+        Assert.Equal("[color=#4a90e2][url=Unit/Warrior]WARRIOR[/url][/color]", Bb(Line("Warrior", "Unit/Warrior"))); // C076: an internal link is info-coloured
+        Assert.Equal("[color=#ff0000][url=Unit/Warrior]WARRIOR[/url][/color]", Bb(Line("Warrior", "Unit/Warrior", color: "#ff0000"))); // unless the page coloured it
         Assert.Equal("[url=https://x.org]HTTPS://X.ORG[/url]", Bb(Line("", "https://x.org", external: true)));
         Assert.Equal("[color=#ff0000]RED[/color]", Bb(Line("red", color: "#ff0000")));
         Assert.Equal("[color=#ffd700]* STAR[/color]", Bb(Line("star", color: "#ffd700", starred: true)));
@@ -156,7 +157,7 @@ public class PediaModelTests
         Assert.Equal("[b]HEAD[/b]", Bb(Line("head", header: 99)));
         Assert.Equal("        INDENTED", Bb(Line("indented", indent: 2)));
         Assert.Equal("[center]MID[/center]", Bb(Line("mid", centered: true)));
-        Assert.Equal("[color=#808080]------------------------[/color]", Bb(Line(color: "#808080", separator: true)));
+        Assert.Equal("[font_size=6] [/font_size]", Bb(Line(color: "#808080", separator: true))); // C076: a small gap, no row of dashes
         Assert.Equal("", Bb(Line()));
         Assert.Equal("[lb]X]", Bb(Line("[x]")));
     }
@@ -222,5 +223,31 @@ public class PediaModelTests
         Assert.Empty(PediaModel.Search(ruleset, "[lb]\u0000\uD800{}%$" + new string('\u202E', 1000)));
         Assert.Empty(PediaModel.Search(ruleset, string.Concat(Enumerable.Repeat("\uFE0F", 100_000))));
         Assert.True(watch.Elapsed < TimeSpan.FromSeconds(20), "hostile search input must not blow up");
+    }
+
+    [Fact]
+    public void Header_CarriesTheCostOfUnitsBuildingsWondersAndTechnologies()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        PediaHeader HeaderOf(CivilopediaCategories category, string name) => PediaModel.Header(ruleset, PediaModel.Page(ruleset, category, name).NotNull().Entry);
+        var archer = HeaderOf(CivilopediaCategories.Unit, "Archer");
+        Assert.Equal("Archer", archer.Name);
+        Assert.Equal("Units", archer.CategoryLabel);
+        Assert.Equal([new PediaChip("Production", ruleset.Units["Archer"].Cost.ToString(System.Globalization.CultureInfo.InvariantCulture))], archer.Chips);
+        Assert.Equal([new PediaChip("Production", ruleset.Buildings["Monument"].Cost.ToString(System.Globalization.CultureInfo.InvariantCulture))], HeaderOf(CivilopediaCategories.Building, "Monument").Chips);
+        Assert.Equal("Wonders", HeaderOf(CivilopediaCategories.Wonder, "Stonehenge").CategoryLabel);
+        Assert.Equal("Science", HeaderOf(CivilopediaCategories.Technology, "Pottery").Chips.Single().Stat);
+        Assert.Empty(HeaderOf(CivilopediaCategories.Terrain, "Grassland").Chips);
+    }
+
+    [Fact]
+    public void CategoryIcon_ExistsForEveryCategoryAndIsAUiIcon()
+    {
+        foreach (var category in Enum.GetValues<CivilopediaCategories>())
+        {
+            var key = PediaModel.CategoryIcon(category);
+            Assert.Equal(RulesetAssetKeys.UiIcon, key.Category);
+            Assert.Contains(key.Name, RulesetAssetKeys.UiIconNames);
+        }
     }
 }

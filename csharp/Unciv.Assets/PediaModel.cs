@@ -22,6 +22,12 @@ public sealed record PediaLine(string Text, string Link, bool IsExternal, string
 
 public sealed record PediaPage(PediaEntry Entry, IReadOnlyList<PediaLine> Lines);
 
+/// <summary>C076: one chip of an entry's header card: the stat whose icon it carries and its value ("40" production).</summary>
+public sealed record PediaChip(string Stat, string Text);
+
+/// <summary>C076: the header card of an entry page: the name, the category it belongs to, its icon and the cost chips.</summary>
+public sealed record PediaHeader(string Name, string CategoryLabel, AssetKey? Icon, IReadOnlyList<PediaChip> Chips);
+
 /// <summary>
 /// C027: the Civilopedia as plain data, Godot-free so it is unit-tested. Categories, entries, sort order and every page's lines come from the engine's own
 /// <see cref="CivilopediaCategories"/> iterators and <see cref="ICivilopediaText.AssembleCivilopediaText"/> (the ruleset objects' <c>getDescription</c>/unique text); this class
@@ -87,6 +93,27 @@ public static class PediaModel
         return new PediaPage(MakeEntry(ruleset, category, entry, name), lines);
     }
 
+    /// <summary>C076: the header card of an entry. Units, buildings and wonders carry their production cost, a technology its science cost; other entries have no chips.</summary>
+    public static PediaHeader Header(Ruleset ruleset, PediaEntry entry)
+    {
+        var chips = new List<PediaChip>();
+        switch (entry.Category)
+        {
+            case CivilopediaCategories.Unit when ruleset.Units.TryGetValue(entry.Name, out var unit) && unit.Cost > 0:
+                chips.Add(new PediaChip("Production", Number(unit.Cost)));
+                break;
+            case CivilopediaCategories.Building or CivilopediaCategories.Wonder when ruleset.Buildings.TryGetValue(entry.Name, out var building) && building.Cost > 0:
+                chips.Add(new PediaChip("Production", Number(building.Cost)));
+                break;
+            case CivilopediaCategories.Technology when ruleset.Technologies.TryGetValue(entry.Name, out var tech) && tech.Cost > 0:
+                chips.Add(new PediaChip("Science", Number(tech.Cost)));
+                break;
+        }
+        return new PediaHeader(entry.Name, entry.Category.Label(), entry.Icon, chips);
+    }
+
+    private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
+
     /// <summary>The page a link points to (<c>Unit/Warrior</c>, category by name or label); null for an unknown category or entry, and for an external URL.</summary>
     public static PediaPage? Resolve(Ruleset ruleset, string link)
     {
@@ -95,6 +122,30 @@ public static class PediaModel
         var category = CivilopediaCategoriesExtensions.FromLink(link[..slash]);
         return category == null ? null : Page(ruleset, category.Value, link[(slash + 1)..]);
     }
+
+    /// <summary>C076: the interface icon of a category, for the sidebar and for an entry that has no icon of its own.</summary>
+    public static AssetKey CategoryIcon(CivilopediaCategories category) => AssetKey.Of(RulesetAssetKeys.UiIcon, category switch
+    {
+        CivilopediaCategories.Building => "Capital",
+        CivilopediaCategories.Wonder => "Wonders",
+        CivilopediaCategories.Resource => "Resources",
+        CivilopediaCategories.Terrain => "Terrains",
+        CivilopediaCategories.Improvement => "Improvements",
+        CivilopediaCategories.Unit => "Shield",
+        CivilopediaCategories.UnitType => "Hexagon",
+        CivilopediaCategories.Nation => "Nations",
+        CivilopediaCategories.Personality => "Chat",
+        CivilopediaCategories.Technology => "Increase",
+        CivilopediaCategories.Promotion => "Star",
+        CivilopediaCategories.Policy => "Policies",
+        CivilopediaCategories.Belief => "Link",
+        CivilopediaCategories.Tutorial => "Question",
+        CivilopediaCategories.Victory => "Score",
+        CivilopediaCategories.UnitNameGroup => "Pencil",
+        CivilopediaCategories.Difficulty => "ExclamationMark",
+        CivilopediaCategories.Era => "HexagonOutline",
+        _ => "ForwardArrow",
+    });
 
     /// <summary>The icon an entry list shows next to the name, for the categories the asset registry has icons for.</summary>
     public static AssetKey? IconFor(CivilopediaCategories category, string name) => category switch
@@ -111,21 +162,25 @@ public static class PediaModel
 
     /// <summary>
     /// A line as BBCode for a RichTextLabel. <paramref name="translate"/> turns the line's text into the player's language. An internal link becomes <c>[url=Category/Name]</c>,
-    /// an external one <c>[url=https://...]</c>; the client opens the former in the pedia and ignores the latter. Separators are a row of dashes.
+    /// an external one <c>[url=https://...]</c>; the client opens the former in the pedia and ignores the latter. C076: a separator is a small gap, not a row of dashes, and a link
+    /// the page did not colour itself is drawn in the info colour.
     /// </summary>
     public static string ToBbcode(PediaLine line, Func<string, string> translate)
     {
-        if (line.Separator) return "[color=" + line.Color + "]" + new string('-', 24) + "[/color]";
+        if (line.Separator) return "[font_size=" + SeparatorSize.ToString(CultureInfo.InvariantCulture) + "] [/font_size]";
         string text = TooltipModel.Escape(translate(line.Text.Length == 0 && line.IsExternal ? line.Link : line.Text));
         if (line.Starred) text = "* " + text;
         if (line.Link.Length != 0 && text.Length != 0) text = "[url=" + line.Link + "]" + text + "[/url]";
-        if (line.Color != "#ffffff" || line.Starred) text = "[color=" + line.Color + "]" + text + "[/color]";
+        string colour = line.Color == "#ffffff" && line.Link.Length != 0 && !line.IsExternal ? UiText.Hex(UiTokens.Info).ToLowerInvariant() : line.Color;
+        if (colour != "#ffffff" || line.Starred) text = "[color=" + colour + "]" + text + "[/color]";
         int size = line.Header > 0 && line.Header < FormattedLine.HeaderSizes.Count ? FormattedLine.HeaderSizes[line.Header] : line.Size;
         if (size > 0 && size != Constants.DefaultFontSize) text = "[font_size=" + size.ToString(CultureInfo.InvariantCulture) + "]" + text + "[/font_size]";
         if (line.Header > 0) text = "[b]" + text + "[/b]";
         if (line.Indent > 0) text = new string(' ', line.Indent * 4) + text;
         return line.Centered ? "[center]" + text + "[/center]" : text;
     }
+
+    private const int SeparatorSize = 6;
 
     private static List<ICivilopediaText> Visible(Ruleset ruleset, CivilopediaCategories category) =>
         category.GetCategoryIterator(ruleset, null, Context(ruleset))

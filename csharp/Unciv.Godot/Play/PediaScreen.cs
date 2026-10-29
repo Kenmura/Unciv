@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Translations;
@@ -8,26 +9,41 @@ using Unciv.UI.Screens.Civilopedia;
 namespace Unciv.GodotClient.Play;
 
 /// <summary>
-/// C027: the Civilopedia. A row of category buttons, the category's entries on the left (with icons where the registry has them) and the selected entry's page on the right.
-/// Everything shown is <see cref="PediaModel"/>, i.e. the engine's own text for the ruleset objects; a link inside a page opens the linked entry, Back returns to the previous one.
-/// The screen reads only the static <see cref="Ruleset"/> of the session and sends nothing.
+/// C027: the Civilopedia; C076: on a <see cref="ScreenFrame"/> with the search box in the header. A sidebar of categories (icon and name; icons only at the Compact breakpoint),
+/// the category's entries as list rows (with icons where the registry has them), and the selected entry's page: a header card (icon, name, category, cost chips) and the engine's
+/// own text, its section headings as <see cref="SectionHeader"/>s and its links in the info colour (underlined on hover). A link inside a page opens the linked entry, Back returns
+/// to the previous one. Everything shown is <see cref="PediaModel"/>, i.e. the engine's own text for the ruleset objects; the screen reads only the static
+/// <see cref="Ruleset"/> of the session and sends nothing.
 /// </summary>
 public partial class PediaScreen : PanelContainer
 {
     private readonly Ruleset ruleset;
     private readonly UiTheme theme;
     private readonly TooltipHost tooltips;
-    private readonly HBoxContainer categoryRow = new() { Name = "PediaCategories" };
-    private readonly HBoxContainer body = new() { SizeFlagsVertical = SizeFlags.ExpandFill };
-    private readonly RichTextLabel page = new() { Name = "PediaPage", BbcodeEnabled = true, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill, SelectionEnabled = true };
-    private readonly LineEdit search = new() { Name = "PediaSearch", PlaceholderText = "Search".Tr(), ClearButtonEnabled = true, CustomMinimumSize = new Vector2(150, 0) };
-    private readonly Button back = new() { Name = "PediaBack", Text = "Back".Tr(), Disabled = true };
+    private readonly LineEdit search = new() { Name = "PediaSearch", PlaceholderText = "Search".Tr(), ClearButtonEnabled = true };
+    private readonly Button back = new() { Name = "PediaBack", Text = "Back".Tr(), Disabled = true, ThemeTypeVariation = UiVariants.ButtonGhost, SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
     private readonly List<PediaEntry> shown = [];
     private readonly Stack<PediaEntry> history = new();
     private readonly Dictionary<CivilopediaCategories, Button> categoryButtons = [];
     private readonly List<PediaEntry> found = [];
-    private ListPanel? entryList;
-    private ListPanel? searchList;
+    private readonly List<ListRow> entryRows = [];
+    private readonly List<ListRow> searchRows = [];
+    private readonly List<RichTextLabel> labels = [];
+    private readonly List<SectionHeader> headers = [];
+    private ScreenFrame frame = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private ScrollContainer entryScroll = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private ScrollContainer searchScroll = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private ScrollContainer pageScroll = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private VBoxContainer sidebar = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private VBoxContainer entryColumn = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private VBoxContainer searchColumn = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private VBoxContainer pageColumn = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private PanelContainer card = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private TextureRect cardIcon = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private Label cardName = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private Label cardCategory = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private HFlowContainer cardChips = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
+    private VBoxContainer body = null!; // JUSTIFY: C076 assigned by BuildFrame in the constructor
     private PediaEntry? current;
 
     public PediaScreen(Ruleset gameRuleset, UiTheme uiTheme, TooltipHost tooltipHost)
@@ -39,37 +55,120 @@ public partial class PediaScreen : PanelContainer
         Visible = false;
         MouseFilter = MouseFilterEnum.Stop;
         Theme = uiTheme.Theme;
-
-        var column = new VBoxContainer();
-        AddChild(column);
-        var head = new HBoxContainer();
-        column.AddChild(head);
-        var heading = new Label { Text = "Civilopedia".Tr(), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
-        head.AddChild(heading);
         search.TextChanged += ShowSearch;
         search.TextSubmitted += _ => OpenFirstResult();
         search.GuiInput += OnSearchInput;
-        head.AddChild(search);
         back.Pressed += Back;
-        head.AddChild(back);
-        var close = new Button { Name = "PediaClose", Text = "Close".Tr() };
-        close.Pressed += Close;
-        head.AddChild(close);
-        var categoryScroll = new ScrollContainer { VerticalScrollMode = ScrollContainer.ScrollMode.Disabled, HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, CustomMinimumSize = new Vector2(0, uiTheme.Px(40)) };
-        categoryScroll.AddChild(categoryRow);
-        column.AddChild(categoryScroll);
-        column.AddChild(body);
-        page.MetaClicked += meta => OpenLink(meta.AsString());
-        page.CustomMinimumSize = new Vector2(uiTheme.Px(360), 0);
+        BuildFrame();
+    }
+
+    public override void _EnterTree() => theme.LayoutChanged += OnLayoutChanged;
+
+    public override void _ExitTree() => theme.LayoutChanged -= OnLayoutChanged;
+
+    /// <summary>Sizes are fixed when a view is built, so a change of scale or breakpoint builds the frame again and shows the same entry.</summary>
+    private void OnLayoutChanged()
+    {
+        BuildFrame();
+        var at = current;
+        if (at == null) return;
+        current = null;
+        Show(at, remember: false);
+        if (search.Text.Length > 0) ShowSearch(search.Text);
+    }
+
+    private void BuildFrame()
+    {
+        if (frame != null)
+        {
+            search.GetParent()?.RemoveChild(search);
+            back.GetParent()?.RemoveChild(back);
+            RemoveChild(frame);
+            frame.QueueFree();
+        }
+        categoryButtons.Clear();
+        entryRows.Clear();
+        searchRows.Clear();
+        labels.Clear();
+        headers.Clear();
+        Category = null;
+        bool compact = theme.Breakpoint == UiBreakpoint.Compact;
+        int gap = theme.Px(UiTokens.S3);
+        frame = new ScreenFrame(theme, "Civilopedia", closeLabel: "Close");
+        frame.CloseRequested += Close;
+        search.CustomMinimumSize = new Vector2(theme.Px(120), 0);
+        frame.SetHeaderStrip(search);
+        AddChild(frame);
+
+        var middle = new HBoxContainer();
+        middle.AddThemeConstantOverride("separation", gap);
+
+        var sideScroll = new ScrollContainer { Name = "PediaSidebar", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(theme.Px(compact ? 44 : 180), 0) };
+        sidebar = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        sidebar.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        sideScroll.AddChild(sidebar);
+        middle.AddChild(sideScroll);
+        var group = new ButtonGroup();
         foreach (var category in PediaModel.Categories(ruleset))
         {
-            var button = new Button { Name = "PediaCategory_" + category.Category, Text = category.Label.Tr(), ToggleMode = true };
             var chosen = category.Category;
+            var icon = PediaModel.CategoryIcon(chosen);
+            Button button;
+            if (compact)
+            {
+                button = new Button { Name = "PediaCategory_" + chosen, ToggleMode = true, ButtonGroup = group, ThemeTypeVariation = UiVariants.ButtonIcon, Icon = theme.Icon(icon), TooltipText = category.Label.Tr() };
+                button.AddThemeConstantOverride("icon_max_width", theme.Px(UiTheme.IconSize));
+                button.SetMeta(IconButton.LabelMeta, category.Label);
+            }
+            else
+            {
+                button = new ListRow(theme, category.Label, icon: icon, group: group) { Name = "PediaCategory_" + chosen };
+            }
             button.Pressed += () => ShowCategory(chosen);
             categoryButtons[chosen] = button;
-            categoryRow.AddChild(button);
+            sidebar.AddChild(button);
         }
+
+        var listWidth = new Vector2(theme.Px(compact ? 170 : 230), 0);
+        entryScroll = new ScrollContainer { Name = "PediaEntries", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = listWidth };
+        entryColumn = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        entryColumn.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        entryScroll.AddChild(entryColumn);
+        searchScroll = new ScrollContainer { Name = "PediaSearchResults", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = listWidth, Visible = false };
+        searchColumn = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        searchColumn.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        searchScroll.AddChild(searchColumn);
+        middle.AddChild(entryScroll);
+        middle.AddChild(searchScroll);
+
+        pageScroll = new ScrollContainer { Name = "PediaPageScroll", SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        pageColumn = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        pageColumn.AddThemeConstantOverride("separation", gap);
+        pageScroll.AddChild(pageColumn);
+        middle.AddChild(pageScroll);
+        pageColumn.AddChild(back);
+
+        card = new PanelContainer { Name = "PediaCard", ThemeTypeVariation = UiVariants.PanelCard, Visible = false };
+        var cardRow = new HBoxContainer();
+        cardRow.AddThemeConstantOverride("separation", gap);
+        cardIcon = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, TextureFilter = TextureFilterEnum.LinearWithMipmaps, CustomMinimumSize = new Vector2(theme.Px(compact ? 48 : 64), theme.Px(compact ? 48 : 64)), SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        cardRow.AddChild(cardIcon);
+        var texts = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        texts.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+        cardName = new Label { Name = "PediaName", ThemeTypeVariation = UiVariants.LabelHeading, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
+        cardCategory = new Label { Name = "PediaCategoryLabel", ThemeTypeVariation = UiVariants.LabelSecondary };
+        cardChips = new HFlowContainer();
+        cardChips.AddThemeConstantOverride("h_separation", gap);
+        texts.AddChild(cardName);
+        texts.AddChild(cardCategory);
+        texts.AddChild(cardChips);
+        cardRow.AddChild(texts);
+        card.AddChild(cardRow);
+        pageColumn.AddChild(card);
+        body = new VBoxContainer { Name = "PediaBody", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        body.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        pageColumn.AddChild(body);
+        frame.SetContent(middle);
     }
 
     public CivilopediaCategories? Category { get; private set; }
@@ -80,11 +179,32 @@ public partial class PediaScreen : PanelContainer
     /// <summary>The entry whose page is shown, or null.</summary>
     public PediaEntry? Current => current;
 
-    /// <summary>The BBCode of the shown page (before the label turns it into plain text).</summary>
+    /// <summary>The BBCode of the shown page, every line of it (the body below the header card is drawn from the same lines).</summary>
     public string PageBbcode { get; private set; } = "";
 
-    /// <summary>The visible text of the shown page.</summary>
-    public string PageText => page.GetParsedText();
+    /// <summary>The visible text of the shown page: the header card's name, then the section headings and text blocks in order.</summary>
+    public string PageText => string.Join('\n', new[] { cardName.Text }.Concat(body.GetChildren().Select(it => it switch
+    {
+        RichTextLabel label => label.GetParsedText(),
+        SectionHeader header => header.ShownText,
+        _ => "",
+    })));
+
+    /// <summary>C076: the section headings of the shown page, as drawn.</summary>
+    public IReadOnlyList<SectionHeader> SectionHeaders => headers;
+
+    /// <summary>C076: the text blocks of the shown page, as drawn.</summary>
+    public IReadOnlyList<RichTextLabel> TextBlocks => labels;
+
+    /// <summary>C076: the header card of the shown page (icon, name, category, chips).</summary>
+    public Control HeaderCard => card;
+
+    public string CardName => cardName.Text;
+
+    public string CardCategory => cardCategory.Text;
+
+    /// <summary>The stats of the card's chips with their shown values, in order.</summary>
+    public IReadOnlyList<(string Stat, string Value)> CardChips => cardChips.GetChildren().OfType<StatChip>().Select(it => (it.Stat, it.Value)).ToList();
 
     public IReadOnlyCollection<CivilopediaCategories> CategoryKeys => categoryButtons.Keys;
 
@@ -97,7 +217,7 @@ public partial class PediaScreen : PanelContainer
     public Button? SearchResultButton(string name)
     {
         int index = found.FindIndex(it => it.Name == name);
-        return index < 0 ? null : searchList?.ItemAt(index);
+        return index < 0 || index >= searchRows.Count ? null : searchRows[index];
     }
 
     public bool CanGoBack => history.Count > 0;
@@ -111,11 +231,11 @@ public partial class PediaScreen : PanelContainer
     public Button? EntryButton(string name)
     {
         int index = shown.FindIndex(it => it.Name == name);
-        return index < 0 ? null : entryList?.ItemAt(index);
+        return index < 0 || index >= entryRows.Count ? null : entryRows[index];
     }
 
-    /// <summary>The label that draws the page (tests click its links through <see cref="OpenLink"/>).</summary>
-    public RichTextLabel PageLabel => page;
+    /// <summary>The frame's own close button and title, for the harness.</summary>
+    public ScreenFrame Frame => frame;
 
     /// <summary>Shows the screen on a category (the first with entries when null) or, with <paramref name="link"/>, on that entry.</summary>
     public void Open(string? link = null)
@@ -138,24 +258,31 @@ public partial class PediaScreen : PanelContainer
     {
         found.Clear();
         found.AddRange(PediaModel.Search(ruleset, text));
-        if (searchList != null)
+        searchRows.Clear();
+        foreach (var child in searchColumn.GetChildren())
         {
-            if (searchList.GetParent() == body) body.RemoveChild(searchList);
-            searchList.QueueFree();
-            searchList = null;
+            searchColumn.RemoveChild(child);
+            child.QueueFree();
         }
-        if (text.Trim().Length == 0)
+        bool searching = text.Trim().Length != 0;
+        entryScroll.Visible = !searching;
+        searchScroll.Visible = searching;
+        if (!searching) return;
+        if (found.Count == 0)
         {
-            if (entryList != null) entryList.Visible = true;
+            searchColumn.AddChild(new EmptyState(theme, null, "No results"));
             return;
         }
-        if (entryList != null) entryList.Visible = false;
-        searchList = new ListPanel(theme, found.Count == 0 ? "No results" : "Search", new Vector2(theme.Px(240), 0)) { Name = "PediaSearchResults" };
-        foreach (var entry in found) searchList.AddItem(entry.Name.Tr() + " (" + entry.Category.Label().Tr() + ")", entry.Icon); // the category tells same-named entries apart
-        searchList.Selected += index => OpenResult(found[index]);
-        body.AddChild(searchList);
-        body.MoveChild(searchList, 0);
-        if (body.GetChildCount() == 1) body.AddChild(page);
+        var group = new ButtonGroup();
+        for (int i = 0; i < found.Count; i++)
+        {
+            var entry = found[i];
+            // the category tells same-named entries apart
+            var row = new ListRow(theme, entry.Name, entry.Category.Label(), icon: entry.Icon, group: group);
+            row.Pressed += () => OpenResult(entry);
+            searchRows.Add(row);
+            searchColumn.AddChild(row);
+        }
     }
 
     private void OpenFirstResult()
@@ -226,11 +353,75 @@ public partial class PediaScreen : PanelContainer
         if (Category != entry.Category) ShowList(entry.Category);
         current = entry;
         int index = shown.FindIndex(it => it.Link == entry.Link);
-        if (index >= 0) entryList?.ItemAt(index)?.SetPressedNoSignal(true);
+        if (index >= 0 && index < entryRows.Count) entryRows[index].SetPressedNoSignal(true);
         var content = PediaModel.Page(ruleset, entry.Category, entry.Name);
         PageBbcode = content == null ? "" : string.Join('\n', content.Lines.Select(it => PediaModel.ToBbcode(it, text => text.Tr())));
-        page.Text = PageBbcode;
-        page.ScrollToLine(0);
+        ShowCard(entry);
+        ShowBody(content);
+        pageScroll.ScrollVertical = 0;
+    }
+
+    private void ShowCard(PediaEntry entry)
+    {
+        var header = PediaModel.Header(ruleset, entry);
+        card.Visible = true;
+        cardIcon.Texture = theme.Icon(header.Icon ?? PediaModel.CategoryIcon(entry.Category));
+        cardName.Text = header.Name.TrText();
+        cardCategory.Text = header.CategoryLabel.TrText();
+        foreach (var chip in cardChips.GetChildren())
+        {
+            cardChips.RemoveChild(chip);
+            chip.QueueFree();
+        }
+        foreach (var chip in header.Chips) cardChips.AddChild(new StatChip(theme, chip.Stat, chip.Text));
+    }
+
+    /// <summary>The page's lines below the card: a heading line (that is not a link) becomes a section header, a run of other lines one text block. The page's own title line is the card's name.</summary>
+    private void ShowBody(PediaPage? page)
+    {
+        foreach (var child in body.GetChildren())
+        {
+            body.RemoveChild(child);
+            child.QueueFree();
+        }
+        labels.Clear();
+        headers.Clear();
+        if (page == null) return;
+        var run = new List<string>();
+        void Flush()
+        {
+            if (run.Count == 0) return;
+            AddBlock(string.Join('\n', run));
+            run.Clear();
+        }
+        for (int i = 0; i < page.Lines.Count; i++)
+        {
+            var line = page.Lines[i];
+            if (i == 0 && line.Header > 0 && line.Text == page.Entry.Name) continue;
+            if (line.Header > 0 && line.Link.Length == 0 && line.Text.Length > 0 && i > 0)
+            {
+                Flush();
+                var header = new SectionHeader(line.Text);
+                headers.Add(header);
+                body.AddChild(header);
+            }
+            else
+            {
+                run.Add(PediaModel.ToBbcode(line, text => text.Tr()));
+            }
+        }
+        Flush();
+    }
+
+    private void AddBlock(string bbcode)
+    {
+        var label = new RichTextLabel { BbcodeEnabled = true, FitContent = true, ScrollActive = false, SelectionEnabled = true, MetaUnderlined = false, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        label.Text = bbcode;
+        label.MetaClicked += meta => OpenLink(meta.AsString());
+        label.MetaHoverStarted += _ => label.MetaUnderlined = true;
+        label.MetaHoverEnded += _ => label.MetaUnderlined = false;
+        labels.Add(label);
+        body.AddChild(label);
     }
 
     private void ShowList(CivilopediaCategories category)
@@ -239,12 +430,13 @@ public partial class PediaScreen : PanelContainer
         foreach (var (key, button) in categoryButtons) button.SetPressedNoSignal(key == category);
         shown.Clear();
         shown.AddRange(PediaModel.Entries(ruleset, category));
-        if (entryList != null)
+        entryRows.Clear();
+        foreach (var child in entryColumn.GetChildren())
         {
-            body.RemoveChild(entryList);
-            entryList.QueueFree();
+            entryColumn.RemoveChild(child);
+            child.QueueFree();
         }
-        entryList = new ListPanel(theme, category.Label(), new Vector2(theme.Px(240), 0)) { Name = "PediaEntries" };
+        var group = new ButtonGroup();
         string? subCategory = null;
         for (int i = 0; i < shown.Count; i++)
         {
@@ -252,15 +444,14 @@ public partial class PediaScreen : PanelContainer
             if (entry.SubCategory != null && entry.SubCategory != subCategory)
             {
                 subCategory = entry.SubCategory;
-                entryList.AddRow(new Label { Text = subCategory.Tr() });
+                entryColumn.AddChild(new SectionHeader(subCategory));
             }
-            entryList.AddItem(entry.Name.Tr(), entry.Icon);
-            if (TipOf(entry) is { } tip && entryList.ItemAt(i) is { } item) tooltips.Attach(item, () => tip);
+            var row = new ListRow(theme, entry.Name, icon: entry.Icon, group: group);
+            row.Pressed += () => Show(entry, remember: true);
+            if (TipOf(entry) is { } tip) tooltips.Attach(row, () => tip);
+            entryRows.Add(row);
+            entryColumn.AddChild(row);
         }
-        entryList.Selected += index => Show(shown[index], remember: true);
-        body.AddChild(entryList);
-        body.MoveChild(entryList, 0);
-        if (body.GetChildCount() == 1) body.AddChild(page);
     }
 
     /// <summary>The hover text of a list entry: units and buildings (wonders too) show their cost and the ruleset's short description; other categories have none.</summary>

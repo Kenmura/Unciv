@@ -8,8 +8,28 @@ using Unciv.UI.ObjectDescriptions;
 
 namespace Unciv.Assets;
 
-/// <summary>One line of a tooltip. <see cref="Final"/> text already came out of the engine's own (translating) description code and must not be translated again.</summary>
-public sealed record TipLine(string Text, bool Final = false);
+/// <summary>C076: what a tooltip line is, which decides how it is drawn (see <see cref="TooltipModel.ToBbcode"/>).</summary>
+public enum TipKind
+{
+    /// <summary>The first line: the name of what is described.</summary>
+    Heading,
+    /// <summary>An ordinary line.</summary>
+    Body,
+    /// <summary>A stat chip ("Food: 2"): drawn in the stat's colour; consecutive stat lines share one row.</summary>
+    Stat,
+    /// <summary>One source of a stat in a breakdown.</summary>
+    Source,
+    /// <summary>The name of the stat a breakdown is about.</summary>
+    Section,
+    /// <summary>A small muted last line (what the thing requires).</summary>
+    Footer,
+}
+
+/// <summary>
+/// One line of a tooltip. <see cref="Final"/> text already came out of the engine's own (translating) description code and must not be translated again.
+/// <see cref="Stat"/> names the stat whose colour a <see cref="TipKind.Stat"/> line is drawn in.
+/// </summary>
+public sealed record TipLine(string Text, bool Final = false, TipKind Kind = TipKind.Body, string? Stat = null);
 
 /// <summary>
 /// C027: tooltip content as plain data, Godot-free so it is unit-tested. The tile tooltip words the engine's <see cref="TileInfoResult"/> (the viewer's answer, so a
@@ -25,8 +45,9 @@ public static class TooltipModel
         // The engine's tile answer is the live state of any explored tile. A tile in the fog shows only what the viewer can still know of it (terrain, the
         // improvement last seen, ownership); what is going on there now (work in progress, pillaging, who works it, the yields) would leak.
         bool seen = tile.IsVisible;
-        if (tile.IsCityCenter && tile.OwningCity != null) lines.Add(new TipLine(tile.OwningCity));
-        lines.Add(new TipLine(tile.BaseTerrain));
+        // C076: the heading is the city's name on a city centre, otherwise the terrain
+        if (tile.IsCityCenter && tile.OwningCity != null) lines.Add(new TipLine(tile.OwningCity, Kind: TipKind.Heading));
+        lines.Add(tile.IsCityCenter && tile.OwningCity != null ? new TipLine(tile.BaseTerrain) : new TipLine(tile.BaseTerrain, Kind: TipKind.Heading));
         lines.AddRange(tile.TerrainFeatures.Select(it => new TipLine(it)));
         if (tile.NaturalWonder != null) lines.Add(new TipLine(tile.NaturalWonder));
         if (tile.Resource != null)
@@ -44,7 +65,7 @@ public static class TooltipModel
         foreach (var unit in tile.Units) lines.Add(new TipLine($"{unit.Name} - {unit.Civ}"));
         if (seen && tile.Yields.Count > 0)
         {
-            lines.Add(new TipLine(string.Join(", ", tile.Yields.Select(Amount))));
+            lines.AddRange(tile.Yields.Select(it => new TipLine(Amount(it), Kind: TipKind.Stat, Stat: it.Stat)));
             // C056: where each yield comes from, as the engine itemised it. Seen tiles only, like the yields themselves.
             if (tile.YieldBreakdown.Count > 0)
                 foreach (var yield in tile.Yields) lines.AddRange(StatBreakdown(yield.Stat, tile.YieldBreakdown, yield.Value));
@@ -56,10 +77,11 @@ public static class TooltipModel
     public static IReadOnlyList<TipLine>? Unit(Ruleset ruleset, string name)
     {
         if (!ruleset.Units.TryGetValue(name, out var unit)) return null;
-        var lines = new List<TipLine> { new(name) };
-        if (unit.Cost > 0) lines.Add(new TipLine($"{{Cost}}: {Number(unit.Cost)}"));
+        var lines = new List<TipLine> { new(name, Kind: TipKind.Heading) };
+        if (unit.Cost > 0) lines.Add(new TipLine($"{{Cost}}: {Number(unit.Cost)}", Kind: TipKind.Stat, Stat: "Production"));
         string description = BaseUnitDescriptions.GetShortDescription(unit);
         if (description.Length != 0) lines.Add(new TipLine(description, Final: true));
+        if (unit.RequiredTech != null) lines.Add(Requires(unit.RequiredTech));
         return lines;
     }
 
@@ -67,10 +89,11 @@ public static class TooltipModel
     public static IReadOnlyList<TipLine>? Building(Ruleset ruleset, string name)
     {
         if (!ruleset.Buildings.TryGetValue(name, out var building)) return null;
-        var lines = new List<TipLine> { new(name) };
-        if (building.Cost > 0) lines.Add(new TipLine($"{{Cost}}: {Number(building.Cost)}"));
+        var lines = new List<TipLine> { new(name, Kind: TipKind.Heading) };
+        if (building.Cost > 0) lines.Add(new TipLine($"{{Cost}}: {Number(building.Cost)}", Kind: TipKind.Stat, Stat: "Production"));
         string description = BuildingDescriptions.GetShortDescription(building, multiline: true);
         if (description.Length != 0) lines.Add(new TipLine(description, Final: true));
+        if (building.RequiredTech != null) lines.Add(Requires(building.RequiredTech));
         return lines;
     }
 
@@ -81,30 +104,47 @@ public static class TooltipModel
     /// </summary>
     public static IReadOnlyList<TipLine> StatBreakdown(string stat, IReadOnlyList<StatSource> sources, float? total = null)
     {
-        var lines = new List<TipLine> { new($"{{{stat}}}") };
+        var lines = new List<TipLine> { new($"{{{stat}}}", Kind: TipKind.Section, Stat: stat) };
         float sum = 0f;
         foreach (var source in sources)
         {
             var amount = source.Stats.FirstOrDefault(it => it.Stat == stat);
             if (amount == null || amount.Value == 0f) continue;
-            lines.Add(new TipLine($"{{{source.Source}}}: {Signed(amount.Value)}"));
+            lines.Add(new TipLine($"{{{source.Source}}}: {Signed(amount.Value)}", Kind: TipKind.Source));
             sum += amount.Value;
         }
-        lines.Add(new TipLine($"{{Total}}: {Signed(total ?? sum)}"));
+        lines.Add(new TipLine($"{{Total}}: {Signed(total ?? sum)}", Kind: TipKind.Source));
         return lines;
     }
 
-    /// <summary>The lines as BBCode for the tooltip host: engine text kept, other text translated with <paramref name="translate"/>, brackets escaped.</summary>
+    /// <summary>
+    /// The lines as BBCode for the tooltip host: engine text kept, other text translated with <paramref name="translate"/>, brackets escaped. C076: a heading is bold and
+    /// primary, stat lines are bold in their stat's colour and consecutive ones share a row, a breakdown's stat name is in its colour, the footer is small and muted.
+    /// </summary>
     public static string ToBbcode(IEnumerable<TipLine> lines, Func<string, string> translate)
     {
         var text = new StringBuilder();
+        TipKind? previous = null;
         foreach (var line in lines)
         {
-            if (text.Length != 0) text.Append('\n');
-            text.Append(Escape(line.Final ? line.Text : translate(line.Text)));
+            if (previous != null) text.Append(line.Kind == TipKind.Stat && previous == TipKind.Stat ? StatGap : "\n");
+            previous = line.Kind;
+            string shown = Escape(line.Final ? line.Text : translate(line.Text));
+            text.Append(line.Kind switch
+            {
+                TipKind.Heading => $"[b][color={UiText.Hex(UiTokens.TextPrimary)}]{shown}[/color][/b]",
+                TipKind.Stat or TipKind.Section => $"[b][color={UiText.Hex(PlaceholderPalette.ForStat(line.Stat ?? ""))}]{shown}[/color][/b]",
+                TipKind.Source => $"[color={UiText.Hex(UiTokens.TextSecondary)}]{shown}[/color]",
+                TipKind.Footer => $"[font_size={FooterSize}][color={UiText.Hex(UiTokens.TextMuted)}]{shown}[/color][/font_size]",
+                _ => shown,
+            });
         }
         return text.ToString();
     }
+
+    private const string StatGap = "    ";
+
+    private const int FooterSize = 12;
 
     /// <summary>The lines as plain text for a tooltip that does not render BBCode (a control's own tooltip): engine text kept, other text translated.</summary>
     public static string ToPlain(IEnumerable<TipLine> lines, Func<string, string> translate) =>
@@ -112,6 +152,8 @@ public static class TooltipModel
 
     /// <summary>BBCode treats a bracket as a tag; translated text may still contain one (a name such as "[x]"), so it is written as its entity.</summary>
     public static string Escape(string text) => text.Replace("[", "[lb]", StringComparison.Ordinal);
+
+    private static TipLine Requires(string tech) => new($"Requires [{tech}]", Kind: TipKind.Footer);
 
     private static string Amount(StatAmount amount) => $"{{{amount.Stat}}}: {Number(amount.Value)}";
 

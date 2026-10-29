@@ -755,15 +755,19 @@
       },
       {
         "golden": "tooltips/unit.png",
-        "caption": "Civilopedia, Units: the Archer's page with stats, requirements and links."
+        "caption": "Civilopedia, Units (640x480): category icon sidebar, entry list with era heading, and the Archer's header card (icon, name, category, production cost chip) over the engine's text with info-coloured links."
       },
       {
         "golden": "tooltips/entry-tip.png",
-        "caption": "Hovering the Bowman entry shows its name, cost and short description."
+        "caption": "Hovering the Bowman entry: bold heading, the cost as a production-coloured stat line, the short description and a muted Requires footer."
       },
       {
         "golden": "tooltips/building.png",
-        "caption": "Civilopedia, Buildings: the Granary's page."
+        "caption": "Civilopedia, Buildings: the Granary's header card with its cost chip and the engine's page text."
+      },
+      {
+        "golden": "tooltips/wonder.png",
+        "caption": "Civilopedia, Wonders: Stonehenge's page, its Wonder heading drawn as a section header."
       }
     ]
   },
@@ -916,7 +920,7 @@
       },
       {
         "golden": "tooltips/search.png",
-        "caption": "Searching for 'arch': matching entries from every category, best matches first."
+        "caption": "Searching for 'arch': result rows with the category as subtitle, matches from every category, best matches first."
       }
     ]
   },
@@ -927,6 +931,24 @@
       {
         "golden": "tooltips/tile.png",
         "caption": "Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources."
+      }
+    ]
+  },
+  "C076": {
+    "scenario": "tooltips",
+    "about": "Civilopedia on a ScreenFrame (category sidebar, list rows, header card with cost chips, section headers, info-coloured links) and structured tooltip content (heading, stat lines, muted footer).",
+    "shots": [
+      {
+        "golden": "tooltips/unit.png",
+        "caption": "Civilopedia, Units: the Archer's header card with its production cost over the engine's text; links are blue without underline."
+      },
+      {
+        "golden": "tooltips/wonder.png",
+        "caption": "Civilopedia, Wonders: Stonehenge's page with its Wonder heading as a section header."
+      },
+      {
+        "golden": "tooltips/entry-tip.png",
+        "caption": "The Bowman's tooltip: heading, production-coloured cost, description and a muted Requires footer."
       }
     ]
   },

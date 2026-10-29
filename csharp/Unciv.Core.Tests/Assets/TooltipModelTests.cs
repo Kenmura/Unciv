@@ -77,7 +77,7 @@ public class TooltipModelTests
     {
         var ruleset = ScenarioGame.LoadVanilla();
         var lines = TooltipModel.Tile(TileOf("Plains", units: [new TileUnit(1, "Warrior", "Rome")], yields: [new StatAmount("Food", 1f), new StatAmount("Production", 1.5f)]), ruleset);
-        Assert.Equal(["Plains", "Warrior - Rome", "{Food}: 1, {Production}: 1.5"], Texts(lines));
+        Assert.Equal(["Plains", "Warrior - Rome", "{Food}: 1", "{Production}: 1.5"], Texts(lines));
         Assert.All(lines, it => Assert.False(it.Final));
     }
 
@@ -87,7 +87,7 @@ public class TooltipModelTests
         var ruleset = ScenarioGame.LoadVanilla();
         StatAmount[] yields = [new("Food", 3f), new("Gold", 1f)];
         StatSource[] sources = [new("Base terrain", [new StatAmount("Food", 2f)]), new("Farm", [new StatAmount("Food", 1f)]), new("River", [new StatAmount("Gold", 1f)])];
-        Assert.Equal(["Plains", "{Food}: 3, {Gold}: 1", "{Food}", "{Base terrain}: +2", "{Farm}: +1", "{Total}: +3", "{Gold}", "{River}: +1", "{Total}: +1"],
+        Assert.Equal(["Plains", "{Food}: 3", "{Gold}: 1", "{Food}", "{Base terrain}: +2", "{Farm}: +1", "{Total}: +3", "{Gold}", "{River}: +1", "{Total}: +1"],
             Texts(TooltipModel.Tile(TileOf("Plains", yields: yields, breakdown: sources), ruleset)));
         // the engine's own yield is shown as the total even when the sources do not add up to it
         Assert.Equal("{Total}: +5", Texts(TooltipModel.Tile(TileOf("Plains", yields: [new StatAmount("Food", 5f)], breakdown: sources), ruleset))[^1]);
@@ -121,11 +121,13 @@ public class TooltipModelTests
         {
             var lines = TooltipModel.Unit(ruleset, name).NotNull();
             var unit = ruleset.Units[name];
-            Assert.Equal(name, lines[0].Text);
-            Assert.Equal($"{{Cost}}: {unit.Cost}", lines[1].Text);
+            Assert.Equal(new TipLine(name, Kind: TipKind.Heading), lines[0]);
+            Assert.Equal(new TipLine($"{{Cost}}: {unit.Cost}", Kind: TipKind.Stat, Stat: "Production"), lines[1]);
             var description = BaseUnitDescriptions.GetShortDescription(unit);
-            if (description.Length != 0) Assert.Equal(new TipLine(description, true), lines[^1]);
-            Assert.Equal(description.Length != 0 ? 3 : 2, lines.Count);
+            int at = 2;
+            if (description.Length != 0) Assert.Equal(new TipLine(description, true), lines[at++]);
+            if (unit.RequiredTech != null) Assert.Equal(new TipLine($"Requires [{unit.RequiredTech}]", Kind: TipKind.Footer), lines[at++]);
+            Assert.Equal(at, lines.Count);
         }
         Assert.Null(TooltipModel.Unit(ruleset, "Nothing"));
     }
@@ -150,7 +152,8 @@ public class TooltipModelTests
             var building = ruleset.Buildings[name];
             Assert.Equal(name, lines[0].Text);
             Assert.Equal(building.Cost > 0, lines.Any(it => it.Text == $"{{Cost}}: {building.Cost}"));
-            Assert.Equal(new TipLine(BuildingDescriptions.GetShortDescription(building, multiline: true), true), lines[^1]);
+            Assert.Equal(new TipLine(BuildingDescriptions.GetShortDescription(building, multiline: true), true), lines.Single(it => it.Final));
+            Assert.Equal(building.RequiredTech == null ? TipKind.Body : TipKind.Footer, lines[^1].Kind);
         }
         Assert.Null(TooltipModel.Building(ruleset, "Nothing"));
     }
@@ -184,5 +187,35 @@ public class TooltipModelTests
         var text = TooltipModel.ToBbcode([new TipLine("a"), new TipLine("b [x]", true), new TipLine("[c]")], it => it.ToUpperInvariant());
         Assert.Equal("A\nb [lb]x]\n[lb]C]", text);
         Assert.Equal("", TooltipModel.ToBbcode([], it => it));
+    }
+
+    [Fact]
+    public void Tile_HeadingIsTheCityOnACentreElseTheTerrain_YieldsAreStatLines()
+    {
+        var ruleset = ScenarioGame.LoadVanilla();
+        var plain = TooltipModel.Tile(TileOf("Plains", yields: [new StatAmount("Food", 2f), new StatAmount("Gold", 1f)]), ruleset);
+        Assert.Equal([TipKind.Heading, TipKind.Stat, TipKind.Stat], plain.Select(it => it.Kind));
+        Assert.Equal(["Food", "Gold"], plain.Where(it => it.Kind == TipKind.Stat).Select(it => it.Stat));
+        var city = TooltipModel.Tile(TileOf("Plains", owner: "Rome", city: "Rome", centre: true), ruleset);
+        Assert.Equal([new TipLine("Rome", Kind: TipKind.Heading), new TipLine("Plains"), new TipLine("Owned by [Rome]")], city.Take(3));
+    }
+
+    [Fact]
+    public void ToBbcode_StylesEachKindAndPutsConsecutiveStatsOnOneRow()
+    {
+        var text = TooltipModel.ToBbcode(
+        [
+            new TipLine("Head", Kind: TipKind.Heading), new TipLine("body"), new TipLine("1", Kind: TipKind.Stat, Stat: "Food"), new TipLine("2", Kind: TipKind.Stat, Stat: "Gold"),
+            new TipLine("src", Kind: TipKind.Source), new TipLine("Requires [x]", Kind: TipKind.Footer),
+        ], it => it);
+        string[] rows = text.Split('\n');
+        Assert.Equal(5, rows.Length);
+        Assert.StartsWith("[b][color=#ECE8DF]Head[/color][/b]", rows[0], StringComparison.Ordinal);
+        Assert.Equal("body", rows[1]);
+        Assert.Contains("1[/color][/b]    [b][color=", rows[2], StringComparison.Ordinal);
+        Assert.Contains(UiText.Hex(PlaceholderPalette.ForStat("Food")), rows[2], StringComparison.Ordinal);
+        Assert.Contains(UiText.Hex(PlaceholderPalette.ForStat("Gold")), rows[2], StringComparison.Ordinal);
+        Assert.Contains(UiText.Hex(UiTokens.TextSecondary), rows[3], StringComparison.Ordinal);
+        Assert.StartsWith("[font_size=12][color=" + UiText.Hex(UiTokens.TextMuted), rows[4], StringComparison.Ordinal);
     }
 }
