@@ -45,6 +45,10 @@ public sealed record GameMeta
 
     [JsonPropertyName("turnPolicy")]
     public string TurnPolicy { get; init; } = "Simultaneous";
+
+    /// <summary>T254: the turn timer policy the game was hosted with, so a resumed game keeps it. Null (older files, or hosted with the default) means <see cref="Unciv.Net.Turns.TurnPolicy.Default"/>.</summary>
+    [JsonPropertyName("timerPolicy")]
+    public Unciv.Net.Turns.TurnPolicy? TimerPolicy { get; init; }
 }
 
 /// <summary>The store cannot give the game back (no readable game.json, header or snapshot that can be trusted) or was misused.</summary>

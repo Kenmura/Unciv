@@ -266,7 +266,7 @@ flowchart TD
   class T246 prog
   class T247 waiting
   class T253 prog
-  class T254 prog
+  class T254 review
 ```
 
 ## Remaining tickets over time
@@ -372,4 +372,4 @@ xychart-beta
 | T239 | Blocked | T169, T246 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
 | T253 | In-Progress [Claude] | T251 | 0 | ServerLobby post-start leftovers (T251 follow-up) |
-| T254 | In-Progress [Claude] | T252 | 0 | Persist hosted-game turn timer policy so a resumed game keeps it (T252 follow-up) |
+| T254 | Needs-Review [Claude] | T252 | 0 | Persist hosted-game turn timer policy so a resumed game keeps it (T252 follow-up) |

@@ -106,6 +106,34 @@ public sealed class InProcessHostTests : IDisposable
     }
 
     [Fact]
+    public async Task InProcessHost_Resume_KeepsTheStoredTurnPolicy()
+    {
+        var policy = new TurnPolicy { TurnTimerSeconds = 240, TurnTimerMinSeconds = 45, DynamicTurnTimer = true, OnDisconnect = DisconnectAction.AiTakeover, DropGraceSeconds = 7, AbsentTurnsBeforeAiTakeover = 5 };
+        var dir = Path.Combine(root, "keep");
+        await using (var host = StartHost("keep", new InProcessHostOptions { TickInterval = null, TurnPolicy = policy })) await host.StopAsync();
+        using (var opened = FileGameStore.Open(dir)) Assert.Equal(policy, opened.Store.ReadMeta().TimerPolicy);
+
+        await using (var resumed = InProcessHost.ResumeFromDirectory(dir, babylon.PlayerKey, new InProcessHostOptions { TickInterval = null }))
+        {
+            Assert.Equal(policy, resumed.Host.TurnTimer.Policy);
+            await resumed.StopAsync();
+        }
+
+        var other = new TurnPolicy { TurnTimerSeconds = 99 };
+        await using var overridden = InProcessHost.ResumeFromDirectory(dir, babylon.PlayerKey, new InProcessHostOptions { TickInterval = null, TurnPolicy = other });
+        Assert.Equal(other, overridden.Host.TurnTimer.Policy);
+    }
+
+    [Fact]
+    public async Task InProcessHost_Resume_WithoutStoredPolicy_UsesTheDefault()
+    {
+        var dir = Path.Combine(root, "nopolicy");
+        await using (var host = StartHost("nopolicy")) await host.StopAsync();
+        await using var resumed = InProcessHost.ResumeFromDirectory(dir, babylon.PlayerKey, new InProcessHostOptions { TickInterval = null });
+        Assert.Equal(TurnPolicy.Default, resumed.Host.TurnTimer.Policy);
+    }
+
+    [Fact]
     public async Task ServerLobby_StartGame_RunsTheGameWithTheLobbyTimerSettings()
     {
         var settings = new LobbySettings { TurnTimerSeconds = 240, TurnTimerMinSeconds = 45, DynamicTurnTimer = true };

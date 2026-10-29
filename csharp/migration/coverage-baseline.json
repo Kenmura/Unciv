@@ -571,7 +571,7 @@
     "Unciv.Core/Net/Nat/PortMapper.cs": {"branch": 87.5, "line": 81.13},
     "Unciv.Core/Net/Nat/UpnpNatDevice.cs": {"branch": 41.67, "line": 83.04},
     "Unciv.Core/Net/Persistence/FileGameStore.cs": {"branch": 91.55, "line": 97.48},
-    "Unciv.Core/Net/Persistence/GameStoreModels.cs": {"branch": 100.0, "line": 96.3},
+    "Unciv.Core/Net/Persistence/GameStoreModels.cs": {"branch": 100.0, "line": 96.55},
     "Unciv.Core/Net/Persistence/LogScan.cs": {"branch": 87.5, "line": 100.0},
     "Unciv.Core/Net/ProtocolCodec.cs": {"branch": 90.91, "line": 100.0},
     "Unciv.Core/Net/ProtocolVersion.cs": {"branch": 100.0, "line": 100.0},
