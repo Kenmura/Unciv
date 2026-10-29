@@ -197,7 +197,7 @@ jobs:
         if: always()
         working-directory: csharp/Unciv.Godot.Harness
         run: |
-          for f in out/menu/hud.png; do echo "FRAME-BEGIN $f"; base64 -w0 "$f"; echo; echo "FRAME-END"; done
+          ls -la out/menu || true; for f in $(find out -name hud.png | head -3); do echo "FRAME-BEGIN $f"; base64 -w0 "$f" || true; echo; echo "FRAME-END"; done
 
   # Long AI-only games (T167). Env-gated, skipped by every other run.
   soak:
