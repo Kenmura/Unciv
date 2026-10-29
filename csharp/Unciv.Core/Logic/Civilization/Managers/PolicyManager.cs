@@ -201,7 +201,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     public void AddCulture(int culture)
     {
         var couldAdoptPolicyBefore = CanAdoptPolicy();
-        StoredCulture += culture;
+        StoredCulture = (int)System.Math.Clamp((long)StoredCulture + culture, int.MinValue, int.MaxValue);
         if (!couldAdoptPolicyBefore && CanAdoptPolicy())
         {
             ShouldOpenPolicyPicker = true;

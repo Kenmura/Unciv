@@ -17,7 +17,8 @@ namespace Unciv.Logic.GreatWorks;
 //   (unit unique "Can create the Great Work [x]") overrides it. B041 may move this into ruleset data.
 // - A Great Person named after the author of a work (GreatWork.GreatPerson, BNW Unit_UniqueNames.GreatWorkType) creates that work when it is
 //   still unused and of the class the unit creates (B011). The names are compared by their letters and digits only (case, spaces and
-//   punctuation ignored; accents are not folded: the invariant globalization mode has no normalization): the work table derives the person from a text key ("D H Lawrence"), the name groups spell it normally. No match,
+//   punctuation ignored; accents are not folded: the invariant globalization mode has no normalization). The BNW generator builds the
+//   Artist/Writer/Musician name groups from the works' own GreatPerson strings, so the two agree; the normalisation matters for mods and hand-edited data. No match,
 //   or the work exists already: the generic choice above.
 // - Closest slot: the city with the smallest aerial distance to the unit, ties by civ city order; inside it the first free slot of the
 //   buildings ordered by name. Spec [I].

@@ -417,6 +417,18 @@ public sealed class GreatPersonTests
     }
 
     [Fact]
+    public void TheGlobalFaithPurchaseNeedsNoReligionInTheCity()
+    {
+        static string Global(string era) => $"May buy [Great Scientist] units for [1000] [Faith] [in all cities] at an increasing price ([500]) <starting from the [{era} era]>";
+        var late = World(Global("Information"));
+        Assert.Null(FaithCost(late, "Great Scientist"));
+        var early = World(Global("Ancient"));
+        Assert.Null(early.CapA.Religion.GetMajorityReligionName()); // a plain city without a religion
+        Assert.Equal(Priced(early, 1000), FaithCost(early, "Great Scientist"));
+        Assert.Null(FaithCost(early, "Great Merchant")); // only the named kind
+    }
+
+    [Fact]
     public void AGreatProphetKeepsItsOwnPurchase()
     {
         var w = World(AllGreatPeople);

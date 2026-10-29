@@ -122,8 +122,6 @@ public enum UnitActionType
     HurryWonder,
     HurryBuilding,
     ConductTradeMission,
-    CreateGreatWork,
-    ConcertTour,
     FoundReligion,
     TriggerUnique,
     SpreadReligion,
@@ -132,6 +130,8 @@ public enum UnitActionType
     GiftUnit,
     Skip,
     AddInCapital,
+    CreateGreatWork,
+    ConcertTour,
 }
 
 public static class UnitActionTypeExtensions
