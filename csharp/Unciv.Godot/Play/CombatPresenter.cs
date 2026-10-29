@@ -25,6 +25,7 @@ public partial class CombatPresenter : Node3D
     private readonly Dictionary<Cue, Node3D> visuals = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<int, UnitNode> dying = [];
     private readonly List<(int Amount, HexCoord At)> numbers = [];
+    private readonly Dictionary<int, float> facings = [];
     private Func<int, UnitNode?> unitOf = _ => null;
     private Func<HexCoord, Vector3> tileTop = _ => Vector3.Zero;
 
@@ -79,6 +80,7 @@ public partial class CombatPresenter : Node3D
     public void Refresh()
     {
         if (!Enabled) return;
+        foreach (var (id, yaw) in facings) unitOf(id)?.Face(yaw); // the screen rebuilt its nodes: units keep the way they last turned
         foreach (var cue in timeline.Upcoming.Reverse()) if (cue.Kind == CueKind.Move) Pose(cue, 0f);
         Apply(timeline.Advance(0f));
     }
@@ -92,6 +94,7 @@ public partial class CombatPresenter : Node3D
         foreach (var ghost in dying.Values) ghost.QueueFree();
         dying.Clear();
         numbers.Clear();
+        facings.Clear();
     }
 
     public override void _Process(double delta)
@@ -119,15 +122,27 @@ public partial class CombatPresenter : Node3D
                 {
                     var (leg, along) = CuePoses.PathLeg(path.Count, p);
                     walker.Position = tileTop(path[leg]).Lerp(tileTop(path[leg + 1]), along);
+                    Turn(id, walker, tileTop(path[leg + 1]) - tileTop(path[leg]));
+                    walker.ShowClipLooped(UnitModelContract.WalkClip, p * cue.Duration); // no walk clip: it just slides
                     break;
                 }
             case CueKind.Strike when cue.UnitId is { } id && Find(id) is { } striker:
+                Turn(id, striker, Toward(cue));
                 striker.Position = striker.RestPosition + Toward(cue) * CuePoses.Lunge(p);
+                striker.ShowClip(UnitModelContract.AttackClip, p); // no attack clip: the lunge alone
                 break;
             case CueKind.Shot:
                 {
+                    // a unit's shot starts with its draw (attack_ranged); the projectile leaves at the release marker. A city's shot is the projectile alone.
+                    var flight = cue.UnitId != null ? CuePoses.ShotFlight(p) : p;
+                    if (cue.UnitId is { } archer && Find(archer) is { } drawing)
+                    {
+                        Turn(archer, drawing, Toward(cue));
+                        drawing.ShowClip(UnitModelContract.RangedAttackClip, p);
+                    }
+                    if (flight <= 0f && !visuals.ContainsKey(cue)) break;
                     var ball = Effect(cue, () => Ball(ProjectileRadius, PlaceholderPalette.Projectile));
-                    ball.Position = tileTop(cue.From).Lerp(tileTop(cue.To), p) + new Vector3(0f, ProjectileLift + CuePoses.Arc(p), 0f);
+                    ball.Position = tileTop(cue.From).Lerp(tileTop(cue.To), flight) + new Vector3(0f, ProjectileLift + CuePoses.Arc(flight), 0f);
                     break;
                 }
             case CueKind.Bombard:
@@ -140,13 +155,14 @@ public partial class CombatPresenter : Node3D
                 }
             case CueKind.Hit:
                 {
-                    if (cue.UnitId is { } id && Find(id) is { } hurt) hurt.Position = hurt.RestPosition + new Vector3(CuePoses.Shake(p), 0f, 0f);
+                    if (cue.UnitId is { } id && Find(id) is { } hurt && !hurt.ShowClip(UnitModelContract.HitClip, p)) hurt.Position = hurt.RestPosition + new Vector3(CuePoses.Shake(p), 0f, 0f); // no hit clip: shake
                     PoseNumber(cue, p);
                     break;
                 }
             case CueKind.Death when cue.UnitId is { } id:
                 {
                     if (Find(id) is not { } node) break;
+                    if (node.ShowClip(UnitModelContract.DeathClip, p)) break; // a death clip does the falling; without one the unit shrinks and sinks
                     node.Scale = Vector3.One * CuePoses.DeathScale(p);
                     node.Position = node.RestPosition - new Vector3(0f, CuePoses.Sink(p), 0f);
                     break;
@@ -182,16 +198,30 @@ public partial class CombatPresenter : Node3D
     {
         switch (cue.Kind)
         {
-            case CueKind.Move or CueKind.Strike or CueKind.Hit when cue.UnitId is { } id && Find(id) is { } node:
+            case CueKind.Move or CueKind.Strike or CueKind.Hit or CueKind.Shot when cue.UnitId is { } id && Find(id) is { } node:
                 node.Position = node.RestPosition;
+                node.RestClips();
                 break;
         }
         if (cue.Kind == CueKind.Death && cue.UnitId is { } dead)
         {
+            facings.Remove(dead);
             if (dying.Remove(dead, out var ghost)) ghost.QueueFree();
-            else if (unitOf(dead) is { } live) live.Scale = Vector3.One;
+            else if (unitOf(dead) is { } live)
+            {
+                live.Scale = Vector3.One;
+                live.RestClips();
+            }
         }
         if (visuals.Remove(cue, out var effect)) effect.QueueFree();
+    }
+
+    /// <summary>Turns a unit toward a world-space direction and remembers it; no direction (a zero-length step) keeps the current way.</summary>
+    private void Turn(int id, UnitNode node, Vector3 way)
+    {
+        if (CuePoses.FacingYaw(way.X, way.Z) is not { } yaw) return;
+        facings[id] = yaw;
+        node.Face(yaw);
     }
 
     private Vector3 Toward(Cue cue)

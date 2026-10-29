@@ -30,9 +30,9 @@ public sealed partial class HarnessDeterminismTests
     // The client reads the wall clock exactly twice, to seed a brand-new game at launch (a one-off, not frame-driven; scenarios build their own seeded sessions).
     private static readonly HashSet<string> AllowedClientClock = new(StringComparer.Ordinal) { "App.cs", "QuickStart.cs", "GameScreen.cs" }; // GameScreen: the turn bar countdown reads GameScreen.NowMs (C036), which every multiplayer scenario replaces with a fixed time
 
-    // C080: these files only find a model's AnimationPlayer and read it while it is held paused in its idle pose (nothing plays until the presenter drives clip time, UNIT-MODELS.md section 2);
+    // C080/C081: these files only find a model's AnimationPlayer and stand it at an explicit clip time while it stays paused (UnitAnimator, driven by the presenter's clock; nothing ever plays, UNIT-MODELS.md section 2);
     // the word AnimationPlayer is ignored there, every other clock/timer API still fails the test.
-    private static readonly HashSet<string> PausedAnimationUsers = new(StringComparer.Ordinal) { "UnitModels.cs", "UnitNode.cs", "UnitVisualsScenario.cs" };
+    private static readonly HashSet<string> PausedAnimationUsers = new(StringComparer.Ordinal) { "UnitModels.cs", "UnitNode.cs", "UnitVisualsScenario.cs", "UnitAnimator.cs" };
 
     private static bool UsesClock(string name, string text) => ClockApi().IsMatch(PausedAnimationUsers.Contains(name) ? text.Replace("AnimationPlayer", "", StringComparison.Ordinal) : text);
 

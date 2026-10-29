@@ -51,23 +51,30 @@ public sealed class CombatPresentationTests
     }
 
     [Fact]
-    public void A_melee_attack_is_a_lunge_then_an_impact_with_the_engines_numbers()
+    public void A_melee_attack_is_one_beat_whose_hit_lands_at_the_swings_marker_with_the_engines_numbers()
     {
         var plan = CombatPresentation.Plan([Attack(A, B, dealt: 7, taken: 3)]);
-        Assert.Equal(2, plan.Count);
-        var strike = Assert.Single(plan[0]);
-        Assert.Equal(new Cue(CueKind.Strike, 1, A, B, 0f, CombatPresentation.StrikeSeconds), strike with { Path = null });
         Assert.Equal(
         [
-            new Cue(CueKind.Hit, 2, B, B, 0f, CombatPresentation.HitSeconds, 7),
-            new Cue(CueKind.Hit, 1, A, A, 0f, CombatPresentation.HitSeconds, 3),
-        ], plan[1]);
+            new Cue(CueKind.Strike, 1, A, B, 0f, CombatPresentation.StrikeSeconds),
+            new Cue(CueKind.Hit, 2, B, B, CombatPresentation.StrikeHitDelay, CombatPresentation.HitSeconds, 7),
+            new Cue(CueKind.Hit, 1, A, A, CombatPresentation.StrikeHitDelay, CombatPresentation.HitSeconds, 3),
+        ], Assert.Single(plan));
+    }
+
+    [Fact]
+    public void The_strike_timing_constants_are_the_step_swing_hit_step_back_shape()
+    {
+        Near(0.7f, CombatPresentation.StrikeSeconds);
+        Near(0.35f, CombatPresentation.StrikeHitDelay);
+        Assert.InRange(CombatPresentation.StrikeHitMarker, CuePoses.StepInEnd, CuePoses.StepBackStart);
+        Near(0.2f, CombatPresentation.ShotReleaseSeconds);
     }
 
     [Fact]
     public void An_attacker_that_took_no_damage_does_not_flinch()
     {
-        var impact = CombatPresentation.Plan([Attack(A, B, dealt: 5, taken: 0)])[1];
+        var impact = CombatPresentation.Plan([Attack(A, B, dealt: 5, taken: 0)])[0].Where(it => it.Kind != CueKind.Strike).ToList();
         Assert.Equal(CueKind.Hit, Assert.Single(impact).Kind);
         Assert.Equal(2, impact[0].UnitId);
     }
@@ -75,8 +82,10 @@ public sealed class CombatPresentationTests
     [Fact]
     public void An_attack_from_a_distance_flies_a_projectile_from_the_attacker()
     {
-        var shot = Assert.Single(CombatPresentation.Plan([Attack(A, C)])[0]);
-        Assert.Equal(new Cue(CueKind.Shot, 1, A, C, 0f, CombatPresentation.ShotSeconds), shot);
+        var plan = CombatPresentation.Plan([Attack(A, C)]);
+        var shot = Assert.Single(plan[0]);
+        Assert.Equal(new Cue(CueKind.Shot, 1, A, C, 0f, CombatPresentation.ShotReleaseSeconds + CombatPresentation.ShotSeconds), shot);
+        Assert.All(plan[1], it => Assert.Equal(CueKind.Hit, it.Kind)); // the number lands once the projectile has arrived
     }
 
     [Fact]
@@ -94,21 +103,21 @@ public sealed class CombatPresentationTests
     [Fact]
     public void A_city_that_is_attacked_shows_the_number_over_its_tile_without_a_unit()
     {
-        var impact = CombatPresentation.Plan([Attack(A, B, dealt: 9, defenderUnit: null, defenderCity: "Cairo", defenderKilled: true)])[1];
-        Assert.Equal(new Cue(CueKind.Hit, null, B, B, 0f, CombatPresentation.HitSeconds, 9), impact[0]);
+        var impact = CombatPresentation.Plan([Attack(A, B, dealt: 9, defenderUnit: null, defenderCity: "Cairo", defenderKilled: true)])[0].Where(it => it.Kind != CueKind.Strike).ToList();
+        Assert.Equal(new Cue(CueKind.Hit, null, B, B, CombatPresentation.StrikeHitDelay, CombatPresentation.HitSeconds, 9), impact[0]);
         Assert.DoesNotContain(impact, it => it.Kind == CueKind.Death);
     }
 
     [Fact]
-    public void Units_killed_in_a_fight_die_inside_the_impact_beat_after_the_shake()
+    public void Units_killed_in_a_fight_die_inside_the_fights_beat_after_the_shake()
     {
         var plan = CombatPresentation.Plan([new UnitDestroyed("Egypt", 2, "Warrior", B), Attack(A, B, attackerKilled: true, defenderKilled: true)]);
-        Assert.Equal(2, plan.Count);
-        var deaths = plan[1].Where(it => it.Kind == CueKind.Death).ToList();
+        Assert.Single(plan);
+        var deaths = plan[0].Where(it => it.Kind == CueKind.Death).ToList();
         Assert.Equal([1, 2], deaths.Select(it => it.UnitId));
         Assert.All(deaths, it =>
         {
-            Near(CombatPresentation.DeathDelay, it.Delay);
+            Near(CombatPresentation.StrikeHitDelay + CombatPresentation.DeathDelay, it.Delay);
             Near(CombatPresentation.DeathSeconds, it.Duration);
         });
         Assert.Equal(A, deaths[0].From);
@@ -118,7 +127,7 @@ public sealed class CombatPresentationTests
     [Fact]
     public void A_survivor_does_not_die_and_a_killed_flag_without_a_unit_is_ignored()
     {
-        Assert.DoesNotContain(CombatPresentation.Plan([Attack(A, B)])[1], it => it.Kind == CueKind.Death);
+        Assert.DoesNotContain(CombatPresentation.Plan([Attack(A, B)])[0], it => it.Kind == CueKind.Death);
         Assert.DoesNotContain(CombatPresentation.Plan([Attack(A, B, attackerKilled: true, attackerUnit: null, attackerCity: "Rome")])[1], it => it.Kind == CueKind.Death);
     }
 
@@ -126,7 +135,7 @@ public sealed class CombatPresentationTests
     public void A_destruction_outside_a_fight_is_a_beat_of_its_own()
     {
         var plan = CombatPresentation.Plan([new UnitDestroyed("Rome", 5, "Settler", C), Attack(A, B, defenderKilled: true)]);
-        Assert.Equal(3, plan.Count);
+        Assert.Equal(2, plan.Count);
         Assert.Equal(new Cue(CueKind.Death, 5, C, C, 0f, CombatPresentation.DeathSeconds), Assert.Single(plan[0]));
     }
 
@@ -134,8 +143,7 @@ public sealed class CombatPresentationTests
     public void Beats_follow_the_event_order()
     {
         var plan = CombatPresentation.Plan([new UnitMoved("Rome", 1, "Warrior", [A, B]), Attack(B, C), new UnitMoved("Egypt", 2, "Warrior", [C, B])]);
-        Assert.Equal([CueKind.Move, CueKind.Strike, CueKind.Hit, CueKind.Move], plan.Select(it => it[0].Kind).ToList().Take(4));
-        Assert.Equal(4, plan.Count);
+        Assert.Equal([CueKind.Move, CueKind.Strike, CueKind.Move], plan.Select(it => it[0].Kind));
     }
 
     [Theory]
@@ -177,6 +185,18 @@ public sealed class CombatPresentationTests
         Assert.True(last.Done);
         Assert.True(timeline.IsIdle);
         Assert.Empty(timeline.Advance(1f));
+    }
+
+    [Fact]
+    public void A_delayed_cue_finishes_at_its_end_time_even_when_the_float_division_would_fall_short()
+    {
+        var timeline = new PresentationTimeline();
+        var cue = Make(CombatPresentation.StrikeHitDelay, CombatPresentation.HitSeconds);
+        timeline.Enqueue([[cue]]);
+        var update = Assert.Single(timeline.Advance(CombatPresentation.StrikeHitDelay + CombatPresentation.HitSeconds));
+        Assert.True(update.Done);
+        Near(1f, update.Progress);
+        Assert.True(timeline.IsIdle);
     }
 
     [Fact]
@@ -351,11 +371,62 @@ public sealed class CombatPresentationTests
     }
 
     [Fact]
+    public void Lunge_steps_in_holds_for_the_swing_and_steps_back()
+    {
+        Near(0f, CuePoses.Lunge(0f));
+        Assert.InRange(CuePoses.Lunge(CuePoses.StepInEnd / 2f), 0.01f, CuePoses.LungeReach - 0.01f);
+        Near(CuePoses.LungeReach, CuePoses.Lunge(CuePoses.StepInEnd));
+        Near(CuePoses.LungeReach, CuePoses.Lunge(CombatPresentation.StrikeHitMarker));
+        Near(CuePoses.LungeReach, CuePoses.Lunge(CuePoses.StepBackStart));
+        Assert.InRange(CuePoses.Lunge((1f + CuePoses.StepBackStart) / 2f), 0.01f, CuePoses.LungeReach - 0.01f);
+        Near(0f, CuePoses.Lunge(1f));
+        Near(0f, CuePoses.Lunge(-3f));
+        Near(0f, CuePoses.Lunge(7f));
+    }
+
+    [Theory]
+    [InlineData(-1f, 0f)]
+    [InlineData(0f, 0f)]
+    [InlineData(0.3636364f, 0f)]
+    [InlineData(1f, 1f)]
+    [InlineData(2f, 1f)]
+    public void The_shot_flight_starts_at_the_release_marker(float p, float expected) => Near(expected, CuePoses.ShotFlight(p));
+
+    [Fact]
+    public void The_shot_flight_is_halfway_between_release_and_the_end()
+    {
+        const float release = CombatPresentation.ShotReleaseSeconds / (CombatPresentation.ShotReleaseSeconds + CombatPresentation.ShotSeconds);
+        Near(0.5f, CuePoses.ShotFlight((1f + release) / 2f));
+    }
+
+    [Theory]
+    [InlineData(0f, 1f, 0f)]
+    [InlineData(1f, 0f, MathF.PI / 2f)]
+    [InlineData(-1f, 0f, -MathF.PI / 2f)]
+    [InlineData(0f, -1f, MathF.PI)]
+    public void Facing_turns_toward_the_direction_with_zero_yaw_along_plus_z(float dx, float dz, float expected) => Near(expected, CuePoses.FacingYaw(dx, dz)!.Value);
+
+    [Theory]
+    [InlineData(0f, 0f)]
+    [InlineData(float.NaN, 1f)]
+    [InlineData(1f, float.PositiveInfinity)]
+    public void Facing_a_missing_or_broken_direction_keeps_the_current_one(float dx, float dz) => Assert.Null(CuePoses.FacingYaw(dx, dz));
+
+    [Theory]
+    [InlineData(0.5f, 2f, false, 0.5f)]
+    [InlineData(3f, 2f, false, 2f)]
+    [InlineData(3f, 2f, true, 1f)]
+    [InlineData(-1f, 2f, true, 0f)]
+    [InlineData(float.NaN, 2f, true, 0f)]
+    [InlineData(float.PositiveInfinity, 2f, true, 0f)]
+    [InlineData(1f, 0f, true, 0f)]
+    [InlineData(1f, float.NaN, false, 0f)]
+    public void Clip_time_wraps_a_loop_holds_the_end_of_a_one_shot_and_survives_bad_input(float seconds, float length, bool loop, float expected) => Near(expected, CuePoses.ClipTime(seconds, length, loop));
+
+    [Fact]
     public void Lunge_and_arc_peak_in_the_middle()
     {
         Near(0f, CuePoses.Lunge(0f));
-        Near(CuePoses.LungeReach, CuePoses.Lunge(0.5f));
-        Near(0f, CuePoses.Lunge(1f));
         Near(0f, CuePoses.Arc(0f));
         Near(CuePoses.ArcHeight, CuePoses.Arc(0.5f));
         Near(0f, CuePoses.Arc(1f));

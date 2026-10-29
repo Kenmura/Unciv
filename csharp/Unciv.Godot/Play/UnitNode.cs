@@ -37,9 +37,39 @@ public partial class UnitNode : Node3D
     public int FigureCount { get; private set; }
 
     private readonly List<AnimationPlayer> players = [];
+    private readonly List<UnitAnimator> animators = [];
+    private readonly List<Node3D> figures = [];
 
     /// <summary>C080: the animation player of each figure whose model has one (none for generated blocks), held in its idle pose until the presenter drives them.</summary>
     public IReadOnlyList<AnimationPlayer> Players => players;
+
+    /// <summary>C081: the clip the first animated figure stands in (null for a unit without animated figures or one at rest before any cue).</summary>
+    public string? CurrentClip => animators.Count == 0 ? null : animators[0].Clip;
+
+    /// <summary>C081: seconds into <see cref="CurrentClip"/> the first animated figure stands.</summary>
+    public float ClipPosition => animators.Count == 0 ? 0f : animators[0].Position;
+
+    /// <summary>C081: the direction the figures face, as a yaw about Y (0 faces +Z, the glTF default).</summary>
+    public float FacingYaw { get; private set; }
+
+    /// <summary>C081: turns every figure to <paramref name="yaw"/>. Figures turn in place, so the formation keeps its layout and the health bar and marks stay put.</summary>
+    public void Face(float yaw)
+    {
+        FacingYaw = yaw;
+        foreach (var figure in figures) figure.Rotation = new Vector3(0f, yaw, 0f);
+    }
+
+    /// <summary>C081: stands every figure that has <paramref name="clip"/> a fraction <paramref name="progress"/> through it; false when none has it (the presenter then poses procedurally).</summary>
+    public bool ShowClip(string clip, float progress) => animators.Count(it => it.Show(clip, progress)) > 0;
+
+    /// <summary>C081: like <see cref="ShowClip"/> for a looping clip, <paramref name="seconds"/> into it.</summary>
+    public bool ShowClipLooped(string clip, float seconds) => animators.Count(it => it.ShowLooped(clip, seconds)) > 0;
+
+    /// <summary>C081: back to the idle pose after a cue.</summary>
+    public void RestClips()
+    {
+        foreach (var animator in animators) animator.Rest();
+    }
 
     /// <summary>The marks shown, in drawing order.</summary>
     public IReadOnlyList<UnitStatusIcon> StatusIcons { get; private set; } = [];
@@ -59,13 +89,16 @@ public partial class UnitNode : Node3D
             if (civ is { } c) MapMaterials.ColourTeam(model, c.R, c.G, c.B);
             if (UnitModels.FindPlayer(model) is { } player)
             {
-                UnitModels.HoldIdle(player, UnitModels.IdlePhase(Unit.Id, i));
+                var phase = UnitModels.IdlePhase(Unit.Id, i);
+                UnitModels.HoldIdle(player, phase);
                 players.Add(player);
+                animators.Add(new UnitAnimator(player, phase));
             }
             if (i > 0) model.GetNodeOrNull("Glyphs")?.Free(); // one initials billboard for the whole group
             var figure = new Node3D { Name = "Figure" + i, Position = new Vector3(formation[i].X, 0f, formation[i].Z), Scale = Vector3.One * formation[i].Scale };
             figure.AddChild(model);
             AddChild(figure);
+            figures.Add(figure);
         }
 
         var bar = UnitVisuals.HealthBar(Unit);

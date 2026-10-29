@@ -36,7 +36,19 @@ public sealed record Cue(CueKind Kind, int? UnitId, HexCoord From, HexCoord To, 
 public static class CombatPresentation
 {
     public const float MoveSecondsPerTile = 0.18f;
-    public const float StrikeSeconds = 0.25f;
+
+    /// <summary>A melee attack: step forward, swing, hit at the marker, step back (<see cref="CuePoses.StepInEnd"/>, <see cref="StrikeHitMarker"/>, <see cref="CuePoses.StepBackStart"/>).</summary>
+    public const float StrikeSeconds = 0.7f;
+
+    /// <summary>Where in the strike the swing connects (fraction of <see cref="StrikeSeconds"/>); the clip's impact marker is expected near here.</summary>
+    public const float StrikeHitMarker = 0.5f;
+
+    /// <summary>Seconds into a melee beat at which the defender is hit.</summary>
+    public const float StrikeHitDelay = StrikeSeconds * StrikeHitMarker;
+
+    /// <summary>A ranged attacker's draw and release, before the projectile leaves (its <c>attack_ranged</c> marker).</summary>
+    public const float ShotReleaseSeconds = 0.2f;
+
     public const float ShotSeconds = 0.35f;
     public const float BombardFlashSeconds = 0.3f;
     public const float BombardShotDelay = 0.15f;
@@ -57,9 +69,12 @@ public static class CombatPresentation
                 case UnitMoved { Path.Count: >= 2 } moved:
                     beats.Add([new Cue(CueKind.Move, moved.UnitId, moved.Path[0], moved.Path[^1], 0f, (moved.Path.Count - 1) * MoveSecondsPerTile, Path: moved.Path)]);
                     break;
+                case UnitAttacked attacked when IsMelee(attacked):
+                    beats.Add(MeleeBeat(attacked));
+                    break;
                 case UnitAttacked attacked:
                     beats.Add(StrikeBeat(attacked));
-                    beats.Add(ImpactBeat(attacked));
+                    beats.Add(ImpactBeat(attacked, 0f));
                     break;
                 case UnitDestroyed destroyed when !killedInBattle.Contains(destroyed.UnitId):
                     beats.Add([new Cue(CueKind.Death, destroyed.UnitId, destroyed.Position, destroyed.Position, 0f, DeathSeconds)]);
@@ -69,6 +84,13 @@ public static class CombatPresentation
         return beats;
     }
 
+    private static bool IsMelee(UnitAttacked e) => e.AttackerCityId == null && HexMath.GetDistance(e.AttackerPosition, e.DefenderPosition) <= 1;
+
+    /// <summary>The swing and its consequences in one beat: the defender is hit (and may die) at the swing's marker, while the attacker is still stepping back.</summary>
+    private static IReadOnlyList<Cue> MeleeBeat(UnitAttacked e) =>
+        [new Cue(CueKind.Strike, e.AttackerUnitId, e.AttackerPosition, e.DefenderPosition, 0f, StrikeSeconds), .. ImpactBeat(e, StrikeHitDelay)];
+
+    /// <summary>The wind-up beat of a ranged or city attack (a melee attack is one beat, <see cref="MeleeBeat"/>).</summary>
     private static IReadOnlyList<Cue> StrikeBeat(UnitAttacked e)
     {
         if (e.AttackerCityId != null)
@@ -77,20 +99,19 @@ public static class CombatPresentation
                 new Cue(CueKind.Bombard, null, e.AttackerPosition, e.DefenderPosition, 0f, BombardFlashSeconds),
                 new Cue(CueKind.Shot, null, e.AttackerPosition, e.DefenderPosition, BombardShotDelay, ShotSeconds),
             ];
-        if (HexMath.GetDistance(e.AttackerPosition, e.DefenderPosition) > 1)
-            return [new Cue(CueKind.Shot, e.AttackerUnitId, e.AttackerPosition, e.DefenderPosition, 0f, ShotSeconds)];
-        return [new Cue(CueKind.Strike, e.AttackerUnitId, e.AttackerPosition, e.DefenderPosition, 0f, StrikeSeconds)];
+        // not a city, not melee: a unit's shot, which starts with its draw and then releases the projectile
+        return [new Cue(CueKind.Shot, e.AttackerUnitId, e.AttackerPosition, e.DefenderPosition, 0f, ShotReleaseSeconds + ShotSeconds)];
     }
 
-    private static IReadOnlyList<Cue> ImpactBeat(UnitAttacked e)
+    private static IReadOnlyList<Cue> ImpactBeat(UnitAttacked e, float at)
     {
-        var cues = new List<Cue> { new(CueKind.Hit, e.DefenderUnitId, e.DefenderPosition, e.DefenderPosition, 0f, HitSeconds, e.DamageToDefender) };
+        var cues = new List<Cue> { new(CueKind.Hit, e.DefenderUnitId, e.DefenderPosition, e.DefenderPosition, at, HitSeconds, e.DamageToDefender) };
         if (e.DamageToAttacker > 0 && e.AttackerCityId == null)
-            cues.Add(new Cue(CueKind.Hit, e.AttackerUnitId, e.AttackerPosition, e.AttackerPosition, 0f, HitSeconds, e.DamageToAttacker));
+            cues.Add(new Cue(CueKind.Hit, e.AttackerUnitId, e.AttackerPosition, e.AttackerPosition, at, HitSeconds, e.DamageToAttacker));
         if (e.AttackerKilled && e.AttackerUnitId is { } attacker)
-            cues.Add(new Cue(CueKind.Death, attacker, e.AttackerPosition, e.AttackerPosition, DeathDelay, DeathSeconds));
+            cues.Add(new Cue(CueKind.Death, attacker, e.AttackerPosition, e.AttackerPosition, at + DeathDelay, DeathSeconds));
         if (e.DefenderKilled && e.DefenderUnitId is { } defender)
-            cues.Add(new Cue(CueKind.Death, defender, e.DefenderPosition, e.DefenderPosition, DeathDelay, DeathSeconds));
+            cues.Add(new Cue(CueKind.Death, defender, e.DefenderPosition, e.DefenderPosition, at + DeathDelay, DeathSeconds));
         return cues;
     }
 
@@ -190,8 +211,10 @@ public sealed class PresentationTimeline
         foreach (var slot in beat)
         {
             if (slot.Done || time < slot.Cue.Delay) continue;
-            var progress = slot.Cue.Duration <= 0f ? 1f : Math.Clamp((time - slot.Cue.Delay) / slot.Cue.Duration, 0f, 1f);
-            slot.Done = progress >= 1f;
+            // finished is decided on the end time itself: (end - delay) / duration can round to just under 1 in float, which would leave the cue running forever
+            var finished = time >= slot.Cue.Delay + slot.Cue.Duration;
+            var progress = finished || slot.Cue.Duration <= 0f ? 1f : Math.Clamp((time - slot.Cue.Delay) / slot.Cue.Duration, 0f, 1f);
+            slot.Done = finished || progress >= 1f;
             updates.Add(new CueUpdate(slot.Cue, progress, slot.Done));
         }
     }
@@ -231,8 +254,46 @@ public static class CuePoses
         return (leg, scaled - leg);
     }
 
-    /// <summary>Fraction of the way to the target a melee attacker has lunged.</summary>
-    public static float Lunge(float p) => LungeReach * Bump(p);
+    /// <summary>Strike progress at which the attacker has finished stepping in.</summary>
+    public const float StepInEnd = 0.3f;
+
+    /// <summary>Strike progress at which the attacker starts stepping back.</summary>
+    public const float StepBackStart = 0.7f;
+
+    /// <summary>Fraction of the way to the target a melee attacker has stepped: eases in, holds for the swing, eases back.</summary>
+    public static float Lunge(float p)
+    {
+        p = Math.Clamp(p, 0f, 1f);
+        if (p < StepInEnd) return LungeReach * Smooth(p / StepInEnd);
+        return p < StepBackStart ? LungeReach : LungeReach * Smooth((1f - p) / (1f - StepBackStart));
+    }
+
+    private static float Smooth(float t) => t * t * (3f - 2f * t);
+
+    /// <summary>
+    /// Where a ranged attacker's projectile is (0..1 of its flight) at progress <paramref name="p"/> of a unit's shot cue, which starts with the draw (<see cref="CombatPresentation.ShotReleaseSeconds"/>);
+    /// 0 until the release.
+    /// </summary>
+    public static float ShotFlight(float p)
+    {
+        const float release = CombatPresentation.ShotReleaseSeconds / (CombatPresentation.ShotReleaseSeconds + CombatPresentation.ShotSeconds);
+        return Math.Clamp((Math.Clamp(p, 0f, 1f) - release) / (1f - release), 0f, 1f);
+    }
+
+    /// <summary>The yaw (radians about Y, 0 facing +Z, the glTF default) that turns a figure toward the horizontal vector (<paramref name="dx"/>, <paramref name="dz"/>); null when there is no direction to face.</summary>
+    public static float? FacingYaw(float dx, float dz)
+    {
+        var length = dx * dx + dz * dz;
+        return float.IsFinite(length) && length > 1e-8f ? MathF.Atan2(dx, dz) : null;
+    }
+
+    /// <summary>Where in a clip of <paramref name="length"/> seconds to stand at <paramref name="seconds"/> into it; a looping clip wraps, any other holds its last frame. NaN or a negative time is the start.</summary>
+    public static float ClipTime(float seconds, float length, bool loop)
+    {
+        if (!(length > 0f) || !(seconds > 0f)) return 0f;
+        if (!float.IsFinite(seconds)) return 0f;
+        return loop ? seconds % length : Math.Min(seconds, length);
+    }
 
     /// <summary>Height above the straight line of a projectile.</summary>
     public static float Arc(float p) => ArcHeight * Bump(p);

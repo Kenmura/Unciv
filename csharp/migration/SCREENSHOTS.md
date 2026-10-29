@@ -598,21 +598,21 @@ Scenario `improvements`.
 
 ## C033 Unit animation and combat presentation
 
-Unit animation and combat presentation: lunge, flinch with floating engine damage numbers, ranged shot, bombard flash, death shrink; stepped by hand so every frame is deterministic.
+Unit animation and combat presentation: step in, face the target, swing and hit clips with floating engine damage numbers, ranged draw and shot, bombard flash, death shrink; stepped by hand so every frame is deterministic.
 
 Scenario `combat-presentation`.
 
-![Mid-lunge: our warrior leans into the enemy warrior (a real attack made through the UI).](../Unciv.Godot.Harness/golden/combat-presentation/lunge.png)
+![Mid-swing: our warrior has stepped in, turned to the enemy warrior and plays its attack clip (a real attack made through the UI).](../Unciv.Godot.Harness/golden/combat-presentation/lunge.png)
 
-*Mid-lunge: our warrior leans into the enemy warrior (a real attack made through the UI).* (`combat-presentation/lunge.png`)
+*Mid-swing: our warrior has stepped in, turned to the enemy warrior and plays its attack clip (a real attack made through the UI).* (`combat-presentation/lunge.png`)
 
-![Impact: both warriors flinch and the engine's damage numbers float up (-31 each).](../Unciv.Godot.Harness/golden/combat-presentation/impact.png)
+![Impact: the enemy plays its hit clip and the engine's damage numbers float up.](../Unciv.Godot.Harness/golden/combat-presentation/impact.png)
 
-*Impact: both warriors flinch and the engine's damage numbers float up (-31 each).* (`combat-presentation/impact.png`)
+*Impact: the enemy plays its hit clip and the engine's damage numbers float up.* (`combat-presentation/impact.png`)
 
-![A ranged shot in flight from our warrior toward a far tile.](../Unciv.Godot.Harness/golden/combat-presentation/shot.png)
+![A ranged shot in flight from our warrior (after its draw) toward a far tile.](../Unciv.Godot.Harness/golden/combat-presentation/shot.png)
 
-*A ranged shot in flight from our warrior toward a far tile.* (`combat-presentation/shot.png`)
+*A ranged shot in flight from our warrior (after its draw) toward a far tile.* (`combat-presentation/shot.png`)
 
 ![A city bombards: a flash at the city and a shot toward our warrior.](../Unciv.Godot.Harness/golden/combat-presentation/bombard.png)
 
@@ -1064,7 +1064,7 @@ Scenario `ui-kit`.
 
 *The city screen under the same top bar.* (`city-a/open.png`)
 
-## C065 (ticket not Done or unknown)
+## C065 UI shared components
 
 Shared UI components in every state: icon buttons with badges, steppers, segmented control, stat chips and bars, inline stat icons, key hints, underline tab bar with overflow arrows, list rows, data table and empty state. The tab bar of every screen now uses underline tabs.
 
@@ -1081,6 +1081,30 @@ Scenario `ui-kit`.
 ![The same components at 1280x720: the control page on the left and the data page on the right.](../Unciv.Godot.Harness/golden/ui-kit/wide.png)
 
 *The same components at 1280x720: the control page on the left and the data page on the right.* (`ui-kit/wide.png`)
+
+## C080 Unit model loader and contract
+
+The Warrior is a CC0 animated model file: textured TeamColor material tinted per civ, held in its idle pose.
+
+Scenario `unit-visuals`.
+
+![Close view of the Warrior model in its idle pose with its TeamColor material tinted in the red civ's colour.](../Unciv.Godot.Harness/golden/unit-visuals/warrior.png)
+
+*Close view of the Warrior model in its idle pose with its TeamColor material tinted in the red civ's colour.* (`unit-visuals/warrior.png`)
+
+## C081 (ticket not Done or unknown)
+
+Clip-driven combat: attackers turn to their target, step in and play attack or attack_ranged, the struck unit plays hit; the clip time follows the presenter's clock.
+
+Scenario `combat-presentation`.
+
+![Mid-swing: the attacking warrior has turned to its target and plays its attack clip.](../Unciv.Godot.Harness/golden/combat-presentation/lunge.png)
+
+*Mid-swing: the attacking warrior has turned to its target and plays its attack clip.* (`combat-presentation/lunge.png`)
+
+![The hit lands at the swing's marker: the defender plays its hit clip and the damage number floats up.](../Unciv.Godot.Harness/golden/combat-presentation/impact.png)
+
+*The hit lands at the swing's marker: the defender plays its hit clip and the damage number floats up.* (`combat-presentation/impact.png`)
 
 ## T252 (ticket not Done or unknown)
 

@@ -753,19 +753,19 @@
   },
   "C033": {
     "scenario": "combat-presentation",
-    "about": "Unit animation and combat presentation: lunge, flinch with floating engine damage numbers, ranged shot, bombard flash, death shrink; stepped by hand so every frame is deterministic.",
+    "about": "Unit animation and combat presentation: step in, face the target, swing and hit clips with floating engine damage numbers, ranged draw and shot, bombard flash, death shrink; stepped by hand so every frame is deterministic.",
     "shots": [
       {
         "golden": "combat-presentation/lunge.png",
-        "caption": "Mid-lunge: our warrior leans into the enemy warrior (a real attack made through the UI)."
+        "caption": "Mid-swing: our warrior has stepped in, turned to the enemy warrior and plays its attack clip (a real attack made through the UI)."
       },
       {
         "golden": "combat-presentation/impact.png",
-        "caption": "Impact: both warriors flinch and the engine's damage numbers float up (-31 each)."
+        "caption": "Impact: the enemy plays its hit clip and the engine's damage numbers float up."
       },
       {
         "golden": "combat-presentation/shot.png",
-        "caption": "A ranged shot in flight from our warrior toward a far tile."
+        "caption": "A ranged shot in flight from our warrior (after its draw) toward a far tile."
       },
       {
         "golden": "combat-presentation/bombard.png",
@@ -774,6 +774,30 @@
       {
         "golden": "combat-presentation/death.png",
         "caption": "A dying worker shrinks and sinks into its tile."
+      }
+    ]
+  },
+  "C080": {
+    "scenario": "unit-visuals",
+    "about": "The Warrior is a CC0 animated model file: textured TeamColor material tinted per civ, held in its idle pose.",
+    "shots": [
+      {
+        "golden": "unit-visuals/warrior.png",
+        "caption": "Close view of the Warrior model in its idle pose with its TeamColor material tinted in the red civ's colour."
+      }
+    ]
+  },
+  "C081": {
+    "scenario": "combat-presentation",
+    "about": "Clip-driven combat: attackers turn to their target, step in and play attack or attack_ranged, the struck unit plays hit; the clip time follows the presenter's clock.",
+    "shots": [
+      {
+        "golden": "combat-presentation/lunge.png",
+        "caption": "Mid-swing: the attacking warrior has turned to its target and plays its attack clip."
+      },
+      {
+        "golden": "combat-presentation/impact.png",
+        "caption": "The hit lands at the swing's marker: the defender plays its hit clip and the damage number floats up."
       }
     ]
   },

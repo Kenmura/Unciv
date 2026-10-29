@@ -28,8 +28,8 @@ public sealed class CombatPresentationScenario : Scenario
 
     public override IReadOnlyList<string> Checklist =>
     [
-        "Does the attacker visibly lunge at its target, and does the struck unit flinch, with a red damage number rising over it?",
-        "Is the projectile of a ranged attack easy to follow, and does the bombard flash read as a city firing?",
+        "Does the attacker step in, turn toward its target and swing (attack clip), and does the struck unit react (hit clip), with a red damage number rising over it?",
+        "Does a ranged attacker draw before the projectile leaves, and is the projectile easy to follow, and does the bombard flash read as a city firing?",
         "Do dying units shrink away instead of vanishing, and does the pace of a fight (about a second each) feel right?",
     ];
 
@@ -79,6 +79,9 @@ public sealed class CombatPresentationScenario : Scenario
             warriorHealthBefore = warrior.Health;
         }
 
+        // a little before the swing connects, so the attacker has stepped in and nobody is hit yet
+        private const float StepBeforeHit = CombatPresentation.StrikeSeconds * 0.4f;
+
         private CombatPresenter Presenter => screen.Presenter;
 
         private Vector3 Top(HexCoord at) => MapLayout.TileTop(at.x, at.y, screen.Map.TileNodeAt(at)?.Elevation ?? 1f);
@@ -119,22 +122,26 @@ public sealed class CombatPresentationScenario : Scenario
             new Act("frame the fight and step to the middle of the lunge", () =>
             {
                 Frame3D(warriorTile, 5f);
-                Presenter.Step(CombatPresentation.StrikeSeconds / 2f);
+                Presenter.Step(StepBeforeHit);
             }),
             new WaitFrames(2),
-            new AssertQuery("the attacker has lunged toward the target and the target has not moved", () =>
+            new AssertQuery("the attacker has stepped toward the target and the target has not moved or been hit", () =>
                 screen.Units.ContainsKey(warrior.Id) && (screen.Units[warrior.Id].Position - screen.Units[warrior.Id].RestPosition).Length() > 0.1f
-                && screen.Units[enemy.Id].Position.IsEqualApprox(screen.Units[enemy.Id].RestPosition)),
-            new Capture("lunge", "Mid-lunge: our warrior leans into the enemy warrior"),
+                && screen.Units[enemy.Id].Position.IsEqualApprox(screen.Units[enemy.Id].RestPosition) && Presenter.NumbersShown.Count == 0),
+            new AssertQuery("the attacker plays its attack clip, part-way through, and faces the enemy; the enemy is still idle", () =>
+                screen.Units[warrior.Id].CurrentClip == UnitModelContract.AttackClip && screen.Units[warrior.Id].ClipPosition > 0f
+                && Mathf.IsEqualApprox(screen.Units[warrior.Id].FacingYaw, CuePoses.FacingYaw((Top(enemyTile) - Top(warriorTile)).X, (Top(enemyTile) - Top(warriorTile)).Z) ?? float.NaN)
+                && screen.Units[enemy.Id].CurrentClip == UnitModelContract.IdleClip),
+            new Capture("lunge", "Mid-swing: our warrior has stepped in, turned to the enemy warrior and plays its attack clip"),
             new Act("step into the impact", () =>
             {
-                Presenter.Step(CombatPresentation.StrikeSeconds / 2f + 0.15f);
+                Presenter.Step(CombatPresentation.StrikeHitDelay - StepBeforeHit + 0.15f);
             }),
             new WaitFrames(2),
-            new AssertQuery("the defender flinches and the engine's damage floats over it", () =>
+            new AssertQuery("the defender plays its hit clip and the engine's damage floats over it", () =>
                 attacks.Count == 1 && Presenter.NumbersShown.Count >= 1 && Presenter.NumbersShown[0] == (attacks[0].DamageToDefender, enemyTile) && Presenter.EffectCount >= 1
-                && (screen.Units[enemy.Id].Position - screen.Units[enemy.Id].RestPosition).Length() > 0.01f),
-            new Capture("impact", "Impact: the enemy flinches and its damage number floats up"),
+                && screen.Units[enemy.Id].CurrentClip == UnitModelContract.HitClip && screen.Units[enemy.Id].ClipPosition > 0f),
+            new Capture("impact", "Impact: the enemy plays its hit clip and its damage number floats up"),
             new Act("play the rest of the script", () => Presenter.Step(10f)),
             new WaitFrames(2),
             new AssertQuery("the queue drained, only the engine's numbers were shown, no effect is left, and every unit is back at rest", () =>
@@ -155,8 +162,12 @@ public sealed class CombatPresentationScenario : Scenario
                 var lost = new UnitDestroyed(ScenarioGame.HumanA, worker.Id, "Worker", workerTile);
                 screen.PresentEvents([shot, bombard, lost]);
                 Frame3D(warriorTile, 6f);
-                Presenter.Step(CombatPresentation.ShotSeconds / 2f);
+                Presenter.Step(CombatPresentation.ShotReleaseSeconds / 2f);
             }),
+            new WaitFrames(2),
+            new AssertQuery("the archer draws (attack_ranged) and no projectile has left yet", () =>
+                screen.Units[warrior.Id].CurrentClip == UnitModelContract.RangedAttackClip && Presenter.EffectCount == 0),
+            new Act("step past the release marker to the middle of the flight", () => Presenter.Step(CombatPresentation.ShotReleaseSeconds / 2f + CombatPresentation.ShotSeconds / 2f)),
             new WaitFrames(2),
             new AssertQuery("the dying worker left the unit table at once but is still on screen, and a projectile is in flight", () =>
                 !screen.Units.ContainsKey(worker.Id) && Presenter.DyingCount == 1 && workerNode.NotNull().GetParent() == Presenter && Presenter.EffectCount == 1),
