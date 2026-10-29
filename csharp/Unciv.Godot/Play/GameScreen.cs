@@ -141,6 +141,20 @@ public partial class GameScreen : Control
     /// <summary>C040: True from pressing Next turn until the host answered; input is ignored meanwhile.</summary>
     public bool IsEndingTurn => turnCancellation != null;
 
+    /// <summary>C036: the multiplayer turn bar (who ended, deadline, connection marks, toasts); hidden unless the session is a simultaneous game (<see cref="ITurnRoster"/>).</summary>
+    public TurnBarView TurnBar { get; private set; } = null!; // JUSTIFY: C036 assigned in _Ready before any use
+
+    /// <summary>C036: the clock the countdown reads (Unix ms); wall time in the game, fixed in scenarios.</summary>
+    public Func<long> NowMs { get; set; } = static () => (long)(Time.GetUnixTimeFromSystem() * 1000.0);
+
+    /// <summary>C036: true while the host resolves the round of a simultaneous game.</summary>
+    public bool IsResolving => snapshot?.TurnStatus.Phase == "Resolving" && session is ITurnRoster;
+
+    private string? shownCountdown;
+
+    /// <summary>The turn bar sits centred below the two rows of screen buttons, so it covers none of them.</summary>
+    private float TurnBarTop() => Hud.TopBarHeight + HudMargin + 2f * (DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
+
     private CancellationTokenSource? turnCancellation;
 
     /// <summary>
@@ -736,6 +750,8 @@ public partial class GameScreen : Control
             Proposals.Close();
             Run(RefreshHud());
         };
+        TurnBar = new TurnBarView();
+        AddChild(TurnBar);
         TurnOverlay = new NextTurnProgressView();
         AddChild(TurnOverlay);
         VoteResult = new VoteResultScreen();
@@ -833,6 +849,7 @@ public partial class GameScreen : Control
         Picker.LayoutIn(Size);
         Tutorials.LayoutIn(Size);
         TaskCard.LayoutIn(Size, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
+        TurnBar.LayoutIn(Size.X, TurnBarTop());
         TurnOverlay.LayoutIn(Size);
         Panel.LayoutIn(Size);
         PlacePromoteButton();
@@ -847,6 +864,7 @@ public partial class GameScreen : Control
         {
             session.SnapshotChanged -= OnSnapshotChanged;
             session.EventsReceived -= OnEventsReceived;
+            if (session is ITurnRoster roster) roster.RosterChanged -= RefreshTurnBar;
         }
     }
 
@@ -857,6 +875,7 @@ public partial class GameScreen : Control
         {
             session.SnapshotChanged -= OnSnapshotChanged;
             session.EventsReceived -= OnEventsReceived;
+            if (session is ITurnRoster previous) previous.RosterChanged -= RefreshTurnBar;
             Presenter.Reset();
             turnCancellation?.Cancel();
             SelectedUnitId = null;
@@ -868,6 +887,7 @@ public partial class GameScreen : Control
         queries = new GameQueries(session);
         var theme = new UiTheme(registry);
         Hud.Init(theme);
+        TurnBar.Init(theme);
         Notifications.Init(theme);
         Alerts.Init(theme);
         Proposals.Init(theme);
@@ -1007,7 +1027,9 @@ public partial class GameScreen : Control
         session.EventsReceived += OnEventsReceived;
         Presenter.Bind(id => unitNodes.GetValueOrDefault(id), coord => UnitPosition(coord, 0));
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
+        if (session is ITurnRoster roster) roster.RosterChanged += RefreshTurnBar;
         Refresh();
+        RefreshTurnBar();
         var first = snapshot.Units.FirstOrDefault(it => it.Own != null);
         if (first != null) Map.FocusOn(MapLayout.TileTop(first.X, first.Y));
         SetStatus("Click one of your units.");
@@ -1603,6 +1625,35 @@ public partial class GameScreen : Control
     {
         PresentEvents(batch.Events);
         PlayCues(batch.Events);
+        if (session is not ITurnRoster roster) return;
+        foreach (var gameEvent in batch.Events)
+            if (TurnBarModel.Toast(gameEvent, roster.Roster, session.ViewerCivId) is { } toast) TurnBar.Toast(toast);
+    }
+
+    /// <summary>
+    /// C036: redraws the turn bar from the host's TurnStatus and roster and raises the "resolving" overlay while the round is resolved (commands are refused then:
+    /// <c>turn-resolving</c>). Hides the bar in a game that is not simultaneous.
+    /// </summary>
+    private void RefreshTurnBar()
+    {
+        if (session is not ITurnRoster roster || snapshot == null)
+        {
+            TurnBar.Show(null);
+            return;
+        }
+        var bar = TurnBarModel.Of(snapshot.TurnStatus, roster.Roster, session.ViewerCivId, NowMs());
+        TurnBar.Show(bar);
+        shownCountdown = bar?.Countdown;
+        TurnBar.LayoutIn(Size.X, TurnBarTop());
+        if (bar is { Resolving: true }) TurnOverlay.Show(new NextTurnProgressViewData("Resolving the turn", "Waiting for the host", 0.0));
+        else if (turnCancellation == null) TurnOverlay.Close();
+    }
+
+    public override void _Process(double delta)
+    {
+        // the countdown moves with the clock, not with snapshots
+        if (session is not ITurnRoster || TurnBar.Data == null || snapshot?.TurnStatus.Deadline == null) return;
+        if (TurnBarModel.Countdown(snapshot.TurnStatus.Deadline, NowMs()) != shownCountdown) RefreshTurnBar();
     }
 
     /// <summary>C057: where the engine's sound cues are played (the app's sound player); null in scenarios that do not care, which then play nothing.</summary>
@@ -1621,6 +1672,7 @@ public partial class GameScreen : Control
     private void OnSnapshotChanged(ClientSnapshot changed)
     {
         snapshot = changed;
+        RefreshTurnBar();
         Run(RefreshHud());
     }
 
@@ -1630,6 +1682,9 @@ public partial class GameScreen : Control
         {
             case HudActionKind.EndTurn:
                 OnNextTurn();
+                break;
+            case HudActionKind.UndoEndTurn:
+                Run(UndoEndTurn());
                 break;
             case HudActionKind.NextUnit:
                 SelectNextUnit();
@@ -1794,8 +1849,30 @@ public partial class GameScreen : Control
             SetStatus("Stop AutoPlay first.");
             return;
         }
-        Run(EndTurn());
+        Run(session is ITurnRoster ? EndTurnSimultaneous() : EndTurn());
     }
+
+    /// <summary>
+    /// C036: End turn in a simultaneous game only marks this player as done; the host resolves the round when everybody has (or the deadline passed). So nothing waits here
+    /// and nothing is blocked: the turn bar shows whom the game waits for, and Undo end turn stays possible until the host starts resolving.
+    /// </summary>
+    private async Task EndTurnSimultaneous()
+    {
+        var result = await session.SubmitAsync(new EndTurn());
+        if (!IsInstanceValid(this) || !IsInsideTree()) return;
+        SetStatus(result.Accepted ? "Turn ended. Waiting for the other players." : "Cannot end the turn: " + Describe(result.Message));
+        Refresh();
+    }
+
+    private async Task UndoEndTurn()
+    {
+        var result = await session.SubmitAsync(new UndoEndTurn());
+        if (!IsInstanceValid(this) || !IsInsideTree()) return;
+        SetStatus(result.Accepted ? "Your turn continues." : "Cannot undo: " + Describe(result.Message));
+        Refresh();
+    }
+
+    private static string Describe(string code) => code == "turn-resolving" ? "the host is resolving the turn" : code;
 
     /// <summary>C047: the AutoPlay button stops a running run, otherwise opens its menu (or closes it when open).</summary>
     private void OnAutoPlayButton()

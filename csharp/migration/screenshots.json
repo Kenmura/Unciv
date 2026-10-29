@@ -952,5 +952,27 @@
         "caption": "After the host kicked Friend B and closed the slot: slot 3 is Closed (Open undoes it), slot 4 is still Open and becomes AI at Start."
       }
     ]
+  },
+  "C036": {
+    "scenario": "mp-turn",
+    "about": "Multiplayer turn bar: who has ended, deadline countdown, connection marks, Next turn / Undo end turn, resolving overlay and toasts for other humans' actions.",
+    "shots": [
+      {
+        "golden": "mp-turn/waiting.png",
+        "caption": "Turn bar under the buttons: 'Waiting for Alice, Bob', countdown 1:05, both players green and Playing; Next turn and Next unit bottom right."
+      },
+      {
+        "golden": "mp-turn/ended-offline.png",
+        "caption": "Alice (you) has ended (green Ended) and the button reads Undo end turn; the bar says 'Waiting for Bob (offline)' with Bob's dot red."
+      },
+      {
+        "golden": "mp-turn/other-ended.png",
+        "caption": "After Undo, Bob ends his turn: his row turns Ended, the bar says 'Waiting for Alice' and a toast reads 'Bob ended their turn'."
+      },
+      {
+        "golden": "mp-turn/resolving.png",
+        "caption": "Both ended and the host is resolving: dimmed 'Resolving the turn / Waiting for the host' overlay, disabled 'Resolving turn...' button, and the refusal in the status line."
+      }
+    ]
   }
 }

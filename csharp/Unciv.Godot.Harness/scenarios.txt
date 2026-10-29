@@ -46,3 +46,4 @@ hotseat
 tutorial-tasks
 host-screen
 lobby
+mp-turn

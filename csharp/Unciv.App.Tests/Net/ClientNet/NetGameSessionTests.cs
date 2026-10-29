@@ -29,6 +29,31 @@ public sealed class NetGameSessionTests
     }
 
     [Fact]
+    public async Task Roster_ListsTheHumanSlotsAndFollowsLobbyUpdates()
+    {
+        await using var rig = new ClientNetRig();
+        var (net, host) = await StartAsync(rig, ClientNetRig.Snap(5, 1));
+        await using var _ = net;
+        Assert.Empty(net.Roster);
+        var changed = new TaskCompletionSource();
+        net.RosterChanged += () => changed.TrySetResult();
+        await host.SendAsync(new LobbyState
+        {
+            Settings = JsonDocument.Parse("{}").RootElement.Clone(),
+            HostName = "Alice",
+            Slots =
+            [
+                new LobbySlot { Slot = 0, PlayerName = "Alice", Nation = "Rome", Ready = true, Kind = "Human", Connected = true },
+                new LobbySlot { Slot = 1, Nation = "Greece", Ready = false, Kind = "Human" },
+                new LobbySlot { Slot = 2, Nation = "Egypt", Ready = true, Kind = "AI" },
+                new LobbySlot { Slot = 3, Ready = false, Kind = "Open" },
+            ]
+        });
+        await changed.Task.WaitAsync(Limit);
+        Assert.Equal([("Rome", "Alice", true), ("Greece", "Greece", false)], net.Roster.Select(it => (it.CivId, it.Name, it.Connected)));
+    }
+
+    [Fact]
     public async Task Constructor_WithoutSnapshot_Throws()
     {
         await using var rig = new ClientNetRig();

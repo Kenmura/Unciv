@@ -89,7 +89,7 @@ public static class HudModel
     {
         if (status is { Phase: "Resolving" }) return new HudAction(HudActionKind.Resolving, "Resolving turn...", null, false);
         if (viewer != null && status != null && status.Ended.Contains(viewer, StringComparer.Ordinal))
-            return new HudAction(HudActionKind.UndoEndTurn, "Undo end turn", null, false);
+            return new HudAction(HudActionKind.UndoEndTurn, "Undo end turn", null, true);
         var first = pending?.Decisions.FirstOrDefault();
         if (first == null || !Enum.TryParse<DecisionKind>(first.Kind, out var kind)) return new HudAction(HudActionKind.EndTurn, EndTurnLabel, null, true);
         var label = DecisionLabels.GetValueOrDefault(kind, first.Kind);

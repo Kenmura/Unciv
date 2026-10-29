@@ -618,7 +618,7 @@ Scenario `host-screen`.
 
 *A saved hosted game resumed: it listens again with an invite, and shows the players who were in it.* (`host-screen/resumed.png`)
 
-## C035 (ticket not Done or unknown)
+## C035 Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views)
 
 Lobby screen: slot table with colour and ready, nation and colour picker, read-only settings, chat, host controls (kick, close, AI, Start), the joiner's view and a refusal for different rules.
 
@@ -647,6 +647,28 @@ Scenario `lobby`.
 ![After the host kicked Friend B and closed the slot: slot 3 is Closed (Open undoes it), slot 4 is still Open and becomes AI at Start.](../Unciv.Godot.Harness/golden/lobby/kicked.png)
 
 *After the host kicked Friend B and closed the slot: slot 3 is Closed (Open undoes it), slot 4 is still Open and becomes AI at Start.* (`lobby/kicked.png`)
+
+## C036 (ticket not Done or unknown)
+
+Multiplayer turn bar: who has ended, deadline countdown, connection marks, Next turn / Undo end turn, resolving overlay and toasts for other humans' actions.
+
+Scenario `mp-turn`.
+
+![Turn bar under the buttons: 'Waiting for Alice, Bob', countdown 1:05, both players green and Playing; Next turn and Next unit bottom right.](../Unciv.Godot.Harness/golden/mp-turn/waiting.png)
+
+*Turn bar under the buttons: 'Waiting for Alice, Bob', countdown 1:05, both players green and Playing; Next turn and Next unit bottom right.* (`mp-turn/waiting.png`)
+
+![Alice (you) has ended (green Ended) and the button reads Undo end turn; the bar says 'Waiting for Bob (offline)' with Bob's dot red.](../Unciv.Godot.Harness/golden/mp-turn/ended-offline.png)
+
+*Alice (you) has ended (green Ended) and the button reads Undo end turn; the bar says 'Waiting for Bob (offline)' with Bob's dot red.* (`mp-turn/ended-offline.png`)
+
+![After Undo, Bob ends his turn: his row turns Ended, the bar says 'Waiting for Alice' and a toast reads 'Bob ended their turn'.](../Unciv.Godot.Harness/golden/mp-turn/other-ended.png)
+
+*After Undo, Bob ends his turn: his row turns Ended, the bar says 'Waiting for Alice' and a toast reads 'Bob ended their turn'.* (`mp-turn/other-ended.png`)
+
+![Both ended and the host is resolving: dimmed 'Resolving the turn / Waiting for the host' overlay, disabled 'Resolving turn...' button, and the refusal in the status line.](../Unciv.Godot.Harness/golden/mp-turn/resolving.png)
+
+*Both ended and the host is resolving: dimmed 'Resolving the turn / Waiting for the host' overlay, disabled 'Resolving turn...' button, and the refusal in the status line.* (`mp-turn/resolving.png`)
 
 ## C038 Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result
 

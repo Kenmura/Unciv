@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Include="..\Unciv.Godot\Play\IGameSession.cs" Link="Linked\IGameSession.cs" />
     <Compile Include="..\Unciv.Godot\Play\NetGameSession.cs" Link="Linked\NetGameSession.cs" />
+    <Compile Include="..\Unciv.Godot\Play\ITurnRoster.cs" Link="Linked\ITurnRoster.cs" />
   </ItemGroup>
 
   <ItemGroup>

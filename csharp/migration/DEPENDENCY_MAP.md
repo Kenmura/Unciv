@@ -251,7 +251,7 @@ flowchart TD
   class B025 waiting
   class B026 waiting
   class C006 ondeck
-  class C036 prog
+  class C036 review
   class C045 ondeck
   class C061 waiting
   class C062 waiting
@@ -370,7 +370,7 @@ xychart-beta
 | C076 | Available (waiting on C066) | C066 | 6 | Civilopedia and tooltip content |
 | C077 | Available (waiting on C066, C067) | C066, C067 | 6 | Victory, defeat and vote result screens |
 | B015 | Available (waiting on B003, B013) | B003, B013 | 5 | BNW: World Congress: founding, sessions, delegates, proposals, voting |
-| C036 | In-Progress [Claude] | C010, C011, T180, T202, T175 | 5 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
+| C036 | Needs-Review [Claude] | C010, C011, T180, T202, T175 | 5 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | C078 | Available (waiting on C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
 | C083 | Available (waiting on C081) | C081 | 5 | Unit art pipeline |
 | B004 | Available (waiting on B002, B003) | B002, B003 | 4 | BNW: Content uniques needing no new subsystem |

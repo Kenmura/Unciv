@@ -88,7 +88,7 @@ public class HudModelTests
     {
         var ended = new TurnStatusDto { Ended = ["Babylon"], Phase = "Playing" };
         var undo = HudModel.NextAction(Pending(), ended, "Babylon");
-        Assert.Equal((HudActionKind.UndoEndTurn, "Undo end turn", false), (undo.Kind, undo.Label, undo.Enabled));
+        Assert.Equal((HudActionKind.UndoEndTurn, "Undo end turn", true), (undo.Kind, undo.Label, undo.Enabled));
         Assert.Equal(HudActionKind.EndTurn, HudModel.NextAction(Pending(), ended, "Greece").Kind);
         var resolving = HudModel.NextAction(Pending(), new TurnStatusDto { Ended = [], Phase = "Resolving" }, "Babylon");
         Assert.Equal((HudActionKind.Resolving, false), (resolving.Kind, resolving.Enabled));

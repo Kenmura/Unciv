@@ -1,8 +1,10 @@
+using Unciv.Assets;
 using Unciv.Client.Net.Session;
 using Unciv.Commands;
 using Unciv.Commands.Events;
 using Unciv.Commands.Turn;
 using Unciv.Models.Ruleset;
+using Unciv.Net;
 using Unciv.Net.Remote;
 using Unciv.Net.Visibility;
 using Unciv.Queries;
@@ -24,7 +26,7 @@ namespace Unciv.GodotClient.Play;
 /// (a refusal "cancelled", also while the submit itself is waiting); `progress` is unused; the host keeps the turn ended, and calling again waits for the next turn without submitting End turn a second time.
 /// <see cref="ExportSaveAsync"/> is null: the host saves.</para>
 /// </summary>
-public sealed class NetGameSession : IGameSession, IAsyncDisposable
+public sealed class NetGameSession : IGameSession, ITurnRoster, IAsyncDisposable
 {
     /// <summary>How long a submit waits for the delta that carries its events after the host accepted it; past it the events are reported empty (the snapshot still catches up).</summary>
     private static readonly TimeSpan EventWait = TimeSpan.FromSeconds(30);
@@ -66,6 +68,18 @@ public sealed class NetGameSession : IGameSession, IAsyncDisposable
 
     public event Action<string>? Desynchronized;
 
+    /// <summary>C036: the humans of the game from the host's latest lobby view (slots of kind Human with a nation), in slot order; the host re-sends it when somebody connects or drops.</summary>
+    public IReadOnlyList<TurnRosterEntry> Roster => RosterOf(session.Lobby);
+
+    public event Action? RosterChanged;
+
+    private static List<TurnRosterEntry> RosterOf(LobbyState? lobby) => lobby == null ? [] :
+    [
+        .. lobby.Slots
+            .Where(it => it.Kind == "Human" && !string.IsNullOrEmpty(it.Nation))
+            .Select(it => new TurnRosterEntry(it.Nation!, string.IsNullOrEmpty(it.PlayerName) ? it.Nation! : it.PlayerName, it.Connected ?? false))
+    ];
+
     private static TaskCompletionSource NewSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     // ------------------------------------------------------------ the pump
@@ -83,6 +97,9 @@ public sealed class NetGameSession : IGameSession, IAsyncDisposable
                         break;
                     case DeltaApplied delta:
                         Apply(delta.Snapshot, new EventBatch(delta.Seq, DecodeEvents(delta)));
+                        break;
+                    case LobbyUpdated:
+                        Raise(() => RosterChanged?.Invoke());
                         break;
                     case Unciv.Client.Net.Session.Desynchronized lost:
                         Raise(() => Desynchronized?.Invoke(lost.Reason));
