@@ -80,7 +80,7 @@
 - [C093 Unit art by era: medieval and renaissance](#c093-unit-art-by-era-medieval-and-renaissance)
 - [C094 Unit art by era: industrial, modern and naval/air](#c094-unit-art-by-era-industrial-modern-and-navalair)
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
-- [C097 (ticket not Done or unknown)](#c097-ticket-not-done-or-unknown)
+- [C097 Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike)](#c097-graphics-quality-setting-with-an-ultra-preset-effects-chosen-by-the-ultra-graphics-spike)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
@@ -1626,7 +1626,7 @@ Scenario `unit-visuals`.
 
 *Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract.* (`unit-visuals/elephants.png`)
 
-## C097 (ticket not Done or unknown)
+## C097 Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike)
 
 Graphics quality picker (Low, High, Ultra) on the Display tab with the Ultra restart flow and the fallback note.
 
