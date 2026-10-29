@@ -50,7 +50,6 @@ public sealed class ClientSessionOptions
         (attempt, token) => Task.Delay(TimeSpan.FromSeconds(Math.Min(30, 1 << Math.Min(attempt - 1, 5))), token);
 
     public QueryRegistry? Queries { get; init; }
-    public CommandRegistry<GameInfo>? Commands { get; init; }
     public ISecureRandom? Random { get; init; }
 }
 
@@ -93,9 +92,10 @@ public sealed class ClientSession : IAsyncDisposable
     private string? gameId;
     private TaskCompletionSource? resyncWaiter;
 
-    private sealed class PendingCommand(Command message)
+    private sealed class PendingCommand(Command message, long ordinal)
     {
         public Command Message { get; } = message;
+        public long Ordinal { get; } = ordinal;
         public TaskCompletionSource<CommandOutcome> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
@@ -165,15 +165,16 @@ public sealed class ClientSession : IAsyncDisposable
         {
             if (stopped) return new CommandOutcome("", false, ClientCodes.SessionClosed, null);
             if (pending.Count >= MaxPendingCommands) return new CommandOutcome("", false, ClientCodes.TooManyPending, null);
-            var id = $"{idPrefix}-{nextCommand++}";
-            entry = new PendingCommand(new Command { ClientCmdId = id, CommandType = commandType, Payload = payload });
+            var ordinal = nextCommand++;
+            var id = $"{idPrefix}-{ordinal}";
+            entry = new PendingCommand(new Command { ClientCmdId = id, CommandType = commandType, Payload = payload }, ordinal);
             pending[id] = entry;
         }
 
         if (state is ClientSessionState.InGame or ClientSessionState.Syncing)
         {
             try { await SendAsync(entry.Message, cancellationToken).ConfigureAwait(false); }
-            catch (InvalidOperationException) { /* connection just dropped: resent after the resume */ }
+            catch (Exception e) when (IsConnectionGone(e)) { /* connection just dropped: resent after the resume */ }
         }
 
         using var registration = cancellationToken.Register(() =>
@@ -234,7 +235,7 @@ public sealed class ClientSession : IAsyncDisposable
     public async Task LeaveAsync()
     {
         try { await SendAsync(new Leave()).ConfigureAwait(false); }
-        catch (InvalidOperationException) { }
+        catch (Exception e) when (IsConnectionGone(e)) { }
         await StopAsync("left").ConfigureAwait(false);
     }
 
@@ -270,6 +271,8 @@ public sealed class ClientSession : IAsyncDisposable
                 await EndAsync(current == null ? ClientCodes.ConnectFailed : ClientCodes.ConnectionLost, refused: false).ConfigureAwait(false);
                 return;
             }
+            // The mirror may have missed deltas since the drop: IGameSession.Desynchronized must fire before the reconnect/resume (T180 note, T244).
+            Emit(new Desynchronized("reconnect"));
             if (++attempt > options.MaxReconnectAttempts)
             {
                 await EndAsync("reconnect-failed", refused: false).ConfigureAwait(false);
@@ -462,7 +465,8 @@ public sealed class ClientSession : IAsyncDisposable
     private async Task ResendPendingAsync(CancellationToken token)
     {
         List<PendingCommand> all;
-        lock (gate) all = [.. pending.Values.OrderBy(it => it.Message.ClientCmdId, StringComparer.Ordinal)];
+        // Submission order, not ClientCmdId text order: "10" sorts before "2" as a string, and the host must apply a player's commands in the order they were issued.
+        lock (gate) all = [.. pending.Values.OrderBy(it => it.Ordinal)];
         foreach (var entry in all) await SendAsync(entry.Message, token).ConfigureAwait(false);
     }
 
@@ -527,7 +531,7 @@ public sealed class ClientSession : IAsyncDisposable
         queries.FailAll();
         Emit(new Desynchronized(reason));
         try { await SendAsync(new ResyncRequest()).ConfigureAwait(false); }
-        catch (InvalidOperationException) { /* connection lost: the reconnect resyncs */ }
+        catch (Exception e) when (IsConnectionGone(e)) { /* connection lost: the reconnect resyncs */ }
     }
 
     private void HandleCommandResult(CommandResult result)
@@ -543,6 +547,9 @@ public sealed class ClientSession : IAsyncDisposable
     }
 
     // ------------------------------------------------------------ plumbing
+
+    /// <summary>A send that failed because the connection died (closed transport, broken pipe, disposed stream): not a command failure, the reconnect resends.</summary>
+    private static bool IsConnectionGone(Exception e) => e is InvalidOperationException or IOException or ObjectDisposedException;
 
     private async ValueTask SendAsync(Message message, CancellationToken cancellationToken = default)
     {

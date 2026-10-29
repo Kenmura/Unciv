@@ -497,6 +497,58 @@ public sealed class ClientNetSessionTests
         Assert.True((await task).Accepted);
     }
 
+    // T180 review finding: the resend order is submission order; ClientCmdId text order puts "10" before "2".
+    [Fact]
+    public async Task Submit_ResentCommandsKeepSubmissionOrderBeyondNine()
+    {
+        await using var rig = new ClientNetRig();
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        var next = rig.NewConnection();
+        await host.CloseAsync();
+        await rig.NextAsync<StateChanged>();
+        var tasks = Enumerable.Range(0, 12).Select(i => rig.Session.SubmitAsync("t" + i, EmptyObject)).ToList();
+        await rig.HandshakeAsync(next);
+        await next.ReceiveAsync<ResyncRequest>();
+        var sent = new List<string>();
+        for (var i = 0; i < 12; i++) sent.Add((await next.ReceiveAsync<Command>()).CommandType);
+        Assert.Equal(Enumerable.Range(0, 12).Select(i => "t" + i), sent);
+        Assert.All(tasks, it => Assert.False(it.IsCompleted));
+    }
+
+    // T180 review finding: a TCP broken pipe on the command send must not fault the caller while the command is pending and will be resent.
+    [Fact]
+    public async Task Submit_SendFailureWhileConnected_WaitsForTheAnswerInsteadOfFaulting()
+    {
+        using var identity = ClientIdentity.Generate();
+        var (clientEnd, hostEnd) = InMemoryTransport.CreatePair();
+        await using var session = new ClientSession(
+            _ => Task.FromResult<ITransport>(new CommandSendFailingTransport(clientEnd)),
+            new ClientSessionOptions
+            {
+                Identity = identity,
+                DisplayName = "A",
+                RulesetHash = "h",
+                ExpectedFingerprint = ClientNetRig.Fingerprint
+            });
+        var host = new FakeHostConnection(hostEnd);
+        var join = session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s1", Challenge = "c1", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        await host.ReceiveAsync<Join>();
+        await host.ReceiveAsync<Auth>();
+        await host.SendAsync(new JoinOk());
+        await host.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(5, 1)));
+        Assert.True((await join).Joined);
+        while (session.Game.Snapshot == null) await Task.Delay(10);
+
+        var task = session.SubmitAsync("a", EmptyObject);
+        await Task.Delay(100); // the send has thrown IOException inside the session by now
+        Assert.False(task.IsCompleted);
+        Assert.Equal(1, session.PendingCommandCount);
+        await session.DisposeAsync();
+        Assert.Equal(ClientCodes.SessionClosed, (await task).Code);
+    }
+
     [Fact]
     public async Task Submit_TooManyPending_IsRefusedLocally()
     {
@@ -562,6 +614,18 @@ public sealed class ClientNetSessionTests
         var s6 = ClientNetRig.Snap(6, 1, 2);
         await next.SendAsync(ClientNetRig.Delta(s5, s6));
         Assert.Equal(6, (await withGame.NextAsync<DeltaApplied>()).Seq);
+    }
+
+    // T180 review finding: the T180 note requires Desynchronized "on a sequence gap / reconnect"; IGameSession.Desynchronized documents the same for T244.
+    [Fact]
+    public async Task Reconnect_RaisesDesynchronizedBeforeResuming()
+    {
+        await using var rig = new ClientNetRig();
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        await host.CloseAsync();
+        var seen = await rig.CollectUntilAsync<StateChanged>();
+        Assert.Contains(seen, it => it is Desynchronized { Reason: "reconnect" });
+        Assert.Equal(ClientSessionState.Reconnecting, ((StateChanged)seen[^1]).State);
     }
 
     [Fact]
