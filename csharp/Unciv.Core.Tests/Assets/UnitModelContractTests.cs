@@ -46,6 +46,13 @@ public sealed class UnitModelContractTests
         return data.RootElement.GetProperty("rigid").GetProperty("units").EnumerateObject().Select(it => it.Name).ToList();
     }
 
+    /// <summary>T256: the rigid units built by <c>build-rigid-models.py</c> (the entries with a <c>build</c> archetype; the ram is C095's).</summary>
+    private static List<string> GeneratedRigidUnits()
+    {
+        using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientFolder, "Packs", "units", "attachments.json")));
+        return data.RootElement.GetProperty("rigid").GetProperty("units").EnumerateObject().Where(it => it.Value.TryGetProperty("build", out _)).Select(it => it.Name).ToList();
+    }
+
     [Fact]
     public void EveryUnitOfTheUnitsPackIsInTheManifestAndKeepsTheSixClips()
     {
@@ -106,7 +113,7 @@ public sealed class UnitModelContractTests
         }
     }
 
-    /// <summary>Every Gods &amp; Kings humanoid and mounted unit, the great people included (C084, C093, C094), has art; ships, siege, aircraft, missiles, helicopters, armour and spaceship parts stay generated blocks; the Battering Ram has a rigid model (C095).</summary>
+    /// <summary>Every Gods &amp; Kings unit, the great people, ships, siege, armour, aircraft, missiles and the helicopter included (C084, C093, C094, T256), has art; only the spaceship parts stay generated blocks; the Battering Ram has a rigid model (C095).</summary>
     [Fact]
     public void EveryHumanoidAndMountedUnitHasAModel()
     {
@@ -117,9 +124,9 @@ public sealed class UnitModelContractTests
         {
             var ruleset = RulesetCache.Get("Civ V - Gods & Kings")!;
             var keys = UnitsManifestKeys().EnumerateObject().Select(it => it.Name).ToHashSet();
-            string[] generated = ["Siege", "Melee Water", "Ranged Water", "Civilian Water", "Submarine", "Fighter", "Bomber", "Aircraft Carrier", "Atomic Bomber", "Missile", "Helicopter", "Armored"];
             var wanted = ruleset.Units.Values
-                .Where(it => !generated.Contains(it.UnitType) && !it.Name.StartsWith("SS ", StringComparison.Ordinal)).Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
+                .Where(it => !it.Name.StartsWith("SS ", StringComparison.Ordinal)).Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
+            foreach (var rigid in new[] { "Trireme", "Catapult", "Tank", "Fighter", "Destroyer", "Helicopter Gunship", "Guided Missile", "Carrier", "Great Admiral" }) Assert.Contains(rigid, wanted);
             Assert.Contains("Settler", wanted);
             Assert.Contains("War Elephant", wanted);
             Assert.Contains("Marauder", wanted);
@@ -182,6 +189,38 @@ public sealed class UnitModelContractTests
         Assert.False(doc.TryGetProperty("skins", out _));
         Assert.False(doc.TryGetProperty("animations", out _));
         Assert.Contains("TeamColor", doc.GetProperty("materials").EnumerateArray().Select(it => it.GetProperty("name").GetString()));
+
+    }
+
+    /// <summary>T256: the rigid models have a TeamColor surface, no clips, and armour models expose the top-level turret <c>Part1</c> and gun <c>Part2</c> that <c>UnitNode</c> turns; the unit's rigid family is not <c>None</c>.</summary>
+    [Fact]
+    public void RigidModelsHaveNoClipsAndArmourExposesItsTurret()
+    {
+        RulesetCache.Clear();
+        var jsons = Path.Combine(ClientFolder, "..", "..", "android", "assets", "jsons");
+        RulesetCache.LoadRulesets(new DirectoryRulesetFileSource(jsons, Path.Combine(jsons, "no mods here")), noMods: true);
+        try
+        {
+            var ruleset = RulesetCache.Get("Civ V - Gods & Kings")!;
+            var rigid = GeneratedRigidUnits();
+            Assert.True(rigid.Count >= 44);
+            foreach (var name in rigid)
+            {
+                var type = ruleset.Units[name].UnitType;
+                var kind = RigidMotion.KindOf(type);
+                Assert.True(kind != RigidKind.None || name == "Great Admiral", name + " (" + type + ") is not rigid");
+                var doc = Glb(File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", "models", "unit", name + ".glb")));
+                Assert.False(doc.TryGetProperty("animations", out _), name);
+                Assert.False(doc.TryGetProperty("skins", out _), name);
+                Assert.Contains("TeamColor", doc.GetProperty("materials").EnumerateArray().Select(it => it.GetProperty("name").GetString()));
+                var top = doc.GetProperty("scenes")[0].GetProperty("nodes").EnumerateArray().Select(it => doc.GetProperty("nodes")[it.GetInt32()].GetProperty("name").GetString()).ToList();
+                Assert.Equal(kind == RigidKind.Armor, top.Contains("Part1") && top.Contains("Part2"));
+            }
+        }
+        finally
+        {
+            RulesetCache.Clear();
+        }
     }
 
     [Fact]

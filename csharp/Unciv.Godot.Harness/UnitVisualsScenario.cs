@@ -55,6 +55,22 @@ public sealed class UnitVisualsScenario : Scenario
         "Great Artist", "Great Merchant", "Great Engineer", "Great Prophet", "Great General", "Missionary", "Inquisitor",
     ];
 
+    // T256: the rigid models (no skeleton, no clips; RigidMotion moves them) that are not already in the gallery's first rows (Catapult, Cannon, Tank, Trireme, Destroyer and Fighter are)
+    private static readonly string[] ShipRoster =
+    [
+        "Work Boats", "Galley", "Quinquereme", "Dromon", "Galleass", "Turtle Ship", "Caravel", "Privateer", "Sea Beggar", "Frigate", "Ship of the Line", "Ironclad",
+        "Submarine", "Nuclear Submarine", "Battleship", "Missile Cruiser", "Carrier", "Great Admiral",
+    ];
+
+    private static readonly string[] LandRigidRoster = ["Ballista", "Trebuchet", "Hwach'a", "Artillery", "Rocket Artillery", "Landship", "Panzer", "Modern Armor", "Giant Death Robot"];
+
+    private static readonly string[] AirRoster =
+    [
+        "Triplane", "Zero", "Great War Bomber", "Bomber", "B17", "Jet Fighter", "Stealth Bomber", "Atomic Bomb", "Guided Missile", "Nuclear Missile", "Helicopter Gunship",
+    ];
+
+    private static readonly string[] RigidRoster = ["Catapult", "Cannon", "Tank", "Trireme", "Destroyer", "Fighter", .. ShipRoster, .. LandRigidRoster, .. AirRoster];
+
     private static readonly Slot[] Slots =
     [
         new("Settler", Rome, 100), new("Warrior", Rome, 100), new("Horseman", Rome, 100), new("Archer", Rome, 60), new("Catapult", Rome, 100),
@@ -70,14 +86,21 @@ public sealed class UnitVisualsScenario : Scenario
         // C094: the industrial and modern roster (rows 11 to 16)
         .. ModernRoster.Select((unit, i) => new Slot(unit, i % 2 == 0 ? Rome : Egypt, 100)),
         new("Battering Ram", Rome, 100), // C095: a rigid model file (no skeleton, no clips), siege by name
+        // T256: ships on the coast, then siege and armour, then aircraft (rows 17 to 25)
+        .. ShipRoster.Select((unit, i) => new Slot(unit, i % 2 == 0 ? Rome : Egypt, 100, Terrain: "Coast")),
+        .. LandRigidRoster.Select((unit, i) => new Slot(unit, i % 2 == 0 ? Egypt : Rome, 100)),
+        .. AirRoster.Select((unit, i) => new Slot(unit, i % 2 == 0 ? Rome : Egypt, 100)),
     ];
 
     // C080/C083: the units of the bundled units pack are model files (TeamColor material, animation player, humanoid bodies and riders on a generated horse); every other unit is a generated block with a Banner
     private static readonly string[] ModelUnits = [.. EraRoster, .. LaterRoster, .. ModernRoster, "Infantry", "Musketman", "Warrior", "Longswordsman", "Swordsman", "Archer", "Crossbowman", "Scout", "Worker", "Great Scientist", "Horseman", "Knight"];
     private static readonly string[] MountedUnits = ["Horseman", "Knight", "Horse Archer", "Chariot Archer", "War Chariot", "Companion Cavalry", "Cataphract", "War Elephant", "African Forest Elephant", "Camel Archer", "Keshik", "Conquistador", "Naresuan's Elephant", "Mandekalu Cavalry", "Lancer", "Sipahi", "Hakkapeliitta", "Cavalry", "Cossack", "Hussar", "Khan"];
-    private static bool IsRigidModel(UnitNode n) => n.Unit.Name == RigidMotion.BatteringRam;
+    private static bool IsRigidModel(UnitNode n) => n.Unit.Name == RigidMotion.BatteringRam || RigidRoster.Contains(n.Unit.Name); // C095 the ram, T256 the rest
     private static bool IsModel(UnitNode n) => ModelUnits.Contains(n.Unit.Name);
     private static IEnumerable<Node3D> FigureModels(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => f.GetChild<Node3D>(0));
+    /// <summary>The model's meshes' box in the model's own frame (its parts are direct children of the root).</summary>
+    private static Aabb Extent(Node3D model) => model.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>()
+        .Select(mi => mi.Transform * mi.Mesh.GetAabb()).Aggregate((a, b) => a.Merge(b));
     private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
     private static bool HoldsIdle(AnimationPlayer p) => p.AssignedAnimation == UnitModelContract.IdleClip && !p.IsPlaying() && p.CurrentAnimationPosition > 0f;
     private static bool Textured(UnitNode n) => FigureModels(n).SelectMany(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
@@ -161,8 +184,9 @@ public sealed class UnitVisualsScenario : Scenario
                 nodes.All(n => Figures(n) == n.FigureCount && n.FigureCount == UnitVisuals.FigureCount(Of(n.Unit.Name).Units[n.Unit.Name], Of(n.Unit.Name)))),
             new AssertQuery("a generated group has one initials billboard whatever its size; a model file carries none (its art identifies it)", () => nodes.All(n => Glyphs(n) == (IsModel(n) || IsRigidModel(n) ? 0 : 1))),
             new AssertQuery("every figure of a unit carries its civ's colour", () => nodes.All(CivColoured)),
-            new AssertQuery("the units pack's units are CC0 model files: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player", () =>
-                nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n))),
+            new AssertQuery("the units pack's units are CC0 model files: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player; the rigid models (T256) are model files with the TeamColor material but neither a player nor a skeleton", () =>
+                nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n))
+                && nodes.Where(IsRigidModel).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 0 && MapMaterials.TeamColourOf(m) != null))),
             new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for (nearly) every unit", () =>
                 nodes.Where(IsModel).SelectMany(n => n.Players).All(HoldsIdle)
                 && nodes.Where(IsModel).Select(n => n.Players[0].CurrentAnimationPosition).Distinct().Count() >= nodes.Count(IsModel) * 9 / 10), // 1000 phases: a few of the 33 model units may collide
@@ -221,11 +245,15 @@ public sealed class UnitVisualsScenario : Scenario
                 && nodes.Where(n => IsModel(n) && !MountedUnits.Contains(n.Unit.Name)).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 1))),
             new AssertQuery("rigid motion applies only to clipless ships, siege, armour and aircraft", () =>
                 node("Catapult", null).Rigid == RigidKind.Siege && node("Tank", null).Rigid == RigidKind.Armor && node("Destroyer", null).Rigid == RigidKind.Ship && node("Fighter", null).Rigid == RigidKind.Air
-                && nodes.Where(n => n.Rigid != RigidKind.None).Select(n => n.Unit.Name).Order().SequenceEqual(new[] { "Battering Ram", "Catapult", "Cannon", "Destroyer", "Fighter", "Tank", "Trireme" }.Order())
+                && nodes.Where(n => n.Rigid != RigidKind.None).All(IsRigidModel) && nodes.Where(IsRigidModel).All(n => n.Rigid != RigidKind.None)
                 && nodes.Where(IsModel).All(n => n.Rigid == RigidKind.None)),
-            new AssertQuery("C094: the 25 industrial and modern units (and the Infantry) are all model files with the six clips, none a generated block; the ships, aircraft and armour stay generated", () =>
+            new AssertQuery("C094: the 25 industrial and modern units (and the Infantry) are all model files with the six clips, none a generated block; the ships, aircraft and armour are the clipless rigid models of T256", () =>
                 ModernRoster.Append("Infantry").All(u => nodes.Where(n => n.Unit.Name == u).All(n => IsModel(n) && HasClips(n) && n.Rigid == RigidKind.None))
-                && new[] { "Trireme", "Destroyer", "Fighter", "Tank" }.All(u => !IsModel(node(u, null)))),
+                && new[] { "Trireme", "Destroyer", "Fighter", "Tank" }.All(u => !IsModel(node(u, null)) && IsRigidModel(node(u, null)) && node(u, null).Players.Count == 0)),
+            new AssertQuery("T256: every rigid unit is a model file, all 44 of them; the carrier and the battleship are longer than the trireme, the aircraft stand on a pole above their shadow, the helicopter on skids", () =>
+                RigidRoster.Length == 44 && RigidRoster.All(u => nodes.Count(n => n.Unit.Name == u) == 1 && IsRigidModel(node(u, null)))
+                && Extent(FigureModels(node("Carrier", null)).First()).Size.Z > Extent(FigureModels(node("Trireme", null)).First()).Size.Z * 1.1f
+                && AirRoster.All(u => MathF.Abs(Extent(FigureModels(node(u, null)).First()).Position.Y) < 0.02f)),
             new AssertQuery("C093: the 18 medieval and renaissance units (and the Musketman) are all model files with the six clips, none a generated block; Naresuan's Elephant stands on the taller mount", () =>
                 LaterRoster.Append("Musketman").All(u => nodes.Where(n => n.Unit.Name == u).All(n => IsModel(n) && HasClips(n) && n.Rigid == RigidKind.None))
                 && SaddleHeight(node("Naresuan's Elephant", null)) > SaddleHeight(node("Knight", null)) * 1.08f),
@@ -305,7 +333,7 @@ public sealed class UnitVisualsScenario : Scenario
             }),
             new AssertQuery("posed rigid figures moved off their slots (siege recoiled, armour turret turned, ship rolled, aircraft dived) and clip units did not", () =>
                 node("Catapult", null).RigidPose.Recoil > 0.1f
-                && node("Tank", null).GetNode<Node3D>("Figure0").GetNode<Node3D>("Tank/Part2").Rotation.Y > 0.3f
+                && FigureModels(node("Tank", null)).First().GetNode<Node3D>("Part2").Rotation.Y > 0.3f
                 && node("Destroyer", null).GetNode<Node3D>("Figure0").Basis.GetEuler().Z != 0f
                 && node("Fighter", null).GetNode<Node3D>("Figure0").Basis.GetEuler().X != 0f
                 && node("Warrior", Rome).RigidPose == RigidPose.Rest),
@@ -317,13 +345,35 @@ public sealed class UnitVisualsScenario : Scenario
             }),
             new WaitFrames(2),
             new Capture("rigid", "Close view of the Tank mid-shot, posed by the code-driven rigid motion: the hull has kicked back and the turret has swung off the target line (catapult, destroyer and fighter pose the same way)"),
+            new Act("frame the ships", () =>
+            {
+                view.FocusOn(MapLayout.TileTop(coord(95).X, coord(95).Y, 0f));
+                view.SetView(40f);
+                view.SetZoom(6.5f);
+            }),
+            new WaitFrames(2),
+            new Capture("ships", "The ships of the rigid roster, oared galleys and sailing ships, ironclad, submarines and the modern warships and carrier, in red and blue civ colours (generated models, T256)"),
+            new Act("frame the siege and armour", () =>
+            {
+                view.FocusOn(MapLayout.TileTop(coord(109).X, coord(109).Y, 0f));
+                view.SetZoom(6.5f);
+            }),
+            new WaitFrames(2),
+            new Capture("siege-armour", "The lower gallery: siege engines (ballista, trebuchet, hwach'a, artillery, rocket artillery) and armour (landship, panzer, modern armor, giant death robot) with civ-coloured pennants, between the ships and the aircraft (T256)"),
+            new Act("frame the aircraft", () =>
+            {
+                view.FocusOn(MapLayout.TileTop(coord(119).X, coord(119).Y, 0f));
+                view.SetZoom(6.5f);
+            }),
+            new WaitFrames(2),
+            new Capture("air", "Aircraft, missiles and the helicopter as generated models: aircraft hover on a pole above their shadow, the helicopter stands on its skids (T256)"),
             new Act("rigid units back to rest", () =>
             {
                 foreach (var n in nodes) n.RestRigid();
             }),
             new AssertQuery("resting restores every rigid figure to its slot and turret", () =>
                 nodes.Where(n => n.Rigid != RigidKind.None).All(n => n.RigidPose == RigidPose.Rest)
-                && node("Tank", null).GetNode<Node3D>("Figure0").GetNode<Node3D>("Tank/Part2").Rotation.Y == 0f),
+                && FigureModels(node("Tank", null)).First().GetNode<Node3D>("Part2").Rotation.Y == 0f),
     ];
 
     private static int Bones(UnitNode n, string bone) => FigureModels(n).Sum(m => m.FindChildren("*", nameof(Skeleton3D), true, false).OfType<Skeleton3D>().Count(sk => sk.FindBone(bone) >= 0));

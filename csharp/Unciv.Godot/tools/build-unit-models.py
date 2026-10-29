@@ -598,10 +598,11 @@ def main(source, pack):
         path = os.path.join(models, name + ".glb")
         print(f"unit/{name}: {write_glb(path, horse, merged)} bytes (mounted)")
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"
-    for name in data.get("rigid", {}).get("units", {}):  # C095: models without skeleton or clips
-        doc, binary = build_ram()
-        path = os.path.join(models, name + ".glb")
-        print(f"unit/{name}: {write_glb(path, doc, binary)} bytes (rigid)")
+    for name, unit in data.get("rigid", {}).get("units", {}).items():  # C095: models without skeleton or clips; T256: the ones with a "build" key come from build-rigid-models.py
+        if "build" not in unit:
+            doc, binary = build_ram()
+            path = os.path.join(models, name + ".glb")
+            print(f"unit/{name}: {write_glb(path, doc, binary)} bytes (rigid)")
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"
     manifest = {"keys": dict(sorted(keys.items())), "pack": "units"}
     with open(os.path.join(pack, "manifest.json"), "w") as f:
