@@ -2,17 +2,53 @@ using System.Globalization;
 using Unciv.Commands;
 using Unciv.Commands.Empire;
 using Unciv.Queries.Empire;
+using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Assets;
 
 /// <summary>One technology placed in the tree. <see cref="GridColumn"/> and <see cref="GridRow"/> are zero-based positions with unused leading columns and rows removed.</summary>
-public sealed record TechNode(string Name, string Era, int GridColumn, int GridRow, string State, string Label, Rgb Fill, IReadOnlyList<string> Prerequisites, string Description);
+public sealed record TechNode(string Name, string Era, int GridColumn, int GridRow, string State, string Label, Rgb Fill, IReadOnlyList<string> Prerequisites, string Description)
+{
+    /// <summary>C070: the research cost in science.</summary>
+    public int Cost { get; init; }
+
+    /// <summary>C070: science already put into it.</summary>
+    public int Progress { get; init; }
+
+    /// <summary>C070: turns until it is done at the current science rate; null when science per turn is not positive.</summary>
+    public int? Turns { get; init; }
+
+    /// <summary>C070: 0 for the current research, 1 and up for the techs queued after it, null when not queued.</summary>
+    public int? QueuePosition { get; init; }
+
+    /// <summary>C070: what the tech unlocks (units, buildings, wonders, improvements), for the icon row; empty when no ruleset was given.</summary>
+    public IReadOnlyList<TechUnlock> Unlocks { get; init; } = [];
+
+    /// <summary>C070: the tech's icon (<c>icon/tech/&lt;name&gt;</c>).</summary>
+    public AssetKey IconKey => AssetKey.Of(RulesetAssetKeys.TechIcon, Name);
+
+    /// <summary>C070: the share researched, 0 to 1 (a researched tech is 1).</summary>
+    public double Fraction => State == TechScreenModel.Researched ? 1.0 : Cost > 0 ? Math.Clamp((double)Progress / Cost, 0.0, 1.0) : 0.0;
+
+    /// <summary>C070: the tech being researched right now.</summary>
+    public bool IsCurrent => QueuePosition == 0 && State != TechScreenModel.Researched;
+}
+
+/// <summary>C070: something a tech unlocks. <see cref="Kind"/> is Unit, Building, Wonder or Improvement; <see cref="Icon"/> is its icon key.</summary>
+public sealed record TechUnlock(string Kind, string Name, AssetKey Icon);
+
+/// <summary>C070: the columns <see cref="FirstColumn"/> to <c>FirstColumn + Columns - 1</c> that belong to one era; one header band is drawn per span.</summary>
+public sealed record EraSpan(string Era, int FirstColumn, int Columns);
 
 /// <summary>A prerequisite link of the tree: <see cref="From"/> must be researched before <see cref="To"/>.</summary>
 public sealed record TechEdge(string From, string To);
 
 /// <summary>The tree as drawn: nodes in column, row order, the links between them, the size of the grid and one heading (era name) per column.</summary>
-public sealed record TechLayout(IReadOnlyList<TechNode> Nodes, IReadOnlyList<TechEdge> Edges, int Columns, int Rows, IReadOnlyList<string> ColumnEras);
+public sealed record TechLayout(IReadOnlyList<TechNode> Nodes, IReadOnlyList<TechEdge> Edges, int Columns, int Rows, IReadOnlyList<string> ColumnEras)
+{
+    /// <summary>C070: one span per run of columns with the same era (a column without a tech has no era and belongs to no span), so a header is drawn once per era.</summary>
+    public IReadOnlyList<EraSpan> EraSpans => TechScreenModel.EraSpans(ColumnEras);
+}
 
 /// <summary>A button of the tech panel and the command it sends; <see cref="Why"/> explains a disabled one. <see cref="Command"/> is null exactly when the button is disabled.</summary>
 public sealed record TechAction(string Id, string Label, bool Enabled, string Why, GameCommand? Command);
@@ -39,7 +75,7 @@ public static class TechScreenModel
     /// The tree: techs that have a column and are not hidden for this civ (<c>Unavailable</c>), ordered by column, row, name (ordinal). A tech that lists a prerequisite which is not
     /// placed gets no link for it. The grid starts at the smallest column and row actually used.
     /// </summary>
-    public static TechLayout Layout(TechTreeResult tree)
+    public static TechLayout Layout(TechTreeResult tree, RulesetClass? ruleset = null)
     {
         var placed = tree.Techs.Where(it => it.Column != null && it.State != Unavailable).ToList();
         if (placed.Count == 0) return new TechLayout([], [], 0, 0, []);
@@ -47,7 +83,14 @@ public static class TechScreenModel
         int minRow = placed.Min(it => it.Row);
         var nodes = placed
             .OrderBy(it => it.Column).ThenBy(it => it.Row).ThenBy(it => it.Name, StringComparer.Ordinal)
-            .Select(it => new TechNode(it.Name, it.Era, it.Column!.Value - minColumn, it.Row - minRow, it.State, Label(it), PlaceholderPalette.ForTechState(it.State), it.Prerequisites, it.Description))
+            .Select(it => new TechNode(it.Name, it.Era, it.Column!.Value - minColumn, it.Row - minRow, it.State, Label(it), PlaceholderPalette.ForTechState(it.State), it.Prerequisites, it.Description)
+            {
+                Cost = it.Cost,
+                Progress = it.Progress,
+                Turns = it.Turns,
+                QueuePosition = it.QueuePosition,
+                Unlocks = ruleset == null ? [] : Unlocks(ruleset, it.Name),
+            })
             .ToList();
         var names = nodes.Select(it => it.Name).ToHashSet(StringComparer.Ordinal);
         var edges = nodes.SelectMany(node => node.Prerequisites.Where(names.Contains).Select(from => new TechEdge(from, node.Name))).ToList();
@@ -55,6 +98,50 @@ public static class TechScreenModel
         var eras = new string[columns];
         for (int i = 0; i < columns; i++) eras[i] = nodes.FirstOrDefault(it => it.GridColumn == i)?.Era ?? "";
         return new TechLayout(nodes, edges, columns, nodes.Max(it => it.GridRow) + 1, eras);
+    }
+
+    /// <summary>C070: runs of equal, non-empty era names over the columns.</summary>
+    public static IReadOnlyList<EraSpan> EraSpans(IReadOnlyList<string> columnEras)
+    {
+        var spans = new List<EraSpan>();
+        for (int i = 0; i < columnEras.Count; i++)
+        {
+            if (columnEras[i].Length == 0) continue;
+            if (spans.Count > 0 && spans[^1].Era == columnEras[i] && spans[^1].FirstColumn + spans[^1].Columns == i) spans[^1] = spans[^1] with { Columns = spans[^1].Columns + 1 };
+            else spans.Add(new EraSpan(columnEras[i], i, 1));
+        }
+        return spans;
+    }
+
+    /// <summary>
+    /// C070: what researching <paramref name="tech"/> unlocks: the units and buildings (wonders apart) that require it and the improvements it enables, leaving out those unique to a nation.
+    /// Ordered by kind (units, buildings, wonders, improvements) then name (ordinal).
+    /// </summary>
+    public static IReadOnlyList<TechUnlock> Unlocks(RulesetClass ruleset, string tech)
+    {
+        var result = new List<TechUnlock>();
+        result.AddRange(ruleset.Units.Values.Where(it => it.RequiredTech == tech && it.UniqueTo == null).OrderBy(it => it.Name, StringComparer.Ordinal)
+            .Select(it => new TechUnlock("Unit", it.Name, AssetKey.Of(RulesetAssetKeys.UnitIcon, it.Name))));
+        result.AddRange(ruleset.Buildings.Values.Where(it => it.RequiredTech == tech && it.UniqueTo == null && !it.IsAnyWonder()).OrderBy(it => it.Name, StringComparer.Ordinal)
+            .Select(it => new TechUnlock("Building", it.Name, AssetKey.Of(RulesetAssetKeys.BuildingIcon, it.Name))));
+        result.AddRange(ruleset.Buildings.Values.Where(it => it.RequiredTech == tech && it.UniqueTo == null && it.IsAnyWonder()).OrderBy(it => it.Name, StringComparer.Ordinal)
+            .Select(it => new TechUnlock("Wonder", it.Name, AssetKey.Of(RulesetAssetKeys.BuildingIcon, it.Name))));
+        result.AddRange(ruleset.TileImprovements.Values.Where(it => it.TechRequired == tech && it.UniqueTo == null).OrderBy(it => it.Name, StringComparer.Ordinal)
+            .Select(it => new TechUnlock("Improvement", it.Name, AssetKey.Of(RulesetAssetKeys.ImprovementIcon, it.Name))));
+        return result;
+    }
+
+    /// <summary>
+    /// C070: the search filter. An empty (or blank) query matches every tech; otherwise a tech matches when the query is part of its name, of the name of something it unlocks, or of a line of
+    /// the engine's unlock text that is not an entry of its unit and building lists (those are covered by <see cref="TechNode.Unlocks"/>; the rest carries the stats, e.g. "+1 Science"). Case-insensitive; <paramref name="translate"/> also matches the names as the player sees them.
+    /// </summary>
+    public static bool Matches(TechNode node, string query, Func<string, string>? translate = null)
+    {
+        string needle = query.Trim();
+        if (needle.Length == 0) return true;
+        bool Has(string text) => text.Contains(needle, StringComparison.OrdinalIgnoreCase);
+        bool HasName(string name) => Has(name) || (translate != null && Has(translate(name)));
+        return HasName(node.Name) || node.Unlocks.Any(it => HasName(it.Name)) || UnlockLines(node).Any(it => !it.StartsWith('•') && Has(it));
     }
 
     /// <summary>Two lines: the name, then the research state (cost, progress and turns).</summary>
@@ -126,7 +213,7 @@ public static class TechScreenModel
 
         var actions = new List<TechAction>();
         if (path!.SequenceEqual(tree.Queue)) actions.Add(Disabled("Research", "Research now", "Already the research plan."));
-        else actions.Add(Enabled("Research", "Research now", path!));
+        else actions.Add(Enabled("Research", path!.Count > 1 ? PathLabel(tree, path) : "Research now", path!));
 
         if (tech.State == Queued) actions.Add(Disabled("Enqueue", "Add to queue", "Already queued."));
         else actions.Add(Enabled("Enqueue", "Add to queue", [.. tree.Queue, .. PathTo(tree, techName, tree.Queue.ToHashSet(StringComparer.Ordinal))!]));
@@ -141,6 +228,14 @@ public static class TechScreenModel
             actions.Add(kept.Count == 0 ? Disabled("Dequeue", "Remove from queue", "The queue cannot be empty; research something else instead.") : Enabled("Dequeue", "Remove from queue", kept));
         }
         return actions;
+    }
+
+    /// <summary>C070: the label of the research button for a tech that needs others first: "Research path (3 techs, 12 turns)"; the turns are left out when science per turn is not positive.</summary>
+    public static string PathLabel(TechTreeResult tree, IReadOnlyList<string> path)
+    {
+        var turns = path.Select(it => Find(tree, it)?.Turns).ToList();
+        string total = turns.All(it => it != null) ? $", {I(turns.Sum(it => it!.Value))} turns" : "";
+        return $"Research path ({I(path.Count)} techs{total})";
     }
 
     /// <summary>

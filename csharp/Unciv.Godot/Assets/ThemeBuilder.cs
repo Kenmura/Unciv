@@ -212,6 +212,18 @@ public static class ThemeBuilder
         Hex(UiVariants.CityTileForeign, UiTokens.Danger.Scale(50), UiTokens.Danger);
         Hex(UiVariants.CityTileUnowned, UiTokens.Inset, UiTokens.BorderSubtle);
 
+        // tech tree node cards: the content margin is the card's own, the pressed state is the selection (a lifted fill and a bright 2 px border)
+        Box Node(Rgb fill, Rgb border, int borderWidth = UiTokens.BorderWidth) => new() { Fill = C(fill), Border = C(border), BorderWidth = borderWidth };
+        void TechNode(string name, Rgb fill, Rgb border, Rgb text, int borderWidth = UiTokens.BorderWidth) =>
+            Variation(name, new ButtonLook(
+                Node(fill, border, borderWidth), Node(UiTokens.Surface3, border, borderWidth), Node(UiTokens.Surface3, UiTokens.AccentHi, UiTokens.RingWidth), Node(fill, border, borderWidth),
+                text, text, text, text));
+        TechNode(UiVariants.TechNodeResearched, UiTokens.Surface1, UiTokens.BorderSubtle, UiTokens.TextSecondary);
+        TechNode(UiVariants.TechNodeCurrent, UiTokens.Surface2, UiTokens.Accent, UiTokens.TextPrimary, UiTokens.RingWidth);
+        TechNode(UiVariants.TechNodeQueued, UiTokens.Surface2, UiTokens.AccentLo, UiTokens.TextPrimary);
+        TechNode(UiVariants.TechNodeResearchable, UiTokens.Surface2, UiTokens.BorderStrong, UiTokens.TextPrimary);
+        TechNode(UiVariants.TechNodeLocked, UiTokens.Surface1, UiTokens.BorderSubtle, UiTokens.TextMuted);
+
         void Variation(string name, ButtonLook look)
         {
             theme.SetTypeVariation(name, "Button");

@@ -328,21 +328,29 @@ Scenario `city-b`.
 
 ## C019 Tech screen
 
-Tech screen: the tree by column and row with state colours, unlock list, research now / add to queue / remove from queue.
+Tech screen (redesigned in C070): node cards by column and row with era bands, prerequisite elbows, search, unlock list, and research now / add to queue / remove from queue in the footer.
 
 Scenario `tech`.
 
-![First open: Agriculture researched (green), its follow-ups available (blue), the rest locked (grey).](../Unciv.Godot.Harness/golden/tech/open.png)
+![First open at 640x480: one era band on top, node cards with tech icon, unlock icons and turns, Agriculture researched (green bar and check), Pottery selected, the highlighted path to it, details on the right and the actions in the footer.](../Unciv.Godot.Harness/golden/tech/open.png)
 
-*First open: Agriculture researched (green), its follow-ups available (blue), the rest locked (grey).* (`tech/open.png`)
+*First open at 640x480: one era band on top, node cards with tech icon, unlock icons and turns, Agriculture researched (green bar and check), Pottery selected, the highlighted path to it, details on the right and the actions in the footer.* (`tech/open.png`)
 
-![Bronze Working chosen: it and Mining are queued (amber) in prerequisite order; the side panel lists unlocks and the queue.](../Unciv.Godot.Harness/golden/tech/chosen.png)
+![Searching 'spearman': the techs that do not unlock it are dimmed and Bronze Working is scrolled into view.](../Unciv.Godot.Harness/golden/tech/search.png)
 
-*Bronze Working chosen: it and Mining are queued (amber) in prerequisite order; the side panel lists unlocks and the queue.* (`tech/chosen.png`)
+*Searching 'spearman': the techs that do not unlock it are dimmed and Bronze Working is scrolled into view.* (`tech/search.png`)
 
-![Pottery researched instead: the queue is replaced and Pottery is the current research.](../Unciv.Godot.Harness/golden/tech/replaced.png)
+![Bronze Working chosen: it and Mining carry queue number badges (1, 2) in prerequisite order; the side panel lists the unlocks.](../Unciv.Godot.Harness/golden/tech/chosen.png)
 
-*Pottery researched instead: the queue is replaced and Pottery is the current research.* (`tech/replaced.png`)
+*Bronze Working chosen: it and Mining carry queue number badges (1, 2) in prerequisite order; the side panel lists the unlocks.* (`tech/chosen.png`)
+
+![Pottery researched instead: the queue holds only it (badge 1, accent border as the current research) and the footer buttons are disabled.](../Unciv.Godot.Harness/golden/tech/replaced.png)
+
+*Pottery researched instead: the queue holds only it (badge 1, accent border as the current research) and the footer buttons are disabled.* (`tech/replaced.png`)
+
+![1280x720: the tree gets more room, with two era bands (Ancient, Classical), a wider detail panel with the unlocks and the research queue.](../Unciv.Godot.Harness/golden/tech/wide.png)
+
+*1280x720: the tree gets more room, with two era bands (Ancient, Classical), a wider detail panel with the unlocks and the research queue.* (`tech/wide.png`)
 
 ## C020 Policy screen
 
@@ -1180,7 +1188,7 @@ Scenario `unit-orders`.
 
 *Disband asks inline in the panel: a question with a red Disband button and Cancel.* (`unit-orders/disband-confirm.png`)
 
-## C069 (ticket not Done or unknown)
+## C069 City screen redesign
 
 City screen redesign: hex tiles drawn from theme variations, structured queue and buildable rows, keyboard and drag reorder, Raze as a confirmed Danger action.
 

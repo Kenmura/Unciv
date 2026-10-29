@@ -58,8 +58,8 @@ public sealed class TechScenario : Scenario
         List<string> ResearchableByEngine() => game.Ruleset.Technologies.Keys.Where(it => human.Tech.CanBeResearched(it) && !human.Tech.IsResearched(it)).Order(StringComparer.Ordinal).ToList();
         List<string> ResearchableOnScreen() => screen.Tech.Layout.Nodes.Where(it => it.State is TechScreenModel.Researchable or TechScreenModel.Queued).Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
 
-        var steps = new List<ScenarioStep>
-        {
+        List<ScenarioStep> steps =
+        [
             new WaitFrames(3),
             new Act("dismiss the banner", () => screen.Hud.HideBanner()),
             new Click(() => Centre(screen.TechButton)),
@@ -72,8 +72,10 @@ public sealed class TechScenario : Scenario
                 ResearchableOnScreen().Count > 0 && ResearchableOnScreen().SequenceEqual(ResearchableByEngine()) && Queue().Count == 0 && screen.Tech.HeaderText == "Nothing is being researched"),
             new AssertQuery("a locked tech is shown locked, the starting tech researched and its follow-ups researchable", () =>
                 screen.Tech.Layout.Nodes.Single(it => it.Name == "Bronze Working").State == "Locked" && screen.Tech.Layout.Nodes.Single(it => it.Name == "Agriculture").State == "Researched" && screen.Tech.Layout.Nodes.Single(it => it.Name == "Mining").State == "Researchable"),
-            new Capture("open", "The tech tree on first open: Agriculture researched, its follow-ups available, the rest locked"),
-        };
+            .. OpenLayoutAsserts(screen),
+            new Capture("open", "The tech tree on first open: era band on top, node cards with the tech icon, unlock icons and turns, Agriculture researched, Pottery selected; details and the footer actions on the right and below"),
+            .. SearchSteps(screen),
+        ];
 
         steps.AddRange(Pick("Bronze Working"));
         steps.AddRange(
@@ -134,9 +136,44 @@ public sealed class TechScenario : Scenario
                 Queue().SequenceEqual(new[] { "Pottery" }) && human.Tech.CurrentTechnologyName() == "Pottery"
                 && screen.Tech.Layout.Nodes.Single(it => it.Name == "Animal Husbandry").State == "Researchable"),
             new Capture("replaced", "Pottery researched instead: the queue holds only it"),
+            new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
+            new WaitFrames(4),
+            new AssertQuery("the tree survived the rebuild for the new breakpoint: same techs, selection and queue", () =>
+                screen.IsTechVisible && screen.Tech.SelectedTech == "Pottery" && screen.Tech.Layout.Nodes.All(it => screen.Tech.NodeButton(it.Name)?.IsInsideTree() == true)
+                && screen.Tech.ActionButton("Research") != null && screen.Tech.QueueText.Contains("1. Pottery", StringComparison.Ordinal)),
+            new Capture("wide", "1280x720: the tree gets more room next to a wider detail panel with the unlocks and the queue"),
             new Press("Close technology"),
             new AssertQuery("the screen closed and nothing was refused", () => !screen.IsTechVisible && screen.Tech.MessageText.Length == 0),
         ]);
         return steps;
     }
+
+    /// <summary>C070: the layout asserts of the freshly opened tree (no clipped labels, one header per era, a theme variation per state).</summary>
+    private static IEnumerable<ScenarioStep> OpenLayoutAsserts(GameScreen screen) =>
+    [
+            new AssertQuery("no node label clips: each card's content fits its width, the name is ellipsized when long and the full name is in the tooltip", () =>
+                screen.Tech.Layout.Nodes.All(it => screen.Tech.NodeButton(it.Name) is { } card
+                    && card.Content.GetCombinedMinimumSize().X <= card.Size.X + 0.5f && card.NameLabel.TextOverrunBehavior == TextServer.OverrunBehavior.TrimEllipsis
+                    && card.TooltipText.Contains(it.Name, StringComparison.Ordinal))),
+            new AssertQuery("each era header is drawn once, one band per era of the tree, and the bands are not clipped to nothing", () =>
+                screen.Tech.EraBands.Count > 1 && screen.Tech.EraBands.Count == screen.Tech.Layout.EraSpans.Count
+                && screen.Tech.EraBands.Select(it => it.Name.ToString()).Distinct().Count() == screen.Tech.EraBands.Count
+                && screen.Tech.Layout.EraSpans.Select(it => it.Era).Distinct().Count() == screen.Tech.Layout.EraSpans.Count && screen.Tech.EraBands.All(it => it.Size.X > 0f)),
+            new AssertQuery("the footer actions are inside the screen and every card has a theme variation of its state", () =>
+                screen.Tech.Layout.Nodes.All(it => screen.Tech.NodeButton(it.Name).NotNull().Variation.StartsWith("TechNode", StringComparison.Ordinal))
+                && screen.Tech.NodeButton("Agriculture").NotNull().Variation == "TechNodeResearched" && screen.Tech.NodeButton("Bronze Working").NotNull().Variation == "TechNodeLocked"),
+    ];
+
+    /// <summary>C070: the search box dims what does not match and clearing it lights every tech again.</summary>
+    private static IEnumerable<ScenarioStep> SearchSteps(GameScreen screen) =>
+    [
+            new Act("type 'spearman' into the search box", () => screen.Tech.Search("spearman")),
+            new WaitFrames(3),
+            new AssertQuery("search dims the techs that do not match: Bronze Working (unlocks the Spearman) stays bright, Pottery is dimmed, and the match is by what a tech unlocks", () =>
+                screen.Tech.MatchingTechs.Contains("Bronze Working") && !screen.Tech.MatchingTechs.Contains("Pottery")
+                && !screen.Tech.NodeButton("Bronze Working").NotNull().Dimmed && screen.Tech.NodeButton("Pottery").NotNull().Dimmed),
+            new Capture("search", "Searching 'spearman': the techs that do not unlock it are dimmed, Bronze Working is scrolled into view"),
+            new Act("clear the search", () => screen.Tech.Search("")),
+            new AssertQuery("clearing the search lights every tech again", () => screen.Tech.Layout.Nodes.All(it => !screen.Tech.NodeButton(it.Name).NotNull().Dimmed)),
+    ];
 }

@@ -299,4 +299,75 @@ public class TechScreenModelTests
         Assert.True(session.Submit(ScenarioGame.HumanA, trimmed.Command!).Accepted);
         Assert.Equal(["Pottery"], Ask(session).Queue);
     }
+
+    [Fact]
+    public void EraSpans_AreRunsOfEqualEraNamesAndEachEraIsOneSpan()
+    {
+        var spans = TechScreenModel.EraSpans(["Ancient era", "Ancient era", "Classical era", "", "Classical era", "Medieval era"]);
+        Assert.Equal([new EraSpan("Ancient era", 0, 2), new EraSpan("Classical era", 2, 1), new EraSpan("Classical era", 4, 1), new EraSpan("Medieval era", 5, 1)], spans);
+        var tree = Sample();
+        Assert.Equal([new EraSpan("Ancient era", 0, 3)], TechScreenModel.Layout(tree).EraSpans);
+        Assert.Empty(TechScreenModel.Layout(Tree([])).EraSpans);
+    }
+
+    [Fact]
+    public void Nodes_CarryCostProgressTurnsQueuePositionAndIcon()
+    {
+        var tree = Tree([Tech("Pottery", 1, 1, "Queued", cost: 40, progress: 10, turns: 3) with { QueuePosition = 0 }, Tech("Done", 2, 1, "Researched")], ["Pottery"]);
+        var layout = TechScreenModel.Layout(tree);
+        var pottery = layout.Nodes.Single(it => it.Name == "Pottery");
+        Assert.Equal((40, 10, 3, 0), (pottery.Cost, pottery.Progress, pottery.Turns, pottery.QueuePosition));
+        Assert.Equal(0.25, pottery.Fraction);
+        Assert.True(pottery.IsCurrent);
+        Assert.Equal(AssetKey.Of(RulesetAssetKeys.TechIcon, "Pottery"), pottery.IconKey);
+        var done = layout.Nodes.Single(it => it.Name == "Done");
+        Assert.Equal(1.0, done.Fraction);
+        Assert.False(done.IsCurrent);
+        Assert.Empty(done.Unlocks);
+    }
+
+    [Fact]
+    public void Unlocks_ListUnitsBuildingsWondersAndImprovementsOfTheTechByKindThenName()
+    {
+        var ruleset = Unciv.Models.Ruleset.RulesetCache.GetVanillaRuleset();
+        var unlocks = TechScreenModel.Unlocks(ruleset, "Bronze Working");
+        Assert.Contains(unlocks, it => it.Kind == "Unit" && it.Name == "Spearman");
+        Assert.All(unlocks, it => Assert.Contains(it.Kind, new[] { "Unit", "Building", "Wonder", "Improvement" }));
+        Assert.Equal(unlocks.Select(it => it.Kind).Order(StringComparer.Ordinal).Distinct().Count(), unlocks.Select(it => it.Kind).Distinct().Count());
+        var pottery = TechScreenModel.Unlocks(ruleset, "Pottery");
+        Assert.Contains(pottery, it => it.Kind == "Building" && it.Name == "Granary");
+        Assert.Empty(TechScreenModel.Unlocks(ruleset, "No such tech"));
+        var layout = TechScreenModel.Layout(Ask(ScenarioGame.Create(solo: true)), ruleset);
+        Assert.Contains(layout.Nodes.Single(it => it.Name == "Bronze Working").Unlocks, it => it.Name == "Spearman");
+        Assert.Equal(["Bronze Working"], layout.Nodes.Where(it => TechScreenModel.Matches(it, "spearman")).Select(it => it.Name));
+    }
+
+    [Fact]
+    public void Matches_FindsATechByNameUnlockOrStatAndEmptyQueryMatchesAll()
+    {
+        var node = TechScreenModel.Layout(Tree([Tech("Pottery", 1, 1, description: "Provides +1 Science\nUnlocks Granary")])).Nodes[0] with
+        {
+            Unlocks = [new TechUnlock("Building", "Granary", AssetKey.Of(RulesetAssetKeys.BuildingIcon, "Granary"))],
+        };
+        Assert.True(TechScreenModel.Matches(node, ""));
+        Assert.True(TechScreenModel.Matches(node, "   "));
+        Assert.True(TechScreenModel.Matches(node, "pott"));
+        Assert.True(TechScreenModel.Matches(node, "GRANARY"));
+        Assert.True(TechScreenModel.Matches(node, "science"));
+        Assert.False(TechScreenModel.Matches(node, "archery"));
+        var bullets = TechScreenModel.Layout(Tree([Tech("Farming", 1, 1, description: "Units enabled: \n • Warrior (upgrades to Spearman)\n+1 Food")])).Nodes[0];
+        Assert.False(TechScreenModel.Matches(bullets, "spearman"));
+        Assert.True(TechScreenModel.Matches(bullets, "food"));
+        Assert.True(TechScreenModel.Matches(node, "Topf", text => text == "Pottery" ? "Topferei" : text));
+        Assert.False(TechScreenModel.Matches(node, "Topf"));
+    }
+
+    [Fact]
+    public void ResearchLabel_NamesThePathWhenPrerequisitesAreNeeded()
+    {
+        Assert.Equal("Research now", TechScreenModel.Actions(Sample(researched: ["Agriculture"]), "Mining").Single(it => it.Id == "Research").Label);
+        Assert.Equal("Research path (2 techs, 10 turns)", TechScreenModel.Actions(Sample(researched: ["Agriculture"]), "Bronze").Single(it => it.Id == "Research").Label);
+        var noScience = Tree([Tech("a", 1, 1, "Researchable", turns: null), Tech("b", 2, 1, "Locked", ["a"], turns: null)]);
+        Assert.Equal("Research path (2 techs)", TechScreenModel.Actions(noScience, "b").Single(it => it.Id == "Research").Label);
+    }
 }

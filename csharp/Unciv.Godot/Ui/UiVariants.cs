@@ -26,6 +26,13 @@ public static class UiVariants
     public const string CityTileForeign = "CityTileForeign";
     public const string CityTileUnowned = "CityTileUnowned";
 
+    // Tech tree node cards (C070): one per research state, the pressed state is the selection
+    public const string TechNodeResearched = "TechNodeResearched";
+    public const string TechNodeCurrent = "TechNodeCurrent";
+    public const string TechNodeQueued = "TechNodeQueued";
+    public const string TechNodeResearchable = "TechNodeResearchable";
+    public const string TechNodeLocked = "TechNodeLocked";
+
     // Panels
     public const string PanelCard = "PanelCard";
     public const string PanelInset = "PanelInset";
@@ -68,6 +75,15 @@ public static class UiVariants
         _ => CityTileUnowned,
     };
 
+    /// <summary>C070: the node card variation of a tech: the current research first, then by engine state ("Researched", "Queued", "Researchable", anything else reads as locked).</summary>
+    public static string TechNode(string state, bool current) => current ? TechNodeCurrent : state switch
+    {
+        "Researched" => TechNodeResearched,
+        "Queued" => TechNodeQueued,
+        "Researchable" => TechNodeResearchable,
+        _ => TechNodeLocked,
+    };
+
     /// <summary>The city tile variations (they draw a hex instead of a box, so they have no focus ring stylebox).</summary>
     public static IReadOnlyList<string> CityTiles { get; } =
         [CityTileCenter, CityTileWorked, CityTileTaken, CityTileAvailable, CityTileUnavailable, CityTileForeign, CityTileUnowned];
@@ -79,6 +95,7 @@ public static class UiVariants
         (ButtonIcon, "Button"), (ButtonTab, "Button"), (ButtonChip, "Button"), (ButtonSegment, "Button"), (ButtonRow, "Button"),
         (CityTileCenter, "Button"), (CityTileWorked, "Button"), (CityTileTaken, "Button"), (CityTileAvailable, "Button"),
         (CityTileUnavailable, "Button"), (CityTileForeign, "Button"), (CityTileUnowned, "Button"),
+        (TechNodeResearched, "Button"), (TechNodeCurrent, "Button"), (TechNodeQueued, "Button"), (TechNodeResearchable, "Button"), (TechNodeLocked, "Button"),
         (PanelCard, "PanelContainer"), (PanelInset, "PanelContainer"), (PanelModal, "PanelContainer"), (PanelTooltip, "PanelContainer"),
         (PanelHeader, "PanelContainer"), (PanelDock, "PanelContainer"), (PanelSegmentTrack, "PanelContainer"),
         (PanelBadge, "PanelContainer"), (PanelBadgeAccent, "PanelContainer"), (PanelKeyHint, "PanelContainer"), (PanelCellEven, "PanelContainer"), (PanelCellOdd, "PanelContainer"),

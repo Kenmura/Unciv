@@ -346,19 +346,27 @@
   },
   "C019": {
     "scenario": "tech",
-    "about": "Tech screen: the tree by column and row with state colours, unlock list, research now / add to queue / remove from queue.",
+    "about": "Tech screen (redesigned in C070): node cards by column and row with era bands, prerequisite elbows, search, unlock list, and research now / add to queue / remove from queue in the footer.",
     "shots": [
       {
         "golden": "tech/open.png",
-        "caption": "First open: Agriculture researched (green), its follow-ups available (blue), the rest locked (grey)."
+        "caption": "First open at 640x480: one era band on top, node cards with tech icon, unlock icons and turns, Agriculture researched (green bar and check), Pottery selected, the highlighted path to it, details on the right and the actions in the footer."
+      },
+      {
+        "golden": "tech/search.png",
+        "caption": "Searching 'spearman': the techs that do not unlock it are dimmed and Bronze Working is scrolled into view."
       },
       {
         "golden": "tech/chosen.png",
-        "caption": "Bronze Working chosen: it and Mining are queued (amber) in prerequisite order; the side panel lists unlocks and the queue."
+        "caption": "Bronze Working chosen: it and Mining carry queue number badges (1, 2) in prerequisite order; the side panel lists the unlocks."
       },
       {
         "golden": "tech/replaced.png",
-        "caption": "Pottery researched instead: the queue is replaced and Pottery is the current research."
+        "caption": "Pottery researched instead: the queue holds only it (badge 1, accent border as the current research) and the footer buttons are disabled."
+      },
+      {
+        "golden": "tech/wide.png",
+        "caption": "1280x720: the tree gets more room, with two era bands (Ancient, Classical), a wider detail panel with the unlocks and the research queue."
       }
     ]
   },
