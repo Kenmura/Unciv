@@ -196,6 +196,22 @@ public static class ThemeBuilder
             Transparent(radius: 0), Transparent(UiTokens.Surface3, radius: 0), Transparent(UiTokens.Surface3, radius: 0), Transparent(radius: 0),
             UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextDisabled));
 
+        // city tiles: the box is invisible, the hex is drawn by the tile from "hex_fill" and "hex_border"
+        void Hex(string name, Rgb fill, Rgb border)
+        {
+            Variation(name, new ButtonLook(clear, clear, clear, clear, UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextDisabled));
+            theme.SetStylebox("focus", name, new StyleBoxEmpty());
+            theme.SetColor("hex_fill", name, C(fill));
+            theme.SetColor("hex_border", name, C(border));
+        }
+        Hex(UiVariants.CityTileCenter, UiTokens.AccentLo, UiTokens.Accent);
+        Hex(UiVariants.CityTileWorked, UiTokens.Success.Scale(50), UiTokens.Success);
+        Hex(UiVariants.CityTileTaken, UiTokens.Surface3, UiTokens.BorderStrong);
+        Hex(UiVariants.CityTileAvailable, UiTokens.Info.Scale(50), UiTokens.Info);
+        Hex(UiVariants.CityTileUnavailable, UiTokens.Surface1, UiTokens.BorderSubtle);
+        Hex(UiVariants.CityTileForeign, UiTokens.Danger.Scale(50), UiTokens.Danger);
+        Hex(UiVariants.CityTileUnowned, UiTokens.Inset, UiTokens.BorderSubtle);
+
         void Variation(string name, ButtonLook look)
         {
             theme.SetTypeVariation(name, "Button");

@@ -217,7 +217,7 @@
     "shots": [
       {
         "golden": "city-a/open.png",
-        "caption": "The capital's city screen: header, stats, focus picker and the tile grid with worked tiles lit."
+        "caption": "The capital's city screen at 640x480: header with the Rename action, Citizens/Production tabs, food and border meters, stat chips, specialists and focus on the left, and the hexagon tile grid with worked tiles green, available tiles blue and the centre in brass, each yield an icon and a number."
       },
       {
         "golden": "city-a/specialist.png",
@@ -225,7 +225,7 @@
       },
       {
         "golden": "city-a/tile-locked.png",
-        "caption": "A locked tile keeps its golden outline."
+        "caption": "A locked tile keeps a thick brass outline and a lock mark on its hexagon."
       }
     ]
   },
@@ -235,7 +235,7 @@
     "shots": [
       {
         "golden": "city-b/queued.png",
-        "caption": "The Production tab with Warrior, Monument and a perpetual Nothing item queued; Top/Up/Down/X per entry and Buy prices in gold."
+        "caption": "The Production tab with Warrior, Monument and a perpetual Nothing item queued as striped cards (icon, turns, progress, Top/Up/Down and a remove cross, Buy chip with the gold price), the buildable list as rows and the Buildings column with a red Raze city button."
       },
       {
         "golden": "city-b/bought.png",
@@ -1215,6 +1215,24 @@
       {
         "golden": "unit-orders/disband-confirm.png",
         "caption": "Disband asks inline in the panel: a question with a red Disband button and Cancel."
+      }
+    ]
+  },
+  "C069": {
+    "scenario": "city-b",
+    "about": "City screen redesign: hex tiles drawn from theme variations, structured queue and buildable rows, keyboard and drag reorder, Raze as a confirmed Danger action.",
+    "shots": [
+      {
+        "golden": "city-b/queued.png",
+        "caption": "Queue entries are cards with icon, turns and cost, and reorder by Ctrl+Up/Down or by dragging one onto another; buildable rows show icon, turns, cost and a gold Buy chip."
+      },
+      {
+        "golden": "city-b/raze-confirm.png",
+        "caption": "Raze city asks first: a modal names the city, the red Danger button confirms and Cancel has the focus; the screen behind is dimmed."
+      },
+      {
+        "golden": "city-b/wide.png",
+        "caption": "At 1280x720 the city screen keeps its structure: buildable list rows spread over the extra width, with cost and Buy chips at the right edge."
       }
     ]
   }

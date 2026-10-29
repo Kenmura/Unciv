@@ -9,7 +9,14 @@ using Unciv.Queries.Cities;
 namespace Unciv.Assets;
 
 /// <summary>One tile cell of the city screen: where to draw it (<see cref="Px"/>, <see cref="Py"/> in tile-radius units around the city, y down), its engine state and a compact yield label.</summary>
-public sealed record CityTileCell(int X, int Y, string State, bool Locked, float Px, float Py, string Label, string Tooltip);
+public sealed record CityTileCell(int X, int Y, string State, bool Locked, float Px, float Py, string Label, string Tooltip)
+{
+    /// <summary>C069: the tile's yields as numbers (the view draws a stat icon and the value for each); <see cref="Label"/> is the same as text.</summary>
+    public IReadOnlyList<Queries.Cities.StatAmount> Yields { get; init; } = [];
+}
+
+/// <summary>C069: a progress meter of the city header: the stat it is coloured by, the filled amount, the total and the caption beside it.</summary>
+public sealed record CityMeter(string Stat, float Value, float Max, string Caption);
 
 /// <summary>A specialist line: assigned of max slots, and whether the + and - buttons are offered (the engine refuses the same cases).</summary>
 public sealed record SpecialistRow(string Name, int Assigned, int Max, bool CanAdd, bool CanRemove);
@@ -27,6 +34,9 @@ public sealed record ForeignCityText(string Title, IReadOnlyList<string> Lines);
 /// </summary>
 public static class CityScreenModel
 {
+    /// <summary>The circumradius of a tile hexagon in the units of <see cref="CityTileCell.Px"/> (neighbours are 1.732 apart, so a little under 1 leaves a gap).</summary>
+    public const float HexCircumradius = 0.96f;
+
     /// <summary>Title line: name, size and the notable flags.</summary>
     public static string Title(CityPanelResult city)
     {
@@ -57,6 +67,14 @@ public static class CityScreenModel
         ];
     }
 
+    /// <summary>C069: the growth meter ("Food 5/20 (+2/turn), grows in 8 turns"), the same words as the first info line.</summary>
+    public static CityMeter FoodMeter(CityPanelResult city) =>
+        new("Food", city.Growth.FoodStored, city.Growth.FoodToNextPopulation, InfoLines(city)[0]);
+
+    /// <summary>C069: the border meter (culture stored toward the next tile), the same words as the second info line.</summary>
+    public static CityMeter BorderMeter(CityPanelResult city) =>
+        new("Culture", city.Borders.CultureStored, city.Borders.CultureToNextTile, InfoLines(city)[1]);
+
     /// <summary>The city's totals, one entry per nonzero stat, for the stat block.</summary>
     public static IReadOnlyList<string> StatLines(CityPanelResult city) =>
         city.TotalStats.Select(it => $"{it.Stat} {Signed(it.Value)}").ToList();
@@ -77,8 +95,10 @@ public static class CityScreenModel
         {
             var world = HexMath.Hex2WorldCoords(new HexCoord(tile.Position.X, tile.Position.Y));
             string label = YieldLabel(tile.Stats);
-            cells.Add(new CityTileCell(tile.Position.X, tile.Position.Y, tile.State, tile.Locked,
-                world.x - centre.x, -(world.y - centre.y), label, TileTooltip(tile)));
+            cells.Add(new CityTileCell(tile.Position.X, tile.Position.Y, tile.State, tile.Locked, world.x - centre.x, -(world.y - centre.y), label, TileTooltip(tile))
+            {
+                Yields = tile.Stats,
+            });
         }
         return cells;
     }

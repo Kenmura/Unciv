@@ -8,19 +8,57 @@ using Unciv.Queries.Cities;
 namespace Unciv.Assets;
 
 /// <summary>One line of the production queue. The raise/lower/top/remove flags mirror what the engine's commands allow, so a button is disabled exactly when the engine would refuse.</summary>
-public sealed record QueueRow(int Index, string Name, string Label, bool IsPerpetual, bool CanTop, bool CanRaise, bool CanLower, bool CanRemove, IReadOnlyList<BuyOption> Buy);
+public sealed record QueueRow(int Index, string Name, string Label, bool IsPerpetual, bool CanTop, bool CanRaise, bool CanLower, bool CanRemove, IReadOnlyList<BuyOption> Buy)
+{
+    /// <summary>C069: the construction's icon.</summary>
+    public AssetKey Icon { get; init; }
+
+    /// <summary>C069: the production cost, null for a perpetual item.</summary>
+    public int? Cost { get; init; }
+
+    /// <summary>C069: production put in so far.</summary>
+    public int WorkDone { get; init; }
+
+    /// <summary>C069: turns to finish at the current rate, null when never (and for a perpetual item).</summary>
+    public int? Turns { get; init; }
+
+    /// <summary>C069: the finished share, 0 to 1 (0 for a perpetual item).</summary>
+    public double Progress => Cost is > 0 ? Math.Clamp((double)WorkDone / Cost.Value, 0, 1) : 0;
+
+    /// <summary>C069: the second line of the row: "5 turns - 12/30", or "perpetual".</summary>
+    public string Detail => Cost == null ? "perpetual" : $"{CityProductionModel.TurnsText(Turns)}, {WorkDone.ToString(CultureInfo.InvariantCulture)}/{Cost.Value.ToString(CultureInfo.InvariantCulture)}";
+}
 
 /// <summary>One way to buy a construction: the engine's price and whether the engine would accept it now (<see cref="Why"/> explains a disabled one).</summary>
 public sealed record BuyOption(string Stat, int Cost, bool Allowed, string Label, string Why);
 
 /// <summary>One entry of the buildable list. <see cref="QueueWhy"/> is the reason the queue button is disabled (empty when <see cref="CanQueue"/>).</summary>
-public sealed record BuildableRow(string Name, string Category, string State, string Label, string Detail, string Tooltip, bool CanQueue, string QueueWhy, IReadOnlyList<BuyOption> Buy);
+public sealed record BuildableRow(string Name, string Category, string State, string Label, string Detail, string Tooltip, bool CanQueue, string QueueWhy, IReadOnlyList<BuyOption> Buy)
+{
+    /// <summary>C069: the construction's icon.</summary>
+    public AssetKey Icon { get; init; }
+
+    /// <summary>C069: the production cost, null for a perpetual item.</summary>
+    public int? Cost { get; init; }
+
+    /// <summary>C069: turns to finish at the current rate, null when never.</summary>
+    public int? Turns { get; init; }
+}
 
 /// <summary>A built building or wonder with the gold it sells for (the engine's price). Wonders cannot be sold.</summary>
-public sealed record BuildingRow(string Name, string Kind, int SellPrice, bool CanSell, string Label);
+public sealed record BuildingRow(string Name, string Kind, int SellPrice, bool CanSell, string Label)
+{
+    /// <summary>C069: the building's icon.</summary>
+    public AssetKey Icon => AssetKey.Of(RulesetAssetKeys.BuildingIcon, Name);
+}
 
-/// <summary>A button of the city state area (annex, raze, stop razing) and the command it sends.</summary>
-public sealed record CityStateAction(string Label, GameCommand Command, string Tooltip);
+/// <summary>A button of the city state area (annex, raze, stop razing) and the command it sends. A <see cref="Confirm"/> text means the player must confirm before the command is sent (C069: Raze).</summary>
+public sealed record CityStateAction(string Label, GameCommand Command, string Tooltip)
+{
+    public string? Confirm { get; init; }
+
+    public bool Dangerous => Confirm != null;
+}
 
 /// <summary>
 /// C018: the production half of the city screen as plain data, Godot-free so it is unit-tested. It formats the engine's <see cref="CityPanelResult"/> and
@@ -58,9 +96,39 @@ public static class CityProductionModel
             bool perpetual = entry.Cost == null;
             string progress = perpetual ? "perpetual" : $"{Turns(entry.Turns)}, {I(entry.WorkDone)}/{I(entry.Cost ?? 0)}";
             rows.Add(new QueueRow(i, entry.Name, $"{I(i + 1)}. {entry.Name} ({progress})", perpetual,
-                changeable && !perpetual && i > 0, changeable && i > 0, changeable && i != last, changeable, BuyOptions(city, list, entry.Name, gold)));
+                changeable && !perpetual && i > 0, changeable && i > 0, changeable && i != last, changeable, BuyOptions(city, list, entry.Name, gold))
+            {
+                Icon = IconFor(list.Entries.FirstOrDefault(it => it.Name == entry.Name)?.Category ?? (perpetual ? "Perpetual" : null), entry.Name),
+                Cost = entry.Cost,
+                WorkDone = entry.WorkDone,
+                Turns = entry.Turns,
+            });
         }
         return rows;
+    }
+
+    /// <summary>The icon of a construction: a unit's, a stat's for the perpetual gold / science / culture / faith items, the generic one for "Nothing", a building's otherwise (a queued entry the list does not know is taken for a building).</summary>
+    public static AssetKey IconFor(string? category, string name)
+    {
+        if (category == "Unit") return AssetKey.Of(RulesetAssetKeys.UnitIcon, name);
+        if (category == "Perpetual") return Enum.TryParse<Stat>(name, out _) ? AssetKey.Of(RulesetAssetKeys.StatIcon, name) : AssetKey.Of(RulesetAssetKeys.UiIcon, "Pause");
+        return AssetKey.Of(RulesetAssetKeys.BuildingIcon, name);
+    }
+
+    /// <summary>
+    /// C069: the commands that drag the entry <paramref name="from"/> to place <paramref name="to"/> (both indices of the queue as shown): a drop on the first place of a
+    /// non-perpetual entry is one Top, anything else a run of single Up / Down steps, which is what the buttons and Ctrl+Up / Ctrl+Down send. Empty when nothing moves or an index is outside the queue.
+    /// </summary>
+    public static IReadOnlyList<GameCommand> Drag(CityPanelResult city, int from, int to)
+    {
+        int count = city.Queue.Count;
+        if (city.IsPuppet || from == to || from < 0 || to < 0 || from >= count || to >= count) return [];
+        if (to == 0 && city.Queue[from].Cost != null) return [new ReorderQueue { CityId = city.CityId, Index = from, Move = QueueMove.Top }];
+        var move = to < from ? QueueMove.Up : QueueMove.Down;
+        int step = to < from ? -1 : 1;
+        var commands = new List<GameCommand>();
+        for (int at = from; at != to; at += step) commands.Add(new ReorderQueue { CityId = city.CityId, Index = at, Move = move });
+        return commands;
     }
 
     public static GameCommand Reorder(string cityId, QueueRow row, QueueMove move) => new ReorderQueue { CityId = cityId, Index = row.Index, Move = move };
@@ -81,7 +149,12 @@ public static class CityProductionModel
             string detail = entry.State == "rejected"
                 ? entry.Rejections.FirstOrDefault(it => it.ShouldShow)?.Message ?? "cannot be built"
                 : entry.Cost != null ? $"{Turns(entry.Turns)}, {I(entry.Cost.Value)}" : "perpetual";
-            rows.Add(new BuildableRow(entry.Name, entry.Category, entry.State, entry.Name + " - " + detail, detail, Tooltip(entry), why.Length == 0, why, BuyOptions(city, list, entry.Name, gold)));
+            rows.Add(new BuildableRow(entry.Name, entry.Category, entry.State, entry.Name + " - " + detail, detail, Tooltip(entry), why.Length == 0, why, BuyOptions(city, list, entry.Name, gold))
+            {
+                Icon = IconFor(entry.Category, entry.Name),
+                Cost = entry.Cost,
+                Turns = entry.Turns,
+            });
         }
         return rows;
     }
@@ -167,9 +240,12 @@ public static class CityProductionModel
         var actions = new List<CityStateAction>();
         if (city.IsPuppet) actions.Add(new CityStateAction("Annex city", new AnnexCity { CityId = city.CityId }, "Take control of the puppet city."));
         if (city.IsBeingRazed) actions.Add(new CityStateAction("Stop razing", new SetRazing { CityId = city.CityId, Raze = false }, "Keep the city."));
-        else if (!city.IsPuppet) actions.Add(new CityStateAction("Raze city", new SetRazing { CityId = city.CityId, Raze = true }, "Destroy the city, one citizen per turn."));
+        else if (!city.IsPuppet) actions.Add(new CityStateAction("Raze city", new SetRazing { CityId = city.CityId, Raze = true }, "Destroy the city, one citizen per turn.") { Confirm = $"Raze {city.Name}? It loses a citizen every turn until it is gone." });
         return actions;
     }
+
+    /// <summary>"never", "1 turn" or "N turns".</summary>
+    public static string TurnsText(int? turns) => Turns(turns);
 
     private static string Turns(int? turns) => turns == null ? "never" : turns == 1 ? "1 turn" : $"{I(turns.Value)} turns";
 

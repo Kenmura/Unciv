@@ -74,6 +74,7 @@ public class CityScreenModelTests
         var worked = cells.Single(it => it.State == "Worked");
         Assert.True(worked.Locked);
         Assert.Equal("F2", worked.Label);
+        Assert.Equal(["Food"], worked.Yields.Select(it => it.Stat));
         Assert.NotEqual(0f, worked.Px);
         Assert.NotEqual(0f, cells[2].Py);
         // North is up: a tile whose world y is above the city's gets a negative Py (y down), one below it a positive Py.
@@ -199,10 +200,12 @@ public class CityScreenModelTests
     }
 
     [Fact]
-    public void CityTileColour_IsDefinedPerState()
+    public void Meters_UseTheInfoLineWordsAndTheEnginesNumbers()
     {
-        foreach (var state in new[] { "Center", "Worked", "Taken", "Available", "Unavailable", "Foreign", "Unowned" })
-            Assert.NotEqual(default, PlaceholderPalette.ForCityTile(state));
-        Assert.Equal(PlaceholderPalette.ForCityTile("Unowned"), PlaceholderPalette.ForCityTile("whatever"));
+        var city = Panel();
+        var food = CityScreenModel.FoodMeter(city);
+        var borders = CityScreenModel.BorderMeter(city);
+        Assert.Equal(("Food", (float)city.Growth.FoodStored, (float)city.Growth.FoodToNextPopulation, CityScreenModel.InfoLines(city)[0]), (food.Stat, food.Value, food.Max, food.Caption));
+        Assert.Equal(("Culture", (float)city.Borders.CultureStored, (float)city.Borders.CultureToNextTile), (borders.Stat, borders.Value, borders.Max));
     }
 }

@@ -296,17 +296,17 @@ City screen A: info, tile grid, specialists, focus.
 
 Scenario `city-a`.
 
-![The capital's city screen: header, stats, focus picker and the tile grid with worked tiles lit.](../Unciv.Godot.Harness/golden/city-a/open.png)
+![The capital's city screen at 640x480: header with the Rename action, Citizens/Production tabs, food and border meters, stat chips, specialists and focus on the left, and the hexagon tile grid with worked tiles green, available tiles blue and the centre in brass, each yield an icon and a number.](../Unciv.Godot.Harness/golden/city-a/open.png)
 
-*The capital's city screen: header, stats, focus picker and the tile grid with worked tiles lit.* (`city-a/open.png`)
+*The capital's city screen at 640x480: header with the Rename action, Citizens/Production tabs, food and border meters, stat chips, specialists and focus on the left, and the hexagon tile grid with worked tiles green, available tiles blue and the centre in brass, each yield an icon and a number.* (`city-a/open.png`)
 
 ![A Merchant specialist at work: the specialist row reads 1/1 and the stats include it.](../Unciv.Godot.Harness/golden/city-a/specialist.png)
 
 *A Merchant specialist at work: the specialist row reads 1/1 and the stats include it.* (`city-a/specialist.png`)
 
-![A locked tile keeps its golden outline.](../Unciv.Godot.Harness/golden/city-a/tile-locked.png)
+![A locked tile keeps a thick brass outline and a lock mark on its hexagon.](../Unciv.Godot.Harness/golden/city-a/tile-locked.png)
 
-*A locked tile keeps its golden outline.* (`city-a/tile-locked.png`)
+*A locked tile keeps a thick brass outline and a lock mark on its hexagon.* (`city-a/tile-locked.png`)
 
 ## C018 City screen B: production queue, purchase, buildings
 
@@ -314,9 +314,9 @@ City screen B: production queue, buildable list, purchase, buildings, puppet and
 
 Scenario `city-b`.
 
-![The Production tab with Warrior, Monument and a perpetual Nothing item queued; Top/Up/Down/X per entry and Buy prices in gold.](../Unciv.Godot.Harness/golden/city-b/queued.png)
+![The Production tab with Warrior, Monument and a perpetual Nothing item queued as striped cards (icon, turns, progress, Top/Up/Down and a remove cross, Buy chip with the gold price), the buildable list as rows and the Buildings column with a red Raze city button.](../Unciv.Godot.Harness/golden/city-b/queued.png)
 
-*The Production tab with Warrior, Monument and a perpetual Nothing item queued; Top/Up/Down/X per entry and Buy prices in gold.* (`city-b/queued.png`)
+*The Production tab with Warrior, Monument and a perpetual Nothing item queued as striped cards (icon, turns, progress, Top/Up/Down and a remove cross, Buy chip with the gold price), the buildable list as rows and the Buildings column with a red Raze city button.* (`city-b/queued.png`)
 
 ![After buying the Monument: it is listed under Buildings with its sell price and a Sell button; gold fell from 500 to 300.](../Unciv.Godot.Harness/golden/city-b/bought.png)
 
@@ -1150,7 +1150,7 @@ Scenario `hud`.
 
 *The notification column with its drop-down list open under the toggle, floating over the map and the docks.* (`alerts/list.png`)
 
-## C068 (ticket not Done or unknown)
+## C068 Unit panel and action bar
 
 Unit panel and action bar: header with unit icon, name and standing order, stat chips (strength, moves, experience), health bar, an icon grid of at most two rows with a More popover for the rest, the inline danger confirm for Disband and the battle card (VS layout) for attacks. The duplicate permanent status line is gone: messages show briefly in a toast panel at the bottom.
 
@@ -1179,6 +1179,24 @@ Scenario `unit-orders`.
 ![Disband asks inline in the panel: a question with a red Disband button and Cancel.](../Unciv.Godot.Harness/golden/unit-orders/disband-confirm.png)
 
 *Disband asks inline in the panel: a question with a red Disband button and Cancel.* (`unit-orders/disband-confirm.png`)
+
+## C069 (ticket not Done or unknown)
+
+City screen redesign: hex tiles drawn from theme variations, structured queue and buildable rows, keyboard and drag reorder, Raze as a confirmed Danger action.
+
+Scenario `city-b`.
+
+![Queue entries are cards with icon, turns and cost, and reorder by Ctrl+Up/Down or by dragging one onto another; buildable rows show icon, turns, cost and a gold Buy chip.](../Unciv.Godot.Harness/golden/city-b/queued.png)
+
+*Queue entries are cards with icon, turns and cost, and reorder by Ctrl+Up/Down or by dragging one onto another; buildable rows show icon, turns, cost and a gold Buy chip.* (`city-b/queued.png`)
+
+![Raze city asks first: a modal names the city, the red Danger button confirms and Cancel has the focus; the screen behind is dimmed.](../Unciv.Godot.Harness/golden/city-b/raze-confirm.png)
+
+*Raze city asks first: a modal names the city, the red Danger button confirms and Cancel has the focus; the screen behind is dimmed.* (`city-b/raze-confirm.png`)
+
+![At 1280x720 the city screen keeps its structure: buildable list rows spread over the extra width, with cost and Buy chips at the right edge.](../Unciv.Godot.Harness/golden/city-b/wide.png)
+
+*At 1280x720 the city screen keeps its structure: buildable list rows spread over the extra width, with cost and Buy chips at the right edge.* (`city-b/wide.png`)
 
 ## C080 Unit model loader and contract
 

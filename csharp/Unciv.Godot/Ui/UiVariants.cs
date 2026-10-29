@@ -17,6 +17,15 @@ public static class UiVariants
     public const string ButtonSegment = "ButtonSegment";
     public const string ButtonRow = "ButtonRow";
 
+    // City tiles (C069): a hex drawn from the variation's colours "hex_fill" and "hex_border"; one per engine tile state
+    public const string CityTileCenter = "CityTileCenter";
+    public const string CityTileWorked = "CityTileWorked";
+    public const string CityTileTaken = "CityTileTaken";
+    public const string CityTileAvailable = "CityTileAvailable";
+    public const string CityTileUnavailable = "CityTileUnavailable";
+    public const string CityTileForeign = "CityTileForeign";
+    public const string CityTileUnowned = "CityTileUnowned";
+
     // Panels
     public const string PanelCard = "PanelCard";
     public const string PanelInset = "PanelInset";
@@ -47,11 +56,29 @@ public static class UiVariants
     public const string StatBarThin = "StatBarThin";
     public const string StatBarLabelled = "StatBarLabelled";
 
+    /// <summary>C069: the city tile variation of an engine tile state ("Center", "Worked", ...); an unknown state reads as unowned.</summary>
+    public static string CityTile(string state) => state switch
+    {
+        "Center" => CityTileCenter,
+        "Worked" => CityTileWorked,
+        "Taken" => CityTileTaken,
+        "Available" => CityTileAvailable,
+        "Unavailable" => CityTileUnavailable,
+        "Foreign" => CityTileForeign,
+        _ => CityTileUnowned,
+    };
+
+    /// <summary>The city tile variations (they draw a hex instead of a box, so they have no focus ring stylebox).</summary>
+    public static IReadOnlyList<string> CityTiles { get; } =
+        [CityTileCenter, CityTileWorked, CityTileTaken, CityTileAvailable, CityTileUnavailable, CityTileForeign, CityTileUnowned];
+
     /// <summary>Every variation with the Godot control type it extends.</summary>
     public static IReadOnlyList<(string Name, string Base)> All { get; } =
     [
         (ButtonPrimary, "Button"), (ButtonSecondary, "Button"), (ButtonGhost, "Button"), (ButtonDanger, "Button"),
         (ButtonIcon, "Button"), (ButtonTab, "Button"), (ButtonChip, "Button"), (ButtonSegment, "Button"), (ButtonRow, "Button"),
+        (CityTileCenter, "Button"), (CityTileWorked, "Button"), (CityTileTaken, "Button"), (CityTileAvailable, "Button"),
+        (CityTileUnavailable, "Button"), (CityTileForeign, "Button"), (CityTileUnowned, "Button"),
         (PanelCard, "PanelContainer"), (PanelInset, "PanelContainer"), (PanelModal, "PanelContainer"), (PanelTooltip, "PanelContainer"),
         (PanelHeader, "PanelContainer"), (PanelDock, "PanelContainer"), (PanelSegmentTrack, "PanelContainer"),
         (PanelBadge, "PanelContainer"), (PanelBadgeAccent, "PanelContainer"), (PanelKeyHint, "PanelContainer"), (PanelCellEven, "PanelContainer"), (PanelCellOdd, "PanelContainer"),

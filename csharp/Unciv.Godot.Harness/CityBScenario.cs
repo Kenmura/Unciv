@@ -2,6 +2,7 @@ using Godot;
 using Unciv.Commands;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Ui;
 using Unciv.Harness;
 using CityObject = Unciv.Logic.City.City;
 using Unciv.Net.Visibility;
@@ -94,6 +95,20 @@ public sealed class CityBScenario : Scenario
             new AssertQuery("Remove took the Gold item out", () => Queue().SequenceEqual(new[] { "Monument", "Warrior" }) && screen.City.Production.ButtonNamed("Remove_2") == null),
             new Capture("reordered", "Monument first, Warrior second, after reordering and removing the perpetual item"),
 
+            new Act("focus the Warrior's queue entry and press Ctrl+Up", () => ((Control)screen.City.Production.QueueEntries[1]).GrabFocus()),
+            new PressKey(Key.Up, Ctrl: true),
+            new WaitFrames(3),
+            new AssertQuery("Ctrl+Up moved the focused entry up, and the moved entry keeps the focus", () =>
+                Queue().SequenceEqual(new[] { "Warrior", "Monument" }) && screen.City.Production.QueueEntries[0].HasFocus()),
+            new PressKey(Key.Down, Ctrl: true),
+            new WaitFrames(3),
+            new AssertQuery("Ctrl+Down moved it back down", () => Queue().SequenceEqual(new[] { "Monument", "Warrior" }) && screen.City.Production.QueueEntries[1].HasFocus()),
+            new Act("drag the Warrior's entry onto the Monument's", () => screen.City.Production.MoveEntry(1, 0)),
+            new WaitFrames(3),
+            new AssertQuery("a drop on the first place put the Warrior first", () => Queue().SequenceEqual(new[] { "Warrior", "Monument" })),
+            new Act("drop it back", () => screen.City.Production.MoveEntry(0, 1)),
+            new WaitFrames(3),
+            new AssertQuery("the order is Monument, Warrior again", () => Queue().SequenceEqual(new[] { "Monument", "Warrior" })),
             new AssertQuery("the Warrior's Buy button is disabled with the engine's reason, because a unit stands in the city center", () =>
                 Disabled("Buy_Warrior_Gold") && screen.City.Production.ButtonNamed("Buy_Warrior_Gold").NotNull().TooltipText.Contains("cannot be bought", StringComparison.Ordinal)
                 && !List().Entries.First(it => it.Name == "Warrior").BuyCosts.First(it => it.Stat == "Gold").Allowed),
@@ -103,7 +118,7 @@ public sealed class CityBScenario : Scenario
                 quoted = List().Entries.First(it => it.Name == "Monument").BuyCosts.First(it => it.Stat == "Gold").Cost;
             }),
             new AssertQuery("the queued Monument's Buy button is enabled and shows the quoted price", () =>
-                quoted > 0 && quoted <= goldBefore && Enabled("QBuy_0_Gold") && screen.City.Production.ButtonNamed("QBuy_0_Gold").NotNull().Text == $"Buy {quoted} Gold"),
+                quoted > 0 && quoted <= goldBefore && Enabled("QBuy_0_Gold") && screen.City.Production.ButtonNamed("QBuy_0_Gold").NotNull().Text == quoted.ToString(System.Globalization.CultureInfo.InvariantCulture) && screen.City.Production.ButtonNamed("QBuy_0_Gold").NotNull().TooltipText.Contains("Buy", StringComparison.Ordinal)),
             new Click(() => At("QBuy_0_Gold")),
             new AssertQuery("buying the Monument took exactly the quoted price, built it, and the Buildings column offers to sell it", () =>
                 refusals.Count == 0 && human.Gold == goldBefore - quoted && city.CityConstructions.IsBuilt("Monument") && Queue().SequenceEqual(new[] { "Warrior" })
@@ -120,8 +135,16 @@ public sealed class CityBScenario : Scenario
                 sellPrice > 0 && human.Gold == goldBefore + sellPrice && !city.CityConstructions.IsBuilt("Monument") && screen.City.Production.ButtonNamed("Sell_Monument") == null),
 
             new Click(() => At("State_Raze city")),
-            new AssertQuery("razing the capital is refused by the engine and the screen says so", () =>
-                !city.IsBeingRazed && screen.City.MessageText.StartsWith("Refused:", StringComparison.Ordinal)),
+            new AssertQuery("Raze is a Danger button and asks first: the popup is open and nothing was sent", () =>
+                screen.City.Production.ButtonNamed("State_Raze city") is { } raze && raze.ThemeTypeVariation == UiVariants.ButtonDanger
+                && screen.City.ConfirmPopup.Visible && screen.City.ConfirmPopup.QuestionText.Contains(city.Name, StringComparison.Ordinal) && !city.IsBeingRazed && screen.City.MessageText.Length == 0),
+            new Capture("raze-confirm", "Raze asks for confirmation: the question names the city, the Danger button confirms, Cancel has the focus"),
+            new PressKey(Key.Escape),
+            new AssertQuery("Escape cancels the confirmation and leaves the city screen open", () => !screen.City.ConfirmPopup.Visible && screen.IsCityPanelVisible && !city.IsBeingRazed),
+            new Click(() => At("State_Raze city")),
+            new Click(() => Centre(screen.City.ConfirmPopup.ConfirmButton)),
+            new AssertQuery("confirming sends the command; razing the capital is refused by the engine and the screen says so", () =>
+                !screen.City.ConfirmPopup.Visible && !city.IsBeingRazed && screen.City.MessageText.StartsWith("Refused:", StringComparison.Ordinal)),
 
             new Act("open the puppet city on the Production tab", () => screen.OpenCityScreen(Dto(puppet))),
             new WaitFrames(2),
@@ -133,11 +156,15 @@ public sealed class CityBScenario : Scenario
             new AssertQuery("Annex made it an ordinary city that offers Raze", () =>
                 !puppet.IsPuppet && refusals.Count == 0 && Enabled("State_Raze city") && screen.City.Production.StateText.Length == 0 && Enabled("Build_Warrior")),
             new Click(() => At("State_Raze city")),
+            new Click(() => Centre(screen.City.ConfirmPopup.ConfirmButton)),
             new AssertQuery("Raze set the engine's flag and the screen offers Stop razing and says so", () =>
                 puppet.IsBeingRazed && Enabled("State_Stop razing") && screen.City.Production.StateText.Contains("being razed", StringComparison.Ordinal) && screen.City.TitleText.Contains("Being razed", StringComparison.Ordinal)),
             new Capture("razing", "A city being razed, with Stop razing offered"),
             new Click(() => At("State_Stop razing")),
             new AssertQuery("Stop razing cleared the flag", () => !puppet.IsBeingRazed && Enabled("State_Raze city")),
+            new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
+            new WaitFrames(4),
+            new Capture("wide", "1280x720, the second city with an empty queue: the buildable list takes the extra width, with the cost, the Buy chips and the Buildings column beside it"),
             new Press("Close city"),
             new AssertQuery("the screen closed", () => screen.OpenCity == null && !screen.IsCityPanelVisible),
         ];

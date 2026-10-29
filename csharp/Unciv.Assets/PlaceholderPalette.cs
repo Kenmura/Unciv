@@ -39,20 +39,6 @@ public static class PlaceholderPalette
         ["Faith"] = new Rgb(230, 230, 240),
     };
 
-    private static readonly Dictionary<string, Rgb> CityTileColours = new(StringComparer.Ordinal)
-    {
-        ["Center"] = new Rgb(150, 120, 60),
-        ["Worked"] = new Rgb(60, 130, 70),
-        ["Taken"] = new Rgb(80, 90, 110),
-        ["Available"] = new Rgb(70, 100, 150),
-        ["Unavailable"] = new Rgb(60, 60, 66),
-        ["Foreign"] = new Rgb(120, 60, 60),
-        ["Unowned"] = new Rgb(40, 44, 52),
-    };
-
-    /// <summary>Fill of a city-screen tile cell by its state (C017); an unknown state reads as unowned.</summary>
-    public static Rgb ForCityTile(string state) => CityTileColours.TryGetValue(state, out var c) ? c : CityTileColours["Unowned"];
-
     private static readonly Dictionary<string, Rgb> TechStateColours = new(StringComparer.Ordinal)
     {
         ["Researched"] = new Rgb(60, 130, 70),
@@ -91,8 +77,6 @@ public static class PlaceholderPalette
 
     /// <summary>C035: the swatch of a lobby colour name; a neutral grey for a name nobody here offers.</summary>
     public static Rgb ForLobbyColour(string? name) => LobbyColourTable.FirstOrDefault(it => it.Name == name) is { Name: not null } found ? found.Colour : TextDisabled;
-
-    public static Rgb LockedOutline { get; } = new(240, 200, 90);
 
     public static Rgb HorseBrown { get; } = new(120, 80, 45);
     public static Rgb Background => UiTokens.Bg1;

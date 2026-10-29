@@ -93,7 +93,10 @@ public sealed class ThemeScenario : Scenario
             new AssertQuery("titles use a different face than headings", () => theme.GetFont("font", UiVariants.LabelTitle) != theme.GetFont("font", UiVariants.LabelHeading)),
             new AssertQuery("every button variation has all five states and the 2 px focus ring", () => UiVariants.All.Where(v => v.Base == "Button").All(v =>
                 new[] { "normal", "hover", "pressed", "disabled", "focus" }.All(s => theme.HasStylebox(s, v.Name)) &&
-                theme.GetStylebox("focus", v.Name) is StyleBoxFlat { DrawCenter: false, BorderWidthLeft: 2 })),
+                (UiVariants.CityTiles.Contains(v.Name) || theme.GetStylebox("focus", v.Name) is StyleBoxFlat { DrawCenter: false, BorderWidthLeft: 2 }))),
+            new AssertQuery("each city tile variation has a hex fill and border colour, and they differ per state", () =>
+                UiVariants.CityTiles.All(v => theme.HasColor("hex_fill", v) && theme.HasColor("hex_border", v) && theme.GetStylebox("focus", v) is StyleBoxEmpty)
+                && UiVariants.CityTiles.Select(v => theme.GetColor("hex_fill", v)).Distinct().Count() == UiVariants.CityTiles.Count),
             new AssertQuery("the primary button is accent filled and the plain button is the secondary look", () =>
                 ((StyleBoxFlat)theme.GetStylebox("normal", UiVariants.ButtonPrimary)).BgColor == ProceduralAssets.ToColor(UiTokens.Accent)
                 && ((StyleBoxFlat)theme.GetStylebox("normal", "Button")).BgColor == ProceduralAssets.ToColor(UiTokens.Surface2)),

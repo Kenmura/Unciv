@@ -1,4 +1,5 @@
 using Unciv.Assets;
+using Unciv.Commands;
 using Unciv.Commands.City;
 using Unciv.Harness;
 using Unciv.Models.StatTypes;
@@ -238,5 +239,54 @@ public class CityProductionModelTests
         var both = CityProductionModel.StateActions(Panel(puppet: true, razed: true));
         Assert.Equal(["Annex city", "Stop razing"], both.Select(it => it.Label));
         Assert.All(plain.Concat(puppet).Concat(razing), it => Assert.NotEmpty(it.Tooltip));
+    }
+
+    [Fact]
+    public void StateActions_OnlyRazeIsDangerousAndNamesTheCity()
+    {
+        var raze = Assert.Single(CityProductionModel.StateActions(Panel()));
+        Assert.True(raze.Dangerous);
+        Assert.Contains("Ur", raze.Confirm, StringComparison.Ordinal);
+        Assert.All(CityProductionModel.StateActions(Panel(puppet: true, razed: true)), it => Assert.False(it.Dangerous));
+    }
+
+    [Fact]
+    public void Queue_RowsCarryStructuredNumbersAndIcons()
+    {
+        var list = List(Entry("Warrior", "Unit"), Entry("Monument", "Building"));
+        var rows = CityProductionModel.Queue(Panel(queue: ThreeQueue), list, 0);
+        Assert.Equal((30, 6, 4), (rows[0].Cost, rows[0].WorkDone, rows[0].Turns));
+        Assert.Equal(0.2, rows[0].Progress, 3);
+        Assert.Equal("4 turns, 6/30", rows[0].Detail);
+        Assert.Equal("perpetual", rows[2].Detail);
+        Assert.Equal(0, rows[2].Progress);
+        Assert.Equal(AssetKey.Of(RulesetAssetKeys.UnitIcon, "Warrior"), rows[0].Icon);
+        Assert.Equal(AssetKey.Of(RulesetAssetKeys.BuildingIcon, "Monument"), rows[1].Icon);
+        Assert.Equal(AssetKey.Of(RulesetAssetKeys.StatIcon, "Gold"), rows[2].Icon);
+        Assert.Equal(AssetKey.Of(RulesetAssetKeys.UiIcon, "Pause"), CityProductionModel.IconFor("Perpetual", "Nothing"));
+        var done = CityProductionModel.Queue(Panel(queue: [new QueueEntry("Done", 0, 5, 9)]), List(), 0);
+        Assert.Equal(1, done[0].Progress);
+    }
+
+    [Fact]
+    public void Drag_IsTopOrARunOfSteps()
+    {
+        var city = Panel(queue: ThreeQueue);
+        static (int Index, QueueMove Move) Of(GameCommand c) { var r = Assert.IsType<ReorderQueue>(c); return (r.Index, r.Move); }
+        Assert.Equal([(1, QueueMove.Top)], CityProductionModel.Drag(city, 1, 0).Select(Of));
+        Assert.Equal([(0, QueueMove.Down), (1, QueueMove.Down)], CityProductionModel.Drag(city, 0, 2).Select(Of));
+        Assert.Equal([(2, QueueMove.Up), (1, QueueMove.Up)], CityProductionModel.Drag(city, 2, 0).Select(Of)); // a perpetual entry has no Top
+        Assert.Empty(CityProductionModel.Drag(city, 1, 1));
+        Assert.Empty(CityProductionModel.Drag(city, 1, 3));
+        Assert.Empty(CityProductionModel.Drag(city, -1, 0));
+        Assert.Empty(CityProductionModel.Drag(Panel(puppet: true, queue: ThreeQueue), 1, 0));
+    }
+
+    [Fact]
+    public void Buildables_CarryIconCostAndTurns()
+    {
+        var row = Assert.Single(CityProductionModel.Buildables(Panel(), List(Entry("Warrior", "Unit", turns: 5, cost: 30)), 0));
+        Assert.Equal((30, 5), (row.Cost, row.Turns));
+        Assert.Equal(AssetKey.Of(RulesetAssetKeys.UnitIcon, "Warrior"), row.Icon);
     }
 }

@@ -21,28 +21,32 @@ public partial class CityScreen : PanelContainer
 {
     private const string Hint = "Click: work or free. Right click: lock.";
     private const int GridMargin = 8;
-    private const int CellFontSize = 9;
 
     private readonly IGameSession session;
     private readonly GameQueries queries;
     private readonly UiTheme theme;
-    private readonly Label title = new() { Name = "Title" };
-    private readonly Label info = new() { Name = "Info" };
+    private readonly ScreenFrame frame;
+    private readonly Label info = new() { Name = "Info", ThemeTypeVariation = UiVariants.LabelSecondary, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center };
     private readonly VBoxContainer side = new() { Name = "Side" };
     private readonly Control grid = new() { Name = "Grid", ClipContents = true, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
-    private readonly Label message = new() { Name = "Message" };
-    private readonly Dictionary<(int X, int Y), Button> tileButtons = [];
+    private readonly Label message = new() { Name = "Message", ThemeTypeVariation = UiVariants.LabelSmall };
+    private readonly Dictionary<(int X, int Y), CityTileButton> tileButtons = [];
     private readonly Dictionary<(string Name, bool Add), Button> specialistButtons = [];
+    private readonly Dictionary<string, StatChip> statChips = [];
+    private readonly PanelContainer meters = new() { Name = "Meters", ThemeTypeVariation = UiVariants.PanelCard };
     private IReadOnlyList<CityTileCell> cells = [];
     private OptionButton? focusChoice;
     private readonly HBoxContainer middle = new() { Name = "Middle", SizeFlagsVertical = SizeFlags.ExpandFill };
-    private readonly Button citizensTab = new() { Name = "ShowCitizens", Text = "Citizens".Tr(), ToggleMode = true };
-    private readonly Button productionTab = new() { Name = "ShowProduction", Text = "Production".Tr(), ToggleMode = true };
+    private readonly Segmented tabs = new(["Citizens", "Production"], "Citizens") { Name = "Tabs" };
     private readonly CityProductionView productionView;
     private readonly CityRenameView renameView;
-    private readonly Button renameButton = new() { Name = "RenameCity", Text = "Rename".Tr(), Visible = false };
+    private readonly CityConfirmView confirmView;
+    private readonly Button renameButton = new() { Name = "RenameCity", Text = "Rename".Tr(), Visible = false, ThemeTypeVariation = UiVariants.ButtonGhost };
     private bool showProduction;
     private int generation;
+    private string infoText = "";
+    private ConstructionListResult? lastList;
+    private int lastGold;
 
     public CityScreen(IGameSession gameSession, UiTheme uiTheme)
     {
@@ -54,39 +58,55 @@ public partial class CityScreen : PanelContainer
         MouseFilter = MouseFilterEnum.Stop;
         Theme = uiTheme.Theme;
 
+        frame = new ScreenFrame(uiTheme, "", closeLabel: "Close city");
+        frame.CloseRequested += Close;
+        AddChild(frame);
         var column = new VBoxContainer();
-        AddChild(column);
-        title.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
-        var head = new HBoxContainer();
-        column.AddChild(head);
-        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        head.AddChild(title);
+        column.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
+        frame.SetContent(column);
+        var top = new HBoxContainer();
+        top.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
+        tabs.ButtonFor("Citizens")!.Name = "ShowCitizens";
+        tabs.ButtonFor("Production")!.Name = "ShowProduction";
+        tabs.Chosen += option => SetProduction(option == "Production");
+        top.AddChild(tabs);
+        top.AddChild(info);
         renameButton.Pressed += OpenRename;
-        head.AddChild(renameButton);
-        citizensTab.Pressed += () => SetProduction(false);
-        productionTab.Pressed += () => SetProduction(true);
-        head.AddChild(citizensTab);
-        head.AddChild(productionTab);
-        message.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        message.ClipText = true;
-        message.HorizontalAlignment = HorizontalAlignment.Right;
-        head.AddChild(message);
-        var close = new Button { Name = "CityPanelClose", Text = "Close city".Tr() };
-        close.Pressed += Close;
-        head.AddChild(close);
-        column.AddChild(info);
+        top.AddChild(renameButton);
+        column.AddChild(top);
+        column.AddChild(meters);
         column.AddChild(middle);
-        productionView = new CityProductionView(Send, SetMessage, uiTheme);
+        productionView = new CityProductionView(Send, SetMessage, action => confirmView!.Open(action), uiTheme);
         column.AddChild(productionView);
-        side.AddThemeConstantOverride("separation", 2);
-        side.CustomMinimumSize = new Vector2(uiTheme.Px(190), 0f);
-        middle.AddChild(side);
+        message.ClipText = true;
+        column.AddChild(message);
+        side.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
+        var sideScroll = new ScrollContainer { Name = "SideScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(uiTheme.Px(200), 0f) };
+        side.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        sideScroll.AddChild(side);
+        middle.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S3));
+        middle.AddChild(sideScroll);
         middle.AddChild(grid);
         grid.Resized += LayoutGrid;
         renameView = new CityRenameView(command => Fire(Send(command)), uiTheme);
         AddChild(renameView); // a PanelContainer lays every child over the whole panel: the popup covers the screen
+        confirmView = new CityConfirmView(command => Fire(Send(command)), uiTheme);
+        AddChild(confirmView);
         SetProduction(false);
     }
+
+    public override void _EnterTree() => theme.LayoutChanged += OnLayoutChanged;
+
+    public override void _ExitTree() => theme.LayoutChanged -= OnLayoutChanged;
+
+    /// <summary>Sizes are fixed when a view is built, so a change of scale or breakpoint builds the open city's content again from the answers it has.</summary>
+    private void OnLayoutChanged()
+    {
+        if (Panel != null && Tiles != null && lastList != null && Visible) ShowAnswers(Panel, Tiles, lastList, lastGold);
+    }
+
+    /// <summary>The "Confirm" popup of a destructive city command (Raze).</summary>
+    public CityConfirmView ConfirmPopup => confirmView;
 
     /// <summary>The "Rename city" popup (C048).</summary>
     public CityRenameView RenamePopup => renameView;
@@ -111,13 +131,14 @@ public partial class CityScreen : PanelContainer
     {
         showProduction = production;
         middle.Visible = !production;
+        meters.Visible = !production && Panel != null;
         productionView.Visible = production;
-        citizensTab.SetPressedNoSignal(!production);
-        productionTab.SetPressedNoSignal(production);
+        tabs.ButtonFor("Citizens")!.SetPressedNoSignal(!production);
+        tabs.ButtonFor("Production")!.SetPressedNoSignal(production);
         SetMessage(production || Panel == null ? "" : Hint);
     }
 
-    public Button? Tab(bool production) => production ? productionTab : citizensTab;
+    public Button? Tab(bool production) => tabs.ButtonFor(production ? "Production" : "Citizens");
 
     /// <summary>The city on show (the snapshot entry it was opened with).</summary>
     public CityDto? City { get; private set; }
@@ -130,16 +151,16 @@ public partial class CityScreen : PanelContainer
     /// <summary>True when the city on show is not the viewer's: only its snapshot entry is displayed.</summary>
     public bool IsForeign { get; private set; }
 
-    public string TitleText => title.Text;
+    public string TitleText => frame.TitleText;
 
-    public string InfoText => info.Text;
+    public string InfoText => infoText;
 
     public string MessageText => message.Text;
 
     public IReadOnlyList<CityTileCell> Cells => cells;
 
     /// <summary>C056: the hover tooltip of a stat in the stat block (its sources and total), null when the city has no such stat.</summary>
-    public string? StatTooltip(string stat) => AllLabels(side).FirstOrDefault(it => it.Name == "Stat_" + stat)?.TooltipText;
+    public string? StatTooltip(string stat) => statChips.GetValueOrDefault(stat)?.TooltipText;
 
     public IReadOnlyList<string> SideTexts => AllLabels(side).Select(it => it.Text).ToList();
 
@@ -151,7 +172,7 @@ public partial class CityScreen : PanelContainer
 
     public event Action? Closed;
 
-    public Button? TileButton(int x, int y) => tileButtons.GetValueOrDefault((x, y));
+    public CityTileButton? TileButton(int x, int y) => tileButtons.GetValueOrDefault((x, y));
 
     public Button? SpecialistButton(string specialist, bool add) => specialistButtons.GetValueOrDefault((specialist, add));
 
@@ -188,14 +209,22 @@ public partial class CityScreen : PanelContainer
         Panel = panel;
         Tiles = tiles;
         renameButton.Visible = true;
-        Rebuild(panel, tiles);
-        productionView.Show(panel, list, bar?.Gold ?? 0, session.Ruleset);
+        lastList = list;
+        lastGold = bar?.Gold ?? 0;
+        ShowAnswers(panel, tiles, list, lastGold);
         SetTabs(visible: true);
+    }
+
+    private void ShowAnswers(CityPanelResult panel, CityTilesResult tiles, ConstructionListResult list, int gold)
+    {
+        Rebuild(panel, tiles);
+        productionView.Show(panel, list, gold, session.Ruleset);
     }
 
     public void Close()
     {
         generation++;
+        confirmView.Cancel();
         Visible = false;
         renameView.Cancel();
         renameButton.Visible = false;
@@ -227,8 +256,7 @@ public partial class CityScreen : PanelContainer
 
     private void SetTabs(bool visible)
     {
-        citizensTab.Visible = visible;
-        productionTab.Visible = visible;
+        tabs.Visible = visible;
     }
 
     private static string Id(CityDto city) => city.Own!.Id;
@@ -241,26 +269,36 @@ public partial class CityScreen : PanelContainer
         SetTabs(visible: false);
         SetProduction(false);
         var text = CityScreenModel.Foreign(city);
-        title.Text = text.Title.TrText();
+        frame.TitleLabel.Text = text.Title.TrText();
         info.Text = "";
+        infoText = "";
+        meters.Visible = false;
         foreach (string line in text.Lines) side.AddChild(new Label { Text = line.TrText() });
         SetMessage("");
     }
 
     private void Rebuild(CityPanelResult panel, CityTilesResult tiles)
     {
-        title.Text = CityScreenModel.Title(panel).TrText();
-        info.Text = string.Join("\n", CityScreenModel.InfoLines(panel).Select(it => it.TrText()));
+        frame.TitleLabel.Text = CityScreenModel.Title(panel).TrText();
+        var infoLines = CityScreenModel.InfoLines(panel);
+        infoText = string.Join("\n", infoLines.Select(it => it.TrText()));
+        info.Text = infoLines[2].TrText();
+        ShowMeters(panel);
         ClearSide();
+        var chips = new HFlowContainer { Name = "Stats" };
+        chips.AddThemeConstantOverride("h_separation", theme.Px(UiTokens.S2));
+        chips.AddThemeConstantOverride("v_separation", theme.Px(UiTokens.S1));
         foreach (var stat in panel.TotalStats)
         {
-            var label = new Label { Name = "Stat_" + stat.Stat, Text = $"{stat.Stat.ToString().TrText()} {(stat.Value >= 0 ? "+" : "")}{stat.Value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}", MouseFilter = MouseFilterEnum.Stop };
-            label.TooltipText = TooltipModel.ToPlain(TooltipModel.StatBreakdown(stat.Stat, panel.StatSources, stat.Value), text => text.Tr());
-            label.AddThemeColorOverride("font_color", ToColour(PlaceholderPalette.ForStat(stat.Stat)));
-            side.AddChild(label);
+            string value = $"{(stat.Value >= 0 ? "+" : "")}{stat.Value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}";
+            var chip = new StatChip(theme, stat.Stat, value) { Name = "Stat_" + stat.Stat, MouseFilter = MouseFilterEnum.Stop };
+            chip.TooltipText = TooltipModel.ToPlain(TooltipModel.StatBreakdown(stat.Stat, panel.StatSources, stat.Value), text => text.Tr());
+            statChips[stat.Stat] = chip;
+            chips.AddChild(chip);
         }
+        side.AddChild(chips);
         var specialists = CityScreenModel.Specialists(panel);
-        if (specialists.Count > 0) side.AddChild(new Label { Text = "Specialists".Tr() });
+        if (specialists.Count > 0) side.AddChild(new SectionHeader("Specialists"));
         foreach (var row in specialists) side.AddChild(SpecialistLine(panel, row));
         focusChoice = new OptionButton { Name = "Focus", Disabled = panel.IsPuppet };
         var focuses = CityScreenModel.Focuses(panel, religionEnabled: true);
@@ -270,6 +308,7 @@ public partial class CityScreen : PanelContainer
             if (focuses[i].Current) focusChoice.Selected = i;
         }
         focusChoice.ItemSelected += index => ChooseFocus(focuses[(int)index].Focus);
+        side.AddChild(new SectionHeader("Citizen focus"));
         side.AddChild(focusChoice);
         var reset = new Button { Name = "ResetCitizens", Text = "Reset citizens".Tr(), Disabled = panel.IsPuppet };
         reset.Pressed += () => Fire(Send(new ReassignPopulation { CityId = panel.CityId, ResetLocked = true }));
@@ -282,13 +321,35 @@ public partial class CityScreen : PanelContainer
         SetMessage(showProduction ? "" : Hint);
     }
 
+    private void ShowMeters(CityPanelResult panel)
+    {
+        foreach (var child in meters.GetChildren())
+        {
+            meters.RemoveChild(child);
+            child.QueueFree();
+        }
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", theme.Px(UiTokens.S4));
+        foreach (var meter in new[] { CityScreenModel.FoodMeter(panel), CityScreenModel.BorderMeter(panel) })
+        {
+            var column = new VBoxContainer { Name = "Meter_" + meter.Stat, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            column.AddThemeConstantOverride("separation", 0);
+            column.AddChild(new Label { Text = meter.Caption.TrText(), ThemeTypeVariation = UiVariants.LabelSmall, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis });
+            column.AddChild(new StatBar(theme, meter.Stat, meter.Value, meter.Max));
+            row.AddChild(column);
+        }
+        meters.AddChild(row);
+        meters.Visible = !showProduction;
+    }
+
     private Control SpecialistLine(CityPanelResult panel, SpecialistRow row)
     {
         var line = new HBoxContainer { Name = "Specialist_" + row.Name };
+        line.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
         line.AddChild(new Label { Text = $"{row.Name.TrText()} {row.Assigned}/{row.Max}", SizeFlagsHorizontal = SizeFlags.ExpandFill });
         foreach (bool add in new[] { false, true })
         {
-            var button = new Button { Name = (add ? "Add_" : "Remove_") + row.Name, Text = add ? "+" : "-", Disabled = add ? !row.CanAdd : !row.CanRemove };
+            var button = new Button { Name = (add ? "Add_" : "Remove_") + row.Name, Text = add ? "+" : "-", Disabled = add ? !row.CanAdd : !row.CanRemove, ThemeTypeVariation = UiVariants.ButtonChip };
             button.Pressed += () => Fire(Send(CityScreenModel.SpecialistCommand(panel.CityId, row, add)));
             specialistButtons[(row.Name, add)] = button;
             line.AddChild(button);
@@ -296,20 +357,9 @@ public partial class CityScreen : PanelContainer
         return line;
     }
 
-    private Button TileCell(CityPanelResult panel, CityTilesResult tiles, CityTileCell cell)
+    private CityTileButton TileCell(CityPanelResult panel, CityTilesResult tiles, CityTileCell cell)
     {
-        string text = string.Join("\n", cell.Label.Split(' ', StringSplitOptions.RemoveEmptyEntries).Chunk(2).Select(it => string.Join(' ', it)));
-        var button = new Button { Name = $"Tile_{cell.X}_{cell.Y}", Text = text.TrText(), TooltipText = cell.Tooltip.TrText(), ClipText = true };
-        button.AddThemeFontSizeOverride("font_size", theme.Px(CellFontSize));
-        var fill = ToColour(PlaceholderPalette.ForCityTile(cell.State));
-        foreach (string state in new[] { "normal", "hover", "pressed", "focus", "disabled" })
-        {
-            var box = new StyleBoxFlat { BgColor = state == "hover" ? fill.Lightened(0.2f) : fill };
-            int border = cell.Locked ? 3 : 1;
-            box.SetBorderWidthAll(theme.Px(border));
-            box.BorderColor = cell.Locked ? ToColour(PlaceholderPalette.LockedOutline) : ToColour(PlaceholderPalette.PanelBorder);
-            button.AddThemeStyleboxOverride(state, box);
-        }
+        var button = new CityTileButton(theme, cell);
         button.Pressed += () => OnTileClicked(panel, tiles, cell, lockIt: false);
         button.GuiInput += input =>
         {
@@ -367,16 +417,17 @@ public partial class CityScreen : PanelContainer
     {
         if (cells.Count == 0) return;
         var (minX, minY, maxX, maxY) = CityScreenModel.Bounds(cells);
-        const float cellSide = 1.4f; // tile-radius units; neighbours are at least 1.5 apart, so cells never overlap
-        float width = maxX - minX + cellSide;
-        float height = maxY - minY + cellSide;
+        const float radius = CityScreenModel.HexCircumradius; // tile-radius units: a hexagon is 2 radii wide and 0.866 * 2 high
+        float width = maxX - minX + 2f * radius;
+        float height = maxY - minY + CityTileButton.HeightFor(2f * radius);
         float scale = MathF.Min((grid.Size.X - GridMargin * 2) / width, (grid.Size.Y - GridMargin * 2) / height);
         if (scale <= 0f) return;
         var origin = new Vector2((grid.Size.X - width * scale) / 2f, (grid.Size.Y - height * scale) / 2f);
+        var cellSize = new Vector2(2f * radius * scale, CityTileButton.HeightFor(2f * radius * scale));
         foreach (var cell in cells)
         {
             var button = tileButtons[(cell.X, cell.Y)];
-            button.Size = new Vector2(cellSide * scale, cellSide * scale);
+            button.Size = cellSize;
             button.Position = origin + new Vector2((cell.Px - minX) * scale, (cell.Py - minY) * scale);
         }
     }
@@ -389,6 +440,7 @@ public partial class CityScreen : PanelContainer
             child.QueueFree();
         }
         specialistButtons.Clear();
+        statChips.Clear();
         focusChoice = null;
     }
 
@@ -404,6 +456,4 @@ public partial class CityScreen : PanelContainer
     }
 
     private void SetMessage(string text) => message.Text = text.TrText();
-
-    private static Color ToColour(Rgb rgb) => new(rgb.R / 255f, rgb.G / 255f, rgb.B / 255f);
 }

@@ -21,7 +21,7 @@ public partial class ScreenFrame : VBoxContainer
     private readonly HBoxContainer footerRow = new() { Alignment = BoxContainer.AlignmentMode.End };
     private readonly IconButton close;
 
-    public ScreenFrame(UiTheme theme, string titleText, bool closeButton = true)
+    public ScreenFrame(UiTheme theme, string titleText, bool closeButton = true, string closeLabel = "Close")
     {
         Name = "ScreenFrame";
         header.Bind(theme, 0);
@@ -30,7 +30,7 @@ public partial class ScreenFrame : VBoxContainer
         headerRow.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
         headerRow.AddChild(title);
         headerRow.AddChild(strip);
-        close = new IconButton(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "Close"), "Close", hotkey: "Esc") { Visible = closeButton };
+        close = new IconButton(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "Close"), closeLabel, hotkey: "Esc") { Visible = closeButton };
         close.Pressed += () => CloseRequested?.Invoke();
         headerRow.AddChild(close);
         header.AddChild(headerRow);
