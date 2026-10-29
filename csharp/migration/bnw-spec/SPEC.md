@@ -1140,8 +1140,8 @@ Uniques per civ (traits in §3.2). The unique units and buildings are in `Civili
 lines, their map order and its total are untouched): `Policies` = adopted policies (branch openers and tenets count, the `BranchComplete`
 bonus does not); `Great Works` = works standing in the civ's own cities; `Beliefs` = beliefs of the civ's religion (a pantheon-only religion counts);
 `Religion` = cities of any civ whose majority religion is the civ's (`NumberOfCitiesFollowingThisReligion`). The new lines are integral, but the Cities/Tiles lines are not, so the JavaHashMap order of the keys (deterministic) decides the rounding of the total; the total is the map-order sum, asserted in `BnwScoreTests`. [K]/[?]: whether Civ V counts openers/tenets in "policies" and works only in own cities is unverified
-(no decompiler output); the choice above is a deliberate deviation. The BNW population (4) and wonder (25) score constants noted in `ModConstants.cs`
-are not emitted by the generator (G&K 3/40 apply): follow-up.
+(no decompiler output); the choice above is a deliberate deviation. The BNW population (4) and wonder (25) score constants are emitted by the generator since B029
+(`SCORE_POPULATION_MULTIPLIER` / `SCORE_WONDER_MULTIPLIER` comments in `ModConstants.cs`, cross-checked with `Defines.tsv`); G&K keeps 3/40.
 
 ### 4.16 AI
 The Civ V grand-strategy spec (`../ai-spec/SPEC.md`) already covers the BNW grand strategy columns: culture/tourism

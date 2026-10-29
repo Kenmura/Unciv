@@ -7,6 +7,7 @@ using Unciv.Logic.GreatWorks;
 using Unciv.Logic.Map;
 using Unciv.Logic.Tourism;
 using Unciv.Logic.Trade.Routes;
+using Unciv.Models;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
@@ -168,6 +169,35 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         var c = Real().ModOptions.Constants;
         Assert.Equal((100, 2, 2), (c.InternationalTradeBase, c.BaseTourismPerGreatWork, c.BaseCulturePerGreatWork));
         Assert.True(c.TourismModifierOpenBorders > 0 && c.TourismModifierTradeRoute > 0 && c.TourismModifierSharedReligion > 0);
+    }
+
+    // B029: Eras.tsv TradeRouteFood/ProductionBonusTimes100 (hundredths) on the Unciv era names (POSTMODERN = Atomic; FUTURE spans Information and Future).
+    [Fact]
+    public void TheEraTradeBonusesComeFromTheEraTable()
+    {
+        var eras = Real().Eras;
+        int[] expected = [0, 50, 100, 150, 200, 250, 300, 350, 350];
+        string[] names = ["Ancient era", "Classical era", "Medieval era", "Renaissance era", "Industrial era", "Modern era", "Atomic era", "Information era", "Future era"];
+        Assert.Equal(expected, names.Select(it => eras[it].TradeRouteFoodBonusTimes100));
+        Assert.Equal(expected, names.Select(it => eras[it].TradeRouteProductionBonusTimes100));
+    }
+
+    // B029: CityStateTradeChange is stored in hundredths in Policies.tsv (200); the engine reads whole Gold.
+    [Fact]
+    public void MerchantConfederacyStatesWholeGoldPerCityStateRoute()
+    {
+        Assert.Contains("[+2] Gold from trade routes with city-states", Real().Policies["Merchant Confederacy"].Uniques);
+        Assert.Contains("[+5]% Production for each trade route to a city-state", Real().Buildings["Hanse"].Uniques);
+    }
+
+    // B029/B025: the BNW score multipliers for population and wonders (SCORE_POPULATION_MULTIPLIER 4, SCORE_WONDER_MULTIPLIER 25); G&K keeps 3 and 40.
+    [Fact]
+    public void TheBnwRulesetCarriesTheBnwScoreMultipliers()
+    {
+        var c = Real().ModOptions.Constants;
+        Assert.Equal((4, 25), (c.ScoreFromPopulation, c.ScoreFromWonders));
+        var gk = new ModConstants();
+        Assert.Equal((3, 40), (gk.ScoreFromPopulation, gk.ScoreFromWonders));
     }
 
     // ---- Great Works (B007, B027)
@@ -593,6 +623,7 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         var (game, civ, capital) = NewCapital();
         var second = civ.AddCity(game.TileMap.TileList.First(it => it.IsLand && !it.IsImpassible() && it.GetOwner() == null && it.GetCity() == null).Position, null);
         int Dest(TradeRouteKind kind, int stat) => TradeRouteYields.Compute(capital, second, TradeDomain.Land, kind).Dest[stat];
+        civ.Tech.Era = game.Ruleset.Eras["Modern era"]; // Follow() moves the civ there; B029: the era's trade bonus is part of the base yield
         int food = Dest(TradeRouteKind.Food, TradeYield.Food);
         int production = Dest(TradeRouteKind.Production, TradeYield.Production);
         Assert.True(food > 0 && production > 0);

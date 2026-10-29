@@ -53,11 +53,14 @@
   United Nations: removed (SPEC 3.3)
   Utopia Project: removed (SPEC 3.3)
 
+== eras
+  trade route food/production bonuses (hundredths) written from Eras.tsv
+
 == greatWorks
   279 works (233 named after a Great Person)
 
 == modOptions
-  83 BNW tunables written to ModOptions.json constants (values from the ModConstants.cs comments, cross-checked with Defines.tsv)
+  85 BNW tunables written to ModOptions.json constants (values from the ModConstants.cs comments, cross-checked with Defines.tsv)
 
 == overrides
   UnitPromotions.json: added Sapper

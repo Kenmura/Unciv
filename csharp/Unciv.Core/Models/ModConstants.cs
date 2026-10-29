@@ -199,11 +199,13 @@ public sealed class ModConstants
     public float SpyTechStealCostModifier { get; set; } = 1.25f;
 
     // Score value of things
+    // SCORE_POPULATION_MULTIPLIER: BNW 4, G&K 3
     [JsonPropertyName("scoreFromPopulation")]
-    public int ScoreFromPopulation { get; set; } = 3; // 4 in BNW
+    public int ScoreFromPopulation { get; set; } = 3;
 
+    // SCORE_WONDER_MULTIPLIER: BNW 25, G&K 40
     [JsonPropertyName("scoreFromWonders")]
-    public int ScoreFromWonders { get; set; } = 40; // 25 in BNW
+    public int ScoreFromWonders { get; set; } = 40;
 
     // UI: If set >= 0, ImprovementPicker will silently skip improvements whose tech requirement is more advanced than your current Era + this
     [JsonPropertyName("maxImprovementTechErasForward")]

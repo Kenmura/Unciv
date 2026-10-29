@@ -9,6 +9,8 @@
 		"BNW happiness rules"
 	],
 	"constants": {
+		"scoreFromPopulation": 4,
+		"scoreFromWonders": 25,
 		"aiTacticalBarbarianPriorityPlunderTradeUnit": 20,
 		"baseCulturePerGreatWork": 2,
 		"baseTourismPerGreatWork": 2,

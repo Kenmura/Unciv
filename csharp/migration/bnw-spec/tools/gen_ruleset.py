@@ -862,6 +862,25 @@ def unread_columns_report(report):
                     report.add("unread columns", f"{key}: {count} non-empty row(s)")
 
 
+def build_eras(eras, report):
+    """B029: the domestic trade route era bonuses (Eras.tsv TradeRouteFoodBonusTimes100 / TradeRouteProductionBonusTimes100, SPEC 4.1.4)."""
+    by_name = {e["name"]: e for e in eras}
+    # Unciv names Civ V's POSTMODERN column pair "Atomic era" (as Techs.json does) and splits FUTURE (columns 15-17) into Information and Future.
+    unciv_eras = {"ERA_POSTMODERN": ["Atomic era"], "ERA_FUTURE": ["Information era", "Future era"]}
+    for r in tsv("Eras"):
+        for name in unciv_eras.get(r["Type"], [era_name(r["Type"])]):
+            fill_era_trade_bonuses(by_name[name], r)
+    report.add("eras", "trade route food/production bonuses (hundredths) written from Eras.tsv")
+    return eras
+
+
+def fill_era_trade_bonuses(era, r):
+    for column, prop in (("TradeRouteFoodBonusTimes100", "tradeRouteFoodBonusTimes100"),
+                         ("TradeRouteProductionBonusTimes100", "tradeRouteProductionBonusTimes100")):
+        if num(r[column]):
+            era[prop] = num(r[column])
+
+
 def generate():
     report = Report()
     READ_COLUMNS.clear()
@@ -893,6 +912,7 @@ def generate():
     gate_wonders_by_branch(files["Buildings.json"], report)
     for text in overrides.get("policyPending", []):
         report.add("pending policy effects (not emitted)", text)
+    files["Eras.json"] = build_eras(files["Eras.json"], report)
     files = apply_overrides(files, overrides, report)
     name_groups_from_works(files, report)
     for key, texts in overrides.get("pending", {}).items():

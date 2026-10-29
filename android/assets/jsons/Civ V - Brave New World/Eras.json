@@ -29,6 +29,8 @@
 		"startPercent": 10,
 		"citySound": "cityClassical",
 		"iconRGB": [233, 31, 99],
+		"tradeRouteFoodBonusTimes100": 50,
+		"tradeRouteProductionBonusTimes100": 50,
 		"warmongerPercent": 60
 	},
 	{
@@ -55,6 +57,8 @@
 		"startPercent": 25,
 		"citySound": "cityMedieval",
 		"iconRGB": [157, 39, 176],
+		"tradeRouteFoodBonusTimes100": 100,
+		"tradeRouteProductionBonusTimes100": 100,
 		"warmongerPercent": 70
 	},
 	{
@@ -89,6 +93,8 @@
 		"citySound": "cityRenaissance",
 		"uniques": ["Every major Civilization gains a spy once a civilization enters this era"],
 		"iconRGB": [104, 58, 183],
+		"tradeRouteFoodBonusTimes100": 150,
+		"tradeRouteProductionBonusTimes100": 150,
 		"warmongerPercent": 80
 	},
 	{
@@ -144,6 +150,8 @@
 			"Starting in this era disables religion",
 			"Every major Civilization gains a spy once a civilization enters this era"
 		],
+		"tradeRouteFoodBonusTimes100": 200,
+		"tradeRouteProductionBonusTimes100": 200,
 		"warmongerPercent": 90
 	},
 	{
@@ -205,7 +213,9 @@
 			"May buy [Great Prophet] units for [200] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([100])",
 			"Starting in this era disables religion",
 			"Every major Civilization gains a spy once a civilization enters this era"
-		]
+		],
+		"tradeRouteFoodBonusTimes100": 250,
+		"tradeRouteProductionBonusTimes100": 250
 	},
 	{
 		"name": "Atomic era",
@@ -269,7 +279,9 @@
 			"May buy [Great Prophet] units for [200] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([100])",
 			"Starting in this era disables religion",
 			"Every major Civilization gains a spy once a civilization enters this era"
-		]
+		],
+		"tradeRouteFoodBonusTimes100": 300,
+		"tradeRouteProductionBonusTimes100": 300
 	},
 	{
 		"name": "Information era",
@@ -339,7 +351,9 @@
 			"May buy [Great Prophet] units for [200] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([100])",
 			"Starting in this era disables religion",
 			"Every major Civilization gains a spy once a civilization enters this era"
-		]
+		],
+		"tradeRouteFoodBonusTimes100": 350,
+		"tradeRouteProductionBonusTimes100": 350
 	},
 	{
 		"name": "Future era",
@@ -409,6 +423,8 @@
 			"May buy [Great Prophet] units for [200] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([100])",
 			"Starting in this era disables religion",
 			"Every major Civilization gains a spy once a civilization enters this era"
-		]
+		],
+		"tradeRouteFoodBonusTimes100": 350,
+		"tradeRouteProductionBonusTimes100": 350
 	}
 ]
