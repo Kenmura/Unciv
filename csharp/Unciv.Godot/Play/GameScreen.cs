@@ -929,7 +929,10 @@ public partial class GameScreen : Control
     /// C079: a screen that rebuilt its content for a new scale or breakpoint shrinks its minimum size, but a control never shrinks by itself: it keeps the larger size it had at the old
     /// scale and sticks out of a smaller window. Sizing every screen again once the rebuild is done (deferred, so after all the screens handled the change) puts them back.
     /// </summary>
-    private void RelayoutAfterRebuild() => CallDeferred(nameof(Layout));
+    private void RelayoutAfterRebuild()
+    {
+        if (IsInsideTree()) CallDeferred(nameof(Layout));
+    }
 
     // Sized from the viewport, not from anchors: the screen may sit under a parent Control that has no size (the scenario runner).
     private void Layout()
@@ -1000,6 +1003,7 @@ public partial class GameScreen : Control
     public override void _ExitTree()
     {
         GetViewport().SizeChanged -= Layout;
+        ui?.Unbind(); // C079: a freed screen must not keep receiving the window's resizes through its theme
         turnCancellation?.Cancel(); // a turn still being processed stops after the civ it is playing; nothing waits for it
         if (session != null)
         {
