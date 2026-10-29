@@ -655,6 +655,8 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
             {
                 if (unit.MatchesFilter(unique.Params[1])) xp = unchecked(xp + ParseInt(unique.Params[0]) * works);
             });
+        if (civInfo.IsAI() && civInfo.IsMajorCiv() && unit.IsMilitary())
+            xp = unchecked(xp + civInfo.GameInfo.GetDifficulty().AiFreeXp);
         unit.Promotions.XP = xp;
 
         cityConstructions.City.ForEachMatchingUnique(UniqueType.UnitStartingPromotions, unique =>

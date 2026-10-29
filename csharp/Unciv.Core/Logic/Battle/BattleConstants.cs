@@ -13,4 +13,6 @@ public static class BattleConstants
     public const int FortificationBonus = 20;
     public const float DamageReductionWoundedUnitRatioPercentage = 300f;
     public const int DamageToCivilianUnit = 40;
+    /// <summary>B023: extra damage (percent of the damage just dealt) when a Heavy Charge cannot push the defender back.</summary>
+    public const int HeavyChargeBlockedDamagePercent = 50;
 }

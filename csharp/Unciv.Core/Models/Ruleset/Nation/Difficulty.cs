@@ -110,6 +110,12 @@ public class Difficulty : RulesetObject, ICivilopediaText
     public float AiUnitMaintenanceModifier { get; set; } = 1f;
     public float AiUnitSupplyModifier { get; set; }
     public List<string> AiFreeTechs { get; set; } = [];
+
+    /// <summary>B023 (bnw-spec 4.12, HandicapInfos.AIFreeXP): flat XP each military unit an AI major civ constructs starts with.</summary>
+    public int AiFreeXp { get; set; }
+
+    /// <summary>B023 (bnw-spec 4.12, HandicapInfos.AIFreeXPPercent): extra percent on the combat XP an AI major civ's units earn.</summary>
+    public int AiFreeXpPercent { get; set; }
     public List<string> AiMajorCivBonusStartingUnits { get; set; } = [];
     public List<string> AiCityStateBonusStartingUnits { get; set; } = [];
     public float AiUnhappinessModifier { get; set; } = 1f;

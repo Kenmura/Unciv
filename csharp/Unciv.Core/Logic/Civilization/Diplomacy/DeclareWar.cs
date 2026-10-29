@@ -231,7 +231,7 @@ public static class DeclareWar
                     && thirdCiv != declareWarReason.AllyCiv)
                 {
                     // We don't want this modify to stack if there is a defensive pact
-                    thirdCiv.GetDiplomacyManager(civInfo).NotNull().AddModifier(DiplomaticModifiers.WarMongerer, -5f);
+                    thirdCiv.GetDiplomacyManager(civInfo).NotNull().AddModifier(DiplomaticModifiers.WarMongerer, WarmongerRules.Scale(-5f, civInfo, otherCiv));
                 }
             }
         }

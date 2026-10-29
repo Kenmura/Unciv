@@ -135,6 +135,7 @@ public static class Battle
 
         var attackSnapshot = GameEventHooks.BeginAttack(attacker, defender);
         var damageDealt = TakeDamage(attacker, defender) + extraRangedAttackDamage;
+        damageDealt = ApplyHeavyCharge(attacker, defender, attackedTile, damageDealt);
         GameEventHooks.UnitAttacked(attackSnapshot, attacker, defender, damageDealt);
 
         // check if unit is captured by the attacker (prize ships unique)
@@ -186,6 +187,12 @@ public static class Battle
         ReduceAttackerMovementPointsAndAttacks(attacker, defender, attackedTile);
 
         if (!isAlreadyDefeatedCity) PostBattleAddXp(attacker, defender);
+
+        if (!isAlreadyDefeatedCity)
+        {
+            GivePostCombatPromotion(attacker, defender, attackedTile, CombatAction.Attack);
+            GivePostCombatPromotion(defender, attacker, attackedTile, CombatAction.Defend);
+        }
 
         if (attacker is CityCombatant)
         {
@@ -669,6 +676,7 @@ public static class Battle
         double xpBonus = 0.0;
         foreach (var unique in unitCombatant.GetMatchingUniques(UniqueType.PercentageXPGain, gameContext, true))
             xpBonus += unique.Params[0].ToDouble();
+        if (civ.IsAI() && civ.IsMajorCiv()) xpBonus += civ.GameInfo.GetDifficulty().AiFreeXpPercent; // B023: AI handicap (HandicapInfos.AIFreeXPPercent)
         double xpModifier = 1.0 + xpBonus / 100;
 
         int xpGained = KotlinMath.DoubleToInt(baseXP * xpModifier);
@@ -841,6 +849,82 @@ public static class Battle
         }
     }
 
+    /// <summary>The tile a melee-attacked defender retreats to: first a tile not adjacent to the attacker, else one that is; null when it has none.</summary>
+    private static TileClass? SelectRetreatTile(MapUnitCombatant attacker, MapUnitCombatant defender, GameRandom rng)
+    {
+        var fromTile = defender.GetTile();
+        var attackerTile = attacker.GetTile();
+
+        bool CanNotWithdrawTo(TileClass tile) // if the tile is what the defender can't withdraw to, this fun will return true
+        {
+            return !defender.Unit.Movement.CanMoveTo(tile)
+                   || (((ICombatant)defender).IsLandUnit() && !tile.IsLand) // forbid retreat from land to sea - embarked already excluded
+                   || (tile.IsCityCenter() && tile.GetOwner() != defender.GetCivInfo()); // forbid retreat into the city which doesn't belong to the defender
+        }
+
+        var firstCandidateTiles = fromTile.Neighbors.Where(it => it != attackerTile && !attackerTile.Neighbors.Contains(it))
+            .Where(it => !CanNotWithdrawTo(it));
+        var secondCandidateTiles = fromTile.Neighbors.Where(it => attackerTile.Neighbors.Contains(it))
+            .Where(it => !CanNotWithdrawTo(it));
+        if (firstCandidateTiles.Any()) return firstCandidateTiles.ToList().Random(rng);
+        if (secondCandidateTiles.Any()) return secondCandidateTiles.ToList().Random(rng);
+        return null;
+    }
+
+    /// <summary>
+    /// BNW Heavy Charge (B023, bnw-spec 4.12; the exact Civ V rule is [K] and undecoded, deliberate deviation): a melee attacker with
+    /// <see cref="UniqueType.HeavyCharge"/> that wounds a surviving military defender pushes it one tile back for free; a defender that
+    /// cannot retreat takes <see cref="BattleConstants.HeavyChargeBlockedDamagePercent"/>% of the damage just dealt as extra damage.
+    /// </summary>
+    private static DamageDealt ApplyHeavyCharge(ICombatant attacker, ICombatant defender, TileClass attackedTile, DamageDealt dealt)
+    {
+        if (attacker is not MapUnitCombatant mapAttacker || defender is not MapUnitCombatant mapDefender) return dealt;
+        if (!attacker.IsMelee() || attacker.IsDefeated() || defender.IsDefeated() || dealt.AttackerDealt <= 0) return dealt;
+        if (mapDefender.Unit.IsCivilian()) return dealt;
+        if (!mapAttacker.Unit.HasUnique(UniqueType.HeavyCharge, GameContext.ForCombatants(attacker, defender, attackedTile, CombatAction.Attack))) return dealt;
+
+        var rng = GameContext.ForCombatants(attacker, defender, attackedTile, CombatAction.Attack).StateBasedRandom("Battle.heavyCharge");
+        var toTile = mapDefender.Unit.IsEmbarked() || mapDefender.Unit.Cache.CannotMove ? null : SelectRetreatTile(mapAttacker, mapDefender, rng);
+        if (toTile != null)
+        {
+            var origin = mapDefender.Unit.GetTile();
+            mapDefender.Unit.RemoveFromTile();
+            mapDefender.Unit.PutInTile(toTile);
+            GameEventHooks.UnitMoved(mapDefender.Unit, origin, toTile);
+            mapDefender.Unit.MostRecentMoveType = UnitMovementMemoryType.UnitWithdrew;
+            string text = $"[{mapDefender.GetName()}] was pushed back by a [{mapAttacker.GetName()}]";
+            var locations = LocationAction.Of(toTile.Position, mapAttacker.GetTile().Position).ToList();
+            defender.GetCivInfo().AddNotification(text, locations, NotificationCategory.War, mapDefender.GetName(), NotificationIcon.War, mapAttacker.GetName());
+            attacker.GetCivInfo().AddNotification(text, locations, NotificationCategory.War, mapDefender.GetName(), NotificationIcon.War, mapAttacker.GetName());
+            return dealt;
+        }
+
+        int extra = dealt.AttackerDealt * BattleConstants.HeavyChargeBlockedDamagePercent / 100;
+        if (extra <= 0) return dealt;
+        int before = defender.GetHealth();
+        defender.TakeDamage(extra);
+        return dealt + new DamageDealt(before - defender.GetHealth(), 0);
+    }
+
+    /// <summary>
+    /// BNW post-combat promotions (B023, bnw-spec 4.12, Kris Swordsman's Mystic Blade): a surviving unit with
+    /// <see cref="UniqueType.PostCombatPromotion"/> uniques gains one of the listed promotions it lacks, drawn from the state-based RNG.
+    /// With <see cref="UniqueType.PostCombatPromotionsExclusive"/> it gets nothing once it already holds one of them.
+    /// </summary>
+    private static void GivePostCombatPromotion(ICombatant ourCombatant, ICombatant enemy, TileClass attackedTile, CombatAction action)
+    {
+        if (ourCombatant is not MapUnitCombatant mapUnit || mapUnit.IsDefeated()) return;
+        var unit = mapUnit.Unit;
+        var context = GameContext.ForCombatants(ourCombatant, enemy, attackedTile, action);
+        var candidates = unit.GetMatchingUniques(UniqueType.PostCombatPromotion, context).Select(it => it.Params[0]).Distinct().ToList();
+        if (candidates.Count == 0) return;
+        if (unit.HasUnique(UniqueType.PostCombatPromotionsExclusive, context) && candidates.Any(it => unit.Promotions.Promotions.Contains(it))) return;
+        var available = candidates.Where(it => !unit.Promotions.Promotions.Contains(it)
+            && unit.Civ.GameInfo.Ruleset.UnitPromotions.ContainsKey(it)).ToList();
+        if (available.Count == 0) return;
+        unit.Promotions.AddPromotion(available.Random(context.StateBasedRandom("Battle.postCombatPromotion")), isFree: true);
+    }
+
     private static bool HasWithdrawnFromMelee(ICombatant attacker, ICombatant defender, TileClass attackedTile)
     {
         return attacker is MapUnitCombatant mapAttacker && attacker.IsMelee() && defender is MapUnitCombatant mapDefender
@@ -861,25 +945,11 @@ public static class Battle
 
         // Promotions have no effect as per what I could find in available documentation
         var fromTile = defender.GetTile();
-        var attackerTile = attacker.GetTile();
         var attackContext = GameContext.ForCombatants(attacker, defender, fromTile, CombatAction.Defend);
         var rng = attackContext.StateBasedRandom("Battle.doWithdrawFromMeleeAbility");
 
-        bool CanNotWithdrawTo(TileClass tile) // if the tile is what the defender can't withdraw to, this fun will return true
-        {
-            return !defender.Unit.Movement.CanMoveTo(tile)
-                   || (((ICombatant)defender).IsLandUnit() && !tile.IsLand) // forbid retreat from land to sea - embarked already excluded
-                   || (tile.IsCityCenter() && tile.GetOwner() != defender.GetCivInfo()); // forbid retreat into the city which doesn't belong to the defender
-        }
-
-        var firstCandidateTiles = fromTile.Neighbors.Where(it => it != attackerTile && !attackerTile.Neighbors.Contains(it))
-            .Where(it => !CanNotWithdrawTo(it));
-        var secondCandidateTiles = fromTile.Neighbors.Where(it => attackerTile.Neighbors.Contains(it))
-            .Where(it => !CanNotWithdrawTo(it));
-        TileClass toTile;
-        if (firstCandidateTiles.Any()) toTile = firstCandidateTiles.ToList().Random(rng);
-        else if (secondCandidateTiles.Any()) toTile = secondCandidateTiles.ToList().Random(rng);
-        else return false;
+        var toTile = SelectRetreatTile(attacker, defender, rng);
+        if (toTile == null) return false;
         // Withdraw success: Do it - move defender to toTile for no cost
         // NOT defender.unit.movement.moveToTile(toTile) - we want a free teleport
         var withdrawOrigin = defender.Unit.GetTile();

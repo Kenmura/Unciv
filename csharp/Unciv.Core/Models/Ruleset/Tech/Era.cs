@@ -88,6 +88,10 @@ public class Era : RulesetObject, ICivilopediaText
 
     /// <summary>B020 (bnw-spec 4.1.4): the production counterpart of <see cref="TradeRouteFoodBonusTimes100"/>.</summary>
     public int TradeRouteProductionBonusTimes100 { get; set; }
+
+    /// <summary>B023 (bnw-spec 4.12, Eras.WarmongerPercent): the share of a warmongering penalty an aggressor of this era incurs; 100 in G&amp;K.</summary>
+    public int WarmongerPercent { get; set; } = 100;
+
     public string CitySound { get; set; } = "cityClassical";
 
     public Dictionary<string, List<string>> FriendBonus { get; set; } = [];

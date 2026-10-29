@@ -210,7 +210,7 @@ public class CityConquestFunctions(CityObject city)
                 thirdPartyCiv.GetDiplomacyManager(conqueringCiv).NotNull()
                         .AddModifier(DiplomaticModifiers.SharedEnemy, aggroGeneratedForOtherCivs); // Cool, keep at it! =D
             else thirdPartyCiv.GetDiplomacyManager(conqueringCiv).NotNull()
-                    .AddModifier(DiplomaticModifiers.WarMongerer, -aggroGeneratedForOtherCivs); // Uncool bro.
+                    .AddModifier(DiplomaticModifiers.WarMongerer, -WarmongerRules.Scale(aggroGeneratedForOtherCivs, conqueringCiv, oldCiv)); // Uncool bro.
         }
     }
 

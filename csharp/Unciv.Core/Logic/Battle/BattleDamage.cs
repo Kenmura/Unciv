@@ -144,6 +144,12 @@ public static class BattleDamage
             if (mapUnitAttacker.Unit.IsPreparingAirSweep())
                 modifiers.Add(GetAirSweepAttackModifiers(mapUnitAttacker));
 
+            if (defender.IsCity())
+            {
+                int sapperBonus = GetSapperBonus(mapUnitAttacker, tileToAttackFrom);
+                if (sapperBonus != 0) modifiers["Sapper"] = sapperBonus;
+            }
+
             if (mapUnitAttacker.IsMelee())
             {
                 int numberOfOtherAttackersSurroundingDefender = defender.GetTile().Neighbors.Count(it =>
@@ -166,6 +172,23 @@ public static class BattleDamage
         }
 
         return modifiers;
+    }
+
+    /// <summary>
+    /// BNW Sapper (B023, bnw-spec 4.12): friendly units within <c>SapperBonusRange</c> tiles (1 when the ruleset states none) of the attacking
+    /// tile that carry <see cref="UniqueType.SapperBonus"/> give the attacker the best matching bonus when it attacks a city. Bonuses do not stack.
+    /// </summary>
+    private static int GetSapperBonus(MapUnitCombatant attacker, TileClass tileToAttackFrom)
+    {
+        int range = Math.Max(1, attacker.GetCivInfo().GameInfo.Ruleset.ModOptions.Constants.SapperBonusRange);
+        int best = 0;
+        foreach (var sapper in attacker.GetCivInfo().Units.GetCivUnits())
+        {
+            if (sapper.CurrentTile.AerialDistanceTo(tileToAttackFrom) > range) continue;
+            foreach (var unique in sapper.GetMatchingUniques(UniqueType.SapperBonus))
+                if (attacker.Unit.MatchesFilter(unique.Params[1], true)) best = Math.Max(best, unique.Params[0].ToInt());
+        }
+        return best;
     }
 
     private static Counter<string> GetTerrainAttackModifiers(MapUnitCombatant attacker, ICombatant defender, TileClass tileToAttackFrom)
