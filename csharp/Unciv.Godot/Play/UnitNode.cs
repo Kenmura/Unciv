@@ -36,6 +36,11 @@ public partial class UnitNode : Node3D
     /// <summary>How many figures stand on the tile.</summary>
     public int FigureCount { get; private set; }
 
+    private readonly List<AnimationPlayer> players = [];
+
+    /// <summary>C080: the animation player of each figure whose model has one (none for generated blocks), held in its idle pose until the presenter drives them.</summary>
+    public IReadOnlyList<AnimationPlayer> Players => players;
+
     /// <summary>The marks shown, in drawing order.</summary>
     public IReadOnlyList<UnitStatusIcon> StatusIcons { get; private set; } = [];
 
@@ -51,7 +56,12 @@ public partial class UnitNode : Node3D
         for (var i = 0; i < formation.Count; i++)
         {
             var model = assets.Get<Node3D>(key);
-            if (civ is { } c) MapMaterials.ColourBanner(model, c.R, c.G, c.B);
+            if (civ is { } c) MapMaterials.ColourTeam(model, c.R, c.G, c.B);
+            if (UnitModels.FindPlayer(model) is { } player)
+            {
+                UnitModels.HoldIdle(player, UnitModels.IdlePhase(Unit.Id, i));
+                players.Add(player);
+            }
             if (i > 0) model.GetNodeOrNull("Glyphs")?.Free(); // one initials billboard for the whole group
             var figure = new Node3D { Name = "Figure" + i, Position = new Vector3(formation[i].X, 0f, formation[i].Z), Scale = Vector3.One * formation[i].Scale };
             figure.AddChild(model);

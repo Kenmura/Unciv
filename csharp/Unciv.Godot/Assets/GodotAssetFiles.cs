@@ -30,8 +30,33 @@ public sealed class GodotAssetFiles : IAssetFiles
 
     public static Resource? Load(string relativePath)
     {
+        if (relativePath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase) && !ResourceLoader.Exists(Root + relativePath)) return LoadModel(relativePath);
         if (IsImage(relativePath) && !ResourceLoader.Exists(Root + relativePath)) return LoadImage(relativePath);
         return ResourceLoader.Exists(Root + relativePath) ? ResourceLoader.Load(Root + relativePath) : null;
+    }
+
+    private static readonly Dictionary<string, PackedScene?> Models = new(StringComparer.Ordinal);
+
+    /// <summary>C080: an un-imported <c>.glb</c> (a pack's unit model) as a scene, parsed once per path: <see cref="GltfDocument"/> reads it at run time, so a pack needs no editor import step, as with images.</summary>
+    private static PackedScene? LoadModel(string relativePath)
+    {
+        if (Models.TryGetValue(relativePath, out var cached)) return cached;
+        PackedScene? scene = null;
+        var source = Godot.FileAccess.FileExists(Root + relativePath) ? Root + relativePath : ExternalPath(relativePath);
+        if (source != null)
+        {
+            var document = new GltfDocument();
+            var state = new GltfState();
+            if (document.AppendFromFile(source, state) == Error.Ok && document.GenerateScene(state) is { } root)
+            {
+                scene = new PackedScene();
+                if (scene.Pack(root) != Error.Ok) scene = null;
+                root.Free();
+            }
+            if (scene == null) GD.PushWarning($"Model file {source} could not be loaded; using the placeholder");
+        }
+        Models[relativePath] = scene;
+        return scene;
     }
 
     private static bool IsImage(string path) =>

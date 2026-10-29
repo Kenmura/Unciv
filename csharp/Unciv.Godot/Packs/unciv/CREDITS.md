@@ -149,3 +149,7 @@ Unciv's own work is CC BY 4.0. Licences: CC-BY-3.0, CC-BY-4.0, CC0-1.0, Public-D
 - [right click](https://thenounproject.com/icon/right-click-8250175/) by Lewen Design
 - [Download](https://thenounproject.com/icon/download-8259347/) by icelloid for mod update available (mod manager), cropped
 - [personality](https://thenounproject.com/icon/personality-7778661/) by Adrien Coquet for Civilopedia category
+
+## Models
+
+-   `models/unit/Warrior.glb`: the Barbarian of the [KayKit Adventurers Character Pack 1.0](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) by Kay Lousberg (https://kaylousberg.com), licensed CC0 1.0 (no attribution required); reduced and renamed by `Unciv.Godot/tools/make-unit-model.py`

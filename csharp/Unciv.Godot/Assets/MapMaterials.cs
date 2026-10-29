@@ -98,11 +98,42 @@ public static class MapMaterials
         AmbientLightEnergy = 0.55f,
     };
 
-    /// <summary>Gives a unit block's neutral <c>Banner</c> the civ's colour (C010). The model is freshly built per call, so its material is owned by the caller.</summary>
-    public static void ColourBanner(Node3D unitModel, float r, float g, float b)
+    /// <summary>
+    /// The albedo a civ's colour gives a <c>TeamColor</c> material (C080): the colour itself on a flat material; on a textured one the colour is blended halfway to white so the multiplied texture
+    /// (skin, metal, cloth) still reads and the figure still takes on the civ's hue.
+    /// </summary>
+    public static Color TeamTint(Color civ, bool textured) => textured ? Colors.White.Lerp(civ, 0.5f) : civ;
+
+    /// <summary>
+    /// Gives a unit model the civ's colour (C010, C080): every surface whose material is named <see cref="UnitModelContract.TeamColorMaterial"/> gets its own tinted copy (the loaded scene shares its
+    /// materials between instances); a model without such a material falls back to its neutral <c>Banner</c> node, as the generated blocks have.
+    /// </summary>
+    public static void ColourTeam(Node3D unitModel, float r, float g, float b)
     {
-        if (unitModel.GetNodeOrNull<MeshInstance3D>("Banner") is { } banner)
-            banner.MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(r, g, b), Roughness = 1f };
+        var civ = new Color(r, g, b);
+        var found = false;
+        foreach (var mesh in unitModel.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
+        {
+            for (var i = 0; i < (mesh.Mesh?.GetSurfaceCount() ?? 0); i++)
+            {
+                if (mesh.GetActiveMaterial(i) is not BaseMaterial3D { ResourceName: UnitModelContract.TeamColorMaterial } material) continue;
+                var tinted = (BaseMaterial3D)material.Duplicate();
+                tinted.AlbedoColor = TeamTint(civ, tinted.AlbedoTexture != null);
+                mesh.SetSurfaceOverrideMaterial(i, tinted);
+                found = true;
+            }
+        }
+        if (!found && unitModel.GetNodeOrNull<MeshInstance3D>("Banner") is { } banner)
+            banner.MaterialOverride = new StandardMaterial3D { AlbedoColor = civ, Roughness = 1f };
+    }
+
+    /// <summary>The colour a unit model wears: its <c>TeamColor</c> surfaces' albedo, else its <c>Banner</c>'s; null when it has neither (for tests).</summary>
+    public static Color? TeamColourOf(Node3D unitModel)
+    {
+        foreach (var mesh in unitModel.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
+            for (var i = 0; i < (mesh.Mesh?.GetSurfaceCount() ?? 0); i++)
+                if (mesh.GetActiveMaterial(i) is BaseMaterial3D { ResourceName: UnitModelContract.TeamColorMaterial } material) return material.AlbedoColor;
+        return unitModel.GetNodeOrNull<MeshInstance3D>("Banner")?.MaterialOverride is StandardMaterial3D banner ? banner.AlbedoColor : null;
     }
 
     /// <summary>Small unshaded sphere of the accent colour: one dot of the path preview (C010).</summary>

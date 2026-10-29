@@ -55,6 +55,14 @@ GROUPS = [
     ("icon/ui", "android/Images.Icons/OtherIcons", "CC-BY-3.0", "Others", UI_ICONS),
 ]
 
+# C080: 3D models committed in the pack (made by make-unit-model.py, not copied from the Kotlin repo): key -> path in the pack. Their licence travels in CREDITS.md.
+MODELS = {"unit/Warrior": "models/unit/Warrior.glb"}
+MODEL_CREDITS = (
+    "## Models\n\n"
+    "-   `models/unit/Warrior.glb`: the Barbarian of the [KayKit Adventurers Character Pack 1.0](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) "
+    "by Kay Lousberg (https://kaylousberg.com), licensed CC0 1.0 (no attribution required); reduced and renamed by `Unciv.Godot/tools/make-unit-model.py`\n"
+)
+
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 
@@ -102,7 +110,8 @@ def collect():
 
 def render_manifest(entries):
     groups = {category: {"licence": licence, "credits": f"CREDITS.md#{section}"} for category, _, licence, section, _ in GROUPS}
-    doc = {"pack": "unciv", "keys": {key: rel for key, _, rel in entries}, "groups": groups, "excluded": dict(sorted(EXCLUDED.items()))}
+    groups["unit"] = {"licence": "CC0-1.0", "credits": "CREDITS.md#Models"}
+    doc = {"pack": "unciv", "keys": {**{key: rel for key, _, rel in entries}, **MODELS}, "groups": groups, "excluded": dict(sorted(EXCLUDED.items()))}
     return json.dumps(doc, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 
@@ -117,7 +126,7 @@ def render_credits(credits_text):
     ]
     for section in dict.fromkeys(g[3] for g in GROUPS):
         lines += [f"## {section}", "", credit_section(credits_text, section), ""]
-    return "\n".join(lines)
+    return "\n".join(lines) + "\n" + MODEL_CREDITS
 
 
 def main(argv):
@@ -151,6 +160,7 @@ def main(argv):
                 bad.append(f"{rel} is missing or differs from {source.relative_to(ROOT)}")
         extra = {p.relative_to(PACK).as_posix() for p in (PACK / "icons").rglob("*.png")} - {rel for _, _, rel in entries} if (PACK / "icons").is_dir() else set()
         bad += [f"{rel} is not in the manifest" for rel in sorted(extra)]
+        bad += [f"{rel} is missing" for rel in MODELS.values() if not (PACK / rel).is_file()]
         if bad:
             print("pack check failed:\n  " + "\n  ".join(bad), file=sys.stderr)
             return 1

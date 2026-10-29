@@ -31,6 +31,10 @@
     "icon/ui": {
       "credits": "CREDITS.md#Others",
       "licence": "CC-BY-3.0"
+    },
+    "unit": {
+      "credits": "CREDITS.md#Models",
+      "licence": "CC0-1.0"
     }
   },
   "keys": {
@@ -188,7 +192,8 @@
     "icon/ui/Stop": "icons/ui/Stop.png",
     "icon/ui/Terrains": "icons/ui/Terrains.png",
     "icon/ui/Undo": "icons/ui/Undo.png",
-    "icon/ui/Wonders": "icons/ui/Wonders.png"
+    "icon/ui/Wonders": "icons/ui/Wonders.png",
+    "unit/Warrior": "models/unit/Warrior.glb"
   },
   "pack": "unciv"
 }

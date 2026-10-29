@@ -41,6 +41,14 @@ public sealed class UnitVisualsScenario : Scenario
         new("Destroyer", Egypt, 100, Terrain: "Coast"), new("Warrior", Egypt, 50, Fortified: true, Own: false),
     ];
 
+    // C080: the Warrior is a model file (TeamColor material, animation player); every other unit is still a generated block with a Banner
+    private static bool IsModel(UnitNode n) => n.Unit.Name == "Warrior";
+    private static IEnumerable<Node3D> FigureModels(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => f.GetChild<Node3D>(0));
+    private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
+    private static bool HoldsIdle(AnimationPlayer p) => p.AssignedAnimation == UnitModelContract.IdleClip && !p.IsPlaying() && p.CurrentAnimationPosition > 0f;
+    private static bool Textured(UnitNode n) => FigureModels(n).SelectMany(m => m.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>())
+        .Any(mi => Enumerable.Range(0, mi.Mesh?.GetSurfaceCount() ?? 0).Any(i => mi.GetActiveMaterial(i) is BaseMaterial3D { ResourceName: UnitModelContract.TeamColorMaterial, AlbedoTexture: not null }));
+
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
         var ruleset = session.Game.Ruleset;
@@ -101,9 +109,8 @@ public sealed class UnitVisualsScenario : Scenario
         bool Marks(UnitNode n, params UnitStatusIcon[] icons) => n.StatusIcons.SequenceEqual(icons)
             && icons.All(i => n.GetNodeOrNull<Sprite3D>("Status_" + i) != null)
             && n.GetChildren().OfType<Sprite3D>().Count(s => s.Name.ToString().StartsWith("Status_", StringComparison.Ordinal)) == icons.Length;
-        bool CivColoured(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal))
-            .All(f => f.GetChild<Node3D>(0).GetNodeOrNull<MeshInstance3D>("Banner") is { MaterialOverride: StandardMaterial3D m }
-                && ProceduralAssets.ToColor(colours[n.Unit.Owner]).IsEqualApprox(m.AlbedoColor));
+        bool CivColoured(UnitNode n) => FigureModels(n).All(m => MapMaterials.TeamColourOf(m) is { } worn
+            && MapMaterials.TeamTint(ProceduralAssets.ToColor(colours[n.Unit.Owner]), textured: IsModel(n)).IsEqualApprox(worn));
 
         return
         [
@@ -115,8 +122,13 @@ public sealed class UnitVisualsScenario : Scenario
                 && Node("Infantry").FigureCount == 3 && Node("Cannon").FigureCount == 3 && Node("Tank").FigureCount == 4),
             new AssertQuery("the figure nodes equal the figure count, from the tier rule, for every unit", () =>
                 nodes.All(n => Figures(n) == n.FigureCount && n.FigureCount == UnitVisuals.FigureCount(ruleset.Units[n.Unit.Name], ruleset))),
-            new AssertQuery("a group has one initials billboard whatever its size", () => nodes.All(n => Glyphs(n) == 1)),
+            new AssertQuery("a generated group has one initials billboard whatever its size; a model file carries none (its art identifies it)", () => nodes.All(n => Glyphs(n) == (IsModel(n) ? 0 : 1))),
             new AssertQuery("every figure of a unit carries its civ's colour", () => nodes.All(CivColoured)),
+            new AssertQuery("the Warrior is the CC0 model file: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player", () =>
+                nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n))),
+            new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for each warrior", () =>
+                nodes.Where(IsModel).SelectMany(n => n.Players).All(HoldsIdle)
+                && nodes.Where(IsModel).Select(n => n.Players[0].CurrentAnimationPosition).Distinct().Count() == nodes.Count(IsModel)),
             new AssertQuery("figures of a group stand at distinct spots, smaller than a lone figure", () =>
                 Node("Tank").GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => (f.Position.X, f.Position.Z)).Distinct().Count() == 4
                 && Node("Tank").GetNode<Node3D>("Figure0").Scale.X < Node("Warrior").GetNode<Node3D>("Figure0").Scale.X),
@@ -147,6 +159,14 @@ public sealed class UnitVisualsScenario : Scenario
             }),
             new WaitFrames(2),
             new Capture("formations", "Close view: Infantry (3 figures), Tank (4, hurt, promotion mark) and Cannon (3, automated mark)"),
+            new Act("close view of the Warrior model", () =>
+            {
+                view.FocusOn(MapLayout.TileTop(Coord(1).X, Coord(1).Y, 0f));
+                view.SetView(40f);
+                view.SetZoom(3f);
+            }),
+            new WaitFrames(2),
+            new Capture("warrior", "Close view: the Warrior is a CC0 animated model file standing in its idle pose, tinted with the red civ's colour"),
         ];
     }
 }

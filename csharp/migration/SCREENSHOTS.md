@@ -80,6 +80,10 @@ Scenario `unit-visuals`.
 
 *Close view: Infantry (3 figures), Tank (4, hurt, promotion mark) and Cannon (3, automated mark).* (`unit-visuals/formations.png`)
 
+![Close view of the Warrior, now a CC0 animated model file in its idle pose with its TeamColor material tinted in the red civ's colour (C080).](../Unciv.Godot.Harness/golden/unit-visuals/warrior.png)
+
+*Close view of the Warrior, now a CC0 animated model file in its idle pose with its TeamColor material tinted in the red civ's colour (C080).* (`unit-visuals/warrior.png`)
+
 ## C005 Civ 5-style UI kit: theme, screen stack, popups, tooltip host
 
 Civ 5-style UI kit: theme, tab bar, scrolling icon list, tooltip host, popup queue, screen stack, UI scale.

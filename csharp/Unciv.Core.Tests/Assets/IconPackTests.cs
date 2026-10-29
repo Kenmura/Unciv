@@ -98,7 +98,8 @@ public sealed class IconPackTests : IDisposable
             Assert.True(AssetKey.TryParse(entry.Name, out _), entry.Name);
             var file = Path.Combine(PackRoot, "Packs", "unciv", entry.Value.GetString()!);
             Assert.True(File.Exists(file), file);
-            Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, File.ReadAllBytes(file).Take(4));
+            // C080: the pack also holds unit models (binary glTF, magic "glTF"), checked by UnitModelContractTests
+            Assert.Equal(file.EndsWith(".glb", StringComparison.Ordinal) ? "glTF"u8.ToArray() : new byte[] { 0x89, 0x50, 0x4E, 0x47 }, File.ReadAllBytes(file).Take(4));
         }
         Assert.True(File.Exists(Path.Combine(PackRoot, "Packs", "unciv", "CREDITS.md")));
     }

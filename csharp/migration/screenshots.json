@@ -337,6 +337,10 @@
       {
         "golden": "unit-visuals/formations.png",
         "caption": "Close view: Infantry (3 figures), Tank (4, hurt, promotion mark) and Cannon (3, automated mark)."
+      },
+      {
+        "golden": "unit-visuals/warrior.png",
+        "caption": "Close view of the Warrior, now a CC0 animated model file in its idle pose with its TeamColor material tinted in the red civ's colour (C080)."
       }
     ]
   },
