@@ -48,6 +48,7 @@ public partial class PolicyScreen : PanelContainer
     private Button adopt = null!; // JUSTIFY: C071 assigned by BuildFrame in the constructor
     private TabBar? tabs;
     private ScrollContainer? branchScroll;
+    private int lastTab;
     private PolicyCell? selected;
     private string headerText = "";
     private string goldenAgeText = "";
@@ -199,6 +200,7 @@ public partial class PolicyScreen : PanelContainer
         policyButtons.Clear();
         branchCards.Clear();
         cardOrder.Clear();
+        lastTab = tabs?.SelectedIndex ?? lastTab; // a rebuild for a new layout keeps the branch in view
         tabs = null;
         frame = new ScreenFrame(uiTheme, "Policies", closeLabel: "Close policies");
         frame.CloseRequested += Close;
@@ -306,7 +308,7 @@ public partial class PolicyScreen : PanelContainer
         policyButtons.Clear();
         branchCards.Clear();
         cardOrder.Clear();
-        int activeTab = tabs?.SelectedIndex ?? 0; // a reload or a rebuild keeps the branch the player was looking at
+        int activeTab = tabs?.SelectedIndex ?? lastTab; // a reload or a rebuild keeps the branch the player was looking at
         tabs = null;
         branchScroll = null;
         var cards = Branches.Select(Card).ToList();
