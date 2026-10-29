@@ -294,4 +294,29 @@ public sealed class FileGameStoreReplicationTests : IDisposable
         Assert.Equal(1, store.ReadNewestSnapshot()!.Value.Seq);
         Assert.Equal(UncivJson.Serialize(new CommandLogHeader()), store.ReadHeaderLine());
     }
+
+    [Fact]
+    public void ALineThatIsNotJson_IsSkipped_NotSent()
+    {
+        using var store = NewStore();
+        store.Append(Envelope(1));
+        using (var raw = new FileStream(Path.Combine(((FileGameStore)store).DirectoryPath, "commands.log"), FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+            raw.Write(Encoding.UTF8.GetBytes("garbage line\n"));
+        Assert.Equal([1L], store.ReadReplicationBatch(0, 0, 0, 10).Lines.Select(it => it.Seq));
+    }
+
+    [Fact]
+    public void ASnapshotThatCannotBeRead_FallsBackToAnOlderOne()
+    {
+        if (OperatingSystem.IsWindows() || Environment.UserName == "root") return;
+        using var store = NewStore();
+        store.Append(Envelope(1));
+        Assert.True(store.TrySnapshot(new Unciv.Logic.GameInfo()));
+        store.Append(Envelope(2));
+        var older = store.ReadNewestSnapshot()!.Value.Seq;
+        Assert.True(store.TrySnapshot(new Unciv.Logic.GameInfo { Turns = 9 }));
+        var newest = Directory.GetFiles(store.DirectoryPath, "snapshot-*").OrderBy(it => it, StringComparer.Ordinal).Last();
+        File.SetUnixFileMode(newest, UnixFileMode.None);
+        Assert.Equal(older, store.ReadNewestSnapshot()!.Value.Seq);
+    }
 }
