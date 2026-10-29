@@ -190,6 +190,53 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         Assert.Contains("[+5]% Production for each trade route to a city-state", Real().Buildings["Hanse"].Uniques);
     }
 
+    // B035: Hanse's '[+5]% Production for each trade route to a city-state' is read by CityStats (route from this city to a city-state's city).
+    [Fact]
+    public void HanseAddsItsProductionPercentPerRouteToACityState()
+    {
+        Models.Ruleset.BnwRulesetTests.LoadBnw();
+        var game = GameStarter.StartNewGame(
+            new GameSetupInfo(
+                new GameParameters
+                {
+                    BaseRuleset = BaseRuleset.Civ_V_BNW.FullName(),
+                    NumberOfCityStates = 1,
+                    Players = [new Player("Brazil", PlayerType.Human), new Player("Poland")],
+                },
+                new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Small }),
+            5, 1000L);
+        var civ = game.Civilizations.First(it => it.IsMajorCiv());
+        var cityState = game.Civilizations.First(it => it.IsCityState);
+        var capital = FoundCity(civ);
+        var csTile = game.TileMap.TileList.First(it => it.IsLand && !it.IsImpassible() && it.GetOwner() == null && it.GetCity() == null);
+        var cityStateCity = cityState.AddCity(csTile.Position, null);
+        capital.CityConstructions.AddBuilding("Hanse");
+        float Bonus()
+        {
+            capital.CityStats.Update();
+            return capital.CityStats.StatPercentBonusTree.TotalStats.Production;
+        }
+        void Route(string destCityId, string destOwner, string originCityId) => (game.TradeRoutes ??= []).Add(new TradeRoute
+        {
+            Id = game.TradeRoutes.Count + 1,
+            OriginCityId = originCityId,
+            DestCityId = destCityId,
+            OriginOwner = civ.CivId,
+            DestOwner = destOwner,
+            Kind = TradeRouteKind.International,
+        });
+
+        float baseline = Bonus();
+        Route(capital.Id, civ.CivId, capital.Id); // a route to a major civ (here itself) does not count
+        Assert.Equal(baseline, Bonus(), 3);
+        Route(cityStateCity.Id, cityState.CivId, cityStateCity.Id); // starts in the city-state, not in Hanse's city
+        Assert.Equal(baseline, Bonus(), 3);
+        Route(cityStateCity.Id, cityState.CivId, capital.Id);
+        Assert.Equal(baseline + 5, Bonus(), 3);
+        Route(cityStateCity.Id, cityState.CivId, capital.Id);
+        Assert.Equal(baseline + 10, Bonus(), 3);
+    }
+
     // B029/B025: the BNW score multipliers for population and wonders (SCORE_POPULATION_MULTIPLIER 4, SCORE_WONDER_MULTIPLIER 25); G&K keeps 3 and 40.
     [Fact]
     public void TheBnwRulesetCarriesTheBnwScoreMultipliers()

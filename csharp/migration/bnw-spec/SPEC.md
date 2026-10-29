@@ -474,7 +474,7 @@ gated by the ModOptions unique `Enables international trade routes`, never by ru
   The unit is lost. "Loss of path" is not checked. Embargoes end routes too (B016, 4.7.9).
 - **Still open** (seams in the code): `TODO(B072)` influence science bonus (Scholasticism), `TODO(B051)` shared ideology gold, tourism / religion /
   quest / Hanse effects of §4.1.5 (B021 and later), `[stats] for each international trade route [cityFilter]` and
-  `[relativeAmount]% Production for each trade route to a city-state` (declared by B003, not yet read).
+  (read by B035: `[relativeAmount]% Production for each trade route to a city-state`).
 
 #### 4.1.6b As built (B006)
 Code: `TradeRouteRules` (`SlotsFree`, `HasTarget`, `CheckRebase`, `Rebase`), `ExoticGoods`, commands `rebase-trade-unit` and `sell-exotic-goods`,

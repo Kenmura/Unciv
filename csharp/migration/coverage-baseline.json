@@ -322,7 +322,7 @@
     "Unciv.Core/Logic/City/CityGreatWorks.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/City/CityPathing.cs": {"branch": 91.67, "line": 100.0},
     "Unciv.Core/Logic/City/CityResources.cs": {"branch": 79.73, "line": 87.8},
-    "Unciv.Core/Logic/City/CityStats.cs": {"branch": 96.37, "line": 98.26},
+    "Unciv.Core/Logic/City/CityStats.cs": {"branch": 96.15, "line": 98.31},
     "Unciv.Core/Logic/City/CityUnitAndConnectionAccess.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/City/GreatPersonPointsBreakdown.cs": {"branch": 95.83, "line": 100.0},
     "Unciv.Core/Logic/City/Managers/CityConquestFunctions.cs": {"branch": 97.37, "line": 100.0},

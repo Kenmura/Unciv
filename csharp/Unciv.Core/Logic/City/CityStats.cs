@@ -555,6 +555,26 @@ public class CityStats(City city)
         BaseStatTree = newBaseStatTree;
     }
 
+    /// <summary>
+    /// B035 (bnw-spec 4.1.5, Hanse): "[relativeAmount]% Production for each trade route to a city-state". Not in Kotlin.
+    /// Counts the active routes that START in this city and END in a city-state's city; each adds the unique's amount.
+    /// </summary>
+    private void AddCityStateTradeRouteProduction(StatTreeNode tree)
+    {
+        var routes = City.Civ.GameInfo.TradeRoutes;
+        if (routes == null) return;
+        int count = 0;
+        foreach (var route in routes)
+        {
+            if (route.OriginCityId == City.Id && City.Civ.GameInfo.GetCivilization(route.DestOwner).IsCityState) count++;
+        }
+        if (count == 0) return;
+        City.ForEachMatchingUnique(UniqueType.ProductionPerCityStateTradeRoute, unique =>
+        {
+            tree.AddStats(new Stats(production: unique.Params[0].ToFloat() * count), unique.GetSourceNameForUser(), unique.SourceObjectName ?? "");
+        });
+    }
+
     private StatTreeNode GetStatPercentBonusList(IConstruction currentConstruction)
     {
         var newStatsBonusTree = new StatTreeNode();
@@ -567,6 +587,7 @@ public class CityStats(City city)
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromUnitSupply(), "Unit Supply");
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromUnhappiness(), "Unhappiness");
         newStatsBonusTree.Add(GetStatsPercentBonusesFromUniquesBySource(currentConstruction));
+        AddCityStateTradeRouteProduction(newStatsBonusTree);
 
         foreach (var building in City.CityConstructions.GetBuiltBuildings())
             newStatsBonusTree.AddStats(building.GetStatPercentageBonuses(City),
