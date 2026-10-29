@@ -81,7 +81,7 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class B020 prog
-  class B021 prog
+  class B021 review
   class B022 prog
   class B023 ready
   class B024 ready
@@ -167,7 +167,7 @@ xychart-beta
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
 | B020 | In-Progress [Claude] | B008, B015 | 1 | BNW: Espionage: diplomats, coup levels, influence spy bonus |
-| B021 | In-Progress [Claude] | B005, B004 | 1 | BNW: City-state BNW changes, Merchant of Venice purchase, Venice restrictions |
+| B021 | Needs-Review [Claude] | B005, B004 | 1 | BNW: City-state BNW changes, Merchant of Venice purchase, Venice restrictions |
 | B022 | In-Progress [Claude] | B005, B004 | 1 | BNW: Religion BNW constants, belief effects, trade-route pressure |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | B026 | Available (waiting on B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
