@@ -1447,5 +1447,23 @@
         "caption": "Aircraft, missiles and the helicopter: aircraft hover on a pole above their shadow, the helicopter stands on its skids."
       }
     ]
+  },
+  "C089": {
+    "scenario": "map-markers",
+    "about": "Private map markers: right-click a tile (no unit selected) for a small menu, edit icon and label, see the tacks on the map, list them and jump to one. Stored in client settings only, never sent to the game.",
+    "shots": [
+      {
+        "golden": "map-markers/menu.png",
+        "caption": "Right-click menu at the pointer offering Place marker and Map markers."
+      },
+      {
+        "golden": "map-markers/placed.png",
+        "caption": "Two tacks on the map with their labels, Iron here and Barbarians."
+      },
+      {
+        "golden": "map-markers/list.png",
+        "caption": "The marker list: icon, tile and label per entry; pressing one centres the camera on it."
+      }
+    ]
   }
 }

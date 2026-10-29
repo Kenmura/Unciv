@@ -51,3 +51,4 @@ mp-social
 join
 viewport
 rival-ribbon
+map-markers

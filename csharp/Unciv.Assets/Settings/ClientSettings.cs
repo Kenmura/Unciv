@@ -91,6 +91,10 @@ public sealed record ClientSettings
     [JsonPropertyName("buildTemplates")]
     public List<BuildTemplate> BuildTemplates { get; init; } = [];
 
+    /// <summary>C089: the player's private map markers by game key (see <see cref="MapMarkerModel.Key"/>). Client-only: never a command, never hashed, never sent to a host.</summary>
+    [JsonPropertyName("mapMarkers")]
+    public SortedDictionary<string, List<MapMarker>> MapMarkers { get; init; } = new(StringComparer.Ordinal);
+
     public static ClientSettings Default { get; } = new();
 
     /// <summary>The settings made safe: values a hand-edited or damaged file could hold that would break the UI are replaced by the default.</summary>
@@ -110,6 +114,7 @@ public sealed record ClientSettings
             ConsoleHistory = ConsoleModel.SanitizeHistory(ConsoleHistory),
             PlayerName = string.IsNullOrWhiteSpace(PlayerName) ? Default.PlayerName : PlayerName,
             BuildTemplates = CityBulkModel.SanitizeTemplates(BuildTemplates),
+            MapMarkers = MapMarkerModel.Sanitize(MapMarkers),
             AutoPlay = AutoPlay?.Sanitized() ?? new AutoPlaySettings(),
             Player = Player is null ? PlayerSettings.Default : Player with { NotificationsLogMaxTurns = Math.Max(0, Player.NotificationsLogMaxTurns) },
         };

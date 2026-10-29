@@ -71,6 +71,9 @@ public partial class MapView : Node3D
     /// <summary>Raised on a right click (C010: the quick "move there" order); the tile is picked but not selected.</summary>
     public event Action<HexCoord?>? TileRightClicked;
 
+    /// <summary>C089: where the pointer was when <see cref="TileRightClicked"/> last fired (the marker menu opens there).</summary>
+    public Vector2 RightClickAt { get; private set; }
+
     public float Zoom => zoom;
 
     public float Tilt => tilt;
@@ -457,6 +460,7 @@ public partial class MapView : Node3D
                 OnMouseButton(button);
                 break;
             case InputEventMouseButton { Pressed: false, ButtonIndex: MouseButton.Right } right:
+                RightClickAt = right.Position;
                 TileRightClicked?.Invoke(PickTile(right.Position));
                 break;
             case InputEventMouseMotion motion when pressAt != null:

@@ -27,6 +27,9 @@ public interface IGameSession
     /// <summary>The civ this client plays as; every command and query is made as that civ.</summary>
     string ViewerCivId { get; }
 
+    /// <summary>C089: the id of the game, which keys the player's private client-side data (map markers); null when the session does not know it (a joined network game), then such data is not persisted.</summary>
+    string? GameId => null;
+
     /// <summary>The static ruleset (names, colours, costs by name). Read-only data identical on every peer, so it may be read directly.</summary>
     Ruleset Ruleset { get; }
 

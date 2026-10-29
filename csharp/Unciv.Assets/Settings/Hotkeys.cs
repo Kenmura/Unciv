@@ -63,6 +63,9 @@ public enum HotkeyAction
     /// <summary>C078: toggles the yield icons on the map (Kotlin <c>ToggleYieldDisplay</c>, Ctrl+Y).</summary>
     ToggleYields,
 
+    /// <summary>C089: opens the map marker editor on the tile under the pointer (the marker list when the pointer is off the map). Unciv has no such key; Ctrl+M because plain M is Automate.</summary>
+    PlaceMarker,
+
     // C078: the unit actions. Each is named like the engine's UnitActionType (so a menu entry finds its key by name); DisbandUnit is the panel's own Disband entry.
     // Their keys are the Kotlin KeyboardBinding.UnitActions defaults. Several actions share a key (they are never on offer together, as in Kotlin).
     Automate,
@@ -129,6 +132,7 @@ public static class Hotkeys
         [HotkeyAction.ViewCapital] = "Home",
         [HotkeyAction.ToggleResources] = "Ctrl+R",
         [HotkeyAction.ToggleYields] = "Ctrl+Y",
+        [HotkeyAction.PlaceMarker] = "Ctrl+M",
         [HotkeyAction.Automate] = "M",
         [HotkeyAction.StopAutomation] = "M",
         [HotkeyAction.StopMovement] = "M",

@@ -78,6 +78,15 @@ public partial class GameScreen : Control
     /// <summary>C088: the work radius of the city site under the pointer while a unit that can found a city is selected.</summary>
     public TileOverlay SiteOverlay { get; private set; } = null!; // JUSTIFY: C088 assigned in _Ready before any use
 
+    /// <summary>C089: the player's private map markers (pins and labels), drawn from the client settings only.</summary>
+    public MapMarkerLayer MarkerLayer { get; private set; } = null!; // JUSTIFY: C089 assigned in _Ready before any use
+
+    /// <summary>C089: the marker editor and list (built again for every game started on this screen).</summary>
+    public MapMarkerView? MarkerEditor { get; private set; }
+
+    /// <summary>C089: the context menu a right-click on a tile opens when no unit is selected.</summary>
+    public MapMarkerMenuView MarkerMenu { get; private set; } = null!; // JUSTIFY: C089 assigned in _Ready before any use
+
     private bool foundsCities;
 
     public TileOverlay AttackOverlay { get; private set; } = null!; // JUSTIFY: C012 assigned in _Ready before any use
@@ -205,6 +214,8 @@ public partial class GameScreen : Control
         GameMenu.Close();
         AutoPlayMenu.Close();
         ConsolePopup.Close();
+        MarkerMenu.Close();
+        MarkerEditor?.Close();
         Tutorials.Close();
         VictoryStatus.Close();
         TurnOverlay.Close();
@@ -227,7 +238,7 @@ public partial class GameScreen : Control
     }
 
     // The 3D parts do not follow the screen's own visibility (a Node3D under a Control is a separate branch), so they are hidden one by one.
-    private IEnumerable<Node3D> WorldLayers() => [Map, Overlays, unitLayer, dotLayer, ReachableOverlay, AttackOverlay, SiteOverlay];
+    private IEnumerable<Node3D> WorldLayers() => [Map, Overlays, unitLayer, dotLayer, ReachableOverlay, AttackOverlay, SiteOverlay, MarkerLayer];
 
     private bool watchingAfterDefeat;
     private int gameOverCheck;
@@ -536,6 +547,7 @@ public partial class GameScreen : Control
     private void ApplySettings(ClientSettings settings)
     {
         if (session != null && snapshot != null) Run(RefreshTaskCard()); // C054: Show tutorials may have changed
+        if (session != null && snapshot != null) RefreshMarkers();
         hotkeys = settings.KeyBindings;
         World.SetKeys(KeyOf);
         Hud.EndTurnKey = KeyOf(HotkeyAction.EndTurn);
@@ -571,7 +583,7 @@ public partial class GameScreen : Control
             return true;
         }
         if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return false; // keys belong to a text field being typed in (Ctrl and F keys are not swallowed by it)
-        if (!IsVisibleInTree() || GameMenu.Visible || VictoryStatus.Visible || Trade.Visible || Picker.Visible || AutoPlayMenu.Visible) return false; // covered or hidden (the options screen hides this one)
+        if (!IsVisibleInTree() || MarkerEditor?.Visible == true || GameMenu.Visible || VictoryStatus.Visible || Trade.Visible || Picker.Visible || AutoPlayMenu.Visible) return false; // covered or hidden (the options screen hides this one)
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
         if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || Espionage.Visible || GameOver.Visible || VoteResult.Visible || Alerts.Visible || Proposals.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
@@ -633,6 +645,9 @@ public partial class GameScreen : Control
             case HotkeyAction.ToggleResources:
                 boundSettings?.Update(s => s with { ShowResources = !s.ShowResources });
                 return boundSettings != null;
+            case HotkeyAction.PlaceMarker:
+                OpenMarkerEditor(HoveredTile);
+                return true;
             case HotkeyAction.ToggleYields:
                 boundSettings?.Update(s => s with { ShowYields = !s.ShowYields });
                 return boundSettings != null;
@@ -685,6 +700,11 @@ public partial class GameScreen : Control
             return true;
         }
         if (ConsolePopup.Visible) return ConsolePopup.Cancel();
+        if (MarkerMenu.Visible)
+        {
+            MarkerMenu.Close();
+            return true;
+        }
         if (GameMenu.Visible) return GameMenu.Cancel();
         if (VictoryStatus.Visible)
         {
@@ -797,6 +817,8 @@ public partial class GameScreen : Control
         AddChild(ReachableOverlay);
         AddChild(AttackOverlay);
         AddChild(SiteOverlay);
+        MarkerLayer = new MapMarkerLayer { Name = "MarkerLayer" };
+        AddChild(MarkerLayer);
 
         statusLabel = new Label { Name = "StatusLabel" };
         statusPanel = new PanelContainer { Name = "StatusPanel", Visible = false, MouseFilter = MouseFilterEnum.Ignore, ThemeTypeVariation = UiVariants.PanelTooltip };
@@ -881,6 +903,9 @@ public partial class GameScreen : Control
         ConsolePopup = new ConsoleView();
         AddChild(ConsolePopup);
         ConsolePopup.StateChanged += (history, keepOpen) => boundSettings?.Update(s => s with { ConsoleHistory = [.. history], KeepConsoleOpen = keepOpen });
+        MarkerMenu = new MapMarkerMenuView();
+        AddChild(MarkerMenu);
+        MarkerMenu.Chosen += OnMarkerMenuChosen;
         GetViewport().SizeChanged += Layout;
         Layout();
 
@@ -944,6 +969,7 @@ public partial class GameScreen : Control
         var autoPlayRect = Hud.AutoPlayButton?.GetGlobalRect() ?? default; // the dock's own layout places the button; the menu opens above it, right-aligned
         AutoPlayMenu.Position = new Vector2(autoPlayRect.End.X - AutoPlayMenu.Size.X, autoPlayRect.Position.Y - AutoPlayMenu.Size.Y - HudMargin / 2f);
         ConsolePopup.LayoutIn(Size);
+        MarkerEditor?.LayoutIn(Size);
         Picker.LayoutIn(Size);
         Tutorials.LayoutIn(Size);
         TaskCard.LayoutIn(Size, World.NavBottom + HudMargin);
@@ -1082,6 +1108,18 @@ public partial class GameScreen : Control
         Overview.CityChosen += JumpToCity;
         Overview.UnitChosen += JumpToUnit;
         if (boundSettings != null) Overview.BindSettings(boundSettings);
+        if (MarkerEditor != null)
+        {
+            RemoveChild(MarkerEditor);
+            MarkerEditor.QueueFree();
+        }
+        MarkerEditor = new MapMarkerView(theme);
+        AddChild(MarkerEditor);
+        MarkerEditor.Saved += OnMarkerSaved;
+        MarkerEditor.Removed += OnMarkerRemoved;
+        MarkerEditor.GoTo += OnMarkerGoTo;
+        MarkerMenu.Init(theme);
+        MarkerMenu.Close();
         if (Tooltips != null)
         {
             RemoveChild(Tooltips);
@@ -1117,6 +1155,8 @@ public partial class GameScreen : Control
         MoveChild(GameMenu, -1);
         MoveChild(AutoPlayMenu, -1);
         MoveChild(ConsolePopup, -1);
+        MoveChild(MarkerEditor, -1);
+        MoveChild(MarkerMenu, -1);
         MoveChild(Tutorials, -1);
         AddChild(Tooltips); // above everything, so a tip is never covered by a screen
         MoveChild(TurnOverlay, -1); // above every screen: while the turn is processed nothing underneath may be used
@@ -1144,6 +1184,7 @@ public partial class GameScreen : Control
         Minimap.Update(snapshot.Tiles, OwnerColour);
         Layout();
         Overlays.Rebuild(assets, session.Ruleset, Map, snapshot.Tiles, snapshot.Cities, OwnerColour);
+        RefreshMarkers();
         if (OpenCity != null) ShowCity(snapshot.Cities.FirstOrDefault(it => it.X == OpenCity.X && it.Y == OpenCity.Y));
         RebuildUnits();
         ClearPreview();
@@ -1196,6 +1237,7 @@ public partial class GameScreen : Control
 
     private void OnTileClicked(HexCoord? coord)
     {
+        MarkerMenu.Close();
         if (coord is not { } tile)
         {
             Deselect();
@@ -1226,9 +1268,87 @@ public partial class GameScreen : Control
 
     private void OnTileRightClicked(HexCoord? coord)
     {
+        MarkerMenu.Close();
+        if (coord is { } marked && SelectedUnitId == null)
+        {
+            // C089: with no unit selected a right-click on a tile opens the marker menu there (with a unit selected it moves or attacks, as before)
+            markerTile = marked;
+            MarkerMenu.Open(Map.RightClickAt, Size, MapMarkerModel.At(MarkerSettings, MarkerKey, marked.X, marked.Y) != null);
+            return;
+        }
         if (coord is not { } tile || SelectedUnitId == null) return;
         if (attackTiles.Contains((tile.X, tile.Y))) Run(ShowAttackPreview(tile));
         else Run(RightClickMove(tile));
+    }
+
+    // C089: private map markers. Stored in the client settings under the game and viewer; a game without an id keeps them in memory for the session.
+    private const string SessionMarkerKey = "session";
+    private ClientSettings sessionMarkers = ClientSettings.Default;
+    private HexCoord? markerTile;
+
+    private string? MarkerKey => MapMarkerModel.Key(session?.GameId, session?.ViewerCivId ?? "");
+
+    private bool MarkersPersist => boundSettings != null && MarkerKey != null;
+
+    private ClientSettings MarkerSettings => MarkersPersist ? boundSettings!.Current : sessionMarkers;
+
+    private string StoreKey => MarkersPersist ? MarkerKey! : SessionMarkerKey;
+
+    /// <summary>The viewer's markers of this game, in the order they were placed.</summary>
+    public IReadOnlyList<MapMarker> Markers => MapMarkerModel.For(MarkerSettings, StoreKey);
+
+    private void RefreshMarkers()
+    {
+        if (MarkerLayer == null || session == null) return;
+        MarkerLayer.Show(Markers, TileTopAt);
+    }
+
+    private void ChangeMarkers(Func<ClientSettings, string, ClientSettings> change)
+    {
+        string key = StoreKey;
+        if (MarkersPersist) boundSettings!.Update(it => change(it, key)); // Changed redraws the layer
+        else
+        {
+            sessionMarkers = change(sessionMarkers, key);
+            RefreshMarkers();
+        }
+        MarkerEditor?.SetList(Markers);
+    }
+
+    /// <summary>Opens the marker editor on a tile (the list only when null).</summary>
+    public void OpenMarkerEditor(HexCoord? tile)
+    {
+        if (session == null || MarkerEditor == null) return;
+        MarkerMenu.Close();
+        var existing = tile is { } at ? MapMarkerModel.At(MarkerSettings, StoreKey, at.X, at.Y) : null;
+        MarkerEditor.Open(tile, existing, Markers);
+    }
+
+    private void OnMarkerMenuChosen(MarkerMenuChoice choice)
+    {
+        MarkerMenu.Close();
+        switch (choice)
+        {
+            case MarkerMenuChoice.Edit:
+                OpenMarkerEditor(markerTile);
+                break;
+            case MarkerMenuChoice.Remove:
+                if (markerTile is { } tile) OnMarkerRemoved(tile);
+                break;
+            case MarkerMenuChoice.List:
+                OpenMarkerEditor(null);
+                break;
+        }
+    }
+
+    private void OnMarkerSaved(HexCoord tile, string icon, string label) => ChangeMarkers((it, key) => MapMarkerModel.Place(it, key, tile.X, tile.Y, icon, label));
+
+    private void OnMarkerRemoved(HexCoord tile) => ChangeMarkers((it, key) => MapMarkerModel.Remove(it, key, tile.X, tile.Y));
+
+    private void OnMarkerGoTo(HexCoord tile)
+    {
+        MarkerEditor?.Close();
+        Map.FocusOn(MapLayout.TileTop(tile.X, tile.Y));
     }
 
     private async Task RightClickMove(HexCoord tile)

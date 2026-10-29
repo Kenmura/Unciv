@@ -1425,6 +1425,24 @@ Scenario `unit-orders`.
 
 *Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius.* (`unit-orders/city-site.png`)
 
+## C089 (ticket not Done or unknown)
+
+Private map markers: right-click a tile (no unit selected) for a small menu, edit icon and label, see the tacks on the map, list them and jump to one. Stored in client settings only, never sent to the game.
+
+Scenario `map-markers`.
+
+![Right-click menu at the pointer offering Place marker and Map markers.](../Unciv.Godot.Harness/golden/map-markers/menu.png)
+
+*Right-click menu at the pointer offering Place marker and Map markers.* (`map-markers/menu.png`)
+
+![Two tacks on the map with their labels, Iron here and Barbarians.](../Unciv.Godot.Harness/golden/map-markers/placed.png)
+
+*Two tacks on the map with their labels, Iron here and Barbarians.* (`map-markers/placed.png`)
+
+![The marker list: icon, tile and label per entry; pressing one centres the camera on it.](../Unciv.Godot.Harness/golden/map-markers/list.png)
+
+*The marker list: icon, tile and label per entry; pressing one centres the camera on it.* (`map-markers/list.png`)
+
 ## C093 Unit art by era: medieval and renaissance
 
 Medieval and renaissance unit art: 19 more units (pikemen, samurai, longbowmen, musketeers, lancers, camel archers and elephants) from the units pack, built from data in attachments.json.

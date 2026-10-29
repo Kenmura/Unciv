@@ -34,6 +34,9 @@ public sealed class LocalHost : IGameSession
     private volatile bool endingTurn;
     private List<(long Seq, IReadOnlyList<GameEvent> Events)>? collected; // only touched while the gate is held
 
+    /// <inheritdoc/>
+    public string? GameId => session.Game.GameId;
+
     public LocalHost(GameSession session, string humanCivId, Func<long> clock)
     {
         this.session = session;
