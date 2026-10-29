@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 229/230 | 1 | 1 | 0 | [T256](backlog/T256.md) |
+| Phase 1: CLI (headless engine) | 229/230 | 1 | 0 | 1 | [T256](backlog/T256.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 29/29 | 0 | 0 | 0 | complete |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 63/73 | 10 | 0 | 2 | [C078](backlog/C078.md) [C079](backlog/C079.md) [C082](backlog/C082.md) [C085](backlog/C085.md) [C086](backlog/C086.md) [C089](backlog/C089.md) [C090](backlog/C090.md) [C091](backlog/C091.md) [C095](backlog/C095.md) [T247](backlog/T247.md) |
@@ -61,7 +61,7 @@ flowchart TD
   class C091 ondeck
   class C095 prog
   class T247 waiting
-  class T256 ready
+  class T256 prog
 ```
 
 ## Remaining tickets over time
@@ -80,9 +80,9 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 9]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 8]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0]
-    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 2]
+    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 3]
 ```
 
 ## Progress and scope over time
@@ -106,7 +106,6 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T256 | **Ready to start** | C094 | 0 | Unit art: ships, aircraft, armour, missiles and siege models |
 | C089 | **On deck** (after C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C079 | **On deck** (after C078) | C078 | 0 | Responsive and localization pass |
 | C091 | **On deck** (after C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
@@ -117,3 +116,4 @@ xychart-beta
 | C086 | Available (waiting on ) | C094 | 0 | Unit combat polish: effects and sounds |
 | C095 | In-Progress [Claude-C095] | C084 | 0 | Battering Ram rigid siege kind and chariot/elephant art |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
+| T256 | In-Progress [Claude-T256] | C094 | 0 | Unit art: ships, aircraft, armour, missiles and siege models |
