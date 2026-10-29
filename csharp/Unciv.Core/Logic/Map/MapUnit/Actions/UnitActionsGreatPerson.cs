@@ -65,7 +65,9 @@ public static class UnitActionsGreatPerson
             else
             {
                 var constructions = ((CityObject)tile.GetCity().NotNull()).CityConstructions;
-                canHurryWonder = constructions.IsBuildingWonder() && constructions.CanBeHurried();
+                // T242: a wonder another civ finished meanwhile is still the current construction until the queue is validated at turn processing:
+                // without the buildability check a second human's Great Engineer would be consumed for nothing (two humans race for a wonder in the same round).
+                canHurryWonder = constructions.IsBuildingWonder() && constructions.CanBeHurried() && constructions.GetCurrentConstruction().IsBuildable(constructions);
             }
 
             yield return new UnitAction(

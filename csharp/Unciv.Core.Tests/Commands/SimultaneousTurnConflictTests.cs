@@ -2,16 +2,19 @@ using System.Text.Json.Nodes;
 using Unciv.Commands;
 using Unciv.Commands.City;
 using Unciv.Commands.Diplomacy;
+using Unciv.Commands.Empire;
 using Unciv.Commands.Events;
 using Unciv.Commands.Turn;
 using Unciv.Commands.Units;
 using Unciv.Core.Tests.Commands.Diplomacy;
 using Unciv.Core.Tests.Support;
 using Unciv.Logic;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Files;
 using Unciv.Logic.Map;
 using Unciv.Logic.Trade;
 using Unciv.Models;
+using Unciv.Models.Ruleset;
 using Unciv.Net.Visibility;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
@@ -615,5 +618,429 @@ public sealed class SimultaneousTurnConflictTests
         Assert.Equal(hash, arena.Hash());
         victim.DoAction(); // the order running on a dead unit does nothing
         Assert.Equal(hash, arena.Hash());
+    }
+
+    // ----- T242, row 7: one-per-game wonders (queued by both, completed at turn processing or live by a Great Engineer) -----
+
+    private static GameCommand StepCommand(ResolveStep step) => step switch
+    {
+        ResolveStep.ProcessEndTurn s => new ProcessEndTurn { CivId = s.CivId },
+        ResolveStep.RunAiTurn s => new RunAiTurn { CivId = s.CivId },
+        ResolveStep.StartNextTurn => new StartNextTurn(),
+        ResolveStep.BeginTurn s => new BeginTurn { CivId = s.CivId },
+        _ => throw new InvalidOperationException(step.ToString()),
+    };
+
+    // Both humans end their turn (in the given order), then the host drives the round to the end like the real server does.
+    private static void EndRound(Arena arena, bool aFirst)
+    {
+        foreach (var civ in Order(arena, aFirst)) arena.Ok(civ, new EndTurn());
+        var game = arena.Game.GameInfo;
+        Assert.Equal(SimultaneousPhase.Resolving, game.TurnState!.Phase);
+        while (game.NextResolveStep() is { } step)
+        {
+            var result = arena.Session.SubmitAsServer(StepCommand(step));
+            Assert.True(result.Accepted, result.Validation.Code + ": " + result.Validation.Message);
+        }
+        Assert.Equal(SimultaneousPhase.Playing, game.TurnState!.Phase);
+    }
+
+    // A human with nothing to research is blocked from ending the turn (a pending Technology decision): give both something to do.
+    private static void GiveResearch(Arena arena)
+    {
+        foreach (var civ in new[] { arena.A, arena.B }) civ.Tech.TechsToResearch.Add(arena.Game.Ruleset.Technologies.Keys.First());
+    }
+
+    private sealed record WonderRace(Arena Arena, string Wonder, Unciv.Logic.City.City CityA, Unciv.Logic.City.City CityB);
+
+    private static WonderRace BuildWonderRace(int cost, int progress)
+    {
+        var arena = new Arena();
+        var wonder = arena.Game.CreateWonder();
+        wonder.Cost = cost;
+        GiveResearch(arena);
+        var cityA = arena.Game.AddCity(arena.A, arena.Tile(-3, 0));
+        var cityB = arena.Game.AddCity(arena.B, arena.Tile(3, 0));
+        foreach (var city in new[] { cityA, cityB })
+            if (progress > 0) city.CityConstructions.InProgressConstructions[wonder.Name] = progress;
+        return new WonderRace(arena, wonder.Name, cityA, cityB);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoHumansQueueingTheSameWonderAreBothAcceptedAndTheCivIndexOrderDecidesWhoCompletesIt(bool aFirst)
+    {
+        var race = BuildWonderRace(cost: 100, progress: 100);
+        var arena = race.Arena;
+        var queue = new Dictionary<CivilizationObject, GameCommand>
+        {
+            [arena.A] = new QueueConstruction { CityId = race.CityA.Id, Name = race.Wonder, AddToTop = true },
+            [arena.B] = new QueueConstruction { CityId = race.CityB.Id, Name = race.Wonder, AddToTop = true },
+        };
+        foreach (var civ in Order(arena, aFirst)) arena.Ok(civ, queue[civ]); // nothing is built yet: the wonder is an open race, both may queue it
+        Assert.All(new[] { race.CityA, race.CityB }, city => Assert.Equal(race.Wonder, city.CityConstructions.CurrentConstructionName()));
+        Assert.False(race.CityA.CityConstructions.IsBuilt(race.Wonder) || race.CityB.CityConstructions.IsBuilt(race.Wonder));
+
+        EndRound(arena, aFirst);
+
+        // the completion happens in BeginTurn (StartTurn -> ConstructIfEnough), in civ-index order: A comes before B, whatever the log order was
+        Assert.True(race.CityA.CityConstructions.IsBuilt(race.Wonder));
+        Assert.False(race.CityB.CityConstructions.IsBuilt(race.Wonder));
+        Assert.DoesNotContain(race.Wonder, race.CityB.CityConstructions.ConstructionQueue);
+        // the loser's production is not lost: it is refunded as gold, once, at the next validation
+        Assert.Equal(1, arena.B.Notifications.Count(it => it.Text.Contains("Excess production for [" + race.Wonder + "]", StringComparison.Ordinal)));
+        Assert.False(race.CityB.CityConstructions.InProgressConstructions.ContainsKey(race.Wonder));
+        AssertReplays(arena, () => BuildWonderRace(cost: 100, progress: 100).Arena);
+    }
+
+    private static UnitActionDescriptor Hurry(MapUnitObject engineer) =>
+        UnitActionDescriptor.Describe(engineer).First(it => it.Descriptor.ActionType == UnitActionType.HurryWonder).Descriptor;
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoGreatEngineersHurryingTheSameWonder_TheFirstInTheLogCompletesItAndTheSecondIsRejected(bool aFirst)
+    {
+        MapUnitObject engineerA = null!, engineerB = null!;
+        Unciv.Logic.City.City extraA = null!, extraB = null!;
+        WonderRace race = null!;
+        Arena Build()
+        {
+            race = BuildWonderRace(cost: 100, progress: 0);
+            foreach (var city in new[] { race.CityA, race.CityB }) city.CityConstructions.SetCurrentConstruction(race.Wonder);
+            var engineer = race.Arena.Game.CreateBaseUnit("Civilian", "Can speed up the construction of a wonder");
+            engineerA = race.Arena.Unit(engineer.Name, race.Arena.A, -3, 0);
+            engineerB = race.Arena.Unit(engineer.Name, race.Arena.B, 3, 0);
+            extraA = race.Arena.Game.AddCity(race.Arena.A, race.Arena.Tile(-5, 0));
+            extraB = race.Arena.Game.AddCity(race.Arena.B, race.Arena.Tile(5, 0));
+            return race.Arena;
+        }
+        var arena = Build();
+        var hurry = new Dictionary<CivilizationObject, GameCommand>
+        {
+            [arena.A] = new ExecuteUnitAction { UnitId = engineerA.Id, Descriptor = Hurry(engineerA) },
+            [arena.B] = new ExecuteUnitAction { UnitId = engineerB.Id, Descriptor = Hurry(engineerB) },
+        };
+        var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
+        var (firstCity, secondCity, secondEngineer) = first == arena.A ? (race.CityA, race.CityB, engineerB) : (race.CityB, race.CityA, engineerA);
+        Assert.Equal(race.Wonder, secondCity.CityConstructions.CurrentConstructionName()); // the race is on: both cities build it
+        arena.Ok(first, hurry[first]);
+        Assert.True(firstCity.CityConstructions.IsBuilt(race.Wonder));
+        var goldBefore = second.Gold;
+        arena.Rejected(second, hurry[second], CommandErrors.NotAllowed);
+        arena.Rejected(second, hurry[second], CommandErrors.NotAllowed);
+        Assert.False(secondEngineer.IsDestroyed); // the Great Engineer is not wasted on a wonder that is gone
+        Assert.False(secondCity.CityConstructions.IsBuilt(race.Wonder));
+        Assert.Equal(goldBefore, second.Gold);
+        // nobody can start the finished wonder anywhere any more
+        var later = new QueueConstruction { CityId = (second == arena.A ? extraA : extraB).Id, Name = race.Wonder };
+        arena.Rejected(second, later, CommandErrors.NotAllowed, CommandErrors.InvalidTarget);
+        arena.Rejected(first, new QueueConstruction { CityId = (first == arena.A ? extraA : extraB).Id, Name = race.Wonder }, CommandErrors.NotAllowed, CommandErrors.InvalidTarget);
+        AssertReplays(arena, Build);
+    }
+
+    // ----- T242, row 7: a natural wonder's first-discoverer reward and ancient ruins are claimed by whoever the log lets arrive first -----
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoHumansDiscoveringTheSameNaturalWonder_OnlyTheFirstInTheLogGetsTheFirstToDiscoverReward(bool aFirst)
+    {
+        MapUnitObject a = null!, b = null!;
+        const string wonder = "El Dorado";
+        Arena Build()
+        {
+            var arena = new Arena();
+            var wonderTile = arena.Tile(0, 0);
+            wonderTile.NaturalWonder = wonder;
+            wonderTile.SetTerrainFeatures(wonderTile.TerrainFeatures); // rebuilds the terrain caches that know the wonder's uniques
+            a = arena.Unit("Warrior", arena.A, -4, 0);
+            b = arena.Unit("Warrior", arena.B, 4, 0);
+            Assert.DoesNotContain(wonder, arena.A.NaturalWonders); // nobody knows it yet: the race is on
+            Assert.DoesNotContain(wonder, arena.B.NaturalWonders);
+            return arena;
+        }
+        var arena = Build();
+        var moves = new Dictionary<CivilizationObject, GameCommand>
+        {
+            [arena.A] = new MoveUnit { UnitId = a.Id, To = new HexCoord(-2, 0) },
+            [arena.B] = new MoveUnit { UnitId = b.Id, To = new HexCoord(2, 0) },
+        };
+        var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
+        var (firstGold, secondGold) = (first.Gold, second.Gold);
+        arena.Ok(first, moves[first]);
+        Assert.Contains(wonder, first.NaturalWonders);
+        Assert.Equal(firstGold + 500, first.Gold); // the first discoverer is paid ...
+        arena.Ok(second, moves[second]);
+        Assert.Contains(wonder, second.NaturalWonders);
+        Assert.Equal(secondGold, second.Gold); // ... the second one discovers it too, for nothing
+        Assert.Single(first.Notifications, it => it.Text.Contains("500", StringComparison.Ordinal));
+        Assert.DoesNotContain(second.Notifications, it => it.Text.Contains("for discovering", StringComparison.Ordinal));
+        AssertReplays(arena, Build);
+    }
+
+    private static List<string> RuinRewards(CivilizationObject civ) =>
+        JsonNode.Parse(Save((GameInfo)civ.GameInfo))!["civilizations"]!.AsArray()
+            .First(it => it!["civName"]!.GetValue<string>() == civ.CivName)!["ruinsManager"]!["lastChosenRewards"]!.AsArray()
+            .Select(it => it!.GetValue<string>()).ToList();
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoHumansReachingTheSameAncientRuins_OnlyTheFirstGetsAReward(bool aFirst)
+    {
+        MapUnitObject a = null!, b = null!;
+        Arena Build()
+        {
+            var arena = new Arena();
+            var ruins = arena.Game.Ruleset.TileImprovements.Values.First(it => it.IsAncientRuinsEquivalent());
+            arena.Tile(0, 0).SetImprovement(ruins.Name);
+            a = arena.Unit("Warrior", arena.A, -1, 0);
+            b = arena.Unit("Warrior", arena.B, 1, 0);
+            return arena;
+        }
+        var arena = Build();
+        var tile = arena.Tile(0, 0);
+        Assert.NotNull(tile.TileImprovement);
+        Assert.All(new[] { arena.A, arena.B }, civ => Assert.All(RuinRewards(civ), it => Assert.Equal("", it)));
+        var enter = new Dictionary<CivilizationObject, GameCommand>
+        {
+            [arena.A] = new MoveUnit { UnitId = a.Id, To = new HexCoord(0, 0) },
+            [arena.B] = new MoveUnit { UnitId = b.Id, To = new HexCoord(0, 0) },
+        };
+        var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
+        var (firstUnit, secondUnit) = first == arena.A ? (a, b) : (b, a);
+        arena.Ok(first, enter[first]);
+        Assert.Null(tile.TileImprovement); // consumed by the first unit entering
+        Assert.Contains(RuinRewards(first), it => it != "");
+        // the second cannot even enter the occupied tile ...
+        arena.Rejected(second, enter[second], CommandErrors.InvalidTarget);
+        Assert.All(RuinRewards(second), it => Assert.Equal("", it));
+        // ... and when the first has walked on, the tile is an ordinary one: entering it gives nothing
+        arena.Ok(first, new MoveUnit { UnitId = firstUnit.Id, To = first == arena.A ? new HexCoord(-1, 0) : new HexCoord(1, 0) });
+        Assert.Null(tile.MilitaryUnit);
+        var secondGold = second.Gold;
+        var secondUnits = second.Units.GetCivUnits().Count();
+        arena.Ok(second, enter[second]);
+        Assert.Equal(tile.Position, secondUnit.CurrentTile.Position);
+        Assert.All(RuinRewards(second), it => Assert.Equal("", it));
+        Assert.Equal((secondGold, secondUnits), (second.Gold, second.Units.GetCivUnits().Count()));
+        AssertReplays(arena, Build);
+    }
+
+    // ----- T242, row 8: pantheons, religion founding and beliefs are limited per game: the first applied takes them -----
+
+    private sealed record ReligionRace(Arena Arena, Unciv.Logic.City.City CityA, Unciv.Logic.City.City CityB);
+
+    // Both humans own a city and plenty of faith. <paramref name="limit"/> may thin out the ruleset's beliefs or icons before anything is created.
+    private static ReligionRace BuildReligionRace(Action<Unciv.Models.Ruleset.Ruleset>? limit = null)
+    {
+        var arena = new Arena();
+        limit?.Invoke(arena.Game.Ruleset);
+        GiveResearch(arena);
+        var cityA = arena.Game.AddCity(arena.A, arena.Tile(-3, 0));
+        var cityB = arena.Game.AddCity(arena.B, arena.Tile(3, 0));
+        arena.A.ReligionManager.StoredFaith = 1000;
+        arena.B.ReligionManager.StoredFaith = 1000;
+        foreach (var city in new[] { cityA, cityB }) city.CityConstructions.AddToQueue("Warrior"); // a city without production blocks the end of the turn
+        return new ReligionRace(arena, cityA, cityB);
+    }
+
+    private static List<Belief> Beliefs(Arena arena, BeliefType type) =>
+        arena.Game.Ruleset.Beliefs.Values.Where(it => it.Type == type && arena.A.ReligionManager.GetReligionWithBelief(it) == null).ToList();
+
+    // One belief of each slot the great prophet's picker offers, taking the candidates from the offset on.
+    private static List<string> FoundingBeliefs(Arena arena, CivilizationObject civ, int offset)
+    {
+        var picked = new List<string>();
+        foreach (var slot in civ.ReligionManager.GetBeliefsToChooseAtFounding())
+            for (var i = 0; i < slot.Value; i++)
+                picked.Add(Beliefs(arena, slot.Key == BeliefType.Any ? BeliefType.Follower : slot.Key).Select(it => it.Name).Except(picked).Skip(offset).First());
+        return picked;
+    }
+
+    // The state after a great prophet was used in the city and before the religion is named: what the pending "found a religion" decision waits for.
+    private static void UseProphet(Arena arena, CivilizationObject civ, Unciv.Logic.City.City city)
+    {
+        var pantheon = Beliefs(arena, BeliefType.Pantheon).First(it => !civ.GameInfo.Civilizations.Any(c => c.ReligionManager.GetReligionWithBelief(it) != null));
+        civ.ReligionManager.ChooseBeliefs([pantheon], useFreeBeliefs: true);
+        civ.ReligionManager.FoundReligion(arena.Game.AddUnit("Great Prophet", civ, city.GetCenterTile()));
+        Assert.Equal(ReligionState.FoundingReligion, civ.ReligionManager.ReligionState);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoHumansFoundingTheSamePantheon_TheFirstTakesTheBeliefAndTheSecondMustTakeAnother(bool aFirst)
+    {
+        ReligionRace Build() => BuildReligionRace();
+        var race = Build();
+        var arena = race.Arena;
+        var pantheons = Beliefs(arena, BeliefType.Pantheon);
+        Assert.True(pantheons.Count >= 2);
+        var found = new Dictionary<CivilizationObject, GameCommand>
+        {
+            [arena.A] = new FoundPantheon { Belief = pantheons[0].Name },
+            [arena.B] = new FoundPantheon { Belief = pantheons[0].Name },
+        };
+        Assert.All(new[] { arena.A, arena.B }, civ => Assert.True(civ.ReligionManager.CanFoundOrExpandPantheon())); // both can: it is a race for the belief
+        var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
+        var faith = (First: first.ReligionManager.StoredFaith, Second: second.ReligionManager.StoredFaith);
+        arena.Ok(first, found[first]);
+        Assert.True(first.ReligionManager.Religion!.HasBelief(pantheons[0].Name));
+        Assert.Equal(faith.First - first.ReligionManager.FaithForPantheon(additionalCivs: -1), first.ReligionManager.StoredFaith);
+
+        arena.Rejected(second, found[second], CommandErrors.NotAllowed); // taken
+        arena.Rejected(second, found[second], CommandErrors.NotAllowed);
+        Assert.Equal((ReligionState.None, faith.Second), (second.ReligionManager.ReligionState, second.ReligionManager.StoredFaith));
+        Assert.Null(second.ReligionManager.Religion);
+
+        var cost = second.ReligionManager.FaithForPantheon(); // the second pantheon of the game costs more
+        arena.Ok(second, new FoundPantheon { Belief = pantheons[1].Name });
+        Assert.Equal(faith.Second - cost, second.ReligionManager.StoredFaith);
+        Assert.True(second.ReligionManager.Religion!.HasBelief(pantheons[1].Name));
+        Assert.False(second.ReligionManager.Religion.HasBelief(pantheons[0].Name));
+        AssertReplays(arena, () => Build().Arena);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoHumansRacingForTheLastPantheonBelief_TheSecondHasNothingLeftToFoundOrExpand(bool aFirst)
+    {
+        ReligionRace Build() => BuildReligionRace(rules =>
+        {
+            var last = rules.Beliefs.Values.First(it => it.Type == BeliefType.Pantheon).Name;
+            foreach (var name in rules.Beliefs.Values.Where(it => it.Type == BeliefType.Pantheon && it.Name != last).Select(it => it.Name).ToList()) rules.Beliefs.Remove(name);
+        });
+        var race = Build();
+        var arena = race.Arena;
+        var last = Beliefs(arena, BeliefType.Pantheon).Single();
+        var found = new FoundPantheon { Belief = last.Name };
+        Assert.All(new[] { arena.A, arena.B }, civ => Assert.Contains(PendingDecisions.BlockingFor(civ), it => it.Kind == DecisionKind.Pantheon));
+        var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
+        arena.Ok(first, found);
+        Assert.False(second.ReligionManager.CanFoundOrExpandPantheon()); // not only the belief: the whole option is gone
+        Assert.DoesNotContain(PendingDecisions.BlockingFor(second), it => it.Kind == DecisionKind.Pantheon); // so the second human is not asked to pick one any more
+        arena.Rejected(second, found, CommandErrors.NotAllowed);
+        arena.Rejected(second, new FoundPantheon { Belief = "Nonsense" }, CommandErrors.NotAllowed); // validated for availability before the name
+        Assert.Equal(1000, second.ReligionManager.StoredFaith);
+        arena.Ok(second, new EndTurn()); // and it can end its turn without picking
+        AssertReplays(arena, () => Build().Arena);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoProphetsFoundingReligionsAtOnce_TheFirstTakesTheIconNameAndBeliefsAndTheSecondChoosesOthers(bool aFirst)
+    {
+        ReligionRace Build()
+        {
+            var built = BuildReligionRace();
+            UseProphet(built.Arena, built.Arena.A, built.CityA);
+            UseProphet(built.Arena, built.Arena.B, built.CityB);
+            return built;
+        }
+        var race = Build();
+        var arena = race.Arena;
+        var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
+        var good = FoundingBeliefs(arena, first, 0);
+        var other = FoundingBeliefs(arena, first, 1);
+        Assert.Empty(good.Intersect(other));
+        var religions = arena.Game.Ruleset.Religions;
+        Assert.True(religions.Count >= 3);
+        Assert.All(new[] { arena.A, arena.B }, civ => Assert.Contains(PendingDecisions.BlockingFor(civ), it => it.Kind == DecisionKind.FoundReligion));
+        Assert.Equal(good, FoundingBeliefs(arena, second, 0)); // the very same offer
+
+        arena.Ok(first, new FoundReligion { ReligionName = religions[0], DisplayName = "Faith One", Beliefs = good });
+        Assert.Equal(first.CivId, arena.Game.GameInfo.Religions[religions[0]].FoundingCivName);
+        Assert.Equal(ReligionState.FoundingReligion, second.ReligionManager.ReligionState);
+        // the icon, then the beliefs, then the display name are each taken now
+        arena.Rejected(second, new FoundReligion { ReligionName = religions[0], DisplayName = religions[0], Beliefs = other }, CommandErrors.InvalidTarget);
+        arena.Rejected(second, new FoundReligion { ReligionName = religions[1], DisplayName = religions[1], Beliefs = good }, CommandErrors.NotAllowed, CommandErrors.InvalidTarget);
+        arena.Rejected(second, new FoundReligion { ReligionName = religions[1], DisplayName = "Faith One", Beliefs = other }, CommandErrors.InvalidTarget);
+        arena.Rejected(second, new FoundReligion { ReligionName = religions[1], DisplayName = religions[0], Beliefs = other }, CommandErrors.InvalidTarget);
+        arena.Rejected(second, new ChooseBeliefs { Beliefs = other }, CommandErrors.NotAllowed); // still the founding, not a reform
+        Assert.Equal(ReligionState.FoundingReligion, second.ReligionManager.ReligionState);
+        Assert.DoesNotContain(religions[1], arena.Game.GameInfo.Religions.Keys);
+
+        arena.Ok(second, new FoundReligion { ReligionName = religions[1], DisplayName = "Faith Two", Beliefs = other });
+        Assert.Equal(new[] { religions[0], religions[1] }, arena.Game.GameInfo.Religions.Keys.Where(religions.Contains).ToArray()); // the pantheons are religions of their own, named after a belief
+        Assert.All(other, name => Assert.True(second.ReligionManager.Religion!.HasBelief(name)));
+        Assert.All(good, name => Assert.False(second.ReligionManager.Religion!.HasBelief(name)));
+        AssertReplays(arena, () => Build().Arena);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoProphetsFoundingReligionsWithOneIconLeft_TheSecondCanNoLongerFoundAndIsNotBlockedForever(bool aFirst)
+    {
+        ReligionRace Build()
+        {
+            var built = BuildReligionRace(rules => rules.Religions.RemoveAll(it => it != rules.Religions[0])); // a game with room for a single religion
+            UseProphet(built.Arena, built.Arena.A, built.CityA);
+            UseProphet(built.Arena, built.Arena.B, built.CityB);
+            return built;
+        }
+        var race = Build();
+        var arena = race.Arena;
+        var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
+        var icon = arena.Game.Ruleset.Religions.Single();
+        var good = FoundingBeliefs(arena, first, 0);
+        var found = new FoundReligion { ReligionName = icon, DisplayName = icon, Beliefs = good };
+        arena.Ok(first, found);
+        Assert.Equal(ReligionState.Religion, first.ReligionManager.ReligionState);
+
+        arena.Rejected(second, found, CommandErrors.InvalidTarget); // the only icon is gone
+        arena.Rejected(second, new FoundReligion { ReligionName = "Judaism", DisplayName = "Judaism", Beliefs = good }, CommandErrors.InvalidTarget); // and there is no other
+        // what the second human is left with: a prophet that was used and nothing to found. It is told by the rejection, and the server
+        // can still end its turn (T250 tracks giving the prophet back or ending this state in the engine).
+        Assert.Equal(ReligionState.FoundingReligion, second.ReligionManager.ReligionState);
+        arena.Rejected(second, new EndTurn(), CommandErrors.PendingDecisions);
+        Assert.True(arena.Session.SubmitAsServer(new ForceEndTurn { CivId = second.CivId }).Accepted);
+        Assert.True(arena.Game.GameInfo.HasEndedTurn(second));
+        AssertReplays(arena, () => Build().Arena);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TwoHumansReformingTheirReligionWithTheSameFollowerBelief_TheFirstTakesItAndTheSecondChoosesAnother(bool aFirst)
+    {
+        ReligionRace Build()
+        {
+            var built = BuildReligionRace();
+            var arena = built.Arena;
+            var icons = arena.Game.Ruleset.Religions;
+            UseProphet(arena, arena.A, built.CityA);
+            arena.A.ReligionManager.FoundReligion(icons[0], icons[0]);
+            arena.A.ReligionManager.ChooseBeliefs(FoundingBeliefs(arena, arena.A, 0).Select(it => arena.Game.Ruleset.Beliefs[it]).ToList());
+            UseProphet(arena, arena.B, built.CityB);
+            arena.B.ReligionManager.FoundReligion(icons[1], icons[1]);
+            arena.B.ReligionManager.ChooseBeliefs(FoundingBeliefs(arena, arena.B, 0).Select(it => arena.Game.Ruleset.Beliefs[it]).ToList());
+            foreach (var civ in new[] { arena.A, arena.B }) civ.ReligionManager.FreeBeliefs["Follower"] = 1; // a belief to add without a prophet (a unique's reward)
+            return built;
+        }
+        var race = Build();
+        var arena = race.Arena;
+        Assert.All(new[] { arena.A, arena.B }, civ => Assert.Equal(ReligionState.Religion, civ.ReligionManager.ReligionState));
+        var followers = Beliefs(arena, BeliefType.Follower);
+        Assert.True(followers.Count >= 2);
+        var choose = new ChooseBeliefs { Beliefs = [followers[0].Name] };
+        var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
+        Assert.All(new[] { arena.A, arena.B }, civ => Assert.Contains(PendingDecisions.BlockingFor(civ), it => it.Kind == DecisionKind.ReformReligion));
+        arena.Ok(first, choose);
+        Assert.True(first.ReligionManager.Religion!.HasBelief(followers[0].Name));
+        Assert.False(first.ReligionManager.HasFreeBeliefs());
+        arena.Rejected(second, choose, CommandErrors.NotAllowed); // taken by the other religion
+        arena.Rejected(second, choose, CommandErrors.NotAllowed);
+        Assert.True(second.ReligionManager.HasFreeBeliefs()); // the free belief is not spent by a rejection
+        Assert.False(second.ReligionManager.Religion!.HasBelief(followers[0].Name));
+        arena.Ok(second, new ChooseBeliefs { Beliefs = [followers[1].Name] });
+        Assert.True(second.ReligionManager.Religion.HasBelief(followers[1].Name));
+        arena.Rejected(first, new ChooseBeliefs { Beliefs = [followers[1].Name] }, CommandErrors.NotAllowed); // nothing left to choose: not allowed
+        AssertReplays(arena, () => Build().Arena);
     }
 }

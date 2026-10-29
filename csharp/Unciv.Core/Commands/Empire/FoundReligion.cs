@@ -33,7 +33,7 @@ public sealed class FoundReligion : GameCommand
             || (DisplayName != "" && DisplayName.Length <= MaxNameLength && DisplayName.IndexOfAny(ForbiddenNameChars.ToCharArray()) < 0
                 && DisplayName != NoReligionName
                 && !gameInfo.Ruleset.Religions.Contains(DisplayName)
-                && gameInfo.Religions.Values.All(it => it.Name != DisplayName));
+                && gameInfo.Religions.Values.All(it => it.Name != DisplayName && it.GetReligionDisplayName() != DisplayName)); // T242: Kotlin's picker only compares icon names; two humans naming a religion alike in the same round must not both succeed
         if (!nameOk)
             return CommandValidation.Fail(CommandErrors.InvalidTarget, $"\"{DisplayName}\" is not a valid religion name");
         return ReligionCommandChecks.TryBeliefs(actor, Beliefs, manager.GetBeliefsToChooseAtFounding(), out _, out failure)
