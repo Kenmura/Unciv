@@ -39,18 +39,8 @@ public sealed class PhoneTablesScenario : Scenario
         int minTarget = UiTokens.DpToPx(UiTokens.TouchTargetDp, Dpi);
 
         ScenarioStep Fits(string what, Func<Node> node) => LayoutChecks.Assert($"on a phone no {what} text is cut off, leaves the window or overlaps another", host, node);
-        ScenarioStep Touchable(string what, Func<Node> node) => new AssertQuery($"every visible button of the {what} is at least 48 dp (120 px) tall", () =>
-        {
-            var bad = Buttons(node()).Where(it => it.IsVisibleInTree() && it.Size.Y > 0 && it.Size.Y + 0.5f < minTarget).Select(it => $"{it.GetType().Name} '{(it as Button)?.Text}' {it.Name} {it.Size.Y}").ToList();
-            foreach (string line in bad.Take(12)) GD.PrintErr($"[phone-tables] {what}: undersized {line}");
-            return bad.Count == 0;
-        });
-        ScenarioStep Reachable(string what, Func<Node> node) => new AssertQuery($"nothing of the {what} is cut off by a container that cannot scroll", () =>
-        {
-            var bad = Unscrollable(node()).ToList();
-            foreach (string line in bad.Take(12)) GD.PrintErr($"[phone-tables] {what}: {line}");
-            return bad.Count == 0;
-        });
+        ScenarioStep Touchable(string what, Func<Node> node) => LayoutChecks.Touchable("phone-tables", what, minTarget, node);
+        ScenarioStep Reachable(string what, Func<Node> node) => LayoutChecks.Reachable("phone-tables", what, node);
         ScenarioStep[] Check(string what, Func<Node> node) => [Fits(what, node), Touchable(what, node), Reachable(what, node)];
 
         var steps = new List<ScenarioStep>
@@ -87,29 +77,5 @@ public sealed class PhoneTablesScenario : Scenario
         steps.AddRange(Check("espionage screen", () => screen.Espionage));
         steps.Add(new Capture("espionage", "Espionage on a phone: the spy table with 48 dp Move and Coup buttons, Assign spies below"));
         return steps;
-    }
-
-    /// <summary>Scroll containers whose content is larger than they are on an axis they do not scroll: what lies beyond is unreachable for a finger.</summary>
-    private static IEnumerable<string> Unscrollable(Node root)
-    {
-        foreach (var child in root.GetChildren())
-        {
-            if (child is ScrollContainer { Visible: true } scroll && scroll.IsVisibleInTree() && scroll.GetChildCount() > 0 && scroll.GetChild(0) is Control content)
-            {
-                var need = content.GetCombinedMinimumSize();
-                if (scroll.VerticalScrollMode == ScrollContainer.ScrollMode.Disabled && need.Y > scroll.Size.Y + 1.5f) yield return $"{scroll.Name} needs {need.Y} high, has {scroll.Size.Y}";
-                if (scroll.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled && need.X > scroll.Size.X + 1.5f) yield return $"{scroll.Name} needs {need.X} wide, has {scroll.Size.X}";
-            }
-            foreach (string nested in Unscrollable(child)) yield return nested;
-        }
-    }
-
-    private static IEnumerable<BaseButton> Buttons(Node root)
-    {
-        foreach (var child in root.GetChildren())
-        {
-            if (child is BaseButton button) yield return button;
-            foreach (var nested in Buttons(child)) yield return nested;
-        }
     }
 }

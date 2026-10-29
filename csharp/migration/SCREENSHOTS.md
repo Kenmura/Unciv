@@ -87,6 +87,7 @@
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
 - [T284 (ticket not Done or unknown)](#t284-ticket-not-done-or-unknown)
+- [T286 (ticket not Done or unknown)](#t286-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -1763,6 +1764,20 @@ Scenario `phone-tables`.
 ![Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer.](../Unciv.Godot.Harness/golden/phone-tables/espionage.png)
 
 *Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer.* (`phone-tables/espionage.png`)
+
+## T286 (ticket not Done or unknown)
+
+The city screen (citizens and production views) on a 2400x1080 400 ppi phone profile: 120 px buttons, meters moved into the side column so the tile grid gets the height, no clipped or overlapping text, nothing behind a container that cannot scroll.
+
+Scenario `phone-city`.
+
+![City screen on a phone: food and border meters, stat chips, specialists and focus in the side column (scrolls), and the tile grid at about 29 dp per hexagon (seven rows share the height).](../Unciv.Godot.Harness/golden/phone-city/citizens.png)
+
+*City screen on a phone: food and border meters, stat chips, specialists and focus in the side column (scrolls), and the tile grid at about 29 dp per hexagon (seven rows share the height).* (`phone-city/citizens.png`)
+
+![City production on a phone: the queue with 48 dp Top/Up/Down/Remove and buy chips, the buildable list, and the built buildings with Sell buttons; each column scrolls.](../Unciv.Godot.Harness/golden/phone-city/production.png)
+
+*City production on a phone: the queue with 48 dp Top/Up/Down/Remove and buy chips, the buildable list, and the built buildings with Sell buttons; each column scrolls.* (`phone-city/production.png`)
 
 ## Missing screenshots
 

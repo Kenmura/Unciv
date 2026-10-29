@@ -44,6 +44,46 @@ internal static class LayoutChecks
         return steps;
     }
 
+    /// <summary>T284/T286: a step asserting every visible button under <paramref name="root"/> is at least <paramref name="minTargetPx"/> tall (a touch target) unless <paramref name="exempt"/> excuses it; the offenders are printed.</summary>
+    public static ScenarioStep Touchable(string tag, string what, int minTargetPx, Func<Node> root, Func<BaseButton, bool>? exempt = null) => new AssertQuery($"every visible button of the {what} is at least 48 dp ({minTargetPx} px) tall", () =>
+    {
+        var bad = Buttons(root()).Where(it => !(exempt?.Invoke(it) ?? false) && it.IsVisibleInTree() && it.Size.Y > 0 && it.Size.Y + 0.5f < minTargetPx).Select(it => $"{it.GetType().Name} '{(it as Button)?.Text}' {it.Name} {it.Size.Y}").ToList();
+        foreach (string line in bad.Take(12)) GD.PrintErr($"[{tag}] {what}: undersized {line}");
+        return bad.Count == 0;
+    });
+
+    /// <summary>T284/T286: a step asserting no scroll container under <paramref name="root"/> hides content on an axis it cannot scroll.</summary>
+    public static ScenarioStep Reachable(string tag, string what, Func<Node> root) => new AssertQuery($"nothing of the {what} is cut off by a container that cannot scroll", () =>
+    {
+        var bad = Unscrollable(root()).ToList();
+        foreach (string line in bad.Take(12)) GD.PrintErr($"[{tag}] {what}: {line}");
+        return bad.Count == 0;
+    });
+
+    /// <summary>Scroll containers whose content is larger than they are on an axis they do not scroll: what lies beyond is unreachable for a finger.</summary>
+    private static IEnumerable<string> Unscrollable(Node root)
+    {
+        foreach (var child in root.GetChildren())
+        {
+            if (child is ScrollContainer { Visible: true } scroll && scroll.IsVisibleInTree() && scroll.GetChildCount() > 0 && scroll.GetChild(0) is Control content)
+            {
+                var need = content.GetCombinedMinimumSize();
+                if (scroll.VerticalScrollMode == ScrollContainer.ScrollMode.Disabled && need.Y > scroll.Size.Y + 1.5f) yield return $"{scroll.Name} needs {need.Y} high, has {scroll.Size.Y}";
+                if (scroll.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled && need.X > scroll.Size.X + 1.5f) yield return $"{scroll.Name} needs {need.X} wide, has {scroll.Size.X}";
+            }
+            foreach (string nested in Unscrollable(child)) yield return nested;
+        }
+    }
+
+    private static IEnumerable<BaseButton> Buttons(Node root)
+    {
+        foreach (var child in root.GetChildren())
+        {
+            if (child is BaseButton button) yield return button;
+            foreach (var nested in Buttons(child)) yield return nested;
+        }
+    }
+
     /// <summary>The problems found under <paramref name="root"/> inside a window of <paramref name="window"/> (empty when the layout is sound).</summary>
     public static List<string> Problems(Node root, Rect2 window)
     {

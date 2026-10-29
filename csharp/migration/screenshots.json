@@ -1704,5 +1704,19 @@
         "caption": "Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer."
       }
     ]
+  },
+  "T286": {
+    "scenario": "phone-city",
+    "about": "The city screen (citizens and production views) on a 2400x1080 400 ppi phone profile: 120 px buttons, meters moved into the side column so the tile grid gets the height, no clipped or overlapping text, nothing behind a container that cannot scroll.",
+    "shots": [
+      {
+        "golden": "phone-city/citizens.png",
+        "caption": "City screen on a phone: food and border meters, stat chips, specialists and focus in the side column (scrolls), and the tile grid at about 29 dp per hexagon (seven rows share the height)."
+      },
+      {
+        "golden": "phone-city/production.png",
+        "caption": "City production on a phone: the queue with 48 dp Top/Up/Down/Remove and buy chips, the buildable list, and the built buildings with Sell buttons; each column scrolls."
+      }
+    ]
   }
 }

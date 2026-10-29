@@ -22,6 +22,9 @@ public partial class CityScreen : PanelContainer
     private const string DesktopHint = "Click: work or free. Right click: lock.";
     private const string TouchHint = "Tap: work or free. Long press: lock.";
 
+    /// <summary>T286: a touch build with a density scale: height is scarce (a 1080 px window with 120 px targets), so the meters move into the side column and an empty message line takes no room.</summary>
+    private bool Phone => theme.MinTargetPx > 0;
+
     private static string Hint => DisplayProfile.Current.Touch ? TouchHint : DesktopHint;
     private const int GridMargin = 8;
 
@@ -134,7 +137,7 @@ public partial class CityScreen : PanelContainer
     {
         showProduction = production;
         middle.Visible = !production;
-        meters.Visible = !production && Panel != null;
+        meters.Visible = !production && Panel != null && !Phone;
         productionView.Visible = production;
         tabs.ButtonFor("Citizens")!.SetPressedNoSignal(!production);
         tabs.ButtonFor("Production")!.SetPressedNoSignal(production);
@@ -289,6 +292,7 @@ public partial class CityScreen : PanelContainer
         info.Text = infoLines[2].TrText();
         ShowMeters(panel);
         ClearSide();
+        if (Phone) side.AddChild(MeterColumns(panel));
         var chips = new HFlowContainer { Name = "Stats" };
         chips.AddThemeConstantOverride("h_separation", theme.Px(UiTokens.S2));
         chips.AddThemeConstantOverride("v_separation", theme.Px(UiTokens.S1));
@@ -332,18 +336,24 @@ public partial class CityScreen : PanelContainer
             meters.RemoveChild(child);
             child.QueueFree();
         }
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", theme.Px(UiTokens.S4));
+        meters.AddChild(MeterColumns(panel));
+        meters.Visible = !showProduction && !Phone;
+    }
+
+    /// <summary>The food and border meters: side by side in the header strip, stacked in the side column on a phone.</summary>
+    private BoxContainer MeterColumns(CityPanelResult panel)
+    {
+        BoxContainer row = Phone ? new VBoxContainer { Name = "PhoneMeters" } : new HBoxContainer();
+        row.AddThemeConstantOverride("separation", theme.Px(Phone ? UiTokens.S2 : UiTokens.S4));
         foreach (var meter in new[] { CityScreenModel.FoodMeter(panel), CityScreenModel.BorderMeter(panel) })
         {
             var column = new VBoxContainer { Name = "Meter_" + meter.Stat, SizeFlagsHorizontal = SizeFlags.ExpandFill };
             column.AddThemeConstantOverride("separation", 0);
-            column.AddChild(new Label { Text = meter.Caption.TrText(), ThemeTypeVariation = UiVariants.LabelSmall, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis });
+            column.AddChild(new Label { Text = meter.Caption.TrText(), ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = Phone ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off, TextOverrunBehavior = Phone ? TextServer.OverrunBehavior.NoTrimming : TextServer.OverrunBehavior.TrimEllipsis });
             column.AddChild(new StatBar(theme, meter.Stat, meter.Value, meter.Max));
             row.AddChild(column);
         }
-        meters.AddChild(row);
-        meters.Visible = !showProduction;
+        return row;
     }
 
     private Control SpecialistLine(CityPanelResult panel, SpecialistRow row)
@@ -466,5 +476,9 @@ public partial class CityScreen : PanelContainer
         cells = [];
     }
 
-    private void SetMessage(string text) => message.Text = text.TrText();
+    private void SetMessage(string text)
+    {
+        message.Text = text.TrText();
+        message.Visible = !Phone || message.Text.Length > 0;
+    }
 }

@@ -47,7 +47,7 @@ public partial class CityProductionView : HBoxContainer
         AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S3));
         queueColumn.CustomMinimumSize = new Vector2(uiTheme.Px(245), 0f);
         queueColumn.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
-        buildingColumn.CustomMinimumSize = new Vector2(uiTheme.Px(105), 0f);
+        buildingColumn.CustomMinimumSize = new Vector2(uiTheme.Px(uiTheme.MinTargetPx > 0 ? 150 : 105), 0f); // T286: a phone gives the building names room to wrap on fewer lines
         buildingColumn.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
         buildColumn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         AddChild(Scroll("QueueScroll", queueColumn, expand: false));
@@ -159,7 +159,7 @@ public partial class CityProductionView : HBoxContainer
             var top = new HBoxContainer();
             top.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
             top.AddChild(Icon(row.Icon, 20));
-            top.AddChild(Wrapped(row.Label, 70));
+            top.AddChild(Wrapped(row.Label, theme.MinTargetPx > 0 ? 115 : 70));
             line.AddChild(top);
             if (row.Kind == "Building")
                 line.AddChild(MakeButton("Sell_" + row.Name, "Sell", row.CanSell, row.CanSell ? $"Sell for {row.SellPrice} gold (one per turn)" : CityProductionModel.PuppetWhy, CityProductionModel.Sell(panel.CityId, row), UiVariants.ButtonGhost));
