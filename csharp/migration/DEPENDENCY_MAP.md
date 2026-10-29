@@ -92,7 +92,7 @@ flowchart TD
   class B029 ready
   class B031 ready
   class C071 ready
-  class C076 prog
+  class C076 review
   class C078 waiting
   class C079 waiting
   class C082 ready
@@ -164,7 +164,7 @@ xychart-beta
 | C087 | **Ready to start** | C067, T181 | 0 | Rival stats ribbon in the HUD |
 | C088 | **Ready to start** | C068 | 0 | City-site preview: yields at a candidate settle tile |
 | C092 | **Ready to start** | C074 | 0 | City management at scale: bulk actions and reusable build queues |
-| C076 | In-Progress [Claude] | C066 | 6 | Civilopedia and tooltip content |
+| C076 | In-Review [Claude] | C066 | 6 | Civilopedia and tooltip content |
 | C078 | Available (waiting on C071, C076) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
 | C084 | Available (waiting on C083) | C083 | 4 | Unit art by era: ancient and classical |
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
