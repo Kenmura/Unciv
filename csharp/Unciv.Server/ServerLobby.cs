@@ -178,8 +178,7 @@ public sealed class ServerLobby : IAsyncDisposable
             gameHostReady.TrySetException(ex); // late seats waiting for the game must fail (and drop their connection), not hang
             if (gameHost != null)
             {
-                try { await gameHost.DisposeAsync().ConfigureAwait(false); }
-                catch (Exception) { /* the start failure is the news, not the cleanup */ }
+                try { await gameHost.DisposeAsync().ConfigureAwait(false); } catch (Exception) { /* the start failure is the news, not the cleanup */ }
             }
             // Seats that were handed over but never attached have no reader: close them so their clients see the drop.
             foreach (var slot in startResult.Slots)
