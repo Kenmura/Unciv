@@ -76,7 +76,7 @@
 - [C088 City-site preview: yields at a candidate settle tile](#c088-city-site-preview-yields-at-a-candidate-settle-tile)
 - [C089 Map markers: private client-side tacks](#c089-map-markers-private-client-side-tacks)
 - [C090 Shared map pings and team markers (multiplayer)](#c090-shared-map-pings-and-team-markers-multiplayer)
-- [C091 (ticket not Done or unknown)](#c091-ticket-not-done-or-unknown)
+- [C091 Group move and escort macro (client-side)](#c091-group-move-and-escort-macro-client-side)
 - [C093 Unit art by era: medieval and renaissance](#c093-unit-art-by-era-medieval-and-renaissance)
 - [C094 Unit art by era: industrial, modern and naval/air](#c094-unit-art-by-era-industrial-modern-and-navalair)
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
@@ -1561,7 +1561,7 @@ Scenario `map-pings`.
 
 *An ally's blue 'Bob: Look here' ping, bright, beside Alice's earlier red ping which is already fading.* (`map-pings/ally.png`)
 
-## C091 (ticket not Done or unknown)
+## C091 Group move and escort macro (client-side)
 
 Group move and escort: shift-click adds units to the selection, the menu offers Escort pair for a civilian and a military unit, and one click on a tile commands every unit with its own ordinary move command (an escort pair together, continuing by itself next turn).
 
