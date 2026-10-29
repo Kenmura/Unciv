@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 218/222 | 4 | 2 | 1 | [T239](backlog/T239.md) [T242](backlog/T242.md) [T244](backlog/T244.md) [T245](backlog/T245.md) |
+| Phase 1: CLI (headless engine) | 219/222 | 3 | 1 | 0 | [T239](backlog/T239.md) [T244](backlog/T244.md) [T245](backlog/T245.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 21/29 | 8 | 1 | 1 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T225](backlog/T225.md) |
 
@@ -28,7 +28,6 @@ flowchart TD
     T182["T182<br/>Multi-client end-to-end: scripted 3-human + AI game over in-..."]
     T225["T225<br/>Network robustness: real TCP+TLS multi-client tests, backpre..."]
     T239["T239<br/>Observe first green CI run after the workflow scope is grant..."]
-    T242["T242<br/>Two-human conflict tests: one-per-game wonder race, ruins, r..."]
     T244["T244<br/>NetGameSession: IGameSession over Unciv.Client.Net ClientSes..."]
     T245["T245<br/>Simultaneous turns: a human whose great prophet was used whe..."]
   end
@@ -64,8 +63,7 @@ flowchart TD
   class T180 review
   class T182 ondeck
   class T225 ondeck
-  class T239 ready
-  class T242 review
+  class T239 blocked
   class T244 ondeck
   class T245 ready
 ```
@@ -86,9 +84,9 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 10]
-    line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0]
-    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 2]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 9]
+    line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 1]
+    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 1]
 ```
 
 ## Progress and scope over time
@@ -104,7 +102,7 @@ xychart-beta
     title "Done vs total scope"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00"]
     y-axis "Tickets" 0 --> 315
-    line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 299]
+    line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 300]
     line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 311]
 ```
 
@@ -113,7 +111,6 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | C034 | **Ready to start** | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
-| T239 | **Ready to start** | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T245 | **Ready to start** | T203 | 0 | Simultaneous turns: a human whose great prophet was used when the last religion icon went to the other human is stuck in FoundingReligion |
 | C036 | **On deck** (after T180) | C010, C011, T180, T202, T175 | 2 | Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers |
 | C035 | **On deck** (after T180) | C005, T180, T204 | 1 | Lobby screen: slots, nation pick, ready-up, chat, kick, start (host and joiner views) |
@@ -123,4 +120,4 @@ xychart-beta
 | T180 | In-Review [DeepSeek] | T172, T173, T174, T175, T179, T204, T223, T224 | 7 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | C006 | Available (waiting on T180, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C045 | Available (waiting on C036) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
-| T242 | In-Review [Claude] | T203 | 0 | Two-human conflict tests: one-per-game wonder race, ruins, religion founding and belief limits |
+| T239 | Blocked | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
