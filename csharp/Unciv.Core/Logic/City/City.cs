@@ -554,6 +554,7 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
         // unless, of course, they are captured by a one-city-challenger.
         if (!CanBeDestroyed() && !overrideSafeties) return;
         GameEventHooks.CityDestroyed(this);
+        Archaeology.ArchaeologyRules.RecordCityRazed(GetCenterTile(), Civ, foundingCiv); // B010
 
         // Destroy planes stationed in city
         foreach (var airUnit in GetCenterTile().AirUnits.ToList()) airUnit.Destroy();

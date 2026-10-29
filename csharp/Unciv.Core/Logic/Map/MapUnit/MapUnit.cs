@@ -780,6 +780,10 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
             && tile.ImprovementInProgress != improvement.Name
         ) return false;
         var buildImprovementUniques = GetMatchingUniques(UniqueType.BuildImprovements).ToList();
+        // B010: only a unit that names the dig itself (the Archaeologist) can dig, not a Worker that builds every [Land] improvement
+        if (((IHasUniques)improvement).HasUnique(UniqueType.IsArchaeologicalDig, GameContext.IgnoreConditionalsState)
+            && !buildImprovementUniques.Any(it => it.Params[0] == improvement.Name))
+            return false;
         if (tile.ImprovementInProgress == Constants.Repair)
         {
             if (tile.IsEnemyTerritory(Civ)) return false;
@@ -1179,6 +1183,7 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
             cityState.QuestManager.BarbarianCampCleared(Civ, tile.Position);
 
         tile.RemoveImprovement();
+        Archaeology.ArchaeologyRules.RecordCampCleared(tile, Civ); // B010
 
         var goldGained = (float)Civ.GetDifficulty().ClearBarbarianCampReward;
 
@@ -1249,6 +1254,7 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     private void GetAncientRuinBonus(Tile tile)
     {
         tile.RemoveImprovement();
+        Archaeology.ArchaeologyRules.RecordRuinPopped(tile, Civ); // B010
         Civ.RuinsManager.SelectNextRuinsReward(this);
     }
 

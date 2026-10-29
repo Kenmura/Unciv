@@ -124,6 +124,7 @@ Two routes, in order of preference:
 | `GameInfo` | `TradeRoutes : List<TradeRoute>` | Every active route (global, as in Civ V `CvGameTrade`), in creation order. Ids are monotonic. |
 | `GameInfo` | `League : League?` | World Congress state (§4.7). `null` until founded. |
 | `GameInfo` | `GreatWorks : List<GreatWorkInstance>` | Every created work: index, type name, creator civ, era, turn. Used names are derived from the instances (each named work exists once per game); B007 stores instances in `GreatWorkInstances` and swap offers in `GreatWorkSwapOffers`, both null until used. |
+| `Tile` / `GameInfo` | `Tile.ArchaeologyRecord`, `GameInfo.ArchaeologySitesSpawned`, `GameInfo.PendingDigs` | B010: the record of a tile (JSON `archaeology`), whether sites were spawned, and the digs a human civ still has to resolve. Null/false when unused (omitted from saves). |
 | `GameInfo` | `Archaeology` | Spawn done flag, list of placed site records (§4.4). |
 | `Tile` | `ArchaeologyRecord?` | `{ArtifactClass, Era, Player1, Player2, GreatWork?}`. Written by historical events, read by digs. |
 | `Civilization` | `Trade : CivTradeManager` (transient + persisted) | Trade units, recent routes, plundered-route memory (30 turns, @101f7e40). |
@@ -656,6 +657,25 @@ player chooses (`ChooseArchaeologyPopup` [U], @1018a790 [O]):
   Art/Artifact slot. It needs a free slot [K]. Writing records yield a Great Work of Writing instead.
 - Artifacts list Player1 and Player2 as "creators". This matters for theming (`requiresUniquePlayers` and so on) [K].
 - AI economic strategies `NEED/ENOUGH_ARCHAEOLOGISTS` (@100bab30) [O].
+
+#### 4.4.4 As built (B010)
+Code: `Unciv.Core/Logic/Archaeology/ArchaeologyRules.cs` (header lists every choice), `ArchaeologyRecord.cs`, `GameInfoArchaeology.cs`,
+`Commands/Archaeology/ChooseDigReward.cs` (command `choose-dig-reward`, event `DigResolved`). All of it is gated by the ModOptions unique
+"Enables archaeology"; Civ V G&K is unchanged. Resolved here ([K]/[?] became [X], deterministic, from the seeded `StateBasedRandom` only):
+- Record: stored on the tile (`Tile.ArchaeologyRecord`, JSON key `archaeology`). The tiles are the source of truth, so there is no separate list of
+  placed records (deviation from the 4.4.2 wording). Game era = average era number of the living major civs [X]. Players: winner/attacker is
+  Player1, loser/defender Player2; a ruin has Player1 only; a razed city has the razer as Player1 and the founder as Player2 [X].
+- Spawn: runs once (`GameInfo.ArchaeologySitesSpawned`) when a tech with "Triggers the creation of archaeological sites" is learned. Weight
+  `(raw + 10 + rand(10)) * (owned 8 / unowned 9) * 4 / (4 + nearbySites)`, `raw = (10 - eraNumber) * (class + 1)`, 11 without a record [X]. A
+  record-less site gets class `rand(6) + 1`, era `rand(currentEra + 1)` and two different random major civs [X]. Hidden sites reveal through
+  a resource `revealedBy` that may now name a policy ("Exploration Complete"; `TechManager.IsRevealed`, ruleset validator updated).
+- Dig: only a unit whose "Can build [X] improvements" names the dig (the Archaeologist) can build "Archaeological Dig" (`MapUnit.CanBuildImprovement`).
+  When it completes the builder is consumed. A human gets a `PendingDig` and answers with `choose-dig-reward` (artifact or Landmark); an AI
+  resolves at once: artifact if a slot is free, else Landmark [X]. Artifact choice: first unused work of the record class and era, else the era-less one [X];
+  creator = Player1, creator2 = Player2, theming reads Player1 only [X]. Landmark culture is "[+1 Culture] per era since discovery" times the
+  eras between the record era and the owner's era [X]; city-state land adds `LandmarkMinorFriendshipChange` influence.
+- Not done (follow-ups): the diplomacy penalty for digging on foreign land and the AI "stop digging" promise (A track); AI use of Archaeologists
+  and `NEED/ENOUGH_ARCHAEOLOGISTS`; the BNW Great Artist Landmark option (B041).
 
 ### 4.5 Great People additions [D]+[K]
 - Writers', Artists' and Musicians' Guilds hold specialists (+3 Culture each, +3 GPP of their type) [D, Specialists.tsv].

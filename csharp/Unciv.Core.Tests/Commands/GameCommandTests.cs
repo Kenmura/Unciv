@@ -234,6 +234,13 @@ public sealed class GameCommandTests : IDisposable
                 actor = world.A.CivId;
                 command = DiplomacySamples.Sample(name, world);
             }
+            else if (Archaeology.ArchaeologySamples.Types.Contains(name))
+            {
+                var sample = new Archaeology.ArchaeologySamples.Sample();
+                game = sample.World.W.Game.GameInfo;
+                actor = sample.World.W.A.CivId;
+                command = Archaeology.ArchaeologySamples.Command(name, sample);
+            }
             else if (GreatWorkSamples.Types.Contains(name))
             {
                 var sample = new GreatWorkSamples.Sample();

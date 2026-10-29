@@ -1989,7 +1989,10 @@
 		"unitType": "Civilian",
 		"movement": 4,
 		"requiredTech": "Archaeology",
-		"uniques": ["Unbuildable"],
+		"uniques": [
+			"Can build [Archaeological Dig] improvements on tiles",
+			"Only available <in cities with a [University]>"
+		],
 		"cost": 200
 	},
 	{

@@ -404,7 +404,7 @@ internal sealed class BaseRulesetValidator : RulesetValidator
     {
         foreach (var resource in ruleset.TileResources.Values)
         {
-            if (resource.RevealedBy != null && !ruleset.Technologies.ContainsKey(resource.RevealedBy))
+            if (resource.RevealedBy != null && !ruleset.Technologies.ContainsKey(resource.RevealedBy) && !ruleset.Policies.ContainsKey(resource.RevealedBy))
                 lines.Add($"{resource.Name} revealed by tech {resource.RevealedBy} which does not exist!", sourceObject: resource);
             if (resource.Improvement != null && !ruleset.TileImprovements.ContainsKey(resource.Improvement))
                 lines.Add($"{resource.Name} improved by improvement {resource.Improvement} which does not exist!", sourceObject: resource);

@@ -28,9 +28,10 @@ internal sealed class GreatWorkWorld
     public CityObject CityB { get; }
     public GameSession Session { get; }
 
-    public GreatWorkWorld(string[]? aUniques = null, bool enabled = true)
+    public GreatWorkWorld(string[]? aUniques = null, bool enabled = true, bool archaeology = false)
     {
         if (enabled) Game.Ruleset.ModOptions.Uniques.Add("Enables Great Works and tourism");
+        if (archaeology) Game.Ruleset.ModOptions.Uniques.Add("Enables archaeology");
         Game.Ruleset.ModOptions.Constants.BaseCulturePerGreatWork = 2;
         AddWork("ArtAncient", GreatWorkClass.Art, Ancient);
         AddWork("ArtClassical", GreatWorkClass.Art, Classical);

@@ -7,7 +7,7 @@ Unciv.Core/Models/Ruleset/Unique/Conditionals.cs::Conditionals.ConditionalApplie
 Unciv.Core/Models/Ruleset/Unique/UniqueParameterType.cs::UniqueParameterTypeExtensions.GetKnownValuesForAutocomplete|122
 Unciv.Core/Models/Ruleset/Unique/UniqueTypeData.cs|2592
 # T127: lowered to the actual size after T061/T063/T065 landed.
-Unciv.Core/Logic/Map/Tile/Tile.cs|1578
+Unciv.Core/Logic/Map/Tile/Tile.cs|1577
 Unciv.Core/Logic/Civilization/Civilization.cs|1533
 Unciv.Core/Models/Ruleset/Building.cs::Building.GetRejectionReasons|193
 # T052: faithful port of the 1.4k-line Kotlin when over UniqueType (one branch per trigger type); split by family later.

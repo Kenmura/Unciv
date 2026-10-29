@@ -19,6 +19,11 @@ public class GreatWorkInstance : IsPartOfGameInfoSerialization
     [JsonPropertyName("creator")]
     public string Creator { get; set; } = "";
 
+    /// <summary>Second civ id of a found artifact (B010: the loser of the historical event), else empty.</summary>
+    [JsonPropertyName("creator2")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string Creator2 { get; set; } = "";
+
     /// <summary>Era name: the era of the work when its data names one, else the creator's era at the moment of creation.</summary>
     [JsonPropertyName("era")]
     public string Era { get; set; } = "";
@@ -27,7 +32,7 @@ public class GreatWorkInstance : IsPartOfGameInfoSerialization
     [JsonPropertyName("turn")]
     public int Turn { get; set; }
 
-    public GreatWorkInstance Clone() => new() { Name = Name, Creator = Creator, Era = Era, Turn = Turn };
+    public GreatWorkInstance Clone() => new() { Name = Name, Creator = Creator, Creator2 = Creator2, Era = Era, Turn = Turn };
 }
 
 /// <summary>

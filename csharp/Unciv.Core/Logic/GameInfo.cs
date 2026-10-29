@@ -326,6 +326,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         toReturn.EndedTradeRoutes = EndedTradeRoutes?.ToList();
         toReturn.EngineOptions = EngineOptions.Clone();
         CloneGreatWorksTo(toReturn);
+        CloneArchaeologyTo(toReturn);
         if (PlayerSettingsByCiv != null) toReturn.PlayerSettingsByCiv = new Dictionary<string, PlayerSettings>(PlayerSettingsByCiv);
         toReturn.ClientState = ClientState;
 

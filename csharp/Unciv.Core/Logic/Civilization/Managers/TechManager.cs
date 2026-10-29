@@ -184,6 +184,9 @@ public class TechManager : IsPartOfGameInfoSerialization
     {
         var revealedBy = resource.RevealedBy;
         if (revealedBy == null) return true;
+        // B010: a resource may also be revealed by a policy (Hidden Antiquity Site, Exploration Complete)
+        if (!GetRuleset().Technologies.ContainsKey(revealedBy) && GetRuleset().Policies.ContainsKey(revealedBy))
+            return CivInfo.Policies.IsAdopted(revealedBy);
         return IsResearched(revealedBy);
     }
 
@@ -358,6 +361,7 @@ public class TechManager : IsPartOfGameInfoSerialization
         AddTechToTransients(newTech);
 
         MoveToNewEra(showNotification);
+        if (isNewTech) Archaeology.ArchaeologyRules.OnTechResearched(CivInfo, newTech); // B010: the first Archaeology creates the sites
 
         if (!CivInfo.IsSpectator() && showNotification)
             CivInfo.AddNotification($"Research of [{techName}] has completed!", new TechAction(techName),

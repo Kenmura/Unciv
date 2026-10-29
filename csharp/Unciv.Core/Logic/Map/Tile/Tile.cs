@@ -28,7 +28,7 @@ namespace Unciv.Logic.Map.Tiles;
 /// A single hex of the map. Kotlin <c>Tile</c> has no <c>equals</c>/<c>hashCode</c>: this class keeps reference identity.
 /// </summary>
 [JsonConverter(typeof(Tile.TileJsonConverter))]
-public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistorySource
+public partial class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistorySource
 {
     #region Serialized fields
     public MapUnitClass? MilitaryUnit { get; set; }
@@ -55,19 +55,9 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
     public string? Improvement { get; set; }
     public bool ImprovementIsPillaged { get; set; }
 
-    internal class ImprovementQueueEntry(string improvement, int turnsToImprovement) : IsPartOfGameInfoSerialization
-    {
-        public string Improvement { get; } = improvement;
-        public int TurnsToImprovement { get; private set; } = turnsToImprovement;
-        public override string ToString() => $"{Improvement}: {TurnsToImprovement}⏳";
-        /// <returns><c>true</c> if it's still counting and not finished</returns>
-        public bool CountDown()
-        {
-            TurnsToImprovement = Math.Max(TurnsToImprovement - 1, 0);
-            return TurnsToImprovement > 0;
-        }
-        public ImprovementQueueEntry Clone() => new(Improvement, TurnsToImprovement);
-    }
+    /// <summary>B010 (bnw-spec 4.4.1): what happened here, for archaeology. Null until a historical event or a site writes it.</summary>
+    public Archaeology.ArchaeologyRecord? ArchaeologyRecord { get; set; }
+
     internal List<ImprovementQueueEntry> ImprovementQueue { get; } = [];
 
     public RoadStatus RoadStatus { get; set; } = RoadStatus.None;
@@ -251,6 +241,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
         toReturn.Improvement = Improvement;
         toReturn.ImprovementQueue.AddRange(ImprovementQueue.Select(it => it.Clone()));
         toReturn.ImprovementIsPillaged = ImprovementIsPillaged;
+        toReturn.ArchaeologyRecord = ArchaeologyRecord?.Clone();
         toReturn.RoadStatus = RoadStatus;
         toReturn.RoadIsPillaged = RoadIsPillaged;
         toReturn.roadOwner = roadOwner;
@@ -1074,6 +1065,7 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
             worker.Civ.GameInfo.AddCompletedTutorialTask(worker.Civ.CivId, "Construct an improvement");
 
         SetImprovement(queueEntry.Improvement, worker.Civ, worker);
+        Archaeology.ArchaeologyRules.OnImprovementBuilt(this, worker); // B010: a finished dig uses up the archaeologist
         return true;
     }
 
@@ -1413,6 +1405,9 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
                     case "continent":
                         tile.continent = JsonValueReader.ReadInt(ref reader, "Tile.continent");
                         break;
+                    case "archaeology":
+                        tile.ArchaeologyRecord = JsonSerializer.Deserialize<Archaeology.ArchaeologyRecord>(ref reader, options);
+                        break;
                     default:
                         reader.Skip(); // ignoreUnknownFields
                         break;
@@ -1569,6 +1564,11 @@ public class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITileHistor
                 new TileHistoryConverter().Write(writer, value.History, options);
             }
             if (value.continent != -1) writer.WriteNumber("continent", value.continent);
+            if (value.ArchaeologyRecord != null)
+            {
+                writer.WritePropertyName("archaeology");
+                JsonSerializer.Serialize(writer, value.ArchaeologyRecord, options);
+            }
             writer.WriteEndObject();
         }
     }

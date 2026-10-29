@@ -103,6 +103,7 @@
   Nations.json: added Vilnius
   Nations.json: added Ife
   Nations.json: added Sofia
+  TileImprovements.json: added Archaeological Dig
   TileImprovements.json: added Brazilwood Camp
   TileImprovements.json: added Kasbah
   TileImprovements.json: added Feitoria
@@ -125,6 +126,8 @@
   UnitNameGroups.json: added Writer
   UnitNameGroups.json: added Musician
   Personalities.json: added Maria I
+  TileResources.json: added Antiquity Site
+  TileResources.json: added Hidden Antiquity Site
   TileResources.json: added Bison
   TileResources.json: added Cocoa
   TileResources.json: added Cloves
@@ -140,7 +143,7 @@
   Mercenary Army: no stat column; it only unlocks the Landsknecht unit (not in the generated units yet) and is a prerequisite of Mercantilism
   Wagon Trains: RouteGoldMaintenanceMod -50 is read as road/rail maintenance; Entrepreneurship: EmbarkedExtraMoves 1 has no unique yet
   Scientific Revolution: MedianTechPercentChange 25 (one-shot) has no unique yet; Rationalism Complete keeps the G&K free-tech wording with the BNW count (1)
-  Exploration Complete: reveals Antiquity Sites (Resources.PolicyReveal), wired by B040; Aesthetics Complete has no leader title
+  Exploration Complete: reveals Hidden Antiquity Sites through the resource's revealedBy (B040); Aesthetics Complete has no leader title
   Exploration opener: the Naval Tradition free promotion is read as +1 Movement and +1 Sight for naval units [?]
   Cultural Exchange: ethics tourism modifiers are declared data only (B030)
 
@@ -154,10 +157,9 @@
   Nations.json/The Zulus: Iklwa XP modifier is wired (existing unique); the Ikanda promotion stays open for B074
   Nations.json/Venice: Serenissima: no annexing, no Settlers and the free Merchant of Venice at Optics are wired; the double trade slots are declared data only (B020)
   Buildings.json/all: Tourism, Great Work, trade route and league columns of SPEC 3.2 (B003 declares the UniqueTypes, feature tickets B020-B062 wire them)
-  Units.json/Caravan, Cargo Ship, Archaeologist: made Unbuildable until B021/B040 give them behaviour
+  Units.json/Caravan, Cargo Ship: made Unbuildable until B021 gives them behaviour
   Beliefs.json/13 new BNW beliefs: added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Evangelism, Heathen Conversion, Underground Sect, Unity of the Prophets (B073), To the Glory of God (B041)
-  TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp: added by B004. Feitoria luxury siphon (B072) and the Landmark / Archaeological Dig improvements (B040) are not wired yet
-  TileResources.json/Antiquity Site, Hidden Antiquity Site: artifact resources need the archaeology subsystem (B040)
+  TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp: added by B004. Feitoria luxury siphon (B072) is not wired yet
   Units.json/upgrades: upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture
   Policies.json/ideologies: Freedom, Order and Autocracy are the BNW ideologies (B013): PurchaseByLevel, Level 1/2/3 tenets (7/6/3), first/second adopter free tenets (2/1). The tenets carry no effects yet: their stat columns are B010, the tourism/trade/espionage/league ones belong to those subsystems
   Policies.json/ideologies: The three Universal Healthcare tenets share one BNW name; here they are named 'Universal Healthcare (Freedom)', '(Order)', '(Autocracy)' because policy names are unique

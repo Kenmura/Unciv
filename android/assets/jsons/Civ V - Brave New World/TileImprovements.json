@@ -240,7 +240,9 @@
 			"Great Improvement",
 			"Removes removable features when built",
 			"Will not be replaced by automated units",
-			"Pillaging this improvement yields approximately [+20 Gold]"
+			"Pillaging this improvement yields approximately [+20 Gold]",
+			"Is a Landmark",
+			"[+1 Culture] per era since discovery"
 		]
 	},
 	{
@@ -376,6 +378,19 @@
 		"civilopediaText": [
 			{"text": "Home to uncivilized barbarians, will spawn a hostile unit from time to time"}
 		]
+	},
+	{
+		"name": "Archaeological Dig",
+		"terrainsCanBeBuiltOn": ["Land", "Forest", "Jungle", "Marsh"],
+		"turnsToBuild": 6,
+		"techRequired": "Archaeology",
+		"uniques": [
+			"Is an Archaeological Dig",
+			"Can be built in any civ's territory",
+			"Can only be built to improve a resource",
+			"Will not be replaced by automated units"
+		],
+		"shortcutKey": "A"
 	},
 	{
 		"name": "Brazilwood Camp",

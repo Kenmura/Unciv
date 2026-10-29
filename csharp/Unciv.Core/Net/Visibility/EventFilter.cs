@@ -73,6 +73,7 @@ public static class EventFilter
         [typeof(SoundRequested)] = ParticipantsOnly,
         [typeof(ResearchCompleted)] = ParticipantsOnly,
         [typeof(PolicyAdopted)] = ParticipantsOnly,
+        [typeof(DigResolved)] = ParticipantsOnly,
         [typeof(GreatWorkCreated)] = ParticipantsOnly,
         [typeof(GreatWorkMoved)] = ParticipantsOnly,
         [typeof(GreatWorkSwapped)] = ParticipantsOnly,

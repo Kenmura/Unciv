@@ -40,6 +40,7 @@ public sealed class GameEventsTests
         "controller-changed" => new ControllerChanged("Greece", true),
         "decision-auto-resolved" => new DecisionAutoResolved("Babylon", "Technology", "", "research"),
         "events-truncated" => new EventsTruncated(7),
+        "dig-resolved" => new DigResolved("Babylon", 3, 4, "FindAncient", true),
         "great-work-created" => new GreatWorkCreated("Babylon", "ArtAncient", "Art", "city-1", "Museum", 0),
         "great-work-moved" => new GreatWorkMoved("Babylon", "ArtAncient", "city-1", "Museum", 0, "city-2", "Museum", 1),
         "great-work-swapped" => new GreatWorkSwapped("Babylon", "Greece", "ArtAncient", "ArtClassical"),

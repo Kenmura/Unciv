@@ -546,6 +546,18 @@
 		]
 	},
 	{
+		"name": "Antiquity Site",
+		"resourceType": "Bonus",
+		"revealedBy": "Archaeology",
+		"improvement": "Archaeological Dig"
+	},
+	{
+		"name": "Hidden Antiquity Site",
+		"resourceType": "Bonus",
+		"revealedBy": "Exploration Complete",
+		"improvement": "Archaeological Dig"
+	},
+	{
 		"name": "Bison",
 		"resourceType": "Bonus",
 		"terrainsCanBeFoundOn": ["Plains", "Grassland"],

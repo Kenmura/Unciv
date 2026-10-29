@@ -154,6 +154,12 @@ public static class Battle
         // or any enemy military unit with Sacrificial captives unique (can be either attacker or defender!)
         TriggerPostKillingUniques(defender, attacker, attackedTile);
 
+        // B010 (bnw-spec 4.4.1): a unit that dies in a fight leaves a historical record on its tile
+        if (defender.IsDefeated() && defender is MapUnitCombatant)
+            Archaeology.ArchaeologyRules.RecordCombatDeath(attackedTile, attacker.IsRanged(), attacker.GetCivInfo(), defender.GetCivInfo());
+        else if (attacker.IsDefeated() && attacker is MapUnitCombatant)
+            Archaeology.ArchaeologyRules.RecordCombatDeath(attacker.GetTile(), attacker.IsRanged(), defender.GetCivInfo(), attacker.GetCivInfo());
+
         if (attacker is MapUnitCombatant mapAttacker && defender is MapUnitCombatant mapDefender)
         {
             TriggerDamageUniquesForUnit(mapAttacker, mapDefender, attackedTile, CombatAction.Attack);

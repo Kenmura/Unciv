@@ -348,6 +348,12 @@ public class TileStatFunctions(Tile tile)
                 stats.Add(unique.Stats);
         });
 
+        ((IHasUniques)improvement).ForEachMatchingUnique(UniqueType.YieldPerEra, conditionalState, unique =>
+        {
+            int eras = Archaeology.ArchaeologyRules.ErasSinceDiscovery(Tile); // B010: Landmark
+            if (eras > 0) stats.Add(unique.Stats * (float)eras);
+        });
+
         return stats;
     }
 
