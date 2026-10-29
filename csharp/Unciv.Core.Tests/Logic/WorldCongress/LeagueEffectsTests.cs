@@ -1,5 +1,6 @@
 using Unciv.Core.Tests.Support;
 using Unciv.Logic;
+using Unciv.Logic.Civilization;
 using Unciv.Logic.Map.MapUnit.Actions;
 using Unciv.Logic.Tourism;
 using Unciv.Logic.Trade.Routes;
@@ -101,6 +102,14 @@ public sealed class LeagueEffectsTests
         var lone = new TestGame(BaseRuleset.Civ_V_BNW);
         lone.MakeHexagonalMap(3);
         Assert.Equal(LeagueEffects.None, LeagueEffects.For(lone.AddCiv()));
+    }
+
+    [Fact]
+    public void AGameStateWithoutALeagueHasNoTechDiscountAndNoSpreadBonus()
+    {
+        IGameInfoState state = new Unciv.Core.Tests.Logic.FakeGameInfoState();
+        Assert.Equal(0, state.LeagueTechDiscountPercent(a, "Currency"));
+        Assert.Equal(0, state.LeagueReligionSpreadPercent("Any"));
     }
 
     // ---- Change League Host / projects

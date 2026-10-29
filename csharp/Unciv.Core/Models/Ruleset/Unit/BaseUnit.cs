@@ -491,7 +491,7 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
         if (civ.GameInfo.IsUnavailableBySettingsCached(this))
             yield return RejectionReasonType.DisabledBySetting.ToInstance();
 
-        if (LeagueEffects.For(civ).NoNuclearWeapons && IsNuclearWeapon())
+        if (IsNuclearWeapon() && LeagueEffects.For(civ).NoNuclearWeapons)
             yield return RejectionReasonType.DisabledBySetting.ToInstance("Nuclear Non-Proliferation"); // B016
 
         if (self.HasUnique(UniqueType.Unbuildable, stateForConditionals))
