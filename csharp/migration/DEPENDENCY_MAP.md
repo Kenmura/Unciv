@@ -145,7 +145,7 @@ xychart-beta
 | T274 | Available (waiting on T273) | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T277 | Available (waiting on T260) | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
 | C099 | Available (waiting on T260) | T260, C096 | 0 | Android shell behaviour: back button, safe area, orientation, lifecycle autosave, virtual keyboard, hide Host, permissions |
-| C100 | Needs-Review [Claude-C100] | C096 | 0 | Touch replacements for mouse-only interaction: right-click move/attack, tap tooltips, modifier toggles, queue reorder |
+| C100 | In-Review [Claude-C100] | C096 | 0 | Touch replacements for mouse-only interaction: right-click move/attack, tap tooltips, modifier toggles, queue reorder |
 | C101 | In-Progress [Claude-C101] | C096 | 0 | Phone layouts of the full screens (split by screen group when claimed): HUD and menus, city, tech and policy, tables, pedia |
 | T262 | Needs-Review [Claude-T262] | T261 | 0 | Optimise the top turn-time hotspots with proof of identical game state |
 | T266 | Available (waiting on T270) | T270 | 0 | Dedicated server distribution: self-contained Linux and Windows builds in releases and CI, run guide |
