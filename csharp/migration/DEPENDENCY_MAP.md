@@ -81,7 +81,7 @@ flowchart TD
   class C078 waiting
   class C079 waiting
   class C082 ready
-  class C083 prog
+  class C083 review
   class C084 ondeck
   class C085 waiting
   class C086 waiting
@@ -147,7 +147,7 @@ xychart-beta
 | C084 | **On deck** (after C083) | C083 | 4 | Unit art by era: ancient and classical |
 | B026 | **On deck** (after B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
 | C078 | Available (waiting on C071) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
-| C083 | In-Progress [Claude] | C081 | 5 | Unit art pipeline |
+| C083 | Needs-Review [Claude] | C081 | 5 | Unit art pipeline |
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
