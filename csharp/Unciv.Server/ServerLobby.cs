@@ -1,4 +1,7 @@
 using Unciv.Commands;
+using Unciv.Commands.Log;
+using Unciv.Json;
+using Unciv.Logic;
 using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Lobby;
@@ -15,7 +18,8 @@ namespace Unciv.Server;
 public sealed class ServerLobby : IAsyncDisposable
 {
     private readonly LobbyHost lobbyHost;
-    private readonly IGameStore? store;
+    private readonly string? gameDirectory;
+    private IGameStore? store;
     private readonly IClock clock;
     private readonly TaskCompletionSource<GameHost> gameHostReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly CancellationTokenSource disposed = new();
@@ -32,8 +36,10 @@ public sealed class ServerLobby : IAsyncDisposable
         ISecureRandom? random = null,
         IClock? clock = null,
         IGameStore? store = null,
-        string hostName = "Host")
+        string hostName = "Host",
+        string? gameDirectory = null)
     {
+        this.gameDirectory = gameDirectory;
         this.clock = clock ?? SystemClock.Instance;
         this.store = store;
         lobbyHost = new LobbyHost(
@@ -155,7 +161,8 @@ public sealed class ServerLobby : IAsyncDisposable
             if (string.Equals(lobbyHost.Settings.TurnMode, "Simultaneous", StringComparison.OrdinalIgnoreCase) && startResult.Game.TurnState == null)
                 startResult.Game.StartSimultaneousTurns();
             var policy = lobbyHost.Settings.ToTurnPolicy();
-            if (store != null) store.WriteMeta(store.ReadMeta() with { TimerPolicy = policy }); // a resume must run the same turn rules
+            if (store == null && gameDirectory != null) store = CreateStore(startResult, policy); // T270: the game is saved from its first moment
+            else if (store != null) store.WriteMeta(store.ReadMeta() with { TimerPolicy = policy }); // a resume must run the same turn rules
             gameHost = new GameHost(new GameSession(startResult.Game) { Clock = () => clock.NowMillis }, store, clock: clock, turnPolicy: policy, standby: lobbyHost.Standby); // the designation made in the lobby carries over
             foreach (var slot in startResult.Slots)
             {
@@ -179,6 +186,7 @@ public sealed class ServerLobby : IAsyncDisposable
         }
         catch (Exception ex)
         {
+            if (gameHost == null) { store?.Dispose(); store = null; } // the host never took ownership of a store made for it
             gameHostReady.TrySetException(ex); // late seats waiting for the game must fail (and drop their connection), not hang
             if (gameHost != null)
             {
@@ -196,6 +204,47 @@ public sealed class ServerLobby : IAsyncDisposable
             throw;
         }
 
+        activeGameHost = gameHost;
+        gameHostReady.TrySetResult(gameHost);
+        return gameHost;
+    }
+
+    /// <summary>T270: creates <c>game.json</c>, the log header (with <c>TurnMode</c> when the game is simultaneous) and the first snapshot in <see cref="gameDirectory"/>. The join password is never written.</summary>
+    private FileGameStore CreateStore(LobbyStartResult started, TurnPolicy policy)
+    {
+        var header = CommandLogHeader.Create(started.Setup, started.Seed, started.StartClockMillis);
+        if (started.Game.TurnState != null) header = header with { TurnMode = CommandLogHeader.SimultaneousTurns };
+        var saved = UncivJson.Deserialize<LobbySettings>(UncivJson.Serialize(lobbyHost.Settings))!;
+        saved.Password = null;
+        var seats = new SortedDictionary<string, SlotBinding>(StringComparer.Ordinal);
+        foreach (var slot in started.Slots)
+            if (slot.Kind == SlotKind.Human && slot.PlayerKeyId != null) seats[slot.Nation] = new SlotBinding { PlayerKey = slot.PlayerKeyId, DisplayName = slot.DisplayName ?? "" };
+        using var settingsJson = System.Text.Json.JsonDocument.Parse(UncivJson.Serialize(saved));
+        var meta = new GameMeta { Slots = seats, TimerPolicy = policy, HostFingerprint = lobbyHost.HostFingerprint, LobbySettings = settingsJson.RootElement.Clone() };
+        return FileGameStore.Create(gameDirectory!, started.Game.GameId, header, meta, started.Game);
+    }
+
+    /// <summary>
+    /// T270: reopens a saved game instead of starting one. The game directory's seats become the lobby's bound human slots (those keys, and only those, reconnect), the host gets the stored
+    /// turn policy (<paramref name="policyOverride"/> wins when the operator gave one) and the clock a live game needs, and a round the stop interrupted continues. Only valid on a fresh lobby.
+    /// </summary>
+    public async Task<GameHost> ResumeGameAsync(OpenedGame opened, TurnPolicy? policyOverride = null)
+    {
+        if (activeGameHost != null || store != null) throw new InvalidOperationException("A game is already running");
+        var meta = opened.Store.ReadMeta();
+        lobbyHost.RestoreStarted(meta.Slots.Select(x => (x.Key, x.Value.PlayerKey, x.Value.DisplayName)));
+        lobbyHost.Standby.Restore(meta.Standby); // before the host persists the coordinator: otherwise the stored designation would be overwritten with nothing
+        var session = new GameSession(opened.Session.Game, lastSeq: opened.Session.LastSeq) { Clock = () => clock.NowMillis };
+        var gameHost = new GameHost(session, opened.Store, clock: clock, turnPolicy: policyOverride ?? meta.TimerPolicy, standby: lobbyHost.Standby);
+        store = opened.Store;
+        if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
+        {
+            await gameHost.EnqueueAsync(() =>
+            {
+                gameHost.PumpResolving(); // a stop in the middle of a resolve: the log holds the steps done, the rest is derived from the state
+                return Task.CompletedTask;
+            }).ConfigureAwait(false);
+        }
         activeGameHost = gameHost;
         gameHostReady.TrySetResult(gameHost);
         return gameHost;

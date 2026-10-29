@@ -136,6 +136,11 @@ public sealed partial class GameHost : IAsyncDisposable
         }
     }
 
+    /// <summary>T270: where the host reports something an operator must know (the dedicated server logs it). Called on the actor.</summary>
+    public Action<string>? Warn { get; set; }
+
+    private string? lastResolveRefusal;
+
     public GameSession Session => session;
 
     public GameInfo Game => session.Game;
@@ -327,7 +332,16 @@ public sealed partial class GameHost : IAsyncDisposable
         {
             var cmd = ResolvePump.StepCommand(step);
             // A refused step would come back as the same step forever and freeze the actor at full speed: stop; the round stays Resolving and the next tick tries again.
-            if (!ApplyServerCommand(cmd).Accepted) break;
+            var applied = ApplyServerCommand(cmd);
+            if (!applied.Accepted)
+            {
+                // T270: said once per distinct refusal, not once per tick, so a stuck round is visible in the log without flooding it.
+                var refusal = $"{applied.Validation.Code}: {applied.Validation.Message}";
+                if (refusal != lastResolveRefusal) Warn?.Invoke($"the round cannot resolve: a server step was refused ({refusal}); trying again every tick");
+                lastResolveRefusal = refusal;
+                break;
+            }
+            lastResolveRefusal = null;
             steps++;
         }
         if (steps > 0 && store != null)

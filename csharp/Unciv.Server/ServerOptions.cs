@@ -26,7 +26,11 @@ public sealed record ServerOptions
 
           --port N            TCP port to listen on (default 47821; 0 picks a free one). The bound port is printed as a stdout line 'LISTENING <port>'.
           --data-dir DIR      Where the host key (host-key.pfx) lives (default ./unciv-server-data). Keep it: its fingerprint is what players pin.
-          --password TEXT     Players must give this password to join (visible in the process list; prefer --settings for a script you protect).
+          --password TEXT     Players must give this password to join (visible in the process list: prefer --password-file).
+          --password-file F   Read the join password from the first line of file F (keep it readable by you only). Excludes --password.
+          --game-id ID        Save this game under DATA-DIR/games/ID (letters, digits, '.', '_', '-'). If that folder holds a game, the server resumes it at once: the seated players
+                              reconnect with their keys, the lobby is closed, and the saved turn timer rules apply. Otherwise the game the lobby starts is saved there. Without --game-id
+                              nothing is saved: a stop ends the game.
           --max-players N     Number of major civs (seats) in the lobby, at least 2 (default: the settings file's, else 4).
           --ai-fill           Fill the seats nobody takes with AI when the game starts (default). --no-ai-fill leaves them out.
           --auto-start        Start the game by itself once every seated human is ready and at least --min-humans have joined.
@@ -39,7 +43,11 @@ public sealed record ServerOptions
           --log-level LEVEL   debug, info (default), warn or error. Log lines go to stdout.
           --help, -h          Show this help and exit.
 
-        Exit codes: 0 stopped normally, 1 failure while running, 2 bad command line.
+        Stopping: SIGINT (Ctrl+C) or SIGTERM (not on Windows, where only Ctrl+C is caught) closes the port to new joins, finishes the running command and round, saves the game, tells the
+        players the host is closing and exits 0. A second signal while it saves ends the process at once without saving further.
+
+        Exit codes: 0 stopped normally (also after a signal), 1 failure while running (port in use, a lobby that cannot start, an internal error), 2 bad command line or settings,
+        3 the saved game under --game-id cannot be loaded (corrupt or from missing rulesets): fix or remove it; a supervisor should not restart on 3.
         """;
 
     public bool Help { get; init; }
@@ -49,6 +57,10 @@ public sealed record ServerOptions
     public string DataDir { get; init; } = "unciv-server-data";
 
     public string? Password { get; init; }
+
+    public string? PasswordFile { get; init; }
+
+    public string? GameId { get; init; }
 
     public int? MaxPlayers { get; init; }
 
@@ -63,7 +75,10 @@ public sealed record ServerOptions
 
     public bool PrintInvite { get; init; }
 
-    public string Address { get; init; } = "localhost";
+    /// <summary>Null when not given (the invite then names <c>localhost</c>, which only works on this machine).</summary>
+    public string? Address { get; init; }
+
+    public string EffectiveAddress => Address ?? "localhost";
 
     public string? Jsons { get; init; }
 
@@ -90,13 +105,15 @@ public sealed record ServerOptions
                 case "print-invite": result = result with { PrintInvite = true }; continue;
             }
 
-            if (name is not ("port" or "data-dir" or "password" or "max-players" or "min-humans" or "settings" or "address" or "jsons" or "mods-dir" or "log-level"))
+            if (name is not ("port" or "data-dir" or "password" or "password-file" or "game-id" or "max-players" or "min-humans" or "settings" or "address" or "jsons" or "mods-dir" or "log-level"))
                 throw new ServerUsageException($"unknown option --{name} (see --help)");
             if (i + 1 >= args.Count) throw new ServerUsageException($"option --{name} needs a value");
             var value = args[++i];
             result = name switch
             {
                 "port" => result with { Port = ParseInt(name, value, 0, 65535) },
+                "password-file" => result with { PasswordFile = value },
+                "game-id" => result with { GameId = IsValidGameId(value) ? value : throw new ServerUsageException("--game-id must be 1 to 64 letters, digits, '.', '_' or '-' and start with a letter or digit") },
                 "data-dir" => result with { DataDir = value },
                 "password" => result with { Password = value.Length == 0 ? throw new ServerUsageException("--password must not be empty") : value },
                 "max-players" => result with { MaxPlayers = ParseInt(name, value, 2, 64) },
@@ -109,8 +126,13 @@ public sealed record ServerOptions
             };
         }
         if (seen.Contains("ai-fill") && seen.Contains("no-ai-fill")) throw new ServerUsageException("--ai-fill and --no-ai-fill exclude each other");
+        if (seen.Contains("password") && seen.Contains("password-file")) throw new ServerUsageException("--password and --password-file exclude each other");
         return result;
     }
+
+    /// <summary>The id becomes a folder name, so it can never hold a separator or climb out of the data dir.</summary>
+    public static bool IsValidGameId(string id) =>
+        id.Length is >= 1 and <= 64 && char.IsAsciiLetterOrDigit(id[0]) && id.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-');
 
     private static int ParseInt(string name, string text, int min, int max)
     {

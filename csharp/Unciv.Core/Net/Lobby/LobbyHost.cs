@@ -23,7 +23,9 @@ public enum LobbyStatus
 public sealed record LobbyStartResult(
     GameInfo Game,
     GameSetupInfo Setup,
-    IReadOnlyList<Slot> Slots
+    IReadOnlyList<Slot> Slots,
+    long Seed = 0,
+    long StartClockMillis = 0
 );
 
 /// <summary>
@@ -128,6 +130,26 @@ public sealed class LobbyHost : IAsyncDisposable
     public Func<GameSetupInfo, long, long, GameInfo>? GameFactory { get; set; }
 
     private TaskCompletionSource startSettled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>
+    /// T270: a restarted dedicated server reopens a saved game: the lobby is already <see cref="LobbyStatus.Started"/> and every <paramref name="seats"/> entry (civ id, bound player key, display name)
+    /// is a human slot with its binding, so those keys reconnect through the late-seat path and nobody else gets in. Only valid before anyone joined.
+    /// </summary>
+    public void RestoreStarted(IEnumerable<(string Nation, string PlayerKey, string DisplayName)> seats)
+    {
+        lock (gate)
+        {
+            if (Status != LobbyStatus.InLobby || sessions.Count != 0) throw new InvalidOperationException("A lobby can only be restored before anyone joined");
+            slots.Clear();
+            foreach (var (nation, key, name) in seats)
+            {
+                var index = slots.Count;
+                if (!Bindings.TryBind(index, key)) throw new InvalidOperationException($"The saved key of {nation} cannot be bound");
+                slots.Add(new Slot { Index = index, Kind = SlotKind.Human, Nation = nation, PlayerKeyId = key, DisplayName = name, Ready = true });
+            }
+            Status = LobbyStatus.Started;
+        }
+    }
 
     /// <summary>The game host now reads the seat's hand-over stream; until then the lobby reader answers its pings (the game actor can be busy seating others).</summary>
     public void MarkGameReading(string sessionId)
@@ -1004,7 +1026,7 @@ public sealed class LobbyHost : IAsyncDisposable
 
         await BroadcastAsync(new GameStarting(), includeHandedOver: true).ConfigureAwait(false);
 
-        return new LobbyStartResult(game, setup, [.. activeSlots]);
+        return new LobbyStartResult(game, setup, [.. activeSlots], actualSeed, actualClock);
     }
 
     /// <summary>Under the lobby lock, as the game starts: every seated connection's stream goes to the game, connections replaced by a newer one of the same key are dropped.</summary>

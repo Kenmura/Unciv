@@ -15,7 +15,7 @@ namespace Unciv.Core.Tests.Server;
 // T265: the dedicated server executable's logic. Options and settings are plain unit tests; the end-to-end test runs ServerRunner (what Program.Main calls) in this process on port 0
 // and joins two scripted ClientSessions over real TCP+TLS, pinned to the fingerprint of the INVITE line.
 [Collection("RulesetCache")]
-public sealed class DedicatedServerTests : IDisposable
+public sealed partial class DedicatedServerTests : IDisposable
 {
     private static readonly TimeSpan Bound = TimeSpan.FromSeconds(60);
     private readonly string root = Directory.CreateTempSubdirectory("unciv-server-").FullName;
