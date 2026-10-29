@@ -152,7 +152,7 @@ flowchart TD
   class B028 ready
   class B029 ready
   class B030 ondeck
-  class C069 prog
+  class C069 review
   class C070 ondeck
   class C071 waiting
   class C072 ready
@@ -245,7 +245,7 @@ xychart-beta
 | B025 | **On deck** (after B013) | B007, B013 | 1 | BNW: Score changes |
 | B030 | **On deck** (after B013) | B013 | 0 | BNW: Ideology tenet effects (48 tenets) |
 | B013 | Needs-Review [Claude] | B012 | 10 | BNW: Ideologies: unlock, adopter bonuses, tenet levels |
-| C069 | In-Progress [Claude] | C066 | 8 | City screen redesign |
+| C069 | Needs-Review [Claude] | C066 | 8 | City screen redesign |
 | C071 | Available (waiting on C070) | C066, C070 | 6 | Policies screen redesign |
 | C078 | Available (waiting on C069, C070, C071, C072, C073, C074, C075, C076, C077) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
 | C084 | Available (waiting on C083) | C083 | 4 | Unit art by era: ancient and classical |
