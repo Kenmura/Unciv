@@ -93,7 +93,7 @@ public static class TourismRules
     }
 
     /// <summary>Sum of the tourism of all cities of the civ (@10073fa0).</summary>
-    public static int PlayerTourism(CivilizationObject civ) => civ.Cities.Sum(CityTourism);
+    public static int PlayerTourism(CivilizationObject civ) => (int)Math.Clamp(civ.Cities.Sum(it => (long)CityTourism(it)), int.MinValue, int.MaxValue);
 
     // ---- modifier toward a civ (4.3.2)
 

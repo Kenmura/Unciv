@@ -174,7 +174,7 @@ public sealed class TourismTests
         tile.Improvement = landmark.Name;
         var wonder = w.Game.CreateWonder("[100]% of Culture from Wonders, Landmarks and Natural Wonders added as Tourism");
         w.CapA.CityConstructions.AddBuilding(wonder);
-        Assert.True(TourismRules.CityTourismBeforeModifiers(w.CapA) >= 6);
+        Assert.Equal(6, TourismRules.CityTourismBeforeModifiers(w.CapA));
         tile.Improvement = null;
         Assert.Equal(0, TourismRules.CityTourismBeforeModifiers(w.CapA));
     }

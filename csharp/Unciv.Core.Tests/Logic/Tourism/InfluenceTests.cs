@@ -100,6 +100,29 @@ public sealed class InfluenceTests
     }
 
     [Fact]
+    public void LevelIsUnknownWhenTheRulesetSetsNoThresholds()
+    {
+        var w = new GreatWorkWorld();
+        w.B.TotalCultureForContests = 10;
+        Set(w.A, w.B, 1000);
+        Assert.Equal(InfluenceLevel.Unknown, InfluenceRules.Level(w.A, w.B));
+    }
+
+    [Fact]
+    public void ABlastNeverTakesInfluenceAway()
+    {
+        var w = World();
+        Assert.Equal(100, InfluenceRules.ApplyBlast(w.A, w.B, -5, -20));
+        Assert.Equal(100, InfluenceRules.InfluenceOn(w.A, w.B));
+    }
+
+    [Fact]
+    public void InfluencePerTurnDoesNotOverflow()
+    {
+        Assert.Equal(int.MaxValue, InfluenceRules.InfluencePerTurn(int.MaxValue, 100));
+    }
+
+    [Fact]
     public void LevelIsUnknownWhenTourismIsOff()
     {
         var w = new GreatWorkWorld(enabled: false);

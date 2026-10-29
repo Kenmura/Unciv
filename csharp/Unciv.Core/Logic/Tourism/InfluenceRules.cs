@@ -55,7 +55,7 @@ public static class InfluenceRules
     public static int InfluencePerTurn(CivilizationObject me, CivilizationObject target) =>
         InfluencePerTurn(TourismRules.PlayerTourism(me), TourismRules.ModifierWith(me, target));
 
-    internal static int InfluencePerTurn(int tourism, int modifier) => unchecked(tourism * Math.Max(0, 100 + modifier) / 100);
+    internal static int InfluencePerTurn(int tourism, int modifier) => (int)Math.Clamp(tourism * (long)Math.Max(0, 100 + modifier) / 100, int.MinValue, int.MaxValue);
 
     /// <summary>Influence as a percentage of the target's lifetime culture, 0 when that is 0 (@1006e410).</summary>
     public static int Percent(CivilizationObject me, CivilizationObject target)
@@ -68,6 +68,7 @@ public static class InfluenceRules
     {
         if (!TourismRules.IsEnabled(me)) return InfluenceLevel.Unknown;
         var constants = me.GameInfo.Ruleset.ModOptions.Constants;
+        if (constants.CultureLevelExotic <= 0) return InfluenceLevel.Unknown; // thresholds not set by the ruleset: no levels (never Dominant for everyone)
         int percent = Percent(me, target);
         if (percent >= constants.CultureLevelDominant) return InfluenceLevel.Dominant;
         if (percent >= constants.CultureLevelInfluential) return InfluenceLevel.Influential;
@@ -160,7 +161,8 @@ public static class InfluenceRules
     /// </summary>
     public static int ApplyBlast(CivilizationObject me, CivilizationObject target, int oneShotTourism, int percentOthers)
     {
-        int strength = BlastStrength(me, oneShotTourism);
+        int strength = BlastStrength(me, Math.Max(0, oneShotTourism));
+        percentOthers = Math.Max(0, percentOthers);
         if (!CanInfluence(me, target)) return 0;
         var culture = me.Culture ??= new();
         culture.AddInfluence(target.CivId, strength);
