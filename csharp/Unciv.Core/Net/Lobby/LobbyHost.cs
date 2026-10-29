@@ -109,6 +109,9 @@ public sealed class LobbyHost : IAsyncDisposable
         public volatile bool GameReading;
     }
 
+    /// <summary>Replaces <see cref="NewGame.Start"/> as the creator of the game (tests make the creation fail or stall); null uses the engine.</summary>
+    public Func<GameSetupInfo, long, long, GameInfo>? GameFactory { get; set; }
+
     private TaskCompletionSource startSettled = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>The game host now reads the seat's hand-over stream; until then the lobby reader answers its pings (the game actor can be busy seating others).</summary>
@@ -802,7 +805,7 @@ public sealed class LobbyHost : IAsyncDisposable
         GameInfo game;
         try
         {
-            game = NewGame.Start(setup, actualSeed, actualClock, isHostedGame: true);
+            game = GameFactory != null ? GameFactory(setup, actualSeed, actualClock) : NewGame.Start(setup, actualSeed, actualClock, isHostedGame: true);
         }
         catch (Exception)
         {

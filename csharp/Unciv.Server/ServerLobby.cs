@@ -74,7 +74,16 @@ public sealed class ServerLobby : IAsyncDisposable
                 await MarkAbsentIfUnseatedAsync(gameHost, nation).ConfigureAwait(false);
                 return;
             }
-            await gameHost.AttachSessionAsync(sessionId, nation, transport, playerKeyId).ConfigureAwait(false);
+            try
+            {
+                await gameHost.AttachSessionAsync(sessionId, nation, transport, playerKeyId).ConfigureAwait(false);
+            }
+            catch (Exception) when (lobbyHost.GameTransportFor(sessionId) == null)
+            {
+                // A newer connection of the key replaced this one (closing it) while it was being seated: the newer one seats itself, this is not a failed start.
+                await MarkAbsentIfUnseatedAsync(gameHost, nation).ConfigureAwait(false);
+                return;
+            }
             lobbyHost.MarkGameReading(sessionId);
         }
         finally

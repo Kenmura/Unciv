@@ -1052,7 +1052,7 @@ public sealed class NetLobbyTests : IDisposable
         await RawJoinAsync(lobby, c1, id);
         await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
         await ReceiveMessageAsync<LobbyState>(c1);
-        RulesetCache.Clear(); // validation passed against the settings, creating the game needs the ruleset: gone
+        lobby.Lobby.GameFactory = (_, _, _) => throw new InvalidOperationException("creation failed");
         await Assert.ThrowsAnyAsync<Exception>(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
         Assert.Equal(LobbyStatus.InLobby, lobby.Lobby.Status);
     }
