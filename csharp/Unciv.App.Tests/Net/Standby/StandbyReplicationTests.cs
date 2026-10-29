@@ -77,7 +77,7 @@ internal sealed class TestSuccessor : IAsyncDisposable
             if (hit != null) return hit;
             await Task.Delay(20);
         }
-        throw new TimeoutException($"No {typeof(T).Name}; got: {string.Join(", ", All().Select(it => it.GetType().Name))}");
+        throw new TimeoutException($"No {typeof(T).Name}; got: {string.Join(", ", All().Select(it => it.GetType().Name))}; reader: {Failure}");
     }
 
     public async Task WaitForSeqAsync(long seq)
@@ -118,8 +118,15 @@ internal sealed class TestSuccessor : IAsyncDisposable
                 }
             }
         }
+        catch (Exception e) when (!stop.IsCancellationRequested)
+        {
+            Failure = e;
+        }
         catch (Exception) { /* closed */ }
     }
+
+    /// <summary>What ended the reader early (a rejected frame, a broken transport), shown by the wait timeouts.</summary>
+    public Exception? Failure { get; private set; }
 
     private async Task AckAsync(bool force)
     {
