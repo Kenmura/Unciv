@@ -1812,7 +1812,7 @@ public partial class GameScreen : Control
         bool any = false;
         foreach (var pair in list.ToArray()) // the list can change while a step awaits (the player may end an escort), so entries are found again by value
         {
-            if (pair.Target is not { } target) continue;
+            if (pair.Target is not { } target || !list.Contains(pair)) continue; // ended or re-targeted while an earlier pair awaited
             var outcome = await GroupMoveModel.EscortStepAsync(env, pair, target);
             any |= outcome.Status == GroupMoveStatus.Moved;
             int at = list.IndexOf(pair);
