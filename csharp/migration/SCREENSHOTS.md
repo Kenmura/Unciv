@@ -1042,7 +1042,7 @@ Scenario `theme`.
 
 *Every theme variation: type scale, switch and stat bars on the left, the button variants in the middle, card, inset, tooltip, modal, header and dock panels with a text field on the right.* (`theme/variations.png`)
 
-## C063 (ticket not Done or unknown)
+## C063 Unciv icon pack and icon keys
 
 Unciv's own icon pack is the default art: stat icons come from the bundled pack (all goldens with a top bar or stat labels were re-recorded), nation emblems sit on colour badges, and a key with no pack art (Atlantis) falls back to a generated badge.
 
@@ -1084,3 +1084,4 @@ Done tickets with nothing meaningful to show.
 - **C058 Harness: other scenarios can capture stray hover tooltips under load (real-time TooltipHost delay)**: Harness-only change: scenarios no longer depend on real frame time; no new UI and no golden changed.
 - **C059 Espionage screen: coup button clipped at 640px width**: Layout fix (wrapping coup button) of the espionage screen shown under C051; its re-recorded goldens espionage/*.png are listed there, with the wrapped coup row in screen.png.
 - **C060 Tutorial task completed-set: per-viewer and replay-safe (C054 review follow-up)**: Per-viewer, replay-safe tutorial-task state (no layout change); the card itself is shown under C054 (tutorial-tasks scenario) and the hotseat hand-over under C029.
+- **C064 Unique display text and hidden uniques in UI models**: Model-level text fix (unique display text, hidden uniques filtered); the decisions, tooltips and policy scenario goldens are pixel-unchanged.

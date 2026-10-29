@@ -1070,5 +1070,8 @@
         "caption": "The city screen under the same top bar."
       }
     ]
+  },
+  "C064": {
+    "none": "Model-level text fix (unique display text, hidden uniques filtered); the decisions, tooltips and policy scenario goldens are pixel-unchanged."
   }
 }

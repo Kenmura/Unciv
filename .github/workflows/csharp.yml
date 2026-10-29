@@ -142,8 +142,7 @@ jobs:
         run: Unciv.Godot/tools/smoke-export.sh
 
   # Rendered scenarios (C008) against the committed goldens. Goldens were recorded with Fedora's Mesa llvmpipe; ubuntu's differs in blending (T246), so
-  # the job compares with GoldenTolerance.Renderer (HARNESS_GOLDEN_TOLERANCE below). This job does not gate merges (continue-on-error) until T239 has seen it
-  # green on the runner image and removes that line.
+  # the job compares with GoldenTolerance.Renderer (HARNESS_GOLDEN_TOLERANCE below). T239 saw it green on the runner image, so it gates like the others.
   client-scenarios:
     name: Client scenarios (Xvfb, software GL)
     # needs: engine only orders the jobs; an unrelated failing unit test must not hide the scenario result (T246), hence !cancelled()
@@ -151,7 +150,6 @@ jobs:
     needs: engine
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    continue-on-error: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

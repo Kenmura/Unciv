@@ -523,16 +523,18 @@ public sealed class ClientSession : IAsyncDisposable
         handshakeTimer?.CancelAfter(Timeout.InfiniteTimeSpan);
         var firstJoin = !everJoined;
         everJoined = true;
-        joined.TrySetResult(new JoinResult(true, null));
 
+        // The state moves before JoinAsync completes, so a caller that awaits the join never observes the stale Joining state.
         var snapshot = Game.Snapshot;
         if (snapshot == null && !gameStarted)
         {
             SetState(ClientSessionState.Lobby);
+            joined.TrySetResult(new JoinResult(true, null));
             return;
         }
 
         SetState(ClientSessionState.Syncing);
+        joined.TrySetResult(new JoinResult(true, null));
         if (snapshot == null)
         {
             awaitingSnapshot = true;
