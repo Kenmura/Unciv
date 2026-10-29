@@ -19,7 +19,7 @@
 - [5. Persistence and resync (host-owned, requirement 4)](#5-persistence-and-resync-host-owned-requirement-4)
   - [5.1 Files [V design on T100]](#51-files-v-design-on-t100)
   - [5.2 Resync](#52-resync)
-  - [5.3 When the host quits (no host migration in the MVP)](#53-when-the-host-quits-no-host-migration-in-the-mvp)
+  - [5.3 When the host quits (manual hand-off; optional automatic host migration, T268)](#53-when-the-host-quits-manual-hand-off-optional-automatic-host-migration-t268)
 - [6. Network stack, identity, security (host-a-lobby, requirement 5)](#6-network-stack-identity-security-host-a-lobby-requirement-5)
   - [6.1 Protocol messages (transport independent; JSON, one `type` per frame)](#61-protocol-messages-transport-independent-json-one-type-per-frame)
   - [6.2 Identity and join (no accounts server)](#62-identity-and-join-no-accounts-server)
@@ -227,11 +227,12 @@ Write order: append + fsync the log line *before* acknowledging an accepted comm
 - Faulted processor (`IsFaulted`, COMMANDS.md [V]): the host reloads snapshot + log, refuses to continue past the failing command, quarantines it and tells the lobby.
 - Save interplay: the host save is a normal Unciv save, so it opens in single player; a log is replayed only by the engine version that wrote it, across versions the snapshot is authoritative (the host snapshots at end of turn before an upgrade). Kotlin hashes are not comparable (T160) [V].
 
-### 5.3 When the host quits (no host migration in the MVP)
+### 5.3 When the host quits (manual hand-off; optional automatic host migration, T268)
 - **Clean quit**: the host stops accepting commands after the current command, takes a snapshot at the next safe point (end of Playing if a turn is mid-flight: mid-turn state is saved as is, including each civ's *ended* flag, which is why `TurnState` is in the game state), writes the `clean` marker, sends `HostClosing` to clients and closes. Clients keep their identity key, last address and `lastSeq` and show "host went away; waiting".
 - **Crash**: recovery from snapshot + log on next start (5.1).
 - **Resume**: the host chooses "Host saved game"; slots stay bound to the same player keys; clients reconnect with `Resume` to the same `address:port` (or a new one; the invite can be re-copied). Players need not be online at the same time: a game can be played like a persistent world as long as *the host* process is up.
-- **Manual host change**: zip the game directory and hand it to a friend; their host process loads the same bindings and clients reconnect with the same keys (new address). No protocol feature is needed, only the doc. Automatic migration (leader election, state replication to a successor) is out of scope.
+- **Manual host change**: zip the game directory and hand it to a friend; their host process loads the same bindings and clients reconnect with the same keys (new address). No protocol feature is needed, only the doc. This stays the fallback when everything else fails.
+- **Automatic host migration (T268, go, opt-in, default off).** Full design, rejected alternatives, threat model per message and acceptance criteria: `design/HOST-MIGRATION.md`. Summary: the host designates one consenting player as *backup host* at lobby time and streams it the snapshot and the command log asynchronously (the successor sees full state, a stated trust change, section 6.6); a clean quit hands over losslessly (`HostHandoff`), a crash promotes the successor only after its own loss window plus a quorum of signed `HostLossVote`s from connected humans; a persisted `hostEpoch` fences the old host (`stale-epoch`) so there is never a second host; clients get the successor's endpoint and fingerprint from the host in advance (`HostSuccessor`, pinned, no TOFU prompt) and reconnect with the same keys through `Resume`, rolled back by a snapshot if they were ahead. The departing host's seat follows the T267 rule (section 4.1). Tickets T269, T272-T275.
 - Retention: logs older than the latest snapshot are kept as a replay file (history, audit).
 
 ## 6. Network stack, identity, security (host-a-lobby, requirement 5)
@@ -297,7 +298,7 @@ Default port `47821` (configurable). IPv4 and IPv6 dual-stack listen.
 `Slot{index, kind: Human|AI|Closed|Open, nation|Random, color, playerKeyId, displayName, ready, connected}`. Rules: nation uniqueness and `Random` resolution by the host (using `PlayerPickerTable`-equivalent rules from T199), a joiner takes the first Open slot or a chosen one, everyone sets *ready*, the host can Start when all human slots are ready (or force), kick, close slots, chat. Starting builds the game with each human slot's `PlayerId` = player key id, writes `game.json`, takes the first snapshot and sends everyone `Snapshot`.
 
 ### 6.6 Trust model (state it to players)
-Clients are untrusted (sections 2-3). The **host is trusted**: it holds the full `GameInfo` and the save, and an in-process host's player can in principle inspect their own process. Friends-only; a group that wants hidden-information integrity against the host uses a dedicated server run by a third party. The anti-cheat filter still matters: it stops a modified *client*, which is the realistic threat.
+Clients are untrusted (sections 2-3). The **host is trusted**: it holds the full `GameInfo` and the save, and an in-process host's player can in principle inspect their own process. Friends-only; a group that wants hidden-information integrity against the host uses a dedicated server run by a third party and no backup host. With the optional backup host (`design/HOST-MIGRATION.md`, off by default) the designated successor also holds the full state and the salt, so two players are trusted; every joiner sees who before joining. The anti-cheat filter still matters: it stops a modified *client*, which is the realistic threat.
 
 ## 7. Godot side (C006 and the host/lobby slices)
 
@@ -318,7 +319,7 @@ Clients are untrusted (sections 2-3). The **host is trusted**: it holds the full
 | D6 | Mods | Ruleset hash must match; no mod download in v1 | recommendation |
 | D7 | Transport security | **TLS 1.3, self-signed host key, fingerprint in the invite, TOFU for typed addresses** | recommendation |
 | D8 | NAT | Manual forward + overlay VPN docs for the MVP; UPnP and LAN discovery optional tickets; no hole punching | OWNER (scope delegated) |
-| D9 | Host leaves | Game saved, resumable by the same or another host process; no migration | OWNER |
+| D9 | Host leaves | Game saved, resumable by the same or another host process; optional automatic migration to one designated backup host (T268, `design/HOST-MIGRATION.md`), off by default | OWNER |
 | D10 | Conflict model | Arrival-order, immediate application, first come first served (doc SIMULTANEOUS-TURNS) | recommendation |
 
 ### Owner decisions still open (each has a default; work proceeds on the default)
@@ -333,7 +334,7 @@ Clients are untrusted (sections 2-3). The **host is trusted**: it holds the full
 ## 9. Tickets
 
 See `ticket.py list` for live state. Dependency-ordered set:
-protocol DTOs (T172) -> (host identity/join auth T173 | visibility filter T174 | persistence T176 | turn policy T177) -> engine simultaneous turns (T200-T203, engine track, parallel to the above) -> host core (T178) -> lobby (T204) -> transport (T179) -> client library (T180) -> in-process host (T205) -> end-to-end (T182) -> Godot (C006, C034-C036). Optional: LAN discovery (T206), UPnP (T207). Command catalogue tickets (T164, T186-T194) are unchanged except for the notes added by this revision.
+protocol DTOs (T172) -> (host identity/join auth T173 | visibility filter T174 | persistence T176 | turn policy T177) -> engine simultaneous turns (T200-T203, engine track, parallel to the above) -> host core (T178) -> lobby (T204) -> transport (T179) -> client library (T180) -> in-process host (T205) -> end-to-end (T182) -> Godot (C006, C034-C036). Optional: LAN discovery (T206), UPnP (T207), host migration (T269, T272-T275; design/HOST-MIGRATION.md). Command catalogue tickets (T164, T186-T194) are unchanged except for the notes added by this revision.
 
 ## 10. Verified vs inferred summary
 

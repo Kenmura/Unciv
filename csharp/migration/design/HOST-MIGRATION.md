@@ -1,0 +1,110 @@
+# Host migration: automatic successor host when the host leaves (spike T268)
+
+Status: design with acceptance criteria. Linked from `design/SERVER.md` section 5.3. Source: GitHub issue #5 ("if a host leaves, switch to a new host automatically"). Respects the owner's decisions: host-run lobby, simultaneous turns, flat MVP, a dedicated host is nice-to-have only. Verified against the code as of T205/T267: `InProcessHost.ResumeFromDirectory`, `GameHost` sessions and `HostClosing`, `TcpTlsListener`, `KnownHosts`, T267 `TurnTimer.Depart`.
+
+Decision: go, as an opt-in, trust-changing feature (one designated backup host chosen at lobby time, default off), delivered in five sized tickets (T269, T272-T275). The cheaper option (manual directory hand-off, section 5.3 of SERVER.md) stays as the fallback and is improved by the same work.
+
+## 0. The problem in one paragraph
+
+Clients hold only a visibility-filtered mirror (SERVER.md section 2-3); the host alone holds the full `GameInfo`, the command log, the per-game secret salt (T230) and the slot bindings. If the host process dies, nobody else can continue the game, which is why 5.3 said "no host migration". An automatic successor needs the full state, and giving full state to an arbitrary player breaks the anti-cheat filter for that player. So the real question is not the election, it is who may legitimately hold a copy and how everyone else learns where to go.
+
+## 1. What a successor needs, how it gets it, and the trust change
+
+**Needs (everything the host process owns):** a snapshot (full `GameInfo`, includes `TurnState` and every civ's ended flag), the command log tail since that snapshot (T194 format, includes server commands and checkpoints), `game.json` (lobby settings, slot bindings civ -> player key id and display name, turn policy, the T230 salt which lives in the log header and `game.json`, join-password salted hash). **Not replicated, ever:** the old host's TLS private key (the successor has its own `HostKey`), the invite-token store (the new host mints new invites), any client session state.
+
+**Clients already hold** only filtered views. Rejected alternatives for recovering state from them:
+- *Reconstruct from the union of client views.* Unexplored tiles nobody saw, the salt, AI state, other civs' hidden research and gold are in no view. Rejected: cannot work.
+- *Standby state sealed so only a host failure opens it* (threshold shares of a key held by every client, released on host loss). The release rule would be enforced by client code, and the realistic adversary is a modified client, so it protects nothing, while adding a key-management protocol. Rejected.
+- *Every client holds a full encrypted copy.* Same problem, and it would hand every player the successor trust. Rejected.
+- *Any player is elected successor at failure time.* The state would have to be already on every machine. Rejected for the same reasons.
+
+**Recommendation: one designated backup host (the successor), chosen at lobby time.**
+- The host picks one human slot as `backupHost` (`LobbySettings.BackupHost`, a slot index, default none). The `Join`/lobby UI shows to every player, before they join, a fixed notice: "Player X holds a complete copy of this game, including what you cannot see. They are trusted like the host." The invite-based join cannot hide it because `LobbyState` carries it.
+- The chosen player must consent: the host sends `StandbyOffer`, the player's client shows a prompt, and only a `StandbyAccept` makes it effective. A player can decline or later withdraw (`StandbyDecline`) and the host then runs without a backup. Nobody is silently made a keeper of full state.
+- **Trust change, stated plainly (feeds SERVER.md 6.6):** with a backup host the game has two parties who see hidden information and the salt, the host and the backup. A successor can read the standby store on its own disk and predict combat rolls. It is the same honor-system as an in-process host's own player, now for two people. A group that wants integrity against both uses a dedicated host run by a third party and no backup host (feature off, the default). A modified client of any *other* player is unaffected: they never receive state.
+- The standby copy is stored in the successor's data dir under `standby/<gameId>/` in exactly the host game-directory format of SERVER.md 5.1 (`snapshot-<seq>.json.gz`, `commands.log`, `game.json`), so promotion is `InProcessHost.ResumeFromDirectory` plus a listener, and the manual hand-off can use the same folder. The client UI must never render from it (a test asserts the mirror shown to the successor's player is the filtered one).
+
+**Replication.** The successor connects as an ordinary authenticated session (its seat) and additionally sends `StandbySubscribe{gameId, haveSeq}` on the same connection; the host accepts it only from the designated, consented key id after `Auth`.
+- Host to successor: `StandbySnapshot{epoch, seq, part, parts, sha256, data}` (the snapshot in chunks under `HostLimits` max frame size, whole-file sha256, re-sent when `haveSeq` is below the host's oldest retained snapshot), then `StandbyEntry{epoch, seq, line}` carrying the verbatim `commands.log` line for every entry the host accepts, in log order, including `{checkpoint}` lines; the successor appends and fsyncs, then `StandbyAck{seq}`.
+- **Frequency and mode: asynchronous.** The host never waits for the ack (a slow or dead backup must not stall a simultaneous-turn game; rejected: semi-synchronous acks, which add the successor's round trip to every command). The host keeps a bounded send queue (`StandbyMaxLagEntries`, 2000); beyond it, or after `StandbyMaxLagSeconds` (30) without ack, the standby is marked `lagging`, entries are dropped and a fresh `StandbySnapshot` is sent when it catches up. Snapshots are sent at assignment and whenever the host takes its own snapshot (every N turns, 5.1).
+- Consequence: when the host crashes the successor may be a few commands behind. Commands the dead host acknowledged to a client but never replicated are lost. On `Resume` a client whose `lastSeq` is greater than the new host's `LastSeq` receives a fresh `Snapshot` flagged `rolledBack{lostCommands}` and its mirror is replaced; the UI tells the player "the last N actions were lost in the host change". A graceful hand-off (below) loses nothing.
+- A `StandbyStatus{state: none|offered|syncing|ready|lagging, lagEntries}` is shown on the host screen and to the successor. `ready` requires the reachability probe (section 3).
+
+**Threat model, new messages in this section.**
+| Message | Direction | Threats and rules |
+|---|---|---|
+| `StandbyOffer{keyId}` | host to candidate | Only the host sends it; a client that receives it from a non-host path ignores it. Consent is a UI prompt; no state flows until accept. |
+| `StandbyAccept{endpoints[], port}` / `StandbyDecline` | candidate to host | Accepted only from the designated key id after `Auth` (`not-designated` otherwise, one generic code, no oracle). Endpoints are attacker-chosen: the host probes at most one endpoint per minute, port 1024-65535, 3 s timeout, one TLS handshake and `Hello`, no payload (no amplification, no SSRF beyond a handshake). |
+| `StandbySubscribe`, `StandbyAck` | candidate to host | Only from the designated, accepted key; ack seq must be non-decreasing and not above the host's `LastSeq`, otherwise the subscription is closed. |
+| `StandbySnapshot`, `StandbyEntry` | host to candidate | Full state, so only ever on the authenticated TLS session of the designated key, never broadcast, never logged (frames are not logged, SERVER.md 6.4). Chunk and total size limits and the sha256 stop a truncated or tampered snapshot from being promoted. A leaked successor key is a full-state leak: documented, and the host can `StandbyRevoke` (drops the subscription, clears the designation, new `epoch` not needed because nothing was promoted). |
+| `StandbyStatus` | host to candidate and host UI | Carries counters only. |
+
+## 2. Election rule and split-brain prevention
+
+**Who.** In v1 the successor is the single designated backup host: no election among peers, hence no ranking ambiguity. The DTOs carry `successors[]` (length 1 in v1) so a ranked list can be added later without a version break; ranked fallback is explicitly out of scope (follow-up, only needed when the first successor is also gone).
+
+**Epoch fencing.** `game.json` and the command-log header carry `hostEpoch` (0 at creation, +1 per promotion). `Welcome` carries it; `Hello` carries `knownEpoch`. Clients, the successor and every host process persist the highest epoch they have seen per game. A host that sees `knownEpoch` greater than its own, or a client that sees `Welcome.epoch` below its stored epoch, hard-stops with `stale-epoch` (like a host-key change, never silently accepted). A superseded host stops accepting joins, shows "another host took over", and offers to export its directory or to join the new host as a player.
+
+**Two paths to promotion.**
+1. *Graceful hand-off (the host quits cleanly with a ready standby).* The host flushes the standby up to its final seq, takes the clean snapshot, then sends `HostHandoff{epoch+1, successor, finalSeq}` to the successor and every client instead of the plain `HostClosing`. The successor, having `finalSeq`, promotes at once (no wait, no vote, lossless); clients go to the announced endpoint. Authority comes from the host's authenticated channel at the current epoch.
+2. *Crash or network loss.* Needs agreement that the host is really gone, otherwise a partition makes two hosts. Rules, all of which must hold before the successor promotes:
+   - (a) The successor's own link to the host has been dead for `HostLossSeconds` (default 20; transport close or no frame including `Pong` for three ping intervals).
+   - (b) A quorum of human seats reports the same loss. Each client that lost the host (same 20 s rule and a failed reconnect to the old address for `ReconnectGraceSeconds`, default 10) connects to the successor's announced endpoint and sends `HostLossVote{gameId, epoch, candidateKeyId, lastSeq, sig}` (signed with its player key, T173 style; `sig` covers gameId, epoch, candidate and lastSeq so it cannot be replayed across games or epochs). Quorum = strictly more than half of the non-host human seats that the last host-announced roster (`HostSuccessor.roster`, with each seat's connected flag) listed as connected, the successor's own vote included, counting distinct bound key ids. Offline players do not count. A dedicated host has no seat, so all connected humans count.
+   - (c) Each client votes at most once per epoch and persists it (`votedEpoch`, candidate); a client that still reaches the host never votes. In a partition where the host still reaches a majority, the successor cannot collect a quorum, so no second host appears. In a partition that isolates the host with the minority, the majority elects the successor and the host, on return, is fenced by epoch.
+   - Known limit: with exactly two humans the quorum is the successor alone, so a partition between the two machines can yield one host each. The epoch fence then makes the old host refuse to continue once it learns the new epoch, but the two games diverge until the players meet; accepted, documented in the UI help ("backup host works best with 3 or more players").
+- The successor promotes by loading its standby store with `InProcessHost.ResumeFromDirectory`, setting `hostEpoch+1`, listening on its announced endpoint (its own `HostKey`) and resuming through the existing crash-recovery path (`NextResolveStep` continues a half-resolved round). The new host's `Welcome.epoch` is the proof for clients.
+- **The departing host's seat** is handled by the T267 boundary rule, not by anything new: a clean quit counts as an explicit `Leave` (the civ stays human, its turn is force-ended, `SetController(AI)` at the next boundary); a crash is a drop (grace plus `K` rules). If the old host returns as a player it uses the normal `Reclaim`.
+
+**Threat model.** `HostLossVote` (above) is the only new election message. Forged votes fail the signature or the bound-key check; a kicked or unbound key is not in the roster; votes for another epoch or candidate are ignored; a successor that never saw host loss ignores votes (they are stored and expire after `ElectionWindowSeconds`, default 60, restarting the cycle). `HostHandoff` is only honoured on the authenticated session of the current-epoch host; a client receiving it on any other path ignores it.
+
+## 3. Clients learn the new address and reconnect with the same keys
+
+- **Announcement while healthy.** `HostSuccessor{epoch, successor{keyId, endpoints[], fingerprint}, status, roster[]}` goes to every client in `Welcome`/`JoinOk`, whenever the standby becomes `ready` or changes, and with every roster change. It is public information (an address and a certificate fingerprint, no state). Clients persist it next to the game's `lastSeq`.
+- **Reachability probe.** `ready` requires the host to dial the successor's endpoint, complete the TLS handshake and see the announced fingerprint (the successor's listener in standby mode answers `Hello` with `Welcome{standby: true}` and refuses everything else with `not-host-yet`). This catches the common failure, a successor behind NAT with no port forward, before it matters. A non-ready standby is shown as such and promotion paths still work only on a LAN or overlay where the endpoint is reachable by the clients (the clients are not probed).
+- **Reconnect.** Same player key, same slot: the client runs the T180 reconnect flow against the successor endpoint: `Hello{knownEpoch}`, `Welcome{epoch+1, challenge}`, `Join`, `Auth` (key proof), `Resume{gameId, lastSeq, lastViewHash}`. The host answers with deltas or a snapshot (`rolledBack` when `lastSeq` is ahead), exactly as 5.2.
+- **TOFU fingerprint story.** The successor's certificate is pinned from the announcement, which came over the authenticated, already-pinned host channel (T179): the old host vouched for it, so the user gets no first-use window and no prompt (the same guarantee as an invite carrying the fingerprint). It is stored in `KnownHosts` under the successor endpoint with `vouchedBy = old host fingerprint, epoch`. A later mismatch for that entry is the usual hard stop. The successor additionally signs `(gameId, epoch, its TLS fingerprint)` with its player key in `Welcome`, and the client checks the signer key id equals the announced `keyId`, which is a seat key the client already knows from the roster: a stranger who guessed the address cannot pass as the successor.
+- A client that finds neither host nor successor reachable keeps retrying both with back-off for `GiveUpMinutes` (default 10), then shows the manual hand-off help (section 5).
+- Threat model, `HostSuccessor`: a compromised host could point clients at an attacker endpoint, but the host is already the trusted party; the pinned fingerprint plus the successor's seat-key signature bound the damage to "a seat holder" and make the redirect to a non-seat impostor fail.
+
+## 4. In-process host (T205) and the dedicated server
+
+- **In-process host (the host's process is also a player).** Closing the game ends both the host and its player. Clean quit with a ready standby: the graceful hand-off path (lossless). Crash or power loss: the election path. Its seat is handled as described in section 2. Hosting UI (C034) gains: pick the backup host in the lobby, show standby state, warn on quit when no standby is ready.
+- **Dedicated server (T265).** Same protocol; the server has no seat, the successor is a player's in-process host after promotion, and quorum counts all connected humans. A dedicated host that is deliberately shut down uses the graceful path. Running the dedicated server stays optional and nothing depends on it; the feature works with only player-run hosts.
+- **Successor's process and seat.** After promotion the successor's process is the host; its own player connects through the in-memory loopback (as T205 does) and keeps its seat. If the successor is the dead machine's only other human, see the two-player limit in section 2.
+- **A game started before the feature or with the feature off** behaves exactly as before: no `Standby*` traffic, `hostEpoch` stays 0, an old client ignores unknown optional fields (new `Welcome.epoch` and `Hello.knownEpoch` are additive; the protocol version is bumped only because the new message types are new, per T172 DTO style).
+
+## 5. Failure cases and the fallback
+
+| Case | Behaviour |
+|---|---|
+| Host and successor both gone | Clients retry both, then show the manual hand-off help. The successor's `standby/<gameId>/` is a normal game directory: "Host saved game" on it (or zip and hand to a friend, SERVER.md 5.3 manual change) resumes at `hostEpoch+1`, so even this case recovers up to the replicated seq. |
+| Host dead, successor behind | Promotes anyway (liveness over loss); clients ahead of it are rolled back with a notice. |
+| Host dead, no quorum (too few players online) | Successor stays standby, keeps listening for `ElectionWindowSeconds` and repeats; the game waits like any "host went away" state. A human can force it: "Take over now" on the successor (an explicit local action, `epoch+1`, fenced like any promotion). |
+| Partition, host still reaches the majority | No quorum, no promotion, no split. |
+| Partition isolates the host | The majority promotes the successor; the old host is fenced (`stale-epoch`) on return. |
+| Old host comes back after promotion | Refused by epoch; offers "join as player" or export. Its seat follows the T267 rule. |
+| Successor declines, leaves or its key is revoked | Standby cleared, status `none`, UI warning to the host; the game continues without a backup. |
+| Standby store corrupt or checksum mismatch | Not promoted (`standby-invalid`); the successor requests a fresh snapshot. A corrupt tail line is truncated like 5.1 recovery. |
+| Successor is also the seat that crashed | Same as host and successor gone. |
+
+## 6. Go/no-go, ticket split and acceptance criteria
+
+Decision: go. Opt-in (default off), single designated backup host, asynchronous replication, quorum-gated crash promotion, lossless graceful hand-off, epoch fencing, manual hand-off kept as the fallback. Rejected: reconstruct-from-clients, sealed/threshold standby, every-player copies, semi-synchronous replication, automatic ranked multi-successor election (follow-up only).
+
+Sized tickets (one session each, in this order):
+1. **T269 Epoch fencing and backup-host designation.** `hostEpoch` in game.json/log header/`Welcome`/`Hello`, `stale-epoch` refusal by hosts and clients (persisted highest epoch), `LobbySettings.BackupHost`, `StandbyOffer/Accept/Decline/Revoke`, endpoint probe, `HostSuccessor` announcement, `KnownHosts` vouch entry, `StandbyStatus` (none/offered/ready without sync yet).
+2. **T272 Standby replication.** `StandbySubscribe/Snapshot/Entry/Ack`, standby store in the successor's data dir, lag handling, chunked verified snapshot, resume of the stream after a reconnect.
+3. **T273 Graceful hand-off and promotion.** `HostHandoff`, promotion from the standby store (`ResumeFromDirectory` + listener at epoch+1), client redirect and `Resume` with `rolledBack` snapshot, successor's loopback seat, the departing host's seat per T267.
+4. **T274 Crash election.** Loss detection timers, `HostLossVote`, quorum, vote persistence, superseded-host mode, forced "Take over now", fallback timers; the end-to-end kill-the-host scenarios.
+5. **T275 Client UI and docs.** Lobby backup-host picker and trust notice to all players, standby status, rollback and "host changed" notices, superseded-host screen, quit warning, `docs/HOSTING.md` section, screenshots entries.
+
+**Acceptance criteria (each is a test in the named ticket, in-memory transport first, then TCP+TLS):**
+- A1 (T269) A game with the feature off produces byte-identical traffic to today apart from the additive `epoch` field; a stale-epoch host or client is refused with `stale-epoch`.
+- A2 (T269) `StandbyAccept` from a non-designated key is refused with one generic code; the probe rejects wrong fingerprint, closed port and rate-limit breaches; the trust notice text is part of `LobbyState`.
+- A3 (T272) The standby store replays to the same `fullHash` as the host at every checkpoint; a lagging standby resyncs by snapshot; a tampered chunk is rejected; no `Standby*` frame ever reaches a non-designated session; the successor's UI mirror stays the filtered one.
+- A4 (T273) Graceful quit with a ready standby: exactly one successor promotes, the command log continues with no gap, every client's `viewHash` agrees after reconnect with the same keys, and no key prompt appears (fingerprint pinned from the announcement).
+- A5 (T273) Client ahead of the new host gets a `rolledBack` snapshot; a half-resolved round continues through `NextResolveStep`.
+- A6 (T274) Kill the host mid-turn (3 humans + AI): the successor promotes only after its own loss window and a quorum of votes; exactly one host exists; hashes agree; the dead host's seat is handled by the T267 rule.
+- A7 (T274) Split-brain attempts are refused: host alive to a majority (no promotion), forged or replayed vote, vote for another epoch, returning old host (`stale-epoch`), two simultaneous promotion attempts (at most one reaches quorum).
+- A8 (T274) Host and successor both gone: clients end in the manual hand-off state; `Host saved game` on the standby directory resumes at `epoch+1`.
+- A9 (T275) UI scenarios and `screenshots.json` entries for the backup-host picker with trust notice, standby status, rollback notice and superseded-host screen; the notice is shown before join.
