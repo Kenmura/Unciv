@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 229/230 | 1 | 0 | 1 | [T256](backlog/T256.md) |
+| Phase 1: CLI (headless engine) | 229/231 | 2 | 1 | 1 | [T256](backlog/T256.md) [T257](backlog/T257.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 29/29 | 0 | 0 | 0 | complete |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 64/73 | 9 | 0 | 1 | [C079](backlog/C079.md) [C082](backlog/C082.md) [C085](backlog/C085.md) [C086](backlog/C086.md) [C089](backlog/C089.md) [C090](backlog/C090.md) [C091](backlog/C091.md) [C095](backlog/C095.md) [T247](backlog/T247.md) |
@@ -27,6 +27,7 @@ flowchart TD
   subgraph TTRACK["Engine track"]
     T247["T247<br/>Mod sync in the lobby: checksum diff, transfer and hot-load"]
     T256["T256<br/>Unit art: ships, aircraft, armour, missiles and siege models"]
+    T257["T257<br/>Fix stale scenario goldens: unit-orders/warrior-selected and..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C079["C079<br/>Responsive and localization pass"]
@@ -57,6 +58,7 @@ flowchart TD
   class C095 review
   class T247 waiting
   class T256 prog
+  class T257 ready
 ```
 
 ## Remaining tickets over time
@@ -75,7 +77,7 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 8]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31, 9]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0]
     line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3, 2]
 ```
@@ -94,13 +96,14 @@ xychart-beta
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00", "Oct 30 00:00"]
     y-axis "Tickets" 0 --> 395
     line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 354, 382]
-    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 392]
+    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 388, 393]
 ```
 
 ## Incomplete tickets
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
+| T257 | **Ready to start** | none | 0 | Fix stale scenario goldens: unit-orders/warrior-selected and tutorial/second-step |
 | C089 | Available (waiting on ) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | C079 | Available (waiting on ) | C078 | 0 | Responsive and localization pass |
