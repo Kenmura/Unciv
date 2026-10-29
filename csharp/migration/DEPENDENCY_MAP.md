@@ -215,23 +215,23 @@ flowchart TD
   class B024 ondeck
   class B025 waiting
   class B026 waiting
-  class C066 ready
-  class C067 waiting
+  class C066 prog
+  class C067 ondeck
   class C068 waiting
-  class C069 waiting
+  class C069 ondeck
   class C070 waiting
   class C071 waiting
-  class C072 waiting
-  class C073 waiting
-  class C074 waiting
+  class C072 ondeck
+  class C073 ondeck
+  class C074 ondeck
   class C075 waiting
-  class C076 waiting
+  class C076 ondeck
   class C077 waiting
   class C078 waiting
   class C079 waiting
-  class C081 prog
-  class C082 ondeck
-  class C083 ondeck
+  class C081 ready
+  class C082 waiting
+  class C083 waiting
   class C084 waiting
   class C085 waiting
   class C086 waiting
@@ -288,32 +288,31 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| C066 | **Ready to start** | C065 | 20 | ScreenFrame, Modal and Tooltip |
+| C081 | **Ready to start** | C080 | 7 | UnitAnimator, facing and re-timed combat cues |
+| C067 | **On deck** (after C066) | C066 | 11 | World HUD layout |
 | B005 | **On deck** (after B003) | B003 | 10 | BNW: Trade routes: model, slots, range, yields, lifecycle, plunder, commands, queries |
 | B012 | **On deck** (after B002) | B002 | 10 | BNW: Policy tree: branch era gates, branch-gated wonders, finishers |
 | B007 | **On deck** (after B003) | B003 | 9 | BNW: Great Works: instances, slots, creation, theming, moving, swapping |
-| C083 | **On deck** (after C081) | C081 | 5 | Unit art pipeline |
+| C069 | **On deck** (after C066) | C066 | 8 | City screen redesign |
+| C074 | **On deck** (after C066) | C066 | 7 | Overview and espionage on DataTable |
+| C072 | **On deck** (after C066) | C066 | 6 | Setup, nation picker and main menu redesign |
+| C073 | **On deck** (after C066) | C066 | 6 | Diplomacy and trade redesign |
+| C076 | **On deck** (after C066) | C066 | 6 | Civilopedia and tooltip content |
 | B004 | **On deck** (after B002, B003) | B002, B003 | 4 | BNW: Content uniques needing no new subsystem |
 | B024 | **On deck** (after B002) | B002 | 1 | BNW: Map: Indonesia luxuries, new resources, start along ocean |
-| C082 | **On deck** (after C081) | C081 | 0 | Articulated placeholder unit with code-built clips |
 | B003 | In-Progress [Claude] | B001 | 20 | BNW: New UniqueTypes (declarations, parameter types, docs only) |
+| C066 | In-Progress [Claude] | C065 | 20 | ScreenFrame, Modal and Tooltip |
 | B002 | In-Progress [Claude] | B001 | 16 | BNW: Ruleset generator gen_ruleset.py, overrides.json and generated JSON |
-| C067 | Available (waiting on C066) | C066 | 11 | World HUD layout |
 | B013 | Available (waiting on B012) | B012 | 9 | BNW: Ideologies: unlock, adopter bonuses, tenet levels |
-| C069 | Available (waiting on C066) | C066 | 8 | City screen redesign |
 | C068 | Available (waiting on C066, C067) | C066, C067 | 7 | Unit panel and action bar |
 | C070 | Available (waiting on C066, C069) | C066, C069 | 7 | Tech tree redesign |
-| C074 | Available (waiting on C066) | C066 | 7 | Overview and espionage on DataTable |
-| C081 | In-Progress [Claude] | C080 | 7 | UnitAnimator, facing and re-timed combat cues |
 | B008 | Available (waiting on B007, B005) | B007, B005 | 6 | BNW: Tourism and influence: city tourism, modifiers, influence, levels, trend, blast, level bonuses |
 | C071 | Available (waiting on C066, C070) | C066, C070 | 6 | Policies screen redesign |
-| C072 | Available (waiting on C066) | C066 | 6 | Setup, nation picker and main menu redesign |
-| C073 | Available (waiting on C066) | C066 | 6 | Diplomacy and trade redesign |
 | C075 | Available (waiting on C066, C067) | C066, C067 | 6 | Game menu, save/load and options |
-| C076 | Available (waiting on C066) | C066 | 6 | Civilopedia and tooltip content |
 | C077 | Available (waiting on C066, C067) | C066, C067 | 6 | Victory, defeat and vote result screens |
 | B015 | Available (waiting on B003, B013) | B003, B013 | 5 | BNW: World Congress: founding, sessions, delegates, proposals, voting |
 | C078 | Available (waiting on C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
+| C083 | Available (waiting on C081) | C081 | 5 | Unit art pipeline |
 | C084 | Available (waiting on C083) | C083 | 4 | Unit art by era: ancient and classical |
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
 | B014 | Available (waiting on B013, B008) | B013, B008 | 2 | BNW: Public opinion, opinion unhappiness, switching, anarchy |
@@ -335,6 +334,7 @@ xychart-beta
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | B026 | Available (waiting on B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
+| C082 | Available (waiting on C081) | C081 | 0 | Articulated placeholder unit with code-built clips |
 | C085 | Available (waiting on C094) | C094 | 0 | Unit model LOD and performance caps |
 | C086 | Available (waiting on C094) | C094 | 0 | Unit combat polish: effects and sounds |
 | C087 | Available (waiting on C067) | C067, T181 | 0 | Rival stats ribbon in the HUD |
