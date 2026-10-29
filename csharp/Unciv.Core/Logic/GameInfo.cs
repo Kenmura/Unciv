@@ -771,42 +771,45 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
             // See issue: https://github.com/yairm210/Unciv/issues/7781
             .OrderByDescending(it => it.IsCityState).ToList())
         {
-            foreach (var unit in civInfo.Units.GetCivUnits().ToList())
-                unit.UpdateVisibleTiles(false); // this needs to be done after all the units are assigned to their civs and all other transients are set
+            using (TurnProbe.Measure("UCS.UnitVisibleTiles"))
+                foreach (var unit in civInfo.Units.GetCivUnits().ToList())
+                    unit.UpdateVisibleTiles(false); // this needs to be done after all the units are assigned to their civs and all other transients are set
             if (civInfo.PlayerType == PlayerType.Human)
                 civInfo.ExploredRegion.SetMapParameters(TileMap.MapParameters); // Required for the correct calculation of the explored region on world wrap maps
 
-            civInfo.Cache.UpdateOurTiles();
-            civInfo.Cache.UpdateSightAndResources(); // only run ONCE and not for each unit - this is a huge performance saver!
+            using (TurnProbe.Measure("UCS.UpdateOurTiles")) civInfo.Cache.UpdateOurTiles();
+            using (TurnProbe.Measure("UCS.UpdateSightAndResources")) civInfo.Cache.UpdateSightAndResources(); // only run ONCE and not for each unit - this is a huge performance saver!
 
             // Since this depends on the cities of ALL civilizations,
             // we need to wait until we've set the transients of all the cities before we can run this.
             // Hence why it's not in CivInfo.setTransients().
-            civInfo.Cache.UpdateCitiesConnectedToCapital(true);
+            using (TurnProbe.Measure("UCS.CitiesConnectedToCapital")) civInfo.Cache.UpdateCitiesConnectedToCapital(true);
 
             // We need to determine the GLOBAL happiness state in order to determine the city stats
-            foreach (var city in civInfo.Cities)
-            {
-                city.CityStats.UpdateTileStats(); // Some nat wonders can give happiness!
-                city.CityStats.UpdateCityHappiness(city.CityConstructions.GetStats());
-            }
+            using (TurnProbe.Measure("UCS.TileStatsAndHappiness"))
+                foreach (var city in civInfo.Cities)
+                {
+                    city.CityStats.UpdateTileStats(); // Some nat wonders can give happiness!
+                    city.CityStats.UpdateCityHappiness(city.CityConstructions.GetStats());
+                }
 
-            foreach (var city in civInfo.Cities)
-            {
-                // We remove constructions from the queue that aren't defined in the ruleset.
-                // This can lead to situations where the city is puppeted and had its construction removed, and there's no way to user-set it
-                // So for cities like those, we'll auto-set the construction
-                // Also set construction for human players who have automate production turned on
-                if (city.CityConstructions.ConstructionQueue.Count == 0)
-                    city.CityConstructions.ChooseNextConstruction();
+            using (TurnProbe.Measure("UCS.CityStatsUpdate"))
+                foreach (var city in civInfo.Cities)
+                {
+                    // We remove constructions from the queue that aren't defined in the ruleset.
+                    // This can lead to situations where the city is puppeted and had its construction removed, and there's no way to user-set it
+                    // So for cities like those, we'll auto-set the construction
+                    // Also set construction for human players who have automate production turned on
+                    if (city.CityConstructions.ConstructionQueue.Count == 0)
+                        city.CityConstructions.ChooseNextConstruction();
 
-                // We also remove resources that the city may be demanding but are no longer in the ruleset
-                if (!Ruleset.TileResources.ContainsKey(city.DemandedResource))
-                    city.DemandedResource = "";
+                    // We also remove resources that the city may be demanding but are no longer in the ruleset
+                    if (!Ruleset.TileResources.ContainsKey(city.DemandedResource))
+                        city.DemandedResource = "";
 
-                // No uniques have changed since the cache was created, so we can still use it
-                city.CityStats.Update();
-            }
+                    // No uniques have changed since the cache was created, so we can still use it
+                    city.CityStats.Update();
+                }
         }
     }
 

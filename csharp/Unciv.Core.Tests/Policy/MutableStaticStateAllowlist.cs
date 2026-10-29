@@ -20,6 +20,8 @@ internal static class MutableStaticStateAllowlist
         ["Unciv.Models.Ruleset.Unique.Expressions.Operator.Cache"] = "JUSTIFY: memo cache of a pure lookup populated on first use; cannot change results.",
         ["Unciv.Models.Ruleset.Unique.UniqueParameterTypeExtensions.CountablesProvider"] = "JUSTIFY: host-installed hook set once at startup.",
         ["Unciv.Models.Translations.FontRulesetIcons.RulesetObjectNameToChar"] = "JUSTIFY: host-populated glyph registry, written at ruleset load.",
+        ["Unciv.Utils.TurnProbe.Current"] = "JUSTIFY: T261 thread-local measurement observer set by the bench; never read by game logic, state hashes are equal with and without it (BenchTests).",
+        ["Unciv.Utils.TurnProbe.Observer"] = "JUSTIFY: T261 [ThreadStatic] backing field of TurnProbe.Current (per thread, so parallel tests do not see each other's observer).",
         ["Unciv.Models.Translations.TranslationCache.CachedLangData"] = "JUSTIFY: memo of parsed translation file, derived from immutable files.",
         ["Unciv.Models.Translations.Translations.Current"] = "JUSTIFY: host-installed current translations instance.",
         ["Unciv.UI.Screens.Civilopedia.FormattedLine.NameMapCacheInstance"] = "JUSTIFY: memo cache for civilopedia name lookup.",

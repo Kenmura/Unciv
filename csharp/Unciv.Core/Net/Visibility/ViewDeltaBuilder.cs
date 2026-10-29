@@ -78,6 +78,11 @@ public static class ViewDeltaBuilder
 
     public static ViewMark Capture(GameInfo gameInfo, CivilizationClass viewer)
     {
+        using (TurnProbe.Measure("View.Capture")) return CaptureCore(gameInfo, viewer);
+    }
+
+    private static ViewMark CaptureCore(GameInfo gameInfo, CivilizationClass viewer)
+    {
         var view = new GameView(gameInfo, viewer).CivView;
         var hidden = gameInfo.Civilizations.Where(it => it != viewer).SelectMany(it => it.Units.GetCivUnits().Select(unit => (Civ: it, Unit: unit)))
             .Where(it => it.Unit.HasActiveInvisibilityUnique(viewer) && !it.Unit.IsVisibleTo(viewer))
@@ -124,9 +129,13 @@ public static class ViewDeltaBuilder
     public static (ViewDelta Delta, ClientSnapshot After) BuildWithDiff(GameInfo gameInfo, CivilizationClass viewer, ClientSnapshot before, ViewMark mark,
         IEnumerable<EngineEvent> events, long seq, TurnStatusDto turnStatus)
     {
-        var after = SnapshotBuilder.Build(gameInfo, viewer, seq, turnStatus);
-        var diff = SnapshotDiff.Compute(before, after);
-        var delta = Build(gameInfo, viewer, mark, events, seq) with { Diff = SnapshotBuilder.ToElement(diff), ViewHash = after.ViewHash };
+        ClientSnapshot after;
+        using (TurnProbe.Measure("View.Snapshot")) after = SnapshotBuilder.Build(gameInfo, viewer, seq, turnStatus);
+        SnapshotDiff diff;
+        using (TurnProbe.Measure("View.Diff")) diff = SnapshotDiff.Compute(before, after);
+        ViewDelta built;
+        using (TurnProbe.Measure("View.Events")) built = Build(gameInfo, viewer, mark, events, seq);
+        var delta = built with { Diff = SnapshotBuilder.ToElement(diff), ViewHash = after.ViewHash };
         return (delta, after);
     }
 

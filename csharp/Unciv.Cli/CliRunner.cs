@@ -27,7 +27,7 @@ public static class CliRunner
     public const long StartMillis = 1_000_000L;
     public const long TurnMillis = 1000L;
 
-    private static readonly HashSet<string> Flags = new(StringComparer.Ordinal) { "zip", "hashes" };
+    private static readonly HashSet<string> Flags = new(StringComparer.Ordinal) { "zip", "hashes", "no-probe" };
 
     public const string Usage = """
         usage: unciv-cli <command> [options]
@@ -51,6 +51,8 @@ public static class CliRunner
           load  --in FILE                        Load a save and print its summary line and state hash.
           hash  --in FILE                        Print the state hash (StateHasher over the plain JSON save).
           info  --in FILE                        Print the game's turn, map and civilizations.
+          bench [--scenario small|medium|all] [--turns N] [--json FILE|-] [--host-turns K] [--recipients R] [--no-probe]
+                Profile end-turn time on fixed-seed generated games (see 'bench --help'); not part of the tests.
         new/record also take [--ruleset NAME] [--mods A,B] [--map FILE] (a saved map; not with record); every command takes [--mods-dir DIR] (the folder of mods, needed by --mods
         and by saves/logs that use mods) and [--jsons DIR]: the android/assets/jsons folder (default: data/jsons next to the executable in a release build, else searched upwards from the working directory).
         exit codes: 0 ok, 1 failure while running, 2 bad command line.
@@ -60,6 +62,11 @@ public static class CliRunner
     {
         try
         {
+            if (args.Length >= 2 && args[0] == "bench" && args[1] is "--help" or "-h")
+            {
+                output.WriteLine(BenchRunner.Usage);
+                return ExitOk;
+            }
             if (args.Length != 0 && args[0] is "help" or "--help" or "-h")
             {
                 output.WriteLine(Usage);
@@ -78,6 +85,7 @@ public static class CliRunner
                 case "load": Load(cli, output); break;
                 case "hash": Hash(cli, output); break;
                 case "info": Info(cli, output); break;
+                case "bench": code = BenchRunner.Run(cli, output, LoadRulesets); break;
                 default: throw new UsageException($"unknown command '{cli.Command}'");
             }
             return code;

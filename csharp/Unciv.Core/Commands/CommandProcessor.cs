@@ -54,7 +54,7 @@ public sealed class CommandProcessor<TState>(TState state, CommandRegistry<TStat
         IReadOnlyList<GameEvent> events;
         try
         {
-            events = command.Apply(State, envelope.ActorId);
+            using (TurnProbe.Measure("Command.Apply", envelope.Type)) events = command.Apply(State, envelope.ActorId);
         }
         catch (Exception e)
         {

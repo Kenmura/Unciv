@@ -32,6 +32,11 @@ public class TurnManager(Civilization civInfo)
 
     public void StartTurn(Action? progressBar = null)
     {
+        using (TurnProbe.Measure("TurnManager.StartTurn", civInfo.CivId)) StartTurnCore(progressBar);
+    }
+
+    private void StartTurnCore(Action? progressBar)
+    {
         if (civInfo.IsSpectator()) return;
         GameEventHooks.TurnStarted(civInfo);
 
@@ -49,7 +54,7 @@ public class TurnManager(Civilization civInfo)
 
         civInfo.CivConstructions.StartTurn();
         civInfo.AttacksSinceTurnStart.Clear();
-        civInfo.UpdateStatsForNextTurn(); // for things that change when turn passes e.g. golden age, city state influence
+        using (TurnProbe.Measure("Start.UpdateStatsForNextTurn")) civInfo.UpdateStatsForNextTurn(); // for things that change when turn passes e.g. golden age, city state influence
 
         // Do this after updateStatsForNextTurn but before cities.startTurn
         if (civInfo.PlayerType == PlayerType.AI && ((IHasUniques)civInfo.GameInfo.Ruleset.ModOptions).HasUnique(UniqueType.ConvertGoldToScience))
@@ -76,7 +81,7 @@ public class TurnManager(Civilization civInfo)
 
         NotifyIdeologyChoice();
 
-        civInfo.Cache.UpdateViewableTiles(); // adds explored tiles so that the units will be able to perform automated actions better
+        using (TurnProbe.Measure("Start.UpdateViewableTiles")) civInfo.Cache.UpdateViewableTiles(); // adds explored tiles so that the units will be able to perform automated actions better
         civInfo.Cache.UpdateCitiesConnectedToCapital();
         StartTurnFlags();
         UpdateRevolts();
@@ -86,13 +91,15 @@ public class TurnManager(Civilization civInfo)
             UniqueTriggerActivation.TriggerUnique(unique, civInfo);
         });
 
-        foreach (var city in civInfo.Cities)
-        {
-            progressBar?.Invoke();
-            new CityTurnManager(city).StartTurn(); // Most expensive part of startTurn
-        }
+        using (TurnProbe.Measure("Start.Cities"))
+            foreach (var city in civInfo.Cities)
+            {
+                progressBar?.Invoke();
+                new CityTurnManager(city).StartTurn(); // Most expensive part of startTurn
+            }
 
-        foreach (var unit in civInfo.Units.GetCivUnits().ToList()) new UnitTurnManager(unit).StartTurn();
+        using (TurnProbe.Measure("Start.Units"))
+            foreach (var unit in civInfo.Units.GetCivUnits().ToList()) new UnitTurnManager(unit).StartTurn();
 
         if (civInfo.PlayerType == PlayerType.Human && civInfo.GameInfo.GetPlayerSettings(civInfo.CivId).AutomatedUnitsMoveOnTurnStart)
         {
@@ -344,8 +351,11 @@ public class TurnManager(Civilization civInfo)
 
     public void EndTurn(Action? progressBar = null)
     {
-        EndTurnCore(progressBar);
-        if (!civInfo.IsSpectator()) GameEventHooks.TurnEnded(civInfo);
+        using (TurnProbe.Measure("TurnManager.EndTurn", civInfo.CivId))
+        {
+            EndTurnCore(progressBar);
+            if (!civInfo.IsSpectator()) GameEventHooks.TurnEnded(civInfo);
+        }
     }
 
     // T186 deviation: the body of Kotlin's endTurn, split off so that the TurnEnded event is reported once after every early return.
@@ -383,7 +393,7 @@ public class TurnManager(Civilization civInfo)
             nextTurnStats = new StatsObject();
         else
         {
-            civInfo.UpdateStatsForNextTurn();
+            using (TurnProbe.Measure("End.UpdateStatsForNextTurn")) civInfo.UpdateStatsForNextTurn();
             nextTurnStats = civInfo.Stats.StatsForNextTurn;
         }
 
@@ -438,17 +448,20 @@ public class TurnManager(Civilization civInfo)
 
         // To handle tile's owner issue (#8246), we need to run cities being razed first.
         // a city can be removed while iterating (if it's being razed) so we need to iterate over a copy - sorting does one
-        foreach (var city in civInfo.Cities.OrderByDescending(it => it.IsBeingRazed).ToList())
-        {
-            progressBar?.Invoke();
-            new CityTurnManager(city).EndTurn();
-        }
+        using (TurnProbe.Measure("End.Cities"))
+            foreach (var city in civInfo.Cities.OrderByDescending(it => it.IsBeingRazed).ToList())
+            {
+                progressBar?.Invoke();
+                new CityTurnManager(city).EndTurn();
+            }
 
         civInfo.TemporaryUniques.EndTurn();
 
         civInfo.GoldenAges.EndTurn(civInfo.GetHappiness());
-        foreach (var unit in civInfo.Units.GetCivUnits().ToList()) new UnitTurnManager(unit).EndTurn(); // This is the most expensive part of endTurn
-        foreach (var diplomacy in civInfo.Diplomacy.Values.ToList()) diplomacy.NextTurn(); // we copy the diplomacy values so if it changes in-loop we won't crash
+        using (TurnProbe.Measure("End.Units"))
+            foreach (var unit in civInfo.Units.GetCivUnits().ToList()) new UnitTurnManager(unit).EndTurn(); // This is the most expensive part of endTurn
+        using (TurnProbe.Measure("End.Diplomacy"))
+            foreach (var diplomacy in civInfo.Diplomacy.Values.ToList()) diplomacy.NextTurn(); // we copy the diplomacy values so if it changes in-loop we won't crash
         civInfo.Cache.UpdateHasActiveEnemyMovementPenalty();
 
         civInfo.ResetMilitaryMightCache();
@@ -484,7 +497,8 @@ public class TurnManager(Civilization civInfo)
         if (civInfo.IsDefeated())
             return;
         // Do stuff
-        civInfo.GameInfo.ClientState.NextTurnAutomation?.AutomateCivMoves(civInfo);
+        using (TurnProbe.Measure("TurnManager.AutomateTurn", civInfo.CivId))
+            civInfo.GameInfo.ClientState.NextTurnAutomation?.AutomateCivMoves(civInfo);
 
         // Update barbarian camps
         if (civInfo.IsBarbarian && !civInfo.GameInfo.GameParameters.NoBarbarians)
