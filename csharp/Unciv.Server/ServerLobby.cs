@@ -141,7 +141,9 @@ public sealed class ServerLobby : IAsyncDisposable
         GameHost? gameHost = null;
         try
         {
-            gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock, turnPolicy: lobbyHost.Settings.ToTurnPolicy());
+            var policy = lobbyHost.Settings.ToTurnPolicy();
+            if (store != null) store.WriteMeta(store.ReadMeta() with { TimerPolicy = policy }); // a resume must run the same turn rules
+            gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock, turnPolicy: policy);
             foreach (var slot in startResult.Slots)
             {
                 if (slot.Kind != SlotKind.Human) continue;

@@ -1,9 +1,12 @@
 using Unciv.Client.Net.Session;
+using Unciv.Commands;
 using Unciv.Commands.Turn;
+using Unciv.Logic;
 using Unciv.Models.Ruleset;
 using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Lobby;
+using Unciv.Net.Persistence;
 using Unciv.Server;
 
 namespace Unciv.Core.Tests.Net.Lobby;
@@ -996,5 +999,61 @@ public sealed class NetLobbyTests : IDisposable
         await host.EnqueueAsync(() => Task.CompletedTask);
         Assert.False(host.TurnTimer.IsConnected("Greece"));
         Assert.True(host.TurnTimer.IsConnected("Rome"));
+    }
+
+    private sealed class MetaOnlyStore : IGameStore
+    {
+        private GameMeta meta = new();
+        public string GameId => "t253";
+        public long LastSeq => 0;
+        public long HostSecret { get; set; }
+        public GameMeta ReadMeta() => meta;
+        public void WriteMeta(GameMeta value) => meta = value;
+        public void Append(CommandEnvelope envelope, string? clientCmdId = null) { }
+        public void Sync(GameSession session) { }
+        public void AppendCheckpoint(long seq, int turn, ulong fullHash) { }
+        public bool TrySnapshot(GameInfo game) => false;
+        public bool MaybeSnapshot(GameInfo game) => false;
+        public void CloseCleanly(GameInfo game) { }
+        public LoggedOutcome? FindOutcome(string actor, string clientCmdId) => null;
+        public ResumePlan Resume(long lastSeq) => new(ResumeKind.Snapshot, []);
+        public void Dispose() { }
+    }
+
+    // T253 (from T254): the lobby's turn policy is stored with the game so a resume keeps it.
+    [Fact]
+    public async Task ServerLobby_StartGame_WritesTheTurnPolicyIntoTheStoreMeta()
+    {
+        var store = new MetaOnlyStore();
+        var settings = new LobbySettings { TurnTimerSeconds = 77 };
+        await using var lobby = new ServerLobby(settings, store: store);
+        using var id = ClientIdentity.Generate();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        await RawJoinAsync(lobby, c1, id);
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await ReceiveMessageAsync<LobbyState>(c1);
+        await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+
+        var saved = store.ReadMeta().TimerPolicy;
+        Assert.NotNull(saved);
+        Assert.Equal(77, saved.TurnTimerSeconds);
+        Assert.Equal(settings.ToTurnPolicy(), saved);
+    }
+
+    // T253: a start that fails while the game is created returns the lobby to InLobby (and frees reconnects waiting for it) instead of leaving it Starting forever.
+    [Fact]
+    public async Task ServerLobby_StartFailingWhileCreatingTheGame_ReturnsToTheLobby()
+    {
+        await using var lobby = new ServerLobby();
+        using var id = ClientIdentity.Generate();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        await RawJoinAsync(lobby, c1, id);
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await ReceiveMessageAsync<LobbyState>(c1);
+        RulesetCache.Clear(); // validation passed against the settings, creating the game needs the ruleset: gone
+        await Assert.ThrowsAnyAsync<Exception>(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
+        Assert.Equal(LobbyStatus.InLobby, lobby.Lobby.Status);
     }
 }
