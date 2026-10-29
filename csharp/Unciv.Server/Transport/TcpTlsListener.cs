@@ -49,11 +49,21 @@ public sealed class TcpTlsListener : IAsyncDisposable
     /// Accepts a client connection, performs TLS handshake as server, and returns an <see cref="ITransport"/>.
     /// Enforces handshake timeout.
     /// </summary>
-    public async Task<ITransport> AcceptTransportAsync(CancellationToken cancellationToken = default)
+    public async Task<ITransport> AcceptTransportAsync(CancellationToken cancellationToken = default) =>
+        await HandshakeAsync(await AcceptTcpAsync(cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+
+    /// <summary>T265: accepts the raw connection only, so a caller can run each TLS handshake in its own task and a silent client cannot stall the others.</summary>
+    public async Task<TcpClient> AcceptTcpAsync(CancellationToken cancellationToken = default)
     {
         if (disposed) throw new ObjectDisposedException(nameof(TcpTlsListener));
         var tcpClient = await listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
         tcpClient.NoDelay = true;
+        return tcpClient;
+    }
+
+    /// <summary>The server-side TLS handshake on an accepted connection (closes it on failure).</summary>
+    public async Task<ITransport> HandshakeAsync(TcpClient tcpClient, CancellationToken cancellationToken = default)
+    {
 
         var sslStream = new SslStream(tcpClient.GetStream(), leaveInnerStreamOpen: false);
 

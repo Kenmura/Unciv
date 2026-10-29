@@ -300,6 +300,12 @@ public sealed class DedicatedServerTests : IDisposable
         var invite = await ReadInviteAsync(sink);
         Assert.NotNull(invite.Token); // a password is set, so the invite carries a token
         Assert.True(File.Exists(Path.Combine(root, "data", "host-key.pfx")));
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(Path.Combine(root, "data", "host-key.pfx")));
+            Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute, File.GetUnixFileMode(Path.Combine(root, "data")));
+        }
+        using var idle = new System.Net.Sockets.TcpClient("127.0.0.1", invite.Port); // silent connection: must not delay the real joins below
 
         using var aliceId = ClientIdentity.Generate();
         using var bobId = ClientIdentity.Generate();

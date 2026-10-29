@@ -171,10 +171,18 @@ public static class ServerRunner
 
     private static X509Certificate2 LoadCertificate(string dataDir)
     {
-        Directory.CreateDirectory(dataDir);
+        if (OperatingSystem.IsWindows()) Directory.CreateDirectory(dataDir);
+        else Directory.CreateDirectory(dataDir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute); // the private key's folder: owner only
         var path = Path.Combine(dataDir, "host-key.pfx");
+        if (!OperatingSystem.IsWindows() && !File.Exists(path))
+        {
+            // Write the new key into a file that is owner-only from its creation (LoadOrGenerate would create it with the default umask first).
+            var fresh = HostCertificate.Generate();
+            using (var stream = new FileStream(path, new FileStreamOptions { Mode = FileMode.CreateNew, Access = FileAccess.Write, UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite }))
+                stream.Write(fresh.Export(X509ContentType.Pfx));
+            fresh.Dispose();
+        }
         var certificate = HostCertificate.LoadOrGenerate(path);
-        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite); // the private key: owner only
         return certificate;
     }
 
@@ -182,22 +190,37 @@ public static class ServerRunner
     {
         while (!token.IsCancellationRequested)
         {
-            ITransport transport;
+            System.Net.Sockets.TcpClient client;
             try
             {
-                transport = await tcp.AcceptTransportAsync(token).ConfigureAwait(false);
+                client = await tcp.AcceptTcpAsync(token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) { return; }
             catch (ObjectDisposedException) { return; }
             catch (SocketException) when (token.IsCancellationRequested) { return; }
             catch (Exception e)
             {
-                log.Debug("connection dropped before the handshake finished: " + e.Message); // a failed handshake costs only that connection
+                log.Debug("accept failed: " + e.Message);
                 continue;
             }
-            log.Debug("connection accepted");
-            _ = lobby.AttachConnectionAsync(transport, token);
+            _ = HandshakeAndAttachAsync(tcp, client, lobby, log, token); // per connection: a client that sends nothing must not stall the others
         }
+    }
+
+    private static async Task HandshakeAndAttachAsync(TcpTlsListener tcp, System.Net.Sockets.TcpClient client, ServerLobby lobby, ServerLog log, CancellationToken token)
+    {
+        ITransport transport;
+        try
+        {
+            transport = await tcp.HandshakeAsync(client, token).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            log.Debug("connection dropped before the handshake finished: " + e.Message); // a failed handshake costs only that connection
+            return;
+        }
+        log.Debug("connection accepted");
+        await lobby.AttachConnectionAsync(transport, token).ConfigureAwait(false);
     }
 
     /// <summary>Logs seat changes and, with <c>--auto-start</c>, starts the game; then ticks the turn timer. A failed start ends the server with exit code 1 (a script must not hang on a lobby that can never start).</summary>
