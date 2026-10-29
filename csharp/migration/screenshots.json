@@ -1596,6 +1596,9 @@
       }
     ]
   },
+  "C098": {
+    "none": "Ultra-only water and terrain shader: no golden, because goldens are pinned to Low on llvmpipe OpenGL and the Ultra look is time-animated and only meaningful on a real GPU. The optional terrain-ultra scenario (not in CI) writes unversioned PNGs; the settings picker is shown under C097 (settings-graphics)."
+  },
   "C097": {
     "scenario": "settings-graphics",
     "about": "Graphics quality picker (Low, High, Ultra) on the Display tab with the Ultra restart flow and the fallback note.",
