@@ -1624,7 +1624,7 @@
     "shots": [
       {
         "golden": "phone-world/phone-hud.png",
-        "caption": "The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall, the HUD still fits."
+        "caption": "The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall. The HUD is not re-laid-out for a phone yet (C101)."
       },
       {
         "golden": "phone-world/phone-zoomed.png",

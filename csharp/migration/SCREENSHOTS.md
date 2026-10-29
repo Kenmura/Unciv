@@ -1633,9 +1633,9 @@ Touch on a 2400x1080 400 ppi phone profile: density-derived UI scale 2.5 with 48
 
 Scenario `phone-world`.
 
-![The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall, the HUD still fits.](../Unciv.Godot.Harness/golden/phone-world/phone-hud.png)
+![The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall. The HUD is not re-laid-out for a phone yet (C101).](../Unciv.Godot.Harness/golden/phone-world/phone-hud.png)
 
-*The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall, the HUD still fits.* (`phone-world/phone-hud.png`)
+*The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall. The HUD is not re-laid-out for a phone yet (C101).* (`phone-world/phone-hud.png`)
 
 ![After pinch zoom, two-finger pan, taps and a long press: the map is zoomed, the tapped tile is selected and the long press acted as a right click (the worker's move order was refused: it is already there).](../Unciv.Godot.Harness/golden/phone-world/phone-zoomed.png)
 

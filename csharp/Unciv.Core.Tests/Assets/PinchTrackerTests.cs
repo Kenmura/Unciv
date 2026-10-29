@@ -71,4 +71,15 @@ public class PinchTrackerTests
         t.Down(1, new Vector2(5, 5));
         Assert.Equal(1f, t.Move(1, new Vector2(50, 5))!.Value.ZoomFactor);
     }
+
+    [Fact]
+    public void ResetForgetsGhostFingersSoTheNextTouchIsNotAPinch()
+    {
+        var t = new PinchTracker();
+        t.Down(0, new Vector2(0, 0)); // its release never arrives
+        t.Reset();
+        Assert.Equal(0, t.Count);
+        Assert.False(t.Down(1, new Vector2(50, 50)));
+        Assert.False(t.Active);
+    }
 }

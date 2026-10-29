@@ -146,7 +146,7 @@ public static class UiTokens
     public const int TouchMinLogicalWidth = 900;
     public const int TouchMinLogicalHeight = 415;
 
-    /// <summary>Upper end of the density-derived scale (a total of about 2.0 to 2.6 once the user's scale is applied, never the 3.75 a 32 px control would need for 48 dp).</summary>
+    /// <summary>Upper end of the density-derived scale before the quarter-step floor (so 2.5 in practice; a total of about 2.0 to 2.6 once the user's scale is applied, never the 3.75 a 32 px control would need for 48 dp).</summary>
     public const float MaxTouchScale = 2.6f;
 
     /// <summary>

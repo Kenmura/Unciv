@@ -509,13 +509,14 @@ public partial class MapView : Node3D
         {
             case InputEventScreenTouch touch:
                 // C096: a second finger turns the press into a pinch: nothing is selected or dragged by the first one any more
-                if (touch.Pressed ? pinch.Down(touch.Index, new System.Numerics.Vector2(touch.Position.X, touch.Position.Y)) : Unpinch(touch.Index)) CancelPress();
+                if (!touch.Pressed) pinch.Up(touch.Index);
+                else if (pinch.Down(touch.Index, new System.Numerics.Vector2(touch.Position.X, touch.Position.Y))) CancelPress();
                 break;
             case InputEventScreenDrag drag:
                 if (pinch.Move(drag.Index, new System.Numerics.Vector2(drag.Position.X, drag.Position.Y)) is { } move)
                     ApplyPinch(move.ZoomFactor, new Vector2(move.Midpoint.X, move.Midpoint.Y), new Vector2(move.MidpointDelta.X, move.MidpointDelta.Y));
                 break;
-            case InputEventMagnifyGesture magnify:
+            case InputEventMagnifyGesture magnify when pinch.Count < 2: // a touch pinch is already zooming through the finger events
                 SetZoom(zoom / Math.Max(0.1f, magnify.Factor));
                 break;
             case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.WheelUp }:
@@ -547,10 +548,14 @@ public partial class MapView : Node3D
         pressHeld = 0;
     }
 
-    private bool Unpinch(int index)
+    public override void _Notification(int what)
     {
-        pinch.Up(index);
-        return false;
+        // a release that never arrives (focus lost, app paused, view removed) must not leave a ghost finger or a pending long press
+        if (what is (int)NotificationWMWindowFocusOut or (int)NotificationApplicationFocusOut or (int)NotificationExitTree)
+        {
+            pinch.Reset();
+            CancelPress();
+        }
     }
 
     /// <summary>C096: zooms by <paramref name="factor"/> about the midpoint of the fingers and pans with it: the ground point that was under the midpoint stays under it.</summary>
@@ -565,7 +570,8 @@ public partial class MapView : Node3D
     /// <summary>C096: the smallest finger movement that is a drag, in this viewport's pixels (8 dp; the plain mouse threshold when the density is unknown).</summary>
     private float TouchDragThreshold()
     {
-        float dpi = DisplayProfile.Current.Dpi;
+        var profile = DisplayProfile.Current;
+        float dpi = profile.UsesDensity ? profile.Dpi : 0f;
         if (!(dpi > 0f)) return DragThresholdPixels;
         var window = GetWindow();
         float content = window != null && window.ContentScaleMode != Window.ContentScaleModeEnum.Disabled && window.ContentScaleFactor > 0f ? window.ContentScaleFactor : 1f;
@@ -589,7 +595,7 @@ public partial class MapView : Node3D
         {
             pressAt = button.Position;
             dragging = button.ButtonIndex == MouseButton.Middle;
-            touchPress = button.Device == InputEvent.DeviceIdEmulation && button.ButtonIndex == MouseButton.Left; // C096: a finger, as the emulated left button
+            touchPress = DisplayProfile.Current.Touch && button.Device == InputEvent.DeviceIdEmulation && button.ButtonIndex == MouseButton.Left; // C096: a finger on a touch build, as the emulated left button
             longPressed = false;
             pressHeld = 0;
             return;
@@ -606,7 +612,7 @@ public partial class MapView : Node3D
     private void OnDrag(InputEventMouseMotion motion)
     {
         if (!dragging && pressAt is { } start && start.DistanceTo(motion.Position) > (touchPress ? TouchDragThreshold() : DragThresholdPixels)) dragging = true;
-        if (!dragging) return;
+        if (!dragging || longPressed) return; // after a long press the finger only holds the menu or order it opened
         // Keep the ground point that was under the cursor under it: move the camera by the difference of the two picks.
         var before = PickGround(motion.Position - motion.Relative, 0f);
         var after = PickGround(motion.Position, 0f);

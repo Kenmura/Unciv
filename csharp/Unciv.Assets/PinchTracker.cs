@@ -28,6 +28,13 @@ public sealed class PinchTracker
         return true;
     }
 
+    /// <summary>Forgets every finger (focus lost, view left): a release that never arrived must not leave a ghost finger that turns the next touch into a pinch.</summary>
+    public void Reset()
+    {
+        fingers.Clear();
+        active = false;
+    }
+
     /// <summary>A finger lifted; the pinch ends (a finger that remains does not pan or tap until it lifts and lands again).</summary>
     public void Up(int index)
     {

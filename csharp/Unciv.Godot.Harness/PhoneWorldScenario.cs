@@ -30,7 +30,7 @@ public sealed class PhoneWorldScenario : Scenario
 
     public override IReadOnlyList<string> Checklist =>
     [
-        "Is every button and tab big enough for a thumb (about 9 mm) while the top bar, unit panel and side panels still fit the 960x432 logical window?",
+        "Is every button and tab big enough for a thumb (about 9 mm) (per-screen phone layout is C101: the top-right icon row overlapping Review alerts here is known)?",
     ];
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
