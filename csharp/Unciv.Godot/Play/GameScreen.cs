@@ -564,6 +564,14 @@ public partial class GameScreen : Control
             Tutorials.OkButton.EmitSignal(BaseButton.SignalName.Pressed);
             return true;
         }
+        if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return false; // keys belong to a text field being typed in (Ctrl and F keys are not swallowed by it)
+        if (Pedia.Visible) // only its own key (toggle) works over the Civilopedia
+        {
+            if (Hotkeys.Resolve(hotkeys, keyText) != HotkeyAction.OpenPedia) return false;
+            Pedia.Close();
+            return true;
+        }
+        if (!IsVisibleInTree() || GameMenu.Visible || VictoryStatus.Visible || Trade.Visible || Picker.Visible || AutoPlayMenu.Visible) return false; // covered or hidden (the options screen hides this one)
         if (ConsolePopup.Visible) return false; // keys belong to the console's input while it is open
         if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || Espionage.Visible || GameOver.Visible || VoteResult.Visible || Alerts.Visible || Proposals.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
@@ -636,6 +644,7 @@ public partial class GameScreen : Control
     /// <summary>C078: centres the camera on the viewer's capital (false when it has none).</summary>
     private bool ViewCapital()
     {
+        if (session == null || snapshot == null) return false;
         var capital = snapshot.Cities.FirstOrDefault(it => it.Owner == session.ViewerCivId && it.IsCapital);
         if (capital == null) return false;
         Map.FocusOn(MapLayout.TileTop(capital.X, capital.Y));

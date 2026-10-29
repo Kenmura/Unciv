@@ -188,6 +188,21 @@ public sealed class OptionsTests
     }
 
     [Fact]
+    public void SanitizeKeepsTheOtherBindingsOfAFileWrittenForOlderDefaults()
+    {
+        // pre-C078 swap of End turn and Next unit stored as EndTurn=N, NextUnit=Space: NextUnit collides with the alternate end-turn key and is dropped, the rest survives
+        var kept = Hotkeys.Sanitize(new Dictionary<string, string> { ["EndTurn"] = "N", ["NextUnit"] = "Space", ["OpenPedia"] = "F12" });
+        Assert.Equal(new Dictionary<string, string> { ["OpenPedia"] = "F12" }, kept);
+    }
+
+    [Fact]
+    public void AUnitActionCanReturnToItsOwnDefaultOnAScreenKey()
+    {
+        var moved = Hotkeys.Rebind(NoBindings, HotkeyAction.AirSweep, "Q", out _)!;
+        Assert.Empty(Hotkeys.Rebind(moved, HotkeyAction.AirSweep, "A", out _)!); // A is also Pan left's default
+    }
+
+    [Fact]
     public void ResetAllEmptiesTheBindings() => Assert.Empty(Hotkeys.ResetAll());
 
     [Fact]

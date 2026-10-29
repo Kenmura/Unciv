@@ -1,4 +1,5 @@
 using Godot;
+using Unciv.GodotClient.Settings;
 using Unciv.Assets;
 using Unciv.GodotClient.Ui;
 using Unciv.GodotClient.Localization;
@@ -65,7 +66,8 @@ public partial class GameMenuView : Modal
                 string? hint = entry.Kind switch
                 {
                     GameMenuKind.Resume => "Esc",
-                    GameMenuKind.Save or GameMenuKind.Load => "F10",
+                    GameMenuKind.Save => Hotkeys.Defaults[HotkeyAction.SaveGame],
+                    GameMenuKind.Load => Hotkeys.Defaults[HotkeyAction.LoadGame],
                     _ => null,
                 };
                 var icon = Icons.TryGetValue(entry.Kind, out string? name) ? AssetKey.Of(RulesetAssetKeys.UiIcon, name) : (AssetKey?)null;

@@ -213,7 +213,7 @@ public static class Hotkeys
         return [.. Enum.GetValues<HotkeyAction>().Where(a => IsUnitAction(a) && KeyFor(bindings, a) == key)];
     }
 
-    /// <summary>The binding map made safe: unknown actions, unusable keys and keys equal to the default are dropped. If two actions would end up on one key the whole map is reset to the defaults (a hand-edited file cannot create ambiguity).</summary>
+    /// <summary>The binding map made safe: unknown actions, unusable keys and keys equal to the default are dropped, and so is a screen action's binding onto a key another screen action holds (a hand-edited file cannot create ambiguity).</summary>
     public static SortedDictionary<string, string> Sanitize(IDictionary<string, string>? raw)
     {
         var result = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -221,10 +221,12 @@ public static class Hotkeys
         var effective = new Dictionary<HotkeyAction, string>(Defaults);
         foreach (var action in Enum.GetValues<HotkeyAction>())
         {
-            if (raw.TryGetValue(action.ToString(), out var value) && Normalize(value) is { } key) effective[action] = key;
+            if (!raw.TryGetValue(action.ToString(), out var value) || Normalize(value) is not { } key) continue;
+            // a screen action on a key another screen action holds is dropped (it keeps its default), not the whole map: an older file written against the pre-C078 defaults
+            // keeps its other bindings
+            if (!IsUnitAction(action) && effective.Any(it => it.Key != action && !IsUnitAction(it.Key) && it.Value == key)) continue;
+            effective[action] = key;
         }
-        var screen = effective.Where(it => !IsUnitAction(it.Key)).Select(it => it.Value).ToList();
-        if (screen.Distinct(StringComparer.Ordinal).Count() != screen.Count) return result;
         return FromEffective(effective);
     }
 
@@ -256,7 +258,7 @@ public static class Hotkeys
         var effective = Enum.GetValues<HotkeyAction>().ToDictionary(a => a, a => KeyFor(bindings, a));
         var previous = effective[action];
         bool unit = IsUnitAction(action);
-        if (unit && effective.Any(it => !IsUnitAction(it.Key) && it.Value == key)) return null;
+        if (unit && key != Defaults[action] && effective.Any(it => !IsUnitAction(it.Key) && it.Value == key)) return null;
         foreach (var other in Enum.GetValues<HotkeyAction>())
         {
             if (!unit && !IsUnitAction(other) && other != action && effective[other] == key)
