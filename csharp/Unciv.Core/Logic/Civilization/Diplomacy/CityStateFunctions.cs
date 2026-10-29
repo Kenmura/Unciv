@@ -411,15 +411,19 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
             return;
 
         otherCiv.AddGold(-GetDiplomaticMarriageCost());
+        TakeOver(otherCiv, "married into the ruling family of");
+    }
 
+    internal void TakeOver(Civilization otherCiv, string how)
+    {
         var notificationLocation = civInfo.GetCapital().NotNull().Location;
-        otherCiv.AddNotification($"We have married into the ruling family of [{civInfo.CivName}], bringing them under our control.",
+        otherCiv.AddNotification($"We have {how} [{civInfo.CivName}], bringing them under our control.",
             notificationLocation,
             NotificationCategory.Diplomacy, civInfo.CivName,
             NotificationIcon.Diplomacy, otherCiv.CivName);
 
         foreach (var civ in civInfo.GameInfo.Civilizations.Where(it => it != otherCiv))
-            civ.AddNotification($"[{otherCiv.CivName}] has married into the ruling family of [{civInfo.CivName}], bringing them under their control.",
+            civ.AddNotification($"[{otherCiv.CivName}] has {how} [{civInfo.CivName}], bringing them under their control.",
                 notificationLocation,
                 NotificationCategory.Diplomacy, civInfo.CivName,
                 NotificationIcon.Diplomacy, otherCiv.CivName);
@@ -812,6 +816,8 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
         // Notify all City-States that we were killed (for quest completion)
         foreach (var it in civInfo.GameInfo.GetAliveCityStates())
             it.QuestManager.CityStateConquered(civInfo, attacker);
+
+        CityStateBuyout.KeepFriendshipsOnDeath(civInfo);
     }
 
     /// <summary>Asks all met majors that haven't yet declared wor on <paramref name="attacker"/> to at least give some units</summary>

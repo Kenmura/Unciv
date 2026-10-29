@@ -606,7 +606,6 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         "AllowsWalkingOnWater",
         "AnnoyFreeCityStateIntrusion",
         "BuildingPurchaseCostModifier",
-        "CanBuyCityState",
         "CreatesGreatWork",
         "FaithFromKills",
         "FreePoliciesWhenExpended",

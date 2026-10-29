@@ -98,6 +98,17 @@ public static class DiplomacyTurnManager
             self.SetInfluence(Math.Min(restingPoint, self.Influence + increment));
         }
 
+        // B021 (bnw-spec 4.10): the tenets' per-turn influence with afraid and with protected city-states. Whole points ([B030] scale).
+        if (!civInfo.IsDefeated() && otherCiv.IsMajorCiv())
+        {
+            float bonus = 0f;
+            if (self.DiplomaticStatus == DiplomaticStatus.Protector)
+                bonus += otherCiv.GetMatchingUniques(UniqueType.ProtectedCityStateInfluencePerTurn).Sum(it => it.Params[0].ToInt());
+            if (otherCiv.HasUnique(UniqueType.AfraidCityStateInfluencePerTurn) && self.RelationshipLevel() == RelationshipLevel.Afraid)
+                bonus += otherCiv.GetMatchingUniques(UniqueType.AfraidCityStateInfluencePerTurn).Sum(it => it.Params[0].ToInt());
+            if (bonus != 0f) self.AddInfluence(bonus);
+        }
+
         if (!civInfo.IsDefeated()) // don't display city state relationship notifications when the city state is currently defeated
         {
             var notificationActions = civInfo.CityStateFunctions.GetNotificationActions();

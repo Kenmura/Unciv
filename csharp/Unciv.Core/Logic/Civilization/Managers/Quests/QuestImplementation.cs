@@ -56,6 +56,23 @@ public abstract class QuestImplementation : IQuestImplementation
             assignedQuest.AssigneeCiv.IsCapitalConnectedToCity(civ.GetCapital().NotNull());
     }
 
+    /// <summary>
+    /// B021 (bnw-spec 4.10): "connect a trade route" (+MINOR_QUEST_FRIENDSHIP_TRADE_ROUTE influence). Not in Kotlin. Only offered where trade routes
+    /// exist, to a civ that has a slot and no route to us yet; complete while the assignee has an active route to a city of ours.
+    /// </summary>
+    public sealed class TradeRoute : QuestImplementation
+    {
+        public override bool IsValid(Civilization civ, Civilization challenger) =>
+            Trade.Routes.TradeRouteRules.IsEnabled(civ.GameInfo) && civ.Cities.Count > 0
+            && Trade.Routes.TradeRouteRules.Slots(challenger) > 0
+            && !HasRoute(civ, challenger);
+
+        public override bool IsComplete(Civilization civ, AssignedQuest assignedQuest) => HasRoute(civ, assignedQuest.AssigneeCiv);
+
+        private static bool HasRoute(Civilization civ, Civilization trader) =>
+            Trade.Routes.TradeRouteRules.Routes(civ.GameInfo).Any(it => it.OriginOwner == trader.CivId && it.DestOwner == civ.CivId);
+    }
+
     public sealed class ClearBarbarianCamp : QuestImplementation
     {
         public override bool IsValid(Civilization civ, Civilization challenger) =>
@@ -326,6 +343,7 @@ public static class QuestNameImplementation
         QuestName.BullyCityState => new QuestImplementation.BullyCityState(),
         QuestName.DenounceCiv => new QuestImplementation.DenounceCiv(),
         QuestName.SpreadReligion => new QuestImplementation.SpreadReligion(),
+        QuestName.TradeRoute => new QuestImplementation.TradeRoute(),
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 

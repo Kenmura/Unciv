@@ -362,7 +362,7 @@ public class RulesetObjectTests
     [Fact]
     public void QuestNameValuesAndFind()
     {
-        Assert.Equal(18, Enum.GetValues<QuestName>().Length);
+        Assert.Equal(19, Enum.GetValues<QuestName>().Length);
         Assert.Equal("", QuestName.None.GetValue());
         Assert.Equal("Acquire Great Person", QuestName.GreatPerson.GetValue());
         Assert.Equal("Contest Technologies", QuestName.ContestTech.GetValue());

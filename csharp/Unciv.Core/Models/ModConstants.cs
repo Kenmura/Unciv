@@ -381,13 +381,13 @@ public sealed class ModConstants
     [JsonPropertyName("minorFriendshipAnchorDefault")]
     public int MinorFriendshipAnchorDefault { get; set; } = 0;
 
-    // MINOR_FRIENDSHIP_ANCHOR_MOD_PROTECTED: BNW 5
+    // MINOR_FRIENDSHIP_ANCHOR_MOD_PROTECTED: BNW 5, G&K 10
     [JsonPropertyName("minorFriendshipAnchorModProtected")]
-    public int MinorFriendshipAnchorModProtected { get; set; } = 0;
+    public int MinorFriendshipAnchorModProtected { get; set; } = 10;
 
-    // MINOR_FRIENDSHIP_ANCHOR_MOD_WARY_OF: BNW -20
+    // MINOR_FRIENDSHIP_ANCHOR_MOD_WARY_OF: BNW -20, G&K -20
     [JsonPropertyName("minorFriendshipAnchorModWaryOf")]
-    public int MinorFriendshipAnchorModWaryOf { get; set; } = 0;
+    public int MinorFriendshipAnchorModWaryOf { get; set; } = -20;
 
     // MINOR_LIBERATION_FRIENDSHIP: BNW 105; the engine already uses 105 (CityConquestFunctions), so that is the default (spec lists G&K 60)
     [JsonPropertyName("minorLiberationFriendship")]

@@ -27,6 +27,7 @@ public enum QuestName
     BullyCityState,
     DenounceCiv,
     SpreadReligion,
+    TradeRoute,
 }
 
 public static class QuestNameExtensions
@@ -51,6 +52,7 @@ public static class QuestNameExtensions
         QuestName.BullyCityState => "Bully City State",
         QuestName.DenounceCiv => "Denounce Civilization",
         QuestName.SpreadReligion => "Spread Religion",
+        QuestName.TradeRoute => "Trade Route",
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 

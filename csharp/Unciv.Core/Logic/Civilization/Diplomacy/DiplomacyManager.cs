@@ -367,7 +367,9 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
     // To be run from City-State DiplomacyManager, which holds the influence. Resting point for every major civ can be different.
     internal float GetCityStateInfluenceRestingPoint()
     {
-        float restingPoint = 0f;
+        // B021: the anchors are ModConstants (BNW 0 / +5 protected / -20 wary of; G&K 0 / +10 / -20).
+        var constants = CivInfo.GameInfo.Ruleset.ModOptions.Constants;
+        float restingPoint = constants.MinorFriendshipAnchorDefault;
 
         OtherCiv.ForEachMatchingUnique(UniqueType.CityStateRestingPoint, unique =>
         {
@@ -381,9 +383,9 @@ public class DiplomacyManager : IsPartOfGameInfoSerialization
                     restingPoint += ParseInt(unique.Params[0]);
             });
 
-        if (DiplomaticStatus == DiplomaticStatus.Protector) restingPoint += 10;
+        if (DiplomaticStatus == DiplomaticStatus.Protector) restingPoint += constants.MinorFriendshipAnchorModProtected;
 
-        if (HasFlag(DiplomacyFlags.WaryOf)) restingPoint -= 20;
+        if (HasFlag(DiplomacyFlags.WaryOf)) restingPoint += constants.MinorFriendshipAnchorModWaryOf;
 
         return restingPoint;
     }

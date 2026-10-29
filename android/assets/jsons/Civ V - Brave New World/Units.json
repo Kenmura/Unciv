@@ -1917,7 +1917,8 @@
 			"[This Unit] gets a name from the [Merchant] group",
 			"Great Person - [Gold]",
 			"Unbuildable",
-			"Uncapturable"
+			"Uncapturable",
+			"Can buy a City-State"
 		],
 		"movement": 2,
 		"uniqueTo": "Venice",

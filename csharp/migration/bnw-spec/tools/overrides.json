@@ -979,7 +979,19 @@
     ]
    }
   },
-  "Personalities.json": {
+  "Quests.json": {
+  // B021 (SPEC 4.10): the BNW quest to connect a trade route; influence is MINOR_QUEST_FRIENDSHIP_TRADE_ROUTE (40). The weights are [X]: a city-state that
+  // trades (Mercantile, Maritime) asks more often.
+  "add": [
+   {
+    "name": "Trade Route",
+    "description": "Establish a trade route with one of our cities.",
+    "influence": 40,
+    "weightForCityStateType": {"Friendly": 1, "Hostile": 0.2, "Maritime": 1.5, "Mercantile": 2}
+   }
+  ]
+ },
+ "Personalities.json": {
    "add": [
     {
      "name": "Maria I",
@@ -1132,7 +1144,8 @@
     "Merchant of Venice": {
      "copyFrom": "Great Merchant",
      "uniqueTo": "Venice",
-     "replaces": "Great Merchant"
+     "replaces": "Great Merchant",
+     "uniques+": ["Can buy a City-State"]
     },
     "Great Writer": {
      "copyFrom": "Great Artist",

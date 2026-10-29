@@ -149,5 +149,16 @@
 		"name": "Spread Religion",
 		"description": "We have heard the tenets of [religionName] and are most curious. Will you send missionaries to teach us about your religion?",
 		"weightForCityStateType": {"Religious": 3}
+	},
+	{
+		"name": "Trade Route",
+		"description": "Establish a trade route with one of our cities.",
+		"influence": 40,
+		"weightForCityStateType": {
+			"Friendly": 1,
+			"Hostile": 0.2,
+			"Maritime": 1.5,
+			"Mercantile": 2
+		}
 	}
 ]

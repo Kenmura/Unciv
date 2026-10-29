@@ -105,6 +105,7 @@
   Beliefs.json: added Unity of the Prophets
   Specialists.json: added Writer
   Specialists.json: added Musician
+  Quests.json: added Trade Route
   Personalities.json: added Maria I
   TileResources.json: added Antiquity Site
   TileResources.json: added Hidden Antiquity Site

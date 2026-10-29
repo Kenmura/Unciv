@@ -47,6 +47,9 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(units["Caravan"]["uniques"], ["Can establish trade routes"])
         self.assertEqual(units["Cargo Ship"]["uniques"], ["Can establish trade routes"])
         self.assertIn("Carries [1] exotic goods", units["Nau"]["uniques"])
+        # B021: the Merchant of Venice buys city-states; the trade route quest
+        self.assertIn("Can buy a City-State", units["Merchant of Venice"]["uniques"])
+        self.assertEqual(40, {q["name"]: q for q in files["Quests.json"]}["Trade Route"]["influence"])
         self.assertIn("[+1] trade route slots", techs["Animal Husbandry"]["uniques"])
         self.assertIn("[+10] sea trade route range", techs["Compass"]["uniques"])
         self.assertIn("[+50]% land trade route range [in this city]", buildings["Caravansary"]["uniques"])

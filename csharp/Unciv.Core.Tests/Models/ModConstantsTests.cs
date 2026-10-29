@@ -17,9 +17,9 @@ public class ModConstantsTests
     {
         // Golden from the real class on the JVM (670061036 / 1000388743) until the Brave New World tunables (B001) were added; the hash chain is the JVM's,
         // the values below are this port's own after that deliberate extension
-        Assert.Equal(625887933, ModConstants.Defaults.GetHashCode());
+        Assert.Equal(1692645083, ModConstants.Defaults.GetHashCode());
         var changed = new ModConstants { MaxXPfromBarbarians = 99, CityStrengthBase = 6.0 };
-        Assert.Equal(1565648258, changed.GetHashCode());
+        Assert.Equal(-1662561888, changed.GetHashCode());
     }
 
     [Fact]
@@ -140,8 +140,8 @@ public class UncivSoundAndTutorialTests
         ("LeagueSessionSoonWarningTurns", "leagueSessionSoonWarningTurns", (object)0),
         ("MiniumumTourismBlastStrength", "miniumumTourismBlastStrength", (object)0),
         ("MinorFriendshipAnchorDefault", "minorFriendshipAnchorDefault", (object)0),
-        ("MinorFriendshipAnchorModProtected", "minorFriendshipAnchorModProtected", (object)0),
-        ("MinorFriendshipAnchorModWaryOf", "minorFriendshipAnchorModWaryOf", (object)0),
+        ("MinorFriendshipAnchorModProtected", "minorFriendshipAnchorModProtected", (object)10),
+        ("MinorFriendshipAnchorModWaryOf", "minorFriendshipAnchorModWaryOf", (object)-20),
         ("MinorLiberationFriendship", "minorLiberationFriendship", (object)105),
         ("MinorQuestFriendshipTradeRoute", "minorQuestFriendshipTradeRoute", (object)0),
         ("MinorUnitGiftTravelTurns", "minorUnitGiftTravelTurns", (object)0),

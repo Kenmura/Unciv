@@ -1038,6 +1038,12 @@ Station is also a building) and each turn put `round(production) + overflow` int
 - The Merchant of Venice can buy a city-state (`CanBuyCityState`), which turns it into a puppet [K]. Venice cannot
   found or annex cities (`NoAnnexing`; Venice has no settlers via `Trait_NoTrain`) [D].
 - Bully/tribute rework: `MinorBullyScoreModifier` policies (the bully score function @10137010) [O text].
+- **Engine status (B021)**: wired: the Merchant of Venice buy (`BuyCityState` command, unique `Can buy a City-State`; [?] price = the diplomatic
+  marriage price, unit spent, no ally requirement, cities become puppets), the anchors (`MinorFriendshipAnchor*` ModConstants; G&K keeps +10 protected),
+  `Afraid/ProtectedMinorPerTurnInfluence` tenets (whole points per turn), `FRIENDSHIP_*_ON_DEATH` (applied when a battle destroys the city-state;
+  worse than Neutral is left alone [?]), and the trade-route quest (`Trade Route`, +40; weights [X]). Venice's no-annex / no-Settlers were already wired.
+  Not wired (follow-ups): `MinorBullyScoreModifier` / `% bullying strength`, `extra Influence from gifting military units`, `% Influence gained`,
+  `MINOR_UNIT_GIFT_TRAVEL_TURNS` and `FRIENDSHIP_PER_UNIT_GIFTED` (Unciv has no unit-gift-to-city-state action), `AllowsAnnexingCityStates`.
 
 ### 4.11 Religion [D]
 - Pressure scale ×10: `RELIGION_ATHEISM_PRESSURE_PER_POP` 1000, `RELIGION_INITIAL_FOUNDING_CITY_PRESSURE` 5000, and
