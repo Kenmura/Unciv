@@ -180,6 +180,18 @@ public sealed class NetTurnPolicyTests : IDisposable
     }
 
     [Fact]
+    public void DynamicTimerLoadIsExactAnd()
+    {
+        var game = NewGame();
+        var majors = game.Civilizations.Where(c => c.IsMajorCiv()).ToList();
+        int units = majors.Sum(c => c.Units.GetCivUnitsSize());
+        int era = majors.Where(c => c.IsHuman()).Max(c => c.GetEraNumber());
+        Assert.Equal(era * DynamicTurnTimer.PointsPerEra + units * DynamicTurnTimer.PointsPerUnit, DynamicTurnTimer.Load(game));
+        // no load: the minimum; load capped: the maximum
+        Assert.Equal(30 + (300 - 30) * DynamicTurnTimer.Load(game) / DynamicTurnTimer.FullLoad, DynamicTurnTimer.Compute(game, 30, 300));
+    }
+
+    [Fact]
     public void DisconnectGraceIssuesForceEndTurnAndUndosOnReturn()
     {
         var clock = new ManualClock(10_000L);
