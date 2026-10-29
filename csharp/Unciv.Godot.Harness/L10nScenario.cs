@@ -51,15 +51,15 @@ public sealed class L10nScenario : Scenario
         var uiTheme = new UiTheme(AssetRegistry.ForRuleset(session.Game.Ruleset));
         var font = uiTheme.Registry.Get<Font>(RulesetAssetKeys.DefaultFont);
 
-        var root = new HBoxContainer { Theme = uiTheme.Theme, Position = new Vector2(16, 16), Size = new Vector2(608, 448) };
+        var root = new Control { Theme = uiTheme.Theme, Position = new Vector2(16, 16), Size = new Vector2(608, 448) };
         host.AddChild(root);
-        var settingsPanel = new SettingsPanel(service, uiTheme, localization, []) { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        var settingsPanel = new SettingsPanel(service, uiTheme, localization, []) { Position = Vector2.Zero, Size = new Vector2(380, 448), ClipContents = true };
         root.AddChild(settingsPanel);
         settingsPanel.SelectTab(settingsPanel.TabNames.ToList().IndexOf("Language"));
-        var samples = new VBoxContainer { Name = "Samples" };
+        var samples = new VBoxContainer { Name = "Samples", Position = new Vector2(176, 80) };
         root.AddChild(samples);
-        var picker = settingsPanel.FindChildren("LanguagePicker", "LanguagePicker", true, false).OfType<LanguagePicker>().Single();
-
+        var picker = settingsPanel.FindChildren("*", "OptionButton", true, false).OfType<LanguagePicker>().Single();
+        
         void Rebuild(string language)
         {
             foreach (var child in samples.GetChildren()) child.QueueFree();

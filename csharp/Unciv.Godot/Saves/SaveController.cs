@@ -235,6 +235,14 @@ public partial class SaveController : Control
         RefreshList();
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        // Escape closes the dialog before the game screen can open its menu behind it
+        if (dialog == null || @event is not InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape }) return;
+        CloseDialog();
+        GetViewport().SetInputAsHandled();
+    }
+
     public override void _UnhandledKeyInput(InputEvent @event)
     {
         if (@event is not InputEventKey { Pressed: true, Echo: false } key) return;
@@ -381,12 +389,20 @@ public partial class SaveController : Control
     {
         if (dialog == null) return;
         entries = store.List();
+        DisarmDelete();
         ApplyFilter();
+    }
+
+    private void DisarmDelete()
+    {
+        pendingDelete = null;
+        if (confirmDelete != null) confirmDelete.Visible = false;
     }
 
     private void ApplyFilter()
     {
         if (table == null || search == null) return;
+        DisarmDelete();
         string query = search.Text.Trim();
         shown = entries.Where(it => query.Length == 0 || it.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         table.SetRows(shown.Select(Row).ToList());

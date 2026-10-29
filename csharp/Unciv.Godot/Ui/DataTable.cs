@@ -152,7 +152,7 @@ public partial class DataTable : PanelContainer
                 int inputRow = order[r];
                 if (inputRow == SelectedRow) label.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.Accent));
                 else if (RowTone?.Invoke(inputRow) is { } tone) label.AddThemeColorOverride("font_color", tone);
-                var cell = new PanelContainer { ThemeTypeVariation = r % 2 == 0 ? UiVariants.PanelCellEven : UiVariants.PanelCellOdd, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                var cell = new PanelContainer { ThemeTypeVariation = r % 2 == 0 ? UiVariants.PanelCellEven : UiVariants.PanelCellOdd, SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = selectable ? MouseFilterEnum.Pass : MouseFilterEnum.Stop };
                 if (selectable)
                 {
                     cell.GuiInput += input =>

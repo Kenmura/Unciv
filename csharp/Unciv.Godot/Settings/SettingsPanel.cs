@@ -77,9 +77,13 @@ public partial class SettingsPanel : HBoxContainer
         BuildAdvanced();
         SelectTab(0);
 
-        service.Changed += _ => Refresh();
+        service.Changed += OnChanged;
         Refresh();
     }
+
+    private void OnChanged(ClientSettings _) => Refresh();
+
+    public override void _ExitTree() => service.Changed -= OnChanged;
 
     /// <summary>The action waiting for its new key, or null.</summary>
     public HotkeyAction? Listening { get; private set; }
@@ -354,7 +358,7 @@ public partial class SettingsPanel : HBoxContainer
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
-        var label = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1f, AutowrapMode = TextServer.AutowrapMode.WordSmart, VerticalAlignment = VerticalAlignment.Center };
+        var label = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1f, CustomMinimumSize = new Vector2(theme.Px(110), 0), AutowrapMode = TextServer.AutowrapMode.WordSmart, VerticalAlignment = VerticalAlignment.Center };
         refreshers.Add(() => label.Text = key.Tr());
         row.AddChild(label);
         control.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
@@ -411,6 +415,18 @@ public partial class SettingsPanel : HBoxContainer
     private void Refresh()
     {
         refreshing = true;
+        try
+        {
+            RefreshControls();
+        }
+        finally
+        {
+            refreshing = false;
+        }
+    }
+
+    private void RefreshControls()
+    {
         foreach (var refresh in refreshers) refresh();
         var s = service.Current;
         nameLabel.Text = $"{"Player".Tr()}: {s.PlayerName}";
@@ -420,6 +436,6 @@ public partial class SettingsPanel : HBoxContainer
         foreach (var (action, button) in keyButtons)
             button.Text = Listening == action ? "..." : Hotkeys.KeyFor(s.KeyBindings, action);
         foreach (var (tab, _) in tabs) tab.Retranslate();
-        refreshing = false;
+        for (int i = 0; i < OptionsModel.WindowModes.Count; i++) windowMode.SetItemText(i, OptionsModel.WindowModes[i].Tr());
     }
 }
