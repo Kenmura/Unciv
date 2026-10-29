@@ -28,7 +28,7 @@ namespace Unciv.Core.Tests.Server;
 // the reconnecting sessions without a port). Nothing here sleeps for a duration: every wait is on a condition the sessions or the host reach (state/event driven), bounded by a
 // generous guard so a regression fails instead of hanging.
 //
-// One long scenario, not many short ones: 3 humans + 1 AI play 24 simultaneous rounds with interleaved commands and these things happening on the way:
+// One long scenario, not many short ones: 3 humans + 1 AI play 25 simultaneous rounds with interleaved commands and these things happening on the way:
 //   round 3  a client submits tampered commands (foreign unit, server-only command, unknown type): all refused, the log does not move
 //   round 4  the turn timer fires for an idle player (logged ForceEndTurn, the round resolves)
 //   round 7  a client drops, its drop grace expires (ForceEndTurn), it returns and its end is undone (UndoEndTurn)
@@ -294,6 +294,78 @@ public sealed class ServerEndToEndTests : IDisposable
         Assert.Equal(new JoinResult(false, JoinRefusedCodes.BadCredentials), await JoinAsync("wrong", Fingerprint));
         Assert.Equal(new JoinResult(false, ClientCodes.HostKeyMismatch), await JoinAsync("open sesame", HostKey.Fingerprint(new byte[] { 1, 1, 1 })));
         Assert.True((await JoinAsync("open sesame", Fingerprint)).Joined);
+    }
+
+    // The turn-advance bookkeeping (absent turns, AI takeover) runs once per turn change and its server commands reach every client in sequence order (review of T182).
+    [Fact]
+    public async Task ServerEndToEnd_AiTakeoverAtTurnChange_CountsAbsenceOnceAndDeltasStayInOrder()
+    {
+        var players = new List<Player> { new("Babylon", PlayerType.Human), new("Greece", PlayerType.Human), new("Egypt", PlayerType.Human), new("Rome", PlayerType.AI) };
+        var game = GameStarter.StartNewGame(
+            new GameSetupInfo(
+                new GameParameters { BaseRuleset = ruleset.Name, NumberOfCityStates = 0, VictoryTypes = ruleset.Victories.Keys.ToList(), Players = players },
+                new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Tiny }),
+            Seed, StartClock);
+        game.StartSimultaneousTurns();
+        var clock = new ManualClock(StartClock);
+        var gameSession = new GameSession(game) { Clock = () => clock.NowMillis };
+        var policy = new TurnPolicy { OnDisconnect = DisconnectAction.AiTakeover, AbsentTurnsBeforeAiTakeover = 1, TurnTimerSeconds = 100 };
+        await using var host = new GameHost(gameSession, turnTimer: new TurnTimer(gameSession, policy, clock, autoResolve: false), clock: clock, limits: new HostLimits { IdleTimeoutMillis = long.MaxValue / 4 });
+
+        var (babylon, babylonHost) = InMemoryTransport.CreatePair();
+        var (greece, greeceHost) = InMemoryTransport.CreatePair();
+        var (egypt, egyptHost) = InMemoryTransport.CreatePair();
+        await host.AttachSessionAsync("b", "Babylon", babylonHost);
+        await host.AttachSessionAsync("g", "Greece", greeceHost);
+        await host.AttachSessionAsync("e", "Egypt", egyptHost);
+        var seqs = new List<long>();
+        var kinds = new List<string>();
+        var reading = Task.Run(async () =>
+        {
+            while (await babylon.ReceiveAsync() is { } frame)
+            { var message = ProtocolCodec.Decode(frame); kinds.Add(message.GetType().Name); if (message is ViewDelta delta) seqs.Add(delta.Seq); }
+        });
+        await greece.CloseAsync();
+        await egypt.CloseAsync();
+        for (var connected = 3; connected != 1;)
+        {
+            await host.EnqueueAsync(() =>
+            {
+                connected = host.Sessions.Count;
+                return Task.CompletedTask;
+            });
+            await Task.Yield();
+        }
+
+        clock.AdvanceSeconds(101);
+        await host.EnqueueAsync(() =>
+        {
+            host.Tick(); // the timer ends everybody's turn, the round resolves, the turn changes
+            return Task.CompletedTask;
+        });
+        await host.EnqueueAsync(() =>
+        {
+            host.Tick(); // the turn change bookkeeping
+            return Task.CompletedTask;
+        });
+
+        Assert.Equal(1, host.TurnTimer.GetAbsentTurns("Greece"));
+        Assert.Equal(1, host.TurnTimer.GetAbsentTurns("Egypt"));
+        using var limit = new CancellationTokenSource(Guard);
+        for (long last = -1; ; await Task.Yield())
+        {
+            if (limit.IsCancellationRequested) Assert.Fail($"seqs [{string.Join(',', seqs)}] host last {last} kinds {kinds.Count}");
+            await host.EnqueueAsync(() =>
+            {
+                last = host.Session.LastSeq;
+                return Task.CompletedTask;
+            });
+            if (seqs.Count > 0 && seqs[^1] == last) break; // Babylon has been sent everything the host did
+        }
+        await host.DisposeAsync();
+        await reading.WaitAsync(Guard);
+        Assert.True(seqs.Count > 0, string.Join(',', kinds));
+        Assert.Equal(Enumerable.Range((int)seqs[0], seqs.Count).Select(it => (long)it), seqs);
     }
 
     // ------------------------------------------------------------------ harness

@@ -219,13 +219,13 @@ public sealed class TurnTimer
     }
 
     /// <summary>
-    /// Notices that a round has just finished resolving (the turn counter moved and Playing began) without waiting for the next <see cref="Tick"/>, so the deadline of the new turn is known
-    /// before the host builds the delta of the round's last step. Without it every client mirror shows the previous turn's deadline until some later command.
+    /// A round has just finished resolving (the turn counter moved and Playing began): restarts the deadline now, so the delta of the round's last step carries the new turn's
+    /// deadline. Only the deadline: the rest of the turn-advance bookkeeping stays in <see cref="Tick"/>, because it can submit server commands and must not run inside one.
     /// </summary>
-    public void SyncTurn()
+    public void RefreshDeadline()
     {
         if (session.Game.Turns != currentTurn && session.Game.TurnState is { Phase: SimultaneousPhase.Playing })
-            OnTurnAdvanced();
+            ResetTurnDeadline();
     }
 
     /// <summary>Constructs a <see cref="TurnStatus"/> protocol message for clients (SERVER.md 6.1).</summary>

@@ -274,7 +274,7 @@ public sealed class GameHost : IAsyncDisposable
         if (result.Accepted)
         {
             store?.Sync(session);
-            turnTimer.SyncTurn();
+            turnTimer.RefreshDeadline();
             BroadcastDelta(marks, result);
         }
         return result;
