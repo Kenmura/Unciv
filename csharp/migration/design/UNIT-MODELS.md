@@ -20,6 +20,7 @@
 - [C094 status: industrial, modern and great people](#c094-status-industrial-modern-and-great-people)
 - [C095 status: Battering Ram, chariots and elephants](#c095-status-battering-ram-chariots-and-elephants)
 - [T256 status: ships, siege, armour, aircraft and missiles](#t256-status-ships-siege-armour-aircraft-and-missiles)
+- [C085 status: level of detail and performance caps](#c085-status-level-of-detail-and-performance-caps)
 <!-- /toc -->
 
 Status: tickets filed as C080-C086 (phase 4, root C080 held Blocked until phases 1-3 are clear; written 2026-10-28). Goal: every unit gets a proper 3D model (eventually high-quality art) and units play

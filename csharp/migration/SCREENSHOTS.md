@@ -73,7 +73,7 @@
 - [C086 Unit combat polish: effects and sounds](#c086-unit-combat-polish-effects-and-sounds)
 - [C087 Rival stats ribbon in the HUD](#c087-rival-stats-ribbon-in-the-hud)
 - [C088 City-site preview: yields at a candidate settle tile](#c088-city-site-preview-yields-at-a-candidate-settle-tile)
-- [C089 (ticket not Done or unknown)](#c089-ticket-not-done-or-unknown)
+- [C089 Map markers: private client-side tacks](#c089-map-markers-private-client-side-tacks)
 - [C093 Unit art by era: medieval and renaissance](#c093-unit-art-by-era-medieval-and-renaissance)
 - [C094 Unit art by era: industrial, modern and naval/air](#c094-unit-art-by-era-industrial-modern-and-navalair)
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
@@ -1452,7 +1452,7 @@ Scenario `unit-orders`.
 
 *Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius.* (`unit-orders/city-site.png`)
 
-## C089 (ticket not Done or unknown)
+## C089 Map markers: private client-side tacks
 
 Private map markers: right-click a tile (no unit selected) for a small menu, edit icon and label, see the tacks on the map, list them and jump to one. Stored in client settings only, never sent to the game.
 
