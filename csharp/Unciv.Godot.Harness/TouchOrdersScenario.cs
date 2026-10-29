@@ -57,17 +57,7 @@ public sealed class TouchOrdersScenario : Scenario
         Vector2 Pointer(HexCoord tile) => map.ScreenPositionOf(tile);
         Vector2 Centre(Control control) => control.GetGlobalRect().GetCenter();
         bool Free(HexCoord tile) => !game.Civilizations.SelectMany(it => it.Units.GetCivUnits()).Any(it => it.CurrentTile.Position == tile);
-        bool Reachable(MapUnit unit, HexCoord tile)
-        {
-            try
-            {
-                return queries.Path(unit.Id, tile.x, tile.y).GetAwaiter().GetResult() is { Reachable: true, CanEnter: true };
-            }
-            catch (InvalidOperationException) // not a tile of the map
-            {
-                return false;
-            }
-        }
+        bool Reachable(MapUnit unit, HexCoord tile) => CanReach(queries, unit, tile);
         // on the map, clear of the top bar, the unit panel (bottom left), the minimap (top right) and the action buttons
         bool Clear(HexCoord tile)
         {
@@ -80,13 +70,6 @@ public sealed class TouchOrdersScenario : Scenario
         HexCoord tapTile = default;
         HexCoord otherTile = default;
         bool toggledBefore = false;
-        int cityLogBefore = 0;
-        Vector3 focusBefore = default;
-        Vector2 minimapAt = default;
-        Unciv.Logic.City.City City() => human.Cities[0];
-        string FoundCityLabel() => UnitOrdersModel.Clean(queries.Actions(settler.Id).GetAwaiter().GetResult().NotNull().Actions.First(it => it.Descriptor.ActionType == UnitActionType.FoundCity).Title);
-        CityTileCell worked = new(0, 0, "", false, 0f, 0f, "", "");
-        int workedBefore = 0;
         int clicks = 0;
         map.TileClicked += _ => clicks++;
 
@@ -164,6 +147,41 @@ public sealed class TouchOrdersScenario : Scenario
             new WaitFrames(3),
             new AssertQuery("one move command, the unit left its tile, and the release was not also a tap", () =>
                 session.Log.Count == logBefore + 1 && session.Log[^1].Type.Contains("move", StringComparison.OrdinalIgnoreCase) && Where(warrior) != startAt && clicks == 0),
+            .. LaterSteps(host, session, screen, queries, localHost, settler, () => clicks),
+        ];
+    }
+
+    private static bool CanReach(GameQueries queries, MapUnit unit, HexCoord tile)
+    {
+        try
+        {
+            return queries.Path(unit.Id, tile.x, tile.y).GetAwaiter().GetResult() is { Reachable: true, CanEnter: true };
+        }
+        catch (InvalidOperationException) // not a tile of the map
+        {
+            return false;
+        }
+    }
+
+    private static double TooltipHostSeconds() => Unciv.GodotClient.Ui.TooltipHost.TouchHideSeconds + 1.0;
+
+    /// <summary>The minimap drag, then a city founded by the settler and its tile locked and unlocked by long press.</summary>
+    private static ScenarioStep[] LaterSteps(Control host, GameSession session, GameScreen screen, GameQueries queries, LocalHost localHost, MapUnit settler, Func<int> clicks)
+    {
+        var map = screen.Map;
+        var viewport = host.GetViewport();
+        var human = session.Game.GetCivilization(ScenarioGame.HumanA);
+        Vector2 Centre(Control control) => control.GetGlobalRect().GetCenter();
+        Unciv.Logic.City.City City() => human.Cities[0];
+        string FoundCityLabel() => UnitOrdersModel.Clean(queries.Actions(settler.Id).GetAwaiter().GetResult().NotNull().Actions.First(it => it.Descriptor.ActionType == UnitActionType.FoundCity).Title);
+        Vector3 focusBefore = default;
+        Vector2 minimapAt = default;
+        CityTileCell worked = new(0, 0, "", false, 0f, 0f, "", "");
+        int workedBefore = 0;
+        int cityLogBefore = 0;
+        Vector2 TilePoint() => Centre(screen.City.TileButton(worked.X, worked.Y).NotNull());
+        return
+        [
             new Act("drag a finger across the minimap", () =>
             {
                 focusBefore = map.Focus;
@@ -175,7 +193,7 @@ public sealed class TouchOrdersScenario : Scenario
                 InputSimulator.SimulateTouchUp(viewport, 0, to);
             }),
             new WaitFrames(3),
-            new AssertQuery("the minimap took the drag: the camera followed it and no tile was tapped", () => map.Focus.DistanceTo(focusBefore) > 0.01f && clicks == 0),
+            new AssertQuery("the minimap took the drag: the camera followed it and no tile was tapped", () => map.Focus.DistanceTo(focusBefore) > 0.01f && clicks() == 0),
             new Act("found a city with the settler through its menu", () =>
             {
                 screen.SelectUnitById(settler.Id);
@@ -193,21 +211,19 @@ public sealed class TouchOrdersScenario : Scenario
                 worked = screen.City.Cells.First(it => it.State == "Worked");
                 workedBefore = City().WorkedTiles.Count;
                 cityLogBefore = session.Log.Count;
-                InputSimulator.SimulateTouchDown(viewport, 0, Centre(screen.City.TileButton(worked.X, worked.Y)!));
+                InputSimulator.SimulateTouchDown(viewport, 0, TilePoint());
             }),
             new WaitUntil("the long press locked the tile", () => City().LockedTiles.Contains(new HexCoord(worked.X, worked.Y)), 900),
-            new Act("lift", () => InputSimulator.SimulateTouchUp(viewport, 0, Centre(screen.City.TileButton(worked.X, worked.Y)!))),
+            new Act("lift", () => InputSimulator.SimulateTouchUp(viewport, 0, TilePoint())),
             new WaitFrames(4),
             new AssertQuery("it locked the tile and the release did not also free the citizen", () =>
                 City().WorkedTiles.Count == workedBefore && City().LockedTiles.Count == 1 && session.Log.Count == cityLogBefore + 1 && screen.City.Cells.Any(it => it.X == worked.X && it.Y == worked.Y && it.Locked)),
             new Capture("tile-locked", "A long press on a worked tile of the city screen locked it (the padlock on the tile; its tip is up too): the touch stand-in for the right click, and the hint line says so"),
-            new Act("long press it again", () => InputSimulator.SimulateTouchDown(viewport, 0, Centre(screen.City.TileButton(worked.X, worked.Y)!))),
+            new Act("long press it again", () => InputSimulator.SimulateTouchDown(viewport, 0, TilePoint())),
             new WaitUntil("the second long press unlocked it", () => City().LockedTiles.Count == 0, 900),
-            new Act("lift", () => InputSimulator.SimulateTouchUp(viewport, 0, Centre(screen.City.TileButton(worked.X, worked.Y)!))),
+            new Act("lift", () => InputSimulator.SimulateTouchUp(viewport, 0, TilePoint())),
             new WaitFrames(4),
             new AssertQuery("it is unlocked and still worked", () => City().WorkedTiles.Count == workedBefore && !screen.City.Cells.Any(it => it.Locked)),
         ];
-
-        static double TooltipHostSeconds() => Unciv.GodotClient.Ui.TooltipHost.TouchHideSeconds + 1.0;
     }
 }
