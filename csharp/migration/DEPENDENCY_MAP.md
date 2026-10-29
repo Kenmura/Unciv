@@ -95,7 +95,7 @@ flowchart TD
   class T288 ready
   class T289 ready
   class T290 ready
-  class T291 prog
+  class T291 review
 ```
 
 ## Remaining tickets over time
@@ -160,4 +160,4 @@ xychart-beta
 | T280 | Available (waiting on T260, T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
 | T283 | In-Progress [Claude-T283] | C101 | 0 | Phone layout: Tech and policy screens (C101 follow-up) |
 | T287 | In-Progress [Claude-T287] | T271 | 0 | Far-zoom draw-call reduction |
-| T291 | In-Progress [Claude-shots] | none | 0 | Publish curated real-GPU Ultra graphics screenshots as docs images (not goldens) |
+| T291 | Needs-Review [Claude-shots] | none | 0 | Publish curated real-GPU Ultra graphics screenshots as docs images (not goldens) |
