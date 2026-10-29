@@ -165,7 +165,7 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | C071 | Available (waiting on ) | C066, C070 | 6 | Policies screen redesign |
-| C075 | Needs-Review [Claude] | C066, C067 | 6 | Game menu, save/load and options |
+| C075 | In-Review [Claude] | C066, C067 | 6 | Game menu, save/load and options |
 | C076 | In-Progress [Claude] | C066 | 6 | Civilopedia and tooltip content |
 | C077 | Available (waiting on ) | C066, C067 | 6 | Victory, defeat and vote result screens |
 | C078 | Available (waiting on C071, C075, C076, C077) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
