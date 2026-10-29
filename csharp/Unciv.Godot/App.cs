@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets.Localization;
+using Unciv.Client.Net.Hosting;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Play;
@@ -14,7 +15,7 @@ namespace Unciv.GodotClient;
 
 /// <summary>
 /// C015: the composition root of the real client. Main menu, then New game (<see cref="NewGameScreen"/> over a <see cref="NewGameForm"/>, started through
-/// <see cref="LocalHost.Start"/>), Resume last / Load game (C016 <see cref="SaveController"/> over <see cref="SaveStore"/>) or Options (the C043
+/// <see cref="LocalHost.Start"/>), Host game (C034 <see cref="HostScreen"/>), Resume last / Load game (C016 <see cref="SaveController"/> over <see cref="SaveStore"/>) or Options (the C043
 /// settings panel, which saves through <see cref="ClientSettingsService"/>). A started or loaded game replaces the whole screen stack; every game gets its own
 /// <see cref="SaveController"/> for saving. The game-over screen (C024) returns to a fresh menu; C044: the in-game menu (Escape or the Menu button) saves, loads, starts a new game, resigns, shows the victory status, opens the options and leaves for the main menu.
 /// </summary>
@@ -65,6 +66,7 @@ public partial class App : Node
         menu.NewGameRequested += OpenNewGame;
         menu.ResumeRequested += () => _ = menuSaves.ResumeLastAsync();
         menu.LoadRequested += menuSaves.OpenDialog;
+        menu.HostRequested += OpenHost;
         menu.OptionsRequested += OpenOptions;
         menu.QuitRequested += () => GetTree().Quit();
         menu.SetCanResume(store.Latest() != null);
@@ -79,6 +81,23 @@ public partial class App : Node
     {
         var screen = new NewGameScreen(theme, NewGameForm.FromRulesetCache(), form => LocalHost.Start(form, WallClockMillis));
         screen.Started += ShowGame;
+        screen.BackRequested += () => screens.Pop();
+        screens.Push(screen);
+    }
+
+    // C034: the host screen; it stops hosting itself when it leaves the stack.
+    private void OpenHost()
+    {
+        var environment = new HostScreenEnvironment
+        {
+            Identity = () => HostFiles.LoadIdentity(UserPaths.Identity),
+            Certificate = () => HostFiles.LoadCertificate(UserPaths.HostKey),
+            HostedGamesDirectory = UserPaths.HostedGames,
+            DisplayName = System.Environment.UserName is { Length: > 0 } user ? user : "Host",
+            Clock = WallClockMillis,
+            SetClipboard = DisplayServer.ClipboardSet,
+        };
+        var screen = new HostScreen(theme, new HostSettingsForm(NewGameForm.FromRulesetCache()), environment);
         screen.BackRequested += () => screens.Pop();
         screens.Push(screen);
     }

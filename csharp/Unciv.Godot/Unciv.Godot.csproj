@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Unciv.Core\Unciv.Core.csproj" />
     <ProjectReference Include="..\Unciv.Assets\Unciv.Assets.csproj" />
+    <ProjectReference Include="..\Unciv.Client.Net\Unciv.Client.Net.csproj" />
   </ItemGroup>
 
 </Project>

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Unciv.Core\Unciv.Core.csproj" />
+    <ProjectReference Include="..\Unciv.Server\Unciv.Server.csproj" />
   </ItemGroup>
 
 </Project>

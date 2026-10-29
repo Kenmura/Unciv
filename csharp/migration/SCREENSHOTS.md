@@ -230,9 +230,9 @@ Main menu and new-game screen: players and nations, rules, game, map and advance
 
 Scenario `setup`.
 
-![Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Options, Quit.](../Unciv.Godot.Harness/golden/setup/menu.png)
+![Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Host game, Options, Quit.](../Unciv.Godot.Harness/golden/setup/menu.png)
 
-*Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Options, Quit.* (`setup/menu.png`)
+*Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Host game, Options, Quit.* (`setup/menu.png`)
 
 ![Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the nation grid, nations in their colours.](../Unciv.Godot.Harness/golden/setup/players.png)
 
@@ -591,6 +591,32 @@ Scenario `combat-presentation`.
 ![A dying worker shrinks and sinks into its tile.](../Unciv.Godot.Harness/golden/combat-presentation/death.png)
 
 *A dying worker shrinks and sinks into its tile.* (`combat-presentation/death.png`)
+
+## C034 (ticket not Done or unknown)
+
+Host screen: game, map, rules and network settings, port-forward hint, Start hosting with the host in slot 1, invite with Copy invite, a friend joining, and resuming a saved hosted game.
+
+Scenario `host-screen`.
+
+![Network tab: turn timer (5 min chosen), password, port, the addresses of this computer (the internet address chosen) and the port-forward hint.](../Unciv.Godot.Harness/golden/host-screen/network.png)
+
+*Network tab: turn timer (5 min chosen), password, port, the addresses of this computer (the internet address chosen) and the port-forward hint.* (`host-screen/network.png`)
+
+![A port another program already uses is refused with the port number and what to do; nothing is hosted.](../Unciv.Godot.Harness/golden/host-screen/port-in-use.png)
+
+*A port another program already uses is refused with the port number and what to do; nothing is hosted.* (`host-screen/port-in-use.png`)
+
+![Hosting: the host in slot 1 and two open slots, the address the invite uses, the invite and Copy invite (copied), and the port-forward hint.](../Unciv.Godot.Harness/golden/host-screen/hosting.png)
+
+*Hosting: the host in slot 1 and two open slots, the address the invite uses, the invite and Copy invite (copied), and the port-forward hint.* (`host-screen/hosting.png`)
+
+![A friend joined with the invite over the network and sits in slot 2; the host's table updated and the invite now uses the other address.](../Unciv.Godot.Harness/golden/host-screen/friend.png)
+
+*A friend joined with the invite over the network and sits in slot 2; the host's table updated and the invite now uses the other address.* (`host-screen/friend.png`)
+
+![A saved hosted game resumed: it listens again with an invite, and shows the players who were in it.](../Unciv.Godot.Harness/golden/host-screen/resumed.png)
+
+*A saved hosted game resumed: it listens again with an invite, and shows the players who were in it.* (`host-screen/resumed.png`)
 
 ## C038 Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result
 

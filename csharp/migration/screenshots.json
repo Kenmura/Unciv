@@ -181,7 +181,7 @@
     "shots": [
       {
         "golden": "setup/menu.png",
-        "caption": "Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Options, Quit."
+        "caption": "Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Host game, Options, Quit."
       },
       {
         "golden": "setup/players.png",
@@ -894,6 +894,32 @@
       {
         "golden": "hotseat/greece.png",
         "caption": "After Ready: the game as Greece (its own units, 'Your turn, Greece' banner)"
+      }
+    ]
+  },
+  "C034": {
+    "scenario": "host-screen",
+    "about": "Host screen: game, map, rules and network settings, port-forward hint, Start hosting with the host in slot 1, invite with Copy invite, a friend joining, and resuming a saved hosted game.",
+    "shots": [
+      {
+        "golden": "host-screen/network.png",
+        "caption": "Network tab: turn timer (5 min chosen), password, port, the addresses of this computer (the internet address chosen) and the port-forward hint."
+      },
+      {
+        "golden": "host-screen/port-in-use.png",
+        "caption": "A port another program already uses is refused with the port number and what to do; nothing is hosted."
+      },
+      {
+        "golden": "host-screen/hosting.png",
+        "caption": "Hosting: the host in slot 1 and two open slots, the address the invite uses, the invite and Copy invite (copied), and the port-forward hint."
+      },
+      {
+        "golden": "host-screen/friend.png",
+        "caption": "A friend joined with the invite over the network and sits in slot 2; the host's table updated and the invite now uses the other address."
+      },
+      {
+        "golden": "host-screen/resumed.png",
+        "caption": "A saved hosted game resumed: it listens again with an invite, and shows the players who were in it."
       }
     ]
   }
