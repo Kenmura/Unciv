@@ -814,31 +814,7 @@ public sealed class LobbyHost : IAsyncDisposable
             throw;
         }
 
-        var takenNations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var slot in activeSlots)
-        {
-            if (slot.Kind == SlotKind.Human)
-            {
-                var civ = game.Civilizations.FirstOrDefault(c => c.PlayerId == slot.PlayerKeyId);
-                if (civ != null)
-                {
-                    slot.Nation = civ.CivName;
-                    takenNations.Add(civ.CivName);
-                }
-            }
-        }
-        foreach (var slot in activeSlots)
-        {
-            if (slot.Kind == SlotKind.AI)
-            {
-                var civ = game.Civilizations.FirstOrDefault(c => c.IsAI() && !c.IsCityState && !c.IsSpectator() && !takenNations.Contains(c.CivName));
-                if (civ != null)
-                {
-                    slot.Nation = civ.CivName;
-                    takenNations.Add(civ.CivName);
-                }
-            }
-        }
+        ResolveNations(game, activeSlots);
 
         lock (gate)
         {
@@ -864,6 +840,36 @@ public sealed class LobbyHost : IAsyncDisposable
         await BroadcastAsync(new GameStarting(), includeHandedOver: true).ConfigureAwait(false);
 
         return new LobbyStartResult(game, setup, [.. activeSlots]);
+    }
+
+    /// <summary>Writes the nation each active slot really got (Random resolved) back into the slots.</summary>
+    private static void ResolveNations(GameInfo game, List<Slot> activeSlots)
+    {
+        var takenNations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var slot in activeSlots)
+        {
+            if (slot.Kind == SlotKind.Human)
+            {
+                var civ = game.Civilizations.FirstOrDefault(c => c.PlayerId == slot.PlayerKeyId);
+                if (civ != null)
+                {
+                    slot.Nation = civ.CivName;
+                    takenNations.Add(civ.CivName);
+                }
+            }
+        }
+        foreach (var slot in activeSlots)
+        {
+            if (slot.Kind == SlotKind.AI)
+            {
+                var civ = game.Civilizations.FirstOrDefault(c => c.IsAI() && !c.IsCityState && !c.IsSpectator() && !takenNations.Contains(c.CivName));
+                if (civ != null)
+                {
+                    slot.Nation = civ.CivName;
+                    takenNations.Add(civ.CivName);
+                }
+            }
+        }
     }
 
     /// <summary>Creates the current LobbyState wire message.</summary>

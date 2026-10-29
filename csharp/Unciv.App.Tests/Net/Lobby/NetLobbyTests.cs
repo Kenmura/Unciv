@@ -899,6 +899,8 @@ public sealed class NetLobbyTests : IDisposable
         using var idScope = id;
         Assert.Equal("not-started", await new ServerLobby().KickCivAsync("Rome"));
         Assert.Equal("no-store", await lobby.KickCivAsync("Rome")); // refused by the game: the lobby binding stays
+        Assert.Equal("not-started", await new ServerLobby().RebindCivAsync("Rome", id.PlayerKey));
+        Assert.Equal("no-store", await lobby.RebindCivAsync("Rome", id.PlayerKey));
         Assert.Equal(0, lobby.Lobby.Bindings.SlotOf(id.PlayerKey));
 
         using var newId = ClientIdentity.Generate();
