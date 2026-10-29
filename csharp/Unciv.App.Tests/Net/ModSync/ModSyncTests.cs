@@ -504,8 +504,15 @@ public sealed class ModSyncTests : IDisposable
         var options = Options(Service());
         await using var session = new ClientSession(_ => Task.FromResult<ITransport>(client), new ClientSessionOptions
         {
-            Identity = options.Identity, DisplayName = "M", RulesetHash = "h", ExpectedFingerprint = ClientNetFingerprint, ModSync = Service(),
-            ModFileTimeout = TimeSpan.FromMilliseconds(200), MaxReconnectAttempts = 0, HandshakeTimeout = Timeout.InfiniteTimeSpan, KeepAliveInterval = Timeout.InfiniteTimeSpan,
+            Identity = options.Identity,
+            DisplayName = "M",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetFingerprint,
+            ModSync = Service(),
+            ModFileTimeout = TimeSpan.FromMilliseconds(200),
+            MaxReconnectAttempts = 0,
+            HandshakeTimeout = Timeout.InfiniteTimeSpan,
+            KeepAliveInterval = Timeout.InfiniteTimeSpan,
         });
         var join = session.JoinAsync();
         await ReceiveAsync<Hello>(host);
