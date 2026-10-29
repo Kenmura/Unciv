@@ -774,6 +774,17 @@ under `policyPending`. "First adopter" counts the civs that follow the ideology 
 B052 (switching) adds one (done, 4.6.6). Public opinion, unhappiness, switching and anarchy are B052. The policy screen (C track) shows the ideology branches through
 the generic tree with the new locked reasons `ideology-locked`, `ideology:<branch>` and `tenet-level:<n>`; a dedicated ideology UI is a client follow-up.
 
+**B030 result (tenet effects, spec id B030).** The 48 tenets now carry their effects. Scalar `Policies.tsv` columns and the small tables are written in
+`overrides.json` `policyUniques` (keyed by tenet name); the building-class tables (`Policy_BuildingClassHappiness`, `ProductionModifiers`,
+`TourismModifiers`, `YieldModifiers`) are derived by the generator (`tenet_building_uniques`), so Universal Healthcare is twelve `[+1 Happiness] from every
+[<national wonder>]` uniques per ideology. Wired and tested on the real ruleset (`BnwGeneratedRulesetTests`): Cult of Personality (common foe), Dictatorship of the
+Proletariat (less happy), Cultural Revolution (shared ideology), Media Culture (Broadcast Tower tourism), Futurism (250 tourism per Writer/Artist/Musician born),
+Creative Expression (+1 culture per Great Work), Iron Curtain (+50% Food and Production of domestic routes; the free Courthouse on conquest is declared data only),
+Economic Union (`GoldFromIdeologyTradeRoutes`: +3 whole Gold per route to a civ with the same ideology, now read by `TradeRouteYields.PolicyGold`), plus stat
+tenets (Five-Year Plan, Party Leadership, ...). Declared but not wired yet: the city-state, espionage, spaceship, purchase-cost and free-building rows.
+No unique exists yet for seven tenets (`policyPending`): Resettlement, Patriotic War, Lightning Warfare, Elite Forces, Double Agents, United Front and
+Clausewitz's Legacy. [I] scales: Treaty Organization +4 and Gunboat Diplomacy +6 Influence are the hundredths columns /100.
+
 #### 4.6.4 Public opinion (`DoPublicOpinion` @1006f9d0) [O]
 Only for a civ with an ideology `I`:
 1. `pressure[X] = leaguePressure(X)` (World Ideology resolution, @1024be50) for each ideology X.
