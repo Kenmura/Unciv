@@ -73,7 +73,7 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class C082 ready
-  class C091 prog
+  class C091 review
   class C096 waiting
   class C097 waiting
   class T247 prog
@@ -142,7 +142,7 @@ xychart-beta
 | T267 | Available (waiting on ) | T177, T202, T178, T180, T226 | 1 | AI takeover of a departed player only at the end of the turn (never mid-turn) |
 | T268 | Available (waiting on ) | T178, T180, T176, T230, T173, T182, T179, T205 | 1 | Host migration spike: automatic successor host when the host leaves (design with acceptance criteria) |
 | T270 | Available (waiting on T265) | T265, T176, T254 | 1 | Dedicated server executable B: graceful shutdown, persistence and resume, exit codes, subprocess test |
-| C091 | In-Progress [Claude-C091] | C068, C078 | 0 | Group move and escort macro (client-side) |
+| C091 | Needs-Review [Claude-C091] | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C096 | Available (waiting on T259) | T259, C043 | 0 | Touch and small-screen client UI: gestures, hit targets, layout for phone and tablet |
 | C097 | Available (waiting on T264) | T264, C043, C002 | 0 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
 | T247 | In-Progress [Claude-T247] | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
