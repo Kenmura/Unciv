@@ -37,6 +37,20 @@ public class BaseUnitCost(BaseUnit baseUnit)
         return KotlinMath.FloatToInt(productionCost);
     }
 
+    /// <summary>Brave New World (B011, RELIGION_MIN_FAITH_FIRST_GREAT_PERSON): the price of the first Great Person bought with Faith.</summary>
+    public const int FaithGreatPersonBasePrice = 1000;
+
+    /// <summary>Brave New World (B011, RELIGION_FAITH_DELTA_NEXT_GREAT_PERSON): what each Great Person of the same kind already bought adds.</summary>
+    public const int FaithGreatPersonPriceIncrease = 500;
+
+    /// <summary>
+    /// Brave New World (B011, bnw-spec/SPEC.md 4.5): does <c>Can purchase all Great People with Faith</c> (a belief, with its own conditionals such as
+    /// <c>starting from the [Industrial era]</c>) let the city buy this unit with Faith? Great Prophets keep their own purchase.
+    /// </summary>
+    public bool IsFaithPurchasableGreatPerson(IConstructionCity city, Stat stat) =>
+        stat == Stat.Faith && baseUnit.IsGreatPerson && !baseUnit.IsGreatPersonOfType("Faith")
+        && city.GetMatchingUniques(UniqueType.FaithPurchaseAllGreatPeople, city.State).Any();
+
     /// <summary>Contains only unit-specific uniques that allow purchasing with stat</summary>
     public bool CanBePurchasedWithStat(IConstructionCity city, Stat stat)
     {
@@ -68,7 +82,7 @@ public class BaseUnitCost(BaseUnit baseUnit)
                 && city.MatchesFilter(it.Params[3], null)))
             return true;
 
-        return false;
+        return IsFaithPurchasableGreatPerson(city, stat);
     }
 
     public int? GetStatBuyCost(IConstructionCity city, Stat stat)
@@ -127,6 +141,10 @@ public class BaseUnitCost(BaseUnit baseUnit)
                          && baseUnit.MatchesFilter(it.Params[0], conditionalState)
                          && city.MatchesFilter(it.Params[3], null)))
             yield return ParseInt(unique.Params[1]) * city.Civ.GameInfo.Speed.GetStatCostModifier(stat);
+
+        if (IsFaithPurchasableGreatPerson(city, stat))
+            yield return self.GetCostForConstructionsIncreasingInPrice(FaithGreatPersonBasePrice, FaithGreatPersonPriceIncrease,
+                city.Civ.GetBoughtItemsWithIncreasingPrice(baseUnit.Name)) * city.Civ.GameInfo.Speed.GetStatCostModifier(stat);
     }
 
     /// <summary>Kotlin <c>String.toInt()</c></summary>

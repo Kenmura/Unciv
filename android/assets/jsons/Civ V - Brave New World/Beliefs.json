@@ -364,7 +364,7 @@
 	{
 		"name": "To the Glory of God",
 		"type": "Reformation",
-		"uniques": ["Can purchase all Great People with Faith"]
+		"uniques": ["Can purchase all Great People with Faith <starting from the [Industrial era]>"]
 	},
 	{
 		"name": "Underground Sect",

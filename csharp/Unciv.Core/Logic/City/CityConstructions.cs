@@ -823,7 +823,9 @@ public class CityConstructions : IsPartOfGameInfoSerialization
 
             var conditionalState = City.State;
 
-            if (City.Civ.GetMatchingUniques(UniqueType.BuyUnitsIncreasingCost, conditionalState)
+            if (construction is BaseUnit bought && bought.CostFunctions.IsFaithPurchasableGreatPerson(City, stat)) // BNW (B011)
+                City.Civ.CivConstructions.BoughtItemsWithIncreasingPrice.Add(construction.Name, 1);
+            else if (City.Civ.GetMatchingUniques(UniqueType.BuyUnitsIncreasingCost, conditionalState)
                     .Concat(City.Civ.GetMatchingUniques(UniqueType.BuyBuildingsIncreasingCost, conditionalState))
                     .Any(it =>
                         (construction is BaseUnit unitConstruction && unitConstruction.MatchesFilter(it.Params[0], conditionalState)

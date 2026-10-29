@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Map.MapUnits;
+using Unciv.Logic.Tourism;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Unit;
@@ -183,6 +184,7 @@ public class GreatPersonManager : IsPartOfGameInfoSerialization
         var unit = CivInfo.Units.AddUnit(choice, CivInfo.GetCapital());
         if (unit == null) return null;
 
+        InfluenceRules.ApplyBirthTourism(CivInfo, choice.Name); // BNW (B011): no-op without the unique
         FreeGreatPeople--;
         if (useMayaLongCount)
         {

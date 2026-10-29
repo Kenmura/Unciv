@@ -906,7 +906,7 @@
     "name": "To the Glory of God",
     "type": "Reformation",
     "uniques": [
-     "Can purchase all Great People with Faith"
+     "Can purchase all Great People with Faith <starting from the [Industrial era]>"
     ]
    },
    {
@@ -929,7 +929,7 @@
    "add": [
     {
      "name": "Writer",
-     "culture": 2,
+     "culture": 3,
      "greatPersonPoints": {
       "Great Writer": 3
      },
@@ -941,7 +941,7 @@
     },
     {
      "name": "Musician",
-     "culture": 2,
+     "culture": 3,
      "greatPersonPoints": {
       "Great Musician": 3
      },
@@ -951,51 +951,22 @@
       200
      ]
     }
-   ]
+   ],
+   // B011: Specialists.tsv CulturePerTurn is 3 for the three culture specialists (G&K Artist has 2).
+   "patch": {
+    "Artist": {"culture": 3}
+   }
   },
-  "UnitNameGroups.json": {
-   "add": [
-    {
-     "name": "Writer",
-     "unitNames": [
-      "Homer",
-      "Sophocles",
-      "Virgil",
-      "Dante Alighieri",
-      "Geoffrey Chaucer",
-      "Miguel de Cervantes",
-      "William Shakespeare",
-      "John Milton",
-      "Voltaire",
-      "Jane Austen",
-      "Victor Hugo",
-      "Charles Dickens",
-      "Leo Tolstoy",
-      "Mark Twain",
-      "Fyodor Dostoevsky",
-      "Virginia Woolf"
-     ]
-    },
-    {
-     "name": "Musician",
-     "unitNames": [
-      "Johann Sebastian Bach",
-      "Antonio Vivaldi",
-      "George Frideric Handel",
-      "Joseph Haydn",
-      "Wolfgang Amadeus Mozart",
-      "Ludwig van Beethoven",
-      "Franz Schubert",
-      "Frederic Chopin",
-      "Richard Wagner",
-      "Giuseppe Verdi",
-      "Pyotr Tchaikovsky",
-      "Claude Debussy",
-      "Duke Ellington",
-      "Louis Armstrong"
-     ]
-    }
-   ]
+  // B011: Faith purchase of Great People from the Industrial era (SPEC 4.5): the three economic/scientific ones for everybody, the rest with the
+  // belief To the Glory of God. [K] the base list is not decoded; the price is Defines RELIGION_MIN_FAITH_FIRST_GREAT_PERSON 1000, +500 per bought.
+  "GlobalUniques.json": {
+   "patch": {
+    "uniques+": [
+     "May buy [Great Scientist] units for [1000] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([500]) <starting from the [Industrial era]>",
+     "May buy [Great Merchant] units for [1000] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([500]) <starting from the [Industrial era]>",
+     "May buy [Great Engineer] units for [1000] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([500]) <starting from the [Industrial era]>"
+    ]
+   }
   },
   "Personalities.json": {
    "add": [
@@ -1156,6 +1127,7 @@
      "uniques": [
       "Is part of Great Person group [Great Person]",
       "[This Unit] gets a name from the [Writer] group",
+      "Great Work counts as [8] turns of culture",
       "Great Person - [Culture]",
       "Unbuildable",
       "Uncapturable"
@@ -1166,6 +1138,7 @@
      "uniques": [
       "Is part of Great Person group [Great Person]",
       "[This Unit] gets a name from the [Musician] group",
+      "Gives [10] Tourism with the target civ and [20]% with other civs when expended",
       "Great Person - [Culture]",
       "Unbuildable",
       "Uncapturable"

@@ -33,11 +33,8 @@ public sealed class CreateGreatWork : GameCommand
     {
         var actor = context.Actor;
         var unit = context.OwnUnit(actor, UnitId).Value.NotNull();
-        var work = GreatWorkRules.ChooseWork(actor, unit).NotNull();
-        var location = GreatWorkRules.FindClosestFreeSlot(actor, unit.GetTile(), work.GreatWorkClass).NotNull();
-        unit.Consume();
-        GreatWorkRules.CreateAndPlace(actor, work, location);
-        actor.UpdateStatsForNextTurn();
+        var (instance, location) = GreatWorkRules.Create(actor, unit);
+        var work = context.Game.Ruleset.GreatWorks[instance.Name];
         return [new GreatWorkCreated(actor.CivId, work.Name, work.GreatWorkClass.ToString(), location.City.Id, location.Building.Name, location.Slot)];
     }
 }

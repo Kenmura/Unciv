@@ -13,7 +13,7 @@
 	},
 	{
 		"name": "Artist",
-		"culture": 2,
+		"culture": 3,
 		"greatPersonPoints": {"Great Artist": 3},
 		"color": [160, 32, 240]
 	},
@@ -25,13 +25,13 @@
 	},
 	{
 		"name": "Writer",
-		"culture": 2,
+		"culture": 3,
 		"greatPersonPoints": {"Great Writer": 3},
 		"color": [200, 120, 60]
 	},
 	{
 		"name": "Musician",
-		"culture": 2,
+		"culture": 3,
 		"greatPersonPoints": {"Great Musician": 3},
 		"color": [60, 160, 200]
 	}

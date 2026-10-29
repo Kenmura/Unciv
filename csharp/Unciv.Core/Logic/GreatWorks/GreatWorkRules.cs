@@ -1,6 +1,7 @@
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using TileObject = Unciv.Logic.Map.Tiles.Tile;
@@ -14,6 +15,10 @@ namespace Unciv.Logic.GreatWorks;
 //   table order whose era is not later than the creator's, else the first unused one of the class. Spec proposal [X].
 // - Which classes a Great Person creates: by unit name (Great Artist: Art, Great Writer: Writing, Great Musician: Music). A named work
 //   (unit unique "Can create the Great Work [x]") overrides it. B041 may move this into ruleset data.
+// - A Great Person named after the author of a work (GreatWork.GreatPerson, BNW Unit_UniqueNames.GreatWorkType) creates that work when it is
+//   still unused and of the class the unit creates (B011). The names are compared by their letters and digits only (case, spaces and
+//   punctuation ignored; accents are not folded: the invariant globalization mode has no normalization): the work table derives the person from a text key ("D H Lawrence"), the name groups spell it normally. No match,
+//   or the work exists already: the generic choice above.
 // - Closest slot: the city with the smallest aerial distance to the unit, ties by civ city order; inside it the first free slot of the
 //   buildings ordered by name. Spec [I].
 // - Swap rules beyond the spec text: not while at war, both civs alive and known to each other; Music cannot be offered (the engine has
@@ -45,6 +50,25 @@ public static class GreatWorkRules
         return unique != null && ruleset.GreatWorks.TryGetValue(unique.Params[0], out var work) ? work : null;
     }
 
+    /// <summary>A name reduced to its lower-case letters and digits, for comparing a unit's name with <see cref="GreatWork.GreatPerson"/>.</summary>
+    public static string PersonKey(string name)
+    {
+        var key = new System.Text.StringBuilder(name.Length);
+        foreach (char c in name)
+            if (char.IsLetterOrDigit(c)) key.Append(char.ToLowerInvariant(c));
+        return key.ToString();
+    }
+
+    /// <summary>The unused work of the class that is named after the unit's own name (a Great Person with a name of its name group), or null.</summary>
+    public static GreatWork? WorkOfPerson(CivilizationObject civ, MapUnit unit, GreatWorkClass greatWorkClass)
+    {
+        if (string.IsNullOrEmpty(unit.InstanceName)) return null;
+        string key = PersonKey(unit.InstanceName);
+        if (key.Length == 0) return null;
+        return civ.GameInfo.Ruleset.GreatWorks.Values.FirstOrDefault(it => it.GreatWorkClass == greatWorkClass && !it.ArchaeologyOnly
+            && it.GreatPerson.Length != 0 && PersonKey(it.GreatPerson) == key && !GameOf(civ).IsGreatWorkUsed(it.Name));
+    }
+
     /// <summary>The class of work this unit creates, or null when it creates none.</summary>
     public static GreatWorkClass? ClassCreatedBy(MapUnit unit, Ruleset ruleset)
     {
@@ -58,6 +82,7 @@ public static class GreatWorkRules
         var ruleset = civ.GameInfo.Ruleset;
         if (NamedWorkOf(unit, ruleset) is { } named) return GameOf(civ).IsGreatWorkUsed(named.Name) ? null : named;
         if (ClassCreatedBy(unit, ruleset) is not { } greatWorkClass) return null;
+        if (WorkOfPerson(civ, unit, greatWorkClass) is { } ofPerson) return ofPerson;
         int eraNumber = civ.GetEraNumber();
         var unused = ruleset.GreatWorks.Values
             .Where(it => it.GreatWorkClass == greatWorkClass && !it.ArchaeologyOnly && !GameOf(civ).IsGreatWorkUsed(it.Name))
@@ -102,6 +127,27 @@ public static class GreatWorkRules
         location.City.SetGreatWorkIn(location.Building.Name, location.Slot, work.Name);
         location.City.CityStats.Update();
         return instance;
+    }
+
+    /// <summary>Can <paramref name="unit"/> (standing on <paramref name="tile"/>) create a Great Work now: in a city of its owner, a work is left and a slot is free?</summary>
+    public static bool CanCreate(CivilizationObject civ, MapUnit unit, TileObject tile) =>
+        IsEnabled(civ.GameInfo.Ruleset) && tile.IsCityCenter() && ReferenceEquals(((CityObject?)tile.GetCity())?.Civ, civ)
+        && ClassCreatedBy(unit, civ.GameInfo.Ruleset) != null
+        && ChooseWork(civ, unit) is { } work && FindClosestFreeSlot(civ, tile, work.GreatWorkClass) != null;
+
+    /// <summary>Culture of a Great Writer's Political Treatise: <paramref name="turns"/> turns of the civ's culture per turn (rounded down, at least 0). No game speed [K, spec 4.5].</summary>
+    public static int PoliticalTreatiseCulture(CivilizationObject civ, int turns) =>
+        (int)Math.Clamp((long)KotlinMath.FloatToInt(civ.Stats.StatsForNextTurn.Culture) * Math.Max(0, turns), 0, int.MaxValue);
+
+    /// <summary>Consumes the unit and puts the work it creates into the closest free slot; the caller has checked <see cref="CanCreate"/>.</summary>
+    public static (GreatWorkInstance Instance, GreatWorkLocation Location) Create(CivilizationObject civ, MapUnit unit)
+    {
+        var work = ChooseWork(civ, unit).NotNull();
+        var location = FindClosestFreeSlot(civ, unit.GetTile(), work.GreatWorkClass).NotNull();
+        unit.Consume();
+        var instance = CreateAndPlace(civ, work, location);
+        civ.UpdateStatsForNextTurn();
+        return (instance, location);
     }
 
     /// <summary>

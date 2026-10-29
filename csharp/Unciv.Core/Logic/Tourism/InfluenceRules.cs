@@ -1,3 +1,5 @@
+using Unciv.Logic.Civilization.Transients;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 
@@ -13,7 +15,8 @@ namespace Unciv.Logic.Tourism;
 //   decoded and not implemented (B020 reads the spy rank bonus, the happiness ticket B019 the others).
 // - InfluenceSpreadModifier (Internet) and NullifiesForeignInfluence (Great Firewall) have unresolved maths (4.3.4 [?]) and are not applied.
 // - The blast applies the game speed as Speed.Modifier * 100 (the spec says "speed%" without naming the field).
-// - The one-shot tourism of Policy_TourismOnUnitCreation (a Great Person's birth) is not applied (B011 owns the Great Person actions).
+// - The one-shot tourism of Policy_TourismOnUnitCreation (a Great Person's birth, B011): the amount is influence over every other met living major civ
+//   (not scaled by tourism or speed, [K]). It applies when a Great Person is born from points or chosen as a free Great Person.
 
 /// <summary>How well a civ knows another (spec 4.3.3; the value is the engine's level number).</summary>
 public enum InfluenceLevel
@@ -169,5 +172,25 @@ public static class InfluenceRules
         foreach (var other in me.GameInfo.Civilizations)
             if (other != target && CanInfluence(me, other)) culture.AddInfluence(other.CivId, (int)(strength * (long)percentOthers / 100));
         return strength;
+    }
+
+    // ---- birth of a Great Person (4.3.6, Policy_TourismOnUnitCreation)
+
+    /// <summary>
+    /// A Great Person named <paramref name="unitName"/> was born for <paramref name="me"/>: every unique <c>[amount] Tourism when a [greatPerson] is born</c> that
+    /// names it adds its amount (at least 0) as influence over each other met living major civ. Returns the total amount.
+    /// </summary>
+    public static int ApplyBirthTourism(CivilizationObject me, string unitName)
+    {
+        if (!TourismRules.IsEnabled(me)) return 0;
+        long total = 0;
+        foreach (var unique in me.GetMatchingUniques(UniqueType.TourismOnGreatPersonBirth))
+            if (unique.Params[1] == unitName) total += Math.Max(0, unique.Params[0].ToInt());
+        int amount = (int)Math.Min(total, int.MaxValue);
+        if (amount == 0) return 0;
+        var culture = me.Culture ??= new();
+        foreach (var other in me.GameInfo.Civilizations)
+            if (CanInfluence(me, other)) culture.AddInfluence(other.CivId, amount);
+        return amount;
     }
 }

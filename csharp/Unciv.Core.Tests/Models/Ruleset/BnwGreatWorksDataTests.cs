@@ -92,4 +92,61 @@ public sealed class BnwGreatWorksDataTests
         Assert.Equal("Parthenon Frieze", unique.Params[0]);
         Assert.Equal(GreatWorkClass.Art, r.GreatWorks["Parthenon Frieze"].GreatWorkClass);
     }
+
+    // B011 (bnw-spec 4.5)
+
+    [Fact]
+    public void TheCultureSpecialistsGiveThreeCultureAndThreePointsOfTheirGreatPerson()
+    {
+        var r = BnwRulesetTests.LoadBnw();
+        foreach (var (specialist, person) in new[] { ("Writer", "Great Writer"), ("Artist", "Great Artist"), ("Musician", "Great Musician") })
+        {
+            Assert.Equal(3f, r.Specialists[specialist].Culture);
+            Assert.Equal(3, r.Specialists[specialist].GreatPersonPoints[person]);
+        }
+    }
+
+    [Fact]
+    public void TheGuildsHoldTwoSpecialistsEachAndAddGreatPersonPoints()
+    {
+        var b = BnwRulesetTests.LoadBnw().Buildings;
+        foreach (var (guild, specialist, points) in new[] { ("Writers' Guild", "Writer", 1), ("Artists' Guild", "Artist", 2), ("Musicians' Guild", "Musician", 3) })
+        {
+            Assert.Equal(2, b[guild].SpecialistSlots[specialist]);
+            Assert.Equal(points, b[guild].GreatPersonPoints["Great " + specialist]);
+            Assert.True(b[guild].IsNationalWonder);
+        }
+    }
+
+    [Fact]
+    public void TheArtistWriterAndMusicianHaveTheirActions()
+    {
+        var u = BnwRulesetTests.LoadBnw().Units;
+        Assert.Contains("Great Work counts as [8] turns of culture", u["Great Writer"].Uniques);
+        Assert.Contains("Gives [10] Tourism with the target civ and [20]% with other civs when expended", u["Great Musician"].Uniques);
+        Assert.Contains("Empire enters a [8]-turn Golden Age <by consuming this unit>", u["Great Artist"].Uniques);
+    }
+
+    [Fact]
+    public void EveryArtistWriterAndMusicianNameIsThePersonOfExactlyOneWork()
+    {
+        var r = BnwRulesetTests.LoadBnw();
+        foreach (var (group, cls, count) in new[] { ("Artist", GreatWorkClass.Art, 93), ("Writer", GreatWorkClass.Writing, 70), ("Musician", GreatWorkClass.Music, 70) })
+        {
+            var names = r.UnitNameGroups[group].UnitNames;
+            Assert.Equal(count, names.Count);
+            foreach (string name in names)
+                Assert.Single(r.GreatWorks.Values, it => it.GreatWorkClass == cls && !it.ArchaeologyOnly && it.GreatPerson == name);
+        }
+    }
+
+    [Fact]
+    public void ToTheGloryOfGodAllowsAllGreatPeopleFromTheIndustrialEra()
+    {
+        var r = BnwRulesetTests.LoadBnw();
+        var unique = Assert.Single(r.Beliefs["To the Glory of God"].Uniques);
+        Assert.Equal("Can purchase all Great People with Faith <starting from the [Industrial era]>", unique);
+        Assert.Equal(3, ((IHasUniques)r.GlobalUniques).GetMatchingUniques(UniqueType.BuyUnitsIncreasingCost, GameContext.IgnoreConditionalsState)
+            .Count(it => it.Params[2] == "Faith" && r.Units[it.Params[0]].IsGreatPerson));
+    }
 }

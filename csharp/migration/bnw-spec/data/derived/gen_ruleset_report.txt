@@ -123,8 +123,6 @@
   Beliefs.json: added Unity of the Prophets
   Specialists.json: added Writer
   Specialists.json: added Musician
-  UnitNameGroups.json: added Writer
-  UnitNameGroups.json: added Musician
   Personalities.json: added Maria I
   TileResources.json: added Antiquity Site
   TileResources.json: added Hidden Antiquity Site
@@ -207,6 +205,11 @@
   Optics: cost 85 differs from column 3 (105), per-tech cost set
   Compass: cost 375 differs from column 6 (485), per-tech cost set
   The Internet: new (column 16, row 1)
+
+== unitNames
+  Artist: 93 names from the works named after a Great Person
+  Writer: 70 names from the works named after a Great Person
+  Musician: 70 names from the works named after a Great Person
 
 == units
   UNIT_BARBARIAN_WARRIOR: skipped (barbarian variant shares the name Brute with the normal unit)

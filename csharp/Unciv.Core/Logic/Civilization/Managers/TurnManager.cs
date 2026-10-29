@@ -63,7 +63,10 @@ public class TurnManager(Civilization civInfo)
             while (greatPerson != null)
             {
                 if (civInfo.GameInfo.Ruleset.Units.ContainsKey(greatPerson))
+                {
                     civInfo.Units.AddUnit(greatPerson);
+                    InfluenceRules.ApplyBirthTourism(civInfo, greatPerson); // BNW (B011): no-op without the unique
+                }
                 greatPerson = civInfo.GreatPeople.GetNewGreatPerson();
             }
             civInfo.ReligionManager.StartTurn();

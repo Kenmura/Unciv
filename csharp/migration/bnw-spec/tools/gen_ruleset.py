@@ -300,6 +300,23 @@ def build_great_works(report):
     return out, names
 
 
+NAME_GROUP_OF_CLASS = {"Art": "Artist", "Writing": "Writer", "Music": "Musician"}
+
+
+def name_groups_from_works(files, report):
+    """B011: the Artist, Writer and Musician name groups are the people the works are named after (Unit_UniqueNames), in table order, so every
+    Great Artist, Writer or Musician unit can create the work of its name (GreatWork.greatPerson)."""
+    groups = files["UnitNameGroups.json"]
+    index = {g["name"]: g for g in groups}
+    for cls, group in NAME_GROUP_OF_CLASS.items():
+        names = [w["greatPerson"] for w in files["GreatWorks.json"] if w["greatWorkClass"] == cls and not w.get("archaeologyOnly") and "greatPerson" in w]
+        if group not in index:
+            index[group] = {"name": group}
+            groups.append(index[group])
+        index[group]["unitNames"] = names
+        report.add("unitNames", f"{group}: {len(names)} names from the works named after a Great Person")
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Buildings
 # ----------------------------------------------------------------------------------------------------------------------
@@ -697,6 +714,7 @@ def generate():
     for text in overrides.get("policyPending", []):
         report.add("pending policy effects (not emitted)", text)
     files = apply_overrides(files, overrides, report)
+    name_groups_from_works(files, report)
     for key, texts in overrides.get("pending", {}).items():
         for t in texts:
             report.add("pending uniques (not emitted: need B003 UniqueTypes, wired by B010 or the feature ticket)", f"{key}: {t}")

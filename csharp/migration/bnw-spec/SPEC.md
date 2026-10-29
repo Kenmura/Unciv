@@ -689,6 +689,14 @@ Code: `Unciv.Core/Logic/Archaeology/ArchaeologyRules.cs` (header lists every cho
 - GP improvements (Academy, Customs House, Manufactory, Citadel) get +culture under Historical Landmarks
   (`GreatPersonTileImprovementCulture` 2) [D].
 
+#### 4.5a As built (B011)
+- **Create Great Work** (`UnitActionType.CreateGreatWork`, also the B007 command `create-great-work`): a Great Artist/Writer/Musician (by unit name) in a city of its owner with a free slot; a unit named after the author of a work (`GreatWork.greatPerson` against the unit's name, letters and digits only) creates that unused work first, else the B007 choice. `ExecuteUnitAction` carries it.
+- **Political Treatise** (`HurryPolicy` action of the unique `Great Work counts as [8] turns of culture`, Great Writer): culture = 8 x (culture per turn rounded down), saturating, no game speed [K]. **Golden Age**: the existing unique of the Great Artist (8 turns). **Concert Tour** (`ConcertTour`, unique `Gives [10] Tourism with the target civ and [20]% with other civs when expended`): in tiles owned by a met living major civ, `InfluenceRules.ApplyBlast`.
+- **Birth tourism** (`[amount] Tourism when a [greatPerson] is born`): the summed amounts (negatives count 0) are added as influence over every met living major civ when a Great Person is born from points or chosen as a free Great Person [K].
+- **Guilds**: Writer, Artist and Musician specialists give 3 culture and 3 points of their Great Person (Specialists.tsv); the guilds hold 2 each (already in the generated data). Name groups Artist/Writer/Musician are now generated from the people the works are named after.
+- **Faith purchase**: the Great Scientist, Merchant and Engineer cost 1000 Faith from the Industrial era for everybody (global uniques) [K, base list not decoded]; the belief To the Glory of God (`Can purchase all Great People with Faith <starting from the [Industrial era]>`) widens it to every Great Person except the Prophet. Price and count follow the engine's increasing price (1000 + 250 x (n^2 + n), the Unciv formula; BNW adds 500 per purchase [?]), counted per unit kind.
+- Not done (open, not in the title): the per-type born-rate modifiers (`GreatPersonRateByType`, resolution `Artsy/ScienceyGreatPersonRateMod`), GP improvement culture under Historical Landmarks (B028/B010).
+
 ### 4.6 Social policies and ideologies
 
 #### 4.6.1 Branches [D]
