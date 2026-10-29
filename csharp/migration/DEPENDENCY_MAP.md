@@ -178,7 +178,7 @@ flowchart TD
   class B026 waiting
   class B027 review
   class B028 ready
-  class C067 prog
+  class C067 review
   class C068 ondeck
   class C069 ready
   class C070 waiting
@@ -269,7 +269,7 @@ xychart-beta
 | B021 | **On deck** (after B005) | B005, B004 | 1 | BNW: City-state BNW changes, Merchant of Venice purchase, Venice restrictions |
 | B022 | **On deck** (after B005) | B005, B004 | 1 | BNW: Religion BNW constants, belief effects, trade-route pressure |
 | C087 | **On deck** (after C067) | C067, T181 | 0 | Rival stats ribbon in the HUD |
-| C067 | In-Progress [Claude] | C066 | 11 | World HUD layout |
+| C067 | Needs-Review [Claude] | C066 | 11 | World HUD layout |
 | B005 | In-Review [Claude] | B003 | 10 | BNW: Trade routes: model, slots, range, yields, lifecycle, plunder, commands, queries |
 | B012 | Needs-Review [Claude] | B002 | 10 | BNW: Policy tree: branch era gates, branch-gated wonders, finishers |
 | C070 | Available (waiting on C069) | C066, C069 | 7 | Tech tree redesign |

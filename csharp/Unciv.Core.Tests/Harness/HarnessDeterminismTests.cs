@@ -70,7 +70,7 @@ public sealed partial class HarnessDeterminismTests
             .OrderBy(it => it, StringComparer.Ordinal)
             .ToList();
         // TurnBarView counts toast frames (no time); GameScreen redraws the turn bar when the countdown text changes (reads NowMs, fixed in scenarios); LobbyScreen drains the session events and rebuilds on change (no time); HostScreen refreshes the lobby slot table when it changed (no time); HudView/MinimapView count frames or redraw on change (no time); TooltipHost, MapView, CombatPresenter use the delta and are frozen/off in the harness
-        Assert.Equal(["CombatPresenter", "GameScreen", "HostScreen", "HudView", "LobbyScreen", "MapView", "MinimapView", "TooltipHost", "TurnBarView"], processUsers);
+        Assert.Equal(["CombatPresenter", "GameScreen", "HostScreen", "HudView", "LobbyScreen", "MapView", "MinimapView", "NotificationListView", "TooltipHost", "TurnBarView"], processUsers);
     }
 
     [Fact]
