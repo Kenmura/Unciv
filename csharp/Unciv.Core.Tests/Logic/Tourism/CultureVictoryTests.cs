@@ -243,7 +243,7 @@ public sealed class CultureVictoryTests
         var cultural = r.Victories["Cultural"];
         Assert.Equal(["Influential over all civilizations"], cultural.Milestones);
         Assert.Equal(MilestoneType.InfluentialOverAllCivs, cultural.MilestoneObjects[0].Type);
-        Assert.False(r.Victories.ContainsKey("Diplomatic"));
+        Assert.Equal(["Win the World Leader vote"], r.Victories["Diplomatic"].Milestones);
         Assert.Contains(Spread100, r.Technologies["The Internet"].Uniques);
         Assert.Contains(Nullify, r.Buildings["Great Firewall"].Uniques);
     }

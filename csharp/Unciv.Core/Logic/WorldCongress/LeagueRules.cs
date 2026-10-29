@@ -1,6 +1,7 @@
 using Unciv.Commands.Events;
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Diplomacy;
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
@@ -15,7 +16,7 @@ namespace Unciv.Logic.WorldCongress;
 // Brave New World (ticket B015, spec id B060, bnw-spec/SPEC.md section 4.7). Not part of the Kotlin source.
 //
 // Founding, special sessions, delegates, proposals and voting of the World Congress. The effects of the resolutions are B016, the league
-// projects B017, the diplomatic victory B018. Deliberate deviations and unresolved spec items (no decompiler output or SDK source is available,
+// projects B017; the diplomatic victory (votes needed 4.7.6, the win, the bonus delegates of a failed vote) is B018. Deliberate deviations and unresolved spec items (no decompiler output or SDK source is available,
 // so the [K]/[?] items of 4.7.4 keep the spec value or the reading below):
 // - Session shape [K]: a session opens at the end of a round (the AI members vote at once, the proposals of the proposers are fixed) and is
 //   decided at the end of the next round, so every human has one round to commit delegates. A member that does nothing abstains.
@@ -29,6 +30,11 @@ namespace Unciv.Logic.WorldCongress;
 // - Members are the major civs alive at founding. A civ that dies keeps its seat but has no delegates and cannot vote or propose.
 // - The AI is minimal (LeagueAi): it proposes a resolution without a choice, backs its own and its friends' proposals and opposes those of its
 //   enemies. The AI tickets refine it.
+// - Diplomatic Victory (B018): the vote is on a major civ; a civ wins with the plurality (no tie) and at least VotesNeeded delegates. A failed vote gives every civ
+//   tied for the most votes LeadersVoteBonusOnFail extra delegates for the following sessions ("the top vote-getters" [K]). Only the delegates of civs still
+//   alive when the session is decided count, and only for a living civ (a civ that died in the session loses its committed delegates).
+//   The win sets VictoryManager.HasEverWonDiplomaticVote, which the "Win the World Leader vote" milestone of the Diplomatic victory reads.
+//   The count of civs and city-states ever alive is the civilizations list (defeated civs stay in it); the [?] exclusion of @1012a210 is not applied.
 // - World Ideology needs a living member with an ideology; a ruleset without the tech of a resolution can never propose it.
 
 public static class LeagueRules
@@ -185,7 +191,12 @@ public static class LeagueRules
     private static void Decide(GameInfo game, League league, LeagueProposal proposal)
     {
         var resolution = LeagueData.Find(proposal.Resolution).NotNull();
-        var tally = Tally(proposal);
+        var tally = LivingTally(game, league, proposal, resolution.DiplomaticVictory || resolution.Voter == VoterDecision.MajorCiv);
+        if (resolution.DiplomaticVictory)
+        {
+            DecideDiplomaticVictory(game, league, resolution, tally);
+            return;
+        }
         int Count(string choice) => tally.FirstOrDefault(it => it.Key == choice).Value;
         string winner = "";
         bool passed;
@@ -199,9 +210,7 @@ public static class LeagueRules
             if (passed) winner = leaders[0].Key;
         }
 
-        // Seam (B018): a Diplomatic Victory vote needs the votes needed (4.7.6), ends the game and gives the failed vote's leaders LeadersVoteBonusOnFail delegates (AddExtraVotes)
-        if (resolution.DiplomaticVictory) passed = false;
-        else if (passed && proposal.IsRepeal) passed = league.Active.RemoveAll(it => it.Id == proposal.RepealId) > 0;
+        if (passed && proposal.IsRepeal) passed = league.Active.RemoveAll(it => it.Id == proposal.RepealId) > 0;
         else if (passed && resolution.ChangeLeagueHost) league.Host = winner;
         else if (passed && !proposal.IsRepeal)
             league.Active.Add(new ActiveResolution { Id = league.NextId++, Resolution = proposal.Resolution, Choice = proposal.Choice, Proposer = proposal.Proposer, Turn = game.Turns });
@@ -214,6 +223,69 @@ public static class LeagueRules
         game.EventSink?.Emit(result);
         foreach (var civ in LivingMembers(game, league).Where(it => it.IsHuman()))
             civ.AddNotification($"{proposal.Resolution}: {(passed ? (proposal.IsRepeal ? "repealed" : "passed") : "failed")}", NotificationCategory.Diplomacy, NotificationIcon.Diplomacy);
+    }
+
+    /// <summary>The tally of the delegates of civs that are still alive; for a vote on a civ only the choices that are living civs.</summary>
+    private static List<KeyValuePair<string, int>> LivingTally(GameInfo game, League league, LeagueProposal proposal, bool choiceIsCiv)
+    {
+        bool Alive(string civId) => league.GetMember(civId) != null && game.GetCivilization(civId).IsAlive();
+        return Tally(new LeagueProposal { Votes = proposal.Votes.Where(it => Alive(it.Civ) && (!choiceIsCiv || Alive(it.Choice))).ToList() });
+    }
+
+    private static void DecideDiplomaticVictory(GameInfo game, League league, LeagueResolution resolution, List<KeyValuePair<string, int>> tally)
+    {
+        int needed = VotesNeeded(game, league);
+        int best = tally.Select(it => it.Value).DefaultIfEmpty(0).Max();
+        var leaders = tally.Where(it => it.Value == best).Select(it => it.Key).ToList();
+        string name = LeagueData.DiplomaticVictory;
+        if (best > 0 && leaders.Count == 1 && best >= needed)
+        {
+            var winner = game.GetCivilization(leaders[0]);
+            winner.VictoryManager.HasEverWonDiplomaticVote = true;
+            game.EventSink?.Emit(new ResolutionEnacted(name, winner.CivId));
+            foreach (var civ in LivingMembers(game, league).Where(it => it.IsHuman()))
+                civ.AddNotification(civ == winner ? "You have been elected world leader!" : $"{winner.CivName} has been elected world leader!",
+                    NotificationCategory.Diplomacy, NotificationIcon.Diplomacy);
+            new TurnManager(winner).UpdateWinningCiv();
+            return;
+        }
+        if (best > 0)
+            foreach (var leader in leaders) AddExtraVotes(league, leader, resolution.LeadersVoteBonusOnFail);
+        game.EventSink?.Emit(new ResolutionFailed(name, leaders.Count == 1 ? leaders[0] : ""));
+        foreach (var civ in LivingMembers(game, league).Where(it => it.IsHuman()))
+            civ.AddNotification($"No world leader was elected: {needed} delegates are needed", NotificationCategory.Diplomacy, NotificationIcon.Diplomacy);
+    }
+
+    // ---- votes needed for the diplomatic victory (4.7.6, @100d1830)
+
+    // The defines DIPLO_VICTORY_{CIV,CS}_DELEGATES_{COEFFICIENT,CONSTANT} of Defines.tsv, single precision as in the engine.
+    private const float CivCoefficient = 1.443f, CivConstant = 7f, CityStateCoefficient = 16.023f, CityStateConstant = -13.758f;
+
+    /// <summary>
+    /// The delegates a civ needs to win the diplomatic vote from the number of civs and city-states ever alive (alive counts 1, defeated 0.5), all in float:
+    /// floor(max(0, 1.443 ln civs + 7) + max(0, 16.023 ln cs - 13.758)), at least civ delegates + 1 + host delegates, at most the delegates of all members.
+    /// </summary>
+    public static int VotesNeeded(float civs, float cityStates, LeagueSession session)
+    {
+        float civPart = Math.Max(0f, CivCoefficient * MathF.Log(civs) + CivConstant);
+        float csPart = Math.Max(0f, CityStateCoefficient * MathF.Log(cityStates) + CityStateConstant);
+        int needed = (int)MathF.Floor(civPart + csPart);
+        needed = Math.Max(needed, unchecked(session.CivDelegates + 1 + session.HostDelegates));
+        return Math.Min(needed, unchecked(session.CivDelegates * (int)civs + session.CityStateDelegates * (int)cityStates + session.HostDelegates));
+    }
+
+    /// <summary>The delegates needed in the game as it is: the civs and city-states ever alive are the civilizations list (defeated ones stay in it).</summary>
+    public static int VotesNeeded(GameInfo game, League league)
+    {
+        float civs = 0f, cityStates = 0f;
+        foreach (var civ in game.Civilizations)
+        {
+            if (civ.IsSpectator()) continue;
+            float weight = civ.IsAlive() ? 1f : 0.5f;
+            if (civ.IsMajorCiv()) civs += weight;
+            else if (civ.IsCityState) cityStates += weight;
+        }
+        return VotesNeeded(civs, cityStates, LeagueData.Sessions[league.SessionIndex]);
     }
 
     /// <summary>Gives a member extra delegates for the following sessions (the spec's member field <c>extra</c>).</summary>

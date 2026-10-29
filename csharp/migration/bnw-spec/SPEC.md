@@ -934,8 +934,7 @@ generated. Deliberate choices, none verified against the binary (no decompile av
   A resolution needs a tech known by any living member, must not be in force or proposed (same choice), and its choice must be valid (another member, a luxury,
   a founded religion, an ideology of the ruleset; World Ideology also needs a living member with an ideology).
 - World Religion's holy-city tourism (+50%) is added to the city tourism modifier (4.3.1); the other effects of resolutions are B016 (4.7.9), projects B017.
-- Diplomatic Victory: the vote is held and recorded as failed; votes needed (4.7.6), the victory and `LeadersVoteBonusOnFail` (`AddExtraVotes`) are B018.
-  Delegates per diplomat in a capital is B020 (seam in `StartingVotes`).
+- Diplomatic Victory: see 4.7.10 (B018). Delegates per diplomat in a capital is B020 (seam in `StartingVotes`).
 - The AI proposes a choice-free resolution (picked by turn and civ index) and backs its own and its friends' proposals, opposes its enemies'.
 - No pending-decision kind: the client reads `empire.League` (`CanPropose`, `Left`).
 
@@ -956,7 +955,18 @@ readings of the open [K] items (no decompile available, all deliberate):
 - World Ideology: `OtherIdeologyRebellionMod` (2) is the league pressure toward the chosen ideology in 4.6.4 step 1, for every member [K reading of @1024be50].
 - Arts / Sciences Funding: +33 / -33 percent in the Great Person points breakdown of the Writer, Artist, Musician (artsy) and Scientist, Engineer, Merchant (sciencey).
 - Historical Landmarks: +2 culture on each worked tile with an unpillaged Great Person improvement, +4 on each worked Landmark.
-- Diplomatic Victory is B018.
+- Diplomatic Victory: 4.7.10 (B018).
+
+#### 4.7.10 Diplomatic victory as built (B018)
+`LeagueRules.VotesNeeded` implements 4.7.6 in `float` (`MathF.Log`, `MathF.Floor`), golden-tested (8 civs and 16 city-states give 40). `VotesNeeded(game, league)` counts
+the civilizations list: a living major civ or city-state 1.0, a defeated one 0.5 (the `[?]` exclusion of `@1012a210` is not applied); the session is the current one
+(the vote only exists in the United Nations session). The Diplomatic Victory proposal is a vote on a living member: the winner needs the plurality (a tie fails), at least
+the votes needed and to be alive. A win sets `VictoryManager.HasEverWonDiplomaticVote` and runs `UpdateWinningCiv`, so the game is won through the ruleset: the generated BNW
+`VictoryTypes.json` keeps the `Diplomatic` victory with the milestone `Win the World Leader vote` (B009; the generator no longer removes the victory, the United Nations building
+stays removed), and the victory counts only when it is among `GameParameters.VictoryTypes`. A failed vote gives every civ tied for the most votes `LeadersVoteBonusOnFail` (2)
+`ExtraVotes` (`AddExtraVotes`) [K reading of "top vote-getters"]; no vote at all gives nothing. Only the delegates of civs alive when the session is decided count
+(also for the other votes: a civ that died keeps no delegates in a vote), and a dead candidate gets none. G&K `VictoryManager.VotesNeededForDiplomaticVictory` and the
+G&K vote are unchanged; the AI victory scorer still reads the G&K figure (follow-up).
 
 ### 4.8 Happiness (BNW) [O]
 - `IsEmpireUnhappy` = excess happiness < 0 (@10150dc0). **While unhappy**: production and gold get

@@ -6,14 +6,6 @@
   Helsinki: removed
   Rio de Janeiro: removed
   Venice: removed
-  Greece: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
-  England: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
-  Siam: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
-  Sweden: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
-  Austria: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
-
-== VictoryTypes.json
-  Diplomatic: removed
 
 == buildings
   Opera House: 1 Music slot(s), 0 theming row(s)

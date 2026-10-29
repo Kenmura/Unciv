@@ -1172,6 +1172,11 @@
     "Cultural": {
      "victoryScreenHeader": "Become Influential over every other civilization to win!",
      "milestones": ["Influential over all civilizations"]
+    },
+    // B018: the vote of the World Congress (the "Win the World Leader vote" milestone is set by LeagueRules)
+    "Diplomatic": {
+     "victoryScreenHeader": "Be voted World Leader by the World Congress to win!",
+     "milestones": ["Win the World Leader vote"]
     }
    }
   },
