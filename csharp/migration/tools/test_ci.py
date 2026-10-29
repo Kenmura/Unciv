@@ -150,3 +150,70 @@ class WorkflowShape(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ClientPlatforms(unittest.TestCase):
+    """T258: release.py, CI, package.sh, the export presets and the archive checker agree on the platform list (T279 builds the same archives)."""
+
+    def load(self, name):
+        spec = importlib.util.spec_from_file_location(name, HERE / f"{name}.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_release_py_builds_linux_windows_and_macos_by_default(self):
+        self.assertEqual(self.load("release").CLIENT_PLATFORMS, ["linux", "windows", "macos"])
+
+    def test_ci_exports_exactly_the_release_platforms(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        packaged = re.findall(r"Unciv\.Godot/tools/package\.sh (\w+)", text)
+        checked = re.findall(r"check_package\.py (\w+)", text)
+        self.assertEqual(packaged, self.load("release").CLIENT_PLATFORMS)
+        self.assertEqual(checked, packaged)
+
+    def test_package_script_presets_and_checker_cover_every_platform(self):
+        package = (REPO / "csharp" / "Unciv.Godot" / "tools" / "package.sh").read_text(encoding="utf-8")
+        presets = (REPO / "csharp" / "Unciv.Godot" / "export_presets.cfg").read_text(encoding="utf-8")
+        checker = self.load("check_package")
+        self.assertEqual(sorted(checker.PLATFORMS), sorted(self.load("release").CLIENT_PLATFORMS))
+        for platform, preset in (("linux", "Linux"), ("windows", "Windows"), ("macos", "macOS")):
+            self.assertIn(f'    {platform}) preset="{preset}"', package)
+            self.assertIn(f'name="{preset}"', presets)
+        self.assertRegex(presets, r'(?s)name="macOS".*codesign/codesign=0.*notarization/notarization=0')  # unsigned, un-notarised
+
+    def test_archive_names_are_the_documented_ones(self):
+        names = {p: self.load("check_package").PLATFORMS[p][0] for p in ("linux", "windows", "macos")}
+        self.assertEqual(names, {"linux": "Unciv-client-linux.tar.gz", "windows": "Unciv-client-windows.zip", "macos": "Unciv-client-macos.zip"})
+        package = (REPO / "csharp" / "Unciv.Godot" / "tools" / "package.sh").read_text(encoding="utf-8")
+        self.assertIn("Unciv-client-linux.tar.gz", package)
+        self.assertIn("Unciv-client-$platform.zip", package)
+
+
+class CheckPackage(unittest.TestCase):
+    """T258: check_package.py accepts a complete archive and names what is missing or too small."""
+
+    def build(self, tmp, platform, drop=None, exe_size=None):
+        import zipfile
+
+        mod = ClientPlatforms().load("check_package")
+        name, exe, minimum, required = mod.PLATFORMS[platform]
+        top = f"Unciv-{platform}/"
+        paths = {exe: exe_size if exe_size is not None else minimum}
+        for pattern in required:
+            paths.setdefault(pattern.replace("\\", ""), 1)  # a literal path that matches the regex
+        archive = Path(tmp) / "a.zip"
+        with zipfile.ZipFile(archive, "w") as z:
+            for p, size in paths.items():
+                if p != drop:
+                    z.writestr(top + p, b"\0" * size)
+        return mod, archive
+
+    def test_complete_archive_passes_and_gaps_are_reported(self):
+        with tempfile.TemporaryDirectory() as t:
+            mod, archive = self.build(t, "windows")
+            self.assertEqual(mod.check("windows", archive), [])
+            mod, archive = self.build(t, "windows", drop="LICENSE")
+            self.assertTrue(any("LICENSE" in p for p in mod.check("windows", archive)))
+            mod, archive = self.build(t, "windows", exe_size=10)
+            self.assertTrue(any("expected at least" in p for p in mod.check("windows", archive)))
+            self.assertTrue(any("does not exist" in p for p in mod.check("windows", Path(t) / "none.zip")))

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Build the CLI and the Godot client from the current (clean) tree and publish them to <repo>/csharp-releases/.
 
-Usage: release.py T### [--cli-only | --client-only] [--windows] [--keep N] [--force] [--dry-run]
+Usage: release.py T### [--cli-only | --client-only] [--linux-only] [--keep N] [--force] [--dry-run]
 
 ticket.py runs this after every `state T### Done`. The folder sits next to `csharp/` in the main checkout (never inside a worktree, which is
 removed when its agent finishes):
 
     csharp-releases/<ticket>-<shortsha>/cli/        dotnet publish of Unciv.Cli, self-contained linux-x64 (runtime and data/jsons bundled: ./Unciv.Cli works with no dotnet installed)
     csharp-releases/<ticket>-<shortsha>/client-linux/   Unciv.Godot/tools/package.sh linux (self-contained: Godot export with the .NET runtime, data/jsons, fonts, LICENSE, notices)
+    csharp-releases/<ticket>-<shortsha>/client-windows/ and client-macos/   the same for the other platforms (T258; --linux-only skips them). Only the Linux build is ever run
+                                                       (smoke-export.sh in CI); Windows and macOS are checked for file presence and size (check_package.py) and are UNVERIFIED otherwise.
     csharp-releases/<ticket>-<shortsha>/manifest.json   ticket, commit, tree, build time, what was built
     csharp-releases/latest -> newest version (only moves forward: a build of a commit older than the current latest never replaces it)
     csharp-releases/releases.log                         one line per release
@@ -31,6 +33,7 @@ CSHARP = HERE.parent
 CONTAINER = "dotnet-dev"
 KEEP_DEFAULT = 5
 RID = "linux-x64"
+CLIENT_PLATFORMS = ["linux", "windows", "macos"]  # T258: default client platforms; T279 builds the same list, in the same order, as release archives
 
 
 def git(*args, check=True):
@@ -139,11 +142,11 @@ def point_latest(root, name):
 
 def main(argv):
     if not argv or argv[0].startswith("-"):
-        die("usage: release.py T### [--cli-only | --client-only] [--windows] [--keep N] [--force] [--dry-run]", 2)
+        die("usage: release.py T### [--cli-only | --client-only] [--linux-only] [--keep N] [--force] [--dry-run]", 2)
     tid, opts = argv[0], argv[1:]
     cli = "--client-only" not in opts
     client = "--cli-only" not in opts
-    windows = "--windows" in opts
+    platforms = ["linux"] if "--linux-only" in opts else CLIENT_PLATFORMS
     force, dry = "--force" in opts, "--dry-run" in opts
     keep = int(opts[opts.index("--keep") + 1]) if "--keep" in opts else KEEP_DEFAULT
     if git("status", "--porcelain").stdout.strip():
@@ -154,7 +157,7 @@ def main(argv):
     root = releases_root()
     print(f"release: {tid} @ {sha[:9]} -> {root}/{name}")
     if dry:
-        print(f"release: dry run (cli={cli}, client={client}, windows={windows}, keep={keep})")
+        print(f"release: dry run (cli={cli}, client={client}, platforms={platforms}, keep={keep})")
         return
     root.mkdir(parents=True, exist_ok=True)
     if not force:
@@ -177,8 +180,9 @@ def main(argv):
             smoke_cli(out)
             built.append("cli")
         if client:
-            for platform in ["linux"] + (["windows"] if windows else []):
+            for platform in platforms:
                 run(f"package client ({platform})", in_container(f"cd {shlex.quote(str(CSHARP))} && Unciv.Godot/tools/package.sh {platform}"), crash_retries=CRASH_RETRIES)
+                run(f"check {platform} archive", f"python3 -I {shlex.quote(str(HERE / 'tools' / 'check_package.py'))} {platform}")
                 shutil.copytree(CSHARP / "Unciv.Godot" / "build" / platform, stage / f"client-{platform}", symlinks=True)
                 built.append(f"client-{platform}")
         manifest = {"ticket": tid, "commit": sha, "tree": tree, "built": int(time.time()), "contents": built}

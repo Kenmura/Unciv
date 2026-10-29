@@ -47,7 +47,7 @@ public sealed class PackagingFilesTests
     public void PackageScriptCopiesRulesetsNoticesAndLicence()
     {
         var script = Read("tools/package.sh");
-        Assert.Contains("android/assets/jsons\" \"$out/data/jsons\"", script);
+        Assert.Contains("android/assets/jsons\" \"$root/data/jsons\"", script);
         Assert.Contains("THIRD_PARTY_NOTICES.md", script);
         Assert.Contains("LICENSE", script);
         Assert.Contains("--export-release", script);

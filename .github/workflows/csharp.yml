@@ -132,7 +132,7 @@ jobs:
 
   # Export smoke (C042): the packaged client must start from a folder outside the checkout and reach the main menu.
   client-export:
-    name: Export the Linux client (smoke)
+    name: Export the Linux client (smoke) and the Windows and macOS clients (archive check)
     if: github.event_name != 'schedule'
     needs: engine
     runs-on: ubuntu-24.04
@@ -171,6 +171,22 @@ jobs:
       - name: Smoke the packaged build
         working-directory: csharp
         run: Unciv.Godot/tools/smoke-export.sh
+      # T258: Windows and macOS are exported with the existing presets and only checked for file presence and size; nothing can run them here (UNVERIFIED, see GODOT.md).
+      - name: Check the Linux archive
+        working-directory: csharp
+        run: python3 -I migration/tools/check_package.py linux
+      - name: Package (Windows)
+        working-directory: csharp
+        run: Unciv.Godot/tools/retry-on-crash.sh 2 Unciv.Godot/tools/package.sh windows
+      - name: Check the Windows archive (presence and size only)
+        working-directory: csharp
+        run: python3 -I migration/tools/check_package.py windows
+      - name: Package (macOS, unsigned)
+        working-directory: csharp
+        run: Unciv.Godot/tools/retry-on-crash.sh 2 Unciv.Godot/tools/package.sh macos
+      - name: Check the macOS archive (presence and size only)
+        working-directory: csharp
+        run: python3 -I migration/tools/check_package.py macos
 
   # Rendered scenarios (C008) against the committed goldens. Goldens were recorded with Fedora's Mesa llvmpipe; ubuntu's differs in blending (T246), so
   # the job compares with GoldenTolerance.Renderer (HARNESS_GOLDEN_TOLERANCE below). T239 saw it green on the runner image, so it gates like the others.
