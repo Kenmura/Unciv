@@ -163,8 +163,15 @@ public partial class HudView : Control
         Rebuild(force: true);
     }
 
-    /// <summary>Height of the top bar in pixels (what <see cref="WorldHud"/> reserves for it).</summary>
-    public float TopBarHeight => theme?.Px(theme.Breakpoint == UiBreakpoint.Compact ? CompactBarHeight : BarHeight) ?? BarHeight;
+    /// <summary>Height of the top bar in pixels (what <see cref="WorldHud"/> reserves for it); C101: on a touch build never less than the bar's own minimum height (the 48 dp menu button makes it taller); a mouse build is unchanged.</summary>
+    public float TopBarHeight
+    {
+        get
+        {
+            float height = theme?.Px(theme.Breakpoint == UiBreakpoint.Compact ? CompactBarHeight : BarHeight) ?? BarHeight;
+            return theme is { MinTargetPx: > 0 } ? Math.Max(height, bar.GetCombinedMinimumSize().Y) : height;
+        }
+    }
 
     public void Update(EmpireTopBarResult topBar, HudAction action, bool canEndTurn)
     {

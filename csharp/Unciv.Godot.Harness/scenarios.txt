@@ -57,3 +57,4 @@ map-pings
 group-move
 phone-world
 touch-orders
+phone-menus

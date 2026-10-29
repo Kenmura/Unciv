@@ -83,6 +83,7 @@
 - [C096 Touch map input and density-derived UI scale: pinch/pan, tap and long-press, 48 dp targets, phone-world scenario](#c096-touch-map-input-and-density-derived-ui-scale-pinchpan-tap-and-long-press-48-dp-targets-phone-world-scenario)
 - [C097 Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike)](#c097-graphics-quality-setting-with-an-ultra-preset-effects-chosen-by-the-ultra-graphics-spike)
 - [C100 Touch replacements for mouse-only interaction: right-click move/attack, tap tooltips, modifier toggles, queue reorder](#c100-touch-replacements-for-mouse-only-interaction-right-click-moveattack-tap-tooltips-modifier-toggles-queue-reorder)
+- [C101 (ticket not Done or unknown)](#c101-ticket-not-done-or-unknown)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
@@ -1634,9 +1635,9 @@ Touch on a 2400x1080 400 ppi phone profile: density-derived UI scale 2.5 with 48
 
 Scenario `phone-world`.
 
-![The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall. The HUD is not re-laid-out for a phone yet (C101).](../Unciv.Godot.Harness/golden/phone-world/phone-hud.png)
+![The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall; the nav icon row now sits clear of Review alerts (C101).](../Unciv.Godot.Harness/golden/phone-world/phone-hud.png)
 
-*The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall. The HUD is not re-laid-out for a phone yet (C101).* (`phone-world/phone-hud.png`)
+*The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall; the nav icon row now sits clear of Review alerts (C101).* (`phone-world/phone-hud.png`)
 
 ![After pinch zoom, two-finger pan, taps and a long press: the map is zoomed, the tapped tile is selected and the long press acted as a right click (the worker's move order was refused: it is already there).](../Unciv.Godot.Harness/golden/phone-world/phone-zoomed.png)
 
@@ -1677,6 +1678,40 @@ Scenario `touch-orders`.
 ![A long press on a worked tile of the city screen locked it (padlock on the tile, tile tip shown) and the hint line says Long press: lock.](../Unciv.Godot.Harness/golden/touch-orders/tile-locked.png)
 
 *A long press on a worked tile of the city screen locked it (padlock on the tile, tile tip shown) and the hint line says Long press: lock.* (`touch-orders/tile-locked.png`)
+
+## C101 (ticket not Done or unknown)
+
+The menu screens on a 2400x1080 400 ppi phone profile: the app theme is bound to the density scale (2.5, 48 dp targets), so the main menu, new game, host, lobby, join and options screens and a modal are touch sized and fit.
+
+Scenario `phone-menus`.
+
+![The main menu on a phone: the scaled column of 48 dp buttons is centred and fits.](../Unciv.Godot.Harness/golden/phone-menus/main-menu.png)
+
+*The main menu on a phone: the scaled column of 48 dp buttons is centred and fits.* (`phone-menus/main-menu.png`)
+
+![New game on a phone: tabs, steppers (icon buttons) and the player rows are touch targets; the page scrolls under the header and Back/Start sit in the footer.](../Unciv.Godot.Harness/golden/phone-menus/new-game.png)
+
+*New game on a phone: tabs, steppers (icon buttons) and the player rows are touch targets; the page scrolls under the header and Back/Start sit in the footer.* (`phone-menus/new-game.png`)
+
+![Host game on a phone: the Game tab's buttons and fields are touch targets and the page scrolls; the two check boxes are still small and the screen is not yet framed like the others (known gaps, see C101 notes).](../Unciv.Godot.Harness/golden/phone-menus/host.png)
+
+*Host game on a phone: the Game tab's buttons and fields are touch targets and the page scrolls; the two check boxes are still small and the screen is not yet framed like the others (known gaps, see C101 notes).* (`phone-menus/host.png`)
+
+![The host's lobby on a phone: seats, Ready and Pick nation, and Start/Leave stay on screen (the settings list scrolls beside the chat); the content keeps a margin from the screen edge.](../Unciv.Godot.Harness/golden/phone-menus/lobby.png)
+
+*The host's lobby on a phone: seats, Ready and Pick nation, and Start/Leave stay on screen (the settings list scrolls beside the chat); the content keeps a margin from the screen edge.* (`phone-menus/lobby.png`)
+
+![Multiplayer join on a phone: the address and password fields and Join/Back are touch targets.](../Unciv.Godot.Harness/golden/phone-menus/join.png)
+
+*Multiplayer join on a phone: the address and password fields and Join/Back are touch targets.* (`phone-menus/join.png`)
+
+![Options on a phone: the section list and the setting rows are touch targets.](../Unciv.Godot.Harness/golden/phone-menus/options.png)
+
+*Options on a phone: the section list and the setting rows are touch targets.* (`phone-menus/options.png`)
+
+![A confirmation modal on a phone: centred, readable, both choices touch targets.](../Unciv.Godot.Harness/golden/phone-menus/modal.png)
+
+*A confirmation modal on a phone: centred, readable, both choices touch targets.* (`phone-menus/modal.png`)
 
 ## T252 (ticket not Done or unknown)
 

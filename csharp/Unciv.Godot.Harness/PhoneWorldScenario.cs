@@ -30,7 +30,7 @@ public sealed class PhoneWorldScenario : Scenario
 
     public override IReadOnlyList<string> Checklist =>
     [
-        "Is every button and tab big enough for a thumb (about 9 mm) (per-screen phone layout is C101: the top-right icon row overlapping Review alerts here is known)?",
+        "Is every button and tab big enough for a thumb (about 9 mm)?",
     ];
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
@@ -67,7 +67,8 @@ public sealed class PhoneWorldScenario : Scenario
                 foreach (string line in bad.Take(10)) GD.PrintErr("[phone-world] undersized " + line);
                 return bad.Count == 0;
             }),
-            new Capture("phone-hud", "The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window) with every button at least 48 dp (120 px) tall"),
+            new AssertQuery("no HUD element overlaps another (the nav icon row clears Review alerts and Notifications) and all stay on the screen", () => HudClear(screen, viewport)),
+            new Capture("phone-hud", "The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window) with every button at least 48 dp (120 px) tall, the icon row clear of Review alerts"),
             new Act("pinch apart about the map centre", () =>
             {
                 zoomBefore = map.Zoom;
@@ -142,6 +143,21 @@ public sealed class PhoneWorldScenario : Scenario
             new AssertQuery("the long press selected nothing and sent no command", () => clicked == 3 && rightClicked == 1 && session.Log.Count == 0),
             new Capture("phone-zoomed", "After a pinch, a two-finger pan, taps and a long press: the map zoomed about the fingers, the tapped tile is selected, and the long press acted as a right click (the selected worker's move order was refused: it is already there)"),
         ];
+    }
+
+    private static bool HudClear(GameScreen screen, Viewport viewport)
+    {
+        var rects = screen.World.Rects();
+        var window = new Rect2(Vector2.Zero, viewport.GetVisibleRect().Size);
+        foreach (string needed in new[] { "ReviewAlerts", "Notifications", "Diplomacy" })
+            if (rects.All(it => it.Name != needed)) { GD.PrintErr($"[phone-world] {needed} is not showing, so its clearance was not checked"); return false; }
+        for (int i = 0; i < rects.Count; i++)
+        {
+            if (!window.Encloses(rects[i].Rect)) { GD.PrintErr($"[phone-world] {rects[i].Name} leaves the window"); return false; }
+            for (int j = i + 1; j < rects.Count; j++)
+                if (rects[i].Rect.Intersects(rects[j].Rect)) { GD.PrintErr($"[phone-world] {rects[i].Name} {rects[i].Rect} overlaps {rects[j].Name} {rects[j].Rect}"); return false; }
+        }
+        return true;
     }
 
     private static IEnumerable<BaseButton> AllButtons(Node root)

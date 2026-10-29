@@ -183,7 +183,18 @@ public partial class LobbyScreen : Control
         this.Fill();
         var column = new VBoxContainer();
         column.Fill();
-        AddChild(column);
+        // C101: a touch build keeps the content off the screen edges (rounded corners, the notch); a mouse build is unchanged
+        if (theme.MinTargetPx > 0)
+        {
+            var margin = new MarginContainer { Name = "LobbyMargin" };
+            margin.Fill();
+            foreach (string side in new[] { "left", "top", "right", "bottom" }) margin.AddThemeConstantOverride("margin_" + side, theme.Px(UiTokens.S3));
+            AddChild(margin);
+            column.SetAnchorsPreset(LayoutPreset.TopLeft);
+            column.SizeFlagsVertical = SizeFlags.ExpandFill;
+            margin.AddChild(column);
+        }
+        else AddChild(column);
         column.AddChild(titleLabel);
         slotsBox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         column.AddChild(slotsBox);
@@ -202,11 +213,14 @@ public partial class LobbyScreen : Control
 
         // Settings (read-only; the host edits them on the Host screen) on the left, chat on the right; hidden while the nation picker is open.
         column.AddChild(bottomRow);
-        var settings = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 2 };
+        // C101: the settings scroll when they do not fit beside the chat, so Start and Leave stay on the screen of a phone
+        var settingsScroll = new ScrollContainer { Name = "SettingsScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 2 };
+        var settings = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        settingsScroll.AddChild(settings);
         settings.AddChild(new Label { Text = (host ? "Settings (change them on the Host screen)" : "Settings (set by the host)").Tr(), AutowrapMode = TextServer.AutowrapMode.WordSmart });
         settingsLabel.AddThemeFontSizeOverride("font_size", theme.Px(13));
         settings.AddChild(settingsLabel);
-        bottomRow.AddChild(settings);
+        bottomRow.AddChild(settingsScroll);
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 3 };
         bottomRow.AddChild(right);
         right.AddChild(new Label { Text = "Chat".Tr() });

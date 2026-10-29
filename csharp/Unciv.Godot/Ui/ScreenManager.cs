@@ -29,6 +29,17 @@ public partial class ScreenManager : Control
     public UiTheme UiTheme { get; }
 
     /// <summary>
+    /// C101: on a touch build the menu theme follows the window like the world screen's does: the density-derived scale and the 48 dp target floor reach every menu screen built
+    /// below this root. A mouse build keeps the unbound theme (scale 1), as before.
+    /// </summary>
+    public override void _EnterTree()
+    {
+        if (DisplayProfile.Current.UsesDensity) UiTheme.Bind(GetViewport());
+    }
+
+    public override void _ExitTree() => UiTheme.Unbind();
+
+    /// <summary>
     /// C079: mirrors every screen, popup and tooltip below this root for a right-to-left language (the containers then lay their children out from the right): the direction is
     /// set on this root, so every control below it inherits it, and follows the language from now on.
     /// </summary>

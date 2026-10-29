@@ -114,13 +114,19 @@ public partial class WorldHud : Control
 
     private bool Compact => theme.Breakpoint == UiBreakpoint.Compact;
 
+    /// <summary>C101: the nav row's height in pixels; on a touch build never below the 48 dp target, so what sits under the row (notification column, toast) starts below the buttons.</summary>
+    private int NavPx => theme.MinTargetPx > 0 ? Math.Max(Math.Max(theme.Px(NavHeight), theme.MinTargetPx), (int)MathF.Ceiling(NavButtonsHeight())) : theme.Px(NavHeight);
+
+    /// <summary>The tallest nav button's minimum height (a button's padding can make it taller than the 48 dp floor), so the row and what hangs under it are sized from the buttons themselves.</summary>
+    private float NavButtonsHeight() => navLeft.GetChildren().Concat(navRight.GetChildren()).OfType<Control>().Where(it => it.Visible).Select(it => it.GetCombinedMinimumSize().Y).DefaultIfEmpty(0f).Max();
+
     private float Gap => theme.Px(UiTokens.S2);
 
     /// <summary>Global y of the bottom edge of the top bar (what tooltips stay below).</summary>
     public float BarBottom => hud.BarRect.End.Y;
 
     /// <summary>Global y just under the nav row, where the screen's other top-anchored panels (tutorial card, turn bar) start.</summary>
-    public float NavBottom => theme == null ? 0f : hud.TopBarHeight + Gap + theme.Px(NavHeight);
+    public float NavBottom => theme == null ? 0f : hud.TopBarHeight + Gap + NavPx;
 
     /// <summary>Hands the layout the widgets it places. Call once, before <see cref="Init"/>.</summary>
     public void Mount(HudView content, NotificationListView notificationList, MinimapView minimapView)
@@ -151,10 +157,11 @@ public partial class WorldHud : Control
         int gap = theme.Px(UiTokens.S2);
         foreach (string side in new[] { "left", "top", "right", "bottom" }) body.AddThemeConstantOverride("margin_" + side, side == "top" ? 0 : gap);
         bodyColumn.AddThemeConstantOverride("separation", gap);
+        BuildNav(); // before the sizes below: they reckon with the buttons' own height (NavPx)
         notificationLayer.AddThemeConstantOverride("margin_top", (int)NavBottom + gap);
         notificationLayer.AddThemeConstantOverride("margin_right", gap);
         notificationLayer.AddThemeConstantOverride("margin_left", gap);
-        navRow.CustomMinimumSize = new Vector2(0f, theme.Px(NavHeight));
+        navRow.CustomMinimumSize = new Vector2(0f, NavPx);
         navLeft.AddThemeConstantOverride("separation", gap);
         navRight.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
         rightDock.AddThemeConstantOverride("separation", gap);
@@ -163,8 +170,7 @@ public partial class WorldHud : Control
         toastLayer.Theme = uiTheme.Theme;
         hud.Toast.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterTop);
         hud.Toast.GrowHorizontal = GrowDirection.Both;
-        hud.Toast.OffsetTop = hud.TopBarHeight + 2 * gap + theme.Px(NavHeight);
-        BuildNav();
+        hud.Toast.OffsetTop = hud.TopBarHeight + 2 * gap + NavPx;
     }
 
     /// <summary>Rebuilds when the breakpoint or the UI scale changed since the last build (a window resize across 1000 logical pixels, or to a size with another automatic scale, C079: the pixel sizes the build reckoned with are stale then); any other resize needs nothing, the containers follow.</summary>

@@ -15,7 +15,8 @@ public partial class MainMenu : Control
 {
     private readonly Button resume;
 
-    public MainMenu()
+    /// <param name="theme">C101: when given, the column is 260 px at the theme's scale (wider on a touch build; a mouse build with the default scale gets 260 px); without it 260 px.</param>
+    public MainMenu(UiTheme? theme = null)
     {
         Name = "MainMenu";
         var backdrop = new ColorRect { Name = "Backdrop", Color = ProceduralAssets.ToColor(UiTokens.Bg1), MouseFilter = MouseFilterEnum.Ignore };
@@ -24,7 +25,7 @@ public partial class MainMenu : Control
         var centre = new CenterContainer();
         centre.Fill();
         AddChild(centre);
-        var column = new VBoxContainer { Name = "MenuColumn", CustomMinimumSize = new Vector2(260, 0) };
+        var column = new VBoxContainer { Name = "MenuColumn", CustomMinimumSize = new Vector2(theme?.Px(260) ?? 260, 0) };
         column.AddThemeConstantOverride("separation", UiTokens.S2);
         centre.AddChild(column);
         column.AddChild(new Label { Name = "Logo", Text = "Unciv".Tr(), HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = UiVariants.LabelDisplay });

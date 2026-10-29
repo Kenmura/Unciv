@@ -1627,7 +1627,7 @@
     "shots": [
       {
         "golden": "phone-world/phone-hud.png",
-        "caption": "The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall. The HUD is not re-laid-out for a phone yet (C101)."
+        "caption": "The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall; the nav icon row now sits clear of Review alerts (C101)."
       },
       {
         "golden": "phone-world/phone-zoomed.png",
@@ -1646,6 +1646,40 @@
       {
         "golden": "touch-orders/tile-locked.png",
         "caption": "A long press on a worked tile of the city screen locked it (padlock on the tile, tile tip shown) and the hint line says Long press: lock."
+      }
+    ]
+  },
+  "C101": {
+    "scenario": "phone-menus",
+    "about": "The menu screens on a 2400x1080 400 ppi phone profile: the app theme is bound to the density scale (2.5, 48 dp targets), so the main menu, new game, host, lobby, join and options screens and a modal are touch sized and fit.",
+    "shots": [
+      {
+        "golden": "phone-menus/main-menu.png",
+        "caption": "The main menu on a phone: the scaled column of 48 dp buttons is centred and fits."
+      },
+      {
+        "golden": "phone-menus/new-game.png",
+        "caption": "New game on a phone: tabs, steppers (icon buttons) and the player rows are touch targets; the page scrolls under the header and Back/Start sit in the footer."
+      },
+      {
+        "golden": "phone-menus/host.png",
+        "caption": "Host game on a phone: the Game tab's buttons and fields are touch targets and the page scrolls; the two check boxes are still small and the screen is not yet framed like the others (known gaps, see C101 notes)."
+      },
+      {
+        "golden": "phone-menus/lobby.png",
+        "caption": "The host's lobby on a phone: seats, Ready and Pick nation, and Start/Leave stay on screen (the settings list scrolls beside the chat); the content keeps a margin from the screen edge."
+      },
+      {
+        "golden": "phone-menus/join.png",
+        "caption": "Multiplayer join on a phone: the address and password fields and Join/Back are touch targets."
+      },
+      {
+        "golden": "phone-menus/options.png",
+        "caption": "Options on a phone: the section list and the setting rows are touch targets."
+      },
+      {
+        "golden": "phone-menus/modal.png",
+        "caption": "A confirmation modal on a phone: centred, readable, both choices touch targets."
       }
     ]
   }

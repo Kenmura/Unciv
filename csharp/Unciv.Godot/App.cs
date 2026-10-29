@@ -68,7 +68,7 @@ public partial class App : Node
     // The menu is rebuilt each time (leaving a game frees the screen stack, menu included); the same save controller serves every menu.
     private void ShowMenu(bool first)
     {
-        menu = new MainMenu();
+        menu = new MainMenu(theme);
         menu.NewGameRequested += OpenNewGame;
         menu.ResumeRequested += () => _ = menuSaves.ResumeLastAsync();
         menu.LoadRequested += menuSaves.OpenDialog;
