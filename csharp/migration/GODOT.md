@@ -9,8 +9,8 @@
 - [Scenarios and the owner review sheet (C008)](#scenarios-and-the-owner-review-sheet-c008)
 - [Limits](#limits)
 - [Packaging an exported client (C042)](#packaging-an-exported-client-c042)
+  - [Android APK (T260)](#android-apk-t260)
 - [How a release is produced (T169)](#how-a-release-is-produced-t169)
-  - [Client platforms and what is verified (T258)](#client-platforms-and-what-is-verified-t258)
   - [Known Godot headless export crashes and the retry](#known-godot-headless-export-crashes-and-the-retry)
 - [CI (T169)](#ci-t169)
 <!-- /toc -->
@@ -80,19 +80,19 @@ proves a wrong golden fails. `review-sheet.sh` runs all scenarios and writes `ou
 - `Unciv.Godot.Harness` is not in `Unciv.sln`: it needs the Godot SDK and runtime, which the Standard checks must not require.
   Its gate is `tools/run-smoke.sh`.
 - `Unciv.Godot` (C001) is the real client project: it references `Unciv.Core`, boots an empty `Main.tscn`, and is likewise kept out of `Unciv.sln`. CI builds it headlessly with `dotnet build Unciv.Godot -warnaserror` (needs only the .NET SDK and the `Godot.NET.Sdk` NuGet package; no editor or Godot binary). It uses no assets (see ASSETS.md).
-- The harness and the smoke run are Linux x86-64 only (the install script and the Xvfb path). Windows and macOS clients are exported and packaged (T258) but never run here: see the platform table under Packaging.
+- Linux x86-64 only (the install script and the Xvfb path). Windows/macOS are not covered.
 - llvmpipe is slow; keep test scenes small and the resolution at 640x480 unless a ticket needs more.
 
 ## Packaging an exported client (C042)
 
 ```
 Unciv.Godot/tools/install-export-templates.sh      # once: export templates matching the pinned editor (checksum verified)
-Unciv.Godot/tools/package.sh [linux|windows|macos] # -> Unciv.Godot/build/<platform>/ and the archive Unciv.Godot/build/Unciv-client-<platform>.* (git-ignored)
-python3 -I migration/tools/check_package.py <platform>   # file-presence and size check of that archive
+Unciv.Godot/tools/package.sh [linux|windows]       # -> Unciv.Godot/build/<platform>/ (git-ignored)
 Unciv.Godot/tools/smoke-export.sh                  # copies build/linux outside the checkout, runs it under Xvfb, expects the main menu
 ```
 
-`package.sh` builds, runs `--export-release` with the presets in `Unciv.Godot/export_presets.cfg` (Linux, Windows, macOS), then copies `android/assets/jsons` (rulesets and `translations/`) to
+`package.sh` builds, runs `--export-release` with the presets in `Unciv.Godot/export_presets.cfg` (Linux, Windows; **macOS is not
+a preset yet**: it needs a Mac host for signing/notarisation), then copies `android/assets/jsons` (rulesets and `translations/`) to
 `<build>/data/jsons`, plus `LICENSE` and `THIRD_PARTY_NOTICES.md`. `RulesetLocator` looks for `data/jsons` beside the executable first and
 falls back to the checkout's `android/assets/jsons` when run from the editor (`ContentLocator`). Godot's .NET export requires a solution file
 beside `project.godot`; the script generates a throw-away, git-ignored `Unciv.Godot.sln`. Template version = editor version (`4.7.2-stable`),
@@ -101,50 +101,42 @@ pinned in `setup-godot.sh` and `install-export-templates.sh`; a unit test keeps 
 Local mods: drop mod folders (same layout as Unciv's `mods/`) into the `mods` folder of the user data directory (`user://mods`, created on first start;
 Linux `~/.local/share/godot/app_userdata/Unciv/mods`). They are loaded with the built-in rulesets at start-up.
 No Firaxis/Civ 5 or Unciv atlas/sound/image is bundled (the client draws generated placeholders).
+### Android APK (T260)
+
+```
+export ANDROID_HOME=$HOME/Android/Sdk      # cmdline-tools/latest, platform-tools, build-tools/36.1.0 (sdkmanager 'cmdline-tools;latest' 'platform-tools' 'build-tools;36.1.0' 'platforms;android-36')
+Unciv.Godot/tools/install-export-templates.sh
+Unciv.Godot/tools/package.sh android               # -> Unciv.Godot/build/android/Unciv.apk (arm64-v8a, debug-signed)
+Unciv.Godot/tools/package.sh android-emulator      # -> build/android/Unciv-emulator.apk (arm64-v8a + x86_64, for the emulator)
+adb install -r Unciv.Godot/build/android/Unciv.apk && adb shell am start -n org.unciv.godot/com.godot.game.GodotApp
+```
+
+- **Why net9.0.** The Godot 4.7.2 Android export template bundles .NET 9 and refuses a `net10.0` game assembly. `package.sh android` exports
+  `UncivAndroid=true`, which makes `Unciv.Core`, `Unciv.Assets`, `Unciv.Client.Net`, `Unciv.Server` and `Unciv.Godot` build for `net9.0`
+  (`$(UncivTfm)` in `Directory.Build.props`; `Unciv.Godot.csproj` keeps literal `net10.0`/`net9.0` elements because the Godot editor rewrites a TFM it cannot read as text).
+  Desktop builds, the CLI, the harness and the tests stay `net10.0`. The only net10-only API was `JsonDocumentOptions.AllowDuplicateProperties` in `ProtocolCodec`
+  (net9 path rejects duplicate keys with `ProtocolCodec.HasDuplicateProperties`, unit-tested). Building both TFMs in one checkout re-restores `obj/` on each switch (automatic, a few seconds).
+- **Preflight.** The script checks for the SDK pieces, `keytool` and the Android templates first and exits 3 listing exactly what is missing. No NDK and no Gradle are needed (prebuilt templates, `gradle_build/use_gradle_build=false`).
+- **Signing.** The script generates a throw-away keystore in `build/android/` for each build, hands it to Godot through `GODOT_ANDROID_KEYSTORE_DEBUG_*` and deletes it; nothing is committed. The APK is a debug build (`--export-debug`), good for sideloading, not for a store.
+- **Preset.** `export_presets.cfg` `Android` / `Android (emulator)`: package `org.unciv.godot`, `INTERNET` and `CHANGE_WIFI_MULTICAST_STATE`, immersive mode, `window/handheld/orientation=4` (sensor landscape, in `project.godot`).
+- **Reinstall.** The keystore is regenerated on every build, so install a rebuilt APK with `adb uninstall org.unciv.godot` first (`install -r` fails on a signature mismatch).
+- **Editor.** To export from the editor instead: Editor Settings > Export > Android: set the Android SDK path, Java SDK path and a debug keystore, then Project > Export > Android.
+- **Content.** The APK does not yet carry the ruleset jsons, fonts or packs (T276); expect it to stop at the content check on a device until then.
 
 ## How a release is produced (T169)
 
 Releases are built **locally** and never by CI: `csharp-releases/` is git-ignored and CI publishes nothing.
 
-- `python3 -I tools/release.py T### [--cli-only | --client-only] [--linux-only] [--keep N] [--force] [--dry-run]` (run automatically by `ticket.py` after
+- `python3 -I tools/release.py T### [--cli-only | --client-only] [--windows] [--keep N] [--force] [--dry-run]` (run automatically by `ticket.py` after
   `state T### Done`) builds the tree it is run on into `<main checkout>/csharp-releases/<ticket>-<shortsha>/`:
-  `cli/` (`dotnet publish Unciv.Cli`, self-contained linux-x64, so `./Unciv.Cli` runs with no dotnet installed), `client-linux/`,
-  `client-windows/`, `client-macos/` (T258: the `package.sh` output below; `--linux-only` builds just the first; a failing Windows or macOS build only warns and is left out, a Linux failure fails the release) and `manifest.json`. `csharp-releases/latest` only ever moves forward, the newest 5 versions are kept, and a tree
+  `cli/` (`dotnet publish Unciv.Cli`, self-contained linux-x64, so `./Unciv.Cli` runs with no dotnet installed), `client-linux/` (the
+  `package.sh` output below) and `manifest.json`. `csharp-releases/latest` only ever moves forward, the newest 5 versions are kept, and a tree
   already released (same git tree id) is not rebuilt without `--force`. After building, the CLI is smoke-run with an empty `PATH`.
-- `Unciv.Godot/tools/package.sh [linux|windows|macos]` does the client: `dotnet build -c Release`, `godot --headless --export-release` with the presets in
+- `Unciv.Godot/tools/package.sh [linux|windows]` does the client: `dotnet build -c Release`, `godot --headless --export-release` with the presets in
   `export_presets.cfg`, then copies `data/jsons`, fonts, `LICENSE` and `THIRD_PARTY_NOTICES.md` next to the executable. Output is
   `Unciv.Godot/build/<platform>/` (git-ignored). `smoke-export.sh` runs the Linux build from outside the checkout and expects the main menu.
 - Needs: the pinned Godot 4.7.2 .NET editor (`setup-godot.sh`) and the matching export templates (`install-export-templates.sh`); both check SHA-512.
   Bump the version in those two scripts together (a unit test keeps them equal).
-
-### Client platforms and what is verified (T258)
-
-`release.py` (`CLIENT_PLATFORMS`), CI job `client-export`, `package.sh`, the presets and `check_package.py` share one platform list, and a unit test
-(`test_ci.py`, `ClientPlatforms`) keeps them equal. **T279 builds every release archive from `package.sh <platform>`; keep these names stable.**
-
-| Platform | Archive (top folder `Unciv-<platform>/`) | Executable | Exported from Linux with | Built by CI | Run by us |
-| --- | --- | --- | --- | --- | --- |
-| linux | `Unciv-client-linux.tar.gz` | `Unciv.x86_64` | preset `Linux` (x86_64) | yes, plus `smoke-export.sh` (main menu under Xvfb) | yes |
-| windows | `Unciv-client-windows.zip` | `Unciv.exe` | preset `Windows` (x86_64) | yes, archive check only | **UNVERIFIED**: never started on Windows |
-| macos | `Unciv-client-macos.zip` | `Unciv.app/Contents/MacOS/Unciv` | preset `macOS` (universal: x86_64 and arm64) | yes, archive check only | **UNVERIFIED**: never started on a Mac |
-
-What is verified for Windows and macOS: the export succeeds on Linux, the archive is produced, `check_package.py` finds the executable (size above a
-floor), the .NET assemblies folders (`data_Unciv.Godot_<platform>*`), `Unciv.pck`, `data/jsons`, fonts, icon packs, `LICENSE` and notices. That is all.
-It does not prove the client starts, renders, finds its content, or that the .NET runtime loads. Not done at all: code signing, notarisation (the
-macOS preset has `codesign/codesign=0` and `notarization/notarization=0`), a Windows installer, an Apple developer account.
-
-macOS specifics and manual steps (to be run by someone with a Mac, then recorded here):
-
-- The export is one universal binary; enabling that needed `textures/vram_compression/import_etc2_astc=true` in `project.godot` (without it Godot's export
-  reports a configuration error for universal/arm64). The only template Godot ships for macOS is universal.
-- Content (`data/`, `Assets/`, `Packs/`) is placed in `Unciv.app/Contents/MacOS` next to the executable, because the client resolves it relative to
-  the executable. It is unconventional for an app bundle (Apple expects `Contents/Resources`) and is harmless only while the app is unsigned; signing
-  later means moving the content or adding a resource lookup.
-- Gatekeeper blocks the first launch of an unsigned download. The archive carries `FIRST_RUN_MACOS.txt`: right-click, Open, or
-  `xattr -dr com.apple.quarantine Unciv.app`.
-- Manual smoke: unzip, run the `xattr` command, start `Unciv.app/Contents/MacOS/Unciv --rendering-driver opengl3 -- --exit-on-menu` from Terminal and
-  expect `UNCIV_MENU_READY` and exit code 0; then launch it from Finder, load the main menu, start a new game. Windows: the same with `Unciv.exe` from a
-  folder outside the download location (SmartScreen may warn). Until someone does this the rows above stay UNVERIFIED.
 
 ### Known Godot headless export crashes and the retry
 
@@ -166,7 +158,7 @@ The headless export crashes intermittently (about 1 in 15 fresh imports, more un
 | Job | Runs | What |
 |---|---|---|
 | `engine` | push, PR | the Green gate: `dotnet build -warnaserror`, `dotnet format --verify-no-changes`, `dotnet test`, `Unciv.Godot` and `Unciv.Godot.Harness` builds with `-warnaserror` (they need only the SDK and the `Godot.NET.Sdk` NuGet package), `coverage.py --check` (base chosen by `tools/ci_base.py`: PR merge-base, push `before`, else `--all`), `screenshots.py --check`, `ticket.py check`, the tools' Python unit tests |
-| `client-export` | push, PR | pinned Godot + export templates (cached, SHA-512 checked), `retry-on-crash.sh 2 package.sh linux`, `smoke-export.sh`; then packages windows and macos and runs `check_package.py` on all three archives (T258, presence and size only) |
+| `client-export` | push, PR | pinned Godot + export templates (cached, SHA-512 checked), `retry-on-crash.sh 2 package.sh linux`, `smoke-export.sh` |
 | `client-scenarios` | push, PR (non-blocking) | `run-smoke.sh`, every scenario in `scenarios.txt`, and `run-scenario.sh menu --expect-golden-failure`, under Xvfb |
 | `soak` | weekly schedule, manual | `UNCIV_SOAK=1 dotnet test --filter Category=Soak` (T167); the ordinary `dotnet test` skips it |
 

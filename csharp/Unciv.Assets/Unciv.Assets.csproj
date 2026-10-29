@@ -3,7 +3,7 @@
   <!-- C007: engine-independent half of the client asset system (key resolution, fallback chains, procedural generation maths).
        Plain net10.0 with no Godot reference so the Standard checks build and test it; Unciv.Godot turns its output into engine objects. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>$(UncivTfm)</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>

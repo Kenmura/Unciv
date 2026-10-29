@@ -80,6 +80,10 @@ Recommended: A, with B as the fallback (see the decision in section 5).
 Estimate total for an arm64-only debug APK: 90 to 130 MB. That is below the 150 MB Play base limit but large for a sideloaded game; the 41 MB model pack is the lever (T260 may ship the
 APK without it only if the client tolerates a missing pack, which it does for icons but is not verified for models).
 
+**T260 resolution (option A taken).** `UncivAndroid=true` builds the five projects for `net9.0`; `dotnet build Unciv.Godot -warnaserror` with it **Verified** succeeds, and the Godot 4.7.2 headless
+`--export-debug Android` validation **Verified** no longer reports the net10.0 error (against a stand-in SDK folder it now stops only at the missing real SDK build-tools). Recipe and details: `GODOT.md`, section "Android APK (T260)".
+The one net10-only API was `AllowDuplicateProperties` (shimmed in `ProtocolCodec`). **APK size: not measured**, there is still no Android SDK in this environment, so `package.sh android` could not run to completion and no APK was produced (UNVERIFIED; T277 CI / T278 device).
+
 ## 2. Renderer and frame budget
 
 **From source.** `project.godot` sets `renderer/rendering_method="gl_compatibility"` and `renderer/rendering_method.mobile="gl_compatibility"`, so Android already uses the OpenGL ES 3.0
@@ -141,8 +145,6 @@ Facts that shape every item:
 | B-10 | Marker menu and pings open on right click and close on any click outside | `Play/GameScreen.cs:439`, `MapMarkerMenuView` | S (follows B-2) |
 | B-11 | Unit panel popover closes on any mouse click outside (`UnitPanelView._Input`) | `Play/UnitPanelView.cs:204` | S |
 | B-12 | Minimap: click-to-recenter works through emulation; drag on it conflicts with map pan if the minimap is under the finger (assigned to C100) | `Play/MinimapView.cs` | S |
-
-**B-1 (scale and shared widgets), B-3 and B-4 resolved by C096.** `DisplayProfile` (touch = `OS.HasFeature("mobile")`, density from `ScreenGetDpi`) switches `UiTheme` to `UiTokens.TouchAutoScale` (dpi/160, capped at 2.6, floored to a quarter step, never below a 900x415 logical viewport; a 400 ppi 2400x1080 phone gets 2.5) and gives the theme a 48 dp floor (`MinTargetPx`) for every control height (buttons, tabs, segments, steppers, line edits) and `ListRow`. `MapView` tracks fingers (`PinchTracker`): a second finger cancels the one-finger press and starts a pinch (zoom about the midpoint) with two-finger pan; the drag threshold of an emulated touch press is 8 dp; a finger held for 0.5 s raises `TileRightClicked` (long press = right click, the hook for C100). Taps keep using the emulated mouse. Desktop (not a touch build) is unchanged. Not verified on a device: real multitouch event order, `ScreenGetDpi` values on real phones, content-scale interaction with the user's UI scale.
 
 ### C. Screens (layout and scrolling on a small display)
 

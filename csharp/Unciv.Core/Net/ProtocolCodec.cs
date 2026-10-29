@@ -59,7 +59,13 @@ public static class ProtocolCodec
         JsonObject? node;
         try
         {
+#if NET10_0_OR_GREATER
             node = JsonNode.Parse(frame, documentOptions: new JsonDocumentOptions { MaxDepth = Options.MaxDepth, AllowDuplicateProperties = false }) as JsonObject;
+#else
+            // T260: the Android build targets net9.0, which has no AllowDuplicateProperties; reject duplicates ourselves.
+            if (HasDuplicateProperties(frame)) return Fail(ErrorCodes.Malformed);
+            node = JsonNode.Parse(frame, documentOptions: new JsonDocumentOptions { MaxDepth = Options.MaxDepth }) as JsonObject;
+#endif
         }
         catch (Exception e) when (e is JsonException or ArgumentException)
         {
@@ -81,6 +87,26 @@ public static class ProtocolCodec
         {
             return Fail(ErrorCodes.InvalidMessage);
         }
+    }
+
+    /// <summary>True when any JSON object in <paramref name="frame"/> repeats a property name (T260: net9.0 stand-in for AllowDuplicateProperties = false). Throws <see cref="JsonException"/> on malformed JSON.</summary>
+    internal static bool HasDuplicateProperties(string frame)
+    {
+        var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(frame), new JsonReaderOptions { MaxDepth = Options.MaxDepth });
+        var scopes = new Stack<HashSet<string>?>();
+        while (reader.Read())
+        {
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.StartObject: scopes.Push([]); break;
+                case JsonTokenType.StartArray: scopes.Push(null); break;
+                case JsonTokenType.EndObject or JsonTokenType.EndArray: scopes.Pop(); break;
+                case JsonTokenType.PropertyName:
+                    if (scopes.Peek() is { } names && !names.Add(reader.GetString() ?? string.Empty)) return true;
+                    break;
+            }
+        }
+        return false;
     }
 
     private static Error Fail(string code) => new() { Code = code };

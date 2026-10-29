@@ -1,6 +1,14 @@
 <Project>
 
   <!-- Shared build policy for every C# project. Rationale and ticket: migration/backlog/T013.md. -->
+  <!-- T260: the Godot 4.7.2 Android export template bundles a .NET 9 runtime, so the five projects the Android client is made of
+       (Unciv.Core, Unciv.Assets, Unciv.Client.Net, Unciv.Server, Unciv.Godot) build for net9.0 when UncivAndroid=true (set by
+       Unciv.Godot/tools/package.sh android, as an environment variable so Godot's own dotnet publish sees it). Everything else stays net10.0. -->
+  <PropertyGroup>
+    <UncivTfm>net10.0</UncivTfm>
+    <UncivTfm Condition="'$(UncivAndroid)' == 'true'">net9.0</UncivTfm>
+  </PropertyGroup>
+
   <PropertyGroup>
     <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>

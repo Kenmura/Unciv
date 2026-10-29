@@ -185,4 +185,18 @@ public class NetProtocolTests
         var error = Assert.IsType<Error>(ProtocolCodec.Decode(frame));
         Assert.Equal(code, error.Code);
     }
+
+    [Theory]
+    [InlineData("""{"a":1,"b":2}""", false)]
+    [InlineData("""{"a":1,"a":2}""", true)]
+    [InlineData("""{"x":{"a":1},"y":{"a":2}}""", false)]
+    [InlineData("""{"x":{"a":1,"a":2}}""", true)]
+    [InlineData("""{"x":[{"a":1},{"a":2}],"y":[1,2]}""", false)]
+    [InlineData("""{"x":[{"a":1,"a":2}]}""", true)]
+    public void HasDuplicateProperties_Detects_Repeated_Names_Per_Object(string json, bool expected)
+        => Assert.Equal(expected, ProtocolCodec.HasDuplicateProperties(json));
+
+    [Fact]
+    public void HasDuplicateProperties_Throws_On_Malformed_Json()
+        => Assert.ThrowsAny<JsonException>(() => ProtocolCodec.HasDuplicateProperties("{\"a\":"));
 }

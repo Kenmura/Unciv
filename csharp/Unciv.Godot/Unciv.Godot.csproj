@@ -1,7 +1,10 @@
 <Project Sdk="Godot.NET.Sdk/4.7.2">
 
   <PropertyGroup>
+    <!-- Literal net10.0 on purpose: the Godot editor rewrites a TargetFramework it cannot read as text (it turned $(UncivTfm) into net8.0).
+         UncivAndroid=true (set by tools/package.sh android) selects net9.0, the .NET version the Android export template bundles (T260). -->
     <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework Condition="'$(UncivAndroid)' == 'true'">net9.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>Unciv.GodotClient</RootNamespace>
   </PropertyGroup>
