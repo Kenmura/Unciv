@@ -569,7 +569,7 @@ public class CityStatsGameTests
         game.AddTileToCity(city, game.GetTile(1, 0));
         game.SetTileTerrain(game.GetTile(1, 0).Position, "Grassland");
         city.WorkedTiles.Add(game.GetTile(1, 0).Position);
-        game.GameInfo.SetTransients();
+        game.GameInfo.RefreshTransientCaches();
         var skipping = (city.CityStats.StatsFromTiles.Clone(), city.CityStats.CurrentCityStats.Clone());
         city.CityStats.UpdateTileStats();
         city.CityStats.Update(updateTileStats: true);
