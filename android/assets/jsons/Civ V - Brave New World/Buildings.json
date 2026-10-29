@@ -304,31 +304,70 @@
 	},
 	{
 		"name": "Opera House",
-		"culture": 4,
+		"culture": 1,
 		"specialistSlots": {"Artist": 1},
 		"hurryCostModifier": 10,
 		"requiredBuilding": "Amphitheater",
 		"maintenance": 1,
 		"requiredTech": "Acoustics",
-		"uniques": ["Destroyed when the city is captured"]
+		"uniques": ["Destroyed when the city is captured"],
+		"greatWorkSlotType": "Music",
+		"greatWorkSlots": 1
 	},
 	{
 		"name": "Museum",
-		"culture": 5,
+		"culture": 1,
 		"specialistSlots": {"Artist": 2},
 		"requiredBuilding": "Opera House",
 		"maintenance": 1,
 		"requiredTech": "Archaeology",
-		"uniques": ["Destroyed when the city is captured"]
+		"uniques": ["Destroyed when the city is captured"],
+		"greatWorkSlotType": "Art/Artifact",
+		"greatWorkSlots": 2,
+		"themingBonuses": [
+			{
+				"bonus": 2,
+				"sameEra": true,
+				"mustBeArt": true,
+				"requiresOwner": true
+			},
+			{
+				"bonus": 2,
+				"sameEra": true,
+				"mustBeArt": true,
+				"requiresAnyButOwner": true
+			},
+			{
+				"bonus": 2,
+				"sameEra": true,
+				"mustBeArtifact": true,
+				"requiresOwner": true
+			},
+			{
+				"bonus": 2,
+				"sameEra": true,
+				"mustBeArtifact": true,
+				"requiresAnyButOwner": true
+			},
+			{"bonus": 1, "sameEra": true, "mustBeArt": true},
+			{"bonus": 1, "sameEra": true, "mustBeArtifact": true},
+			{"bonus": 1, "sameEra": true, "requiresOwner": true},
+			{"bonus": 1, "sameEra": true, "requiresAnyButOwner": true},
+			{"bonus": 1, "mustBeArt": true, "requiresOwner": true},
+			{"bonus": 1, "mustBeArt": true, "requiresAnyButOwner": true},
+			{"bonus": 1, "mustBeArtifact": true, "requiresOwner": true},
+			{"bonus": 1, "mustBeArtifact": true, "requiresAnyButOwner": true}
+		]
 	},
 	{
 		"name": "Broadcast Tower",
-		"culture": 3,
-		"percentStatBonus": {"culture": 33},
+		"culture": 1,
 		"requiredBuilding": "Museum",
 		"maintenance": 3,
 		"requiredTech": "Radio",
-		"uniques": ["Destroyed when the city is captured"]
+		"uniques": ["Destroyed when the city is captured"],
+		"greatWorkSlotType": "Music",
+		"greatWorkSlots": 1
 	},
 	{
 		"name": "Barracks",
@@ -524,7 +563,9 @@
 		"culture": 1,
 		"cityStrength": 2.5,
 		"cost": 0,
-		"uniques": ["Indicates the capital city"]
+		"uniques": ["Indicates the capital city"],
+		"greatWorkSlotType": "Art/Artifact",
+		"greatWorkSlots": 1
 	},
 	{
 		"name": "Heroic Epic",
@@ -536,7 +577,9 @@
 			"All newly-trained [non-[Air]] units [in this city] receive the [Morale] promotion",
 			"Cost increases by [30] per owned city"
 		],
-		"requiredTech": "Iron Working"
+		"requiredTech": "Iron Working",
+		"greatWorkSlotType": "Writing",
+		"greatWorkSlots": 1
 	},
 	{
 		"name": "National College",
@@ -561,7 +604,9 @@
 			"[+25]% Great Person generation [in this city]",
 			"Cost increases by [30] per owned city"
 		],
-		"requiredTech": "Drama and Poetry"
+		"requiredTech": "Drama and Poetry",
+		"greatWorkSlotType": "Writing",
+		"greatWorkSlots": 1
 	},
 	{
 		"name": "Circus Maximus",
@@ -610,19 +655,33 @@
 			"Free Technology",
 			"Cost increases by [30] per owned city"
 		],
-		"requiredTech": "Education"
+		"requiredTech": "Education",
+		"greatWorkSlotType": "Writing",
+		"greatWorkSlots": 2,
+		"themingBonuses": [
+			{"bonus": 2, "uniqueEras": true, "requiresAnyButOwner": true}
+		]
 	},
 	{
 		"name": "Hermitage",
 		"cost": 125,
-		"percentStatBonus": {"culture": 50},
-		"culture": 5,
+		"culture": 2,
 		"isNationalWonder": true,
 		"uniques": [
 			"Only available <if [Opera House] is constructed in all [non-[Puppeted]] cities>",
 			"Cost increases by [30] per owned city"
 		],
-		"requiredTech": "Architecture"
+		"requiredTech": "Architecture",
+		"greatWorkSlotType": "Art/Artifact",
+		"greatWorkSlots": 3,
+		"themingBonuses": [
+			{
+				"bonus": 3,
+				"uniqueEras": true,
+				"mustBeArt": true,
+				"requiresUniquePlayers": true
+			}
+		]
 	},
 	{
 		"name": "The Great Lighthouse",
@@ -655,7 +714,12 @@
 		"isWonder": true,
 		"requiredTech": "Writing",
 		"uniques": ["Free Technology", "Gain a free [Library] [in this city]"],
-		"quote": "'Libraries are as the shrine where all the relics of the ancient saints, full of true virtue, and all that without delusion or imposture are preserved and reposed.' - Sir Francis Bacon"
+		"quote": "'Libraries are as the shrine where all the relics of the ancient saints, full of true virtue, and all that without delusion or imposture are preserved and reposed.' - Sir Francis Bacon",
+		"greatWorkSlotType": "Writing",
+		"greatWorkSlots": 2,
+		"themingBonuses": [
+			{"bonus": 2, "uniqueEras": true, "requiresUniquePlayers": true}
+		]
 	},
 	{
 		"name": "The Pyramids",
@@ -801,7 +865,17 @@
 		"greatPersonPoints": {"Great Artist": 2},
 		"uniques": ["[+25]% [Culture] [in all cities]"],
 		"requiredTech": "Acoustics",
-		"quote": "'I live and love in God's peculiar light.' - Michelangelo Buonarroti"
+		"quote": "'I live and love in God's peculiar light.' - Michelangelo Buonarroti",
+		"greatWorkSlotType": "Art/Artifact",
+		"greatWorkSlots": 2,
+		"themingBonuses": [
+			{
+				"bonus": 2,
+				"sameEra": true,
+				"mustBeArt": true,
+				"requiresSamePlayer": true
+			}
+		]
 	},
 	{
 		"name": "Kremlin",
@@ -847,12 +921,22 @@
 	},
 	{
 		"name": "The Louvre",
-		"culture": 4,
+		"culture": 2,
 		"greatPersonPoints": {"Great Artist": 2},
 		"isWonder": true,
 		"uniques": ["[2] free [Great Artist] units appear", "Only available <after adopting [Exploration]>"],
 		"requiredTech": "Archaeology",
-		"quote": "'Every genuine work of art has as much reason for being as the earth and the sun' - Ralph Waldo Emerson"
+		"quote": "'Every genuine work of art has as much reason for being as the earth and the sun' - Ralph Waldo Emerson",
+		"greatWorkSlotType": "Art/Artifact",
+		"greatWorkSlots": 4,
+		"themingBonuses": [
+			{
+				"bonus": 4,
+				"uniqueEras": true,
+				"mustBeEqualArtArtifact": true,
+				"requiresUniquePlayers": true
+			}
+		]
 	},
 	{
 		"name": "Brandenburg Gate",
@@ -907,10 +991,14 @@
 		"name": "Sydney Opera House",
 		"isWonder": true,
 		"greatPersonPoints": {"Great Artist": 2},
-		"percentStatBonus": {"culture": 50},
 		"uniques": ["Free Social Policy", "Must be next to [Coast]"],
 		"requiredTech": "Ecology",
-		"quote": "'Those who lose dreaming are lost.' - Australian Aboriginal saying"
+		"quote": "'Those who lose dreaming are lost.' - Australian Aboriginal saying",
+		"greatWorkSlotType": "Music",
+		"greatWorkSlots": 2,
+		"themingBonuses": [
+			{"bonus": 2, "uniqueEras": true, "requiresSamePlayer": true}
+		]
 	},
 	{
 		"name": "Aqueduct",
@@ -983,14 +1071,16 @@
 		"name": "Ceilidh Hall",
 		"replaces": "Opera House",
 		"uniqueTo": "Celts",
-		"culture": 4,
+		"culture": 1,
 		"happiness": 3,
 		"specialistSlots": {"Artist": 1},
 		"hurryCostModifier": 10,
 		"requiredBuilding": "Amphitheater",
 		"maintenance": 1,
 		"requiredTech": "Acoustics",
-		"uniques": ["Destroyed when the city is captured"]
+		"uniques": ["Destroyed when the city is captured"],
+		"greatWorkSlotType": "Music",
+		"greatWorkSlots": 1
 	},
 	{
 		"name": "Coffee House",
@@ -1018,13 +1108,15 @@
 	},
 	{
 		"name": "Amphitheater",
-		"culture": 3,
+		"culture": 1,
 		"specialistSlots": {"Artist": 1},
 		"requiredBuilding": "Monument",
 		"maintenance": 1,
 		"hurryCostModifier": 25,
 		"uniques": ["Destroyed when the city is captured"],
-		"requiredTech": "Drama and Poetry"
+		"requiredTech": "Drama and Poetry",
+		"greatWorkSlotType": "Writing",
+		"greatWorkSlots": 1
 	},
 	{
 		"name": "Shrine",
@@ -1197,10 +1289,12 @@
 	{
 		"name": "Cathedral",
 		"faith": 1,
-		"culture": 3,
+		"culture": 1,
 		"happiness": 1,
 		"specialistSlots": {"Artist": 1},
-		"uniques": ["Unbuildable", "Only available <when religion is enabled>"]
+		"uniques": ["Unbuildable", "Only available <when religion is enabled>"],
+		"greatWorkSlotType": "Art/Artifact",
+		"greatWorkSlots": 1
 	},
 	{
 		"name": "Mosque",
@@ -1270,6 +1364,8 @@
 		"maintenance": 1,
 		"hurryCostModifier": 25,
 		"requiredTech": "Writing",
+		"greatWorkSlotType": "Writing",
+		"greatWorkSlots": 1,
 		"uniqueTo": "Assyria",
 		"replaces": "Library"
 	},
@@ -1343,19 +1439,39 @@
 		"isWonder": true,
 		"requiredTech": "Architecture",
 		"culture": 2,
+		"greatWorkSlotType": "Art/Artifact",
+		"greatWorkSlots": 3,
+		"themingBonuses": [
+			{
+				"bonus": 3,
+				"sameEra": true,
+				"mustBeArt": true,
+				"requiresSamePlayer": true
+			}
+		],
 		"uniques": ["Only available <after adopting [Aesthetics]>"]
 	},
 	{
 		"name": "Globe Theatre",
 		"isWonder": true,
 		"requiredTech": "Printing Press",
-		"culture": 2
+		"culture": 2,
+		"greatWorkSlotType": "Writing",
+		"greatWorkSlots": 2,
+		"themingBonuses": [
+			{"bonus": 2, "sameEra": true, "requiresSamePlayer": true}
+		]
 	},
 	{
 		"name": "Broadway",
 		"isWonder": true,
 		"requiredTech": "Radio",
-		"culture": 2
+		"culture": 2,
+		"greatWorkSlotType": "Music",
+		"greatWorkSlots": 3,
+		"themingBonuses": [
+			{"bonus": 3, "sameEra": true, "requiresSamePlayer": true}
+		]
 	},
 	{
 		"name": "Red Fort",
@@ -1381,7 +1497,10 @@
 		"name": "Parthenon",
 		"isWonder": true,
 		"requiredTech": "Drama and Poetry",
-		"culture": 4
+		"culture": 4,
+		"greatWorkSlotType": "Art/Artifact",
+		"greatWorkSlots": 1,
+		"uniques": ["Contains the Great Work [Parthenon Frieze] when built"]
 	},
 	{
 		"name": "International Space Station",

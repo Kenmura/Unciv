@@ -26,9 +26,25 @@
   Diplomatic: removed
 
 == buildings
+  Opera House: 1 Music slot(s), 0 theming row(s)
+  Museum: 2 Art/Artifact slot(s), 12 theming row(s)
+  Broadcast Tower: 1 Music slot(s), 0 theming row(s)
+  Palace: 1 Art/Artifact slot(s), 0 theming row(s)
+  Heroic Epic: 1 Writing slot(s), 0 theming row(s)
+  National Epic: 1 Writing slot(s), 0 theming row(s)
+  Oxford University: 2 Writing slot(s), 1 theming row(s)
+  Hermitage: 3 Art/Artifact slot(s), 1 theming row(s)
+  The Great Library: 2 Writing slot(s), 1 theming row(s)
+  Sistine Chapel: 2 Art/Artifact slot(s), 1 theming row(s)
+  The Louvre: 4 Art/Artifact slot(s), 1 theming row(s)
+  Sydney Opera House: 2 Music slot(s), 1 theming row(s)
+  Ceilidh Hall: 1 Music slot(s), 0 theming row(s)
+  Amphitheater: 1 Writing slot(s), 0 theming row(s)
+  Cathedral: 1 Art/Artifact slot(s), 0 theming row(s)
   National Visitor Center: new
   Ikanda: new
   Ducal Stable: new
+  Royal Library: 1 Writing slot(s), 0 theming row(s)
   Royal Library: new
   Candi: new
   Hanse: new
@@ -38,18 +54,25 @@
   Hotel: new
   Caravansary: new
   Airport: new
+  Uffizi: 3 Art/Artifact slot(s), 1 theming row(s)
   Uffizi: new
+  Globe Theatre: 2 Writing slot(s), 1 theming row(s)
   Globe Theatre: new
+  Broadway: 3 Music slot(s), 1 theming row(s)
   Broadway: new
   Red Fort: new
   Prora: new
   Borobudur: new
+  Parthenon: 1 Art/Artifact slot(s), 0 theming row(s)
   Parthenon: new
   International Space Station: new
   Manhattan Project: kept (Civ V project that Unciv models as a building, not in the BNW table)
   Apollo Program: kept (Civ V project that Unciv models as a building, not in the BNW table)
   United Nations: removed (SPEC 3.3)
   Utopia Project: removed (SPEC 3.3)
+
+== greatWorks
+  279 works (233 named after a Great Person)
 
 == modOptions
   75 BNW tunables written to ModOptions.json constants (values from the ModConstants.cs comments, cross-checked with Defines.tsv)

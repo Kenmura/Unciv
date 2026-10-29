@@ -249,15 +249,70 @@ def era_costs(techs_json):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+# Great Works (B027, SPEC 4.2.1)
+# ----------------------------------------------------------------------------------------------------------------------
+SLOT_TYPES = {"GREAT_WORK_SLOT_ART_ARTIFACT": "Art/Artifact", "GREAT_WORK_SLOT_LITERATURE": "Writing", "GREAT_WORK_SLOT_MUSIC": "Music"}
+WORK_CLASSES = {"GREAT_WORK_ART": "Art", "GREAT_WORK_ARTIFACT": "Artifact", "GREAT_WORK_LITERATURE": "Writing", "GREAT_WORK_MUSIC": "Music"}
+THEMING_FLAGS = {"SameEra": "sameEra", "UniqueEras": "uniqueEras", "MustBeArt": "mustBeArt", "MustBeArtifact": "mustBeArtifact",
+                 "MustBeEqualArtArtifact": "mustBeEqualArtArtifact", "RequiresOwner": "requiresOwner",
+                 "RequiresAnyButOwner": "requiresAnyButOwner", "RequiresSamePlayer": "requiresSamePlayer",
+                 "RequiresUniquePlayers": "requiresUniquePlayers"}
+
+
+def title_words(key):
+    return " ".join(w.capitalize() for w in key.split("_") if w)
+
+
+def theming_row(r):
+    row = {"bonus": num(r["Bonus"])}
+    for column, field in THEMING_FLAGS.items():
+        if num(r[column]):
+            row[field] = True
+    return row
+
+
+def build_great_works(report):
+    """GreatWorks.json: one entry per row of GreatWorks.tsv (table order). Blank and duplicate English names fall back to the type."""
+    rows = tsv("GreatWorks")
+    seen, names = set(), {}
+    people = {}  # work type -> great person (Unit_UniqueNames.GreatWorkType; the key suffix of the person's text key)
+    for r in tsv("Unit_UniqueNames"):
+        if r["GreatWorkType"]:
+            people[r["GreatWorkType"]] = title_words(r["UniqueName"][len("TXT_KEY_GREAT_PERSON_"):])
+    out = []
+    for r in rows:
+        name = r["Name"] if r["Name"] and r["Name"] not in seen else title_words(r["Type"][len("GREAT_WORK_"):])
+        if name in seen:
+            raise SystemExit("duplicate Great Work name " + name)
+        seen.add(name)
+        names[r["Type"]] = name
+        w = {"name": name, "greatWorkClass": WORK_CLASSES[r["GreatWorkClassType"]]}
+        if r["EraType"]:
+            w["era"] = era_name(r["EraType"])
+        if r["ArtifactClassType"]:
+            w["artifactClass"] = title_words(r["ArtifactClassType"][len("ARTIFACT_"):])
+        if num(r["ArchaeologyOnly"]):
+            w["archaeologyOnly"] = True
+        if r["Type"] in people:
+            w["greatPerson"] = people[r["Type"]]
+        out.append(w)
+    report.add("greatWorks", f"{len(out)} works ({sum(1 for w in out if 'greatPerson' in w)} named after a Great Person)")
+    return out, names
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 # Buildings
 # ----------------------------------------------------------------------------------------------------------------------
-def build_buildings(gk, techs_json, lk, report):
+def build_buildings(gk, techs_json, lk, work_names, report):
     old = {b["name"]: b for b in gk}
     costs = era_costs(techs_json)
     ycs = table_by("Building_YieldChanges", "BuildingType")
     yms = table_by("Building_YieldModifiers", "BuildingType")
     needed = table_by("Building_ClassesNeededInCity", "BuildingType", "BuildingClassType")
     class_over = {r["BuildingType"]: r["CivilizationType"] for r in tsv("Civilization_BuildingClassOverrides")}
+    theming = {}
+    for tr in tsv("Building_ThemingBonuses"):
+        theming.setdefault(tr["BuildingType"], []).append(tr)
     out, seen = [], set()
     for r in tsv("Buildings"):
         bnw_name = r["Name"]
@@ -298,8 +353,9 @@ def build_buildings(gk, techs_json, lk, report):
         # Yields. Culture is kept from G&K for matched objects: Unciv models Great Work slots as flat culture, and the
         # Great Works subsystem (B030) takes that role in BNW (deliberate deviation, see SPEC 2.1 as built B002).
         yields = {YIELDS[x["YieldType"]]: int(x["Yield"]) for x in ycs.get(r["Type"], []) if x["YieldType"] in YIELDS and int(x["Yield"])}
+        slotted = bool(r["GreatWorkSlotType"]) and num(r["GreatWorkCount"]) > 0  # the slots replace the flat G&K culture
         for stat in YIELDS.values():
-            if stat == "culture" and not is_new:
+            if stat == "culture" and not is_new and not slotted:
                 continue
             if stat in yields:
                 b[stat] = yields[stat]
@@ -307,12 +363,20 @@ def build_buildings(gk, techs_json, lk, report):
                 b.pop(stat, None)
         pct = {YIELDS[x["YieldType"]]: int(x["Yield"]) for x in yms.get(r["Type"], []) if x["YieldType"] in YIELDS and int(x["Yield"])}
         if pct:
-            if is_new or "culture" not in b.get("percentStatBonus", {}):
+            if is_new or slotted or "culture" not in b.get("percentStatBonus", {}):
                 b["percentStatBonus"] = pct
             else:
                 b["percentStatBonus"] = dict(pct, culture=b["percentStatBonus"]["culture"])
-        elif is_new or "culture" not in b.get("percentStatBonus", {}):
+        elif is_new or slotted or "culture" not in b.get("percentStatBonus", {}):
             b.pop("percentStatBonus", None)
+        if slotted:
+            b["greatWorkSlotType"] = SLOT_TYPES[r["GreatWorkSlotType"]]
+            b["greatWorkSlots"] = num(r["GreatWorkCount"])
+            if r["Type"] in theming:
+                b["themingBonuses"] = [theming_row(tr) for tr in theming[r["Type"]]]
+            if r["FreeGreatWork"]:
+                b.setdefault("uniques", []).append(f"Contains the Great Work [{work_names[r['FreeGreatWork']]}] when built")
+            report.add("buildings", f"{name}: {b['greatWorkSlots']} {b['greatWorkSlotType']} slot(s), {len(theming.get(r['Type'], []))} theming row(s)")
         # Cost: omit when it equals the era default of the required tech (Unciv derives it), set otherwise.
         cost = num(r["Cost"])
         default = None
@@ -583,7 +647,8 @@ def generate():
         report.add("renamed", f"{old_name} -> {new_name}")
     lk = Lookups()
     files["Techs.json"] = build_techs(files["Techs.json"], report)
-    files["Buildings.json"] = build_buildings(files["Buildings.json"], files["Techs.json"], lk, report)
+    files["GreatWorks.json"], work_names = build_great_works(report)
+    files["Buildings.json"] = build_buildings(files["Buildings.json"], files["Techs.json"], lk, work_names, report)
     files["Units.json"] = build_units(files["Units.json"], lk, report)
     for fname, names in REMOVED.items():
         if fname == "Buildings.json":

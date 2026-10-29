@@ -1,0 +1,1420 @@
+[
+	{
+		"name": "Figurine",
+		"greatWorkClass": "Artifact",
+		"artifactClass": "Ancient Ruin"
+	},
+	{
+		"name": "Belt Buckle",
+		"greatWorkClass": "Artifact",
+		"artifactClass": "Barbarian Camp"
+	},
+	{
+		"name": "Bullets",
+		"greatWorkClass": "Artifact",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Saber",
+		"greatWorkClass": "Artifact",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Artillery Shell",
+		"greatWorkClass": "Artifact",
+		"artifactClass": "Battle Ranged"
+	},
+	{
+		"name": "Earrings",
+		"greatWorkClass": "Artifact",
+		"artifactClass": "Razed City"
+	},
+	{
+		"name": "Beads",
+		"greatWorkClass": "Artifact",
+		"era": "Ancient era",
+		"artifactClass": "Ancient Ruin"
+	},
+	{
+		"name": "Pottery Sherd",
+		"greatWorkClass": "Artifact",
+		"era": "Ancient era",
+		"artifactClass": "Barbarian Camp"
+	},
+	{
+		"name": "Axe Head",
+		"greatWorkClass": "Artifact",
+		"era": "Ancient era",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Shield",
+		"greatWorkClass": "Artifact",
+		"era": "Ancient era",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Arrowheads",
+		"greatWorkClass": "Artifact",
+		"era": "Ancient era",
+		"artifactClass": "Battle Ranged"
+	},
+	{
+		"name": "Mask",
+		"greatWorkClass": "Artifact",
+		"era": "Ancient era",
+		"artifactClass": "Razed City"
+	},
+	{
+		"name": "Amulet",
+		"greatWorkClass": "Artifact",
+		"era": "Classical era",
+		"artifactClass": "Ancient Ruin"
+	},
+	{
+		"name": "Coin",
+		"greatWorkClass": "Artifact",
+		"era": "Classical era",
+		"artifactClass": "Barbarian Camp"
+	},
+	{
+		"name": "Spear Tips",
+		"greatWorkClass": "Artifact",
+		"era": "Classical era",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Greaves",
+		"greatWorkClass": "Artifact",
+		"era": "Classical era",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Javelin Tips",
+		"greatWorkClass": "Artifact",
+		"era": "Classical era",
+		"artifactClass": "Battle Ranged"
+	},
+	{
+		"name": "Necklace",
+		"greatWorkClass": "Artifact",
+		"era": "Classical era",
+		"artifactClass": "Razed City"
+	},
+	{
+		"name": "Pendant",
+		"greatWorkClass": "Artifact",
+		"era": "Medieval era",
+		"artifactClass": "Ancient Ruin"
+	},
+	{
+		"name": "Longship",
+		"greatWorkClass": "Artifact",
+		"era": "Medieval era",
+		"artifactClass": "Barbarian Camp"
+	},
+	{
+		"name": "Short Sword",
+		"greatWorkClass": "Artifact",
+		"era": "Medieval era",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Breastplate",
+		"greatWorkClass": "Artifact",
+		"era": "Medieval era",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Crossbow Bolts",
+		"greatWorkClass": "Artifact",
+		"era": "Medieval era",
+		"artifactClass": "Battle Ranged"
+	},
+	{
+		"name": "Chalice",
+		"greatWorkClass": "Artifact",
+		"era": "Medieval era",
+		"artifactClass": "Razed City"
+	},
+	{
+		"name": "Statue",
+		"greatWorkClass": "Artifact",
+		"era": "Renaissance era",
+		"artifactClass": "Ancient Ruin"
+	},
+	{
+		"name": "Doubloon",
+		"greatWorkClass": "Artifact",
+		"era": "Renaissance era",
+		"artifactClass": "Barbarian Camp"
+	},
+	{
+		"name": "Two-Handed Sword",
+		"greatWorkClass": "Artifact",
+		"era": "Renaissance era",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Plate Armor",
+		"greatWorkClass": "Artifact",
+		"era": "Renaissance era",
+		"artifactClass": "Battle Melee"
+	},
+	{
+		"name": "Cannonball",
+		"greatWorkClass": "Artifact",
+		"era": "Renaissance era",
+		"artifactClass": "Battle Ranged"
+	},
+	{
+		"name": "Crown",
+		"greatWorkClass": "Artifact",
+		"era": "Renaissance era",
+		"artifactClass": "Razed City"
+	},
+	{
+		"name": "Odyssey",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Homer"
+	},
+	{
+		"name": "Fables",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Aesop"
+	},
+	{
+		"name": "Oedipus the King",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Sophocles"
+	},
+	{
+		"name": "Lysistrata",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Aristophanes"
+	},
+	{
+		"name": "Aeneid",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Virgil"
+	},
+	{
+		"name": "Metamorphoses",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Ovid"
+	},
+	{
+		"name": "A True Story",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Lucian Samosata"
+	},
+	{
+		"name": "Rubaiyat",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Omar Khayyam"
+	},
+	{
+		"name": "Masnavi",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Rumi"
+	},
+	{
+		"name": "Ramayama",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Valmiki"
+	},
+	{
+		"name": "Mahabharata",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Vyasa"
+	},
+	{
+		"name": "Urubhanga (The Broken Thigh)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Bhasa"
+	},
+	{
+		"name": "Abhijnanasakuntalam (Of Shantukala)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Kalidasa"
+	},
+	{
+		"name": "Chu Ci (Songs of the South)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Qu Yuan"
+	},
+	{
+		"name": "Shuihu Zhuan (Water Margin)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Shi Naian"
+	},
+	{
+		"name": "Jin Ping Mei (The Plum in the Gold Vase)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Lanling Xiaoxiao Sheng"
+	},
+	{
+		"name": "Hong Lou Meng (Dream of the Red Chamber)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Cao Xueqin"
+	},
+	{
+		"name": "Kokin wakashu",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Ki No Tsurayuki"
+	},
+	{
+		"name": "Genji monogatari (The Tale of Genji)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Murasaki Shikibu"
+	},
+	{
+		"name": "Tsurezuregusa (Essays in Idleness)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Yoshida Kenko"
+	},
+	{
+		"name": "Shinjuten No Amijima",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Chikamatsu Monzaemon"
+	},
+	{
+		"name": "Ugetsu monogatari (Tales of Moonlight and Rain)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Ueda Akinari"
+	},
+	{
+		"name": "Wagahai wa neko de aru (I am a Cat)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Natsume Soseki"
+	},
+	{
+		"name": "Don Quixote",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Miguel De Cervantes"
+	},
+	{
+		"name": "Maria",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Jorge Isaacs"
+	},
+	{
+		"name": "Martin Fierro",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Jose Hernandez"
+	},
+	{
+		"name": "Azul",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Ruben Dario"
+	},
+	{
+		"name": "Girart de Vienne",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Bertrand De Bar Sur Aube"
+	},
+	{
+		"name": "La Vie de Gargantua et de Pantagruel",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Francois Rabelais"
+	},
+	{
+		"name": "Candide, ou l'Optimisme",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Voltaire"
+	},
+	{
+		"name": "Les Trois Mousquetaires (The Three Musketeers)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Alexandre Dumas"
+	},
+	{
+		"name": "Les Miserables",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Victor Hugo"
+	},
+	{
+		"name": "Vignt Mille Lieues",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Jules Verne"
+	},
+	{
+		"name": "A La Recherche",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Marcus Proust"
+	},
+	{
+		"name": "Divina Commedia (The Divine Comedy)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Dante Alighieri"
+	},
+	{
+		"name": "Il Canzoniere (Song Book)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Petrarch"
+	},
+	{
+		"name": "Orlando Furioso (The Frenzy of Orlando)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Ludovico Ariosto"
+	},
+	{
+		"name": "Saul",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Vittorio Alfieri"
+	},
+	{
+		"name": "Die Rauber (The Robbers)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Johann Friedrich Von Schiller"
+	},
+	{
+		"name": "Faust: Der Tragodie",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Johann Wolfgang Von Goethe"
+	},
+	{
+		"name": "Revizor (The Government Inspector)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Nikolai Gogol"
+	},
+	{
+		"name": "Prestipleniye",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Fyodor Dostoyevsky"
+	},
+	{
+		"name": "Voyna i Mir (War and Peace)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Leo Tolstoy"
+	},
+	{
+		"name": "Chayka (The Seagull)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Anton Chekhov"
+	},
+	{
+		"name": "Na dne (The Lower Depths)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Maxim Gorky"
+	},
+	{
+		"name": "The Canterbury Tales",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Geoffrey Chaucer"
+	},
+	{
+		"name": "Le Morte D'Arthur (The Death of Arthur)",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Thomas Malory"
+	},
+	{
+		"name": "The Faerie Queene",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Edmund Spenser"
+	},
+	{
+		"name": "Macbeth",
+		"greatWorkClass": "Writing",
+		"greatPerson": "William Shakespeare"
+	},
+	{
+		"name": "Pride and Prejudice",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Jane Austin"
+	},
+	{
+		"name": "Frankenstein",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Mary Shelley"
+	},
+	{
+		"name": "A Christmas Carol",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Charles Dickens"
+	},
+	{
+		"name": "Alice's Adventures in Wonderland",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Lewis Carroll"
+	},
+	{
+		"name": "Barrack-Room Ballads",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Rudyard Kipling"
+	},
+	{
+		"name": "The Time Machine",
+		"greatWorkClass": "Writing",
+		"greatPerson": "H G Wells"
+	},
+	{
+		"name": "The Sign of the Four",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Arthur Conan Doyle"
+	},
+	{
+		"name": "Lady Chatterley's Lover",
+		"greatWorkClass": "Writing",
+		"greatPerson": "D H Lawrence"
+	},
+	{
+		"name": "The Sketch Book of Geoffrey Crayon, Gent.",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Washington Irving"
+	},
+	{
+		"name": "The Last of the Mohicans",
+		"greatWorkClass": "Writing",
+		"greatPerson": "James Fenimore Cooper"
+	},
+	{
+		"name": "The Raven and Other Poems",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Edgar Allen Poe"
+	},
+	{
+		"name": "Twice-Told Tales",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Nathaniel Hawthorne"
+	},
+	{
+		"name": "Moby Dick",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Herman Melville"
+	},
+	{
+		"name": "Uncle Tom's Cabin",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Harriet Beecher Stowe"
+	},
+	{
+		"name": "Walden",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Henry David Thoreau"
+	},
+	{
+		"name": "Leaves of Grass",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Walt Whitman"
+	},
+	{
+		"name": "Adventures of Huckleberry Finn",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Mark Twain"
+	},
+	{
+		"name": "Poems",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Emily Dickenson"
+	},
+	{
+		"name": "The Red Badge of Courage",
+		"greatWorkClass": "Writing",
+		"greatPerson": "Stephen Crane"
+	},
+	{
+		"name": "The Wonderful Wizard of Oz",
+		"greatWorkClass": "Writing",
+		"greatPerson": "L Frank Baum"
+	},
+	{
+		"name": "The Great Gatsby",
+		"greatWorkClass": "Writing",
+		"greatPerson": "F Scott Fitzgerald"
+	},
+	{
+		"name": "Nin Me Schara",
+		"greatWorkClass": "Music",
+		"greatPerson": "Enheduanna"
+	},
+	{
+		"name": "Hymn to the Muse",
+		"greatWorkClass": "Music",
+		"greatPerson": "Mesomedes"
+	},
+	{
+		"name": "Guangling San",
+		"greatWorkClass": "Music",
+		"greatPerson": "Ji Kang"
+	},
+	{
+		"name": "Lamma Bada Yatathanna",
+		"greatWorkClass": "Music",
+		"greatPerson": "Ziryab"
+	},
+	{
+		"name": "Whirling Dervish",
+		"greatWorkClass": "Music",
+		"greatPerson": "Alkindi"
+	},
+	{
+		"name": "Ut Queant Laxis",
+		"greatWorkClass": "Music",
+		"greatPerson": "Guido Darezzo"
+	},
+	{
+		"name": "Messe de Nostre Dame",
+		"greatWorkClass": "Music",
+		"greatPerson": "Guillaume De Machaut"
+	},
+	{
+		"name": "Nymphes des bois",
+		"greatWorkClass": "Music",
+		"greatPerson": "Josquin Des Pres"
+	},
+	{
+		"name": "Payoji Maine",
+		"greatWorkClass": "Music",
+		"greatPerson": "Meerabai"
+	},
+	{
+		"name": "Spem In Alium",
+		"greatWorkClass": "Music",
+		"greatPerson": "Thomas Tallis"
+	},
+	{
+		"name": "Missa Papae Marcelli: Kyrie",
+		"greatWorkClass": "Music",
+		"greatPerson": "Giovanni Pierluigi"
+	},
+	{
+		"name": "Xicochi",
+		"greatWorkClass": "Music",
+		"greatPerson": "Gaspar Fernandes"
+	},
+	{
+		"name": "Rokudan No Shirabe",
+		"greatWorkClass": "Music",
+		"greatPerson": "Yatsuhashi Kengyo"
+	},
+	{
+		"name": "Brandenburg Concertos (Concerto III in G Major)",
+		"greatWorkClass": "Music",
+		"greatPerson": "Johann Sebastian Bach"
+	},
+	{
+		"name": "Gloria, Laus et Honor",
+		"greatWorkClass": "Music",
+		"greatPerson": "Estaban Salas Y Castro"
+	},
+	{
+		"name": "Salve Regina",
+		"greatWorkClass": "Music",
+		"greatPerson": "Emerico Lobo De Mesquita"
+	},
+	{
+		"name": "Eine Kleine Nachtmusik",
+		"greatWorkClass": "Music",
+		"greatPerson": "Wolfgang Amadeus Mozart"
+	},
+	{
+		"name": "Sakuragari",
+		"greatWorkClass": "Music",
+		"greatPerson": "Yamada Kengyo"
+	},
+	{
+		"name": "Fifth Symphony",
+		"greatWorkClass": "Music",
+		"greatPerson": "Ludwig Von Beethoven"
+	},
+	{
+		"name": "Caprice No. 24 in A Minor",
+		"greatWorkClass": "Music",
+		"greatPerson": "Niccolo Paganini"
+	},
+	{
+		"name": "Te Deum",
+		"greatWorkClass": "Music",
+		"greatPerson": "Francisco Manuel Da Silva"
+	},
+	{
+		"name": "Raindrop Prelude",
+		"greatWorkClass": "Music",
+		"greatPerson": "Frederic Chopin"
+	},
+	{
+		"name": "Die Walküre",
+		"greatWorkClass": "Music",
+		"greatPerson": "Richard Wagner"
+	},
+	{
+		"name": "Pace, pace mio Dio",
+		"greatWorkClass": "Music",
+		"greatPerson": "Giuseppe Verdi"
+	},
+	{
+		"name": "Contradanzas Cubanas",
+		"greatWorkClass": "Music",
+		"greatPerson": "Manuel Saumell"
+	},
+	{
+		"name": "Die Fledermaus",
+		"greatWorkClass": "Music",
+		"greatPerson": "Johann Strauss"
+	},
+	{
+		"name": "Hungarian Dances",
+		"greatWorkClass": "Music",
+		"greatPerson": "Johannes Brahms"
+	},
+	{
+		"name": "Night on Bald Mountain",
+		"greatWorkClass": "Music",
+		"greatPerson": "Modest Mussorgsky"
+	},
+	{
+		"name": "1812 Overture",
+		"greatWorkClass": "Music",
+		"greatPerson": "Pyotr Ilyich Tchaikovsky"
+	},
+	{
+		"name": "From the New World (Symphone No. 9 in E Minor)",
+		"greatWorkClass": "Music",
+		"greatPerson": "Antonin Dvorak"
+	},
+	{
+		"name": "Daha (The Beating of the Waves)",
+		"greatWorkClass": "Music",
+		"greatPerson": "Taizan Higuchi"
+	},
+	{
+		"name": "La Cathedrale Engloutie (\"The Sunken Cathedral\")",
+		"greatWorkClass": "Music",
+		"greatPerson": "Clause Debussy"
+	},
+	{
+		"name": "Variations on America",
+		"greatWorkClass": "Music",
+		"greatPerson": "Charles Ives"
+	},
+	{
+		"name": "Lao Duang Duen",
+		"greatWorkClass": "Music",
+		"greatPerson": "Prince Benbadhanabongse"
+	},
+	{
+		"name": "Ana Haweet",
+		"greatWorkClass": "Music",
+		"greatPerson": "Sayed Darwish"
+	},
+	{
+		"name": "Sermon of Sadness",
+		"greatWorkClass": "Music",
+		"greatPerson": "Hanna Petros"
+	},
+	{
+		"name": "I Got Rhythm",
+		"greatWorkClass": "Music",
+		"greatPerson": "George Gershwin"
+	},
+	{
+		"name": "Sensemaya",
+		"greatWorkClass": "Music",
+		"greatPerson": "Silvestre Revueltas"
+	},
+	{
+		"name": "Sinfonia India",
+		"greatWorkClass": "Music",
+		"greatPerson": "Carlos Chavez"
+	},
+	{
+		"name": "Ladrang Sri-Duhito",
+		"greatWorkClass": "Music",
+		"greatPerson": "Wasitodiningrat"
+	},
+	{
+		"name": "In A Landscape",
+		"greatWorkClass": "Music",
+		"greatPerson": "John Cage"
+	},
+	{
+		"name": "Jhaptal",
+		"greatWorkClass": "Music",
+		"greatPerson": "Alla Rakha"
+	},
+	{
+		"name": "Didgeridoo",
+		"greatWorkClass": "Music",
+		"greatPerson": "David Blanasi"
+	},
+	{
+		"name": "Katcina Dances",
+		"greatWorkClass": "Music",
+		"greatPerson": "Louis Ballard"
+	},
+	{
+		"name": "Electric Counterpoint III Fast",
+		"greatWorkClass": "Music",
+		"greatPerson": "Steve Reich"
+	},
+	{
+		"name": "Al Capone",
+		"greatWorkClass": "Music",
+		"greatPerson": "Cecil Bustamente"
+	},
+	{
+		"name": "Song For The Morning Star",
+		"greatWorkClass": "Music",
+		"greatPerson": "Carlos Nakai"
+	},
+	{
+		"name": "Also Sprach Zarathustra",
+		"greatWorkClass": "Music",
+		"greatPerson": "Richard Strauss"
+	},
+	{
+		"name": "Saturn",
+		"greatWorkClass": "Music",
+		"greatPerson": "Gustav Holst"
+	},
+	{
+		"name": "Caravan",
+		"greatWorkClass": "Music",
+		"greatPerson": "Duke Ellington"
+	},
+	{
+		"name": "Symphony No. 1",
+		"greatWorkClass": "Music",
+		"greatPerson": "Ulvi Cemal Erkin"
+	},
+	{
+		"name": "Mbube",
+		"greatWorkClass": "Music",
+		"greatPerson": "Solomon Linda"
+	},
+	{
+		"name": "Shaker Loops",
+		"greatWorkClass": "Music",
+		"greatPerson": "John Adams"
+	},
+	{
+		"name": "Ave Maris Stella",
+		"greatWorkClass": "Music",
+		"greatPerson": "Guillaume Dufay"
+	},
+	{
+		"name": "Requiem: Kyrie",
+		"greatWorkClass": "Music",
+		"greatPerson": "Johannes Ockeghem"
+	},
+	{
+		"name": "Salve Regina A 4",
+		"greatWorkClass": "Music",
+		"greatPerson": "Jacob Obrecht"
+	},
+	{
+		"name": "Bonjour Mon Coeur",
+		"greatWorkClass": "Music",
+		"greatPerson": "Orlande De Lassus"
+	},
+	{
+		"name": "O magnum mysterium",
+		"greatWorkClass": "Music",
+		"greatPerson": "Giovanni Gabrieli"
+	},
+	{
+		"name": "Poiche l'avida sete",
+		"greatWorkClass": "Music",
+		"greatPerson": "Carlo Gesualdo"
+	},
+	{
+		"name": "Agnus Dei",
+		"greatWorkClass": "Music",
+		"greatPerson": "William Byrd"
+	},
+	{
+		"name": "Water Music",
+		"greatWorkClass": "Music",
+		"greatPerson": "George Handel"
+	},
+	{
+		"name": "Symphony No. 93",
+		"greatWorkClass": "Music",
+		"greatPerson": "Franz Josef Haydn"
+	},
+	{
+		"name": "Hungarian Rhapsody No. 2",
+		"greatWorkClass": "Music",
+		"greatPerson": "Franz Liszt"
+	},
+	{
+		"name": "Das Verlassene Mägdlein",
+		"greatWorkClass": "Music",
+		"greatPerson": "Hugo Wolf"
+	},
+	{
+		"name": "Symphony No. 5",
+		"greatWorkClass": "Music",
+		"greatPerson": "Gustav Mahler"
+	},
+	{
+		"name": "Symphony No. 3 \"with organ\"",
+		"greatWorkClass": "Music",
+		"greatPerson": "Camille Saint Saens"
+	},
+	{
+		"name": "Parade",
+		"greatWorkClass": "Music",
+		"greatPerson": "Erik Satie"
+	},
+	{
+		"name": "Lulu",
+		"greatWorkClass": "Music",
+		"greatPerson": "Alban Berg"
+	},
+	{
+		"name": "String Quartet in F",
+		"greatWorkClass": "Music",
+		"greatPerson": "Maurice Ravel"
+	},
+	{
+		"name": "Young Person's Guide to the Orchestra",
+		"greatWorkClass": "Music",
+		"greatPerson": "Benjamin Britten"
+	},
+	{
+		"name": "Girl with a Pearl Earring",
+		"greatWorkClass": "Art",
+		"greatPerson": "Jan Vermeer"
+	},
+	{
+		"name": "Henry VIII",
+		"greatWorkClass": "Art",
+		"greatPerson": "Hans Holbein"
+	},
+	{
+		"name": "Hunters in the Snow",
+		"greatWorkClass": "Art",
+		"greatPerson": "Pieter Bruegel"
+	},
+	{
+		"name": "Les Demoiselles d'Avignon",
+		"greatWorkClass": "Art",
+		"greatPerson": "Pablo Picasso"
+	},
+	{
+		"name": "Luncheon of the Boating Party",
+		"greatWorkClass": "Art",
+		"greatPerson": "Pierre Auguste Enoir"
+	},
+	{
+		"name": "Mona Lisa",
+		"greatWorkClass": "Art",
+		"greatPerson": "Leonardo Da Vinci"
+	},
+	{
+		"name": "Sunday Afternoon",
+		"greatWorkClass": "Art",
+		"greatPerson": "George Seurat"
+	},
+	{
+		"name": "View of Toledo",
+		"greatWorkClass": "Art",
+		"greatPerson": "El Greco"
+	},
+	{
+		"name": "Water Lilies",
+		"greatWorkClass": "Art",
+		"greatPerson": "Claude Monet"
+	},
+	{
+		"name": "Starry Night",
+		"greatWorkClass": "Art",
+		"greatPerson": "Vincent Van Gogh"
+	},
+	{
+		"name": "Birth of Venus",
+		"greatWorkClass": "Art",
+		"greatPerson": "Sandro Botticelli"
+	},
+	{
+		"name": "Portrait of Bindo Altoviti",
+		"greatWorkClass": "Art",
+		"greatPerson": "Raffaello Sanzo"
+	},
+	{
+		"name": "Saint George and the Dragon",
+		"greatWorkClass": "Art",
+		"greatPerson": "Paolo Uccello"
+	},
+	{
+		"name": "Creation of Adam",
+		"greatWorkClass": "Art",
+		"greatPerson": "Michelangelo Buonarroti"
+	},
+	{
+		"name": "Gallery of the Louvre",
+		"greatWorkClass": "Art",
+		"greatPerson": "Samuel Morse"
+	},
+	{
+		"name": "Washington Crossing the Delaware",
+		"greatWorkClass": "Art",
+		"greatPerson": "Emanual Leutze"
+	},
+	{
+		"name": "Arrangement In Grey",
+		"greatWorkClass": "Art",
+		"greatPerson": "James Whistler"
+	},
+	{
+		"name": "Breezing Up (A Fair Wind)",
+		"greatWorkClass": "Art",
+		"greatPerson": "Winslow Homer"
+	},
+	{
+		"name": "A Thousand Li of Rivers and Mountains",
+		"greatWorkClass": "Art",
+		"greatPerson": "Wang Ximeng"
+	},
+	{
+		"name": "Dwelling in the Fuchun Mountains",
+		"greatWorkClass": "Art",
+		"greatPerson": "Huang Gongwang"
+	},
+	{
+		"name": "Along the River During Qingming Festival",
+		"greatWorkClass": "Art",
+		"greatPerson": "Zhang Zuduan"
+	},
+	{
+		"name": "Leaf 2 (Paintings of Ladies)",
+		"greatWorkClass": "Art",
+		"greatPerson": "Jiao Bingzhen"
+	},
+	{
+		"name": "Emperor Taizong Receiving the Tibetan Envoy",
+		"greatWorkClass": "Art",
+		"greatPerson": "Yan Liben"
+	},
+	{
+		"name": "Spring Morning in the Han Palace",
+		"greatWorkClass": "Art",
+		"greatPerson": "Qiu Ying"
+	},
+	{
+		"name": "Under the Wave off Kanagawa (the Great Wave)",
+		"greatWorkClass": "Art",
+		"greatPerson": "Katsushika Hokusai"
+	},
+	{
+		"name": "Evening Shower at Atake and the Great Bridge",
+		"greatWorkClass": "Art",
+		"greatPerson": "Utagawa Hiroshige"
+	},
+	{
+		"name": "L'Absinthe",
+		"greatWorkClass": "Art",
+		"greatPerson": "Edgar Degas"
+	},
+	{
+		"name": "Upaupa Schneklud",
+		"greatWorkClass": "Art",
+		"greatPerson": "Paul Gauduin"
+	},
+	{
+		"name": "A Bar at the Folies-Bergère",
+		"greatWorkClass": "Art",
+		"greatPerson": "Edouard Manet"
+	},
+	{
+		"name": "Ball at the Moulin Rouge",
+		"greatWorkClass": "Art",
+		"greatPerson": "Henri De Toulouse Lautrec"
+	},
+	{
+		"name": "The Kiss (Der Kuß)",
+		"greatWorkClass": "Art",
+		"greatPerson": "Gustav Klimpt"
+	},
+	{
+		"name": "American Gothic",
+		"greatWorkClass": "Art",
+		"greatPerson": "Grant Devolson Wood"
+	},
+	{
+		"name": "Sri Shanmukaha Subramania Swami",
+		"greatWorkClass": "Art",
+		"greatPerson": "Raja Ravi Varma"
+	},
+	{
+		"name": "Da'ud Receives a Robe of Honor from Mun'im Khan",
+		"greatWorkClass": "Art",
+		"greatPerson": "Hiranand"
+	},
+	{
+		"name": "Yusef and Zuleykha",
+		"greatWorkClass": "Art",
+		"greatPerson": "Kamaleddin Behzad"
+	},
+	{
+		"name": "The Ascent of Muhammad to Heaven",
+		"greatWorkClass": "Art",
+		"greatPerson": "Sultan Muhammad"
+	},
+	{
+		"name": "Liberty Leading the People",
+		"greatWorkClass": "Art",
+		"greatPerson": "Eugene Delacroix"
+	},
+	{
+		"name": "Saint Jerome in his Study",
+		"greatWorkClass": "Art",
+		"greatPerson": "Antonello Da Messina"
+	},
+	{
+		"name": "Parthenon Frieze",
+		"greatWorkClass": "Art"
+	},
+	{
+		"name": "Paris Street; Rainy Day",
+		"greatWorkClass": "Art",
+		"greatPerson": "Gustave Caillebotte"
+	},
+	{
+		"name": "The Night Watch",
+		"greatWorkClass": "Art",
+		"greatPerson": "Rembrandt"
+	},
+	{
+		"name": "Death of Marat",
+		"greatWorkClass": "Art",
+		"greatPerson": "Jacques David"
+	},
+	{
+		"name": "Etienne Chevalier with St. Stephen",
+		"greatWorkClass": "Art",
+		"greatPerson": "Jean Fouquet"
+	},
+	{
+		"name": "Saint Francis in Meditation",
+		"greatWorkClass": "Art",
+		"greatPerson": "Zurbaran"
+	},
+	{
+		"name": "Hataori",
+		"greatWorkClass": "Art",
+		"greatPerson": "Yanagawa"
+	},
+	{
+		"name": "The Execution of Lady Jane Grey",
+		"greatWorkClass": "Art",
+		"greatPerson": "Paul Delaroche"
+	},
+	{
+		"name": "The Wanderer Above the Sea of Fog",
+		"greatWorkClass": "Art",
+		"greatPerson": "Caspar David Friedrich"
+	},
+	{
+		"name": "Tower of Babel",
+		"greatWorkClass": "Art",
+		"greatPerson": "Peter Brueghel"
+	},
+	{
+		"name": "Portrait of a Young Girl",
+		"greatWorkClass": "Art",
+		"greatPerson": "Petrus Christus"
+	},
+	{
+		"name": "Kindred Spirits",
+		"greatWorkClass": "Art",
+		"greatPerson": "Asher Durand"
+	},
+	{
+		"name": "The Blue Boy",
+		"greatWorkClass": "Art",
+		"greatPerson": "Thomas Gainsborough"
+	},
+	{
+		"name": "The Third of May 1808",
+		"greatWorkClass": "Art",
+		"greatPerson": "Francisco De Goya"
+	},
+	{
+		"name": "The Last Cartridges",
+		"greatWorkClass": "Art",
+		"greatPerson": "Alphonse Marie Adolphe De Neuville"
+	},
+	{
+		"name": "Early Autumn",
+		"greatWorkClass": "Art",
+		"greatPerson": "Qian Xuan"
+	},
+	{
+		"name": "Zhou Maoshu Appreciating Lotuses",
+		"greatWorkClass": "Art",
+		"greatPerson": "Kano Masanobu"
+	},
+	{
+		"name": "Equestrian Portrait of Charles V",
+		"greatWorkClass": "Art",
+		"greatPerson": "Titian"
+	},
+	{
+		"name": "The Armada Portrait of Elizabeth I",
+		"greatWorkClass": "Art",
+		"greatPerson": "George Gower"
+	},
+	{
+		"name": "Francis I of France",
+		"greatWorkClass": "Art",
+		"greatPerson": "Jean Clouet"
+	},
+	{
+		"name": "Self portrait",
+		"greatWorkClass": "Art",
+		"greatPerson": "Bartholomeum Spranger"
+	},
+	{
+		"name": "Vertumnus",
+		"greatWorkClass": "Art",
+		"greatPerson": "Giuseppe Arcimboldo"
+	},
+	{
+		"name": "The Last Supper",
+		"greatWorkClass": "Art",
+		"greatPerson": "Tintoretto"
+	},
+	{
+		"name": "Portrait of a Man in a Turban",
+		"greatWorkClass": "Art",
+		"greatPerson": "Jan Van Eyck"
+	},
+	{
+		"name": "Naked Young Woman in Front of the Mirror",
+		"greatWorkClass": "Art",
+		"greatPerson": "Giovanni Bellini"
+	},
+	{
+		"name": "Adoration of the Magi",
+		"greatWorkClass": "Art",
+		"greatPerson": "Giotto Di Bondone"
+	},
+	{
+		"name": "Rubens And Isabella",
+		"greatWorkClass": "Art",
+		"greatPerson": "Peter Paul Rubens"
+	},
+	{
+		"name": "The Child's Bath",
+		"greatWorkClass": "Art",
+		"greatPerson": "Mary Cassatt"
+	},
+	{
+		"name": "The Card Players",
+		"greatWorkClass": "Art",
+		"greatPerson": "Paul Cezanne"
+	},
+	{
+		"name": "The Swing",
+		"greatWorkClass": "Art",
+		"greatPerson": "Jean Honore Fragonard"
+	},
+	{
+		"name": "Giant Magnolias on a Blue Velvet Cloth",
+		"greatWorkClass": "Art",
+		"greatPerson": "Martin Johnson Heade"
+	},
+	{
+		"name": "Saint George Killing the Dragon",
+		"greatWorkClass": "Art",
+		"greatPerson": "Bernardo Martorell"
+	},
+	{
+		"name": "Jacques and Berthe Lipchitz",
+		"greatWorkClass": "Art",
+		"greatPerson": "Amedeo Modigliani"
+	},
+	{
+		"name": "A Dash for the Timber",
+		"greatWorkClass": "Art",
+		"greatPerson": "Frederic Remington"
+	},
+	{
+		"name": "George Washington (Landsdowne portrait)",
+		"greatWorkClass": "Art",
+		"greatPerson": "Gilbert Stuart"
+	},
+	{
+		"name": "Attack On Beijing",
+		"greatWorkClass": "Art",
+		"greatPerson": "Torajiro Kasai"
+	},
+	{
+		"name": "Sumo Wrestler Somagahana Fuchiemon",
+		"greatWorkClass": "Art",
+		"greatPerson": "Toyokuni Utagawa"
+	},
+	{
+		"name": "Rosetta Stone",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Mawangdui Silk Texts",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Dead Sea Scrolls",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Epic of Gilgamesh",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Nag Hammadi",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Linear B Shards",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Papyrus of Ani",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Roak Runestone",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Code of Hammurabi",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Bakshali Manuscript",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Codex Perez",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Jushichijo Kempo",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Book of Kells",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Codex Borgia",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Kedukan Bukit Stone",
+		"greatWorkClass": "Writing",
+		"archaeologyOnly": true
+	},
+	{
+		"name": "Tiger in a Tropical Storm (Surprised!)",
+		"greatWorkClass": "Art",
+		"greatPerson": "Henri Rousseau"
+	},
+	{
+		"name": "The Home Guard",
+		"greatWorkClass": "Art",
+		"greatPerson": "Jozef Borsos"
+	},
+	{
+		"name": "Ceremonial Sitting",
+		"greatWorkClass": "Art",
+		"greatPerson": "Ilya Repin"
+	},
+	{
+		"name": "Russian tsar in XVI",
+		"greatWorkClass": "Art",
+		"greatPerson": "Sergey Ivanov"
+	},
+	{
+		"name": "The Crucifixion of Saint Peter",
+		"greatWorkClass": "Art",
+		"greatPerson": "Caravaggio"
+	},
+	{
+		"name": "Landscape with an Ant Bear",
+		"greatWorkClass": "Art",
+		"greatPerson": "Frans Post"
+	},
+	{
+		"name": "Dutch men-o'-war and other shipping in a calm",
+		"greatWorkClass": "Art",
+		"greatPerson": "Willem The Younger"
+	},
+	{
+		"name": "Harbor In Balaklava",
+		"greatWorkClass": "Art",
+		"greatPerson": "William Simpson"
+	},
+	{
+		"name": "The Peacemakers",
+		"greatWorkClass": "Art",
+		"greatPerson": "George Healy"
+	},
+	{
+		"name": "Portrait of Chitasei Go Yo",
+		"greatWorkClass": "Art",
+		"greatPerson": "Utagawa Kuniyoshi"
+	},
+	{
+		"name": "Portrait of Louis François Roubiliac",
+		"greatWorkClass": "Art",
+		"greatPerson": "Adrien Carpentiers"
+	},
+	{
+		"name": "Portrait of Nasser al-Din Shah Qajar",
+		"greatWorkClass": "Art",
+		"greatPerson": "Bahram Kirmanshahi"
+	},
+	{
+		"name": "Field with sheafs",
+		"greatWorkClass": "Art",
+		"greatPerson": "August Haake"
+	},
+	{
+		"name": "At the Edge of the Brook",
+		"greatWorkClass": "Art",
+		"greatPerson": "William Bouguereau"
+	},
+	{
+		"name": "The Kiss",
+		"greatWorkClass": "Art",
+		"greatPerson": "Francesco Hayez"
+	},
+	{
+		"name": "Moving House",
+		"greatWorkClass": "Art",
+		"greatPerson": "Viktor Vasnetsov"
+	},
+	{
+		"name": "Scene from the Mexican Expedition in 1838",
+		"greatWorkClass": "Art",
+		"greatPerson": "Horace Vernet"
+	},
+	{
+		"name": "The Last Day of Pompeii",
+		"greatWorkClass": "Art",
+		"greatPerson": "Karl Briullov"
+	},
+	{
+		"name": "The Accolade",
+		"greatWorkClass": "Art",
+		"greatPerson": "Edmund Leighton"
+	}
+]

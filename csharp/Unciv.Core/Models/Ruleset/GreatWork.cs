@@ -53,6 +53,9 @@ public class GreatWork : INamed
 
     /// <summary>The hidden writing finds: only archaeology creates them, never a Great Person.</summary>
     public bool ArchaeologyOnly { get; set; }
+
+    /// <summary>The Great Person this work is named after (BNW <c>Unit_UniqueNames.GreatWorkType</c>), or empty. Data for the Great Person actions (B011).</summary>
+    public string GreatPerson { get; set; } = "";
 }
 
 /// <summary>
