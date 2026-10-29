@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 217/220 | 3 | 0 | 2 | [T239](backlog/T239.md) [T242](backlog/T242.md) [T243](backlog/T243.md) |
+| Phase 1: CLI (headless engine) | 218/220 | 2 | 0 | 1 | [T239](backlog/T239.md) [T242](backlog/T242.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 20/29 | 9 | 0 | 2 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T205](backlog/T205.md) [T225](backlog/T225.md) |
 
@@ -30,7 +30,6 @@ flowchart TD
     T225["T225<br/>Network robustness: real TCP+TLS multi-client tests, backpre..."]
     T239["T239<br/>Observe first green CI run after the workflow scope is grant..."]
     T242["T242<br/>Two-human conflict tests: one-per-game wonder race, ruins, r..."]
-    T243["T243<br/>Real-started-game visibility test for two humans: B's mirror..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C006["C006<br/>Networked play client: join screen (address:port / invite), ..."]
@@ -67,7 +66,6 @@ flowchart TD
   class T225 ondeck
   class T239 blocked
   class T242 prog
-  class T243 review
 ```
 
 ## Remaining tickets over time
@@ -86,7 +84,7 @@ xychart-beta
     x-axis ["24 12:00", "25 00:00", "25 12:00", "26 00:00", "26 12:00", "27 00:00", "27 12:00", "28 00:00", "28 12:00", "29 00:00", "29 12:00"]
     y-axis "Tickets" 0 --> 62
     line [57, 13, 54, 39, 19, 12, 10, 10, 10, 10, 8]
-    line [0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 4]
+    line [0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3]
 ```
 
 ## Incomplete tickets
@@ -104,4 +102,3 @@ xychart-beta
 | C045 | Available (waiting on C036) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | T239 | Blocked | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T242 | In-Progress [Claude] | T203 | 0 | Two-human conflict tests: one-per-game wonder race, ruins, religion founding and belief limits |
-| T243 | Needs-Review [Claude] | T203 | 0 | Real-started-game visibility test for two humans: B's mirror never holds A-only tiles/units across a simultaneous round |
