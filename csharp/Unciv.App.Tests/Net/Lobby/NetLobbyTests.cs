@@ -795,18 +795,14 @@ public sealed class NetLobbyTests : IDisposable
         await using var lobby = new ServerLobby();
         using var id = ClientIdentity.Generate();
         var (c1, s1) = InMemoryTransport.CreatePair();
-        var flaky = new FailingSendTransport(s1);
-        _ = lobby.AttachConnectionAsync(flaky);
-        await using var first = NewClient(lobby, id, "Alice", c1);
-        Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
-        await first.SetLobbySlotAsync(0, "Rome", null, true);
+        _ = lobby.AttachConnectionAsync(new FailingSendTransport(s1));
+        await RawJoinAsync(lobby, c1, id); // a raw peer sends nothing after GameStarting, so the lobby reader stays parked in its receive
         await Assert.ThrowsAsync<InvalidOperationException>(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
 
         // A known key arriving now would wait for a game that never comes: its connection must be closed, not left without a snapshot.
         var (c2, s2) = InMemoryTransport.CreatePair();
         _ = lobby.AttachConnectionAsync(s2);
-        await using var second = NewClient(lobby, id, "Alice", c2);
-        _ = second.JoinAsync();
+        await RawJoinAsync(lobby, c2, id);
         using var cts = new CancellationTokenSource(Bound);
         while (await c2.ReceiveAsync(cts.Token) != null) { }
     }
