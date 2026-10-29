@@ -63,7 +63,7 @@
     "Unciv.Cli/Program.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Client.Net/Session/ClientEvent.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Client.Net/Session/ClientGameState.cs": {"branch": 86.36, "line": 100.0},
-    "Unciv.Client.Net/Session/ClientSession.cs": {"branch": 91.72, "line": 96.85},
+    "Unciv.Client.Net/Session/ClientSession.cs": {"branch": 93.33, "line": 97.52},
     "Unciv.Client.Net/Transport/TcpTlsClientTransport.cs": {"branch": 81.82, "line": 84.09},
     "Unciv.Core/AI/Civ5AiDriver.cs": {"branch": 91.49, "line": 98.91},
     "Unciv.Core/AI/Civ5AiState.cs": {"branch": 100.0, "line": 100.0},

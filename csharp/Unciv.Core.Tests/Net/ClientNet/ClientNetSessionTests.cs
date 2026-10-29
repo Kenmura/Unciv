@@ -211,6 +211,64 @@ public sealed class ClientNetSessionTests
         Assert.Equal(new JoinResult(false, ClientCodes.ConnectFailed), result);
     }
 
+    // T180 review finding (Claude): a socket that accepts but never sends Welcome used to hang JoinAsync forever.
+    [Fact]
+    public async Task Join_HostThatNeverAdmitsUs_TimesOutInsteadOfHanging()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "Alice",
+            RulesetHash = "hash",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            ReconnectDelay = (_, _) => Task.CompletedTask,
+            HandshakeTimeout = TimeSpan.FromMilliseconds(100)
+        });
+        rig.NewConnection(); // the host end stays silent, still holding the transport open
+        var result = await rig.Session.JoinAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(result.Joined);
+        Assert.Equal(ClientCodes.ConnectionLost, result.Code);
+    }
+
+    // T180 review finding (Claude): a throwing caller callback used to fault the background loop and never complete JoinAsync.
+    [Fact]
+    public async Task Join_TrustPromptThrows_EndsTheSessionWithoutFaultingTheLoop()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "Alice",
+            RulesetHash = "hash",
+            HostAddress = "host:1",
+            KnownHosts = new KnownHosts(),
+            TrustPrompt = (_, _) => throw new InvalidOperationException("ui is gone"),
+            ReconnectDelay = (_, _) => Task.CompletedTask
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s1", Challenge = "c1", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        var result = await join.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(result.Joined);
+        // The throwing prompt ends that connection (a caller bug must not fault the loop); the loop reports the lost connection to the joiner.
+        Assert.Equal(ClientCodes.ConnectionLost, result.Code);
+        Assert.Equal(ClientCodes.ConnectionLost, (await rig.NextAsync<SessionEnded>()).Reason);
+        // DisposeAsync awaits the loop task; it must not rethrow the callback's exception.
+        await rig.Session.DisposeAsync();
+    }
+
+    // T180 review finding (Claude): an unexpected exception from the connect factory used to fault the loop, so JoinAsync never completed.
+    [Fact]
+    public async Task Join_ConnectFactoryThrowsUnexpectedly_EndsTheSessionWithoutFaultingTheLoop()
+    {
+        using var identity = ClientIdentity.Generate();
+        await using var session = new ClientSession(
+            _ => throw new ArgumentException("bad factory"),
+            new ClientSessionOptions { Identity = identity, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint });
+        var result = await session.JoinAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(new JoinResult(false, "session-error"), result);
+    }
+
     // ---------------------------------------------------------------- mirror: snapshot and deltas
 
     [Fact]
@@ -413,7 +471,48 @@ public sealed class ClientNetSessionTests
         Assert.Equal(9, rig.Session.Game.Seq);
     }
 
+    // T180 review finding (Claude): a rejected snapshot used to leave the ResyncAsync waiter pending forever.
+    [Fact]
+    public async Task ResyncAsync_FaultsWhenTheSnapshotIsRejected()
+    {
+        await using var rig = new ClientNetRig();
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        var resync = rig.Session.ResyncAsync();
+        await host.ReceiveAsync<ResyncRequest>();
+        await host.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(9, 4)) with { ViewHash = "bad" });
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => resync);
+        Assert.Equal("snapshot-hash-mismatch", error.Message);
+        Assert.Equal(5, rig.Session.Game.Seq);
+    }
+
+    // T180 review finding (Claude): ResyncAsync after the session ended used to wait for a snapshot that can never arrive.
+    [Fact]
+    public async Task ResyncAsync_AfterTheSessionEnded_ThrowsInsteadOfWaitingForever()
+    {
+        await using var rig = new ClientNetRig();
+        await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        await rig.Session.DisposeAsync();
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => rig.Session.ResyncAsync());
+        Assert.Equal(ClientCodes.SessionClosed, error.Message);
+    }
+
     // ---------------------------------------------------------------- commands
+
+    // T180 review finding (Claude): a command submitted in the lobby was remembered forever with no host ever answering it.
+    [Fact]
+    public async Task Submit_InLobby_IsRefusedInsteadOfLeftPending()
+    {
+        await using var rig = new ClientNetRig();
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await rig.HandshakeAsync(host);
+        Assert.True((await join).Joined);
+        await rig.NextAsync(it => it is StateChanged { State: ClientSessionState.Lobby });
+        var outcome = await rig.Session.SubmitAsync("a", EmptyObject);
+        Assert.False(outcome.Accepted);
+        Assert.Equal(ClientCodes.NotInGame, outcome.Code);
+        Assert.Equal(0, rig.Session.PendingCommandCount);
+    }
 
     [Fact]
     public async Task Submit_CompletesWithHostAnswer_AndIdsAreUnique()

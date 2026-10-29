@@ -45,6 +45,9 @@ public sealed class ClientSessionOptions
 
     public int MaxReconnectAttempts { get; init; } = 5;
 
+    /// <summary>How long a connection may stay unadmitted (no <c>JoinOk</c>) before the session closes it and retries.</summary>
+    public TimeSpan HandshakeTimeout { get; init; } = TimeSpan.FromSeconds(30);
+
     /// <summary>Waits before reconnect attempt n (1-based). The default backs off 1, 2, 4, ... 30 seconds; tests pass an immediate one.</summary>
     public Func<int, CancellationToken, Task> ReconnectDelay { get; init; } =
         (attempt, token) => Task.Delay(TimeSpan.FromSeconds(Math.Min(30, 1 << Math.Min(attempt - 1, 5))), token);
@@ -87,7 +90,7 @@ public sealed class ClientSession : IAsyncDisposable
     // Receive-loop state (touched by the loop only, except where noted).
     private bool everJoined;
     private bool connectionJoined;
-    private bool awaitingSnapshot;
+    private volatile bool awaitingSnapshot;
     private bool gameStarted;
     private string? gameId;
     private TaskCompletionSource? resyncWaiter;
@@ -164,6 +167,9 @@ public sealed class ClientSession : IAsyncDisposable
         lock (gate)
         {
             if (stopped) return new CommandOutcome("", false, ClientCodes.SessionClosed, null);
+            // Before a game starts there is nothing to command: accept nothing rather than keep a command pending that no host will ever answer.
+            if (state is ClientSessionState.Disconnected or ClientSessionState.Joining or ClientSessionState.Lobby)
+                return new CommandOutcome("", false, ClientCodes.NotInGame, null);
             if (pending.Count >= MaxPendingCommands) return new CommandOutcome("", false, ClientCodes.TooManyPending, null);
             var ordinal = nextCommand++;
             var id = $"{idPrefix}-{ordinal}";
@@ -210,12 +216,13 @@ public sealed class ClientSession : IAsyncDisposable
         }
     }
 
-    /// <summary>Asks the host for a full snapshot and completes when it replaced the mirror (or the connection was lost first, which faults the task).</summary>
+    /// <summary>Asks the host for a full snapshot and completes when it replaced the mirror (or the connection was lost, the snapshot was rejected, or the session already ended: then the task faults).</summary>
     public async Task ResyncAsync(CancellationToken cancellationToken = default)
     {
         TaskCompletionSource waiter;
         lock (gate)
         {
+            if (stopped) throw new InvalidOperationException(ClientCodes.SessionClosed);
             waiter = resyncWaiter ??= new(TaskCreationOptions.RunContinuationsAsynchronously);
         }
         await RequestResyncAsync("requested").ConfigureAwait(false);
@@ -250,6 +257,21 @@ public sealed class ClientSession : IAsyncDisposable
     private async Task RunAsync()
     {
         var token = lifetime.Token;
+        try
+        {
+            await ConnectLoopAsync(token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception)
+        {
+            // A caller callback (trust prompt, connect factory, persist) or an undecodable message escaped the connection: end the session cleanly.
+            // The loop task must never fault silently, or JoinAsync would never complete and DisposeAsync would rethrow it (T180 review).
+            await EndAsync("session-error", refused: false).ConfigureAwait(false);
+        }
+    }
+
+    private async Task ConnectLoopAsync(CancellationToken token)
+    {
         var attempt = 0;
         while (!stopped)
         {
@@ -287,6 +309,8 @@ public sealed class ClientSession : IAsyncDisposable
 
     private async Task RunConnectionAsync(ITransport current, CancellationToken token)
     {
+        using var handshake = CancellationTokenSource.CreateLinkedTokenSource(token);
+        handshake.CancelAfter(options.HandshakeTimeout);
         transport = current;
         connectionJoined = false;
         awaitingSnapshot = false;
@@ -303,15 +327,17 @@ public sealed class ClientSession : IAsyncDisposable
 
             while (!stopped)
             {
-                var frame = await current.ReceiveAsync(token).ConfigureAwait(false);
+                // Until the host admits us every read races the handshake deadline: a socket that accepts but never answers must not hang JoinAsync.
+                var frame = await current.ReceiveAsync(connectionJoined ? token : handshake.Token).ConfigureAwait(false);
                 if (frame == null) break;
                 if (!await HandleAsync(ProtocolCodec.Decode(frame), token).ConfigureAwait(false)) break;
             }
         }
-        catch (OperationCanceledException) { }
-        catch (Exception e) when (e is IOException or InvalidOperationException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) { /* handshake deadline */ }
+        catch (Exception)
         {
-            // a dead transport ends this connection; the loop decides about reconnecting
+            // A dead transport, a malformed frame or a throwing callback ends this connection; the loop decides about reconnecting.
         }
         finally
         {
@@ -490,10 +516,12 @@ public sealed class ClientSession : IAsyncDisposable
             case SnapshotOutcome.Malformed:
                 awaitingSnapshot = false;
                 Emit(new Desynchronized("malformed-snapshot"));
+                FailResync("malformed-snapshot"); // a caller waiting in ResyncAsync must not hang for a snapshot that will never be applied
                 break;
             default:
                 awaitingSnapshot = false;
                 Emit(new Desynchronized("snapshot-hash-mismatch"));
+                FailResync("snapshot-hash-mismatch");
                 break;
         }
     }
@@ -572,9 +600,14 @@ public sealed class ClientSession : IAsyncDisposable
     private void FailWaiters()
     {
         queries.FailAll();
+        FailResync(ClientCodes.ConnectionLost);
+    }
+
+    private void FailResync(string reason)
+    {
         lock (gate)
         {
-            resyncWaiter?.TrySetException(new InvalidOperationException(ClientCodes.ConnectionLost));
+            resyncWaiter?.TrySetException(new InvalidOperationException(reason));
             resyncWaiter = null;
         }
     }

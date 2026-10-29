@@ -30,6 +30,8 @@ public static class ClientCodes
     public const string TooManyPending = "too-many-pending";
     public const string QueryTimeout = "query-timeout";
     public const string MalformedCommand = "malformed-command";
+    /// <summary>A command was submitted before the session was in a game; nothing was sent and nothing is pending.</summary>
+    public const string NotInGame = "not-in-game";
 }
 
 /// <summary>The final answer to one submitted command. <see cref="Code"/> is a host code or a <see cref="ClientCodes"/> value, never free text.</summary>
