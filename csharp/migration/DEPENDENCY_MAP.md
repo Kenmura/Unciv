@@ -107,7 +107,7 @@ flowchart TD
   class B029 waiting
   class B031 waiting
   class C071 waiting
-  class C072 prog
+  class C072 review
   class C073 prog
   class C075 waiting
   class C076 waiting
@@ -174,7 +174,7 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | C071 | Available (waiting on ) | C066, C070 | 6 | Policies screen redesign |
-| C072 | In-Progress [Claude] | C066 | 6 | Setup, nation picker and main menu redesign |
+| C072 | Needs-Review [Claude] | C066 | 6 | Setup, nation picker and main menu redesign |
 | C073 | In-Progress [Claude] | C066 | 6 | Diplomacy and trade redesign |
 | C075 | Available (waiting on ) | C066, C067 | 6 | Game menu, save/load and options |
 | C076 | Available (waiting on ) | C066 | 6 | Civilopedia and tooltip content |
