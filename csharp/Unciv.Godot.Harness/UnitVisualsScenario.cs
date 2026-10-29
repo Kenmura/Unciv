@@ -166,7 +166,7 @@ public sealed class UnitVisualsScenario : Scenario
                 view.SetZoom(3f);
             }),
             new WaitFrames(2),
-            new Capture("warrior", "Close view: the Warrior is a CC0 animated model file standing in its idle pose, tinted with the red civ's colour"),
+            new Capture("warrior", "Close view of the Warrior, now a CC0 animated model file in its idle pose with its TeamColor material tinted in the red civ's colour (C080)"),
         ];
     }
 }

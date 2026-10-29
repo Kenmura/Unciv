@@ -49,7 +49,17 @@ public static class UnitModelContract
         foreach (var clip in Names(root, "animations").Where(it => !ClipNames.Contains(it, StringComparer.Ordinal)))
             problems.Add($"clip '{clip}' is not one of {string.Join(", ", ClipNames)}");
 
-        if (Bounds(root) is not var (min, max))
+        (Vector3 Min, Vector3 Max)? bounds;
+        try
+        {
+            bounds = Bounds(root);
+        }
+        catch (Exception e) when (e is KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException or FormatException or ArgumentOutOfRangeException)
+        {
+            problems.Add("cannot measure the model (a mesh, accessor or node is malformed or lacks POSITION min/max): " + e.Message);
+            return problems;
+        }
+        if (bounds is not var (min, max))
         {
             problems.Add("no mesh in the default scene");
             return problems;
@@ -95,7 +105,8 @@ public static class UnitModelContract
             var world = Local(node) * parent;
             if (node.TryGetProperty("mesh", out var meshIndex) && meshes.ValueKind == JsonValueKind.Array)
             {
-                // a skinned mesh ignores its own node transform (glTF 2.0 section 3.7.3.3): its vertices are already in the rig's space
+                // a skinned mesh ignores its own node transform (glTF 2.0 section 3.7.3.3): its vertices are already in the rig's space. Assumes the joints sit under the mesh node's parent (as the
+                // bundled rigs do), so joint world times inverse bind is the identity at bind; a rig whose armature is a sibling subtree with its own transform would be mis-measured.
                 var matrix = node.TryGetProperty("skin", out _) ? parent : world;
                 foreach (var prim in meshes[meshIndex.GetInt32()].GetProperty("primitives").EnumerateArray())
                 {

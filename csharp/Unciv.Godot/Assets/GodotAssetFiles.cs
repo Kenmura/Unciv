@@ -35,6 +35,7 @@ public sealed class GodotAssetFiles : IAssetFiles
         return ResourceLoader.Exists(Root + relativePath) ? ResourceLoader.Load(Root + relativePath) : null;
     }
 
+    // main thread only; a failed load stays cached as null (the placeholder is used, one warning), and a loaded scene lives for the whole run
     private static readonly Dictionary<string, PackedScene?> Models = new(StringComparer.Ordinal);
 
     /// <summary>C080: an un-imported <c>.glb</c> (a pack's unit model) as a scene, parsed once per path: <see cref="GltfDocument"/> reads it at run time, so a pack needs no editor import step, as with images.</summary>

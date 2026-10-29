@@ -24,12 +24,17 @@ public sealed partial class HarnessDeterminismTests
     private static readonly Dictionary<string, string> AllowedClockUsers = new(StringComparer.Ordinal)
     {
         ["ScenarioRunner.cs"] = "reports the wall time between frames of a WaitUntil (C040); asserted only by next-turn with a generous budget",
-        ["UnitVisualsScenario.cs"] = "reads the paused idle pose of the Warrior's AnimationPlayer (C080); nothing plays, so no clip time follows the frame clock",
         ["TerrainBlendScenario.cs"] = "frame-time budget of the Standard-size map (C040 follow-up), best of three batches",
     };
 
     // The client reads the wall clock exactly twice, to seed a brand-new game at launch (a one-off, not frame-driven; scenarios build their own seeded sessions).
-    private static readonly HashSet<string> AllowedClientClock = new(StringComparer.Ordinal) { "App.cs", "QuickStart.cs", "GameScreen.cs", "UnitModels.cs", "UnitNode.cs" }; // UnitModels/UnitNode (C080): find the model's AnimationPlayer and hold it paused in its idle pose; nothing plays until the presenter drives clip time (UNIT-MODELS.md section 2). // GameScreen: the turn bar countdown reads GameScreen.NowMs (C036), which every multiplayer scenario replaces with a fixed time
+    private static readonly HashSet<string> AllowedClientClock = new(StringComparer.Ordinal) { "App.cs", "QuickStart.cs", "GameScreen.cs" }; // GameScreen: the turn bar countdown reads GameScreen.NowMs (C036), which every multiplayer scenario replaces with a fixed time
+
+    // C080: these files only find a model's AnimationPlayer and read it while it is held paused in its idle pose (nothing plays until the presenter drives clip time, UNIT-MODELS.md section 2);
+    // the word AnimationPlayer is ignored there, every other clock/timer API still fails the test.
+    private static readonly HashSet<string> PausedAnimationUsers = new(StringComparer.Ordinal) { "UnitModels.cs", "UnitNode.cs", "UnitVisualsScenario.cs" };
+
+    private static bool UsesClock(string name, string text) => ClockApi().IsMatch(PausedAnimationUsers.Contains(name) ? text.Replace("AnimationPlayer", "", StringComparison.Ordinal) : text);
 
     [GeneratedRegex(@"GetTicks(Msec|Usec)|OS\.GetTicks|GetUnixTime|GetDatetime|OS\.DelayM?Usec|OS\.DelayMsec|DateTime(Offset)?\.(Utc)?(Now|Today)|TimeProvider|Environment\.TickCount|Stopwatch|CreateTween|CreateTimer|new\s+([A-Za-z]+\.)*(Periodic)?Timer\b|Task\.Delay|Thread\.Sleep|AnimationPlayer|AnimationTree|\bTween\b|Engine\.TimeScale", RegexOptions.None)]
     private static partial Regex ClockApi();
@@ -42,7 +47,7 @@ public sealed partial class HarnessDeterminismTests
     public void ScenariosDoNotReadTheWallClockOrStartTimers()
     {
         var offenders = Sources("Unciv.Godot.Harness")
-            .Where(it => ClockApi().IsMatch(it.Text) && !AllowedClockUsers.ContainsKey(it.Name))
+            .Where(it => UsesClock(it.Name, it.Text) && !AllowedClockUsers.ContainsKey(it.Name))
             .Select(it => it.Name)
             .ToList();
         Assert.True(offenders.Count == 0, "wall-clock/timer APIs in the harness (use WaitFrames/explicit stepping, or add the file to AllowedClockUsers with a reason): " + string.Join(", ", offenders));
@@ -53,7 +58,7 @@ public sealed partial class HarnessDeterminismTests
     {
         // The client's own use of real time: frame deltas in _Process. Each must have a switch the runner turns (or be frame-counted/idle in scenarios).
         var clientClock = Sources("Unciv.Godot")
-            .Where(it => ClockApi().IsMatch(it.Text) && !AllowedClientClock.Contains(it.Name))
+            .Where(it => UsesClock(it.Name, it.Text) && !AllowedClientClock.Contains(it.Name))
             .Select(it => it.Name)
             .OrderBy(it => it, StringComparer.Ordinal)
             .ToList();

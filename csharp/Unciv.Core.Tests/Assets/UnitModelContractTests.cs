@@ -119,6 +119,18 @@ public sealed class UnitModelContractTests
     }
 
     [Fact]
+    public void MissingAccessorBoundsAreReportedNotThrown()
+    {
+        var noBounds = Make(Feet, Head);
+        var text = Encoding.UTF8.GetString(noBounds, 20, noBounds.Length - 20).Replace("\"min\"", "\"mix\"", StringComparison.Ordinal);
+        var file = new byte[20 + text.Length];
+        noBounds.AsSpan(0, 20).CopyTo(file);
+        BitConverter.GetBytes((uint)text.Length).CopyTo(file, 12);
+        Encoding.UTF8.GetBytes(text).CopyTo(file, 20);
+        Assert.NotEmpty(UnitModelContract.Check(file));
+    }
+
+    [Fact]
     public void GarbageIsReportedNotThrown()
     {
         Assert.Contains("magic", Assert.Single(UnitModelContract.Check([1, 2, 3])));
