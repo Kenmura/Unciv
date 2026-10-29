@@ -74,6 +74,14 @@ public sealed class BnwGreatWorksDataTests
     }
 
     [Fact]
+    public void SlotBuildingsThatSurviveCaptureAreNotDestroyedWithTheCity()
+    {
+        var buildings = BnwRulesetTests.LoadBnw().Buildings;
+        foreach (var name in new[] { "Opera House", "Museum", "Broadcast Tower", "Amphitheater", "Cathedral", "Ceilidh Hall" })
+            Assert.DoesNotContain("Destroyed when the city is captured", buildings[name].Uniques);
+    }
+
+    [Fact]
     public void TheParthenonCreatesItsFrieze()
     {
         var r = BnwRulesetTests.LoadBnw();

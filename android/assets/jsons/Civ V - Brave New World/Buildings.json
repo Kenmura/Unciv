@@ -310,7 +310,7 @@
 		"requiredBuilding": "Amphitheater",
 		"maintenance": 1,
 		"requiredTech": "Acoustics",
-		"uniques": ["Destroyed when the city is captured"],
+		"uniques": [],
 		"greatWorkSlotType": "Music",
 		"greatWorkSlots": 1
 	},
@@ -321,7 +321,7 @@
 		"requiredBuilding": "Opera House",
 		"maintenance": 1,
 		"requiredTech": "Archaeology",
-		"uniques": ["Destroyed when the city is captured"],
+		"uniques": [],
 		"greatWorkSlotType": "Art/Artifact",
 		"greatWorkSlots": 2,
 		"themingBonuses": [
@@ -365,7 +365,7 @@
 		"requiredBuilding": "Museum",
 		"maintenance": 3,
 		"requiredTech": "Radio",
-		"uniques": ["Destroyed when the city is captured"],
+		"uniques": [],
 		"greatWorkSlotType": "Music",
 		"greatWorkSlots": 1
 	},
@@ -1078,7 +1078,7 @@
 		"requiredBuilding": "Amphitheater",
 		"maintenance": 1,
 		"requiredTech": "Acoustics",
-		"uniques": ["Destroyed when the city is captured"],
+		"uniques": [],
 		"greatWorkSlotType": "Music",
 		"greatWorkSlots": 1
 	},
@@ -1113,7 +1113,7 @@
 		"requiredBuilding": "Monument",
 		"maintenance": 1,
 		"hurryCostModifier": 25,
-		"uniques": ["Destroyed when the city is captured"],
+		"uniques": [],
 		"requiredTech": "Drama and Poetry",
 		"greatWorkSlotType": "Writing",
 		"greatWorkSlots": 1

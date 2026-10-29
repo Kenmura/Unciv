@@ -374,6 +374,8 @@ def build_buildings(gk, techs_json, lk, work_names, report):
             b["greatWorkSlots"] = num(r["GreatWorkCount"])
             if r["Type"] in theming:
                 b["themingBonuses"] = [theming_row(tr) for tr in theming[r["Type"]]]
+            if num(r["ConquestProb"]) >= 100 and "Destroyed when the city is captured" in b.get("uniques", []):
+                b["uniques"].remove("Destroyed when the city is captured")  # BNW keeps these (and the works in them) on capture
             if r["FreeGreatWork"]:
                 b.setdefault("uniques", []).append(f"Contains the Great Work [{work_names[r['FreeGreatWork']]}] when built")
             report.add("buildings", f"{name}: {b['greatWorkSlots']} {b['greatWorkSlotType']} slot(s), {len(theming.get(r['Type'], []))} theming row(s)")
