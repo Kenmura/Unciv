@@ -195,6 +195,34 @@ public sealed class NetGameSessionTests
     }
 
     [Fact]
+    public async Task ResyncAsync_WithSameSeq_StillWaitsForTheSnapshotToBeApplied()
+    {
+        await using var rig = new ClientNetRig();
+        var (net, host) = await StartAsync(rig, ClientNetRig.Snap(5, 1));
+        await using var _ = net;
+        var task = net.ResyncAsync();
+        await host.ReceiveAsync<ResyncRequest>();
+        await host.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(5, 1, 2)));
+        await task.WaitAsync(Limit);
+        Assert.Equal(2, net.Snapshot.Units.Count);
+    }
+
+    [Fact]
+    public async Task EndTurn_CancelledWhileTheSubmitWaits_IsACancelledRefusal()
+    {
+        await using var rig = new ClientNetRig();
+        var (net, host) = await StartAsync(rig, ClientNetRig.Snap(5, 1));
+        await using var _ = net;
+        using var cts = new CancellationTokenSource();
+        var task = net.EndTurnAsync(null, cts.Token);
+        await host.ReceiveAsync<Command>(); // never answered
+        await cts.CancelAsync();
+        var outcome = await task.WaitAsync(Limit);
+        Assert.False(outcome.Accepted);
+        Assert.Equal(Unciv.Net.Visibility.ViewerSessionFlow.CancelledMessage, outcome.Message);
+    }
+
+    [Fact]
     public async Task ExportSave_IsNull_AndDisposeStopsThePump()
     {
         await using var rig = new ClientNetRig();

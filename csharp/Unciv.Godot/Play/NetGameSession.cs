@@ -17,11 +17,11 @@ namespace Unciv.GodotClient.Play;
 /// <para>Ownership: the caller owns the <see cref="ClientSession"/> (join, lobby, leave, dispose). This class takes over reading <see cref="ClientSession.Events"/> once the game
 /// started (the channel has a single reader, so the lobby UI must stop reading it first) and needs the first snapshot to exist.</para>
 /// <para>Events are raised on the <see cref="SynchronizationContext"/> current at construction (the Godot main thread); with none they are raised on the pump thread.
-/// A handler that throws faults the pump, and every pending and later call then faults with that exception.</para>
+/// With none, a handler that throws faults the pump, and every pending and later call then faults with that exception (under a context the exception goes to the context).</para>
 /// <para>End turn over the network: the host plays the other civs on its own schedule, so <see cref="EndTurnAsync"/> submits <see cref="EndTurn"/> and completes when the
 /// mirror shows a later turn (or the viewer's civ is defeated). <see cref="TurnOutcome.Events"/> holds the events of the End turn command itself; everything that follows
 /// (other civs, the next turn's start) arrives through <see cref="EventsReceived"/>, and <c>AiTurnsRun</c> is 0 because the host does not report it. Cancelling stops waiting
-/// (a refusal "cancelled"); the host keeps the turn ended, and calling again waits for the next turn without submitting End turn a second time.
+/// (a refusal "cancelled", also while the submit itself is waiting); `progress` is unused; the host keeps the turn ended, and calling again waits for the next turn without submitting End turn a second time.
 /// <see cref="ExportSaveAsync"/> is null: the host saves.</para>
 /// </summary>
 public sealed class NetGameSession : IGameSession, IAsyncDisposable
@@ -42,6 +42,7 @@ public sealed class NetGameSession : IGameSession, IAsyncDisposable
     private Exception? failure;
     private volatile ClientSnapshot snapshot;
     private int endingTurn;
+    private int replacedCount; // full snapshots applied so far; a resync waits for it to advance
 
     public NetGameSession(ClientSession session, Ruleset ruleset)
     {
@@ -129,6 +130,7 @@ public sealed class NetGameSession : IGameSession, IAsyncDisposable
         lock (gate)
         {
             snapshot = fresh;
+            if (batch == null) replacedCount++;
             if (batch != null)
             {
                 batches[batch.Seq] = batch.Events;
@@ -188,8 +190,11 @@ public sealed class NetGameSession : IGameSession, IAsyncDisposable
 
     public async Task ResyncAsync()
     {
+        int before;
+        lock (gate) before = replacedCount;
         await session.ResyncAsync().ConfigureAwait(false);
-        await WaitUntilAsync(() => snapshot.Seq >= session.Game.Seq, CancellationToken.None).ConfigureAwait(false);
+        // the mirror is replaced before the pump has applied the event, and the new snapshot may have the same seq: wait for the application itself
+        await WaitUntilAsync(() => { lock (gate) return replacedCount > before; }, CancellationToken.None).ConfigureAwait(false);
     }
 
     public async Task<TResult?> QueryAsync<TResult>(IQuery<TResult> query) where TResult : class
@@ -201,9 +206,11 @@ public sealed class NetGameSession : IGameSession, IAsyncDisposable
         return null;
     }
 
-    public async Task<SubmitResult> SubmitAsync(GameCommand command)
+    public Task<SubmitResult> SubmitAsync(GameCommand command) => SubmitAsync(command, CancellationToken.None);
+
+    private async Task<SubmitResult> SubmitAsync(GameCommand command, CancellationToken cancellation)
     {
-        var outcome = await session.SubmitAsync(command).ConfigureAwait(false);
+        var outcome = await session.SubmitAsync(command, cancellation).ConfigureAwait(false);
         if (outcome.Code is ClientCodes.SessionClosed or ClientCodes.ConnectionLost or ClientCodes.ConnectFailed)
             throw new InvalidOperationException(outcome.Code);
         if (!outcome.Accepted || outcome.Seq is not { } seq) return new SubmitResult(false, outcome.Code ?? "refused", []);
@@ -238,14 +245,14 @@ public sealed class NetGameSession : IGameSession, IAsyncDisposable
         {
             var startTurn = snapshot.Turn;
             IReadOnlyList<GameEvent> events = [];
-            if (!snapshot.TurnStatus.Ended.Contains(ViewerCivId)) // else a cancelled End turn is being continued
-            {
-                var submitted = await SubmitAsync(command()).ConfigureAwait(false);
-                if (!submitted.Accepted) return new TurnOutcome(false, submitted.Message, 0, false, []);
-                events = submitted.Events;
-            }
             try
             {
+                if (!snapshot.TurnStatus.Ended.Contains(ViewerCivId)) // else a cancelled End turn is being continued
+                {
+                    var submitted = await SubmitAsync(command(), cancellation).ConfigureAwait(false);
+                    if (!submitted.Accepted) return new TurnOutcome(false, submitted.Message, 0, false, []);
+                    events = submitted.Events;
+                }
                 await WaitUntilAsync(() => snapshot.Turn > startTurn || IsDefeated(snapshot), cancellation).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
