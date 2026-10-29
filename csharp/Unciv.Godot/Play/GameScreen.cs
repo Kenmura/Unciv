@@ -422,6 +422,7 @@ public partial class GameScreen : Control
     public override void _Input(InputEvent @event)
     {
         if (@event is InputEventMouseMotion motion && Map != null && Tooltips != null) UpdateHover(motion.Position);
+        if (@event is InputEventMouseButton { Pressed: true } press && MarkerMenu is { Visible: true } menu && !menu.GetGlobalRect().HasPoint(press.Position)) menu.Close(); // C089: any click outside the marker menu closes it
     }
 
     /// <summary>Follows the pointer: over the map (no widget under it) the tile under it is asked of the engine for the tooltip; over a widget the tip goes away.</summary>
@@ -1009,6 +1010,7 @@ public partial class GameScreen : Control
             bannerTurn = -1;
             rivalsTurn = -1;
         }
+        if (session != gameSession) sessionMarkers = ClientSettings.Default; // C089: in-memory markers belong to one game
         session = gameSession;
         assets = registry;
         queries = new GameQueries(session);
@@ -1313,7 +1315,7 @@ public partial class GameScreen : Control
     private void RefreshMarkers()
     {
         if (MarkerLayer == null || session == null) return;
-        MarkerLayer.Show(Markers, TileTopAt);
+        MarkerLayer.Show([.. Markers.Where(it => Map.TileNodeAt(new HexCoord(it.X, it.Y)) != null)], TileTopAt); // a marker off this map (stale or hand-edited) stays in the file but is not drawn
     }
 
     private void ChangeMarkers(Func<ClientSettings, string, ClientSettings> change)
