@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Tourism;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
 using Unciv.Models.Translations;
@@ -28,6 +29,10 @@ public enum MilestoneType
     MoreCountableThanEachPlayer,
     /// <summary>Reach an absolute amount of a countable - unlike <see cref="MoreCountableThanEachPlayer"/> this does not depend on the other players</summary>
     HaveCountable,
+    /// <summary>Brave New World (B009): influential over every other living major civilization. Not part of the Kotlin source.</summary>
+    InfluentialOverAllCivs,
+    /// <summary>Brave New World (B009): win the World Leader vote of the World Congress (same check as <see cref="WinDiplomaticVote"/>; the vote itself is B063). Not part of the Kotlin source.</summary>
+    WinWorldLeaderVote,
 }
 
 public static class MilestoneTypeExtensions
@@ -46,6 +51,8 @@ public static class MilestoneTypeExtensions
         MilestoneType.ScoreAfterTimeOut => "Have highest score after max turns",
         MilestoneType.MoreCountableThanEachPlayer => "Have more [countable] than each player's [countable]",
         MilestoneType.HaveCountable => "Have at least [amount] [countable]",
+        MilestoneType.InfluentialOverAllCivs => "Influential over all civilizations",
+        MilestoneType.WinWorldLeaderVote => "Win the World Leader vote",
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 }
@@ -223,7 +230,10 @@ public class Milestone
             case MilestoneType.BuildingBuiltGlobally:
                 return civInfo.GameInfo.GetCities().Any(it => it.CityConstructions.BuiltBuildings.Contains(Params[0]));
             case MilestoneType.WinDiplomaticVote:
+            case MilestoneType.WinWorldLeaderVote:
                 return civInfo.VictoryManager.HasEverWonDiplomaticVote;
+            case MilestoneType.InfluentialOverAllCivs:
+                return InfluenceRules.IsInfluentialOverAll(civInfo);
             case MilestoneType.ScoreAfterTimeOut:
                 {
                     if (civInfo.GameInfo.Turns < civInfo.GameInfo.GameParameters.MaxTurns) return false;
@@ -261,9 +271,18 @@ public class Milestone
         {
             case MilestoneType.BuildingBuiltGlobally:
             case MilestoneType.WinDiplomaticVote:
+            case MilestoneType.WinWorldLeaderVote:
             case MilestoneType.ScoreAfterTimeOut:
             case MilestoneType.BuiltBuilding:
                 return UniqueDescription;
+            case MilestoneType.InfluentialOverAllCivs:
+                {
+                    int amountToDo = InfluenceRules.VictoryRivals(civInfo).Count;
+                    int amountDone = completed ? amountToDo : InfluenceRules.InfluentialCount(civInfo);
+                    if (civInfo.ShouldHideCivCount())
+                        return $"{{{UniqueDescription}}} ({amountDone.Tr()}/?)";
+                    return $"{{{UniqueDescription}}} ({amountDone.Tr()}/{amountToDo.Tr()})";
+                }
             case MilestoneType.CompletePolicyBranches:
                 {
                     string amountToDo = Params[0].Tr();
@@ -389,7 +408,10 @@ public class Milestone
             case MilestoneType.HaveCountable:
                 return GetFocusFromCountable(Params[1], ruleset);
             case MilestoneType.WinDiplomaticVote:
+            case MilestoneType.WinWorldLeaderVote:
                 return Victory.FocusType.CityStates;
+            case MilestoneType.InfluentialOverAllCivs:
+                return Victory.FocusType.Culture;
             case MilestoneType.ScoreAfterTimeOut:
                 return Victory.FocusType.Score;
             case MilestoneType.WorldReligion:

@@ -1166,8 +1166,19 @@
     }
    }
   },
+  "VictoryTypes.json": {
+   "patch": {
+    "Cultural": {
+     "victoryScreenHeader": "Become Influential over every other civilization to win!",
+     "milestones": ["Influential over all civilizations"]
+    }
+   }
+  },
   "Buildings.json": {
    "patch": {
+    "Great Firewall": {
+     "uniques+": ["Other civs' cultural influence is nullified here"]
+    },
     "Factory": {
      "uniques+": ["Building [3] of these unlocks Ideologies"]
     },

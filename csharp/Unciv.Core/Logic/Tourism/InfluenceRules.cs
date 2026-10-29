@@ -13,7 +13,13 @@ namespace Unciv.Logic.Tourism;
 // - The level benefits of 4.3.5 are [K]: Familiar and above give +1 science per trade route, Exotic and above +1 spy rank in the civ. The
 //   spy rank of city-states, the shorter resistance after conquest (Popular) and no revolt of conquered cities (Influential) are not
 //   decoded and not implemented (B020 reads the spy rank bonus, the happiness ticket B019 the others).
-// - InfluenceSpreadModifier (Internet) and NullifiesForeignInfluence (Great Firewall) have unresolved maths (4.3.4 [?]) and are not applied.
+// - Internet and Great Firewall (4.3.4 [?], ticket B009; the maths is not decoded, no decompiler output is available): the "[x]% influence spread from
+//   Tourism" uniques of the civ's techs are summed and added to the modifier toward every civ as one more additive percent (Internet +100), but
+//   toward a civ that owns a "nullified" building (Great Firewall) the sum is 0. This is the whole effect of the Great Firewall on influence:
+//   the spec says it reduces the tech-based modifier against its owner, the flag value (1) of the data is read as "all of it".
+// - Culture victory (4.3.4, B009): the milestone "Influential over all civilizations" holds when the civ is Influential or better over every other
+//   living major civ and there is at least one; civs never met count (their influence is 0). The check is the ordinary end-of-turn victory
+//   check, which runs after the influence of the start of the turn.
 // - The blast applies the game speed as Speed.Modifier * 100 (the spec says "speed%" without naming the field).
 // - The one-shot tourism of Policy_TourismOnUnitCreation (a Great Person's birth, B011): the amount is influence over every other met living major civ
 //   (not scaled by tourism or speed, [K]). It applies when a Great Person is born from points or chosen as a free Great Person.
@@ -116,6 +122,34 @@ public static class InfluenceRules
             if (percent < bestPercent) { best = other; bestPercent = percent; }
         }
         return best;
+    }
+
+    // ---- culture victory (4.3.4) and the Internet / Great Firewall
+
+    /// <summary>The living major civs other than <paramref name="me"/>: the civs a culture victory must be Influential over, met or not.</summary>
+    public static List<CivilizationObject> VictoryRivals(CivilizationObject me) =>
+        me.GameInfo.Civilizations.Where(it => it != me && it.IsMajorCiv() && it.IsAlive()).ToList();
+
+    /// <summary>How many of <see cref="VictoryRivals"/> the civ is Influential (or better) over.</summary>
+    public static int InfluentialCount(CivilizationObject me) => VictoryRivals(me).Count(it => Level(me, it) >= InfluenceLevel.Influential);
+
+    /// <summary>Influential or better over every other living major civ, and there is one (spec 4.3.4).</summary>
+    public static bool IsInfluentialOverAll(CivilizationObject me)
+    {
+        var rivals = VictoryRivals(me);
+        return rivals.Count != 0 && rivals.All(it => Level(me, it) >= InfluenceLevel.Influential);
+    }
+
+    /// <summary>Does the civ own something that nullifies the tech-based influence of other civs (Great Firewall)?</summary>
+    public static bool NullifiesForeignInfluence(CivilizationObject civ) => civ.HasUnique(UniqueType.NullifiesForeignInfluence);
+
+    /// <summary>The additive percent of <paramref name="me"/>'s techs ("influence spread", The Internet) toward <paramref name="target"/>, 0 when the target nullifies it.</summary>
+    public static int TechSpreadModifier(CivilizationObject me, CivilizationObject target)
+    {
+        if (NullifiesForeignInfluence(target)) return 0;
+        int sum = 0;
+        foreach (var unique in me.GetMatchingUniques(UniqueType.InfluenceSpreadModifier)) sum = unchecked(sum + unique.Params[0].ToInt());
+        return sum;
     }
 
     // ---- turn (spec 2.3 step 2)

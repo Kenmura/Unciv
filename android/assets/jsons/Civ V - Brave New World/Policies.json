@@ -2,7 +2,12 @@
 	{
 		"name": "Tradition",
 		"era": "Ancient era",
-		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
+		"priorities": {
+			"Neutral": 5,
+			"Cultural": 5,
+			"Domination": 5,
+			"Scientific": 5
+		},
 		"uniques": ["[+3 Culture] [in capital]", "[-25]% Culture cost of natural border growth [in all cities]"],
 		"policies": [
 			{
@@ -58,7 +63,12 @@
 	{
 		"name": "Liberty",
 		"era": "Ancient era",
-		"priorities": {"Neutral": 10, "Domination": 10, "Scientific": 10},
+		"priorities": {
+			"Neutral": 10,
+			"Cultural": 10,
+			"Domination": 10,
+			"Scientific": 10
+		},
 		"uniques": ["[+1 Culture] [in all cities]"],
 		"policies": [
 			{
@@ -117,7 +127,12 @@
 	{
 		"name": "Honor",
 		"era": "Ancient era",
-		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
+		"priorities": {
+			"Neutral": 5,
+			"Cultural": 5,
+			"Domination": 5,
+			"Scientific": 5
+		},
 		"uniques": [
 			"[+33]% Strength <vs [Barbarian] units>",
 			"Earn [100]% of killed [Barbarian] unit's [Strength] as [Culture]",
@@ -177,7 +192,12 @@
 	{
 		"name": "Piety",
 		"era": "Ancient era",
-		"priorities": {"Neutral": 0, "Domination": 0, "Scientific": 0},
+		"priorities": {
+			"Neutral": 0,
+			"Cultural": 0,
+			"Domination": 0,
+			"Scientific": 0
+		},
 		"uniques": [
 			"[+100]% Production when constructing [Shrine] buildings [in all cities]",
 			"[+100]% Production when constructing [Temple] buildings [in all cities]",
@@ -231,7 +251,12 @@
 	{
 		"name": "Patronage",
 		"era": "Classical era",
-		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
+		"priorities": {
+			"Neutral": 5,
+			"Cultural": 5,
+			"Domination": 5,
+			"Scientific": 5
+		},
 		"uniques": [
 			"[-25]% City-State Influence degradation",
 			"[-100]% weight to this choice for AI decisions <when number of [Remaining [City-State] Civilizations] is less than [2]>"
@@ -285,7 +310,12 @@
 	{
 		"name": "Aesthetics",
 		"era": "Classical era",
-		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
+		"priorities": {
+			"Neutral": 5,
+			"Cultural": 5,
+			"Domination": 5,
+			"Scientific": 5
+		},
 		"uniques": [
 			"[+25]% [Great Writer] generation",
 			"[+25]% [Great Artist] generation",
@@ -344,7 +374,12 @@
 	{
 		"name": "Commerce",
 		"era": "Medieval era",
-		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
+		"priorities": {
+			"Neutral": 5,
+			"Cultural": 5,
+			"Domination": 5,
+			"Scientific": 5
+		},
 		"uniques": ["[+25]% [Gold] [in capital]"],
 		"policies": [
 			{
@@ -398,7 +433,12 @@
 	{
 		"name": "Exploration",
 		"era": "Medieval era",
-		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 5},
+		"priorities": {
+			"Neutral": 5,
+			"Cultural": 5,
+			"Domination": 5,
+			"Scientific": 5
+		},
 		"uniques": ["[+1] Movement <for [{Military} {Water}] units>", "[+1] Sight <for [{Military} {Water}] units>"],
 		"policies": [
 			{
@@ -452,7 +492,12 @@
 	{
 		"name": "Rationalism",
 		"era": "Renaissance era",
-		"priorities": {"Neutral": 10, "Domination": 10, "Scientific": 10},
+		"priorities": {
+			"Neutral": 10,
+			"Cultural": 10,
+			"Domination": 10,
+			"Scientific": 10
+		},
 		"uniques": ["[10]% of excess happiness converted to [Science]"],
 		"policies": [
 			{
@@ -497,7 +542,12 @@
 	{
 		"name": "Freedom",
 		"era": "Industrial era",
-		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 10},
+		"priorities": {
+			"Neutral": 5,
+			"Cultural": 10,
+			"Domination": 5,
+			"Scientific": 10
+		},
 		"uniques": [],
 		"purchaseByLevel": true,
 		"firstAdopterFreePolicies": 2,
@@ -620,7 +670,12 @@
 	{
 		"name": "Order",
 		"era": "Industrial era",
-		"priorities": {"Neutral": 10, "Domination": 5, "Scientific": 5},
+		"priorities": {
+			"Neutral": 10,
+			"Cultural": 5,
+			"Domination": 5,
+			"Scientific": 5
+		},
 		"uniques": [],
 		"purchaseByLevel": true,
 		"firstAdopterFreePolicies": 2,
@@ -743,7 +798,12 @@
 	{
 		"name": "Autocracy",
 		"era": "Industrial era",
-		"priorities": {"Neutral": 5, "Domination": 10, "Scientific": 5},
+		"priorities": {
+			"Neutral": 5,
+			"Cultural": 5,
+			"Domination": 10,
+			"Scientific": 5
+		},
 		"uniques": [],
 		"purchaseByLevel": true,
 		"firstAdopterFreePolicies": 2,

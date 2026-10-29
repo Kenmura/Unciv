@@ -142,7 +142,8 @@ public static class TourismRules
         // 8. most of the target's cities follow the religion I founded
         if (FollowsFoundedReligionOf(target, me))
             modifier = unchecked(modifier + constants.TourismModifierSharedReligion + Sum(UniqueType.TourismSharedReligion));
-        return modifier;
+        // 9. the tech-based influence spread (The Internet), unless the target owns the Great Firewall (spec 4.3.4)
+        return unchecked(modifier + InfluenceRules.TechSpreadModifier(me, target));
     }
 
     // "Most cities": the religion that is the majority religion of the most cities of the civ wins (first in city order on a tie).

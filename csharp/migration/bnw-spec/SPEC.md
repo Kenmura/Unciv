@@ -596,7 +596,7 @@ turn of a game with tourism). Influence accumulates in `TurnManager.StartTurn` a
 - Culture from wonders/landmarks/natural wonders = own stats of built world wonders + tile culture of Landmark and natural wonder tiles [I].
 - Influence per turn is clamped at 0; percentage and trend use 64-bit products; the blast uses `Speed.Modifier * 100` as "speed%".
 - Not applied (still open): league/holy-city tourism modifier (B015), diplomat bonus (B020, seam), ideology choice (B013; `PolicyManager.Ideology`
-  is only a field), InfluenceSpreadModifier/NullifiesForeignInfluence maths (4.3.4 [?]), city-state spy rank, conquest resistance and revolt
+  is only a field), (InfluenceSpreadModifier/NullifiesForeignInfluence: see 4.3.4a), city-state spy rank, conquest resistance and revolt
   benefits of 4.3.5, one-shot tourism of a Great Person's birth (B011). Level benefits kept at the [K] values: Familiar +1 route science
   (wired into `TradeRouteYields`, origin side), Exotic +1 spy rank. The blast is an engine function (`ApplyBlast`); the unit action is B011.
 
@@ -606,6 +606,16 @@ civ**. The check runs once per turn after influence, and civs that were never me
 "someone is influential / no longer influential" exist (@10075be0) [O]. The Great Firewall's `NullifyInfluenceModifier`
 reduces the *tech-based* influence modifier (`InfluenceSpreadModifier`, Internet +100%) against its owner [K]; exact
 math is [?].
+
+#### 4.3.4a As built (B009)
+`Victories.json` Cultural = milestone `Influential over all civilizations` (`MilestoneType.InfluentialOverAllCivs`, `Victory.cs`): completed when
+`InfluenceRules.IsInfluentialOverAll` (level >= Influential over every other living major civ, at least one such civ, met or not; city-states and
+dead civs do not count). It is the ordinary end-of-turn victory check (`TurnManager`), which runs after the start-of-turn influence. Also added:
+`Win the World Leader vote` (`WinWorldLeaderVote`, same flag as `Win diplomatic vote`; B063 sets it). The generator keeps Cultural (with the new
+milestone and header, `overrides.json`) and still drops Diplomatic until B063. Internet/Great Firewall (the [?] is closed by a deliberate choice, no
+decompile available): the generator writes `[+100]% influence spread from Tourism` on The Internet (from `Technologies.tsv`) and
+`Other civs' cultural influence is nullified here` on the Great Firewall; step 9 of 4.3.2 adds the sum of the influence-spread uniques of M's techs to the
+modifier toward T, but 0 when T owns a nullifying building. The Great Firewall changes nothing else (the data value 1 is read as "all of it").
 
 #### 4.3.5 Benefits of influence levels [O names, K values]
 Lua-exposed: `GetInfluenceTradeRouteScienceBonus(T)` (@1006e720, adds science to routes to T), `GetInfluenceCityStateSpyRankBonus`
@@ -946,8 +956,8 @@ Uniques per civ (traits in §3.2). The unique units and buildings are in `Civili
 - Victories: Time, Science (Space Race), Domination, **Cultural** (`Influential`), **Diplomatic** (`DiploVote`).
   Apollo and the spaceship are unchanged. Utopia is gone.
 - The culture victory check (§4.3.4) and the diplomatic victory check (§4.7.6) need victory-type JSON
-  `milestones` support in Unciv's `Victory` model. B060 adds milestone kinds `Influential over all civilizations` and
-  `Win the World Leader vote`.
+  `milestones` support in Unciv's `Victory` model. B009 added the milestone kinds `Influential over all civilizations` and
+  `Win the World Leader vote` (4.3.4a); B063 sets the vote flag.
 - Score: +`SCORE_POLICY_MULTIPLIER` (4) per policy, +`SCORE_GREAT_WORK_MULTIPLIER` (4) per Great Work,
   +`SCORE_BELIEF_MULTIPLIER` (20) per belief, +`SCORE_RELIGION_CITIES_MULTIPLIER` (1) per city following your
   religion [D]+[K: same formula shape as existing score].
@@ -1035,7 +1045,7 @@ unless noted. Each ticket's RE step resolves the [K] and [?] items it touches an
 ## 8. Unknowns and risks (to be closed by the ticket noted)
 1. Trade route duration formula (B020). 2. Plunder gold (B020). 3. Trade-route religious pressure amount (B073).
 4. Great Work selection when a GP has no named work (resolved [X] in B007, §4.2.3). 5. Theming precedence details (resolved [X] in B007, §4.2.4). 6. Influence-level
-benefits and their values (B031). 7. Great Firewall math (B031). 8. Archaeology weight constants and random-record
+benefits and their values (B031). 7. Great Firewall math (B031; built as a deliberate choice in B009, 4.3.4a). 8. Archaeology weight constants and random-record
 generation (B040). 9. Proposal and voting flow details (B060), and the unused `DIPLO_VICTORY_ALGORITHM*` defines (B063).
 10. City revolt target selection (B070). 11. Rebel unit-type choice and city weight (B070). 12. Speed-percent field
 identities in domestic routes (B020). 13. Exact public-opinion tie-breaks (B052).

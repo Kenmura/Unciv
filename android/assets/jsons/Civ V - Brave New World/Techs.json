@@ -660,7 +660,8 @@
 			{
 				"name": "The Internet",
 				"row": 1,
-				"prerequisites": ["Telecommunications"]
+				"prerequisites": ["Telecommunications"],
+				"uniques": ["[+100]% influence spread from Tourism"]
 			},
 			{
 				"name": "Globalization",

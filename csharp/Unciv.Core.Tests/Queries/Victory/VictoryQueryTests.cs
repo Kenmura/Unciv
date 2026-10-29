@@ -106,6 +106,7 @@ public class VictoryQueryTests
             [
                 "Complete [3] Policy branches", "Have at least [2] [Cities]", "Capture all capitals", "Destroy all players",
                 "Have more [Cities] than each player's [Cities]", "Become the world religion", "Build [Palace]",
+                "Influential over all civilizations", "Win the World Leader vote",
             ],
         };
         SetVictories("Custom");
@@ -120,6 +121,8 @@ public class VictoryQueryTests
         Assert.Equal((2, 2), (Of("MoreCountableThanEachPlayer").Done, Of("MoreCountableThanEachPlayer").Total)); // 2 cities beat the 1 of each rival
         Assert.Equal((0, 2), (Of("WorldReligion").Done, Of("WorldReligion").Total));
         Assert.Null(Of("BuiltBuilding").Done);
+        Assert.Equal((0, 2), (Of("InfluentialOverAllCivs").Done, Of("InfluentialOverAllCivs").Total));
+        Assert.Null(Of("WinWorldLeaderVote").Done);
 
         testGame.AddReligion(player);
         Assert.InRange(Ask(new VictoryProgressQuery()).Victories[0].Own.Single(it => it.Type == "WorldReligion").Done!.Value, 0, 1); // pantheon counts 1, a religion nobody follows 0

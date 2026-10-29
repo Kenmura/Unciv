@@ -1282,7 +1282,8 @@
 		"uniques": [
 			"Only available <when espionage is enabled>",
 			"[-99]% enemy spy effectiveness [in this city]",
-			"[-25]% enemy spy effectiveness [in all cities]"
+			"[-25]% enemy spy effectiveness [in all cities]",
+			"Other civs' cultural influence is nullified here"
 		],
 		"requiredTech": "Computers",
 		"quote": "'Distrust and caution are the parents of security.' - Benjamin Franklin"

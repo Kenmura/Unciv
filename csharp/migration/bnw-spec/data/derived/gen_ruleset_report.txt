@@ -6,23 +6,13 @@
   Helsinki: removed
   Rio de Janeiro: removed
   Venice: removed
-  Greece: preferredVictoryType Diplomatic -> Neutral (victory type removed until B032/B063)
-  Egypt: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
-  England: preferredVictoryType Diplomatic -> Neutral (victory type removed until B032/B063)
-  France: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
-  India: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
-  Polynesia: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
-  Siam: preferredVictoryType Diplomatic -> Neutral (victory type removed until B032/B063)
-  Inca: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
-  Denmark: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
-  The Netherlands: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
-  Sweden: preferredVictoryType Diplomatic -> Neutral (victory type removed until B032/B063)
-  Austria: preferredVictoryType Diplomatic -> Neutral (victory type removed until B032/B063)
-  Byzantium: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
-  Ethiopia: preferredVictoryType Cultural -> Neutral (victory type removed until B032/B063)
+  Greece: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
+  England: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
+  Siam: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
+  Sweden: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
+  Austria: preferredVictoryType Diplomatic -> Neutral (victory type removed until B063)
 
 == VictoryTypes.json
-  Cultural: removed
   Diplomatic: removed
 
 == buildings

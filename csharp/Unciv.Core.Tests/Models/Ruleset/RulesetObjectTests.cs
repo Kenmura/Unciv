@@ -526,9 +526,10 @@ public class RulesetObjectTests
         var victory = VictoryWith(
             "Build [Apollo Program]", "Anyone should build [Manhattan Project]", "Add all [Spaceship Parts] in capital", "Destroy all players",
             "Capture all capitals", "Complete [5] Policy branches", "Become the world religion", "Win diplomatic vote",
-            "Have highest score after max turns", "Have more [Cities] than each player's [Cities]", "Have at least [100] [Gold]", "Unknown milestone");
+            "Have highest score after max turns", "Have more [Cities] than each player's [Cities]", "Have at least [100] [Gold]",
+            "Influential over all civilizations", "Win the World Leader vote", "Unknown milestone");
         var milestones = victory.MilestoneObjects;
-        Assert.Equal(12, milestones.Count);
+        Assert.Equal(14, milestones.Count);
         Assert.Equal(Enum.GetValues<MilestoneType>().Cast<MilestoneType?>().Append(null), milestones.Select(it => it.Type));
         Assert.Equal(["Apollo Program"], milestones[0].Params);
         Assert.Equal(["Cities", "Cities"], milestones[9].Params);
@@ -544,7 +545,9 @@ public class RulesetObjectTests
     {
         Assert.Equal("Have at least [amount] [countable]", MilestoneType.HaveCountable.GetText());
         Assert.Equal("Win diplomatic vote", MilestoneType.WinDiplomaticVote.GetText());
-        Assert.Equal(11, Enum.GetValues<MilestoneType>().Length);
+        Assert.Equal("Influential over all civilizations", MilestoneType.InfluentialOverAllCivs.GetText());
+        Assert.Equal("Win the World Leader vote", MilestoneType.WinWorldLeaderVote.GetText());
+        Assert.Equal(13, Enum.GetValues<MilestoneType>().Length);
     }
 
     [Fact]

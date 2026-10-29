@@ -1,4 +1,5 @@
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Tourism;
 using Unciv.Models.Ruleset;
 using Unciv.View;
 using VictoryRuleset = Unciv.Models.Ruleset.Victory;
@@ -120,6 +121,11 @@ public sealed record VictoryProgressQuery : IQuery<VictoryProgressResult>
                     incomplete.Remove(civ.VictoryManager.CurrentsSpaceshipParts);
                     return (total - incomplete.SumValues(), total);
                 }
+            case MilestoneType.InfluentialOverAllCivs:
+                {
+                    int total = InfluenceRules.VictoryRivals(civ).Count;
+                    return (completed ? total : InfluenceRules.InfluentialCount(civ), viewer.ShouldHideCivCount() ? null : total);
+                }
             case MilestoneType.WorldReligion:
                 {
                     int total = game.Civilizations.Count(it => it.IsMajorCiv() && it.IsAlive()) - 1; // Don't count yourself
@@ -131,7 +137,7 @@ public sealed record VictoryProgressQuery : IQuery<VictoryProgressResult>
                     else done = game.Civilizations.Count(it => it.IsMajorCiv() && it.IsAlive() && it.ReligionManager.IsMajorityReligionForCiv(religion));
                     return (done, total);
                 }
-            default: // BuiltBuilding, BuildingBuiltGlobally, WinDiplomaticVote, ScoreAfterTimeOut: no numbers
+            default: // BuiltBuilding, BuildingBuiltGlobally, WinDiplomaticVote, WinWorldLeaderVote, ScoreAfterTimeOut: no numbers
                 return (null, null);
         }
     }

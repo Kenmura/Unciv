@@ -55,7 +55,7 @@ RENAMES = {  # Unciv G&K name -> BNW name, applied to every exact-match referenc
 REMOVED = {
     "Buildings.json": {"Utopia Project", "United Nations"},
     "Nations.json": {"Dublin", "Edinburgh", "Helsinki", "Rio de Janeiro", "Venice"},  # Venice becomes a major civ (overrides)
-    "VictoryTypes.json": {"Cultural", "Diplomatic"},  # rewritten by B032 / B063: their milestones need new kinds
+    "VictoryTypes.json": {"Diplomatic"},  # rewritten by B063 (needs the World Congress vote); Cultural is rewritten by overrides.json (B032)
 }
 GK_BUILDINGS_KEPT_OUTSIDE_TSV = {"Apollo Program", "Manhattan Project"}  # Civ V projects that Unciv models as buildings
 
@@ -190,6 +190,10 @@ def build_techs(gk_techs, report):
             report.add("techs", f"{name}: cost {cost} differs from column {col} ({cols[col]['techCost']}), per-tech cost set")
         else:
             t.pop("cost", None)
+        spread = int(r["InfluenceSpreadModifier"] or 0)  # The Internet: +100% influence from tourism (SPEC 4.3.4)
+        if spread:
+            unique = f"[{spread:+d}]% influence spread from Tourism"
+            t["uniques"] = [u for u in t.get("uniques", []) if u != unique] + [unique]
         if is_new:
             report.add("techs", f"{name}: new (column {col}, row {t['row']})")
         grouped.setdefault(col, []).append(t)
@@ -706,7 +710,7 @@ def generate():
             p.get("priorities", {}).pop(v, None)
     for n in files["Nations.json"]:
         if n.get("preferredVictoryType") in removed_victories:
-            report.add("Nations.json", f"{n['name']}: preferredVictoryType {n['preferredVictoryType']} -> Neutral (victory type removed until B032/B063)")
+            report.add("Nations.json", f"{n['name']}: preferredVictoryType {n['preferredVictoryType']} -> Neutral (victory type removed until B063)")
             n["preferredVictoryType"] = "Neutral"
     overrides = lenient_loads(OVERRIDES.read_text(encoding="utf-8"))
     files["Policies.json"] = build_policies(files["Policies.json"], overrides, report)
