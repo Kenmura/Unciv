@@ -425,5 +425,12 @@ class ReleaseAssets(unittest.TestCase):
         self.assertEqual(self.mod.main(["bogus"]), 2)
 
 
+class ProjectSettings(unittest.TestCase):
+    def test_etc2_astc_import_stays_on(self):
+        # macOS universal and Android exports both refuse to export without it (T258, T260 regression)
+        text = (REPO / "csharp" / "Unciv.Godot" / "project.godot").read_text(encoding="utf-8")
+        self.assertIn("textures/vram_compression/import_etc2_astc=true", text)
+
+
 if __name__ == "__main__":
     unittest.main()
