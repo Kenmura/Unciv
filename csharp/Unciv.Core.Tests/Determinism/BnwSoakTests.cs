@@ -93,6 +93,18 @@ public sealed class BnwSoakTests : IDisposable
 
     private readonly List<string> scripted = [];
 
+    private int Accepted(string prefix) => scripted.Count(it => it.StartsWith(prefix, StringComparison.Ordinal));
+
+    // The scripted actions are skipped silently when the engine refuses them; these assertions make sure the BNW features were really exercised.
+    private void AssertScriptedFeaturesHappened(GameInfo game, bool soak)
+    {
+        Assert.True(Accepted("trade route") > 0, "no trade route was established");
+        Assert.True(Accepted("great work by") > 0, "no Great Work was created");
+        Assert.NotNull(game.League);
+        Assert.True(Accepted("propose") + Accepted("vote") > 0, "no World Congress proposal or vote was accepted");
+        if (soak) Assert.Contains(game.Civilizations, it => it.IsMajorCiv() && it.Policies.Ideology != null);
+    }
+
     private bool Try(Live live, string what, GameCommand command)
     {
         var result = live.Session.Submit(Human, command);
@@ -118,7 +130,7 @@ public sealed class BnwSoakTests : IDisposable
         var game = live.Session.Game;
         var capital = civ.Cities.FirstOrDefault(it => it.GetCenterTile().GetUnits().All(u => !u.IsCivilian())) ?? civ.GetCapital();
         if (capital == null) return;
-        foreach (var blocker in capital.GetCenterTile().GetUnits().Where(u => u.IsCivilian() && u.Civ == civ).Skip(0).ToList())
+        foreach (var blocker in capital.GetCenterTile().GetUnits().Where(u => u.IsCivilian() && u.Civ == civ).ToList())
             Try(live, "disband civilian blocking the city centre", new DisbandUnit { UnitId = blocker.Id });
         var tile = capital.GetCenterTile().Position;
         bool Console(string line) => Try(live, "console " + line, new RunConsoleCommand { Line = line, Tile = tile });
@@ -126,9 +138,9 @@ public sealed class BnwSoakTests : IDisposable
         {
             // Make the scripted human the host of the World Congress (the first major that has the founding tech and knows everybody), so that
             // it can propose resolutions, vote and put production into the league projects below.
-            Console("civ addtechnology Babylon \"Printing Press\"");
+            Console($"civ addtechnology {Human} \"Printing Press\"");
             foreach (var other in game.Civilizations.Where(it => it.IsMajorCiv() && it != civ && it.IsAlive()))
-                Console($"diplomacy meet Babylon {other.CivName}");
+                Console($"diplomacy meet {Human} {other.CivName}");
         }
         TradeUnitAndRoute(live, civ, capital, Console);
         if (game.Turns >= 60) GreatWork(live, civ, Console);
@@ -205,12 +217,12 @@ public sealed class BnwSoakTests : IDisposable
         return game.Turns - (target - turns);
     }
 
-    private void Run(MapSize size, int majors, int cityStates, long gameSeed, int mapSeed, int turns, int saveEvery, bool replay, string[]? victories = null)
+    private void Run(MapSize size, int majors, int cityStates, long gameSeed, int mapSeed, int turns, int saveEvery, bool replay, string[]? victories = null, bool soak = false)
     {
         Exception? failure = null;
         var worker = new Thread(() =>
         {
-            try { RunOnThread(size, majors, cityStates, gameSeed, mapSeed, turns, saveEvery, replay, victories); }
+            try { RunOnThread(size, majors, cityStates, gameSeed, mapSeed, turns, saveEvery, replay, victories, soak); }
             catch (Exception ex) { failure = ex; }
         }, 256 * 1024 * 1024)
         { IsBackground = true };
@@ -219,7 +231,7 @@ public sealed class BnwSoakTests : IDisposable
         if (failure != null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
     }
 
-    private void RunOnThread(MapSize size, int majors, int cityStates, long gameSeed, int mapSeed, int turns, int saveEvery, bool replay, string[]? victories = null)
+    private void RunOnThread(MapSize size, int majors, int cityStates, long gameSeed, int mapSeed, int turns, int saveEvery, bool replay, string[]? victories, bool soak)
     {
         var live = Start(Setup(size, majors, cityStates, mapSeed, victories), gameSeed);
         var game = live.Session.Game;
@@ -250,7 +262,9 @@ public sealed class BnwSoakTests : IDisposable
         }
         output.WriteLine("[bnw] scripted: " + string.Join(", ", scripted.GroupBy(it => it).OrderBy(g => g.Key, StringComparer.Ordinal).Select(g => g.Key + " x" + g.Count())));
         output.WriteLine(string.Create(CultureInfo.InvariantCulture, $"[bnw] DONE winner={game.Civilizations.FirstOrDefault(it => it.IsMajorCiv() && it.VictoryManager.HasWon())?.CivName ?? "none"} turns={game.Turns} total={total.Elapsed.TotalSeconds:F1}s avg={total.Elapsed.TotalSeconds / System.Math.Max(1, game.Turns):F2}s/turn final: {Summary(game)}"));
-        Assert.True(total.Elapsed.TotalSeconds / System.Math.Max(1, game.Turns) < 5.0, "average turn time budget (5 s) exceeded");
+        // Wall time is only a runaway guard in the opt-in soak runs, never a pass/fail of the default build.
+        if (soak) Assert.True(total.Elapsed.TotalSeconds / System.Math.Max(1, game.Turns) < 5.0, "average turn time budget (5 s) exceeded");
+        AssertScriptedFeaturesHappened(game, soak);
         foreach (var civ in game.Civilizations.Where(it => it.IsMajorCiv() && !it.IsDefeated()))
             Assert.False(float.IsNaN(civ.Stats.StatsForNextTurn.Gold), $"{civ.CivName} gold is NaN");
         // With only the Time victory the game must really run the whole length (a conquest of the human or a victory would end it early).
@@ -260,6 +274,7 @@ public sealed class BnwSoakTests : IDisposable
         var log = CommandLogReader.Read(live.Text.ToString());
         var result = ReplayVerifier.Verify(log);
         Assert.True(result.Matches, $"replay diverged at seq {result.DivergedAtSeq} after {result.CheckpointsVerified} checkpoints");
+        Assert.True(result.CheckpointsVerified > 0 && result.CheckpointsVerified == log.Lines.OfType<CommandLogLine.Checkpoint>().Count(), "replay verified fewer checkpoints than the log holds");
         Assert.Equal(live.Session.LastSeq, result.LastSeq);
         Assert.Equal(ReplayVerifier.FullHash(game), result.FinalHash);
         output.WriteLine($"[bnw] replay of {live.Session.LastSeq} commands matched at {result.CheckpointsVerified} checkpoints");
@@ -270,8 +285,8 @@ public sealed class BnwSoakTests : IDisposable
     public void Bnw80TurnsOnASmallMapSavesAndReplays() => Run(MapSize.Small, 6, 4, 11L, 5, 80, 20, replay: true);
 
     [SoakFact]
-    public void Bnw300TurnsEightCivsSavesAndReplays() => Run(MapSize.Medium, 8, 8, 23L, 9, TurnLimit, 25, replay: true, victories: ["Time"]);
+    public void Bnw300TurnsEightCivsSavesAndReplays() => Run(MapSize.Medium, 8, 8, 23L, 9, TurnLimit, 25, replay: true, victories: ["Time"], soak: true);
 
     [SoakFact]
-    public void Bnw300TurnsOnASmallMapSavesAndReplays() => Run(MapSize.Small, 6, 4, 11L, 5, TurnLimit, 25, replay: true);
+    public void Bnw300TurnsOnASmallMapSavesAndReplays() => Run(MapSize.Small, 6, 4, 11L, 5, TurnLimit, 25, replay: true, soak: true);
 }
