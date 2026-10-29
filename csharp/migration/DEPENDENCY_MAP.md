@@ -170,7 +170,7 @@ xychart-beta
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
-| B019 | Needs-Review [Claude] | B014 | 1 | BNW: happiness: graded penalties, uprisings, rebels, city revolt |
+| B019 | In-Review [Claude] | B014 | 1 | BNW: happiness: graded penalties, uprisings, rebels, city revolt |
 | B020 | Available (waiting on ) | B008, B015 | 1 | BNW: Espionage: diplomats, coup levels, influence spy bonus |
 | B021 | Available (waiting on ) | B005, B004 | 1 | BNW: City-state BNW changes, Merchant of Venice purchase, Venice restrictions |
 | B022 | Available (waiting on ) | B005, B004 | 1 | BNW: Religion BNW constants, belief effects, trade-route pressure |
