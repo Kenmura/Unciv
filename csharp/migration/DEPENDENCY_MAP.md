@@ -281,7 +281,7 @@ flowchart TD
   class T247 waiting
   class T248 waiting
   class T249 review
-  class T250 prog
+  class T250 review
 ```
 
 ## Remaining tickets over time
@@ -392,4 +392,4 @@ xychart-beta
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
 | T248 | Available (waiting on ) | T177, C035, C036 | 0 | Dynamic turn timer from era, unit count and war state |
 | T249 | Needs-Review [Claude] | T225 | 0 | Network robustness leftovers: frame-loss injection, lobby join/ping during AI turn, macOS/Android/WASM TLS verification |
-| T250 | In-Progress [Claude] | T204 | 0 | ServerLobby hand-off: lobby reader keeps reading slot transports after StartGame (competes with GameHost reader), and no join-in-progress |
+| T250 | Needs-Review [Claude] | T204 | 0 | ServerLobby hand-off: lobby reader keeps reading slot transports after StartGame (competes with GameHost reader), and no join-in-progress |

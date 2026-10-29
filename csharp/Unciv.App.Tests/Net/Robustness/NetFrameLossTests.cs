@@ -196,7 +196,7 @@ public sealed class NetFrameLossTests : IDisposable
         try
         {
             // A new player and a known player (the first one, on a second connection) both knock at the lobby while the actor is busy.
-            async Task<Message> KnockAsync(ClientIdentity who, string name)
+            async Task<Message> KnockAsync(ClientIdentity who, string name, bool ping = true)
             {
                 var (client, server) = InMemoryTransport.CreatePair();
                 _ = lobby.AttachConnectionAsync(server);
@@ -206,6 +206,7 @@ public sealed class NetFrameLossTests : IDisposable
                 await client.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = who.PlayerKey, DisplayName = name }));
                 await client.SendAsync(ProtocolCodec.Encode(new Auth { Proof = who.Sign(lobby.Lobby.HostFingerprint, welcome.SessionId, welcome.Challenge) }));
                 var answer = await Next(); // JoinOk or JoinRefused, whichever the lobby decides: it must decide
+                if (!ping) return answer; // a known player is seated through the game actor, which is busy: the in-game ping is answered once it is free
                 await client.SendAsync(ProtocolCodec.Encode(new Ping()));
                 while (await Next() is not Pong) { } // LobbyState broadcasts may precede the Pong
                 return answer;
@@ -214,7 +215,7 @@ public sealed class NetFrameLossTests : IDisposable
             using var stranger = ClientIdentity.Generate();
             var refused = Assert.IsType<JoinRefused>(await KnockAsync(stranger, "Bob")); // the started lobby has no free slot for a new player
             Assert.False(string.IsNullOrEmpty(refused.Code));
-            Assert.IsType<JoinOk>(await KnockAsync(first, "Alice")); // a known key is seated again
+            Assert.IsType<JoinOk>(await KnockAsync(first, "Alice", ping: false)); // a known key is seated again
 
             // The actor was occupied throughout (the in-game ping during a busy actor is covered by NetRobustnessTests).
             Assert.False(aiTurn.IsCompleted);

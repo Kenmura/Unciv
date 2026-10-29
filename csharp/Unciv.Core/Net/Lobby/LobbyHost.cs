@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Threading.Channels;
 using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Models.Metadata;
@@ -99,6 +100,58 @@ public sealed class LobbyHost : IAsyncDisposable
         public string? DisplayName { get; set; }
         public bool IsAuthenticated { get; set; }
         public int? SlotIndex { get; set; }
+
+        /// <summary>Set once this seat's transport belongs to the running game: the lobby reader (the only reader of the socket) then forwards every frame here.</summary>
+        public Channel<string>? Handoff { get; set; }
+        public ITransport? GameTransport { get; set; }
+    }
+
+    /// <summary>
+    /// What the game host reads once a seat is handed over: the frames the lobby reader keeps pulling off the real transport.
+    /// A single reader per socket means no inbound frame can be taken by the wrong side.
+    /// </summary>
+    private sealed class HandoffTransport(ITransport inner, Channel<string> frames) : ITransport
+    {
+        public bool IsOpen => inner.IsOpen;
+        public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default) => inner.SendAsync(frame, cancellationToken);
+        public ValueTask CloseAsync() => inner.CloseAsync();
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
+
+        public async ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await frames.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (ChannelClosedException)
+            {
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Raised (after <see cref="JoinOk"/>) when a player whose key already holds a seat authenticates after the game started.
+    /// The handler seats the connection in the running game; the transport is the hand-over one the game host must read.
+    /// Brand-new keys are refused after the start (<see cref="JoinRefusedCodes.GameAlreadyStarted"/>): join-in-progress for new
+    /// players is not supported even when <see cref="LobbySettings.AllowJoinInProgress"/> is set (T250).
+    /// </summary>
+    public Func<Slot, ITransport, Task>? LateSeated { get; set; }
+
+    /// <summary>The transport the game host must read for a seat that was connected when the game started (null if it was not handed over).</summary>
+    public ITransport? GameTransportFor(string? sessionId)
+    {
+        if (sessionId == null) return null;
+        lock (gate)
+        {
+            return sessions.TryGetValue(sessionId, out var s) ? s.GameTransport : null;
+        }
+    }
+
+    private static void HandOff(LobbySession session)
+    {
+        session.Handoff = Channel.CreateUnbounded<string>();
+        session.GameTransport = new HandoffTransport(session.Transport, session.Handoff);
     }
 
     /// <summary>
@@ -125,6 +178,17 @@ public sealed class LobbyHost : IAsyncDisposable
                 var frame = await transport.ReceiveAsync(cancellationToken).ConfigureAwait(false);
                 if (frame == null) break;
 
+                ChannelWriter<string>? handoff;
+                lock (gate)
+                {
+                    handoff = session.Handoff?.Writer;
+                }
+                if (handoff != null)
+                {
+                    handoff.TryWrite(frame);
+                    continue;
+                }
+
                 var message = ProtocolCodec.Decode(frame);
                 await HandleMessageAsync(session, message).ConfigureAwait(false);
             }
@@ -136,7 +200,24 @@ public sealed class LobbyHost : IAsyncDisposable
         }
         finally
         {
-            await HandleDisconnectAsync(session).ConfigureAwait(false);
+            Channel<string>? handoff;
+            lock (gate)
+            {
+                handoff = session.Handoff;
+            }
+            if (handoff != null)
+            {
+                // The game host owns this seat now; it notices the end of stream itself.
+                handoff.Writer.TryComplete();
+                lock (gate)
+                {
+                    sessions.Remove(session.SessionId);
+                }
+            }
+            else
+            {
+                await HandleDisconnectAsync(session).ConfigureAwait(false);
+            }
         }
     }
 
@@ -261,6 +342,19 @@ public sealed class LobbyHost : IAsyncDisposable
         }
 
         bool stateChanged = false;
+        Slot? lateSlot = null;
+        bool started;
+        lock (gate)
+        {
+            started = Status is LobbyStatus.Starting or LobbyStatus.Started;
+        }
+
+        if (started && (Status != LobbyStatus.Started || Bindings.SlotOf(session.PendingPlayerKey) is not int knownSeat || knownSeat >= slots.Count))
+        {
+            await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.GameAlreadyStarted }).ConfigureAwait(false);
+            return;
+        }
+
         lock (gate)
         {
             session.IsAuthenticated = true;
@@ -277,6 +371,11 @@ public sealed class LobbyHost : IAsyncDisposable
                 slot.DisplayName = session.DisplayName;
                 session.SlotIndex = existingSlotIndex.Value;
                 stateChanged = true;
+                if (Status == LobbyStatus.Started)
+                {
+                    HandOff(session);
+                    lateSlot = slot;
+                }
             }
             else
             {
@@ -306,6 +405,14 @@ public sealed class LobbyHost : IAsyncDisposable
         }
 
         await SendAsync(session.Transport, new JoinOk()).ConfigureAwait(false);
+
+        if (lateSlot != null)
+        {
+            var seated = LateSeated;
+            var gameTransport = session.GameTransport;
+            if (seated != null && gameTransport != null) await seated(lateSlot, gameTransport).ConfigureAwait(false);
+            return;
+        }
 
         if (stateChanged)
         {
@@ -610,6 +717,10 @@ public sealed class LobbyHost : IAsyncDisposable
         lock (gate)
         {
             Status = LobbyStatus.Started;
+            foreach (var session in sessions.Values.Where(s => s.SlotIndex.HasValue))
+            {
+                HandOff(session);
+            }
         }
 
         await BroadcastAsync(new GameStarting()).ConfigureAwait(false);

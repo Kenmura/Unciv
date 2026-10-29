@@ -1,3 +1,5 @@
+using Unciv.Client.Net.Session;
+using Unciv.Commands.Turn;
 using Unciv.Models.Ruleset;
 using Unciv.Net;
 using Unciv.Net.Identity;
@@ -541,5 +543,86 @@ public sealed class NetLobbyTests : IDisposable
         Assert.Equal("Quick", setup.GameParameters.Speed);
         Assert.Equal("Emperor", setup.GameParameters.Difficulty);
         Assert.Equal(8, setup.GameParameters.NumberOfCityStates);
+    }
+
+    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(30);
+
+    private static ClientSession NewClient(ServerLobby lobby, ClientIdentity identity, string name, ITransport clientEnd) =>
+        new(_ => Task.FromResult(clientEnd), new ClientSessionOptions
+        {
+            Identity = identity,
+            DisplayName = name,
+            RulesetHash = lobby.Lobby.Settings.ComputeRulesetHash(),
+            ExpectedFingerprint = lobby.Lobby.HostFingerprint,
+            KeepAliveInterval = Timeout.InfiniteTimeSpan,
+            HostSilenceTimeout = Timeout.InfiniteTimeSpan
+        });
+
+    [Fact]
+    public async Task ServerLobby_ClientSession_CommandRoundTripAfterStart_HasOneReaderPerSocket()
+    {
+        await using var lobby = new ServerLobby();
+        var (clientEnd, serverEnd) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverEnd);
+        using var id = ClientIdentity.Generate();
+        await using var session = NewClient(lobby, id, "Alice", clientEnd);
+
+        Assert.True((await session.JoinAsync().WaitAsync(Bound)).Joined);
+        await session.SetLobbySlotAsync(0, "Rome", null, true);
+        await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+
+        // Several commands in a row: any frame taken by a competing lobby reader would leave one without a CommandResult.
+        for (var i = 0; i < 5; i++)
+        {
+            var outcome = await session.SubmitAsync(new EndTurn()).WaitAsync(Bound);
+            Assert.False(string.IsNullOrEmpty(outcome.ClientCmdId));
+        }
+    }
+
+    [Fact]
+    public async Task ServerLobby_KnownPlayerReconnectingAfterStart_IsSeatedInTheRunningGame()
+    {
+        await using var lobby = new ServerLobby();
+        var (clientEnd, serverEnd) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(serverEnd);
+        using var id = ClientIdentity.Generate();
+        await using var first = NewClient(lobby, id, "Alice", clientEnd);
+        Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
+        await first.SetLobbySlotAsync(0, "Rome", null, true);
+        await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+
+        var (client2, server2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(server2);
+        await using var second = NewClient(lobby, id, "Alice", client2);
+        Assert.True((await second.JoinAsync().WaitAsync(Bound)).Joined);
+        using var cts = new CancellationTokenSource(Bound);
+        await foreach (var ev in second.Events.ReadAllAsync(cts.Token))
+            if (ev is SnapshotReplaced) break; // seated in the running game: the host sent the first snapshot
+        var outcome = await second.SubmitAsync(new EndTurn()).WaitAsync(Bound);
+        Assert.False(string.IsNullOrEmpty(outcome.ClientCmdId));
+    }
+
+    [Fact]
+    public async Task ServerLobby_NewPlayerAfterStart_IsRefusedAsGameStarted_EvenWithJoinInProgressAllowed()
+    {
+        await using var lobby = new ServerLobby(new LobbySettings { AllowJoinInProgress = true, AiFill = false, MaxMajorCivs = 3 });
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        using var alice = ClientIdentity.Generate();
+        await using var session = NewClient(lobby, alice, "Alice", c1);
+        Assert.True((await session.JoinAsync().WaitAsync(Bound)).Joined);
+        await session.SetLobbySlotAsync(0, "Rome", null, true);
+        await lobby.Lobby.SetSlotKindAsync(1, SlotKind.AI);
+        await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s2);
+        using var bob = ClientIdentity.Generate();
+        await c2.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = lobby.Lobby.Settings.ComputeRulesetHash(), ModList = [] }));
+        var welcome = await ReceiveMessageAsync<Welcome>(c2);
+        await c2.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = bob.PlayerKey, DisplayName = "Bob" }));
+        await c2.SendAsync(ProtocolCodec.Encode(new Auth { Proof = bob.Sign(lobby.Lobby.HostFingerprint, welcome.SessionId, welcome.Challenge) }));
+        var refused = await ReceiveMessageAsync<JoinRefused>(c2);
+        Assert.Equal(JoinRefusedCodes.GameAlreadyStarted, refused.Code);
     }
 }

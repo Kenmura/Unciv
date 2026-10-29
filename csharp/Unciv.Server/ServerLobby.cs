@@ -17,6 +17,8 @@ public sealed class ServerLobby : IAsyncDisposable
     private readonly LobbyHost lobbyHost;
     private readonly IGameStore? store;
     private readonly IClock clock;
+    private readonly TaskCompletionSource<GameHost> gameHostReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly CancellationTokenSource disposed = new();
     private GameHost? activeGameHost;
 
     public ServerLobby(
@@ -40,6 +42,15 @@ public sealed class ServerLobby : IAsyncDisposable
             this.clock,
             hostName
         );
+        lobbyHost.LateSeated = SeatLateAsync;
+    }
+
+    /// <summary>A known player reconnects after the start: their connection joins the running game (the lobby reader stays its only reader).</summary>
+    private async Task SeatLateAsync(Slot slot, ITransport gameTransport)
+    {
+        if (slot.SessionId == null) return;
+        var gameHost = await gameHostReady.Task.WaitAsync(disposed.Token).ConfigureAwait(false);
+        await gameHost.AttachSessionAsync(slot.SessionId, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
     }
 
     public LobbyHost Lobby => lobbyHost;
@@ -68,21 +79,24 @@ public sealed class ServerLobby : IAsyncDisposable
         {
             if (slot.Kind == SlotKind.Human && slot.Connected && slot.SessionId != null && slot.Transport != null)
             {
+                // The hand-over transport, never the raw one: the lobby reader keeps reading the socket and forwards to the game.
                 await gameHost.AttachSessionAsync(
                     slot.SessionId,
                     slot.Nation,
-                    slot.Transport,
+                    lobbyHost.GameTransportFor(slot.SessionId) ?? slot.Transport,
                     slot.PlayerKeyId
                 ).ConfigureAwait(false);
             }
         }
 
         activeGameHost = gameHost;
+        gameHostReady.TrySetResult(gameHost);
         return gameHost;
     }
 
     public async ValueTask DisposeAsync()
     {
+        await disposed.CancelAsync().ConfigureAwait(false);
         await lobbyHost.DisposeAsync().ConfigureAwait(false);
         if (activeGameHost != null)
         {
