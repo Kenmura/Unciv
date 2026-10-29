@@ -46,6 +46,14 @@ public class TradeProposalModelTests
     }
 
     [Fact]
+    public void AProposalCarriesItsOffersWithIcons()
+    {
+        var popup = TradeProposalModel.Next(Snapshot([Peace("rome", "Me")]), None)!;
+        Assert.Equal(["Peace Treaty (10 turns)"], popup.GiveItems.Select(it => it.Text));
+        Assert.Equal(AssetKey.Of("icon/ui", "Diplomacy"), Assert.Single(popup.AskItems).Icon);
+    }
+
+    [Fact]
     public void ThePeaceTreatyAndThePeaceProposalMakeItAPeaceProposal()
     {
         var treaty = TradeProposalModel.Next(Snapshot([Peace("rome", "Me")]), None)!;

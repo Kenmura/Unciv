@@ -259,6 +259,10 @@ public class TradeScreenModelTests
         builder.Toggle(TradeSide.Give, "Gold", "Gold");
         Assert.Equal("[x] 10 gold", builder.Groups(TradeSide.Give)[0].Choices[0].Label);
         Assert.Equal("Give_Gold_Gold", builder.Groups(TradeSide.Give)[0].Choices[0].Id);
+        var staged = builder.Groups(TradeSide.Give)[0].Choices[0];
+        Assert.Equal("10 gold", staged.Text);
+        Assert.Equal(AssetKey.Of("icon/stat", "Gold"), staged.Icon);
+        Assert.Equal("Peace with Peace with X (not possible)", give["Peace with X"].Text);
         Assert.True(builder.Groups(TradeSide.Give)[0].Choices[0].Quantity);
         Assert.Equal("Ask_Agreement_Open_Borders", TradeScreenModel.KeyOf(TradeSide.Ask, "Agreement", "Open Borders"));
     }
