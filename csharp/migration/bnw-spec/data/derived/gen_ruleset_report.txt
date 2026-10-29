@@ -150,14 +150,14 @@
   Nations.json/Indonesia: Spice Islanders uniques are declared data only: the luxury placement is B080
   Nations.json/Morocco: Gateway to Africa uniques are declared data only: trade partners and incoming routes are B020; the Kasbah is B004
   Nations.json/Poland: Solidarity is wired by B004 (a free policy per era). B013: free policies buy social-branch policies only (free tenets buy tenets), which is the BNW limit to the social branches
-  Nations.json/Portugal: Mare Nostrum is declared data only (B020); the Feitoria rules are B004, its luxury siphon is B072
+  Nations.json/Portugal: Mare Nostrum is declared data only (B020); the Feitoria rules are B004, its luxury siphon is B034
   Nations.json/The Shoshone: Great Expanse is wired by B004 (read as 8 extra tiles after the radius-1 ring, see UniqueTypeDataBnw)
   Nations.json/The Zulus: Iklwa XP modifier is wired (existing unique); the Ikanda promotion stays open for B074
   Nations.json/Venice: Serenissima: no annexing, no Settlers and the free Merchant of Venice at Optics are wired; the double trade slots are declared data only (B020)
   Buildings.json/all: Tourism, Great Work, trade route and league columns of SPEC 3.2 (B003 declares the UniqueTypes, feature tickets B020-B062 wire them)
   Units.json/Caravan, Cargo Ship: B006: buildable trade units (Can establish trade routes; the build restrictions are engine rules)
-  Beliefs.json/13 new BNW beliefs: added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). B022 wired Evangelism, Underground Sect, Unity of the Prophets and Messenger of the Gods; To the Glory of God works through the faith purchase gate. Declared data only until their subsystem: Sacred Sites (already wired through TourismFromBuildingsFlat), Charitable Missions (B072), Heathen Conversion (no barbarian conversion rule in the spec)
-  TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp: added by B004. Feitoria luxury siphon (B072) is not wired yet
+  Beliefs.json/13 new BNW beliefs: added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). B022 wired Evangelism, Underground Sect, Unity of the Prophets and Messenger of the Gods; To the Glory of God works through the faith purchase gate. B034 wired Charitable Missions (influence from gifts and quest rewards). Declared data only until their subsystem: Sacred Sites (already wired through TourismFromBuildingsFlat), Heathen Conversion (no barbarian conversion rule in the spec)
+  TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp: added by B004. B034 wired the Feitoria luxury siphon (FeitoriaRules)
   Units.json/upgrades: upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture
   Policies.json/ideologies: Freedom, Order and Autocracy are the BNW ideologies (B013): PurchaseByLevel, Level 1/2/3 tenets (7/6/3), first/second adopter free tenets (2/1). B030: the tenets carry their effects (overrides policyUniques plus the generator's building-class tables); see policyPending for the ones with no unique yet
   Policies.json/ideologies: The three Universal Healthcare tenets share one BNW name; here they are named 'Universal Healthcare (Freedom)', '(Order)', '(Autocracy)' because policy names are unique

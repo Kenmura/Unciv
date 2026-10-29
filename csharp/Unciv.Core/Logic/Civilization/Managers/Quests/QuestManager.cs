@@ -440,8 +440,8 @@ public class QuestManager : IsPartOfGameInfoSerialization
     /// <summary>Increments the assignee influence on <see cref="Civ"/> and adds a Notification</summary>
     private void GiveReward(AssignedQuest assignedQuest)
     {
-        var rewardInfluence = assignedQuest.GetInfluence();
         var assignee = assignedQuest.AssigneeCiv;
+        var rewardInfluence = CityStateFunctions.ScaleInfluenceGain(assignee, assignedQuest.GetInfluence()); // B034
 
         Civ.GetDiplomacyManager(assignee).NotNull().AddInfluence(rewardInfluence);
         if (rewardInfluence > 0)

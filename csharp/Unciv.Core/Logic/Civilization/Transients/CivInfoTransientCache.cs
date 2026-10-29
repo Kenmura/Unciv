@@ -388,6 +388,7 @@ public class CivInfoTransientCache(Civilization civInfo)
             }
             // Then we combine these into one
             newDetailedCivResources.AddByResource(cityStateProvidedResources, Constants.CityStates);
+            Unciv.Logic.Civilization.Diplomacy.FeitoriaRules.AddSiphonedResources(CivInfo, newDetailedCivResources); // B034
         }
 
         CivInfo.ForEachMatchingUnique(UniqueType.ProvidesResources, unique =>

@@ -472,7 +472,7 @@ gated by the ModOptions unique `Enables international trade routes`, never by ru
 - **Plunder** [X]: an enemy military unit entering a non-city tile with the route's unit takes `100 + (origin gold per turn) * (turns left)`.
 - **Breaking** [X]: war between the owners (at once on declaration, and rechecked at turn start), a city that changed owner, or a defeated owner.
   The unit is lost. "Loss of path" is not checked. Embargoes end routes too (B016, 4.7.9).
-- **Still open** (seams in the code): `TODO(B072)` influence science bonus (Scholasticism), `TODO(B051)` shared ideology gold, tourism / religion /
+- **Still open** (seams in the code): `TODO(B051)` shared ideology gold, tourism / religion /
   quest / Hanse effects of §4.1.5 (B021 and later), `[stats] for each international trade route [cityFilter]` and
   (read by B035: `[relativeAmount]% Production for each trade route to a city-state`).
 
@@ -1058,7 +1058,12 @@ Station is also a building) and each turn put `round(production) + overflow` int
   marriage price, unit spent, no ally requirement, cities become puppets), the anchors (`MinorFriendshipAnchor*` ModConstants; G&K keeps +10 protected),
   `Afraid/ProtectedMinorPerTurnInfluence` tenets (whole points per turn), `FRIENDSHIP_*_ON_DEATH` (applied when a battle destroys the city-state;
   worse than Neutral is left alone [?]), and the trade-route quest (`Trade Route`, +40; weights [X]). Venice's no-annex / no-Settlers were already wired.
-  Not wired (follow-ups): `MinorBullyScoreModifier` / `% bullying strength`, `extra Influence from gifting military units`, `% Influence gained`,
+- **Engine status (B034)**: wired: the Feitoria luxury siphon (`FeitoriaRules`: an unpillaged improvement with `Gains [n] copies of the luxury resource from the
+  City-State` in city-state territory gives its civ n copies of every luxury that city-state's cities produce, origin "Feitoria"; [?] tiles record no builder,
+  so the civ is the one the improvement is unique to), Charitable Missions (`[+30]% Influence gained with City-States` scales positive influence from gold gifts,
+  unit gifts and quest rewards, `CityStateFunctions.ScaleInfluenceGain`), and Scholasticism (the existing Kotlin `Allied City-States provide [stat] equal to [n]%`,
+  tested on the real ruleset; the old `TODO(B072)` seam note was stale).
+  Not wired (follow-ups): `MinorBullyScoreModifier` / `% bullying strength`, `extra Influence from gifting military units`,
   `MINOR_UNIT_GIFT_TRAVEL_TURNS` and `FRIENDSHIP_PER_UNIT_GIFTED` (Unciv has no unit-gift-to-city-state action), `AllowsAnnexingCityStates`.
 
 ### 4.11 Religion [D]
@@ -1081,7 +1086,7 @@ Station is also a building) and each turn put `round(production) + overflow` int
   Unity of the Prophets (`InquisitorPressureRetention` [?]) lets the religion whose founder has it keep N% of its own pressure when someone's Inquisitor cleans a city;
   Underground Sect: each set-up spy in a city adds N (x scale) pressure per turn for its civ's religion. Faith purchases use the existing
   `May buy ... with Faith` and `Can purchase all Great People with Faith` uniques (tested on the real ruleset). Not done: Heathen Conversion
-  (`ConvertsBarbarians`, no rule in the spec), Charitable Missions (city-states), Sacred Sites (its "[+2] Tourism from [Faith] buildings" already uses TourismFromBuildingsFlat, B031 check).
+  (`ConvertsBarbarians`, no rule in the spec), Sacred Sites (its "[+2] Tourism from [Faith] buildings" already uses TourismFromBuildingsFlat, B031 check).
 
 ### 4.12 Military, warmonger, AI difficulty [D]
 - Warmonger: `WARMONGER_THREAT_*` thresholds and weights lowered, `WARMONGER_ON_CITY_STATE_MULTIPLIER` 50, and

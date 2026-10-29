@@ -66,9 +66,9 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class B026 prog
-  class B034 prog
+  class B034 review
   class B035 review
-  class C071 prog
+  class C071 review
   class C078 ondeck
   class C079 waiting
   class C082 ready
@@ -132,13 +132,13 @@ xychart-beta
 | C088 | **Ready to start** | C068 | 0 | City-site preview: yields at a candidate settle tile |
 | C092 | **Ready to start** | C074 | 0 | City management at scale: bulk actions and reusable build queues |
 | C078 | **On deck** (after C071) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
-| C071 | In-Progress [Claude] | C066, C070 | 6 | Policies screen redesign |
+| C071 | Needs-Review [Claude] | C066, C070 | 6 | Policies screen redesign |
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | B026 | In-Progress [Claude] | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
-| B034 | In-Progress [Claude] | B021 | 0 | BNW city-state follow-ups: Feitoria luxury siphon, Scholasticism, Charitable Missions |
+| B034 | Needs-Review [Claude] | B021 | 0 | BNW city-state follow-ups: Feitoria luxury siphon, Scholasticism, Charitable Missions |
 | B035 | Needs-Review [Claude] | B029 | 0 | BNW: engine reads Hanse '[relativeAmount]% Production for each trade route to a city-state' (ProductionPerCityStateTradeRoute) |
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
 | C085 | Available (waiting on C094) | C094 | 0 | Unit model LOD and performance caps |

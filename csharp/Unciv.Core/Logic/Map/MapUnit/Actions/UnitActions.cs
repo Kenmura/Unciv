@@ -264,6 +264,7 @@ public static class UnitActions
         {
             if (recipient.IsCityState)
             {
+                var influence = 5f;
                 foreach (var unique in unit.GetMatchingUniques(
                     UniqueType.GainInfluenceWithUnitGiftToCityState,
                     checkCivInfoUniques: true
@@ -271,13 +272,13 @@ public static class UnitActions
                 {
                     if (unit.MatchesFilter(unique.Params[1]))
                     {
-                        recipient.GetDiplomacyManager(unit.Civ).NotNull()
-                            .AddInfluence(unique.Params[0].ToFloat() - 5f);
+                        influence = unique.Params[0].ToFloat();
                         break;
                     }
                 }
 
-                recipient.GetDiplomacyManager(unit.Civ).NotNull().AddInfluence(5f);
+                // B034: Charitable Missions scales the whole gain
+                recipient.GetDiplomacyManager(unit.Civ).NotNull().AddInfluence(CityStateFunctions.ScaleInfluenceGain(unit.Civ, influence));
             }
             else
             {

@@ -1428,7 +1428,7 @@
    "Solidarity is wired by B004 (a free policy per era). B013: free policies buy social-branch policies only (free tenets buy tenets), which is the BNW limit to the social branches"
   ],
   "Nations.json/Portugal": [
-   "Mare Nostrum is declared data only (B020); the Feitoria rules are B004, its luxury siphon is B072"
+   "Mare Nostrum is declared data only (B020); the Feitoria rules are B004, its luxury siphon is B034"
   ],
   "Nations.json/The Shoshone": [
    "Great Expanse is wired by B004 (read as 8 extra tiles after the radius-1 ring, see UniqueTypeDataBnw)"
@@ -1446,10 +1446,10 @@
    "B006: buildable trade units (Can establish trade routes; the build restrictions are engine rules)"
   ],
   "Beliefs.json/13 new BNW beliefs": [
-   "added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). B022 wired Evangelism, Underground Sect, Unity of the Prophets and Messenger of the Gods; To the Glory of God works through the faith purchase gate. Declared data only until their subsystem: Sacred Sites (already wired through TourismFromBuildingsFlat), Charitable Missions (B072), Heathen Conversion (no barbarian conversion rule in the spec)"
+   "added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). B022 wired Evangelism, Underground Sect, Unity of the Prophets and Messenger of the Gods; To the Glory of God works through the faith purchase gate. B034 wired Charitable Missions (influence from gifts and quest rewards). Declared data only until their subsystem: Sacred Sites (already wired through TourismFromBuildingsFlat), Heathen Conversion (no barbarian conversion rule in the spec)"
   ],
   "TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp": [
-   "added by B004. Feitoria luxury siphon (B072) is not wired yet"
+   "added by B004. B034 wired the Feitoria luxury siphon (FeitoriaRules)"
   ],
   "Units.json/upgrades": ["upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture"],
   "Policies.json/ideologies": [

@@ -1,4 +1,5 @@
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models;
 using Unciv.Models.Ruleset.Unique;
@@ -44,6 +45,7 @@ public static class UnitActionsPillage
             PillageLooting(tile, unit);
             tile.SetPillaged(); // Also triggers reassignPopulation
             if (tile.Resource != null) tile.GetOwner()?.UpdateCivResources(); // this might take away a resource
+            FeitoriaRules.TileChanged(tile); // B034: a pillaged Feitoria stops siphoning
 
             bool freePillage = unit.HasUnique(UniqueType.NoMovementToPillage, checkCivInfoUniques: true);
             if (!freePillage) unit.UseMovementPoints(1f);

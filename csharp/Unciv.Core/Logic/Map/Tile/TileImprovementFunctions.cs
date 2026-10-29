@@ -236,6 +236,7 @@ public class TileImprovementFunctions(Tile tile)
             city.CityStats.Update();
             city.Civ.Cache.UpdateCivResources();
             city.ReassignPopulationDeferred();
+            Unciv.Logic.Civilization.Diplomacy.FeitoriaRules.TileChanged(Tile); // B034
         }
 
         if (improvement == null)

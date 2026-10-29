@@ -209,6 +209,17 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
             militaryUnit.Name);
     }
 
+    /// <summary>
+    /// B034 (bnw-spec 4.11), not in Kotlin: Charitable Missions, <c>[+30]% Influence gained with City-States</c>, scales every positive influence
+    /// <paramref name="gainer"/> earns with a city-state by a gift (gold or unit) or a quest reward. Losses and the per-turn resting-point drift are not scaled.
+    /// </summary>
+    public static float ScaleInfluenceGain(Civilization gainer, float amount)
+    {
+        if (amount <= 0f) return amount;
+        gainer.ForEachMatchingUnique(UniqueType.CityStateInfluenceGain, unique => amount *= 1f + unique.Params[0].ToFloat() / 100f);
+        return amount;
+    }
+
     public int InfluenceGainedByGift(Civilization donorCiv, int giftAmount)
     {
         // https://github.com/Gedemon/Civ5-DLL/blob/aa29e80751f541ae04858b6d2a2c7dcca454201e/CvGameCoreDLL_Expansion1/CvMinorCivAI.cpp
@@ -225,6 +236,8 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
 
         // Bonus due to "Invest" quests
         influenceGained *= civInfo.QuestManager.GetInvestmentMultiplier(donorCiv);
+
+        influenceGained = ScaleInfluenceGain(donorCiv, influenceGained);
 
         influenceGained -= influenceGained % 5;
         if (influenceGained < 5f) influenceGained = 5f;
