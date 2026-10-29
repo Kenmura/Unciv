@@ -82,7 +82,7 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class C096 review
-  class C098 prog
+  class C098 review
   class C099 ondeck
   class C100 ondeck
   class C101 ondeck
@@ -162,7 +162,7 @@ xychart-beta
 | T265 | In-Progress [Claude-T265] | T178, T179, T204, T205 | 2 | Dedicated server executable A: Unciv.Server command line, lobby and game hosting over TCP+TLS |
 | T273 | Available (waiting on T272) | T272, T267 | 2 | Host migration 3/5: graceful hand-off and promotion (HostHandoff, promote from standby store, client redirect, rolledBack resync) |
 | T274 | Available (waiting on T273) | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
-| C098 | In-Progress [Claude-C098] | C097 | 0 | Shader polish for water and terrain on the Ultra graphics level |
+| C098 | Needs-Review [Claude-C098] | C097 | 0 | Shader polish for water and terrain on the Ultra graphics level |
 | T262 | In-Progress [Claude-T262] | T261 | 0 | Optimise the top turn-time hotspots with proof of identical game state |
 | T266 | Available (waiting on T270) | T270 | 0 | Dedicated server distribution: self-contained Linux and Windows builds in releases and CI, run guide |
 | T275 | Available (waiting on T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
