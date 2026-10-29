@@ -186,6 +186,12 @@ public sealed class ClientSession : IAsyncDisposable
         {
             try { await SendAsync(entry.Message, cancellationToken).ConfigureAwait(false); }
             catch (Exception e) when (IsConnectionGone(e)) { /* connection just dropped: resent after the resume */ }
+            catch (OperationCanceledException)
+            {
+                // Cancelled before or during the send: the entry must not leak into the pending cap or be resent after a reconnect.
+                lock (gate) pending.Remove(entry.Message.ClientCmdId);
+                throw;
+            }
         }
 
         using var registration = cancellationToken.Register(() =>
@@ -579,14 +585,24 @@ public sealed class ClientSession : IAsyncDisposable
         switch (outcome)
         {
             case DeltaOutcome.Applied:
+                SettleResume();
                 Emit(new DeltaApplied(delta.Seq, delta.Events, Game.Snapshot!));
                 break;
             case DeltaOutcome.Duplicate:
+                SettleResume();
                 break;
             default:
                 await RequestResyncAsync(DescribeOutcome(outcome)).ConfigureAwait(false);
                 break;
         }
+    }
+
+    /// <summary>The host answered a Resume with deltas (no snapshot): the mirror is current again, so the connection counts as settled and the outage is over.</summary>
+    private void SettleResume()
+    {
+        connectionSettled = true;
+        desyncAnnounced = false;
+        if (state == ClientSessionState.Syncing) SetState(ClientSessionState.InGame);
     }
 
     private static string DescribeOutcome(DeltaOutcome outcome) => outcome switch

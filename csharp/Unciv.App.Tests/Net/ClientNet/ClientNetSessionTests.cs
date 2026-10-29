@@ -647,6 +647,55 @@ public sealed class ClientNetSessionTests
     }
 
     [Fact]
+    public async Task Reconnect_ResumedByDeltasMoreOftenThanTheAttemptLimit_StaysInGameAndAnnouncesEachOutage()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            GameId = "game-1",
+            MaxReconnectAttempts = 2,
+            ReconnectDelay = (_, _) => Task.CompletedTask
+        });
+        var current = ClientNetRig.Snap(5, 1);
+        var host = await rig.StartInGameAsync(current);
+        for (var cycle = 0; cycle < 4; cycle++)
+        {
+            var next = rig.NewConnection();
+            await host.CloseAsync();
+            Assert.Equal("reconnect", (await rig.NextAsync<Desynchronized>()).Reason);
+            await rig.HandshakeAsync(next);
+            await next.ReceiveAsync<Resume>();
+            var after = ClientNetRig.Snap(current.Seq + 1, 1, cycle + 2);
+            await next.SendAsync(ClientNetRig.Delta(current, after));
+            await rig.NextAsync<DeltaApplied>();
+            current = after;
+            host = next;
+            Assert.Equal(ClientSessionState.InGame, rig.Session.State);
+        }
+    }
+
+    [Fact]
+    public async Task Submit_AlreadyCancelledToken_DoesNotLeakAPendingCommand()
+    {
+        await using var rig = new ClientNetRig();
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rig.Session.SubmitAsync("a", EmptyObject, cts.Token));
+        var next = rig.NewConnection();
+        await host.CloseAsync();
+        await rig.HandshakeAsync(next);
+        await next.ReceiveAsync<ResyncRequest>();
+        await next.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(5, 1)));
+        await rig.NextAsync<SnapshotReplaced>();
+        _ = rig.Session.SubmitAsync("b", EmptyObject);
+        Assert.Equal("b", (await next.ReceiveAsync<Command>()).CommandType); // the cancelled "a" was not resent first
+    }
+
+    [Fact]
     public async Task Events_AreBoundedWhenNobodyReads_AndTheEndIsKept()
     {
         await using var rig = new ClientNetRig();
