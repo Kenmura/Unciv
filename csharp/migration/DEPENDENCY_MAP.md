@@ -65,15 +65,15 @@ flowchart TD
   class C078 ready
   class C079 waiting
   class C082 ready
-  class C084 prog
+  class C084 ready
   class C085 waiting
   class C086 waiting
-  class C088 ready
+  class C088 prog
   class C089 waiting
   class C090 waiting
   class C091 waiting
   class C092 prog
-  class C093 ondeck
+  class C093 waiting
   class C094 waiting
   class T247 waiting
 ```
@@ -121,10 +121,9 @@ xychart-beta
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
 | C078 | **Ready to start** | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
+| C084 | **Ready to start** | C083 | 4 | Unit art by era: ancient and classical |
 | C082 | **Ready to start** | C081 | 0 | Articulated placeholder unit with code-built clips |
-| C088 | **Ready to start** | C068 | 0 | City-site preview: yields at a candidate settle tile |
-| C093 | **On deck** (after C084) | C084 | 3 | Unit art by era: medieval and renaissance |
-| C084 | In-Progress [Claude] | C083 | 4 | Unit art by era: ancient and classical |
+| C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
@@ -132,6 +131,7 @@ xychart-beta
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
 | C085 | Available (waiting on C094) | C094 | 0 | Unit model LOD and performance caps |
 | C086 | Available (waiting on C094) | C094 | 0 | Unit combat polish: effects and sounds |
+| C088 | In-Progress [Claude] | C068 | 0 | City-site preview: yields at a candidate settle tile |
 | C091 | Available (waiting on C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C092 | In-Progress [Claude] | C074 | 0 | City management at scale: bulk actions and reusable build queues |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
