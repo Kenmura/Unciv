@@ -109,6 +109,7 @@ public sealed class DecisionsReligionScenario : Scenario
             new AssertQuery("the spy report opened the move-spies picker without sending anything; Confirm waits for a destination, saying so", () =>
                 screen.Picker.Visible && screen.Picker.Spec is { Kind: Unciv.Assets.PickerKind.MoveSpies } && screen.Picker.Spec.Slots.Count == 2
                 && session.Log.Count == logged && screen.Picker.ConfirmButton.Disabled && screen.Picker.ProblemText == "Choose a destination for at least one spy"),
+            new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(screen.Picker)),
             new Capture("spies", "The move-spies picker, opened from the spy report: one slot per spy; Move spies is disabled until a destination is chosen"),
             new Act("pick Rome's capital as the first spy's destination", () => picked = game.GetCivilization(ScenarioGame.Ai).Cities[0].Id),
             new Click(() => Centre(screen.Picker.OptionButton(0, picked))),

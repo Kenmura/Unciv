@@ -165,7 +165,7 @@ public static class ThemeBuilder
             UiTokens.TextSecondary, UiTokens.TextPrimary, UiTokens.Accent, UiTokens.TextDisabled));
         Variation(UiVariants.ButtonDanger, new ButtonLook(
             Fill(UiTokens.Surface2, UiTokens.Danger), Fill(UiTokens.Danger, UiTokens.Danger), Fill(UiTokens.Danger.Scale(75), UiTokens.Danger), Fill(UiTokens.Surface1, UiTokens.BorderSubtle),
-            UiTokens.Danger, UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextDisabled));
+            UiTokens.DangerText, UiTokens.TextPrimary, UiTokens.TextPrimary, UiTokens.TextDisabled));
         Variation(UiVariants.ButtonIcon, new ButtonLook(
             Transparent(padIcon: true), Transparent(UiTokens.Surface2, padIcon: true), Transparent(UiTokens.Inset, padIcon: true), Transparent(padIcon: true),
             UiTokens.TextSecondary, UiTokens.AccentHi, UiTokens.Accent, UiTokens.TextDisabled));

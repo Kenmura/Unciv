@@ -81,6 +81,7 @@ public sealed class TooltipsScenario : Scenario
                 return screen.Tooltips.IsShowing && screen.Tooltips.ShownText == ExpectedTileTip() && info.IsCityCenter && info.OwningCity == capital.Name
                     && screen.Tooltips.ShownText.StartsWith(capital.Name, StringComparison.Ordinal) && info.Yields.Count > 0 && info.YieldBreakdown.Count > 0 && screen.Tooltips.ShownText.Contains("Total", StringComparison.Ordinal) && info.BaseTerrain == capitalTile.BaseTerrain;
             }),
+            new AssertQuery("the tip never overlaps the HUD's top bar", () => screen.Tooltips.PanelRect.Position.Y >= screen.Hud.BarRect.End.Y && !screen.Tooltips.PanelRect.Intersects(screen.Hud.BarRect)),
             new Capture("tile", "Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources"),
             new Act("pointer onto the top bar", () => InputSimulator.SimulateMouseMove(viewport, new Vector2(300, 8))),
             new WaitFrames(3),

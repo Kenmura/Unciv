@@ -1,17 +1,23 @@
 using Godot;
+using Unciv.Assets;
 
 namespace Unciv.GodotClient.Ui;
 
 /// <summary>
 /// One tooltip for the whole UI. <see cref="Attach"/> registers a control and a function producing its text (BBCode, so it can be rich);
 /// after the pointer has rested on the control for <see cref="Delay"/> seconds the tooltip appears next to the pointer and follows it,
-/// staying inside the window. Leaving the control, or pressing a mouse button, hides it. Time is fed by <see cref="Advance"/> (called each frame),
+/// staying inside the window and below <see cref="TopInset"/> (C066: never over the HUD's top bar). Leaving the control, or pressing a mouse button, hides it. Time is fed by <see cref="Advance"/> (called each frame),
 /// which lets a test fast-forward instead of waiting.
 /// </summary>
 public partial class TooltipHost : Control
 {
     private readonly UiTheme theme;
-    private readonly PanelContainer panel = new() { Visible = false };
+    /// <summary>The widest a tooltip gets, in unscaled pixels (design/ui-redesign.md 2.5); longer lines wrap.</summary>
+    public const int MaxWidth = 340;
+
+    private const int MinTextWidth = 120;
+
+    private readonly PanelContainer panel = new() { Visible = false, ThemeTypeVariation = UiVariants.PanelTooltip };
     private readonly RichTextLabel text = new() { BbcodeEnabled = true, FitContent = true, ScrollActive = false };
     private Control? hovered;
     private Func<string>? textOf;
@@ -21,8 +27,9 @@ public partial class TooltipHost : Control
     public TooltipHost(UiTheme theme)
     {
         this.theme = theme;
+        Theme = theme.Theme; // the game screen is not under a ScreenManager: without its own theme the tip came out as a bare grey box
         this.Fill(); MouseFilter = MouseFilterEnum.Ignore;
-        text.CustomMinimumSize = new Vector2(theme.Px(220), 0);
+        text.CustomMinimumSize = new Vector2(theme.Px(MinTextWidth), 0);
         panel.MouseFilter = MouseFilterEnum.Ignore;
         text.MouseFilter = MouseFilterEnum.Ignore;
         panel.AddChild(text);
@@ -38,6 +45,9 @@ public partial class TooltipHost : Control
     public Control? Hovered => hovered;
 
     public Rect2 PanelRect => panel.GetGlobalRect();
+
+    /// <summary>The y (global) above which a tip may not be placed, or null for the top of the window: the owner gives the bottom edge of its top bar.</summary>
+    public Func<float>? TopInset { get; set; }
 
     public void Attach(Control target, Func<string> bbcodeText)
     {
@@ -76,6 +86,7 @@ public partial class TooltipHost : Control
         {
             shownSource = current;
             text.Text = current;
+            text.CustomMinimumSize = new Vector2(TextWidth(), 0);
             panel.Size = Vector2.Zero;
         }
         Follow();
@@ -118,6 +129,19 @@ public partial class TooltipHost : Control
         panel.Visible = false;
     }
 
+    /// <summary>The width the tip's text is laid out at: that of its longest line, up to <see cref="MaxWidth"/> less the panel's padding, so a short tip is narrow and a long one wraps.</summary>
+    private float TextWidth()
+    {
+        var font = text.GetThemeFont("normal_font");
+        int fontSize = text.GetThemeFontSize("normal_font_size");
+        float widest = 0f;
+        foreach (string line in text.GetParsedText().Split('\n')) widest = Math.Max(widest, font.GetStringSize(line, HorizontalAlignment.Left, -1, fontSize).X);
+        float padding = 2 * theme.Px(UiTokens.S3) + 2 * theme.Px(UiTokens.BorderWidth);
+        float most = theme.Px(MaxWidth) - padding;
+        // a little slack for bold runs, which measure wider than the regular face the parsed text is measured in
+        return Math.Clamp(widest * 1.08f + 2f, theme.Px(MinTextWidth), most);
+    }
+
     private void Follow()
     {
         var pointer = GetViewport().GetMousePosition();
@@ -127,6 +151,9 @@ public partial class TooltipHost : Control
         var at = pointer + new Vector2(offset, offset);
         if (at.X + size.X > window.X) at.X = Math.Max(0, pointer.X - offset - size.X);
         if (at.Y + size.Y > window.Y) at.Y = Math.Max(0, pointer.Y - offset - size.Y);
+        // below the top bar whatever the pointer does: when flipping above the pointer would put the tip over the bar, sit just under it instead
+        float top = (TopInset?.Invoke() ?? 0f) + theme.Px(UiTokens.S1);
+        if (at.Y < top) at.Y = Math.Min(top, Math.Max(0, window.Y - size.Y));
         panel.Position = at;
     }
 }

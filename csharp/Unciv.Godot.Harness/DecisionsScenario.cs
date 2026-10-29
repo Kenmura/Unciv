@@ -58,6 +58,7 @@ public sealed class DecisionsScenario : Scenario
             new AssertQuery("the picker lists the engine's options and Confirm waits for a choice, saying so", () =>
                 screen.Picker.Visible && screen.Picker.Spec is { Kind: Unciv.Assets.PickerKind.FreeGreatPerson } && screen.Picker.ConfirmButton.Disabled
                 && screen.Picker.ProblemText == "Choose: Great person" && screen.Picker.Spec.Slots[0].Options.Count == human.GreatPeople.GetFreeGreatPersonOptions().Count()),
+            new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(screen.Picker)),
             new Capture("great-person", "The free great person picker: one button per great person the engine offers; Confirm is disabled and says to choose first"),
             new Act("remember the log and the first option", () =>
             {

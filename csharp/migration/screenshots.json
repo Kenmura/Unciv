@@ -1119,5 +1119,55 @@
         "caption": "The same components at 1280x720: the control page on the left and the data page on the right."
       }
     ]
+  },
+  "C066": {
+    "scenario": "ui-kit",
+    "about": "One frame for every popup and screen: Modal (scrim, centred panel with the brass hairline on its top edge, title, body and a right-aligned footer with the primary button right-most, stacked when there are more than three), ScreenFrame (header bar with hairline, title, close button, content, footer) and a styled tooltip that wraps at 340 px and never covers the HUD top bar. The alert, decision-picker, tutorial, trade-proposal, rename and hotseat popups now all use Modal.",
+    "shots": [
+      {
+        "golden": "ui-kit/popup.png",
+        "caption": "A popup in the shared Modal frame over the scrim: brass hairline along the panel's top edge, the title, the body, and the footer with Cancel (secondary) left of OK (primary, gold)."
+      },
+      {
+        "golden": "ui-kit/popup-danger.png",
+        "caption": "A destructive confirmation: the consequence line, Cancel (secondary) on the left and Declare war (danger, red text and border) on the right; Escape chooses Cancel."
+      },
+      {
+        "golden": "ui-kit/pushed.png",
+        "caption": "A full-screen screen in a ScreenFrame: header bar with the brass hairline, the serif title on the left and the close button on the right, content below, and a footer bar with Reset (ghost) and Apply (primary, right-most)."
+      },
+      {
+        "golden": "ui-kit/tooltip.png",
+        "caption": "The tooltip: a raised Surface3 panel with border and shadow, as wide as its longest line."
+      },
+      {
+        "golden": "alerts/demand.png",
+        "caption": "Rome's demand in a Modal: Decide later (ghost) on the left, Refuse (secondary), Accept (primary, right-most); Escape does the same as Decide later."
+      },
+      {
+        "golden": "proposals/peace.png",
+        "caption": "Rome's peace proposal in a Modal: four answers stacked in a column (Accept primary, two secondary, Decide later ghost) because there are more than three."
+      },
+      {
+        "golden": "decisions/great-person.png",
+        "caption": "A decision picker in the Modal frame: title, prompt, the option column, the reason Confirm is disabled in red, and Decide later (ghost) and Choose (primary, disabled) in the footer."
+      },
+      {
+        "golden": "tutorial/second-step.png",
+        "caption": "A tutorial step in the Modal frame: title, text, the 2 / 3 counter and OK (primary); Escape dismisses it like OK."
+      },
+      {
+        "golden": "city-rename/refused.png",
+        "caption": "The rename popup in the Modal frame: the name field, the refusal reason in the lightened danger red, Cancel and a disabled OK."
+      },
+      {
+        "golden": "hotseat/cover.png",
+        "caption": "The hotseat hand-over: an opaque scrim with the same Modal frame, the next player's name and Ready (primary)."
+      },
+      {
+        "golden": "tooltips/tile.png",
+        "caption": "The tile tooltip in the new tooltip style, wrapped to the 340 px maximum and placed below the HUD top bar instead of over it."
+      }
+    ]
   }
 }

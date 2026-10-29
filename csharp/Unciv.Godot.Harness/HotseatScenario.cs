@@ -73,7 +73,10 @@ public sealed class HotseatScenario : Scenario
             new AssertQuery("Greece's turn has not begun while the device changes hands", () => !Started(ScenarioGame.HumanB) && !babylonHost.IsRetired && refusals.Count == 0),
             new AssertQuery("the game cannot be saved while the device changes hands (a save does not record whose turn is next)", () =>
                 !babylonHost.CanExportSave && babylonHost.ExportSaveAsync().GetAwaiter().GetResult() == null),
+            new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(cover)),
             new Capture("cover", "Pass the device to Greece: an opaque cover, no map, no panels, a Ready button"),
+            new PressKey(Key.Escape),
+            new AssertQuery("Escape is swallowed by the cover: it stays up and the game menu does not open behind it", () => cover.Visible && cover.CivId == ScenarioGame.HumanB && !screen.GameMenu.Visible),
             new Act("Greece presses Ready", () => cover.ReadyButton.EmitSignal(BaseButton.SignalName.Pressed)),
             new WaitUntil("the game is handed to Greece", () => !cover.Visible && !screen.IsConcealed && Viewer() == ScenarioGame.HumanB),
             new WaitFrames(3),

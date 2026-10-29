@@ -13,12 +13,22 @@ namespace Unciv.Assets;
 /// <summary>One button of an alert popup. <see cref="Command"/> is what pressing it submits.</summary>
 public sealed record AlertButton(string Id, string Label, GameCommand Command);
 
+/// <summary>C066: how an alert reaches the player. A <see cref="Blocking"/> alert asks for a decision (or the engine will not end the turn until it is answered) and is a modal popup; an <see cref="Ambient"/> one only informs and waits to be reviewed.</summary>
+public enum AlertKind
+{
+    Blocking,
+    Ambient,
+}
+
 /// <summary>
 /// An alert ready to draw. <see cref="Buttons"/> are the engine's answers (a choice only appears when the engine's query said the command would accept it).
 /// <see cref="CanDefer"/> means the popup may be closed without answering (the alert stays pending and the HUD offers to review it); a blocking alert cannot.
 /// </summary>
 public sealed record AlertPopup(int Index, AlertType Type, string Value, string Title, string Body, IReadOnlyList<AlertButton> Buttons, bool Blocking, bool CanDefer)
 {
+    /// <summary>C066: whether the alert interrupts the player (a modal popup) or only tells something (<see cref="AlertKind.Ambient"/>, a toast once C067 lands).</summary>
+    public AlertKind Kind => AlertPopupModel.KindOf(this);
+
     /// <summary>Identifies this alert instance for "decide later" bookkeeping.</summary>
     public string Key => $"{Index.ToString(CultureInfo.InvariantCulture)}:{Type}:{Value}";
 }
@@ -95,9 +105,12 @@ public static class AlertPopupModel
     {
         if (pending == null) return null;
         foreach (var entry in pending.Decisions)
-            if (Describe(entry, snapshot) is { } popup && !deferred.Contains(popup.Key) && (reviewing || !IsInformational(popup))) return popup;
+            if (Describe(entry, snapshot) is { } popup && !deferred.Contains(popup.Key) && (reviewing || KindOf(popup) == AlertKind.Blocking)) return popup;
         return null;
     }
+
+    /// <summary><see cref="AlertKind.Ambient"/> when the alert is only informational and the engine does not require an answer; every alert that asks for a choice, or that blocks the turn, is <see cref="AlertKind.Blocking"/>.</summary>
+    public static AlertKind KindOf(AlertPopup popup) => popup.Blocking || !IsInformational(popup) ? AlertKind.Blocking : AlertKind.Ambient;
 
     /// <summary>An alert that is only acknowledged: its single answer is OK.</summary>
     public static bool IsInformational(AlertPopup popup) => popup.Buttons is [{ Command: AckAlert }];

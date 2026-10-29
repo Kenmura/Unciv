@@ -256,7 +256,7 @@ internal sealed class UiKitGallery(UiTheme theme, List<string> log)
 
     public bool DeltaChecks() =>
         Gold.DeltaText == "+5" && Gold.DeltaColour == Tone(UiTokens.Success)
-        && Science.DeltaText == "-2" && Science.DeltaColour == Tone(UiTokens.Danger)
+        && Science.DeltaText == "-2" && Science.DeltaColour == Tone(UiTokens.DangerText)
         && Culture.DeltaText == "0" && Culture.DeltaColour == Tone(UiTokens.TextMuted);
 
     public bool BarChecks() =>

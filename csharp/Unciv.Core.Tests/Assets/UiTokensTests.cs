@@ -27,6 +27,11 @@ public class UiTokensTests
         Assert.True(UiTokens.Contrast(UiTokens.TextMuted, surface) >= 3.0, name);
     }
 
+    [Theory]
+    [MemberData(nameof(Surfaces))]
+    public void DangerTextReadsOnEveryRaisedSurface(string name, Rgb surface) =>
+        Assert.True(UiTokens.Contrast(UiTokens.DangerText, surface) >= 4.5, $"DangerText on {name}");
+
     [Fact]
     public void TextOnAccentReads() => Assert.True(UiTokens.Contrast(UiTokens.OnAccent, UiTokens.Accent) >= 4.5);
 

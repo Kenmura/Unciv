@@ -1,6 +1,7 @@
 using Godot;
 using Unciv.Assets;
 using Unciv.Commands;
+using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
 using Unciv.Utils;
@@ -13,17 +14,14 @@ namespace Unciv.GodotClient.Play;
 /// why Confirm is disabled (<see cref="DecisionPickerModel.Problem"/>) and which commands a confirmed choice sends (<see cref="DecisionPickerModel.Commands"/>) come from the model;
 /// the owner submits the commands it is given in <see cref="Confirmed"/>.
 /// </summary>
-public partial class DecisionPickerView : Control
+public partial class DecisionPickerView : Modal
 {
-    private readonly ColorRect dim = new() { MouseFilter = MouseFilterEnum.Ignore };
-    private readonly PanelContainer panel = new() { Name = "PickerPanel" };
-    private readonly Label title = new() { Name = "PickerTitle", HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly Label prompt = new() { Name = "PickerPrompt", HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private readonly Label prompt = new() { Name = "PickerPrompt", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly HBoxContainer columns = new() { Name = "PickerSlots" };
     private readonly Label detail = new() { Name = "PickerDetail", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly LineEdit nameField = new() { Name = "PickerName", Visible = false };
     private readonly CheckBox flagBox = new() { Name = "PickerFlag", Visible = false };
-    private readonly Label problem = new() { Name = "PickerProblem", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private readonly Label problem = new() { Name = "PickerProblem", ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Button confirm = new() { Name = "PickerConfirm" };
     private readonly Button later = new() { Name = "PickerLater" };
     private readonly Dictionary<(int Slot, string Id), Button> optionButtons = [];
@@ -34,27 +32,15 @@ public partial class DecisionPickerView : Control
     public DecisionPickerView()
     {
         Name = "DecisionPicker";
-        Visible = false;
-        MouseFilter = MouseFilterEnum.Stop;
-        dim.Fill();
-        AddChild(dim);
-        var centre = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
-        centre.Fill();
-        AddChild(centre);
-        centre.AddChild(panel);
-        var column = new VBoxContainer();
-        panel.AddChild(column);
-        column.AddChild(title);
-        column.AddChild(prompt);
-        column.AddChild(columns);
-        column.AddChild(detail);
-        column.AddChild(nameField);
-        column.AddChild(flagBox);
-        column.AddChild(problem);
-        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        row.AddChild(confirm);
-        row.AddChild(later);
-        column.AddChild(row);
+        TitleLabel.Name = "PickerTitle";
+        problem.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.DangerText));
+        Body.AddChild(prompt);
+        Body.AddChild(columns);
+        Body.AddChild(detail);
+        Body.AddChild(nameField);
+        Body.AddChild(flagBox);
+        Body.AddChild(problem);
+        SetActions([(confirm, ChoiceRole.Primary), (later, ChoiceRole.Ghost)]);
         confirm.Pressed += () => Confirmed?.Invoke(Spec.NotNull(), DecisionPickerModel.Commands(Spec.NotNull(), Choice()));
         later.Pressed += () => Dismissed?.Invoke(Spec.NotNull());
         nameField.TextChanged += _ =>
@@ -67,7 +53,7 @@ public partial class DecisionPickerView : Control
 
     public PickerSpec? Spec { get; private set; }
 
-    public string TitleText => title.Text;
+    public string TitleText => TitleLabel.Text;
 
     public string PromptText => prompt.Text;
 
@@ -95,24 +81,20 @@ public partial class DecisionPickerView : Control
 
     public Button? OptionButton(int slot, string id) => optionButtons.GetValueOrDefault((slot, id));
 
-    public void Init(UiTheme uiTheme)
+    public override void Init(UiTheme uiTheme)
     {
         theme = uiTheme;
-        Theme = uiTheme.Theme;
-        var shade = uiTheme.Panel.BgColor;
-        shade.A = 0.6f;
-        dim.Color = shade;
-        title.AddThemeFontSizeOverride("font_size", uiTheme.Px(22));
+        base.Init(uiTheme);
     }
-
-    public void LayoutIn(Vector2 screen) => Size = screen;
 
     public void Open(PickerSpec spec)
     {
         Spec = spec;
         selected = new string?[spec.Slots.Count];
         nameEdited = false;
-        title.Text = spec.Title.TrText();
+        float width = Fit(560);
+        SetHeader(spec.Title);
+        prompt.CustomMinimumSize = new Vector2(width, 0);
         prompt.Text = spec.Prompt.TrText();
         confirm.Text = spec.ConfirmLabel.TrText();
         later.Text = spec.DismissLabel.TrText();
@@ -123,7 +105,7 @@ public partial class DecisionPickerView : Control
         flagBox.Text = (spec.FlagLabel ?? "").TrText();
         flagBox.SetPressedNoSignal(false);
         detail.Text = "";
-        detail.CustomMinimumSize = new Vector2(theme.Px(420), theme.Px(48));
+        detail.CustomMinimumSize = new Vector2(width, theme.Px(48));
         optionButtons.Clear();
         foreach (var child in columns.GetChildren())
         {
@@ -153,13 +135,12 @@ public partial class DecisionPickerView : Control
         Update();
     }
 
-    public override void _UnhandledKeyInput(InputEvent @event)
+    /// <summary>Escape is "Decide later" / the dismiss button.</summary>
+    protected override bool OnCancel()
     {
-        if (Visible && Spec != null && @event is InputEventKey { Pressed: true, Keycode: Key.Escape })
-        {
-            Dismissed?.Invoke(Spec);
-            GetViewport().SetInputAsHandled();
-        }
+        if (Spec == null) return false;
+        Dismissed?.Invoke(Spec);
+        return true;
     }
 
     private PickerChoice Choice() => new(selected, nameField.Text, flagBox.ButtonPressed);

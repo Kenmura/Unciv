@@ -1011,7 +1011,7 @@ public partial class GameScreen : Control
             RemoveChild(Tooltips);
             Tooltips.QueueFree();
         }
-        Tooltips = new TooltipHost(theme) { Name = "Tooltips" };
+        Tooltips = new TooltipHost(theme) { Name = "Tooltips", TopInset = () => Hud.BarRect.End.Y };
         HoveredTile = null;
         HoverTip = "";
         if (Pedia != null)

@@ -55,6 +55,7 @@ public sealed class TutorialScenario : Scenario
             new WaitFrames(4),
             new AssertQuery("the Introduction tutorial pops up at game start", () => tutorials.Visible && tutorials.Current?.Trigger == TutorialTrigger.Introduction && tutorials.TitleText == "Introduction"),
             new AssertQuery("it shows the ruleset's text and nothing is marked seen yet", () => tutorials.BodyText.StartsWith("Welcome to Unciv!", StringComparison.Ordinal) && service.Current.TutorialsSeen.Count == 0 && tutorials.CounterText == ""),
+            new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(tutorials)),
             new Capture("introduction", "Game start: the Introduction tutorial over the map with its OK button"),
             new Press("OK"),
             new WaitFrames(2),
@@ -71,9 +72,9 @@ public sealed class TutorialScenario : Scenario
             new Capture("second-step", "Second of three steps of Culture and Policies: step counter 2 / 3 above OK"),
             new PressKey(Key.Space),
             new WaitFrames(2),
-            new PressKey(Key.Space),
+            new PressKey(Key.Escape),
             new WaitFrames(2),
-            new AssertQuery("after the last step it is gone and seen", () => !tutorials.Visible && SeenInFile("CultureAndPolicies")),
+            new AssertQuery("Escape dismissed the last step like OK; after it it is gone and seen", () => !tutorials.Visible && SeenInFile("CultureAndPolicies")),
             new Act("close the policy screen and open it again", () =>
             {
                 screen.Policies.Close();

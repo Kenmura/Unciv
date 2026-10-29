@@ -7,7 +7,7 @@ public class UiComponentsTests
 {
     [Theory]
     [InlineData(3, "+3", "#5DBB63")]
-    [InlineData(-2, "-2", "#D6544A")]
+    [InlineData(-2, "-2", "#EF7B71")]
     [InlineData(0, "0", "#6F7988")]
     public void DeltaIsSignedAndColouredFromTokens(int value, string text, string hex)
     {

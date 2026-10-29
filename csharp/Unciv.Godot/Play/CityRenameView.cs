@@ -10,14 +10,14 @@ namespace Unciv.GodotClient.Play;
 
 /// <summary>
 /// C048: the "Rename city" popup over the city screen: a text field that starts as the current name, the reason a name is refused as you type
-/// (<see cref="CityRenameModel"/>), "OK" (Enter in the field does the same) and "Cancel" (Escape, handled by the city screen). It builds the
+/// (<see cref="CityRenameModel"/>), "OK" (Enter in the field does the same) and "Cancel" (Escape). It builds the
 /// <c>RenameCity</c> command and hands it to <see cref="submit"/>; it never changes a city itself.
 /// </summary>
-public partial class CityRenameView : Control
+public partial class CityRenameView : Modal
 {
     private readonly Action<GameCommand> submit;
-    private readonly LineEdit nameField = new() { Name = "RenameField", CustomMinimumSize = new Vector2(240, 0) };
-    private readonly Label problem = new() { Name = "RenameProblem" };
+    private readonly LineEdit nameField = new() { Name = "RenameField" };
+    private readonly Label problem = new() { Name = "RenameProblem", ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Button confirm = new() { Name = "RenameConfirm", Text = "OK".Tr() };
     private readonly Button cancel = new() { Name = "RenameCancel", Text = "Cancel".Tr() };
     private string cityId = "";
@@ -27,27 +27,12 @@ public partial class CityRenameView : Control
     {
         submit = submitCommand;
         Name = "RenamePopup";
-        Visible = false;
-        MouseFilter = MouseFilterEnum.Stop;
-        this.Fill();
-        var dim = new ColorRect { Color = theme.Panel.BgColor with { A = 0.7f }, MouseFilter = MouseFilterEnum.Ignore };
-        dim.Fill();
-        AddChild(dim);
-        var centre = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
-        centre.Fill();
-        AddChild(centre);
-        var panel = new PanelContainer();
-        centre.AddChild(panel);
-        var column = new VBoxContainer();
-        panel.AddChild(column);
-        column.AddChild(new Label { Text = "Rename city".Tr(), HorizontalAlignment = HorizontalAlignment.Center });
-        column.AddChild(nameField);
-        problem.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(PlaceholderPalette.ErrorText));
-        column.AddChild(problem);
-        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        row.AddChild(confirm);
-        row.AddChild(cancel);
-        column.AddChild(row);
+        Init(theme);
+        SetHeader("Rename city");
+        Body.AddChild(nameField);
+        problem.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.DangerText));
+        Body.AddChild(problem);
+        SetActions([(confirm, ChoiceRole.Primary), (cancel, ChoiceRole.Secondary)]);
         nameField.TextChanged += _ => Update();
         nameField.TextSubmitted += _ => Confirm();
         confirm.Pressed += Confirm;
@@ -65,6 +50,7 @@ public partial class CityRenameView : Control
     {
         cityId = id;
         current = name;
+        nameField.CustomMinimumSize = new Vector2(Fit(360), 0);
         nameField.Text = name;
         Update();
         Visible = true;
@@ -87,6 +73,12 @@ public partial class CityRenameView : Control
 
     /// <summary>What the Cancel button and Escape do: closes without sending anything.</summary>
     public void Cancel() => Visible = false;
+
+    protected override bool OnCancel()
+    {
+        Cancel();
+        return true;
+    }
 
     private void Update()
     {

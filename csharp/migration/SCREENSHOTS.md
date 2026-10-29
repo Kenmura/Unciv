@@ -1082,6 +1082,56 @@ Scenario `ui-kit`.
 
 *The same components at 1280x720: the control page on the left and the data page on the right.* (`ui-kit/wide.png`)
 
+## C066 (ticket not Done or unknown)
+
+One frame for every popup and screen: Modal (scrim, centred panel with the brass hairline on its top edge, title, body and a right-aligned footer with the primary button right-most, stacked when there are more than three), ScreenFrame (header bar with hairline, title, close button, content, footer) and a styled tooltip that wraps at 340 px and never covers the HUD top bar. The alert, decision-picker, tutorial, trade-proposal, rename and hotseat popups now all use Modal.
+
+Scenario `ui-kit`.
+
+![A popup in the shared Modal frame over the scrim: brass hairline along the panel's top edge, the title, the body, and the footer with Cancel (secondary) left of OK (primary, gold).](../Unciv.Godot.Harness/golden/ui-kit/popup.png)
+
+*A popup in the shared Modal frame over the scrim: brass hairline along the panel's top edge, the title, the body, and the footer with Cancel (secondary) left of OK (primary, gold).* (`ui-kit/popup.png`)
+
+![A destructive confirmation: the consequence line, Cancel (secondary) on the left and Declare war (danger, red text and border) on the right; Escape chooses Cancel.](../Unciv.Godot.Harness/golden/ui-kit/popup-danger.png)
+
+*A destructive confirmation: the consequence line, Cancel (secondary) on the left and Declare war (danger, red text and border) on the right; Escape chooses Cancel.* (`ui-kit/popup-danger.png`)
+
+![A full-screen screen in a ScreenFrame: header bar with the brass hairline, the serif title on the left and the close button on the right, content below, and a footer bar with Reset (ghost) and Apply (primary, right-most).](../Unciv.Godot.Harness/golden/ui-kit/pushed.png)
+
+*A full-screen screen in a ScreenFrame: header bar with the brass hairline, the serif title on the left and the close button on the right, content below, and a footer bar with Reset (ghost) and Apply (primary, right-most).* (`ui-kit/pushed.png`)
+
+![The tooltip: a raised Surface3 panel with border and shadow, as wide as its longest line.](../Unciv.Godot.Harness/golden/ui-kit/tooltip.png)
+
+*The tooltip: a raised Surface3 panel with border and shadow, as wide as its longest line.* (`ui-kit/tooltip.png`)
+
+![Rome's demand in a Modal: Decide later (ghost) on the left, Refuse (secondary), Accept (primary, right-most); Escape does the same as Decide later.](../Unciv.Godot.Harness/golden/alerts/demand.png)
+
+*Rome's demand in a Modal: Decide later (ghost) on the left, Refuse (secondary), Accept (primary, right-most); Escape does the same as Decide later.* (`alerts/demand.png`)
+
+![Rome's peace proposal in a Modal: four answers stacked in a column (Accept primary, two secondary, Decide later ghost) because there are more than three.](../Unciv.Godot.Harness/golden/proposals/peace.png)
+
+*Rome's peace proposal in a Modal: four answers stacked in a column (Accept primary, two secondary, Decide later ghost) because there are more than three.* (`proposals/peace.png`)
+
+![A decision picker in the Modal frame: title, prompt, the option column, the reason Confirm is disabled in red, and Decide later (ghost) and Choose (primary, disabled) in the footer.](../Unciv.Godot.Harness/golden/decisions/great-person.png)
+
+*A decision picker in the Modal frame: title, prompt, the option column, the reason Confirm is disabled in red, and Decide later (ghost) and Choose (primary, disabled) in the footer.* (`decisions/great-person.png`)
+
+![A tutorial step in the Modal frame: title, text, the 2 / 3 counter and OK (primary); Escape dismisses it like OK.](../Unciv.Godot.Harness/golden/tutorial/second-step.png)
+
+*A tutorial step in the Modal frame: title, text, the 2 / 3 counter and OK (primary); Escape dismisses it like OK.* (`tutorial/second-step.png`)
+
+![The rename popup in the Modal frame: the name field, the refusal reason in the lightened danger red, Cancel and a disabled OK.](../Unciv.Godot.Harness/golden/city-rename/refused.png)
+
+*The rename popup in the Modal frame: the name field, the refusal reason in the lightened danger red, Cancel and a disabled OK.* (`city-rename/refused.png`)
+
+![The hotseat hand-over: an opaque scrim with the same Modal frame, the next player's name and Ready (primary).](../Unciv.Godot.Harness/golden/hotseat/cover.png)
+
+*The hotseat hand-over: an opaque scrim with the same Modal frame, the next player's name and Ready (primary).* (`hotseat/cover.png`)
+
+![The tile tooltip in the new tooltip style, wrapped to the 340 px maximum and placed below the HUD top bar instead of over it.](../Unciv.Godot.Harness/golden/tooltips/tile.png)
+
+*The tile tooltip in the new tooltip style, wrapped to the 340 px maximum and placed below the HUD top bar instead of over it.* (`tooltips/tile.png`)
+
 ## C080 Unit model loader and contract
 
 The Warrior is a CC0 animated model file: textured TeamColor material tinted per civ, held in its idle pose.

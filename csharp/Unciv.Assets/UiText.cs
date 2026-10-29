@@ -29,8 +29,8 @@ public static class UiText
     /// <summary>BBCode colour value (<c>#RRGGBB</c>) of a token.</summary>
     public static string Hex(Rgb colour) => string.Create(CultureInfo.InvariantCulture, $"#{colour.R:X2}{colour.G:X2}{colour.B:X2}");
 
-    /// <summary>The colour of a signed delta: <see cref="UiTokens.Success"/> above zero, <see cref="UiTokens.Danger"/> below, <see cref="UiTokens.TextMuted"/> at zero.</summary>
-    public static Rgb DeltaColour(int value) => value > 0 ? UiTokens.Success : value < 0 ? UiTokens.Danger : UiTokens.TextMuted;
+    /// <summary>The colour of a signed delta: <see cref="UiTokens.Success"/> above zero, <see cref="UiTokens.DangerText"/> below, <see cref="UiTokens.TextMuted"/> at zero.</summary>
+    public static Rgb DeltaColour(int value) => value > 0 ? UiTokens.Success : value < 0 ? UiTokens.DangerText : UiTokens.TextMuted;
 
     /// <summary>The signed text of a delta: "+3", "-2" (ASCII minus, so the tabular figures line up) or "0".</summary>
     public static string DeltaText(int value) => value > 0 ? "+" + value.ToString(CultureInfo.InvariantCulture) : value.ToString(CultureInfo.InvariantCulture);

@@ -70,6 +70,7 @@ public sealed class CityRenameScenario : Scenario
             new Act("type a name with markup characters", () => Type("[Ur]")),
             new AssertQuery("the popup refuses it and says why", () =>
                 !screen.City.RenamePopup.CanConfirm && screen.City.RenamePopup.ProblemText.StartsWith("The name cannot contain", StringComparison.Ordinal)),
+            new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(screen.City.RenamePopup)),
             new Capture("refused", "A name with [ ] is refused: the reason is shown and OK is disabled"),
             new Act("clear the name", () => Type("   ")),
             new AssertQuery("an empty name is refused", () => !screen.City.RenamePopup.CanConfirm && screen.City.RenamePopup.ProblemText == "Enter a name"),

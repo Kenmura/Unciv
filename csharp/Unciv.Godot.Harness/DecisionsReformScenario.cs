@@ -53,6 +53,7 @@ public sealed class DecisionsReformScenario : Scenario
                 screen.Picker.Visible && screen.Picker.Spec is { Kind: Unciv.Assets.PickerKind.Beliefs } && screen.Picker.TitleText == "Reform your religion"
                 && screen.Picker.Spec.Slots.Count == 1 && screen.Picker.Spec.Slots[0].Title == "Follower belief" && screen.Picker.Spec.Slots[0].Options.Count > 1
                 && screen.Picker.ConfirmButton.Disabled && screen.Picker.ProblemText == "Choose: Follower belief"),
+            new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(screen.Picker)),
             new Capture("reform", "The reform picker before a choice: one follower belief slot; Choose beliefs is disabled and says to choose first"),
             new Act("remember the log and the first belief", () =>
             {

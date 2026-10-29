@@ -55,6 +55,9 @@ public static class UiTokens
     public static Rgb Warning { get; } = new(0xE3, 0xA3, 0x3B);
     public static Rgb Danger { get; } = new(0xD6, 0x54, 0x4A);
 
+    /// <summary>C066: <see cref="Danger"/> lightened for text and thin lines on <see cref="Surface2"/>/<see cref="Surface3"/> (the fill itself is only 3.6:1 there); at least 4.5:1 on every raised surface.</summary>
+    public static Rgb DangerText { get; } = new(0xEF, 0x7B, 0x71);
+
     /// <summary>Modal backdrop colour; drawn at <see cref="ScrimPercent"/> opacity.</summary>
     public static Rgb Scrim { get; } = new(0x06, 0x08, 0x0C);
     public const int ScrimPercent = 72;

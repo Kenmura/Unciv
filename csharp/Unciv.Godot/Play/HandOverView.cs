@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Localization;
 using Unciv.GodotClient.Ui;
 
@@ -8,31 +9,23 @@ namespace Unciv.GodotClient.Play;
 /// <summary>
 /// C029: the hotseat "pass the device" screen (<see cref="HotseatModel"/>). A fully opaque full-screen cover (the dim of other overlays would let the map show through) with the next
 /// player's name and a Ready button; it takes every mouse event, so nothing underneath can be used while the device changes hands.
+/// C066: a <see cref="Modal"/> with an opaque scrim; Escape is swallowed (there is nothing to cancel, and the game menu must not open behind the cover).
 /// </summary>
-public partial class HandOverView : Control
+public partial class HandOverView : Modal
 {
-    private readonly ColorRect cover = new() { Name = "Cover", MouseFilter = MouseFilterEnum.Ignore };
-    private readonly Label heading = new() { Name = "HandOverHeading", HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly Label message = new() { Name = "HandOverMessage", HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly Label failure = new() { Name = "HandOverFailure", HorizontalAlignment = HorizontalAlignment.Center, Visible = false };
+    private readonly Label message = new() { Name = "HandOverMessage", HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private readonly Label failure = new() { Name = "HandOverFailure", HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart, Visible = false };
     private readonly Button ready = new() { Name = "ReadyButton" };
 
     public HandOverView()
     {
         Name = "HandOver";
-        Visible = false;
-        MouseFilter = MouseFilterEnum.Stop;
-        cover.Fill();
-        AddChild(cover);
-        var centre = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
-        centre.Fill();
-        AddChild(centre);
-        var column = new VBoxContainer { Name = "HandOverColumn" };
-        centre.AddChild(column);
-        column.AddChild(heading);
-        column.AddChild(message);
-        column.AddChild(ready);
-        column.AddChild(failure);
+        TitleLabel.Name = "HandOverHeading";
+        TitleLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        Opaque = true;
+        Body.AddChild(message);
+        Body.AddChild(failure);
+        SetActions([(ready, ChoiceRole.Primary)]);
         ready.Pressed += () =>
         {
             if (CivId is { } civ) Confirmed?.Invoke(civ);
@@ -45,7 +38,7 @@ public partial class HandOverView : Control
     /// <summary>The civ the game is handed to while the screen is up, else null.</summary>
     public string? CivId { get; private set; }
 
-    public string HeadingText => heading.Text;
+    public string HeadingText => TitleLabel.Text;
 
     public string MessageText => message.Text;
 
@@ -53,11 +46,10 @@ public partial class HandOverView : Control
 
     public Button ReadyButton => ready;
 
-    public void Init(UiTheme uiTheme)
+    public override void Init(UiTheme uiTheme)
     {
-        Theme = uiTheme.Theme;
-        cover.Color = uiTheme.Panel.BgColor with { A = 1f };
-        heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(26));
+        base.Init(uiTheme);
+        failure.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.DangerText));
     }
 
     public override void _Ready() => GetViewport().SizeChanged += Layout;
@@ -71,7 +63,8 @@ public partial class HandOverView : Control
     public void Show(HandOverViewData view)
     {
         CivId = view.CivId;
-        heading.Text = view.Heading.TrText();
+        SetHeader(view.Heading);
+        message.CustomMinimumSize = new Vector2(Fit(Modal.MinWidth), 0);
         message.Text = view.Message.TrText();
         ready.Text = view.ButtonText.TrText();
         failure.Visible = false;
@@ -97,4 +90,6 @@ public partial class HandOverView : Control
         CivId = null;
         Visible = false;
     }
+
+    protected override bool OnCancel() => CivId != null;
 }

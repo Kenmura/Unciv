@@ -227,4 +227,27 @@ public class AlertPopupModelTests
         var c = AlertPopupModel.Describe(Entry(AlertType.WonderBuilt, "Pyramids", 2), Snapshot())!;
         Assert.Equal(3, new[] { a.Key, b.Key, c.Key }.Distinct().Count());
     }
+
+    [Fact]
+    public void InformationalAlertsAreAmbientAndDecisionsAreBlocking()
+    {
+        var snapshot = Snapshot();
+        foreach (var type in new[] { AlertType.WonderBuilt, AlertType.TechResearched, AlertType.FirstContact, AlertType.GoldenAge, AlertType.StartIntro })
+            Assert.Equal(AlertKind.Ambient, AlertPopupModel.Describe(Entry(type, "rome-id"), snapshot)!.Kind);
+        Assert.Equal(AlertKind.Blocking, AlertPopupModel.Describe(Entry(AlertType.DeclarationOfFriendship, "rome-id"), snapshot)!.Kind);
+        Assert.Equal(AlertKind.Blocking, AlertPopupModel.Describe(Entry(AlertType.DemandToNotAttackUs, "rome-id"), snapshot)!.Kind);
+        Assert.Equal(AlertKind.Blocking, AlertPopupModel.Describe(Entry(AlertType.CityConquered, "c1", choices: ("annex", "annex")), snapshot)!.Kind);
+    }
+
+    [Fact]
+    public void AnAcknowledgeOnlyAlertThatBlocksTheTurnIsBlocking()
+    {
+        var snapshot = Snapshot();
+        var popup = AlertPopupModel.Describe(Entry(AlertType.WonderBuilt, "Pyramids", blocking: true), snapshot)!;
+        Assert.True(AlertPopupModel.IsInformational(popup));
+        Assert.Equal(AlertKind.Blocking, popup.Kind);
+        // so it opens as a popup straight away instead of waiting under "Review alerts"
+        Assert.Equal(AlertType.WonderBuilt, AlertPopupModel.Next(Pending(Entry(AlertType.WonderBuilt, "Pyramids", blocking: true)), snapshot, new HashSet<string>())!.Type);
+        Assert.Null(AlertPopupModel.Next(Pending(Entry(AlertType.WonderBuilt, "Pyramids")), snapshot, new HashSet<string>()));
+    }
 }

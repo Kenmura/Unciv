@@ -65,6 +65,7 @@ public sealed class AlertsScenario : Scenario
                 Showing("A demand from Rome") && Pending(AlertType.StartIntro) && screen.Notifications.ReviewButton.Visible && screen.Notifications.ReviewButton.Text == "Review alerts (3)"),
             new AssertQuery("the demand offers accept, refuse and decide later", () =>
                 screen.Alerts.BodyText == "Please don't spread your religion to us." && screen.Alerts.ButtonIds.SequenceEqual(["Accept", "Refuse", "DecideLater"])),
+            new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(screen.Alerts)),
             new Capture("demand", "Rome's demand as a popup: accept, refuse or decide later; the informational alerts wait under Review alerts"),
             new Act("remember the command log", () => logged = session.Log.Count),
             new Click(() => Answer("Accept")),
@@ -75,13 +76,16 @@ public sealed class AlertsScenario : Scenario
 
             new AssertQuery("the friendship offer is shown", () => Showing("Declaration of Friendship") && screen.Alerts.ButtonIds.SequenceEqual(["Accept", "Decline", "DecideLater"])),
             new Act("remember the command log", () => logged = session.Log.Count),
-            new Click(() => Answer("DecideLater")),
+            new PressKey(Key.Escape),
             new WaitFrames(2),
-            new AssertQuery("deciding later sent nothing, the offer is still pending, and the next alert (the conquered city) took its place", () =>
+            new AssertQuery("Escape decides later: it sent nothing, the offer is still pending, and the next alert (the conquered city) took its place", () =>
                 session.Log.Count == logged && Pending(AlertType.DeclarationOfFriendship) && Showing("City conquered")),
             new AssertQuery("the conquered city's alert cannot be put off and offers exactly the engine's choices; End turn is not offered", () =>
                 screen.Alerts.ButtonIds.SequenceEqual(["Choice_annex", "Choice_puppet"]) && !screen.Hud.EndTurnShown),
+            new AssertQuery("the popup is the shared modal frame: centred, accent hairline, titled, buttons inside with the primary right-most", () => ModalChecks.Framed(screen.Alerts)),
             new Capture("city-conquered", "A just-conquered city: only the engine's choices, no way to put it off"),
+            new PressKey(Key.Escape),
+            new AssertQuery("Escape does nothing to an alert that must be answered, and the game menu does not open behind it", () => Showing("City conquered") && !screen.GameMenu.Visible),
             new Click(() => Answer("Choice_puppet")),
             new WaitFrames(2),
             new AssertQuery("the choice sent respond-to-alert and the engine made the city a puppet", () =>
