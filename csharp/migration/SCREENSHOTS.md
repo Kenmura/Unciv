@@ -82,7 +82,7 @@
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
 - [C096 Touch map input and density-derived UI scale: pinch/pan, tap and long-press, 48 dp targets, phone-world scenario](#c096-touch-map-input-and-density-derived-ui-scale-pinchpan-tap-and-long-press-48-dp-targets-phone-world-scenario)
 - [C097 Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike)](#c097-graphics-quality-setting-with-an-ultra-preset-effects-chosen-by-the-ultra-graphics-spike)
-- [C100 (ticket not Done or unknown)](#c100-ticket-not-done-or-unknown)
+- [C100 Touch replacements for mouse-only interaction: right-click move/attack, tap tooltips, modifier toggles, queue reorder](#c100-touch-replacements-for-mouse-only-interaction-right-click-moveattack-tap-tooltips-modifier-toggles-queue-reorder)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
@@ -1664,7 +1664,7 @@ Scenario `settings-graphics`.
 
 *After a failed Ultra attempt: Ultra stays chosen, the note says it needs a Vulkan or Direct3D 12 GPU and that High is shown.* (`settings-graphics/ultra-fallback.png`)
 
-## C100 (ticket not Done or unknown)
+## C100 Touch replacements for mouse-only interaction: right-click move/attack, tap tooltips, modifier toggles, queue reorder
 
 Touch replacements for mouse-only interaction on the phone profile: tap shows tile and widget tips, long press moves the selected unit or locks a city tile, Group select stands in for Shift+click.
 
