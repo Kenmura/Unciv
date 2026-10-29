@@ -315,7 +315,7 @@ public sealed class ClientSession : IAsyncDisposable
     /// <summary>Declines the offer, or withdraws an accepted standby.</summary>
     public ValueTask DeclineStandbyAsync()
     {
-        var kept = standbyGameId;
+        var kept = standbyGameId ?? gameId;
         EndStandbyReplication();
         if (kept != null && options.StandbyRoot != null && StandbyStore.DirectoryFor(options.StandbyRoot, kept) is { } path)
         {
@@ -414,6 +414,10 @@ public sealed class ClientSession : IAsyncDisposable
                 StandbyEntry e => store.Apply(e),
                 _ => StandbyApply.Rejected,
             };
+        }
+        catch (ObjectDisposedException)
+        {
+            return; // the copy was closed (declined) while this frame was in flight
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

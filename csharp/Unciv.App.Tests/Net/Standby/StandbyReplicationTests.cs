@@ -533,6 +533,8 @@ public sealed class StandbyReplicationTests : IDisposable
         await using var successor = await DesignateAndAcceptAsync(host, Path.Combine(root, "successor8"));
         await successor.SubscribeAsync();
         await successor.WaitAsync<StandbySnapshot>();
+        for (var again = 0; again < 4; again++) await successor.SendAsync(new StandbySubscribe { GameId = host.Host.Game.GameId, HaveSeq = -1 }); // the burst a restarting client may need
+        await successor.WaitAsync<StandbyMeta>(it => successor.Of<StandbyMeta>().Count >= 5);
         var metas = successor.Of<StandbyMeta>().Count;
         await successor.SendAsync(new StandbySubscribe { GameId = host.Host.Game.GameId, HaveSeq = -1 });
         await successor.WaitAsync<Error>(it => it.Code == ErrorCodes.StandbyViolation && it.Detail == "subscribe-rate");

@@ -21,7 +21,7 @@ public sealed class StandbyClientStoreTests : IDisposable
         try { Directory.Delete(root, recursive: true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { /* best effort */ }
     }
 
-    private ClientNetRig Rig(string standbyRoot) => new(id => new ClientSessionOptions
+    private ClientNetRig Rig(string standbyRoot, string? joinedGame = null) => new(id => new ClientSessionOptions
     {
         Identity = id,
         DisplayName = "Alice",
@@ -29,12 +29,13 @@ public sealed class StandbyClientStoreTests : IDisposable
         ExpectedFingerprint = ClientNetRig.Fingerprint,
         ReconnectDelay = (_, _) => Task.CompletedTask,
         StandbyRoot = standbyRoot,
+        GameId = joinedGame,
     });
 
 
-    private async Task<(ClientNetRig Rig, FakeHostConnection Host)> AcceptedAsync(string standbyRoot, bool accept = true)
+    private async Task<(ClientNetRig Rig, FakeHostConnection Host)> AcceptedAsync(string standbyRoot, bool accept = true, string? joinedGame = null)
     {
-        var rig = Rig(standbyRoot);
+        var rig = Rig(standbyRoot, joinedGame);
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
         await rig.HandshakeAsync(host);
@@ -140,7 +141,7 @@ public sealed class StandbyClientStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task AStatusForAnotherGame_IsIgnored_AndDecliningRemovesTheCopy()
+    public async Task DecliningRemovesTheCopy()
     {
         var (rig, host) = await AcceptedAsync(root);
         await using var _ = rig;
@@ -158,5 +159,16 @@ public sealed class StandbyClientStoreTests : IDisposable
         await rig.NextAsync<StandbyStatusChanged>();
         await Task.Delay(100);
         Assert.False(Directory.Exists(dir));
+    }
+
+    [Fact]
+    public async Task AStatusForAnotherGame_IsIgnored()
+    {
+        var (rig, host) = await AcceptedAsync(root, joinedGame: GameId);
+        await using var _ = rig;
+        await host.SendAsync(new StandbyStatus { State = StandbyStates.Ready, LagEntries = 0, GameId = "other-game" });
+        await host.SendAsync(new StandbyStatus { State = StandbyStates.Ready, LagEntries = 0, GameId = GameId });
+        Assert.Equal(GameId, (await host.ReceiveAsync<StandbySubscribe>()).GameId); // the first frame the client sent is for the joined game
+        Assert.False(Directory.Exists(StandbyStore.DirectoryFor(root, "other-game")!));
     }
 }

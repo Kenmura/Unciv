@@ -60,7 +60,9 @@ public sealed partial class GameHost
 
     private StandbyStream? standbyStream;
     private int standbyStepPosted;
-    private long lastStandbySubscribeMillis = long.MinValue;
+    private long subscribeWindowStart = long.MinValue;
+    private int subscribesInWindow;
+    private const int SubscribeBurst = 5; // a first subscribe plus the successor's own restart requests (at most 3) and a reconnect
 
     private void InitReplication()
     {
@@ -133,13 +135,19 @@ public sealed partial class GameHost
             return;
         }
         var now = clock.NowMillis;
-        if (lastStandbySubscribeMillis != long.MinValue && now - lastStandbySubscribeMillis < Standby.Limits.MinSubscribeMillis)
+        var windowOpen = subscribeWindowStart != long.MinValue && now >= subscribeWindowStart && now - subscribeWindowStart < Standby.Limits.MinSubscribeMillis;
+        if (windowOpen && subscribesInWindow >= SubscribeBurst)
         {
             await SafeSendAsync(from, new Error { Code = ErrorCodes.StandbyViolation, Detail = "subscribe-rate" }); // a snapshot send is the costly part: the designated key may not trigger it in a loop
             return;
         }
-        lastStandbySubscribeMillis = now;
         StopStandbyStream();
+        if (!windowOpen)
+        {
+            subscribeWindowStart = now;
+            subscribesInWindow = 0;
+        }
+        subscribesInWindow++;
         var stream = new StandbyStream(from, store.ReadMeta().HostEpoch) { LastProgressMillis = clock.NowMillis };
         Volatile.Write(ref standbyStream, stream);
         if (CanContinue(source, subscribe))
