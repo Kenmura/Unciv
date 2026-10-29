@@ -147,8 +147,7 @@ public sealed class TechScenario : Scenario
             new Press("Close technology"),
             new AssertQuery("the screen closed and nothing was refused", () => !screen.IsTechVisible && screen.Tech.MessageText.Length == 0),
         ]);
-        foreach (var (language, step) in new[] { ("German", "de"), ("Russian", "ru") })
-            steps.AddRange(LocaleSteps.GameScreenIn(host, language, step, language + " at 640x480: the tech screen's headings, buttons and details fit without clipping or overlap", recording, game.Ruleset, it => it.Tech,
+        foreach (var (language, step) in new[] { ("German", "de"), ("Russian", "ru") }) steps.AddRange(LocaleSteps.GameScreenIn(host, language, step, language + " at 640x480: the tech screen's headings, buttons and details fit without clipping or overlap", recording, game.Ruleset, it => it.Tech,
                 it => it.OpenTechScreen(), opened: it => it.IsTechVisible));
         return steps;
     }

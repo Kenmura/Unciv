@@ -67,7 +67,6 @@ public sealed class SetupScenario : Scenario
             };
             manager.Push(screen);
         };
-
         NewGameScreen Screen() => screen.NotNull();
         Vector2 Centre(Func<Control?> find) => find()?.GetGlobalRect().GetCenter() ?? Vector2.Zero;
         // a page is taller than the 640x480 window: scroll the control into view (the next steps wait a frame for the layout)
@@ -75,10 +74,8 @@ public sealed class SetupScenario : Scenario
         Click ClickChoice(string field, string option) => new(() => Centre(() => Screen().ChoiceButton(field, option)));
         Click ClickNation(string nation) => new(() => Centre(() => Screen().NationButton(nation)));
         Click ClickSlotNation(int slot) => new(() => Centre(() => Screen().SlotNationButton(slot)));
-
         // The pages are rebuilt after every change, and a new button has no layout until a frame has passed: wait after each input.
-        ScenarioStep[] script =
-        [
+        ScenarioStep[] script = [
             new WaitFrames(3),
             new AssertQuery("the menu is the only screen; Resume last is disabled", () => manager.Depth == 1 && !menu.CanResume),
             new Capture("menu", "Main menu: New game, Resume last (disabled), Load game, Multiplayer, Host game, Options, Quit"),

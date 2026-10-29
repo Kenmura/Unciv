@@ -45,8 +45,7 @@ public sealed class OptionsScenario : Scenario
         screen.BindSettings(service);
 
         var ui = new UiTheme(registry);
-        var backdrop = new Control { Name = "OptionsBackdrop", Theme = ui.Theme };
-        backdrop.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        var backdrop = new Control { Name = "OptionsBackdrop", Theme = ui.Theme, AnchorRight = 1f, AnchorBottom = 1f };
         var screenOptions = new OptionsScreen(service, ui, null, ["Retro", "Neon"]);
         screenOptions.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         backdrop.AddChild(screenOptions);
@@ -75,7 +74,6 @@ public sealed class OptionsScenario : Scenario
                 && screen.World.Technology.TooltipText == "Technology (F6)" && screen.Hud.EndTurnButton is IconButton { Hotkey: "N" } && screen.World.Overview.Hotkey == "E"),
             new Capture("top", "Options, Display tab: the vertical tabs on the left, the UI scale stepper and the window mode"),
             .. LayoutChecks.Widths(host, "options screen", () => backdrop, "1280x720: the Display tab with the tab strip, the stepper and the window mode in the wider panel", "1920x1080: the same tab at full HD"),
-
             .. Reveal(HotkeyAction.EndTurn),
             new Click(() => Centre(options.KeyButton(HotkeyAction.EndTurn))),
             new WaitFrames(2),
