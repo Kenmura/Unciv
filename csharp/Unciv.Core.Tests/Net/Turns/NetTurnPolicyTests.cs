@@ -373,6 +373,22 @@ public sealed class NetTurnPolicyTests : IDisposable
     }
 
     [Fact]
+    public void LeaveAfterAReconnectQueuedDuringResolvingStillEndsAsAi()
+    {
+        var (game, session, timer, _) = ThreeHumans(this, TurnPolicy.Default);
+        timer.Depart("Greece");
+        timer.Tick();
+        session.Submit("Babylon", new EndTurn());
+        session.Submit("Rome", new EndTurn());
+        Assert.Equal(SimultaneousPhase.Resolving, game.TurnState!.Phase);
+        Assert.True(timer.Reclaim("Greece", "k")); // queued: resolving
+        timer.Depart("Greece"); // leaves again before the boundary
+        timer.Tick();
+        Assert.Equal(1, game.Turns);
+        Assert.Equal(PlayerType.AI, game.GetCivilization("Greece").PlayerType);
+    }
+
+    [Fact]
     public void ForgettingThePlayerCancelsThePendingTakeoverAndTheLastHumanStays()
     {
         var (game, session, timer, _) = ThreeHumans(this, TurnPolicy.Default);

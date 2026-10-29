@@ -114,6 +114,7 @@ public sealed class TurnTimer
         var state = GetOrCreateState(civId);
         state.DisconnectedAt ??= clock.NowMillis;
         state.DisconnectedAt = Math.Min(state.DisconnectedAt.Value, clock.NowMillis - policy.DropGraceSeconds * 1000L);
+        pendingReclaims.Remove(civId); // a reconnect queued during Resolving must not hand the seat back after the player left
         pendingDepartures.Add(civId);
     }
 
@@ -345,7 +346,8 @@ public sealed class TurnTimer
         ResetTurnDeadline();
     }
 
-    private bool HasOtherHumans(Civilization civ) =>
+    /// <summary>The last living human cannot be handed to the AI; shared by the boundary takeover and the host's kick check.</summary>
+    public bool HasOtherHumans(Civilization civ) =>
         session.Game.Civilizations.Any(c => c != civ && c.IsHuman() && !c.IsSpectator() && !c.IsDefeated());
 
     private void ResetTurnDeadline()

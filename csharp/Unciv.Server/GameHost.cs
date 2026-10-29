@@ -702,7 +702,7 @@ public sealed class GameHost : IAsyncDisposable
             if (newKey == null)
             {
                 if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving }) return CommandErrors.TurnResolving;
-                if (!session.Game.Civilizations.Any(it => it != civ && it.IsHuman() && !it.IsSpectator()))
+                if (!turnTimer.HasOtherHumans(civ))
                     return CommandErrors.NotAllowed;
             }
             else
