@@ -963,8 +963,15 @@
   },
   // B011: Faith purchase of Great People from the Industrial era (SPEC 4.5): the three economic/scientific ones for everybody, the rest with the
   // belief To the Glory of God. [K] the base list is not decoded; the price is Defines RELIGION_MIN_FAITH_FIRST_GREAT_PERSON 1000, +500 per bought.
+  // B019 (SPEC 4.8): the fixed G&K unhappiness penalties (-50% production, -33% strength, rebels below -20) are replaced by the engine's graded
+  // penalty and the uprising/revolt counters, which the BNW happiness rules unique switches on.
   "GlobalUniques.json": {
    "patch": {
+    "uniques-": [
+     "[-50]% [Production] [in all cities] <when below [-10] [Happiness]>",
+     "[-33]% Strength <for [All] units> <when below [-10] [Happiness]>",
+     "Rebel units may spawn <when below [-20] [Happiness]>"
+    ],
     "uniques+": [
      "May buy [Great Scientist] units for [1000] [Faith] [in all cities] at an increasing price ([500]) <starting from the [Industrial era]>",
      "May buy [Great Merchant] units for [1000] [Faith] [in all cities] at an increasing price ([500]) <starting from the [Industrial era]>",

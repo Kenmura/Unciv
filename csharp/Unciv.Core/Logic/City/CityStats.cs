@@ -1,3 +1,4 @@
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Logic.WorldCongress;
@@ -369,6 +370,13 @@ public class CityStats(City city)
         return null;
     }
 
+    // BNW (B019, bnw-spec 4.8): graded production and gold penalty while the empire is unhappy
+    private Stats? GetStatPercentBonusesFromUnhappiness()
+    {
+        int penalty = BnwHappinessRules.PenaltyPercent(City.Civ);
+        return penalty == 0 ? null : new Stats(production: penalty, gold: penalty);
+    }
+
     private bool ConstructionMatchesFilter(IConstruction construction, string filter)
     {
         var state = City.State;
@@ -544,6 +552,7 @@ public class CityStats(City city)
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromRailroad(), "Railroad");
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromPuppetCity(), "Puppet City");
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromUnitSupply(), "Unit Supply");
+        newStatsBonusTree.AddStats(GetStatPercentBonusesFromUnhappiness(), "Unhappiness");
         newStatsBonusTree.Add(GetStatsPercentBonusesFromUniquesBySource(currentConstruction));
 
         foreach (var building in City.CityConstructions.GetBuiltBuildings())

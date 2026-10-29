@@ -1,3 +1,4 @@
+using Unciv.Logic.Civilization.Managers;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Models;
 using Unciv.Models.Ruleset;
@@ -45,6 +46,9 @@ public static class BattleDamage
         {
             var unitUniqueModifiers = GetUnitUniqueModifiers(mapUnitCombatant, enemy, conditionalState, tileToAttackFrom);
             modifiers.Add(unitUniqueModifiers);
+
+            int unhappiness = BnwHappinessRules.PenaltyPercent(civInfo); // BNW (B019): graded penalty, 0 in G&K
+            if (unhappiness != 0) modifiers["Unhappiness"] = unhappiness;
 
             var civResources = civInfo.GetCivResourcesByName();
             foreach (var resource in mapUnitCombatant.Unit.GetResourceRequirementsPerTurn().Keys)

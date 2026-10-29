@@ -1528,4 +1528,5 @@ public enum CivFlags
     RecentlyBullied,
     TurnsTillCallForBarbHelp,
     RevoltSpawning,
+    CityRevolt,
 }

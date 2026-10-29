@@ -189,7 +189,12 @@ public class TurnManager(Civilization civInfo)
 
             if (civInfo.FlagsCountdown[flag] != 0) continue;
 
-            if (flag == CivFlags.RevoltSpawning.ToString()) DoRevoltSpawn();
+            if (flag == CivFlags.RevoltSpawning.ToString())
+            {
+                if (BnwHappinessRules.IsEnabled(civInfo.GameInfo.Ruleset)) BnwHappinessRules.SpawnRebels(civInfo);
+                else DoRevoltSpawn();
+            }
+            else if (flag == CivFlags.CityRevolt.ToString()) BnwHappinessRules.RevoltCity(civInfo);
             else if (flag == CivFlags.TurnsTillCityStateElection.ToString()) civInfo.CityStateFunctions.HoldElections();
         }
         HandleDiplomaticVictoryFlags();
@@ -229,6 +234,12 @@ public class TurnManager(Civilization civInfo)
 
     private void UpdateRevolts()
     {
+        if (BnwHappinessRules.IsEnabled(civInfo.GameInfo.Ruleset))
+        {
+            BnwHappinessRules.UpdateCounters(civInfo); // BNW (B019): bnw-spec 4.8 uprisings and city revolt
+            return;
+        }
+
         if (!civInfo.GameInfo.Civilizations.Any(it => it.IsBarbarian))
         {
             // Can't spawn revolts without barbarians ¯\_(ツ)_/¯

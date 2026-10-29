@@ -827,7 +827,7 @@ goes stale. Saved (only when set, G&K saves stay identical): `PolicyManager.Anar
   `(preferred priority - current priority) + unhappiness >= 10`. The scores are the branch `PriorityMap` values (the `IDEOLOGY_SCORE_*` defines
   are not in the ruleset); the grand-strategy veto (`IDEOLOGY_PERCENT_CLEAR_VICTORY_PREF`) is not ported.
 - Not done: the World Ideology resolution pressure is done (B016, 4.7.9); the pressure tooltip (step 5)
-  is available as `PublicOpinion.Pressures` but no query/UI exposes it yet; uprisings, rebels and city revolt (4.8) are B070. The tie order Freedom,
+  is available as `PublicOpinion.Pressures` but no query/UI exposes it yet; uprisings, rebels and city revolt are done (B019, 4.8). The tie order Freedom,
   Autocracy, Order is kept as the spec's observed order ([?] stays open).
 
 ### 4.7 World Congress and United Nations
@@ -1004,6 +1004,18 @@ Station is also a building) and each turn put `round(production) + overflow` int
   revolt counter starts at `REVOLT_COUNTER_MIN(5)` × speed% (only if > 100%), at least 1. At 0, a city flips
   (@1016a790 [?]: which city and to whom). The civ with the most influence and the preferred ideology is [K]. Then
   re-arm.
+
+**As built (B019, `BnwHappinessRules`, gated by the `BNW happiness rules` unique; G&K is unchanged).**
+- Graded penalty `max(-40, 2 x excess)` percent (-2 per point, cap -40, hard-coded) on each city's production and gross gold (`CityStats`, source "Unhappiness") and on unit
+  strength (`BattleDamage`, modifier "Unhappiness"). The generated BNW `GlobalUniques.json` no longer has the fixed -50% production, -33% strength and rebel lines
+  (`overrides.json`); growth -75%/-100% and "no Settlers" stay as global uniques.
+- Uprising counter = the `RevoltSpawning` civ flag, armed at excess <= `veryUnhappyThreshold`: `min + rand(possible)`, x speed% above 100%, halved on the first arming, at least 1.
+  At 0 the rebels spawn and it re-arms (full length) while still very unhappy; it is dropped when not. City revolt = the `CityRevolt` flag, armed at excess <= `superUnhappyThreshold`
+  with opinion unhappiness > 0, `revoltCounterMin` x speed% above 100%, at least 1; at 0 a city flips and it re-arms.
+- Rebels: count `(rand(cities x 20 + 100) + 100) / 100`; city weight population + rand(10) [?]; plot rand(10) +4 forest/jungle +4 route (+7 subtype [?] not applied), owned land, no city, no units;
+  the unit is the strongest buildable land melee non-unique unit; owned by the barbarian civ; nothing spawns without one.
+- City revolt target [?, a documented choice]: the receiving civ follows the preferred ideology and pressures us most (ties: civ order); the non-capital city nearest to one of its cities moves
+  (`MoveToCiv`). Both civs get a notification. The `RebelsSpawned`/`CityRevolted` events of 2.4 have no hook yet.
 
 ### 4.9 Espionage [O]+[D]+[K]
 - **Diplomats**: a spy placed in another *major* civ's capital may be a diplomat instead of a spy [K]. A diplomat
