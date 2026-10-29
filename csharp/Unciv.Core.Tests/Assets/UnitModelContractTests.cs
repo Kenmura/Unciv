@@ -1,10 +1,12 @@
 using System.Text;
 using System.Text.Json;
 using Unciv.Assets;
+using Unciv.Models.Ruleset;
 
 namespace Unciv.Core.Tests.Assets;
 
 /// <summary>C080: every <c>.glb</c> shipped in a pack satisfies the unit model contract, the bundled Warrior is one of them and is what <c>unit/Warrior</c> resolves to, and the checker rejects each way of breaking the contract.</summary>
+[Collection("RulesetCache")]
 public sealed class UnitModelContractTests
 {
     private static readonly string ClientFolder = FindClientFolder();
@@ -69,7 +71,10 @@ public sealed class UnitModelContractTests
     [Fact]
     public void AMountedUnitHasHorseAndRiderUnderOneSkeletonWithMergedClips()
     {
-        foreach (var name in new[] { "Horseman", "Knight", "Horse Archer" })
+        using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientFolder, "Packs", "units", "attachments.json")));
+        var mounted = data.RootElement.GetProperty("mounted").GetProperty("units").EnumerateObject().Select(it => it.Name).ToList();
+        Assert.Contains("Cataphract", mounted);
+        foreach (var name in mounted)
         {
             var doc = Glb(File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", "models", "unit", name + ".glb")));
             var nodes = doc.GetProperty("nodes").EnumerateArray().Select(it => it.GetProperty("name").GetString()).ToList();
@@ -85,6 +90,31 @@ public sealed class UnitModelContractTests
                 Assert.True(targets.Overlaps(["body", "neck", "root", "leg_fl"]), clip.GetProperty("name").GetString());
                 Assert.True(targets.Overlaps(["hips", "upperarm.l", "upperarm.r", "chest"]), clip.GetProperty("name").GetString());
             }
+        }
+    }
+
+    /// <summary>The ancient and classical eras (the G&amp;K techs of eras 0 and 1, and the barbarian units) have art for every humanoid and mounted unit; ships, siege and the ram stay generated blocks.</summary>
+    [Fact]
+    public void EveryAncientAndClassicalHumanoidAndMountedUnitHasAModel()
+    {
+        RulesetCache.Clear();
+        var jsons = Path.Combine(ClientFolder, "..", "..", "android", "assets", "jsons");
+        RulesetCache.LoadRulesets(new DirectoryRulesetFileSource(jsons, Path.Combine(jsons, "no mods here")), noMods: true);
+        try
+        {
+            var ruleset = RulesetCache.Get("Civ V - Gods & Kings")!;
+            var keys = UnitsManifestKeys().EnumerateObject().Select(it => it.Name).ToHashSet();
+            string[] generated = ["Siege", "Melee Water", "Ranged Water", "Civilian Water"];
+            var wanted = ruleset.Units.Values.Where(it => (it.RequiredTech != null && it.GetSortGroup(ruleset) <= 1) || it.UniqueTo == "Barbarians")
+                .Where(it => !generated.Contains(it.UnitType) && it.Name != "Battering Ram").Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
+            Assert.Contains("Settler", wanted);
+            Assert.Contains("War Elephant", wanted);
+            Assert.Contains("Marauder", wanted);
+            Assert.Equal(wanted, wanted.Where(it => keys.Contains("unit/" + it)).ToList());
+        }
+        finally
+        {
+            RulesetCache.Clear();
         }
     }
 

@@ -112,3 +112,11 @@ Finds the clips and maps each presenter cue to one, falling back to today's proc
 - **Rigid units:** ships, siege, armour and aircraft keep their generated blocks and move as one piece through `RigidMotion` (pure, tested): ships bob and roll, siege and armour kick back and the turret turns, aircraft bank and dive. `UnitNode.ShowRigid` poses it, `CombatPresenter` drives it from the cue clock.
 - **Follow-ups:** real art for ships/siege/armour/aircraft files (the generated blocks stay the fallback); a separate idle bob needs a presenter idle clock; the tracks of a rigid unit that also has a clip model are ignored.
 
+
+## C084 status: ancient and classical art
+
+- 23 more `unit/*` keys in the units pack, all from `attachments.json` data and `build-unit-models.py`, no code in the client: Settler; the axe infantry Maori Warrior, Jaguar, Brute, Marauder, Pictish Warrior, Mohawk Warrior; the sword and spear infantry Spearman, Hoplite, Persian Immortal, Legion; the throwers and bowmen Bowman, Slinger, Atlatlist, Skirmisher, Composite Bowman; the mounted Chariot Archer, War Chariot, War Elephant, Companion Cavalry, Cataphract, African Forest Elephant (Horse Archer already existed).
+- A unique unit gets its own key (the fallback chain goes by unit type, not `replaces`), so each one is a variant of its base: another body, attachments or attack clip. KayKit has no spear or bow, so spearmen use the sword with the stab clip, bowmen the crossbow and throwers the `Throw` clip: placeholders for art that arrives as a pack.
+- Elephants are the horse rig with a `mount` entry (`scale` 1.12 and a grey `colour`, limited by the contract's 0.65 radius); a real elephant model replaces them with no code change. A mounted unit's `attack` clip must be about one second (Chop, Slice_Horizontal) or the horse's stretched clip no longer matches the rider's; the infantry may use longer ones (Stab, 2H Chop).
+- Not covered, still generated blocks: Trireme, Quinquereme, Dromon, Galley, Work Boats, Catapult, Ballista (code-driven rigid motion) and the Battering Ram (a `Sword` type with no rigid kind: a follow-up gives it a rigid siege kind).
+- `UnitModelContractTests.EveryAncientAndClassicalHumanoidAndMountedUnitHasAModel` fails when a Gods & Kings unit of eras 0 and 1 (or a barbarian) that is not a ship, siege unit or the ram has no key.

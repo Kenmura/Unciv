@@ -24,7 +24,23 @@
     "Crossbowman": { "body": "Rogue", "keep": ["2H_Crossbow"], "clips": { "attack_ranged": "2H_Ranged_Shoot" } },
     "Scout": { "body": "Rogue_Hooded", "keep": ["Knife", "Rogue_Cape"] },
     "Worker": { "body": "Barbarian", "keep": ["Mug", "Barbarian_Hat"], "clips": { "attack": "Interact" } },
-    "Great Scientist": { "body": "Mage", "keep": ["Spellbook", "Mage_Hat", "Mage_Cape"], "clips": { "attack": "Spellcast_Shoot", "attack_ranged": "Spellcast_Shoot" } }
+    "Great Scientist": { "body": "Mage", "keep": ["Spellbook", "Mage_Hat", "Mage_Cape"], "clips": { "attack": "Spellcast_Shoot", "attack_ranged": "Spellcast_Shoot" } },
+    "Settler": { "body": "Rogue_Hooded", "keep": ["Rogue_Cape"], "clips": { "attack": "Interact" } },
+    "Maori Warrior": { "body": "Barbarian", "keep": ["2H_Axe", "Barbarian_Cape"], "clips": { "attack": "2H_Melee_Attack_Chop" } },
+    "Jaguar": { "body": "Barbarian", "keep": ["1H_Axe", "1H_Axe_Offhand", "Barbarian_Hat", "Barbarian_Cape"], "clips": { "attack": "Dualwield_Melee_Attack_Chop" } },
+    "Brute": { "body": "Barbarian", "keep": ["2H_Axe", "Barbarian_Hat"], "clips": { "attack": "2H_Melee_Attack_Chop" } },
+    "Marauder": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
+    "Pictish Warrior": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
+    "Mohawk Warrior": { "body": "Barbarian", "keep": ["1H_Axe", "1H_Axe_Offhand"], "clips": { "attack": "Dualwield_Melee_Attack_Slice" } },
+    "Spearman": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield"], "clips": { "attack": "1H_Melee_Attack_Stab" } },
+    "Hoplite": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Stab" } },
+    "Persian Immortal": { "body": "Knight", "keep": ["1H_Sword", "Badge_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Stab" } },
+    "Legion": { "body": "Knight", "keep": ["1H_Sword", "Rectangle_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
+    "Bowman": { "body": "Rogue_Hooded", "keep": ["2H_Crossbow"], "clips": { "attack_ranged": "2H_Ranged_Shoot" } },
+    "Slinger": { "body": "Rogue_Hooded", "keep": ["Throwable", "Rogue_Cape"], "clips": { "attack_ranged": "Throw" } },
+    "Atlatlist": { "body": "Rogue", "keep": ["Throwable", "Knife"], "clips": { "attack_ranged": "Throw" } },
+    "Skirmisher": { "body": "Rogue_Hooded", "keep": ["Throwable", "Knife"], "clips": { "attack_ranged": "Throw" } },
+    "Composite Bowman": { "body": "Rogue", "keep": ["1H_Crossbow", "Rogue_Cape"] }
   },
   "mounted": {
     "about": "A mounted unit is a rider (body + attachments as above, scaled to 'riderHeight', own skeleton) following the root and body joints of the generated horse rig (build-unit-models.py builds the horse: rigid boxes on a 10-joint skeleton with the six contract clips, stretched to the rider's clip lengths); 'saddleHeight' is the rider's feet height above the ground. Per clip the rider's upper body follows 'clips' and its legs and hips hold the Sit_Chair_Idle pose, so he sits the horse whatever he does with his arms.",
@@ -34,7 +50,13 @@
     "units": {
       "Horseman": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet"] },
       "Knight": { "body": "Knight", "keep": ["1H_Sword", "Spike_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
-      "Horse Archer": { "body": "Rogue_Hooded", "keep": ["1H_Crossbow", "Rogue_Cape"] }
+      "Horse Archer": { "body": "Rogue_Hooded", "keep": ["1H_Crossbow", "Rogue_Cape"] },
+      "Chariot Archer": { "body": "Rogue", "keep": ["1H_Crossbow"] },
+      "War Chariot": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
+      "War Elephant": { "body": "Rogue", "keep": ["2H_Crossbow", "Rogue_Cape"], "mount": { "scale": 1.12, "colour": [0.5, 0.48, 0.45, 1.0] } },
+      "Companion Cavalry": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
+      "African Forest Elephant": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield"], "clips": { "attack": "1H_Melee_Attack_Chop" }, "mount": { "scale": 1.12, "colour": [0.5, 0.48, 0.45, 1.0] } },
+      "Cataphract": { "body": "Knight", "keep": ["1H_Sword", "Rectangle_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } }
     }
   }
 }

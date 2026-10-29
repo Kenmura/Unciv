@@ -5,7 +5,9 @@ using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Map;
 using Unciv.GodotClient.Play;
 using Unciv.Logic.Map;
+using Unciv.Models.Ruleset;
 using Unciv.Net.Visibility;
+using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.GodotHarness;
 
@@ -32,6 +34,12 @@ public sealed class UnitVisualsScenario : Scenario
 
     private sealed record Slot(string Unit, string Owner, int Health, string? Action = null, bool Fortified = false, bool Automated = false, bool Promotable = false, bool Own = true, string Terrain = "Grassland");
 
+    private static readonly string[] EraRoster =
+    [
+        "Settler", "Maori Warrior", "Jaguar", "Brute", "Marauder", "Pictish Warrior", "Mohawk Warrior", "Spearman", "Hoplite", "Persian Immortal", "Legion",
+        "Bowman", "Slinger", "Atlatlist", "Skirmisher", "Composite Bowman", "Horse Archer", "Chariot Archer", "War Chariot", "Companion Cavalry", "Cataphract", "War Elephant", "African Forest Elephant",
+    ];
+
     private static readonly Slot[] Slots =
     [
         new("Settler", Rome, 100), new("Warrior", Rome, 100), new("Horseman", Rome, 100), new("Archer", Rome, 60), new("Catapult", Rome, 100),
@@ -40,11 +48,13 @@ public sealed class UnitVisualsScenario : Scenario
         new("Trireme", Rome, 100, Terrain: "Coast"), new("Fighter", Egypt, 100), new("Worker", Rome, 100, Automated: true, Promotable: true),
         new("Destroyer", Egypt, 100, Terrain: "Coast"), new("Warrior", Egypt, 50, Fortified: true, Own: false),
         new("Swordsman", Rome, 100), new("Knight", Egypt, 100), new("Crossbowman", Rome, 100), new("Great Scientist", Rome, 100), new("Scout", Egypt, 100),
+        // C084: the ancient and classical roster (rows 4 to 8), all model files; owners alternate so both civ colours show
+        .. EraRoster.Select((unit, i) => new Slot(unit, i % 2 == 0 ? Rome : Egypt, 100)),
     ];
 
     // C080/C083: the units of the bundled units pack are model files (TeamColor material, animation player, humanoid bodies and riders on a generated horse); every other unit is a generated block with a Banner
-    private static readonly string[] ModelUnits = ["Warrior", "Longswordsman", "Swordsman", "Archer", "Crossbowman", "Scout", "Worker", "Great Scientist", "Horseman", "Knight"];
-    private static readonly string[] MountedUnits = ["Horseman", "Knight"];
+    private static readonly string[] ModelUnits = [.. EraRoster, "Warrior", "Longswordsman", "Swordsman", "Archer", "Crossbowman", "Scout", "Worker", "Great Scientist", "Horseman", "Knight"];
+    private static readonly string[] MountedUnits = ["Horseman", "Knight", "Horse Archer", "Chariot Archer", "War Chariot", "Companion Cavalry", "Cataphract", "War Elephant", "African Forest Elephant"];
     private static bool IsModel(UnitNode n) => ModelUnits.Contains(n.Unit.Name);
     private static IEnumerable<Node3D> FigureModels(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => f.GetChild<Node3D>(0));
     private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
@@ -56,6 +66,9 @@ public sealed class UnitVisualsScenario : Scenario
     {
         var ruleset = session.Game.Ruleset;
         var registry = AssetRegistry.ForRuleset(ruleset);
+        // C084: the session is Vanilla; the roster's Gods & Kings units (Pictish Warrior, Cataphract...) are built from that ruleset
+        var gods = RulesetCache.Get("Civ V - Gods & Kings") ?? ruleset;
+        RulesetClass Of(string unit) => ruleset.Units.ContainsKey(unit) ? ruleset : gods;
         var colours = new Dictionary<string, Rgb> { [Rome] = PlaceholderPalette.AttackTint, [Egypt] = PlaceholderPalette.ReachableTint };
 
         // Staggered grid, 5 columns by 3 rows: two columns are one step (1,-1) apart, an odd column sits one step (1,0) from the even one before it
@@ -101,7 +114,7 @@ public sealed class UnitVisualsScenario : Scenario
             var elevation = view.TileNodeAt(Coord(i))?.Elevation ?? 1f;
             node.Position = MapLayout.TileTop(dto.X, dto.Y, elevation);
             var c = colours[slot.Owner];
-            node.Build(registry, ruleset, ruleset.Units[slot.Unit], (c.R / 255f, c.G / 255f, c.B / 255f));
+            node.Build(registry, Of(slot.Unit), Of(slot.Unit).Units[slot.Unit], (c.R / 255f, c.G / 255f, c.B / 255f));
             view.AddChild(node);
             nodes.Add(node);
         }
@@ -124,14 +137,14 @@ public sealed class UnitVisualsScenario : Scenario
                 && Node("Longswordsman").FigureCount == 2 && Node("Musketman").FigureCount == 2 && Node("Catapult").FigureCount == 2
                 && Node("Infantry").FigureCount == 3 && Node("Cannon").FigureCount == 3 && Node("Tank").FigureCount == 4),
             new AssertQuery("the figure nodes equal the figure count, from the tier rule, for every unit", () =>
-                nodes.All(n => Figures(n) == n.FigureCount && n.FigureCount == UnitVisuals.FigureCount(ruleset.Units[n.Unit.Name], ruleset))),
+                nodes.All(n => Figures(n) == n.FigureCount && n.FigureCount == UnitVisuals.FigureCount(Of(n.Unit.Name).Units[n.Unit.Name], Of(n.Unit.Name)))),
             new AssertQuery("a generated group has one initials billboard whatever its size; a model file carries none (its art identifies it)", () => nodes.All(n => Glyphs(n) == (IsModel(n) ? 0 : 1))),
             new AssertQuery("every figure of a unit carries its civ's colour", () => nodes.All(CivColoured)),
             new AssertQuery("the units pack's units are CC0 model files: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player", () =>
                 nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n))),
-            new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for each warrior", () =>
+            new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for (nearly) every unit", () =>
                 nodes.Where(IsModel).SelectMany(n => n.Players).All(HoldsIdle)
-                && nodes.Where(IsModel).Select(n => n.Players[0].CurrentAnimationPosition).Distinct().Count() == nodes.Count(IsModel)),
+                && nodes.Where(IsModel).Select(n => n.Players[0].CurrentAnimationPosition).Distinct().Count() >= nodes.Count(IsModel) * 9 / 10), // 1000 phases: a few of 45 may collide
             .. PipelineAsserts(nodes, Node),
             new AssertQuery("figures of a group stand at distinct spots, smaller than a lone figure", () =>
                 Node("Tank").GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => (f.Position.X, f.Position.Z)).Distinct().Count() == 4
@@ -155,6 +168,7 @@ public sealed class UnitVisualsScenario : Scenario
             }),
             new WaitFrames(2),
             new Capture("gallery", "Unit gallery: civilian, land units by era (1 to 4 figures), ships and plane; red and blue civs; health bars and status marks"),
+            .. EraSteps(view, Coord, Node),
             .. RigidSteps(view, nodes, Node, Coord),
             CloseView("close view of the formations", view, Coord(8), new Vector3(-1.5f, 0f, 0f), 5f),
             new WaitFrames(2),
@@ -165,6 +179,9 @@ public sealed class UnitVisualsScenario : Scenario
             .. MountedSteps(view, Node, Coord),
         ];
     }
+
+    private static float SaddleHeight(UnitNode n) =>
+        FigureModels(n).First().FindChildren("*", nameof(Skeleton3D), true, false).OfType<Skeleton3D>().Select(sk => sk.GetBoneGlobalRest(sk.FindBone("saddle")).Origin.Y).FirstOrDefault(y => y > 0f);
 
     private static Act CloseView(string label, MapView view, HexCoord at, Vector3 offset, float zoom) => new(label, () =>
     {
@@ -182,6 +199,29 @@ public sealed class UnitVisualsScenario : Scenario
                 node("Catapult", null).Rigid == RigidKind.Siege && node("Tank", null).Rigid == RigidKind.Armor && node("Destroyer", null).Rigid == RigidKind.Ship && node("Fighter", null).Rigid == RigidKind.Air
                 && nodes.Where(n => n.Rigid != RigidKind.None).Select(n => n.Unit.Name).Order().SequenceEqual(new[] { "Catapult", "Cannon", "Destroyer", "Fighter", "Tank", "Trireme" }.Order())
                 && nodes.Where(IsModel).All(n => n.Rigid == RigidKind.None)),
+            new AssertQuery("C084: the 23 ancient and classical units are all model files with the six clips, none a generated block; the elephants stand on a taller, wider mount than the horses", () =>
+                EraRoster.All(u => nodes.Where(n => n.Unit.Name == u).All(n => IsModel(n) && HasClips(n) && n.Rigid == RigidKind.None))
+                && SaddleHeight(node("War Elephant", null)) > SaddleHeight(node("Horseman", null)) * 1.08f && SaddleHeight(node("African Forest Elephant", null)) > SaddleHeight(node("Cataphract", null)) * 1.08f),
+    ];
+
+    private static IEnumerable<ScenarioStep> EraSteps(MapView view, Func<int, HexCoord> coord, Func<string, string?, UnitNode> node) =>
+    [
+            new Act("frame the ancient and classical roster", () =>
+            {
+                view.FocusOn(MapLayout.TileTop(coord(30).X, coord(30).Y, 0f));
+                view.SetZoom(13f);
+            }),
+            new WaitFrames(2),
+            new Capture("ancient", "Ancient and classical roster (the top five rows; the gallery's lower rows show at the bottom): settler, axe infantry, spearmen and legionaries, throwers and bowmen, chariots, cavalry and elephants; red and blue civs"),
+            new Act("close view of the cavalry and elephants", () =>
+            {
+                foreach (var name in new[] { "Cataphract", "War Elephant", "African Forest Elephant" }) node(name, null).Face(MathF.PI / 2f); // side on: the mounts' length shows
+                view.FocusOn(MapLayout.TileTop(coord(41).X, coord(41).Y, 0f));
+                view.SetView(40f);
+                view.SetZoom(3.5f);
+            }),
+            new WaitFrames(2),
+            new Capture("elephants", "Close view of the Cataphract, War Elephant and African Forest Elephant: riders on the generated mount, the elephants' a larger grey one (a placeholder shape)"),
     ];
 
     private static IEnumerable<ScenarioStep> RigidSteps(MapView view, List<UnitNode> nodes, Func<string, string?, UnitNode> node, Func<int, HexCoord> coord) =>

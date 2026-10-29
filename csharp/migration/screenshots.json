@@ -869,6 +869,20 @@
       }
     ]
   },
+  "C084": {
+    "scenario": "unit-visuals",
+    "about": "Ancient and classical unit art: 23 more units (axe, spear and sword infantry, throwers and bowmen, chariots, cavalry and elephants) from the units pack, built from data in attachments.json.",
+    "shots": [
+      {
+        "golden": "unit-visuals/ancient.png",
+        "caption": "The 23-unit ancient and classical roster (the top five rows; the gallery's lower rows show at the bottom): settler, axe infantry, spearmen and legionaries, throwers and bowmen, chariots, cavalry and elephants in the red and blue civ colours."
+      },
+      {
+        "golden": "unit-visuals/elephants.png",
+        "caption": "Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger grey one (a placeholder shape)."
+      }
+    ]
+  },
   "C048": {
     "scenario": "city-rename",
     "about": "Rename a city from the city screen header: popup with live validation, Enter to confirm, Escape to cancel; the new name shows in the title, the map banner and the overview.",

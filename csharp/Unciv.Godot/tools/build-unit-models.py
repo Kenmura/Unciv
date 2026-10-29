@@ -241,13 +241,14 @@ def box(centre, size):
     return positions, normals, indices
 
 
-def build_horse():
+def build_horse(scale=1.0, colour=None):
+    """The generated mount: the horse of the mounted units; `scale` and `colour` make the same rig an elephant (C084)."""
     b = Builder()
     doc = b.doc
-    world = {name: pos for name, _, pos in HORSE_JOINTS}
+    world = {name: tuple(c * scale for c in pos) for name, _, pos in HORSE_JOINTS}
     index = {name: i for i, (name, _, _) in enumerate(HORSE_JOINTS)}
-    for name, parent, pos in HORSE_JOINTS:
-        node = {"name": name, "translation": [round(pos[i] - (world[parent][i] if parent else 0.0), 5) for i in range(3)]}
+    for name, parent, _ in HORSE_JOINTS:
+        node = {"name": name, "translation": [round(world[name][i] - (world[parent][i] if parent else 0.0), 5) for i in range(3)]}
         doc["nodes"].append(node)
     for name, parent, _ in HORSE_JOINTS:
         if parent:
@@ -255,7 +256,7 @@ def build_horse():
 
     positions, normals, joints, weights, indices = [], [], [], [], []
     for joint, centre, size in HORSE_PARTS:
-        p, n, i = box(centre, size)
+        p, n, i = box(tuple(c * scale for c in centre), tuple(c * scale for c in size))
         indices += [len(positions) + k for k in i]
         positions += p
         normals += n
@@ -270,7 +271,7 @@ def build_horse():
     idx = b.accessor(indices, "SCALAR", 5123, 34963)
     inverse = [[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -world[name][0], -world[name][1], -world[name][2], 1] for name, _, _ in HORSE_JOINTS]
     ibm = b.accessor(inverse, "MAT4", 5126)
-    doc["materials"] = [{"name": "Horse", "pbrMetallicRoughness": {"baseColorFactor": HORSE_COLOUR, "metallicFactor": 0.0, "roughnessFactor": 1.0}}]
+    doc["materials"] = [{"name": "Horse", "pbrMetallicRoughness": {"baseColorFactor": colour or HORSE_COLOUR, "metallicFactor": 0.0, "roughnessFactor": 1.0}}]
     doc["meshes"] = [{"name": "Horse", "primitives": [{"attributes": acc, "indices": idx, "material": 0}]}]
     doc["skins"] = [{"name": "HorseRig", "joints": list(range(len(HORSE_JOINTS))), "inverseBindMatrices": ibm, "skeleton": 0}]
     doc["nodes"].append({"name": "HorseMesh", "mesh": 0, "skin": 0})
@@ -352,7 +353,7 @@ def sample(keys, t, default):
     return list(keys[-1][1])
 
 
-def merge_rider(horse, horse_bin, rider, rider_bin, saddle_height, tracks):
+def merge_rider(horse, horse_bin, rider, rider_bin, saddle_height, tracks, body_height=0.32):
     """
     Appends the rider (its own skeleton, a second root of the scene) to the horse. The rider's 'Rig' node is not parented to a horse joint (glTF importers fuse joint trees into one skeleton,
     which would clash with the rider's own bone names and scale): instead each clip also animates the Rig node along with the horse's root and body joints, so he stays on the saddle.
@@ -396,7 +397,7 @@ def merge_rider(horse, horse_bin, rider, rider_bin, saddle_height, tracks):
 
     merged = pad(horse_bin, b"\0") + rider_bin
     b = Builder(horse, merged)
-    body_rest = [0.0, 0.32, 0.0]
+    body_rest = [0.0, body_height, 0.0]
     by_name = {a["name"]: a for a in horse["animations"]}
     for anim in rider["animations"]:
         target = by_name[anim["name"]]
@@ -454,8 +455,10 @@ def main(source, pack):
         rider, rider_bin = read_glb(os.path.join(source, data["bodies"][unit["body"]]))
         clips = clips_for(data, unit)
         rider, rider_bin = reduce_body(rider, rider_bin, set(unit["keep"]), clips, mounted["riderHeight"], seat=mounted["seat"])
-        horse, horse_bin, tracks = build_horse()
-        horse, merged = merge_rider(horse, horse_bin, rider, rider_bin, mounted["saddleHeight"], tracks)
+        mount = unit.get("mount", {})
+        scale = mount.get("scale", 1.0)
+        horse, horse_bin, tracks = build_horse(scale, mount.get("colour"))
+        horse, merged = merge_rider(horse, horse_bin, rider, rider_bin, mounted["saddleHeight"] * scale, tracks, 0.32 * scale)
         path = os.path.join(models, name + ".glb")
         print(f"unit/{name}: {write_glb(path, horse, merged)} bytes (mounted)")
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"

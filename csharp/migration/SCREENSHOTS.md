@@ -1304,6 +1304,20 @@ Scenario `unit-visuals`.
 
 *The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.* (`unit-visuals/gallery.png`)
 
+## C084 (ticket not Done or unknown)
+
+Ancient and classical unit art: 23 more units (axe, spear and sword infantry, throwers and bowmen, chariots, cavalry and elephants) from the units pack, built from data in attachments.json.
+
+Scenario `unit-visuals`.
+
+![The 23-unit ancient and classical roster (the top five rows; the gallery's lower rows show at the bottom): settler, axe infantry, spearmen and legionaries, throwers and bowmen, chariots, cavalry and elephants in the red and blue civ colours.](../Unciv.Godot.Harness/golden/unit-visuals/ancient.png)
+
+*The 23-unit ancient and classical roster (the top five rows; the gallery's lower rows show at the bottom): settler, axe infantry, spearmen and legionaries, throwers and bowmen, chariots, cavalry and elephants in the red and blue civ colours.* (`unit-visuals/ancient.png`)
+
+![Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger grey one (a placeholder shape).](../Unciv.Godot.Harness/golden/unit-visuals/elephants.png)
+
+*Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger grey one (a placeholder shape).* (`unit-visuals/elephants.png`)
+
 ## C087 Rival stats ribbon in the HUD
 
 Rival stats ribbon in the world HUD: a collapsible block under the research pill with each known major rival's science (technologies), culture, gold and military strength; luxuries it could trade on hover.
