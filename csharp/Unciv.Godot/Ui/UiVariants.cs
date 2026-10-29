@@ -33,6 +33,12 @@ public static class UiVariants
     public const string TechNodeResearchable = "TechNodeResearchable";
     public const string TechNodeLocked = "TechNodeLocked";
 
+    // Policy node cards (C071): one per adoption state, the pressed state is the selection
+    public const string PolicyNodeAdopted = "PolicyNodeAdopted";
+    public const string PolicyNodeAvailable = "PolicyNodeAvailable";
+    public const string PolicyNodeOpen = "PolicyNodeOpen";
+    public const string PolicyNodeLocked = "PolicyNodeLocked";
+
     // Panels
     public const string PanelCard = "PanelCard";
     public const string PanelInset = "PanelInset";
@@ -84,6 +90,14 @@ public static class UiVariants
         _ => TechNodeLocked,
     };
 
+    /// <summary>C071: the node variation of a policy: adopted, adoptable and affordable now (<paramref name="pickable"/>), adoptable but not now (the culture is short), or locked.</summary>
+    public static string PolicyNode(string state, bool pickable) => state switch
+    {
+        "Adopted" => PolicyNodeAdopted,
+        "Adoptable" => pickable ? PolicyNodeAvailable : PolicyNodeOpen,
+        _ => PolicyNodeLocked,
+    };
+
     /// <summary>The city tile variations (they draw a hex instead of a box, so they have no focus ring stylebox).</summary>
     public static IReadOnlyList<string> CityTiles { get; } =
         [CityTileCenter, CityTileWorked, CityTileTaken, CityTileAvailable, CityTileUnavailable, CityTileForeign, CityTileUnowned];
@@ -96,6 +110,7 @@ public static class UiVariants
         (CityTileCenter, "Button"), (CityTileWorked, "Button"), (CityTileTaken, "Button"), (CityTileAvailable, "Button"),
         (CityTileUnavailable, "Button"), (CityTileForeign, "Button"), (CityTileUnowned, "Button"),
         (TechNodeResearched, "Button"), (TechNodeCurrent, "Button"), (TechNodeQueued, "Button"), (TechNodeResearchable, "Button"), (TechNodeLocked, "Button"),
+        (PolicyNodeAdopted, "Button"), (PolicyNodeAvailable, "Button"), (PolicyNodeOpen, "Button"), (PolicyNodeLocked, "Button"),
         (PanelCard, "PanelContainer"), (PanelInset, "PanelContainer"), (PanelModal, "PanelContainer"), (PanelTooltip, "PanelContainer"),
         (PanelHeader, "PanelContainer"), (PanelDock, "PanelContainer"), (PanelSegmentTrack, "PanelContainer"),
         (PanelBadge, "PanelContainer"), (PanelBadgeAccent, "PanelContainer"), (PanelKeyHint, "PanelContainer"), (PanelCellEven, "PanelContainer"), (PanelCellOdd, "PanelContainer"),

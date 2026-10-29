@@ -45,6 +45,7 @@ public sealed class PolicyScenario : Scenario
 
         Vector2 Centre(Button? button) => button?.GetGlobalRect().GetCenter() ?? Vector2.Zero;
         Vector2 At(string policy) => Centre(screen.Policies.PolicyButton(policy));
+        ScenarioStep Show(string policy) => new Act("scroll " + policy + " into view", () => screen.Policies.EnsureVisible(policy));
         PolicyTreeResult Tree() => recording.QueryAsync(new PolicyTreeQuery()).GetAwaiter().GetResult().NotNull();
         PolicyEntry Entry(string name) => Tree().Branches.SelectMany(it => it.Policies.Append(it.Start)).First(it => it.Name == name);
         // The picker's cells are the engine's tree: same states, and pickable exactly when the engine says adoptable and the culture or a free policy is there.
@@ -72,7 +73,9 @@ public sealed class PolicyScenario : Scenario
             new AssertQuery("the culture line is the engine's numbers, and the golden-age line the top bar's", () =>
                 screen.Policies.HeaderText.StartsWith($"Culture: {Tree().StoredCulture} / {Tree().CultureNeededForNextPolicy}", StringComparison.Ordinal)
                 && screen.Policies.GoldenAgeText.StartsWith("Golden Age:", StringComparison.Ordinal)),
-            new Capture("open", "The policy screen: branch columns with their openers and members, culture and golden-age lines, nothing chosen yet"),
+            .. OpenLayoutAsserts(screen),
+            new Capture("open", "The policy screen at 640x480: culture bar and golden-age line on top, a tab per branch with the Tradition card (opener, members on the ruleset grid with connector lines, completion strip), nothing chosen yet"),
+            .. SearchSteps(screen),
 
             new Act("remember the command log", () => logged = session.Log.Count),
             new Press("Close policies"),
@@ -90,6 +93,7 @@ public sealed class PolicyScenario : Scenario
                 culture = human.Policies.StoredCulture;
                 cost = Tree().CultureNeededForNextPolicy;
             }),
+            Show("Tradition"),
             new Click(() => At("Tradition")),
             new WaitFrames(2),
             new AssertQuery("choosing a policy only selects it: nothing sent, the detail lists its effects and Adopt is offered", () =>
@@ -105,11 +109,13 @@ public sealed class PolicyScenario : Scenario
                 && screen.Policies.Branches[0].Progress == "1 / 6 adopted"),
             new AssertQuery("the culture line follows the engine", () => screen.Policies.HeaderText.StartsWith($"Culture: {human.Policies.StoredCulture} / {Tree().CultureNeededForNextPolicy}", StringComparison.Ordinal)),
 
+            Show("Landed Elite"),
             new Click(() => At("Landed Elite")),
             new WaitFrames(2),
             new AssertQuery("a policy whose prerequisite is missing cannot be adopted and names it", () =>
                 screen.Policies.Selected is { Name: "Landed Elite", State: "Locked", Pickable: false } && screen.Policies.AdoptButton.Disabled
                 && screen.Policies.DetailText.Contains("Needs Legalism first", StringComparison.Ordinal) && Entry("Landed Elite").LockedReason == "requires:Legalism"),
+            Show("Legalism"),
             new Click(() => At("Legalism")),
             new Press("Adopt Legalism"),
             new WaitFrames(3),
@@ -117,6 +123,7 @@ public sealed class PolicyScenario : Scenario
                 human.Policies.IsAdopted("Legalism") && Entry("Landed Elite").State == "Adoptable" && Entry("Monarchy").State == "Adoptable" && CellsEqualTree()),
             new Capture("adopted", "Tradition and Legalism adopted (gold); Landed Elite and Monarchy are now open; later branches are dimmed"),
 
+            Show("Landed Elite"),
             new Click(() => At("Landed Elite")),
             new WaitFrames(2),
             new AssertQuery("with the culture spent, an open policy is shown but cannot be adopted, and says what it costs", () =>
@@ -128,9 +135,51 @@ public sealed class PolicyScenario : Scenario
             new Click(() => Centre(screen.Policies.AdoptButton)),
             new AssertQuery("pressing the disabled Adopt button sent nothing", () => session.Log.Count == logged),
 
+            new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
+            new WaitFrames(4),
+            new AssertQuery("the screen survived the rebuild for the new breakpoint: branch cards side by side in a grid (no tabs), same selection, every cell still a node", () =>
+                screen.IsPolicyScreenVisible && !screen.Policies.IsTabbed && screen.Policies.Selected is { Name: "Landed Elite" } && screen.Policies.BranchCards.Count == 10
+                && screen.Policies.BranchCards.Values.All(it => it.IsInsideTree()) && CellsEqualTree()
+                && screen.Policies.BranchCards["Tradition"].GetGlobalRect().Position.Y < screen.Policies.BranchCards["Piety"].GetGlobalRect().End.Y),
+            new Capture("wide", "1280x720: the branch cards flow side by side, Tradition with Legalism adopted (lit connectors), Landed Elite chosen with its hint, Adopt disabled and the effects on the right"),
             new PressKey(Key.Escape),
             new WaitFrames(2),
             new AssertQuery("Escape closes the screen and, with no pick pending, sends nothing", () => !screen.IsPolicyScreenVisible && session.Log.Count == logged),
         ];
     }
+
+    /// <summary>C071: the layout asserts of the freshly opened screen at 640x480 (tabs, no clipped labels, a theme variation per state, the summary).</summary>
+    private static IEnumerable<ScenarioStep> OpenLayoutAsserts(GameScreen screen) =>
+    [
+            new AssertQuery("at the compact breakpoint one branch is shown at a time behind tabs, one tab per branch", () =>
+                screen.Policies.IsTabbed && screen.Policies.BranchCards.Count == 10 && screen.Policies.BranchCards["Tradition"].IsVisibleInTree() && !screen.Policies.BranchCards["Liberty"].IsVisibleInTree()),
+            new AssertQuery("no node label clips: each node's content fits its width and height, the name is ellipsized when long and the full name is in the tooltip", () =>
+                screen.Policies.Branches.SelectMany(it => it.Cells).All(it => screen.Policies.PolicyButton(it.Name) is PolicyNodeCard card
+                    ? card.Content.GetCombinedMinimumSize().X <= card.Size.X + 0.5f && card.Content.GetCombinedMinimumSize().Y <= card.Size.Y + 0.5f && card.NameLabel.TextOverrunBehavior == TextServer.OverrunBehavior.TrimEllipsis && card.TooltipText.Contains(it.Name, StringComparison.Ordinal)
+                    : screen.Policies.PolicyButton(it.Name) is { } strip && it.IsComplete && strip.TooltipText.Contains(it.Name, StringComparison.Ordinal))),
+            new AssertQuery("every node has the theme variation of its state, and the culture bar shows the engine's numbers", () =>
+                screen.Policies.Branches.SelectMany(it => it.Cells).All(it => screen.Policies.PolicyButton(it.Name).NotNull().ThemeTypeVariation == Unciv.GodotClient.Ui.UiVariants.PolicyNode(it.State, it.Pickable))
+                && screen.Policies.PolicyButton("Tradition").NotNull().ThemeTypeVariation == "PolicyNodeAvailable" && screen.Policies.PolicyButton("Liberty").NotNull().ThemeTypeVariation == "PolicyNodeAvailable"),
+    ];
+
+    /// <summary>C071: the search box dims what does not match, by name and by effect, and clearing it lights every policy again.</summary>
+    private static IEnumerable<ScenarioStep> SearchSteps(GameScreen screen) =>
+    [
+            new Act("type 'legal' into the search box", () => screen.Policies.Search("legal")),
+            new WaitFrames(3),
+            new AssertQuery("search dims the policies that do not match: Legalism stays bright, Oligarchy is dimmed", () =>
+                screen.Policies.MatchingPolicies.Contains("Legalism") && !screen.Policies.MatchingPolicies.Contains("Oligarchy")
+                && screen.Policies.PolicyButton("Oligarchy") is PolicyNodeCard { Dimmed: true }
+                && screen.Policies.PolicyButton("Legalism") is PolicyNodeCard { Dimmed: false }),
+            new Capture("search", "Searching 'legal': Legalism stays bright, the other policies of the branch are dimmed"),
+            new Act("search by effect ('culture')", () => screen.Policies.Search("culture")),
+            new AssertQuery("the match also reads the effect lines: policies whose effects mention culture match, whatever their name", () =>
+                screen.Policies.MatchingPolicies.Count > 0 && screen.Policies.MatchingPolicies.Count < screen.Policies.Branches.SelectMany(it => it.Cells).Count()
+                && screen.Policies.Branches.SelectMany(it => it.Cells).Where(it => it.Effects.Any(e => e.Text.Contains("culture", StringComparison.OrdinalIgnoreCase)) && !it.Name.Contains("culture", StringComparison.OrdinalIgnoreCase))
+                    .All(it => screen.Policies.MatchingPolicies.Contains(it.Name))),
+            new Act("clear the search", () => screen.Policies.Search("")),
+            new AssertQuery("clearing the search lights every policy again", () =>
+                screen.Policies.MatchingPolicies.Count == screen.Policies.Branches.SelectMany(it => it.Cells).Count()
+                && screen.Policies.Branches.SelectMany(it => it.Cells).All(it => screen.Policies.PolicyButton(it.Name) is not PolicyNodeCard { Dimmed: true })),
+    ];
 }

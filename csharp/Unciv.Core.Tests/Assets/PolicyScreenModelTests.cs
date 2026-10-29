@@ -120,8 +120,59 @@ public class PolicyScreenModelTests
     {
         var branch = Tradition();
         var cell = PolicyScreenModel.Cell(branch.Policies[0], Tree(), branch);
-        Assert.Equal("Legalism\nCan be adopted now\n• +1 Culture", PolicyScreenModel.Detail(cell, "Legalism\n• +1 Culture"));
-        Assert.Equal("Legalism\nCan be adopted now", PolicyScreenModel.Detail(cell, ""));
+        Assert.Equal("Legalism\nCan be adopted now", PolicyScreenModel.Detail(cell, it => it));
+        var full = cell with { Effects = PolicyScreenModel.EffectLines("Legalism\n• +1 Culture", "Legalism") };
+        Assert.Equal("[Legalism]\n[Can be adopted now]\n• +1 Culture", PolicyScreenModel.Detail(full, it => "[" + it + "]"));
+    }
+
+    [Fact]
+    public void RepeatedEffectLinesAreCountedNotRepeated()
+    {
+        var lines = PolicyScreenModel.EffectLines("Volunteer Army\n• [6] units cost no maintenance\n• Free [Foreign Legion] appears\n• Free [Foreign Legion] appears\n\n• Free [Foreign Legion] appears\n• Other", "Volunteer Army");
+        Assert.Equal(["• [6] units cost no maintenance", "• Free [Foreign Legion] appears (×3)", "• Other"], lines.Select(it => it.Display));
+        Assert.Equal([1, 3, 1], lines.Select(it => it.Count));
+        Assert.Empty(PolicyScreenModel.EffectLines(""));
+        Assert.Equal("• A", Assert.Single(PolicyScreenModel.EffectLines("• A\nX", "X")).Text); // the name line is dropped wherever it is
+        Assert.Equal(2, PolicyScreenModel.EffectLines("• A\n• A").Single().Count); // a branch description has no name line
+    }
+
+    [Fact]
+    public void BranchesStartingAtColumnZeroKeepEveryMember()
+    {
+        var tree = Tree(true, 50, 15, 0, Branch("Order", "Industrial era", 0, 3, Entry("Zero", row: 1, column: 0), Entry("Six", row: 1, column: 6), Entry("Deep", row: 2, column: 3)));
+        var view = PolicyScreenModel.Branches(tree)[0];
+        Assert.Equal((7, 2), (view.Columns, view.Rows));
+        Assert.Equal((0, 1), (view.ColumnOrigin, view.RowOrigin));
+        var shifted = PolicyScreenModel.Branches(Tree(true, 50, 15, 0, Branch("B", "", 0, 1, Entry("A", row: 2, column: 2))))[0];
+        Assert.Equal((1, 1), (shifted.ColumnOrigin, shifted.RowOrigin)); // the origin is 1 unless a member sits at 0
+    }
+
+    [Fact]
+    public void CellsCarryRequirementsAndTheBranchStateAndEra()
+    {
+        var branch = Branch("Tradition", "Ancient era", 1, 6, new PolicyEntry("Legalism", "Member", 2, 3, ["Oligarchy"], "Locked", "requires:Oligarchy"));
+        var view = PolicyScreenModel.Branches(Tree(true, 50, 15, 0, branch))[0];
+        Assert.Equal(["Oligarchy"], view.Members[0].Requires);
+        Assert.Equal(("Ancient era", 1, 6, true), (view.Era, view.Adopted, view.Total, view.IsOpen));
+        Assert.Equal(["Tradition", "Legalism"], view.Cells.Select(it => it.Name));
+        Assert.False(PolicyScreenModel.Branches(Tree(true, 50, 15, 0, branch with { Start = Entry("Tradition", "BranchStart", 0, 0, "Locked", "era:Medieval era") }))[0].IsOpen);
+        Assert.Equal(AssetKey.Of(RulesetAssetKeys.PolicyIcon, "Legalism"), view.Members[0].IconKey);
+    }
+
+    [Fact]
+    public void SearchMatchesNameOrEffectAndSharesTheTechMatcher()
+    {
+        var cell = new PolicyCell("Policy_Legalism", "Legalism", "Member", 1, 1, "Locked", false, "") { Effects = PolicyScreenModel.EffectLines("• Gain a free [Culture] building", "Legalism") };
+        Assert.True(PolicyScreenModel.Matches(cell, ""));
+        Assert.True(PolicyScreenModel.Matches(cell, "  "));
+        Assert.True(PolicyScreenModel.Matches(cell, "LEGAL"));
+        Assert.True(PolicyScreenModel.Matches(cell, "free"));
+        Assert.False(PolicyScreenModel.Matches(cell, "tradition"));
+        Assert.True(PolicyScreenModel.Matches(cell, "recht", it => it == "Legalism" ? "Rechtsprechung" : it)); // as the player sees it
+        Assert.False(PolicyScreenModel.Matches(cell, "recht"));
+        Assert.True(SearchMatcher.Matches("b", ["abc"], []));
+        Assert.True(SearchMatcher.Matches(" x ", [], ["a X b"]));
+        Assert.False(SearchMatcher.Matches("x", [], []));
     }
 
     [Fact]

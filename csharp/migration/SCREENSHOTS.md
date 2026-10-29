@@ -354,25 +354,33 @@ Scenario `tech`.
 
 ## C020 Policy screen
 
-Policy screen: branch columns, adopt with confirmation step, culture and golden-age lines, why a policy is locked or unaffordable.
+Policy screen (redesigned in C071): culture bar and golden-age line, one card per branch with icon nodes on the ruleset grid and connector lines (tabs per branch at 640x480, a flowing grid at 1280x720), search, Adopt right under the policy name, why a policy is locked or unaffordable.
 
 Scenario `policy`.
 
-![The policy screen as opened by the Pick a policy button: branch columns (Tradition first, more to scroll to), culture 50 / 15 and golden-age lines, nothing chosen.](../Unciv.Godot.Harness/golden/policy/open.png)
+![The policy screen as opened by Pick a policy at 640x480: culture bar 50 / 15 with 'You can adopt a policy now', the golden-age line, a tab per branch and the Tradition card (opener, members as icon nodes with connector lines), nothing chosen.](../Unciv.Godot.Harness/golden/policy/open.png)
 
-*The policy screen as opened by the Pick a policy button: branch columns (Tradition first, more to scroll to), culture 50 / 15 and golden-age lines, nothing chosen.* (`policy/open.png`)
+*The policy screen as opened by Pick a policy at 640x480: culture bar 50 / 15 with 'You can adopt a policy now', the golden-age line, a tab per branch and the Tradition card (opener, members as icon nodes with connector lines), nothing chosen.* (`policy/open.png`)
 
-![Tradition chosen: its effects on the right and an Adopt button; nothing is adopted until it is pressed.](../Unciv.Godot.Harness/golden/policy/selected.png)
+![Searching 'legal': Legalism stays bright and the other policies are dimmed.](../Unciv.Godot.Harness/golden/policy/search.png)
 
-*Tradition chosen: its effects on the right and an Adopt button; nothing is adopted until it is pressed.* (`policy/selected.png`)
+*Searching 'legal': Legalism stays bright and the other policies are dimmed.* (`policy/search.png`)
 
-![Tradition and Legalism adopted (gold); Landed Elite and Monarchy are now open.](../Unciv.Godot.Harness/golden/policy/adopted.png)
+![Tradition chosen (gold ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed.](../Unciv.Godot.Harness/golden/policy/selected.png)
 
-*Tradition and Legalism adopted (gold); Landed Elite and Monarchy are now open.* (`policy/adopted.png`)
+*Tradition chosen (gold ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed.* (`policy/selected.png`)
 
-![Not enough culture: Landed Elite is open but Adopt is disabled and the hint gives the price.](../Unciv.Godot.Harness/golden/policy/short.png)
+![Tradition and Legalism adopted (gold rings, lit connectors); Legalism's detail shows 'Adopted' with a disabled button.](../Unciv.Godot.Harness/golden/policy/adopted.png)
 
-*Not enough culture: Landed Elite is open but Adopt is disabled and the hint gives the price.* (`policy/short.png`)
+*Tradition and Legalism adopted (gold rings, lit connectors); Legalism's detail shows 'Adopted' with a disabled button.* (`policy/adopted.png`)
+
+![Not enough culture (15 / 40): Landed Elite is open but Adopt is disabled and the hint gives the price.](../Unciv.Godot.Harness/golden/policy/short.png)
+
+*Not enough culture (15 / 40): Landed Elite is open but Adopt is disabled and the hint gives the price.* (`policy/short.png`)
+
+![1280x720: branch cards flow in a grid with a wider detail panel; Landed Elite chosen, Adopt disabled, Tradition's connectors lit.](../Unciv.Godot.Harness/golden/policy/wide.png)
+
+*1280x720: branch cards flow in a grid with a wider detail panel; Landed Elite chosen, Adopt disabled, Tradition's connectors lit.* (`policy/wide.png`)
 
 ## C021 Diplomacy screen
 
@@ -1336,6 +1344,7 @@ Done tickets with nothing meaningful to show.
 - **C060 Tutorial task completed-set: per-viewer and replay-safe (C054 review follow-up)**: Per-viewer, replay-safe tutorial-task state (no layout change); the card itself is shown under C054 (tutorial-tasks scenario) and the hotseat hand-over under C029.
 - **C064 Unique display text and hidden uniques in UI models**: Model-level text fix (unique display text, hidden uniques filtered); the decisions, tooltips and policy scenario goldens are pixel-unchanged.
 - **C070 Tech tree redesign**: Tech tree redesign: shown under C019 (tech/*), whose captions and goldens were re-recorded in C070.
+- **C071 (ticket not Done or unknown)**: Policies redesign: shown under C020 (policy/*), whose captions and goldens were re-recorded in C071.
 - **C073 Diplomacy and trade redesign**: Diplomacy and trade redesign: the redesigned screens are shown under C021 (diplomacy/*), C022 (trade/*) and C039 (proposals/*), whose goldens were re-recorded.
 - **C074 Overview and espionage on DataTable**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.
 - **C075 Game menu, save/load and options**: Game menu, save/load and options redesign: the redesigned screens are shown under C044 (menu/*), the save/load, options and settings entries, whose goldens were re-recorded.

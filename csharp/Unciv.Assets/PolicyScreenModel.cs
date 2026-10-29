@@ -4,6 +4,7 @@ using Unciv.Commands;
 using Unciv.Commands.Empire;
 using Unciv.Models.Translations;
 using Unciv.Queries.Empire;
+using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
 namespace Unciv.Assets;
 
@@ -13,6 +14,15 @@ namespace Unciv.Assets;
 /// </summary>
 public sealed record PolicyCell(string Id, string Name, string Kind, int Row, int Column, string State, bool Pickable, string Hint)
 {
+    /// <summary>C071: the policies that must be adopted first (the links drawn into this node); empty for a branch opener.</summary>
+    public IReadOnlyList<string> Requires { get; init; } = [];
+
+    /// <summary>C071: what the policy does, one entry per distinct line of the ruleset text (repeated lines are counted, not repeated); empty when no ruleset was given.</summary>
+    public IReadOnlyList<PolicyEffect> Effects { get; init; } = [];
+
+    /// <summary>C071: the policy's icon (<c>icon/policy/&lt;name&gt;</c>).</summary>
+    public AssetKey IconKey => AssetKey.Of(RulesetAssetKeys.PolicyIcon, Name);
+
     public bool IsAdopted => State == PolicyScreenModel.AdoptedState;
 
     public bool IsBranchStart => Kind == PolicyScreenModel.BranchStartKind;
@@ -20,8 +30,35 @@ public sealed record PolicyCell(string Id, string Name, string Kind, int Row, in
     public bool IsComplete => Kind == PolicyScreenModel.BranchCompleteKind;
 }
 
-/// <summary>A branch as a column: its opener, the members laid out on a <see cref="Columns"/> x <see cref="Rows"/> grid (1-based cell positions), and the completion bonus.</summary>
-public sealed record PolicyBranchView(string Name, string Title, string Progress, PolicyCell Start, IReadOnlyList<PolicyCell> Members, PolicyCell? Complete, int Columns, int Rows);
+/// <summary>C071: one effect line of a policy. <see cref="Count"/> says how often the ruleset repeats it (Volunteer Army lists "Free [Foreign Legion] appears" six times); <see cref="Display"/> is the line shown.</summary>
+public sealed record PolicyEffect(string Text, int Count)
+{
+    public string Display => Count > 1 ? $"{Text} (×{Count.ToString(CultureInfo.InvariantCulture)})" : Text;
+}
+
+/// <summary>
+/// A branch as a card: its opener, the members laid out on a <see cref="Columns"/> x <see cref="Rows"/> grid, and the completion bonus. A member's cell position is
+/// <c>Row - RowOrigin</c>, <c>Column - ColumnOrigin</c> (zero-based): the origin is 1, or 0 when the ruleset starts a branch at column 0 (the ideologies do).
+/// </summary>
+public sealed record PolicyBranchView(string Name, string Title, string Progress, PolicyCell Start, IReadOnlyList<PolicyCell> Members, PolicyCell? Complete, int Columns, int Rows)
+{
+    /// <summary>C071: the era the branch opens in (empty when the ruleset gives none).</summary>
+    public string Era { get; init; } = "";
+
+    public int Adopted { get; init; }
+
+    public int Total { get; init; }
+
+    public int ColumnOrigin { get; init; } = 1;
+
+    public int RowOrigin { get; init; } = 1;
+
+    /// <summary>C071: the branch can still be started (its opener is adoptable now or adopted); a locked branch is drawn dimmed with <see cref="PolicyCell.Hint"/> of its opener.</summary>
+    public bool IsOpen => Start.State != "Locked";
+
+    /// <summary>C071: every cell of the card, opener first, then the members, then the completion bonus.</summary>
+    public IEnumerable<PolicyCell> Cells => new[] { Start }.Concat(Members).Concat(Complete == null ? [] : [Complete]);
+}
 
 /// <summary>
 /// C020: the policy screen's content as plain data, Godot-free so it is unit-tested. It words the engine's <see cref="PolicyTreeResult"/> (branches, adoptable or locked
@@ -55,29 +92,78 @@ public static class PolicyScreenModel
         : $"Golden Age: {Int(bar.GoldenAgeStored)} / {Int(bar.GoldenAgeNeeded)} happiness stored";
 
     /// <summary>The branches in the engine's order, each with its members placed by row and column.</summary>
-    public static IReadOnlyList<PolicyBranchView> Branches(PolicyTreeResult tree)
+    public static IReadOnlyList<PolicyBranchView> Branches(PolicyTreeResult tree, RulesetClass? ruleset = null)
     {
         var views = new List<PolicyBranchView>();
         foreach (var branch in tree.Branches)
         {
-            var start = Cell(branch.Start, tree, branch);
-            var members = branch.Policies.Where(it => it.Kind == "Member").Select(it => Cell(it, tree, branch))
+            var start = Cell(branch.Start, tree, branch, ruleset);
+            var members = branch.Policies.Where(it => it.Kind == "Member").Select(it => Cell(it, tree, branch, ruleset))
                 .OrderBy(it => it.Row).ThenBy(it => it.Column).ToList();
-            var complete = branch.Policies.Where(it => it.Kind == BranchCompleteKind).Select(it => Cell(it, tree, branch)).FirstOrDefault();
-            int columns = members.Count == 0 ? 0 : members.Max(it => it.Column);
-            int rows = members.Count == 0 ? 0 : members.Max(it => it.Row);
+            var complete = branch.Policies.Where(it => it.Kind == BranchCompleteKind).Select(it => Cell(it, tree, branch, ruleset)).FirstOrDefault();
+            // C071: the origin is 1 unless a member sits at 0 (the ideologies start at column 0), so no member falls off the grid
+            int columnOrigin = members.Count == 0 ? 1 : Math.Min(1, members.Min(it => it.Column));
+            int rowOrigin = members.Count == 0 ? 1 : Math.Min(1, members.Min(it => it.Row));
+            int columns = members.Count == 0 ? 0 : members.Max(it => it.Column) - columnOrigin + 1;
+            int rows = members.Count == 0 ? 0 : members.Max(it => it.Row) - rowOrigin + 1;
             string title = branch.Era.Length > 0 ? $"{branch.Name} ({branch.Era})" : branch.Name;
-            views.Add(new PolicyBranchView(branch.Name, title, $"{Int(branch.Adopted)} / {Int(branch.Total)} adopted", start, members, complete, columns, rows));
+            views.Add(new PolicyBranchView(branch.Name, title, $"{Int(branch.Adopted)} / {Int(branch.Total)} adopted", start, members, complete, columns, rows)
+            {
+                Era = branch.Era,
+                Adopted = branch.Adopted,
+                Total = branch.Total,
+                ColumnOrigin = columnOrigin,
+                RowOrigin = rowOrigin,
+            });
         }
         return views;
     }
 
-    public static PolicyCell Cell(PolicyEntry entry, PolicyTreeResult tree, PolicyBranchEntry branch)
+    public static PolicyCell Cell(PolicyEntry entry, PolicyTreeResult tree, PolicyBranchEntry branch, RulesetClass? ruleset = null)
     {
         bool complete = entry.Kind == BranchCompleteKind;
         bool pickable = !complete && entry.State == AdoptableState && tree.CanAdopt;
-        return new PolicyCell("Policy_" + entry.Name, entry.Name, entry.Kind, entry.Row, entry.Column, entry.State, pickable, HintFor(entry, tree, branch));
+        return new PolicyCell("Policy_" + entry.Name, entry.Name, entry.Kind, entry.Row, entry.Column, entry.State, pickable, HintFor(entry, tree, branch))
+        {
+            Requires = entry.Requires,
+            Effects = ruleset == null ? [] : EffectLines(DescriptionOf(ruleset, entry.Name), entry.Name),
+        };
     }
+
+    /// <summary>C071: the ruleset's description of a policy or branch (its effects, one line each); empty for an unknown name.</summary>
+    public static string DescriptionOf(RulesetClass ruleset, string name) =>
+        ruleset.Policies.TryGetValue(name, out var policy) ? policy.GetDescription()
+        : ruleset.PolicyBranches.TryGetValue(name, out var branch) ? branch.GetDescription() : "";
+
+    /// <summary>
+    /// C071: the effect lines of a description: the policy's own name line (the ruleset text of a member starts with it, translated or not) and blank lines are dropped, and a line
+    /// the ruleset repeats is shown once with its count (Volunteer Army's six "Free [Foreign Legion] appears" become one line, ×6). The order is that of the first occurrence.
+    /// </summary>
+    public static IReadOnlyList<PolicyEffect> EffectLines(string description, string name = "")
+    {
+        var order = new List<string>();
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        string translated = name.Length == 0 ? "" : name.Tr();
+        foreach (string raw in description.Split('\n'))
+        {
+            string line = raw.Trim();
+            if (line.Length == 0 || (name.Length > 0 && (line == name || line == translated))) continue;
+            if (counts.TryGetValue(line, out int count)) counts[line] = count + 1;
+            else
+            {
+                counts[line] = 1;
+                order.Add(line);
+            }
+        }
+        return order.Select(it => new PolicyEffect(it, counts[it])).ToList();
+    }
+
+    /// <summary>
+    /// C071: the search filter shared with the tech screen (<see cref="SearchMatcher"/>): an empty query matches every policy, otherwise a policy matches when the query is part of its
+    /// name (also as the player sees it, through <paramref name="translate"/>) or of one of its effect lines.
+    /// </summary>
+    public static bool Matches(PolicyCell cell, string query, Func<string, string>? translate = null) =>
+        SearchMatcher.Matches(query, [cell.Name], cell.Effects.Select(it => it.Text), translate);
 
     private static string HintFor(PolicyEntry entry, PolicyTreeResult tree, PolicyBranchEntry branch)
     {
@@ -98,12 +184,11 @@ public static class PolicyScreenModel
 
     public static string AdoptLabel(PolicyCell cell) => cell.IsAdopted ? "Adopted" : "Adopt " + cell.Name;
 
-    /// <summary>Fill-in text for the detail panel: the name, the state, why it cannot be adopted (if so) and the effects the ruleset lists.</summary>
-    public static string Detail(PolicyCell cell, string description)
+    /// <summary>The detail panel's text: the name and the state (both through <paramref name="translate"/>), then the effect lines as the ruleset worded them (they are already translated).</summary>
+    public static string Detail(PolicyCell cell, Func<string, string> translate)
     {
-        var lines = new List<string> { cell.Name, cell.Hint };
-        var body = description.Split('\n').Where(it => it.Length > 0 && it != cell.Name).ToList(); // the ruleset text of a member starts with its own name
-        if (body.Count > 0) lines.Add(string.Join("\n", body));
+        var lines = new List<string> { translate(cell.Name), translate(cell.Hint) };
+        lines.AddRange(cell.Effects.Select(it => it.Display));
         return string.Join("\n", lines);
     }
 

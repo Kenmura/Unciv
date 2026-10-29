@@ -135,14 +135,8 @@ public static class TechScreenModel
     /// C070: the search filter. An empty (or blank) query matches every tech; otherwise a tech matches when the query is part of its name, of the name of something it unlocks, or of a line of
     /// the engine's unlock text that is not an entry of its unit and building lists (those are covered by <see cref="TechNode.Unlocks"/>; the rest carries the stats, e.g. "+1 Science"). Case-insensitive; <paramref name="translate"/> also matches the names as the player sees them.
     /// </summary>
-    public static bool Matches(TechNode node, string query, Func<string, string>? translate = null)
-    {
-        string needle = query.Trim();
-        if (needle.Length == 0) return true;
-        bool Has(string text) => text.Contains(needle, StringComparison.OrdinalIgnoreCase);
-        bool HasName(string name) => Has(name) || (translate != null && Has(translate(name)));
-        return HasName(node.Name) || node.Unlocks.Any(it => HasName(it.Name)) || UnlockLines(node).Any(it => !it.StartsWith('•') && !it.EndsWith(':') && Has(it));
-    }
+    public static bool Matches(TechNode node, string query, Func<string, string>? translate = null) =>
+        SearchMatcher.Matches(query, node.Unlocks.Select(it => it.Name).Prepend(node.Name), UnlockLines(node).Where(it => !it.StartsWith('•') && !it.EndsWith(':')), translate);
 
     /// <summary>Two lines: the name, then the research state (cost, progress and turns).</summary>
     public static string Label(TechTreeEntry tech) => tech.Name + "\n" + Detail(tech);

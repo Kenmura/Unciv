@@ -249,23 +249,31 @@
   },
   "C020": {
     "scenario": "policy",
-    "about": "Policy screen: branch columns, adopt with confirmation step, culture and golden-age lines, why a policy is locked or unaffordable.",
+    "about": "Policy screen (redesigned in C071): culture bar and golden-age line, one card per branch with icon nodes on the ruleset grid and connector lines (tabs per branch at 640x480, a flowing grid at 1280x720), search, Adopt right under the policy name, why a policy is locked or unaffordable.",
     "shots": [
       {
         "golden": "policy/open.png",
-        "caption": "The policy screen as opened by the Pick a policy button: branch columns (Tradition first, more to scroll to), culture 50 / 15 and golden-age lines, nothing chosen."
+        "caption": "The policy screen as opened by Pick a policy at 640x480: culture bar 50 / 15 with 'You can adopt a policy now', the golden-age line, a tab per branch and the Tradition card (opener, members as icon nodes with connector lines), nothing chosen."
+      },
+      {
+        "golden": "policy/search.png",
+        "caption": "Searching 'legal': Legalism stays bright and the other policies are dimmed."
       },
       {
         "golden": "policy/selected.png",
-        "caption": "Tradition chosen: its effects on the right and an Adopt button; nothing is adopted until it is pressed."
+        "caption": "Tradition chosen (gold ring): its effects on the right with the Adopt Tradition button directly under the name; nothing is adopted until it is pressed."
       },
       {
         "golden": "policy/adopted.png",
-        "caption": "Tradition and Legalism adopted (gold); Landed Elite and Monarchy are now open."
+        "caption": "Tradition and Legalism adopted (gold rings, lit connectors); Legalism's detail shows 'Adopted' with a disabled button."
       },
       {
         "golden": "policy/short.png",
-        "caption": "Not enough culture: Landed Elite is open but Adopt is disabled and the hint gives the price."
+        "caption": "Not enough culture (15 / 40): Landed Elite is open but Adopt is disabled and the hint gives the price."
+      },
+      {
+        "golden": "policy/wide.png",
+        "caption": "1280x720: branch cards flow in a grid with a wider detail panel; Landed Elite chosen, Adopt disabled, Tradition's connectors lit."
       }
     ]
   },
@@ -1338,5 +1346,8 @@
   },
   "C077": {
     "none": "Victory, defeat, resigned, victory status and World Congress result as Modals: shown under C024 (victory/*, defeat/*), C044 (menu/victory-status, menu/resigned) and C053 (vote-result/*), whose captions and goldens were re-recorded."
+  },
+  "C071": {
+    "none": "Policies redesign: shown under C020 (policy/*), whose captions and goldens were re-recorded in C071."
   }
 }
