@@ -11,6 +11,7 @@
   - [Checkpoint hash, small and medium](#checkpoint-hash-small-and-medium)
   - [Host-side view building (medium, turns 198-200, 3 recipients, 54 commands)](#host-side-view-building-medium-turns-198-200-3-recipients-54-commands)
 - [Ranked hotspots](#ranked-hotspots)
+- [Result of T262](#result-of-t262)
 - [Targets recorded for T262 and T263](#targets-recorded-for-t262-and-t263)
 - [Follow-ups](#follow-ups)
 <!-- /toc -->
@@ -142,6 +143,30 @@ Ranked by their share of a late medium turn (last quarter, engine time about 650
 
 Small: the same order (refresh 52%, AI 20%, start 18%), turn 103 ms at turn 50.
 
+## Result of T262
+
+Method: golden per-turn `FullHash` list (`design/perf-golden.json`, small 50 and medium 200 turns) generated before any change; `bench --golden design/perf-golden.json` compares every turn and exits 1 on a difference.
+All six after-runs below matched every one of the 200 hashes.
+
+Medium, 200 turns, three interleaved runs (base, new) in one session on a loaded machine (wall times vary about 30%):
+
+| metric (median of 3) | before | after | change |
+|---|---|---|---|
+| total wall | 119.1 s | 95.6 s | -20% |
+| user CPU | 99.3 s | 81.7 s | -18% |
+| allocated | 58.8 GB | 39.2 GB | -33% |
+| GC pause | 15.0 s | 10.5 s | -30% |
+| late median turn (last 20%) | 730 ms | 676 ms | -7% (noisy: run values 1431/1047, 730/676, 363/505) |
+
+The 30% late-median target was not met; user CPU and total wall (-18% to -20%) clear the 10% fallback, the late-median wall figure is within noise.
+
+What changed (all identical-state):
+- `TileMap.GetViewableTiles`: neighbour lookup without per-call lists (oracle test against the old algorithm).
+- `UniqueMap`/`TemporaryUnique`/`City`/`MapUnit`/`MultiFilter`: iterators instead of `SelectMany`, static lambdas with state tuples, loops instead of `Any(lambda)`, empty fast paths.
+- `CityStats.TileStatsCurrent`: a city's tile stats are not recomputed when civ happiness is unchanged and no tile was dropped from work (`GameInfo.UpdateCivilizationState`).
+
+Rejected as not provably identical: civ-level dirty tracking of the refresh, skipping the duplicate `UpdateViewableTiles`/`UpdateCivResources` passes.
+
 ## Targets recorded for T262 and T263
 
 - T262 (optimise): the top three hotspots are 1 (refresh), 2 (unit moves) and 3 (allocation); target **at least 30% off the late median turn time of the medium scenario**
@@ -153,3 +178,5 @@ Small: the same order (refresh 52%, AI 20%, start 18%), turn 103 ms at turn 50.
 - Call-level profiling inside `AI.AutomateUnitMoves` and the spike turns (install `dotnet-trace`; or add `Measure` points in pathfinding), and a GC-count column per phase.
 - Incremental host view diff (T178 note), once the host cost per recipient is chosen as a target.
 - A `--repeat N` option for the bench that reports the median of several runs (the machine noise is the main limit of the numbers above).
+- Per-unit `GetViewableTiles` cache keyed on position, range and a terrain revision counter (still the top allocator after T262), and a struct `ViewableTile`.
+- Remaining refresh cost: civ-level dirty tracking needs a proof that every input to `UpdateCivilizationState` is covered by a revision counter.
