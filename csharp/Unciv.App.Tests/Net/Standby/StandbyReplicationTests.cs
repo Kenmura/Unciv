@@ -58,9 +58,31 @@ internal sealed class TestSuccessor : IAsyncDisposable
         lock (received) return [.. received];
     }
 
+    private string Frames() => string.Join(",", All().Select(it => it switch
+    {
+        StandbyEntry entry => "e" + entry.Seq,
+        StandbyStatus status => "status:" + status.State + "/" + status.LagEntries,
+        ViewDelta => "d",
+        StandbySnapshot part => "s" + part.Seq + (part.Reset ? "r" : "a"),
+        _ => it.GetType().Name,
+    }));
+
     public List<T> Of<T>() where T : Message => All().OfType<T>().ToList();
 
-    public Task SendAsync(Message message) => transport.SendAsync(ProtocolCodec.Encode(message)).AsTask();
+    private readonly SemaphoreSlim sendGate = new(1, 1); // the TLS stream takes one write at a time; the reader acks while the test sends
+
+    public async Task SendAsync(Message message)
+    {
+        await sendGate.WaitAsync();
+        try
+        {
+            await transport.SendAsync(ProtocolCodec.Encode(message));
+        }
+        finally
+        {
+            sendGate.Release();
+        }
+    }
 
     public async Task SubscribeAsync()
     {
@@ -77,7 +99,7 @@ internal sealed class TestSuccessor : IAsyncDisposable
             if (hit != null) return hit;
             await Task.Delay(20);
         }
-        throw new TimeoutException($"No {typeof(T).Name}; got: {string.Join(", ", All().Select(it => it.GetType().Name))}; reader: {Failure}");
+        throw new TimeoutException($"No {typeof(T).Name}; got: {Frames()}; reader: {Failure}");
     }
 
     public async Task WaitForSeqAsync(long seq)
@@ -87,7 +109,7 @@ internal sealed class TestSuccessor : IAsyncDisposable
             if (Store != null && Store.HaveSeq >= seq) return;
             await Task.Delay(20);
         }
-        throw new TimeoutException($"Standby store at {Store?.HaveSeq}, wanted {seq}");
+        throw new TimeoutException($"Standby store at {Store?.HaveSeq}, wanted {seq}; reader: {Failure}; got: {Frames()}");
     }
 
     private async Task ReadAsync()
@@ -133,6 +155,31 @@ internal sealed class TestSuccessor : IAsyncDisposable
         if (HoldAcks || (!force && lastAck == Store!.HaveSeq)) return;
         lastAck = Store!.HaveSeq;
         await SendAsync(new StandbyAck { Seq = lastAck });
+    }
+
+    /// <summary>Waits until no frame arrived for a while (the host stopped sending).</summary>
+    public async Task WaitUntilQuietAsync()
+    {
+        var seen = -1;
+        var quiet = 0;
+        for (var attempt = 0; attempt < 750 && quiet < 15; attempt++)
+        {
+            await Task.Delay(20);
+            var count = All().Count;
+            quiet = count == seen ? quiet + 1 : 0;
+            seen = count;
+        }
+    }
+
+    /// <summary>Waits until the store holds a log line (its copy can then be reopened and continued).</summary>
+    public async Task WaitDurableAsync()
+    {
+        for (var attempt = 0; attempt < 750; attempt++)
+        {
+            if (Store?.HaveLineSha256 != null) return;
+            await Task.Delay(20);
+        }
+        throw new TimeoutException("The standby store holds no log line");
     }
 
     /// <summary>Acks what the store holds now (after <see cref="HoldAcks"/>).</summary>
@@ -254,6 +301,12 @@ public sealed class StandbyReplicationTests : IDisposable
         return successor;
     }
 
+    private static async Task WaitForHostStateAsync(InProcessHost host, string state)
+    {
+        for (var attempt = 0; attempt < 750 && host.Host.Standby.State != state; attempt++) await Task.Delay(20);
+        Assert.Equal(state, host.Host.Standby.State);
+    }
+
     private static async Task<long> HostSeqAsync(InProcessHost host)
     {
         long seq = 0;
@@ -284,7 +337,7 @@ public sealed class StandbyReplicationTests : IDisposable
 
         var last = await HostSeqAsync(host);
         await successor.WaitForSeqAsync(last);
-        await successor.WaitAsync<StandbyStatus>(it => it.State == StandbyStates.Ready && successor.All().OfType<StandbyStatus>().Count() >= 2 && it.LagEntries == 0);
+        await WaitForHostStateAsync(host, StandbyStates.Ready); // the last status the host sent is ready again (the first one only meant the probe passed)
 
         // Snapshot at assignment (reset), then one for each later host snapshot (cadence 2 turns), then the verbatim log.
         Assert.True(successor.Of<StandbySnapshot>().First().Reset);
@@ -319,6 +372,7 @@ public sealed class StandbyReplicationTests : IDisposable
         await first.SubscribeAsync();
         await PlayTurnsAsync(host, 2);
         await first.WaitForSeqAsync(await HostSeqAsync(host));
+        await first.WaitDurableAsync(); // a reset snapshot alone is not a copy that can be continued: its log line follows it
         await first.DisposeAsync();
 
         await PlayTurnsAsync(host, 2);
@@ -439,6 +493,7 @@ public sealed class StandbyReplicationTests : IDisposable
         successor.HoldAcks = true;
         await successor.SubscribeAsync();
         await successor.WaitAsync<StandbySnapshot>();
+        await successor.WaitForSeqAsync(0); // installed (a client acks after applying)
         await successor.AckNowAsync(); // the snapshot's ack (the store holds seq 0 and no entries yet)
         await PlayTurnsAsync(host, 1); // a turn is about 9 entries: sent, not acked, still within the limit
         await successor.WaitForSeqAsync(await HostSeqAsync(host));
@@ -453,8 +508,7 @@ public sealed class StandbyReplicationTests : IDisposable
 
         // It catches up with what was sent: the host drops the rest and restarts it from a snapshot (a second reset, with the header again).
         var resets = successor.Of<StandbySnapshot>().Count(it => it.Reset && it.Part == 0);
-        await successor.WaitForSeqAsync(successor.Store!.HaveSeq);
-        await Task.Delay(200);
+        await successor.WaitUntilQuietAsync(); // everything the host sent before it stopped has arrived
         await successor.AckNowAsync();
         var resync = await successor.WaitAsync<StandbySnapshot>(it => it.Reset && it.Part == 0 && successor.Of<StandbySnapshot>().Count(x => x.Reset && x.Part == 0) > resets);
         successor.HoldAcks = false;
@@ -480,6 +534,7 @@ public sealed class StandbyReplicationTests : IDisposable
         successor.HoldAcks = true;
         await successor.SubscribeAsync();
         await successor.WaitAsync<StandbySnapshot>();
+        await successor.WaitForSeqAsync(0);
         await successor.AckNowAsync();
         await PlayTurnsAsync(host, 1);
         await successor.WaitForSeqAsync(await HostSeqAsync(host));
