@@ -354,7 +354,11 @@ public partial class OverviewScreen : PanelContainer
         template.Selected = Math.Max(0, templates.ToList().FindIndex(it => it.Name == bulkTemplate));
         template.ItemSelected += index => bulkTemplate = templates[(int)index].Name;
         var apply = new Button { Name = "BulkTemplateApply", Text = "Apply template".Tr(), Disabled = templates.Count == 0 };
-        apply.Pressed += () => RunBulk(CityBulkModel.ApplyTemplate(SelectedBulk(table), templates.First(it => it.Name == bulkTemplate)));
+        apply.Pressed += () =>
+        {
+            if (templates.FirstOrDefault(it => it.Name == bulkTemplate) is { } chosen) RunBulk(CityBulkModel.ApplyTemplate(SelectedBulk(table), chosen));
+            else SetBulkResult("Template not found.");
+        };
         var delete = new Button { Name = "BulkTemplateDelete", Text = "Delete template".Tr(), ThemeTypeVariation = UiVariants.ButtonDanger, Disabled = templates.Count == 0 };
         delete.Pressed += () => ChangeTemplates(list => CityBulkModel.WithoutTemplate(list, bulkTemplate), $"Deleted the template {bulkTemplate}.");
         templateRow.Add(new Label { Text = "Build template".Tr(), VerticalAlignment = VerticalAlignment.Center }, template, apply, delete);
@@ -369,10 +373,11 @@ public partial class OverviewScreen : PanelContainer
             var from = SelectedBulk(table).FirstOrDefault();
             var made = from == null ? null : CityBulkModel.FromQueue(from.Panel, bulkTemplateName);
             if (made == null) SetBulkResult(from == null ? "Select a city whose queue to save." : bulkTemplateName.Trim().Length == 0 ? "Type a name for the template." : "That city has nothing in its queue.");
+            else if (templates.Count >= BuildTemplate.MaxTemplates && templates.All(it => it.Name != made.Name)) SetBulkResult($"At most {BuildTemplate.MaxTemplates.ToString(System.Globalization.CultureInfo.InvariantCulture)} templates: delete one first.");
             else
             {
                 bulkTemplate = made.Name;
-                ChangeTemplates(list => CityBulkModel.WithTemplate(list, made), $"Saved the template {made.Name}.");
+                ChangeTemplates(list => CityBulkModel.WithTemplate(list, made), $"{(templates.Any(it => it.Name == made.Name) ? "Replaced" : "Saved")} the template {made.Name}.");
             }
         };
         saveRow.Add(name, save);
@@ -425,7 +430,7 @@ public partial class OverviewScreen : PanelContainer
 
     private void ChangeTemplates(Func<IReadOnlyList<BuildTemplate>, List<BuildTemplate>> change, string done)
     {
-        if (settings == null) return;
+        if (settings == null || bulkBusy) return;
         settings.Update(s => s with { BuildTemplates = change(s.BuildTemplates) });
         bulkResult = done;
         Fire(RefreshAsync());
@@ -436,7 +441,11 @@ public partial class OverviewScreen : PanelContainer
 
     private async Task RunBulkAsync(BulkPlan plan)
     {
-        if (bulkBusy) return;
+        if (bulkBusy)
+        {
+            SetBulkResult("Working...");
+            return;
+        }
         if (plan.Steps.Count == 0)
         {
             SetBulkResult("Select a city first.");
