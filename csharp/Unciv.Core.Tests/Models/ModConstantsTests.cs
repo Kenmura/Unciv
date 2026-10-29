@@ -17,9 +17,9 @@ public class ModConstantsTests
     {
         // Golden from the real class on the JVM (670061036 / 1000388743) until the Brave New World tunables (B001) were added; the hash chain is the JVM's,
         // the values below are this port's own after that deliberate extension
-        Assert.Equal(359667477, ModConstants.Defaults.GetHashCode());
+        Assert.Equal(625887933, ModConstants.Defaults.GetHashCode());
         var changed = new ModConstants { MaxXPfromBarbarians = 99, CityStrengthBase = 6.0 };
-        Assert.Equal(1687033136, changed.GetHashCode());
+        Assert.Equal(1565648258, changed.GetHashCode());
     }
 
     [Fact]
@@ -101,6 +101,11 @@ public class UncivSoundAndTutorialTests
         ("AiTacticalBarbarianPriorityPlunderTradeUnit", "aiTacticalBarbarianPriorityPlunderTradeUnit", (object)0),
         ("BaseCulturePerGreatWork", "baseCulturePerGreatWork", (object)0),
         ("BaseTourismPerGreatWork", "baseTourismPerGreatWork", (object)0),
+        ("CultureLevelExotic", "cultureLevelExotic", (object)0),
+        ("CultureLevelFamiliar", "cultureLevelFamiliar", (object)0),
+        ("CultureLevelPopular", "cultureLevelPopular", (object)0),
+        ("CultureLevelInfluential", "cultureLevelInfluential", (object)0),
+        ("CultureLevelDominant", "cultureLevelDominant", (object)0),
         ("DiploVictoryAlgorithmThreshold", "diploVictoryAlgorithmThreshold", (object)0.0),
         ("DiploVictoryBeyondAlgorithmMultiplier", "diploVictoryBeyondAlgorithmMultiplier", (object)0.0),
         ("DiploVictoryCivDelegatesCoefficient", "diploVictoryCivDelegatesCoefficient", (object)0.0),
@@ -187,7 +192,7 @@ public class UncivSoundAndTutorialTests
             Assert.Equal(json, info.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute), false)
                 .Cast<System.Text.Json.Serialization.JsonPropertyNameAttribute>().Single().Name);
         }
-        Assert.Equal(76, BnwTunables.Length);
+        Assert.Equal(81, BnwTunables.Length);
     }
 
     [Fact]

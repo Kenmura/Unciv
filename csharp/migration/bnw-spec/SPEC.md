@@ -588,6 +588,19 @@ is the same; port them as three separate constants.
 - Least-influenced civ for victory progress (@1006e5d0): minimum `pct` among the living majors we have not reached
   Influential with, optionally only the met ones.
 
+#### 4.3.3a As built (B008)
+`Logic/Tourism/TourismRules.cs` (4.3.1, 4.3.2) and `InfluenceRules.cs` (4.3.3, 4.3.5, 4.3.6); state in `Civilization.Culture`
+(`CivCultureManager`: per-civ entries `influence`, `lastTurnInfluence`, `lastTurnLifetimeCulture`, plus `tourismBonusTurns`; null until the first
+turn of a game with tourism). Influence accumulates in `TurnManager.StartTurn` after trade routes. Lifetime culture is `TotalCultureForContests`.
+`CULTURE_LEVEL_*` are ModConstants (`cultureLevel*`). Deliberate choices, none verified against the binary (no decompile available):
+- "[x]% Tourism" is one unique; a city counts all that apply, and 4.3.2 step 7 counts the golden-age ones once more (spec lists both).
+- Culture from wonders/landmarks/natural wonders = own stats of built world wonders + tile culture of Landmark and natural wonder tiles [I].
+- Influence per turn is clamped at 0; percentage and trend use 64-bit products; the blast uses `Speed.Modifier * 100` as "speed%".
+- Not applied (still open): league/holy-city tourism modifier (B015), diplomat bonus (B020, seam), ideology choice (B013; `PolicyManager.Ideology`
+  is only a field), InfluenceSpreadModifier/NullifiesForeignInfluence maths (4.3.4 [?]), city-state spy rank, conquest resistance and revolt
+  benefits of 4.3.5, one-shot tourism of a Great Person's birth (B011). Level benefits kept at the [K] values: Familiar +1 route science
+  (wired into `TradeRouteYields`, origin side), Exotic +1 spy rank. The blast is an engine function (`ApplyBlast`); the unit action is B011.
+
 #### 4.3.4 Culture victory [D]+[K]
 `Victories.VICTORY_CULTURAL.Influential = 1`: a civ wins when it is **Influential or higher on every other living major
 civ**. The check runs once per turn after influence, and civs that were never met still count [K]. Notifications for

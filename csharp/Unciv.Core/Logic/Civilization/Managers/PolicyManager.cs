@@ -50,6 +50,13 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     [JsonInclude]
     private int[] cultureOfLast8Turns = new int[8];
 
+    /// <summary>
+    /// Brave New World (B008 reads it for tourism, B013 owns choosing it): the ideology branch the civ follows, null for none. Not in Kotlin.
+    /// </summary>
+    [JsonPropertyName("ideology")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Ideology { get; set; }
+
     /// <summary>Indicates whether we should *check* if policy is adoptible, and if so open</summary>
     [JsonPropertyName("shouldOpenPolicyPicker")]
     public bool ShouldOpenPolicyPicker { get; set; }
@@ -138,6 +145,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
             FreePolicies = FreePolicies,
             ShouldOpenPolicyPicker = ShouldOpenPolicyPicker,
             StoredCulture = StoredCulture,
+            Ideology = Ideology,
             cultureOfLast8Turns = (int[])cultureOfLast8Turns.Clone(),
         };
         foreach (var policyName in AdoptedPolicies) toReturn.AdoptedPolicies.Add(policyName);

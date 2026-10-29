@@ -1,5 +1,6 @@
 using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Transients;
+using Unciv.Logic.Tourism;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.StatTypes;
@@ -68,8 +69,8 @@ public static class TradeRouteYields
             + CityGpt(dest, constants.InternationalTradeCityGptDivisor) + ResourceValue(origin, dest, originCiv)
             + Exclusive(dest, originCiv, excludeRouteId, constants.InternationalTradeExclusiveConnection) + policy + yourBuildings + theirBuildings + trait;
         originYields[TradeYield.Gold] = Math.Max(100, goldSum * originMultiplier / 100);
-        // Seam (B031): the influence science bonus over the destination owner (spec 4.3.5, GetInfluenceTradeRouteScienceBonus @1006e720)
-        originYields[TradeYield.Science] += ScienceBase(Techs(destCiv) - Techs(originCiv)) * 100;
+        // The origin owner's influence over the destination owner adds science (spec 4.3.5, GetInfluenceTradeRouteScienceBonus @1006e720)
+        originYields[TradeYield.Science] += ScienceBase(Techs(destCiv) - Techs(originCiv)) * 100 + InfluenceRules.TradeRouteScienceBonusTimes100(originCiv, destCiv);
 
         // --- destination side
         int destMultiplier = 100 + domainPercent + River(domain, dest);

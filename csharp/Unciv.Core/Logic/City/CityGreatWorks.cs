@@ -120,7 +120,7 @@ public partial class City
     /// <summary>
     /// The stats the works of the city give (spec 4.2.2): per work <c>baseCulturePerGreatWork</c> Culture plus each
     /// <c>[stats] from each Great Work [cityFilter]</c> unique, plus the theming bonuses as Culture. Empty unless the ruleset enables Great Works.
-    /// Tourism is not a stat of this engine yet (B031).
+    /// Tourism is not a stat of this engine: it is computed by <see cref="Tourism.TourismRules"/> (B008).
     /// </summary>
     public Stats GetGreatWorkStats()
     {

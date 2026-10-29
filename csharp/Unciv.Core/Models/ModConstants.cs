@@ -225,6 +225,26 @@ public sealed class ModConstants
     [JsonPropertyName("baseTourismPerGreatWork")]
     public int BaseTourismPerGreatWork { get; set; } = 0;
 
+    // CULTURE_LEVEL_EXOTIC: BNW 10
+    [JsonPropertyName("cultureLevelExotic")]
+    public int CultureLevelExotic { get; set; } = 0;
+
+    // CULTURE_LEVEL_FAMILIAR: BNW 30
+    [JsonPropertyName("cultureLevelFamiliar")]
+    public int CultureLevelFamiliar { get; set; } = 0;
+
+    // CULTURE_LEVEL_POPULAR: BNW 60
+    [JsonPropertyName("cultureLevelPopular")]
+    public int CultureLevelPopular { get; set; } = 0;
+
+    // CULTURE_LEVEL_INFLUENTIAL: BNW 100
+    [JsonPropertyName("cultureLevelInfluential")]
+    public int CultureLevelInfluential { get; set; } = 0;
+
+    // CULTURE_LEVEL_DOMINANT: BNW 200
+    [JsonPropertyName("cultureLevelDominant")]
+    public int CultureLevelDominant { get; set; } = 0;
+
     // DIPLO_VICTORY_ALGORITHM_THRESHOLD: BNW 28
     [JsonPropertyName("diploVictoryAlgorithmThreshold")]
     public double DiploVictoryAlgorithmThreshold { get; set; } = 0.0;

@@ -75,7 +75,7 @@
   279 works (233 named after a Great Person)
 
 == modOptions
-  75 BNW tunables written to ModOptions.json constants (values from the ModConstants.cs comments, cross-checked with Defines.tsv)
+  80 BNW tunables written to ModOptions.json constants (values from the ModConstants.cs comments, cross-checked with Defines.tsv)
 
 == overrides
   Nations.json: added Assyria
