@@ -30,6 +30,7 @@ public partial class UnitPanelView : PanelContainer
     private readonly Label title = new() { Name = "Title", ThemeTypeVariation = UiVariants.LabelHeading, ClipText = true };
     private readonly Label order = new() { Name = "Order", ThemeTypeVariation = UiVariants.LabelSmall };
     private readonly HBoxContainer chips = new() { Name = "Chips" };
+    private readonly Button groupToggle = new() { Name = "GroupToggle", Text = "Group select".Tr(), ToggleMode = true, Visible = false, TooltipText = "While on, tapping a tile with your units adds them to the selection (Shift+click on a desktop)".Tr() };
     private readonly Control healthSlot = new() { Name = "HealthSlot" };
     private readonly VBoxContainer healthBox = new() { Name = "Health" };
     private readonly Label promotions = new() { Name = "Promotions", ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = TextServer.AutowrapMode.WordSmart };
@@ -76,6 +77,7 @@ public partial class UnitPanelView : PanelContainer
         confirmBox.AddChild(answers);
         column.AddChild(header);
         column.AddChild(chips);
+        column.AddChild(groupToggle);
         column.AddChild(healthBox);
         column.AddChild(promotions);
         column.AddChild(grid);
@@ -86,6 +88,7 @@ public partial class UnitPanelView : PanelContainer
         popoverBox.AddChild(promoteBox);
         popover.AddChild(popoverBox);
         AddChild(popover);
+        groupToggle.Toggled += on => GroupModeChanged?.Invoke(on);
         yes.Pressed += () =>
         {
             if (asking is { } entry) Confirmed?.Invoke(entry);
@@ -111,6 +114,9 @@ public partial class UnitPanelView : PanelContainer
     /// <summary>The "More" button, or null when every action fits the grid.</summary>
     public Button? MoreButton => more;
 
+    /// <summary>The stat chips row (the harness taps a chip to show its tip).</summary>
+    public Control ChipsRow => chips;
+
     public bool PopoverOpen => popover.Visible;
 
     /// <summary>The grid's rectangle (the harness checks that it has at most two rows).</summary>
@@ -119,6 +125,14 @@ public partial class UnitPanelView : PanelContainer
     public int GridRows => (grid.GetChildCount() + Columns - 1) / Columns;
 
     public Rect2 PopoverRect => popover.GetGlobalRect();
+
+    /// <summary>C100: the touch stand-in for Shift+click: while on, a tap on a tile with own units adds them to (or takes them off) the selected group. Only offered on a touch build, for an own unit.</summary>
+    public bool GroupMode => groupToggle.Visible && groupToggle.ButtonPressed;
+
+    /// <summary>The group select toggle (null never; it is hidden unless a touch build shows an own unit).</summary>
+    public Button GroupToggle => groupToggle;
+
+    public event Action<bool>? GroupModeChanged;
 
     public event Action<MenuEntry>? EntryChosen;
 
@@ -172,6 +186,8 @@ public partial class UnitPanelView : PanelContainer
         promotions.Visible = info.Promotions.Count > 0;
         BuildHeaderIcon(info);
         BuildChips(info);
+        groupToggle.Visible = DisplayProfile.Current.Touch && info.IsOwn;
+        if (!groupToggle.Visible) groupToggle.SetPressedNoSignal(false);
         BuildHealth(info);
         BuildMenu(menu);
         Visible = true;
@@ -180,6 +196,7 @@ public partial class UnitPanelView : PanelContainer
 
     public void Clear()
     {
+        groupToggle.SetPressedNoSignal(false);
         EndConfirmation();
         ClosePopover();
         Visible = false;

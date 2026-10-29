@@ -435,7 +435,7 @@ public partial class GameScreen : Control
 
     public override void _Input(InputEvent @event)
     {
-        if (@event is InputEventMouseMotion motion && Map != null && Tooltips != null) UpdateHover(motion.Position);
+        if (@event is InputEventMouseMotion motion && Map != null && Tooltips != null && !DisplayProfile.Current.Touch) UpdateHover(motion.Position); // C100: a finger does not hover; a tap shows the tile tip
         if (@event is InputEventMouseButton { Pressed: true } press && MarkerMenu is { Visible: true } menu && !menu.GetGlobalRect().HasPoint(press.Position)) menu.Close(); // C089: any click outside the marker menu closes it
     }
 
@@ -443,8 +443,13 @@ public partial class GameScreen : Control
     private void UpdateHover(Vector2 pointer)
     {
         var over = GetViewport().GuiGetHoveredControl();
-        HexCoord? tile = over == null || over == this ? Map.PickTile(pointer) : null;
-        if (tile == HoveredTile) return;
+        ShowTileTip(over == null || over == this ? Map.PickTile(pointer) : null, null);
+    }
+
+    /// <summary>Shows the tooltip of <paramref name="tile"/> (hides it for null). <paramref name="touchAt"/> is a tap's position (C100): the tip then shows above it at once, even when the tile is the one shown last.</summary>
+    private void ShowTileTip(HexCoord? tile, Vector2? touchAt)
+    {
+        if (tile == HoveredTile && touchAt == null) return;
         HoveredTile = tile;
         HoverTip = "";
         SiteOverlay.Clear();
@@ -454,7 +459,7 @@ public partial class GameScreen : Control
             Tooltips.Unpoint();
             return;
         }
-        Tooltips.Point(() => HoverTip);
+        Tooltips.Point(() => HoverTip, touchAt);
         Run(LoadHoverTip(coord));
     }
 
@@ -1298,13 +1303,14 @@ public partial class GameScreen : Control
     private void OnTileClicked(HexCoord? coord)
     {
         MarkerMenu.Close();
+        if (DisplayProfile.Current.Touch && Tooltips != null) ShowTileTip(coord, Map.ClickAt); // C100: tile info without hover
         if (coord is not { } tile)
         {
             Deselect();
             return;
         }
         var own = OwnUnitsAt(tile);
-        if (Map.LastClickShift && own.Count > 0)
+        if ((Map.LastClickShift || Panel.GroupMode) && own.Count > 0) // C100: Panel.GroupMode is the touch stand-in for Shift
         {
             ToggleGroup(own);
             return;

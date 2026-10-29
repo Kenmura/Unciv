@@ -452,7 +452,7 @@ public partial class TechScreen : PanelContainer
     private void AddQueue(IReadOnlyList<string> queueLines)
     {
         detail.AddChild(new SectionHeader("Research queue"));
-        string text = queueLines.Count == 0 ? "Queue empty. Shift+click a tech to queue it.".Tr() : string.Join("\n", queueLines.Select(it => it.TrText()));
+        string text = queueLines.Count == 0 ? (DisplayProfile.Current.Touch ? "Queue empty. Select a tech and press Add to queue." : "Queue empty. Shift+click a tech to queue it.").Tr() : string.Join("\n", queueLines.Select(it => it.TrText()));
         detail.AddChild(new Label { Name = "Queue", Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = SizeFlags.ExpandFill });
     }
 

@@ -1518,7 +1518,7 @@
       },
       {
         "golden": "hud/de.png",
-        "caption": "German at 640x480: the next-action button reads Nächste Einheit, no overlap or clipping."
+        "caption": "German at 640x480: the next-action button reads N\u00e4chste Einheit, no overlap or clipping."
       },
       {
         "golden": "hud/ru.png",
@@ -1632,6 +1632,20 @@
       {
         "golden": "phone-world/phone-zoomed.png",
         "caption": "After pinch zoom, two-finger pan, taps and a long press: the map is zoomed, the tapped tile is selected and the long press acted as a right click (the worker's move order was refused: it is already there)."
+      }
+    ]
+  },
+  "C100": {
+    "scenario": "touch-orders",
+    "about": "Touch replacements for mouse-only interaction on the phone profile: tap shows tile and widget tips, long press moves the selected unit or locks a city tile, Group select stands in for Shift+click.",
+    "shots": [
+      {
+        "golden": "touch-orders/tile-tip.png",
+        "caption": "A tap on a tile (the warrior is selected, so it also shows the path preview) shows the tile's tooltip beside the finger: a touch build has no hover. It goes at the next touch or after four seconds. The Group select toggle stands in for Shift+click."
+      },
+      {
+        "golden": "touch-orders/tile-locked.png",
+        "caption": "A long press on a worked tile of the city screen locked it (padlock on the tile, tile tip shown) and the hint line says Long press: lock."
       }
     ]
   }

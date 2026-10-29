@@ -82,6 +82,7 @@
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
 - [C096 Touch map input and density-derived UI scale: pinch/pan, tap and long-press, 48 dp targets, phone-world scenario](#c096-touch-map-input-and-density-derived-ui-scale-pinchpan-tap-and-long-press-48-dp-targets-phone-world-scenario)
 - [C097 Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike)](#c097-graphics-quality-setting-with-an-ultra-preset-effects-chosen-by-the-ultra-graphics-spike)
+- [C100 (ticket not Done or unknown)](#c100-ticket-not-done-or-unknown)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
@@ -1662,6 +1663,20 @@ Scenario `settings-graphics`.
 ![After a failed Ultra attempt: Ultra stays chosen, the note says it needs a Vulkan or Direct3D 12 GPU and that High is shown.](../Unciv.Godot.Harness/golden/settings-graphics/ultra-fallback.png)
 
 *After a failed Ultra attempt: Ultra stays chosen, the note says it needs a Vulkan or Direct3D 12 GPU and that High is shown.* (`settings-graphics/ultra-fallback.png`)
+
+## C100 (ticket not Done or unknown)
+
+Touch replacements for mouse-only interaction on the phone profile: tap shows tile and widget tips, long press moves the selected unit or locks a city tile, Group select stands in for Shift+click.
+
+Scenario `touch-orders`.
+
+![A tap on a tile (the warrior is selected, so it also shows the path preview) shows the tile's tooltip beside the finger: a touch build has no hover. It goes at the next touch or after four seconds. The Group select toggle stands in for Shift+click.](../Unciv.Godot.Harness/golden/touch-orders/tile-tip.png)
+
+*A tap on a tile (the warrior is selected, so it also shows the path preview) shows the tile's tooltip beside the finger: a touch build has no hover. It goes at the next touch or after four seconds. The Group select toggle stands in for Shift+click.* (`touch-orders/tile-tip.png`)
+
+![A long press on a worked tile of the city screen locked it (padlock on the tile, tile tip shown) and the hint line says Long press: lock.](../Unciv.Godot.Harness/golden/touch-orders/tile-locked.png)
+
+*A long press on a worked tile of the city screen locked it (padlock on the tile, tile tip shown) and the hint line says Long press: lock.* (`touch-orders/tile-locked.png`)
 
 ## T252 (ticket not Done or unknown)
 

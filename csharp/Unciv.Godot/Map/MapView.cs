@@ -76,6 +76,9 @@ public partial class MapView : Node3D
     /// <summary>C091: whether Shift was held for the click that last fired <see cref="TileClicked"/> (a shift-click adds a unit to the group).</summary>
     public bool LastClickShift { get; private set; }
 
+    /// <summary>C100: where the last click or tap was released (a touch tile tip is shown there).</summary>
+    public Vector2 ClickAt { get; private set; }
+
     /// <summary>Raised on a right click (C010: the quick "move there" order); the tile is picked but not selected.</summary>
     public event Action<HexCoord?>? TileRightClicked;
 
@@ -605,6 +608,7 @@ public partial class MapView : Node3D
         if (!wasClick) return;
         var picked = PickTile(button.Position);
         LastClickShift = button.ShiftPressed;
+        ClickAt = button.Position;
         Select(picked);
         TileClicked?.Invoke(picked);
     }

@@ -19,7 +19,10 @@ namespace Unciv.GodotClient.Play;
 /// </summary>
 public partial class CityScreen : PanelContainer
 {
-    private const string Hint = "Click: work or free. Right click: lock.";
+    private const string DesktopHint = "Click: work or free. Right click: lock.";
+    private const string TouchHint = "Tap: work or free. Long press: lock.";
+
+    private static string Hint => DisplayProfile.Current.Touch ? TouchHint : DesktopHint;
     private const int GridMargin = 8;
 
     private readonly IGameSession session;
@@ -361,7 +364,12 @@ public partial class CityScreen : PanelContainer
     private CityTileButton TileCell(CityPanelResult panel, CityTilesResult tiles, CityTileCell cell)
     {
         var button = new CityTileButton(theme, cell);
-        button.Pressed += () => OnTileClicked(panel, tiles, cell, lockIt: false);
+        // C100: a long press locks or unlocks the tile (the touch stand-in for the right click); the release that ends it is not also a click
+        var longPress = new LongPress(button, () => OnTileClicked(panel, tiles, cell, lockIt: true));
+        button.Pressed += () =>
+        {
+            if (!longPress.TakeFired()) OnTileClicked(panel, tiles, cell, lockIt: false);
+        };
         button.GuiInput += input =>
         {
             if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right })

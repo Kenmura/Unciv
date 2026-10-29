@@ -162,8 +162,13 @@ public partial class DecisionPickerView : Modal
                 TooltipText = (option.Reason ?? "").TrText(),
             };
             string id = option.Id;
-            button.Pressed += () => Choose(slotIndex, id);
-            button.MouseEntered += () => detail.Text = (option.Detail.Length > 0 ? option.Detail : option.Label).TrText();
+            string shownDetail = (option.Detail.Length > 0 ? option.Detail : option.Label).TrText();
+            button.Pressed += () =>
+            {
+                detail.Text = shownDetail; // C100: without hover a tap shows the detail as well as choosing
+                Choose(slotIndex, id);
+            };
+            button.MouseEntered += () => detail.Text = shownDetail;
             list.AddChild(button);
             optionButtons[(slotIndex, id)] = button;
         }
