@@ -295,8 +295,9 @@ public partial class SettingsPanel : HBoxContainer
         {
             var current = service.Current;
             // the same decision the start makes (and that showed this button), so the two never disagree
-            if (GraphicsModel.Startup(current.Quality, current.UltraFailed, "", GraphicsRuntime.Renderer, GraphicsRuntime.Adapter).RestartInto is not { } wanted) return;
-            if (!service.Update(s => s with { RendererPending = wanted })) return; // the marker is the loop guard: no restart without it on disk
+            var decision = GraphicsModel.Startup(current.Quality, current.UltraFailed, "", GraphicsRuntime.Renderer, GraphicsRuntime.Adapter);
+            if (decision.RestartInto is not { } wanted) return;
+            if (!service.Update(s => s with { RendererPending = wanted, UltraFailed = decision.UltraFailed })) return; // the marker is the loop guard: no restart without it on disk
             if (!GraphicsRuntime.Restart(wanted)) service.Update(s => s with { RendererPending = "" });
         };
         refreshers.Add(() => graphicsRestart.Text = "Restart to apply".Tr());
