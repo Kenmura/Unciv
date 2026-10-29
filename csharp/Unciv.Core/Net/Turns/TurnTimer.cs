@@ -93,6 +93,7 @@ public sealed class TurnTimer
     public void Disconnect(string civId)
     {
         var state = GetOrCreateState(civId);
+        if (!state.IsConnected) return; // already disconnected: the grace period keeps running from the first drop
         state.IsConnected = false;
         state.DisconnectedAt = clock.NowMillis;
     }

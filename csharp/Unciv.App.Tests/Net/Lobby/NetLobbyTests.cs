@@ -1055,6 +1055,8 @@ public sealed class NetLobbyTests : IDisposable
         lobby.Lobby.GameFactory = (_, _, _) => throw new InvalidOperationException("creation failed");
         await Assert.ThrowsAnyAsync<Exception>(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
         Assert.Equal(LobbyStatus.InLobby, lobby.Lobby.Status);
+        Assert.All(lobby.Lobby.Slots.Skip(1), slot => Assert.Equal(SlotKind.Open, slot.Kind)); // the AI fill is undone
+        Assert.Equal(SlotKind.Human, lobby.Lobby.Slots[0].Kind);
     }
 
     private sealed class SupersededWhileSeatingTransport(ITransport inner, Func<Task> supersede) : ITransport

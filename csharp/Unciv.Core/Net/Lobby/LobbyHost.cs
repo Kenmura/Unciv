@@ -135,8 +135,7 @@ public sealed class LobbyHost : IAsyncDisposable
             var slot = slots.FirstOrDefault(s => s.Kind == SlotKind.Human && string.Equals(s.Nation, civId, StringComparison.Ordinal));
             if (slot == null) return false;
             Bindings.Clear(slot.Index);
-            if (newPlayerKey != null) Bindings.TryBind(slot.Index, newPlayerKey);
-            slot.PlayerKeyId = newPlayerKey;
+            slot.PlayerKeyId = newPlayerKey != null && Bindings.TryBind(slot.Index, newPlayerKey) ? newPlayerKey : null;
             slot.Connected = false;
             slot.SessionId = null;
             slot.Transport = null;
@@ -431,6 +430,7 @@ public sealed class LobbyHost : IAsyncDisposable
             }
             if (pendingStart == null) break;
             await pendingStart.ConfigureAwait(false);
+            await Task.Yield();
         }
 
         bool stateChanged = false;
@@ -753,6 +753,8 @@ public sealed class LobbyHost : IAsyncDisposable
         long actualClock;
         List<Slot> activeSlots;
         List<ITransport> superseded = [];
+        List<Slot> filled = [];
+        TaskCompletionSource settled;
 
         lock (gate)
         {
@@ -773,6 +775,7 @@ public sealed class LobbyHost : IAsyncDisposable
                     openSlot.Kind = SlotKind.AI;
                     openSlot.DisplayName = "AI Player";
                     openSlot.Ready = true;
+                    filled.Add(openSlot);
                 }
             }
 
@@ -799,50 +802,63 @@ public sealed class LobbyHost : IAsyncDisposable
             }
 
             Status = LobbyStatus.Starting;
-            startSettled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            settled = startSettled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         GameInfo game;
         try
         {
             game = GameFactory != null ? GameFactory(setup, actualSeed, actualClock) : NewGame.Start(setup, actualSeed, actualClock, isHostedGame: true);
+            ResolveNations(game, activeSlots);
+            lock (gate)
+            {
+                Status = LobbyStatus.Started;
+                HandOffSeats(superseded);
+            }
         }
         catch (Exception)
         {
             lock (gate)
             {
-                if (Status == LobbyStatus.Starting) Status = LobbyStatus.InLobby;
+                if (Status == LobbyStatus.Starting)
+                {
+                    Status = LobbyStatus.InLobby;
+                    foreach (var slot in filled) // the AI fill did not happen: the seats are open again
+                    {
+                        slot.Kind = SlotKind.Open;
+                        slot.DisplayName = null;
+                        slot.Ready = false;
+                    }
+                }
             }
-            startSettled.TrySetResult(); // waiting reconnects re-evaluate: back in the lobby they simply join
+            settled.TrySetResult(); // waiting reconnects re-evaluate: back in the lobby they simply join
             throw;
         }
 
-        ResolveNations(game, activeSlots);
-
-        lock (gate)
-        {
-            Status = LobbyStatus.Started;
-            foreach (var session in sessions.Values.ToList())
-            {
-                if (session.SlotIndex is not int seat) continue;
-                if (slots[seat].SessionId == session.SessionId)
-                {
-                    HandOff(session);
-                }
-                else
-                {
-                    sessions.Remove(session.SessionId); // superseded by a newer connection of the same key
-                    superseded.Add(session.Transport);
-                }
-            }
-        }
-
-        startSettled.TrySetResult();
+        settled.TrySetResult();
         foreach (var transport in superseded) await CloseQuietlyAsync(transport).ConfigureAwait(false);
 
         await BroadcastAsync(new GameStarting(), includeHandedOver: true).ConfigureAwait(false);
 
         return new LobbyStartResult(game, setup, [.. activeSlots]);
+    }
+
+    /// <summary>Under the lobby lock, as the game starts: every seated connection's stream goes to the game, connections replaced by a newer one of the same key are dropped.</summary>
+    private void HandOffSeats(List<ITransport> superseded)
+    {
+        foreach (var session in sessions.Values.ToList())
+        {
+            if (session.SlotIndex is not int seat) continue;
+            if (slots[seat].SessionId == session.SessionId)
+            {
+                HandOff(session);
+            }
+            else
+            {
+                sessions.Remove(session.SessionId); // superseded by a newer connection of the same key
+                superseded.Add(session.Transport);
+            }
+        }
     }
 
     /// <summary>Writes the nation each active slot really got (Random resolved) back into the slots.</summary>

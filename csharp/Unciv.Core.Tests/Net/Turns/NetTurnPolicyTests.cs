@@ -481,4 +481,20 @@ public sealed class NetTurnPolicyTests : IDisposable
         Assert.Contains(submitted, c => c is SetController { Controller: PlayerType.Human });
         Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType);
     }
+
+    // T253 review: a second Disconnect of the same civ must not restart its grace period.
+    [Fact]
+    public void Disconnect_Twice_KeepsTheFirstDropTime()
+    {
+        var clock = new ManualClock(10_000L);
+        var game = NewGame();
+        var session = Session(game, clock);
+        var timer = new TurnTimer(session, new TurnPolicy { DropGraceSeconds = 30 }, clock, autoResolve: false);
+        timer.Disconnect("Greece");
+        clock.AdvanceSeconds(20);
+        timer.Disconnect("Greece");
+        clock.AdvanceSeconds(11);
+        timer.Tick();
+        Assert.True(timer.WasForceEndedByDisconnect("Greece"));
+    }
 }
