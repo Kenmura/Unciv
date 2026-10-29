@@ -11,6 +11,8 @@
     "Unciv.Assets/CityRenameModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/CityScreenModel.cs": {"branch": 98.59, "line": 100.0},
     "Unciv.Assets/CitySpecs.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/CombatEffects.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/CombatPresentation.cs": {"branch": 98.96, "line": 100.0},
     "Unciv.Assets/ConsoleModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/DecisionPickerModel.cs": {"branch": 97.78, "line": 100.0},
     "Unciv.Assets/DiplomacyScreenModel.cs": {"branch": 100.0, "line": 100.0},
