@@ -95,20 +95,7 @@ public sealed class CityBScenario : Scenario
             new AssertQuery("Remove took the Gold item out", () => Queue().SequenceEqual(new[] { "Monument", "Warrior" }) && screen.City.Production.ButtonNamed("Remove_2") == null),
             new Capture("reordered", "Monument first, Warrior second, after reordering and removing the perpetual item"),
 
-            new Act("focus the Warrior's queue entry and press Ctrl+Up", () => ((Control)screen.City.Production.QueueEntries[1]).GrabFocus()),
-            new PressKey(Key.Up, Ctrl: true),
-            new WaitFrames(3),
-            new AssertQuery("Ctrl+Up moved the focused entry up, and the moved entry keeps the focus", () =>
-                Queue().SequenceEqual(new[] { "Warrior", "Monument" }) && screen.City.Production.QueueEntries[0].HasFocus()),
-            new PressKey(Key.Down, Ctrl: true),
-            new WaitFrames(3),
-            new AssertQuery("Ctrl+Down moved it back down", () => Queue().SequenceEqual(new[] { "Monument", "Warrior" }) && screen.City.Production.QueueEntries[1].HasFocus()),
-            new Act("drag the Warrior's entry onto the Monument's", () => screen.City.Production.MoveEntry(1, 0)),
-            new WaitFrames(3),
-            new AssertQuery("a drop on the first place put the Warrior first", () => Queue().SequenceEqual(new[] { "Warrior", "Monument" })),
-            new Act("drop it back", () => screen.City.Production.MoveEntry(0, 1)),
-            new WaitFrames(3),
-            new AssertQuery("the order is Monument, Warrior again", () => Queue().SequenceEqual(new[] { "Monument", "Warrior" })),
+            .. KeyboardAndDragSteps(screen, Queue),
             new AssertQuery("the Warrior's Buy button is disabled with the engine's reason, because a unit stands in the city center", () =>
                 Disabled("Buy_Warrior_Gold") && screen.City.Production.ButtonNamed("Buy_Warrior_Gold").NotNull().TooltipText.Contains("cannot be bought", StringComparison.Ordinal)
                 && !List().Entries.First(it => it.Name == "Warrior").BuyCosts.First(it => it.Stat == "Gold").Allowed),
@@ -134,13 +121,7 @@ public sealed class CityBScenario : Scenario
             new AssertQuery("selling the Monument paid the engine's sell price and removed the building", () =>
                 sellPrice > 0 && human.Gold == goldBefore + sellPrice && !city.CityConstructions.IsBuilt("Monument") && screen.City.Production.ButtonNamed("Sell_Monument") == null),
 
-            new Click(() => At("State_Raze city")),
-            new AssertQuery("Raze is a Danger button and asks first: the popup is open and nothing was sent", () =>
-                screen.City.Production.ButtonNamed("State_Raze city") is { } raze && raze.ThemeTypeVariation == UiVariants.ButtonDanger
-                && screen.City.ConfirmPopup.Visible && screen.City.ConfirmPopup.QuestionText.Contains(city.Name, StringComparison.Ordinal) && !city.IsBeingRazed && screen.City.MessageText.Length == 0),
-            new Capture("raze-confirm", "Raze asks for confirmation: the question names the city, the Danger button confirms, Cancel has the focus"),
-            new PressKey(Key.Escape),
-            new AssertQuery("Escape cancels the confirmation and leaves the city screen open", () => !screen.City.ConfirmPopup.Visible && screen.IsCityPanelVisible && !city.IsBeingRazed),
+            .. RazeConfirmSteps(screen, city, () => At("State_Raze city")),
             new Click(() => At("State_Raze city")),
             new Click(() => Centre(screen.City.ConfirmPopup.ConfirmButton)),
             new AssertQuery("confirming sends the command; razing the capital is refused by the engine and the screen says so", () =>
@@ -169,4 +150,35 @@ public sealed class CityBScenario : Scenario
             new AssertQuery("the screen closed", () => screen.OpenCity == null && !screen.IsCityPanelVisible),
         ];
     }
+
+    /// <summary>C069: Ctrl+Up / Ctrl+Down on the focused queue entry, and a drop on another entry.</summary>
+    private static IEnumerable<ScenarioStep> KeyboardAndDragSteps(GameScreen screen, Func<List<string>> queue) =>
+    [
+            new Act("focus the Warrior's queue entry and press Ctrl+Up", () => ((Control)screen.City.Production.QueueEntries[1]).GrabFocus()),
+            new PressKey(Key.Up, Ctrl: true),
+            new WaitFrames(3),
+            new AssertQuery("Ctrl+Up moved the focused entry up, and the moved entry keeps the focus", () =>
+                queue().SequenceEqual(new[] { "Warrior", "Monument" }) && screen.City.Production.QueueEntries[0].HasFocus()),
+            new PressKey(Key.Down, Ctrl: true),
+            new WaitFrames(3),
+            new AssertQuery("Ctrl+Down moved it back down", () => queue().SequenceEqual(new[] { "Monument", "Warrior" }) && screen.City.Production.QueueEntries[1].HasFocus()),
+            new Act("drag the Warrior's entry onto the Monument's", () => screen.City.Production.MoveEntry(1, 0)),
+            new WaitFrames(3),
+            new AssertQuery("a drop on the first place put the Warrior first", () => queue().SequenceEqual(new[] { "Warrior", "Monument" })),
+            new Act("drop it back", () => screen.City.Production.MoveEntry(0, 1)),
+            new WaitFrames(3),
+            new AssertQuery("the order is Monument, Warrior again", () => queue().SequenceEqual(new[] { "Monument", "Warrior" })),
+    ];
+
+    /// <summary>C069: Raze is a Danger button that asks first; Escape cancels the question.</summary>
+    private static IEnumerable<ScenarioStep> RazeConfirmSteps(GameScreen screen, CityObject city, Func<Vector2> razeButton) =>
+    [
+            new Click(razeButton),
+            new AssertQuery("Raze is a Danger button and asks first: the popup is open and nothing was sent", () =>
+                screen.City.Production.ButtonNamed("State_Raze city") is { } raze && raze.ThemeTypeVariation == UiVariants.ButtonDanger
+                && screen.City.ConfirmPopup.Visible && screen.City.ConfirmPopup.QuestionText.Contains(city.Name, StringComparison.Ordinal) && !city.IsBeingRazed && screen.City.MessageText.Length == 0),
+            new Capture("raze-confirm", "Raze asks for confirmation: the question names the city, the Danger button confirms, Cancel has the focus"),
+            new PressKey(Key.Escape),
+            new AssertQuery("Escape cancels the confirmation and leaves the city screen open", () => !screen.City.ConfirmPopup.Visible && screen.IsCityPanelVisible && !city.IsBeingRazed),
+    ];
 }

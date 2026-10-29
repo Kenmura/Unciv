@@ -2,6 +2,7 @@ using Godot;
 using Unciv.Assets;
 using Unciv.Commands;
 using Unciv.GodotClient.Localization;
+using Unciv.Models.Translations;
 using Unciv.GodotClient.Ui;
 
 namespace Unciv.GodotClient.Play;
@@ -12,7 +13,7 @@ public partial class CityConfirmView : Modal
     private readonly Action<GameCommand> submit;
     private readonly Label question = new() { Name = "ConfirmText", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Button confirm = new() { Name = "ConfirmDanger" };
-    private readonly Button cancel = new() { Name = "ConfirmCancel", Text = "Cancel".TrText() };
+    private readonly Button cancel = new() { Name = "ConfirmCancel", Text = "Cancel".Tr() };
     private GameCommand? pending;
 
     public CityConfirmView(Action<GameCommand> submitCommand, UiTheme theme)
