@@ -282,13 +282,13 @@ Save/load screen and autosave.
 
 Scenario `saveload`.
 
-![The save list: Alpha, the autosave and the numbered autosave with turn, civ and ruleset.](../Unciv.Godot.Harness/golden/saveload/list.png)
+![The Saves dialog (a framed modal): a table of Alpha, the autosave and the numbered autosave with turn and civilization, a details card with the save name field, and Resume last, Load, Delete and Save in the footer.](../Unciv.Godot.Harness/golden/saveload/list.png)
 
-*The save list: Alpha, the autosave and the numbered autosave with turn, civ and ruleset.* (`saveload/list.png`)
+*The Saves dialog (a framed modal): a table of Alpha, the autosave and the numbered autosave with turn and civilization, a details card with the save name field, and Resume last, Load, Delete and Save in the footer.* (`saveload/list.png`)
 
-![Damaged save files listed as unreadable next to good ones; QuickSave loaded.](../Unciv.Godot.Harness/golden/saveload/damaged.png)
+![The damaged and truncated files listed in the warning colour as Damaged next to the good saves.](../Unciv.Godot.Harness/golden/saveload/damaged.png)
 
-*Damaged save files listed as unreadable next to good ones; QuickSave loaded.* (`saveload/damaged.png`)
+*The damaged and truncated files listed in the warning colour as Damaged next to the good saves.* (`saveload/damaged.png`)
 
 ## C017 City screen A: info, tiles, specialists, focus
 
@@ -538,21 +538,21 @@ Scenario `tooltips`.
 
 ## C028 Options screen, hotkeys, edge-pan
 
-Options screen: engine options, UI scale, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.
+Options screen with vertical tabs (Display, Gameplay, Map, Sound, Keys, Advanced): engine options, UI scale stepper, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.
 
 Scenario `options`.
 
-![Options, top: engine options, UI scale buttons, then sound volume, window mode, scroll speed and the edge-scroll and map toggles](../Unciv.Godot.Harness/golden/options/top.png)
+![Options, Display tab: the vertical tabs on the left, the UI scale stepper and the window mode.](../Unciv.Godot.Harness/golden/options/top.png)
 
-*Options, top: engine options, UI scale buttons, then sound volume, window mode, scroll speed and the edge-scroll and map toggles* (`options/top.png`)
+*Options, Display tab: the vertical tabs on the left, the UI scale stepper and the window mode.* (`options/top.png`)
 
-![The key bindings while rebinding: the End turn key button shows ... and the other actions keep their keys](../Unciv.Godot.Harness/golden/options/listening.png)
+![The Keys tab while rebinding: the End turn key chip shows ... and the other actions keep their keys.](../Unciv.Godot.Harness/golden/options/listening.png)
 
-*The key bindings while rebinding: the End turn key button shows ... and the other actions keep their keys* (`options/listening.png`)
+*The Keys tab while rebinding: the End turn key chip shows ... and the other actions keep their keys.* (`options/listening.png`)
 
-![The key bindings after rebinding: End turn now shows E, the other actions keep their default keys](../Unciv.Godot.Harness/golden/options/rebound.png)
+![The Keys tab after rebinding: End turn now shows E, the other actions keep their default keys.](../Unciv.Godot.Harness/golden/options/rebound.png)
 
-*The key bindings after rebinding: End turn now shows E, the other actions keep their default keys* (`options/rebound.png`)
+*The Keys tab after rebinding: End turn now shows E, the other actions keep their default keys.* (`options/rebound.png`)
 
 ## C029 Hotseat player switch screen
 
@@ -790,9 +790,17 @@ Client settings model persisted under user:// and the engine PlayerSettings opti
 
 Scenario `settings`.
 
-![The temporary settings screen after clicks: move-on-turn-start on, UI scale 1.25. (Real options screen is C028.)](../Unciv.Godot.Harness/golden/settings/changed.png)
+![The Gameplay tab of the settings after a click: automated units move on turn start is on.](../Unciv.Godot.Harness/golden/settings/changed.png)
 
-*The temporary settings screen after clicks: move-on-turn-start on, UI scale 1.25. (Real options screen is C028.)* (`settings/changed.png`)
+*The Gameplay tab of the settings after a click: automated units move on turn start is on.* (`settings/changed.png`)
+
+![The Display tab after Bigger UI: the scale stepper reads 125%.](../Unciv.Godot.Harness/golden/settings/display.png)
+
+*The Display tab after Bigger UI: the scale stepper reads 125%.* (`settings/display.png`)
+
+![The Gameplay tab defaults: vertical tabs on the left, a switch per option.](../Unciv.Godot.Harness/golden/settings/start.png)
+
+*The Gameplay tab defaults: vertical tabs on the left, a switch per option.* (`settings/start.png`)
 
 ## C044 In-game menu: save, load, new game, resign, victory status, options, main menu
 
@@ -804,21 +812,21 @@ Scenario `menu`.
 
 *The game screen with the new Menu button after Trade, clear of the minimap at 640x480* (`menu/hud.png`)
 
-![The in-game menu: resume, save, load, new game, victory status, options, resign and main menu](../Unciv.Godot.Harness/golden/menu/menu.png)
+![The in-game menu as a modal of icon rows with key hints: resume, save, load, new game, victory status, options, then Resign (danger) and main menu.](../Unciv.Godot.Harness/golden/menu/menu.png)
 
-*The in-game menu: resume, save, load, new game, victory status, options, resign and main menu* (`menu/menu.png`)
+*The in-game menu as a modal of icon rows with key hints: resume, save, load, new game, victory status, options, then Resign (danger) and main menu.* (`menu/menu.png`)
 
 ![Victory status: each victory with the milestones of your own path and every civ's progress](../Unciv.Godot.Harness/golden/menu/victory-status.png)
 
 *Victory status: each victory with the milestones of your own path and every civ's progress* (`menu/victory-status.png`)
 
-![Start new game with unsaved progress: the menu asks before the game is left](../Unciv.Godot.Harness/golden/menu/unsaved.png)
+![Start new game with unsaved progress: the menu modal asks before the game is left, Cancel on the left and the confirmation on the right.](../Unciv.Godot.Harness/golden/menu/unsaved.png)
 
-*Start new game with unsaved progress: the menu asks before the game is left* (`menu/unsaved.png`)
+*Start new game with unsaved progress: the menu modal asks before the game is left, Cancel on the left and the confirmation on the right.* (`menu/unsaved.png`)
 
-![Resign asks for confirmation and says the AI takes over](../Unciv.Godot.Harness/golden/menu/resign-confirm.png)
+![Resign asks for confirmation in a modal with a danger button and says the AI takes over.](../Unciv.Godot.Harness/golden/menu/resign-confirm.png)
 
-*Resign asks for confirmation and says the AI takes over* (`menu/resign-confirm.png`)
+*Resign asks for confirmation in a modal with a danger button and says the AI takes over.* (`menu/resign-confirm.png`)
 
 ![After resigning: the screen says so and offers only the main menu](../Unciv.Godot.Harness/golden/menu/resigned.png)
 
@@ -886,9 +894,9 @@ Scenario `autoplay`.
 
 *After pressing Stop: the status line says AutoPlay stopped, the button is idle and the turn is the player's.* (`autoplay/stopped.png`)
 
-![Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI.](../Unciv.Godot.Harness/golden/autoplay/options.png)
+![Options, Gameplay tab, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI.](../Unciv.Godot.Harness/golden/autoplay/options.png)
 
-*Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI.* (`autoplay/options.png`)
+*Options, Gameplay tab, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI.* (`autoplay/options.png`)
 
 ## C048 Rename city popup
 

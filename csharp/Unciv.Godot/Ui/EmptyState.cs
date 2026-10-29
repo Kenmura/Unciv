@@ -38,6 +38,9 @@ public partial class EmptyState : VBoxContainer
 
     public string Message => message.Text;
 
+    /// <summary>C075: changes the line (a list that is empty for different reasons).</summary>
+    public void SetMessage(string text) => message.Text = text.TrText();
+
     /// <summary>The action button, or null when there is no action.</summary>
     public Button? ActionButton { get; }
 

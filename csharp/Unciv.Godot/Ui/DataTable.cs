@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Localization;
 
 namespace Unciv.GodotClient.Ui;
@@ -22,12 +23,14 @@ public partial class DataTable : PanelContainer
     private IReadOnlyList<IReadOnlyList<string>> rows = [];
     private IReadOnlyList<int> order = [];
     private readonly bool hasActions;
+    private readonly bool selectable;
     private IReadOnlyList<Control?> actionControls = [];
 
-    public DataTable(IReadOnlyList<DataColumn> columns, bool actions = false)
+    public DataTable(IReadOnlyList<DataColumn> columns, bool actions = false, bool selectable = false)
     {
         this.columns = columns;
         hasActions = actions;
+        this.selectable = selectable;
         ThemeTypeVariation = UiVariants.PanelInset;
         grid.Columns = Math.Max(1, columns.Count + (actions ? 1 : 0));
         grid.AddThemeConstantOverride("h_separation", 0);
@@ -36,6 +39,15 @@ public partial class DataTable : PanelContainer
         AddChild(grid);
         Rebuild();
     }
+
+    /// <summary>C075: the selected input row (a selectable table; a click on any cell of a row selects it), or -1.</summary>
+    public int SelectedRow { get; private set; } = -1;
+
+    /// <summary>C075: a row was selected by a click or by <see cref="Select"/>.</summary>
+    public event Action<int>? RowSelected;
+
+    /// <summary>C075: the colour of the text of an input row (null for the default); set before <see cref="SetRows"/>. The selected row reads in the accent colour.</summary>
+    public Func<int, Color?>? RowTone { get; set; }
 
     /// <summary>The sorted column, or -1 while the rows are in input order.</summary>
     public int SortColumn { get; private set; } = -1;
@@ -73,6 +85,15 @@ public partial class DataTable : PanelContainer
     private void ReleaseActions()
     {
         foreach (var control in actionControls) control?.GetParent()?.RemoveChild(control);
+    }
+
+    /// <summary>C075: selects an input row (-1 clears the selection) and raises <see cref="RowSelected"/> for a valid one unless <paramref name="notify"/> is false.</summary>
+    public void Select(int inputRow, bool notify = true)
+    {
+        if (inputRow >= rows.Count) inputRow = -1;
+        SelectedRow = inputRow;
+        Rebuild();
+        if (notify && inputRow >= 0) RowSelected?.Invoke(inputRow);
     }
 
     /// <summary>Sorts by a column in the given direction.</summary>
@@ -128,7 +149,17 @@ public partial class DataTable : PanelContainer
                     SizeFlagsHorizontal = SizeFlags.ExpandFill,
                 };
                 if (columns[c].Numeric) label.ThemeTypeVariation = UiVariants.LabelNumber;
+                int inputRow = order[r];
+                if (inputRow == SelectedRow) label.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(UiTokens.Accent));
+                else if (RowTone?.Invoke(inputRow) is { } tone) label.AddThemeColorOverride("font_color", tone);
                 var cell = new PanelContainer { ThemeTypeVariation = r % 2 == 0 ? UiVariants.PanelCellEven : UiVariants.PanelCellOdd, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                if (selectable)
+                {
+                    cell.GuiInput += input =>
+                    {
+                        if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Callable.From(() => Select(inputRow)).CallDeferred(); // rebuilding frees the cell whose event is being handled, so the selection runs after it
+                    };
+                }
                 cell.AddChild(label);
                 grid.AddChild(cell);
                 line.Add(label);

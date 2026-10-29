@@ -28,7 +28,7 @@ public sealed class OptionsScenario : Scenario
     [
         "Is it clear what each option does, and which key belongs to which action?",
         "Is the waiting-for-a-key state obvious, and how do you get out of it?",
-        "Is the screen comfortable to scroll through on a small window?",
+        "Is each tab comfortable to scroll through on a small window, and are the switches clearly on or off?",
     ];
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
@@ -44,12 +44,13 @@ public sealed class OptionsScenario : Scenario
         screen.TutorialsEnabled = false;
         screen.BindSettings(service);
 
-        var backdrop = new PanelContainer { Name = "OptionsBackdrop", Theme = new UiTheme(registry).Theme };
-        backdrop.Position = Vector2.Zero;
-        backdrop.Size = new Vector2(640, 480);
-        var options = new OptionsScreen(service, null, ["Retro", "Neon"]);
-        backdrop.AddChild(options);
+        var ui = new UiTheme(registry);
+        var backdrop = new Control { Name = "OptionsBackdrop", Theme = ui.Theme, Position = Vector2.Zero, Size = new Vector2(640, 480) };
+        var screenOptions = new OptionsScreen(service, ui, null, ["Retro", "Neon"]);
+        screenOptions.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        backdrop.AddChild(screenOptions);
         host.AddChild(backdrop);
+        var options = screenOptions.Panel;
         int startTurn = game.Turns;
         float focusBefore = 0f;
         float slowStep = 0f;
@@ -59,7 +60,7 @@ public sealed class OptionsScenario : Scenario
         Vector2 Centre(Control control) => control.GetGlobalRect().GetCenter();
         ScenarioStep[] Reveal(HotkeyAction action) =>
         [
-            new Act("scroll the " + action + " row into view", () => options.EnsureControlVisible(options.KeyButton(action))),
+            new Act("open the Keys tab and scroll the " + action + " row into view", () => options.Reveal(options.KeyButton(action))),
             new WaitFrames(2),
         ];
 
@@ -69,13 +70,13 @@ public sealed class OptionsScenario : Scenario
             new Act("dismiss the banner", () => screen.Hud.HideBanner()),
             new AssertQuery("defaults: End turn is Space, Next unit is N, nothing stored", () =>
                 Hotkeys.KeyFor(service.Current.KeyBindings, HotkeyAction.EndTurn) == "Space" && options.KeyButton(HotkeyAction.NextUnit).Text == "N" && service.Current.KeyBindings.Count == 0 && !File.Exists(path)),
-            new Capture("top", "Options, top: engine options, UI scale buttons, then sound volume, window mode, scroll speed and the edge-scroll and map toggles"),
+            new Capture("top", "Options, Display tab: the vertical tabs on the left, the UI scale stepper and the window mode"),
 
             .. Reveal(HotkeyAction.EndTurn),
             new Click(() => Centre(options.KeyButton(HotkeyAction.EndTurn))),
             new WaitFrames(2),
             new AssertQuery("the End turn row waits for a key", () => options.Listening == HotkeyAction.EndTurn && options.KeyButton(HotkeyAction.EndTurn).Text == "..."),
-            new Capture("listening", "The key bindings while rebinding: the End turn key button shows ... and the other actions keep their keys"),
+            new Capture("listening", "The Keys tab while rebinding: the End turn key chip shows ... and the other actions keep their keys"),
             new PressKey(Key.Escape),
             new WaitFrames(2),
             new AssertQuery("Escape cancelled: still Space and nothing saved", () => options.Listening == null && options.KeyButton(HotkeyAction.EndTurn).Text == "Space" && !File.Exists(path)),
@@ -90,7 +91,7 @@ public sealed class OptionsScenario : Scenario
             new Act("restart the client: a new service reads the file", () => restarted = new ClientSettingsService(new ClientSettingsStore(path))),
             new AssertQuery("the binding persisted", () => Hotkeys.KeyFor(restarted.NotNull().Current.KeyBindings, HotkeyAction.EndTurn) == "E"),
             .. Reveal(HotkeyAction.EndTurn),
-            new Capture("rebound", "The key bindings after rebinding: End turn now shows E, the other actions keep their default keys"),
+            new Capture("rebound", "The Keys tab after rebinding: End turn now shows E, the other actions keep their default keys"),
 
             new Act("close the options", () => backdrop.Visible = false),
             new WaitFrames(2),
@@ -132,7 +133,7 @@ public sealed class OptionsScenario : Scenario
             new Act("drag the volume slider and switch resources off", () => options.VolumeSlider.Value = 0.25),
             new Act("resources off through the checkbox", () =>
             {
-                foreach (var box in options.FindChildren("*", "CheckBox", true, false).OfType<CheckBox>())
+                foreach (var box in options.FindChildren("*", "CheckButton", true, false).OfType<CheckButton>())
                 {
                     if (box.Text == "Show resources on the map") box.ButtonPressed = false;
                 }
@@ -141,9 +142,9 @@ public sealed class OptionsScenario : Scenario
             new AssertQuery("volume and the toggle reached the settings, the file and the map", () =>
                 Math.Abs(service.Current.SoundVolume - 0.25f) < 0.001f && !service.Current.ShowResources && new ClientSettingsStore(path).Load().ShowResources == false
                 && resourcesBefore > 0 && screen.Map.VisibleResourcePropCount == 0),
-            new Act("scroll to the bottom", () => options.ScrollVertical = 100000),
+            new Act("open the Map tab", () => options.SelectTab(options.TabNames.ToList().IndexOf("Map"))),
             new WaitFrames(2),
-            new Capture("settings", "Bottom of the options after the game-screen checks: volume slider moved to 25%, edge-scroll on, resources off, scroll speed 2, End turn still E"),
+            new Capture("settings", "The Map tab after the game-screen checks: scroll speed 2.00, edge-scroll on, resources off"),
         ];
     }
 }

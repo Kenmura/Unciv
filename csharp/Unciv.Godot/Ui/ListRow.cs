@@ -94,6 +94,9 @@ public partial class ListRow : Button
 
     public string ShownTrailing => trailingLabel.Visible ? trailingLabel.Text : "";
 
+    /// <summary>C075: translates the title again after a language change.</summary>
+    public void Retranslate() => titleLabel.Text = Title.TrText();
+
     public override void _Ready() => Refit();
 
     public override void _Notification(int what)

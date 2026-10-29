@@ -6,30 +6,28 @@ using Unciv.GodotClient.Localization;
 namespace Unciv.GodotClient.Play;
 
 /// <summary>
-/// C044: the in-game menu, a modal over the world: one button per <see cref="GameMenuEntry"/> the model lists. An entry that carries a <see cref="GameMenuConfirm"/>
+/// C044: the in-game menu, a C075 <see cref="Modal"/> over the world: one <see cref="ListRow"/> (Resign: a danger button) per <see cref="GameMenuEntry"/> the model lists. An entry that carries a <see cref="GameMenuConfirm"/>
 /// first swaps the list for the question with a confirm and a cancel button; only the confirmed choice raises <see cref="Chosen"/>. The view decides nothing: the owner
 /// reacts to the choice (submits Resign, opens the save dialog, leaves for the main menu).
 /// </summary>
-public partial class GameMenuView : Control
+public partial class GameMenuView : Modal
 {
-    private readonly ColorRect dim = new() { MouseFilter = MouseFilterEnum.Ignore };
-    private readonly PanelContainer panel = new() { Name = "MenuPanel" };
-    private readonly VBoxContainer column = new() { Name = "MenuColumn" };
+    private static readonly Dictionary<GameMenuKind, string> Icons = new()
+    {
+        [GameMenuKind.Resume] = "Resume",
+        [GameMenuKind.Save] = "Pencil",
+        [GameMenuKind.Load] = "Load",
+        [GameMenuKind.NewGame] = "New",
+        [GameMenuKind.VictoryStatus] = "Score",
+        [GameMenuKind.Options] = "Options",
+        [GameMenuKind.MainMenu] = "BackArrow",
+    };
+
     private readonly Dictionary<string, Button> byId = [];
-    private UiTheme? theme;
 
     public GameMenuView()
     {
         Name = "GameMenu";
-        Visible = false;
-        MouseFilter = MouseFilterEnum.Stop;
-        dim.Fill();
-        AddChild(dim);
-        var centre = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
-        centre.Fill();
-        AddChild(centre);
-        centre.AddChild(panel);
-        panel.AddChild(column);
     }
 
     /// <summary>The entries as shown, empty while the menu is closed.</summary>
@@ -44,32 +42,39 @@ public partial class GameMenuView : Control
 
     public event Action<GameMenuKind>? Chosen;
 
-    public void Init(UiTheme uiTheme)
-    {
-        theme = uiTheme;
-        Theme = uiTheme.Theme;
-        var shade = uiTheme.Panel.BgColor;
-        shade.A = 0.75f;
-        dim.Color = shade;
-        panel.CustomMinimumSize = new Vector2(uiTheme.Px(260), 0f);
-    }
-
-    public void LayoutIn(Vector2 screen) => Size = screen;
-
     public void Open(IReadOnlyList<GameMenuEntry> entries)
     {
         Entries = entries;
         Asking = null;
         Clear();
         PanelTitle = GameMenuModel.Title;
-        column.AddChild(Heading(GameMenuModel.Title));
+        SetHeader(GameMenuModel.Title);
+        Fit(320);
+        SetActions([]);
         foreach (var entry in entries)
         {
-            var button = new Button { Name = entry.Id, Text = entry.Label.TrText(), Disabled = !entry.Enabled };
-            if (entry.DisabledReason != null) button.TooltipText = entry.DisabledReason.TrText();
+            if (entry.Kind == GameMenuKind.MainMenu) Body.AddChild(new HSeparator());
+            Button button;
+            if (entry.Kind == GameMenuKind.Resign)
+            {
+                button = new Button { Text = entry.Label.TrText(), Disabled = !entry.Enabled, ThemeTypeVariation = UiVariants.ButtonDanger };
+                if (entry.DisabledReason != null) button.TooltipText = entry.DisabledReason.TrText();
+            }
+            else
+            {
+                string? hint = entry.Kind switch
+                {
+                    GameMenuKind.Resume => "Esc",
+                    GameMenuKind.Save or GameMenuKind.Load => "F10",
+                    _ => null,
+                };
+                var icon = Icons.TryGetValue(entry.Kind, out string? name) ? AssetKey.Of(RulesetAssetKeys.UiIcon, name) : (AssetKey?)null;
+                button = new ListRow(Ui, entry.Label, trailing: hint, icon: icon, disabledReason: entry.Enabled ? null : entry.DisabledReason ?? "");
+            }
+            button.Name = entry.Id;
             var captured = entry;
             button.Pressed += () => Press(captured);
-            column.AddChild(button);
+            Body.AddChild(button);
             byId[entry.Id] = button;
         }
         Visible = true;
@@ -108,25 +113,24 @@ public partial class GameMenuView : Control
         Asking = confirm;
         Clear();
         PanelTitle = confirm.Title;
-        column.AddChild(Heading(confirm.Title));
-        column.AddChild(new Label { Name = "ConfirmText", Text = confirm.Body.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(theme?.Px(260) ?? 260f, 0f) });
+        SetHeader(confirm.Title);
+        float width = Fit(Modal.MinWidth);
+        Body.AddChild(new Label { Name = "ConfirmText", Text = confirm.Body.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(width, 0f) });
         var yes = new Button { Name = "ConfirmYes", Text = confirm.ConfirmLabel.TrText() };
         yes.Pressed += () => Chosen?.Invoke(entry.Kind);
         var no = new Button { Name = "ConfirmNo", Text = GameMenuModel.CancelLabel.TrText() };
         no.Pressed += () => Open(Entries);
-        column.AddChild(yes);
-        column.AddChild(no);
+        SetActions([(yes, entry.Kind == GameMenuKind.Resign ? ChoiceRole.Danger : ChoiceRole.Primary), (no, ChoiceRole.Secondary)]);
         byId["ConfirmYes"] = yes;
         byId["ConfirmNo"] = no;
+        no.GrabFocus(); // the safe choice has the focus
     }
-
-    private Label Heading(string text) => new() { Name = "MenuTitle", Text = text.TrText(), HorizontalAlignment = HorizontalAlignment.Center };
 
     private void Clear()
     {
-        foreach (var child in column.GetChildren())
+        foreach (var child in Body.GetChildren())
         {
-            column.RemoveChild(child);
+            Body.RemoveChild(child);
             child.QueueFree();
         }
         byId.Clear();

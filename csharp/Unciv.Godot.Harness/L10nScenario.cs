@@ -53,11 +53,12 @@ public sealed class L10nScenario : Scenario
 
         var root = new HBoxContainer { Theme = uiTheme.Theme, Position = new Vector2(16, 16), Size = new Vector2(608, 448) };
         host.AddChild(root);
-        var settingsPanel = new SettingsPanel(service, localization);
+        var settingsPanel = new SettingsPanel(service, uiTheme, localization, []) { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         root.AddChild(settingsPanel);
+        settingsPanel.SelectTab(settingsPanel.TabNames.ToList().IndexOf("Language"));
         var samples = new VBoxContainer { Name = "Samples" };
         root.AddChild(samples);
-        var picker = settingsPanel.GetChildren().OfType<HBoxContainer>().SelectMany(row => row.GetChildren().OfType<LanguagePicker>()).Single();
+        var picker = settingsPanel.FindChildren("LanguagePicker", "LanguagePicker", true, false).OfType<LanguagePicker>().Single();
 
         void Rebuild(string language)
         {

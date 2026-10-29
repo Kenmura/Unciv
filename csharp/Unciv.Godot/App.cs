@@ -14,7 +14,6 @@ using Unciv.Models;
 using Unciv.Net.Identity;
 using Unciv.Net.Lobby;
 using Unciv.Utils;
-using Unciv.Models.Translations;
 
 namespace Unciv.GodotClient;
 
@@ -181,13 +180,9 @@ public partial class App : Node
 
     private void OpenOptions()
     {
-        var page = new VBoxContainer();
-        var options = new OptionsScreen(settings, localization, null, vanilla) { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        page.AddChild(options);
-        var back = new Button { Text = "Back".Tr() };
-        back.Pressed += () => screens.Pop();
-        page.AddChild(back);
-        screens.Push(page);
+        var options = new OptionsScreen(settings, theme, localization, null, vanilla);
+        options.CloseRequested += () => screens.Pop();
+        screens.Push(options);
     }
 
     // A new or loaded game takes over the screen; its own save controller keeps autosaving it.

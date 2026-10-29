@@ -25,8 +25,8 @@ public sealed class SaveLoadScenario : Scenario
 
     public override IReadOnlyList<string> Checklist =>
     [
-        "Is the save list readable: name, turn, civ, ruleset and date on each row?",
-        "Is it clear which buttons act on the selected save, and that Delete asks again?",
+        "Is the save table readable: name, turn, civ, ruleset and date on each row, and is the selected row and its details card obvious?",
+        "Is it clear which footer buttons act on the selected save, and that Delete asks again?",
         "Do the damaged files read as damaged rather than as saves?",
     ];
 
@@ -66,6 +66,25 @@ public sealed class SaveLoadScenario : Scenario
             controller.RefreshList();
         }
 
+        ScenarioStep[] Row(string name) =>
+        [
+            new Act("scroll the " + name + " row into view", () =>
+            {
+                var row = FindRow(host, name);
+                for (Node? node = row; node != null; node = node.GetParent())
+                {
+                    if (node is ScrollContainer scroller)
+                    {
+                        scroller.EnsureControlVisible(row.NotNull());
+                        break;
+                    }
+                }
+            }),
+            new WaitFrames(2),
+            new Click(() => RowCentre(name)),
+            new WaitFrames(2),
+        ];
+
         Vector2 RowCentre(string prefix) => FindRow(host, prefix)?.GetGlobalRect().GetCenter() ?? Vector2.Zero;
 
         return
@@ -86,7 +105,7 @@ public sealed class SaveLoadScenario : Scenario
             new Act("pin file dates and open the list", PinDates),
             new Press("Saves"),
             new Capture("list", "The save list: Alpha, then the autosave and the numbered autosave, each with turn, civ and ruleset"),
-            new Click(() => RowCentre("Alpha")),
+            .. Row("Alpha"),
             new AssertQuery("selecting a save copies its name into the name field", () => controller.NameField.NotNull().Text == "Alpha"),
             new Press("Load"),
             new AssertQuery("the loaded game's state hash equals the saved one", () => loaded != null && ScenarioGame.StateHash(loaded.Session) == savedHash),
@@ -110,14 +129,14 @@ public sealed class SaveLoadScenario : Scenario
             new Press("Saves"),
             new AssertQuery("both damaged files are listed but not readable", () => store.List().Count(it => it.Info == null) == 2),
             new Capture("damaged", "The damaged files are listed as unreadable"),
-            new Click(() => RowCentre("Broken")),
+            .. Row("Broken"),
             new Press("Load"),
             new AssertQuery("loading the damaged file was refused with a message and changed nothing", () => controller.Message.StartsWith("Cannot load", StringComparison.Ordinal) && screen.Turn == savedTurn && controller.IsDialogOpen),
-            new Click(() => RowCentre("Truncated")),
+            .. Row("Truncated"),
             new Press("Load"),
             new AssertQuery("the truncated file was refused too", () => controller.Message.StartsWith("Cannot load \"Truncated\"", StringComparison.Ordinal) && screen.Turn == savedTurn),
 
-            new Click(() => RowCentre("Alpha")),
+            .. Row("Alpha"),
             new Press("Delete"),
             new AssertQuery("Delete only asks: the save is still there", () => store.List().Any(it => it.Name == "Alpha") && controller.Message.Contains("Confirm delete", StringComparison.Ordinal)),
             new Press("Confirm delete"),
@@ -129,13 +148,7 @@ public sealed class SaveLoadScenario : Scenario
         ];
     }
 
-    private static Button? FindRow(Node node, string prefix)
-    {
-        if (node is Button { ToggleMode: true, Visible: true } button && button.Text.StartsWith(prefix, StringComparison.Ordinal)) return button;
-        foreach (var child in node.GetChildren())
-        {
-            if (FindRow(child, prefix) is { } found) return found;
-        }
-        return null;
-    }
+    /// <summary>The name cell of a row of the open dialog's table.</summary>
+    private static Label? FindRow(Node host, string name) =>
+        host.FindChild("SaveTable", true, false)?.FindChildren("*", "Label", true, false).OfType<Label>().FirstOrDefault(it => it.Text == name && it.IsVisibleInTree());
 }

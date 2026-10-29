@@ -203,11 +203,11 @@
     "shots": [
       {
         "golden": "saveload/list.png",
-        "caption": "The save list: Alpha, the autosave and the numbered autosave with turn, civ and ruleset."
+        "caption": "The Saves dialog (a framed modal): a table of Alpha, the autosave and the numbered autosave with turn and civilization, a details card with the save name field, and Resume last, Load, Delete and Save in the footer."
       },
       {
         "golden": "saveload/damaged.png",
-        "caption": "Damaged save files listed as unreadable next to good ones; QuickSave loaded."
+        "caption": "The damaged and truncated files listed in the warning colour as Damaged next to the good saves."
       }
     ]
   },
@@ -322,7 +322,15 @@
     "shots": [
       {
         "golden": "settings/changed.png",
-        "caption": "The temporary settings screen after clicks: move-on-turn-start on, UI scale 1.25. (Real options screen is C028.)"
+        "caption": "The Gameplay tab of the settings after a click: automated units move on turn start is on."
+      },
+      {
+        "golden": "settings/display.png",
+        "caption": "The Display tab after Bigger UI: the scale stepper reads 125%."
+      },
+      {
+        "golden": "settings/start.png",
+        "caption": "The Gameplay tab defaults: vertical tabs on the left, a switch per option."
       }
     ]
   },
@@ -597,19 +605,19 @@
   },
   "C028": {
     "scenario": "options",
-    "about": "Options screen: engine options, UI scale, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.",
+    "about": "Options screen with vertical tabs (Display, Gameplay, Map, Sound, Keys, Advanced): engine options, UI scale stepper, sound, window mode, scroll speed, edge-scroll and map toggles, asset pack, key rebinding persisted and used on the game screen.",
     "shots": [
       {
         "golden": "options/top.png",
-        "caption": "Options, top: engine options, UI scale buttons, then sound volume, window mode, scroll speed and the edge-scroll and map toggles"
+        "caption": "Options, Display tab: the vertical tabs on the left, the UI scale stepper and the window mode."
       },
       {
         "golden": "options/listening.png",
-        "caption": "The key bindings while rebinding: the End turn key button shows ... and the other actions keep their keys"
+        "caption": "The Keys tab while rebinding: the End turn key chip shows ... and the other actions keep their keys."
       },
       {
         "golden": "options/rebound.png",
-        "caption": "The key bindings after rebinding: End turn now shows E, the other actions keep their default keys"
+        "caption": "The Keys tab after rebinding: End turn now shows E, the other actions keep their default keys."
       }
     ]
   },
@@ -677,7 +685,7 @@
       },
       {
         "golden": "menu/menu.png",
-        "caption": "The in-game menu: resume, save, load, new game, victory status, options, resign and main menu"
+        "caption": "The in-game menu as a modal of icon rows with key hints: resume, save, load, new game, victory status, options, then Resign (danger) and main menu."
       },
       {
         "golden": "menu/victory-status.png",
@@ -685,11 +693,11 @@
       },
       {
         "golden": "menu/unsaved.png",
-        "caption": "Start new game with unsaved progress: the menu asks before the game is left"
+        "caption": "Start new game with unsaved progress: the menu modal asks before the game is left, Cancel on the left and the confirmation on the right."
       },
       {
         "golden": "menu/resign-confirm.png",
-        "caption": "Resign asks for confirmation and says the AI takes over"
+        "caption": "Resign asks for confirmation in a modal with a danger button and says the AI takes over."
       },
       {
         "golden": "menu/resigned.png",
@@ -853,7 +861,7 @@
       },
       {
         "golden": "autoplay/options.png",
-        "caption": "Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI."
+        "caption": "Options, Gameplay tab, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI."
       }
     ]
   },

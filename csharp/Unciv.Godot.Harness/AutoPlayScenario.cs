@@ -44,12 +44,13 @@ public sealed class AutoPlayScenario : Scenario
         screen.AutoPlayFramesPerTurn = 12;
         screen.BindSettings(service);
 
-        var backdrop = new PanelContainer { Name = "OptionsBackdrop", Theme = new UiTheme(registry).Theme, Visible = false };
-        backdrop.Position = Vector2.Zero;
-        backdrop.Size = new Vector2(640, 480);
-        var options = new OptionsScreen(service);
-        backdrop.AddChild(options);
+        var ui = new UiTheme(registry);
+        var backdrop = new Control { Name = "OptionsBackdrop", Theme = ui.Theme, Visible = false, Position = Vector2.Zero, Size = new Vector2(640, 480) };
+        var screenOptions = new OptionsScreen(service, ui);
+        screenOptions.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        backdrop.AddChild(screenOptions);
         host.AddChild(backdrop);
+        var options = screenOptions.Panel;
 
         int startTurn = 0;
         int logged = 0;
@@ -123,11 +124,10 @@ public sealed class AutoPlayScenario : Scenario
 
             new Act("open the options", () => backdrop.Visible = true),
             new WaitFrames(2),
-            new Act("scroll to the AutoPlay settings", () => options.EnsureControlVisible(options.AutoPlayTurnsSlider)),
-            new Act("a little further so the whole section shows", () => options.ScrollVertical += 90),
+            new Act("open the Gameplay tab and scroll to the AutoPlay settings", () => options.Reveal(options.AutoPlayTurnsSlider)),
             new WaitFrames(3),
             new AssertQuery("the options show the slider at 50", () => options.AutoPlayTurnsSlider.Value == 50),
-            new Capture("options", "Options, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI"),
+            new Capture("options", "Options, Gameplay tab, AutoPlay section: show the button, play until victory, number of turns and full AutoPlay AI"),
             new Act("close the options", () => backdrop.Visible = false),
 
             new Act("a new client reads the file", () => restartedSettings = new ClientSettingsService(new ClientSettingsStore(path))),
