@@ -113,7 +113,7 @@ flowchart TD
   class B026 waiting
   class B028 ready
   class B029 ready
-  class B030 prog
+  class B030 review
   class B031 ready
   class C071 ready
   class C072 prog
@@ -213,7 +213,7 @@ xychart-beta
 | B018 | In-Progress [Claude] | B015 | 1 | BNW: Diplomatic victory (UN) |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | B026 | Available (waiting on B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
-| B030 | In-Progress [Claude] | B013 | 0 | BNW: Ideology tenet effects (48 tenets) |
+| B030 | Needs-Review [Claude] | B013 | 0 | BNW: Ideology tenet effects (48 tenets) |
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
 | C085 | Available (waiting on C094) | C094 | 0 | Unit model LOD and performance caps |
 | C086 | Available (waiting on C094) | C094 | 0 | Unit combat polish: effects and sounds |
