@@ -869,6 +869,20 @@
       }
     ]
   },
+  "C094": {
+    "scenario": "unit-visuals",
+    "about": "Industrial and modern unit art: 25 more units (riflemen, marines, paratroopers, gun crews, cavalry, great people) from the units pack, built from data in attachments.json; ships, aircraft and armour stay generated blocks.",
+    "shots": [
+      {
+        "golden": "unit-visuals/modern.png",
+        "caption": "The industrial and modern roster (the gallery's lower rows, the last one partly below the frame): riflemen, marines and gun crews as crossbow-armed placeholders, cavalry and the great people, in red and blue civ colours."
+      },
+      {
+        "golden": "unit-visuals/modern-mounts.png",
+        "caption": "Close view, side on: the Cavalry, Cossack and Hussar, riders on the generated mount."
+      }
+    ]
+  },
   "C093": {
     "scenario": "unit-visuals",
     "about": "Medieval and renaissance unit art: 19 more units (pikemen, samurai, longbowmen, musketeers, lancers, camel archers and elephants) from the units pack, built from data in attachments.json.",

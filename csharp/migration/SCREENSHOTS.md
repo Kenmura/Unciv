@@ -1346,7 +1346,7 @@ Scenario `unit-orders`.
 
 *Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius.* (`unit-orders/city-site.png`)
 
-## C093 (ticket not Done or unknown)
+## C093 Unit art by era: medieval and renaissance
 
 Medieval and renaissance unit art: 19 more units (pikemen, samurai, longbowmen, musketeers, lancers, camel archers and elephants) from the units pack, built from data in attachments.json.
 
@@ -1359,6 +1359,20 @@ Scenario `unit-visuals`.
 ![Close view, side on, left to right: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount; front-on figures below are other roster units.](../Unciv.Godot.Harness/golden/unit-visuals/medieval-mounts.png)
 
 *Close view, side on, left to right: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount; front-on figures below are other roster units.* (`unit-visuals/medieval-mounts.png`)
+
+## C094 (ticket not Done or unknown)
+
+Industrial and modern unit art: 25 more units (riflemen, marines, paratroopers, gun crews, cavalry, great people) from the units pack, built from data in attachments.json; ships, aircraft and armour stay generated blocks.
+
+Scenario `unit-visuals`.
+
+![The industrial and modern roster (the gallery's lower rows, the last one partly below the frame): riflemen, marines and gun crews as crossbow-armed placeholders, cavalry and the great people, in red and blue civ colours.](../Unciv.Godot.Harness/golden/unit-visuals/modern.png)
+
+*The industrial and modern roster (the gallery's lower rows, the last one partly below the frame): riflemen, marines and gun crews as crossbow-armed placeholders, cavalry and the great people, in red and blue civ colours.* (`unit-visuals/modern.png`)
+
+![Close view, side on: the Cavalry, Cossack and Hussar, riders on the generated mount.](../Unciv.Godot.Harness/golden/unit-visuals/modern-mounts.png)
+
+*Close view, side on: the Cavalry, Cossack and Hussar, riders on the generated mount.* (`unit-visuals/modern-mounts.png`)
 
 ## T252 (ticket not Done or unknown)
 

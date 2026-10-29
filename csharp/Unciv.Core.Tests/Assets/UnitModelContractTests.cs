@@ -93,9 +93,9 @@ public sealed class UnitModelContractTests
         }
     }
 
-    /// <summary>The ancient, classical, medieval and renaissance eras (the G&amp;K techs of eras 0 to 3, and the barbarian units; C084, C093) have art for every humanoid and mounted unit; ships, siege and the ram stay generated blocks.</summary>
+    /// <summary>Every Gods &amp; Kings humanoid and mounted unit, the great people included (C084, C093, C094), has art; ships, siege, the ram, aircraft, missiles, helicopters, armour and spaceship parts stay generated blocks.</summary>
     [Fact]
-    public void EveryPreIndustrialHumanoidAndMountedUnitHasAModel()
+    public void EveryHumanoidAndMountedUnitHasAModel()
     {
         RulesetCache.Clear();
         var jsons = Path.Combine(ClientFolder, "..", "..", "android", "assets", "jsons");
@@ -104,15 +104,18 @@ public sealed class UnitModelContractTests
         {
             var ruleset = RulesetCache.Get("Civ V - Gods & Kings")!;
             var keys = UnitsManifestKeys().EnumerateObject().Select(it => it.Name).ToHashSet();
-            string[] generated = ["Siege", "Melee Water", "Ranged Water", "Civilian Water"];
-            var wanted = ruleset.Units.Values.Where(it => (it.RequiredTech != null && it.GetSortGroup(ruleset) <= 3) || it.UniqueTo == "Barbarians")
-                .Where(it => !generated.Contains(it.UnitType) && it.Name != "Battering Ram").Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
+            string[] generated = ["Siege", "Melee Water", "Ranged Water", "Civilian Water", "Submarine", "Fighter", "Bomber", "Aircraft Carrier", "Atomic Bomber", "Missile", "Helicopter", "Armored"];
+            var wanted = ruleset.Units.Values
+                .Where(it => !generated.Contains(it.UnitType) && it.Name != "Battering Ram" && !it.Name.StartsWith("SS ", StringComparison.Ordinal)).Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
             Assert.Contains("Settler", wanted);
             Assert.Contains("War Elephant", wanted);
             Assert.Contains("Marauder", wanted);
             Assert.Contains("Samurai", wanted);
             Assert.Contains("Hakkapeliitta", wanted);
             Assert.Contains("Naresuan's Elephant", wanted);
+            Assert.Contains("Mechanized Infantry", wanted);
+            Assert.Contains("Great Prophet", wanted);
+            Assert.Contains("Cossack", wanted);
             Assert.Equal(wanted, wanted.Where(it => keys.Contains("unit/" + it)).ToList());
         }
         finally
