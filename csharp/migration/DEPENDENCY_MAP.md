@@ -66,11 +66,11 @@ flowchart TD
   class C084 review
   class C085 waiting
   class C086 waiting
-  class C088 prog
+  class C088 review
   class C089 ondeck
   class C090 waiting
   class C091 ondeck
-  class C092 prog
+  class C092 review
   class C093 ondeck
   class C094 waiting
   class C095 ondeck
@@ -126,11 +126,11 @@ xychart-beta
 | C091 | **On deck** (after C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C095 | **On deck** (after C084) | C084 | 0 | Battering Ram rigid siege kind and chariot/elephant art |
 | C078 | In-Progress [Claude] | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
-| C084 | Needs-Review [Claude] | C083 | 5 | Unit art by era: ancient and classical |
+| C084 | In-Review [Claude] | C083 | 5 | Unit art by era: ancient and classical |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | C085 | Available (waiting on C094) | C094 | 0 | Unit model LOD and performance caps |
 | C086 | Available (waiting on C094) | C094 | 0 | Unit combat polish: effects and sounds |
-| C088 | In-Progress [Claude] | C068 | 0 | City-site preview: yields at a candidate settle tile |
-| C092 | In-Progress [Claude] | C074 | 0 | City management at scale: bulk actions and reusable build queues |
+| C088 | Needs-Review [Claude] | C068 | 0 | City-site preview: yields at a candidate settle tile |
+| C092 | Needs-Review [Claude] | C074 | 0 | City management at scale: bulk actions and reusable build queues |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
