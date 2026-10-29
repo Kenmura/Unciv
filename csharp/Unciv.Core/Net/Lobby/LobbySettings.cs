@@ -1,6 +1,7 @@
 using Unciv.Commands.Log;
 using Unciv.Logic.Map;
 using Unciv.Models.Metadata;
+using Unciv.Net.Turns;
 
 namespace Unciv.Net.Lobby;
 
@@ -25,6 +26,11 @@ public sealed class LobbySettings
     public List<string> Mods { get; set; } = [];
     public string TurnMode { get; set; } = "Simultaneous";
     public int TurnTimerSeconds { get; set; } = 120;
+
+    /// <summary>T248: scale each turn's timer with era, unit count and wars, between <see cref="TurnTimerMinSeconds"/> and <see cref="TurnTimerSeconds"/>.</summary>
+    public bool DynamicTurnTimer { get; set; }
+
+    public int TurnTimerMinSeconds { get; set; } = 30;
     public string OnDisconnect { get; set; } = "wait";
     public string? Password { get; set; }
     public int MaxPlayers { get; set; } = 8;
@@ -57,6 +63,14 @@ public sealed class LobbySettings
 
         return setup;
     }
+
+    /// <summary>The turn policy the host runs with: the timer options of these settings (the lobby maximum is <see cref="TurnTimerSeconds"/>).</summary>
+    public TurnPolicy ToTurnPolicy() => new()
+    {
+        TurnTimerSeconds = Math.Max(0, TurnTimerSeconds),
+        DynamicTurnTimer = DynamicTurnTimer,
+        TurnTimerMinSeconds = Math.Max(0, TurnTimerMinSeconds),
+    };
 
     /// <summary>
     /// Computes the ruleset hash for this lobby's ruleset and mods.

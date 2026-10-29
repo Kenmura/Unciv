@@ -116,6 +116,70 @@ public sealed class NetTurnPolicyTests : IDisposable
     }
 
     [Fact]
+    public void DynamicTimerIsMinAtZeroLoadAndRisesWithWarsAndUnits()
+    {
+        var game = NewGame();
+        var peace = DynamicTurnTimer.Load(game);
+        var seconds = DynamicTurnTimer.Compute(game, 30, 300);
+        Assert.InRange(seconds, 30, 300);
+
+        var babylon = game.GetCivilization("Babylon");
+        var greece = game.GetCivilization("Greece");
+        babylon.DiplomacyFunctions.MakeCivilizationsMeet(greece);
+        babylon.GetDiplomacyManager(greece)!.DeclareWar();
+        Assert.Equal(peace + DynamicTurnTimer.PointsPerWar, DynamicTurnTimer.Load(game));
+        Assert.True(DynamicTurnTimer.Compute(game, 30, 300) > seconds);
+    }
+
+    [Fact]
+    public void DynamicTimerClampsToLobbyBounds()
+    {
+        var game = NewGame();
+        Assert.Equal(100, DynamicTurnTimer.Compute(game, 100, 100));
+        Assert.Equal(50, DynamicTurnTimer.Compute(game, 100, 50));
+        Assert.Equal(0, DynamicTurnTimer.Compute(game, -5, 0));
+        Assert.Equal(DynamicTurnTimer.Compute(game, 0, 300), DynamicTurnTimer.Compute(game, -20, 300));
+        Assert.InRange(DynamicTurnTimer.Load(game), 0, DynamicTurnTimer.FullLoad);
+    }
+
+    [Fact]
+    public void DynamicTimerSetsDeadlineAndStillEndsTurnsThroughForceEndTurn()
+    {
+        var clock = new ManualClock(10_000L);
+        var game = NewGame();
+        var session = Session(game, clock);
+        var policy = new TurnPolicy { TurnTimerSeconds = 300, TurnTimerMinSeconds = 30, DynamicTurnTimer = true };
+        var timer = new TurnTimer(session, policy, clock, autoResolve: true);
+
+        var expected = DynamicTurnTimer.Compute(game, 30, 300);
+        Assert.Equal(10_000L + expected * 1000L, timer.TurnDeadline);
+
+        clock.AdvanceSeconds(expected + 1);
+        timer.Tick();
+        Assert.Equal(1, game.Turns);
+        Assert.Equal(2, session.Log.Count(e => e.Type == "force-end-turn"));
+    }
+
+    [Fact]
+    public void DynamicTimerOffWhenMaximumIsZero()
+    {
+        var clock = new ManualClock(10_000L);
+        var session = Session(NewGame(), clock);
+        var timer = new TurnTimer(session, new TurnPolicy { TurnTimerSeconds = 0, DynamicTurnTimer = true }, clock);
+        Assert.Null(timer.TurnDeadline);
+    }
+
+    [Fact]
+    public void LobbySettingsBuildTurnPolicy()
+    {
+        var policy = new Unciv.Net.Lobby.LobbySettings { TurnTimerSeconds = 240, TurnTimerMinSeconds = 45, DynamicTurnTimer = true }.ToTurnPolicy();
+        Assert.Equal(240, policy.TurnTimerSeconds);
+        Assert.Equal(45, policy.TurnTimerMinSeconds);
+        Assert.True(policy.DynamicTurnTimer);
+        Assert.False(new Unciv.Net.Lobby.LobbySettings().ToTurnPolicy().DynamicTurnTimer);
+    }
+
+    [Fact]
     public void DisconnectGraceIssuesForceEndTurnAndUndosOnReturn()
     {
         var clock = new ManualClock(10_000L);

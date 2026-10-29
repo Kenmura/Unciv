@@ -24,6 +24,12 @@ public sealed record TurnPolicy
     /// <summary>Seconds per turn. 0 = disabled (wait for everyone).</summary>
     public int TurnTimerSeconds { get; init; }
 
+    /// <summary>T248: when set, each turn's timer is <see cref="DynamicTurnTimer.Compute"/> between <see cref="TurnTimerMinSeconds"/> and <see cref="TurnTimerSeconds"/> (the maximum) instead of a fixed <see cref="TurnTimerSeconds"/>.</summary>
+    public bool DynamicTurnTimer { get; init; }
+
+    /// <summary>T248: lower bound of the dynamic turn timer in seconds.</summary>
+    public int TurnTimerMinSeconds { get; init; } = 30;
+
     /// <summary>Seconds before a disconnected player's turn is force-ended. Default 120s.</summary>
     public int DropGraceSeconds { get; init; } = 120;
 

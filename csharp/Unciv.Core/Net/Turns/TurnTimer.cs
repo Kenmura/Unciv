@@ -194,7 +194,7 @@ public sealed class TurnTimer
         }
 
         // 4. Check turn timer expiry
-        if (policy.TurnTimerSeconds > 0 && TurnDeadline.HasValue && now >= TurnDeadline.Value)
+        if (TurnDeadline.HasValue && now >= TurnDeadline.Value)
         {
             // ForceEndTurn in civ-index order for all living human civs that have not ended
             var unended = game.Civilizations
@@ -316,7 +316,10 @@ public sealed class TurnTimer
     {
         if (policy.TurnTimerSeconds > 0 && session.Game.TurnState is { Phase: SimultaneousPhase.Playing })
         {
-            TurnDeadline = clock.NowMillis + policy.TurnTimerSeconds * 1000L;
+            var seconds = policy.DynamicTurnTimer
+                ? DynamicTurnTimer.Compute(session.Game, policy.TurnTimerMinSeconds, policy.TurnTimerSeconds)
+                : policy.TurnTimerSeconds;
+            TurnDeadline = clock.NowMillis + seconds * 1000L;
         }
         else
         {
