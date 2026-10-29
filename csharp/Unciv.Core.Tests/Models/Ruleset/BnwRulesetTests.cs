@@ -67,7 +67,7 @@ public sealed class BnwRulesetTests : IDisposable
         Assert.False(r.Nations.ContainsKey("Dublin"));
         Assert.Equal(["Bison", "Cloves", "Cocoa", "Nutmeg", "Pepper"], new[] { "Bison", "Cloves", "Cocoa", "Nutmeg", "Pepper" }.Where(r.TileResources.ContainsKey));
         Assert.Contains("Writer", r.Specialists.Keys);
-        Assert.False(r.Victories.ContainsKey("Cultural"));
+        Assert.True(r.Victories.ContainsKey("Cultural")); // rewritten by B009
     }
 
     [Fact]

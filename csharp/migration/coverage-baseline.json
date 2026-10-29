@@ -555,7 +555,7 @@
     "Unciv.Core/Models/Ruleset/Validation/TextSimilarity.cs": {"branch": 96.67, "line": 96.83},
     "Unciv.Core/Models/Ruleset/Validation/UniqueAutoUpdater.cs": {"branch": 86.36, "line": 97.78},
     "Unciv.Core/Models/Ruleset/Validation/UniqueValidator.cs": {"branch": 72.63, "line": 72.6},
-    "Unciv.Core/Models/Ruleset/Victory.cs": {"branch": 61.59, "line": 75.76},
+    "Unciv.Core/Models/Ruleset/Victory.cs": {"branch": 61.93, "line": 76.35},
     "Unciv.Core/Models/Spy.cs": {"branch": 71.82, "line": 86.65},
     "Unciv.Core/Models/Stats/NamedStats.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Models/Stats/Stat.cs": {"branch": 64.29, "line": 82.76},
