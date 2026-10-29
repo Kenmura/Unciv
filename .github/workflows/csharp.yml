@@ -139,8 +139,9 @@ jobs:
         working-directory: csharp
         run: Unciv.Godot/tools/smoke-export.sh
 
-  # Rendered scenarios (C008) against the committed goldens. Goldens were recorded with Fedora's Mesa llvmpipe; ubuntu's differs by rasterizer rounding,
-  # so this job does not gate merges (continue-on-error) until it has been seen green on the runner image. Then remove that line.
+  # Rendered scenarios (C008) against the committed goldens. Goldens were recorded with Fedora's Mesa llvmpipe; ubuntu's differs in blending (T246), so
+  # the job compares with GoldenTolerance.Renderer (HARNESS_GOLDEN_TOLERANCE below). This job does not gate merges (continue-on-error) until T239 has seen it
+  # green on the runner image and removes that line.
   client-scenarios:
     name: Client scenarios (Xvfb, software GL)
     if: github.event_name != 'schedule'
@@ -178,6 +179,7 @@ jobs:
         working-directory: csharp/Unciv.Godot.Harness
         env:
           HARNESS_SKIP_BUILD: 1   # run-smoke.sh just built the project
+          HARNESS_GOLDEN_TOLERANCE: renderer   # T246: goldens come from Fedora llvmpipe, the runner's differs in blending
         run: |
           failed=()
           while read -r name; do
@@ -187,6 +189,12 @@ jobs:
           # A comparison that cannot fail would pass everything: a wrong golden must be rejected
           tools/run-scenario.sh menu --expect-golden-failure || failed+=("menu --expect-golden-failure")
           if (( ${#failed[@]} )); then echo "FAILED: ${failed[*]}" >&2; exit 1; fi
+      # T246 TEMPORARY diagnostic (removed in the same ticket): the runner's frames, to measure the renderer drift against the goldens
+      - name: Dump frames (T246 diagnostic)
+        if: always()
+        working-directory: csharp/Unciv.Godot.Harness
+        run: |
+          for f in out/hud/start.png out/victory/victory.png out/menu/*.png; do echo "FRAME-BEGIN $f"; base64 -w0 "$f"; echo; echo "FRAME-END"; done
 
   # Long AI-only games (T167). Env-gated, skipped by every other run.
   soak:

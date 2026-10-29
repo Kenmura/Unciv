@@ -8,7 +8,7 @@ namespace Unciv.GodotHarness;
 /// Runs one scenario (C008): seeded session, the scenario's UI, its script. State assertions run before captures; each capture is
 /// compared to its golden; at the end the session's state hash must equal the hash of a headless replay of the command log
 /// (<see cref="ScenarioReplay"/>, no Godot involved). Writes <c>result.json</c> and the PNGs to <c>--out/&lt;scenario&gt;</c>.
-/// User arguments (after <c>--</c>): <c>--scenario=NAME</c>, <c>--out=DIR</c>, <c>--golden-dir=DIR</c>, <c>--update-golden</c>.
+/// User arguments (after <c>--</c>): <c>--scenario=NAME</c>, <c>--out=DIR</c>, <c>--golden-dir=DIR</c>, <c>--update-golden</c>, <c>--golden-tolerance=strict|renderer</c>.
 /// The process exits 0 only when nothing failed.
 /// </summary>
 public partial class ScenarioRunner : Control
@@ -19,6 +19,7 @@ public partial class ScenarioRunner : Control
     private string outDir = "out";
     private string goldenDir = "golden";
     private bool updateGolden;
+    private GoldenTolerance tolerance = new();
 
     public override void _Ready()
     {
@@ -28,6 +29,13 @@ public partial class ScenarioRunner : Control
             else if (arg.StartsWith("--out=", StringComparison.Ordinal)) outDir = arg["--out=".Length..];
             else if (arg.StartsWith("--golden-dir=", StringComparison.Ordinal)) goldenDir = arg["--golden-dir=".Length..];
             else if (arg == "--update-golden") updateGolden = true;
+            else if (arg.StartsWith("--golden-tolerance=", StringComparison.Ordinal))
+            {
+                string profile = arg["--golden-tolerance=".Length..];
+                var chosen = GoldenTolerance.FromName(profile);
+                if (chosen == null) failures.Add($"unknown golden tolerance profile '{profile}' (strict, renderer)");
+                else tolerance = chosen;
+            }
         }
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         GetTree().NodeAdded += FreezeRealTime;
@@ -162,7 +170,7 @@ public partial class ScenarioRunner : Control
             failures.Add($"golden {golden} does not exist (run with --update-golden)");
             return;
         }
-        var compared = GoldenComparer.Compare(image, ViewportCapture.LoadPng(golden));
+        var compared = GoldenComparer.Compare(image, ViewportCapture.LoadPng(golden), tolerance);
         GD.Print($"[scenario] {capture.Step}: {compared.Message} (hash {compared.HashDistance}, mean {compared.MeanAbsoluteDifference:F4}, px {compared.DifferingPixelFraction:P2})");
         if (!compared.Passed) failures.Add($"golden mismatch at {capture.Step}: {compared.Message}");
     }

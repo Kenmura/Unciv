@@ -7,6 +7,7 @@
 #   tools/run-scenario.sh <name> --update-golden         re-record goldens (review the PNGs before committing)
 #   tools/run-scenario.sh <name> --expect-golden-failure self-test: against deliberately wrong goldens the run must FAIL
 #
+# HARNESS_GOLDEN_TOLERANCE=renderer compares with the cross-renderer tolerance of GoldenTolerance.Renderer (CI, T246); default strict.
 # Output: out/<name>/<step>.png and out/<name>/result.json (git-ignored). Run inside dotnet-dev (see csharp/migration/GODOT.md).
 set -euo pipefail
 
@@ -21,6 +22,7 @@ mkdir -p "$out"
 if [[ -z "${HARNESS_SKIP_BUILD:-}" ]]; then (cd "$project" && dotnet build -warnaserror); fi
 
 extra=()
+[[ -n "${HARNESS_GOLDEN_TOLERANCE:-}" ]] && extra+=("--golden-tolerance=$HARNESS_GOLDEN_TOLERANCE")
 case "$mode" in
     "") ;;
     --update-golden) extra+=(--update-golden) ;;

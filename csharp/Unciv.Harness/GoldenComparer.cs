@@ -5,7 +5,20 @@ namespace Unciv.Harness;
 /// <param name="MaxMeanAbsoluteDifference">Largest allowed mean per-channel difference, 0..1 (overall shading/colour drift).</param>
 /// <param name="PixelTolerance">A pixel counts as different when any channel differs by more than this (0..255).</param>
 /// <param name="MaxDifferingPixelFraction">Largest allowed fraction of different pixels, 0..1.</param>
-public sealed record GoldenTolerance(int MaxHashDistance = 6, double MaxMeanAbsoluteDifference = 0.02, int PixelTolerance = 16, double MaxDifferingPixelFraction = 0.05);
+public sealed record GoldenTolerance(int MaxHashDistance = 6, double MaxMeanAbsoluteDifference = 0.02, int PixelTolerance = 16, double MaxDifferingPixelFraction = 0.05)
+{
+    /// <summary>
+    /// Cross-renderer profile (T246): the goldens were recorded with Fedora's Mesa llvmpipe, the ubuntu-24.04 runner's differs in blending/dithering
+    /// (observed: up to 0.062 mean difference, 85% of pixels off by more than 16, hash distance up to 30 on dimmed modal screens, where the hash
+    /// is noise). The hash is therefore not used, and the mean, per-pixel and fraction limits are widened to about twice the observed drift; a
+    /// missing or wrong screen (other layout, blank) still differs far more, which <c>run-scenario.sh --expect-golden-failure</c> proves in CI.
+    /// Selected with <c>HARNESS_GOLDEN_TOLERANCE=renderer</c>; the default stays strict so the developer machine keeps its precise check.
+    /// </summary>
+    public static GoldenTolerance Renderer { get; } = new(MaxHashDistance: 64, MaxMeanAbsoluteDifference: 0.12, PixelTolerance: 48, MaxDifferingPixelFraction: 0.6);
+
+    /// <summary>The profile named by <paramref name="name"/> (<c>strict</c>, the default, or <c>renderer</c>); null for an unknown name.</summary>
+    public static GoldenTolerance? FromName(string? name) => string.IsNullOrEmpty(name) || name == "strict" ? new GoldenTolerance() : name == "renderer" ? Renderer : null;
+}
 
 public sealed record GoldenResult(bool Passed, int HashDistance, double MeanAbsoluteDifference, double DifferingPixelFraction, string Message);
 

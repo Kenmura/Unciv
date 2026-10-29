@@ -66,6 +66,25 @@ public class GoldenComparerTests
     }
 
     [Fact]
+    public void RendererProfileToleratesBlendingDriftButStillRejectsWrongScreens()
+    {
+        var drifted = Scene(shade: 240);
+        Assert.False(GoldenComparer.Compare(drifted, Scene(shade: 200)).Passed);
+        Assert.True(GoldenComparer.Compare(drifted, Scene(shade: 200), GoldenTolerance.Renderer).Passed);
+        Assert.False(GoldenComparer.Compare(RgbaImage.Solid(64, 48, 200, 160, 40), Scene(), GoldenTolerance.Renderer).Passed);
+        Assert.False(GoldenComparer.Compare(Scene(left: 36), Scene(left: 4), GoldenTolerance.Renderer).Passed);
+    }
+
+    [Fact]
+    public void ProfilesAreSelectedByName()
+    {
+        Assert.Equal(new GoldenTolerance(), GoldenTolerance.FromName(null));
+        Assert.Equal(new GoldenTolerance(), GoldenTolerance.FromName("strict"));
+        Assert.Same(GoldenTolerance.Renderer, GoldenTolerance.FromName("renderer"));
+        Assert.Null(GoldenTolerance.FromName("loose"));
+    }
+
+    [Fact]
     public void PerceptualHashIsStableAndSensitiveToLayout()
     {
         ulong hash = PerceptualHash.Compute(Scene());
