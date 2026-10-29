@@ -262,7 +262,7 @@ flowchart TD
   class C093 waiting
   class C094 waiting
   class T239 blocked
-  class T246 prog
+  class T246 review
   class T247 waiting
   class T253 prog
 ```
@@ -357,7 +357,7 @@ xychart-beta
 | B024 | Available (waiting on B002) | B002 | 1 | BNW: Map: Indonesia luxuries, new resources, start along ocean |
 | B025 | Available (waiting on B007, B013) | B007, B013 | 1 | BNW: Score changes |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
-| T246 | In-Progress [Claude] | none | 1 | CI client-scenarios: goldens recorded on Fedora llvmpipe mismatch on ubuntu-24.04 (all rendered scenarios fail); make scenarios CI-stable |
+| T246 | Needs-Review [Claude] | none | 1 | CI client-scenarios: goldens recorded on Fedora llvmpipe mismatch on ubuntu-24.04 (all rendered scenarios fail); make scenarios CI-stable |
 | B026 | Available (waiting on B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
 | C082 | Available (waiting on C081) | C081 | 0 | Articulated placeholder unit with code-built clips |
