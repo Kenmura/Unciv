@@ -1028,7 +1028,7 @@ Scenario `viewport`.
 
 *A 1280x720 capture: the label reads "Pressed by label" and an empty button sits bottom right (harness test, not a game screen).* (`viewport/pressed.png`)
 
-## C062 (ticket not Done or unknown)
+## C062 UI design tokens and theme builder v2
 
 Theme builder v2: every type variation of the UI theme on one sheet. All other goldens were re-recorded with the new theme (colours, fonts, padding and radii changed; some headers clip slightly differently).
 
