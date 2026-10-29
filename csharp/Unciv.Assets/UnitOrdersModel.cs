@@ -28,6 +28,9 @@ public enum MenuEntryKind
     /// <summary>A promotion the unit may take now (promotion query, <see cref="PromoteUnit"/>); <see cref="MenuEntry.Argument"/> is its name.</summary>
     Promote,
 
+    /// <summary>C091: a client-side group entry (escort pair on or off, <see cref="GroupMoveModel"/>); it sends no command by itself.</summary>
+    Group,
+
     /// <summary>Disband (<see cref="DisbandUnit"/>), always last.</summary>
     Disband,
 }

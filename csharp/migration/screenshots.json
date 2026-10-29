@@ -1577,5 +1577,23 @@
         "caption": "Right to left: the settings panel mirrored by the ScreenManager root, the tab column on the right."
       }
     ]
+  },
+  "C091": {
+    "scenario": "group-move",
+    "about": "Group move and escort: shift-click adds units to the selection, the menu offers Escort pair for a civilian and a military unit, and one click on a tile commands every unit with its own ordinary move command (an escort pair together, continuing by itself next turn).",
+    "shots": [
+      {
+        "golden": "group-move/group-selected.png",
+        "caption": "Warrior and settler selected together with shift-click: the panel shows the warrior and its icon grid offers Escort pair."
+      },
+      {
+        "golden": "group-move/group-moved.png",
+        "caption": "Worker grouped with the escort pair, one click on a far tile: the worker and the pair each moved with ordinary commands; the toast says Group move: 2 moved."
+      },
+      {
+        "golden": "group-move/escort-continued.png",
+        "caption": "Next turn: the escort pair took its next step toward the target without any click."
+      }
+    ]
   }
 }

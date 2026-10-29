@@ -11,6 +11,9 @@ public sealed record Click(Func<Vector2> At) : ScenarioStep
     public Click(Vector2 at) : this(() => at) { }
 }
 
+/// <summary>C091: left click with Shift held (adds a unit to the group).</summary>
+public sealed record ShiftClick(Func<Vector2> At) : ScenarioStep;
+
 /// <summary>Key press and release through the viewport.</summary>
 public sealed record PressKey(Key Code, bool Shift = false, bool Ctrl = false, bool Alt = false) : ScenarioStep;
 

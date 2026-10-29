@@ -123,6 +123,11 @@ public partial class ScenarioRunner : Control
     {
         switch (step)
         {
+            case ShiftClick shiftClick:
+                InputSimulator.SimulateMouseClick(GetViewport(), shiftClick.At(), shift: true);
+                await NextFrame();
+                await SettleTurnProcessing();
+                break;
             case Click click:
                 InputSimulator.SimulateMouseClick(GetViewport(), click.At());
                 await NextFrame();

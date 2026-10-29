@@ -5,7 +5,7 @@ namespace Unciv.GodotHarness;
 /// <summary>Synthetic input for headless interaction tests: events go through the viewport exactly like device input would.</summary>
 public static class InputSimulator
 {
-    public static void SimulateMouseClick(Viewport viewport, Vector2 position, MouseButton button = MouseButton.Left)
+    public static void SimulateMouseClick(Viewport viewport, Vector2 position, MouseButton button = MouseButton.Left, bool shift = false)
     {
         SimulateMouseMove(viewport, position);
         foreach (bool pressed in new[] { true, false })
@@ -15,6 +15,7 @@ public static class InputSimulator
                 Position = position,
                 GlobalPosition = position,
                 ButtonIndex = button,
+                ShiftPressed = shift,
                 Pressed = pressed,
                 ButtonMask = pressed ? ToMask(button) : 0,
             };

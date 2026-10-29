@@ -100,6 +100,16 @@ public partial class GameScreen : Control
 
     public int? SelectedUnitId { get; private set; }
 
+    // C091: the units shift-clicked into the selection besides the selected one, and the escort pairs of each viewer (client-side only; every move is an ordinary command)
+    private IReadOnlyList<int> extraGroupIds = [];
+    private readonly Dictionary<string, List<EscortPair>> escorts = [];
+
+    /// <summary>C091: the selected unit and the shift-clicked ones in the order they were added; empty unless two or more are selected.</summary>
+    public IReadOnlyList<int> GroupUnitIds => extraGroupIds.Count == 0 || SelectedUnitId is not { } primary ? [] : [primary, .. extraGroupIds];
+
+    /// <summary>C091: the escort pairs of the viewer.</summary>
+    public IReadOnlyList<EscortPair> Escorts => escorts.TryGetValue(session?.ViewerCivId ?? "", out var list) ? list : [];
+
     /// <summary>C013: the clickable notification list.</summary>
     public NotificationListView Notifications { get; private set; } = null!; // JUSTIFY: C013 assigned in _Ready before any use
 
@@ -1026,6 +1036,9 @@ public partial class GameScreen : Control
             Presenter.Reset();
             turnCancellation?.Cancel();
             SelectedUnitId = null;
+            extraGroupIds = [];
+            escorts.Clear();
+            escortsDue = false;
             mapLoaded = false;
             bannerTurn = -1;
             rivalsTurn = -1;
@@ -1216,6 +1229,7 @@ public partial class GameScreen : Control
         if (SelectedUnitId is { } id && unitNodes.TryGetValue(id, out var selected) && selected.IsOwn)
             Map.Select(new HexCoord(selected.Unit.X, selected.Unit.Y));
         else SelectedUnitId = null;
+        extraGroupIds = SelectedUnitId == null ? [] : [.. extraGroupIds.Where(it => unitNodes.TryGetValue(it, out var member) && member.IsOwn)];
         ApplySelectionScale();
         Run(RefreshSelection());
     }
@@ -1266,7 +1280,7 @@ public partial class GameScreen : Control
 
     private void ApplySelectionScale()
     {
-        foreach (var (id, node) in unitNodes) node.Scale = id == SelectedUnitId ? Vector3.One * SelectedScale : Vector3.One;
+        foreach (var (id, node) in unitNodes) node.Scale = id == SelectedUnitId || extraGroupIds.Contains(id) ? Vector3.One * SelectedScale : Vector3.One;
     }
 
     // Input
@@ -1280,6 +1294,11 @@ public partial class GameScreen : Control
             return;
         }
         var own = OwnUnitsAt(tile);
+        if (Map.LastClickShift && own.Count > 0)
+        {
+            ToggleGroup(own);
+            return;
+        }
         var city = snapshot.Cities.FirstOrDefault(it => it.X == tile.X && it.Y == tile.Y);
         if (city != null && (own.Count == 0 ? SelectedUnitId == null : SelectedUnitId is { } selected && own.Any(it => it.Unit.Id == selected)))
         {
@@ -1440,8 +1459,50 @@ public partial class GameScreen : Control
         if (unitNodes.TryGetValue(id, out var node) && node.IsOwn) SelectUnit(node);
     }
 
+    /// <summary>C091: shift-click on a tile with own units: adds the first of them that is not in the selection, or (when all are) removes them.</summary>
+    private void ToggleGroup(List<UnitNode> here)
+    {
+        if (SelectedUnitId is not { } primary)
+        {
+            SelectUnit(here[0]);
+            return;
+        }
+        IReadOnlyList<int> members = GroupUnitIds.Count > 0 ? GroupUnitIds : [primary];
+        var absent = here.FirstOrDefault(it => !members.Contains(it.Unit.Id));
+        if (absent != null) members = GroupMoveModel.Toggle(members, absent.Unit.Id);
+        else foreach (var node in here) members = GroupMoveModel.Toggle(members, node.Unit.Id);
+        ApplyGroup(members);
+    }
+
+    private void ApplyGroup(IReadOnlyList<int> members)
+    {
+        if (members.Count == 0)
+        {
+            Deselect();
+            return;
+        }
+        int newPrimary = SelectedUnitId is { } current && members.Contains(current) ? current : members[0];
+        SelectedUnitId = newPrimary;
+        extraGroupIds = [.. members.Where(it => it != newPrimary)];
+        ClearPreview();
+        var node = unitNodes[newPrimary];
+        Map.Select(new HexCoord(node.Unit.X, node.Unit.Y));
+        ApplySelectionScale();
+        string hint = GroupMoveModel.Hint(members.Count, GroupPair() != null);
+        SetStatus(hint.Length > 0 ? hint : DescribeSelected(), quiet: true);
+        Run(RefreshSelection());
+    }
+
+    /// <summary>The escort pair that exactly the selected group forms, if any.</summary>
+    private EscortPair? GroupPair()
+    {
+        var group = GroupUnitIds;
+        return group.Count == 2 ? Escorts.FirstOrDefault(it => group.Contains(it.CivilianId) && group.Contains(it.MilitaryId)) : null;
+    }
+
     private void SelectUnit(UnitNode node)
     {
+        extraGroupIds = [];
         SelectedUnitId = node.Unit.Id;
         ClearPreview();
         Map.Select(new HexCoord(node.Unit.X, node.Unit.Y));
@@ -1474,6 +1535,7 @@ public partial class GameScreen : Control
     private void Deselect()
     {
         SelectedUnitId = null;
+        extraGroupIds = [];
         ClearPreview();
         ApplySelectionScale();
         ClearSelectionUi();
@@ -1587,7 +1649,10 @@ public partial class GameScreen : Control
         var targets = await queries.AttackTargets(id);
         if (request != selectionRequest || SelectedUnitId != id) return; // superseded by another selection or a deselect
         session.Ruleset.Units.TryGetValue(unit.Name, out var baseUnit);
-        var menu = UnitOrdersModel.Menu(actions ?? new UnitActionsResult(id, []), tile, promotions, unit.Own?.CurrentMovement > 0f);
+        List<MenuEntry> menu = [.. UnitOrdersModel.Menu(actions ?? new UnitActionsResult(id, []), tile, promotions, unit.Own?.CurrentMovement > 0f)];
+        bool paired = GroupPair() != null;
+        if (paired || GroupMoveModel.Offer([.. GroupUnitIds.Select(it => unitNodes[it].Unit)], name => session.Ruleset.Units.GetValueOrDefault(name)) != null)
+            menu.Insert(menu.Count > 0 && menu[^1].Kind == MenuEntryKind.Disband ? menu.Count - 1 : menu.Count, GroupMoveModel.Entry(paired));
         Panel.Show(UnitOrdersModel.Panel(unit, baseUnit), menu);
         PromoteButton.Visible = promotions is { Promotions.Count: > 0 };
         bool wasFounding = foundsCities;
@@ -1653,6 +1718,11 @@ public partial class GameScreen : Control
     private async Task ExecuteEntry(MenuEntry entry, bool confirmed)
     {
         if (SelectedUnitId is not { } id) return;
+        if (entry.Kind == MenuEntryKind.Group)
+        {
+            ToggleEscort(entry.Argument == GroupMoveModel.EscortArgument);
+            return;
+        }
         GameCommand command = entry.Kind switch
         {
             MenuEntryKind.Engine => new ExecuteUnitAction { UnitId = id, Descriptor = entry.Action.NotNull().Descriptor, Confirmed = confirmed },
@@ -1670,9 +1740,83 @@ public partial class GameScreen : Control
         SetStatus($"{entry.Label}: done.");
     }
 
+    private void ToggleEscort(bool make)
+    {
+        var group = GroupUnitIds;
+        string viewer = session.ViewerCivId ?? "";
+        if (!escorts.TryGetValue(viewer, out var list)) escorts[viewer] = list = [];
+        list.RemoveAll(it => group.Contains(it.CivilianId) || group.Contains(it.MilitaryId));
+        if (make && GroupMoveModel.Offer([.. group.Select(it => unitNodes[it].Unit)], name => session.Ruleset.Units.GetValueOrDefault(name)) is { } pair) list.Add(pair);
+        SetStatus(make ? "Escort pair formed: it moves together." : "Escort ended.");
+        Run(RefreshSelection());
+    }
+
+    private sealed class GroupEnvironment(GameScreen screen) : IGroupMoveEnvironment
+    {
+        private UnitDto? Own(int id) => screen.session.Snapshot.Units.FirstOrDefault(it => it.Id == id && it.Own != null);
+
+        public HexCoord? Position(int unitId) => Own(unitId) is { } unit ? new HexCoord(unit.X, unit.Y) : null;
+
+        public float MovesLeft(int unitId) => Own(unitId)?.Own?.CurrentMovement ?? 0f;
+
+        public Task<PathPreviewResult?> PathAsync(int unitId, HexCoord to) => screen.queries.Path(unitId, to.x, to.y);
+
+        public Task<SubmitResult> MoveAsync(int unitId, HexCoord to) => screen.session.SubmitAsync(new MoveUnit { UnitId = unitId, To = to });
+    }
+
+    private string UnitName(int id) => unitNodes.TryGetValue(id, out var node) ? node.Unit.Name : "Unit";
+
+    /// <summary>C091: moves the whole selection toward a tile (escort pairs as pairs); the pairs remember the tile and continue at the start of each turn.</summary>
+    private async Task MoveGroupTo(HexCoord target)
+    {
+        var ids = GroupUnitIds;
+        var report = await GroupMoveModel.MoveGroupAsync(new GroupEnvironment(this), ids, Escorts, target);
+        string viewer = session.ViewerCivId ?? "";
+        if (escorts.TryGetValue(viewer, out var list))
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                var pair = list[i];
+                if (!ids.Contains(pair.CivilianId) || !ids.Contains(pair.MilitaryId)) continue;
+                var outcome = report.Outcomes.FirstOrDefault(it => it.UnitId == pair.MilitaryId);
+                list[i] = pair with { Target = outcome?.Status == GroupMoveStatus.Moved ? target : null };
+            }
+        }
+        if (report.Outcomes.Any(it => it.Status == GroupMoveStatus.Moved)) ReportTaskDone(TutorialTaskModel.MoveUnitTask);
+        Refresh();
+        SetStatus(GroupMoveModel.Summary(report, UnitName));
+    }
+
+    private bool escortsDue;
+
+    private bool EscortsCanMove() =>
+        Escorts.Any(pair => pair.Target != null && snapshot.Units.Any(it => it.Id == pair.MilitaryId && it.Own?.CurrentMovement > 0f));
+
+    /// <summary>C091: at the start of a turn every escort pair with a standing move takes its next step (two ordinary move commands each).</summary>
+    private async Task ContinueEscorts()
+    {
+        if (!escorts.TryGetValue(session.ViewerCivId ?? "", out var list)) return;
+        var env = new GroupEnvironment(this);
+        bool any = false;
+        for (int i = 0; i < list.Count; i++)
+        {
+            var pair = list[i];
+            if (pair.Target is not { } target) continue;
+            var outcome = await GroupMoveModel.EscortStepAsync(env, pair, target);
+            any |= outcome.Status == GroupMoveStatus.Moved;
+            if (outcome.Status != GroupMoveStatus.Moved) list[i] = pair with { Target = null };
+        }
+        if (any) Refresh();
+    }
+
     private async Task MoveSelectedTo()
     {
         var path = preview;
+        if (GroupUnitIds.Count > 1 && PreviewTarget is { } groupTarget)
+        {
+            await MoveGroupTo(groupTarget);
+            return;
+        }
         if (path?.FirstStep is not { } step || SelectedUnitId is not { } unitId) return;
         var result = await session.SubmitAsync(new MoveUnit { UnitId = unitId, To = new HexCoord(step.X, step.Y) });
         if (!result.Accepted)
@@ -1700,8 +1844,14 @@ public partial class GameScreen : Control
         Notifications.Update(bar.Turn, rows);
         if (bar.Turn != bannerTurn)
         {
+            if (bannerTurn >= 0) escortsDue = true;
             bannerTurn = bar.Turn;
             Hud.ShowBanner(HudModel.Banner(bar.Turn, bar.Year, session.ViewerCivId));
+        }
+        if (escortsDue && EscortsCanMove())
+        {
+            escortsDue = false; // the new turn has begun for the viewer (its units have movement again)
+            await ContinueEscorts();
         }
         ShowNextAlert(pending, reopen: false);
         ShowNextProposal(reopen: false);

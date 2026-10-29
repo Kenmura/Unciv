@@ -76,6 +76,7 @@
 - [C088 City-site preview: yields at a candidate settle tile](#c088-city-site-preview-yields-at-a-candidate-settle-tile)
 - [C089 Map markers: private client-side tacks](#c089-map-markers-private-client-side-tacks)
 - [C090 Shared map pings and team markers (multiplayer)](#c090-shared-map-pings-and-team-markers-multiplayer)
+- [C091 (ticket not Done or unknown)](#c091-ticket-not-done-or-unknown)
 - [C093 Unit art by era: medieval and renaissance](#c093-unit-art-by-era-medieval-and-renaissance)
 - [C094 Unit art by era: industrial, modern and naval/air](#c094-unit-art-by-era-industrial-modern-and-navalair)
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
@@ -1559,6 +1560,24 @@ Scenario `map-pings`.
 ![An ally's blue 'Bob: Look here' ping, bright, beside Alice's earlier red ping which is already fading.](../Unciv.Godot.Harness/golden/map-pings/ally.png)
 
 *An ally's blue 'Bob: Look here' ping, bright, beside Alice's earlier red ping which is already fading.* (`map-pings/ally.png`)
+
+## C091 (ticket not Done or unknown)
+
+Group move and escort: shift-click adds units to the selection, the menu offers Escort pair for a civilian and a military unit, and one click on a tile commands every unit with its own ordinary move command (an escort pair together, continuing by itself next turn).
+
+Scenario `group-move`.
+
+![Warrior and settler selected together with shift-click: the panel shows the warrior and its icon grid offers Escort pair.](../Unciv.Godot.Harness/golden/group-move/group-selected.png)
+
+*Warrior and settler selected together with shift-click: the panel shows the warrior and its icon grid offers Escort pair.* (`group-move/group-selected.png`)
+
+![Worker grouped with the escort pair, one click on a far tile: the worker and the pair each moved with ordinary commands; the toast says Group move: 2 moved.](../Unciv.Godot.Harness/golden/group-move/group-moved.png)
+
+*Worker grouped with the escort pair, one click on a far tile: the worker and the pair each moved with ordinary commands; the toast says Group move: 2 moved.* (`group-move/group-moved.png`)
+
+![Next turn: the escort pair took its next step toward the target without any click.](../Unciv.Godot.Harness/golden/group-move/escort-continued.png)
+
+*Next turn: the escort pair took its next step toward the target without any click.* (`group-move/escort-continued.png`)
 
 ## C093 Unit art by era: medieval and renaissance
 
