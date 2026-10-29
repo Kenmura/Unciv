@@ -198,9 +198,9 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class B001 ready
-  class B002 waiting
-  class B003 waiting
+  class B001 prog
+  class B002 ondeck
+  class B003 ondeck
   class B004 waiting
   class B005 waiting
   class B006 waiting
@@ -224,8 +224,8 @@ flowchart TD
   class B024 waiting
   class B025 waiting
   class B026 waiting
-  class C065 prog
-  class C066 ondeck
+  class C065 ready
+  class C066 waiting
   class C067 waiting
   class C068 waiting
   class C069 waiting
@@ -299,12 +299,12 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| B001 | **Ready to start** | none | 25 | BNW: BaseRuleset.Civ_V_BNW, ModOptions gates, ModConstants, CompatibilityVersion bump |
+| C065 | **Ready to start** | C062, C063, C064 | 21 | UI shared components |
 | C080 | **Ready to start** | none | 8 | Unit model loader and contract |
-| C066 | **On deck** (after C065) | C065 | 20 | ScreenFrame, Modal and Tooltip |
-| C065 | In-Progress [Claude] | C062, C063, C064 | 21 | UI shared components |
-| B003 | Available (waiting on B001) | B001 | 20 | BNW: New UniqueTypes (declarations, parameter types, docs only) |
-| B002 | Available (waiting on B001) | B001 | 16 | BNW: Ruleset generator gen_ruleset.py, overrides.json and generated JSON |
+| B003 | **On deck** (after B001) | B001 | 20 | BNW: New UniqueTypes (declarations, parameter types, docs only) |
+| B002 | **On deck** (after B001) | B001 | 16 | BNW: Ruleset generator gen_ruleset.py, overrides.json and generated JSON |
+| B001 | In-Progress [Claude] | none | 25 | BNW: BaseRuleset.Civ_V_BNW, ModOptions gates, ModConstants, CompatibilityVersion bump |
+| C066 | Available (waiting on C065) | C065 | 20 | ScreenFrame, Modal and Tooltip |
 | C067 | Available (waiting on C066) | C066 | 11 | World HUD layout |
 | B005 | Available (waiting on B003) | B003 | 10 | BNW: Trade routes: model, slots, range, yields, lifecycle, plunder, commands, queries |
 | B012 | Available (waiting on B002) | B002 | 10 | BNW: Policy tree: branch era gates, branch-gated wonders, finishers |
