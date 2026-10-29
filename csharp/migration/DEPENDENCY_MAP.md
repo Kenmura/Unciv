@@ -83,7 +83,7 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class C096 prog
+  class C096 review
   class C098 prog
   class C099 ondeck
   class C100 ondeck
@@ -160,7 +160,7 @@ xychart-beta
 | C101 | **On deck** (after C096) | C096 | 0 | Phone layouts of the full screens (split by screen group when claimed): HUD and menus, city, tech and policy, tables, pedia |
 | T278 | **On deck** (after T260) | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T260 | In-Progress [Claude-T260] | T259, C042 | 4 | Android APK build: unblock the .NET export (net9.0 target or Gradle), Android preset, debug-signed arm64 APK from tools/package.sh android |
-| C096 | In-Progress [Claude-C096] | T259, C043 | 3 | Touch map input and density-derived UI scale: pinch/pan, tap and long-press, 48 dp targets, phone-world scenario |
+| C096 | Needs-Review [Claude-C096] | T259, C043 | 3 | Touch map input and density-derived UI scale: pinch/pan, tap and long-press, 48 dp targets, phone-world scenario |
 | T272 | Available (waiting on T281) | T281, T267 | 3 | Host migration 2/5: standby replication (StandbySubscribe/Snapshot/Entry/Ack, standby store in the successor's data dir, lag handling) |
 | T258 | In-Progress [Claude-T258] | C042, T169 | 2 | Windows and macOS client release builds (packaged, smoke-tested, released) |
 | T265 | In-Progress [Claude-T265] | T178, T179, T204, T205 | 2 | Dedicated server executable A: Unciv.Server command line, lobby and game hosting over TCP+TLS |
