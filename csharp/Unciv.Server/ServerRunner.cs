@@ -195,14 +195,8 @@ public static class ServerRunner
             {
                 client = await tcp.AcceptTcpAsync(token).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) { return; }
-            catch (ObjectDisposedException) { return; }
-            catch (SocketException) when (token.IsCancellationRequested) { return; }
-            catch (Exception e)
-            {
-                log.Debug("accept failed: " + e.Message);
-                continue;
-            }
+            catch (Exception e) when (token.IsCancellationRequested || e is ObjectDisposedException) { return; }
+            catch (Exception e) { log.Debug("accept failed: " + e.Message); continue; }
             _ = HandshakeAndAttachAsync(tcp, client, lobby, log, token); // per connection: a client that sends nothing must not stall the others
         }
     }

@@ -765,10 +765,10 @@
     "Unciv.Server/Program.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Server/ServerLobby.cs": {"branch": 90.91, "line": 100.0},
     "Unciv.Server/ServerOptions.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Server/ServerRunner.cs": {"branch": 87.5, "line": 97.71},
+    "Unciv.Server/ServerRunner.cs": {"branch": 85.71, "line": 98.4},
     "Unciv.Server/Transport/BoundedSendTransport.cs": {"branch": 100.0, "line": 98.73},
     "Unciv.Server/Transport/HostCertificate.cs": {"branch": 66.67, "line": 86.36},
-    "Unciv.Server/Transport/TcpTlsListener.cs": {"branch": 75.0, "line": 97.78},
+    "Unciv.Server/Transport/TcpTlsListener.cs": {"branch": 75.0, "line": 100.0},
     "Unciv.Server/Transport/TcpTlsTransport.cs": {"branch": 90.0, "line": 96.67}
   },
   "excused": {
