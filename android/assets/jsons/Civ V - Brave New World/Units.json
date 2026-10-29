@@ -1950,14 +1950,14 @@
 		"movement": 1,
 		"cost": 100,
 		"requiredTech": "Sailing",
-		"uniques": ["Unbuildable"]
+		"uniques": ["Unbuildable", "Can establish trade routes"]
 	},
 	{
 		"name": "Caravan",
 		"unitType": "Civilian",
 		"movement": 1,
 		"requiredTech": "Animal Husbandry",
-		"uniques": ["Unbuildable"],
+		"uniques": ["Unbuildable", "Can establish trade routes"],
 		"cost": 75
 	},
 	{

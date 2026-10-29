@@ -1147,14 +1147,16 @@
     "Caravan": {
      "copyFrom": "Worker",
      "uniques": [
-      "Unbuildable"
+      "Unbuildable",
+      "Can establish trade routes"
      ]
     },
     "Cargo Ship": {
      "copyFrom": "Work Boat",
      "unitType": "Civilian Water",
      "uniques": [
-      "Unbuildable"
+      "Unbuildable",
+      "Can establish trade routes"
      ]
     },
     "Archaeologist": {
@@ -1183,7 +1185,7 @@
      "uniques+": ["Building [3] of these unlocks Ideologies"]
     },
     "International Space Station": {
-     "uniques": [
+     "uniques+": [
       "Unbuildable"
      ]
     },

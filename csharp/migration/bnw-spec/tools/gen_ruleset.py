@@ -92,9 +92,28 @@ def lenient_loads(text):
     return json.loads(re.sub(r",(\s*[\]}])", r"\1", "".join(out)))
 
 
+READ_COLUMNS = {}  # table -> columns the generator looked at (B033: the unread-column sweep of the report)
+
+
+class Row(dict):
+    """A TSV row that remembers which columns were read, so the report can list the non-empty ones nothing looked at."""
+
+    def __init__(self, table, data):
+        super().__init__(data)
+        self.table = table
+
+    def __getitem__(self, key):
+        READ_COLUMNS.setdefault(self.table, set()).add(key)
+        return super().__getitem__(key)
+
+    def get(self, key, default=None):
+        READ_COLUMNS.setdefault(self.table, set()).add(key)
+        return super().get(key, default)
+
+
 def tsv(name):
     with open(DATA / (name + ".tsv"), encoding="utf-8", newline="") as f:
-        return list(csv.DictReader(f, delimiter="\t"))
+        return [Row(name, r) for r in csv.DictReader(f, delimiter="\t")]
 
 
 def dump_json(value, indent=0):
@@ -163,6 +182,30 @@ def apply_renames(node, renames):
 # ----------------------------------------------------------------------------------------------------------------------
 # Techs
 # ----------------------------------------------------------------------------------------------------------------------
+# B033: every non-empty Technologies.tsv column, and what happens to it. "emitted" columns are written below; "G&K" columns are the
+# Civ V rules Unciv's G&K Techs.json already states with the same unique (BnwGeneratedRulesetTests proves each on the real ruleset);
+# "skipped" columns have no Unciv or engine counterpart. A new non-empty column fails the generator until it is listed here.
+TECH_COLUMNS = {
+    "Name": "key", "Type": "key", "Cost": "emitted (cost)", "Era": "unused: Unciv derives the era from the column",
+    "GridX": "emitted (column)", "GridY": "emitted (row)", "Description": "skipped: Civilopedia text",
+    "InfluenceSpreadModifier": "emitted (The Internet, SPEC 4.3.4)", "TriggersArchaeologicalSites": "emitted (Archaeology, B010)",
+    "AllowsWorldCongress": "emitted (Printing Press, B015)", "ExtraVotesPerDiplomat": "emitted (Globalization, B015)",
+    "InternationalTradeRoutesChange": "emitted: one trade route slot per tech (B005, SPEC 3.2)",
+    "EmbarkedMoveChange": "G&K: '[+1] Movement <for [Embarked] units>' (Astronomy, Steam Power)",
+    "AllowsEmbarking": "G&K: 'Enables embarkation for land units' (Optics)",
+    "EmbarkedAllWaterPassage": "G&K: 'Enables [Embarked] units to enter ocean tiles' (Astronomy)",
+    "Repeat": "G&K: 'Can be continually researched' (Future Tech)",
+    "MapVisible": "G&K: 'Reveals the entire map' (Satellites)",
+    "AllowEmbassyTradingAllowed": "G&K: 'Enables establishment of embassies' (Writing)",
+    "OpenBordersTradingAllowed": "G&K: 'Enables Open Borders agreements' (Civil Service)",
+    "DefensivePactTradingAllowed": "G&K: 'Enables Defensive Pacts' (Chivalry)",
+    "ResearchAgreementTradingAllowed": "G&K: 'Enables Research agreements' (Education)",
+    "BridgeBuilding": "G&K: 'Roads connect tiles across rivers' (Engineering)",
+    "Trade": "skipped: Civ V lets every tech be traded in a deal; Unciv has no per-tech switch",
+    "GoodyTech": "skipped: Civ V's goody-hut tech pool; Unciv grants any unresearched tech",
+}
+
+
 def build_techs(gk_techs, report):
     cols = {c["columnNumber"]: {k: v for k, v in c.items() if k != "techs"} for c in gk_techs}
     old = {t["name"]: t for c in gk_techs for t in c["techs"]}
@@ -170,8 +213,14 @@ def build_techs(gk_techs, report):
     prereqs = {}
     for r in tsv("Technology_PrereqTechs"):
         prereqs.setdefault(r["TechType"], []).append(by_type[r["PrereqTech"]])
+    trade_range = {}
+    for dr in tsv("Technology_TradeRouteDomainExtraRange"):
+        trade_range.setdefault(dr["TechType"], []).append(dr)
     grouped = {}
     for r in tsv("Technologies"):
+        unlisted = [c for c, v in r.items() if v not in ("", "0") and c not in TECH_COLUMNS]
+        if unlisted:
+            raise SystemExit(f"Technologies.tsv column(s) {unlisted} are non-empty for {r['Name']} but not classified in TECH_COLUMNS")
         name = r["Name"]
         col = int(r["GridX"])
         if col not in cols:
@@ -185,6 +234,11 @@ def build_techs(gk_techs, report):
             t["uniques"] = list(t.get("uniques", [])) + ["Allows founding the World Congress"]
         if num(r.get("ExtraVotesPerDiplomat")):
             t["uniques"] = list(t.get("uniques", [])) + [f"[+{num(r['ExtraVotesPerDiplomat'])}] votes per Diplomat in the World Congress"]
+        # B033: trade route slots (InternationalTradeRoutesChange) and the flat trade range of Technology_TradeRouteDomainExtraRange
+        if num(r["InternationalTradeRoutesChange"]):
+            t["uniques"] = list(t.get("uniques", [])) + [f"[+{num(r['InternationalTradeRoutesChange'])}] trade route slots"]
+        for dr in trade_range.get(r["Type"], []):
+            t["uniques"] = list(t.get("uniques", [])) + [f"[+{num(dr['Range'])}] {TRADE_DOMAIN[dr['DomainType']]} trade route range"]
         if prereqs.get(r["Type"]):
             t["prerequisites"] = prereqs[r["Type"]]
         else:
@@ -214,6 +268,7 @@ def build_techs(gk_techs, report):
 # ----------------------------------------------------------------------------------------------------------------------
 # Shared lookups
 # ----------------------------------------------------------------------------------------------------------------------
+TRADE_DOMAIN = {"DOMAIN_LAND": "land", "DOMAIN_SEA": "sea"}
 YIELDS = {"YIELD_FOOD": "food", "YIELD_PRODUCTION": "production", "YIELD_GOLD": "gold", "YIELD_SCIENCE": "science",
           "YIELD_CULTURE": "culture", "YIELD_FAITH": "faith"}
 NATION_FOR_CIV = {  # BNW civilization type -> Unciv nation name (G&K names kept)
@@ -332,6 +387,49 @@ def name_groups_from_works(files, report):
 # ----------------------------------------------------------------------------------------------------------------------
 # Buildings
 # ----------------------------------------------------------------------------------------------------------------------
+FREE_XP_DOMAIN = {"DOMAIN_LAND": "Land", "DOMAIN_SEA": "Water", "DOMAIN_AIR": "Air"}
+HOOK_YIELD_NAMES = {"YIELD_FOOD": "Food", "YIELD_PRODUCTION": "Production", "YIELD_GOLD": "Gold", "YIELD_SCIENCE": "Science",
+                    "YIELD_CULTURE": "Culture", "YIELD_FAITH": "Faith"}
+
+
+def building_hook_uniques(r, lk, xp_rows, religion_rows):
+    """B033: the trade route, tourism, Great Work and league columns of Buildings.tsv as the uniques B003 declared (SPEC 3.2).
+    The trade gold bonuses are Times100 in the table and stay hundredths of Gold in the unique; the two recipient columns are whole Gold."""
+    out = []
+
+    def add(column, template):
+        n = num(r[column])
+        if n:
+            out.append(template.format(n=n))
+
+    add("GreatWorksTourismModifier", "[+{n}]% Tourism from Great Works [in this city]")
+    add("LandmarksTourismPercent", "[{n}]% of Culture from Wonders, Landmarks and Natural Wonders added as Tourism")
+    if num(r["TechEnhancedTourism"]):
+        out.append(f"[+{num(r['TechEnhancedTourism'])}] Tourism <after discovering [{lk.tech_name[r['EnhancedYieldTech']]}]>")
+    if num(r["AllowsFoodTradeRoutes"]):
+        out.append("Allows domestic [Food] trade routes from this city")
+    if num(r["AllowsProductionTradeRoutes"]):
+        out.append("Allows domestic [Production] trade routes from this city")
+    add("TradeRouteLandDistanceModifier", "[+{n}]% land trade route range [in this city]")
+    add("TradeRouteSeaDistanceModifier", "[+{n}]% sea trade route range [in this city]")
+    add("TradeRouteLandGoldBonus", "[+{n}] Gold (x1/100) from land trade routes [in this city]")
+    add("TradeRouteSeaGoldBonus", "[+{n}] Gold (x1/100) from sea trade routes [in this city]")
+    add("TradeRouteRecipientBonus", "[+{n}] Gold to the owner of an international trade route from this city")
+    add("TradeRouteTargetBonus", "[+{n}] Gold to the owner of an international trade route to this city")
+    add("NumTradeRouteBonus", "[+{n}] trade route slots")
+    add("CityStateTradeRouteProductionModifier", "[+{n}]% Production for each trade route to a city-state")
+    add("GreatScientistBeakerModifier", "[+{n}]% Science from Great Scientists' bulbs")
+    if num(r["InstantMilitaryIncrease"]):
+        out.append("Doubles the number of military units")
+    for xr in xp_rows.get(r["Type"], []):
+        out.append(f"[+{num(xr['Experience'])}] XP for [{FREE_XP_DOMAIN[xr['DomainType']]}] units per Great Work in this city")
+    for yr in religion_rows.get(r["Type"], []):
+        # [I]: Times100 like the other per-religion rates (Candi: 200 -> +2 Faith per religion); the effect is a later feature ticket
+        if num(yr["Yield"]):
+            out.append(f"[+{num(yr['Yield']) // 100} {HOOK_YIELD_NAMES[yr['YieldType']]}] for each religion in this city")
+    return out
+
+
 def build_buildings(gk, techs_json, lk, work_names, report):
     old = {b["name"]: b for b in gk}
     costs = era_costs(techs_json)
@@ -342,6 +440,11 @@ def build_buildings(gk, techs_json, lk, work_names, report):
     theming = {}
     for tr in tsv("Building_ThemingBonuses"):
         theming.setdefault(tr["BuildingType"], []).append(tr)
+    xp_rows, religion_rows = {}, {}
+    for xr in tsv("Building_DomainFreeExperiencePerGreatWork"):
+        xp_rows.setdefault(xr["BuildingType"], []).append(xr)
+    for yr in tsv("Building_YieldChangesPerReligion"):
+        religion_rows.setdefault(yr["BuildingType"], []).append(yr)
     out, seen = [], set()
     for r in tsv("Buildings"):
         bnw_name = r["Name"]
@@ -410,6 +513,9 @@ def build_buildings(gk, techs_json, lk, work_names, report):
             if r["FreeGreatWork"]:
                 b.setdefault("uniques", []).append(f"Contains the Great Work [{work_names[r['FreeGreatWork']]}] when built")
             report.add("buildings", f"{name}: {b['greatWorkSlots']} {b['greatWorkSlotType']} slot(s), {len(theming.get(r['Type'], []))} theming row(s)")
+        for text in building_hook_uniques(r, lk, xp_rows, religion_rows):
+            if text not in b.get("uniques", []):
+                b.setdefault("uniques", []).append(text)
         # Cost: omit when it equals the era default of the required tech (Unciv derives it), set otherwise.
         cost = num(r["Cost"])
         default = None
@@ -695,8 +801,42 @@ def gate_wonders_by_branch(buildings, report):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+SWEPT_TABLES = ["Technologies", "Buildings", "Units", "Policies", "Resources", "Improvements"]
+
+
+# Columns the generator code does not read but overrides.json states by hand (checked on the real ruleset by BnwGeneratedRulesetTests).
+OVERRIDE_COLUMNS = {
+    "Buildings.NullifyInfluenceModifier": "Great Firewall: 'Other civs' cultural influence is nullified here'",
+    "Buildings.ExtraLeagueVotes": "Forbidden Palace: '[+2] Delegates in the World Congress'",
+    "Buildings.UnlockedByLeague": "International Space Station: 'Unbuildable' (the league project reward is B015)",
+    "Units.OneShotTourism": "Great Musician: the tourism blast unique",
+    "Units.OneShotTourismPercentOthers": "Great Musician: the tourism blast unique",
+    "Units.Trade": "Caravan, Cargo Ship: 'Can establish trade routes' (they stay Unbuildable until B006)",
+    "Units.BaseCultureTurnsToCount": "Great Writer: the Great Work culture turns",
+}
+
+
+def unread_columns_report(report):
+    """B033: the non-empty columns of the swept tables that no generator code read, so a gap such as B027/B032 shows up in review.
+    Most are Civ V columns Unciv has no counterpart for (art, AI, spaceship, advanced start), or are carried by the G&K objects the
+    generator starts from; Policies are hand-curated in overrides.json (policyUniques), Units keep their G&K types and uniques."""
+    for table in SWEPT_TABLES:
+        with open(DATA / (table + ".tsv"), encoding="utf-8", newline="") as f:
+            rows = list(csv.DictReader(f, delimiter="\t"))
+        read = READ_COLUMNS.get(table, set())
+        for column in rows[0]:
+            count = sum(1 for r in rows if r[column] not in ("", "0"))
+            key = f"{table}.{column}"
+            if count and column not in read:
+                if key in OVERRIDE_COLUMNS:
+                    report.add("unread columns (stated in overrides.json)", f"{key}: {OVERRIDE_COLUMNS[key]}")
+                else:
+                    report.add("unread columns", f"{key}: {count} non-empty row(s)")
+
+
 def generate():
     report = Report()
+    READ_COLUMNS.clear()
     files = {p.name: lenient_loads(p.read_text(encoding="utf-8")) for p in sorted(GK_DIR.glob("*.json"))}
     files = {n: apply_renames(v, RENAMES) for n, v in files.items()}
     for old_name, new_name in RENAMES.items():
@@ -730,6 +870,7 @@ def generate():
     for key, texts in overrides.get("pending", {}).items():
         for t in texts:
             report.add("pending uniques (not emitted: need B003 UniqueTypes, wired by B010 or the feature ticket)", f"{key}: {t}")
+    unread_columns_report(report)
     consts = mod_constants(report)
     mo = files["ModOptions.json"]
     mo["uniques"] = [u for u in overrides.get("gates", [])]

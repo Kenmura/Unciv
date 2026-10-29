@@ -44,6 +44,17 @@ class GeneratorTests(unittest.TestCase):
         self.assertIn("Triggers the creation of archaeological sites", techs["Archaeology"]["uniques"])
         self.assertIn("[+100]% influence spread from Tourism", techs["The Internet"]["uniques"])
 
+    def test_trade_hooks_are_emitted_and_every_tech_column_is_classified(self):
+        files = g.generate()[0]
+        techs = {t["name"]: t for c in files["Techs.json"] for t in c["techs"]}
+        self.assertIn("[+1] trade route slots", techs["Compass"]["uniques"])
+        self.assertIn("[+10] sea trade route range", techs["Compass"]["uniques"])
+        buildings = {b["name"]: b for b in files["Buildings.json"]}
+        self.assertIn("[+200] Gold (x1/100) from land trade routes [in this city]", buildings["Caravansary"]["uniques"])
+        self.assertIn("[+12] Tourism <after discovering [Radio]>", buildings["Eiffel Tower"]["uniques"])
+        for row in g.tsv("Technologies"):
+            self.assertTrue(all(c in g.TECH_COLUMNS for c, v in row.items() if v not in ("", "0")), row["Name"])
+
     def test_lenient_loads(self):
         self.assertEqual(g.lenient_loads('{"a": [1, 2,], // c\n "b": "x//y" /* z */}'), {"a": [1, 2], "b": "x//y"})
 
