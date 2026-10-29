@@ -94,7 +94,7 @@ flowchart TD
   class C101 waiting
   class T258 ready
   class T260 ready
-  class T261 prog
+  class T261 review
   class T262 ondeck
   class T263 ondeck
   class T265 ready
@@ -106,7 +106,7 @@ flowchart TD
   class T273 waiting
   class T274 waiting
   class T275 waiting
-  class T276 review
+  class T276 prog
   class T277 waiting
   class T278 waiting
 ```
@@ -164,9 +164,9 @@ xychart-beta
 | T271 | **On deck** (after C097) | T259, C097 | 0 | Real-GPU frame-time pass for graphics levels on Linux, Windows, macOS and a mid-range Android phone |
 | T269 | In-Progress [Claude-T269] | T268, T267, T179, T205 | 4 | Host migration 1/5: hostEpoch fencing and backup-host designation (StandbyOffer/Accept/Decline/Revoke, probe, HostSuccessor announcement) |
 | C097 | In-Progress [Claude-C097] | T264, C043, C002 | 2 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
-| T261 | In-Progress [Claude-T261] | T227, T178, T208, B026 | 2 | Turn-time profiling harness and baseline: where end-turn time goes (AI per civ, per phase, host delta build) |
+| T261 | In-Review [Claude-T261] | T227, T178, T208, B026 | 2 | Turn-time profiling harness and baseline: where end-turn time goes (AI per civ, per phase, host delta build) |
 | T273 | Available (waiting on T272) | T272, T267 | 2 | Host migration 3/5: graceful hand-off and promotion (HostHandoff, promote from standby store, client redirect, rolledBack resync) |
-| T276 | Needs-Review [Claude-T276] | T259 | 2 | Android content delivery without an executable folder: jsons, packs and fonts from the pck extracted to user:// |
+| T276 | In-Progress [Claude-T276] | T259 | 2 | Android content delivery without an executable folder: jsons, packs and fonts from the pck extracted to user:// |
 | T270 | Available (waiting on T265) | T265, T176, T254 | 1 | Dedicated server executable B: graceful shutdown, persistence and resume, exit codes, subprocess test |
 | T274 | Available (waiting on T273) | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | C099 | Available (waiting on T260, C096) | T260, C096 | 0 | Android shell behaviour: back button, safe area, orientation, lifecycle autosave, virtual keyboard, hide Host, permissions |
