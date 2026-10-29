@@ -81,7 +81,7 @@
     "Unciv.Assets/UnitVisuals.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/VictoryStatusModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/VoteResultModel.cs": {"branch": 100.0, "line": 100.0},
-    "Unciv.Cli/BenchRunner.cs": {"branch": 79.78, "line": 96.07},
+    "Unciv.Cli/BenchRunner.cs": {"branch": 79.78, "line": 96.13},
     "Unciv.Cli/CliArgs.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Cli/CliRunner.cs": {"branch": 93.43, "line": 98.53},
     "Unciv.Cli/PathFileHandle.cs": {"branch": 93.75, "line": 100.0},
