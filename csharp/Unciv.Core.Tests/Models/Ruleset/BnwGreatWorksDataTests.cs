@@ -78,7 +78,10 @@ public sealed class BnwGreatWorksDataTests
     {
         var buildings = BnwRulesetTests.LoadBnw().Buildings;
         foreach (var name in new[] { "Opera House", "Museum", "Broadcast Tower", "Amphitheater", "Cathedral", "Ceilidh Hall" })
+        {
             Assert.DoesNotContain("Destroyed when the city is captured", buildings[name].Uniques);
+            Assert.Contains("Never destroyed when the city is captured", buildings[name].Uniques);
+        }
     }
 
     [Fact]
