@@ -55,7 +55,8 @@ public static class ContentBundle
         }
         catch
         {
-            Directory.Delete(work, true);
+            try { Directory.Delete(work, true); }
+            catch (IOException) { /* the next start deletes the leftover; the original failure is the one to report */ }
             throw;
         }
         if (Directory.Exists(stagingDir)) Directory.Delete(stagingDir, true);

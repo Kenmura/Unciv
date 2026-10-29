@@ -14,17 +14,34 @@ public static class ContentRoot
     private static string? resolved;
     private static bool done;
 
+    private static readonly object Gate = new();
+
+    /// <summary>
+    /// The content root, resolved once (locked: the temp folder of an extraction is shared). An extraction failure (disk full, unreadable bundle) is logged once and cached as null, so callers fall through to their
+    /// own "no content" errors instead of every one of them retrying a 30 MB extraction. The res:// bundle is ignored in the editor, so a staged <c>Content/</c> cannot shadow a checkout's jsons.
+    /// </summary>
     public static string? Directory
     {
         get
         {
-            if (done) return resolved;
-            var exeDir = System.IO.Path.GetDirectoryName(OS.GetExecutablePath()) ?? "";
-            var zipOverride = System.Environment.GetEnvironmentVariable("UNCIV_CONTENT_ZIP");
-            var zip = string.IsNullOrEmpty(zipOverride) ? BundlePath : zipOverride;
-            resolved = ContentBundle.Resolve(exeDir, System.IO.Directory.Exists, () => ReadVersion(zip), () => Open(zip), ProjectSettings.GlobalizePath("user://content"));
-            done = true;
-            return resolved;
+            lock (Gate)
+            {
+                if (done) return resolved;
+                done = true;
+                var exeDir = System.IO.Path.GetDirectoryName(OS.GetExecutablePath()) ?? "";
+                var zipOverride = System.Environment.GetEnvironmentVariable("UNCIV_CONTENT_ZIP");
+                var zip = string.IsNullOrEmpty(zipOverride) ? BundlePath : zipOverride;
+                if (string.IsNullOrEmpty(zipOverride) && OS.HasFeature("editor")) return null;
+                try
+                {
+                    resolved = ContentBundle.Resolve(exeDir, System.IO.Directory.Exists, () => ReadVersion(zip), () => Open(zip), ProjectSettings.GlobalizePath("user://content"));
+                }
+                catch (Exception e) when (e is System.IO.IOException or UnauthorizedAccessException or System.IO.InvalidDataException)
+                {
+                    GD.PushError($"Content bundle {zip} could not be extracted: {e.Message}");
+                }
+                return resolved;
+            }
         }
     }
 
@@ -32,7 +49,9 @@ public static class ContentRoot
     private static string? ReadVersion(string zip)
     {
         var path = System.IO.Path.ChangeExtension(zip, ".version");
-        return Godot.FileAccess.FileExists(path) ? Godot.FileAccess.GetFileAsString(path) : null;
+        if (Godot.FileAccess.FileExists(path)) return Godot.FileAccess.GetFileAsString(path);
+        if (Godot.FileAccess.FileExists(zip)) GD.PushWarning($"Content bundle {zip} has no {path}; it is ignored (the export must include both files)");
+        return null;
     }
 
     private static Stream Open(string zip)

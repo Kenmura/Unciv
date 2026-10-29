@@ -5,7 +5,7 @@ Usage: tools/stage-content.py [output.zip]   (default Content/unciv-content.zip 
 
 The zip holds the tree tools/package.sh puts next to a desktop executable (data/jsons, Packs, Assets/fonts) so the client can extract it once to user://content and treat
 that folder as the executable folder (ContentRoot.cs). A sibling <name>.version file holds the version (a hash of the contents), read on every start without opening the zip.
-The Android export preset must include both files in the pck (include_filter="Content/*"). Deterministic: sorted entries, fixed timestamps.
+The editor ignores the res:// bundle (a staged Content/ never shadows the checkout). The Android export preset must include both files in the pck (include_filter="Content/*"). Deterministic: sorted entries, fixed timestamps.
 """
 import hashlib
 import sys
@@ -16,7 +16,7 @@ project = Path(__file__).resolve().parent.parent
 repo = project.parent.parent
 out = Path(sys.argv[1]) if len(sys.argv) > 1 else project / "Content" / "unciv-content.zip"
 
-SKIP_NAMES = {"subset-fonts.py", ".gdignore"}
+SKIP_NAMES = {"subset-fonts.py", ".gdignore", ".DS_Store"}
 SKIP_SUFFIXES = {".import", ".uid"}
 SOURCES = [
     (repo / "android" / "assets" / "jsons", "data/jsons"),
