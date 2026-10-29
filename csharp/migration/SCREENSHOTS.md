@@ -705,17 +705,17 @@ Unit animation and combat presentation: step in, face the target, swing and hit 
 
 Scenario `combat-presentation`.
 
-![Mid-swing: our warrior has stepped in, turned to the enemy warrior and plays its attack clip (a real attack made through the UI).](../Unciv.Godot.Harness/golden/combat-presentation/lunge.png)
+![Mid-swing: our warrior has stepped in (dust at its feet), turned to the enemy warrior and plays its attack clip (a real attack made through the UI).](../Unciv.Godot.Harness/golden/combat-presentation/lunge.png)
 
-*Mid-swing: our warrior has stepped in, turned to the enemy warrior and plays its attack clip (a real attack made through the UI).* (`combat-presentation/lunge.png`)
+*Mid-swing: our warrior has stepped in (dust at its feet), turned to the enemy warrior and plays its attack clip (a real attack made through the UI).* (`combat-presentation/lunge.png`)
 
-![Impact: the enemy plays its hit clip and the engine's damage numbers float up.](../Unciv.Godot.Harness/golden/combat-presentation/impact.png)
+![Impact: the enemy plays its hit clip, sparks fly from the blow and the engine's damage numbers float up.](../Unciv.Godot.Harness/golden/combat-presentation/impact.png)
 
-*Impact: the enemy plays its hit clip and the engine's damage numbers float up.* (`combat-presentation/impact.png`)
+*Impact: the enemy plays its hit clip, sparks fly from the blow and the engine's damage numbers float up.* (`combat-presentation/impact.png`)
 
-![A ranged shot in flight from our warrior (after its draw) toward a far tile.](../Unciv.Godot.Harness/golden/combat-presentation/shot.png)
+![A ranged shot in flight from our warrior (after its draw, with a muzzle flash at the release) toward a far tile.](../Unciv.Godot.Harness/golden/combat-presentation/shot.png)
 
-*A ranged shot in flight from our warrior (after its draw) toward a far tile.* (`combat-presentation/shot.png`)
+*A ranged shot in flight from our warrior (after its draw, with a muzzle flash at the release) toward a far tile.* (`combat-presentation/shot.png`)
 
 ![A city bombards: a flash at the city and a shot toward our warrior.](../Unciv.Godot.Harness/golden/combat-presentation/bombard.png)
 

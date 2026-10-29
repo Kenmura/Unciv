@@ -54,6 +54,15 @@ public static class ProceduralSounds
         ["whoosh"] = [new(SoundWave.Noise, 0, 0, 350, 0.4f, Swell: true)],
     };
 
+    // C086: the combat presentation's own sounds (not UncivSound presets, so not in PresetNames): a swish, a twang, a thud with a crack, a falling groan
+    private static readonly Dictionary<string, SoundNote[]> CombatSounds = new(StringComparer.Ordinal)
+    {
+        [CombatEffects.SwingSound] = [new(SoundWave.Noise, 0, 0, 220, 0.35f, Swell: true), new(SoundWave.Sine, 420, 0, 200, 0.12f)],
+        [CombatEffects.ShootSound] = [new(SoundWave.Square, 260, 0, 70, 0.3f), new(SoundWave.Sine, 130, 0, 160, 0.45f), new(SoundWave.Noise, 0, 0, 90, 0.3f)],
+        [CombatEffects.HitSound] = [new(SoundWave.Noise, 0, 0, 90, 0.7f), new(SoundWave.Sine, 90, 0, 180, 0.7f), new(SoundWave.Square, 1500, 0, 25, 0.25f)],
+        [CombatEffects.DeathSound] = [new(SoundWave.Sine, 220, 0, 450, 0.4f), new(SoundWave.Sine, 110, 150, 450, 0.4f), new(SoundWave.Noise, 0, 0, 120, 0.25f)],
+    };
+
     /// <summary>The file names of the sounds with a hand-made table entry (all <see cref="UncivSound"/> presets except Silent).</summary>
     public static IReadOnlyCollection<string> PresetNames => Presets.Keys;
 
@@ -63,7 +72,7 @@ public static class ProceduralSounds
     /// <summary>The notes of a sound name: the table entry, or two hash-derived sine tones (300..999 Hz, then a fifth above) for a name that has none.</summary>
     public static IReadOnlyList<SoundNote> Notes(string name)
     {
-        if (Presets.TryGetValue(name, out var notes)) return notes;
+        if (Presets.TryGetValue(name, out var notes) || CombatSounds.TryGetValue(name, out notes)) return notes;
         var hash = StableHash.Of(name);
         var low = 300f + hash % 700;
         return [new(SoundWave.Sine, low, 0, 120, 0.5f), new(SoundWave.Sine, low * 1.5f, 100, 200, 0.5f)];

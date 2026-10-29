@@ -26,6 +26,9 @@ public partial class CombatPresenter : Node3D
     private readonly Dictionary<int, UnitNode> dying = [];
     private readonly List<(int Amount, HexCoord At)> numbers = [];
     private readonly Dictionary<int, float> facings = [];
+    private readonly Dictionary<Cue, int> fired = new(ReferenceEqualityComparer.Instance);
+    private readonly List<Burst> bursts = [];
+    private readonly List<string> soundsPlayed = [];
     private Func<int, UnitNode?> unitOf = _ => null;
     private Func<HexCoord, Vector3> tileTop = _ => Vector3.Zero;
 
@@ -46,6 +49,18 @@ public partial class CombatPresenter : Node3D
 
     /// <summary>Transient nodes alive right now (projectile, flash, damage numbers).</summary>
     public int EffectCount => visuals.Count;
+
+    /// <summary>C086: plays a named combat sound (<see cref="CombatEffects"/>); the game screen wires it to the sound player. Null is silent.</summary>
+    public Action<string>? PlaySound { get; set; }
+
+    /// <summary>Every sound name the presenter asked for so far, in order (what tests compare with the cues).</summary>
+    public IReadOnlyList<string> SoundsPlayed => soundsPlayed;
+
+    /// <summary>Particle bursts (sparks, dust, muzzle flashes) alive right now.</summary>
+    public int BurstCount => bursts.Count;
+
+    /// <summary>Particle bursts started so far.</summary>
+    public int BurstsStarted { get; private set; }
 
     /// <summary>Wires the presenter to the screen: how to find the node of a unit by id, and where a tile's top is in the world.</summary>
     public void Bind(Func<int, UnitNode?> unitLookup, Func<HexCoord, Vector3> tileTopOf)
@@ -95,6 +110,15 @@ public partial class CombatPresenter : Node3D
         dying.Clear();
         numbers.Clear();
         facings.Clear();
+        fired.Clear();
+        ClearBursts();
+        soundsPlayed.Clear();
+    }
+
+    private void ClearBursts()
+    {
+        foreach (var burst in bursts) burst.Root.QueueFree();
+        bursts.Clear();
     }
 
     public override void _Process(double delta)
@@ -103,13 +127,100 @@ public partial class CombatPresenter : Node3D
     }
 
     /// <summary>Moves the script on by <paramref name="seconds"/> and poses everything that ran.</summary>
-    public void Step(float seconds) => Apply(timeline.Advance(seconds));
+    public void Step(float seconds)
+    {
+        AgeBursts(seconds); // before the script runs, so a burst this step starts is seen at its beginning
+        Apply(timeline.Advance(seconds));
+    }
+
+    private void AgeBursts(float seconds)
+    {
+        if (!(seconds > 0f)) seconds = 0f;
+        for (var i = bursts.Count - 1; i >= 0; i--)
+        {
+            var burst = bursts[i];
+            burst.Age += seconds;
+            var p = burst.Age / CombatEffects.Lifetime(burst.Kind);
+            if (p >= 1f)
+            {
+                burst.Root.QueueFree();
+                bursts.RemoveAt(i);
+                continue;
+            }
+            for (var part = 0; part < burst.Parts.Length; part++)
+            {
+                var (x, y, z, opacity, scale) = CombatEffects.Particle(burst.Kind, part, p);
+                burst.Parts[part].Position = new Vector3(x, y, z);
+                burst.Parts[part].Scale = Vector3.One * scale;
+                if (burst.Parts[part].MaterialOverride is StandardMaterial3D material) material.AlbedoColor = material.AlbedoColor with { A = opacity };
+            }
+        }
+    }
+
+    /// <summary>Fires the moments (sparks, dust, flashes, sounds) of a cue that its progress has reached, each once.</summary>
+    private void FireMoments(Cue cue, float p, bool done)
+    {
+        var moments = CombatEffects.For(cue);
+        if (moments.Count == 0) return;
+        var next = fired.GetValueOrDefault(cue);
+        while (next < moments.Count && (done || moments[next].At <= p))
+        {
+            var moment = moments[next++];
+            if (moment.Effect is { } kind) StartBurst(kind, moment.Tile);
+            if (moment.Sound is { } sound)
+            {
+                soundsPlayed.Add(sound);
+                PlaySound?.Invoke(sound);
+            }
+        }
+        if (done) fired.Remove(cue);
+        else fired[cue] = next;
+    }
+
+    private void StartBurst(EffectKind kind, HexCoord at)
+    {
+        var colour = kind switch { EffectKind.Spark => PlaceholderPalette.Spark, EffectKind.Dust => PlaceholderPalette.Dust, _ => PlaceholderPalette.Flash };
+        var root = new Node3D { Name = "Burst_" + kind + "_" + BurstsStarted, Position = tileTop(at) };
+        var parts = new MeshInstance3D[CombatEffects.ParticleCount(kind)];
+        for (var i = 0; i < parts.Length; i++)
+        {
+            parts[i] = Ball(kind == EffectKind.Muzzle ? FlashRadius * 0.6f : kind == EffectKind.Dust ? 0.14f : 0.07f, colour);
+            root.AddChild(parts[i]);
+        }
+        AddChild(root);
+        BurstsStarted++;
+        var burst = new Burst(root, parts, kind);
+        bursts.Add(burst);
+        AgeBurstsInitial(burst);
+    }
+
+    private static void AgeBurstsInitial(Burst burst)
+    {
+        for (var part = 0; part < burst.Parts.Length; part++)
+        {
+            var (x, y, z, _, scale) = CombatEffects.Particle(burst.Kind, part, 0f);
+            burst.Parts[part].Position = new Vector3(x, y, z);
+            burst.Parts[part].Scale = Vector3.One * scale;
+        }
+    }
+
+    private sealed class Burst(Node3D root, MeshInstance3D[] parts, EffectKind kind)
+    {
+        public Node3D Root { get; } = root;
+
+        public MeshInstance3D[] Parts { get; } = parts;
+
+        public EffectKind Kind { get; } = kind;
+
+        public float Age { get; set; }
+    }
 
     private void Apply(IReadOnlyList<CueUpdate> updates)
     {
         foreach (var update in updates)
         {
             Pose(update.Cue, update.Progress);
+            FireMoments(update.Cue, update.Progress, update.Done);
             if (update.Done) Finish(update.Cue);
         }
     }

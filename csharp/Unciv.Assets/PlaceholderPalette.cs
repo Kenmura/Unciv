@@ -114,6 +114,9 @@ public static class PlaceholderPalette
     public static Rgb DamageNumber { get; } = new(255, 90, 70);
     public static Rgb Projectile { get; } = new(250, 230, 150);
     public static Rgb Flash { get; } = new(255, 200, 90);
+    /// <summary>C086: sparks where a blow lands and dust from feet and falls.</summary>
+    public static Rgb Spark { get; } = new(255, 220, 120);
+    public static Rgb Dust { get; } = new(170, 155, 130);
     public static Rgb Light { get; } = new(255, 250, 240);
     public static Rgb SheetLabel { get; } = new(230, 230, 230);
 

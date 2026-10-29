@@ -31,6 +31,7 @@ public sealed class CombatPresentationScenario : Scenario
         "Does the attacker step in, turn toward its target and swing (attack clip), and does the struck unit react (hit clip), with a red damage number rising over it?",
         "Does a ranged attacker draw before the projectile leaves, and is the projectile easy to follow, and does the bombard flash read as a city firing?",
         "Do dying units shrink away instead of vanishing, and does the pace of a fight (about a second each) feel right?",
+        "Do sparks fly where a blow lands, dust rise at feet, and a flash show at a muzzle, each at the moment of the swing, release or impact (and are the sounds timed with them)?",
     ];
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session) => new Plan(host, session).Steps();
@@ -132,10 +133,13 @@ public sealed class CombatPresentationScenario : Scenario
                 screen.Units[warrior.Id].CurrentClip == UnitModelContract.AttackClip && screen.Units[warrior.Id].ClipPosition > 0f
                 && Mathf.IsEqualApprox(screen.Units[warrior.Id].FacingYaw, CuePoses.FacingYaw((Top(enemyTile) - Top(warriorTile)).X, (Top(enemyTile) - Top(warriorTile)).Z) ?? float.NaN)
                 && screen.Units[enemy.Id].CurrentClip == UnitModelContract.IdleClip),
+            new AssertQuery("the swing has sounded and dust rose at the attacker's feet, but nothing has been struck yet", () =>
+                Presenter.SoundsPlayed.SequenceEqual([CombatEffects.SwingSound]) && Presenter.BurstCount >= 1),
             new Capture("lunge", "Mid-swing: our warrior has stepped in, turned to the enemy warrior and plays its attack clip"),
             new Act("step into the impact", () =>
             {
-                Presenter.Step(CombatPresentation.StrikeHitDelay - StepBeforeHit + 0.15f);
+                Presenter.Step(CombatPresentation.StrikeHitDelay - StepBeforeHit + 0.1f);
+                Presenter.Step(0.1f); // the sparks have left the point of impact
             }),
             new WaitFrames(2),
             new AssertQuery("the defender plays its hit clip and the engine's damage floats over it", () =>
@@ -143,15 +147,17 @@ public sealed class CombatPresentationScenario : Scenario
                 && screen.Units[enemy.Id].CurrentClip == UnitModelContract.HitClip && screen.Units[enemy.Id].ClipPosition > 0f),
             new AssertQuery("the attacker is still in its attack clip and has no damage number yet (counter damage waits for the end of its swing)", () =>
                 screen.Units[warrior.Id].CurrentClip == UnitModelContract.AttackClip && Presenter.NumbersShown.Count == 1),
-            new Capture("impact", "Impact: the enemy plays its hit clip and its damage number floats up"),
-            new Act("play the rest of the script", () => Presenter.Step(10f)),
+            new AssertQuery("the blow sounded and threw sparks at the defender", () =>
+                Presenter.SoundsPlayed.SequenceEqual([CombatEffects.SwingSound, CombatEffects.HitSound]) && Presenter.BurstCount >= 1),
+            new Capture("impact", "Impact: the enemy plays its hit clip, sparks fly from the blow and its damage number floats up"),
+            new Act("play the rest of the script and let the last sparks die", () => { Presenter.Step(10f); Presenter.Step(1f); }),
             new WaitFrames(2),
             new AssertQuery("the queue drained, only the engine's numbers were shown, no effect is left, and every unit is back at rest", () =>
             {
                 if (attacks.Count != 1) return false;
                 var expected = new List<(int, HexCoord)> { (attacks[0].DamageToDefender, enemyTile) };
                 if (attacks[0].DamageToAttacker > 0) expected.Add((attacks[0].DamageToAttacker, warriorTile));
-                return Presenter.IsIdle && Presenter.NumbersShown.SequenceEqual(expected) && Presenter.EffectCount == 0 && Presenter.DyingCount == 0 && AllAtRest();
+                return Presenter.IsIdle && Presenter.NumbersShown.SequenceEqual(expected) && Presenter.EffectCount == 0 && Presenter.BurstCount == 0 && Presenter.DyingCount == 0 && AllAtRest();
             }),
 
             // Part 2: a ranged shot, a bombard and a death through the same entry point, as events a real ranged unit, a city and a lost unit would send
@@ -173,7 +179,8 @@ public sealed class CombatPresentationScenario : Scenario
             new WaitFrames(2),
             new AssertQuery("the dying worker left the unit table at once but is still on screen, and a projectile is in flight", () =>
                 !screen.Units.ContainsKey(worker.Id) && Presenter.DyingCount == 1 && workerNode.NotNull().GetParent() == Presenter && Presenter.EffectCount == 1),
-            new Capture("shot", "A ranged shot in flight from our warrior toward a far tile"),
+            new AssertQuery("the release flashed at the archer and twanged", () => Presenter.SoundsPlayed.Contains(CombatEffects.ShootSound) && Presenter.BurstCount >= 1),
+            new Capture("shot", "A ranged shot in flight from our warrior toward a far tile, with a muzzle flash at its release"),
             new Act("step to the middle of the bombard", () => Presenter.Step(CombatPresentation.ShotSeconds / 2f + CombatPresentation.HitSeconds + 0.2f)),
             new WaitFrames(2),
             new AssertQuery("the far tile's 11 was shown, and the bombard's flash and shot are both in the air", () =>
@@ -182,13 +189,14 @@ public sealed class CombatPresentationScenario : Scenario
             new Act("step to the middle of the death", () => Presenter.Step(CombatPresentation.BombardFlashSeconds + CombatPresentation.HitSeconds + 0.3f)),
             new WaitFrames(2),
             new AssertQuery("the worker is on its death clip (C083: the worker is a model with clips, so it falls instead of shrinking and sinking)", () => workerNode.NotNull().CurrentClip == UnitModelContract.DeathClip && workerNode.NotNull().ClipPosition > 0f && workerNode.NotNull().Scale == Vector3.One),
+            new AssertQuery("the city boomed and the death groaned", () => Presenter.SoundsPlayed.Contains(CombatEffects.BombardSound) && Presenter.SoundsPlayed.Contains(CombatEffects.DeathSound)),
             new Capture("death", "A dying worker plays its death clip on its tile"),
-            new Act("play out the script", () => Presenter.Step(10f)),
+            new Act("play out the script and let the last dust settle", () => { Presenter.Step(10f); Presenter.Step(1f); }),
             new WaitFrames(3),
             new AssertQuery("the script drained: both numbers shown in order, the worker node freed, nothing left", () =>
             {
                 var shown = Presenter.NumbersShown.Skip(Presenter.NumbersShown.Count - 2).ToList();
-                return Presenter.IsIdle && shown.SequenceEqual([(11, farTile), (8, warriorTile)]) && Presenter.DyingCount == 0 && Presenter.EffectCount == 0
+                return Presenter.IsIdle && shown.SequenceEqual([(11, farTile), (8, warriorTile)]) && Presenter.DyingCount == 0 && Presenter.EffectCount == 0 && Presenter.BurstCount == 0
                     && !GodotObject.IsInstanceValid(workerNode) && AllAtRest();
             }),
             new AssertQuery("the game itself never changed: only the one attack was logged", () => session.LastSeq == seqBefore + 1),

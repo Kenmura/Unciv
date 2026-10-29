@@ -787,6 +787,7 @@ public partial class GameScreen : Control
         AddChild(Overlays);
         unitLayer = new Node3D { Name = "Units" };
         AddChild(unitLayer);
+        Presenter.PlaySound = name => PlaySound?.Invoke(name);
         AddChild(Presenter);
         dotLayer = new Node3D { Name = "PathDots" };
         AddChild(dotLayer);

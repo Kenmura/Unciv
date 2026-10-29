@@ -277,9 +277,11 @@ public static class CuePoses
     /// </summary>
     public static float ShotFlight(float p)
     {
-        const float release = CombatPresentation.ShotReleaseSeconds / (CombatPresentation.ShotReleaseSeconds + CombatPresentation.ShotSeconds);
-        return Math.Clamp((Math.Clamp(p, 0f, 1f) - release) / (1f - release), 0f, 1f);
+        return Math.Clamp((Math.Clamp(p, 0f, 1f) - ShotRelease) / (1f - ShotRelease), 0f, 1f);
     }
+
+    /// <summary>Progress of a unit's shot cue at which its projectile is released (the end of the draw).</summary>
+    public const float ShotRelease = CombatPresentation.ShotReleaseSeconds / (CombatPresentation.ShotReleaseSeconds + CombatPresentation.ShotSeconds);
 
     /// <summary>The yaw (radians about Y, 0 facing +Z, the glTF default) that turns a figure toward the horizontal vector (<paramref name="dx"/>, <paramref name="dz"/>); null when there is no direction to face.</summary>
     public static float? FacingYaw(float dx, float dz)

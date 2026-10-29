@@ -807,15 +807,15 @@
     "shots": [
       {
         "golden": "combat-presentation/lunge.png",
-        "caption": "Mid-swing: our warrior has stepped in, turned to the enemy warrior and plays its attack clip (a real attack made through the UI)."
+        "caption": "Mid-swing: our warrior has stepped in (dust at its feet), turned to the enemy warrior and plays its attack clip (a real attack made through the UI)."
       },
       {
         "golden": "combat-presentation/impact.png",
-        "caption": "Impact: the enemy plays its hit clip and the engine's damage numbers float up."
+        "caption": "Impact: the enemy plays its hit clip, sparks fly from the blow and the engine's damage numbers float up."
       },
       {
         "golden": "combat-presentation/shot.png",
-        "caption": "A ranged shot in flight from our warrior (after its draw) toward a far tile."
+        "caption": "A ranged shot in flight from our warrior (after its draw, with a muzzle flash at the release) toward a far tile."
       },
       {
         "golden": "combat-presentation/bombard.png",
