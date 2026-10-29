@@ -7,6 +7,7 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Civilization.Managers;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Validation;
 using Unciv.Queries.Empire;
 using Unciv.View;
 using PolicyObject = Unciv.Models.Ruleset.Policy;
@@ -417,5 +418,71 @@ public sealed class BnwIdeologyTests
         civ.Policies.ChooseIdeology(Branch("Autocracy"));
         Assert.Equal("Autocracy", civ.Policies.Ideology);
         Assert.Same(city, civ.Cities.Single());
+    }
+
+    [Fact]
+    public void NoIdeologyBranchesMeansNothingToChooseEvenWithFactories()
+    {
+        var other = new TestGame(BaseRuleset.Civ_V_BNW);
+        foreach (var name in new[] { "Freedom", "Order", "Autocracy" }) other.Ruleset.PolicyBranches.Remove(name);
+        other.MakeHexagonalMap(2);
+        var civ = other.AddCiv(other.Ruleset.Nations.Values.First(it => it.IsMajorCiv));
+        civ.Tech.Era = other.Ruleset.Eras["Modern era"];
+        Assert.False(civ.Policies.CanChooseIdeology());
+    }
+
+    [Fact]
+    public void RemovingTheIdeologyDropsItsTenetsWithoutRefundAndUniquesCannotTargetThem()
+    {
+        var civ = Major("Freedom");
+        var freedom = Branch("Freedom");
+        var tenet = Tenets(freedom, 1)[0];
+        civ.Policies.FreeTenets = 1;
+        civ.Policies.Adopt(tenet);
+        Assert.Empty(civ.Policies.GetAdoptedPoliciesMatching("All", forRemoval: true));
+
+        civ.Policies.RemovePolicy(freedom);
+        Assert.Null(civ.Policies.Ideology);
+        Assert.False(civ.Policies.IsAdopted(tenet.Name));
+        Assert.False(civ.Policies.IsAdopted(freedom.Name));
+    }
+
+    [Fact]
+    public void ValidatorRejectsTenetLevelOutOfRange()
+    {
+        var other = new TestGame(BaseRuleset.Civ_V_BNW);
+        var tenet = other.Ruleset.PolicyBranches["Freedom"].Policies[0];
+        var original = tenet.Level;
+        tenet.Level = 7;
+        List<RulesetError> errors;
+        try { errors = RulesetValidator.Create(other.Ruleset).GetErrorList().ToList(); }
+        finally { tenet.Level = original; } // the ruleset instance is shared between tests
+        Assert.Contains(errors, it => it.Text.Contains("expected 1 to 3", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ValidatorRejectsIdeologyBranchWithUnknownEra()
+    {
+        var other = new TestGame(BaseRuleset.Civ_V_BNW);
+        var branch = other.Ruleset.PolicyBranches["Order"];
+        var original = branch.Era;
+        branch.Era = "";
+        List<RulesetError> errors;
+        try { errors = RulesetValidator.Create(other.Ruleset).GetErrorList().ToList(); }
+        finally { branch.Era = original; } // the ruleset instance is shared between tests
+        Assert.Contains(errors, it => it.Text.Contains("Order requires era", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ValidatorRejectsTwoTenetsAtTheSameLocation()
+    {
+        var other = new TestGame(BaseRuleset.Civ_V_BNW);
+        var tenets = other.Ruleset.PolicyBranches["Autocracy"].Policies;
+        var (row, column) = (tenets[1].Row, tenets[1].Column);
+        (tenets[1].Row, tenets[1].Column) = (tenets[0].Row, tenets[0].Column);
+        List<RulesetError> errors;
+        try { errors = RulesetValidator.Create(other.Ruleset).GetErrorList().ToList(); }
+        finally { (tenets[1].Row, tenets[1].Column) = (row, column); } // the ruleset instance is shared between tests
+        Assert.Contains(errors, it => it.Text.Contains("are both located at", StringComparison.Ordinal));
     }
 }

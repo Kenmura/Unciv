@@ -279,6 +279,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         if (!forRemoval) return matchingPolicies;
         return matchingPolicies
             .Where(it => it.PolicyBranchType != Policy.PolicyBranchTypes.BranchComplete)
+            .Where(it => !it.Branch.PurchaseByLevel) // ideology and tenets are never removed by uniques (switching is B014)
             .OrderByDescending(it => IndexOfPolicy(rulesetPolicies, it));
     }
 
@@ -356,7 +357,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     /// </summary>
     public bool CanChooseIdeology()
     {
-        if (Ideology != null || !IdeologiesEnabled || CivInfo.IsSpectator() || !CivInfo.IsMajorCiv()) return false;
+        if (Ideology != null || !IdeologiesEnabled || CivInfo.IsSpectator() || !CivInfo.IsMajorCiv() || !IdeologyBranches.Any()) return false;
         return IdeologyBranches.Any(IdeologyUnlockedByEra) || IdeologyUnlockedByBuildings();
     }
 
@@ -408,7 +409,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         var earlierAdopters = CivInfo.GameInfo.Civilizations.Count(it => !ReferenceEquals(it, CivInfo) && it.Policies.Ideology == branch.Name);
         Ideology = branch.Name;
         FreeTenets += earlierAdopters switch { 0 => branch.FirstAdopterFreePolicies, 1 => branch.SecondAdopterFreePolicies, _ => 0 };
-        ShouldOpenPolicyPicker = FreeTenets > 0;
+        ShouldOpenPolicyPicker |= FreeTenets > 0;
         AdoptedPolicies.Add(branch.Name);
         AddPolicyToTransients(branch);
         GameEventHooks.PolicyAdopted(CivInfo, branch.Name);
@@ -501,6 +502,14 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         }
 
         RemovePolicyFromTransients(policy);
+
+        // removing the ideology itself drops all its tenets, none of which refund anything here
+        if (policy is PolicyBranch { PurchaseByLevel: true } ideologyBranch)
+        {
+            if (Ideology == ideologyBranch.Name) Ideology = null;
+            foreach (var tenet in ideologyBranch.Policies.Where(it => IsAdopted(it.Name)).ToList())
+                RemovePolicy(tenet, true, assumeWasFree: true);
+        }
 
         // if a branch is already marked as complete, revert it to incomplete
         if (!branchCompletion && !policy.Branch.PurchaseByLevel)

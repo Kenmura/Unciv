@@ -216,6 +216,8 @@ internal sealed class BaseRulesetValidator : RulesetValidator
             var policyLocations = new Dictionary<string, Policy>();
             foreach (var policy in branch.Policies)
             {
+                if (branch.PurchaseByLevel && policy.Level is < 1 or > 3)
+                    lines.Add($"Tenet {policy.Name} in ideology {branch.Name} has level {policy.Level}, expected 1 to 3!", sourceObject: policy);
                 string policyLocation = $"{policy.Row}/{policy.Column}";
 
                 if (!policyLocations.TryGetValue(policyLocation, out var existingPolicyInLocation))
