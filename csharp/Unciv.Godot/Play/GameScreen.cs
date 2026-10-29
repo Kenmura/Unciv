@@ -1408,7 +1408,7 @@ public partial class GameScreen : Control
     }
 
     /// <summary>
-    /// C087: the rival stats ribbon's rows from the engine's overview (the known major civs and the rankings the game shows) and, while the ribbon is open, from each rival's trade
+    /// C087: the rival stats ribbon's rows from the engine's overview (the known major civs) and the Rankings page (the figures the game shows the viewer) and, while the ribbon is open, from each rival's trade
     /// options (the luxuries it could trade). Collapsed, it asks once per turn (the header counts the rivals); open, on every refresh.
     /// </summary>
     private async Task RefreshRivals(int turn, bool force)
