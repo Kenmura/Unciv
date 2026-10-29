@@ -304,4 +304,70 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         Assert.Contains("Doubles the number of military units", r.Buildings["Terracotta Army"].Uniques);
         Assert.Contains("[+5]% Production for each trade route to a city-state", r.Buildings["Hanse"].Uniques);
     }
+
+    // ---- the generic guard B027 and B032 lacked
+
+    // BNW unique types (ordinals 644 and up) that no object of the generated ruleset states yet, the ideology tenets (TourismCommonFoe, TourismLessHappy, TourismSharedIdeology, DomesticTradeRouteYield, GoldFromIdeologyTradeRoutes,
+    // YieldPerGreatWork, TourismFromBuildings, TourismOnGreatPersonBirth, TradeBuildingModifier, CapitalThemingBonusMultiplier) wait for the tenet
+    // effects, the rest for their feature tickets (city-states, religion, units, espionage, B006 trade units); see gen_ruleset_report.txt.
+    // A type that is neither emitted nor listed here fails, so a Done engine ticket cannot again read a unique the ruleset never carries.
+    private static readonly string[] UnemittedBnwTypes =
+    [
+        "AfraidCityStateInfluencePerTurn",
+        "AllowsAnnexingCityStates",
+        "AllowsSpaceshipPartHurry",
+        "AllowsSpaceshipPartPurchase",
+        "AllowsWalkingOnWater",
+        "AnnoyFreeCityStateIntrusion",
+        "BuildingPurchaseCostModifier",
+        "CanBuyCityState",
+        "CapitalThemingBonusMultiplier",
+        "CityStateBullyingStrength",
+        "CreatesGreatWork",
+        "DomesticTradeRouteYield",
+        "ElectionRiggingModifier",
+        "ExoticGoodsCarried",
+        "FaithFromKills",
+        "FreeBuildingOnConquest",
+        "FreePoliciesWhenExpended",
+        "GoldFromCityConnections",
+        "GoldFromCityConnectionsPercent",
+        "GoldFromIdeologyTradeRoutes",
+        "GoldenAgeFromKills",
+        "HeavyCharge",
+        "MilitaryGiftExtraInfluence",
+        "OnlyBuiltAsLeagueProject",
+        "PostCombatPromotion",
+        "PostCombatPromotionsExclusive",
+        "ProtectedCityStateInfluencePerTurn",
+        "PurchaseOnly",
+        "RemovesResourceWhenBuilt",
+        "RequiresAdjacentLand",
+        "RiversActAsTradeRoads",
+        "SapperBonus",
+        "TechFromCityConquest",
+        "TechStealingSpeed",
+        "TourismCommonFoe",
+        "TourismDuringGoldenAge",
+        "TourismFromBuildings",
+        "TourismLessHappy",
+        "TourismOnGreatPersonBirth",
+        "TourismSharedIdeology",
+        "TradeBuildingModifier",
+        "TradeMissionGoldModifier",
+        "TradeMissionInfluenceModifier",
+        "TradeReligionPressureModifier",
+        "UnresearchedTechFromKills",
+        "YieldPerGreatWork",
+        "YieldPerTradeRoute",
+    ];
+
+    [Fact]
+    public void EveryBnwUniqueTypeIsEmittedByTheRulesetOrListedAsPending()
+    {
+        var r = Real();
+        var emitted = r.AllUniques().Select(it => it.Type).Where(it => it != null).Select(it => it!.Value).ToHashSet();
+        var missing = Enum.GetValues<UniqueType>().Where(it => (int)it >= 644 && !emitted.Contains(it)).Select(it => it.ToString()).Order(StringComparer.Ordinal).ToList();
+        Assert.True(UnemittedBnwTypes.SequenceEqual(missing), string.Join(",", missing));
+    }
 }

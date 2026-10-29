@@ -426,6 +426,7 @@ def building_hook_uniques(r, lk, xp_rows, religion_rows):
     for yr in religion_rows.get(r["Type"], []):
         # [I]: Times100 like the other per-religion rates (Candi: 200 -> +2 Faith per religion); the effect is a later feature ticket
         if num(yr["Yield"]):
+            assert num(yr["Yield"]) % 100 == 0, "per-religion yield is not a whole number of points"
             out.append(f"[+{num(yr['Yield']) // 100} {HOOK_YIELD_NAMES[yr['YieldType']]}] for each religion in this city")
     return out
 
