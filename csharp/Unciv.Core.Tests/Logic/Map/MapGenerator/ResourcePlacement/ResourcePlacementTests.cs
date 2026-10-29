@@ -125,6 +125,14 @@ public class ResourcePlacementTests
         Assert.False(elsewhere.GeneratesNaturallyOn(tile));
         var banned = new TileResource { Name = "Banned", TerrainsCanBeFoundOn = ["Grassland"], Uniques = ["Doesn't generate naturally"] };
         Assert.False(banned.GeneratesNaturallyOn(tile));
+        var cold = new TileResource { Name = "Cold", TerrainsCanBeFoundOn = ["Grassland"], Uniques = ["Occurs at temperature between [0.0] and [0.2] and humidity between [0.0] and [1.0]"] };
+        tile.Temperature = 0.1;
+        tile.Humidity = 0.5;
+        Assert.True(cold.GeneratesNaturallyOn(tile));
+        tile.Temperature = 0.9;
+        Assert.False(cold.GeneratesNaturallyOn(tile));
+        tile.Temperature = null;
+        tile.Humidity = null;
     }
 
     [Fact]
