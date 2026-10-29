@@ -87,7 +87,7 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class B019 prog
+  class B019 review
   class B020 waiting
   class B021 waiting
   class B022 waiting
@@ -170,7 +170,7 @@ xychart-beta
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
-| B019 | In-Progress [Claude] | B014 | 1 | BNW: happiness: graded penalties, uprisings, rebels, city revolt |
+| B019 | Needs-Review [Claude] | B014 | 1 | BNW: happiness: graded penalties, uprisings, rebels, city revolt |
 | B020 | Available (waiting on ) | B008, B015 | 1 | BNW: Espionage: diplomats, coup levels, influence spy bonus |
 | B021 | Available (waiting on ) | B005, B004 | 1 | BNW: City-state BNW changes, Merchant of Venice purchase, Venice restrictions |
 | B022 | Available (waiting on ) | B005, B004 | 1 | BNW: Religion BNW constants, belief effects, trade-route pressure |
