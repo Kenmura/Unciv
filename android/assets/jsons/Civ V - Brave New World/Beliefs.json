@@ -69,7 +69,7 @@
 	{
 		"name": "Messenger of the Gods",
 		"type": "Pantheon",
-		"uniques": ["[+2 Science] from each Trade Route"]
+		"uniques": ["[+2 Science] for each international trade route [in this city]"]
 	},
 	{
 		"name": "Monument to the Gods",

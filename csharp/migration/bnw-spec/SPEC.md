@@ -1069,6 +1069,19 @@ Station is also a building) and each turn put `round(production) + overflow` int
 - New belief effects (list in §3.2). Faith purchases are gated by `Belief_BuildingClassFaithPurchase` /
   `Belief_EraFaithUnitPurchase` instead of G&K's `BuildingClassEnabled`.
 - Trade routes spread religion (§4.1.5). `SpyPressure` beliefs: a spy in a city exerts pressure [K].
+- **Done (B022).** Scale: `ReligionAtheismPressurePerPop` (pop growth), `ReligionInitialFoundingCityPressure` (holy city) and
+  `ReligionMissionaryPressureMultiplier` (missionary/prophet strength) are wired; [K, a documented choice] the multiplier also scales the
+  pantheon's per-citizen pressure (200), the per-turn city-to-city pressure (speed value, holy city 5x) and spy pressure, and the AI's
+  inquisitor threshold, so every pressure stays on one scale (G&K multiplier 1: unchanged). Trade routes [?, documented choice]: each
+  active international route adds, every turn and without range limit, the other end's majority (major) religion to a city at the strength of
+  a nearby city, times `100 + TradeReligionPressureModifier` (Arabia, +100, by the route owner) percent. Reformation: with
+  `AddReformationBelief` (policy Reformation) a founded religion gets one free Reformation belief; `SecondPantheon` (Religious Tolerance) one free
+  Pantheon belief (the usual choose-beliefs decision). Beliefs: Messenger of the Gods = `[stats] for each international trade route [cityFilter]`
+  (origin city side [K]); Evangelism (`OtherReligionPressureErosion` [?]) cuts the pressure of other religions into the owner's cities by N%;
+  Unity of the Prophets (`InquisitorPressureRetention` [?]) lets that religion keep N% of its pressure when an Inquisitor cleans a city;
+  Underground Sect: each set-up spy in a city adds N (x scale) pressure per turn for its civ's religion. Faith purchases use the existing
+  `May buy ... with Faith` and `Can purchase all Great People with Faith` uniques (tested on the real ruleset). Not done: Heathen Conversion
+  (`ConvertsBarbarians`, no rule in the spec), Charitable Missions (city-states), Sacred Sites (tourism, B031).
 
 ### 4.12 Military, warmonger, AI difficulty [D]
 - Warmonger: `WARMONGER_THREAT_*` thresholds and weights lowered, `WARMONGER_ON_CITY_STATE_MULTIPLIER` 50, and

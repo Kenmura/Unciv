@@ -634,7 +634,11 @@
 		"innerColor": [146, 221, 10],
 		"favoredReligion": "Islam",
 		"uniqueName": "Trade Caravans",
-		"uniques": ["[+1 Gold] from each Trade Route", "[+100]% [Oil] resource production"],
+		"uniques": [
+			"[+1 Gold] from each Trade Route",
+			"[+100]% [Oil] resource production",
+			"[+100]% religious pressure along trade routes"
+		],
 		"cities": [
 			"Mecca",
 			"Medina",

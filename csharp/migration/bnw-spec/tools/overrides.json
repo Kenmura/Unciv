@@ -7,7 +7,9 @@
   "Nations.json": {
    // B028: Enhanced Culture (Napoleon, CapitalThemingBonusModifier 100)
    "patch": {
-    "France": {"uniques+": ["[+100]% theming bonuses in your capital"]}
+    "France": {"uniques+": ["[+100]% theming bonuses in your capital"]},
+   // B022: TradeReligionModifier 100 of the Ships of the Desert trait
+   "Arabia": {"uniques+": ["[+100]% religious pressure along trade routes"]}
    },
    "add": [
     {
@@ -828,6 +830,10 @@
   ]
  },
  "Beliefs.json": {
+  // B022: Belief_YieldChangeTradeRoute (Messenger of the Gods +2 Science per international route of the city, [K] origin side) replaces the G&K capital-connection unique
+  "patch": {
+   "Messenger of the Gods": {"uniques": ["[+2 Science] for each international trade route [in this city]"]}
+  },
   "add": [
    {
     "name": "Earth Mother",
@@ -1354,7 +1360,7 @@
  "policyPending": [
   "Tradition: Palace +3 culture (BuildingClassCultureChanges) is approximated by the opener's capital culture",
   "Monarchy, Aristocracy, Meritocracy, Representation, Citizenship, Collective Rule, Warrior Code, Discipline, Military Caste, Mandate of Heaven, Theocracy, Free Thought, Sovereignty: BNW stat columns differ from the G&K wording kept here; B010 retunes them",
-  "Reformation: AddReformationBelief is declared; the Reformation belief tier is B073. Religious Tolerance: SecondReligionPantheon is declared; the second pantheon pick is B073",
+  "Reformation: AddReformationBelief grants one free Reformation belief once a religion is founded (B022). Religious Tolerance: SecondReligionPantheon grants one free Pantheon belief (B022)",
   "Consulates: MinorFriendshipMinimum 20 is read as the G&K 'resting point' unique. Merchant Confederacy: CityStateTradeChange 200 is read as +2 Gold per city-state route (B020 settles the scale)",
   "Patronage Complete: allied city-states gifting Great People reuses the G&K wording (MinorGreatPeopleAllies)",
   "Mercenary Army: no stat column; it only unlocks the Landsknecht unit (not in the generated units yet) and is a prerequisite of Mercantilism",
@@ -1398,7 +1404,7 @@
    "B006: buildable trade units (Can establish trade routes; the build restrictions are engine rules)"
   ],
   "Beliefs.json/13 new BNW beliefs": [
-   "added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Evangelism, Heathen Conversion, Underground Sect, Unity of the Prophets (B073), To the Glory of God (B041)"
+   "added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). B022 wired Evangelism, Underground Sect, Unity of the Prophets and Messenger of the Gods; To the Glory of God works through the faith purchase gate. Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Heathen Conversion (no barbarian conversion rule in the spec)"
   ],
   "TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp": [
    "added by B004. Feitoria luxury siphon (B072) is not wired yet"
