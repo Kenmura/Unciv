@@ -231,6 +231,13 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         Assert.Equal(baseline, Bonus(), 3);
         Route(cityStateCity.Id, cityState.CivId, cityStateCity.Id); // starts in the city-state, not in Hanse's city
         Assert.Equal(baseline, Bonus(), 3);
+        var second = civ.AddCity(game.TileMap.TileList.First(it => it.IsLand && !it.IsImpassible() && it.GetOwner() == null && it.GetCity() == null).Position, null);
+        second.CityStats.Update();
+        float secondBase = second.CityStats.StatPercentBonusTree.TotalStats.Production;
+        Route(cityStateCity.Id, cityState.CivId, second.Id); // a city without Hanse does not get the civ-wide bonus
+        second.CityStats.Update();
+        Assert.Equal(secondBase, second.CityStats.StatPercentBonusTree.TotalStats.Production, 3);
+        Assert.Equal(baseline, Bonus(), 3);
         Route(cityStateCity.Id, cityState.CivId, capital.Id);
         Assert.Equal(baseline + 5, Bonus(), 3);
         Route(cityStateCity.Id, cityState.CivId, capital.Id);

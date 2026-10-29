@@ -566,13 +566,15 @@ public class CityStats(City city)
         int count = 0;
         foreach (var route in routes)
         {
-            if (route.OriginCityId == City.Id && City.Civ.GameInfo.GetCivilization(route.DestOwner).IsCityState) count++;
+            if (route.OriginCityId == City.Id && City.Civ.GameInfo.GetCivilizationOrNull(route.DestOwner)?.IsCityState == true) count++;
         }
         if (count == 0) return;
-        City.ForEachMatchingUnique(UniqueType.ProductionPerCityStateTradeRoute, unique =>
+        // Only this city's own buildings (Hanse): the unique is not a local effect, so City.ForEachMatchingUnique would hand it to every city of the civ.
+        foreach (var unique in City.CityConstructions.BuiltBuildingUniqueMap.GetUniques(UniqueType.ProductionPerCityStateTradeRoute))
         {
+            if (!unique.ConditionalsApply(City.State)) continue;
             tree.AddStats(new Stats(production: unique.Params[0].ToFloat() * count), unique.GetSourceNameForUser(), unique.SourceObjectName ?? "");
-        });
+        }
     }
 
     private StatTreeNode GetStatPercentBonusList(IConstruction currentConstruction)
