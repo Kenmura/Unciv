@@ -46,7 +46,7 @@ public sealed record ReligionQuery : IQuery<ReligionResult>
 
         var available = new SortedDictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         if (civView.IsReligionEnabled())
-            foreach (var type in new[] { BeliefType.Pantheon, BeliefType.Founder, BeliefType.Follower, BeliefType.Enhancer })
+            foreach (var type in new[] { BeliefType.Pantheon, BeliefType.Founder, BeliefType.Follower, BeliefType.Enhancer, BeliefType.Reformation })
                 available[type.ToString()] = civ.GameInfo.Ruleset.Beliefs.Values
                     .Where(it => it.Type == type && manager.GetReligionWithBelief(it) == null)
                     .Select(it => it.Name).ToList();

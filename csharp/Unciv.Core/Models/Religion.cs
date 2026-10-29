@@ -194,7 +194,8 @@ public class Religion : INamed, IsPartOfGameInfoSerialization, IGameContextRelig
         MapToExistingBeliefs(followerBeliefs).Where(it => it.Type == BeliefType.Pantheon)
             .Concat(MapToExistingBeliefs(founderBeliefs).Where(it => it.Type == BeliefType.Founder))
             .Concat(MapToExistingBeliefs(followerBeliefs).Where(it => it.Type == BeliefType.Follower))
-            .Concat(MapToExistingBeliefs(founderBeliefs).Where(it => it.Type == BeliefType.Enhancer));
+            .Concat(MapToExistingBeliefs(founderBeliefs).Where(it => it.Type == BeliefType.Enhancer))
+            .Concat(MapToExistingBeliefs(founderBeliefs).Where(it => it.Type == BeliefType.Reformation));
 
     public bool HasBelief(string belief) => followerBeliefs.Contains(belief) || founderBeliefs.Contains(belief);
 

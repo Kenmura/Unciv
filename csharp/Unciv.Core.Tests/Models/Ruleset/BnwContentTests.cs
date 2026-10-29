@@ -156,7 +156,8 @@ public sealed class BnwContentTests
         var civ = game.AddCiv(["Founded cities claim [8] extra tiles of radius"]);
         var city = game.AddCity(civ, game.TileMap[0, 0]);
         Assert.All(city.GetTiles(), it => Assert.Same(city, it.GetCity()));
-        Assert.True(city.GetTiles().Count() >= 7);
+        Assert.Equal(15, city.GetTiles().Count());
+        Assert.All(city.GetTiles(), it => Assert.True(it.AerialDistanceTo(city.GetCenterTile()) <= 3));
     }
 
     [Fact]
@@ -191,6 +192,17 @@ public sealed class BnwContentTests
         Assert.Equal(UniqueTarget.FounderBelief, new Belief(BeliefType.Reformation).GetUniqueTarget());
         Assert.NotEqual("", BeliefType.Reformation.GetColor());
         Assert.Equal((int)BeliefType.Enhancer + 2, (int)BeliefType.Reformation); // appended after Any, Kotlin ordinals stay
+    }
+
+    [Fact]
+    public void ReformationBeliefsAreReadBackAndGrantTheirPurchases()
+    {
+        var game2 = new TestGame();
+        var belief = game2.CreateBelief(BeliefType.Reformation, "May buy [University] buildings with [Faith] [in cities following this religion]");
+        var religion = new Unciv.Models.Religion("Test", game2.GameInfo, "founder", 0);
+        religion.AddBelief(belief);
+        Assert.Equal([belief.Name], religion.GetAllBeliefsOrdered().Select(it => it.Name));
+        Assert.Equal([belief.Name], religion.GetBeliefs(BeliefType.Reformation).Select(it => it.Name));
     }
 
     [Fact]
