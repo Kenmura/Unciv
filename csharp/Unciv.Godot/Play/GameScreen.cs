@@ -925,6 +925,12 @@ public partial class GameScreen : Control
         Map.TileRightClicked += OnTileRightClicked;
     }
 
+    /// <summary>
+    /// C079: a screen that rebuilt its content for a new scale or breakpoint shrinks its minimum size, but a control never shrinks by itself: it keeps the larger size it had at the old
+    /// scale and sticks out of a smaller window. Sizing every screen again once the rebuild is done (deferred, so after all the screens handled the change) puts them back.
+    /// </summary>
+    private void RelayoutAfterRebuild() => CallDeferred(nameof(Layout));
+
     // Sized from the viewport, not from anchors: the screen may sit under a parent Control that has no size (the scenario runner).
     private void Layout()
     {
@@ -1029,6 +1035,7 @@ public partial class GameScreen : Control
         ui = theme;
         World.Init(theme);
         theme.LayoutChanged += World.OnLayoutChanged;
+        theme.LayoutChanged += RelayoutAfterRebuild;
         theme.Bind(GetViewport());
         TurnBar.Init(theme);
         Social.Init(theme);

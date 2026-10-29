@@ -45,7 +45,8 @@ public sealed class OptionsScenario : Scenario
         screen.BindSettings(service);
 
         var ui = new UiTheme(registry);
-        var backdrop = new Control { Name = "OptionsBackdrop", Theme = ui.Theme, Position = Vector2.Zero, Size = new Vector2(640, 480) };
+        var backdrop = new Control { Name = "OptionsBackdrop", Theme = ui.Theme };
+        backdrop.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         var screenOptions = new OptionsScreen(service, ui, null, ["Retro", "Neon"]);
         screenOptions.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         backdrop.AddChild(screenOptions);
@@ -56,6 +57,7 @@ public sealed class OptionsScenario : Scenario
         float slowStep = 0f;
         int resourcesBefore = 0;
         ClientSettingsService? restarted = null;
+        OptionsScreen? german = null;
 
         Vector2 Centre(Control control) => control.GetGlobalRect().GetCenter();
         ScenarioStep[] Reveal(HotkeyAction action) =>
@@ -72,6 +74,18 @@ public sealed class OptionsScenario : Scenario
                 Hotkeys.KeyFor(service.Current.KeyBindings, HotkeyAction.EndTurn) == "N" && options.KeyButton(HotkeyAction.NextUnit).Text == "Period" && service.Current.KeyBindings.Count == 0 && !File.Exists(path)
                 && screen.World.Technology.TooltipText == "Technology (F6)" && screen.Hud.EndTurnButton is IconButton { Hotkey: "N" } && screen.World.Overview.Hotkey == "E"),
             new Capture("top", "Options, Display tab: the vertical tabs on the left, the UI scale stepper and the window mode"),
+            LayoutChecks.Assert("at 640x480 no options text is cut off, leaves the window or overlaps another", host, () => backdrop),
+            new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
+            new WaitFrames(6),
+            LayoutChecks.Assert("at 1280x720 no options text is cut off, leaves the window or overlaps another", host, () => backdrop),
+            new Capture("wide", "1280x720: the Display tab with the tab strip, the stepper and the window mode in the wider panel"),
+            new Act("widen the window to 1920x1080", () => host.GetWindow().Size = new Vector2I(1920, 1080)),
+            new WaitFrames(6),
+            LayoutChecks.Assert("at 1920x1080 no options text is cut off, leaves the window or overlaps another", host, () => backdrop),
+            new Capture("fhd", "1920x1080: the same tab at full HD"),
+            new Act("back to 640x480", () => host.GetWindow().Size = new Vector2I(640, 480)),
+            new WaitFrames(8),
+            LayoutChecks.Assert("back at 640x480 no options text is cut off, leaves the window or overlaps another", host, () => backdrop),
 
             .. Reveal(HotkeyAction.EndTurn),
             new Click(() => Centre(options.KeyButton(HotkeyAction.EndTurn))),
@@ -147,6 +161,22 @@ public sealed class OptionsScenario : Scenario
             new Act("open the Map tab", () => options.SelectTab(options.TabNames.ToList().IndexOf("Map"))),
             new WaitFrames(2),
             new Capture("settings", "The Map tab after the game-screen checks: scroll speed 2.00, edge-scroll on, resources off"),
+
+            // C079: the options again in German on a fresh options screen (text is built with the screen), Keys tab (the longest labels)
+            LocaleSteps.Use("German"),
+            new Act("rebuild the options screen in German", () =>
+            {
+                backdrop.Visible = false;
+                german = new OptionsScreen(service, ui, null, ["Retro", "Neon"]);
+                german.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+                var layer = new Control { Name = "GermanBackdrop", Theme = ui.Theme };
+                layer.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+                layer.AddChild(german);
+                host.AddChild(layer);
+            }),
+            new WaitFrames(3),
+            LayoutChecks.Assert("German: no options text is cut off, leaves the window or overlaps another (Display tab)", host, () => german.NotNull()),
+            new Capture("de", "German at 640x480: the Display tab's labels, the tab strip and the buttons fit without clipping or overlap"),
         ];
     }
 }

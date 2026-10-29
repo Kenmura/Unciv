@@ -52,6 +52,7 @@ public partial class WorldHud : Control
     private MinimapView minimap = null!; // JUSTIFY: C067 assigned by Mount before any use
     private UiTheme theme = null!; // JUSTIFY: C067 assigned by Init before the layout is read
     private UiBreakpoint builtFor;
+    private float builtScale;
     private bool playersShown;
     private bool technologyAsking;
 
@@ -143,6 +144,7 @@ public partial class WorldHud : Control
         theme = uiTheme;
         Theme = uiTheme.Theme;
         builtFor = uiTheme.Breakpoint;
+        builtScale = uiTheme.Scale;
         hud.Init(uiTheme);
         notifications.Init(uiTheme);
         Rivals.Init(uiTheme);
@@ -165,10 +167,10 @@ public partial class WorldHud : Control
         BuildNav();
     }
 
-    /// <summary>Rebuilds when the breakpoint changed since the last build (a window resize across 1000 logical pixels); a resize within a breakpoint needs nothing, the containers follow.</summary>
+    /// <summary>Rebuilds when the breakpoint or the UI scale changed since the last build (a window resize across 1000 logical pixels, or to a size with another automatic scale, C079: the pixel sizes the build reckoned with are stale then); any other resize needs nothing, the containers follow.</summary>
     public void OnLayoutChanged()
     {
-        if (theme != null && theme.Breakpoint != builtFor) Init(theme);
+        if (theme != null && (theme.Breakpoint != builtFor || theme.Scale != builtScale)) Init(theme);
     }
 
     /// <summary>Shows the Players button (multiplayer games with a roster).</summary>

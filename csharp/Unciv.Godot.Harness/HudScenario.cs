@@ -5,6 +5,7 @@ using Unciv.Commands.Units;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
 using Unciv.Harness;
+using Unciv.Utils;
 using Unciv.Logic.Civilization;
 using Unciv.Assets;
 
@@ -60,11 +61,13 @@ public sealed class HudScenario : Scenario
         }
 
         // C067: every HUD element that shows has its own rectangle: none overlaps another, all lie on screen, and the middle of the map is uncovered
-        string Layout()
+        string Layout() => LayoutOf(screen);
+
+        string LayoutOf(GameScreen shown)
         {
             var screenRect = new Rect2(Vector2.Zero, host.GetViewport().GetVisibleRect().Size);
-            var rects = screen.World.Rects().ToList();
-            if (screen.Panel.IsVisibleInTree()) rects.Add(("UnitPanel", screen.Panel.GetGlobalRect()));
+            var rects = shown.World.Rects().ToList();
+            if (shown.Panel.IsVisibleInTree()) rects.Add(("UnitPanel", shown.Panel.GetGlobalRect()));
             foreach (var (name, rect) in rects)
                 if (!screenRect.Encloses(rect)) return $"{name} {rect} leaves the screen {screenRect}";
             for (int i = 0; i < rects.Count; i++)
@@ -73,9 +76,9 @@ public sealed class HudScenario : Scenario
             var middle = new Rect2(screenRect.Size * 0.4f, screenRect.Size * 0.2f);
             foreach (var (name, rect) in rects)
                 if (rect.Intersects(middle)) return $"{name} {rect} covers the middle of the map {middle}";
-            if (MathF.Abs(hud.BarRect.Size.Y - hud.TopBarHeight) > 0.5f) return $"the bar is {hud.BarRect.Size.Y} high, not the {hud.TopBarHeight} the screens below it reckon with";
-            if (screen.Minimap.Size.X < 140f || screen.Minimap.Size.Y < 100f) return $"the minimap is only {screen.Minimap.Size}";
-            if (hud.Entries.Values.Any(it => !hud.BarRect.Encloses(it.GetGlobalRect()))) return "a top bar entry is clipped by the bar";
+            if (MathF.Abs(shown.Hud.BarRect.Size.Y - shown.Hud.TopBarHeight) > 0.5f) return $"the bar is {shown.Hud.BarRect.Size.Y} high, not the {shown.Hud.TopBarHeight} the screens below it reckon with";
+            if (shown.Minimap.Size.X < 140f || shown.Minimap.Size.Y < 100f) return $"the minimap is only {shown.Minimap.Size}";
+            if (shown.Hud.Entries.Values.Any(it => !shown.Hud.BarRect.Encloses(it.GetGlobalRect()))) return "a top bar entry is clipped by the bar";
             return "";
         }
 
@@ -131,7 +134,43 @@ public sealed class HudScenario : Scenario
             new AssertQuery("the layout follows: at 1280x720 the breakpoint is Regular, still no overlap, minimap 200x140", () =>
                 Report(Layout()) && Report(screen.World.MinimapSize == new Vector2(200f, 140f) && screen.Minimap.Size == new Vector2(200f, 140f) ? "" : $"minimap {screen.World.MinimapSize} {screen.Minimap.Size} {screen.Theme?.DefaultFontSize}")),
             new Capture("wide", "1280x720: top bar, research and policy pills, nav strip, minimap and next-action dock; same structure as at 640x480"),
+            LayoutChecks.Assert("at 1280x720 no HUD text is cut off, leaves the window or overlaps another", host, () => screen),
+            new Act("widen the window to 1920x1080", () => host.GetWindow().Size = new Vector2I(1920, 1080)),
+            new WaitFrames(4),
+            new AssertQuery("at 1920x1080 still no overlap, minimap grows no smaller", () => Report(Layout())),
+            LayoutChecks.Assert("at 1920x1080 no HUD text is cut off, leaves the window or overlaps another", host, () => screen),
+            new Capture("fhd", "1920x1080: the same HUD at full HD, every element in its own place and the middle of the map free"),
+            new Act("back to 640x480", () => host.GetWindow().Size = new Vector2I(640, 480)),
+            new WaitFrames(4),
+            .. Localized("German", "de", "German at 640x480: the longer words of the bar, the nav tooltips' targets, the banner and the buttons fit without clipping or overlap"),
+            .. Localized("Russian", "ru", "Russian at 640x480: Cyrillic text in the bar, the banner and the buttons, every element in its own place"),
         ]);
         return steps;
+
+        // C079: the HUD again in a long-string language: a fresh game screen (text is built when the screen is) over the same session, checked with the same rectangle asserts
+        IEnumerable<ScenarioStep> Localized(string language, string step, string caption)
+        {
+            GameScreen? built = null;
+            return
+            [
+                LocaleSteps.Use(language),
+                new Act("rebuild the game screen in " + language, () =>
+                {
+                    foreach (var old in host.GetChildren().OfType<GameScreen>().ToList())
+                    {
+                        host.RemoveChild(old);
+                        old.QueueFree();
+                    }
+                    built = new GameScreen();
+                    host.AddChild(built);
+                    built.Start(localHost, AssetRegistry.ForRuleset(game.Ruleset));
+                    built.Hud.HoldBanner = true;
+                }),
+                new WaitFrames(4),
+                new AssertQuery($"{language}: no HUD rectangle overlaps another or leaves the screen", () => Report(LayoutOf(built.NotNull()))),
+                LayoutChecks.Assert($"{language}: no HUD text is cut off, leaves the window or overlaps another", host, () => built.NotNull()),
+                new Capture(step, caption),
+            ];
+        }
     }
 }

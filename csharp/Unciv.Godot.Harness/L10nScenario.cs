@@ -104,6 +104,37 @@ public sealed class L10nScenario : Scenario
         steps.Add(new WaitFrames(3));
         steps.Add(new AssertQuery("the sample letters have glyphs", () => "مرحباשלום".EnumerateRunes().All(r => font.HasChar(r.Value))));
         steps.Add(new Capture("rtl", "Arabic and Hebrew sample lines, right to left, with digits and a Latin word inside"));
+
+        // C079: the layout mirrors for a right-to-left language: the direction set on the ScreenManager root flows to every screen below it
+        ScreenManager? manager = null;
+        SettingsPanel? mirrored = null;
+        bool TabsOnTheRight(bool expected)
+        {
+            var panel = mirrored.NotNull();
+            var first = panel.GetChild<Control>(0).GetGlobalRect();
+            var last = panel.CurrentPage.GetGlobalRect();
+            return expected ? first.Position.X > last.Position.X : first.Position.X < last.Position.X;
+        }
+        steps.Add(new Act("open a settings panel under a ScreenManager root, left to right", () =>
+        {
+            root.Visible = false;
+            manager = new ScreenManager(uiTheme);
+            host.AddChild(manager);
+            mirrored = new SettingsPanel(service, uiTheme, localization, []) { Name = "Mirrored" };
+            var frame = new Control { Position = new Vector2(16, 16), Size = new Vector2(608, 300) };
+            frame.AddChild(mirrored);
+            mirrored.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            manager.Push(frame);
+        }));
+        steps.Add(new WaitFrames(3));
+        steps.Add(new AssertQuery("left to right: the tab column is left of the page", () => TabsOnTheRight(false)));
+        steps.Add(new Act("a right-to-left language reaches the root", () => manager.NotNull().ApplyDirection(true)));
+        steps.Add(new WaitFrames(3));
+        steps.Add(new AssertQuery("right to left: the tab column moved to the right of the page and the direction is the root's", () => TabsOnTheRight(true) && manager.NotNull().LayoutDirection == Control.LayoutDirectionEnum.Rtl && mirrored.NotNull().IsLayoutRtl()));
+        steps.Add(new Capture("rtl-layout", "Right-to-left: the settings panel mirrored, the tab column on the right and the page to its left"));
+        steps.Add(new Act("back to left to right", () => manager.NotNull().ApplyDirection(false)));
+        steps.Add(new WaitFrames(3));
+        steps.Add(new AssertQuery("left to right again mirrors back", () => TabsOnTheRight(false)));
         return steps;
     }
 

@@ -132,7 +132,20 @@ public partial class UnitPanelView : PanelContainer
         legible.Clear();
         Theme = uiTheme.Theme;
         uiTheme.ScaleChanged += () => LayoutIn(GetViewportRect().Size);
+        MinimumSizeChanged += KeepAtBottom;
     }
+
+    private Vector2 lastScreen = Vector2.Zero;
+
+    /// <summary>C079: the content can grow after <see cref="LayoutIn"/> measured it (a scale or breakpoint change restyles the children afterwards): keep the panel's bottom edge on the margin.</summary>
+    private void KeepAtBottom()
+    {
+        if (!Visible || lastScreen == Vector2.Zero) return;
+        float wantedTop = lastScreen.Y - Margin - GetCombinedMinimumSize().Y;
+        if (Math.Abs(Position.Y - wantedTop) > 0.5f) CallDeferred(nameof(Relayout));
+    }
+
+    private void Relayout() => LayoutIn(lastScreen);
 
     /// <summary>Hosts the world screen's Promote button as the panel's chip (it keeps its owner, name and handler; the panel only places it).</summary>
     public void SetPromoteChip(Button chip)
@@ -432,6 +445,7 @@ public partial class UnitPanelView : PanelContainer
     /// <summary>Places the panel at the bottom left of a screen of <paramref name="screen"/> pixels.</summary>
     public void LayoutIn(Vector2 screen)
     {
+        lastScreen = screen;
         float width = theme?.Px(Width) ?? Width;
         question.CustomMinimumSize = new Vector2(width - (theme?.Px(UiTokens.S6) ?? UiTokens.S6), 0f);
         promotions.CustomMinimumSize = new Vector2(width - (theme?.Px(UiTokens.S6) ?? UiTokens.S6), 0f); // C055: an autowrapping label measured at width 0 is as tall as it has characters

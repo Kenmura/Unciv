@@ -52,6 +52,7 @@ public partial class App : Node
         };
         store = new SaveStore(UserPaths.Saves);
         screens = new ScreenManager(theme);
+        screens.BindLocalization(localization);
         AddChild(screens);
 
         menuSaves = new SaveController(store, settings, theme, text => LocalHost.FromSave(text, WallClockMillis), ShowGame) { ButtonVisible = false };

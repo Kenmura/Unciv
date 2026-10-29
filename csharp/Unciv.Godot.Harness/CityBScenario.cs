@@ -146,9 +146,46 @@ public sealed class CityBScenario : Scenario
             new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
             new WaitFrames(4),
             new Capture("wide", "1280x720, the second city with an empty queue: the buildable list takes the extra width, with the cost, the Buy chips and the Buildings column beside it"),
+            LayoutChecks.Assert("at 1280x720 no city text is cut off, leaves the window or overlaps another", host, () => screen.City),
+            new Act("widen the window to 1920x1080", () => host.GetWindow().Size = new Vector2I(1920, 1080)),
+            new WaitFrames(6),
+            LayoutChecks.Assert("at 1920x1080 no city text is cut off, leaves the window or overlaps another", host, () => screen.City),
+            new Capture("fhd", "1920x1080: the Production tab at full HD, queue, buildable list and buildings columns scaled up"),
+            new Act("back to 640x480", () => host.GetWindow().Size = new Vector2I(640, 480)),
+            new WaitFrames(8),
+            LayoutChecks.Assert("back at 640x480 no city text is cut off, leaves the window or overlaps another", host, () => screen.City),
             new Press("Close city"),
             new AssertQuery("the screen closed", () => screen.OpenCity == null && !screen.IsCityPanelVisible),
+            .. Localized("German", "de"),
+            .. Localized("Russian", "ru"),
         ];
+
+        // C079: the city screen again in a long-string language, on a fresh game screen (text is built with the screen)
+        IEnumerable<ScenarioStep> Localized(string language, string step)
+        {
+            GameScreen? built = null;
+            return
+            [
+                LocaleSteps.Use(language),
+                new Act("rebuild the game screen in " + language + " and open the city", () =>
+                {
+                    foreach (var old in host.GetChildren().OfType<GameScreen>().ToList())
+                    {
+                        host.RemoveChild(old);
+                        old.QueueFree();
+                    }
+                    built = new GameScreen();
+                    host.AddChild(built);
+                    built.Start(recording, AssetRegistry.ForRuleset(game.Ruleset));
+                    built.Hud.HideBanner();
+                    built.OpenCityScreen(Dto(city));
+                }),
+                new WaitFrames(4),
+                new AssertQuery(language + ": the city screen is open", () => built.NotNull().IsCityPanelVisible),
+                LayoutChecks.Assert($"{language}: no city text is cut off, leaves the window or overlaps another", host, () => built.NotNull().City),
+                new Capture(step, language + " at 640x480: the city screen's tab strip, headings and buttons fit without clipping or overlap (a long tab name is cut with an ellipsis)"),
+            ];
+        }
     }
 
     /// <summary>C069: Ctrl+Up / Ctrl+Down on the focused queue entry, and a drop on another entry.</summary>

@@ -142,9 +142,45 @@ public sealed class TechScenario : Scenario
                 screen.IsTechVisible && screen.Tech.SelectedTech == "Pottery" && screen.Tech.Layout.Nodes.All(it => screen.Tech.NodeButton(it.Name)?.IsInsideTree() == true)
                 && screen.Tech.ActionButton("Research") != null && screen.Tech.QueueText.Contains("1. Pottery", StringComparison.Ordinal)),
             new Capture("wide", "1280x720: the tree gets more room next to a wider detail panel with the unlocks and the queue"),
+            LayoutChecks.Assert("at 1280x720 no tech screen text is cut off, leaves the window or overlaps another", host, () => screen.Tech),
+            new Act("widen the window to 1920x1080", () => host.GetWindow().Size = new Vector2I(1920, 1080)),
+            new WaitFrames(4),
+            new AssertQuery("at 1920x1080 the tree, selection and queue survived the rebuild", () => screen.IsTechVisible && screen.Tech.SelectedTech == "Pottery" && screen.Tech.Layout.Nodes.All(it => screen.Tech.NodeButton(it.Name)?.IsInsideTree() == true)),
+            LayoutChecks.Assert("at 1920x1080 no tech screen text is cut off, leaves the window or overlaps another", host, () => screen.Tech),
+            new Capture("fhd", "1920x1080: the tree at full HD with a wider detail panel, selection and queue kept"),
+            new Act("back to 640x480", () => host.GetWindow().Size = new Vector2I(640, 480)),
+            new WaitFrames(8),
+            LayoutChecks.Assert("back at 640x480 no tech screen text is cut off, leaves the window or overlaps another", host, () => screen.Tech),
             new Press("Close technology"),
             new AssertQuery("the screen closed and nothing was refused", () => !screen.IsTechVisible && screen.Tech.MessageText.Length == 0),
         ]);
+        foreach (var (language, step) in new[] { ("German", "de"), ("Russian", "ru") })
+        {
+            GameScreen? built = null;
+            steps.AddRange(
+            [
+                LocaleSteps.Use(language),
+                new Act("rebuild the game screen in " + language, () =>
+                {
+                    foreach (var old in host.GetChildren().OfType<GameScreen>().ToList())
+                    {
+                        host.RemoveChild(old);
+                        old.QueueFree();
+                    }
+                    built = new GameScreen();
+                    host.AddChild(built);
+                    built.Start(recording, AssetRegistry.ForRuleset(game.Ruleset));
+                    built.Hud.HideBanner();
+                }),
+                new WaitFrames(3),
+                new Click(() => Centre(built.NotNull().TechButton)),
+                new WaitFrames(3),
+                new AssertQuery(language + ": the tech screen is open", () => built.NotNull().IsTechVisible),
+                LayoutChecks.Assert($"{language}: no tech screen text is cut off, leaves the window or overlaps another", host, () => built.NotNull().Tech),
+                new Capture(step, language + " at 640x480: the tech screen's headings, buttons and details fit without clipping or overlap"),
+                new Press("Close technology"),
+            ]);
+        }
         return steps;
     }
 

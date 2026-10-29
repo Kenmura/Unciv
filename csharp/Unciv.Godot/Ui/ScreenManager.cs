@@ -28,6 +28,18 @@ public partial class ScreenManager : Control
 
     public UiTheme UiTheme { get; }
 
+    /// <summary>
+    /// C079: mirrors every screen, popup and tooltip below this root for a right-to-left language (the containers then lay their children out from the right): the direction is
+    /// set on this root, so every control below it inherits it, and follows the language from now on.
+    /// </summary>
+    public void BindLocalization(Unciv.Assets.Localization.ClientLocalization localization)
+    {
+        ApplyDirection(localization.IsRightToLeft(localization.Language));
+        localization.LanguageChanged += language => ApplyDirection(localization.IsRightToLeft(language));
+    }
+
+    public void ApplyDirection(bool rightToLeft) => LayoutDirection = rightToLeft ? LayoutDirectionEnum.Rtl : LayoutDirectionEnum.Ltr;
+
     public PopupStack Popups { get; }
 
     public TooltipHost Tooltips { get; }

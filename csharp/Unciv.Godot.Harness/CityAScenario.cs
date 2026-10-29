@@ -104,6 +104,18 @@ public sealed class CityAScenario : Scenario
                 goldBefore = city.CityStats.CurrentCityStats[Stat.Gold];
             }),
             new Capture("open", "The capital's city screen: header, stats, focus, and the tile grid with the worked tiles lit"),
+            LayoutChecks.Assert("at 640x480 no city text is cut off, leaves the window or overlaps another", host, () => screen.City),
+            new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
+            new WaitFrames(6),
+            new AssertQuery("at 1280x720 the grid still has the engine's cells", () => screen.IsCityPanelVisible && screen.City.Cells.Count(it => it.State == "Center") == 1),
+            LayoutChecks.Assert("at 1280x720 no city text is cut off, leaves the window or overlaps another", host, () => screen.City),
+            new Capture("wide", "1280x720: the city screen with the grid, stats and focus using the extra width"),
+            new Act("widen the window to 1920x1080", () => host.GetWindow().Size = new Vector2I(1920, 1080)),
+            new WaitFrames(6),
+            LayoutChecks.Assert("at 1920x1080 no city text is cut off, leaves the window or overlaps another", host, () => screen.City),
+            new Capture("fhd", "1920x1080: the same city screen at full HD, scaled with room around the grid"),
+            new Act("back to 640x480", () => host.GetWindow().Size = new Vector2I(640, 480)),
+            new WaitFrames(8),
 
             new Click(() => Tile(worked)),
             new AssertQuery("a click on a worked tile freed its citizen", () =>
