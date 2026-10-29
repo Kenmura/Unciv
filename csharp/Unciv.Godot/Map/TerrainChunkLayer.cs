@@ -19,7 +19,8 @@ public partial class TerrainChunkLayer : Node3D
 
     private readonly List<Chunk> chunks = [];
     private readonly Dictionary<ChunkId, Chunk> byId = [];
-    private StandardMaterial3D? material;
+    private Material? material;
+    private int shaderTier;
 
     public int ChunkCount => chunks.Count;
 
@@ -27,6 +28,26 @@ public partial class TerrainChunkLayer : Node3D
 
     /// <summary>Triangles over all chunks.</summary>
     public int TriangleCount { get; private set; }
+
+    /// <summary>The material tier drawing the chunks (<see cref="Unciv.GodotClient.Settings.GraphicsPreset.ShaderTier"/>): 0 the plain vertex-colour material (Low, High), 1 and up the C098 water and terrain shader (Ultra). Changing it re-materials the chunks that exist now and those built later.</summary>
+    public int ShaderTier
+    {
+        get => shaderTier;
+        set
+        {
+            if (value == shaderTier) return;
+            shaderTier = value;
+            material = null;
+            if (chunks.Count == 0) return;
+            material = MaterialFor(shaderTier);
+            foreach (var chunk in chunks) chunk.Node.MaterialOverride = material;
+        }
+    }
+
+    /// <summary>The material the chunks currently wear (tests and scenarios inspect it).</summary>
+    public Material? ChunkMaterial => material;
+
+    private static Material MaterialFor(int tier) => tier >= 1 ? MapShaders.TerrainUltra() : MapMaterials.TerrainChunks();
 
     public void Clear()
     {
@@ -39,7 +60,7 @@ public partial class TerrainChunkLayer : Node3D
     public void Build(IReadOnlyList<ChunkTile> tiles)
     {
         Clear();
-        material ??= MapMaterials.TerrainChunks();
+        material ??= MaterialFor(shaderTier);
         var colours = tiles.ToDictionary(it => it.Coord, it => it.Colour);
         var centres = tiles.Select(it => MapLayout.TileTop(it.Coord.X, it.Coord.Y, 0f)).ToList();
         var arrays = new Dictionary<Mesh, MeshArrays>();

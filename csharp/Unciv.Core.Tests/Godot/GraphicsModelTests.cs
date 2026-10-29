@@ -55,7 +55,7 @@ public sealed class GraphicsModelTests : IDisposable
     }
 
     [Fact]
-    public void NoLevelDrawsShaderPolishYet() => Assert.All(Enum.GetValues<GraphicsQuality>(), it => Assert.Equal(0, GraphicsModel.Preset(it).ShaderTier));
+    public void OnlyUltraDrawsTheShaderPolish() => Assert.All(Enum.GetValues<GraphicsQuality>(), it => Assert.Equal(it == GraphicsQuality.Ultra ? 1 : 0, GraphicsModel.Preset(it).ShaderTier));
 
     [Fact]
     public void HigherLevelsLoosenTheLodCaps()

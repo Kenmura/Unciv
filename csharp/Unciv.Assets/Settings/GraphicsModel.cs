@@ -20,7 +20,7 @@ public enum GraphicsQuality
 /// <param name="Msaa">Multisample anti-aliasing samples (0, 2 or 4).</param>
 /// <param name="Ssao">Screen-space ambient occlusion (Forward+ only).</param>
 /// <param name="Ssr">Screen-space reflections (Forward+ only).</param>
-/// <param name="ShaderTier">0 = today's materials; 1 and 2 are reserved for the water and terrain shader polish (follow-up), which no level draws yet.</param>
+/// <param name="ShaderTier">0 = today's materials; 1 = the C098 water and terrain shader (Ultra only; the design lists it under High too, deliberately held back to Ultra so Low and High pictures stay as they are); 2 is reserved.</param>
 /// <param name="FarZoom">C085: camera size from which unit formations draw a single figure (see <see cref="Unciv.Assets.UnitLod.FarZoom"/>); looser (further out) at the higher levels.</param>
 /// <param name="Exposure">Per-level colour calibration: tone-map exposure that keeps the palette near the Low look.</param>
 /// <param name="AmbientEnergy">Per-level colour calibration: ambient light energy.</param>
@@ -54,7 +54,7 @@ public static class GraphicsModel
     public static GraphicsPreset Preset(GraphicsQuality level) => level switch
     {
         GraphicsQuality.High => new GraphicsPreset(Shadows: true, Tonemap: true, Glow: true, Msaa: 2, Ssao: false, Ssr: false, ShaderTier: 0, FarZoom: 26f, Exposure: 1f, AmbientEnergy: 0.6f),
-        GraphicsQuality.Ultra => new GraphicsPreset(Shadows: true, Tonemap: true, Glow: true, Msaa: 4, Ssao: true, Ssr: true, ShaderTier: 0, FarZoom: 30f, Exposure: 0.9f, AmbientEnergy: 0.5f),
+        GraphicsQuality.Ultra => new GraphicsPreset(Shadows: true, Tonemap: true, Glow: true, Msaa: 4, Ssao: true, Ssr: true, ShaderTier: 1, FarZoom: 30f, Exposure: 0.9f, AmbientEnergy: 0.5f),
         _ => new GraphicsPreset(Shadows: false, Tonemap: false, Glow: false, Msaa: 0, Ssao: false, Ssr: false, ShaderTier: 0, FarZoom: Unciv.Assets.UnitLod.FarZoom, Exposure: 1f, AmbientEnergy: LowAmbientEnergy),
     };
 

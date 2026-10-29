@@ -108,6 +108,9 @@ public partial class MapView : Node3D
     /// <summary>C031: whether the terrain chunk under a world point is currently drawn.</summary>
     public bool IsChunkVisibleAt(Vector3 ground) => terrain.IsChunkVisibleAt(ground);
 
+    /// <summary>C098: the material the terrain chunks wear (a ShaderMaterial at Ultra, else the plain chunk material); null before the first Load.</summary>
+    public Material? TerrainMaterial => terrain.ChunkMaterial;
+
     public int TileCount => tiles.Count;
 
     public int Count(TileFog fog) => tiles.Values.Count(it => it.Fog == fog);
@@ -144,6 +147,7 @@ public partial class MapView : Node3D
         environment.SsaoEnabled = preset.Ssao;
         environment.SsrEnabled = preset.Ssr;
         sun.ShadowEnabled = preset.Shadows;
+        if (terrain != null) terrain.ShaderTier = preset.ShaderTier; // C098: _Ready applies Low before the layer exists, which is tier 0 anyway
         var viewport = GetViewport();
         if (viewport != null)
         {
