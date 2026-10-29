@@ -120,7 +120,7 @@ flowchart TD
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class B006 ready
   class B014 prog
-  class B015 prog
+  class B015 review
   class B016 ondeck
   class B017 ondeck
   class B018 ondeck
@@ -232,7 +232,7 @@ xychart-beta
 | B019 | **On deck** (after B014) | B014 | 1 | BNW: happiness: graded penalties, uprisings, rebels, city revolt |
 | B020 | **On deck** (after B015) | B008, B015 | 1 | BNW: Espionage: diplomats, coup levels, influence spy bonus |
 | C070 | In-Progress [Claude] | C066, C069 | 7 | Tech tree redesign |
-| B015 | In-Progress [Claude] | B003, B013 | 5 | BNW: World Congress: founding, sessions, delegates, proposals, voting |
+| B015 | Needs-Review [Claude] | B003, B013 | 5 | BNW: World Congress: founding, sessions, delegates, proposals, voting |
 | C078 | Available (waiting on C070, C071, C072, C073, C074, C075, C076, C077) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
 | C084 | Available (waiting on C083) | C083 | 4 | Unit art by era: ancient and classical |
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
