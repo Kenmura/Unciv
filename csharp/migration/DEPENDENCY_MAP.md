@@ -198,9 +198,9 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class B001 ready
-  class B002 waiting
-  class B003 waiting
+  class B001 review
+  class B002 ondeck
+  class B003 ondeck
   class B004 waiting
   class B005 waiting
   class B006 waiting
@@ -239,8 +239,8 @@ flowchart TD
   class C077 waiting
   class C078 waiting
   class C079 waiting
-  class C080 prog
-  class C081 ondeck
+  class C080 ready
+  class C081 waiting
   class C082 waiting
   class C083 waiting
   class C084 waiting
@@ -299,22 +299,22 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| B001 | **Ready to start** | none | 25 | BNW: BaseRuleset.Civ_V_BNW, ModOptions gates, ModConstants, CompatibilityVersion bump |
+| C080 | **Ready to start** | none | 8 | Unit model loader and contract |
+| B003 | **On deck** (after B001) | B001 | 20 | BNW: New UniqueTypes (declarations, parameter types, docs only) |
 | C066 | **On deck** (after C065) | C065 | 20 | ScreenFrame, Modal and Tooltip |
-| C081 | **On deck** (after C080) | C080 | 7 | UnitAnimator, facing and re-timed combat cues |
+| B002 | **On deck** (after B001) | B001 | 16 | BNW: Ruleset generator gen_ruleset.py, overrides.json and generated JSON |
+| B001 | Needs-Review [Claude] | none | 25 | BNW: BaseRuleset.Civ_V_BNW, ModOptions gates, ModConstants, CompatibilityVersion bump |
 | C065 | In-Progress [Claude] | C062, C063, C064 | 21 | UI shared components |
-| B003 | Available (waiting on B001) | B001 | 20 | BNW: New UniqueTypes (declarations, parameter types, docs only) |
-| B002 | Available (waiting on B001) | B001 | 16 | BNW: Ruleset generator gen_ruleset.py, overrides.json and generated JSON |
 | C067 | Available (waiting on C066) | C066 | 11 | World HUD layout |
 | B005 | Available (waiting on B003) | B003 | 10 | BNW: Trade routes: model, slots, range, yields, lifecycle, plunder, commands, queries |
 | B012 | Available (waiting on B002) | B002 | 10 | BNW: Policy tree: branch era gates, branch-gated wonders, finishers |
 | B007 | Available (waiting on B003) | B003 | 9 | BNW: Great Works: instances, slots, creation, theming, moving, swapping |
 | B013 | Available (waiting on B012) | B012 | 9 | BNW: Ideologies: unlock, adopter bonuses, tenet levels |
 | C069 | Available (waiting on C066) | C066 | 8 | City screen redesign |
-| C080 | In-Progress [Claude] | none | 8 | Unit model loader and contract |
 | C068 | Available (waiting on C066, C067) | C066, C067 | 7 | Unit panel and action bar |
 | C070 | Available (waiting on C066, C069) | C066, C069 | 7 | Tech tree redesign |
 | C074 | Available (waiting on C066) | C066 | 7 | Overview and espionage on DataTable |
+| C081 | Available (waiting on C080) | C080 | 7 | UnitAnimator, facing and re-timed combat cues |
 | B008 | Available (waiting on B007, B005) | B007, B005 | 6 | BNW: Tourism and influence: city tourism, modifiers, influence, levels, trend, blast, level bonuses |
 | C071 | Available (waiting on C066, C070) | C066, C070 | 6 | Policies screen redesign |
 | C072 | Available (waiting on C066) | C066 | 6 | Setup, nation picker and main menu redesign |

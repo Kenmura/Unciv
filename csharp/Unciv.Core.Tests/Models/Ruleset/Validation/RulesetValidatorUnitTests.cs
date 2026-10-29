@@ -231,7 +231,7 @@ public sealed class RulesetValidatorUnitTests : IDisposable
     [Fact]
     public void BuiltInRulesetsValidateWithoutAnyMessage()
     {
-        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
             Assert.Empty(RulesetCache.Get(baseRuleset.FullName())!.GetErrorList(tryFixUnknownUniques: true).Select(it => $"{it.ErrorSeverityToReport}: {it.Text}"));
     }
 

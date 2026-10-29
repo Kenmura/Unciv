@@ -732,6 +732,21 @@ public sealed class RulesetLoadTests : IDisposable
     }
 
     [Fact]
+    public void LoadRulesetsLoadsBnwWhenItsFolderExistsAndSortsItAfterGnK()
+    {
+        var builtins = new Dictionary<string, object>
+        {
+            [BaseRuleset.Civ_V_Vanilla.FullName()] = BaseFiles("V"),
+            [BaseRuleset.Civ_V_GnK.FullName()] = BaseFiles("G"),
+            [BaseRuleset.Civ_V_BNW.FullName()] = BaseFiles("B"),
+        };
+        Assert.Empty(RulesetCache.LoadRulesets(new MemorySource(builtins, []), noMods: true));
+        Assert.Equal(3, RulesetCache.Count);
+        Assert.Equal(["B"], RulesetCache.Get(BaseRuleset.Civ_V_BNW.FullName())!.Units.Keys);
+        Assert.Equal(["Civ V - Vanilla", "Civ V - Gods & Kings", "Civ V - Brave New World"], RulesetCache.GetSortedBaseRulesets());
+    }
+
+    [Fact]
     public void LoadRulesetsNoModsIgnoresTheModsFolder()
     {
         var builtins = new Dictionary<string, object>

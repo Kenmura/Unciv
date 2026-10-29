@@ -92,6 +92,14 @@ Two routes, in order of preference:
 - BNW tunables (the `Defines` rows used in §4) become `ModConstants` fields. Defaults equal the G&K behaviour or
   "off", and the BNW `ModOptions.json` sets the BNW values. Name them after the define (for example
   `TourismModifierOpenBorders`). Do not read `Defines.tsv` at runtime.
+- **As built (B001).** `BaseRuleset.Civ_V_BNW` exists and `RulesetCache` skips it while its JSON folder is absent (B002 generates
+  it); the six gates are `UniqueType`s 638-643 (target `ModOptions`, `NoConditionals`) in `UniqueTypeDataBnw.cs`, appended
+  after the Kotlin rows. `ModConstants` has 76 tunables named after the defines (the §4 defines plus their siblings, e.g. both
+  ends of a range), defaulting to the G&K value where G&K has one (religion pressure, gift friendship, settler gold,
+  research agreement, hill influence, tech prereqs) and to 0 otherwise. `BASE_CITY_AIR_STACKING` is the existing
+  `cityAirUnitCapacity`, and the `SCORE_*` rows that G&K already has stay in `scoreFrom*`. Nothing reads the new fields yet.
+  Deliberate deviation: the JVM-golden `ModConstants` hash codes and the `UniqueType` count test were rebased on the extended
+  classes. No decompiler output was available, so no [K]/[?] item was resolved by this ticket.
 
 ### 2.2 New state (all JSON-serialized, saved and loaded, included in `Checksum`)
 
@@ -827,7 +835,7 @@ founded, that ideologies are adopted, that the save → load → compare checksu
 the command-log replay reproduces the state (lockstep requirement).
 
 ### 6.3 Save compatibility
-G&K saves are unaffected (all new fields default to empty). BNW saves need `CompatibilityVersion` bumped once (B001).
+G&K saves are unaffected (all new fields default to empty). BNW saves need `CompatibilityVersion` bumped once (B001: `CurrentCompatibilityNumber` 4 to 5; older saves still load, a save made by this build is refused by older ones).
 Renamed objects (Railroads→Railroad, Pharmaceuticals→Penicillin) only matter inside the BNW ruleset, which is new, so
 there are no old saves. Name the BNW objects as BNW does.
 

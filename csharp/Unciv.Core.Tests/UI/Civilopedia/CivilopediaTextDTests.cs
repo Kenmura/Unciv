@@ -563,7 +563,7 @@ public class CivilopediaTextDTests
         Assert.Empty(RulesetCache.LoadRulesets(new DirectoryRulesetFileSource(jsons, Path.Combine(jsons, "no mods here")), noMods: true));
         try
         {
-            foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
+            foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
             {
                 var ruleset = RulesetCache.Get(baseRuleset.FullName())!;
                 var context = Ctx(ruleset);

@@ -86,7 +86,8 @@ public class UniqueTypeTests
     public void Entries_CountOrdinalsAndNames_MatchKotlin()
     {
         Assert.Equal(638, Golden.Count);
-        Assert.Equal(Golden.Count, UniqueTypeExtensions.Entries.Count);
+        // Kotlin's entries come first and keep their ordinals; the Brave New World gates (B001) are appended after them
+        Assert.Equal(Golden.Count + 6, UniqueTypeExtensions.Entries.Count);
         AssertNoMismatches((type, row) =>
             (int)type == row.Ordinal && type.ToString() == row.Name ? null : $"got {(int)type} {type}, expected {row.Ordinal}");
     }

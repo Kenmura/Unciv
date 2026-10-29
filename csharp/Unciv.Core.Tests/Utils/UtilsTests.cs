@@ -201,8 +201,8 @@ public class UtilsTests
         Assert.Equal("4.22.13 (Build 1275)", version.ToSerializeString());
         Assert.Equal(version, Version.Current);
 
-        Assert.Equal(4, CompatibilityVersion.CurrentCompatibilityNumber);
-        Assert.Equal(new CompatibilityVersion(4, Version.Current), CompatibilityVersion.CurrentCompatibilityVersion);
+        Assert.Equal(5, CompatibilityVersion.CurrentCompatibilityNumber);
+        Assert.Equal(new CompatibilityVersion(5, Version.Current), CompatibilityVersion.CurrentCompatibilityVersion);
         Assert.Equal(new CompatibilityVersion(1, new Version("4.1.14", 731)), CompatibilityVersion.FirstWithout);
         // ordering looks at the number only, equality at everything
         var other = new CompatibilityVersion(1, new Version("other", 0));

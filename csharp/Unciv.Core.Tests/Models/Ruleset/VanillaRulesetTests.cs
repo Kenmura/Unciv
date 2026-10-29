@@ -1,5 +1,6 @@
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Models.Ruleset.Validation;
 using RulesetClass = Unciv.Models.Ruleset.Ruleset;
 
@@ -80,9 +81,24 @@ public sealed class VanillaRulesetTests : IDisposable
     }
 
     [Fact]
+    public void BnwGatesAreDeclaredForModOptionsAndOffInTheShippedRulesets()
+    {
+        UniqueType[] gates = [UniqueType.EnablesInternationalTradeRoutes, UniqueType.EnablesGreatWorksAndTourism, UniqueType.EnablesArchaeology,
+            UniqueType.EnablesIdeologies, UniqueType.EnablesWorldCongress, UniqueType.BnwHappinessRules];
+        Assert.All(gates, it => Assert.True(it.CanAcceptUniqueTarget(UniqueTarget.ModOptions)));
+        Assert.All(gates, it => Assert.Contains(UniqueFlag.NoConditionals, it.Flags()));
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
+        {
+            var modOptions = (IHasUniques)LoadBase(baseRuleset).ModOptions;
+            Assert.All(gates, it => Assert.False(modOptions.HasUnique(it), baseRuleset.FullName() + " " + it));
+        }
+        Assert.Equal(6, UniqueTypeExtensions.Entries.Count(it => it.TargetTypes().Contains(UniqueTarget.ModOptions) && (int)it >= (int)UniqueType.EnablesInternationalTradeRoutes));
+    }
+
+    [Fact]
     public void ObjectNamesAreUniqueKeysAndOriginIsSet()
     {
-        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
         {
             var r = LoadBase(baseRuleset);
             Assert.NotEmpty(r.Buildings);

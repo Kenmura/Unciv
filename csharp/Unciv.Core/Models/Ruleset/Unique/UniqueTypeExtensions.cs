@@ -74,7 +74,7 @@ public static class UniqueTypeExtensions
 
     private static ImmutableArray<Info> BuildInfos()
     {
-        var rows = UniqueTypeData.Rows;
+        var rows = UniqueTypeData.Rows.AddRange(UniqueTypeDataBnw.Rows);
         if (rows.Length != Entries.Count)
             throw new InvalidOperationException($"UniqueTypeData has {rows.Length} rows for {Entries.Count} UniqueType entries");
 

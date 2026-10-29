@@ -33,21 +33,21 @@ public sealed class AllObjectsTests : IDisposable
     [Fact]
     public void AllRulesetObjectsShouldNotReturnDuplicateReferences()
     {
-        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
             Assert.Empty(FindDuplicateReferences(RulesetCache.Get(baseRuleset.FullName())!.AllRulesetObjects()).Select(it => $"{baseRuleset.FullName()}: {it.Name}"));
     }
 
     [Fact]
     public void AllICivilopediaTextShouldNotReturnDuplicateReferences()
     {
-        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
             Assert.Empty(FindDuplicateReferences(RulesetCache.Get(baseRuleset.FullName())!.AllICivilopediaText()).Select(it => $"{baseRuleset.FullName()}: {it.MakeLink()}"));
     }
 
     [Fact]
     public void AllUniquesShouldNotReturnDuplicateReferences()
     {
-        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>())
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
             Assert.Empty(FindDuplicateReferences(RulesetCache.Get(baseRuleset.FullName())!.AllUniques()).Select(it => $"{baseRuleset.FullName()}: {it.Text}"));
     }
 }

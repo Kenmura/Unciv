@@ -37,6 +37,7 @@ public class MetadataTests
     {
         Assert.Equal("Civ V - Vanilla", BaseRuleset.Civ_V_Vanilla.FullName());
         Assert.Equal("Civ V - Gods & Kings", BaseRuleset.Civ_V_GnK.FullName());
+        Assert.Equal("Civ V - Brave New World", BaseRuleset.Civ_V_BNW.FullName());
         Assert.Equal("\"Human\"", UncivJson.Serialize(PlayerType.Human));
         Assert.Equal(PlayerType.AI, UncivJson.Deserialize<PlayerType>("\"AI\""));
     }

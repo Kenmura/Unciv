@@ -380,7 +380,7 @@ public sealed class UncivFilesTests : IDisposable
         UncivFiles.SaveZipped = false;
         var game = NewGame();
         game.Version = CompatibilityVersion.CurrentCompatibilityVersion;
-        var json = UncivJson.Serialize(game).Replace("\"number\":4", "\"number\":99", StringComparison.Ordinal);
+        var json = UncivJson.Serialize(game).Replace($"\"number\":{CompatibilityVersion.CurrentCompatibilityNumber}", "\"number\":99", StringComparison.Ordinal);
         Assert.Contains("\"number\":99", json, StringComparison.Ordinal);
         WriteText(files.GetSave("future"), json);
         var ex = Assert.Throws<IncompatibleGameInfoVersionException>(() => files.LoadGameByName("future"));

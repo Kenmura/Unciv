@@ -645,4 +645,12 @@ public enum UniqueType
     ModMapPreselection = 635,
     ConditionalModEnabled = 636,
     ConditionalModNotEnabled = 637,
+
+    // Brave New World gates (bnw-spec section 2.1, B001): each BNW subsystem is switched on by the ruleset, never by its name.
+    EnablesInternationalTradeRoutes = 638,
+    EnablesGreatWorksAndTourism = 639,
+    EnablesArchaeology = 640,
+    EnablesIdeologies = 641,
+    EnablesWorldCongress = 642,
+    BnwHappinessRules = 643,
 }

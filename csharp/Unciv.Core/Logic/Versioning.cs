@@ -36,7 +36,7 @@ public sealed record CompatibilityVersion(
     [property: JsonPropertyName("createdWith")] Version CreatedWith) : IIsPartOfGameInfoSerialization, IComparable<CompatibilityVersion>
 {
     /// <summary>Incremented whenever changes to the save file structure guarantee that previous versions cannot load or play it.</summary>
-    public const int CurrentCompatibilityNumber = 4;
+    public const int CurrentCompatibilityNumber = 5; // 5: Brave New World (B001) state; G&K saves still load
 
     public static CompatibilityVersion CurrentCompatibilityVersion { get; } = new(CurrentCompatibilityNumber, Version.Current);
 

@@ -209,6 +209,314 @@ public sealed class ModConstants
     [JsonPropertyName("maxImprovementTechErasForward")]
     public int MaxImprovementTechErasForward { get; set; } = -1;
 
+    // Brave New World tunables (bnw-spec/SPEC.md section 2.1, ticket B001). Defaults are the G&K behaviour, or 0 (off) for
+    // values G&K has no use for; the BNW ModOptions.json sets the BNW values (the define value is in each comment).
+    // Nothing reads them yet: each feature ticket reads its own and stays gated by the ModOptions uniques.
+
+    // AI_TACTICAL_BARBARIAN_PRIORITY_PLUNDER_TRADE_UNIT: BNW 20
+    [JsonPropertyName("aiTacticalBarbarianPriorityPlunderTradeUnit")]
+    public int AiTacticalBarbarianPriorityPlunderTradeUnit { get; set; } = 0;
+
+    // BASE_CULTURE_PER_GREAT_WORK: BNW 2
+    [JsonPropertyName("baseCulturePerGreatWork")]
+    public int BaseCulturePerGreatWork { get; set; } = 0;
+
+    // BASE_TOURISM_PER_GREAT_WORK: BNW 2
+    [JsonPropertyName("baseTourismPerGreatWork")]
+    public int BaseTourismPerGreatWork { get; set; } = 0;
+
+    // DIPLO_VICTORY_ALGORITHM_THRESHOLD: BNW 28
+    [JsonPropertyName("diploVictoryAlgorithmThreshold")]
+    public double DiploVictoryAlgorithmThreshold { get; set; } = 0.0;
+
+    // DIPLO_VICTORY_BEYOND_ALGORITHM_MULTIPLIER: BNW 35
+    [JsonPropertyName("diploVictoryBeyondAlgorithmMultiplier")]
+    public double DiploVictoryBeyondAlgorithmMultiplier { get; set; } = 0.0;
+
+    // DIPLO_VICTORY_CIV_DELEGATES_COEFFICIENT: BNW 1.443
+    [JsonPropertyName("diploVictoryCivDelegatesCoefficient")]
+    public double DiploVictoryCivDelegatesCoefficient { get; set; } = 0.0;
+
+    // DIPLO_VICTORY_CIV_DELEGATES_CONSTANT: BNW 7
+    [JsonPropertyName("diploVictoryCivDelegatesConstant")]
+    public double DiploVictoryCivDelegatesConstant { get; set; } = 0.0;
+
+    // DIPLO_VICTORY_CS_DELEGATES_COEFFICIENT: BNW 16.023
+    [JsonPropertyName("diploVictoryCsDelegatesCoefficient")]
+    public double DiploVictoryCsDelegatesCoefficient { get; set; } = 0.0;
+
+    // DIPLO_VICTORY_CS_DELEGATES_CONSTANT: BNW -13.758
+    [JsonPropertyName("diploVictoryCsDelegatesConstant")]
+    public double DiploVictoryCsDelegatesConstant { get; set; } = 0.0;
+
+    // DIPLO_VICTORY_DEFAULT_VOTE_PERCENT: BNW 67
+    [JsonPropertyName("diploVictoryDefaultVotePercent")]
+    public double DiploVictoryDefaultVotePercent { get; set; } = 0.0;
+
+    // DIPLO_VICTORY_TEAM_MULTIPLIER: BNW 1.1
+    [JsonPropertyName("diploVictoryTeamMultiplier")]
+    public double DiploVictoryTeamMultiplier { get; set; } = 0.0;
+
+    // ESPIONAGE_COUP_OTHER_PLAYERS_INFLUENCE_DROP: BNW 20
+    [JsonPropertyName("espionageCoupOtherPlayersInfluenceDrop")]
+    public int EspionageCoupOtherPlayersInfluenceDrop { get; set; } = 0;
+
+    // ESPIONAGE_COUP_SPY_LEVEL_DELTA_THREE: BNW 2.6
+    [JsonPropertyName("espionageCoupSpyLevelDeltaThree")]
+    public float EspionageCoupSpyLevelDeltaThree { get; set; } = 0f;
+
+    // EXOTIC_GOODS_GOLD_MAX: BNW 400
+    [JsonPropertyName("exoticGoodsGoldMax")]
+    public int ExoticGoodsGoldMax { get; set; } = 0;
+
+    // EXOTIC_GOODS_GOLD_MIN: BNW 100
+    [JsonPropertyName("exoticGoodsGoldMin")]
+    public int ExoticGoodsGoldMin { get; set; } = 0;
+
+    // EXOTIC_GOODS_XP_MAX: BNW 30
+    [JsonPropertyName("exoticGoodsXpMax")]
+    public int ExoticGoodsXpMax { get; set; } = 0;
+
+    // EXOTIC_GOODS_XP_MIN: BNW 10
+    [JsonPropertyName("exoticGoodsXpMin")]
+    public int ExoticGoodsXpMin { get; set; } = 0;
+
+    // FRIENDSHIP_ALLIES_ON_DEATH: BNW 45
+    [JsonPropertyName("friendshipAlliesOnDeath")]
+    public int FriendshipAlliesOnDeath { get; set; } = 0;
+
+    // FRIENDSHIP_FRIENDS_ON_DEATH: BNW 15
+    [JsonPropertyName("friendshipFriendsOnDeath")]
+    public int FriendshipFriendsOnDeath { get; set; } = 0;
+
+    // FRIENDSHIP_NEUTRAL_ON_DEATH: BNW 0
+    [JsonPropertyName("friendshipNeutralOnDeath")]
+    public int FriendshipNeutralOnDeath { get; set; } = 0;
+
+    // FRIENDSHIP_PER_UNIT_GIFTED: BNW 5, G&K 2
+    [JsonPropertyName("friendshipPerUnitGifted")]
+    public int FriendshipPerUnitGifted { get; set; } = 2;
+
+    // IDEOLOGY_PERCENT_CLEAR_VICTORY_PREF: BNW 25
+    [JsonPropertyName("ideologyPercentClearVictoryPref")]
+    public int IdeologyPercentClearVictoryPref { get; set; } = 0;
+
+    // INFLUENCE_HILL_COST: BNW 1, G&K 2
+    [JsonPropertyName("influenceHillCost")]
+    public int InfluenceHillCost { get; set; } = 2;
+
+    // INTERNATIONAL_TRADE_BASE: BNW 100
+    [JsonPropertyName("internationalTradeBase")]
+    public int InternationalTradeBase { get; set; } = 0;
+
+    // INTERNATIONAL_TRADE_CITY_GPT_DIVISOR: BNW 20
+    [JsonPropertyName("internationalTradeCityGptDivisor")]
+    public int InternationalTradeCityGptDivisor { get; set; } = 0;
+
+    // INTERNATIONAL_TRADE_EXCLUSIVE_CONNECTION: BNW 0
+    [JsonPropertyName("internationalTradeExclusiveConnection")]
+    public int InternationalTradeExclusiveConnection { get; set; } = 0;
+
+    // LANDMARK_MINOR_FRIENDSHIP_CHANGE: BNW 50
+    [JsonPropertyName("landmarkMinorFriendshipChange")]
+    public int LandmarkMinorFriendshipChange { get; set; } = 0;
+
+    // LEAGUE_MEMBER_PROPOSALS_BASE: BNW 1
+    [JsonPropertyName("leagueMemberProposalsBase")]
+    public int LeagueMemberProposalsBase { get; set; } = 0;
+
+    // LEAGUE_MEMBER_VOTES_BASE: BNW 1
+    [JsonPropertyName("leagueMemberVotesBase")]
+    public int LeagueMemberVotesBase { get; set; } = 0;
+
+    // LEAGUE_MEMBER_VOTES_FOR_HOST: BNW 1
+    [JsonPropertyName("leagueMemberVotesForHost")]
+    public int LeagueMemberVotesForHost { get; set; } = 0;
+
+    // LEAGUE_MEMBER_VOTES_PER_CITY_STATE_ALLY: BNW 1
+    [JsonPropertyName("leagueMemberVotesPerCityStateAlly")]
+    public int LeagueMemberVotesPerCityStateAlly { get; set; } = 0;
+
+    // LEAGUE_PROJECT_REWARD_TIER_1_THRESHOLD: BNW 0.5
+    [JsonPropertyName("leagueProjectRewardTier1Threshold")]
+    public float LeagueProjectRewardTier1Threshold { get; set; } = 0f;
+
+    // LEAGUE_PROJECT_REWARD_TIER_2_THRESHOLD: BNW 1
+    [JsonPropertyName("leagueProjectRewardTier2Threshold")]
+    public int LeagueProjectRewardTier2Threshold { get; set; } = 0;
+
+    // LEAGUE_SESSION_INTERVAL_BASE_TURNS: BNW 12
+    [JsonPropertyName("leagueSessionIntervalBaseTurns")]
+    public int LeagueSessionIntervalBaseTurns { get; set; } = 0;
+
+    // LEAGUE_SESSION_SOON_WARNING_TURNS: BNW 5
+    [JsonPropertyName("leagueSessionSoonWarningTurns")]
+    public int LeagueSessionSoonWarningTurns { get; set; } = 0;
+
+    // MINIUMUM_TOURISM_BLAST_STRENGTH: BNW 100
+    [JsonPropertyName("miniumumTourismBlastStrength")]
+    public int MiniumumTourismBlastStrength { get; set; } = 0;
+
+    // MINOR_FRIENDSHIP_ANCHOR_DEFAULT: BNW 0
+    [JsonPropertyName("minorFriendshipAnchorDefault")]
+    public int MinorFriendshipAnchorDefault { get; set; } = 0;
+
+    // MINOR_FRIENDSHIP_ANCHOR_MOD_PROTECTED: BNW 5
+    [JsonPropertyName("minorFriendshipAnchorModProtected")]
+    public int MinorFriendshipAnchorModProtected { get; set; } = 0;
+
+    // MINOR_FRIENDSHIP_ANCHOR_MOD_WARY_OF: BNW -20
+    [JsonPropertyName("minorFriendshipAnchorModWaryOf")]
+    public int MinorFriendshipAnchorModWaryOf { get; set; } = 0;
+
+    // MINOR_LIBERATION_FRIENDSHIP: BNW 105, G&K 60
+    [JsonPropertyName("minorLiberationFriendship")]
+    public int MinorLiberationFriendship { get; set; } = 60;
+
+    // MINOR_QUEST_FRIENDSHIP_TRADE_ROUTE: BNW 40
+    [JsonPropertyName("minorQuestFriendshipTradeRoute")]
+    public int MinorQuestFriendshipTradeRoute { get; set; } = 0;
+
+    // MINOR_UNIT_GIFT_TRAVEL_TURNS: BNW 3
+    [JsonPropertyName("minorUnitGiftTravelTurns")]
+    public int MinorUnitGiftTravelTurns { get; set; } = 0;
+
+    // NUM_AND_TECH_PREREQS: BNW 6, G&K 5
+    [JsonPropertyName("numAndTechPrereqs")]
+    public int NumAndTechPrereqs { get; set; } = 5;
+
+    // OPINION_WEIGHT_TRADE_MAX: BNW -30
+    [JsonPropertyName("opinionWeightTradeMax")]
+    public int OpinionWeightTradeMax { get; set; } = 0;
+
+    // PERCENT_HIDDEN_SITES_WRITING: BNW 30
+    [JsonPropertyName("percentHiddenSitesWriting")]
+    public int PercentHiddenSitesWriting { get; set; } = 0;
+
+    // PERCENT_SITES_HIDDEN: BNW 30
+    [JsonPropertyName("percentSitesHidden")]
+    public int PercentSitesHidden { get; set; } = 0;
+
+    // QUEST_DISABLED_TRADE_ROUTE: BNW 0
+    [JsonPropertyName("questDisabledTradeRoute")]
+    public int QuestDisabledTradeRoute { get; set; } = 0;
+
+    // RELIGION_ATHEISM_PRESSURE_PER_POP: BNW 1000, G&K 100
+    [JsonPropertyName("religionAtheismPressurePerPop")]
+    public int ReligionAtheismPressurePerPop { get; set; } = 100;
+
+    // RELIGION_INITIAL_FOUNDING_CITY_PRESSURE: BNW 5000, G&K 500
+    [JsonPropertyName("religionInitialFoundingCityPressure")]
+    public int ReligionInitialFoundingCityPressure { get; set; } = 500;
+
+    // RELIGION_MISSIONARY_PRESSURE_MULTIPLIER: BNW 10, G&K 1
+    [JsonPropertyName("religionMissionaryPressureMultiplier")]
+    public int ReligionMissionaryPressureMultiplier { get; set; } = 1;
+
+    // RESEARCH_AGREEMENT_BOOST_DIVISOR: BNW 3, G&K 6
+    [JsonPropertyName("researchAgreementBoostDivisor")]
+    public int ResearchAgreementBoostDivisor { get; set; } = 6;
+
+    // REVOLT_COUNTER_MIN: BNW 5
+    [JsonPropertyName("revoltCounterMin")]
+    public int RevoltCounterMin { get; set; } = 0;
+
+    // SAPPED_CITY_ATTACK_MODIFIER: BNW 50
+    [JsonPropertyName("sappedCityAttackModifier")]
+    public int SappedCityAttackModifier { get; set; } = 0;
+
+    // SAPPER_BONUS_RANGE: BNW 2
+    [JsonPropertyName("sapperBonusRange")]
+    public int SapperBonusRange { get; set; } = 0;
+
+    // SCORE_BELIEF_MULTIPLIER: BNW 20
+    [JsonPropertyName("scoreBeliefMultiplier")]
+    public int ScoreBeliefMultiplier { get; set; } = 0;
+
+    // SCORE_GREAT_WORK_MULTIPLIER: BNW 4
+    [JsonPropertyName("scoreGreatWorkMultiplier")]
+    public int ScoreGreatWorkMultiplier { get; set; } = 0;
+
+    // SCORE_POLICY_MULTIPLIER: BNW 4
+    [JsonPropertyName("scorePolicyMultiplier")]
+    public int ScorePolicyMultiplier { get; set; } = 0;
+
+    // SCORE_RELIGION_CITIES_MULTIPLIER: BNW 1
+    [JsonPropertyName("scoreReligionCitiesMultiplier")]
+    public int ScoreReligionCitiesMultiplier { get; set; } = 0;
+
+    // SETTLER_GOLD_MULTIPLIER: BNW 3, G&K 2
+    [JsonPropertyName("settlerGoldMultiplier")]
+    public int SettlerGoldMultiplier { get; set; } = 2;
+
+    // SUPER_UNHAPPY_THRESHOLD: BNW -20
+    [JsonPropertyName("superUnhappyThreshold")]
+    public int SuperUnhappyThreshold { get; set; } = 0;
+
+    // SWITCH_POLICY_BRANCHES_ANARCHY_TURNS: BNW 2
+    [JsonPropertyName("switchPolicyBranchesAnarchyTurns")]
+    public int SwitchPolicyBranchesAnarchyTurns { get; set; } = 0;
+
+    // SWITCH_POLICY_BRANCHES_TENETS_LOST: BNW 2
+    [JsonPropertyName("switchPolicyBranchesTenetsLost")]
+    public int SwitchPolicyBranchesTenetsLost { get; set; } = 0;
+
+    // TEMPORARY_TOURISM_BOOST_MOD: BNW 100
+    [JsonPropertyName("temporaryTourismBoostMod")]
+    public int TemporaryTourismBoostMod { get; set; } = 0;
+
+    // TOURISM_MODIFIER_DIFFERENT_IDEOLOGIES: BNW -34
+    [JsonPropertyName("tourismModifierDifferentIdeologies")]
+    public int TourismModifierDifferentIdeologies { get; set; } = 0;
+
+    // TOURISM_MODIFIER_DIPLOMAT: BNW 25
+    [JsonPropertyName("tourismModifierDiplomat")]
+    public int TourismModifierDiplomat { get; set; } = 0;
+
+    // TOURISM_MODIFIER_OPEN_BORDERS: BNW 25
+    [JsonPropertyName("tourismModifierOpenBorders")]
+    public int TourismModifierOpenBorders { get; set; } = 0;
+
+    // TOURISM_MODIFIER_SHARED_RELIGION: BNW 25
+    [JsonPropertyName("tourismModifierSharedReligion")]
+    public int TourismModifierSharedReligion { get; set; } = 0;
+
+    // TOURISM_MODIFIER_TRADE_ROUTE: BNW 25
+    [JsonPropertyName("tourismModifierTradeRoute")]
+    public int TourismModifierTradeRoute { get; set; } = 0;
+
+    // UNRESEARCHED_TECH_BONUS_FROM_KILLS_INTERCEPT: BNW -114.07
+    [JsonPropertyName("unresearchedTechBonusFromKillsIntercept")]
+    public float UnresearchedTechBonusFromKillsIntercept { get; set; } = 0f;
+
+    // UNRESEARCHED_TECH_BONUS_FROM_KILLS_SLOPE: BNW 9.68
+    [JsonPropertyName("unresearchedTechBonusFromKillsSlope")]
+    public float UnresearchedTechBonusFromKillsSlope { get; set; } = 0f;
+
+    // UPRISING_COUNTER_MIN: BNW 4
+    [JsonPropertyName("uprisingCounterMin")]
+    public int UprisingCounterMin { get; set; } = 0;
+
+    // UPRISING_COUNTER_POSSIBLE: BNW 3
+    [JsonPropertyName("uprisingCounterPossible")]
+    public int UprisingCounterPossible { get; set; } = 0;
+
+    // UPRISING_NUM_BASE: BNW 100
+    [JsonPropertyName("uprisingNumBase")]
+    public int UprisingNumBase { get; set; } = 0;
+
+    // UPRISING_NUM_CITY_COUNT: BNW 20
+    [JsonPropertyName("uprisingNumCityCount")]
+    public int UprisingNumCityCount { get; set; } = 0;
+
+    // VERY_UNHAPPY_THRESHOLD: BNW -10
+    [JsonPropertyName("veryUnhappyThreshold")]
+    public int VeryUnhappyThreshold { get; set; } = 0;
+
+    // WARMONGER_ON_CITY_STATE_MULTIPLIER: BNW 50
+    [JsonPropertyName("warmongerOnCityStateMultiplier")]
+    public int WarmongerOnCityStateMultiplier { get; set; } = 0;
+
     public void Merge(ModConstants other)
     {
         foreach (var field in Fields)
