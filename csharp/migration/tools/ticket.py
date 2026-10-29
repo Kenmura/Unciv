@@ -6,7 +6,7 @@ READ
   list [STATE]              one line per open ticket: id, state, deps, title
   show T027 [Field]         whole ticket (backlog/T027.md) or one field
   ready                     everything workable now: Needs-Review first, then Available with deps all Done
-                            ordered by delivery phase first (phases.txt: 1 CLI, 2 single player, 3 multiplayer, 4 queued plans),
+                            ordered by delivery phase first (phases.txt: 1 CLI, 2 single player, 3 multiplayer, 4 queued plans, 5 owner issue backlog),
                             most downstream-unblocking first (direct + transitive incomplete dependents)
   next [AGENT]              the single pick of the Work Loop (review, else the ready ticket that unblocks most)
   blockers T033             for each dependency not Done: its id, state and title
@@ -196,11 +196,12 @@ def ready_list(ts):
         deps = deps_of(d)
         if s == "Available" and set(deps) <= done and (deps or d.lower().startswith("none")):
             impl.append(("IMPLEMENT", i, t, s, counts.get(i, 0)))
-    # Phase 4 (queued plans) is released automatically, and only, once phases 1-3 hold no open work. Blocked tickets do
-    # not count (they wait for a human and would hold the plans forever); everything else not Done/Won't port does.
+    # Phases 4 (queued plans) and 5 (owner issue backlog) are released automatically: phase P >= 4 is offered only once every
+    # lower phase holds no open work. Blocked tickets do not count (they wait for a human and would hold the plans forever);
+    # everything else not Done/Won't port does.
     states = all_states()
-    if any(phase_of(i) < 4 and not st.startswith(("Done", "Won't", "Blocked")) for i, st in states.items()):
-        impl = [r for r in impl if phase_of(r[1]) < 4]
+    lowest_open = min((phase_of(i) for i, st in states.items() if not st.startswith(("Done", "Won't", "Blocked"))), default=99)
+    impl = [r for r in impl if phase_of(r[1]) < 4 or phase_of(r[1]) <= lowest_open]
     return out + sorted(impl, key=lambda r: (phase_of(r[1]), -r[4], r[1]))
 
 
@@ -437,7 +438,8 @@ def render_map():
     return "\n".join(out) + "\n"
 
 
-PHASE_NAMES = {1: "Phase 1: CLI (headless engine)", 2: "Phase 2: single player (Godot client)", 3: "Phase 3: multiplayer", 4: "Phase 4: queued plans (UI redesign, unit models, BNW)"}
+PHASE_NAMES = {1: "Phase 1: CLI (headless engine)", 2: "Phase 2: single player (Godot client)", 3: "Phase 3: multiplayer", 4: "Phase 4: queued plans (UI redesign, unit models, BNW)",
+               5: "Phase 5: owner issue backlog (Android, performance, ultra graphics, dedicated server, resiliency)"}
 
 
 def backlog_link(tid, title):

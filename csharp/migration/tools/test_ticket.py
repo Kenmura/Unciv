@@ -334,14 +334,14 @@ class ReleaseFolder(unittest.TestCase):
 
 
 class PhaseFourRelease(unittest.TestCase):
-    """Phase 4 (queued plans) is offered only once phases 1-3 hold no open, non-Blocked ticket."""
+    """Phase 4 (queued plans) is offered only once phases 1-3 hold no open, non-Blocked ticket; phase 5 only once 1-4 are clear."""
 
     def ready_ids(self, states):
         spec = importlib.util.spec_from_file_location("ticket_phase4", TOOL)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         mod.all_states = lambda: states
-        mod.phase_of = lambda tid: {"T1": 1, "C1": 3, "C9": 4, "B1": 4}[tid]
+        mod.phase_of = lambda tid: {"T1": 1, "C1": 3, "C9": 4, "B1": 4, "C5": 5}[tid]
         mod.downstream_counts = lambda ts: {}
         ts = [(i, i, s, "none", "") for i, s in states.items()]
         return [r[1] for r in mod.ready_list(ts)]
@@ -352,3 +352,9 @@ class PhaseFourRelease(unittest.TestCase):
 
     def test_released_when_earlier_phases_are_done_or_blocked(self):
         self.assertEqual(self.ready_ids({"T1": "Done", "C1": "Blocked", "C9": "Available", "B1": "Available"}), ["B1", "C9"])
+
+    def test_phase_five_waits_for_phase_four(self):
+        self.assertEqual(self.ready_ids({"T1": "Done", "C9": "Available", "C5": "Available"}), ["C9"])
+        self.assertEqual(self.ready_ids({"T1": "Done", "C9": "In-Progress [Bot]", "C5": "Available"}), [])
+        self.assertEqual(self.ready_ids({"T1": "Done", "C9": "Done", "B1": "Blocked", "C5": "Available"}), ["C5"])
+        self.assertEqual(self.ready_ids({"T1": "Available", "C9": "Done", "C5": "Available"}), ["T1"])

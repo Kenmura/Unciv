@@ -92,6 +92,8 @@ Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs t
 
 **Phase 4 (queued plans).** Tickets in phase 4 (`phases.txt`: UI redesign, unit models, Brave New World, feature-review items) are never offered by `ready`/`next` while any phase 1-3 ticket is open and not `Blocked`; when none is, they are offered automatically in the usual order. Do not hand-pick one earlier, and do not release or reorder them. Tickets in the B track default to phase 4; new C/T/A tickets for these plans must be added to the phase 4 line in `phases.txt`.
 
+**Phase 5 (owner issue backlog).** Tickets converted from the owner's GitHub issues (Android, performance, ultra graphics, dedicated server, connection resiliency) are queued in phase 5 and follow the same rule one level up: never offered while any phase 1-4 ticket is open and not `Blocked`; released automatically afterwards. Do not hand-pick one earlier.
+
 ## States
 
 `Available` → `In-Progress [Agent]` → `Needs-Review [Implementer]` → `In-Review [Reviewer]` → `Done`
