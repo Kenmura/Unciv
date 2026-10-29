@@ -82,7 +82,7 @@ flowchart TD
   class C079 prog
   class C082 ready
   class C085 prog
-  class C086 prog
+  class C086 review
   class C089 prog
   class C090 ondeck
   class C091 ready
@@ -159,7 +159,7 @@ xychart-beta
 | T270 | Available (waiting on T265) | T265, T176, T254 | 1 | Dedicated server executable B: graceful shutdown, persistence and resume, exit codes, subprocess test |
 | C079 | In-Progress [Claude-C079] | C078 | 0 | Responsive and localization pass |
 | C085 | In-Progress [Claude-C085] | C094 | 0 | Unit model LOD and performance caps |
-| C086 | In-Progress [Claude-C086] | C094 | 0 | Unit combat polish: effects and sounds |
+| C086 | Needs-Review [Claude-C086] | C094 | 0 | Unit combat polish: effects and sounds |
 | C096 | Available (waiting on T259) | T259, C043 | 0 | Touch and small-screen client UI: gestures, hit targets, layout for phone and tablet |
 | C097 | Available (waiting on T264) | T264, C043, C002 | 0 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
