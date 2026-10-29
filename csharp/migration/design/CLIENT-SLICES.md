@@ -1,5 +1,18 @@
 # Godot client: minimum playable slices
 
+<!-- toc -->
+## Contents
+
+- [Principles](#principles)
+- [Placeholder assets (C007)](#placeholder-assets-c007)
+- [Verification tooling (C008)](#verification-tooling-c008)
+- [Slice list](#slice-list)
+  - [Slice details](#slice-details)
+- [Scope coverage of the old tickets](#scope-coverage-of-the-old-tickets)
+- [What only a human can verify (Owner review)](#what-only-a-human-can-verify-owner-review)
+- [Unverified assumptions](#unverified-assumptions)
+<!-- /toc -->
+
 Design for the C track (client). Replaces the one-line scopes of C002-C005 with a sequence of slices, each small enough for one agent
 and verifiable with the C000 headless harness (GODOT.md). Written while the command layer (T164 split, `design/COMMANDS-IMPLEMENTATION.md`) was still being designed: slices depend on **T164 as an umbrella ID**; when it is split,
 re-point each `Depends` to the specific command/query/turn-flow ticket named in the "Engine needs" column (a `ticket.py set`, nothing else changes). The server work is already split

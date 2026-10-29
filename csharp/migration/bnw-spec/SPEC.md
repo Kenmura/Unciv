@@ -1,5 +1,51 @@
 # Brave New World for the C# engine: Implementation Spec (v0.1)
 
+<!-- toc -->
+## Contents
+
+- [0. How to read this document](#0-how-to-read-this-document)
+  - [Evidence tags](#evidence-tags)
+  - [Provenance](#provenance)
+  - [Clean-room note](#clean-room-note)
+  - [0.4 Verifying [K] and [?] items](#04-verifying-k-and--items)
+- [1. What BNW changes, at a glance](#1-what-bnw-changes-at-a-glance)
+- [2. Engine architecture for the port [X]](#2-engine-architecture-for-the-port-x)
+  - [2.1 Ruleset, not hard-coding](#21-ruleset-not-hard-coding)
+  - [2.2 New state (all JSON-serialized, saved and loaded, included in `Checksum`)](#22-new-state-all-json-serialized-saved-and-loaded-included-in-checksum)
+  - [2.3 Turn order [X] (aligned with Civ V where observed)](#23-turn-order-x-aligned-with-civ-v-where-observed)
+  - [2.4 Commands, queries, events (see `COMMANDS.md`)](#24-commands-queries-events-see-commandsmd)
+  - [2.5 Determinism rules specific to BNW [X]](#25-determinism-rules-specific-to-bnw-x)
+- [3. Ruleset content](#3-ruleset-content)
+  - [3.1 Generator (ticket B002)](#31-generator-ticket-b002)
+  - [3.2 Column → Unique mapping (the new BNW hooks)](#32-column--unique-mapping-the-new-bnw-hooks)
+  - [3.3 Object diff vs Unciv G&K (`data/derived/objects_unciv_gk_vs_bnw.txt`)](#33-object-diff-vs-unciv-gk-dataderivedobjectsuncivgkvsbnwtxt)
+- [4. Rules and formulas](#4-rules-and-formulas)
+  - [4.1 Trade routes](#41-trade-routes)
+  - [4.2 Great Works](#42-great-works)
+  - [4.3 Tourism, influence, culture victory](#43-tourism-influence-culture-victory)
+  - [4.4 Archaeology](#44-archaeology)
+  - [4.5 Great People additions [D]+[K]](#45-great-people-additions-dk)
+  - [4.6 Social policies and ideologies](#46-social-policies-and-ideologies)
+  - [4.7 World Congress and United Nations](#47-world-congress-and-united-nations)
+  - [4.8 Happiness (BNW) [O]](#48-happiness-bnw-o)
+  - [4.9 Espionage [O]+[D]+[K]](#49-espionage-odk)
+  - [4.10 City-states [D]](#410-city-states-d)
+  - [4.11 Religion [D]](#411-religion-d)
+  - [4.12 Military, warmonger, AI difficulty [D]](#412-military-warmonger-ai-difficulty-d)
+  - [4.13 Civilizations [D]](#413-civilizations-d)
+  - [4.14 Map generation](#414-map-generation)
+  - [4.15 Victory and score [D]](#415-victory-and-score-d)
+  - [4.16 AI](#416-ai)
+- [5. Client (Godot) inventory [U]](#5-client-godot-inventory-u)
+- [6. Testing and compatibility [X]](#6-testing-and-compatibility-x)
+  - [6.1 Golden tests per formula](#61-golden-tests-per-formula)
+  - [6.2 Scenario tests](#62-scenario-tests)
+  - [6.3 Save compatibility](#63-save-compatibility)
+- [7. Ticket plan (new `B` track) [X]](#7-ticket-plan-new-b-track-x)
+- [8. Unknowns and risks (to be closed by the ticket noted)](#8-unknowns-and-risks-to-be-closed-by-the-ticket-noted)
+- [9. Function index (BNW engine, for follow-up RE)](#9-function-index-bnw-engine-for-follow-up-re)
+<!-- /toc -->
+
 Audience: implementers and reviewers on the `csharp-migration` track. Goal: a new base ruleset
 **"Civ V - Brave New World"** that plays like Civ V with the BNW expansion (all DLC civs included, as in Unciv's
 G&K ruleset), deterministic and lockstep-safe like the rest of the engine.

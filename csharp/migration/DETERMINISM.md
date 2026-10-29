@@ -1,5 +1,23 @@
 # Determinism Specification & Verification
 
+<!-- toc -->
+## Contents
+
+- [1. Goal](#1-goal)
+- [2. Core Invariants](#2-core-invariants)
+  - [2.1 Seeded Randomness](#21-seeded-randomness)
+  - [2.2 Time and Clocks](#22-time-and-clocks)
+  - [2.3 Numeric Representation and Rounding](#23-numeric-representation-and-rounding)
+  - [2.4 Collection and Iteration Order](#24-collection-and-iteration-order)
+  - [2.5 Culture and Hashing](#25-culture-and-hashing)
+  - [2.6 Debug and cheat flags](#26-debug-and-cheat-flags)
+- [3. State Hashing Harness (`StateHasher`)](#3-state-hashing-harness-statehasher)
+  - [3.1 Algorithm](#31-algorithm)
+  - [3.2 Canonical Handling](#32-canonical-handling)
+  - [3.3 Byte layout (for reproducing hashes outside C#)](#33-byte-layout-for-reproducing-hashes-outside-c)
+  - [3.4 Usage Example](#34-usage-example)
+<!-- /toc -->
+
 ## 1. Goal
 
 The headless C# Unciv engine is designed to be **100% bit-exact and deterministic** across platforms (Linux, Windows, macOS, Android, WebAssembly) and across consecutive runs.

@@ -90,6 +90,13 @@ C-track tickets without an entry.
 """
 
 
+def load_toc():
+    spec = importlib.util.spec_from_file_location("toc", Path(__file__).resolve().parent / "toc.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def main():
     tool = load_ticket_tool()
     mapping = json.loads(MAPPING.read_text(encoding="utf-8"))
@@ -99,6 +106,7 @@ def main():
         print("\n".join(missing))
         return 0
     text, errors = render(mapping, done)
+    text = load_toc().add_toc(text)
     errors += [f"{t}: Done C-track ticket has no entry in screenshots.json" for t in missing]
     if "--check" in sys.argv:
         if not OUTPUT.exists() or OUTPUT.read_text(encoding="utf-8") != text:

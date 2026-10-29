@@ -1,5 +1,22 @@
 # Simultaneous human turns: engine analysis and model (owner decision, MVP requirement)
 
+<!-- toc -->
+## Contents
+
+- [1. Requirement and decision](#1-requirement-and-decision)
+- [2. What the engine assumes today (verified)](#2-what-the-engine-assumes-today-verified)
+- [3. The turn model](#3-the-turn-model)
+  - [3.1 State (new, additive, in `GameInfo`)](#31-state-new-additive-in-gameinfo)
+  - [3.2 Sequence](#32-sequence)
+  - [3.3 Commands (T202)](#33-commands-t202)
+- [4. Ordering, determinism, replay and hash](#4-ordering-determinism-replay-and-hash)
+- [5. Conflicts between humans in the same turn](#5-conflicts-between-humans-in-the-same-turn)
+- [6. Cross-human interactions in the same turn](#6-cross-human-interactions-in-the-same-turn)
+- [7. Visibility (per-player) under interleaving](#7-visibility-per-player-under-interleaving)
+- [8. Engine change list (tickets)](#8-engine-change-list-tickets)
+- [9. Verified vs inferred](#9-verified-vs-inferred)
+<!-- /toc -->
+
 Status: design, no engine code. Companion to `design/SERVER.md` (hosting, lobby, security) and `design/COMMANDS-IMPLEMENTATION.md` (commands, phased turn API).
 Marks: **[V]** verified by reading the cited source in this branch; **[I]** inferred, to be confirmed by the ticket named.
 

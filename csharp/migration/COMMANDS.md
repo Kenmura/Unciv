@@ -1,5 +1,17 @@
 # Command layer design (T012)
 
+<!-- toc -->
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [Model](#model)
+- [Determinism rules (so that lockstep stays possible)](#determinism-rules-so-that-lockstep-stays-possible)
+- [Authority models](#authority-models)
+- [Mapping from Kotlin entry points (first command set)](#mapping-from-kotlin-entry-points-first-command-set)
+- [Identifiers](#identifiers)
+- [Open questions (decide when the first real commands are ported)](#open-questions-decide-when-the-first-real-commands-are-ported)
+<!-- /toc -->
+
 How a player's intent becomes a change to game state in the C# engine. This is the contract between
 the Godot client, a headless server, tests and AI. The skeleton lives in `Unciv.Core/Commands/`
 (`CommandTests` shows every rule below working against a toy state, because `GameInfo` is not ported yet).

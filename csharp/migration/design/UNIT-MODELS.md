@@ -1,5 +1,27 @@
 # Unit models and attack animations (plan)
 
+<!-- toc -->
+## Contents
+
+- [What exists today](#what-exists-today)
+- [Design](#design)
+  - [1. Model contract](#1-model-contract)
+  - [2. `UnitAnimator` per figure](#2-unitanimator-per-figure)
+  - [3. Re-timing combat cues](#3-re-timing-combat-cues)
+  - [4. Articulated placeholder (optional)](#4-articulated-placeholder-optional)
+  - [5. Producing ~100 models](#5-producing-100-models)
+  - [6. Performance](#6-performance)
+  - [7. Verification](#7-verification)
+- [Suggested ticket order](#suggested-ticket-order)
+- [Open decisions (owner)](#open-decisions-owner)
+- [C083 status: the art pipeline as built](#c083-status-the-art-pipeline-as-built)
+- [C084 status: ancient and classical art](#c084-status-ancient-and-classical-art)
+- [C093 status: medieval and renaissance art](#c093-status-medieval-and-renaissance-art)
+- [C094 status: industrial, modern and great people](#c094-status-industrial-modern-and-great-people)
+- [C095 status: Battering Ram, chariots and elephants](#c095-status-battering-ram-chariots-and-elephants)
+- [T256 status: ships, siege, armour, aircraft and missiles](#t256-status-ships-siege-armour-aircraft-and-missiles)
+<!-- /toc -->
+
 Status: tickets filed as C080-C086 (phase 4, root C080 held Blocked until phases 1-3 are clear; written 2026-10-28). Goal: every unit gets a proper 3D model (eventually high-quality art) and units play
 an attack animation when they fight. Builds on the placeholder asset system (CLIENT-SLICES.md, C003/C004) and the combat presenter (C033).
 

@@ -49,6 +49,7 @@ WRITE (each touches only the named ticket's block, verified before the file is w
   publish [--origin]        git rebase csharp-migration && git push . HEAD:csharp-migration (clean tree only)
   archive                   retired no-op (Done tickets stay in their own backlog/T###.md file)
 """
+import importlib.util
 import json
 import os
 import re
@@ -466,7 +467,10 @@ def phase_overview(info, open_ids, ready_ids, inflight):
 
 
 def refresh_map():
-    text = render_map()
+    spec = importlib.util.spec_from_file_location("toc", Path(__file__).resolve().parent / "toc.py")
+    toc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(toc)
+    text = toc.add_toc(render_map())
     if not DEPMAP.exists() or DEPMAP.read_text(encoding="utf-8") != text:
         DEPMAP.write_text(text, encoding="utf-8")
 

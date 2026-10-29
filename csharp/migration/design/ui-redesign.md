@@ -1,5 +1,35 @@
 # UI/UX redesign plan (Godot client)
 
+<!-- toc -->
+## Contents
+
+- [Summary](#summary)
+- [0. Ground truth: what's actually there and what constrains the work](#0-ground-truth-whats-actually-there-and-what-constrains-the-work)
+- [1. Diagnosis, per screen](#1-diagnosis-per-screen)
+- [2. Design system](#2-design-system)
+  - [2.1 Where it lives (one recommendation)](#21-where-it-lives-one-recommendation)
+  - [2.2 Colour tokens (dark strategy palette, brass/gold accent)](#22-colour-tokens-dark-strategy-palette-brassgold-accent)
+  - [2.3 Typography](#23-typography)
+  - [2.4 Spacing, radii, elevation](#24-spacing-radii-elevation)
+  - [2.5 Components (all in `Unciv.Godot/Ui/`)](#25-components-all-in-uncivgodotui)
+  - [2.6 Icons](#26-icons)
+  - [2.7 Responsive rules and UI scale](#27-responsive-rules-and-ui-scale)
+- [3. Layouts](#3-layouts)
+  - [3.1 World HUD](#31-world-hud)
+  - [3.2 City screen](#32-city-screen)
+  - [3.3 Tech tree](#33-tech-tree)
+  - [3.4 Policies](#34-policies)
+  - [3.5 Diplomacy and trade](#35-diplomacy-and-trade)
+  - [3.6 Overview and espionage](#36-overview-and-espionage)
+  - [3.7 Setup, nation picker and main menu](#37-setup-nation-picker-and-main-menu)
+  - [3.8 In-game menu, save/load, options](#38-in-game-menu-saveload-options)
+  - [3.9 Popups, decisions, tooltips, Civilopedia, victory](#39-popups-decisions-tooltips-civilopedia-victory)
+- [4. Interaction rules](#4-interaction-rules)
+- [5. Implementation tickets (C-track, ordered)](#5-implementation-tickets-c-track-ordered)
+- [6. Risks and mitigations](#6-risks-and-mitigations)
+  - [Critical files for implementation](#critical-files-for-implementation)
+<!-- /toc -->
+
 Status: tickets filed 2026-10-28 as C061-C079 (phase 4, held Blocked at the root C061 until phases 1-3 are clear). Written 2026-10-28 from a review of every golden in
 `Unciv.Godot.Harness/golden/`. The full expert plan (diagnosis, tokens, wireframes, ticket details, risks) follows the summary.
 

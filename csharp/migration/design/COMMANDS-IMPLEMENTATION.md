@@ -1,5 +1,36 @@
 # Command layer, human turn flow and engine query API (implementation design)
 
+<!-- toc -->
+## Contents
+
+- [1. Summary of decisions](#1-summary-of-decisions)
+- [2. Infrastructure (ticket T164, narrowed)](#2-infrastructure-ticket-t164-narrowed)
+- [3. Command catalogue](#3-command-catalogue)
+  - [3.1 Turn and decisions (ticket T187; engine part T184)](#31-turn-and-decisions-ticket-t187-engine-part-t184)
+  - [3.2 Movement and combat (T188)](#32-movement-and-combat-t188)
+  - [3.3 Unit actions (T189, T190) - see section 4.](#33-unit-actions-t189-t190---see-section-4)
+  - [3.4 City (T191)](#34-city-t191)
+  - [3.5 Research, policy, religion, great people, espionage, congress (T192)](#35-research-policy-religion-great-people-espionage-congress-t192)
+  - [3.6 Diplomacy, trade, city states (T193)](#36-diplomacy-trade-city-states-t193)
+  - [3.7 Not engine commands](#37-not-engine-commands)
+  - [3.8 Determinism notes common to all commands](#38-determinism-notes-common-to-all-commands)
+  - [3.9 ClientState audit (ticket T183)](#39-clientstate-audit-ticket-t183)
+- [4. Unit actions as serialisable descriptors (T189, T190)](#4-unit-actions-as-serialisable-descriptors-t189-t190)
+- [5. Human turn flow](#5-human-turn-flow)
+  - [5.1 What the engine does today (verified)](#51-what-the-engine-does-today-verified)
+  - [5.2 Phased API (ticket T184)](#52-phased-api-ticket-t184)
+  - [5.3 Pending decisions (query + validation)](#53-pending-decisions-query--validation)
+  - [5.4 Server sequence and AI logging](#54-server-sequence-and-ai-logging)
+- [6. Command log and replay (ticket T194; store = T176)](#6-command-log-and-replay-ticket-t194-store--t176)
+- [7. Events (ticket T186)](#7-events-ticket-t186)
+- [8. Engine query API](#8-engine-query-api)
+  - [8.1 Mechanism (ticket T185)](#81-mechanism-ticket-t185)
+  - [8.2 What already exists in C# (do not duplicate) [V]](#82-what-already-exists-in-c-do-not-duplicate-v)
+- [9. Cross-cutting semantic traps (collected)](#9-cross-cutting-semantic-traps-collected)
+- [10. Build plan (dependency order)](#10-build-plan-dependency-order)
+- [11. Verified vs inferred, and open points](#11-verified-vs-inferred-and-open-points)
+<!-- /toc -->
+
 Status: design, no engine code. Refines `migration/COMMANDS.md` (T012 skeleton) and feeds `design/SERVER.md`
 (T172-T182). Replaces the coarse ticket T164 by the tickets listed in section 10.
 Marks: **[V]** verified against the Kotlin or C# source while writing this; **[I]** inferred, to be checked by the ticket named.

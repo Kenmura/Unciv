@@ -1,5 +1,16 @@
 # Unciv (Godot client): licence and third-party notices
 
+<!-- toc -->
+## Contents
+
+- [Unciv](#unciv)
+- [Godot Engine](#godot-engine)
+- [Noto fonts](#noto-fonts)
+- [Unciv icon pack](#unciv-icon-pack)
+- [Unit models](#unit-models)
+- [.NET runtime and NuGet packages](#net-runtime-and-nuget-packages)
+<!-- /toc -->
+
 Shipped next to every exported build (copied by `tools/package.sh`).
 
 ## Unciv

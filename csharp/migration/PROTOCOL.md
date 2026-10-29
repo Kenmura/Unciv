@@ -1,5 +1,25 @@
 # Kotlin → C# Migration Protocol
 
+<!-- toc -->
+## Contents
+
+- [Trigger phrase](#trigger-phrase)
+  - [No-prompt rule](#no-prompt-rule)
+- [Goals and non-goals](#goals-and-non-goals)
+- [Layout](#layout)
+- [Environment](#environment)
+- [Worktrees and the shared branch](#worktrees-and-the-shared-branch)
+- [States](#states)
+- [Work Loop](#work-loop)
+  - [Context discipline](#context-discipline)
+  - [Implement](#implement)
+  - [Review (Multi-Persona Adversarial Review)](#review-multi-persona-adversarial-review)
+- [Running until budget is exhausted](#running-until-budget-is-exhausted)
+  - [Stop conditions](#stop-conditions)
+- [Rules](#rules)
+- [Ticket format](#ticket-format)
+<!-- /toc -->
+
 Any agent (Claude, Antigravity, or other) that is told **"Begin Conversion work"**
 must follow this file exactly. No live agent-to-agent channel exists: git and
 the `backlog/` folder (one file per ticket) are the only coordination mechanism.
@@ -184,6 +204,7 @@ When the backlog runs low, an agent that finds nothing `Available` should first 
 ## Rules
 
 - One ticket per commit series; commit only files belonging to that ticket plus its `backlog/T###.md`.
+- Markdown docs carry a generated table of contents (`<!-- toc -->` block under the title). After adding or renaming a `##`/`###` heading run `python3 -I tools/toc.py` (CI's tools unit tests fail on a stale one); never edit the block by hand. `SCREENSHOTS.md` and `DEPENDENCY_MAP.md` get theirs from their generators.
 - Never mark `Done` without a passing Gate you ran in this session.
 - New tickets discovered along the way are appended to the backlog as `Available` with correct `Depends`.
 - Do not touch Gradle/Android build files.

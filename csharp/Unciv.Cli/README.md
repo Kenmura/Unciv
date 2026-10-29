@@ -1,5 +1,13 @@
 # Unciv.Cli: the headless runner
 
+<!-- toc -->
+## Contents
+
+- [Build and run](#build-and-run)
+- [Commands](#commands)
+- [Determinism](#determinism)
+<!-- /toc -->
+
 A console program on top of `Unciv.Core`: start a game, play N turns with the AI automation, save and load, print the state hash of every turn.
 It is the entry point for determinism checks, soak runs and demos. It has no UI and no network; everything is a function of its arguments and the files it reads.
 

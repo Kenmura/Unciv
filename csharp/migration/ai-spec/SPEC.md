@@ -1,5 +1,35 @@
 # Civilization V AI — Behavioral Requirements Spec (v0.1)
 
+<!-- toc -->
+## Contents
+
+- [0. How to read this document](#0-how-to-read-this-document)
+  - [Evidence tags](#evidence-tags)
+  - [Provenance](#provenance)
+  - [Constant recovery method (so you can trust the numbers)](#constant-recovery-method-so-you-can-trust-the-numbers)
+  - [Legal/clean-room note](#legalclean-room-note)
+- [1. Architecture overview](#1-architecture-overview)
+  - [1.1 The key architectural contrast with Unciv (read this first)](#11-the-key-architectural-contrast-with-unciv-read-this-first)
+- [2. Flavor system](#2-flavor-system)
+- [3. Grand strategy selection](#3-grand-strategy-selection)
+  - [3.1 Strategies [D]](#31-strategies-d)
+  - [3.2 Per-turn algorithm  [O] — *byte-for-byte identical in base, G&K, and BNW* (only struct strides differ)](#32-per-turn-algorithm--o--byte-for-byte-identical-in-base-gk-and-bnw-only-struct-strides-differ)
+  - [3.3 Tunables [D] (`data/ai_defines.tsv`)](#33-tunables-d-dataaidefinestsv)
+- [4. Victory scorers (what changed with G&K and BNW)](#4-victory-scorers-what-changed-with-gk-and-bnw)
+  - [4.1 Conquest](#41-conquest)
+  - [4.2 Culture](#42-culture)
+  - [4.3 United Nations / Diplomatic](#43-united-nations--diplomatic)
+  - [4.4 Spaceship](#44-spaceship)
+  - [4.5 Summary of version differences](#45-summary-of-version-differences)
+- [5. Economic / Military / City strategies  *(inventory only — trigger logic not yet decompiled)*](#5-economic--military--city-strategies--inventory-only--trigger-logic-not-yet-decompiled)
+- [6. Tactical AI — unit movement in combat  [O unless noted]](#6-tactical-ai--unit-movement-in-combat--o-unless-noted)
+  - [6.1 Per-turn pipeline](#61-per-turn-pipeline)
+  - [6.2 Move → handler table (BNW; generated from the dispatcher `101e16f0`)](#62-move--handler-table-bnw-generated-from-the-dispatcher-101e16f0)
+  - [6.3 Postures (zone stance) [O]](#63-postures-zone-stance-o)
+  - [6.4 Move priority data [D]](#64-move-priority-data-d)
+  - [6.5 Core attack-assignment algorithm ("overkill") — `BNW:101d2420`  [O]](#65-core-attack-assignment-algorithm-overkill--bnw101d2420--o)
+<!-- /toc -->
+
 Audience: a programmer re-implementing Civ 5–style AI (target: a port of Unciv; language-agnostic).
 Scope of v0.1: **grand strategy / victory pursuit** (base, G&K, BNW) and the **tactical (unit-movement) layer**'s
 architecture. Diplomacy scoring, homeland (non-combat) unit logic, operations/armies, and city production are

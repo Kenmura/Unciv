@@ -1,5 +1,14 @@
 # Migration dependency map
 
+<!-- toc -->
+## Contents
+
+- [Delivery phases](#delivery-phases)
+- [Remaining tickets over time](#remaining-tickets-over-time)
+- [Progress and scope over time](#progress-and-scope-over-time)
+- [Incomplete tickets](#incomplete-tickets)
+<!-- /toc -->
+
 ## Delivery phases
 
 Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list earlier phases first; later phases fill idle capacity).

@@ -1,5 +1,19 @@
 # Godot headless test harness (C000)
 
+<!-- toc -->
+## Contents
+
+- [One-time setup (inside `dotnet-dev`)](#one-time-setup-inside-dotnet-dev)
+- [Running](#running)
+- [Pieces](#pieces)
+- [Scenarios and the owner review sheet (C008)](#scenarios-and-the-owner-review-sheet-c008)
+- [Limits](#limits)
+- [Packaging an exported client (C042)](#packaging-an-exported-client-c042)
+- [How a release is produced (T169)](#how-a-release-is-produced-t169)
+  - [Known Godot headless export crashes and the retry](#known-godot-headless-export-crashes-and-the-retry)
+- [CI (T169)](#ci-t169)
+<!-- /toc -->
+
 Lets an agent render Godot scenes, look at the result and click on them with no display, no GPU and no editor.
 
 ## One-time setup (inside `dotnet-dev`)

@@ -1,5 +1,40 @@
 # Host-run authoritative game and networked play (design for T165 / C006)
 
+<!-- toc -->
+## Contents
+
+- [0. Goal and non-goals](#0-goal-and-non-goals)
+  - [Lessons from the Kotlin stack (what it got wrong)](#lessons-from-the-kotlin-stack-what-it-got-wrong)
+- [1. Architecture](#1-architecture)
+- [2. Client view and event stream (requirement 1)](#2-client-view-and-event-stream-requirement-1)
+  - [2.1 What exists [V]](#21-what-exists-v)
+  - [2.2 Wire form: JSON, versioned](#22-wire-form-json-versioned)
+  - [2.3 Two kinds of server-to-client data](#23-two-kinds-of-server-to-client-data)
+  - [2.4 Event vs diff: recommendation](#24-event-vs-diff-recommendation)
+  - [2.5 Notifications [V model, I delivery]](#25-notifications-v-model-i-delivery)
+  - [2.6 State hash across a filtered view [V + design]](#26-state-hash-across-a-filtered-view-v--design)
+- [3. Visibility filter and anti-cheat (requirement 2)](#3-visibility-filter-and-anti-cheat-requirement-2)
+- [4. Turn policy: simultaneous turns (owner decision 2)](#4-turn-policy-simultaneous-turns-owner-decision-2)
+  - [4.1 Timers, AFK, disconnect, join and leave](#41-timers-afk-disconnect-join-and-leave)
+- [5. Persistence and resync (host-owned, requirement 4)](#5-persistence-and-resync-host-owned-requirement-4)
+  - [5.1 Files [V design on T100]](#51-files-v-design-on-t100)
+  - [5.2 Resync](#52-resync)
+  - [5.3 When the host quits (no host migration in the MVP)](#53-when-the-host-quits-no-host-migration-in-the-mvp)
+- [6. Network stack, identity, security (host-a-lobby, requirement 5)](#6-network-stack-identity-security-host-a-lobby-requirement-5)
+  - [6.1 Protocol messages (transport independent; JSON, one `type` per frame)](#61-protocol-messages-transport-independent-json-one-type-per-frame)
+  - [6.2 Identity and join (no accounts server)](#62-identity-and-join-no-accounts-server)
+  - [6.3 Transport (replaces decision D1)](#63-transport-replaces-decision-d1)
+  - [6.3a Transport robustness and TLS platform matrix (T225)](#63a-transport-robustness-and-tls-platform-matrix-t225)
+  - [6.4 Transport security (recommendation: TLS 1.3 + host-key fingerprint pinned on first use, fingerprint carried in the invite)](#64-transport-security-recommendation-tls-13--host-key-fingerprint-pinned-on-first-use-fingerprint-carried-in-the-invite)
+  - [6.5 Hosting, lobby and NAT](#65-hosting-lobby-and-nat)
+  - [6.6 Trust model (state it to players)](#66-trust-model-state-it-to-players)
+- [7. Godot side (C006 and the host/lobby slices)](#7-godot-side-c006-and-the-hostlobby-slices)
+- [8. Decisions (owner decisions override the earlier recommendations D1-D6)](#8-decisions-owner-decisions-override-the-earlier-recommendations-d1-d6)
+  - [Owner decisions still open (each has a default; work proceeds on the default)](#owner-decisions-still-open-each-has-a-default-work-proceeds-on-the-default)
+- [9. Tickets](#9-tickets)
+- [10. Verified vs inferred summary](#10-verified-vs-inferred-summary)
+<!-- /toc -->
+
 Status: design, no engine code; revised after the OWNER decisions (host-a-lobby model, simultaneous turns for the MVP; section 8).
 Owner: server/network track (tickets T172+, see "Tickets"). Simultaneous-turn engine analysis: `design/SIMULTANEOUS-TURNS.md` (read it with sections 4-5). Companion document:
 `design/COMMANDS-IMPLEMENTATION.md` (command catalogue, human turn flow, engine query API; written by another agent).

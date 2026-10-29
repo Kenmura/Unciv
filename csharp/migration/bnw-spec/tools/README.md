@@ -1,5 +1,12 @@
 # Reproducing the BNW extraction
 
+<!-- toc -->
+## Contents
+
+- [1. Data (no decompiler needed)](#1-data-no-decompiler-needed)
+- [2. Engine (decompiler)](#2-engine-decompiler)
+<!-- /toc -->
+
 All scripts are plain Python 3 (stdlib only). Run them with `python3 -I`. Paths below assume a Steam install on Linux;
 `CIV` = `~/.local/share/Steam/steamapps/common/Sid Meier's Civilization V` and
 `CACHE` = `~/.local/share/Steam/steamapps/compatdata/8930/pfx/drive_c/users/steamuser/Documents/My Games/Sid Meier's Civilization 5/cache`.
