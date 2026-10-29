@@ -61,7 +61,7 @@ flowchart TD
   class C035 ondeck
   class C036 ondeck
   class C045 waiting
-  class T180 prog
+  class T180 review
   class T182 ondeck
   class T225 ondeck
   class T239 blocked
@@ -116,7 +116,7 @@ xychart-beta
 | T225 | **On deck** (after T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | T182 | **On deck** (after T180) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T244 | **On deck** (after T180) | T180 | 0 | NetGameSession: IGameSession over Unciv.Client.Net ClientSession (replaces LocalHost per-command full snapshot; Desynchronized from session events) |
-| T180 | In-Progress [Claude] | T172, T173, T174, T175, T179, T204, T223, T224 | 7 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
+| T180 | Needs-Review [Claude] | T172, T173, T174, T175, T179, T204, T223, T224 | 7 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
 | T246 | In-Progress [Claude] | none | 1 | CI client-scenarios: goldens recorded on Fedora llvmpipe mismatch on ubuntu-24.04 (all rendered scenarios fail); make scenarios CI-stable |
 | C006 | Available (waiting on T180, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C034 | Needs-Review [Claude] | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
