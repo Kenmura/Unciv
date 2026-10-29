@@ -521,6 +521,31 @@ public class CityStatsGameTests
     }
 
     [Fact]
+    public void TileStatsCurrent_TracksHappinessTheStatsObjectAndStoppedWorking()
+    {
+        var (_, civ, city) = Setup();
+        Assert.False(city.CityStats.TileStatsCurrent); // never computed
+        city.CityStats.UpdateTileStats();
+        Assert.True(city.CityStats.TileStatsCurrent);
+
+        city.CityStats.CurrentCityStats = new Stats(); // a nested Update replaced the object that countables read
+        Assert.False(city.CityStats.TileStatsCurrent);
+        city.CityStats.UpdateTileStats();
+        Assert.True(city.CityStats.TileStatsCurrent);
+
+        civ.Stats.Happiness += 1; // the one civ stat unique conditionals read
+        Assert.False(city.CityStats.TileStatsCurrent);
+        civ.Stats.Happiness -= 1;
+        Assert.True(city.CityStats.TileStatsCurrent); // back under the happiness it was computed with
+
+        // the skipped computation equals a forced one
+        city.CityStats.UpdateTileStats();
+        var forced = city.CityStats.StatsFromTiles.Clone();
+        city.CityStats.Update(null, updateTileStats: !city.CityStats.TileStatsCurrent, updateCivStats: false);
+        Assert.Equal(forced, city.CityStats.StatsFromTiles);
+    }
+
+    [Fact]
     public void UpdateTileStats_SumsTheCentreAndWorkedTiles_AndStopsWorkingBlockadedOnes()
     {
         var (game, civ, city) = Setup();

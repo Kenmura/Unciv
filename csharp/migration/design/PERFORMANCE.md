@@ -145,25 +145,29 @@ Small: the same order (refresh 52%, AI 20%, start 18%), turn 103 ms at turn 50.
 
 ## Result of T262
 
-Method: golden per-turn `FullHash` list (`design/perf-golden.json`, small 50 and medium 200 turns) generated before any change; `bench --golden design/perf-golden.json` compares every turn and exits 1 on a difference.
-All six after-runs below matched every one of the 200 hashes.
+Method: golden per-turn `FullHash` list (`design/perf-golden.json`, small 50 and medium 200 turns) generated before any change; `bench --golden design/perf-golden.json` compares every turn and exits 1 on a difference (also when nothing was compared).
+The list is frozen at the pre-T262 engine: after a deliberate engine change regenerate it.
+`BenchTests.TheCommittedGoldenListStillMatchesTheEngine` checks the first 25 small turns against the real file on every gate run.
+All 18 after-runs (medium, 200 turns, in two sets of 3 and 5 interleaved base/new pairs, plus the 120-turn prefix checks) matched every golden hash.
 
-Medium, 200 turns, three interleaved runs (base, new) in one session on a loaded machine (wall times vary about 30%):
+Numbers: medium, 200 turns, base and new alternated in one session on a loaded machine (wall times vary by 30% or more between runs; the spread is the main finding).
 
-| metric (median of 3) | before | after | change |
+| metric | before | after | change |
 |---|---|---|---|
-| total wall | 119.1 s | 95.6 s | -20% |
-| user CPU | 99.3 s | 81.7 s | -18% |
-| allocated | 58.8 GB | 39.2 GB | -33% |
-| GC pause | 15.0 s | 10.5 s | -30% |
-| late median turn (last 20%) | 730 ms | 676 ms | -7% (noisy: run values 1431/1047, 730/676, 363/505) |
+| allocated (all 8 runs, spread under 2%) | 58.8-59.9 GB | 39.0-39.3 GB | **-34%** (robust) |
+| user CPU, median of 5 / of 3 | 85.2 s / 99.3 s | 78.0 s / 81.7 s | -8% / -18% |
+| total wall, median of 5 / of 3 | 87.0 s / 119.1 s | 71.3 s / 95.6 s | -18% / -20% |
+| late median turn (last 20%), median of 5 / of 3 | 693 ms / 730 ms | 465 ms / 676 ms | -33% / -7% |
+| late median turn, all 8 pairs pooled | 712 ms | 518 ms | -27% |
 
-The 30% late-median target was not met; user CPU and total wall (-18% to -20%) clear the 10% fallback, the late-median wall figure is within noise.
+Late-median runs, base: 1431 730 363 538 496 762 693 796 ms; new: 1047 676 505 412 531 465 1142 385 ms.
+Verdict against the ticket: the 30% late-median target was **not reliably met** (pooled -27%, individual sets -7% and -33%), the 10% fallback is met on the pooled and the 5-run late median and on total wall, but the late-turn wall figure is within the machine noise.
+Allocation (-34%) and the GC pause that follows it are the robust gains; the CPU gain is smaller than the allocation gain.
 
 What changed (all identical-state):
 - `TileMap.GetViewableTiles`: neighbour lookup without per-call lists (oracle test against the old algorithm).
 - `UniqueMap`/`TemporaryUnique`/`City`/`MapUnit`/`MultiFilter`: iterators instead of `SelectMany`, static lambdas with state tuples, loops instead of `Any(lambda)`, empty fast paths.
-- `CityStats.TileStatsCurrent`: a city's tile stats are not recomputed when civ happiness is unchanged and no tile was dropped from work (`GameInfo.UpdateCivilizationState`).
+- `CityStats.TileStatsCurrent`: a city's tile stats are not recomputed in the second city loop of `GameInfo.UpdateCivilizationState` when the civ happiness, the city's `CurrentCityStats` object (replaced by every `Update`, read by countables) and the worked tiles are unchanged since the first loop.
 
 Rejected as not provably identical: civ-level dirty tracking of the refresh, skipping the duplicate `UpdateViewableTiles`/`UpdateCivResources` passes.
 

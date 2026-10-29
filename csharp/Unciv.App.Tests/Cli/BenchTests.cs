@@ -80,11 +80,29 @@ public sealed class BenchTests : IDisposable
         Assert.Equal(1, code);
 
         File.WriteAllText(golden, "{}");
-        Assert.Equal("", Run(out code).Trim().Split('\n').FirstOrDefault(it => it.StartsWith("golden")) ?? "");
-        Assert.Equal(0, code);
+        Assert.Contains("nothing was compared", Run(out code));
+        Assert.Equal(1, code);
+
+        File.WriteAllText(golden, new JsonObject { ["small"] = new JsonArray(1, 2, 3, 4) }.ToJsonString());
+        Assert.Contains("4 turn hashes differ", Run(out code)); // non-string elements are a mismatch, not a crash
+        Assert.Equal(1, code);
 
         File.WriteAllText(golden, "[]");
         Assert.Equal(2, CliRunner.Run(["bench", "--scenario", "small", "--turns", "2", "--no-probe", "--golden", golden], new StringWriter(), new StringWriter()));
+    }
+
+    // The golden list is frozen at the pre-T262 engine: after a deliberate engine change regenerate it (bench --json, see design/PERFORMANCE.md).
+    [Fact]
+    public void TheCommittedGoldenListStillMatchesTheEngine()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root != null && !File.Exists(Path.Combine(root.FullName, "migration", "design", "perf-golden.json"))) root = root.Parent;
+        Assert.NotNull(root);
+        var output = new StringWriter();
+        var code = CliRunner.Run(["bench", "--scenario", "small", "--turns", "25", "--no-probe", "--golden", Path.Combine(root.FullName, "migration", "design", "perf-golden.json")],
+            output, new StringWriter());
+        Assert.True(code == 0, output.ToString());
+        Assert.Contains("25 turn hashes identical", output.ToString());
     }
 
     [Fact]

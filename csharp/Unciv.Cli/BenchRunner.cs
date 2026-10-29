@@ -94,18 +94,20 @@ public static class BenchRunner
 
     /// <summary>
     /// T262: compares the per-turn state hashes of every scenario with a golden file ({"scenario": ["hash", ...]}, one hash per turn from turn 1);
-    /// a scenario the file does not list is skipped, a shorter run (--turns) is compared as far as it goes.
+    /// a scenario the file does not list is skipped (a run that compares nothing fails), a shorter run (--turns) is compared as far as it goes.
     /// </summary>
     private static int CheckGolden(string path, IReadOnlyList<ScenarioResult> results, TextWriter output)
     {
         var golden = JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? throw new UsageException($"--golden {path}: not a JSON object");
         var failed = false;
+        var compared = 0;
         foreach (var result in results)
         {
-            if (golden[result.Scenario.Name]?.AsArray() is not { } expected) continue;
+            if (golden[result.Scenario.Name] as JsonArray is not { } expected) continue;
+            compared++;
             var actual = result.Hashes;
             var mismatches = Enumerable.Range(0, Math.Min(actual.Count, expected.Count))
-                .Where(i => actual[i] != expected[i]?.GetValue<string>()).ToList();
+                .Where(i => actual[i] != expected[i]?.ToString()).ToList();
             if (actual.Count > expected.Count) mismatches.Add(expected.Count);
             if (mismatches.Count == 0)
             {
@@ -114,6 +116,11 @@ public static class BenchRunner
             }
             failed = true;
             output.WriteLine($"golden {result.Scenario.Name}: {mismatches.Count} turn hashes differ, first at turn {mismatches[0] + 1}");
+        }
+        if (compared == 0)
+        {
+            output.WriteLine($"golden: no scenario of the run is listed in {path}, nothing was compared");
+            failed = true;
         }
         return failed ? CliRunner.ExitFailure : CliRunner.ExitOk;
     }

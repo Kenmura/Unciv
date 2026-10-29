@@ -433,13 +433,15 @@ public class CityStats(City city)
     // T262: the happiness of the civ that StatsFromTiles was computed under, or null when that computation changed the worked tiles.
     // UpdateCivilizationState reads it to skip the second, identical tile stat computation of a city (see TileStatsCurrent).
     private int? tileStatsHappiness;
+    // The CurrentCityStats object at that time: Update replaces it, and countables can read it (City.GetCurrentCityStat), so a nested update in between invalidates the skip.
+    private Stats? tileStatsBasis;
 
     /// <summary>
-    /// Whether <see cref="StatsFromTiles"/> is what <see cref="UpdateTileStats"/> would compute right now, given that nothing but the civ's happiness
-    /// can have changed its inputs since the last call (true in between the two city loops of UpdateCivilizationState, where only stats are written):
+    /// Whether <see cref="StatsFromTiles"/> is what <see cref="UpdateTileStats"/> would compute right now, given that nothing but the civ's happiness and this city's
+    /// CurrentCityStats object can have changed its inputs since the last call (ChooseNextConstruction, DemandedResource and UpdateCityHappiness write none of them) (true in between the two city loops of UpdateCivilizationState, where only stats are written):
     /// the last computation ran under the same happiness (the only civ stat unique conditionals read) and did not stop working a blockaded tile.
     /// </summary>
-    internal bool TileStatsCurrent => tileStatsHappiness == City.Civ.Stats.Happiness;
+    internal bool TileStatsCurrent => tileStatsHappiness == City.Civ.Stats.Happiness && ReferenceEquals(tileStatsBasis, CurrentCityStats);
 
     public void UpdateTileStats()
     {
@@ -466,6 +468,7 @@ public class CityStats(City city)
         }
         StatsFromTiles = stats;
         tileStatsHappiness = stoppedWorking ? null : City.Civ.Stats.Happiness;
+        tileStatsBasis = CurrentCityStats;
     }
 
     // needs to be a separate function because we need to know the global happiness state
