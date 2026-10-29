@@ -86,6 +86,17 @@ public partial class ScenarioRunner : Control
         Directory.CreateDirectory(scenarioOut);
         foreach (string stale in Directory.GetFiles(scenarioOut)) File.Delete(stale);
 
+        if (scenario.Viewport != DisplayServer.WindowGetSize())
+        {
+            GetWindow().Size = scenario.Viewport;
+            await NextFrame();
+            await NextFrame();
+            if ((Vector2I)GetViewport().GetVisibleRect().Size != scenario.Viewport)
+            {
+                failures.Add($"the window could not be resized to {scenario.Viewport.X}x{scenario.Viewport.Y} (is {GetViewport().GetVisibleRect().Size})");
+                return 1;
+            }
+        }
         GetViewport().TransparentBg = false;
         MouseFilter = MouseFilterEnum.Ignore; // keep mouse events flowing to scenarios that handle them in the 3D world
         if (!scenario.Uses3D) AddChild(new ColorRect { Color = new Color(0.12f, 0.14f, 0.2f), AnchorRight = 1, AnchorBottom = 1 });
@@ -123,7 +134,7 @@ public partial class ScenarioRunner : Control
                 break;
             case Press press:
                 var button = FindButton(this, press.ButtonText);
-                if (button == null) failures.Add($"Press: no enabled visible button \"{press.ButtonText}\"");
+                if (button == null) failures.Add($"Press: no enabled visible button \"{press.ButtonText}\" (by text or ui_label)");
                 else InputSimulator.SimulateMouseClick(GetViewport(), button.GetGlobalRect().GetCenter());
                 await NextFrame();
                 await SettleTurnProcessing();
@@ -229,9 +240,13 @@ public partial class ScenarioRunner : Control
 
     private async Task NextFrame() => await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
+    /// <summary>The metadata key (C061) a button carries to be pressable by label although it shows no text (an icon-only button).</summary>
+    public const string LabelMeta = "ui_label";
+
     private static Button? FindButton(Node node, string text)
     {
-        if (node is Button { Disabled: false } button && button.Text == text && button.IsVisibleInTree()) return button;
+        if (node is Button { Disabled: false } button && button.IsVisibleInTree()
+            && (button.Text == text || (button.HasMeta(LabelMeta) && button.GetMeta(LabelMeta).AsString() == text))) return button;
         foreach (var child in node.GetChildren())
             if (FindButton(child, text) is { } found) return found;
         return null;

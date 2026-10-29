@@ -390,6 +390,16 @@
   "C060": {
     "none": "Per-viewer, replay-safe tutorial-task state (no layout change); the card itself is shown under C054 (tutorial-tasks scenario) and the hotseat hand-over under C029."
   },
+  "C061": {
+    "scenario": "viewport",
+    "about": "Harness only (no game screen): a 1280x720 scenario that presses a text-less button by its ui_label metadata.",
+    "shots": [
+      {
+        "golden": "viewport/pressed.png",
+        "caption": "A 1280x720 capture: the label reads \"Pressed by label\" and an empty button sits bottom right (harness test, not a game screen)."
+      }
+    ]
+  },
   "C053": {
     "scenario": "vote-result",
     "about": "World Congress vote result: each civ you know with its votes, the worth of its vote, whom it voted for, the verdict and Continue.",

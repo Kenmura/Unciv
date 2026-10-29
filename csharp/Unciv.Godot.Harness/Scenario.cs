@@ -68,5 +68,10 @@ public abstract class Scenario
     /// <summary>C053: the diplomacy game where the World Congress has voted and Babylon has the result to see: Rome owns the United Nations, Greece is not met (see <see cref="Unciv.Harness.ScenarioGame.Create"/>).</summary>
     public virtual bool VoteResult => false;
 
+    /// <summary>C061: the window (and so viewport) size the runner sets before building the scenario; default 640x480, the size of every committed golden.</summary>
+    public virtual Vector2I Viewport => DefaultViewport;
+
+    public static readonly Vector2I DefaultViewport = new(640, 480);
+
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);
 }

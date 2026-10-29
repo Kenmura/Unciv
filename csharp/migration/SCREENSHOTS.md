@@ -98,7 +98,7 @@ Scenario `ui-kit`.
 
 *Popup A over the dimmed screen (B and C are queued behind it).* (`ui-kit/popup.png`)
 
-## C006 (ticket not Done or unknown)
+## C006 Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage
 
 Join screen (address or invite, password, known hosts), fingerprint prompt, host-key-changed hard stop and the reconnect overlay.
 
@@ -1017,6 +1017,16 @@ Scenario `tooltips`.
 ![Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources.](../Unciv.Godot.Harness/golden/tooltips/tile.png)
 
 *Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources.* (`tooltips/tile.png`)
+
+## C061 (ticket not Done or unknown)
+
+Harness only (no game screen): a 1280x720 scenario that presses a text-less button by its ui_label metadata.
+
+Scenario `viewport`.
+
+![A 1280x720 capture: the label reads "Pressed by label" and an empty button sits bottom right (harness test, not a game screen).](../Unciv.Godot.Harness/golden/viewport/pressed.png)
+
+*A 1280x720 capture: the label reads "Pressed by label" and an empty button sits bottom right (harness test, not a game screen).* (`viewport/pressed.png`)
 
 ## Missing screenshots
 

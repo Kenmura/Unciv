@@ -14,7 +14,7 @@ public sealed record Click(Func<Vector2> At) : ScenarioStep
 /// <summary>Key press and release through the viewport.</summary>
 public sealed record PressKey(Key Code, bool Shift = false, bool Ctrl = false, bool Alt = false) : ScenarioStep;
 
-/// <summary>Click the centre of the enabled, visible button whose text is <paramref name="ButtonText"/> (fails the scenario if there is none).</summary>
+/// <summary>Click the centre of the enabled, visible button whose text, or <c>ui_label</c> metadata (C061, icon-only buttons), is <paramref name="ButtonText"/> (fails the scenario if there is none).</summary>
 public sealed record Press(string ButtonText) : ScenarioStep;
 
 /// <summary>Let <paramref name="Frames"/> frames pass (animations, deferred layout).</summary>

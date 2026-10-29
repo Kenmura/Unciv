@@ -239,7 +239,7 @@ flowchart TD
   class B024 waiting
   class B025 waiting
   class B026 waiting
-  class C061 prog
+  class C061 review
   class C062 ondeck
   class C063 waiting
   class C064 waiting
@@ -324,7 +324,7 @@ xychart-beta
 |---|---|---|---|---|
 | C062 | **On deck** (after C061) | C061 | 24 | UI design tokens and theme builder v2 |
 | B001 | Available (waiting on ) | none | 25 | BNW: BaseRuleset.Civ_V_BNW, ModOptions gates, ModConstants, CompatibilityVersion bump |
-| C061 | In-Progress [Claude] | none | 25 | Harness: label-based Press and multi-resolution captures |
+| C061 | Needs-Review [Claude] | none | 25 | Harness: label-based Press and multi-resolution captures |
 | C063 | Available (waiting on C062) | C062 | 22 | Unciv icon pack and icon keys |
 | C064 | Available (waiting on C062) | C062 | 22 | Unique display text and hidden uniques in UI models |
 | C065 | Available (waiting on C062, C063, C064) | C062, C063, C064 | 21 | UI shared components |
