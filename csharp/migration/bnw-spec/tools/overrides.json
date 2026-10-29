@@ -1270,7 +1270,57 @@
   "Free Thought": ["[+1 Science] from every [Trading post]", "[+17]% [Science] from every [University]"],
   "Sovereignty": ["[+1 Gold] from all [Science] buildings"],
   "Scientific Revolution": ["[-100]% weight to this choice for AI decisions"],
-  "Rationalism Complete": ["[1] Free Technologies", "Get the leader title of [[leaderName] the Wise]"]
+  "Rationalism Complete": ["[1] Free Technologies", "Get the leader title of [[leaderName] the Wise]"],
+  // B030: the 48 ideology tenets (SPEC 4.6.3), keyed by tenet name. Scalar Policies.tsv columns and the small tables are written here; the
+  // building-class tables (happiness, production, tourism, yield modifiers) are derived by the generator (tenet_building_uniques).
+  "Avant Garde": ["[+25]% Great Person generation [in all cities]"],
+  "Creative Expression": ["[+1 Culture] from each Great Work [in all cities]"],
+  "Civil Society": ["[-50]% Food consumption by [Specialists] [in all cities]"],
+  "Covert Action": ["[+100]% success chance for rigging elections"],
+  "Capitalism": [],
+  "Economic Union": ["[+3] Gold from trade routes with civs following your ideology"],
+  "Universal Healthcare (Freedom)": [],
+  "Volunteer Army": ["[6] units cost no maintenance", "Free [Foreign Legion] appears", "Free [Foreign Legion] appears", "Free [Foreign Legion] appears", "Free [Foreign Legion] appears", "Free [Foreign Legion] appears", "Free [Foreign Legion] appears"],
+  "Urbanization": [],
+  "Their Finest Hour": ["[+33]% Strength for cities"],
+  "Universal Suffrage": ["[+50]% Golden Age length", "[-50]% Unhappiness from [Specialists] [in all cities]"],
+  "New Deal": ["[+4 Culture] from every [Landmark]", "[+4 Science] from every [Academy]", "[+4 Gold] from every [Customs house]", "[+4 Production] from every [Manufactory]", "[+4 Faith] from every [Holy site]"],
+  "Arsenal of Democracy": ["[+15]% Production when constructing [Military] units [in all cities]", "[+15] extra Influence from gifting military units to City-States"],
+  "Media Culture": [],
+  "Treaty Organization": ["[+4] Influence per turn with protected City-States"],
+  "Space Procurements": ["Allows purchasing Spaceship parts"],
+  "Hero of the People": ["[+25]% Great Person generation [in all cities]"],
+  "Socialist Realism": [],
+  "Skyscrapers": ["[Gold] cost of purchasing [All] buildings [-33]%"],
+  "Patriotic War": [],
+  "Double Agents": [],
+  "Young Pioneers": [],
+  "Academy of Sciences": [],
+  "Party Leadership": ["[+1 Food, +1 Production, +1 Science, +1 Gold, +1 Culture] [in all cities]"],
+  "Resettlement": [],
+  "Cultural Revolution": ["[+34]% Tourism toward civs following your ideology"],
+  "Workers' Faculties": [],
+  "Five-Year Plan": ["[+2 Production] [in all cities]", "[+1 Production] from every [Mine]", "[+1 Production] from every [Quarry]"],
+  "Dictatorship of the Proletariat": ["[+34]% Tourism toward civs less happy than you"],
+  "Iron Curtain": ["[+50]% [Food] from domestic trade routes", "[+50]% [Production] from domestic trade routes", "Gain a free [Courthouse] in each conquered city"],
+  "Spaceflight Pioneers": ["Allows hurrying Spaceship parts", "Free [Great Engineer] appears", "Free [Great Scientist] appears"],
+  "Universal Healthcare (Order)": [],
+  "Elite Forces": [],
+  "Mobilization": ["[Gold] cost of purchasing [Military] units [-33]%"],
+  "United Front": [],
+  "Futurism": ["[250] Tourism when a [Great Writer] is born", "[250] Tourism when a [Great Artist] is born", "[250] Tourism when a [Great Musician] is born"],
+  "Industrial Espionage": ["[+100]% faster technology stealing"],
+  "Militarism": [],
+  "Fortified Borders": [],
+  "Lightning Warfare": [],
+  "Police State": [],
+  "Nationalism": ["[-33]% maintenance costs <for [Military] units>"],
+  "Third Alternative": ["[+200]% [Strategic] resource production", "[+5 Food, +5 Science] [in capital]"],
+  "Total War": ["New [Military] units start with [15] XP [in all cities]", "[+25]% Production when constructing [Military] units [in all cities]"],
+  "Cult of Personality": ["[+50]% Tourism toward civs with a common enemy"],
+  "Gunboat Diplomacy": ["[+6] Influence per turn with afraid City-States", "[+50]% bullying strength against City-States"],
+  "Clausewitz's Legacy": [],
+  "Universal Healthcare (Autocracy)": []
  },
  "policyPending": [
   "Tradition: Palace +3 culture (BuildingClassCultureChanges) is approximated by the opener's capital culture",
@@ -1283,7 +1333,9 @@
   "Scientific Revolution: MedianTechPercentChange 25 (one-shot) has no unique yet; Rationalism Complete keeps the G&K free-tech wording with the BNW count (1)",
   "Exploration Complete: reveals Hidden Antiquity Sites through the resource's revealedBy (B040); Aesthetics Complete has no leader title",
   "Exploration opener: the Naval Tradition free promotion is read as +1 Movement and +1 Sight for naval units [?]",
-  "Cultural Exchange: ethics tourism modifiers are declared data only (B030)"
+  "Cultural Exchange: ethics tourism modifiers are declared data only (B030)",
+  "B030 tenets without a unique: Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Resettlement (NewCityExtraPopulation 3), Patriotic War, Lightning Warfare (free promotions), Elite Forces (WoundedUnitDamageMod -25), Double Agents (CatchSpiesModifier 100), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus) have no declared unique yet",
+  "B030 scales [I]: Economic Union reads SharedIdeologyTradeGoldChange 3 as +3 whole Gold per route (the city-state row is whole Gold too), Treaty Organization reads ProtectedMinorPerTurnInfluence 400 as +4 and Gunboat Diplomacy AfraidMinorPerTurnInfluence 600 as +6 (hundredths); Iron Curtain's InternalTradeRouteYieldModifier 50 applies to Food and Production routes"
  ],
  "pending": {
   "Nations.json/Assyria": [
@@ -1324,7 +1376,7 @@
   ],
   "Units.json/upgrades": ["upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture"],
   "Policies.json/ideologies": [
-   "Freedom, Order and Autocracy are the BNW ideologies (B013): PurchaseByLevel, Level 1/2/3 tenets (7/6/3), first/second adopter free tenets (2/1). The tenets carry no effects yet: their stat columns are B010, the tourism/trade/espionage/league ones belong to those subsystems",
+   "Freedom, Order and Autocracy are the BNW ideologies (B013): PurchaseByLevel, Level 1/2/3 tenets (7/6/3), first/second adopter free tenets (2/1). B030: the tenets carry their effects (overrides policyUniques plus the generator's building-class tables); see policyPending for the ones with no unique yet",
    "The three Universal Healthcare tenets share one BNW name; here they are named 'Universal Healthcare (Freedom)', '(Order)', '(Autocracy)' because policy names are unique"
   ],
   "Personalities.json/Maria I": [

@@ -1,6 +1,7 @@
 using Unciv.Logic;
 using Unciv.Logic.Archaeology;
 using Unciv.Logic.Civilization;
+using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.GreatWorks;
 using Unciv.Logic.Map;
@@ -305,59 +306,230 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         Assert.Contains("[+5]% Production for each trade route to a city-state", r.Buildings["Hanse"].Uniques);
     }
 
+    // ---- ideology tenets (B030)
+
+    /// <summary>A game of <paramref name="majors"/> major civs on the generated ruleset; every pair has met.</summary>
+    private static GameInfo NewGameOf(int majors)
+    {
+        Models.Ruleset.BnwRulesetTests.LoadBnw();
+        var players = new[] { "Brazil", "Poland", "Greece" }.Take(majors).Select(it => new Player(it, it == "Brazil" ? PlayerType.Human : PlayerType.AI)).ToList();
+        var game = GameStarter.StartNewGame(
+            new GameSetupInfo(
+                new GameParameters { BaseRuleset = BaseRuleset.Civ_V_BNW.FullName(), NumberOfCityStates = 0, Players = players },
+                new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Small }),
+            5, 1000L);
+        var civs = game.Civilizations.Where(it => it.IsMajorCiv()).ToList();
+        foreach (var a in civs)
+            foreach (var b in civs.Where(it => it != a))
+                if (a.GetDiplomacyManager(b) == null) a.DiplomacyFunctions.MakeCivilizationsMeet(b);
+        return game;
+    }
+
+    private static (CivilizationObject A, CivilizationObject B, CivilizationObject C) Majors(GameInfo game)
+    {
+        var majors = game.Civilizations.Where(it => it.IsMajorCiv()).ToList();
+        return (majors[0], majors[1], majors.Count > 2 ? majors[2] : majors[1]);
+    }
+
+    private static CityObject FoundCity(CivilizationObject civ)
+    {
+        var settler = civ.Units.GetCivUnits().First(it => it.HasUnique(UniqueType.FoundCity));
+        return civ.AddCity(settler.GetTile().Position, settler);
+    }
+
+    /// <summary>Makes <paramref name="civ"/> follow <paramref name="ideology"/> and adopts the tenets (the level rule is B013's and tested there).</summary>
+    private static void Follow(CivilizationObject civ, string ideology, params string[] tenets)
+    {
+        civ.Tech.Era = civ.GameInfo.Ruleset.Eras["Modern era"];
+        civ.Policies.ChooseIdeology(civ.GameInfo.Ruleset.PolicyBranches[ideology]);
+        civ.Policies.FreeTenets = 100;
+        foreach (var tenet in tenets) civ.Policies.Adopt(civ.GameInfo.Ruleset.Policies[tenet]);
+    }
+
+    [Fact]
+    public void EveryTenetStatesItsEffectsExceptTheSevenWithoutAUniqueYet()
+    {
+        var r = Real();
+        var tenets = r.PolicyBranches.Values.Where(it => it.PurchaseByLevel).SelectMany(it => it.Policies).ToList();
+        Assert.Equal(48, tenets.Count);
+        string[] pending = ["Clausewitz's Legacy", "Double Agents", "Elite Forces", "Lightning Warfare", "Patriotic War", "Resettlement", "United Front"];
+        Assert.Equal(pending, tenets.Where(it => it.Uniques.Count == 0).Select(it => it.Name).Order(StringComparer.Ordinal));
+        // Universal Healthcare: one happiness unique per national wonder, in each of the three ideologies
+        foreach (string ideology in new[] { "Freedom", "Order", "Autocracy" })
+            Assert.Equal(12, r.Policies[$"Universal Healthcare ({ideology})"].Uniques.Count(it => it.Contains("Happiness] from every", StringComparison.Ordinal)));
+        Assert.All(tenets.SelectMany(it => it.Uniques), text => Assert.NotNull(new UniqueObject(text).Type));
+    }
+
+    [Fact]
+    public void CultOfPersonalityAddsTourismOncePerCommonFoe()
+    {
+        var game = NewGameOf(3);
+        var (a, b, c) = Majors(game);
+        FoundCity(a);
+        c.GetDiplomacyManager(a)!.DiplomaticStatus = DiplomaticStatus.War;
+        c.GetDiplomacyManager(b)!.DiplomaticStatus = DiplomaticStatus.War;
+        a.GetDiplomacyManager(c)!.DiplomaticStatus = DiplomaticStatus.War;
+        b.GetDiplomacyManager(c)!.DiplomaticStatus = DiplomaticStatus.War;
+        int before = TourismRules.ModifierWith(a, b);
+        Follow(a, "Autocracy", "Cult of Personality");
+        Assert.Equal(before + 50, TourismRules.ModifierWith(a, b));
+        Assert.Equal(before, TourismRules.ModifierWith(b, a));
+    }
+
+    [Fact]
+    public void CulturalRevolutionAddsTourismTowardCivsFollowingTheSameIdeologyOnly()
+    {
+        var game = NewGameOf(2);
+        var (a, b, _) = Majors(game);
+        Follow(a, "Order", "Cultural Revolution");
+        Assert.Equal(0, TourismRules.ModifierWith(a, b)); // b has no ideology yet
+        Follow(b, "Freedom");
+        Assert.Equal(TourismRules.ModifierWith(a, b), game.Ruleset.ModOptions.Constants.TourismModifierDifferentIdeologies); // not shared: no +34
+        b.Policies.Ideology = "Order";
+        Assert.Equal(34, TourismRules.ModifierWith(a, b));
+    }
+
+    [Fact]
+    public void DictatorshipOfTheProletariatAddsTourismTowardLessHappyCivs()
+    {
+        var game = NewGameOf(2);
+        var (a, b, _) = Majors(game);
+        FoundCity(a);
+        FoundCity(b);
+        Follow(a, "Order");
+        // b founds more cities, which costs it happiness (unhappiness per city), until a is the happier civ
+        for (int i = 0; i < 4 && a.GetHappiness() <= b.GetHappiness(); i++)
+        {
+            var tile = game.TileMap.TileList.First(it => it.IsLand && !it.IsImpassible() && it.GetOwner() == null && it.GetCity() == null);
+            b.AddCity(tile.Position, null);
+            b.Cache.UpdateCivResources();
+        }
+        Assert.True(a.GetHappiness() > b.GetHappiness(), $"{a.GetHappiness()} vs {b.GetHappiness()}");
+        int before = TourismRules.ModifierWith(a, b);
+        a.Policies.Adopt(game.Ruleset.Policies["Dictatorship of the Proletariat"]);
+        Assert.Equal(before + 34, TourismRules.ModifierWith(a, b));
+    }
+
+    [Fact]
+    public void MediaCultureAddsTourismToCitiesWithABroadcastTower()
+    {
+        var (game, civ, capital) = NewCapital();
+        Follow(civ, "Freedom");
+        Assert.Equal(0, TourismRules.CityTourismModifier(capital));
+        civ.Policies.Adopt(game.Ruleset.Policies["Media Culture"]);
+        Assert.Equal(0, TourismRules.CityTourismModifier(capital)); // no Broadcast Tower yet
+        capital.CityConstructions.AddBuilding("Broadcast Tower");
+        Assert.Equal(34, TourismRules.CityTourismModifier(capital));
+    }
+
+    [Fact]
+    public void FuturismGivesTourismWhenAWriterArtistOrMusicianIsBorn()
+    {
+        var (game, civ, _) = NewCapital();
+        Follow(civ, "Autocracy");
+        Assert.Equal(0, InfluenceRules.ApplyBirthTourism(civ, "Great Writer"));
+        civ.Policies.Adopt(game.Ruleset.Policies["Futurism"]);
+        foreach (string person in new[] { "Great Writer", "Great Artist", "Great Musician" })
+            Assert.Equal(250, InfluenceRules.ApplyBirthTourism(civ, person));
+        Assert.Equal(0, InfluenceRules.ApplyBirthTourism(civ, "Great Scientist"));
+    }
+
+    [Fact]
+    public void CreativeExpressionAddsCultureForEveryGreatWork()
+    {
+        var (game, civ, capital) = NewCapital();
+        capital.CityConstructions.AddBuilding("Parthenon");
+        Assert.Equal(2f, capital.GetGreatWorkStats().Culture);
+        Follow(civ, "Freedom");
+        civ.Policies.Adopt(game.Ruleset.Policies["Creative Expression"]);
+        Assert.Equal(3f, capital.GetGreatWorkStats().Culture);
+    }
+
+    [Fact]
+    public void EconomicUnionAddsGoldToRoutesWithCivsOfTheSameIdeology()
+    {
+        var game = NewGameOf(2);
+        var (a, b, _) = Majors(game);
+        var (from, to) = (FoundCity(a), FoundCity(b));
+        int Gold() => TradeRouteYields.Compute(from, to, TradeDomain.Land, TradeRouteKind.International).Origin[TradeYield.Gold];
+        int multiplier = 100 + (from.GetCenterTile().IsAdjacentToRiver() ? 25 : 0);
+        int before = Gold();
+        Follow(a, "Freedom", "Economic Union");
+        Assert.Equal(before, Gold()); // b follows nothing
+        Follow(b, "Order");
+        Assert.Equal(before, Gold()); // another ideology
+        b.Policies.Ideology = "Freedom";
+        Assert.Equal(before + 300 * multiplier / 100, Gold()); // +3 Gold
+    }
+
+    [Fact]
+    public void IronCurtainRaisesTheYieldOfDomesticRoutes()
+    {
+        var (game, civ, capital) = NewCapital();
+        var second = civ.AddCity(game.TileMap.TileList.First(it => it.IsLand && !it.IsImpassible() && it.GetOwner() == null && it.GetCity() == null).Position, null);
+        int Dest(TradeRouteKind kind, int stat) => TradeRouteYields.Compute(capital, second, TradeDomain.Land, kind).Dest[stat];
+        int food = Dest(TradeRouteKind.Food, TradeYield.Food);
+        int production = Dest(TradeRouteKind.Production, TradeYield.Production);
+        Assert.True(food > 0 && production > 0);
+        Follow(civ, "Order", "Iron Curtain");
+        Assert.Equal(food * 150 / 100, Dest(TradeRouteKind.Food, TradeYield.Food));
+        Assert.Equal(production * 150 / 100, Dest(TradeRouteKind.Production, TradeYield.Production));
+    }
+
+    [Fact]
+    public void StatTenetsReachTheCityStats()
+    {
+        var (game, civ, capital) = NewCapital();
+        Follow(civ, "Order");
+        capital.CityStats.Update(updateCivStats: true);
+        var before = capital.CityStats.CurrentCityStats.Clone();
+        civ.Policies.Adopt(game.Ruleset.Policies["Five-Year Plan"]);
+        capital.CityStats.Update(updateCivStats: true);
+        Assert.Equal(before.Production + 2f, capital.CityStats.CurrentCityStats.Production);
+        before = capital.CityStats.CurrentCityStats.Clone();
+        civ.Policies.Adopt(game.Ruleset.Policies["Party Leadership"]);
+        capital.CityStats.Update(updateCivStats: true);
+        var after = capital.CityStats.CurrentCityStats;
+        Assert.True(after.Food >= before.Food + 1f && after.Science >= before.Science + 1f && after.Gold >= before.Gold + 1f && after.Culture >= before.Culture + 1f);
+    }
+
     // ---- the generic guard B027 and B032 lacked
 
-    // BNW unique types (the BNW hook rows (from ContainsGreatWorkWhenBuilt)) that no object of the generated ruleset states yet, the ideology tenets (TourismCommonFoe, TourismLessHappy, TourismSharedIdeology, DomesticTradeRouteYield, GoldFromIdeologyTradeRoutes,
-    // YieldPerGreatWork, TourismFromBuildings, TourismOnGreatPersonBirth, TradeBuildingModifier, CapitalThemingBonusMultiplier) wait for the tenet
-    // effects, the rest for their feature tickets (city-states, religion, units, espionage, B006 trade units); see gen_ruleset_report.txt.
+    // BNW unique types (the BNW hook rows (from ContainsGreatWorkWhenBuilt)) that no object of the generated ruleset states yet. B030 emitted the
+    // ideology tenets' types (TourismCommonFoe, TourismLessHappy, TourismSharedIdeology, DomesticTradeRouteYield, GoldFromIdeologyTradeRoutes, YieldPerGreatWork,
+    // TourismFromBuildings, TourismOnGreatPersonBirth, ...); the rest wait for their feature tickets (city-states, religion, units, espionage, B006 trade
+    // units); see gen_ruleset_report.txt.
     // A type that is neither emitted nor listed here fails, so a Done engine ticket cannot again read a unique the ruleset never carries.
     private static readonly string[] UnemittedBnwTypes =
     [
-        "AfraidCityStateInfluencePerTurn",
         "AllowsAnnexingCityStates",
-        "AllowsSpaceshipPartHurry",
-        "AllowsSpaceshipPartPurchase",
         "AllowsWalkingOnWater",
         "AnnoyFreeCityStateIntrusion",
         "BuildingPurchaseCostModifier",
         "CanBuyCityState",
         "CapitalThemingBonusMultiplier",
-        "CityStateBullyingStrength",
         "CreatesGreatWork",
-        "DomesticTradeRouteYield",
-        "ElectionRiggingModifier",
         "FaithFromKills",
-        "FreeBuildingOnConquest",
         "FreePoliciesWhenExpended",
         "GoldFromCityConnections",
         "GoldFromCityConnectionsPercent",
-        "GoldFromIdeologyTradeRoutes",
         "GoldenAgeFromKills",
         "HeavyCharge",
-        "MilitaryGiftExtraInfluence",
         "OnlyBuiltAsLeagueProject",
         "PostCombatPromotion",
         "PostCombatPromotionsExclusive",
-        "ProtectedCityStateInfluencePerTurn",
         "PurchaseOnly",
         "RemovesResourceWhenBuilt",
         "RequiresAdjacentLand",
         "RiversActAsTradeRoads",
         "SapperBonus",
         "TechFromCityConquest",
-        "TechStealingSpeed",
-        "TourismCommonFoe",
         "TourismDuringGoldenAge",
-        "TourismFromBuildings",
-        "TourismLessHappy",
-        "TourismOnGreatPersonBirth",
-        "TourismSharedIdeology",
         "TradeBuildingModifier",
         "TradeMissionGoldModifier",
         "TradeMissionInfluenceModifier",
         "TradeReligionPressureModifier",
         "UnresearchedTechFromKills",
-        "YieldPerGreatWork",
         "YieldPerTradeRoute",
     ];
 

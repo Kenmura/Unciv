@@ -134,6 +134,8 @@
   Exploration Complete: reveals Hidden Antiquity Sites through the resource's revealedBy (B040); Aesthetics Complete has no leader title
   Exploration opener: the Naval Tradition free promotion is read as +1 Movement and +1 Sight for naval units [?]
   Cultural Exchange: ethics tourism modifiers are declared data only (B030)
+  B030 tenets without a unique: Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Resettlement (NewCityExtraPopulation 3), Patriotic War, Lightning Warfare (free promotions), Elite Forces (WoundedUnitDamageMod -25), Double Agents (CatchSpiesModifier 100), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus) have no declared unique yet
+  B030 scales [I]: Economic Union reads SharedIdeologyTradeGoldChange 3 as +3 whole Gold per route (the city-state row is whole Gold too), Treaty Organization reads ProtectedMinorPerTurnInfluence 400 as +4 and Gunboat Diplomacy AfraidMinorPerTurnInfluence 600 as +6 (hundredths); Iron Curtain's InternalTradeRouteYieldModifier 50 applies to Food and Production routes
 
 == pending uniques (not emitted: need B003 UniqueTypes, wired by B010 or the feature ticket)
   Nations.json/Assyria: TechFromCityConquer is approximated by 'Free Technology <upon conquering a city>' (BNW: a stolen/random tech per conquest)
@@ -149,7 +151,7 @@
   Beliefs.json/13 new BNW beliefs: added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Evangelism, Heathen Conversion, Underground Sect, Unity of the Prophets (B073), To the Glory of God (B041)
   TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp: added by B004. Feitoria luxury siphon (B072) is not wired yet
   Units.json/upgrades: upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture
-  Policies.json/ideologies: Freedom, Order and Autocracy are the BNW ideologies (B013): PurchaseByLevel, Level 1/2/3 tenets (7/6/3), first/second adopter free tenets (2/1). The tenets carry no effects yet: their stat columns are B010, the tourism/trade/espionage/league ones belong to those subsystems
+  Policies.json/ideologies: Freedom, Order and Autocracy are the BNW ideologies (B013): PurchaseByLevel, Level 1/2/3 tenets (7/6/3), first/second adopter free tenets (2/1). B030: the tenets carry their effects (overrides policyUniques plus the generator's building-class tables); see policyPending for the ones with no unique yet
   Policies.json/ideologies: The three Universal Healthcare tenets share one BNW name; here they are named 'Universal Healthcare (Freedom)', '(Order)', '(Autocracy)' because policy names are unique
   Personalities.json/Maria I: copied from Maria Theresa: derive from Leaders.tsv / Leader_Flavors.tsv in B010
 

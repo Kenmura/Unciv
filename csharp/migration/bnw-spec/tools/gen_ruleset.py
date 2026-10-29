@@ -747,7 +747,7 @@ def build_policies(gk, overrides, report):
                          key=lambda r: (int(r["GridY"]), int(r["GridX"])))
         gk_branch = gk_by_name.get(name) or gk_by_name[PRIORITY_ANALOG[name]]
         if name in IDEOLOGY_BRANCHES:
-            out.append(build_ideology(br, members, gk_branch, uniques, report))
+            out.append(build_ideology(br, members, gk_branch, take, report))
             continue
         branch = {"name": name, "era": era_name(br["EraPrereq"]),
                   "priorities": dict(gk_branch["priorities"]), "uniques": take(name), "policies": []}
@@ -765,18 +765,45 @@ def build_policies(gk, overrides, report):
     return out
 
 
-def build_ideology(br, members, gk_branch, uniques, report):
+YIELD_STAT = {"YIELD_SCIENCE": "Science", "YIELD_GOLD": "Gold", "YIELD_PRODUCTION": "Production", "YIELD_FOOD": "Food", "YIELD_CULTURE": "Culture", "YIELD_FAITH": "Faith"}
+
+
+def tenet_building_uniques(policy_type, lk):
+    """B030: the building-class tables of one tenet (Policy_BuildingClassHappiness / ProductionModifiers / TourismModifiers / YieldModifiers),
+    as uniques naming the class's default building. The scalar columns of Policies.tsv are hand-written in overrides.json (policyUniques)."""
+    def building(cls):
+        return lk.building_unciv_name(lk.building_class_default[cls])
+    out = []
+    for r in tsv("Policy_BuildingClassHappiness"):
+        if r["PolicyType"] == policy_type:
+            out.append(f"[+{r['Happiness']} Happiness] from every [{building(r['BuildingClassType'])}]")
+    for r in tsv("Policy_BuildingClassProductionModifiers"):
+        if r["PolicyType"] == policy_type:
+            out.append(f"[+{r['ProductionModifier']}]% Production when constructing [{building(r['BuildingClassType'])}] buildings [in all cities]")
+    for r in tsv("Policy_BuildingClassTourismModifiers"):
+        if r["PolicyType"] == policy_type:
+            out.append(f"[+{r['TourismModifier']}]% Tourism from [{building(r['BuildingClassType'])}] buildings")
+    for r in tsv("Policy_BuildingClassYieldModifiers"):
+        if r["PolicyType"] == policy_type:
+            out.append(f"[+{r['YieldMod']}]% [{YIELD_STAT[r['YieldType']]}] from every [{building(r['BuildingClassType'])}]")
+    return out
+
+
+def build_ideology(br, members, gk_branch, take, report):
     """An ideology (SPEC 4.6.3): the branch policy is the free choice, its tenets are bought by Level (7 / 6 / 3), no finisher.
     PurchaseByLevel and the adopter counts come from PolicyBranchTypes.tsv; the Universal Healthcare tenet exists once per ideology, so the
-    name is suffixed to stay unique; tenet effects (B010 and the subsystem tickets) are pending, the tenets carry the structure only."""
+    name is suffixed to stay unique. B030: the tenet effects are overrides.policyUniques (scalar columns, by tenet name) plus the building-class
+    tables of the tenet (tenet_building_uniques)."""
     name = br["Name"]
+    lk = Lookups()
     counts = {}
     policies = []
     for r in sorted(members, key=lambda r: (int(r["Level"]), r["Type"])):
         level = int(r["Level"])
         counts[level] = counts.get(level, 0) + 1
         tenet = r["Name"] + f" ({name})" if r["Name"] == "Universal Healthcare" else r["Name"]
-        policies.append({"name": tenet, "level": level, "row": level, "column": counts[level] - 1, "uniques": []})
+        policies.append({"name": tenet, "level": level, "row": level, "column": counts[level] - 1,
+                         "uniques": take(tenet) + tenet_building_uniques(r["Type"], lk)})
     if counts != {1: 7, 2: 6, 3: 3}:
         raise SystemExit(f"{name}: tenet levels {counts}, expected 7/6/3")
     for r in [br]:

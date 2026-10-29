@@ -131,13 +131,16 @@ public static class TradeRouteYields
         TradeRouteRules.Routes(dest.Civ.GameInfo).Any(it => it.Id != excludeRouteId && it.DestCityId == dest.Id && it.OriginOwner != originCiv.CivId) ? 0 : value;
 
     /// <summary>
-    /// (@101f7c20) the policy gold of an international route: the land or sea column of the origin city's filter, shared ideology (B051 has no
-    /// ideologies yet) and city-state routes. The land and sea columns are hundredths of Gold; the other two rows are whole Gold (x100).
+    /// (@101f7c20) the policy gold of an international route: the land or sea column of the origin city's filter, shared ideology (B030: Economic
+    /// Union) and city-state routes. The land and sea columns are hundredths of Gold; the other two rows are whole Gold (x100).
     /// </summary>
     private static int PolicyGold(CityObject origin, CivilizationObject destCiv, bool sea)
     {
         int gold = TradeRouteRules.SumForCity(TradeRouteRules.CivUniques(origin, sea ? UniqueType.GoldFromSeaTradeRoutes : UniqueType.GoldFromLandTradeRoutes), origin);
-        // Seam (B051): GoldFromIdeologyTradeRoutes when both civs follow the same ideology (needs the ideology state)
+        // B030: GoldFromIdeologyTradeRoutes when both civs follow the same ideology; whole Gold like the city-state row
+        string? ideology = origin.Civ.Policies.Ideology;
+        if (ideology != null && ideology == destCiv.Policies.Ideology)
+            gold += TradeRouteRules.CivUniques(origin, UniqueType.GoldFromIdeologyTradeRoutes).Sum(it => it.Params[0].ToInt()) * 100;
         if (destCiv.IsCityState)
             gold += TradeRouteRules.CivUniques(origin, UniqueType.GoldFromCityStateTradeRoutes).Sum(it => it.Params[0].ToInt()) * 100;
         return gold;
