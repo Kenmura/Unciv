@@ -6,6 +6,7 @@ using Unciv.Net;
 using Unciv.Net.Identity;
 using Unciv.Net.Lobby;
 using Unciv.Net.Mods;
+using Unciv.Net.Turns;
 
 namespace Unciv.Core.Tests.Net.ModSync;
 

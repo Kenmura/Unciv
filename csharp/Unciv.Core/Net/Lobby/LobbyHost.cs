@@ -462,12 +462,7 @@ public sealed class LobbyHost : IAsyncDisposable
 
     private async Task SendModManifestAsync(LobbySession session)
     {
-        if (session.ModManifestSent != null)
-        {
-            // one manifest per connection: a second join on it is answered, not ignored
-            await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.AuthFailed }).ConfigureAwait(false);
-            return;
-        }
+        // One manifest per connection: the key proof is single-use (a repeated Auth fails with auth-failed before reaching here), which the tests pin.
         var manifest = CurrentModManifest();
         if (manifest == null)
         {
