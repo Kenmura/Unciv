@@ -1156,9 +1156,9 @@ Unit panel and action bar: header with unit icon, name and standing order, stat 
 
 Scenario `unit-orders`.
 
-![Warrior selected: header with icon, name and order, chips for strength, moves and experience, health bar and the order icons (tooltips carry the names).](../Unciv.Godot.Harness/golden/unit-orders/warrior-selected.png)
+![Warrior selected: header with icon and name (and the standing order when set), chips for strength, moves and experience, health bar and the order icons (tooltips carry the names).](../Unciv.Godot.Harness/golden/unit-orders/warrior-selected.png)
 
-*Warrior selected: header with icon, name and order, chips for strength, moves and experience, health bar and the order icons (tooltips carry the names).* (`unit-orders/warrior-selected.png`)
+*Warrior selected: header with icon and name (and the standing order when set), chips for strength, moves and experience, health bar and the order icons (tooltips carry the names).* (`unit-orders/warrior-selected.png`)
 
 ![Settler selected: Found city leads the grid as the gold primary action; Disband is the red danger cell at the end.](../Unciv.Godot.Harness/golden/unit-orders/settler-selected.png)
 

@@ -202,8 +202,7 @@ public static class UnitOrdersModel
         var attacker = preview.Attacker == null ? null : Fighter(preview.Attacker, damage ? preview.DamageToAttackerMin : 0, damage ? preview.DamageToAttackerMax : 0);
         var defender = preview.Defender == null ? null : Fighter(preview.Defender, damage ? preview.DamageToDefenderMin : 0, damage ? preview.DamageToDefenderMax : 0);
         var outcome = new List<string>();
-        if (battle) AddBattleOutcome(outcome, preview, preview.Attacker!, preview.Defender!);
-        outcome.RemoveAll(it => it.Contains(" health afterwards: ", StringComparison.Ordinal)); // the card's predicted-health bars show it
+        if (battle) AddBattleOutcome(outcome, preview, preview.Attacker!, preview.Defender!, withHealthLine: false); // the card's predicted-health bars show it
         if (!preview.CanAttack) outcome.Add("Cannot attack right now");
         return new CombatCard(attacker, defender, outcome);
     }
@@ -220,7 +219,7 @@ public static class UnitOrdersModel
             lines.Add($"    {(modifier.Percent >= 0 ? "+" : "-")}{Int(Math.Abs(modifier.Percent))}% {modifier.Key}");
     }
 
-    private static void AddBattleOutcome(List<string> lines, AttackPreviewResult preview, CombatantPreview attacker, CombatantPreview defender)
+    private static void AddBattleOutcome(List<string> lines, AttackPreviewResult preview, CombatantPreview attacker, CombatantPreview defender, bool withHealthLine = true)
     {
         string att = Label(attacker);
         string def = Label(defender);
@@ -238,7 +237,7 @@ public static class UnitOrdersModel
         }
         lines.Add($"Damage to {def}: {Range(preview.DamageToDefenderMin, preview.DamageToDefenderMax)}");
         if (preview.DamageToAttackerMax > 0) lines.Add($"Damage to {att}: {Range(preview.DamageToAttackerMin, preview.DamageToAttackerMax)}");
-        lines.Add($"{def} health afterwards: {Range(Math.Max(0, defender.Health - preview.DamageToDefenderMax), Math.Max(0, defender.Health - preview.DamageToDefenderMin))}");
+        if (withHealthLine) lines.Add($"{def} health afterwards: {Range(Math.Max(0, defender.Health - preview.DamageToDefenderMax), Math.Max(0, defender.Health - preview.DamageToDefenderMin))}");
         if (preview.DamageToDefenderMin >= defender.Health) lines.Add($"{def} will be destroyed");
         else if (preview.DamageToDefenderMax >= defender.Health) lines.Add($"{def} may be destroyed");
         if (preview.DamageToAttackerMin >= attacker.Health) lines.Add($"{att} will be destroyed");

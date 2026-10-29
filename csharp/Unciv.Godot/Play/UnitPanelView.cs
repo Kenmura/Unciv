@@ -128,6 +128,7 @@ public partial class UnitPanelView : PanelContainer
     public void Init(UiTheme uiTheme)
     {
         theme = uiTheme;
+        legible.Clear();
         Theme = uiTheme.Theme;
         uiTheme.ScaleChanged += () => LayoutIn(GetViewportRect().Size);
     }
@@ -179,6 +180,7 @@ public partial class UnitPanelView : PanelContainer
         yes.Text = (confirmText.Length > 0 ? confirmText : "Yes").TrText();
         grid.Visible = false;
         confirmBox.Visible = true;
+        if (promoteChip != null) promoteChip.MouseFilter = MouseFilterEnum.Ignore; // no promotion picker over a pending question
         LayoutIn(GetViewportRect().Size);
     }
 
@@ -257,25 +259,27 @@ public partial class UnitPanelView : PanelContainer
             more = null;
         }
         buttons.Clear();
-        // grid order: the primary actions lead, the rest keep the menu's order, Disband is last; promotions never take a grid cell (the promote chip and the popover list them)
-        var shown = menu.Where(it => it.Kind != MenuEntryKind.Promote && it.Kind != MenuEntryKind.Disband).OrderBy(it => it.Primary ? 0 : 1).ToList();
-        shown.AddRange(menu.Where(it => it.Kind == MenuEntryKind.Disband));
+        // grid order: the primary actions lead, the rest keep the menu's order, Disband is last; promotions never take a grid cell (the header promote chip is their way in; their buttons sit in the popover and stay reachable through ButtonFor)
+        var indices = Enumerable.Range(0, menu.Count).ToList();
+        var shown = indices.Where(i => menu[i].Kind != MenuEntryKind.Promote && menu[i].Kind != MenuEntryKind.Disband).OrderBy(i => menu[i].Primary ? 0 : 1).ToList();
+        shown.AddRange(indices.Where(i => menu[i].Kind == MenuEntryKind.Disband));
         int capacity = Columns * Rows;
         bool overflows = shown.Count > capacity;
         int inGrid = overflows ? capacity - 1 : shown.Count;
         foreach (var entry in menu) buttons.Add((entry, MakeButton(entry, inGrid: false)));
-        var byEntry = buttons.ToDictionary(it => it.Entry, it => it.Button);
+        // by position, not by entry: two entries may compare equal as records
         for (int i = 0; i < shown.Count; i++)
         {
-            var button = byEntry[shown[i]];
+            var button = buttons[shown[i]].Button;
             if (i < inGrid)
             {
-                Restyle(button, shown[i], inGrid: true);
+                Restyle(button, buttons[shown[i]].Entry, inGrid: true);
                 grid.AddChild(button);
             }
             else overflowBox.AddChild(button);
         }
-        foreach (var entry in menu.Where(it => it.Kind == MenuEntryKind.Promote)) promoteBox.AddChild(byEntry[entry]);
+        for (int i = 0; i < menu.Count; i++)
+            if (menu[i].Kind == MenuEntryKind.Promote) promoteBox.AddChild(buttons[i].Button);
         promoteHeading.Visible = promoteBox.GetChildCount() > 0;
         promoteBox.Visible = promoteBox.GetChildCount() > 0;
         overflowBox.Visible = overflowBox.GetChildCount() > 0;
@@ -286,13 +290,13 @@ public partial class UnitPanelView : PanelContainer
         grid.AddChild(more);
     }
 
-    private static readonly Dictionary<Texture2D, Texture2D> legible = [];
+    private readonly Dictionary<Texture2D, Texture2D> legible = [];
 
     /// <summary>
     /// The action, improvement and promotion icons are dark silhouettes, invisible on the dark panel: a mostly dark icon is returned as a light silhouette of the same shape
     /// (colour glyphs and the registry's generated badges are kept). Cached per source texture.
     /// </summary>
-    private static Texture2D? Legible(Texture2D? source)
+    private Texture2D? Legible(Texture2D? source)
     {
         if (source == null) return null;
         if (legible.TryGetValue(source, out var known)) return known;
@@ -386,6 +390,7 @@ public partial class UnitPanelView : PanelContainer
         asking = null;
         confirmBox.Visible = false;
         grid.Visible = true;
+        if (promoteChip != null) promoteChip.MouseFilter = MouseFilterEnum.Stop;
     }
 
     private static void Clear(Node parent)

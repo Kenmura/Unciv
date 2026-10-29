@@ -1194,7 +1194,7 @@
     "shots": [
       {
         "golden": "unit-orders/warrior-selected.png",
-        "caption": "Warrior selected: header with icon, name and order, chips for strength, moves and experience, health bar and the order icons (tooltips carry the names)."
+        "caption": "Warrior selected: header with icon and name (and the standing order when set), chips for strength, moves and experience, health bar and the order icons (tooltips carry the names)."
       },
       {
         "golden": "unit-orders/settler-selected.png",
