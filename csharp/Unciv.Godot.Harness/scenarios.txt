@@ -45,3 +45,4 @@ vote-result
 hotseat
 tutorial-tasks
 host-screen
+lobby

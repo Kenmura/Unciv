@@ -922,5 +922,35 @@
         "caption": "A saved hosted game resumed: it listens again with an invite, and shows the players who were in it."
       }
     ]
+  },
+  "C035": {
+    "scenario": "lobby",
+    "about": "Lobby screen: slot table with colour and ready, nation and colour picker, read-only settings, chat, host controls (kick, close, AI, Start), the joiner's view and a refusal for different rules.",
+    "shots": [
+      {
+        "golden": "lobby/waiting.png",
+        "caption": "Host's lobby: Host, Friend A and Friend B seated, one open slot (AI or Close), nobody ready; Start is off and says who it waits for. Settings are read-only on the left, chat on the right."
+      },
+      {
+        "golden": "lobby/picking.png",
+        "caption": "The host's nation picker: Random and every playable nation in its colours, then eight seat colours; the host chose Babylon and Blue and their row shows both."
+      },
+      {
+        "golden": "lobby/ready.png",
+        "caption": "Everybody is ready: all three show Ready with their nation and colour, the chat holds both lines, Start game is on."
+      },
+      {
+        "golden": "lobby/joiner.png",
+        "caption": "Friend A's view: own seat marked (you), the host marked, the same settings read-only, no Kick, Close or Start; only Ready, Pick nation and chat."
+      },
+      {
+        "golden": "lobby/refused.png",
+        "caption": "A joiner whose rules differ from the host's is refused with a plain sentence about base ruleset and mods; nothing else is shown and no seat is taken."
+      },
+      {
+        "golden": "lobby/kicked.png",
+        "caption": "After the host kicked Friend B and closed the slot: slot 3 is Closed (Open undoes it), slot 4 is still Open and becomes AI at Start."
+      }
+    ]
   }
 }

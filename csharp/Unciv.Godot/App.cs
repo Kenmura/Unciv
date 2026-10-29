@@ -99,7 +99,18 @@ public partial class App : Node
         };
         var screen = new HostScreen(theme, new HostSettingsForm(NewGameForm.FromRulesetCache()), environment);
         screen.BackRequested += () => screens.Pop();
+        screen.HostingStarted += hosting => OpenLobby(screen, hosting, environment);
         screens.Push(screen);
+    }
+
+    // C035: a new lobby opens the lobby screen over the host screen (which keeps the address and invite and stops hosting); Leave returns to it.
+    private void OpenLobby(HostScreen hostScreen, HostingSession hosting, HostScreenEnvironment environment)
+    {
+        if (hosting.Lobby == null || hosting.HostPlayer == null) return;
+        var nations = hostScreen.Form.Game;
+        var lobby = new LobbyScreen(theme, nations, hosting.HostPlayer, environment.Identity().PlayerKey, hosting.Lobby);
+        lobby.LeaveRequested += () => screens.Pop();
+        screens.Push(lobby);
     }
 
     private void OpenOptions()

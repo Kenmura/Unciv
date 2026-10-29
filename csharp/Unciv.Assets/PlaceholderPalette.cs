@@ -74,6 +74,24 @@ public static class PlaceholderPalette
     };
 
     /// <summary>Outline of a locked tile on the city screen.</summary>
+    private static readonly (string Name, Rgb Colour)[] LobbyColourTable =
+    [
+        ("Red", new Rgb(214, 70, 64)),
+        ("Blue", new Rgb(70, 120, 220)),
+        ("Green", new Rgb(80, 180, 90)),
+        ("Yellow", new Rgb(230, 200, 70)),
+        ("Purple", new Rgb(150, 90, 200)),
+        ("Orange", new Rgb(235, 140, 50)),
+        ("Teal", new Rgb(60, 180, 180)),
+        ("Pink", new Rgb(230, 130, 180)),
+    ];
+
+    /// <summary>C035: the colour names a player can pick for their lobby seat, in display order.</summary>
+    public static IReadOnlyList<string> LobbyColourNames { get; } = LobbyColourTable.Select(it => it.Name).ToList();
+
+    /// <summary>C035: the swatch of a lobby colour name; a neutral grey for a name nobody here offers.</summary>
+    public static Rgb ForLobbyColour(string? name) => LobbyColourTable.FirstOrDefault(it => it.Name == name) is { Name: not null } found ? found.Colour : TextDisabled;
+
     public static Rgb LockedOutline { get; } = new(240, 200, 90);
 
     public static Rgb HorseBrown { get; } = new(120, 80, 45);

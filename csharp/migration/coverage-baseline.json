@@ -44,6 +44,7 @@
     "Unciv.Assets/Settings/Hotkeys.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Settings/OptionsModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Setup/HostSettingsForm.cs": {"branch": 92.86, "line": 100.0},
+    "Unciv.Assets/Setup/LobbyModel.cs": {"branch": 98.31, "line": 100.0},
     "Unciv.Assets/StableHash.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/TechScreenModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/TerrainBlend.cs": {"branch": 100.0, "line": 100.0},

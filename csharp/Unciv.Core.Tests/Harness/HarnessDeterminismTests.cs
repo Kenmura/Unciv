@@ -63,8 +63,8 @@ public sealed partial class HarnessDeterminismTests
             .Select(it => Path.GetFileNameWithoutExtension(it.Name))
             .OrderBy(it => it, StringComparer.Ordinal)
             .ToList();
-        // HostScreen refreshes the lobby slot table when it changed (no time); HudView/MinimapView count frames or redraw on change (no time); TooltipHost, MapView, CombatPresenter use the delta and are frozen/off in the harness
-        Assert.Equal(["CombatPresenter", "HostScreen", "HudView", "MapView", "MinimapView", "TooltipHost"], processUsers);
+        // LobbyScreen drains the session events and rebuilds on change (no time); HostScreen refreshes the lobby slot table when it changed (no time); HudView/MinimapView count frames or redraw on change (no time); TooltipHost, MapView, CombatPresenter use the delta and are frozen/off in the harness
+        Assert.Equal(["CombatPresenter", "HostScreen", "HudView", "LobbyScreen", "MapView", "MinimapView", "TooltipHost"], processUsers);
     }
 
     [Fact]

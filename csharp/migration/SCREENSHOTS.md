@@ -592,7 +592,7 @@ Scenario `combat-presentation`.
 
 *A dying worker shrinks and sinks into its tile.* (`combat-presentation/death.png`)
 
-## C034 (ticket not Done or unknown)
+## C034 Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game
 
 Host screen: game, map, rules and network settings, port-forward hint, Start hosting with the host in slot 1, invite with Copy invite, a friend joining, and resuming a saved hosted game.
 
@@ -617,6 +617,36 @@ Scenario `host-screen`.
 ![A saved hosted game resumed: it listens again with an invite, and shows the players who were in it.](../Unciv.Godot.Harness/golden/host-screen/resumed.png)
 
 *A saved hosted game resumed: it listens again with an invite, and shows the players who were in it.* (`host-screen/resumed.png`)
+
+## C035 (ticket not Done or unknown)
+
+Lobby screen: slot table with colour and ready, nation and colour picker, read-only settings, chat, host controls (kick, close, AI, Start), the joiner's view and a refusal for different rules.
+
+Scenario `lobby`.
+
+![Host's lobby: Host, Friend A and Friend B seated, one open slot (AI or Close), nobody ready; Start is off and says who it waits for. Settings are read-only on the left, chat on the right.](../Unciv.Godot.Harness/golden/lobby/waiting.png)
+
+*Host's lobby: Host, Friend A and Friend B seated, one open slot (AI or Close), nobody ready; Start is off and says who it waits for. Settings are read-only on the left, chat on the right.* (`lobby/waiting.png`)
+
+![The host's nation picker: Random and every playable nation in its colours, then eight seat colours; the host chose Babylon and Blue and their row shows both.](../Unciv.Godot.Harness/golden/lobby/picking.png)
+
+*The host's nation picker: Random and every playable nation in its colours, then eight seat colours; the host chose Babylon and Blue and their row shows both.* (`lobby/picking.png`)
+
+![Everybody is ready: all three show Ready with their nation and colour, the chat holds both lines, Start game is on.](../Unciv.Godot.Harness/golden/lobby/ready.png)
+
+*Everybody is ready: all three show Ready with their nation and colour, the chat holds both lines, Start game is on.* (`lobby/ready.png`)
+
+![Friend A's view: own seat marked (you), the host marked, the same settings read-only, no Kick, Close or Start; only Ready, Pick nation and chat.](../Unciv.Godot.Harness/golden/lobby/joiner.png)
+
+*Friend A's view: own seat marked (you), the host marked, the same settings read-only, no Kick, Close or Start; only Ready, Pick nation and chat.* (`lobby/joiner.png`)
+
+![A joiner whose rules differ from the host's is refused with a plain sentence about base ruleset and mods; nothing else is shown and no seat is taken.](../Unciv.Godot.Harness/golden/lobby/refused.png)
+
+*A joiner whose rules differ from the host's is refused with a plain sentence about base ruleset and mods; nothing else is shown and no seat is taken.* (`lobby/refused.png`)
+
+![After the host kicked Friend B and closed the slot: slot 3 is Closed (Open undoes it), slot 4 is still Open and becomes AI at Start.](../Unciv.Godot.Harness/golden/lobby/kicked.png)
+
+*After the host kicked Friend B and closed the slot: slot 3 is Closed (Open undoes it), slot 4 is still Open and becomes AI at Start.* (`lobby/kicked.png`)
 
 ## C038 Decision pickers: promotion, free tech, free great person, pantheon and religion found/enhance/reform, spy assignment, diplomatic vote and vote result
 
