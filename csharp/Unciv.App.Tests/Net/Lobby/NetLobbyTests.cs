@@ -1056,4 +1056,47 @@ public sealed class NetLobbyTests : IDisposable
         await Assert.ThrowsAnyAsync<Exception>(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
         Assert.Equal(LobbyStatus.InLobby, lobby.Lobby.Status);
     }
+
+    private sealed class SupersededWhileSeatingTransport(ITransport inner, Func<Task> supersede) : ITransport
+    {
+        private volatile bool armed;
+        private int superseded;
+        // After GameStarting the first look at the socket (the game host's seating) finds that a newer connection took the seat and closed this one.
+        public bool IsOpen
+        {
+            get
+            {
+                if (armed && Interlocked.Exchange(ref superseded, 1) == 0) supersede().GetAwaiter().GetResult();
+                return !armed && inner.IsOpen;
+            }
+        }
+        public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default)
+        {
+            var result = inner.SendAsync(frame, cancellationToken);
+            if (ProtocolCodec.Decode(frame) is GameStarting) armed = true;
+            return result;
+        }
+        public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => inner.ReceiveAsync(cancellationToken);
+        public ValueTask CloseAsync() => inner.CloseAsync();
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
+
+    // T253: a seat replaced by a newer connection while the start seats it is not a failed start.
+    [Fact]
+    public async Task ServerLobby_SeatSupersededWhileTheStartSeatsIt_DoesNotFailTheStart()
+    {
+        await using var lobby = new ServerLobby();
+        using var id = ClientIdentity.Generate();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(new SupersededWhileSeatingTransport(s1, () => lobby.Lobby.ReleaseSeatAsync("Rome", id.PlayerKey)));
+        await RawJoinAsync(lobby, c1, id);
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await ReceiveMessageAsync<LobbyState>(c1);
+
+        var host = await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+
+        Assert.NotNull(host);
+        await host.EnqueueAsync(() => Task.CompletedTask);
+        Assert.False(host.TurnTimer.IsConnected("Rome"));
+    }
 }

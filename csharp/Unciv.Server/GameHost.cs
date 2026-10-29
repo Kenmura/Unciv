@@ -154,10 +154,11 @@ public sealed class GameHost : IAsyncDisposable
         var completion = new TaskCompletionSource<bool>();
         await mailbox.Writer.WriteAsync(async () =>
         {
+            HostSession? hostSession = null;
             try
             {
                 var civ = session.Game.GetCivilizationOrNull(boundCivId);
-                var hostSession = new HostSession
+                hostSession = new HostSession
                 {
                     SessionId = sessionId,
                     BoundCivId = boundCivId,
@@ -198,6 +199,12 @@ public sealed class GameHost : IAsyncDisposable
             }
             catch (Exception ex)
             {
+                // A seat that failed half-way (its snapshot could not be sent) must not stay registered and counted as connected.
+                if (hostSession != null && sessions.TryGetValue(sessionId, out var registered) && ReferenceEquals(registered, hostSession))
+                {
+                    try { await DetachSessionAsync(sessionId); }
+                    catch (Exception) { /* the seating failure is the news */ }
+                }
                 completion.SetException(ex);
             }
         });
