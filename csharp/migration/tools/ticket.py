@@ -181,7 +181,7 @@ def phase_of(tid):
             hi = hi or lo
             if lo[0] == hi[0] == tid[0] and int(lo[1:]) <= int(tid[1:]) <= int(hi[1:]):
                 explicit[tid] = int(ph)
-    return explicit.get(tid, 2 if tid[0] == "C" else 1)
+    return explicit.get(tid, {"C": 2, "B": 4}.get(tid[0], 1))
 
 
 def ready_list(ts):
@@ -196,6 +196,11 @@ def ready_list(ts):
         deps = deps_of(d)
         if s == "Available" and set(deps) <= done and (deps or d.lower().startswith("none")):
             impl.append(("IMPLEMENT", i, t, s, counts.get(i, 0)))
+    # Phase 4 (queued plans) is released automatically, and only, once phases 1-3 hold no open work. Blocked tickets do
+    # not count (they wait for a human and would hold the plans forever); everything else not Done/Won't port does.
+    states = all_states()
+    if any(phase_of(i) < 4 and not st.startswith(("Done", "Won't", "Blocked")) for i, st in states.items()):
+        impl = [r for r in impl if phase_of(r[1]) < 4]
     return out + sorted(impl, key=lambda r: (phase_of(r[1]), -r[4], r[1]))
 
 

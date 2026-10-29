@@ -90,6 +90,8 @@ Never work in the main checkout (`/var/home/nickmarc/repos/Unciv`); it belongs t
 - **Before each ticket and before each review:** `git rebase csharp-migration` so you see the other agent's published work. Reviewers review the implementer's *published* commits, never anyone's working files.
 - Never push to `master`, never force-push or rewrite `csharp-migration`. Merging to `master` is the human's decision.
 
+**Phase 4 (queued plans).** Tickets in phase 4 (`phases.txt`: UI redesign, unit models, Brave New World, feature-review items) are never offered by `ready`/`next` while any phase 1-3 ticket is open and not `Blocked`; when none is, they are offered automatically in the usual order. Do not hand-pick one earlier, and do not release or reorder them. Tickets in the B track default to phase 4; new C/T/A tickets for these plans must be added to the phase 4 line in `phases.txt`.
+
 ## States
 
 `Available` → `In-Progress [Agent]` → `Needs-Review [Implementer]` → `In-Review [Reviewer]` → `Done`

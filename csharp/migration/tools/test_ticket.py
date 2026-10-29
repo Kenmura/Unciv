@@ -331,3 +331,24 @@ class ReleaseFolder(unittest.TestCase):
         repo = Path(__file__).resolve().parents[3]
         r = subprocess.run(["git", "-C", str(repo), "check-ignore", "csharp-releases/T1-abc/client-linux/Unciv.x86_64"], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, "csharp-releases/ must be in .gitignore: binaries never go into git")
+
+
+class PhaseFourRelease(unittest.TestCase):
+    """Phase 4 (queued plans) is offered only once phases 1-3 hold no open, non-Blocked ticket."""
+
+    def ready_ids(self, states):
+        spec = importlib.util.spec_from_file_location("ticket_phase4", TOOL)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        mod.all_states = lambda: states
+        mod.phase_of = lambda tid: {"T1": 1, "C1": 3, "C9": 4, "B1": 4}[tid]
+        mod.downstream_counts = lambda ts: {}
+        ts = [(i, i, s, "none", "") for i, s in states.items()]
+        return [r[1] for r in mod.ready_list(ts)]
+
+    def test_held_while_earlier_phase_has_open_work(self):
+        self.assertEqual(self.ready_ids({"T1": "Available", "C1": "In-Progress [Bot]", "C9": "Available"}), ["T1"])
+        self.assertEqual(self.ready_ids({"T1": "Done", "C1": "In-Progress [Bot]", "C9": "Available"}), [])
+
+    def test_released_when_earlier_phases_are_done_or_blocked(self):
+        self.assertEqual(self.ready_ids({"T1": "Done", "C1": "Blocked", "C9": "Available", "B1": "Available"}), ["B1", "C9"])
