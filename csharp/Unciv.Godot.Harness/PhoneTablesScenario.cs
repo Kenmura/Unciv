@@ -67,7 +67,7 @@ public sealed class PhoneTablesScenario : Scenario
             steps.Add(new Capture("overview-" + tab.ToLowerInvariant(), caption));
         }
         Tab(OverviewModel.Stats, "Overview stats on a 2400x1080 400 ppi phone: two columns of cards, the page scrolls under the tab row");
-        Tab(OverviewModel.Cities, "Overview cities table on a phone: the row and its Go-to arrow are 48 dp targets, bulk actions below");
+        Tab(OverviewModel.Cities, "Overview cities table on a phone: the row's Go-to arrow is a 48 dp target, bulk actions below");
         Tab(OverviewModel.Units, "Overview units table on a phone: each row has a 48 dp (120 px) Go-to arrow");
         Tab(OverviewModel.Resources, "Overview resources on a phone");
         Tab(OverviewModel.Ranking, "Overview ranking on a phone");
@@ -81,7 +81,7 @@ public sealed class PhoneTablesScenario : Scenario
         steps.Add(new Act("open trade", () => screen.OpenTradeScreen()));
         steps.Add(new WaitFrames(5));
         steps.AddRange(Check("trade screen", () => screen.Trade));
-        steps.Add(new Capture("trade", "Trade on a phone: both offer columns, the summary and Propose trade as a touch target"));
+        steps.Add(new Capture("trade", "Trade on a phone: both offer columns shown in full, the page scrolls to the summary, Clear and Propose trade in the footer"));
         steps.Add(new Act("open espionage", () => screen.OpenEspionageScreen()));
         steps.Add(new WaitFrames(5));
         steps.AddRange(Check("espionage screen", () => screen.Espionage));

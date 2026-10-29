@@ -1689,7 +1689,7 @@
     "shots": [
       {
         "golden": "phone-tables/overview-cities.png",
-        "caption": "Overview cities table on a phone: the row's Go-to arrow is a 48 dp target (it was 110 px), bulk actions below."
+        "caption": "Overview cities table on a phone: the row's Go-to arrow is a 48 dp target, bulk actions below."
       },
       {
         "golden": "phone-tables/diplomacy.png",
@@ -1697,7 +1697,7 @@
       },
       {
         "golden": "phone-tables/trade.png",
-        "caption": "Trade on a phone: both offer columns, the summary and Propose trade fit."
+        "caption": "Trade on a phone: both offer columns show their gold and gold-per-turn rows in full (they were a 96 px sliver each); the page scrolls to the summary, and the Clear/Propose trade footer stays on screen (Propose is disabled until something is staged)."
       },
       {
         "golden": "phone-tables/espionage.png",

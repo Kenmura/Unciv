@@ -1748,17 +1748,17 @@ The overview (all tabs), diplomacy, trade and espionage screens on a 2400x1080 4
 
 Scenario `phone-tables`.
 
-![Overview cities table on a phone: the row's Go-to arrow is a 48 dp target (it was 110 px), bulk actions below.](../Unciv.Godot.Harness/golden/phone-tables/overview-cities.png)
+![Overview cities table on a phone: the row's Go-to arrow is a 48 dp target, bulk actions below.](../Unciv.Godot.Harness/golden/phone-tables/overview-cities.png)
 
-*Overview cities table on a phone: the row's Go-to arrow is a 48 dp target (it was 110 px), bulk actions below.* (`phone-tables/overview-cities.png`)
+*Overview cities table on a phone: the row's Go-to arrow is a 48 dp target, bulk actions below.* (`phone-tables/overview-cities.png`)
 
 ![Diplomacy on a phone: civ list and Rome's panel, Declare war and Denounce are touch targets.](../Unciv.Godot.Harness/golden/phone-tables/diplomacy.png)
 
 *Diplomacy on a phone: civ list and Rome's panel, Declare war and Denounce are touch targets.* (`phone-tables/diplomacy.png`)
 
-![Trade on a phone: both offer columns, the summary and Propose trade fit.](../Unciv.Godot.Harness/golden/phone-tables/trade.png)
+![Trade on a phone: both offer columns show their gold and gold-per-turn rows in full (they were a 96 px sliver each); the page scrolls to the summary, and the Clear/Propose trade footer stays on screen (Propose is disabled until something is staged).](../Unciv.Godot.Harness/golden/phone-tables/trade.png)
 
-*Trade on a phone: both offer columns, the summary and Propose trade fit.* (`phone-tables/trade.png`)
+*Trade on a phone: both offer columns show their gold and gold-per-turn rows in full (they were a 96 px sliver each); the page scrolls to the summary, and the Clear/Propose trade footer stays on screen (Propose is disabled until something is staged).* (`phone-tables/trade.png`)
 
 ![Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer.](../Unciv.Godot.Harness/golden/phone-tables/espionage.png)
 

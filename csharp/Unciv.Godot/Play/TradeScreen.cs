@@ -153,7 +153,7 @@ public partial class TradeScreen : PanelContainer
     {
         var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(100f, 0f) };
         box.AddChild(new Label { Text = heading.Tr(), ThemeTypeVariation = UiVariants.LabelBodyStrong });
-        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(0f, theme.Px(96)), SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(0f, Math.Max(theme.Px(96), theme.MinTargetPx * 4)), SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         content.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
         scroll.AddChild(content);
