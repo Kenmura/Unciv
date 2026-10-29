@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""C063: build the bundled icon pack `assets/packs/unciv` from Unciv's own icon images (stdlib only; run with `python3 -I`).
+"""C063: build the bundled icon pack `Unciv.Godot/Packs/unciv` from Unciv's own icon images (stdlib only; run with `python3 -I`).
 
     python3 -I Unciv.Godot/tools/import-unciv-icons.py           copy the icons, write manifest.json and CREDITS.md
     python3 -I Unciv.Godot/tools/import-unciv-icons.py --check   verify the committed pack matches (no writes); exit 1 on any problem
@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]  # repo root (csharp/Unciv.Godot/tools/..)
-PACK = ROOT / "csharp" / "Unciv.Godot" / "assets" / "packs" / "unciv"
+PACK = ROOT / "csharp" / "Unciv.Godot" / "Packs" / "unciv"
 CREDITS = ROOT / "docs" / "Credits.md"
 
 # SPDX-style ids. CC BY needs attribution (CREDITS.md travels with the pack); share-alike and non-commercial licences are not accepted.
@@ -27,9 +27,24 @@ ALLOWED_LICENCES = {"CC0-1.0", "CC-BY-3.0", "CC-BY-4.0", "Public-Domain"}
 UI_ICONS = [
     "ArrowRight", "BackArrow", "Blockade", "Camera", "Capital", "Chat", "Checkmark", "Cities", "CityState", "Close", "Diplomacy", "Espionage",
     "ExclamationMark", "Fire", "ForwardArrow", "Hexagon", "HexagonOutline", "Improvements", "Increase", "Keyboard", "Link", "Load", "LockSmall",
-    "Mods", "Multiplayer", "Nations", "New", "Notifications", "Options", "Pause", "Pencil", "Policies", "Politics", "Question", "Reduce",
-    "Resources", "Resume", "Score", "Search", "Settings", "Shield", "Sleep", "Spy", "Star", "Stop", "Terrains", "Timer", "Undo", "Wonders",
+    "Mods", "Multiplayer", "Nations", "New", "Notifications", "Options", "Pause", "Pencil", "Policies", "Question", "Reduce",
+    "Resources", "Resume", "Score", "Search", "Settings", "Shield", "Sleep", "Spy", "Star", "Stop", "Terrains", "Undo", "Wonders",
 ]
+
+# Icons whose Credits.md entry is not a Noun Project CC BY 3.0 / public-domain work (Flaticon, including Premium; a repository with no licence statement;
+# a Wikiquote file) and so is not proven redistributable here. They are not imported; the key falls back to the generated badge.
+EXCLUDED = {
+    "icon/ui/Timer": "Flaticon (Premium) stopwatch",
+    "icon/ui/Politics": "Flaticon premium 'Political Science'",
+    "icon/action/Skip": "Flaticon 'jump'",
+    "icon/action/ConductTradeMission": "Flaticon 'trade'",
+    "icon/nation/Persia": "Flaticon scimitars",
+    "icon/nation/China": "Ravignir 5Hex-Tileset, no licence stated",
+    "icon/nation/Inca": "Ravignir 5Hex-Tileset, no licence stated",
+    "icon/nation/Iroquois": "Ravignir 5Hex-Tileset, no licence stated",
+    "icon/nation/Songhai": "Ravignir 5Hex-Tileset, no licence stated",
+    "icon/nation/The Huns": "Wikiquote file, licence not stated in Credits.md",
+}
 
 # (category, source folder under the repo root, licence, credit section of docs/Credits.md, stems to take or None for all)
 GROUPS = [
@@ -73,6 +88,8 @@ def collect():
         available = {p.stem: p for p in source.glob("*.png")}
         wanted = sorted(available) if stems is None else stems
         for stem in wanted:
+            if f"{category}/{stem}" in EXCLUDED:
+                continue
             if stem not in available:
                 raise ValueError(f"{category}/{stem}: {folder}/{stem}.png does not exist")
             path = available[stem]
@@ -85,7 +102,7 @@ def collect():
 
 def render_manifest(entries):
     groups = {category: {"licence": licence, "credits": f"CREDITS.md#{section}"} for category, _, licence, section, _ in GROUPS}
-    doc = {"pack": "unciv", "keys": {key: rel for key, _, rel in entries}, "groups": groups}
+    doc = {"pack": "unciv", "keys": {key: rel for key, _, rel in entries}, "groups": groups, "excluded": dict(sorted(EXCLUDED.items()))}
     return json.dumps(doc, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 

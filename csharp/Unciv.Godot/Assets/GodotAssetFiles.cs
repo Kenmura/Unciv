@@ -5,12 +5,14 @@ namespace Unciv.GodotClient.Assets;
 
 /// <summary>
 /// Reads the client's asset files from the Godot resource filesystem (the only place a <c>res://</c> path is formed).
-/// C063: when the running project is the test harness the bundled pack (<c>assets/packs/unciv</c>) lives in the <c>Unciv.Godot</c> project folder instead, so a path
-/// that is not under <c>res://</c> is also looked for in that folder; images are read as plain files (no editor import step needed) unless an imported texture exists.
+/// C063: the bundled pack (<c>assets/packs/unciv</c> as a pack path) is the plain folder <c>Packs/unciv</c> of the <c>Unciv.Godot</c> project, next to the executable in an export, so a pack path that
+/// is not under <c>res://</c> is looked for there; its images are read as plain files (no editor import step, one code path in the editor, the harness and an export).
 /// </summary>
 public sealed class GodotAssetFiles : IAssetFiles
 {
     private const string Root = "res://";
+    /// <summary>Folder of the bundled packs next to the project or the executable. It sits outside the Godot resource tree (<c>.gdignore</c>, no import step) and its name differs from <c>Assets</c> by more than case.</summary>
+    public const string PackFolder = "Packs";
     private static List<string>? externalRoots;
 
     public bool Exists(string relativePath) => ResourceLoader.Exists(Root + relativePath) || Godot.FileAccess.FileExists(Root + relativePath) || ExternalPath(relativePath) != null;
@@ -46,7 +48,7 @@ public sealed class GodotAssetFiles : IAssetFiles
         return ImageTexture.CreateFromImage(image);
     }
 
-    /// <summary>Folders that may hold <c>assets/packs</c> besides res://: next to an exported executable (tools/package.sh copies the pack there), or the <c>Unciv.Godot</c> project folder above a test-harness project.</summary>
+    /// <summary>Folders that may hold the <c>Packs</c> folder besides res://: next to an exported executable (tools/package.sh copies it there), the <c>Unciv.Godot</c> project folder itself, or that folder above a test-harness project.</summary>
     private static List<string> ExternalRoots()
     {
         if (externalRoots != null) return externalRoots;
@@ -55,22 +57,24 @@ public sealed class GodotAssetFiles : IAssetFiles
         if (!string.IsNullOrEmpty(exeDir)) externalRoots.Add(exeDir);
         for (string d = ProjectSettings.GlobalizePath(Root); !string.IsNullOrEmpty(d); d = System.IO.Path.GetDirectoryName(d.TrimEnd('/')) ?? "")
         {
-            var candidate = System.IO.Path.Combine(d, "Unciv.Godot");
-            if (System.IO.File.Exists(System.IO.Path.Combine(candidate, "project.godot")))
+            var found = new[] { d, System.IO.Path.Combine(d, "Unciv.Godot") }.FirstOrDefault(c => System.IO.Directory.Exists(System.IO.Path.Combine(c, PackFolder)) && System.IO.File.Exists(System.IO.Path.Combine(c, "project.godot")));
+            if (found != null)
             {
-                externalRoots.Add(candidate);
+                externalRoots.Add(found);
                 break;
             }
         }
         return externalRoots;
     }
 
+    /// <summary>The disk file of a pack path (<c>assets/packs/&lt;pack&gt;/...</c>) in the <c>Packs</c> folder of an external root; null for any other or unsafe path.</summary>
     private static string? ExternalPath(string relativePath)
     {
-        if (relativePath.Contains("..", StringComparison.Ordinal)) return null;
+        if (!relativePath.StartsWith(AssetResolver.PackDir, StringComparison.Ordinal) || relativePath.Contains('\\', StringComparison.Ordinal) || relativePath.Contains(':', StringComparison.Ordinal) || relativePath.Split('/').Any(seg => seg.Length == 0 || seg is "." or "..")) return null;
+        var inPacks = System.IO.Path.Combine(PackFolder, relativePath[AssetResolver.PackDir.Length..]);
         foreach (var root in ExternalRoots())
         {
-            var full = System.IO.Path.Combine(root, relativePath);
+            var full = System.IO.Path.Combine(root, inPacks);
             if (System.IO.File.Exists(full)) return full;
         }
         return null;

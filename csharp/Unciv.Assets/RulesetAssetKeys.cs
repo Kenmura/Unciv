@@ -47,16 +47,16 @@ public static class RulesetAssetKeys
     [
         "ArrowRight", "BackArrow", "Blockade", "Camera", "Capital", "Chat", "Checkmark", "Cities", "CityState", "Close", "Diplomacy", "Espionage",
         "ExclamationMark", "Fire", "ForwardArrow", "Hexagon", "HexagonOutline", "Improvements", "Increase", "Keyboard", "Link", "Load", "LockSmall",
-        "Mods", "Multiplayer", "Nations", "New", "Notifications", "Options", "Pause", "Pencil", "Policies", "Politics", "Question", "Reduce",
-        "Resources", "Resume", "Score", "Search", "Settings", "Shield", "Sleep", "Spy", "Star", "Stop", "Terrains", "Timer", "Undo", "Wonders",
+        "Mods", "Multiplayer", "Nations", "New", "Notifications", "Options", "Pause", "Pencil", "Policies", "Question", "Reduce",
+        "Resources", "Resume", "Score", "Search", "Settings", "Shield", "Sleep", "Spy", "Star", "Stop", "Terrains", "Undo", "Wonders",
     ];
 
     /// <summary>C063: unit action icons (<c>icon/action/&lt;name&gt;</c>), the file names of Unciv's UnitActionIcons.</summary>
     public static readonly string[] ActionIconNames =
     [
-        "AddInCapital", "AirSweep", "Automate", "ConductTradeMission", "ConstructImprovement", "DisbandUnit", "EnhanceReligion", "Escort", "Explore",
+        "AddInCapital", "AirSweep", "Automate", "ConstructImprovement", "DisbandUnit", "EnhanceReligion", "Escort", "Explore",
         "Fortify", "FortifyUntilHealed", "FoundCity", "FoundReligion", "Guard", "HideMore", "HurryConstruction", "HurryPolicy", "HurryResearch",
-        "MoveTo", "Paradrop", "Pillage", "Present", "Promote", "RemoveHeresy", "Repair", "RoadConnection", "SetUp", "ShowMore", "Skip", "Sleep",
+        "MoveTo", "Paradrop", "Pillage", "Present", "Promote", "RemoveHeresy", "Repair", "RoadConnection", "SetUp", "ShowMore", "Sleep",
         "Star", "StartGoldenAge", "Stop", "StopEscort", "StopMove", "Swap", "Transform", "Upgrade",
     ];
 

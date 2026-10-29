@@ -27,16 +27,16 @@ public sealed class IconPackTests : IDisposable
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
         {
             var candidate = Path.Combine(dir.FullName, "Unciv.Godot");
-            if (File.Exists(Path.Combine(candidate, "assets", "packs", "unciv", "manifest.json"))) return candidate;
+            if (File.Exists(Path.Combine(candidate, "Packs", "unciv", "manifest.json"))) return candidate;
         }
-        throw new DirectoryNotFoundException("Unciv.Godot/assets/packs/unciv not found above " + AppContext.BaseDirectory);
+        throw new DirectoryNotFoundException("Unciv.Godot/Packs/unciv not found above " + AppContext.BaseDirectory);
     }
 
     private sealed class DiskFiles : IAssetFiles
     {
-        public bool Exists(string relativePath) => File.Exists(Path.Combine(PackRoot, relativePath));
+        public bool Exists(string relativePath) => File.Exists(Path.Combine(PackRoot, "Packs", relativePath["assets/packs/".Length..]));
 
-        public string? ReadText(string relativePath) => Exists(relativePath) ? File.ReadAllText(Path.Combine(PackRoot, relativePath)) : null;
+        public string? ReadText(string relativePath) => Exists(relativePath) ? File.ReadAllText(Path.Combine(PackRoot, "Packs", relativePath["assets/packs/".Length..])) : null;
     }
 
     private static AssetResolver Resolver(RulesetClass ruleset) => new(new DiskFiles(), RulesetAssetKeys.FallbacksFor(ruleset), basePack: AssetResolver.BundledPack);
@@ -64,12 +64,15 @@ public sealed class IconPackTests : IDisposable
         foreach (var key in names) Assert.True(resolver.Resolve(key).Source == AssetSourceKind.Pack, key + " is not in the pack");
     }
 
+    /// <summary>Emblems whose Credits.md entry is not a proven free licence (see EXCLUDED in import-unciv-icons.py): they use the generated badge.</summary>
+    private static readonly string[] NationsWithoutPackEmblem = ["China", "Inca", "Iroquois", "Songhai", "Persia"];
+
     [Fact]
-    public void EveryPlayableVanillaNationHasAnEmblem()
+    public void EveryVanillaNationHasAnEmblemExceptTheUnlicensedOnes()
     {
         var resolver = Resolver(ruleset);
-        var missing = ruleset.Nations.Keys.Where(n => resolver.Resolve(AssetKey.Of(RulesetAssetKeys.NationIcon, n)).Source != AssetSourceKind.Pack).ToList();
-        Assert.Empty(missing);
+        var missing = ruleset.Nations.Keys.Where(n => resolver.Resolve(AssetKey.Of(RulesetAssetKeys.NationIcon, n)).Source != AssetSourceKind.Pack).Order().ToList();
+        Assert.Equal(NationsWithoutPackEmblem.Order(), missing);
     }
 
     [Fact]
@@ -87,17 +90,17 @@ public sealed class IconPackTests : IDisposable
     [Fact]
     public void EveryManifestFileExistsAndIsAPng()
     {
-        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(PackRoot, "assets", "packs", "unciv", "manifest.json")));
+        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(PackRoot, "Packs", "unciv", "manifest.json")));
         var entries = doc.RootElement.GetProperty("keys").EnumerateObject().ToList();
         Assert.True(entries.Count > 150);
         foreach (var entry in entries)
         {
             Assert.True(AssetKey.TryParse(entry.Name, out _), entry.Name);
-            var file = Path.Combine(PackRoot, "assets", "packs", "unciv", entry.Value.GetString()!);
+            var file = Path.Combine(PackRoot, "Packs", "unciv", entry.Value.GetString()!);
             Assert.True(File.Exists(file), file);
             Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, File.ReadAllBytes(file).Take(4));
         }
-        Assert.True(File.Exists(Path.Combine(PackRoot, "assets", "packs", "unciv", "CREDITS.md")));
+        Assert.True(File.Exists(Path.Combine(PackRoot, "Packs", "unciv", "CREDITS.md")));
     }
 
     [Fact]

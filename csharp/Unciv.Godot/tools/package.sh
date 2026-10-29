@@ -31,9 +31,10 @@ cp -r "$repo/android/assets/jsons" "$out/data/jsons"
 mkdir -p "$out/Assets"
 cp -r "$project/Assets/fonts" "$out/Assets/fonts"
 rm -f "$out/Assets/fonts/subset-fonts.py" "$out"/Assets/fonts/*.import
-# C063: the bundled icon pack (PNGs and manifest, read from disk by GodotAssetFiles) ships next to the executable with its credits.
-mkdir -p "$out/assets/packs"
-cp -r "$project/assets/packs/unciv" "$out/assets/packs/unciv"
+# C063: the bundled icon pack (PNGs and manifest, read from disk by GodotAssetFiles; .gdignore keeps it out of the pck) ships next to the executable with its credits.
+mkdir -p "$out/Packs"
+cp -r "$project/Packs/unciv" "$out/Packs/unciv"
+rm -f "$out/Packs/unciv/.gdignore"
 cp "$repo/LICENSE" "$out/LICENSE"
 cp "$project/THIRD_PARTY_NOTICES.md" "$out/THIRD_PARTY_NOTICES.md"
 echo "Packaged $platform build in $out"

@@ -152,6 +152,7 @@ public sealed class OptionsTests
     {
         Assert.Equal(["Default", "alpha", "beta"], OptionsModel.PackNames(["beta", "alpha", "Default", "..", "a/b", "", "alpha"]));
         Assert.Equal(["Default"], OptionsModel.PackNames([]));
+        Assert.Equal(["Default", "mine"], OptionsModel.PackNames(["unciv", "mine"]));
         Assert.Null(OptionsModel.RegistryPack("Default"));
         Assert.Null(OptionsModel.RegistryPack(" "));
         Assert.Equal("alpha", OptionsModel.RegistryPack("alpha"));
