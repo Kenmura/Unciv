@@ -258,7 +258,7 @@ flowchart TD
   class C094 waiting
   class T239 prog
   class T247 waiting
-  class T253 prog
+  class T253 review
 ```
 
 ## Remaining tickets over time
@@ -361,4 +361,4 @@ xychart-beta
 | C092 | Available (waiting on C074) | C074 | 0 | City management at scale: bulk actions and reusable build queues |
 | T239 | In-Progress [Claude] | T169, T246 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
-| T253 | In-Progress [Claude] | T251 | 0 | ServerLobby post-start leftovers (T251 follow-up) |
+| T253 | Needs-Review [Claude] | T251 | 0 | ServerLobby post-start leftovers (T251 follow-up) |
