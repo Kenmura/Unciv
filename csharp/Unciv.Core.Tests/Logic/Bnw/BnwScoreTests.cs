@@ -73,7 +73,10 @@ public sealed class BnwScoreTests : IDisposable
         Assert.Equal(8.0, civ.CalculateScoreBreakdown()["Policies"]);
         civ.Policies.AdoptedPolicies.Add(branch.Name + PolicyObject.BranchCompleteSuffix);
         Assert.Equal(8.0, civ.CalculateScoreBreakdown()["Policies"]);
-        Assert.Equal(before + 8.0, civ.CalculateTotalScore());
+        double sum = 0.0;
+        foreach (var value in civ.CalculateScoreBreakdown().Values) sum += value; // the total is the double sum in map order
+        Assert.Equal(sum, civ.CalculateTotalScore());
+        Assert.Equal(before + 8.0, civ.CalculateTotalScore(), 6);
     }
 
     [Fact]

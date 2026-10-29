@@ -12,7 +12,7 @@ public partial class Civilization
     {
         if (modConstants.ScorePolicyMultiplier != 0)
             scoreBreakdown["Policies"] = (double)modConstants.ScorePolicyMultiplier * Policies.AdoptedPolicies
-                .Count(it => Policies.GetPolicyByName(it).PolicyBranchType != Models.Ruleset.Policy.PolicyBranchTypes.BranchComplete);
+                .Count(it => !Models.Ruleset.Policy.IsBranchCompleteByName(it));
         if (modConstants.ScoreGreatWorkMultiplier != 0)
             scoreBreakdown["Great Works"] = (double)modConstants.ScoreGreatWorkMultiplier * Cities.Sum(it => it.GetNumberOfGreatWorks());
         if (modConstants.ScoreBeliefMultiplier != 0)
