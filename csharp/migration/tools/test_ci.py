@@ -121,7 +121,9 @@ class WorkflowShape(unittest.TestCase):
         self.assertEqual(len(re.findall(r"(?i)github\.token|GITHUB_TOKEN", code)), 1)
         self.assertRegex(code, r"GH_TOKEN: \$\{\{ github\.token \}\}")
         self.assertNotIn("pull_request_target", self.text)
-        for word in ("upload-artifact", "gh release", "git push", "nuget push", "docker push"):
+        self.assertEqual(self.text.count("upload-artifact"), 1)  # T255: only the failed scenario renders, 7 days
+        self.assertIn("name: scenario-renders", self.text)
+        for word in ("gh release", "git push", "nuget push", "docker push"):
             self.assertNotIn(word, self.text)
 
     def test_every_action_is_pinned_by_full_commit_sha(self):
