@@ -74,7 +74,7 @@ public static class CombatPresentation
                     break;
                 case UnitAttacked attacked:
                     beats.Add(StrikeBeat(attacked));
-                    beats.Add(ImpactBeat(attacked, 0f));
+                    beats.Add(ImpactBeat(attacked, 0f, 0f));
                     break;
                 case UnitDestroyed destroyed when !killedInBattle.Contains(destroyed.UnitId):
                     beats.Add([new Cue(CueKind.Death, destroyed.UnitId, destroyed.Position, destroyed.Position, 0f, DeathSeconds)]);
@@ -88,7 +88,7 @@ public static class CombatPresentation
 
     /// <summary>The swing and its consequences in one beat: the defender is hit (and may die) at the swing's marker, while the attacker is still stepping back.</summary>
     private static IReadOnlyList<Cue> MeleeBeat(UnitAttacked e) =>
-        [new Cue(CueKind.Strike, e.AttackerUnitId, e.AttackerPosition, e.DefenderPosition, 0f, StrikeSeconds), .. ImpactBeat(e, StrikeHitDelay)];
+        [new Cue(CueKind.Strike, e.AttackerUnitId, e.AttackerPosition, e.DefenderPosition, 0f, StrikeSeconds), .. ImpactBeat(e, StrikeHitDelay, StrikeSeconds)];
 
     /// <summary>The wind-up beat of a ranged or city attack (a melee attack is one beat, <see cref="MeleeBeat"/>).</summary>
     private static IReadOnlyList<Cue> StrikeBeat(UnitAttacked e)
@@ -103,13 +103,14 @@ public static class CombatPresentation
         return [new Cue(CueKind.Shot, e.AttackerUnitId, e.AttackerPosition, e.DefenderPosition, 0f, ShotReleaseSeconds + ShotSeconds)];
     }
 
-    private static IReadOnlyList<Cue> ImpactBeat(UnitAttacked e, float at)
+    /// <summary>The defender reacts at <paramref name="at"/>; a counter-struck attacker only at <paramref name="attackerAt"/> (a melee attacker finishes its swing first, its clips and poses would clash).</summary>
+    private static IReadOnlyList<Cue> ImpactBeat(UnitAttacked e, float at, float attackerAt)
     {
         var cues = new List<Cue> { new(CueKind.Hit, e.DefenderUnitId, e.DefenderPosition, e.DefenderPosition, at, HitSeconds, e.DamageToDefender) };
         if (e.DamageToAttacker > 0 && e.AttackerCityId == null)
-            cues.Add(new Cue(CueKind.Hit, e.AttackerUnitId, e.AttackerPosition, e.AttackerPosition, at, HitSeconds, e.DamageToAttacker));
+            cues.Add(new Cue(CueKind.Hit, e.AttackerUnitId, e.AttackerPosition, e.AttackerPosition, attackerAt, HitSeconds, e.DamageToAttacker));
         if (e.AttackerKilled && e.AttackerUnitId is { } attacker)
-            cues.Add(new Cue(CueKind.Death, attacker, e.AttackerPosition, e.AttackerPosition, at + DeathDelay, DeathSeconds));
+            cues.Add(new Cue(CueKind.Death, attacker, e.AttackerPosition, e.AttackerPosition, attackerAt + DeathDelay, DeathSeconds));
         if (e.DefenderKilled && e.DefenderUnitId is { } defender)
             cues.Add(new Cue(CueKind.Death, defender, e.DefenderPosition, e.DefenderPosition, at + DeathDelay, DeathSeconds));
         return cues;
@@ -291,7 +292,8 @@ public static class CuePoses
     public static float ClipTime(float seconds, float length, bool loop)
     {
         if (!(length > 0f) || !(seconds > 0f)) return 0f;
-        if (!float.IsFinite(seconds)) return 0f;
+        if (float.IsNaN(seconds)) return 0f;
+        if (float.IsPositiveInfinity(seconds)) return loop ? 0f : length;
         return loop ? seconds % length : Math.Min(seconds, length);
     }
 

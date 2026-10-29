@@ -81,7 +81,7 @@ public partial class CombatPresenter : Node3D
     {
         if (!Enabled) return;
         foreach (var (id, yaw) in facings) unitOf(id)?.Face(yaw); // the screen rebuilt its nodes: units keep the way they last turned
-        foreach (var cue in timeline.Upcoming.Reverse()) if (cue.Kind == CueKind.Move) Pose(cue, 0f);
+        foreach (var cue in timeline.Upcoming.Reverse()) if (cue.Kind == CueKind.Move) Pose(cue, 0f, preview: true);
         Apply(timeline.Advance(0f));
     }
 
@@ -114,7 +114,8 @@ public partial class CombatPresenter : Node3D
         }
     }
 
-    private void Pose(Cue cue, float p)
+    /// <summary>Poses one cue. A <paramref name="preview"/> only puts a queued walker at the start of its path: it neither turns nor leaves its idle pose before its turn comes.</summary>
+    private void Pose(Cue cue, float p, bool preview = false)
     {
         switch (cue.Kind)
         {
@@ -122,6 +123,7 @@ public partial class CombatPresenter : Node3D
                 {
                     var (leg, along) = CuePoses.PathLeg(path.Count, p);
                     walker.Position = tileTop(path[leg]).Lerp(tileTop(path[leg + 1]), along);
+                    if (preview) break;
                     Turn(id, walker, tileTop(path[leg + 1]) - tileTop(path[leg]));
                     walker.ShowClipLooped(UnitModelContract.WalkClip, p * cue.Duration); // no walk clip: it just slides
                     break;

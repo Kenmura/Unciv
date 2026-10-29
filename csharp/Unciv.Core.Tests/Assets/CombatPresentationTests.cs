@@ -58,7 +58,7 @@ public sealed class CombatPresentationTests
         [
             new Cue(CueKind.Strike, 1, A, B, 0f, CombatPresentation.StrikeSeconds),
             new Cue(CueKind.Hit, 2, B, B, CombatPresentation.StrikeHitDelay, CombatPresentation.HitSeconds, 7),
-            new Cue(CueKind.Hit, 1, A, A, CombatPresentation.StrikeHitDelay, CombatPresentation.HitSeconds, 3),
+            new Cue(CueKind.Hit, 1, A, A, CombatPresentation.StrikeSeconds, CombatPresentation.HitSeconds, 3), // the attacker is counter-struck once its swing is over
         ], Assert.Single(plan));
     }
 
@@ -117,7 +117,7 @@ public sealed class CombatPresentationTests
         Assert.Equal([1, 2], deaths.Select(it => it.UnitId));
         Assert.All(deaths, it =>
         {
-            Near(CombatPresentation.StrikeHitDelay + CombatPresentation.DeathDelay, it.Delay);
+            Near((it.UnitId == 1 ? CombatPresentation.StrikeSeconds : CombatPresentation.StrikeHitDelay) + CombatPresentation.DeathDelay, it.Delay);
             Near(CombatPresentation.DeathSeconds, it.Duration);
         });
         Assert.Equal(A, deaths[0].From);
@@ -419,6 +419,7 @@ public sealed class CombatPresentationTests
     [InlineData(-1f, 2f, true, 0f)]
     [InlineData(float.NaN, 2f, true, 0f)]
     [InlineData(float.PositiveInfinity, 2f, true, 0f)]
+    [InlineData(float.PositiveInfinity, 2f, false, 2f)]
     [InlineData(1f, 0f, true, 0f)]
     [InlineData(1f, float.NaN, false, 0f)]
     public void Clip_time_wraps_a_loop_holds_the_end_of_a_one_shot_and_survives_bad_input(float seconds, float length, bool loop, float expected) => Near(expected, CuePoses.ClipTime(seconds, length, loop));

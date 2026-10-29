@@ -22,7 +22,9 @@ public sealed class UnitAnimator(AnimationPlayer player, float idlePhase)
     public bool Show(string clip, float progress)
     {
         if (!Has(clip)) return false;
-        var length = (float)player.GetAnimation(clip).Length;
+        var animation = player.GetAnimation(clip);
+        animation.LoopMode = Animation.LoopModeEnum.None; // a one-shot holds its last frame, never wraps to the first
+        var length = (float)animation.Length;
         return Seek(clip, CuePoses.ClipTime(Math.Clamp(float.IsNaN(progress) ? 0f : progress, 0f, 1f) * length, length, false));
     }
 
@@ -31,7 +33,7 @@ public sealed class UnitAnimator(AnimationPlayer player, float idlePhase)
     {
         if (!Has(clip)) return false;
         var animation = player.GetAnimation(clip);
-        animation.LoopMode = Animation.LoopModeEnum.Linear;
+        if (animation.LoopMode != Animation.LoopModeEnum.Linear) animation.LoopMode = Animation.LoopModeEnum.Linear;
         return Seek(clip, CuePoses.ClipTime(seconds, (float)animation.Length, true));
     }
 

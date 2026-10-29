@@ -141,6 +141,8 @@ public sealed class CombatPresentationScenario : Scenario
             new AssertQuery("the defender plays its hit clip and the engine's damage floats over it", () =>
                 attacks.Count == 1 && Presenter.NumbersShown.Count >= 1 && Presenter.NumbersShown[0] == (attacks[0].DamageToDefender, enemyTile) && Presenter.EffectCount >= 1
                 && screen.Units[enemy.Id].CurrentClip == UnitModelContract.HitClip && screen.Units[enemy.Id].ClipPosition > 0f),
+            new AssertQuery("the attacker is still in its attack clip and has no damage number yet (counter damage waits for the end of its swing)", () =>
+                screen.Units[warrior.Id].CurrentClip == UnitModelContract.AttackClip && Presenter.NumbersShown.Count == 1),
             new Capture("impact", "Impact: the enemy plays its hit clip and its damage number floats up"),
             new Act("play the rest of the script", () => Presenter.Step(10f)),
             new WaitFrames(2),
