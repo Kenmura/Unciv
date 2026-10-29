@@ -413,6 +413,264 @@ public sealed class ClientNetSessionTests
         Assert.Equal(9, rig.Session.Game.Seq);
     }
 
+    // ---------------------------------------------------------------- T180 review fixes: no hangs, no faulted loop
+
+    private static ClientSessionOptions Plain(ClientIdentity id) => new()
+    {
+        Identity = id,
+        DisplayName = "A",
+        RulesetHash = "h",
+        ExpectedFingerprint = ClientNetRig.Fingerprint,
+        ReconnectDelay = (_, _) => Task.CompletedTask
+    };
+
+    [Fact]
+    public async Task Join_ConnectFactoryThrowsUnexpectedException_CompletesJoinAndDisposesCleanly()
+    {
+        using var identity = ClientIdentity.Generate();
+        var session = new ClientSession(_ => throw new ArgumentException("factory bug"), Plain(identity));
+        Assert.Equal(new JoinResult(false, ClientCodes.ConnectFailed), await session.JoinAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+        await session.DisposeAsync(); // must not rethrow
+    }
+
+    [Fact]
+    public async Task Join_TrustPromptThrows_IsARefusalNotACrash()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            HostAddress = "h:1",
+            KnownHosts = new KnownHosts(),
+            TrustPrompt = (_, _) => throw new NotSupportedException("ui gone")
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = 1, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        Assert.Equal(ClientCodes.HostUntrusted, (await join.WaitAsync(TimeSpan.FromSeconds(10))).Code);
+    }
+
+    [Fact]
+    public async Task Join_UndecodableFrameFromHost_IsReportedAndTheHandshakeStillCompletes()
+    {
+        await using var rig = new ClientNetRig();
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.Transport.SendAsync("this is not json");
+        Assert.Equal(ErrorCodes.Malformed, (await rig.NextAsync<ProtocolError>()).Code);
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s1", Challenge = "c1", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        await host.ReceiveAsync<Join>();
+        await host.ReceiveAsync<Auth>();
+        await host.SendAsync(new JoinOk());
+        Assert.True((await join.WaitAsync(TimeSpan.FromSeconds(10))).Joined);
+    }
+
+    [Fact]
+    public async Task Join_HostNeverAnswers_TimesOutWithHandshakeTimeout()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            HandshakeTimeout = TimeSpan.FromMilliseconds(200)
+        });
+        _ = rig.NewConnection(); // connects, then stays silent
+        var result = await rig.Session.JoinAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(new JoinResult(false, ClientCodes.HandshakeTimeout), result);
+    }
+
+    [Fact]
+    public async Task Join_SlowTrustPrompt_DoesNotCountAgainstTheHandshakeTimeout()
+    {
+        var known = new KnownHosts();
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            HostAddress = "h:1",
+            KnownHosts = known,
+            HandshakeTimeout = TimeSpan.FromMilliseconds(150),
+            TrustPrompt = async (_, _) =>
+            {
+                await Task.Delay(500);
+                return true;
+            }
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await rig.HandshakeAsync(host);
+        Assert.True((await join.WaitAsync(TimeSpan.FromSeconds(10))).Joined);
+    }
+
+    [Fact]
+    public async Task Snapshot_RejectedOnFirstSync_EndsSessionInsteadOfHanging()
+    {
+        await using var rig = new ClientNetRig();
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await rig.HandshakeAsync(host);
+        await join;
+        await host.SendAsync(new GameStarting());
+        await host.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(5, 1)) with { ViewHash = "bad" });
+        Assert.Equal(ClientCodes.SnapshotRejected, (await rig.NextAsync<SessionEnded>()).Reason);
+        Assert.Equal(ClientSessionState.Disconnected, rig.Session.State);
+    }
+
+    [Fact]
+    public async Task ResyncAsync_AnswerIsARejectedSnapshot_FaultsKeepsOldMirrorAndStaysInGame()
+    {
+        await using var rig = new ClientNetRig();
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        var resync = rig.Session.ResyncAsync();
+        await host.ReceiveAsync<ResyncRequest>();
+        await host.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(9, 4)) with { ViewHash = "bad" });
+        await Assert.ThrowsAsync<InvalidOperationException>(() => resync.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(5, rig.Session.Game.Seq);
+        Assert.Equal(ClientSessionState.InGame, rig.Session.State);
+
+        var again = rig.Session.ResyncAsync(); // the caller may retry
+        await host.ReceiveAsync<ResyncRequest>();
+        await host.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(9, 4)));
+        await again.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(9, rig.Session.Game.Seq);
+    }
+
+    [Fact]
+    public async Task ResyncAsync_AfterSessionEnded_FaultsInsteadOfHanging()
+    {
+        await using var rig = new ClientNetRig();
+        _ = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        await rig.Session.LeaveAsync();
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => rig.Session.ResyncAsync().WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(ClientCodes.SessionClosed, ex.Message);
+    }
+
+    [Fact]
+    public async Task Submit_InLobby_IsRefusedInsteadOfWaitingForever()
+    {
+        await using var rig = new ClientNetRig();
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await rig.HandshakeAsync(host);
+        await join;
+        Assert.Equal(ClientSessionState.Lobby, rig.Session.State);
+        var outcome = await rig.Session.SubmitAsync("a", EmptyObject).WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(ClientCodes.NotInGame, outcome.Code);
+        Assert.Equal(0, rig.Session.PendingCommandCount);
+    }
+
+    [Fact]
+    public async Task Reconnect_HostThatAcceptsThenDropsImmediately_DoesNotResetTheAttemptCounter()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            MaxReconnectAttempts = 2,
+            ReconnectDelay = (_, _) => Task.CompletedTask
+        });
+        var first = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        var flaky = new[] { rig.NewConnection(), rig.NewConnection(), rig.NewConnection(), rig.NewConnection() };
+        await first.CloseAsync();
+        foreach (var connection in flaky)
+        {
+            if (rig.Session.State == ClientSessionState.Disconnected) break;
+            try
+            {
+                await rig.HandshakeAsync(connection);
+                await connection.CloseAsync();
+            }
+            catch (Exception) { break; } // the session gave up and closed this connection's client end
+        }
+        Assert.Equal("reconnect-failed", (await rig.NextAsync<SessionEnded>()).Reason);
+        Assert.True(rig.ConnectAttempts <= 4, $"attempts {rig.ConnectAttempts}"); // first + 2 retries + at most the one that exceeded the limit
+    }
+
+    [Fact]
+    public async Task Events_AreBoundedWhenNobodyReads_AndTheEndIsKept()
+    {
+        await using var rig = new ClientNetRig();
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await rig.HandshakeAsync(host);
+        await join;
+        for (var i = 0; i < 5000; i++) await host.SendAsync(new LobbyChat { Sender = "x", Text = "m" + i });
+        await rig.Session.LeaveAsync();
+        var seen = 0;
+        ClientEvent? last = null;
+        while (rig.Session.Events.TryRead(out var next))
+        {
+            seen++;
+            last = next;
+        }
+        Assert.True(seen <= 4096, $"read {seen}");
+        Assert.IsType<SessionEnded>(last);
+    }
+
+    // T180 review finding: the resend order is submission order; ClientCmdId text order puts "10" before "2".
+    [Fact]
+    public async Task Submit_ResentCommandsKeepSubmissionOrderBeyondNine()
+    {
+        await using var rig = new ClientNetRig();
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        var next = rig.NewConnection();
+        await host.CloseAsync();
+        await rig.NextAsync<StateChanged>();
+        var tasks = Enumerable.Range(0, 12).Select(i => rig.Session.SubmitAsync("t" + i, EmptyObject)).ToList();
+        await rig.HandshakeAsync(next);
+        await next.ReceiveAsync<ResyncRequest>();
+        var sent = new List<string>();
+        for (var i = 0; i < 12; i++) sent.Add((await next.ReceiveAsync<Command>()).CommandType);
+        Assert.Equal(Enumerable.Range(0, 12).Select(i => "t" + i), sent);
+        Assert.All(tasks, it => Assert.False(it.IsCompleted));
+    }
+
+    // T180 review finding: a TCP broken pipe on the command send must not fault the caller while the command is pending and will be resent.
+    [Fact]
+    public async Task Submit_SendFailureWhileConnected_WaitsForTheAnswerInsteadOfFaulting()
+    {
+        using var identity = ClientIdentity.Generate();
+        var (clientEnd, hostEnd) = InMemoryTransport.CreatePair();
+        await using var session = new ClientSession(_ => Task.FromResult<ITransport>(new CommandSendFailingTransport(clientEnd)), Plain(identity));
+        var host = new FakeHostConnection(hostEnd);
+        var join = session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s1", Challenge = "c1", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        await host.ReceiveAsync<Join>();
+        await host.ReceiveAsync<Auth>();
+        await host.SendAsync(new JoinOk());
+        await host.SendAsync(ClientNetRig.SnapshotMessage(ClientNetRig.Snap(5, 1)));
+        Assert.True((await join).Joined);
+        while (session.Game.Snapshot == null) await Task.Delay(10);
+
+        var task = session.SubmitAsync("a", EmptyObject);
+        await Task.Delay(100); // the send has thrown IOException inside the session by now
+        Assert.False(task.IsCompleted);
+        Assert.Equal(1, session.PendingCommandCount);
+        await session.DisposeAsync();
+        Assert.Equal(ClientCodes.SessionClosed, (await task).Code);
+    }
+
+    // T180 note: Desynchronized "on a sequence gap / reconnect"; IGameSession.Desynchronized documents the same for T244.
+    [Fact]
+    public async Task Reconnect_RaisesDesynchronizedOncePerOutageBeforeResuming()
+    {
+        await using var rig = new ClientNetRig();
+        var host = await rig.StartInGameAsync(ClientNetRig.Snap(5, 1));
+        await host.CloseAsync();
+        var seen = await rig.CollectUntilAsync<StateChanged>();
+        Assert.Single(seen, it => it is Desynchronized { Reason: "reconnect" });
+        Assert.Equal(ClientSessionState.Reconnecting, ((StateChanged)seen[^1]).State);
+    }
+
     // ---------------------------------------------------------------- commands
 
     [Fact]

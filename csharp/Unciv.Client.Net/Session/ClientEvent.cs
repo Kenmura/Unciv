@@ -30,6 +30,10 @@ public static class ClientCodes
     public const string TooManyPending = "too-many-pending";
     public const string QueryTimeout = "query-timeout";
     public const string MalformedCommand = "malformed-command";
+    public const string NotInGame = "not-in-game";
+    public const string HandshakeTimeout = "handshake-timeout";
+    public const string SnapshotRejected = "snapshot-rejected";
+    public const string InternalError = "internal-error";
 }
 
 /// <summary>The final answer to one submitted command. <see cref="Code"/> is a host code or a <see cref="ClientCodes"/> value, never free text.</summary>

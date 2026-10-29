@@ -45,12 +45,14 @@ public sealed class ClientSessionOptions
 
     public int MaxReconnectAttempts { get; init; } = 5;
 
+    /// <summary>How long connecting plus the join handshake may take (the TOFU prompt does not count) before the attempt is abandoned.</summary>
+    public TimeSpan HandshakeTimeout { get; init; } = TimeSpan.FromSeconds(15);
+
     /// <summary>Waits before reconnect attempt n (1-based). The default backs off 1, 2, 4, ... 30 seconds; tests pass an immediate one.</summary>
     public Func<int, CancellationToken, Task> ReconnectDelay { get; init; } =
         (attempt, token) => Task.Delay(TimeSpan.FromSeconds(Math.Min(30, 1 << Math.Min(attempt - 1, 5))), token);
 
     public QueryRegistry? Queries { get; init; }
-    public CommandRegistry<GameInfo>? Commands { get; init; }
     public ISecureRandom? Random { get; init; }
 }
 
@@ -67,9 +69,13 @@ public sealed class ClientSession : IAsyncDisposable
 {
     private const int MaxPendingCommands = 64;
 
+    /// <summary>A UI that stops pumping <see cref="Events"/> loses the oldest events, never memory: the mirror (<see cref="Game"/>) stays authoritative and the final <see cref="SessionEnded"/> is always the newest.</summary>
+    private const int EventCapacity = 4096;
+
     private readonly Func<CancellationToken, Task<ITransport>> connect;
     private readonly ClientSessionOptions options;
-    private readonly Channel<ClientEvent> events = Channel.CreateUnbounded<ClientEvent>();
+    private readonly Channel<ClientEvent> events = Channel.CreateBounded<ClientEvent>(
+        new BoundedChannelOptions(EventCapacity) { FullMode = BoundedChannelFullMode.DropOldest, SingleReader = true });
     private readonly CancellationTokenSource lifetime = new();
     private readonly SemaphoreSlim sendLock = new(1, 1);
     private readonly Lock gate = new();
@@ -87,15 +93,19 @@ public sealed class ClientSession : IAsyncDisposable
 
     // Receive-loop state (touched by the loop only, except where noted).
     private bool everJoined;
-    private bool connectionJoined;
-    private bool awaitingSnapshot;
-    private bool gameStarted;
+    private bool connectionSettled; // the connection delivered a lobby view or a snapshot, so the host really accepted us
+    private bool desyncAnnounced;
+    private volatile bool awaitingSnapshot;
+    private volatile bool gameStarted;
+    private CancellationTokenSource? handshakeTimer;
+    private bool handshakeTimedOut;
     private string? gameId;
     private TaskCompletionSource? resyncWaiter;
 
-    private sealed class PendingCommand(Command message)
+    private sealed class PendingCommand(Command message, long ordinal)
     {
         public Command Message { get; } = message;
+        public long Ordinal { get; } = ordinal;
         public TaskCompletionSource<CommandOutcome> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
@@ -164,16 +174,18 @@ public sealed class ClientSession : IAsyncDisposable
         lock (gate)
         {
             if (stopped) return new CommandOutcome("", false, ClientCodes.SessionClosed, null);
+            if (!CanQueueCommands()) return new CommandOutcome("", false, ClientCodes.NotInGame, null);
             if (pending.Count >= MaxPendingCommands) return new CommandOutcome("", false, ClientCodes.TooManyPending, null);
-            var id = $"{idPrefix}-{nextCommand++}";
-            entry = new PendingCommand(new Command { ClientCmdId = id, CommandType = commandType, Payload = payload });
+            var ordinal = nextCommand++;
+            var id = $"{idPrefix}-{ordinal}";
+            entry = new PendingCommand(new Command { ClientCmdId = id, CommandType = commandType, Payload = payload }, ordinal);
             pending[id] = entry;
         }
 
         if (state is ClientSessionState.InGame or ClientSessionState.Syncing)
         {
             try { await SendAsync(entry.Message, cancellationToken).ConfigureAwait(false); }
-            catch (InvalidOperationException) { /* connection just dropped: resent after the resume */ }
+            catch (Exception e) when (IsConnectionGone(e)) { /* connection just dropped: resent after the resume */ }
         }
 
         using var registration = cancellationToken.Register(() =>
@@ -183,6 +195,14 @@ public sealed class ClientSession : IAsyncDisposable
         });
         return await entry.Completion.Task.ConfigureAwait(false);
     }
+
+    /// <summary>Commands only make sense once a game started: in the lobby nothing would ever send them, so they are refused instead of waiting forever.</summary>
+    private bool CanQueueCommands() => state switch
+    {
+        ClientSessionState.InGame or ClientSessionState.Syncing => true,
+        ClientSessionState.Reconnecting => gameStarted || Game.Snapshot != null,
+        _ => false
+    };
 
     /// <summary>Submits an engine command (serialized with the command registry under its registered type).</summary>
     public Task<CommandOutcome> SubmitAsync(GameCommand command, CancellationToken cancellationToken = default)
@@ -209,12 +229,13 @@ public sealed class ClientSession : IAsyncDisposable
         }
     }
 
-    /// <summary>Asks the host for a full snapshot and completes when it replaced the mirror (or the connection was lost first, which faults the task).</summary>
+    /// <summary>Asks the host for a full snapshot and completes when it replaced the mirror. Faults with <see cref="InvalidOperationException"/> when the connection is lost, the snapshot is rejected, or the session is over.</summary>
     public async Task ResyncAsync(CancellationToken cancellationToken = default)
     {
         TaskCompletionSource waiter;
         lock (gate)
         {
+            if (stopped) throw new InvalidOperationException(ClientCodes.SessionClosed);
             waiter = resyncWaiter ??= new(TaskCreationOptions.RunContinuationsAsynchronously);
         }
         await RequestResyncAsync("requested").ConfigureAwait(false);
@@ -234,7 +255,7 @@ public sealed class ClientSession : IAsyncDisposable
     public async Task LeaveAsync()
     {
         try { await SendAsync(new Leave()).ConfigureAwait(false); }
-        catch (InvalidOperationException) { }
+        catch (Exception e) when (IsConnectionGone(e)) { }
         await StopAsync("left").ConfigureAwait(false);
     }
 
@@ -248,27 +269,54 @@ public sealed class ClientSession : IAsyncDisposable
 
     private async Task RunAsync()
     {
+        try
+        {
+            await RunLoopAsync().ConfigureAwait(false);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            // Nothing may fault this task: JoinAsync would never complete and DisposeAsync would rethrow.
+            Emit(new ProtocolError(ClientCodes.InternalError));
+            await EndAsync(ClientCodes.InternalError, refused: false).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            await EndAsync("disposed", refused: false).ConfigureAwait(false);
+        }
+    }
+
+    private async Task RunLoopAsync()
+    {
         var token = lifetime.Token;
         var attempt = 0;
         while (!stopped)
         {
             ITransport? current = null;
-            connectionJoined = false;
-            try { current = await connect(token).ConfigureAwait(false); }
+            connectionSettled = false;
+            handshakeTimedOut = false;
+            using var timer = CancellationTokenSource.CreateLinkedTokenSource(token);
+            handshakeTimer = timer;
+            timer.CancelAfter(options.HandshakeTimeout);
+            try { current = await connect(timer.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
-            catch (Exception e) when (e is IOException or InvalidOperationException or System.Net.Sockets.SocketException or System.Security.Authentication.AuthenticationException or TimeoutException or OperationCanceledException)
-            {
-                // fall through to the retry logic below
-            }
+            catch (OperationCanceledException) { handshakeTimedOut = true; }
+            catch (Exception) { /* any failure to connect (socket, TLS, factory bug) is a failed attempt: fall through to the retry logic */ }
 
-            if (current != null) await RunConnectionAsync(current, token).ConfigureAwait(false);
-            if (connectionJoined) attempt = 0;
+            if (current != null) await RunConnectionAsync(current, timer, token).ConfigureAwait(false);
+            if (connectionSettled) attempt = 0;
             if (stopped) break;
 
             if (!everJoined)
             {
-                await EndAsync(current == null ? ClientCodes.ConnectFailed : ClientCodes.ConnectionLost, refused: false).ConfigureAwait(false);
+                var code = handshakeTimedOut ? ClientCodes.HandshakeTimeout : current == null ? ClientCodes.ConnectFailed : ClientCodes.ConnectionLost;
+                await EndAsync(code, refused: false).ConfigureAwait(false);
                 return;
+            }
+            // The mirror may have missed deltas while we were away: IGameSession.Desynchronized fires once per outage, before the resume (T180 note, T244).
+            if (Game.Snapshot != null && !desyncAnnounced)
+            {
+                desyncAnnounced = true;
+                Emit(new Desynchronized("reconnect"));
             }
             if (++attempt > options.MaxReconnectAttempts)
             {
@@ -282,11 +330,12 @@ public sealed class ClientSession : IAsyncDisposable
         }
     }
 
-    private async Task RunConnectionAsync(ITransport current, CancellationToken token)
+    private async Task RunConnectionAsync(ITransport current, CancellationTokenSource timer, CancellationToken lifetimeToken)
     {
         transport = current;
-        connectionJoined = false;
+        connectionSettled = false;
         awaitingSnapshot = false;
+        var token = timer.Token;
         try
         {
             if (!everJoined) SetState(ClientSessionState.Joining);
@@ -305,15 +354,18 @@ public sealed class ClientSession : IAsyncDisposable
                 if (!await HandleAsync(ProtocolCodec.Decode(frame), token).ConfigureAwait(false)) break;
             }
         }
+        catch (OperationCanceledException) when (!lifetimeToken.IsCancellationRequested) { handshakeTimedOut = true; }
         catch (OperationCanceledException) { }
-        catch (Exception e) when (e is IOException or InvalidOperationException)
+        catch (Exception e) when (IsConnectionGone(e)) { /* a dead transport ends this connection; the loop decides about reconnecting */ }
+        catch (Exception)
         {
-            // a dead transport ends this connection; the loop decides about reconnecting
+            // A hostile or buggy host (undecodable frame, handler fault) ends this connection like a dead one, but the UI gets told.
+            Emit(new ProtocolError(ClientCodes.InternalError));
         }
         finally
         {
             transport = null;
-            try { await current.CloseAsync().ConfigureAwait(false); } catch (Exception e) when (e is IOException or ObjectDisposedException) { }
+            try { await current.CloseAsync().ConfigureAwait(false); } catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException) { }
             queries.FailAll();
         }
     }
@@ -333,6 +385,7 @@ public sealed class ClientSession : IAsyncDisposable
                 return false;
             case LobbyState lobby:
                 Lobby = lobby;
+                connectionSettled = true;
                 Emit(new LobbyUpdated(lobby));
                 return true;
             case LobbyChat chat:
@@ -345,8 +398,8 @@ public sealed class ClientSession : IAsyncDisposable
                 Emit(new GameStarted());
                 return true;
             case Snapshot snapshot:
-                HandleSnapshot(snapshot);
-                return true;
+                await HandleSnapshotAsync(snapshot).ConfigureAwait(false);
+                return !stopped;
             case ViewDelta delta:
                 await HandleDeltaAsync(delta).ConfigureAwait(false);
                 return true;
@@ -415,7 +468,14 @@ public sealed class ClientSession : IAsyncDisposable
         {
             if (known != null)
             {
-                if (options.TrustPrompt == null || !await options.TrustPrompt(address, presented).ConfigureAwait(false)) return ClientCodes.HostUntrusted;
+                if (options.TrustPrompt == null) return ClientCodes.HostUntrusted;
+                // The user may take as long as they like: the handshake clock stops while the prompt is open.
+                handshakeTimer?.CancelAfter(Timeout.InfiniteTimeSpan);
+                bool trusted;
+                try { trusted = await options.TrustPrompt(address, presented).ConfigureAwait(false); }
+                catch (Exception e) when (e is not OperationCanceledException) { trusted = false; } // a failing prompt is a "no", never a crash
+                handshakeTimer?.CancelAfter(options.HandshakeTimeout);
+                if (!trusted) return ClientCodes.HostUntrusted;
             }
             else if (!options.AllowUnpinnedHost)
             {
@@ -429,7 +489,7 @@ public sealed class ClientSession : IAsyncDisposable
 
     private async Task HandleJoinOkAsync(CancellationToken token)
     {
-        connectionJoined = true;
+        handshakeTimer?.CancelAfter(Timeout.InfiniteTimeSpan);
         var firstJoin = !everJoined;
         everJoined = true;
         joined.TrySetResult(new JoinResult(true, null));
@@ -462,18 +522,21 @@ public sealed class ClientSession : IAsyncDisposable
     private async Task ResendPendingAsync(CancellationToken token)
     {
         List<PendingCommand> all;
-        lock (gate) all = [.. pending.Values.OrderBy(it => it.Message.ClientCmdId, StringComparer.Ordinal)];
+        // Submission order, not ClientCmdId text order ("10" sorts before "2"): the host applies a player's commands in the order issued.
+        lock (gate) all = [.. pending.Values.OrderBy(it => it.Ordinal)];
         foreach (var entry in all) await SendAsync(entry.Message, token).ConfigureAwait(false);
     }
 
     // ------------------------------------------------------------ mirror
 
-    private void HandleSnapshot(Snapshot message)
+    private async Task HandleSnapshotAsync(Snapshot message)
     {
         switch (Game.Replace(message))
         {
             case SnapshotOutcome.Accepted:
                 awaitingSnapshot = false;
+                connectionSettled = true;
+                desyncAnnounced = false;
                 queries.FailAll(); // an answer computed against the old state must not be applied to the new one
                 SetState(ClientSessionState.InGame);
                 Emit(new SnapshotReplaced(Game.Snapshot!));
@@ -484,14 +547,29 @@ public sealed class ClientSession : IAsyncDisposable
                 }
                 break;
             case SnapshotOutcome.Malformed:
-                awaitingSnapshot = false;
-                Emit(new Desynchronized("malformed-snapshot"));
+                await RejectSnapshotAsync("malformed-snapshot").ConfigureAwait(false);
                 break;
             default:
-                awaitingSnapshot = false;
-                Emit(new Desynchronized("snapshot-hash-mismatch"));
+                await RejectSnapshotAsync("snapshot-hash-mismatch").ConfigureAwait(false);
                 break;
         }
+    }
+
+    /// <summary>
+    /// A snapshot the host sent was unusable. Nobody may keep waiting for it: the resync waiter faults, and when there is no mirror at all
+    /// (first sync) the session ends, since a host that cannot produce a valid first snapshot never will. Otherwise the old mirror stays and the caller may retry.
+    /// </summary>
+    private async Task RejectSnapshotAsync(string reason)
+    {
+        awaitingSnapshot = false;
+        Emit(new Desynchronized(reason));
+        lock (gate)
+        {
+            resyncWaiter?.TrySetException(new InvalidOperationException(ClientCodes.SnapshotRejected));
+            resyncWaiter = null;
+        }
+        if (Game.Snapshot == null) await EndAsync(ClientCodes.SnapshotRejected, refused: false).ConfigureAwait(false);
+        else SetState(ClientSessionState.InGame);
     }
 
     private async Task HandleDeltaAsync(ViewDelta delta)
@@ -527,7 +605,7 @@ public sealed class ClientSession : IAsyncDisposable
         queries.FailAll();
         Emit(new Desynchronized(reason));
         try { await SendAsync(new ResyncRequest()).ConfigureAwait(false); }
-        catch (InvalidOperationException) { /* connection lost: the reconnect resyncs */ }
+        catch (Exception e) when (IsConnectionGone(e)) { /* connection lost: the reconnect resyncs */ }
     }
 
     private void HandleCommandResult(CommandResult result)
@@ -543,6 +621,9 @@ public sealed class ClientSession : IAsyncDisposable
     }
 
     // ------------------------------------------------------------ plumbing
+
+    /// <summary>A send that failed because the connection died (closed transport, broken pipe, disposed stream): not a command failure, the reconnect resends.</summary>
+    private static bool IsConnectionGone(Exception e) => e is InvalidOperationException or IOException or ObjectDisposedException;
 
     private async ValueTask SendAsync(Message message, CancellationToken cancellationToken = default)
     {

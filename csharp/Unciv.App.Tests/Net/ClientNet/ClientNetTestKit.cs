@@ -24,6 +24,21 @@ internal sealed class FakeHostConnection(InMemoryTransport transport)
     public ValueTask CloseAsync() => Transport.CloseAsync();
 }
 
+/// <summary>A client transport whose command sends fail like a TCP broken pipe; every other frame passes through (T180 review: the session must survive it).</summary>
+internal sealed class CommandSendFailingTransport(ITransport inner) : ITransport
+{
+    public bool IsOpen => inner.IsOpen;
+
+    public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default) =>
+        ProtocolCodec.Decode(frame) is Command ? throw new IOException("broken pipe") : inner.SendAsync(frame, cancellationToken);
+
+    public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => inner.ReceiveAsync(cancellationToken);
+
+    public ValueTask CloseAsync() => inner.CloseAsync();
+
+    public ValueTask DisposeAsync() => inner.DisposeAsync();
+}
+
 /// <summary>A client session wired to scripted hosts: every connect attempt takes the next prepared in-memory pair.</summary>
 internal sealed class ClientNetRig : IAsyncDisposable
 {
