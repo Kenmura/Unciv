@@ -70,12 +70,12 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class C079 ready
+  class C079 prog
   class C082 ready
   class C085 ready
   class C086 prog
-  class C089 prog
-  class C090 ondeck
+  class C089 ready
+  class C090 waiting
   class C091 ready
   class C096 waiting
   class C097 waiting
@@ -137,19 +137,19 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| C079 | **Ready to start** | C078 | 0 | Responsive and localization pass |
+| C089 | **Ready to start** | C067, C078 | 2 | Map markers: private client-side tacks |
 | C082 | **Ready to start** | C081 | 0 | Articulated placeholder unit with code-built clips |
 | C085 | **Ready to start** | C094 | 0 | Unit model LOD and performance caps |
 | C091 | **Ready to start** | C068, C078 | 0 | Group move and escort macro (client-side) |
-| C090 | **On deck** (after C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
-| C089 | In-Progress [Claude-C089] | C067, C078 | 2 | Map markers: private client-side tacks |
 | T259 | Available (waiting on ) | C042, T169, T249 | 2 | Android client spike: Godot .NET Android export feasibility, device requirements and the touch-UI gap list |
 | T261 | Available (waiting on ) | T227, T178, T208, B026 | 2 | Turn-time profiling harness and baseline: where end-turn time goes (AI per civ, per phase, host delta build) |
 | T265 | Available (waiting on ) | T178, T179, T204, T205 | 2 | Dedicated server executable A: Unciv.Server command line, lobby and game hosting over TCP+TLS |
+| C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | T264 | Available (waiting on ) | C002, C043 | 1 | Ultra graphics spike: what 'ray tracing / AAA shaders' can mean in Godot for this client, cost and fallbacks |
 | T267 | Available (waiting on ) | T177, T202, T178, T180, T226 | 1 | AI takeover of a departed player only at the end of the turn (never mid-turn) |
 | T268 | Available (waiting on ) | T178, T180, T176, T230, T173, T182, T179, T205 | 1 | Host migration spike: automatic successor host when the host leaves (design with acceptance criteria) |
 | T270 | Available (waiting on T265) | T265, T176, T254 | 1 | Dedicated server executable B: graceful shutdown, persistence and resume, exit codes, subprocess test |
+| C079 | In-Progress [Claude-C079] | C078 | 0 | Responsive and localization pass |
 | C086 | In-Progress [Claude-C086] | C094 | 0 | Unit combat polish: effects and sounds |
 | C096 | Available (waiting on T259) | T259, C043 | 0 | Touch and small-screen client UI: gestures, hit targets, layout for phone and tablet |
 | C097 | Available (waiting on T264) | T264, C043, C002 | 0 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
