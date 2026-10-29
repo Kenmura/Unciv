@@ -69,7 +69,7 @@
 - [C081 UnitAnimator, facing and re-timed combat cues](#c081-unitanimator-facing-and-re-timed-combat-cues)
 - [C083 Unit art pipeline](#c083-unit-art-pipeline)
 - [C084 Unit art by era: ancient and classical](#c084-unit-art-by-era-ancient-and-classical)
-- [C085 (ticket not Done or unknown)](#c085-ticket-not-done-or-unknown)
+- [C085 Unit model LOD and performance caps](#c085-unit-model-lod-and-performance-caps)
 - [C086 Unit combat polish: effects and sounds](#c086-unit-combat-polish-effects-and-sounds)
 - [C087 Rival stats ribbon in the HUD](#c087-rival-stats-ribbon-in-the-hud)
 - [C088 City-site preview: yields at a candidate settle tile](#c088-city-site-preview-yields-at-a-candidate-settle-tile)
@@ -1400,7 +1400,7 @@ Scenario `unit-visuals`.
 
 *Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger pale grey one (a placeholder shape).* (`unit-visuals/elephants.png`)
 
-## C085 (ticket not Done or unknown)
+## C085 Unit model LOD and performance caps
 
 Unit level of detail: zoomed far out every formation draws its lead figure only; units outside the camera footprint are hidden.
 
