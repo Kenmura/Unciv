@@ -13,14 +13,14 @@ public static class CityStateBuyout
 
     /// <summary>
     /// Why <paramref name="unit"/> (a Merchant of Venice: unique <c>Can buy a City-State</c>) cannot buy <paramref name="cityState"/> now, or null.
-    /// Unlike the diplomatic marriage there is no ally requirement. [?] The price is the marriage price (the same Gedemon DLL formula,
+    /// Unlike the diplomatic marriage there is no ally requirement and no marriage cooldown. [?] The price is the marriage price (the same Gedemon DLL formula,
     /// <see cref="CityStateFunctions.GetDiplomaticMarriageCost"/>) and the unit is spent; the BNW engine's own price is not decoded.
     /// </summary>
     public static string? WhyCannotBeBoughtBy(Civilization cityState, MapUnit unit)
     {
         var buyer = unit.Civ;
         if (!unit.HasUnique(UniqueType.CanBuyCityState)) return $"{unit.Name} cannot buy city-states";
-        if (!cityState.IsCityState || cityState.IsDefeated() || !cityState.Cities.Any()) return "There is no city-state to buy";
+        if (!cityState.IsCityState || cityState.IsDefeated() || !cityState.Cities.Any() || cityState.GetCapital() == null) return "There is no city-state to buy";
         if (!buyer.Knows(cityState)) return $"You have not met {cityState.CivName}";
         if (buyer.IsAtWarWith(cityState)) return $"You are at war with {cityState.CivName}";
         if (!unit.HasMovement()) return "The unit has no movement left";
@@ -42,7 +42,7 @@ public static class CityStateBuyout
 
     /// <summary>
     /// FRIENDSHIP_*_ON_DEATH: when a city-state dies each major civ keeps the influence of its relationship at death (Ally 45, Friend 15,
-    /// Neutral 0 in BNW), which it has again if the city-state is liberated. Rulesets that state none of the constants (G&amp;K: all 0) keep the
+    /// Neutral 0 in BNW), (stored on the city-state's side; nothing reads it back yet, liberation still sets MinorLiberationFriendship). The civ that destroyed it is not excluded [?]. Rulesets that state none of the constants (G&amp;K: all 0) keep the
     /// influence untouched. Worse relationships than Neutral are left alone [?].
     /// </summary>
     public static void KeepFriendshipsOnDeath(Civilization cityState)

@@ -117,6 +117,23 @@ public sealed class CityStateBnwTests
     }
 
     [Fact]
+    public void AForeignUnitIsRefusedAndGoldIsSpentOnce()
+    {
+        var other = game.AddCiv(game.Ruleset.Nations["Brazil"], isPlayer: true);
+        var foreign = game.AddUnit("Merchant of Venice", other, game.GetTile(3, 0));
+        Assert.False(Buy(foreign).Accepted);
+        foreign.Destroy();
+
+        var merchant = Merchant(3, 0);
+        float gold = venice.Gold;
+        int price = ((CityStateFunctions)cityState.CityStateFunctions).GetDiplomaticMarriageCost();
+        Assert.True(Buy(merchant).Accepted);
+        Assert.Equal(gold - price, venice.Gold);
+        Assert.Single(venice.PopupAlerts, it => it.Type == AlertType.DiplomaticMarriage);
+        Assert.False(Buy(merchant).Accepted); // spent
+    }
+
+    [Fact]
     public void AMerchantFarFromTheCityOrWithoutTheUniqueCannotBuy()
     {
         Assert.False(Buy(Merchant(0, 0)).Accepted);
