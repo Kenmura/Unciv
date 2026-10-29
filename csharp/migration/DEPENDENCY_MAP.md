@@ -279,7 +279,7 @@ flowchart TD
   class C092 waiting
   class C093 waiting
   class C094 waiting
-  class T182 prog
+  class T182 review
   class T239 blocked
   class T246 prog
   class T247 waiting
@@ -392,7 +392,7 @@ xychart-beta
 | C088 | Available (waiting on C068) | C068 | 0 | City-site preview: yields at a candidate settle tile |
 | C091 | Available (waiting on C068, C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C092 | Available (waiting on C074) | C074 | 0 | City management at scale: bulk actions and reusable build queues |
-| T182 | In-Progress [Claude] | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
+| T182 | Needs-Review [Claude] | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T239 | Blocked | T169, T246 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
 | T248 | Available (waiting on ) | T177, C035, C036 | 0 | Dynamic turn timer from era, unit count and war state |

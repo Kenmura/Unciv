@@ -394,6 +394,9 @@ public sealed class NetRobustnessTests : IDisposable
             await host.AttachSessionAsync("C", "Rome", serverC);
             Assert.IsType<Snapshot>(await ReceiveAsync(latencyA));
             Assert.IsType<Snapshot>(await ReceiveAsync(latencyB));
+            // C's seat is the AI civ Rome: attaching handed it to a human (T182), which A and B are told with a fresh snapshot rather than a delta with a gap.
+            Assert.IsType<Snapshot>(await ReceiveAsync(latencyA));
+            Assert.IsType<Snapshot>(await ReceiveAsync(latencyB));
 
             // Flood C with large frames until its queue overflows; the host must not block and must drop only C.
             var chunk = new string('z', 1024 * 1024);

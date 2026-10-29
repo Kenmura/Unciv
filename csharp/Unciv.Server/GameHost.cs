@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using Unciv.Commands;
 using Unciv.Commands.Events;
+using Unciv.Commands.Log;
 using Unciv.Commands.Turn;
 using Unciv.Logic;
 using Unciv.Net;
@@ -155,20 +156,12 @@ public sealed class GameHost : IAsyncDisposable
             try
             {
                 var civ = session.Game.GetCivilizationOrNull(boundCivId);
-                var turnStatusDto = CreateTurnStatusDto();
-                ClientSnapshot? initialSnapshot = null;
-                if (civ != null)
-                {
-                    initialSnapshot = SnapshotBuilder.Build(session.Game, civ, session.LastSeq, turnStatusDto);
-                }
-
                 var hostSession = new HostSession
                 {
                     SessionId = sessionId,
                     BoundCivId = boundCivId,
                     PlayerKeyId = playerKeyId,
                     Transport = new BoundedSendTransport(transport, limits.MaxQueuedFrames, limits.MaxQueuedBytes),
-                    PreviousSnapshot = initialSnapshot,
                     LastInboundMillis = clock.NowMillis
                 };
 
@@ -179,12 +172,23 @@ public sealed class GameHost : IAsyncDisposable
                 }
 
                 sessions[sessionId] = hostSession;
+                var seqBefore = session.LastSeq;
                 turnTimer.Connect(boundCivId, playerKeyId);
-
-                if (initialSnapshot != null)
+                var changedState = session.LastSeq != seqBefore;
+                if (changedState)
                 {
-                    var snapshotMsg = SnapshotBuilder.ToMessage(initialSnapshot);
-                    await hostSession.Transport.SendAsync(ProtocolCodec.Encode(snapshotMsg));
+                    // Connecting can apply commands (undoing a drop's forced end, handing an AI civ to the joiner). They happened outside the broadcast path,
+                    // so they are logged now and every other session gets a fresh snapshot instead of a delta with a gap.
+                    store?.Sync(session);
+                    foreach (var other in sessions.Values.Where(x => x != hostSession).ToList())
+                        await SendFullSnapshotAsync(other);
+                }
+
+                if (civ != null)
+                {
+                    var initialSnapshot = SnapshotBuilder.Build(session.Game, civ, session.LastSeq, CreateTurnStatusDto());
+                    hostSession.PreviousSnapshot = initialSnapshot;
+                    await hostSession.Transport.SendAsync(ProtocolCodec.Encode(SnapshotBuilder.ToMessage(initialSnapshot)));
                 }
 
                 _ = RunSessionReaderAsync(hostSession, cts.Token);
@@ -270,6 +274,7 @@ public sealed class GameHost : IAsyncDisposable
         if (result.Accepted)
         {
             store?.Sync(session);
+            turnTimer.SyncTurn();
             BroadcastDelta(marks, result);
         }
         return result;
@@ -284,6 +289,12 @@ public sealed class GameHost : IAsyncDisposable
             var cmd = ResolvePump.StepCommand(step);
             ApplyServerCommand(cmd);
             steps++;
+        }
+        if (steps > 0 && store != null)
+        {
+            // SERVER.md 5.1: a checkpoint after every round's BeginTurn batch lets recovery and audits verify the replay, and the snapshot cadence rides on it.
+            store.AppendCheckpoint(session.LastSeq, session.Game.Turns, ReplayVerifier.FullHash(session.Game));
+            store.MaybeSnapshot(session.Game);
         }
         return steps;
     }
@@ -390,7 +401,7 @@ public sealed class GameHost : IAsyncDisposable
             return;
         }
 
-        store?.Append(filterResult.Envelope!, command.ClientCmdId);
+        LogAccepted(result.Seq, command.ClientCmdId);
         gate.RecordOutcome(hostSession.BoundCivId, command.ClientCmdId, result.Seq, true, null);
 
         await SafeSendAsync(hostSession, new WireCommandResult
@@ -408,6 +419,18 @@ public sealed class GameHost : IAsyncDisposable
             PumpResolving();
             turnTimer.Tick();
         }
+    }
+
+    /// <summary>
+    /// Appends the command the session just accepted under the seq it was given (the gate's envelope still carries the placeholder seq), after any command the session applied
+    /// outside the host's own paths (a reconnect's UndoEndTurn or SetController) so the log stays consecutive.
+    /// </summary>
+    private void LogAccepted(long seq, string clientCmdId)
+    {
+        if (store == null) return;
+        foreach (var earlier in session.Log)
+            if (earlier.Seq > store.LastSeq && earlier.Seq < seq) store.Append(earlier);
+        store.Append(session.Log.First(it => it.Seq == seq), clientCmdId);
     }
 
     private async Task ProcessQueryAsync(HostSession hostSession, Query query)
