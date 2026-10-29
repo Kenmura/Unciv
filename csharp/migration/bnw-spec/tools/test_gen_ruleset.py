@@ -66,6 +66,38 @@ class GeneratorTests(unittest.TestCase):
         for row in g.tsv("Technologies"):
             self.assertTrue(all(c in g.TECH_COLUMNS for c, v in row.items() if v not in ("", "0")), row["Name"])
 
+    def _policy_inputs(self):
+        gk = g.apply_renames(g.lenient_loads((g.GK_DIR / "Policies.json").read_text(encoding="utf-8")), g.RENAMES)
+        return gk, g.lenient_loads(g.OVERRIDES.read_text(encoding="utf-8"))
+
+    def test_build_policies_structure_and_b031_retune(self):
+        files = g.generate()[0]
+        branches = {b["name"]: b for b in files["Policies.json"]}
+        self.assertEqual(len(branches), 12)  # nine social branches and the three ideologies
+        tradition = branches["Tradition"]
+        self.assertEqual(tradition["policies"][-1]["name"], "Tradition Complete")  # the finisher comes last
+        members = {p["name"]: p for p in tradition["policies"]}
+        self.assertEqual(members["Monarchy"]["requires"], ["Legalism"])
+        # every member names its own grid cell, every non-finisher has a row and column
+        for b in branches.values():
+            for p in b["policies"]:
+                self.assertIn("uniques", p)
+        policies = {p["name"]: p for b in branches.values() for p in b["policies"]}
+        self.assertEqual(policies["Monarchy"]["uniques"], ["[+1 Gold] per [2] population [in capital]", "[-50]% Unhappiness from [Population] [in capital]"])
+        self.assertIn("[Great General] is earned [50]% faster", policies["Warrior Code"]["uniques"])
+        self.assertIn("[+1 Gold] from every [Research Lab]", policies["Sovereignty"]["uniques"])
+        self.assertIn("[+1 Happiness] for each international trade route [in all cities]", policies["Meritocracy"]["uniques"])
+        self.assertFalse(any("Happiness, " in u for u in policies["Monarchy"]["uniques"]))
+
+    def test_build_policies_rejects_missing_and_unused_override_entries(self):
+        gk, overrides = self._policy_inputs()
+        missing = dict(overrides, policyUniques={k: v for k, v in overrides["policyUniques"].items() if k != "Monarchy"})
+        with self.assertRaises(SystemExit):
+            g.build_policies(gk, missing, g.Report())
+        extra = dict(overrides, policyUniques=dict(overrides["policyUniques"], Bogus=[]))
+        with self.assertRaises(SystemExit):
+            g.build_policies(gk, extra, g.Report())
+
     def test_lenient_loads(self):
         self.assertEqual(g.lenient_loads('{"a": [1, 2,], // c\n "b": "x//y" /* z */}'), {"a": [1, 2], "b": "x//y"})
 

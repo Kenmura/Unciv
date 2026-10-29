@@ -1283,17 +1283,17 @@
   "Oligarchy": ["Units in cities cost no Maintenance", "[+50]% Strength for cities <with a garrison> <when attacking>", "[-100]% weight to this choice for AI decisions"],
   "Legalism": ["Provides the cheapest [Culture] building in your first [4] cities for free"],
   "Landed Elite": ["[+10]% growth [in capital]", "[+2 Food] [in capital]"],
-  "Monarchy": ["[+1 Gold, +1 Happiness] per [2] population [in capital]"],
+  "Monarchy": ["[+1 Gold] per [2] population [in capital]", "[-50]% Unhappiness from [Population] [in capital]"],
   "Tradition Complete": ["[+15]% growth [in all cities]", "Provides a [Aqueduct] in your first [4] cities for free", "Get the leader title of [Lord [leaderName]]"],
   "Liberty": ["[+1 Culture] [in all cities]"],
   "Republic": ["[+1 Production] [in all cities]", "[+5]% Production when constructing [All] buildings [in all cities]"],
   "Citizenship": ["Can build [all] improvements at a [+25]% rate", "Free [Worker] appears", "[-100]% weight to this choice for AI decisions"],
   "Collective Rule": ["[+50]% Production when constructing [Settler] units [in capital]", "Free [Settler] appears"],
   "Representation": ["Each city founded increases culture cost of policies [33]% less than normal", "Empire enters golden age"],
-  "Meritocracy": ["[+1 Happiness] [in all cities connected to capital]", "[-5]% Unhappiness from [Population] [in all non-occupied cities]", "[-100]% weight to this choice for AI decisions"],
+  "Meritocracy": ["[+1 Happiness] for each international trade route [in all cities]", "[-5]% Unhappiness from [Population] [in all non-occupied cities]", "[-100]% weight to this choice for AI decisions"],
   "Liberty Complete": ["Free Great Person", "Get the leader title of [Consul [leaderName]]"],
   "Honor": ["[+33]% Strength <vs [Barbarian] units>", "Earn [100]% of killed [Barbarian] unit's [Strength] as [Culture]", "Notified of new Barbarian encampments"],
-  "Warrior Code": ["[+15]% Production when constructing [Melee] units [in all cities]", "Free [Great General] appears"],
+  "Warrior Code": ["[+15]% Production when constructing [Melee] units [in all cities]", "[Great General] is earned [50]% faster", "Free [Great General] appears"],
   "Discipline": ["[+15]% Strength <for [Melee] units> <when adjacent to a [Melee] unit>"],
   "Military Tradition": ["[+50]% XP gained from combat <for [Military] units>"],
   "Military Caste": ["[+1 Happiness, +2 Culture] [in all cities with a garrison]"],
@@ -1338,7 +1338,7 @@
   "Secularism": ["[+2 Science] from every specialist [in all cities]"],
   "Humanism": ["[+25]% [Great Scientist] generation"],
   "Free Thought": ["[+1 Science] from every [Trading post]", "[+17]% [Science] from every [University]"],
-  "Sovereignty": ["[+1 Gold] from all [Science] buildings"],
+  "Sovereignty": ["[+1 Gold] from every [Library]", "[+1 Gold] from every [University]", "[+1 Gold] from every [Observatory]", "[+1 Gold] from every [Research Lab]", "[+1 Gold] from every [Public School]"],
   "Scientific Revolution": ["[-100]% weight to this choice for AI decisions"],
   "Rationalism Complete": ["[1] Free Technologies", "Get the leader title of [[leaderName] the Wise]"],
   // B030: the 48 ideology tenets (SPEC 4.6.3), keyed by tenet name. Scalar Policies.tsv columns and the small tables are written here; the
@@ -1394,7 +1394,7 @@
  },
  "policyPending": [
   "Tradition: Palace +3 culture (BuildingClassCultureChanges) is approximated by the opener's capital culture",
-  "Monarchy, Aristocracy, Meritocracy, Representation, Citizenship, Collective Rule, Warrior Code, Discipline, Military Caste, Mandate of Heaven, Theocracy, Free Thought, Sovereignty: BNW stat columns differ from the G&K wording kept here; B010 retunes them",
+  "B031 retune: Monarchy (CapitalYieldPerPopChanges gold 50 = +1 Gold per 2 citizens, CapitalUnhappinessMod -50), Meritocracy (HappinessPerTradeRoute 100 = +1 Happiness per international route, replacing the G&K connected-cities happiness), Warrior Code (GreatGeneralRateModifier 50) and Sovereignty (+1 Gold from the five science buildings) were retuned; Aristocracy, Representation, Citizenship, Collective Rule, Discipline, Military Caste, Mandate of Heaven, Theocracy and Free Thought already match the BNW columns",
   "Reformation: AddReformationBelief grants one free Reformation belief once a religion is founded (B022). Religious Tolerance: SecondReligionPantheon grants one free Pantheon belief (B022)",
   "Consulates: MinorFriendshipMinimum 20 is read as the G&K 'resting point' unique. Merchant Confederacy: CityStateTradeChange 200 is read as +2 Gold per city-state route (B020 settles the scale)",
   "Patronage Complete: allied city-states gifting Great People reuses the G&K wording (MinorGreatPeopleAllies)",
@@ -1402,7 +1402,7 @@
   "Wagon Trains: RouteGoldMaintenanceMod -50 is read as road/rail maintenance; Entrepreneurship: EmbarkedExtraMoves 1 has no unique yet",
   "Scientific Revolution: MedianTechPercentChange 25 (one-shot) has no unique yet; Rationalism Complete keeps the G&K free-tech wording with the BNW count (1)",
   "Exploration Complete: reveals Hidden Antiquity Sites through the resource's revealedBy (B040); Aesthetics Complete has no leader title",
-  "Exploration opener: the Naval Tradition free promotion is read as +1 Movement and +1 Sight for naval units [?]",
+  "Exploration opener: PROMOTION_NAVAL_TRADITION is MovesChange 1 and VisibilityChange 1 on the naval combat classes (UnitPromotions.tsv), so +1 Movement and +1 Sight for naval units is confirmed [K]. Meritocracy's route happiness is counted per international route the city owns (origin side), the same rule as Messenger of the Gods",
   "Cultural Exchange: ethics tourism modifiers are declared data only (B030)",
   "B030 tenets without a unique: Resettlement (NewCityExtraPopulation 3), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus, strength unknown [?]) have no declared unique yet. B023: Patriotic War (Nationalism +15% in friendly lands), Lightning Warfare (a free promotion on new Armored units, Fast General +3 Movement for Great Generals) and Elite Forces (WoundedUnitDamageMod -25 is approximated by removing the wounded-unit damage penalty) are declared. Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Iron Curtain's free Courthouse and the city-state, espionage, spaceship and purchase-cost rows are declared data only",
   "B030 scales [I]: Economic Union reads SharedIdeologyTradeGoldChange 3 as +3 whole Gold per route (the city-state row is whole Gold too), Treaty Organization reads ProtectedMinorPerTurnInfluence 400 as +4 and Gunboat Diplomacy AfraidMinorPerTurnInfluence 600 as +6 (hundredths); Iron Curtain's InternalTradeRouteYieldModifier 50 applies to Food and Production routes"
@@ -1439,7 +1439,7 @@
    "B006: buildable trade units (Can establish trade routes; the build restrictions are engine rules)"
   ],
   "Beliefs.json/13 new BNW beliefs": [
-   "added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). B022 wired Evangelism, Underground Sect, Unity of the Prophets and Messenger of the Gods; To the Glory of God works through the faith purchase gate. Declared data only until their subsystem: Sacred Sites (B031 tourism), Charitable Missions (B072), Heathen Conversion (no barbarian conversion rule in the spec)"
+   "added by B004. Effective now: Earth Mother, Sun God, Tears of the Gods, God-King, Jesuit Education, Religious Fervor (existing uniques). B022 wired Evangelism, Underground Sect, Unity of the Prophets and Messenger of the Gods; To the Glory of God works through the faith purchase gate. Declared data only until their subsystem: Sacred Sites (already wired through TourismFromBuildingsFlat), Charitable Missions (B072), Heathen Conversion (no barbarian conversion rule in the spec)"
   ],
   "TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp": [
    "added by B004. Feitoria luxury siphon (B072) is not wired yet"

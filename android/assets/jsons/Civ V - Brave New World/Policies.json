@@ -46,7 +46,7 @@
 			},
 			{
 				"name": "Monarchy",
-				"uniques": ["[+1 Gold, +1 Happiness] per [2] population [in capital]"],
+				"uniques": ["[+1 Gold] per [2] population [in capital]", "[-50]% Unhappiness from [Population] [in capital]"],
 				"row": 3,
 				"column": 4,
 				"requires": ["Legalism"]
@@ -112,7 +112,7 @@
 			{
 				"name": "Meritocracy",
 				"uniques": [
-					"[+1 Happiness] [in all cities connected to capital]",
+					"[+1 Happiness] for each international trade route [in all cities]",
 					"[-5]% Unhappiness from [Population] [in all non-occupied cities]",
 					"[-100]% weight to this choice for AI decisions"
 				],
@@ -146,6 +146,7 @@
 				"name": "Warrior Code",
 				"uniques": [
 					"[+15]% Production when constructing [Melee] units [in all cities]",
+					"[Great General] is earned [50]% faster",
 					"Free [Great General] appears"
 				],
 				"row": 1,
@@ -523,7 +524,13 @@
 			},
 			{
 				"name": "Sovereignty",
-				"uniques": ["[+1 Gold] from all [Science] buildings"],
+				"uniques": [
+					"[+1 Gold] from every [Library]",
+					"[+1 Gold] from every [University]",
+					"[+1 Gold] from every [Observatory]",
+					"[+1 Gold] from every [Research Lab]",
+					"[+1 Gold] from every [Public School]"
+				],
 				"row": 2,
 				"column": 2,
 				"requires": ["Secularism"]

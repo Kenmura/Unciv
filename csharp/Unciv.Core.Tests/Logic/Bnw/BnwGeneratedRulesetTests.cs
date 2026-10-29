@@ -415,6 +415,74 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         Assert.All(tenets.SelectMany(it => it.Uniques), text => Assert.NotNull(new UniqueObject(text).Type));
     }
 
+    // B031: the policy members whose stat columns differ from the Gods & Kings wording carry the BNW columns (Policies.tsv, Policy_CapitalYieldPerPopChanges,
+    // Policy_BuildingClassYieldChanges), and the retuned effects fire in the engine.
+    [Fact]
+    public void RetunedPolicyMembersStateTheirBnwColumns()
+    {
+        var policies = Real().Policies;
+        Assert.Equal(["[+1 Gold] per [2] population [in capital]", "[-50]% Unhappiness from [Population] [in capital]"], policies["Monarchy"].Uniques);
+        Assert.Contains("[+1 Happiness] for each international trade route [in all cities]", policies["Meritocracy"].Uniques);
+        Assert.DoesNotContain(policies["Meritocracy"].Uniques, it => it.Contains("connected to capital", StringComparison.Ordinal));
+        Assert.Contains("[Great General] is earned [50]% faster", policies["Warrior Code"].Uniques);
+        string[] sovereignty = ["Library", "University", "Observatory", "Research Lab", "Public School"];
+        Assert.Equal(sovereignty.Select(it => $"[+1 Gold] from every [{it}]"), policies["Sovereignty"].Uniques);
+        Assert.All(new[] { "Monarchy", "Meritocracy", "Warrior Code", "Sovereignty" }.SelectMany(it => policies[it].Uniques), text => Assert.NotNull(new UniqueObject(text).Type));
+    }
+
+    [Fact]
+    public void MonarchyPaysGoldPerTwoCitizensAndHalvesTheCapitalsPopulationUnhappiness()
+    {
+        var (game, civ, capital) = NewCapital();
+        capital.Population.SetPopulation(6);
+        capital.CityStats.Update();
+        float gold = capital.CityStats.CurrentCityStats.Gold;
+        float population = capital.CityStats.HappinessList["Population"];
+        Assert.True(population < 0);
+        civ.Policies.Adopt(game.Ruleset.Policies["Monarchy"], true);
+        capital.CityStats.Update();
+        Assert.Equal(gold + 3, capital.CityStats.CurrentCityStats.Gold, 3);
+        Assert.Equal(population / 2, capital.CityStats.HappinessList["Population"], 3);
+    }
+
+    [Fact]
+    public void SovereigntyPaysOneGoldFromEachScienceBuilding()
+    {
+        var (game, civ, capital) = NewCapital();
+        capital.CityConstructions.AddBuilding("Library");
+        capital.CityConstructions.AddBuilding("University");
+        capital.CityStats.Update();
+        float gold = capital.CityStats.CurrentCityStats.Gold;
+        civ.Policies.Adopt(game.Ruleset.Policies["Sovereignty"], true);
+        capital.CityStats.Update();
+        Assert.Equal(gold + 2, capital.CityStats.CurrentCityStats.Gold, 3);
+    }
+
+    [Fact]
+    public void WarriorCodeSpeedsUpGreatGeneralPointsAndMeritocracyPaysHappinessPerInternationalRoute()
+    {
+        var (game, civ, capital) = NewCapital();
+        civ.Policies.Adopt(game.Ruleset.Policies["Warrior Code"], true);
+        Assert.Contains(civ.GetMatchingUniques(UniqueType.GreatPersonEarnedFaster), it => it.Params[0] == "Great General" && it.Params[1] == "50");
+
+        capital.CityStats.Update();
+        float happiness = capital.CityStats.CurrentCityStats.Happiness;
+        civ.Policies.Adopt(game.Ruleset.Policies["Meritocracy"], true);
+        capital.CityStats.Update();
+        Assert.Equal(happiness, capital.CityStats.CurrentCityStats.Happiness, 3); // no route yet
+        (game.TradeRoutes ??= []).Add(new TradeRoute
+        {
+            Id = 1,
+            OriginCityId = capital.Id,
+            DestCityId = capital.Id,
+            OriginOwner = civ.CivId,
+            DestOwner = civ.CivId,
+            Kind = TradeRouteKind.International,
+        });
+        capital.CityStats.Update();
+        Assert.Equal(happiness + 1, capital.CityStats.CurrentCityStats.Happiness, 3);
+    }
+
     [Fact]
     public void CultOfPersonalityAddsTourismOncePerCommonFoe()
     {

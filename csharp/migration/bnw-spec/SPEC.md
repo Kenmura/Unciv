@@ -305,9 +305,9 @@ adopted when the branch is opened; the rule reads "adopted" per [K], so it is a 
 free Aqueducts), Liberty (Great Person), Honor (gold from kills), Piety (free Great Prophet, +3 culture on Holy Sites), Patronage (allied
 city-states gift Great People), Commerce (+1 gold on Trading Posts), Rationalism (1 free technology), Aesthetics (+100% theming bonuses, declared
 data), Exploration (Antiquity Site reveal: B040, no effect yet). The G&K Great-Person-for-Faith purchases on the finishers are dropped; they return as
-`Can purchase all Great People with Faith` (B073). Tests: `BnwPolicyTreeTests`.
+`Can purchase all Great People with Faith` (B011, belief To the Glory of God and the Industrial-era global uniques). Tests: `BnwPolicyTreeTests`.
 **Deliberate deviations / open items.** Many stat columns keep the G&K wording where it matches the BNW meaning; the rest are listed in `policyPending` (report section
-"pending policy effects"). The Exploration opener (`PROMOTION_NAVAL_TRADITION`) is read as +1 Movement and +1 Sight for naval units [?]. No decompiler
+"pending policy effects"). The Exploration opener (`PROMOTION_NAVAL_TRADITION`) is +1 Movement and +1 Sight for naval units [K] (MovesChange and VisibilityChange 1 in UnitPromotions.tsv). B031 retuned Monarchy, Meritocracy, Warrior Code and Sovereignty to the BNW columns. No decompiler
 output is in the repo, so the [K]/[?] items of §4.6.1 stand at their spec values.
 
 ### 3.3 Object diff vs Unciv G&K (`data/derived/objects_unciv_gk_vs_bnw.txt`)
@@ -1081,7 +1081,7 @@ Station is also a building) and each turn put `round(production) + overflow` int
   Unity of the Prophets (`InquisitorPressureRetention` [?]) lets the religion whose founder has it keep N% of its own pressure when someone's Inquisitor cleans a city;
   Underground Sect: each set-up spy in a city adds N (x scale) pressure per turn for its civ's religion. Faith purchases use the existing
   `May buy ... with Faith` and `Can purchase all Great People with Faith` uniques (tested on the real ruleset). Not done: Heathen Conversion
-  (`ConvertsBarbarians`, no rule in the spec), Charitable Missions (city-states), Sacred Sites (tourism, B031).
+  (`ConvertsBarbarians`, no rule in the spec), Charitable Missions (city-states), Sacred Sites (its "[+2] Tourism from [Faith] buildings" already uses TourismFromBuildingsFlat, B031 check).
 
 ### 4.12 Military, warmonger, AI difficulty [D]
 - Warmonger: `WARMONGER_THREAT_*` thresholds and weights lowered, `WARMONGER_ON_CITY_STATE_MULTIPLIER` 50, and
