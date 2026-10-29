@@ -624,9 +624,13 @@ Host screen: game, map, rules and network settings, port-forward hint, Start hos
 
 Scenario `host-screen`.
 
-![Network tab: turn timer (5 min chosen), password, port, the addresses of this computer (the internet address chosen) and the port-forward hint.](../Unciv.Godot.Harness/golden/host-screen/network.png)
+![Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port.](../Unciv.Godot.Harness/golden/host-screen/network.png)
 
-*Network tab: turn timer (5 min chosen), password, port, the addresses of this computer (the internet address chosen) and the port-forward hint.* (`host-screen/network.png`)
+*Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port.* (`host-screen/network.png`)
+
+![Network tab scrolled down: the addresses of this computer (the internet address chosen) and the port-forward hint.](../Unciv.Godot.Harness/golden/host-screen/network-address.png)
+
+*Network tab scrolled down: the addresses of this computer (the internet address chosen) and the port-forward hint.* (`host-screen/network-address.png`)
 
 ![A port another program already uses is refused with the port number and what to do; nothing is hosted.](../Unciv.Godot.Harness/golden/host-screen/port-in-use.png)
 
@@ -1037,6 +1041,16 @@ Scenario `theme`.
 ![Every theme variation: type scale, switch and stat bars on the left, the button variants in the middle, card, inset, tooltip, modal, header and dock panels with a text field on the right.](../Unciv.Godot.Harness/golden/theme/variations.png)
 
 *Every theme variation: type scale, switch and stat bars on the left, the button variants in the middle, card, inset, tooltip, modal, header and dock panels with a text field on the right.* (`theme/variations.png`)
+
+## T252 (ticket not Done or unknown)
+
+Host screen dynamic turn timer: checkbox and shortest-turn choice under the turn timer; the host runs with the chosen policy.
+
+Scenario `host-screen`.
+
+![Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min.](../Unciv.Godot.Harness/golden/host-screen/network.png)
+
+*Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min.* (`host-screen/network.png`)
 
 ## Missing screenshots
 
