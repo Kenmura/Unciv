@@ -78,7 +78,7 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(tradition["policies"][-1]["name"], "Tradition Complete")  # the finisher comes last
         members = {p["name"]: p for p in tradition["policies"]}
         self.assertEqual(members["Monarchy"]["requires"], ["Legalism"])
-        # every member names its own grid cell, every non-finisher has a row and column
+        # every member carries a uniques list
         for b in branches.values():
             for p in b["policies"]:
                 self.assertIn("uniques", p)
