@@ -3,6 +3,7 @@ using Unciv.Commands.Empire;
 using Unciv.Commands.Turn;
 using Unciv.Commands.Units;
 using Unciv.Logic;
+using Unciv.Models.Ruleset;
 using Unciv.Queries.Empire;
 using Unciv.Queries.Units;
 
@@ -21,6 +22,16 @@ public class DecisionPickerModelTests
                 ["Follower"] = ["Feed", "Pagoda"],
                 ["Enhancer"] = ["Crusade"],
             }, slots ?? ["Founder", "Follower"], ["Hinduism", "Islam"]);
+
+    [Fact]
+    public void DescribeUniquesShowsDisplayTextAndHidesHiddenUniques()
+    {
+        var belief = new Belief(BeliefType.Follower) { Name = "Test belief", Uniques = ["[+33]% Strength <vs [Armored]> units", "[+5] Faith <hidden from users>", "[-90]% weight to this choice for AI decisions", "[+2] Food <in cities> <hidden from users>"] };
+        var text = DecisionPickerModel.DescribeUniques(belief); // word order of the conditional depends on the loaded translations, so only the content is pinned here
+        Assert.DoesNotContain('\n', text);
+        Assert.All(new[] { "+33% Strength", "Armored" }, part => Assert.Contains(part, text));
+        Assert.All(new[] { "[", "<", "Faith", "weight", "Food" }, part => Assert.DoesNotContain(part, text));
+    }
 
     private static PickerChoice Pick(params string?[] selected) => new(selected);
 

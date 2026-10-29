@@ -1,4 +1,5 @@
 using Unciv.Models.Ruleset.Unique;
+using Unciv.UI.ObjectDescriptions;
 using Unciv.View;
 
 namespace Unciv.Queries.Units;
@@ -6,7 +7,7 @@ namespace Unciv.Queries.Units;
 // Name: The promotion
 // Selectable: PromoteUnit would accept it now (affordable or free, and the unit may be promoted now)
 // Prerequisites: Promotions of which one must be adopted first
-// Uniques: The promotion's effects as ruleset text
+// Uniques: The promotion's effects as the player reads them (Unique.GetDisplayText, translated; uniques hidden from users left out)
 public sealed record PromotionChoice(string Name, bool Selectable, IReadOnlyList<string> Prerequisites, IReadOnlyList<string> Uniques);
 
 // Xp, XpForNextPromotion: The unit's experience and the cost of its next promotion
@@ -30,7 +31,7 @@ public sealed record PromotionChoicesQuery(int UnitId) : IQuery<PromotionChoices
         var choices = mayPromote
             ? unit.Promotions.GetAvailablePromotions()
                 .Select(it => new PromotionChoice(it.Name, ((IHasUniques)it).HasUnique(UniqueType.FreePromotion) || canAfford, it.Prerequisites.ToList(),
-                    it.Uniques.ToList()))
+                    ((IHasUniques)it).UniquesToDescription().ToList()))
                 .OrderBy(it => it.Name, StringComparer.Ordinal).ToList()
             : [];
         return new PromotionChoicesResult(UnitId, unitView.Xp, unitView.XpForNextPromotion(), unitView.CanBePromoted(), mayPromote && unitView.CanSaveDefaultPromotions(), choices);

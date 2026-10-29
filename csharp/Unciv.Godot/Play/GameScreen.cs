@@ -1833,7 +1833,7 @@ public partial class GameScreen : Control
     {
         var ruleset = session.Ruleset;
         string DescribeUnit(string name) => ruleset.Units.TryGetValue(name, out var unit) ? unit.GetShortDescription() : "";
-        string DescribeBelief(string name) => ruleset.Beliefs.TryGetValue(name, out var belief) ? string.Join("\n", belief.Uniques) : "";
+        string DescribeBelief(string name) => ruleset.Beliefs.TryGetValue(name, out var belief) ? DecisionPickerModel.DescribeUniques(belief) : "";
         switch (kind)
         {
             case DecisionKind.FreeGreatPerson:

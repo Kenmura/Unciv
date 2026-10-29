@@ -4,8 +4,10 @@ using Unciv.Commands.Empire;
 using Unciv.Commands.Turn;
 using Unciv.Commands.Units;
 using Unciv.Logic;
+using Unciv.Models.Ruleset.Unique;
 using Unciv.Queries.Empire;
 using Unciv.Queries.Units;
+using Unciv.UI.ObjectDescriptions;
 
 namespace Unciv.Assets;
 
@@ -176,6 +178,9 @@ public static class DecisionPickerModel
         return new PickerSpec(PickerKind.DiplomaticVote, "World Congress", "Vote for the civilization that should lead the world.", [new PickerSlot("civ", "Vote for", options)],
             "Vote", choice => [new VoteDiplomatic { CivId = choice.Selected[0] is { Length: > 0 } id ? id : null }]);
     }
+
+    /// <summary>The effect lines of a ruleset object for a picker: <c>Unique.GetDisplayText</c> translated (so "[+33]% Strength &lt;vs [Armored]&gt; units" reads "+33% Strength vs Armored units"), hidden uniques left out.</summary>
+    public static string DescribeUniques(IHasUniques source) => string.Join("\n", source.UniquesToDescription());
 
     /// <summary>The promotions a unit may take; null when none is on offer.</summary>
     public static PickerSpec? Promotion(PromotionChoicesResult promotions, string unitName)

@@ -187,6 +187,18 @@ public class DecisionQueryTests
     }
 
     [Fact]
+    public void PromotionChoicesListTheDisplayTextAndSkipHiddenUniques()
+    {
+        var unit = testGame.AddUnit("Warrior", player, testGame.GetTile(0, 0));
+        unit.Promotions.XP = unit.Promotions.XpForNextPromotion();
+        var first = Ask(new PromotionChoicesQuery(unit.Id)).Promotions[0];
+        var promotion = testGame.Ruleset.UnitPromotions[first.Name];
+        promotion.Uniques = ["[+33]% Strength <vs [Armored]> units", "[+7] Sight <hidden from users>", "[-90]% weight to this choice for AI decisions", "[+1] Movement <for [Melee] units> <hidden from users>"];
+        var lines = Ask(new PromotionChoicesQuery(unit.Id)).Promotions.Single(it => it.Name == first.Name).Uniques;
+        Assert.Equal(["+33% Strength vs Armored units"], lines);
+    }
+
+    [Fact]
     public void PromotionChoicesAnswerForeignUnitsLikeMissingOnes()
     {
         var foreign = testGame.AddUnit("Warrior", enemy, testGame.GetTile(2, 2));

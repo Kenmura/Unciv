@@ -55,6 +55,17 @@ public class PediaModelTests
     }
 
     [Fact]
+    public void Page_ListsDisplayTextAndSkipsUniquesHiddenFromUsers()
+    {
+        var ruleset = new RulesetClass();
+        ruleset.UnitPromotions["Test"] = new Unciv.Models.Ruleset.Unit.Promotion { Name = "Test", Uniques = ["[+33]% Strength <vs [Armored]> units", "[-90]% weight to this choice for AI decisions", "[+1] Sight <hidden from users>"] };
+        var lines = PediaModel.Page(ruleset, CivilopediaCategories.Promotion, "Test")!.Lines.Select(it => it.Text).ToList();
+        Assert.Contains(lines, it => it.Contains("+33", StringComparison.Ordinal) || it.Contains("[+33]", StringComparison.Ordinal));
+        Assert.DoesNotContain(lines, it => it.Contains("weight", StringComparison.Ordinal) || it.Contains("Sight", StringComparison.Ordinal));
+        Assert.DoesNotContain(lines, it => it.Contains('<', StringComparison.Ordinal) && it.Contains("hidden", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Page_IsTheEnginesAssembledText()
     {
         var ruleset = ScenarioGame.LoadVanilla();
