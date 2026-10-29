@@ -209,9 +209,9 @@ public sealed class LeagueProjectTests
     {
         var culture = (a.Culture ??= new());
         culture.AddCultureBonusTurns(2);
-        Unciv.Logic.Tourism.InfluenceRules.StartTurn(a);
+        LeagueProjects.ProcessTurn(G, league);
         Assert.Equal(1, culture.CultureBonusTurns);
-        Unciv.Logic.Tourism.InfluenceRules.StartTurn(a);
+        LeagueProjects.ProcessTurn(G, league);
         Assert.Equal(0, culture.CultureBonusTurns);
     }
 
@@ -249,9 +249,6 @@ public sealed class LeagueProjectTests
         a.Tech.TechsToResearch.Add("Theology");
         b.Tech.TechsToResearch.Add("Theology");
         c.Tech.TechsToResearch.Add("Theology");
-        a.Stats.StatsForNextTurn.Science = 10f;
-        b.Stats.StatsForNextTurn.Science = 10f;
-        c.Stats.StatsForNextTurn.Science = 10f;
         int bulbsC = c.Tech.ResearchOfTech("Theology");
         LeagueProjects.ProcessTurn(G, league);
 
@@ -260,7 +257,9 @@ public sealed class LeagueProjectTests
         Assert.Contains(b.Units.GetCivUnits(), it => it.Name == "Great Scientist");
         Assert.Contains(a.Units.GetCivUnits(), it => it.Name == "Great Scientist"); // tier 3 includes tier 2
         Assert.DoesNotContain(c.Units.GetCivUnits(), it => it.Name == "Great Scientist");
-        Assert.Equal(bulbsC + 40, c.Tech.ResearchOfTech("Theology")); // 4 turns of 10
+        float science = c.Stats.StatsForNextTurn.Science; // recomputed at the reward
+        Assert.True(science > 0f);
+        Assert.Equal(bulbsC + KotlinMath.RoundToInt(science * 4), c.Tech.ResearchOfTech("Theology")); // 4 turns of science
     }
 
     [Fact]

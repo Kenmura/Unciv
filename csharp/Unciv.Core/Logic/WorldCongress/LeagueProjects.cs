@@ -23,6 +23,7 @@ namespace Unciv.Logic.WorldCongress;
 // - Rewards: Golden Age points and free policies are added at once; the +3 Happiness is permanent (LeagueMember.ProjectHappiness); the +30 influence goes to
 //   every city-state the civ knows; the +100% culture / tourism last 20 turns (CivCultureManager); the science is 4 turns of the civ's current science; the free
 //   Great Scientist appears next to the capital; the International Space Station building is added to the capital (it is "Unbuildable" otherwise).
+// - Contributions of a member that died stay in the total (the cost only counts living members).
 // - The AI only contributes with cities that would otherwise be idle (ConstructionAutomation).
 
 public static class LeagueProjects
@@ -101,6 +102,9 @@ public static class LeagueProjects
     /// <summary>Once per game turn: drops the projects that are no longer enabled, completes those that reached their cost.</summary>
     public static void ProcessTurn(GameInfo game, League league)
     {
+        // the culture boost counts down once per game turn, independent of tourism being enabled
+        foreach (var civ in game.Civilizations)
+            if (civ.Culture is { CultureBonusTurns: > 0 } culture) culture.CultureBonusTurns--;
         league.Projects.RemoveAll(it => !IsEnabled(game, it.Name));
         foreach (var state in league.Projects.ToList())
             if (state.Total >= Cost(game, league, state.Name)) Complete(game, league, state);
@@ -110,7 +114,9 @@ public static class LeagueProjects
     {
         var tiers = Tiers(game, league, state);
         league.Projects.Remove(state);
-        league.Active.RemoveAll(it => LeagueData.Find(it.Resolution)?.Project == state.Name);
+        var consumed = league.Active.Where(it => LeagueData.Find(it.Resolution)?.Project == state.Name).Select(it => it.Id).ToHashSet();
+        league.Active.RemoveAll(it => consumed.Contains(it.Id));
+        league.Proposals.RemoveAll(it => it.IsRepeal && consumed.Contains(it.RepealId)); // nothing left to repeal
         foreach (var (civId, tier) in tiers)
             for (int level = 1; level <= tier; level++)
                 Reward(game, league, game.GetCivilization(civId), state.Name, level);
@@ -140,7 +146,9 @@ public static class LeagueProjects
                 civ.Policies.FreePolicies++;
                 (civ.Culture ??= new()).AddTourismBonusTurns(GamesTourismTurns);
                 break;
-            case (SpaceStation, 1): civ.Tech.AddScience(KotlinMath.RoundToInt(civ.Stats.StatsForNextTurn.Science * SpaceScienceTurns)); break;
+            case (SpaceStation, 1):
+                civ.UpdateStatsForNextTurn();
+                civ.Tech.AddScience(KotlinMath.RoundToInt(civ.Stats.StatsForNextTurn.Science * SpaceScienceTurns)); break;
             case (SpaceStation, 2):
                 if (civ.GetCapital() is { } scientistCity && game.Ruleset.Units.ContainsKey(GreatScientist))
                     civ.Units.PlaceUnitNearTile(scientistCity.Location, GreatScientist);

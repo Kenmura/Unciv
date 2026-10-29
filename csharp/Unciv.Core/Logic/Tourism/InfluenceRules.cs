@@ -169,7 +169,6 @@ public static class InfluenceRules
             entry.Influence = unchecked(entry.Influence + InfluencePerTurn(tourism, TourismRules.ModifierWith(me, target)));
         }
         if (culture.TourismBonusTurns > 0) culture.TourismBonusTurns--;
-        if (culture.CultureBonusTurns > 0) culture.CultureBonusTurns--;
     }
 
     // ---- benefits of the levels (4.3.5)
