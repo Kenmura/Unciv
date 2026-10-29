@@ -377,7 +377,7 @@ xychart-beta
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | T246 | In-Progress [Claude] | none | 1 | CI client-scenarios: goldens recorded on Fedora llvmpipe mismatch on ubuntu-24.04 (all rendered scenarios fail); make scenarios CI-stable |
 | B026 | Available (waiting on B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
-| C006 | Needs-Review [Claude] | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
+| C006 | In-Review [Claude] | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
 | C082 | Available (waiting on C081) | C081 | 0 | Articulated placeholder unit with code-built clips |
 | C085 | Available (waiting on C094) | C094 | 0 | Unit model LOD and performance caps |
