@@ -23,6 +23,9 @@ public sealed class HostSettingsForm
     /// <summary>The turn timer choices in seconds (0 = no timer), as the host screen offers them.</summary>
     public static readonly IReadOnlyList<int> TimerChoices = [0, 60, 120, 300, 600];
 
+    /// <summary>T252: the shortest turn the dynamic timer may give, in seconds, as the host screen offers them.</summary>
+    public static readonly IReadOnlyList<int> MinTimerChoices = [15, 30, 60, 120];
+
     public HostSettingsForm(NewGameForm game)
     {
         Game = game;
@@ -37,6 +40,11 @@ public sealed class HostSettingsForm
     public bool AiFill { get; set; } = true;
 
     public int TurnTimerSeconds { get; set; } = 120;
+
+    /// <summary>T252: scale each turn's time with the game (era, units, wars) between <see cref="TurnTimerMinSeconds"/> and <see cref="TurnTimerSeconds"/>. Without a timer it has no effect.</summary>
+    public bool DynamicTurnTimer { get; set; }
+
+    public int TurnTimerMinSeconds { get; set; } = 30;
 
     /// <summary>Empty means an open game.</summary>
     public string Password { get; set; } = "";
@@ -57,6 +65,8 @@ public sealed class HostSettingsForm
         var problems = new List<string>(Game.Problems());
         if (string.IsNullOrWhiteSpace(GameName)) problems.Add("The game needs a name.");
         if (TurnTimerSeconds < 0) problems.Add("The turn timer cannot be negative.");
+        if (TurnTimerMinSeconds < 0) problems.Add("The shortest turn cannot be negative.");
+        if (DynamicTurnTimer && TurnTimerSeconds > 0 && TurnTimerMinSeconds > TurnTimerSeconds) problems.Add("The shortest turn cannot be longer than the turn timer.");
         if (Port is < 0 or > 65535) problems.Add("The port must be a number from 1 to 65535.");
         if (!IsUsableInviteAddress(PublicAddress)) problems.Add("The public address must be a host name or IP address only (no port, slash or spaces).");
         return problems;
@@ -108,6 +118,8 @@ public sealed class HostSettingsForm
             Ruleset = p.BaseRuleset,
             Mods = [.. p.Mods],
             TurnTimerSeconds = TurnTimerSeconds,
+            DynamicTurnTimer = DynamicTurnTimer,
+            TurnTimerMinSeconds = TurnTimerMinSeconds,
             Password = Password.Length == 0 ? null : Password,
             MaxPlayers = Game.Slots.Count,
         };

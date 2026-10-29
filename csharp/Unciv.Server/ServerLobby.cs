@@ -103,7 +103,7 @@ public sealed class ServerLobby : IAsyncDisposable
         GameHost? gameHost = null;
         try
         {
-            gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock);
+            gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock, turnPolicy: lobbyHost.Settings.ToTurnPolicy());
             foreach (var slot in startResult.Slots)
             {
                 if (slot.Kind != SlotKind.Human || !slot.Connected || slot.SessionId == null) continue;

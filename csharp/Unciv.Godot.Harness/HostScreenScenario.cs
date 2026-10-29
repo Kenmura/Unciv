@@ -136,21 +136,26 @@ public sealed class HostScreenScenario : Scenario
                 new Act("type the seed", () => Type(screen.SeedField, "7")),
                 new Press("Network"),
                 ClickChoice("Timer", "5 min"),
+                new Click(() => Centre(() => screen.DynamicTimerCheck)),
+                ClickChoice("Shortest turn", "1 min"),
                 new Act("type the password and the port", () =>
                 {
                     Type(screen.PasswordField, "hunter2");
                     Type(screen.PortField, Port.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 }),
+                new Capture("network", "Network tab: turn timer, scaling with the game and its shortest turn, password and port"),
+                new Act("scroll to the addresses", () => screen.Reveal(screen.AddressButton(Wan).NotNull())),
                 new Click(() => Centre(() => screen.AddressButton(Wan))),
                 new AssertQuery("the settings reached the form and build the lobby settings", () =>
                 {
                     var s = screen.Form.Build(5000).Settings;
-                    return s is { GameName: "Friday night", Difficulty: "King", Speed: "Epic", MaxMajorCivs: 3, Ruleset: "Civ V - Vanilla", TurnTimerSeconds: 300, Password: "hunter2", AiFill: true }
+                    return s is { GameName: "Friday night", Difficulty: "King", Speed: "Epic", MaxMajorCivs: 3, Ruleset: "Civ V - Vanilla", TurnTimerSeconds: 300, DynamicTurnTimer: true, TurnTimerMinSeconds: 60, Password: "hunter2", AiFill: true }
                         && s.Map.MapSize.Name == "Tiny" && s.Map.Seed == 7 && screen.Form.Port == Port && screen.InviteAddress == Wan;
                 }),
                 new AssertQuery("the network tab explains the port forward and names the chosen address", () =>
                     screen.FindChild("AddressHint", true, false) is Label hint && hint.Text.Contains("forward TCP port " + Port, StringComparison.Ordinal) && hint.Text.Contains(Wan + ": friends on the internet", StringComparison.Ordinal)),
-                new Capture("network", "Network tab: turn timer, password, port, the addresses of this computer (the internet address chosen) and the port-forward hint"),
+                new Act("scroll to the port-forward hint", () => screen.Reveal(screen.FindChild("AddressHint", true, false) as Control ?? screen)),
+                new Capture("network-address", "Network tab, lower part: the addresses of this computer (the internet address chosen) and the port-forward hint"),
     
                 new Press("Saved games"),
                 new AssertQuery("the saved hosted game is listed and can be resumed by its host", () => screen.ResumeButton(0) is { Disabled: false } && screen.ResumeButton(1) == null),

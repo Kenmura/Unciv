@@ -72,6 +72,40 @@ public sealed class HostScreenTests : IDisposable
     }
 
     [Fact]
+    public void Build_DynamicTimerReachesTheTurnPolicy()
+    {
+        var form = Form();
+        form.TurnTimerSeconds = 300;
+        form.DynamicTurnTimer = true;
+        form.TurnTimerMinSeconds = 60;
+
+        var settings = form.Build(clockMillis: 5).Settings!;
+
+        Assert.True(settings.DynamicTurnTimer);
+        Assert.Equal(60, settings.TurnTimerMinSeconds);
+        var policy = settings.ToTurnPolicy();
+        Assert.True(policy.DynamicTurnTimer);
+        Assert.Equal((300, 60), (policy.TurnTimerSeconds, policy.TurnTimerMinSeconds));
+        Assert.False(Form().Build(5).Settings!.DynamicTurnTimer);
+    }
+
+    [Fact]
+    public void Problems_ShortestTurnLongerThanTimerIsRefusedOnlyWhenDynamic()
+    {
+        var form = Form();
+        form.TurnTimerSeconds = 60;
+        form.TurnTimerMinSeconds = 120;
+        Assert.Empty(form.Problems());
+        form.DynamicTurnTimer = true;
+        Assert.Contains(form.Problems(), p => p.Contains("shortest turn", StringComparison.OrdinalIgnoreCase));
+        Assert.False(form.Build(5).Ok);
+        form.TurnTimerSeconds = 0;
+        Assert.Empty(form.Problems());
+        form.TurnTimerMinSeconds = -1;
+        Assert.Contains(form.Problems(), p => p.Contains("negative", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Build_EmptyPasswordIsAnOpenGameAndBlankSeedTakesTheClock()
     {
         var form = Form();

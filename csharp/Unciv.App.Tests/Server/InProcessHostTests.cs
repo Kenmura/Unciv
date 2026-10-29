@@ -8,6 +8,7 @@ using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Net;
 using Unciv.Net.Identity;
+using Unciv.Net.Lobby;
 using Unciv.Net.Persistence;
 using Unciv.Net.Turns;
 using Unciv.Server;
@@ -92,6 +93,34 @@ public sealed class InProcessHostTests : IDisposable
         await transport.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "x" }));
         await transport.SendAsync(ProtocolCodec.Encode(new Auth { Proof = identity.Sign(welcome.HostKeyFingerprint, welcome.SessionId, welcome.Challenge) }));
         return (transport, await ReadAsync(transport));
+    }
+
+    [Fact]
+    public async Task InProcessHost_TurnPolicyOption_ReachesTheTurnTimer()
+    {
+        var policy = new LobbySettings { TurnTimerSeconds = 240, TurnTimerMinSeconds = 45, DynamicTurnTimer = true }.ToTurnPolicy();
+        await using var host = StartHost("policy", new InProcessHostOptions { TickInterval = null, TurnPolicy = policy });
+        Assert.Equal(policy, host.Host.TurnTimer.Policy);
+        await using var plain = StartHost("plain");
+        Assert.Equal(TurnPolicy.Default, plain.Host.TurnTimer.Policy);
+    }
+
+    [Fact]
+    public async Task ServerLobby_StartGame_RunsTheGameWithTheLobbyTimerSettings()
+    {
+        var settings = new LobbySettings { TurnTimerSeconds = 240, TurnTimerMinSeconds = 45, DynamicTurnTimer = true };
+        await using var lobby = new ServerLobby(settings);
+        var (client, server) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(server);
+        await client.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "test", RulesetHash = settings.ComputeRulesetHash(), ModList = [] }));
+        var welcome = Assert.IsType<Welcome>(await ReadAsync(client));
+        await client.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = babylon.PlayerKey, DisplayName = "Alice" }));
+        await client.SendAsync(ProtocolCodec.Encode(new Auth { Proof = babylon.Sign(lobby.Lobby.HostFingerprint, welcome.SessionId, welcome.Challenge) }));
+        while (await ReadAsync(client) is not LobbyState) { }
+        await client.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        while (await ReadAsync(client) is not LobbyState) { }
+        var gameHost = await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+        Assert.Equal(settings.ToTurnPolicy(), gameHost.TurnTimer.Policy);
     }
 
     [Fact]

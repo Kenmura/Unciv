@@ -102,14 +102,15 @@ public sealed class GameHost : IAsyncDisposable
         IClock? clock = null,
         bool startActor = true,
         HostLimits? limits = null,
-        bool announceRoster = false)
+        bool announceRoster = false,
+        TurnPolicy? turnPolicy = null)
     {
         this.announceRoster = announceRoster;
         this.limits = limits ?? HostLimits.Default;
         this.session = session;
         this.store = store;
         this.clock = clock ?? SystemClock.Instance;
-        this.turnTimer = turnTimer ?? new TurnTimer(session, TurnPolicy.Default, this.clock, autoResolve: false);
+        this.turnTimer = turnTimer ?? new TurnTimer(session, turnPolicy ?? TurnPolicy.Default, this.clock, autoResolve: false);
         this.turnTimer.AutoResolve = false;
         this.turnTimer.ServerCommandSubmitter = ApplyServerCommand;
         this.remoteQueries = remoteQueries ?? CreateDefaultRemoteQueryHost();

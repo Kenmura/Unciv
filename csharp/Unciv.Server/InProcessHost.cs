@@ -26,6 +26,9 @@ public sealed record InProcessHostOptions
     /// <summary>How often the host ticks the turn timer. Null or non-positive: no background ticking (tests drive <see cref="GameHost.Tick"/>).</summary>
     public TimeSpan? TickInterval { get; init; } = TimeSpan.FromSeconds(1);
 
+    /// <summary>The turn timer policy (T252: <c>LobbySettings.ToTurnPolicy()</c>); null means <see cref="TurnPolicy.Default"/>.</summary>
+    public TurnPolicy? TurnPolicy { get; init; }
+
     /// <summary>Time a remote client gets to finish Hello, Join and Auth.</summary>
     public TimeSpan HandshakeTimeout { get; init; } = TimeSpan.FromSeconds(10);
 }
@@ -100,7 +103,7 @@ public sealed class InProcessHost : IAsyncDisposable
         var meta = new GameMeta { Slots = new SortedDictionary<string, SlotBinding>(humanKeys.ToDictionary(x => x.Key, x => x.Value), StringComparer.Ordinal) };
         var store = FileGameStore.Create(directory, game.GameId, header, meta, game, options.Store);
         var session = new GameSession(game) { Clock = () => clock.NowMillis };
-        return new InProcessHost(new GameHost(session, store, clock: clock, announceRoster: options.AnnounceRoster), store, hostCivId, options, null);
+        return new InProcessHost(new GameHost(session, store, clock: clock, announceRoster: options.AnnounceRoster, turnPolicy: options.TurnPolicy), store, hostCivId, options, null);
     }
 
     /// <summary>
@@ -118,7 +121,7 @@ public sealed class InProcessHost : IAsyncDisposable
             var hostCiv = meta.Slots.FirstOrDefault(x => string.Equals(x.Value.PlayerKey, hostPlayerKey, StringComparison.Ordinal)).Key
                 ?? throw new GameStoreException("The host player key is not bound to a civ in this game");
             var session = new GameSession(opened.Session.Game, lastSeq: opened.Session.LastSeq) { Clock = () => clock.NowMillis };
-            var host = new GameHost(session, opened.Store, clock: clock, announceRoster: options.AnnounceRoster);
+            var host = new GameHost(session, opened.Store, clock: clock, announceRoster: options.AnnounceRoster, turnPolicy: options.TurnPolicy);
             var result = new InProcessHost(host, opened.Store, hostCiv, options, opened.Report);
             // Crash mid-resolve: the log holds the steps already applied, the rest is derived from the state.
             if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })

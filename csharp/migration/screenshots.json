@@ -913,7 +913,11 @@
     "shots": [
       {
         "golden": "host-screen/network.png",
-        "caption": "Network tab: turn timer (5 min chosen), password, port, the addresses of this computer (the internet address chosen) and the port-forward hint."
+        "caption": "Network tab: turn timer (5 min chosen), the scale-with-the-game checkbox (on) and its shortest turn (1 min chosen), password and port."
+      },
+      {
+        "golden": "host-screen/network-address.png",
+        "caption": "Network tab scrolled down: the addresses of this computer (the internet address chosen) and the port-forward hint."
       },
       {
         "golden": "host-screen/port-in-use.png",
@@ -1036,6 +1040,16 @@
       {
         "golden": "theme/variations.png",
         "caption": "Every theme variation: type scale, switch and stat bars on the left, the button variants in the middle, card, inset, tooltip, modal, header and dock panels with a text field on the right."
+      }
+    ]
+  },
+  "T252": {
+    "scenario": "host-screen",
+    "about": "Host screen dynamic turn timer: checkbox and shortest-turn choice under the turn timer; the host runs with the chosen policy.",
+    "shots": [
+      {
+        "golden": "host-screen/network.png",
+        "caption": "Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min."
       }
     ]
   }

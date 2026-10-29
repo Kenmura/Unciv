@@ -126,6 +126,7 @@ public partial class HostScreen : Control
 
     public LineEdit PublicAddressField { get; private set; } = null!; // JUSTIFY: C034 assigned by FillNetwork, which the constructor runs
 
+    public CheckBox DynamicTimerCheck { get; private set; } = null!; // JUSTIFY: T252 assigned by FillNetwork, which the constructor runs
     public CheckBox AiFillCheck { get; private set; } = null!; // JUSTIFY: C034 assigned by FillGame, which the constructor runs
 
     /// <summary>The running host (new lobby or resumed game), or null while the settings are shown.</summary>
@@ -155,7 +156,7 @@ public partial class HostScreen : Control
     /// <summary>The Resume button of the n-th saved game (newest first).</summary>
     public Button? ResumeButton(int index) => index >= 0 && index < resumeButtons.Count ? resumeButtons[index] : null;
 
-    /// <summary>The option button of a choice row: field is "Difficulty", "Speed", "Era", "Type", "Shape", "Size", "Resources", "Base ruleset" or "Timer".</summary>
+    /// <summary>The option button of a choice row: field is "Difficulty", "Speed", "Era", "Type", "Shape", "Size", "Resources", "Base ruleset", "Timer" or "Shortest turn".</summary>
     public Button? ChoiceButton(string field, string option) => rows.GetValueOrDefault(field)?.ButtonFor(option);
 
     /// <summary>The address buttons of the Network tab (before hosting) or the hosting panel.</summary>
@@ -559,6 +560,22 @@ public partial class HostScreen : Control
         };
         rows["Timer"] = timer;
         networkPage.AddChild(timer);
+        DynamicTimerCheck = new CheckBox { Name = "DynamicTimerCheck", Text = "Scale each turn's time with the game (era, units, wars)".Tr(), ButtonPressed = Form.DynamicTurnTimer };
+        DynamicTimerCheck.Toggled += on =>
+        {
+            Form.DynamicTurnTimer = on;
+            Change(null);
+        };
+        networkPage.AddChild(DynamicTimerCheck);
+        AddHeading(networkPage, "Shortest turn when scaling");
+        var minTimer = new ChoiceRow(HostSettingsForm.MinTimerChoices.Select(HostSettingsForm.TimerLabel), HostSettingsForm.TimerLabel(Form.TurnTimerMinSeconds));
+        minTimer.Chosen += label =>
+        {
+            Form.TurnTimerMinSeconds = HostSettingsForm.MinTimerChoices.FirstOrDefault(it => HostSettingsForm.TimerLabel(it) == label);
+            Change(null);
+        };
+        rows["Shortest turn"] = minTimer;
+        networkPage.AddChild(minTimer);
         PasswordField = AddField(networkPage, "Password (empty for an open game)", "PasswordField", Form.Password, "none", value => Form.Password = value);
         PortField = AddField(networkPage, "Port (TCP)", "PortField", Form.Port.ToString(CultureInfo.InvariantCulture), HostSettingsForm.DefaultPort.ToString(CultureInfo.InvariantCulture), value =>
         {
