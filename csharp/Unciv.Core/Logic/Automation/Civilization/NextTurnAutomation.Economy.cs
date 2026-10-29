@@ -1,4 +1,5 @@
 using Unciv.Logic.Automation.Unit;
+using Unciv.Logic.Tourism;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tech;
 using Unciv.Models.Ruleset.Unique;
@@ -86,6 +87,7 @@ public static partial class NextTurnAutomation
         */
         var policies = civInfo.Policies;
         if (policies.CanChooseIdeology()) ChooseIdeology(civInfo, rng);
+        else SwitchIdeology(civInfo);
         while (civView.CanAdoptPolicy())
         {
             // B013: tenets first (free ones, or paid with culture); social branches only when their own pool (a free policy, or culture) can pay
@@ -151,6 +153,24 @@ public static partial class NextTurnAutomation
         if (options.Count == 0) return;
         var best = options.Max(it => priorityMap[it]);
         civInfo.Policies.Adopt(options.Where(it => priorityMap[it] == best).ToList().Random(rng));
+    }
+
+    /// <summary>
+    /// B014 (not in Kotlin, bnw-spec 4.6.5, @1018d360): the AI switches to the preferred ideology when its excess happiness is at most the super unhappy
+    /// threshold, the opinion unhappiness is at least 10 and <c>(preferred score - current score) + opinion unhappiness >= 10</c>. The scores are the
+    /// branch priorities of <c>PolicyManager.PriorityMap</c> (the <c>IDEOLOGY_SCORE_*</c> weights are not available); the grand-strategy veto is not ported.
+    /// </summary>
+    private static void SwitchIdeology(CivilizationClass civInfo)
+    {
+        var policies = civInfo.Policies;
+        if (policies.Ideology == null || !policies.CanSwitchIdeology()) return;
+        if (civInfo.GetHappiness() > civInfo.GameInfo.Ruleset.ModOptions.Constants.SuperUnhappyThreshold) return;
+        var unhappiness = PublicOpinionRules.Unhappiness(civInfo);
+        var preferred = policies.PreferredIdeologyBranch();
+        var priorityMap = policies.PriorityMap;
+        if (unhappiness < 10 || preferred == null || !civInfo.GameInfo.Ruleset.PolicyBranches.TryGetValue(policies.Ideology, out var current)) return;
+        if (priorityMap[preferred] - priorityMap[current] + unhappiness < 10) return;
+        policies.SwitchIdeology();
     }
 
     /// <summary>B013: adopt one tenet of the civ's ideology (random, weighted like policies) when one is adoptable and affordable.</summary>

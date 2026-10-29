@@ -753,7 +753,7 @@ free tenets, then culture on tenets before social branches. A one-time notificat
 **Deliberate deviations / open items.** The three "Universal Healthcare" tenets are named `Universal Healthcare (Freedom|Order|Autocracy)` (policy
 names are unique). Tenets carry no effects yet (stat columns: B010; tourism, trade, espionage and league columns: their subsystems); they are listed
 under `policyPending`. "First adopter" counts the civs that follow the ideology now (dead civs included): there is no adoption history until
-B052 (switching) adds one. Public opinion, unhappiness, switching and anarchy are B052. The policy screen (C track) shows the ideology branches through
+B052 (switching) adds one (done, 4.6.6). Public opinion, unhappiness, switching and anarchy are B052. The policy screen (C track) shows the ideology branches through
 the generic tree with the new locked reasons `ideology-locked`, `ideology:<branch>` and `tenet-level:<n>`; a dedicated ideology UI is a client follow-up.
 
 #### 4.6.4 Public opinion (`DoPublicOpinion` @1006f9d0) [O]
@@ -777,6 +777,25 @@ Only for a civ with an ideology `I`:
 @1018d360 [O]: switch when excess happiness ≤ `SUPER_UNHAPPY_THRESHOLD` (−20), opinion unhappiness ≥ 10, and
 `(prefScore − curScore) + opinionUnhappiness ≥ 10`. It refuses to leave an ideology that clearly fits its grand
 strategy (`IDEOLOGY_PERCENT_CLEAR_VICTORY_PREF`). The AI ideology choice weights are the `IDEOLOGY_SCORE_*` defines [D].
+
+#### 4.6.6 As built (B014, spec id B052)
+`Logic/Tourism/PublicOpinionRules.cs` (4.6.4), `PolicyManager.CanSwitchIdeology/SwitchIdeology` (4.6.5), command `switch-ideology` (no payload; the
+spec's `SwitchIdeology{}`). Public opinion is **derived, not saved**: it reads the ideologies and the influence levels (`InfluenceRules.Level`), so nothing
+goes stale. Saved (only when set, G&K saves stay identical): `PolicyManager.AnarchyTurns` and `IdeologyHistory` (every ideology the civ has followed).
+- Opinion unhappiness is added to the happiness breakdown as `Public opinion` (negative) while the opinion is not Content.
+- B013's "first adopter" now counts the civs that **ever** followed the ideology (history), so a civ that switched away or died still counts.
+- Switching goes to the preferred ideology and needs opinion unhappiness > 0. Tenets (and unspent free tenets) are lost; `max(0, adoptedTenets - 2)` free
+  tenets are granted in the new ideology and **no** first/second adopter bonus; `switchPolicyBranchesAnarchyTurns` (2) turns of anarchy start.
+  Costs no culture and refunds none.
+- **Anarchy** (the spec only gives the duration; the effects are a deliberate choice, [?] in the binary): no policy, tenet or ideology can be adopted,
+  and the civ's culture and science per turn are 0 (gold, faith and the cities' own yields are unchanged). It counts down in `PolicyManager.EndTurn`,
+  so it covers the rest of the switching turn and the next full turn.
+- AI (`NextTurnAutomation.SwitchIdeology`, @1018d360): switches when happiness <= `superUnhappyThreshold`, opinion unhappiness >= 10 and
+  `(preferred priority - current priority) + unhappiness >= 10`. The scores are the branch `PriorityMap` values (the `IDEOLOGY_SCORE_*` defines
+  are not in the ruleset); the grand-strategy veto (`IDEOLOGY_PERCENT_CLEAR_VICTORY_PREF`) is not ported.
+- Not done: the World Ideology resolution pressure (4.6.4 step 1) is a constant 0 seam until the World Congress (B015); the pressure tooltip (step 5)
+  is available as `PublicOpinion.Pressures` but no query/UI exposes it yet; uprisings, rebels and city revolt (4.8) are B070. The tie order Freedom,
+  Autocracy, Order is kept as the spec's observed order ([?] stays open).
 
 ### 4.7 World Congress and United Nations
 

@@ -620,7 +620,7 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
 
         var newStats = new Models.StatTypes.Stats();
         foreach (var statsForTurn in Stats.GetStatMapForNextTurn().Values) newStats.Add(statsForTurn);
-        Stats.StatsForNextTurn = newStats;
+        Stats.StatsForNextTurn = Policies.InAnarchy ? Policies.WithoutAnarchyStats(newStats) : newStats; // B014: anarchy stops culture and science
     }
 
     public int GetHappiness() => Stats.Happiness;

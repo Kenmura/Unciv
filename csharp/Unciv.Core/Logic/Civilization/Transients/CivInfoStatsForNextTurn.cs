@@ -1,6 +1,7 @@
 using Unciv.Logic.Civilization.Diplomacy;
 using Unciv.Logic.Map.MapUnits;
 using Unciv.Logic.Map.Tiles;
+using Unciv.Logic.Tourism;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
@@ -315,6 +316,9 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
 
         foreach (var (key, value) in GetGlobalStatsFromUniques())
             statMap[key] = value.Happiness + (statMap.TryGetValue(key, out var existing) ? existing : 0f);
+
+        var opinionUnhappiness = PublicOpinionRules.Unhappiness(CivInfo); // B014: BNW public opinion; 0 without an ideology
+        if (opinionUnhappiness != 0) statMap["Public opinion"] = -opinionUnhappiness;
 
         return statMap;
     }

@@ -1,10 +1,12 @@
 using System.Text.Json.Serialization;
 using Unciv.Json;
 using Unciv.Logic.Map;
+using Unciv.Logic.Tourism;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
 using Unciv.UI.Components.Extensions;
 using Unciv.Utils;
+using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
 
 namespace Unciv.Logic.Civilization.Managers;
 
@@ -52,6 +54,14 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     [JsonPropertyName("ideologyPrompted")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] // absent from Gods & Kings saves
     public bool IdeologyPrompted { get; set; }
+    /// <summary>B014 (bnw-spec 4.6.5): turns of anarchy left after switching ideology; no policy can be adopted and the civ makes no culture and science.</summary>
+    [JsonPropertyName("anarchyTurns")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] // absent from Gods & Kings saves
+    public int AnarchyTurns { get; set; }
+    /// <summary>B014: every ideology the civ has ever followed, oldest first (<c>null</c> until it chose one). "First adopter" counts the civs that ever followed it.</summary>
+    [JsonPropertyName("ideologyHistory")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // absent from Gods & Kings saves
+    public List<string>? IdeologyHistory { get; set; }
     [JsonPropertyName("storedCulture")]
     public int StoredCulture { get; set; }
     [JsonPropertyName("adoptedPolicies")]
@@ -162,6 +172,8 @@ public class PolicyManager : IsPartOfGameInfoSerialization
             FreeTenets = FreeTenets,
             Ideology = Ideology,
             IdeologyPrompted = IdeologyPrompted,
+            AnarchyTurns = AnarchyTurns,
+            IdeologyHistory = IdeologyHistory?.ToList(),
             ShouldOpenPolicyPicker = ShouldOpenPolicyPicker,
             StoredCulture = StoredCulture,
             cultureOfLast8Turns = (int[])cultureOfLast8Turns.Clone(),
@@ -212,6 +224,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     {
         AddCulture(culture);
         AddCurrentCultureToCultureOfLast8Turns(culture);
+        if (AnarchyTurns > 0) AnarchyTurns--;
     }
 
     // from https://forums.civfanatics.com/threads/the-number-crunching-thread.389702/
@@ -325,7 +338,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     /// </summary>
     public bool CanAdoptPolicy()
     {
-        if (CivInfo.IsSpectator()) return false;
+        if (CivInfo.IsSpectator() || InAnarchy) return false;
         var cultureEnough = StoredCulture >= GetCultureNeededForNextPolicy();
         var ideologyChoice = CanChooseIdeology();
         if (FreePolicies == 0 && FreeTenets == 0 && !cultureEnough && !ideologyChoice) return false;
@@ -339,7 +352,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     /// <summary>B013: can this very policy be adopted now, counting its own pool (free policy, free tenet or culture)?</summary>
     public bool CanAdoptPolicy(Policy policy)
     {
-        if (CivInfo.IsSpectator() || !IsAdoptable(policy)) return false;
+        if (CivInfo.IsSpectator() || InAnarchy || !IsAdoptable(policy)) return false;
         return IsIdeologyChoice(policy) || FreeFor(policy) > 0 || StoredCulture >= GetCultureNeededForNextPolicy();
     }
 
@@ -397,18 +410,28 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     public int GetTenetCount(PolicyBranch branch, int level) =>
         branch.Policies.Count(it => it.Level == level && IsAdopted(it.Name));
 
+    /// <summary>B014: has the civ ever followed <paramref name="ideology"/> (switched-away ones count, so do saves that only have <see cref="Ideology"/>)?</summary>
+    public bool HasFollowed(string ideology) => Ideology == ideology || (IdeologyHistory?.Contains(ideology) ?? false);
+
     /// <summary>
     /// B013 (bnw-spec 4.6.2): choose <paramref name="branch"/> as the ideology. It is adopted at no cost; the first civ in the game to follow it gets
     /// <see cref="PolicyBranch.FirstAdopterFreePolicies"/> free tenets, the second <see cref="PolicyBranch.SecondAdopterFreePolicies"/>, later ones none.
-    /// Deviation: "first" is counted among the civs that follow it now (dead civs included), because there is no adoption history yet (B052 switching).
+    /// B014: "followed" is a history, so a civ that switched away and a dead civ still count as earlier adopters.
     /// </summary>
     public void ChooseIdeology(PolicyBranch branch)
     {
         if (!branch.PurchaseByLevel || !IsAdoptable(branch))
             throw new InvalidOperationException($"{branch.Name} cannot be chosen as ideology");
-        var earlierAdopters = CivInfo.GameInfo.Civilizations.Count(it => !ReferenceEquals(it, CivInfo) && it.Policies.Ideology == branch.Name);
+        var earlierAdopters = CivInfo.GameInfo.Civilizations.Count(it => !ReferenceEquals(it, CivInfo) && it.Policies.HasFollowed(branch.Name));
+        AdoptIdeology(branch, earlierAdopters switch { 0 => branch.FirstAdopterFreePolicies, 1 => branch.SecondAdopterFreePolicies, _ => 0 });
+    }
+
+    private void AdoptIdeology(PolicyBranch branch, int freeTenets)
+    {
         Ideology = branch.Name;
-        FreeTenets += earlierAdopters switch { 0 => branch.FirstAdopterFreePolicies, 1 => branch.SecondAdopterFreePolicies, _ => 0 };
+        IdeologyHistory ??= [];
+        if (!IdeologyHistory.Contains(branch.Name)) IdeologyHistory.Add(branch.Name);
+        FreeTenets += freeTenets;
         ShouldOpenPolicyPicker |= FreeTenets > 0;
         AdoptedPolicies.Add(branch.Name);
         AddPolicyToTransients(branch);
@@ -420,6 +443,50 @@ public class PolicyManager : IsPartOfGameInfoSerialization
             city.CityStats.Update(updateCivStats: true);
             city.ReassignPopulationDeferred();
         }
+    }
+
+    /// <summary>B014 (bnw-spec 4.6.5): turns of anarchy are running.</summary>
+    [JsonIgnore]
+    public bool InAnarchy => AnarchyTurns > 0;
+
+    /// <summary>B014: during anarchy the civ makes no culture and no science (a deliberate choice, bnw-spec 4.6.6).</summary>
+    internal Models.StatTypes.Stats WithoutAnarchyStats(Models.StatTypes.Stats stats)
+    {
+        stats.Culture = 0f;
+        stats.Science = 0f;
+        return stats;
+    }
+
+    /// <summary>
+    /// B014 (bnw-spec 4.6.5, <c>SocialPolicyPopup.lua</c>): may the civ switch ideology? It needs one, the public opinion must cause unhappiness (the people prefer
+    /// another ideology) and no anarchy may be running.
+    /// </summary>
+    public bool CanSwitchIdeology() => Ideology != null && !InAnarchy && IdeologiesEnabled && PreferredIdeologyBranch() != null;
+
+    /// <summary>The ideology the people prefer while their opinion makes the civ unhappy, or <c>null</c>.</summary>
+    public PolicyBranch? PreferredIdeologyBranch()
+    {
+        var opinion = PublicOpinionRules.Evaluate(CivInfo);
+        return opinion.Unhappiness > 0 && opinion.Preferred != null
+            && CivInfo.GameInfo.Ruleset.PolicyBranches.TryGetValue(opinion.Preferred, out var branch) ? branch : null;
+    }
+
+    /// <summary>
+    /// B014 (bnw-spec 4.6.5): switch to the preferred ideology. The old ideology and all its tenets (and unspent free tenets) are lost, the civ gets back
+    /// <c>max(0, tenets - switchPolicyBranchesTenetsLost)</c> free tenets in the new one (and none of the first/second adopter ones), and
+    /// <c>switchPolicyBranchesAnarchyTurns</c> turns of anarchy start. Switching costs no culture and refunds none.
+    /// </summary>
+    public void SwitchIdeology()
+    {
+        var target = CanSwitchIdeology() ? PreferredIdeologyBranch() : null;
+        if (target == null || Ideology == null) throw new InvalidOperationException("The civ cannot switch ideology now");
+        var old = CivInfo.GameInfo.Ruleset.PolicyBranches[Ideology];
+        var constants = CivInfo.GameInfo.Ruleset.ModOptions.Constants;
+        int tenets = old.Policies.Count(it => IsAdopted(it.Name));
+        RemovePolicy(old);
+        AdoptIdeology(target, Math.Max(0, tenets - constants.SwitchPolicyBranchesTenetsLost));
+        AnarchyTurns = Math.Max(0, constants.SwitchPolicyBranchesAnarchyTurns);
+        CivInfo.AddNotification($"Our people switched to [{target.Name}]; [{AnarchyTurns}] turns of anarchy begin!", NotificationCategory.General, NotificationIcon.Culture);
     }
 
     public void Adopt(Policy policy, bool branchCompletion = false)

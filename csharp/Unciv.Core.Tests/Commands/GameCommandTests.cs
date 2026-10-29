@@ -265,6 +265,11 @@ public sealed class GameCommandTests : IDisposable
                 actor = world.A.CivId;
                 command = sample;
             }
+            else if (name == "switch-ideology")
+            {
+                (game, actor) = Logic.Tourism.PublicOpinionTests.SwitchSample();
+                command = new Unciv.Commands.Empire.SwitchIdeology();
+            }
             else if (name == "run-console-command")
             {
                 var (fresh, _, _) = NewSession();
