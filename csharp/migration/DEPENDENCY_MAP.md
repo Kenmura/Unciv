@@ -151,7 +151,7 @@ xychart-beta
 | T262 | **On deck** (after T261) | T261 | 0 | Optimise the top turn-time hotspots with proof of identical game state |
 | T263 | **On deck** (after T261) | T261 | 0 | Parallelism spike: which turn work can run in parallel without breaking determinism (go/no-go) |
 | T267 | Needs-Review [Claude-T267] | T177, T202, T178, T180, T226 | 5 | AI takeover of a departed player only at the end of the turn (never mid-turn) |
-| T268 | Needs-Review [Claude-T268] | T178, T180, T176, T230, T173, T182, T179, T205 | 5 | Host migration spike: automatic successor host when the host leaves (design with acceptance criteria) |
+| T268 | In-Review [Claude-T268] | T178, T180, T176, T230, T173, T182, T179, T205 | 5 | Host migration spike: automatic successor host when the host leaves (design with acceptance criteria) |
 | T259 | In-Progress [Claude-T259] | C042, T169, T249 | 3 | Android client spike: Godot .NET Android export feasibility, device requirements and the touch-UI gap list |
 | T272 | Available (waiting on T269) | T269 | 3 | Host migration 2/5: standby replication (StandbySubscribe/Snapshot/Entry/Ack, standby store in the successor's data dir, lag handling) |
 | C097 | Available (waiting on ) | T264, C043, C002 | 2 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
