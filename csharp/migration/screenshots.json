@@ -865,7 +865,7 @@
       },
       {
         "golden": "unit-visuals/gallery.png",
-        "caption": "The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft."
+        "caption": "The gallery (its first 20 units in frame, the ancient roster below it): humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft."
       }
     ]
   },
@@ -879,7 +879,7 @@
       },
       {
         "golden": "unit-visuals/elephants.png",
-        "caption": "Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger grey one (a placeholder shape)."
+        "caption": "Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger pale grey one (a placeholder shape)."
       }
     ]
   },

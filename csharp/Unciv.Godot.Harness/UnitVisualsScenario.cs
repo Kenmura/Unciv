@@ -48,7 +48,7 @@ public sealed class UnitVisualsScenario : Scenario
         new("Trireme", Rome, 100, Terrain: "Coast"), new("Fighter", Egypt, 100), new("Worker", Rome, 100, Automated: true, Promotable: true),
         new("Destroyer", Egypt, 100, Terrain: "Coast"), new("Warrior", Egypt, 50, Fortified: true, Own: false),
         new("Swordsman", Rome, 100), new("Knight", Egypt, 100), new("Crossbowman", Rome, 100), new("Great Scientist", Rome, 100), new("Scout", Egypt, 100),
-        // C084: the ancient and classical roster (rows 4 to 8), all model files; owners alternate so both civ colours show
+        // C084: the ancient and classical roster (rows 5 to 9 of the grid; the last has three), all model files; owners alternate so both civ colours show
         .. EraRoster.Select((unit, i) => new Slot(unit, i % 2 == 0 ? Rome : Egypt, 100)),
     ];
 
@@ -144,7 +144,7 @@ public sealed class UnitVisualsScenario : Scenario
                 nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n))),
             new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for (nearly) every unit", () =>
                 nodes.Where(IsModel).SelectMany(n => n.Players).All(HoldsIdle)
-                && nodes.Where(IsModel).Select(n => n.Players[0].CurrentAnimationPosition).Distinct().Count() >= nodes.Count(IsModel) * 9 / 10), // 1000 phases: a few of 45 may collide
+                && nodes.Where(IsModel).Select(n => n.Players[0].CurrentAnimationPosition).Distinct().Count() >= nodes.Count(IsModel) * 9 / 10), // 1000 phases: a few of the 33 model units may collide
             .. PipelineAsserts(nodes, Node),
             new AssertQuery("figures of a group stand at distinct spots, smaller than a lone figure", () =>
                 Node("Tank").GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => (f.Position.X, f.Position.Z)).Distinct().Count() == 4
@@ -181,7 +181,7 @@ public sealed class UnitVisualsScenario : Scenario
     }
 
     private static float SaddleHeight(UnitNode n) =>
-        FigureModels(n).First().FindChildren("*", nameof(Skeleton3D), true, false).OfType<Skeleton3D>().Select(sk => sk.GetBoneGlobalRest(sk.FindBone("saddle")).Origin.Y).FirstOrDefault(y => y > 0f);
+        FigureModels(n).First().FindChildren("*", nameof(Skeleton3D), true, false).OfType<Skeleton3D>().Where(sk => sk.FindBone("saddle") >= 0).Select(sk => sk.GetBoneGlobalRest(sk.FindBone("saddle")).Origin.Y).FirstOrDefault();
 
     private static Act CloseView(string label, MapView view, HexCoord at, Vector3 offset, float zoom) => new(label, () =>
     {

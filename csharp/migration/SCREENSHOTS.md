@@ -1300,9 +1300,9 @@ Scenario `unit-visuals`.
 
 *Close view of the tank and its neighbours posed by the code-driven rigid motion mid-shot (hull kicked back, turret swung off the target line); the motion is small, the scenario asserts the exact poses.* (`unit-visuals/rigid.png`)
 
-![The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.](../Unciv.Godot.Harness/golden/unit-visuals/gallery.png)
+![The gallery (its first 20 units in frame, the ancient roster below it): humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.](../Unciv.Godot.Harness/golden/unit-visuals/gallery.png)
 
-*The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.* (`unit-visuals/gallery.png`)
+*The gallery (its first 20 units in frame, the ancient roster below it): humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.* (`unit-visuals/gallery.png`)
 
 ## C084 (ticket not Done or unknown)
 
@@ -1314,9 +1314,9 @@ Scenario `unit-visuals`.
 
 *The 23-unit ancient and classical roster (the top five rows; the gallery's lower rows show at the bottom): settler, axe infantry, spearmen and legionaries, throwers and bowmen, chariots, cavalry and elephants in the red and blue civ colours.* (`unit-visuals/ancient.png`)
 
-![Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger grey one (a placeholder shape).](../Unciv.Godot.Harness/golden/unit-visuals/elephants.png)
+![Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger pale grey one (a placeholder shape).](../Unciv.Godot.Harness/golden/unit-visuals/elephants.png)
 
-*Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger grey one (a placeholder shape).* (`unit-visuals/elephants.png`)
+*Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger pale grey one (a placeholder shape).* (`unit-visuals/elephants.png`)
 
 ## C087 Rival stats ribbon in the HUD
 
