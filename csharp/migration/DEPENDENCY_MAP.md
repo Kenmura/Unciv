@@ -116,7 +116,7 @@ flowchart TD
   class C071 ready
   class C072 prog
   class C073 ready
-  class C074 prog
+  class C074 review
   class C075 ready
   class C076 ready
   class C077 ready
@@ -200,7 +200,7 @@ xychart-beta
 | C087 | **Ready to start** | C067, T181 | 0 | Rival stats ribbon in the HUD |
 | C088 | **Ready to start** | C068 | 0 | City-site preview: yields at a candidate settle tile |
 | C092 | **On deck** (after C074) | C074 | 0 | City management at scale: bulk actions and reusable build queues |
-| C074 | In-Progress [Claude] | C066 | 7 | Overview and espionage on DataTable |
+| C074 | In-Review [Claude] | C066 | 7 | Overview and espionage on DataTable |
 | C072 | In-Progress [Claude] | C066 | 6 | Setup, nation picker and main menu redesign |
 | C078 | Available (waiting on C071, C072, C073, C074, C075, C076, C077) | C067, C068, C069, C070, C071, C072, C073, C074, C075, C076, C077 | 5 | Hotkeys v2 and key hints |
 | C084 | Available (waiting on C083) | C083 | 4 | Unit art by era: ancient and classical |
