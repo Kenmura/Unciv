@@ -91,7 +91,7 @@ public sealed class LocalHost : IGameSession
     public event Action<EventBatch>? EventsReceived;
 
     // A local session shares the engine's memory, so it can never miss a batch or lose a connection: it never raises this.
-    // TODO(T180): the network ClientSession raises it on a sequence gap or reconnect and then resyncs from a snapshot.
+    // TODO(T244): the network ClientSession raises it on a sequence gap or reconnect and then resyncs from a snapshot.
     public event Action<string>? Desynchronized
     {
         add { }
@@ -282,7 +282,7 @@ public sealed class LocalHost : IGameSession
         return SnapshotBuilder.Build(game, game.GetCivilization(ViewerCivId), session.LastSeq, new TurnStatusDto { Ended = [], Phase = "Playing" });
     }
 
-    // TODO(T180): a full snapshot is rebuilt after every accepted command; the network session applies ViewDeltas to its mirror instead.
+    // TODO(T244): a full snapshot is rebuilt after every accepted command; the network session applies ViewDeltas to its mirror instead.
     // Every command runs inside SubmitAsync or EndTurnAsync under the gate, which collect what is published; nothing is raised from inside the engine call.
     private void Publish(long seq, IReadOnlyList<GameEvent> visible) =>
         (collected ?? throw new InvalidOperationException("A command ran outside the session gate")).Add((seq, visible));
