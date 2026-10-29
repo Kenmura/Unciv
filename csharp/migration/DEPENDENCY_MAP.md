@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 228/229 | 1 | 1 | 0 | [T255](backlog/T255.md) |
+| Phase 1: CLI (headless engine) | 228/229 | 1 | 0 | 1 | [T255](backlog/T255.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 29/29 | 0 | 0 | 0 | complete |
 | Phase 4: queued plans (UI redesign, unit models, BNW) | 35/70 | 35 | 0 | 4 | [B017](backlog/B017.md) [B018](backlog/B018.md) [B019](backlog/B019.md) [B020](backlog/B020.md) [B021](backlog/B021.md) [B022](backlog/B022.md) [B023](backlog/B023.md) [B024](backlog/B024.md) [B025](backlog/B025.md) [B026](backlog/B026.md) [B028](backlog/B028.md) [B029](backlog/B029.md) [B031](backlog/B031.md) [C071](backlog/C071.md) [C072](backlog/C072.md) [C073](backlog/C073.md) [C075](backlog/C075.md) [C076](backlog/C076.md) [C077](backlog/C077.md) [C078](backlog/C078.md) [C079](backlog/C079.md) [C082](backlog/C082.md) [C083](backlog/C083.md) [C084](backlog/C084.md) [C085](backlog/C085.md) [C086](backlog/C086.md) [C087](backlog/C087.md) [C088](backlog/C088.md) [C089](backlog/C089.md) [C090](backlog/C090.md) [C091](backlog/C091.md) [C092](backlog/C092.md) [C093](backlog/C093.md) [C094](backlog/C094.md) [T247](backlog/T247.md) |
@@ -133,7 +133,7 @@ flowchart TD
   class C093 waiting
   class C094 waiting
   class T247 waiting
-  class T255 ready
+  class T255 prog
 ```
 
 ## Remaining tickets over time
@@ -152,9 +152,9 @@ xychart-beta
     title "Remaining tickets"
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00"]
     y-axis "Tickets" 0 --> 55
-    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 32]
+    line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 31]
     line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0]
-    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 4]
+    line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 5]
 ```
 
 ## Progress and scope over time
@@ -178,7 +178,6 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| T255 | **Ready to start** | none | 0 | CI client scenarios: menu scenario goldens fail on ubuntu llvmpipe |
 | C071 | Available (waiting on ) | C066, C070 | 6 | Policies screen redesign |
 | C072 | In-Progress [Claude] | C066 | 6 | Setup, nation picker and main menu redesign |
 | C073 | In-Progress [Claude] | C066 | 6 | Diplomacy and trade redesign |
@@ -214,3 +213,4 @@ xychart-beta
 | C091 | Available (waiting on C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C092 | Available (waiting on ) | C074 | 0 | City management at scale: bulk actions and reusable build queues |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
+| T255 | In-Progress [Claude] | none | 0 | CI client scenarios: menu scenario goldens fail on ubuntu llvmpipe |
