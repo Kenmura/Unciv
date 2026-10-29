@@ -718,6 +718,19 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
     }
 
     [Fact]
+    public void IndonesianLuxuriesAreNotInTheLuxuryAssignmentPool()
+    {
+        var game = StartBnwGame(3);
+        var regions = new Unciv.Logic.Map.MapGenerator.Mapregions.MapRegions(game.Ruleset);
+        regions.GenerateRegions(game.TileMap, 5);
+        regions.AssignRegions(game.TileMap, game.Civilizations.Where(it => it.IsMajorCiv()).Cast<Unciv.Logic.Map.MapGenerator.Mapregions.IMapRegionsCivilization>().ToList(), new GameParameters());
+        var (cityStateLuxuries, randomLuxuries) = Unciv.Logic.Map.MapGenerator.ResourcePlacement.LuxuryResourcePlacementLogic.AssignLuxuries(
+            regions.Regions.ToList(), regions.TileData, game.Ruleset);
+        var assigned = cityStateLuxuries.Concat(randomLuxuries).Concat(regions.Regions.Select(it => it.Luxury)).ToList();
+        Assert.All(IndonesianLuxuries, name => Assert.DoesNotContain(name, assigned));
+    }
+
+    [Fact]
     public void BisonAndCocoaAppearOnGeneratedMapsAndIndonesianLuxuriesNeverDo()
     {
         var placed = new HashSet<string>();

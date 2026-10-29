@@ -31,7 +31,9 @@ public static class LuxuryResourcePlacementLogic
         var assignableLuxuries = ruleset.TileResources.Values.Where(it =>
             it.ResourceType == ResourceType.Luxury &&
             !((IHasUniques)it).HasUnique(UniqueType.LuxurySpecialPlacement) &&
-            !((IHasUniques)it).HasUnique(UniqueType.CityStateOnlyResource)).ToList();
+            !((IHasUniques)it).HasUnique(UniqueType.CityStateOnlyResource) &&
+            // B024: an unconditional "Doesn't generate naturally" (BNW Indonesian luxuries) keeps the resource out of the pool; conditional ones (G&K Marble) do not
+            !((IHasUniques)it).UniqueObjects.Any(u => u.Type == UniqueType.NoNaturalGeneration && u.Modifiers.Count == 0)).ToList();
         var amountRegionsWithLuxury = new Dictionary<string, int>();
         // Init map
         foreach (var resource in ruleset.TileResources.Values)

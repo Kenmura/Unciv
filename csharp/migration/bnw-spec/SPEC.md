@@ -1117,8 +1117,8 @@ Uniques per civ (traits in §3.2). The unique units and buildings are in `Civili
 - New natural wonders are already in Unciv. Verify `Natural_Wonder_Placement` against Unciv's natural wonder uniques.
 
 #### 4.14a As built (B024)
-- Cloves, Pepper and Nutmeg carry `Doesn't generate naturally` (both the region path, which only places luxuries with weighting uniques, and the
-  fallback `SpreadResources` path now skip them). Bison and Cocoa are placed by the existing region code from their generator-written
+- Cloves, Pepper and Nutmeg carry `Doesn't generate naturally` (`GeneratesNaturallyOn` skips them in every placement path, and `LuxuryResourcePlacementLogic.AssignLuxuries`
+  keeps unconditional-`NoNaturalGeneration` luxuries out of the random/region luxury pool so they do not waste slots). Bison and Cocoa are placed by the existing region code from their generator-written
   `Generated ...` uniques; the BNW tables (`Resource_TerrainBooleans`, `Resource_FeatureBooleans`) were checked against `terrainsCanBeFoundOn`.
 - `Nation.PlaceFirstAlongOcean` (JSON `placeFirstAlongOcean`, only Venice): `MapRegions.AssignRegions` sorts the coast-biased civs with the flagged
   ones first (stable, so rulesets without the flag assign exactly as before). All 12 `Civilization_Start_Along_Ocean` civs already have a `Coast`
