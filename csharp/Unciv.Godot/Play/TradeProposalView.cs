@@ -81,7 +81,7 @@ public partial class TradeProposalView : Modal
         section.AddThemeConstantOverride("separation", Ui.Px(UiTokens.S1));
         section.AddChild(new SectionHeader(heading));
         if (items.Count == 0) section.AddChild(new Label { Text = "Nothing".Tr(), ThemeTypeVariation = UiVariants.LabelSecondary });
-        foreach (var item in items) section.AddChild(new IconLabel(Ui, item.Icon, item.Text.TrText()));
+        foreach (var item in items) section.AddChild(new IconLabel(Ui, item.Icon, item.Text.TrText(), trim: true));
         body.AddChild(section);
     }
 

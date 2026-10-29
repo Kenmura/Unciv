@@ -61,10 +61,12 @@ public partial class TradeScreen : PanelContainer
     /// <summary>Sizes are fixed when a view is built, so a change of scale or breakpoint builds the frame again and fills it from the current state while the screen is open.</summary>
     private void OnLayoutChanged()
     {
+        string kept = messageText;
         BuildFrame();
         if (!Visible) return;
         RebuildPartners();
         Redraw();
+        SetMessage(kept); // Redraw clears the message; a change of layout must not
     }
 
     private void BuildFrame()
@@ -266,9 +268,12 @@ public partial class TradeScreen : PanelContainer
         var group = new ButtonGroup { AllowUnpress = false };
         foreach (var row in Partners)
         {
-            var button = new ListRow(theme, row.Name, row.Subtitle, icon: row.Icon, group: group) { Name = "Partner_" + row.CivId, TooltipText = row.Label.TrText() };
+            var button = new ListRow(theme, row.Name, row.Status.TrText(), icon: row.Icon, group: group) { Name = "Partner_" + row.CivId, TooltipText = row.Label.TrText() };
             string id = row.CivId;
-            button.Pressed += () => Fire(SelectAsync(id));
+            button.Pressed += () =>
+            {
+                if (id != SelectedCivId) Fire(SelectAsync(id)); // choosing the partner already shown would drop the staged trade
+            };
             partnerButtons[row.CivId] = button;
             partnerList.AddChild(button);
         }
@@ -402,7 +407,7 @@ public partial class TradeScreen : PanelContainer
     {
         flow.AddChild(new Label { Text = heading.Tr() + ":", ThemeTypeVariation = UiVariants.LabelSecondary });
         if (items.Count == 0) flow.AddChild(new Label { Text = "nothing".Tr(), ThemeTypeVariation = UiVariants.LabelSecondary });
-        foreach (var item in items) flow.AddChild(new IconLabel(theme, item.Icon, item.Text.TrText()));
+        foreach (var item in items) flow.AddChild(new IconLabel(theme, item.Icon, item.Text.TrText(), trim: true));
     }
 
     private void AddControl(HBoxContainer box, string name, string text, ChoiceRole role, Action pressed)

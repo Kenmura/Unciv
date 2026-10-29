@@ -17,7 +17,6 @@ public sealed record DiplomacyRow(string CivId, string Name, bool IsCityState, s
     /// <summary>C073: the second line of the list row: the status, preceded by "City-state" for a city-state.</summary>
     public string Subtitle => IsCityState ? "City-state - " + Status : Status;
 
-    public bool AtWar => Status == DiplomacyScreenModel.WarStatus;
 }
 
 public enum DiplomacyActionKind

@@ -400,9 +400,9 @@ Scenario `diplomacy`.
 
 *After gifting 250 gold to the city-state: its influence went up.* (`diplomacy/gifted.png`)
 
-![The player now protects the city-state; revoking protection is offered (a danger, confirm step).](../Unciv.Godot.Harness/golden/diplomacy/protected.png)
+![The player now protects the city-state (status Protector); revoking protection is not allowed yet, and the reason is shown under the greyed button.](../Unciv.Godot.Harness/golden/diplomacy/protected.png)
 
-*The player now protects the city-state; revoking protection is offered (a danger, confirm step).* (`diplomacy/protected.png`)
+*The player now protects the city-state (status Protector); revoking protection is not allowed yet, and the reason is shown under the greyed button.* (`diplomacy/protected.png`)
 
 ## C022 Trade screen
 

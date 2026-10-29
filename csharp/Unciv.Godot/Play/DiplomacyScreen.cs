@@ -258,9 +258,12 @@ public partial class DiplomacyScreen : PanelContainer
         var group = new ButtonGroup { AllowUnpress = false };
         foreach (var row in Rows)
         {
-            var button = new ListRow(theme, row.Name, row.Subtitle, icon: row.Icon, group: group) { Name = "Civ_" + row.CivId, TooltipText = row.Label.TrText() };
+            var button = new ListRow(theme, row.Name, row.IsCityState ? "City-state".TrText() + " - " + row.Status.TrText() : row.Status.TrText(), icon: row.Icon, group: group) { Name = "Civ_" + row.CivId, TooltipText = row.Label.TrText() };
             string id = row.CivId;
-            button.Pressed += () => Fire(SelectAsync(id));
+            button.Pressed += () =>
+            {
+                if (id != SelectedCivId) Fire(SelectAsync(id)); // choosing the civ already shown must not disarm a confirm step
+            };
             civButtons[row.CivId] = button;
             civList.AddChild(button);
         }

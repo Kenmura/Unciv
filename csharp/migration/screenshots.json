@@ -295,7 +295,7 @@
       },
       {
         "golden": "diplomacy/protected.png",
-        "caption": "The player now protects the city-state; revoking protection is offered (a danger, confirm step)."
+        "caption": "The player now protects the city-state (status Protector); revoking protection is not allowed yet, and the reason is shown under the greyed button."
       }
     ]
   },

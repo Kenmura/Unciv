@@ -381,6 +381,11 @@ public class TradeScreenModelTests
     [InlineData("City", "Paris", "icon/ui", "Cities")]
     [InlineData("Treaty", "Peace Treaty", "icon/ui", "Diplomacy")]
     [InlineData("WarDeclaration", "Rome", "icon/ui", "Fire")]
+    [InlineData("Stockpiled_Resource", "Oil", "icon/resource", "Oil")]
+    [InlineData("Agreement", "Open Borders", "icon/ui", "Diplomacy")]
+    [InlineData("Embassy", "Embassy", "icon/ui", "Diplomacy")]
+    [InlineData("Introduction", "Egypt", "icon/ui", "Nations")]
+    [InlineData("PeaceProposal", "Rome", "icon/ui", "Checkmark")]
     [InlineData("Something", "x", "icon/ui", "Question")]
     public void EveryOfferTypeHasAnIcon(string type, string name, string category, string icon)
     {

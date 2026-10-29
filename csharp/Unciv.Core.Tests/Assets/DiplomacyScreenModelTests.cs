@@ -72,7 +72,7 @@ public class DiplomacyScreenModelTests
         var rows = DiplomacyScreenModel.Rows(snapshot);
         Assert.Equal(AssetKey.Of("icon/nation", "Aksum"), rows[1].Icon);
         Assert.Equal(["Peace", "War"], new[] { rows[0].Subtitle, rows[1].Subtitle }.Select(it => it.Replace("City-state - ", "", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
-        Assert.True(rows.Single(it => it.CivId == "Zulu").AtWar);
+        Assert.Equal("War", rows.Single(it => it.CivId == "Zulu").Subtitle);
         Assert.StartsWith("City-state - ", rows.Single(it => it.IsCityState).Subtitle, StringComparison.Ordinal);
     }
 

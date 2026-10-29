@@ -8,7 +8,8 @@ public partial class IconLabel : HBoxContainer
 {
     private readonly Label label = new();
 
-    public IconLabel(UiTheme theme, AssetKey icon, string text)
+    // C073, trim: the text is cut with an ellipsis (full text as tooltip) instead of widening its container, for offers whose names can be long.
+    public IconLabel(UiTheme theme, AssetKey icon, string text, bool trim = false)
     {
         var picture = new TextureRect
         {
@@ -22,6 +23,14 @@ public partial class IconLabel : HBoxContainer
         AddChild(label);
         label.VerticalAlignment = VerticalAlignment.Center;
         label.Text = text;
+        if (trim)
+        {
+            label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+            label.CustomMinimumSize = new Vector2(theme.Px(40), 0f);
+            label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            label.TooltipText = text;
+            label.MouseFilter = MouseFilterEnum.Pass;
+        }
         IconKey = icon;
     }
 
