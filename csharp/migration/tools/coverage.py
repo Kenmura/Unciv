@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Line/branch coverage per source file, with a ratchet baseline (T122). Run: python3 -I tools/coverage.py ...
 
-Cost model: ONE instrumented `dotnet test` run (~45 s) per ticket, in the Review step (and by the implementer once
-before Needs-Review). Never on every test run. The result is cached in csharp/migration/.coverage/report.json and
-reused while no .cs/.csproj/.props file is newer than it, so --check, --report and --update-baseline after one run
-cost nothing. Runs through distrobox `dotnet-dev` automatically when `dotnet` is not on PATH.
+Cost model (faster-tests): the instrumented run is tools/ptest.py --coverage (the suite split across processes). A FULL
+instrumented run, by this script or by the Done gate's `ptest.py --coverage`, is cached under the git common dir keyed by a
+hash of the file CONTENTS that can change a result (so every worktree shares it and a rebase that does not change those
+files costs nothing; a plain mtime bump does not invalidate it). --check first tries the cheap path: it instruments only the
+test classes that mention the changed types (ptest.py --affected); a subset can only under-report coverage, so if every
+changed file already meets its baseline there the full run is skipped, otherwise it escalates to the full run. --report and
+--update-baseline always use the full report (a partial one would show false uncovered ranges). Runs through distrobox
+`dotnet-dev` automatically when `dotnet` is not on PATH.
 
   --check            Gate. Exit 1 if, for any checked file, line coverage fell below its baseline, or a file with no
                      baseline entry has < 80% line coverage and is not excused. Prints the per-file table.
@@ -13,7 +17,10 @@ cost nothing. Runs through distrobox `dotnet-dev` automatically when `dotnet` is
                      fixed with tests, or excused). With --all: regenerate EVERY entry from the current tree, lowering
                      included (only for fixing a stale baseline, with a ticket for the lost coverage).
                      Writes migration/coverage-baseline.json.
-  --run              Force a fresh coverage run even if the cached report is current.
+  --run              Force a fresh FULL coverage run even if the cached report is current.
+  --ingest DIR       Store the cobertura reports under DIR (from a full `ptest.py --coverage` run) as the cached report for
+                     the current tree, then continue with the other options (or just exit).
+  --full             With --check: skip the affected-tests shortcut and use the full report.
   --all              Check every file instead of only the files this branch changed (vs csharp-migration, plus
                      uncommitted/untracked). Use with --update-baseline once to (re)generate the whole baseline.
   --since REV        Changed set relative to REV instead of csharp-migration (reviewers use the implementation's parent).
@@ -27,6 +34,7 @@ reason naming a ticket; files with no executable lines are skipped automatically
 """
 import argparse
 import glob
+import hashlib
 import json
 import os
 import re
@@ -39,31 +47,22 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MIGRATION = os.path.dirname(HERE)
 CSHARP = os.path.dirname(MIGRATION)
 CACHE = os.path.join(MIGRATION, ".coverage")
-REPORT = os.path.join(CACHE, "report.json")
+PTEST = os.path.join(HERE, "ptest.py")
+KEY_SUFFIXES = (".cs", ".csproj", ".props", ".targets", ".editorconfig", ".sln", ".json", ".tsv", ".txt", ".map")
 BASELINE = os.path.join(MIGRATION, "coverage-baseline.json")
 NEW_FILE_MIN = 80.0
 CONTAINER = "dotnet-dev"
 
 
-def run_coverage():
-    raw = os.path.join(CACHE, "raw")
-    shutil.rmtree(raw, ignore_errors=True)
-    os.makedirs(raw)
-    cmd = ('dotnet test Unciv.Core.Tests --collect:"XPlat Code Coverage" --results-directory "%s" '
-           '-- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura' % raw)
-    if shutil.which("dotnet") is None:
-        cmd = 'distrobox enter %s -- bash -c %s' % (CONTAINER, shlex_quote("cd %s && %s" % (shlex_quote(CSHARP), cmd)))
-        full = cmd
-    else:
-        full = "cd %s && %s" % (shlex_quote(CSHARP), cmd)
-    print("running instrumented tests (~1 min)...", flush=True)
-    proc = subprocess.run(full, shell=True, capture_output=True, text=True)
-    tail = "\n".join((proc.stdout + proc.stderr).splitlines()[-15:])
-    files = glob.glob(os.path.join(raw, "**", "coverage.cobertura.xml"), recursive=True)
+def run_ptest(extra, results):
+    """Run tools/ptest.py --coverage with EXTRA args; returns the cobertura files it left under RESULTS or exits on test failure."""
+    proc = subprocess.run([sys.executable, "-I", PTEST, "--coverage", "--results", results] + extra, capture_output=True, text=True)
+    sys.stdout.write("\n".join(l for l in proc.stdout.splitlines() if l.startswith("ptest:")) + "\n")
+    files = glob.glob(os.path.join(results, "**", "coverage.cobertura.xml"), recursive=True)
     if proc.returncode != 0 or not files:
-        print(tail)
+        print("\n".join((proc.stdout + proc.stderr).splitlines()[-40:]))
         sys.exit("coverage: the instrumented test run failed (fix the tests; see output above)")
-    return files[0]
+    return files
 
 
 def shlex_quote(s):
@@ -76,22 +75,24 @@ def is_generated(fn):
     return "/obj/" in fn or fn.endswith(".g.cs")
 
 
-def parse(path):
-    """-> {file: {"lines": {n: hits}, "branches": {n: (covered, total)}}} merged across classes/methods."""
+def parse(paths):
+    """-> {file: {"lines": {n: hits}, "branches": {n: (covered, total)}}} merged across classes/methods and across the
+    per-shard reports (a line counts as hit when any shard hit it)."""
     out = {}
-    for cls in ET.parse(path).getroot().iter("class"):
-        fn = cls.get("filename").replace("\\", "/")
-        if ".Tests/" in fn or fn.startswith("/") or is_generated(fn):
-            continue
-        f = out.setdefault(fn, {"lines": {}, "branches": {}})
-        for line in cls.find("lines"):
-            n = int(line.get("number"))
-            f["lines"][n] = max(f["lines"].get(n, 0), int(line.get("hits")))
-            m = re.search(r"\((\d+)/(\d+)\)", line.get("condition-coverage") or "")
-            if m:
-                c, t = int(m.group(1)), int(m.group(2))
-                if n not in f["branches"] or c > f["branches"][n][0]:
-                    f["branches"][n] = (c, t)
+    for path in ([paths] if isinstance(paths, str) else paths):
+        for cls in ET.parse(path).getroot().iter("class"):
+            fn = cls.get("filename").replace("\\", "/")
+            if ".Tests/" in fn or fn.startswith("/") or is_generated(fn):
+                continue
+            f = out.setdefault(fn, {"lines": {}, "branches": {}})
+            for line in cls.find("lines"):
+                n = int(line.get("number"))
+                f["lines"][n] = max(f["lines"].get(n, 0), int(line.get("hits")))
+                m = re.search(r"\((\d+)/(\d+)\)", line.get("condition-coverage") or "")
+                if m:
+                    c, t = int(m.group(1)), int(m.group(2))
+                    if n not in f["branches"] or c > f["branches"][n][0]:
+                        f["branches"][n] = (c, t)
     result = {}
     for fn, f in sorted(out.items()):
         valid = len(f["lines"])
@@ -122,31 +123,81 @@ def ranges(nums):
     return ["%d" % a if a == b else "%d-%d" % (a, b) for a, b in out]
 
 
-def is_stale():
-    if not os.path.exists(REPORT):
-        return True
-    t = os.path.getmtime(REPORT)
-    for root, dirs, files in os.walk(CSHARP):
-        dirs[:] = [d for d in dirs if d not in ("bin", "obj", ".coverage", ".git", "node_modules")]
-        for name in files:
-            if name.endswith((".cs", ".csproj", ".props", ".editorconfig")) and os.path.getmtime(os.path.join(root, name)) > t:
-                return True
-    return False
+def git(*args):
+    return subprocess.run(["git", "-C", CSHARP] + list(args), capture_output=True, text=True).stdout.split("\n")
+
+
+def cache_dir():
+    """Shared by every worktree of the repo (the git common dir); falls back to .coverage/ outside a git checkout."""
+    common = git("rev-parse", "--path-format=absolute", "--git-common-dir")[0].strip()
+    d = os.path.join(common, "unciv-cache") if common else CACHE
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def source_key():
+    """Hash of the CONTENT of every file that can change a coverage result: engine and test sources, project files, test data
+    under csharp/ (not migration/, which holds tickets and tooling) and the rulesets the tests read."""
+    h = hashlib.sha256()
+    names = [n for n in git("ls-files", "-co", "--exclude-standard", "--", ".", "../android/assets/jsons") if n]
+    for n in sorted(set(names)):
+        if n.startswith("migration/") or not n.endswith(KEY_SUFFIXES):
+            continue
+        try:
+            with open(os.path.join(CSHARP, n), "rb") as fh:
+                data = fh.read()
+        except OSError:
+            continue  # deleted in the worktree but still in the index
+        h.update(n.encode() + b"\0" + hashlib.sha256(data).digest())
+    return h.hexdigest()[:24]
+
+
+def cached_path(key):
+    return os.path.join(cache_dir(), "coverage-%s.json" % key)
+
+
+def load_cached():
+    path = cached_path(source_key())
+    if os.path.exists(path):
+        with open(path) as fh:
+            return json.load(fh)
+    return None
+
+
+def store(data):
+    path = cached_path(source_key())
+    tmp = path + ".%d.tmp" % os.getpid()
+    with open(tmp, "w") as fh:
+        json.dump(data, fh)
+    os.replace(tmp, path)  # atomic: two worktrees may store the same key at once
+    olds = sorted(glob.glob(os.path.join(os.path.dirname(path), "coverage-*.json")), key=os.path.getmtime, reverse=True)
+    for old in olds[20:]:
+        try:
+            os.remove(old)
+        except OSError:
+            pass
 
 
 def load_report(force):
-    if force or is_stale():
-        data = parse(run_coverage())
-        os.makedirs(CACHE, exist_ok=True)
-        with open(REPORT, "w") as fh:
-            json.dump(data, fh)
-        return data
-    with open(REPORT) as fh:
-        return json.load(fh)
+    if not force:
+        data = load_cached()
+        if data is not None:
+            return data
+    files = run_ptest([], os.path.join(CACHE, "raw"))  # a full run ingests itself (ptest -> --ingest)
+    data = load_cached()
+    if data is None:
+        data = parse(files)
+        store(data)
+    return data
 
 
-def git(*args):
-    return subprocess.run(["git", "-C", CSHARP] + list(args), capture_output=True, text=True).stdout.split("\n")
+def try_affected(since):
+    """The cheap path of --check: instrument only the affected test classes. Returns a PARTIAL report, or None when ptest decided
+    to run everything (it then ingested the full report; call load_cached())."""
+    raw = os.path.join(CACHE, "raw-affected")
+    args = ["--affected"] + (["--since", since] if since else [])
+    files = run_ptest(args, raw)
+    return parse(files)
 
 
 def changed_files(since=None):
@@ -180,13 +231,23 @@ def main():
     ap.add_argument("--report", action="store_true")
     ap.add_argument("--update-baseline", action="store_true")
     ap.add_argument("--run", action="store_true")
+    ap.add_argument("--ingest", metavar="DIR")
+    ap.add_argument("--full", action="store_true")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--since", metavar="REV", help="changed set = files differing from REV (reviewers: the commit before the "
                     "implementation, e.g. 'abc123^', since the rebased branch already contains it)")
     ap.add_argument("files", nargs="*")
     a = ap.parse_args()
-    if not (a.check or a.report or a.update_baseline or a.run):
-        ap.error("choose --check, --report, --update-baseline or --run")
+    if a.ingest:
+        files = glob.glob(os.path.join(a.ingest, "**", "coverage.cobertura.xml"), recursive=True)
+        if not files:
+            sys.exit("coverage: no coverage.cobertura.xml under " + a.ingest)
+        store(parse(files))
+        if not (a.check or a.report or a.update_baseline):
+            print("coverage: stored the full report for this tree")
+            return 0
+    elif not (a.check or a.report or a.update_baseline or a.run):
+        ap.error("choose --check, --report, --update-baseline, --run or --ingest")
 
     for f in a.files:
         if not os.path.exists(os.path.join(CSHARP, f)):
@@ -195,8 +256,38 @@ def main():
     if wanted is not None and not wanted and not a.run:
         print("(no changed .cs files: skipping the coverage run; use --all or --since REV)")
         return 0
-    report = load_report(a.run)
     baseline = load_baseline()
+    report = None if a.run else load_cached()
+    if report is None and a.check and not (a.report or a.update_baseline or a.run or a.full or a.all or a.files):
+        partial = try_affected(a.since)
+        if not evaluate(partial, wanted, baseline)[1]:
+            print("(coverage from the affected test classes only already meets every baseline; the full instrumented run is skipped)")
+            report = partial
+        else:
+            print("(the affected test classes alone fall short of a baseline: running the full suite instrumented)")
+            report = load_cached()  # ptest may already have run everything
+    if report is None:
+        report = load_report(a.run)
+    if wanted is None:
+        wanted = sorted(report)
+    rows, problems = evaluate(report, wanted, baseline)
+
+    if a.check or a.report:
+        print("%-72s %7s %7s %7s  %s" % ("file", "line%", "branch%", "base%", "status"))
+        for fn, cur, base, status in rows:
+            if cur is None:
+                print("%-72s %7s %7s %7s  %s" % (fn, "-", "-", "-", status))
+                continue
+            print("%-72s %7.2f %7.2f %7s  %s" % (fn, cur["line"], cur["branch"], "%.2f" % base["line"] if base else "-", status))
+            if a.report and cur["uncovered"]:
+                print("    uncovered lines: " + ", ".join(cur["uncovered"]))
+        if not rows:
+            print("(no changed source files with executable lines)")
+    return finish(a, rows, problems, baseline)
+
+
+def evaluate(report, wanted, baseline):
+    """-> (rows, problems) of the ratchet for WANTED files (None = every file of the report)."""
     if wanted is None:
         wanted = sorted(report)
     problems, rows = [], []
@@ -224,18 +315,10 @@ def main():
             status = "new"
         rows.append((fn, cur, base, status))
 
-    if a.check or a.report:
-        print("%-72s %7s %7s %7s  %s" % ("file", "line%", "branch%", "base%", "status"))
-        for fn, cur, base, status in rows:
-            if cur is None:
-                print("%-72s %7s %7s %7s  %s" % (fn, "-", "-", "-", status))
-                continue
-            print("%-72s %7.2f %7.2f %7s  %s" % (fn, cur["line"], cur["branch"], "%.2f" % base["line"] if base else "-", status))
-            if a.report and cur["uncovered"]:
-                print("    uncovered lines: " + ", ".join(cur["uncovered"]))
-        if not rows:
-            print("(no changed source files with executable lines)")
+    return rows, problems
 
+
+def finish(a, rows, problems, baseline):
     if a.update_baseline:
         # --all regenerates the whole baseline from reality: pre-existing files below 80% are grandfathered at their level
         if a.all:

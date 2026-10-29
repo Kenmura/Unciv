@@ -66,9 +66,11 @@ jobs:
         working-directory: csharp
         run: dotnet format --verify-no-changes
 
-      - name: Test
-        working-directory: csharp
-        run: dotnet test --no-build
+      # One pass: the suite is split across processes (the engine statics rule out in-process parallelism) and instrumented for
+      # coverage at the same time; the Coverage ratchet step below then reads the report this stored instead of running tests again.
+      - name: Test and coverage (one pass)
+        working-directory: csharp/migration
+        run: python3 -I tools/ptest.py --no-build --coverage
 
       # Outside Unciv.sln because they need the Godot SDK package
       - name: Build Unciv.Godot

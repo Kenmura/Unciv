@@ -128,7 +128,7 @@ class WorkflowShape(unittest.TestCase):
             self.assertRegex(u, r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$", u)
 
     def test_mirrors_the_green_gate(self):
-        for cmd in ("dotnet build -warnaserror", "dotnet format --verify-no-changes", "dotnet test", "dotnet build Unciv.Godot -warnaserror",
+        for cmd in ("dotnet build -warnaserror", "dotnet format --verify-no-changes", "tools/ptest.py --no-build --coverage", "dotnet build Unciv.Godot -warnaserror",
                     "dotnet build Unciv.Godot.Harness -warnaserror", "tools/coverage.py --check", "tools/screenshots.py --check",
                     "tools/ticket.py check", "unittest discover"):
             self.assertIn(cmd, self.text)

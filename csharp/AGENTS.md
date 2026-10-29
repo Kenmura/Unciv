@@ -4,9 +4,17 @@ Read `migration/PROTOCOL.md` first. This file lists what the compiler cannot che
 Everything the analyzers *can* check (banned APIs, naming, culture, unused code) fails the build, so run it.
 
 ## Before you finish a ticket
-Run all three, inside `dotnet-dev`, from your own worktree's `csharp/` (under `.worktrees/<you>/csharp/`):
+From your own worktree's `csharp/` (under `.worktrees/<you>/csharp/`) run the gate. It enters `dotnet-dev` itself and does, in order:
+`dotnet build -warnaserror`, `dotnet format --verify-no-changes` (your changed files; everything if a style/project file changed), the whole
+test suite split across processes and instrumented for coverage in ONE pass, then the coverage ratchet:
 
-    dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test
+    python3 -I migration/tools/gate.py
+
+While developing use the dev loop instead (build, format your files, only the test classes that mention the types you changed, about 30 s):
+
+    python3 -I migration/tools/gate.py --quick
+
+`--quick` is an approximation and never a substitute for the gate. `python3 -I migration/tools/ptest.py --class FooTests` runs named classes only.
 
 If `dotnet format` complains, run `dotnet format` (no flag) and review the diff. It must touch only your files.
 Review tickets using the multi-persona adversarial review skill (`.agents/skills/adversarial-review/SKILL.md`): apply **The Auditor**, **The Adversary**, and **The Pragmatist** lenses before passing.

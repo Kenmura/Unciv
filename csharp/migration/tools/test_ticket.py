@@ -86,7 +86,20 @@ class GreenGate(unittest.TestCase):
         self.fail_step = "b"
         self.assertEqual(self.state("T001", "Done"), 1)
         self.assertTrue(self.t.current_state("T001").startswith("In-Review"))
-        self.assertFalse(self.t.stamp_path().exists())
+        self.assertNotIn(self.t.tree_id(), self.t.stamped_trees())
+
+    def test_stamp_is_shared_across_worktrees_and_keeps_other_trees(self):
+        self.t.cmd_green()
+        first = self.t.tree_id()
+        self.assertEqual(self.t.stamp_path().parent.resolve(), (self.root / ".git").resolve())  # the common dir, not a per-worktree one
+        (self.mig / "notes.txt").write_text("second tree\n")
+        git(self.root, "commit", "-qam", "second")
+        self.t.cmd_green()
+        self.assertEqual(self.t.stamped_trees(), [first, self.t.tree_id()])
+        self.fail_step = "b"
+        with self.assertRaises(SystemExit):
+            self.t.run_green(force=True)
+        self.assertEqual(self.t.stamped_trees(), [first])  # a failing tree loses its own stamp only
 
     def test_stamp_skips_rerun_for_same_tree_only(self):
         self.t.cmd_green()

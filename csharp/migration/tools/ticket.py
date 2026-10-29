@@ -612,15 +612,11 @@ CONTAINER = "dotnet-dev"
 
 
 def green_commands():
-    """Shell commands of the Green-before-Done rule, each run from csharp/ (dotnet-dev when dotnet is not on PATH)."""
-    csharp = str(HERE.parent)
-    dotnet = "dotnet build -warnaserror && dotnet format --verify-no-changes && dotnet test"
-    if shutil.which("dotnet") is None:
-        dotnet = f"distrobox enter {CONTAINER} -- bash -c {shlex.quote('cd ' + shlex.quote(csharp) + ' && ' + dotnet)}"
-    else:
-        dotnet = f"cd {shlex.quote(csharp)} && {dotnet}"
-    cov = f"cd {shlex.quote(str(HERE))} && python3 -I tools/coverage.py --check"
-    return [("build/format/test", dotnet), ("coverage --check", cov)]
+    """Shell commands of the Green-before-Done rule, run from csharp/migration. tools/gate.py is the whole gate in one pass:
+    build -warnaserror, dotnet format --verify-no-changes (changed files; everything when a style/project file changed), the
+    full suite sharded across processes AND instrumented for coverage in the same run, then the coverage ratchet. It enters
+    dotnet-dev itself when dotnet is not on PATH."""
+    return [("build/format/test+coverage", f"cd {shlex.quote(str(HERE))} && python3 -I tools/gate.py")]
 
 
 def stale_markers(tid):
@@ -630,8 +626,24 @@ def stale_markers(tid):
     return [l for l in out if not is_backlog_file(l.split(":", 1)[0])]
 
 
+STAMP_KEEP = 50
+
+
 def stamp_path():
-    return Path(git("rev-parse", "--path-format=absolute", "--git-path", "ticket-green").stdout.strip())
+    """One file in the git COMMON dir, shared by every worktree: a line per tree that passed the gate. A reviewer whose tree is
+    byte-identical to the implementer's (the usual case after a fast-forward) therefore needs no second run."""
+    return Path(git("rev-parse", "--path-format=absolute", "--git-common-dir").stdout.strip()) / "ticket-green"
+
+
+def stamped_trees():
+    try:
+        return stamp_path().read_text().split()
+    except OSError:
+        return []
+
+
+def write_stamps(trees):
+    stamp_path().write_text("".join(t + "\n" for t in trees[-STAMP_KEEP:]))
 
 
 def tree_id():
@@ -649,18 +661,17 @@ def run_green(force=False):
         die("green: the worktree has uncommitted changes; commit them first (the checks must cover what is published)")
     if not rebased():
         die(f"green: HEAD does not contain {BRANCH}; `git rebase {BRANCH}` and re-run the checks on the rebased tree")
-    stamp = stamp_path()
-    if not force and stamp.exists() and stamp.read_text().strip() == tree_id():
+    if not force and tree_id() in stamped_trees():
         print("green: this tree already passed (stamp)")
         return
-    stamp.unlink(missing_ok=True)
+    write_stamps([t for t in stamped_trees() if t != tree_id()])
     for name, cmd in green_commands():
         print(f"green: {name} ...", flush=True)
         r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         if r.returncode:
             print("\n".join((r.stdout + r.stderr).splitlines()[-40:]), file=sys.stderr)
             die(f"green: {name} failed (exit {r.returncode}); fix it before marking Done")
-    stamp.write_text(tree_id() + "\n")
+    write_stamps(stamped_trees() + [tree_id()])
 
 
 def require_green(tid, no_green):
