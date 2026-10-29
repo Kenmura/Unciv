@@ -406,7 +406,7 @@ SCIENCE= (scienceBase(origin→dest) + influenceScienceBonus(destOwner)) * 100
 
 **International, destination side** (owner = destination owner):
 ```
-GOLD    = ((100 + yourBldg + theirBldg) * (100 + (domain==Sea ? 100 : 0) + river)) / 100
+GOLD    = ((100 + yourBldg + theirBldg + incomingTrait [I]) * (100 + (domain==Sea ? 100 : 0) + river)) / 100
 SCIENCE = scienceBase(dest→origin) * 100        (reverse tech difference, no influence bonus)
 ```
 **Domestic** (only the destination city gains; @101f96f0 returns 0 for the origin):
@@ -462,7 +462,7 @@ gated by the ModOptions unique `Enables international trade routes`, never by ru
 - **River** [I]: the +25 applies per side, to the city whose centre tile is next to a river, land routes only.
 - **Destination side** [I]: the destination city's own land/sea route gold bonus (`yourBldg`) and `TradeRouteTargetGold` pay the destination owner only;
   the Morocco-style `[stats] from incoming trade routes` unique (declared by B003) is the destination counterpart of the origin trait term.
-- **City gold per turn** [I]: `gptOrigin` / `gptDest` use the city's gold without the trade routes' own gold, so the value does not feed back into itself.
+- **City gold per turn** [I]: `gptOrigin` / `gptDest` use the city's gold without the trade routes' own gold, so the value does not feed back into itself (approximate: city gold percent bonuses applied to the route gold are not removed).
 - **Capture** [X]: a captured city's routes end at the next turn start of any civ (no hook in conquest); until then the new owner sees the yields.
 - **Plunder** [X]: only a unit entering the route unit's tile plunders; the route unit walking onto a standing enemy does not.
 - **Domestic yields** [X]: food uses the speed's `modifier`, production its `productionCostModifier` (Unciv has no growth percent); the era
