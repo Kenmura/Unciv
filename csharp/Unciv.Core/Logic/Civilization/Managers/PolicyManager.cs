@@ -496,6 +496,9 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         if (!AdoptedPolicies.Remove(policy.Name))
             throw new InvalidOperationException($"Attempt to remove non-adopted Policy {policy.Name}");
 
+        // the ideology itself is always free (see ChooseIdeology), so removing it never touches culture progression
+        if (policy is PolicyBranch { PurchaseByLevel: true }) assumeWasFree = true;
+
         if (!assumeWasFree && numberOfAdoptedPolicies > 0)
         {
             numberOfAdoptedPolicies -= 1;
@@ -507,6 +510,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         if (policy is PolicyBranch { PurchaseByLevel: true } ideologyBranch)
         {
             if (Ideology == ideologyBranch.Name) Ideology = null;
+            FreeTenets = 0;
             foreach (var tenet in ideologyBranch.Policies.Where(it => IsAdopted(it.Name)).ToList())
                 RemovePolicy(tenet, true, assumeWasFree: true);
         }

@@ -441,7 +441,11 @@ public sealed class BnwIdeologyTests
         civ.Policies.Adopt(tenet);
         Assert.Empty(civ.Policies.GetAdoptedPoliciesMatching("All", forRemoval: true));
 
+        var neededBefore = civ.Policies.GetCultureNeededForNextPolicy();
+        civ.Policies.FreeTenets = 3;
         civ.Policies.RemovePolicy(freedom);
+        Assert.Equal(neededBefore, civ.Policies.GetCultureNeededForNextPolicy());
+        Assert.Equal(0, civ.Policies.FreeTenets);
         Assert.Null(civ.Policies.Ideology);
         Assert.False(civ.Policies.IsAdopted(tenet.Name));
         Assert.False(civ.Policies.IsAdopted(freedom.Name));
@@ -453,8 +457,12 @@ public sealed class BnwIdeologyTests
         var other = new TestGame(BaseRuleset.Civ_V_BNW);
         var tenet = other.Ruleset.PolicyBranches["Freedom"].Policies[0];
         var original = tenet.Level;
-        tenet.Level = 7;
+        tenet.Level = 0;
         List<RulesetError> errors;
+        try { errors = RulesetValidator.Create(other.Ruleset).GetErrorList().ToList(); }
+        finally { tenet.Level = original; }
+        Assert.Contains(errors, it => it.Text.Contains("expected 1 to 3", StringComparison.Ordinal));
+        tenet.Level = 7;
         try { errors = RulesetValidator.Create(other.Ruleset).GetErrorList().ToList(); }
         finally { tenet.Level = original; } // the ruleset instance is shared between tests
         Assert.Contains(errors, it => it.Text.Contains("expected 1 to 3", StringComparison.Ordinal));
