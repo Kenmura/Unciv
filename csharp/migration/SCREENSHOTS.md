@@ -74,6 +74,7 @@
 - [C087 Rival stats ribbon in the HUD](#c087-rival-stats-ribbon-in-the-hud)
 - [C088 City-site preview: yields at a candidate settle tile](#c088-city-site-preview-yields-at-a-candidate-settle-tile)
 - [C089 Map markers: private client-side tacks](#c089-map-markers-private-client-side-tacks)
+- [C090 (ticket not Done or unknown)](#c090-ticket-not-done-or-unknown)
 - [C093 Unit art by era: medieval and renaissance](#c093-unit-art-by-era-medieval-and-renaissance)
 - [C094 Unit art by era: industrial, modern and naval/air](#c094-unit-art-by-era-industrial-modern-and-navalair)
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
@@ -1469,6 +1470,24 @@ Scenario `map-markers`.
 ![The marker list: icon, tile and label per entry; pressing one centres the camera on it.](../Unciv.Godot.Harness/golden/map-markers/list.png)
 
 *The marker list: icon, tile and label per entry; pressing one centres the camera on it.* (`map-markers/list.png`)
+
+## C090 (ticket not Done or unknown)
+
+Shared map pings in a hosted game: the right-click menu offers Look here, Danger and Help; the host relays a ping to allies who know the tile; it shows as a fading ring with the sender's name.
+
+Scenario `map-pings`.
+
+![Right-click menu in a hosted game: the marker entries plus Ping allies: Look here, Danger and Help.](../Unciv.Godot.Harness/golden/map-pings/menu.png)
+
+*Right-click menu in a hosted game: the marker entries plus Ping allies: Look here, Danger and Help.* (`map-pings/menu.png`)
+
+![A fresh Danger ping: a red ring and column with 'Alice: Danger' above the tile.](../Unciv.Godot.Harness/golden/map-pings/sent.png)
+
+*A fresh Danger ping: a red ring and column with 'Alice: Danger' above the tile.* (`map-pings/sent.png`)
+
+![An ally's blue 'Bob: Look here' ping, bright, beside Alice's earlier red ping which is already fading.](../Unciv.Godot.Harness/golden/map-pings/ally.png)
+
+*An ally's blue 'Bob: Look here' ping, bright, beside Alice's earlier red ping which is already fading.* (`map-pings/ally.png`)
 
 ## C093 Unit art by era: medieval and renaissance
 

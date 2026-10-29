@@ -99,6 +99,10 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IGameSocial, IAs
 
     public event Action<ChatLine>? ChatReceived;
 
+    public event Action<MapPingNotice>? PingReceived;
+
+    public Task SendPingAsync(int x, int y, string kind) => session.SendMapPingAsync(x, y, kind).AsTask();
+
     public event Action? PlayersChanged;
 
     public IReadOnlyList<PlayerRow> Players => SocialModel.Players(session.Lobby, ViewerCivId, IsHost);
@@ -152,6 +156,9 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IGameSocial, IAs
                         var line = new ChatLine(string.IsNullOrEmpty(said.Sender) ? "?" : said.Sender, said.Text);
                         lock (gate) chat = SocialModel.Append(chat, line);
                         Raise(() => ChatReceived?.Invoke(line));
+                        break;
+                    case MapPingReceived pinged:
+                        Raise(() => PingReceived?.Invoke(pinged.Ping));
                         break;
                     case StateChanged moved:
                         Raise(() =>

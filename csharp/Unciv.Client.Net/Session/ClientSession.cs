@@ -261,6 +261,9 @@ public sealed class ClientSession : IAsyncDisposable
 
     public ValueTask SendChatAsync(string text) => SendAsync(new LobbyChat { Text = text });
 
+    /// <summary>C090: pings a tile for the allies (the host relays it, also back to this player, and drops it when it is not allowed).</summary>
+    public ValueTask SendMapPingAsync(int x, int y, string kind) => SendAsync(new MapPing { X = x, Y = y, Kind = kind });
+
     public ValueTask PingAsync() => SendAsync(new Ping());
 
     /// <summary>Tells the host this player leaves and ends the session (no reconnect).</summary>
@@ -421,6 +424,9 @@ public sealed class ClientSession : IAsyncDisposable
                 return true;
             case LobbyChat chat:
                 Emit(new LobbyChatReceived(chat.Sender, chat.Text));
+                return true;
+            case MapPingNotice ping:
+                Emit(new MapPingReceived(ping));
                 return true;
             case GameStarting:
                 gameStarted = true;

@@ -1,4 +1,5 @@
 using Unciv.Assets;
+using Unciv.Net;
 
 namespace Unciv.GodotClient.Play;
 
@@ -15,6 +16,12 @@ public interface IGameSocial
 
     /// <summary>Sends a chat line; the host stamps the sender's name and rebroadcasts it (also to the sender).</summary>
     Task SendChatAsync(string text);
+
+    /// <summary>C090: a map ping to show (an ally's, or this player's own echoed by the host).</summary>
+    event Action<MapPingNotice>? PingReceived;
+
+    /// <summary>C090: pings a tile for the allies; the host relays it to those who know the tile and drops it otherwise, so nothing comes back when it is refused.</summary>
+    Task SendPingAsync(int x, int y, string kind);
 
     /// <summary>The players from the host's latest roster.</summary>
     IReadOnlyList<PlayerRow> Players { get; }

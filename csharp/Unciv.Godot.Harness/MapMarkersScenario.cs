@@ -68,7 +68,7 @@ public sealed class MapMarkersScenario : Scenario
             }),
             new AssertQuery("no marker yet, and the game has an id to key them by", () => screen.Markers.Count == 0 && screen.MarkerLayer.Shown.Count == 0 && originalId.Length > 0),
             new Act("right-click tile A", () => RightClick(tileA)),
-            new AssertQuery("the marker menu is open, offering Place marker and the list but not Remove", () => screen.MarkerMenu.Visible && screen.MarkerMenu.EditButton.Text == "Place marker" && !screen.MarkerMenu.RemoveButton.Visible && screen.MarkerMenu.ListButton.Visible),
+            new AssertQuery("the marker menu is open, offering Place marker and the list but not Remove", () => screen.MarkerMenu.Visible && screen.MarkerMenu.EditButton.Text == "Place marker" && !screen.MarkerMenu.RemoveButton.Visible && screen.MarkerMenu.ListButton.Visible && !screen.MarkerMenu.PingLookButton.Visible), // C090: a game that is not hosted has no allies to ping
             new AssertQuery("the menu is on screen, at the pointer", () => new Rect2(Vector2.Zero, host.GetViewport().GetVisibleRect().Size).Encloses(screen.MarkerMenu.GetGlobalRect()) && screen.MarkerMenu.Position.DistanceTo(Pointer(tileA)) < 2f),
             new Capture("menu", "Right-click on a tile with no unit selected: a small menu at the pointer offers Place marker and Map markers"),
             new Press("Place marker"),

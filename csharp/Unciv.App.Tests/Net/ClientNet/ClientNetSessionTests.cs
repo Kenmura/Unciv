@@ -1015,6 +1015,24 @@ public sealed class ClientNetSessionTests
         Assert.Equal(3, rig.Session.TurnStatus!.Turn);
     }
 
+    [Fact]
+    public async Task MapPing_IsSentWithTheTileAndKind_AndARelayedNoticeBecomesAnEvent()
+    {
+        await using var rig = new ClientNetRig();
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await rig.HandshakeAsync(host);
+        await join;
+
+        await rig.Session.SendMapPingAsync(4, 7, MapPingKinds.Help);
+        var sent = await host.ReceiveAsync<MapPing>();
+        Assert.Equal((4, 7, MapPingKinds.Help), (sent.X, sent.Y, sent.Kind));
+
+        await host.SendAsync(new MapPingNotice { X = 4, Y = 7, Kind = MapPingKinds.Help, Sender = "Bob" });
+        var got = (await rig.NextAsync<MapPingReceived>()).Ping;
+        Assert.Equal(("Bob", 4, 7), (got.Sender, got.X, got.Y));
+    }
+
     // ---------------------------------------------------------------- queries
 
     [Fact]

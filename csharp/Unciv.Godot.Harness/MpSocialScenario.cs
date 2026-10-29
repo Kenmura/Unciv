@@ -139,6 +139,14 @@ public sealed class MpSocialScenario : Scenario
 
         public IReadOnlyList<PlayerRow> Players => SocialModel.Players(new LobbyState { Settings = JsonDocument.Parse("{}").RootElement.Clone(), Slots = [.. slots], HostName = "Alice" }, ViewerCivId, IsHost);
 
+        public event Action<MapPingNotice>? PingReceived
+        {
+            add { }
+            remove { }
+        }
+
+        public Task SendPingAsync(int x, int y, string kind) => Task.CompletedTask;
+
         public event Action? PlayersChanged;
 
         public bool IsHost => true;

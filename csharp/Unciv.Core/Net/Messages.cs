@@ -58,6 +58,17 @@ public sealed record LobbyChat : Message
     public string? Sender { get; init; }
 }
 
+/// <summary>
+/// C090: a map ping (look here, danger, help) on a tile, for the sender's allies. Not an engine command: it is not logged, hashed or replayed, and it changes no state. The host relays it as a
+/// <see cref="MapPingNotice"/> to the sender and the allies (defensive-pact partners) who already know the tile; the sender is never read from the frame.
+/// </summary>
+public sealed record MapPing : Message
+{
+    public required int X { get; init; }
+    public required int Y { get; init; }
+    public required string Kind { get; init; }
+}
+
 /// <summary>A game command: the <c>CommandEnvelope</c> minus Seq/ActorId. <c>CommandType</c> is the command registry name (the JSON key is not <c>type</c>, which is the message discriminator).</summary>
 public sealed record Command : Message
 {
@@ -185,6 +196,15 @@ public sealed record QueryResult : Message
     public JsonElement? Payload { get; init; }
 }
 
+/// <summary>C090: a relayed <see cref="MapPing"/>. <c>Sender</c> is the display name the host has bound to the sending civ.</summary>
+public sealed record MapPingNotice : Message
+{
+    public required int X { get; init; }
+    public required int Y { get; init; }
+    public required string Kind { get; init; }
+    public required string Sender { get; init; }
+}
+
 public sealed record HostClosing : Message;
 
 public sealed record Error : Message
@@ -194,3 +214,13 @@ public sealed record Error : Message
 }
 
 public sealed record Pong : Message;
+
+/// <summary>C090: the ping kinds the host relays (any other kind is dropped).</summary>
+public static class MapPingKinds
+{
+    public const string Look = "Look";
+    public const string Danger = "Danger";
+    public const string Help = "Help";
+
+    public static IReadOnlyList<string> All { get; } = [Look, Danger, Help];
+}

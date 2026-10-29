@@ -15,6 +15,7 @@ using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Models;
 using Unciv.Models.Translations;
+using Unciv.Net;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Empire;
 using Unciv.Queries.Units;
@@ -86,6 +87,9 @@ public partial class GameScreen : Control
 
     /// <summary>C089: the context menu a right-click on a tile opens when no unit is selected.</summary>
     public MapMarkerMenuView MarkerMenu { get; private set; } = null!; // JUSTIFY: C089 assigned in _Ready before any use
+
+    /// <summary>C090: the allies' map pings (rings, a column and the sender's name), shown for <see cref="MapPingModel.Lifetime"/> seconds. Never stored or sent anywhere.</summary>
+    public MapPingLayer PingLayer { get; private set; } = null!; // JUSTIFY: C090 assigned in _Ready before any use
 
     private bool foundsCities;
 
@@ -238,7 +242,7 @@ public partial class GameScreen : Control
     }
 
     // The 3D parts do not follow the screen's own visibility (a Node3D under a Control is a separate branch), so they are hidden one by one.
-    private IEnumerable<Node3D> WorldLayers() => [Map, Overlays, unitLayer, dotLayer, ReachableOverlay, AttackOverlay, SiteOverlay, MarkerLayer];
+    private IEnumerable<Node3D> WorldLayers() => [Map, Overlays, unitLayer, dotLayer, ReachableOverlay, AttackOverlay, SiteOverlay, MarkerLayer, PingLayer];
 
     private bool watchingAfterDefeat;
     private int gameOverCheck;
@@ -649,6 +653,10 @@ public partial class GameScreen : Control
             case HotkeyAction.PlaceMarker:
                 OpenMarkerEditor(HoveredTile);
                 return true;
+            case HotkeyAction.PingMap:
+                if (social == null || HoveredTile is not { } pinged) return false;
+                Run(SendPing(pinged, MapPingKinds.Look));
+                return true;
             case HotkeyAction.ToggleYields:
                 boundSettings?.Update(s => s with { ShowYields = !s.ShowYields });
                 return boundSettings != null;
@@ -820,6 +828,8 @@ public partial class GameScreen : Control
         AddChild(SiteOverlay);
         MarkerLayer = new MapMarkerLayer { Name = "MarkerLayer" };
         AddChild(MarkerLayer);
+        PingLayer = new MapPingLayer { Name = "PingLayer" };
+        AddChild(PingLayer);
 
         statusLabel = new Label { Name = "StatusLabel" };
         statusPanel = new PanelContainer { Name = "StatusPanel", Visible = false, MouseFilter = MouseFilterEnum.Ignore, ThemeTypeVariation = UiVariants.PanelTooltip };
@@ -1288,7 +1298,7 @@ public partial class GameScreen : Control
         {
             // C089: with no unit selected a right-click on a tile opens the marker menu there (with a unit selected it moves or attacks, as before)
             markerTile = marked;
-            MarkerMenu.Open(Map.RightClickAt, Size, MapMarkerModel.At(MarkerSettings, MarkerKey, marked.X, marked.Y) != null);
+            MarkerMenu.Open(Map.RightClickAt, Size, MapMarkerModel.At(MarkerSettings, MarkerKey, marked.X, marked.Y) != null, canPing: social != null);
             return;
         }
         if (coord is not { } tile || SelectedUnitId == null) return;
@@ -1353,7 +1363,45 @@ public partial class GameScreen : Control
             case MarkerMenuChoice.List:
                 OpenMarkerEditor(null);
                 break;
+            case MarkerMenuChoice.PingLook:
+            case MarkerMenuChoice.PingDanger:
+            case MarkerMenuChoice.PingHelp:
+                if (markerTile is { } at) Run(SendPing(at, choice == MarkerMenuChoice.PingDanger ? MapPingKinds.Danger : choice == MarkerMenuChoice.PingHelp ? MapPingKinds.Help : MapPingKinds.Look));
+                break;
         }
+    }
+
+    // C090: shared map pings (hosted games only). The host relays a ping to the allies who know the tile and echoes it to the sender; what comes back is shown for a few seconds.
+    private IReadOnlyList<ActivePing> pings = [];
+
+    /// <summary>The pings on screen now.</summary>
+    public IReadOnlyList<ActivePing> Pings => pings;
+
+    private async Task SendPing(HexCoord tile, string kind)
+    {
+        if (social == null) return;
+        try
+        {
+            await social.SendPingAsync(tile.X, tile.Y, kind);
+        }
+        catch (InvalidOperationException)
+        {
+            if (IsInstanceValid(this) && IsInsideTree()) SetStatus("The host cannot be reached.".Tr(), quiet: true);
+        }
+    }
+
+    private void OnPingReceived(MapPingNotice notice)
+    {
+        if (Map.TileNodeAt(new HexCoord(notice.X, notice.Y)) == null) return; // a tile this map does not have
+        pings = MapPingModel.Add(pings, notice);
+        PingLayer.Sync(pings, TileTopAt);
+    }
+
+    /// <summary>Lets <paramref name="seconds"/> pass for the pings on screen (called every frame; a scenario calls it to expire them at once).</summary>
+    public void AdvancePings(float seconds)
+    {
+        pings = MapPingModel.Advance(pings, seconds);
+        PingLayer.Sync(pings, TileTopAt);
     }
 
     private void OnMarkerSaved(HexCoord tile, string icon, string label) => ChangeMarkers((it, key) => MapMarkerModel.Place(it, key, tile.X, tile.Y, icon, label));
@@ -1936,7 +1984,10 @@ public partial class GameScreen : Control
         {
             social.ChatReceived -= Social.AddChat;
             social.PlayersChanged -= RefreshPlayers;
+            social.PingReceived -= OnPingReceived;
         }
+        pings = [];
+        PingLayer?.Clear();
         social = next;
         World.ShowPlayers(next != null);
         if (next == null)
@@ -1946,6 +1997,7 @@ public partial class GameScreen : Control
         }
         next.ChatReceived += Social.AddChat;
         next.PlayersChanged += RefreshPlayers;
+        next.PingReceived += OnPingReceived;
         foreach (var line in next.Chat) Social.AddChat(line);
         RefreshPlayers();
     }
@@ -2008,6 +2060,7 @@ public partial class GameScreen : Control
 
     public override void _Process(double delta)
     {
+        if (pings.Count > 0) AdvancePings((float)delta);
         if (statusFrames > 0 && --statusFrames == 0) statusPanel.Visible = false;
         // the countdown moves with the clock, not with snapshots
         if (session is not ITurnRoster || TurnBar.Data == null || snapshot?.TurnStatus.Deadline == null) return;

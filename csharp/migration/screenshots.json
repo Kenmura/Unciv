@@ -1466,6 +1466,24 @@
       }
     ]
   },
+  "C090": {
+    "scenario": "map-pings",
+    "about": "Shared map pings in a hosted game: the right-click menu offers Look here, Danger and Help; the host relays a ping to allies who know the tile; it shows as a fading ring with the sender's name.",
+    "shots": [
+      {
+        "golden": "map-pings/menu.png",
+        "caption": "Right-click menu in a hosted game: the marker entries plus Ping allies: Look here, Danger and Help."
+      },
+      {
+        "golden": "map-pings/sent.png",
+        "caption": "A fresh Danger ping: a red ring and column with 'Alice: Danger' above the tile."
+      },
+      {
+        "golden": "map-pings/ally.png",
+        "caption": "An ally's blue 'Bob: Look here' ping, bright, beside Alice's earlier red ping which is already fading."
+      }
+    ]
+  },
   "C085": {
     "scenario": "unit-visuals",
     "about": "Unit level of detail: zoomed far out every formation draws its lead figure only; units outside the camera footprint are hidden.",

@@ -43,6 +43,9 @@ public sealed class HostSession
 
     /// <summary>C045: when this session's recent chat lines were accepted (host clock), for the rate limit.</summary>
     public Queue<long> ChatTimes { get; } = new();
+
+    /// <summary>C090: when this session's recent map pings were accepted (host clock), for the rate limit.</summary>
+    public Queue<long> PingTimes { get; } = new();
 }
 
 /// <summary>Per-session protection limits of the host. Times are in <see cref="IClock"/> milliseconds.</summary>
@@ -66,6 +69,11 @@ public sealed record HostLimits
     public int MaxChatPerWindow { get; init; } = 5;
 
     public long ChatWindowMillis { get; init; } = 10_000;
+
+    /// <summary>C090: map pings one session may send per <see cref="PingWindowMillis"/>; the rest are dropped silently.</summary>
+    public int MaxPingPerWindow { get; init; } = 4;
+
+    public long PingWindowMillis { get; init; } = 5_000;
 
     /// <summary>Outbound bytes (approximate) queued per session before a slow reader is disconnected.</summary>
     public long MaxQueuedBytes { get; init; } = 64L * 1024 * 1024;
@@ -264,6 +272,9 @@ public sealed class GameHost : IAsyncDisposable
                     break;
                 case LobbyChat chat:
                     await ProcessChatAsync(hostSession, chat);
+                    break;
+                case MapPing ping:
+                    await ProcessMapPingAsync(hostSession, ping);
                     break;
                 case Leave:
                     await DetachSessionAsync(sessionId);
@@ -564,6 +575,36 @@ public sealed class GameHost : IAsyncDisposable
         if (text.Length > limits.MaxChatChars) text = text[..limits.MaxChatChars];
         var line = new LobbyChat { Text = text, Sender = DisplayNameOf(from.BoundCivId) };
         foreach (var target in sessions.Values.ToList()) await SafeSendAsync(target, line);
+    }
+
+    /// <summary>
+    /// C090: a map ping from a bound player, relayed as a <see cref="MapPingNotice"/> (with the sender's bound display name) to the sender and to the open sessions of civs allied with the
+    /// sender (a defensive pact). Dropped silently: an unknown kind, a tile off the map or one the sender has not explored, and anything over <see cref="HostLimits.MaxPingPerWindow"/> per window.
+    /// A recipient who has not explored the tile gets nothing, so a ping never shows an ally a place they do not know. Not an engine command: nothing is logged, hashed or changed.
+    /// </summary>
+    private async Task ProcessMapPingAsync(HostSession from, MapPing ping)
+    {
+        if (!MapPingKinds.All.Contains(ping.Kind)) return;
+        var tile = session.Game.TileMap.GetOrNull(ping.X, ping.Y);
+        var sender = session.Game.GetCivilizationOrNull(from.BoundCivId);
+        if (tile == null || sender == null || !tile.IsExplored(sender)) return;
+        long now = clock.NowMillis;
+        while (from.PingTimes.Count > 0 && now - from.PingTimes.Peek() >= limits.PingWindowMillis) from.PingTimes.Dequeue();
+        if (from.PingTimes.Count >= limits.MaxPingPerWindow) return;
+        from.PingTimes.Enqueue(now);
+        var notice = new MapPingNotice { X = ping.X, Y = ping.Y, Kind = ping.Kind, Sender = DisplayNameOf(from.BoundCivId) };
+        foreach (var target in sessions.Values.ToList())
+        {
+            if (target != from && !CanReceivePing(sender, tile, target)) continue;
+            await SafeSendAsync(target, notice);
+        }
+    }
+
+    private bool CanReceivePing(Unciv.Logic.Civilization.Civilization sender, Unciv.Logic.Map.Tiles.Tile tile, HostSession target)
+    {
+        if (!target.IsOpen || string.Equals(target.BoundCivId, sender.CivId, StringComparison.Ordinal)) return false;
+        var civ = session.Game.GetCivilizationOrNull(target.BoundCivId);
+        return civ != null && sender.GetDiplomacyManager(civ)?.DiplomaticStatus == Unciv.Logic.Civilization.Diplomacy.DiplomaticStatus.DefensivePact && tile.IsExplored(civ);
     }
 
     /// <summary>The humans of the game and the players whose seat is bound, as a <see cref="LobbyState"/> (what the turn bar and the player list read).</summary>

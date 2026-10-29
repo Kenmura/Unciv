@@ -40,6 +40,7 @@ public partial class SettingsPanel : HBoxContainer
         (HotkeyAction.ToggleResources, "Toggle resource display"),
         (HotkeyAction.ToggleYields, "Toggle yield display"),
         (HotkeyAction.PlaceMarker, "Map marker"),
+        (HotkeyAction.PingMap, "Ping allies"),
         (HotkeyAction.PanUp, "Pan up"),
         (HotkeyAction.PanDown, "Pan down"),
         (HotkeyAction.PanLeft, "Pan left"),

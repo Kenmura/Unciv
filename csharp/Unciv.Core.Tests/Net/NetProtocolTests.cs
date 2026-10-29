@@ -18,6 +18,8 @@ public class NetProtocolTests
         { new Resume { GameId = "g", LastSeq = 9, LastViewHash = "h" }, """{"type":"Resume","gameId":"g","lastSeq":9,"lastViewHash":"h"}""" },
         { new LobbySet { Slot = 2, Nation = "Rome", Color = "red", Ready = true }, """{"type":"LobbySet","slot":2,"nation":"Rome","color":"red","ready":true}""" },
         { new LobbyChat { Text = "hi" }, """{"type":"LobbyChat","text":"hi"}""" },
+        { new MapPing { X = 3, Y = -2, Kind = "Danger" }, """{"type":"MapPing","x":3,"y":-2,"kind":"Danger"}""" },
+        { new MapPingNotice { X = 3, Y = -2, Kind = "Danger", Sender = "Bob" }, """{"type":"MapPingNotice","x":3,"y":-2,"kind":"Danger","sender":"Bob"}""" },
         { new Command { ClientCmdId = "c1", CommandType = "MoveUnit", Payload = J("""{"unit":4}""") }, """{"type":"Command","clientCmdId":"c1","commandType":"MoveUnit","payload":{"unit":4}}""" },
         { new Query { QueryId = 12, QueryType = "units.ReachableTiles", Payload = J("""{"unitId":4}""") }, """{"type":"Query","queryId":12,"queryType":"units.ReachableTiles","payload":{"unitId":4}}""" },
         { new QueryResult { QueryId = 12, Ok = true, Payload = J("""{"tiles":[]}""") }, """{"type":"QueryResult","queryId":12,"ok":true,"payload":{"tiles":[]}}""" },

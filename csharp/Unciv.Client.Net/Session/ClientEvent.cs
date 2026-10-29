@@ -46,6 +46,9 @@ public sealed record StateChanged(ClientSessionState State) : ClientEvent;
 
 public sealed record LobbyUpdated(LobbyState Lobby) : ClientEvent;
 
+/// <summary>C090: an ally's map ping (or the player's own, echoed by the host).</summary>
+public sealed record MapPingReceived(MapPingNotice Ping) : ClientEvent;
+
 public sealed record LobbyChatReceived(string? Sender, string Text) : ClientEvent;
 
 public sealed record GameStarted : ClientEvent;
