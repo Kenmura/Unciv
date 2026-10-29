@@ -127,6 +127,7 @@ public sealed class ClientSession : IAsyncDisposable
     private bool handshakeTimedOut;
     private string? gameId;
     private int knownEpoch;
+    private int pendingEpoch;
     private TaskCompletionSource? resyncWaiter;
 
     private sealed class PendingCommand(Command message, long ordinal)
@@ -591,11 +592,7 @@ public sealed class ClientSession : IAsyncDisposable
             await EndAsync(ClientCodes.StaleEpoch, refused: true).ConfigureAwait(false);
             return false;
         }
-        if (epoch > knownEpoch)
-        {
-            knownEpoch = epoch;
-            options.PersistKnownEpoch?.Invoke(epoch);
-        }
+        pendingEpoch = epoch; // remembered only once the host accepted our seat (JoinOk), so a refused join or a wrong game cannot move the stored epoch
 
         await SendAsync(new Join
         {
@@ -648,6 +645,12 @@ public sealed class ClientSession : IAsyncDisposable
         handshakeTimer?.CancelAfter(Timeout.InfiniteTimeSpan);
         var firstJoin = !everJoined;
         everJoined = true;
+        if (pendingEpoch > knownEpoch)
+        {
+            knownEpoch = pendingEpoch;
+            try { options.PersistKnownEpoch?.Invoke(pendingEpoch); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { /* a store that cannot write must not abort the join; the epoch is kept in memory */ }
+        }
 
         // The state moves before JoinAsync completes, so a caller that awaits the join never observes the stale Joining state.
         var snapshot = Game.Snapshot;
