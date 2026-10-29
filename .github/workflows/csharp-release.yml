@@ -179,7 +179,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # `gh release view` (verify job) cannot see drafts; this job can list them
-          if [[ -n "$(gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName --jq ".[] | select(.tagName == \"$GITHUB_REF_NAME\") | .tagName")" ]]; then
+          existing=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName --jq ".[] | select(.tagName == \"$GITHUB_REF_NAME\") | .tagName")
+          if [[ -n "$existing" ]]; then
             echo "a release or draft for $GITHUB_REF_NAME already exists; delete it first (this workflow never overwrites)" >&2; exit 1
           fi
           pre=(); [[ "$GITHUB_REF_NAME" == *-* ]] && pre=(--prerelease)
