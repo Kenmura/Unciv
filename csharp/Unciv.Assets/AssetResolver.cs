@@ -46,20 +46,29 @@ public sealed class AssetResolver
 {
     public const string OverrideDir = "assets/override/";
     public const string PackDir = "assets/packs/";
+
+    /// <summary>C063: the pack of Unciv's icons shipped with the client; every registry consults it after the selected pack.</summary>
+    public const string BundledPack = "unciv";
     public static readonly string[] OverrideExtensions = ["tres", "glb", "png", "ogg"];
     private static readonly HashSet<string> ManifestExtensions = new(OverrideExtensions, StringComparer.Ordinal) { "jpg", "webp", "wav", "ttf", "otf" };
 
     private readonly IAssetFiles files;
     private readonly IAssetFallbacks fallbacks;
     private readonly string? pack;
+    private readonly string? basePack;
     private readonly List<string> diagnostics = [];
-    private Dictionary<string, string>? manifest;
+    private readonly Dictionary<string, Dictionary<string, string>> manifests = new(StringComparer.Ordinal);
 
-    public AssetResolver(IAssetFiles files, IAssetFallbacks fallbacks, string? pack = null)
+    /// <param name="files">Where asset files are read from.</param>
+    /// <param name="fallbacks">The fallback chain of every key.</param>
+    /// <param name="pack">The selected pack, consulted first.</param>
+    /// <param name="basePack">C063: a pack consulted after <paramref name="pack"/> for every key (the bundled default art); null for none. A missing base pack is silent (only a missing selected pack is a diagnostic).</param>
+    public AssetResolver(IAssetFiles files, IAssetFallbacks fallbacks, string? pack = null, string? basePack = null)
     {
         this.files = files;
         this.fallbacks = fallbacks;
         this.pack = pack;
+        this.basePack = basePack == pack ? null : basePack;
     }
 
     public IReadOnlyList<string> Diagnostics => diagnostics;
@@ -73,24 +82,24 @@ public sealed class AssetResolver
                 var path = OverrideDir + candidate.FileStem + "." + ext;
                 if (files.Exists(path)) return new AssetResolution(key, candidate, AssetSourceKind.Override, path);
             }
-            if (PackEntry(candidate) is { } packPath) return new AssetResolution(key, candidate, AssetSourceKind.Pack, packPath);
+            if ((PackEntry(pack, candidate) ?? PackEntry(basePack, candidate)) is { } packPath) return new AssetResolution(key, candidate, AssetSourceKind.Pack, packPath);
         }
         return new AssetResolution(key, key, AssetSourceKind.Procedural, null);
     }
 
-    private string? PackEntry(AssetKey key)
+    private string? PackEntry(string? pack, AssetKey key)
     {
         if (string.IsNullOrEmpty(pack)) return null;
-        manifest ??= LoadManifest();
+        if (!manifests.TryGetValue(pack, out var manifest)) manifests[pack] = manifest = LoadManifest(pack, quiet: pack == basePack);
         if (!manifest.TryGetValue(key.ToString(), out var relative)) return null;
         var full = PackDir + pack + "/" + relative;
         return files.Exists(full) ? full : null;
     }
 
-    private Dictionary<string, string> LoadManifest()
+    private Dictionary<string, string> LoadManifest(string pack, bool quiet)
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (!IsSafeSegment(pack!))
+        if (!IsSafeSegment(pack))
         {
             diagnostics.Add($"Pack name '{pack}' is not a plain directory name");
             return result;
@@ -99,7 +108,7 @@ public sealed class AssetResolver
         var text = files.ReadText(manifestPath);
         if (text == null)
         {
-            diagnostics.Add($"Pack manifest {manifestPath} not found");
+            if (!quiet) diagnostics.Add($"Pack manifest {manifestPath} not found");
             return result;
         }
         try

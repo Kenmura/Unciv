@@ -19,14 +19,14 @@ public sealed class AssetRegistry
     private readonly IAssetFallbacks fallbacks;
     private readonly Dictionary<(AssetKey, Type), object> cache = [];
 
-    public AssetRegistry(IAssetFiles files, IAssetFallbacks fallbacks, string? pack = null)
+    public AssetRegistry(IAssetFiles files, IAssetFallbacks fallbacks, string? pack = null, string? basePack = null)
     {
         this.fallbacks = fallbacks;
-        resolver = new AssetResolver(files, fallbacks, pack);
+        resolver = new AssetResolver(files, fallbacks, pack, basePack);
     }
 
     public static AssetRegistry ForRuleset(RulesetClass ruleset, string? pack = null) =>
-        new(new GodotAssetFiles(), RulesetAssetKeys.FallbacksFor(ruleset), pack);
+        new(new GodotAssetFiles(), RulesetAssetKeys.FallbacksFor(ruleset), pack, AssetResolver.BundledPack);
 
     public IReadOnlyList<string> Diagnostics => resolver.Diagnostics;
 

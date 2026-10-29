@@ -38,6 +38,11 @@ public sealed class UiKitScenario : Scenario
         stats.AddChild(gold);
         stats.AddChild(new IconLabel(theme, AssetKey.Of(RulesetAssetKeys.StatIcon, "Science"), "+5"));
         stats.AddChild(new IconLabel(theme, AssetKey.Of(RulesetAssetKeys.StatIcon, "Culture"), "+3"));
+        // C063: nation emblems from the bundled pack on their colour badges, and one key no pack has (generated fallback)
+        var badges = new HBoxContainer();
+        var sampleBadges = new[] { ("Rome", new Color(0.55f, 0.1f, 0.12f)), ("Egypt", new Color(0.8f, 0.65f, 0.15f)), ("Greece", new Color(0.2f, 0.4f, 0.7f)), ("Atlantis", new Color(0.3f, 0.3f, 0.35f)) };
+        foreach (var (nation, colour) in sampleBadges) badges.AddChild(new IconBadge(theme, AssetKey.Of(RulesetAssetKeys.NationIcon, nation), colour, Colors.White));
+        stats.AddChild(badges);
         manager.Tooltips.Attach(gold, () => "[b]Gold[/b]\nIncome per turn: [color=yellow]+12[/color]");
         var tabsPage1 = new HBoxContainer();
         tabsPage1.AddChild(list);
@@ -58,6 +63,11 @@ public sealed class UiKitScenario : Scenario
         [
             new WaitFrames(2),
             new AssertQuery("one screen on the stack, first tab selected", () => manager.Depth == 1 && manager.Top == rootScreen && tabs.SelectedIndex == 0 && tabs.SelectedPage == tabsPage1),
+            new AssertQuery("stat icons and badges come from the pack, an unknown nation falls back", () =>
+                new[] { "Gold", "Science", "Culture" }.All(n => theme.Registry.Resolve(AssetKey.Of(RulesetAssetKeys.StatIcon, n)).Source == AssetSourceKind.Pack)
+                && theme.Registry.Resolve(AssetKey.Of(RulesetAssetKeys.NationIcon, "Rome")).Source == AssetSourceKind.Pack
+                && theme.Registry.Resolve(AssetKey.Of(RulesetAssetKeys.NationIcon, "Atlantis")).Source == AssetSourceKind.Procedural
+                && badges.GetChildCount() == 4),
             new Capture("screen", "Tab bar, scrolling list with icons, icon labels"),
             new Press("Cities"),
             new AssertQuery("second tab selected, first page hidden", () => tabs.SelectedIndex == 1 && !tabsPage1.Visible),

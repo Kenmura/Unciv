@@ -1052,5 +1052,23 @@
         "caption": "Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min."
       }
     ]
+  },
+  "C063": {
+    "scenario": "ui-kit",
+    "about": "Unciv's own icon pack is the default art: stat icons come from the bundled pack (all goldens with a top bar or stat labels were re-recorded), nation emblems sit on colour badges, and a key with no pack art (Atlantis) falls back to a generated badge.",
+    "shots": [
+      {
+        "golden": "ui-kit/screen.png",
+        "caption": "Gold, Science and Culture stat icons from the pack, and four nation badges: Rome, Egypt and Greece with their emblems, Atlantis with the generated fallback (initials on a disc)."
+      },
+      {
+        "golden": "hud/start.png",
+        "caption": "The top bar with the pack's stat icons (gold, science, culture, happiness, faith, golden age)."
+      },
+      {
+        "golden": "city-a/open.png",
+        "caption": "The city screen under the same top bar."
+      }
+    ]
   }
 }

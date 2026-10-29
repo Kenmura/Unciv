@@ -23,6 +23,12 @@ The fallback fonts behind the client's default font and the type-scale faces (No
 for Chinese, Japanese and Korean) are Google Noto fonts, copyright The Noto Project Authors (https://github.com/notofonts) and Adobe (CJK), under
 the SIL Open Font License 1.1. The licence text is `Assets/fonts/OFL.txt` in the project and is copied with the exported fonts.
 
+## Unciv icon pack
+
+`assets/packs/unciv` holds Unciv's own stat, nation, unit-action, notification and interface icons (copied from the Unciv repository by
+`tools/import-unciv-icons.py`). They are mostly from The Noun Project under CC BY 3.0 (attribution required) or the public domain, and some are Unciv's own work
+under CC BY 4.0. The attribution text of the Unciv repository's `docs/Credits.md` for these icons is in `assets/packs/unciv/CREDITS.md`, which is copied with the pack.
+
 ## .NET runtime and NuGet packages
 
 Runs on the .NET runtime (MIT licence, Microsoft and contributors). The client assemblies use only the packages restored from

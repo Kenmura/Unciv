@@ -1042,6 +1042,24 @@ Scenario `theme`.
 
 *Every theme variation: type scale, switch and stat bars on the left, the button variants in the middle, card, inset, tooltip, modal, header and dock panels with a text field on the right.* (`theme/variations.png`)
 
+## C063 (ticket not Done or unknown)
+
+Unciv's own icon pack is the default art: stat icons come from the bundled pack (all goldens with a top bar or stat labels were re-recorded), nation emblems sit on colour badges, and a key with no pack art (Atlantis) falls back to a generated badge.
+
+Scenario `ui-kit`.
+
+![Gold, Science and Culture stat icons from the pack, and four nation badges: Rome, Egypt and Greece with their emblems, Atlantis with the generated fallback (initials on a disc).](../Unciv.Godot.Harness/golden/ui-kit/screen.png)
+
+*Gold, Science and Culture stat icons from the pack, and four nation badges: Rome, Egypt and Greece with their emblems, Atlantis with the generated fallback (initials on a disc).* (`ui-kit/screen.png`)
+
+![The top bar with the pack's stat icons (gold, science, culture, happiness, faith, golden age).](../Unciv.Godot.Harness/golden/hud/start.png)
+
+*The top bar with the pack's stat icons (gold, science, culture, happiness, faith, golden age).* (`hud/start.png`)
+
+![The city screen under the same top bar.](../Unciv.Godot.Harness/golden/city-a/open.png)
+
+*The city screen under the same top bar.* (`city-a/open.png`)
+
 ## T252 (ticket not Done or unknown)
 
 Host screen dynamic turn timer: checkbox and shortest-turn choice under the turn timer; the host runs with the chosen policy.

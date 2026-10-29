@@ -15,6 +15,7 @@ public partial class IconLabel : HBoxContainer
             Texture = theme.Icon(icon),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            TextureFilter = TextureFilterEnum.LinearWithMipmaps,
             CustomMinimumSize = new Vector2(theme.Px(UiTheme.IconSize), theme.Px(UiTheme.IconSize)),
         };
         AddChild(picture);

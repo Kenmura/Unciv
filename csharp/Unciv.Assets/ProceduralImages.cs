@@ -34,7 +34,15 @@ public static class ProceduralImages
         Triangle,
     }
 
-    public static IconShape ShapeFor(AssetKey key) => (IconShape)(StableHash.Of(key.ToString()) / 360 % 5);
+    /// <summary>C063: a missing pack icon of the interface categories keeps one shape per category (nation: disc badge, action: diamond, notification: triangle, ui: ring) so the kind is readable even without art; other keys use their hash.</summary>
+    public static IconShape ShapeFor(AssetKey key) => key.Category switch
+    {
+        RulesetAssetKeys.NationIcon => IconShape.Disc,
+        RulesetAssetKeys.ActionIcon => IconShape.Diamond,
+        RulesetAssetKeys.NotificationIcon => IconShape.Triangle,
+        RulesetAssetKeys.UiIcon => IconShape.Ring,
+        _ => (IconShape)(StableHash.Of(key.ToString()) / 360 % 5),
+    };
 
     /// <summary>Fill colour for an icon key: the stat palette for stat icons, otherwise a hash-derived hue.</summary>
     public static Rgb IconColour(AssetKey key) =>
