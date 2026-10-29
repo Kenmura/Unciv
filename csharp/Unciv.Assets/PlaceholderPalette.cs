@@ -95,21 +95,21 @@ public static class PlaceholderPalette
     public static Rgb LockedOutline { get; } = new(240, 200, 90);
 
     public static Rgb HorseBrown { get; } = new(120, 80, 45);
-    public static Rgb Background { get; } = new(24, 28, 36);
-    public static Rgb PanelFill { get; } = new(36, 42, 54);
-    public static Rgb PanelBorder { get; } = new(62, 70, 86);
-    public static Rgb Accent { get; } = new(214, 170, 60);
+    public static Rgb Background => UiTokens.Bg1;
+    public static Rgb PanelFill => UiTokens.Surface1;
+    public static Rgb PanelBorder => UiTokens.BorderSubtle;
+    public static Rgb Accent => UiTokens.Accent;
     /// <summary>C012: overlay on the tiles the selected unit can move to.</summary>
     public static Rgb ReachableTint { get; } = new(70, 130, 220);
     /// <summary>C012: overlay on the tiles the selected unit can attack.</summary>
     public static Rgb AttackTint { get; } = new(220, 60, 50);
-    public static Rgb AccentHover { get; } = new(240, 200, 90);
-    public static Rgb ButtonFill { get; } = new(48, 56, 72);
-    public static Rgb ButtonHover { get; } = new(66, 76, 96);
-    public static Rgb ButtonPressed { get; } = new(30, 36, 48);
-    public static Rgb Text { get; } = new(232, 232, 236);
+    public static Rgb AccentHover => UiTokens.AccentHi;
+    public static Rgb ButtonFill => UiTokens.Surface2;
+    public static Rgb ButtonHover => UiTokens.Surface3;
+    public static Rgb ButtonPressed => UiTokens.Inset;
+    public static Rgb Text => UiTokens.TextPrimary;
     public static Rgb ErrorText { get; } = new(255, 140, 128);
-    public static Rgb TextDisabled { get; } = new(130, 134, 142);
+    public static Rgb TextDisabled => UiTokens.TextMuted;
     public static Rgb IconOutline { get; } = new(16, 18, 24);
     public static Rgb IconGlyph { get; } = new(250, 250, 250);
     public static Rgb RoadBrown { get; } = new(158, 115, 71);

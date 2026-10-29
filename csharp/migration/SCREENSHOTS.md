@@ -1018,7 +1018,7 @@ Scenario `tooltips`.
 
 *Tile tooltip beside the pointer: the capital, its terrain, owner, yields and each yield's sources.* (`tooltips/tile.png`)
 
-## C061 (ticket not Done or unknown)
+## C061 Harness: label-based Press and multi-resolution captures
 
 Harness only (no game screen): a 1280x720 scenario that presses a text-less button by its ui_label metadata.
 
@@ -1027,6 +1027,16 @@ Scenario `viewport`.
 ![A 1280x720 capture: the label reads "Pressed by label" and an empty button sits bottom right (harness test, not a game screen).](../Unciv.Godot.Harness/golden/viewport/pressed.png)
 
 *A 1280x720 capture: the label reads "Pressed by label" and an empty button sits bottom right (harness test, not a game screen).* (`viewport/pressed.png`)
+
+## C062 (ticket not Done or unknown)
+
+Theme builder v2: every type variation of the UI theme on one sheet. All other goldens were re-recorded with the new theme (no layout change).
+
+Scenario `theme`.
+
+![Every theme variation: type scale, switch and stat bars on the left, the button variants in the middle, card, inset, tooltip, modal, header and dock panels with a text field on the right.](../Unciv.Godot.Harness/golden/theme/variations.png)
+
+*Every theme variation: type scale, switch and stat bars on the left, the button variants in the middle, card, inset, tooltip, modal, header and dock panels with a text field on the right.* (`theme/variations.png`)
 
 ## Missing screenshots
 

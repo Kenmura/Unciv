@@ -101,7 +101,7 @@ public sealed class UiKitScenario : Scenario
             new AssertQuery("the bottom screen never pops", () => manager.Depth == 1),
             new Act("UI scale 150%", () => theme.SetScale(1.5f)),
             new WaitFrames(2),
-            new AssertQuery("font size follows the scale", () => theme.Theme.DefaultFontSize == 24 && theme.Px(10) == 15),
+            new AssertQuery("font size follows the scale", () => theme.Theme.DefaultFontSize == 23 && theme.Px(10) == 15),
             new Capture("scaled", "The same screen at 150% UI scale"),
         ];
     }

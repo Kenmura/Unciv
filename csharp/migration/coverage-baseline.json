@@ -59,6 +59,7 @@
     "Unciv.Assets/TurnBarModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/TutorialModel.cs": {"branch": 97.5, "line": 100.0},
     "Unciv.Assets/TutorialTaskModel.cs": {"branch": 95.83, "line": 100.0},
+    "Unciv.Assets/UiTokens.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/UnitOrdersModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/UnitVisuals.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/VictoryStatusModel.cs": {"branch": 100.0, "line": 100.0},

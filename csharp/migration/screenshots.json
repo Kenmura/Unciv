@@ -1028,5 +1028,15 @@
         "caption": "Connection lost: the game is covered by a panel saying it retries with the same key and keeps commands; no buttons."
       }
     ]
+  },
+  "C062": {
+    "scenario": "theme",
+    "about": "Theme builder v2: every type variation of the UI theme on one sheet. All other goldens were re-recorded with the new theme (no layout change).",
+    "shots": [
+      {
+        "golden": "theme/variations.png",
+        "caption": "Every theme variation: type scale, switch and stat bars on the left, the button variants in the middle, card, inset, tooltip, modal, header and dock panels with a text field on the right."
+      }
+    ]
   }
 }

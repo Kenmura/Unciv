@@ -159,12 +159,3 @@ public static class ModelSpecs
         return new ModelSpec(primitives, "", 0f);
     }
 }
-
-/// <summary>Colours and metrics for the procedural UI theme (dark slate panels, gold accent); the Godot side maps these onto StyleBoxFlat.</summary>
-public static class ThemeSpec
-{
-    public const int CornerRadius = 4;
-    public const int BorderWidth = 2;
-    public const int ContentMargin = 8;
-    public const int FontSize = 16;
-}

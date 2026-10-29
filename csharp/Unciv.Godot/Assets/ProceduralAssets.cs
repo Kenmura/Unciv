@@ -124,39 +124,11 @@ public static class ProceduralAssets
         _ => new SphereMesh { Radius = p.SizeX / 2f, Height = p.SizeX },
     };
 
-    public static StyleBoxFlat Panel() => Flat(PlaceholderPalette.PanelFill, PlaceholderPalette.PanelBorder);
+    /// <summary>The plain panel and button styleboxes of the <c>style/*</c> keys at scale 1: the panel and secondary-button looks of <see cref="ThemeBuilder"/>.</summary>
+    public static StyleBoxFlat Panel() => (StyleBoxFlat)ThemeBuilder.Build().GetStylebox("panel", "PanelContainer");
 
-    public static StyleBoxFlat Button() => Flat(PlaceholderPalette.ButtonFill, PlaceholderPalette.Accent);
+    public static StyleBoxFlat Button() => (StyleBoxFlat)ThemeBuilder.Build().GetStylebox("normal", "Button");
 
-    private static StyleBoxFlat Flat(Rgb fill, Rgb border)
-    {
-        var box = new StyleBoxFlat { BgColor = ToColor(fill), BorderColor = ToColor(border) };
-        box.SetBorderWidthAll(ThemeSpec.BorderWidth);
-        box.SetCornerRadiusAll(ThemeSpec.CornerRadius);
-        box.SetContentMarginAll(ThemeSpec.ContentMargin);
-        return box;
-    }
-
-    /// <summary>Dark slate panels with a gold accent; the default font is the engine's built-in one with the C025 fallback chain (<see cref="FontChain"/>) behind it.</summary>
-    public static Theme BuildTheme()
-    {
-        var theme = new Theme { DefaultFontSize = ThemeSpec.FontSize, DefaultFont = FontChain.Default };
-        theme.SetStylebox("panel", "PanelContainer", Panel());
-        theme.SetStylebox("panel", "Panel", Panel());
-        var states = new (string Name, Rgb Fill, Rgb Border)[]
-        {
-            ("normal", PlaceholderPalette.ButtonFill, PlaceholderPalette.PanelBorder),
-            ("hover", PlaceholderPalette.ButtonHover, PlaceholderPalette.AccentHover),
-            ("pressed", PlaceholderPalette.ButtonPressed, PlaceholderPalette.Accent),
-            ("disabled", PlaceholderPalette.PanelFill, PlaceholderPalette.PanelBorder),
-            ("focus", PlaceholderPalette.ButtonFill, PlaceholderPalette.Accent),
-        };
-        foreach (var (name, fill, border) in states) theme.SetStylebox(name, "Button", Flat(fill, border));
-        theme.SetColor("font_color", "Button", ToColor(PlaceholderPalette.Text));
-        theme.SetColor("font_hover_color", "Button", ToColor(PlaceholderPalette.AccentHover));
-        theme.SetColor("font_pressed_color", "Button", ToColor(PlaceholderPalette.Accent));
-        theme.SetColor("font_disabled_color", "Button", ToColor(PlaceholderPalette.TextDisabled));
-        theme.SetColor("font_color", "Label", ToColor(PlaceholderPalette.Text));
-        return theme;
-    }
+    /// <summary>Dark slate panels with a brass accent, built from <see cref="UiTokens"/> by <see cref="ThemeBuilder"/> (C062); the default font is the engine's built-in one with the C025 fallback chain (<see cref="FontChain"/>) behind it.</summary>
+    public static Theme BuildTheme() => ThemeBuilder.Build();
 }

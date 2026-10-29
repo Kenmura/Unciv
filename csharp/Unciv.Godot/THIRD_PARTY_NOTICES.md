@@ -19,7 +19,7 @@ https://docs.godotengine.org/en/stable/about/complying_with_licenses.html and in
 
 ## Noto fonts
 
-The fallback fonts behind the client's default font (Latin/Cyrillic/Greek, Arabic, Hebrew, Thai, Devanagari, Bengali and a subset of Noto Sans CJK
+The fallback fonts behind the client's default font and the type-scale faces (Noto Serif for screen titles and banners; Noto Sans at several weights) (Latin/Cyrillic/Greek, Arabic, Hebrew, Thai, Devanagari, Bengali and a subset of Noto Sans CJK
 for Chinese, Japanese and Korean) are Google Noto fonts, copyright The Noto Project Authors (https://github.com/notofonts) and Adobe (CJK), under
 the SIL Open Font License 1.1. The licence text is `Assets/fonts/OFL.txt` in the project and is copied with the exported fonts.
 

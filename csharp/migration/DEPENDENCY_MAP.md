@@ -237,7 +237,7 @@ flowchart TD
   class B024 waiting
   class B025 waiting
   class B026 waiting
-  class C062 prog
+  class C062 review
   class C063 ondeck
   class C064 ondeck
   class C065 waiting
@@ -322,7 +322,7 @@ xychart-beta
 | C063 | **On deck** (after C062) | C062 | 22 | Unciv icon pack and icon keys |
 | C064 | **On deck** (after C062) | C062 | 22 | Unique display text and hidden uniques in UI models |
 | B001 | Available (waiting on ) | none | 25 | BNW: BaseRuleset.Civ_V_BNW, ModOptions gates, ModConstants, CompatibilityVersion bump |
-| C062 | In-Progress [Claude] | C061 | 24 | UI design tokens and theme builder v2 |
+| C062 | Needs-Review [Claude] | C061 | 24 | UI design tokens and theme builder v2 |
 | C065 | Available (waiting on C062, C063, C064) | C062, C063, C064 | 21 | UI shared components |
 | B003 | Available (waiting on B001) | B001 | 20 | BNW: New UniqueTypes (declarations, parameter types, docs only) |
 | C066 | Available (waiting on C065) | C065 | 20 | ScreenFrame, Modal and Tooltip |

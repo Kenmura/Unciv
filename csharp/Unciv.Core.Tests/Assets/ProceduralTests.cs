@@ -308,5 +308,5 @@ public class ProceduralTests
     }
 
     [Fact]
-    public void ThemeMetricsArePositive() => Assert.True(ThemeSpec.CornerRadius > 0 && ThemeSpec.BorderWidth > 0 && ThemeSpec.ContentMargin > 0 && ThemeSpec.FontSize > 0);
+    public void ThemeMetricsArePositive() => Assert.True(UiTokens.RadiusControl > 0 && UiTokens.BorderWidth > 0 && UiTokens.S3 > 0 && UiTokens.FontSize > 0);
 }
