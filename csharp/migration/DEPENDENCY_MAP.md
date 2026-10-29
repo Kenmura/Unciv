@@ -194,17 +194,17 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class B002 prog
-  class B003 ready
+  class B002 ready
+  class B003 prog
   class B004 waiting
-  class B005 waiting
+  class B005 ondeck
   class B006 waiting
-  class B007 waiting
+  class B007 ondeck
   class B008 waiting
   class B009 waiting
   class B010 waiting
   class B011 waiting
-  class B012 ondeck
+  class B012 waiting
   class B013 waiting
   class B014 waiting
   class B015 waiting
@@ -216,7 +216,7 @@ flowchart TD
   class B021 waiting
   class B022 waiting
   class B023 waiting
-  class B024 ondeck
+  class B024 waiting
   class B025 waiting
   class B026 waiting
   class C065 review
@@ -294,16 +294,15 @@ xychart-beta
 
 | Ticket | State | Depends on | Unblocks | Title |
 |---|---|---|---|---|
-| B003 | **Ready to start** | B001 | 20 | BNW: New UniqueTypes (declarations, parameter types, docs only) |
+| B002 | **Ready to start** | B001 | 16 | BNW: Ruleset generator gen_ruleset.py, overrides.json and generated JSON |
 | C066 | **On deck** (after C065) | C065 | 20 | ScreenFrame, Modal and Tooltip |
-| B012 | **On deck** (after B002) | B002 | 10 | BNW: Policy tree: branch era gates, branch-gated wonders, finishers |
+| B005 | **On deck** (after B003) | B003 | 10 | BNW: Trade routes: model, slots, range, yields, lifecycle, plunder, commands, queries |
+| B007 | **On deck** (after B003) | B003 | 9 | BNW: Great Works: instances, slots, creation, theming, moving, swapping |
 | C081 | **On deck** (after C080) | C080 | 7 | UnitAnimator, facing and re-timed combat cues |
-| B024 | **On deck** (after B002) | B002 | 1 | BNW: Map: Indonesia luxuries, new resources, start along ocean |
 | C065 | Needs-Review [Claude] | C062, C063, C064 | 21 | UI shared components |
-| B002 | In-Progress [Claude] | B001 | 16 | BNW: Ruleset generator gen_ruleset.py, overrides.json and generated JSON |
+| B003 | In-Progress [Claude] | B001 | 20 | BNW: New UniqueTypes (declarations, parameter types, docs only) |
 | C067 | Available (waiting on C066) | C066 | 11 | World HUD layout |
-| B005 | Available (waiting on B003) | B003 | 10 | BNW: Trade routes: model, slots, range, yields, lifecycle, plunder, commands, queries |
-| B007 | Available (waiting on B003) | B003 | 9 | BNW: Great Works: instances, slots, creation, theming, moving, swapping |
+| B012 | Available (waiting on B002) | B002 | 10 | BNW: Policy tree: branch era gates, branch-gated wonders, finishers |
 | B013 | Available (waiting on B012) | B012 | 9 | BNW: Ideologies: unlock, adopter bonuses, tenet levels |
 | C069 | Available (waiting on C066) | C066 | 8 | City screen redesign |
 | C080 | In-Progress [Claude] | none | 8 | Unit model loader and contract |
@@ -338,6 +337,7 @@ xychart-beta
 | B021 | Available (waiting on B005, B004) | B005, B004 | 1 | BNW: City-state BNW changes, Merchant of Venice purchase, Venice restrictions |
 | B022 | Available (waiting on B005, B004) | B005, B004 | 1 | BNW: Religion BNW constants, belief effects, trade-route pressure |
 | B023 | Available (waiting on B004) | B004 | 1 | BNW: Warmonger, Sapper and other military data effects |
+| B024 | Available (waiting on B002) | B002 | 1 | BNW: Map: Indonesia luxuries, new resources, start along ocean |
 | B025 | Available (waiting on B007, B013) | B007, B013 | 1 | BNW: Score changes |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | B026 | Available (waiting on B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
