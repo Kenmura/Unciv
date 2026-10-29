@@ -472,7 +472,7 @@ gated by the ModOptions unique `Enables international trade routes`, never by ru
 - **Plunder** [X]: an enemy military unit entering a non-city tile with the route's unit takes `100 + (origin gold per turn) * (turns left)`.
 - **Breaking** [X]: war between the owners (at once on declaration, and rechecked at turn start), a city that changed owner, or a defeated owner.
   The unit is lost. "Loss of path" is not checked. Embargoes end routes too (B016, 4.7.9).
-- **Still open** (seams in the code): `TODO(B031)` influence science bonus, `TODO(B051)` shared ideology gold, tourism / religion /
+- **Still open** (seams in the code): `TODO(B072)` influence science bonus (Scholasticism), `TODO(B051)` shared ideology gold, tourism / religion /
   quest / Hanse effects of §4.1.5 (B021 and later), `[stats] for each international trade route [cityFilter]` and
   `[relativeAmount]% Production for each trade route to a city-state` (declared by B003, not yet read).
 
