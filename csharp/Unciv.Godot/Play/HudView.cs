@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Ui;
 using Unciv.Queries.Empire;
 using Unciv.GodotClient.Localization;
@@ -116,6 +117,19 @@ public partial class HudView : Control
 
     public event Action? EndTurnRequested;
 
+    private string? endTurnKey = Hotkeys.Defaults[HotkeyAction.EndTurn];
+
+    /// <summary>C078: the key shown in the end-turn button's tooltip.</summary>
+    public string? EndTurnKey
+    {
+        get => endTurnKey;
+        set
+        {
+            endTurnKey = value;
+            if (endTurnButton != null) endTurnButton.Hotkey = value;
+        }
+    }
+
     public void Init(UiTheme uiTheme)
     {
         theme = uiTheme;
@@ -123,7 +137,7 @@ public partial class HudView : Control
         foreach (var node in new Control[] { bar, bannerPanel, dock }) node.Theme = uiTheme.Theme;
         if (endTurnButton != null) dockRow.RemoveChild(endTurnButton);
         endTurnButton?.QueueFree();
-        endTurnButton = new IconButton(uiTheme, AssetKey.Of(RulesetAssetKeys.UiIcon, "ForwardArrow"), HudModel.EndTurnLabel, variation: UiVariants.ButtonGhost) { Name = "EndTurn", Visible = false };
+        endTurnButton = new IconButton(uiTheme, AssetKey.Of(RulesetAssetKeys.UiIcon, "ForwardArrow"), HudModel.EndTurnLabel, hotkey: endTurnKey, variation: UiVariants.ButtonGhost) { Name = "EndTurn", Visible = false };
         endTurnButton.Pressed += () => EndTurnRequested?.Invoke();
         dockRow.AddChild(endTurnButton);
         dockRow.MoveChild(endTurnButton, 0);

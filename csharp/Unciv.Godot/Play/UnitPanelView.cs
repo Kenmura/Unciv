@@ -5,6 +5,7 @@ using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Ui;
 using Unciv.Models.Translations;
 using Unciv.GodotClient.Localization;
+using Unciv.GodotClient.Settings;
 
 namespace Unciv.GodotClient.Play;
 
@@ -327,6 +328,14 @@ public partial class UnitPanelView : PanelContainer
         return result;
     }
 
+    private Func<HotkeyAction, string>? keyOf = action => Hotkeys.Defaults[action];
+
+    /// <summary>C078: the bound keys the grid tooltips and the popover rows show; takes effect when the menu is next built (a selection or a refresh).</summary>
+    public void SetKeys(Func<HotkeyAction, string> keys) => keyOf = keys;
+
+    /// <summary>The key shown for an entry, or null when its action has none.</summary>
+    public string? KeyFor(MenuEntry entry) => keyOf != null && Hotkeys.ForEntry(entry) is { } action ? keyOf(action) : null;
+
     private float Cell => theme?.Px(CellSize) ?? CellSize;
 
     private Button MakeButton(MenuEntry entry, bool inGrid)
@@ -359,8 +368,26 @@ public partial class UnitPanelView : PanelContainer
             : UiVariants.ButtonRow;
         button.CustomMinimumSize = inGrid ? new Vector2(Cell, Cell) : Vector2.Zero;
         button.ExpandIcon = false;
-        string tip = entry.Label.TrText();
+        string tip = UiText.TooltipFor(entry.Label.TrText(), KeyFor(entry));
         button.TooltipText = entry.Reason is { Length: > 0 } reason ? $"{tip}: {reason.TrText()}" : tip;
+        if (button.GetNodeOrNull("KeyHint") is { } old)
+        {
+            button.RemoveChild(old);
+            old.QueueFree();
+        }
+        if (!inGrid && theme != null && KeyFor(entry) is { } key)
+        {
+            // a popover row: the key chip sits at its right end; the row is made wide enough for both
+            var hint = new KeyHint(key) { Name = "KeyHint" };
+            hint.SetAnchorsPreset(LayoutPreset.CenterRight);
+            hint.GrowHorizontal = GrowDirection.Begin;
+            hint.GrowVertical = GrowDirection.Both;
+            hint.OffsetRight = -theme.Px(UiTokens.S2);
+            button.AddChild(hint);
+            var font = button.GetThemeFont("font");
+            float text = font.GetStringSize(entry.Label.TrText(), HorizontalAlignment.Left, -1, button.GetThemeFontSize("font_size")).X;
+            button.CustomMinimumSize = new Vector2(text + hint.GetCombinedMinimumSize().X + theme.Px(UiTokens.S6 * 2) + theme.Px(UiTheme.IconSize), 0f);
+        }
         if (inGrid) button.Alignment = HorizontalAlignment.Center;
     }
 

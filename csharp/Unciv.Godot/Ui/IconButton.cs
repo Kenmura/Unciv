@@ -20,7 +20,7 @@ public partial class IconButton : Button
     {
         this.theme = theme;
         Label = label;
-        Hotkey = hotkey;
+        hotkeyText = hotkey;
         ThemeTypeVariation = variation;
         SetMeta(LabelMeta, label);
         if (icon is { } key)
@@ -35,8 +35,18 @@ public partial class IconButton : Button
     /// <summary>The untranslated accessible name.</summary>
     public string Label { get; }
 
-    /// <summary>The key shown in the tooltip, or null.</summary>
-    public string? Hotkey { get; }
+    private string? hotkeyText;
+
+    /// <summary>The key shown in the tooltip, or null. C078: setting it (a rebound key) rewrites the tooltip.</summary>
+    public string? Hotkey
+    {
+        get => hotkeyText;
+        set
+        {
+            hotkeyText = value;
+            TooltipText = UiText.TooltipFor(Label.TrText(), value);
+        }
+    }
 
     public Badge? CountBadge => badge;
 

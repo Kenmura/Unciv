@@ -1,5 +1,6 @@
 using Godot;
 using Unciv.Assets;
+using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Ui;
 
 namespace Unciv.GodotClient.Play;
@@ -230,6 +231,26 @@ public partial class WorldHud : Control
         foreach (var button in new Control[] { Diplomacy, Trade, Espionage, Civilopedia, Overview, Players }) navRight.AddChild(button);
         foreach (var button in new[] { Technology, Policies, Diplomacy, Trade, Espionage, Civilopedia, Overview, Players, Menu }) button.Theme = theme.Theme;
         Technology.SetBadge(technologyAsking ? 1 : 0, accent: true); // a rebuild (breakpoint change) keeps the dot
+        ApplyKeys();
+    }
+
+    private Func<HotkeyAction, string>? keyOf = action => Hotkeys.Defaults[action];
+
+    /// <summary>C078: shows the bound keys in the nav buttons' tooltips ("Technology (F6)"); a rebind or a rebuilt nav calls it again.</summary>
+    public void SetKeys(Func<HotkeyAction, string> keys)
+    {
+        keyOf = keys;
+        if (Technology != null) ApplyKeys();
+    }
+
+    private void ApplyKeys()
+    {
+        if (keyOf == null) return;
+        Technology.Hotkey = keyOf(HotkeyAction.OpenTech);
+        Policies.Hotkey = keyOf(HotkeyAction.OpenPolicies);
+        Diplomacy.Hotkey = keyOf(HotkeyAction.OpenDiplomacy);
+        Civilopedia.Hotkey = keyOf(HotkeyAction.OpenPedia);
+        Overview.Hotkey = keyOf(HotkeyAction.OpenOverview);
     }
 
     /// <summary>The Accent dot on the Technology pill while the engine asks for a technology.</summary>

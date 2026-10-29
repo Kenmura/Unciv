@@ -59,7 +59,7 @@ public sealed class ClientSettingsTests : IDisposable
             AssetPack = "Pack",
             AutosaveTurns = 7,
             PlayerName = "Ann",
-            KeyBindings = new SortedDictionary<string, string> { ["EndTurn"] = "E" },
+            KeyBindings = new SortedDictionary<string, string> { ["EndTurn"] = "Q" },
             TutorialsSeen = ["a", "b"],
             Player = PlayerSettings.Default with { AutoAssignCityProduction = true },
         };
@@ -69,7 +69,7 @@ public sealed class ClientSettingsTests : IDisposable
         Assert.Equal(2f, loaded.UiScale);
         Assert.Equal(7, loaded.AutosaveTurns);
         Assert.Equal("Ann", loaded.PlayerName);
-        Assert.Equal("E", loaded.KeyBindings["EndTurn"]);
+        Assert.Equal("Q", loaded.KeyBindings["EndTurn"]);
         Assert.Equal(["a", "b"], loaded.TutorialsSeen);
         Assert.True(loaded.Player.AutoAssignCityProduction);
     }

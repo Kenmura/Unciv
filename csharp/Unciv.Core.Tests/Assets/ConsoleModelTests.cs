@@ -136,8 +136,8 @@ public class ConsoleModelTests
         Assert.Equal(HotkeyAction.OpenConsole, Hotkeys.Resolve(new Dictionary<string, string>(), "Quoteleft"));
         Assert.Equal("Quoteleft", Hotkeys.Normalize("QuoteLeft"));
         Assert.Equal("Quoteleft", Hotkeys.Defaults[HotkeyAction.OpenConsole]);
-        var bound = Hotkeys.Rebind(new Dictionary<string, string>(), HotkeyAction.OpenConsole, "F2", out _);
-        Assert.Equal(HotkeyAction.OpenConsole, Hotkeys.Resolve(bound!, "F2"));
+        var bound = Hotkeys.Rebind(new Dictionary<string, string>(), HotkeyAction.OpenConsole, "F12", out _);
+        Assert.Equal(HotkeyAction.OpenConsole, Hotkeys.Resolve(bound!, "F12"));
         Assert.Null(Hotkeys.Resolve(bound!, "Quoteleft"));
     }
 

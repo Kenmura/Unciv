@@ -173,7 +173,12 @@ public sealed class UnitOrdersScenario : Scenario
             steps.AddRange(
             [
                 // Fortify
-                new Act("choose Fortify from the menu", () => ChooseMenu(FortifyLabel())),
+                new AssertQuery("C078: the Fortify entry's key is F (the Kotlin default), shown in its tooltip", () =>
+                    screen.Panel.ButtonFor(FortifyLabel())?.TooltipText == FortifyLabel() + " (F)" && screen.Panel.KeyFor(screen.Panel.Entries.First(it => it.Label == FortifyLabel())) == "F"),
+                new PressKey(Key.K),
+                new WaitFrames(1),
+                new AssertQuery("C078: K (Transform, not on offer here) does nothing", () => !warrior.IsFortified()),
+                new PressKey(Key.F),
                 new WaitFrames(1),
                 new AssertQuery("the warrior is fortified in the engine and the panel shows the order", () =>
                     warrior.IsFortified() && screen.Panel.StatsText.Contains("Order: Fortify", StringComparison.Ordinal)),

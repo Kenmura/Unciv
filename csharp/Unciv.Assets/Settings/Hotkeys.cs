@@ -1,3 +1,5 @@
+using Unciv.Assets;
+
 namespace Unciv.GodotClient.Settings;
 
 /// <summary>The rebindable keyboard actions of the game screen (C028).</summary>
@@ -18,12 +20,87 @@ public enum HotkeyAction
 
     /// <summary>C055: opens (or closes) the Civilopedia (Kotlin <c>KeyboardBinding.Civilopedia</c>, F1).</summary>
     OpenPedia,
+
+    /// <summary>C078: the Kotlin <c>NextTurnAlternate</c> (Space); <see cref="EndTurn"/> now holds the Kotlin <c>NextTurn</c> default, N.</summary>
+    EndTurnAlternate,
+
+    /// <summary>C078: opens the empire overview on its last tab (Kotlin <c>EmpireOverview</c>, E).</summary>
+    OpenOverview,
+
+    /// <summary>C078: the overview's Cities tab (Kotlin <c>EmpireOverviewTrades</c>, F2, the economic info).</summary>
+    OverviewCities,
+
+    /// <summary>C078: the overview's Units tab (Kotlin <c>EmpireOverviewUnits</c>, F3).</summary>
+    OverviewUnits,
+
+    /// <summary>C078: the overview's Politics tab (Kotlin <c>EmpireOverviewPolitics</c>, F4).</summary>
+    OverviewPolitics,
+
+    /// <summary>C078: the overview's Stats tab (Kotlin <c>EmpireOverviewStats</c>, F9).</summary>
+    OverviewStats,
+
+    /// <summary>C078: the overview's Resources tab (Kotlin <c>EmpireOverviewResources</c>, F10).</summary>
+    OverviewResources,
+
+    /// <summary>C078: the victory status page (Kotlin <c>VictoryScreen</c>, F8).</summary>
+    OpenVictory,
+
+    /// <summary>C078: the Save entry of the game menu (Kotlin <c>SaveGame</c>, Ctrl+S).</summary>
+    SaveGame,
+
+    /// <summary>C078: the Load entry of the game menu (Kotlin <c>LoadGame</c>, Ctrl+L).</summary>
+    LoadGame,
+
+    /// <summary>C078: the Options entry of the game menu (Kotlin <c>Options</c>, Ctrl+O).</summary>
+    OpenOptions,
+
+    /// <summary>C078: centres the camera on the capital (Kotlin <c>ViewCapitalCity</c>, Home).</summary>
+    ViewCapital,
+
+    /// <summary>C078: toggles the resource icons on the map (Kotlin <c>ToggleResourceDisplay</c>, Ctrl+R).</summary>
+    ToggleResources,
+
+    /// <summary>C078: toggles the yield icons on the map (Kotlin <c>ToggleYieldDisplay</c>, Ctrl+Y).</summary>
+    ToggleYields,
+
+    // C078: the unit actions. Each is named like the engine's UnitActionType (so a menu entry finds its key by name); DisbandUnit is the panel's own Disband entry.
+    // Their keys are the Kotlin KeyboardBinding.UnitActions defaults. Several actions share a key (they are never on offer together, as in Kotlin).
+    Automate,
+    StopAutomation,
+    StopMovement,
+    Sleep,
+    SleepUntilHealed,
+    Fortify,
+    FortifyUntilHealed,
+    Explore,
+    StopExploration,
+    Upgrade,
+    Transform,
+    Pillage,
+    Paradrop,
+    AirSweep,
+    SetUp,
+    FoundCity,
+    Repair,
+    CreateImprovement,
+    HurryResearch,
+    HurryWonder,
+    HurryBuilding,
+    ConductTradeMission,
+    FoundReligion,
+    TriggerUnique,
+    SpreadReligion,
+    RemoveHeresy,
+    EnhanceReligion,
+    Skip,
+    AddInCapital,
+    DisbandUnit,
 }
 
 /// <summary>
 /// C028: key bindings as text ("N", "Space", "Ctrl+Z"), kept Godot-free so the rules are testable. The settings store only the bindings that differ from
 /// <see cref="Defaults"/>. A key text is canonical when <see cref="Normalize"/> returns it unchanged. One key belongs to one action: rebinding to a key
-/// another action holds swaps the two. The arrow keys always pan the map in addition to the bound pan keys (they are not rebindable).
+/// another action holds swaps the two (C078: that holds among the game screen's actions; the unit actions are a second scope, see <see cref="IsUnitAction"/>). The arrow keys always pan the map in addition to the bound pan keys (they are not rebindable).
 /// </summary>
 public static class Hotkeys
 {
@@ -32,11 +109,56 @@ public static class Hotkeys
     /// <summary>The default key of every action.</summary>
     public static readonly IReadOnlyDictionary<HotkeyAction, string> Defaults = new Dictionary<HotkeyAction, string>
     {
-        [HotkeyAction.EndTurn] = "Space",
-        [HotkeyAction.NextUnit] = "N",
-        [HotkeyAction.OpenTech] = "T",
-        [HotkeyAction.OpenPolicies] = "P",
-        [HotkeyAction.OpenDiplomacy] = "F",
+        // C078, deliberate deviation from the earlier Space/N/T/P/F defaults (owner decision: the Kotlin defaults). Where Kotlin has no key for an action it is F4/Ctrl+D here.
+        [HotkeyAction.EndTurn] = "N",
+        [HotkeyAction.EndTurnAlternate] = "Space",
+        [HotkeyAction.NextUnit] = "Period",
+        [HotkeyAction.OpenTech] = "F6",
+        [HotkeyAction.OpenPolicies] = "F5",
+        [HotkeyAction.OpenDiplomacy] = "Ctrl+D",
+        [HotkeyAction.OpenOverview] = "E",
+        [HotkeyAction.OverviewCities] = "F2",
+        [HotkeyAction.OverviewUnits] = "F3",
+        [HotkeyAction.OverviewPolitics] = "F4",
+        [HotkeyAction.OverviewStats] = "F9",
+        [HotkeyAction.OverviewResources] = "F10",
+        [HotkeyAction.OpenVictory] = "F8",
+        [HotkeyAction.SaveGame] = "Ctrl+S",
+        [HotkeyAction.LoadGame] = "Ctrl+L",
+        [HotkeyAction.OpenOptions] = "Ctrl+O",
+        [HotkeyAction.ViewCapital] = "Home",
+        [HotkeyAction.ToggleResources] = "Ctrl+R",
+        [HotkeyAction.ToggleYields] = "Ctrl+Y",
+        [HotkeyAction.Automate] = "M",
+        [HotkeyAction.StopAutomation] = "M",
+        [HotkeyAction.StopMovement] = "M",
+        [HotkeyAction.Sleep] = "F",
+        [HotkeyAction.SleepUntilHealed] = "H",
+        [HotkeyAction.Fortify] = "F",
+        [HotkeyAction.FortifyUntilHealed] = "H",
+        [HotkeyAction.Explore] = "X",
+        [HotkeyAction.StopExploration] = "X",
+        [HotkeyAction.Upgrade] = "U",
+        [HotkeyAction.Transform] = "K",
+        [HotkeyAction.Pillage] = "P",
+        [HotkeyAction.Paradrop] = "P",
+        [HotkeyAction.AirSweep] = "A",
+        [HotkeyAction.SetUp] = "T",
+        [HotkeyAction.FoundCity] = "C",
+        [HotkeyAction.Repair] = "R",
+        [HotkeyAction.CreateImprovement] = "I",
+        [HotkeyAction.HurryResearch] = "G",
+        [HotkeyAction.HurryWonder] = "G",
+        [HotkeyAction.HurryBuilding] = "G",
+        [HotkeyAction.ConductTradeMission] = "G",
+        [HotkeyAction.FoundReligion] = "G",
+        [HotkeyAction.TriggerUnique] = "G",
+        [HotkeyAction.SpreadReligion] = "G",
+        [HotkeyAction.RemoveHeresy] = "H",
+        [HotkeyAction.EnhanceReligion] = "G",
+        [HotkeyAction.Skip] = "Z",
+        [HotkeyAction.AddInCapital] = "G",
+        [HotkeyAction.DisbandUnit] = "Delete",
         [HotkeyAction.PanUp] = "W",
         [HotkeyAction.PanDown] = "S",
         [HotkeyAction.PanLeft] = "A",
@@ -70,6 +192,27 @@ public static class Hotkeys
         return string.Join('+', ModifierOrder.Where(modifiers.Contains).Append(key));
     }
 
+    /// <summary>
+    /// C078: the unit actions form their own scope (Kotlin <c>Category.UnitActions</c>): they may share a key with each other (the menu offers at most one of them
+    /// for a unit) and with a game screen action (the game screen action wins a press; <see cref="Rebind"/> refuses to bind a unit action to such a key).
+    /// </summary>
+    public static bool IsUnitAction(HotkeyAction action) => action >= HotkeyAction.Automate;
+
+    /// <summary>The hotkey of a unit panel entry (an engine action by its type's name, or Disband), or null when it has none (improvements, promotions, actions Kotlin gives no key).</summary>
+    public static HotkeyAction? ForEntry(MenuEntry entry)
+    {
+        if (entry.Kind == MenuEntryKind.Disband) return HotkeyAction.DisbandUnit;
+        if (entry.Kind != MenuEntryKind.Engine || entry.Action == null) return null;
+        return Enum.TryParse<HotkeyAction>(entry.Action.Descriptor.ActionType.ToString(), out var action) && IsUnitAction(action) ? action : null;
+    }
+
+    /// <summary>The unit actions bound to a key press (canonical or not), in enum order; empty when none.</summary>
+    public static IReadOnlyList<HotkeyAction> ResolveUnit(IReadOnlyDictionary<string, string> bindings, string? keyText)
+    {
+        if (Normalize(keyText) is not { } key) return [];
+        return [.. Enum.GetValues<HotkeyAction>().Where(a => IsUnitAction(a) && KeyFor(bindings, a) == key)];
+    }
+
     /// <summary>The binding map made safe: unknown actions, unusable keys and keys equal to the default are dropped. If two actions would end up on one key the whole map is reset to the defaults (a hand-edited file cannot create ambiguity).</summary>
     public static SortedDictionary<string, string> Sanitize(IDictionary<string, string>? raw)
     {
@@ -80,7 +223,8 @@ public static class Hotkeys
         {
             if (raw.TryGetValue(action.ToString(), out var value) && Normalize(value) is { } key) effective[action] = key;
         }
-        if (effective.Values.Distinct(StringComparer.Ordinal).Count() != effective.Count) return result;
+        var screen = effective.Where(it => !IsUnitAction(it.Key)).Select(it => it.Value).ToList();
+        if (screen.Distinct(StringComparer.Ordinal).Count() != screen.Count) return result;
         return FromEffective(effective);
     }
 
@@ -88,20 +232,22 @@ public static class Hotkeys
     public static string KeyFor(IReadOnlyDictionary<string, string> bindings, HotkeyAction action) =>
         bindings.TryGetValue(action.ToString(), out var text) && Normalize(text) is { } key ? key : Defaults[action];
 
-    /// <summary>The action a key press triggers (canonical or not), or null.</summary>
+    /// <summary>The game screen action a key press triggers (canonical or not), or null; the unit actions are <see cref="ResolveUnit"/>.</summary>
     public static HotkeyAction? Resolve(IReadOnlyDictionary<string, string> bindings, string? keyText)
     {
         if (Normalize(keyText) is not { } key) return null;
         foreach (var action in Enum.GetValues<HotkeyAction>())
         {
-            if (KeyFor(bindings, action) == key) return action;
+            if (!IsUnitAction(action) && KeyFor(bindings, action) == key) return action;
         }
         return null;
     }
 
     /// <summary>
     /// The bindings after binding <paramref name="action"/> to <paramref name="keyText"/>, or null when the key is not usable. When another action holds
-    /// the key, that action takes this action's old key (a swap), so no key ever has two actions. <paramref name="swapped"/> names the other action.
+    /// the key, that action takes this action's old key (a swap), so no game screen key ever has two actions. <paramref name="swapped"/> names the other action.
+    /// C078: a unit action is never swapped (unit actions may share keys), but it is refused a key a game screen action holds; a game screen action that takes a key held by unit
+    /// actions only shadows them (the unit actions keep the key and lose to the screen action).
     /// </summary>
     public static SortedDictionary<string, string>? Rebind(IReadOnlyDictionary<string, string> bindings, HotkeyAction action, string? keyText, out HotkeyAction? swapped)
     {
@@ -109,9 +255,11 @@ public static class Hotkeys
         if (Normalize(keyText) is not { } key) return null;
         var effective = Enum.GetValues<HotkeyAction>().ToDictionary(a => a, a => KeyFor(bindings, a));
         var previous = effective[action];
+        bool unit = IsUnitAction(action);
+        if (unit && effective.Any(it => !IsUnitAction(it.Key) && it.Value == key)) return null;
         foreach (var other in Enum.GetValues<HotkeyAction>())
         {
-            if (other != action && effective[other] == key)
+            if (!unit && !IsUnitAction(other) && other != action && effective[other] == key)
             {
                 effective[other] = previous;
                 swapped = other;

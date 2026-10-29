@@ -566,9 +566,9 @@ Scenario `options`.
 
 *The Keys tab while rebinding: the End turn key chip shows ... and the other actions keep their keys.* (`options/listening.png`)
 
-![The Keys tab after rebinding: End turn now shows E, the other actions keep their default keys.](../Unciv.Godot.Harness/golden/options/rebound.png)
+![The Keys tab after rebinding: End turn now shows Q, the other actions keep their default keys (the Kotlin defaults since C078: F-keys for the screens, Period for the next unit, the unit action keys below).](../Unciv.Godot.Harness/golden/options/rebound.png)
 
-*The Keys tab after rebinding: End turn now shows E, the other actions keep their default keys.* (`options/rebound.png`)
+*The Keys tab after rebinding: End turn now shows Q, the other actions keep their default keys (the Kotlin defaults since C078: F-keys for the screens, Period for the next unit, the unit action keys below).* (`options/rebound.png`)
 
 ## C029 Hotseat player switch screen
 

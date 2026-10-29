@@ -537,6 +537,9 @@ public partial class GameScreen : Control
     {
         if (session != null && snapshot != null) Run(RefreshTaskCard()); // C054: Show tutorials may have changed
         hotkeys = settings.KeyBindings;
+        World.SetKeys(KeyOf);
+        Hud.EndTurnKey = KeyOf(HotkeyAction.EndTurn);
+        Panel.SetKeys(KeyOf);
         Map.KeyBindings = settings.KeyBindings;
         Map.ScrollSpeed = settings.ScrollSpeed;
         Map.EdgePan = settings.EdgePan;
@@ -565,7 +568,7 @@ public partial class GameScreen : Control
         if (IsEndingTurn || City.Visible || Diplomacy.Visible || Tech.Visible || Policies.Visible || Overview.Visible || Espionage.Visible || GameOver.Visible || VoteResult.Visible || Alerts.Visible || Proposals.Visible) return false;
         switch (Hotkeys.Resolve(hotkeys, keyText))
         {
-            case HotkeyAction.EndTurn:
+            case HotkeyAction.EndTurn or HotkeyAction.EndTurnAlternate:
                 OnNextTurn();
                 return true;
             case HotkeyAction.NextUnit:
@@ -587,10 +590,75 @@ public partial class GameScreen : Control
                 if (Pedia.Visible) Pedia.Close();
                 else OpenPediaScreen();
                 return true;
+            case HotkeyAction.OpenOverview:
+                OpenOverviewScreen();
+                return true;
+            case HotkeyAction.OverviewCities:
+                OpenOverviewScreen(OverviewModel.Cities);
+                return true;
+            case HotkeyAction.OverviewUnits:
+                OpenOverviewScreen(OverviewModel.Units);
+                return true;
+            case HotkeyAction.OverviewPolitics:
+                OpenOverviewScreen(OverviewModel.Politics);
+                return true;
+            case HotkeyAction.OverviewStats:
+                OpenOverviewScreen(OverviewModel.Stats);
+                return true;
+            case HotkeyAction.OverviewResources:
+                OpenOverviewScreen(OverviewModel.Resources);
+                return true;
+            case HotkeyAction.OpenVictory:
+                Run(OnMenuChosen(GameMenuKind.VictoryStatus));
+                return true;
+            case HotkeyAction.SaveGame:
+                Run(OnMenuChosen(GameMenuKind.Save));
+                return true;
+            case HotkeyAction.LoadGame:
+                Run(OnMenuChosen(GameMenuKind.Load));
+                return true;
+            case HotkeyAction.OpenOptions:
+                Run(OnMenuChosen(GameMenuKind.Options));
+                return true;
+            case HotkeyAction.ViewCapital:
+                return ViewCapital();
+            case HotkeyAction.ToggleResources:
+                boundSettings?.Update(s => s with { ShowResources = !s.ShowResources });
+                return boundSettings != null;
+            case HotkeyAction.ToggleYields:
+                boundSettings?.Update(s => s with { ShowYields = !s.ShowYields });
+                return boundSettings != null;
             default:
-                return false;
+                return TryUnitHotkey(keyText); // a pan key can also be a unit action's key (A: air sweep)
         }
     }
+
+    /// <summary>C078: centres the camera on the viewer's capital (false when it has none).</summary>
+    private bool ViewCapital()
+    {
+        var capital = snapshot.Cities.FirstOrDefault(it => it.Owner == session.ViewerCivId && it.IsCapital);
+        if (capital == null) return false;
+        Map.FocusOn(MapLayout.TileTop(capital.X, capital.Y));
+        return true;
+    }
+
+    /// <summary>
+    /// C078: runs the selected unit's menu entry whose unit action is bound to <paramref name="keyText"/> (the first enabled one: several actions share a key but a unit is offered
+    /// at most one of them). Entries are the panel's own, so a hotkey does exactly what its button does, confirmation included. True when one ran.
+    /// </summary>
+    private bool TryUnitHotkey(string keyText)
+    {
+        if (!Panel.Visible || SelectedUnitId == null || Panel.IsAsking) return false;
+        var bound = Hotkeys.ResolveUnit(hotkeys, keyText);
+        if (bound.Count == 0) return false;
+        var entry = Panel.Entries.FirstOrDefault(it => it.Enabled && Hotkeys.ForEntry(it) is { } action && bound.Contains(action));
+        if (entry == null) return false;
+        OnMenuEntry(entry);
+        return true;
+    }
+
+    /// <summary>C078: the key a hotkey action shows in tooltips and key chips (the bound key, as the options page shows it).</summary>
+    private string KeyOf(HotkeyAction action) => Hotkeys.KeyFor(hotkeys, action);
 
     public override void _UnhandledKeyInput(InputEvent @event)
     {

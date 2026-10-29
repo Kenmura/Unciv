@@ -68,8 +68,9 @@ public sealed class OptionsScenario : Scenario
         [
             new WaitFrames(3),
             new Act("dismiss the banner", () => screen.Hud.HideBanner()),
-            new AssertQuery("defaults: End turn is Space, Next unit is N, nothing stored", () =>
-                Hotkeys.KeyFor(service.Current.KeyBindings, HotkeyAction.EndTurn) == "Space" && options.KeyButton(HotkeyAction.NextUnit).Text == "N" && service.Current.KeyBindings.Count == 0 && !File.Exists(path)),
+            new AssertQuery("defaults (C078, the Kotlin keys): End turn is N, Next unit is Period, Technology is F6, nothing stored; the nav tooltips and the end-turn button show them", () =>
+                Hotkeys.KeyFor(service.Current.KeyBindings, HotkeyAction.EndTurn) == "N" && options.KeyButton(HotkeyAction.NextUnit).Text == "Period" && service.Current.KeyBindings.Count == 0 && !File.Exists(path)
+                && screen.World.Technology.TooltipText == "Technology (F6)" && screen.Hud.EndTurnButton is IconButton { Hotkey: "N" } && screen.World.Overview.Hotkey == "E"),
             new Capture("top", "Options, Display tab: the vertical tabs on the left, the UI scale stepper and the window mode"),
 
             .. Reveal(HotkeyAction.EndTurn),
@@ -79,26 +80,27 @@ public sealed class OptionsScenario : Scenario
             new Capture("listening", "The Keys tab while rebinding: the End turn key chip shows ... and the other actions keep their keys"),
             new PressKey(Key.Escape),
             new WaitFrames(2),
-            new AssertQuery("Escape cancelled: still Space and nothing saved", () => options.Listening == null && options.KeyButton(HotkeyAction.EndTurn).Text == "Space" && !File.Exists(path)),
+            new AssertQuery("Escape cancelled: still N and nothing saved", () => options.Listening == null && options.KeyButton(HotkeyAction.EndTurn).Text == "N" && !File.Exists(path)),
             .. Reveal(HotkeyAction.EndTurn), // C046: one more key row below pushes End turn out of view after the scroll to the bottom
             new Click(() => Centre(options.KeyButton(HotkeyAction.EndTurn))),
             new WaitFrames(2),
-            new PressKey(Key.E),
+            new PressKey(Key.Q),
             new WaitFrames(2),
-            new AssertQuery("End turn is E on the button, in the settings and in the file", () =>
-                options.Listening == null && options.KeyButton(HotkeyAction.EndTurn).Text == "E"
-                && service.Current.KeyBindings.Count == 1 && service.Current.KeyBindings["EndTurn"] == "E" && File.ReadAllText(path).Contains("\"EndTurn\": \"E\"", StringComparison.Ordinal)),
+            new AssertQuery("End turn is Q on the button, in the settings, in the file and in the end-turn tooltip", () =>
+                options.Listening == null && options.KeyButton(HotkeyAction.EndTurn).Text == "Q"
+                && service.Current.KeyBindings.Count == 1 && service.Current.KeyBindings["EndTurn"] == "Q" && File.ReadAllText(path).Contains("\"EndTurn\": \"Q\"", StringComparison.Ordinal)
+                && screen.Hud.EndTurnButton is IconButton { Hotkey: "Q" }),
             new Act("restart the client: a new service reads the file", () => restarted = new ClientSettingsService(new ClientSettingsStore(path))),
-            new AssertQuery("the binding persisted", () => Hotkeys.KeyFor(restarted.NotNull().Current.KeyBindings, HotkeyAction.EndTurn) == "E"),
+            new AssertQuery("the binding persisted", () => Hotkeys.KeyFor(restarted.NotNull().Current.KeyBindings, HotkeyAction.EndTurn) == "Q"),
             .. Reveal(HotkeyAction.EndTurn),
-            new Capture("rebound", "The Keys tab after rebinding: End turn now shows E, the other actions keep their default keys"),
+            new Capture("rebound", "The Keys tab after rebinding: End turn now shows Q, the other actions keep their default keys"),
 
             new Act("close the options", () => backdrop.Visible = false),
             new WaitFrames(2),
-            new PressKey(Key.Space),
+            new PressKey(Key.N),
             new WaitFrames(4),
             new AssertQuery("the old key does nothing", () => game.Turns == startTurn),
-            new PressKey(Key.E),
+            new PressKey(Key.Q),
             new WaitFrames(8),
             new AssertQuery("the new key ended the turn", () => game.Turns == startTurn + 1 && screen.Turn == startTurn + 1),
 

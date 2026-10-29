@@ -39,7 +39,70 @@ public sealed class OptionsTests
             Assert.True(Hotkeys.Defaults.ContainsKey(action), action.ToString());
             Assert.Equal(Hotkeys.Defaults[action], Hotkeys.Normalize(Hotkeys.Defaults[action]));
         }
-        Assert.Equal(Hotkeys.Defaults.Count, Hotkeys.Defaults.Values.Distinct().Count());
+        // the game screen's actions never share a default key; the unit actions are a scope of their own (C078)
+        var screen = Hotkeys.Defaults.Where(it => !Hotkeys.IsUnitAction(it.Key)).Select(it => it.Value).ToList();
+        Assert.Equal(screen.Count, screen.Distinct().Count());
+    }
+
+    [Fact]
+    public void DefaultsAreTheKotlinKeys()
+    {
+        // C078 deliberate deviation from the earlier Space/N/T/P/F: the Kotlin KeyboardBinding defaults
+        Assert.Equal("N", Hotkeys.Defaults[HotkeyAction.EndTurn]);
+        Assert.Equal("Space", Hotkeys.Defaults[HotkeyAction.EndTurnAlternate]);
+        Assert.Equal("F6", Hotkeys.Defaults[HotkeyAction.OpenTech]);
+        Assert.Equal("F5", Hotkeys.Defaults[HotkeyAction.OpenPolicies]);
+        Assert.Equal("E", Hotkeys.Defaults[HotkeyAction.OpenOverview]);
+        Assert.Equal("Ctrl+S", Hotkeys.Defaults[HotkeyAction.SaveGame]);
+        Assert.Equal("Delete", Hotkeys.Defaults[HotkeyAction.DisbandUnit]);
+        Assert.Equal("X", Hotkeys.Defaults[HotkeyAction.Explore]);
+    }
+
+    [Fact]
+    public void UnitActionsShareKeysAndResolveSeparately()
+    {
+        Assert.True(Hotkeys.IsUnitAction(HotkeyAction.Fortify));
+        Assert.False(Hotkeys.IsUnitAction(HotkeyAction.OpenPedia));
+        // Sleep and Fortify both default to F; the screen resolver ignores unit actions, the unit resolver lists both
+        Assert.Null(Hotkeys.Resolve(NoBindings, "F"));
+        Assert.Equal([HotkeyAction.Sleep, HotkeyAction.Fortify], Hotkeys.ResolveUnit(NoBindings, "f"));
+        Assert.Empty(Hotkeys.ResolveUnit(NoBindings, "Q"));
+        Assert.Empty(Hotkeys.ResolveUnit(NoBindings, null));
+        // A (pan left) is also AirSweep's key: both resolve
+        Assert.Equal(HotkeyAction.PanLeft, Hotkeys.Resolve(NoBindings, "A"));
+        Assert.Equal([HotkeyAction.AirSweep], Hotkeys.ResolveUnit(NoBindings, "A"));
+    }
+
+    [Fact]
+    public void UnitActionRebindDoesNotSwapButRefusesAScreenKey()
+    {
+        var bound = Hotkeys.Rebind(NoBindings, HotkeyAction.Fortify, "G", out var swapped); // G is also the Hurry/Found religion keys
+        Assert.Null(swapped);
+        Assert.Equal(new Dictionary<string, string> { ["Fortify"] = "G" }, bound);
+        Assert.Equal("F", Hotkeys.KeyFor(bound!, HotkeyAction.Sleep));
+        Assert.Null(Hotkeys.Rebind(NoBindings, HotkeyAction.Fortify, "N", out _)); // N is End turn
+        Assert.Null(Hotkeys.Rebind(NoBindings, HotkeyAction.Fortify, "F6", out _));
+        // a screen action may take a key unit actions hold: they stay bound but lose the press to the screen action
+        var screen = Hotkeys.Rebind(NoBindings, HotkeyAction.OpenTech, "X", out var other);
+        Assert.Null(other);
+        Assert.Equal(HotkeyAction.OpenTech, Hotkeys.Resolve(screen!, "X"));
+        Assert.Contains(HotkeyAction.Explore, Hotkeys.ResolveUnit(screen!, "X"));
+        Assert.Equal(screen, Hotkeys.Sanitize(screen));
+    }
+
+    [Fact]
+    public void ForEntryMapsEngineActionsByNameAndDisband()
+    {
+        Assert.Equal(HotkeyAction.DisbandUnit, Hotkeys.ForEntry(new Unciv.Assets.MenuEntry(Unciv.Assets.MenuEntryKind.Disband, "Disband unit", true)));
+        Assert.Null(Hotkeys.ForEntry(new Unciv.Assets.MenuEntry(Unciv.Assets.MenuEntryKind.Improve, "Build: Farm", true, null, "Farm")));
+        Assert.Null(Hotkeys.ForEntry(new Unciv.Assets.MenuEntry(Unciv.Assets.MenuEntryKind.Engine, "Odd", true)));
+        Unciv.Assets.MenuEntry Engine(Unciv.Models.UnitActionType type) => new(Unciv.Assets.MenuEntryKind.Engine, "x", true,
+            new Unciv.Queries.Units.UnitActionInfo(new Unciv.Commands.Units.UnitActionDescriptor(type), "x", true, false, null, null));
+        Assert.Equal(HotkeyAction.Fortify, Hotkeys.ForEntry(Engine(Unciv.Models.UnitActionType.Fortify)));
+        Assert.Null(Hotkeys.ForEntry(Engine(Unciv.Models.UnitActionType.Guard))); // Kotlin gives Guard no key
+        // every unit action's name is an engine UnitActionType (except the panel's Disband), so ForEntry finds it
+        foreach (var action in Enum.GetValues<HotkeyAction>().Where(Hotkeys.IsUnitAction).Where(a => a != HotkeyAction.DisbandUnit))
+            Assert.True(Enum.TryParse<Unciv.Models.UnitActionType>(action.ToString(), out _), action.ToString());
     }
 
     [Fact]
@@ -47,20 +110,21 @@ public sealed class OptionsTests
     {
         Assert.Equal("F1", Hotkeys.Defaults[HotkeyAction.OpenPedia]);
         Assert.Equal(HotkeyAction.OpenPedia, Hotkeys.Resolve(new Dictionary<string, string>(), "f1"));
-        var bound = Hotkeys.Rebind(new Dictionary<string, string>(), HotkeyAction.OpenPedia, "F2", out var swapped);
+        var bound = Hotkeys.Rebind(new Dictionary<string, string>(), HotkeyAction.OpenPedia, "F12", out var swapped);
         Assert.Null(swapped);
-        Assert.Equal(HotkeyAction.OpenPedia, Hotkeys.Resolve(bound!, "F2"));
+        Assert.Equal(HotkeyAction.OpenPedia, Hotkeys.Resolve(bound!, "F12"));
         Assert.Null(Hotkeys.Resolve(bound!, "F1"));
         var steal = Hotkeys.Rebind(new Dictionary<string, string>(), HotkeyAction.EndTurn, "F1", out var other);
         Assert.Equal(HotkeyAction.OpenPedia, other);
-        Assert.Equal("Space", Hotkeys.KeyFor(steal!, HotkeyAction.OpenPedia));
+        Assert.Equal("N", Hotkeys.KeyFor(steal!, HotkeyAction.OpenPedia));
     }
 
     [Fact]
     public void ResolveUsesDefaultsAndNormalises()
     {
-        Assert.Equal(HotkeyAction.EndTurn, Hotkeys.Resolve(NoBindings, "space"));
-        Assert.Equal(HotkeyAction.NextUnit, Hotkeys.Resolve(NoBindings, "N"));
+        Assert.Equal(HotkeyAction.EndTurnAlternate, Hotkeys.Resolve(NoBindings, "space"));
+        Assert.Equal(HotkeyAction.EndTurn, Hotkeys.Resolve(NoBindings, "N"));
+        Assert.Equal(HotkeyAction.NextUnit, Hotkeys.Resolve(NoBindings, "period"));
         Assert.Null(Hotkeys.Resolve(NoBindings, "Q"));
         Assert.Null(Hotkeys.Resolve(NoBindings, null));
     }
@@ -73,19 +137,19 @@ public sealed class OptionsTests
         Assert.Null(swapped);
         Assert.Equal(new Dictionary<string, string> { ["NextUnit"] = "Q" }, bound);
         Assert.Equal(HotkeyAction.NextUnit, Hotkeys.Resolve(bound, "Q"));
-        Assert.Null(Hotkeys.Resolve(bound, "N"));
+        Assert.Null(Hotkeys.Resolve(bound, "Period"));
         Assert.Equal("Q", Hotkeys.KeyFor(bound, HotkeyAction.NextUnit));
     }
 
     [Fact]
     public void RebindToAKeyInUseSwapsTheTwoActions()
     {
-        var bound = Hotkeys.Rebind(NoBindings, HotkeyAction.NextUnit, "Space", out var swapped);
+        var bound = Hotkeys.Rebind(NoBindings, HotkeyAction.NextUnit, "N", out var swapped);
         Assert.Equal(HotkeyAction.EndTurn, swapped);
-        Assert.Equal("Space", Hotkeys.KeyFor(bound!, HotkeyAction.NextUnit));
-        Assert.Equal("N", Hotkeys.KeyFor(bound!, HotkeyAction.EndTurn));
+        Assert.Equal("N", Hotkeys.KeyFor(bound!, HotkeyAction.NextUnit));
+        Assert.Equal("Period", Hotkeys.KeyFor(bound!, HotkeyAction.EndTurn));
         Assert.Equal(2, bound!.Count);
-        var effective = Enum.GetValues<HotkeyAction>().Select(a => Hotkeys.KeyFor(bound, a)).ToList();
+        var effective = Enum.GetValues<HotkeyAction>().Where(a => !Hotkeys.IsUnitAction(a)).Select(a => Hotkeys.KeyFor(bound, a)).ToList();
         Assert.Equal(effective.Count, effective.Distinct().Count());
     }
 
@@ -93,14 +157,14 @@ public sealed class OptionsTests
     public void RebindBackToTheDefaultRemovesTheEntry()
     {
         var bound = Hotkeys.Rebind(NoBindings, HotkeyAction.NextUnit, "Q", out _)!;
-        var back = Hotkeys.Rebind(bound, HotkeyAction.NextUnit, "N", out _);
+        var back = Hotkeys.Rebind(bound, HotkeyAction.NextUnit, "Period", out _);
         Assert.Empty(back!);
     }
 
     [Fact]
     public void RebindToTheSameKeyChangesNothing()
     {
-        var same = Hotkeys.Rebind(NoBindings, HotkeyAction.EndTurn, "Space", out var swapped);
+        var same = Hotkeys.Rebind(NoBindings, HotkeyAction.EndTurn, "N", out var swapped);
         Assert.Empty(same!);
         Assert.Null(swapped);
     }
@@ -116,10 +180,10 @@ public sealed class OptionsTests
     [Fact]
     public void SanitizeDropsGarbageDefaultsAndConflicts()
     {
-        var kept = Hotkeys.Sanitize(new Dictionary<string, string> { ["NextUnit"] = "q", ["Bogus"] = "X", ["OpenTech"] = "Escape", ["EndTurn"] = "Space" });
-        Assert.Equal(new Dictionary<string, string> { ["NextUnit"] = "Q" }, kept);
+        var kept = Hotkeys.Sanitize(new Dictionary<string, string> { ["NextUnit"] = "q", ["Bogus"] = "X", ["OpenTech"] = "Escape", ["EndTurn"] = "N", ["Fortify"] = "g" });
+        Assert.Equal(new Dictionary<string, string> { ["NextUnit"] = "Q", ["Fortify"] = "G" }, kept);
         // NextUnit onto EndTurn's key without moving EndTurn is ambiguous: everything resets.
-        Assert.Empty(Hotkeys.Sanitize(new Dictionary<string, string> { ["NextUnit"] = "Space" }));
+        Assert.Empty(Hotkeys.Sanitize(new Dictionary<string, string> { ["NextUnit"] = "N" }));
         Assert.Empty(Hotkeys.Sanitize(null));
     }
 
