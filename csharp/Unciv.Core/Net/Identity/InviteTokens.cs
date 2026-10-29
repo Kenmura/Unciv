@@ -46,6 +46,14 @@ public sealed class InviteTokens
         }
     }
 
+    /// <summary>True when the token is outstanding and unexpired, without consuming it (a mod sync connection must not spend the invite the re-join needs).</summary>
+    public bool IsValid(string? token)
+    {
+        if (string.IsNullOrEmpty(token) || token.Length > 128) return false;
+        var hash = Hash(token);
+        lock (gate) return expiryByHash.TryGetValue(hash, out var expiry) && clock.GetUtcNow() < expiry;
+    }
+
     public int Outstanding
     {
         get { lock (gate) return expiryByHash.Count; }

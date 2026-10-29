@@ -1,10 +1,12 @@
 using System.Text.Json;
 using System.Threading.Channels;
+using Unciv.Client.Net.Mods;
 using Unciv.Commands;
 using Unciv.Json;
 using Unciv.Logic;
 using Unciv.Net;
 using Unciv.Net.Identity;
+using Unciv.Net.Mods;
 using Unciv.Net.Remote;
 using Unciv.Queries;
 using CommandResult = Unciv.Net.CommandResult;
@@ -60,6 +62,12 @@ public sealed class ClientSessionOptions
 
     public QueryRegistry? Queries { get; init; }
     public ISecureRandom? Random { get; init; }
+
+    /// <summary>T247: takes the host's mod files when the rules differ (the host answers a mismatched join with a manifest). Without it a mismatch is refused as before.</summary>
+    public IModSyncHandler? ModSync { get; init; }
+
+    /// <summary>T247: how long the host may take to answer one mod file request.</summary>
+    public TimeSpan ModFileTimeout { get; init; } = TimeSpan.FromSeconds(30);
 }
 
 /// <summary>The result of <see cref="ClientSession.JoinAsync"/>: joined, or the refusal code.</summary>
@@ -361,7 +369,8 @@ public sealed class ClientSession : IAsyncDisposable
                 Protocol = ProtocolVersion.Current,
                 ClientVersion = options.ClientVersion,
                 RulesetHash = options.RulesetHash,
-                ModList = options.ModList
+                ModList = options.ModList,
+                ModSync = options.ModSync != null ? true : null
             }, token).ConfigureAwait(false);
 
             keepAliveTask = RunKeepAliveAsync(keepAlive.Token);
@@ -417,6 +426,8 @@ public sealed class ClientSession : IAsyncDisposable
             case JoinRefused refused:
                 await EndAsync(refused.Code, refused: true).ConfigureAwait(false);
                 return false;
+            case ModManifest manifest:
+                return await HandleModManifestAsync(manifest, token).ConfigureAwait(false);
             case LobbyState lobby:
                 Lobby = lobby;
                 connectionSettled = true;
@@ -461,6 +472,83 @@ public sealed class ClientSession : IAsyncDisposable
             default:
                 Emit(new ProtocolError(ErrorCodes.InvalidMessage));
                 return true;
+        }
+    }
+
+    /// <summary>What the last mod sync installed (set before the session ends with <see cref="ModSyncCodes.Synced"/>); the caller hot-loads it and joins again.</summary>
+    public ModSyncOutcome? ModSyncResult { get; private set; }
+
+    private async Task<bool> HandleModManifestAsync(ModManifest manifest, CancellationToken token)
+    {
+        var handler = options.ModSync;
+        if (handler == null || connectionSettled || everJoined)
+        {
+            await EndAsync(JoinRefusedCodes.RulesetMismatch, refused: true).ConfigureAwait(false);
+            return false;
+        }
+        // The player may think about the download as long as they like; each file has its own limit.
+        handshakeTimer?.CancelAfter(Timeout.InfiniteTimeSpan);
+        ModSyncOutcome outcome;
+        try
+        {
+            outcome = await handler.SyncAsync(manifest, (mod, path, cancellation) => FetchModFileAsync(mod, path, cancellation), token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            outcome = new ModSyncOutcome(e is ModSyncException sync ? sync.Code : ModSyncCodes.Failed, null, []);
+        }
+
+        if (!outcome.Success)
+        {
+            await EndAsync(outcome.Code ?? ModSyncCodes.Failed, refused: true).ConfigureAwait(false);
+        }
+        else if (outcome.Installed.Count == 0)
+        {
+            // Every mod already is the host's and the rules still differ (a built-in ruleset): nothing a download can fix.
+            await EndAsync(JoinRefusedCodes.RulesetMismatch, refused: true).ConfigureAwait(false);
+        }
+        else
+        {
+            ModSyncResult = outcome;
+            await EndAsync(ModSyncCodes.Synced, refused: false).ConfigureAwait(false);
+        }
+        return false;
+    }
+
+    /// <summary>Asks the host for one file and waits for its answer on the connection's own reader (the receive loop is busy inside the sync, so nothing else reads).</summary>
+    private async Task<byte[]> FetchModFileAsync(string mod, string path, CancellationToken cancellation)
+    {
+        var current = transport ?? throw new ModSyncException(ModSyncCodes.Failed, "not connected");
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        limit.CancelAfter(options.ModFileTimeout);
+        try
+        {
+            await SendAsync(new ModFileRequest { Mod = mod, Path = path }, limit.Token).ConfigureAwait(false);
+            while (true)
+            {
+                var frame = await current.ReceiveAsync(limit.Token).ConfigureAwait(false) ?? throw new ModSyncException(ModSyncCodes.Failed, "connection closed");
+                switch (ProtocolCodec.Decode(frame))
+                {
+                    case ModFileData data when data.Mod == mod && data.Path == path:
+                        if (data.Data.Length > ModSyncRules.MaxFileBytes / 3 * 4 + 8) throw new ModSyncException(ModSyncCodes.BadFile, "file too large");
+                        try { return Convert.FromBase64String(data.Data); }
+                        catch (FormatException) { throw new ModSyncException(ModSyncCodes.BadFile, "bad encoding"); }
+                    case Pong:
+                        continue;
+                    case Error:
+                        throw new ModSyncException(ModSyncCodes.Failed, "host refused the file");
+                    default:
+                        throw new ModSyncException(ModSyncCodes.BadFile, "unexpected message");
+                }
+            }
+        }
+        catch (OperationCanceledException) when (limit.IsCancellationRequested && !cancellation.IsCancellationRequested)
+        {
+            throw new ModSyncException(ModSyncCodes.Failed, "host did not answer");
+        }
+        catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException)
+        {
+            throw new ModSyncException(ModSyncCodes.Failed, "connection lost");
         }
     }
 

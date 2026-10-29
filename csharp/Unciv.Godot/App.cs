@@ -134,11 +134,23 @@ public partial class App : Node
             LastAddress = JoinFiles.LoadLastAddress(UserPaths.LastJoin),
             RememberAddress = address => JoinFiles.SaveLastAddress(UserPaths.LastJoin, address),
             Connect = async (target, token) => await TcpTlsClientTransport.ConnectAsync(target.Host, target.Port, cancellationToken: token),
+            ModFiles = RulesetLocator.FileSource(),
+            ModsDirectory = UserPaths.Mods,
         };
         var screen = new JoinScreen(theme, environment);
         screen.BackRequested += () => screens.Pop();
-        screen.Joined += session => OpenJoinedLobby(session, identity, form);
+        screen.Joined += session => OpenJoinedLobby(session, identity, ConfigureForSync(form, screen));
         screens.Push(screen);
+    }
+
+    // T247: after a mod download the host's mods are in the ruleset cache but not in the form made before; make the form the host's rules (the nations list and the game's ruleset come from it).
+    private static NewGameForm ConfigureForSync(NewGameForm form, JoinScreen screen)
+    {
+        if (screen.SyncedRules is not { } rules) return form;
+        var synced = NewGameForm.FromRulesetCache();
+        synced.SetBaseRuleset(rules.BaseRuleset);
+        foreach (var mod in rules.Mods) synced.SetMod(mod, true);
+        return synced;
     }
 
     private void OpenJoinedLobby(ClientSession session, ClientIdentity identity, NewGameForm form)

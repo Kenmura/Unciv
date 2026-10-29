@@ -13,6 +13,9 @@ public static class JoinRefusedCodes
     public const string LobbyFull = "lobby-full";
     public const string GameAlreadyStarted = "game-started";
     public const string Kicked = "kicked";
+
+    /// <summary>T247: the rules differ and the host cannot offer its mods (it has no downloadable mod, or one is over the size caps).</summary>
+    public const string ModSyncUnavailable = "mod-sync-unavailable";
 }
 
 public enum AdmissionResult { Admitted, BadCredentials, RateLimited }
@@ -44,7 +47,15 @@ public sealed class LobbyAdmission
     /// <summary><c>Welcome.RequiresPassword</c>.</summary>
     public bool RequiresPassword => password != null;
 
-    public AdmissionResult Admit(string remoteKey, string? passwordAttempt, string? inviteToken)
+    /// <summary>
+    /// The same decision as <see cref="Admit"/> (same back-off, same constant-work evaluation) for a connection that only downloads mods: a valid invite token is checked but not
+    /// consumed, because the re-join after the download presents it again.
+    /// </summary>
+    public AdmissionResult AdmitForModSync(string remoteKey, string? passwordAttempt, string? inviteToken) => AdmitCore(remoteKey, passwordAttempt, inviteToken, redeem: false);
+
+    public AdmissionResult Admit(string remoteKey, string? passwordAttempt, string? inviteToken) => AdmitCore(remoteKey, passwordAttempt, inviteToken, redeem: true);
+
+    private AdmissionResult AdmitCore(string remoteKey, string? passwordAttempt, string? inviteToken, bool redeem)
     {
         if (password == null && !InviteOnly) return limiter.IsAllowed(remoteKey) ? AdmissionResult.Admitted : AdmissionResult.RateLimited;
         // Reserves an attempt atomically before the expensive check, so parallel guesses cannot all slip past the limit.
@@ -53,7 +64,7 @@ public sealed class LobbyAdmission
         // Evaluate both, without short-circuiting, so a spent token or wrong password costs the same time.
         // Consequence (deliberate): a valid token presented together with a correct password is consumed.
         var passwordOk = password != null && password.Verify(passwordAttempt);
-        var tokenOk = tokens.Redeem(inviteToken);
+        var tokenOk = redeem ? tokens.Redeem(inviteToken) : tokens.IsValid(inviteToken);
         if (passwordOk || tokenOk)
         {
             limiter.RecordSuccess(remoteKey);

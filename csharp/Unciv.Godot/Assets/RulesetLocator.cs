@@ -12,14 +12,19 @@ public static class RulesetLocator
 {
     public static Ruleset LoadVanilla()
     {
+        System.IO.Directory.CreateDirectory(UserPaths.Mods);
+        RulesetCache.Clear();
+        RulesetCache.LoadRulesets(FileSource());
+        return RulesetCache.GetVanillaRuleset();
+    }
+
+    /// <summary>T247: where rulesets load from and mods are installed (also how a mod downloaded in the lobby is hot-loaded).</summary>
+    public static DirectoryRulesetFileSource FileSource()
+    {
         var exeDir = System.IO.Path.GetDirectoryName(OS.GetExecutablePath()) ?? "";
         var dir = ContentLocator.FindJsons(exeDir, ProjectSettings.GlobalizePath("res://"), System.IO.Directory.Exists)
             ?? throw new System.IO.DirectoryNotFoundException($"No ruleset jsons: expected {ContentLocator.BundledJsons(exeDir)} or android/assets/jsons above the project");
-        var mods = UserPaths.Mods;
-        System.IO.Directory.CreateDirectory(mods);
-        RulesetCache.Clear();
-        RulesetCache.LoadRulesets(new DirectoryRulesetFileSource(dir, mods));
-        return RulesetCache.GetVanillaRuleset();
+        return new DirectoryRulesetFileSource(dir, UserPaths.Mods);
     }
 }
 

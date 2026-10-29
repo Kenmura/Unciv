@@ -1,8 +1,10 @@
 using Godot;
+using Unciv.Client.Net.Mods;
 using Unciv.Client.Net.Session;
 using Unciv.GodotClient.Ui;
 using Unciv.Models.Translations;
 using Unciv.Net;
+using Unciv.Models.Ruleset;
 using Unciv.Net.Identity;
 
 namespace Unciv.GodotClient.Setup;
@@ -30,6 +32,11 @@ public sealed class JoinScreenEnvironment
 
     /// <summary>Opens the connection to the host. The real one is TCP + TLS (<c>TcpTlsClientTransport</c>); the host key is checked by the session, not here.</summary>
     public required Func<JoinTarget, CancellationToken, Task<ITransport>> Connect { get; init; }
+
+    /// <summary>T247: where mods are installed (the file source the rulesets load from, and its mods folder). Without it a host with other mods is refused as before; with it the screen offers to download them.</summary>
+    public IRulesetFileSource? ModFiles { get; init; }
+
+    public string? ModsDirectory { get; init; }
 }
 
 /// <summary>
@@ -49,11 +56,14 @@ public partial class JoinScreen : Control
     private readonly VBoxContainer formPanel = new() { Name = "JoinForm" };
     private readonly VBoxContainer trustPanel = new() { Name = "TrustPanel", Visible = false };
     private readonly Label trustLabel = new() { Name = "TrustText", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private readonly VBoxContainer modPanel = new() { Name = "ModSyncPanel", Visible = false };
+    private readonly Label modLabel = new() { Name = "ModSyncText", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly VBoxContainer stopPanel = new() { Name = "KeyChangedPanel", Visible = false };
     private readonly Label stopLabel = new() { Name = "KeyChangedText", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private CancellationTokenSource? attempt;
     private ClientSession? connecting;
     private TaskCompletionSource<bool>? trustAnswer;
+    private TaskCompletionSource<bool>? modAnswer;
     private string? changedAddress;
     private bool busy;
 
@@ -108,6 +118,17 @@ public partial class JoinScreen : Control
         trustButtons.AddChild(DistrustButton);
         trustPanel.AddChild(trustButtons);
 
+        column.AddChild(modPanel);
+        modPanel.AddChild(modLabel);
+        var modButtons = new HBoxContainer();
+        DownloadButton = new Button { Text = "Download and join".Tr(), Name = "DownloadModsButton" };
+        DownloadButton.Pressed += () => AnswerMods(true);
+        DeclineButton = new Button { Text = "Do not download".Tr(), Name = "DeclineModsButton" };
+        DeclineButton.Pressed += () => AnswerMods(false);
+        modButtons.AddChild(DownloadButton);
+        modButtons.AddChild(DeclineButton);
+        modPanel.AddChild(modButtons);
+
         column.AddChild(stopPanel);
         stopPanel.AddChild(stopLabel);
         var stopButtons = new HBoxContainer();
@@ -137,6 +158,10 @@ public partial class JoinScreen : Control
 
     public Button DistrustButton { get; }
 
+    public Button DownloadButton { get; }
+
+    public Button DeclineButton { get; }
+
     public Button ForgetButton { get; }
 
     public Button StopBackButton { get; }
@@ -146,6 +171,12 @@ public partial class JoinScreen : Control
 
     /// <summary>The fingerprint prompt's text while it is open, else empty.</summary>
     public string TrustPrompt => trustPanel.Visible ? trustLabel.Text : "";
+
+    /// <summary>The mod download prompt while it is open, else empty.</summary>
+    public string ModPrompt => modPanel.Visible ? modLabel.Text : "";
+
+    /// <summary>The base ruleset and mods of the host after a successful mod download (the rules this client now plays with), else null.</summary>
+    public (string BaseRuleset, IReadOnlyList<string> Mods)? SyncedRules { get; private set; }
 
     /// <summary>The hard-stop text while it is open, else empty.</summary>
     public string KeyChangedPrompt => stopPanel.Visible ? stopLabel.Text : "";
@@ -214,53 +245,121 @@ public partial class JoinScreen : Control
         SetBusy(true, $"{"Connecting to".Tr()} {target.Address}...");
         attempt = new CancellationTokenSource();
         var cancellation = attempt.Token;
-        var session = new ClientSession(token => env.Connect(target, token), new ClientSessionOptions
+        var sync = env.ModFiles != null && env.ModsDirectory != null
+            ? new ModSyncService(env.ModFiles, env.ModsDirectory, plan => AskModsAsync(plan, cancellation))
+            : null;
+        string? hashAfterSync = null; // after a mod download the host's own hash: the rules now are the host's
+        SyncedRules = null;
+        for (var round = 0; ; round++)
         {
-            Identity = env.Identity,
-            DisplayName = env.DisplayName,
-            RulesetHash = env.RulesetHash(),
-            Password = string.IsNullOrEmpty(PasswordField.Text) ? null : PasswordField.Text,
-            InviteToken = target.Token,
-            ExpectedFingerprint = target.Fingerprint,
-            HostAddress = target.Address,
-            KnownHosts = env.KnownHosts,
-            PersistKnownHosts = env.PersistKnownHosts,
-            TrustPrompt = (address, fingerprint) => AskTrustAsync(address, fingerprint, cancellation),
-        });
-        connecting = session;
-        JoinResult result;
-        try
-        {
-            result = await session.JoinAsync().ConfigureAwait(true);
-        }
-        catch (Exception e) when (e is not OutOfMemoryException)
-        {
-            result = new JoinResult(false, ClientCodes.ConnectFailed);
-        }
+            var session = new ClientSession(token => env.Connect(target, token), new ClientSessionOptions
+            {
+                Identity = env.Identity,
+                DisplayName = env.DisplayName,
+                RulesetHash = hashAfterSync ?? env.RulesetHash(),
+                Password = string.IsNullOrEmpty(PasswordField.Text) ? null : PasswordField.Text,
+                InviteToken = target.Token,
+                ExpectedFingerprint = target.Fingerprint,
+                HostAddress = target.Address,
+                KnownHosts = env.KnownHosts,
+                PersistKnownHosts = env.PersistKnownHosts,
+                TrustPrompt = (address, fingerprint) => AskTrustAsync(address, fingerprint, cancellation),
+                ModSync = round == 0 ? sync : null, // one download per attempt: a host that still disagrees afterwards is refused, never looped on
+            });
+            connecting = session;
+            JoinResult result;
+            try
+            {
+                result = await session.JoinAsync().ConfigureAwait(true);
+            }
+            catch (Exception e) when (e is not OutOfMemoryException)
+            {
+                result = new JoinResult(false, ClientCodes.ConnectFailed);
+            }
 
-        if (cancellation.IsCancellationRequested || connecting != session) return; // cancelled: CancelAttempt already disposed the session and reset the screen
-        connecting = null;
-        attempt.Dispose();
-        attempt = null;
-        if (result.Joined)
-        {
-            env.RememberAddress(target.Address); // never the invite text itself: it may carry a one-time token
+            if (cancellation.IsCancellationRequested || connecting != session) return; // cancelled: CancelAttempt already disposed the session and reset the screen
+            if (result.Joined)
+            {
+                connecting = null;
+                attempt.Dispose();
+                attempt = null;
+                env.RememberAddress(target.Address); // never the invite text itself: it may carry a one-time token
+                SetBusy(false, "");
+                Joined?.Invoke(session);
+                return;
+            }
+
+            if (result.Code == ModSyncCodes.Synced && sync != null && session.ModSyncResult is { Manifest: { } manifest } outcome)
+            {
+                await session.DisposeAsync().ConfigureAwait(true);
+                if (cancellation.IsCancellationRequested) return;
+                // The mods are on disk; make them live (this is the thread that owns the ruleset cache) and join again with the host's rules.
+                var failure = sync.HotLoad(outcome);
+                if (failure != null)
+                {
+                    EndAttempt(JoinModel.RefusalText(failure));
+                    return;
+                }
+                SyncedRules = (manifest.BaseRuleset, manifest.Mods);
+                hashAfterSync = manifest.RulesetHash;
+                messageLabel.Text = $"{"Mods installed. Joining...".Tr()}";
+                continue;
+            }
+
+            connecting = null;
+            attempt.Dispose();
+            attempt = null;
+            await session.DisposeAsync().ConfigureAwait(true);
             SetBusy(false, "");
-            Joined?.Invoke(session);
+            FillHosts(); // a key trusted during this attempt is pinned now
+            string code = result.Code ?? ClientCodes.ConnectFailed;
+            if (code == ClientCodes.HostKeyChanged)
+            {
+                changedAddress = target.Address;
+                stopLabel.Text = JoinModel.KeyChangedText(target.Address);
+                ShowPanel(stopPanel);
+                return;
+            }
+            messageLabel.Text = JoinModel.RefusalText(code).Tr();
             return;
         }
-        await session.DisposeAsync().ConfigureAwait(true);
+    }
+
+    private void EndAttempt(string message)
+    {
+        connecting = null;
+        attempt?.Dispose();
+        attempt = null;
         SetBusy(false, "");
-        FillHosts(); // a key trusted during this attempt is pinned now
-        string code = result.Code ?? ClientCodes.ConnectFailed;
-        if (code == ClientCodes.HostKeyChanged)
+        FillHosts();
+        messageLabel.Text = message.Tr();
+    }
+
+    // The session asks from its own thread; the answer waits for the player's button on the main thread.
+    private Task<bool> AskModsAsync(ModSyncPlan plan, CancellationToken cancellation)
+    {
+        var answer = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        cancellation.Register(() => answer.TrySetResult(false));
+        void Show()
         {
-            changedAddress = target.Address;
-            stopLabel.Text = JoinModel.KeyChangedText(target.Address);
-            ShowPanel(stopPanel);
-            return;
+            if (cancellation.IsCancellationRequested) return;
+            modAnswer = answer;
+            modLabel.Text = JoinModel.ModSyncText(plan.ToDownload.Select(it => (it.Name, it.Status.ToString(), it.Bytes)).ToList());
+            ShowPanel(modPanel);
+            messageLabel.Text = "";
         }
-        messageLabel.Text = JoinModel.RefusalText(code).Tr();
+        if (context == null) Callable.From(Show).CallDeferred();
+        else context.Post(static state => ((Action)state!)(), (Action)Show);
+        return answer.Task;
+    }
+
+    private void AnswerMods(bool download)
+    {
+        var answer = modAnswer;
+        modAnswer = null;
+        ShowPanel(formPanel);
+        if (download) messageLabel.Text = "Downloading mods...".Tr();
+        answer?.TrySetResult(download);
     }
 
     // The session asks from its own thread; the answer waits for the player's button on the main thread.
@@ -320,6 +419,11 @@ public partial class JoinScreen : Control
             trustAnswer = null;
             answer.TrySetResult(false);
         }
+        if (modAnswer is { } modsAnswer)
+        {
+            modAnswer = null;
+            modsAnswer.TrySetResult(false);
+        }
         ShowPanel(formPanel);
         SetBusy(false, "Cancelled.".Tr());
         if (pending != null) _ = pending.DisposeAsync().AsTask();
@@ -339,6 +443,7 @@ public partial class JoinScreen : Control
     {
         formPanel.Visible = panel == formPanel;
         trustPanel.Visible = panel == trustPanel;
+        modPanel.Visible = panel == modPanel;
         stopPanel.Visible = panel == stopPanel;
     }
 }

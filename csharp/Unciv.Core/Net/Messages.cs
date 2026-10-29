@@ -9,6 +9,9 @@ public static class ErrorCodes
     public const string Malformed = "malformed";
     public const string UnknownType = "unknown-type";
     public const string InvalidMessage = "invalid-message";
+
+    /// <summary>T247: a mod file request the host will not serve (not listed, over a cap, changed on disk, or no manifest was sent). Carries no detail.</summary>
+    public const string ModFileRefused = "mod-file-refused";
 }
 
 /// <summary>Base of every wire message. The JSON frame is the record's fields plus a <c>type</c> discriminator (see <see cref="ProtocolCodec"/>).</summary>
@@ -22,6 +25,9 @@ public sealed record Hello : Message
     public required string ClientVersion { get; init; }
     public required string RulesetHash { get; init; }
     public required List<string> ModList { get; init; }
+
+    /// <summary>T247: true when this client can take the host's mod files. A ruleset mismatch then continues the handshake into a <see cref="ModManifest"/> instead of an immediate refusal. Absent (null) for a client that cannot.</summary>
+    public bool? ModSync { get; init; }
 }
 
 public sealed record Join : Message
@@ -67,6 +73,13 @@ public sealed record MapPing : Message
     public required int X { get; init; }
     public required int Y { get; init; }
     public required string Kind { get; init; }
+}
+
+/// <summary>T247: asks for one ruleset file of a mod listed in the <see cref="ModManifest"/> of this session. Only answered after the manifest, only for a listed file.</summary>
+public sealed record ModFileRequest : Message
+{
+    public required string Mod { get; init; }
+    public required string Path { get; init; }
 }
 
 /// <summary>A game command: the <c>CommandEnvelope</c> minus Seq/ActorId. <c>CommandType</c> is the command registry name (the JSON key is not <c>type</c>, which is the message discriminator).</summary>
@@ -203,6 +216,42 @@ public sealed record MapPingNotice : Message
     public required int Y { get; init; }
     public required string Kind { get; init; }
     public required string Sender { get; init; }
+}
+
+/// <summary>One ruleset data file of a mod: a bare file name in the mod's <c>jsons</c> folder, its size in bytes and the SHA-256 (lower-case hex) of its UTF-8 content.</summary>
+public sealed record ModFileEntry
+{
+    public required string Path { get; init; }
+    public required long Size { get; init; }
+    public required string Sha256 { get; init; }
+}
+
+/// <summary>One mod of the manifest: its name, its files (ordinal by path) and <c>Checksum</c>, the SHA-256 over the file list (see <c>ModManifestBuilder.ChecksumOf</c>).</summary>
+public sealed record ModEntry
+{
+    public required string Name { get; init; }
+    public required string Checksum { get; init; }
+    public required List<ModFileEntry> Files { get; init; }
+}
+
+/// <summary>
+/// T247: the host's answer to an authenticated join of a client whose rules differ, when the client said it can sync mods. The lobby's base ruleset and mod list as the host plays them, the host's
+/// combined ruleset hash, and the downloadable mods (those that exist as folders on the host; built-in rulesets are never transferred). Followed by the client's <see cref="ModFileRequest"/>s.
+/// </summary>
+public sealed record ModManifest : Message
+{
+    public required string BaseRuleset { get; init; }
+    public required List<string> Mods { get; init; }
+    public required string RulesetHash { get; init; }
+    public required List<ModEntry> Entries { get; init; }
+}
+
+/// <summary>T247: the answer to a <see cref="ModFileRequest"/>: the file's bytes, base64.</summary>
+public sealed record ModFileData : Message
+{
+    public required string Mod { get; init; }
+    public required string Path { get; init; }
+    public required string Data { get; init; }
 }
 
 public sealed record HostClosing : Message;

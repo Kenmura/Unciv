@@ -1,5 +1,6 @@
 using System.Globalization;
 using Unciv.Net.Identity;
+using Unciv.Net.Mods;
 
 namespace Unciv.GodotClient.Setup;
 
@@ -95,8 +96,21 @@ public static class JoinModel
         HostKeyMismatch => "The host's key does not match the invite. Someone may be pretending to be the host. Ask the host for a fresh invite over a channel you trust.",
         HostKeyChanged => KeyChangedText("this host"),
         ProtocolMismatch => "Your game version and the host's cannot talk to each other. Both of you need the same version.",
+        ModSyncCodes.Declined => "You chose not to download the host's mods, so you cannot join.",
+        ModSyncCodes.BadManifest or ModSyncCodes.BadFile => "The host sent mod files that are not valid. Nothing was installed.",
+        ModSyncCodes.Failed => "The mods could not be downloaded or installed. Nothing was changed.",
         _ => LobbyModel.RefusalText(code),
     };
+
+    /// <summary>The prompt before a mod download: what is missing or different and how big it is. Nothing is fetched before the player says yes; a mod that is already installed is kept as a backup.</summary>
+    public static string ModSyncText(IReadOnlyList<(string Name, string Status, long Bytes)> mods)
+    {
+        var lines = mods.Select(it => $"- {it.Name}: {(it.Status == "Missing" ? "not installed" : "installed, but different (your copy is kept as a backup)")}, {FormatBytes(it.Bytes)}");
+        return "The host plays with mods you do not have in the same version:\n\n" + string.Join("\n", lines)
+            + "\n\nOnly the rules data of these mods is downloaded (no images, sounds or programs) and it is checked before it is installed. Only continue if you trust this host.";
+    }
+
+    private static string FormatBytes(long bytes) => bytes < 1024 ? $"{bytes} B" : bytes < 1024 * 1024 ? $"{bytes / 1024} KB" : $"{bytes / (1024 * 1024)} MB";
 
     /// <summary>The fingerprint prompt for a host seen for the first time through a typed address.</summary>
     public static string TrustText(string address, string fingerprint) =>

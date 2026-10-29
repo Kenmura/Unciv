@@ -4,6 +4,7 @@ using Unciv.Logic;
 using Unciv.Logic.Civilization;
 using Unciv.Models.Metadata;
 using Unciv.Net.Identity;
+using Unciv.Net.Mods;
 using Unciv.Net.Turns;
 using Unciv.Queries.Setup;
 
@@ -100,6 +101,14 @@ public sealed class LobbyHost : IAsyncDisposable
         public string? DisplayName { get; set; }
         public bool IsAuthenticated { get; set; }
         public int? SlotIndex { get; set; }
+
+        /// <summary>T247: the client announced it can take mod files and its rules differ, so this connection ends in a <see cref="ModManifest"/> instead of a seat.</summary>
+        public bool ModSync { get; set; }
+
+        /// <summary>T247: the manifest this connection was sent (null before); only its files are served, each once.</summary>
+        public ModManifest? ModManifestSent { get; set; }
+
+        public HashSet<string> ModFilesServed { get; } = new(StringComparer.Ordinal);
 
         /// <summary>Set once this seat's transport belongs to the running game: the lobby reader (the only reader of the socket) then forwards every frame here.</summary>
         public Channel<string>? Handoff { get; set; }
@@ -332,6 +341,9 @@ public sealed class LobbyHost : IAsyncDisposable
             case LobbyChat chat:
                 await HandleLobbyChatAsync(session, chat).ConfigureAwait(false);
                 break;
+            case ModFileRequest request:
+                await HandleModFileRequestAsync(session, request).ConfigureAwait(false);
+                break;
             case Leave:
                 await HandleDisconnectAsync(session).ConfigureAwait(false);
                 break;
@@ -352,8 +364,16 @@ public sealed class LobbyHost : IAsyncDisposable
         var expectedRulesetHash = Settings.ComputeRulesetHash();
         if (!string.Equals(hello.RulesetHash, expectedRulesetHash, StringComparison.OrdinalIgnoreCase))
         {
-            await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.RulesetMismatch }).ConfigureAwait(false);
-            return;
+            if (hello.ModSync != true)
+            {
+                await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.RulesetMismatch }).ConfigureAwait(false);
+                return;
+            }
+            // T247: nothing about the mods is revealed yet. The handshake goes on (host key check, password, key proof) and only then does the client get the manifest.
+            lock (gate)
+            {
+                session.ModSync = true;
+            }
         }
 
         var challenge = new HostChallenge(HostFingerprint, random);
@@ -372,6 +392,91 @@ public sealed class LobbyHost : IAsyncDisposable
         }).ConfigureAwait(false);
     }
 
+    /// <summary>The folders the host serves mods from (the loaded mods' own folders); tests replace it.</summary>
+    public IModFolders ModFolders { get; set; } = RulesetCacheModFolders.Instance;
+
+    private (string Key, ModManifest? Manifest)? modManifestCache;
+
+    /// <summary>The manifest of this lobby's downloadable mods, or null when there is nothing the host can offer. Built once per set of rules; the files are re-verified when served.</summary>
+    private ModManifest? CurrentModManifest()
+    {
+        string ruleset;
+        List<string> mods;
+        lock (gate)
+        {
+            ruleset = Settings.Ruleset;
+            mods = [.. Settings.Mods];
+        }
+        var key = ruleset + "\0" + string.Join("\0", mods);
+        lock (gate)
+        {
+            if (modManifestCache is { } cached && cached.Key == key) return cached.Manifest;
+        }
+
+        ModManifest? manifest = null;
+        var entries = new List<ModEntry>();
+        var names = new List<string>();
+        if (!ModSyncRules.IsBuiltinRuleset(ruleset)) names.Add(ruleset);
+        names.AddRange(mods.Where(it => !names.Contains(it, StringComparer.Ordinal)));
+        var usable = true;
+        long total = 0;
+        foreach (var name in names)
+        {
+            var folder = ModFolders.FolderOf(name);
+            if (folder == null) continue;
+            var entry = ModManifestBuilder.Build(name, folder);
+            if (entry == null) { usable = false; break; }
+            total += entry.Files.Sum(it => it.Size);
+            entries.Add(entry);
+        }
+        if (usable && entries.Count is > 0 and <= ModSyncRules.MaxMods && total <= ModSyncRules.MaxTotalBytes)
+        {
+            manifest = new ModManifest { BaseRuleset = ruleset, Mods = mods, RulesetHash = Settings.ComputeRulesetHash(), Entries = entries };
+        }
+        lock (gate)
+        {
+            modManifestCache = (key, manifest);
+        }
+        return manifest;
+    }
+
+    private async Task SendModManifestAsync(LobbySession session)
+    {
+        var manifest = CurrentModManifest();
+        if (manifest == null)
+        {
+            await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.ModSyncUnavailable }).ConfigureAwait(false);
+            return;
+        }
+        lock (gate)
+        {
+            session.ModManifestSent = manifest;
+        }
+        await SendAsync(session.Transport, manifest).ConfigureAwait(false);
+    }
+
+    private async Task HandleModFileRequestAsync(LobbySession session, ModFileRequest request)
+    {
+        var manifest = session.ModManifestSent;
+        var entry = manifest?.Entries.FirstOrDefault(it => string.Equals(it.Name, request.Mod, StringComparison.Ordinal));
+        var listed = entry?.Files.FirstOrDefault(it => string.Equals(it.Path, request.Path, StringComparison.Ordinal));
+        var folder = entry == null ? null : ModFolders.FolderOf(entry.Name);
+        bool first;
+        lock (gate)
+        {
+            first = listed != null && session.ModFilesServed.Add(request.Mod + "/" + request.Path);
+        }
+
+        // Only a listed file, once per connection, whose bytes still are the ones the manifest promised.
+        var bytes = first && folder != null ? ModManifestBuilder.ReadFile(folder, request.Path) : null;
+        if (listed == null || bytes == null || bytes.Length != listed.Size || !string.Equals(ModManifestBuilder.HashOf(bytes), listed.Sha256, StringComparison.Ordinal))
+        {
+            await SendAsync(session.Transport, new Error { Code = ErrorCodes.ModFileRefused }).ConfigureAwait(false);
+            return;
+        }
+        await SendAsync(session.Transport, new ModFileData { Mod = request.Mod, Path = request.Path, Data = Convert.ToBase64String(bytes) }).ConfigureAwait(false);
+    }
+
     private async Task HandleJoinAsync(LobbySession session, Join join)
     {
         if (session.Challenge == null)
@@ -386,7 +491,9 @@ public sealed class LobbyHost : IAsyncDisposable
             return;
         }
 
-        var admissionResult = Admission.Admit(join.PlayerKey, join.Password, join.InviteToken);
+        var admissionResult = session.ModSync
+            ? Admission.AdmitForModSync(join.PlayerKey, join.Password, join.InviteToken)
+            : Admission.Admit(join.PlayerKey, join.Password, join.InviteToken);
         if (admissionResult == AdmissionResult.RateLimited)
         {
             await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.RateLimited }).ConfigureAwait(false);
@@ -416,6 +523,12 @@ public sealed class LobbyHost : IAsyncDisposable
         if (!session.Challenge.Verify(session.PendingPlayerKey, auth.Proof))
         {
             await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.AuthFailed }).ConfigureAwait(false);
+            return;
+        }
+
+        if (session.ModSync)
+        {
+            await SendModManifestAsync(session).ConfigureAwait(false);
             return;
         }
 
