@@ -13,6 +13,9 @@ namespace Unciv.GodotClient.Setup;
 /// <summary>One line of the player list: the nation chosen (a nation name or <see cref="Constants.Random"/>) and whether a person plays it.</summary>
 public sealed record PlayerSlot(string Nation, bool IsHuman);
 
+/// <summary>C072: what the nation detail pane shows of a nation: its leader, its unique ability (name and text) and the terrain it prefers to start on.</summary>
+public sealed record NationDetail(string Name, string Leader, string UniqueName, string UniqueText, IReadOnlyList<string> StartBias);
+
 /// <summary>
 /// What <see cref="NewGameForm.Build"/> produced: the setup and the seed to start it with, or the reasons there is none. A refusal is a result, never an exception.
 /// </summary>
@@ -239,6 +242,18 @@ public sealed class NewGameForm
         if (!colourRuleset.Nations.TryGetValue(nation, out var found)) return null;
         return (ToRgb(found.GetOuterColor()), ToRgb(found.GetInnerColor()));
     }
+
+    /// <summary>C072: the detail of a nation of the current ruleset; null for a name it does not have (and for <see cref="Constants.Random"/>).</summary>
+    public NationDetail? DescribeNation(string nation)
+    {
+        colourRuleset ??= RulesetCache.GetComplexRuleset(new LinkedHashSet<string>(mods), BaseRuleset);
+        if (!colourRuleset.Nations.TryGetValue(nation, out var found)) return null;
+        return new NationDetail(found.Name, found.LeaderName, found.UniqueName, found.UniqueText, found.StartBias.ToList());
+    }
+
+    /// <summary>C072: the one-line summary shown in the screen's footer: players, city-states, difficulty, speed and the map.</summary>
+    public string Summary =>
+        $"{Slots.Count.ToString(CultureInfo.InvariantCulture)} players, {CityStates.ToString(CultureInfo.InvariantCulture)} city-states, {Difficulty}, {Speed}, {MapType} {Size}";
 
     private static Rgb ToRgb(EngineColor c) => new(Channel(c.R), Channel(c.G), Channel(c.B));
 

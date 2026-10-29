@@ -26,6 +26,8 @@ public partial class NewGameScreen : Control
     private readonly VBoxContainer rulesPage = new() { Name = "RulesPage" };
     private readonly VBoxContainer advancedPage = new() { Name = "AdvancedPage" };
     private readonly Label messageLabel = new() { Name = "SetupMessage", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private readonly Label summaryLabel = new() { Name = "SetupSummary", ThemeTypeVariation = UiVariants.LabelSecondary, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
+    private readonly ScreenFrame frame;
     private readonly Dictionary<string, Button> nationButtons = [];
     private readonly List<Button> slotNationButtons = [];
     private readonly List<Button> slotHumanButtons = [];
@@ -40,27 +42,32 @@ public partial class NewGameScreen : Control
         this.start = start;
         Form = form;
         Name = "NewGameScreen";
+        var backdrop = new ColorRect { Name = "Backdrop", Color = ProceduralAssets.ToColor(UiTokens.Bg1), MouseFilter = MouseFilterEnum.Ignore };
+        backdrop.Fill();
+        AddChild(backdrop);
+        frame = new ScreenFrame(theme, "New game", closeButton: false);
+        frame.Fill();
+        AddChild(frame);
         var column = new VBoxContainer();
-        column.Fill();
-        AddChild(column);
+        column.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
         Tabs = new TabBar { SizeFlagsVertical = SizeFlags.ExpandFill };
         foreach (var (title, page) in new[] { ("Players", playersPage), ("Game", gamePage), ("Map", mapPage), ("Rules", rulesPage), ("Advanced", advancedPage) })
         {
             var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill };
             page.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            page.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
             scroll.AddChild(page);
             Tabs.AddTab(title, scroll);
         }
         column.AddChild(Tabs);
         column.AddChild(messageLabel);
-        var bottom = new HBoxContainer();
+        column.AddChild(summaryLabel);
+        frame.SetContent(column);
         StartButton = new Button { Text = "Start game".Tr(), Name = "StartButton" };
         StartButton.Pressed += () => _ = StartAsync();
         BackButton = new Button { Text = "Back".Tr(), Name = "BackButton" };
         BackButton.Pressed += () => BackRequested?.Invoke();
-        bottom.AddChild(StartButton);
-        bottom.AddChild(BackButton);
-        column.AddChild(bottom);
+        frame.SetFooter([(BackButton, ChoiceRole.Ghost), (StartButton, ChoiceRole.Primary)]);
         Refresh();
     }
 
@@ -69,6 +76,9 @@ public partial class NewGameScreen : Control
     public TabBar Tabs { get; }
 
     public Button StartButton { get; }
+
+    /// <summary>The footer summary of the choices (players, city-states, difficulty, speed, map).</summary>
+    public string Summary => summaryLabel.Text;
 
     public Button BackButton { get; }
 
@@ -109,6 +119,7 @@ public partial class NewGameScreen : Control
     {
         messageLabel.Text = text.TrText();
         messageLabel.AddThemeColorOverride("font_color", ProceduralAssets.ToColor(isError ? PlaceholderPalette.ErrorText : PlaceholderPalette.Text));
+        messageLabel.Visible = text.Length > 0;
     }
 
     // Rebuilds every page from the form (cheap: well under a hundred buttons) and shows the form's problems.
@@ -124,6 +135,7 @@ public partial class NewGameScreen : Control
 
     private void ShowProblems()
     {
+        summaryLabel.Text = Form.Summary;
         var problems = Form.Problems();
         SetMessage(string.Join("\n", problems), problems.Count > 0);
     }
@@ -172,16 +184,7 @@ public partial class NewGameScreen : Control
         }
     }
 
-    private Button AddButton(Container parent, string text, Action pressed, string? name = null)
-    {
-        var button = new Button { Text = text.TrText() };
-        if (name != null) button.Name = name;
-        button.Pressed += pressed;
-        parent.AddChild(button);
-        return button;
-    }
-
-    private static void AddHeading(Container page, string text) => page.AddChild(new Label { Text = text.TrText() });
+    private static void AddHeading(Container page, string text) => page.AddChild(new SectionHeader(text));
 
     private void AddChoice(Container page, string field, string heading, IEnumerable<string> options, string selected, Action<string> chosen) =>
         AddCheckedChoice(page, field, heading, options, selected, value =>
@@ -223,49 +226,78 @@ public partial class NewGameScreen : Control
         selectedSlot = Math.Clamp(selectedSlot, 0, Math.Max(0, Form.Slots.Count - 1));
 
         var counts = new HFlowContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        AddButton(counts, "Fewer players", () => Change(Form.SetPlayerCount(Form.Slots.Count - 1)));
-        counts.AddChild(new Label { Text = $" {Form.Slots.Count.ToString(CultureInfo.InvariantCulture)} {"players".Tr()} " });
-        AddButton(counts, "More players", () => Change(Form.SetPlayerCount(Form.Slots.Count + 1)));
-        counts.AddChild(new Label { Text = "   " });
-        AddButton(counts, "Fewer city-states", () => Change(Form.SetCityStates(Form.CityStates - 1)));
-        counts.AddChild(new Label { Text = $" {Form.CityStates.ToString(CultureInfo.InvariantCulture)} {"city-states".Tr()} " });
-        AddButton(counts, "More city-states", () => Change(Form.SetCityStates(Form.CityStates + 1)));
+        counts.AddThemeConstantOverride("h_separation", theme.Px(UiTokens.S6));
+        AddStepper(counts, "Players", new Stepper(theme, NewGameForm.MinPlayers, Math.Max(NewGameForm.MinPlayers, Form.MaxPlayers), Form.Slots.Count, decreaseLabel: "Fewer players", increaseLabel: "More players"),
+            value => Form.SetPlayerCount(value));
+        AddStepper(counts, "City-states", new Stepper(theme, 0, Form.MaxCityStates, Form.CityStates, decreaseLabel: "Fewer city-states", increaseLabel: "More city-states"),
+            value => Form.SetCityStates(value));
         playersPage.AddChild(counts);
 
+        var body = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        body.AddThemeConstantOverride("separation", theme.Px(UiTokens.S3));
+        var list = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        list.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
         for (int i = 0; i < Form.Slots.Count; i++)
         {
             int slot = i;
             var line = new HBoxContainer { Name = $"Slot{(i + 1).ToString(CultureInfo.InvariantCulture)}" };
+            line.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
             var nation = new Button
             {
                 Text = $"{(i + 1).ToString(CultureInfo.InvariantCulture)}. {Form.Slots[i].Nation.TrText()}",
                 ToggleMode = true,
                 ButtonPressed = i == selectedSlot,
-                CustomMinimumSize = new Vector2(theme.Px(190), 0),
+                ThemeTypeVariation = UiVariants.ButtonRow,
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
                 Alignment = HorizontalAlignment.Left,
+                TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             };
-            Colour(nation, Form.Slots[i].Nation);
             nation.Pressed += () =>
             {
                 selectedSlot = slot;
                 Refresh();
             };
-            var human = new Button { Text = (Form.Slots[i].IsHuman ? "Human" : "AI").TrText() };
+            var human = new Button { Text = (Form.Slots[i].IsHuman ? "Human" : "AI").TrText(), ThemeTypeVariation = UiVariants.ButtonChip };
             human.Pressed += () => Change(Form.SetHuman(slot, !Form.Slots[slot].IsHuman));
+            line.AddChild(Emblem(Form.Slots[i].Nation, 24));
             line.AddChild(nation);
             line.AddChild(human);
-            playersPage.AddChild(line);
+            list.AddChild(line);
             slotNationButtons.Add(nation);
             slotHumanButtons.Add(human);
         }
+        body.AddChild(list);
+        body.AddChild(NationCard(Form.Slots[selectedSlot].Nation));
+        playersPage.AddChild(body);
 
         AddHeading(playersPage, $"Nation for player {(selectedSlot + 1).ToString(CultureInfo.InvariantCulture)}:");
         var grid = new HFlowContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        grid.AddThemeConstantOverride("h_separation", theme.Px(UiTokens.S2));
+        grid.AddThemeConstantOverride("v_separation", theme.Px(UiTokens.S2));
         playersPage.AddChild(grid);
         foreach (string name in new[] { Constants.Random }.Concat(Form.PlayableNations))
         {
-            var button = new Button { Text = name.TrText() };
-            Colour(button, name);
+            var button = new Button
+            {
+                ToggleMode = true,
+                ButtonPressed = Form.Slots[selectedSlot].Nation == name,
+                ThemeTypeVariation = UiVariants.ButtonRow,
+                CustomMinimumSize = new Vector2(theme.Px(88), theme.Px(72)),
+                TooltipText = name.TrText(),
+            };
+            button.SetMeta(IconButton.LabelMeta, name);
+            var cell = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
+            cell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            cell.AddThemeConstantOverride("separation", theme.Px(UiTokens.S1));
+            var emblem = Emblem(name, 36);
+            emblem.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            cell.AddChild(emblem);
+            cell.AddChild(new Label
+            {
+                Text = name.TrText(), ThemeTypeVariation = UiVariants.LabelSmall, HorizontalAlignment = HorizontalAlignment.Center,
+                TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, MouseFilter = MouseFilterEnum.Ignore,
+            });
+            button.AddChild(cell);
             bool taken = name != Constants.Random && Form.Slots.Select((s, index) => (s, index)).Any(it => it.s.Nation == name && it.index != selectedSlot);
             button.Disabled = taken;
             button.Pressed += () => Change(Form.SetNation(selectedSlot, name));
@@ -274,17 +306,50 @@ public partial class NewGameScreen : Control
         }
     }
 
-    private void Colour(Button button, string nation)
+    private void AddStepper(Container parent, string label, Stepper stepper, Func<int, string?> changed)
     {
-        if (Form.NationColours(nation) is not { } colours) return;
-        var normal = new StyleBoxFlat { BgColor = ProceduralAssets.ToColor(colours.Background), ContentMarginLeft = 8, ContentMarginRight = 8, ContentMarginTop = 4, ContentMarginBottom = 4 };
-        button.AddThemeStyleboxOverride("normal", normal);
-        button.AddThemeStyleboxOverride("hover", normal);
-        button.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = ProceduralAssets.ToColor(colours.Background).Lightened(0.35f), ContentMarginLeft = 8, ContentMarginRight = 8, ContentMarginTop = 4, ContentMarginBottom = 4 });
-        foreach (string state in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
-            button.AddThemeColorOverride(state, ProceduralAssets.ToColor(colours.Text));
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        row.AddChild(new Label { Text = label.TrText(), ThemeTypeVariation = UiVariants.LabelSecondary, VerticalAlignment = VerticalAlignment.Center });
+        row.AddChild(stepper);
+        stepper.Changed += value => Change(changed(value));
+        parent.AddChild(row);
     }
 
+    // A nation's emblem: its icon on a disc in the nation's colours (the neutral colours for Random).
+    private IconBadge Emblem(string nation, int size)
+    {
+        var colours = Form.NationColours(nation);
+        var fill = ProceduralAssets.ToColor(colours?.Background ?? UiTokens.Surface3);
+        var glyph = ProceduralAssets.ToColor(colours?.Text ?? UiTokens.TextPrimary);
+        return new IconBadge(theme, AssetKey.Of(RulesetAssetKeys.NationIcon, nation), fill, glyph, size);
+    }
+
+    // The detail pane of the selected slot's nation: emblem and name, leader, unique ability and start preference.
+    private PanelContainer NationCard(string nation)
+    {
+        var card = new PanelContainer { Name = "NationDetail", ThemeTypeVariation = UiVariants.PanelCard, CustomMinimumSize = new Vector2(theme.Px(theme.Breakpoint == UiBreakpoint.Compact ? 170 : 260), 0f) };
+        var box = new VBoxContainer();
+        box.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        var head = new HBoxContainer();
+        head.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
+        head.AddChild(Emblem(nation, 40));
+        head.AddChild(new Label { Text = nation.TrText(), ThemeTypeVariation = UiVariants.LabelHeading, VerticalAlignment = VerticalAlignment.Center, SizeFlagsHorizontal = SizeFlags.ExpandFill, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis });
+        box.AddChild(head);
+        if (Form.DescribeNation(nation) is { } detail)
+        {
+            if (detail.Leader.Length > 0) box.AddChild(new Label { Text = detail.Leader.TrText(), ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+            if (detail.UniqueName.Length > 0) box.AddChild(new Label { Text = detail.UniqueName.TrText(), ThemeTypeVariation = UiVariants.LabelBodyStrong, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+            if (detail.UniqueText.Length > 0) box.AddChild(new Label { Text = detail.UniqueText.TrText(), AutowrapMode = TextServer.AutowrapMode.WordSmart });
+            if (detail.StartBias.Count > 0) box.AddChild(new Label { Text = $"{"Starts near".Tr()}: {string.Join(", ", detail.StartBias.Select(it => it.TrText()))}", ThemeTypeVariation = UiVariants.LabelSmall, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        }
+        else
+        {
+            box.AddChild(new Label { Text = "A nation is picked at random when the game starts.".Tr(), ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        }
+        card.AddChild(box);
+        return card;
+    }
 
     private void FillGame()
     {

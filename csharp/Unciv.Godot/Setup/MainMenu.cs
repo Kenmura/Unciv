@@ -1,4 +1,6 @@
 using Godot;
+using Unciv.Assets;
+using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Ui;
 using Unciv.Models.Translations;
 using Unciv.GodotClient.Localization;
@@ -16,20 +18,28 @@ public partial class MainMenu : Control
     public MainMenu()
     {
         Name = "MainMenu";
+        var backdrop = new ColorRect { Name = "Backdrop", Color = ProceduralAssets.ToColor(UiTokens.Bg1), MouseFilter = MouseFilterEnum.Ignore };
+        backdrop.Fill();
+        AddChild(backdrop);
         var centre = new CenterContainer();
         centre.Fill();
         AddChild(centre);
-        var column = new VBoxContainer { CustomMinimumSize = new Vector2(240, 0) };
+        var column = new VBoxContainer { Name = "MenuColumn", CustomMinimumSize = new Vector2(260, 0) };
+        column.AddThemeConstantOverride("separation", UiTokens.S2);
         centre.AddChild(column);
-        column.AddChild(new Label { Text = "Unciv".Tr(), HorizontalAlignment = HorizontalAlignment.Center });
+        column.AddChild(new Label { Name = "Logo", Text = "Unciv".Tr(), HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = UiVariants.LabelDisplay });
+        var rule = new ColorRect { Name = "LogoRule", Color = ProceduralAssets.ToColor(UiTokens.Accent), CustomMinimumSize = new Vector2(0, UiTokens.HairlineWidth) };
+        column.AddChild(rule);
+        column.AddChild(new Control { CustomMinimumSize = new Vector2(0, UiTokens.S3) });
         NewGame = Add(column, "New game", () => NewGameRequested?.Invoke());
+        NewGame.ThemeTypeVariation = UiVariants.ButtonPrimary;
         resume = Add(column, "Resume last", () => ResumeRequested?.Invoke());
         resume.Disabled = true;
         Add(column, "Load game", () => LoadRequested?.Invoke());
         Add(column, "Multiplayer", () => JoinRequested?.Invoke());
         Add(column, "Host game", () => HostRequested?.Invoke());
         Add(column, "Options", () => OptionsRequested?.Invoke());
-        Add(column, "Quit", () => QuitRequested?.Invoke());
+        Add(column, "Quit", () => QuitRequested?.Invoke()).ThemeTypeVariation = UiVariants.ButtonGhost;
     }
 
     public Button NewGame { get; }

@@ -41,8 +41,6 @@ public sealed class SetupScenario : Scenario
     {
         var registry = AssetRegistry.ForRuleset(session.Game.Ruleset);
         var theme = new UiTheme(registry);
-        var backdrop = new ColorRect { Color = new Color(0.12f, 0.14f, 0.2f), AnchorRight = 1, AnchorBottom = 1 };
-        host.AddChild(backdrop);
         var manager = new ScreenManager(theme);
         host.AddChild(manager);
         var menu = new MainMenu(); manager.Push(menu);
@@ -61,7 +59,6 @@ public sealed class SetupScenario : Scenario
             screen.Started += hosted =>
             {
                 started = hosted;
-                backdrop.Visible = false; // the 3D map must show through
                 gameScreen = new GameScreen { Name = "GameScreen" };
                 var playRoot = new Control { Name = "Play", MouseFilter = Control.MouseFilterEnum.Ignore };
                 playRoot.AddChild(gameScreen);
@@ -73,6 +70,8 @@ public sealed class SetupScenario : Scenario
 
         NewGameScreen Screen() => screen.NotNull();
         Vector2 Centre(Func<Control?> find) => find()?.GetGlobalRect().GetCenter() ?? Vector2.Zero;
+        // a page is taller than the 640x480 window: scroll the control into view (the next steps wait a frame for the layout)
+        Act Show(Func<Control?> find) => new("scroll into view", () => { if (find() is { } control) Screen().Reveal(control); });
         Click ClickChoice(string field, string option) => new(() => Centre(() => Screen().ChoiceButton(field, option)));
         Click ClickNation(string nation) => new(() => Centre(() => Screen().NationButton(nation)));
         Click ClickSlotNation(int slot) => new(() => Centre(() => Screen().SlotNationButton(slot)));
@@ -82,7 +81,7 @@ public sealed class SetupScenario : Scenario
         {
             new WaitFrames(3),
             new AssertQuery("the menu is the only screen; Resume last and Multiplayer are disabled", () => manager.Depth == 1 && !menu.CanResume),
-            new Capture("menu", "Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Options, Quit"),
+            new Capture("menu", "Main menu: New game, Resume last (disabled), Load game, Multiplayer, Options, Quit"),
             new Press("New game"),
             new WaitFrames(2),
             new AssertQuery("the setup screen opened with the defaults: four players, one human", () => manager.Depth == 2 && Screen().Form.Slots.Count == 4 && Screen().Form.Humans == 1),
@@ -97,32 +96,33 @@ public sealed class SetupScenario : Scenario
             new Press("Fewer players"),
             new Press("Fewer players"),
             new AssertQuery("two players", () => Screen().Form.Slots.Count == 2),
-            ClickSlotNation(0),
-            ClickNation("Babylon"),
-            ClickSlotNation(1),
-            ClickNation("Rome"),
+            Show(() => Screen().SlotNationButton(0)), ClickSlotNation(0),
+            Show(() => Screen().NationButton("Babylon")), ClickNation("Babylon"),
+            Show(() => Screen().SlotNationButton(1)), ClickSlotNation(1),
+            Show(() => Screen().NationButton("Rome")), ClickNation("Rome"),
             new AssertQuery("Babylon and Rome chosen", () => Screen().Form.Slots.Select(it => it.Nation).SequenceEqual(["Babylon", "Rome"])),
             new AssertQuery("Babylon is taken in the grid while slot 2 is selected", () => Screen().NationButton("Babylon")?.Disabled == true && Screen().NationButton("Rome")?.Disabled == false),
-            new Click(() => Centre(() => Screen().SlotHumanButton(1))),
+            Show(() => Screen().SlotHumanButton(1)), new Click(() => Centre(() => Screen().SlotHumanButton(1))),
             new AssertQuery("choosing slot 2 as human moves the human", () => Screen().Form.Slots.Select(it => it.IsHuman).SequenceEqual([false, true])),
-            new Click(() => Centre(() => Screen().SlotHumanButton(0))),
+            Show(() => Screen().SlotHumanButton(0)), new Click(() => Centre(() => Screen().SlotHumanButton(0))),
             new AssertQuery("and back to slot 1", () => Screen().Form.Slots.Select(it => it.IsHuman).SequenceEqual([true, false])),
             new Act("no city-states", () => { while (Screen().Form.CityStates > 0) Screen().Form.SetCityStates(Screen().Form.CityStates - 1); Screen().Refresh(); }),
+            new AssertQuery("the footer summarises the choices and the detail pane describes Rome", () => Screen().Summary.StartsWith("2 players, 0 city-states", StringComparison.Ordinal) && Screen().FindChild("NationDetail", true, false) != null),
             new Capture("players", "Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the grid"),
 
             new Press("Game"),
-            ClickChoice("Difficulty", "King"),
-            ClickChoice("Era", "Classical era"),
+            Show(() => Screen().ChoiceButton("Difficulty", "King")), ClickChoice("Difficulty", "King"),
+            Show(() => Screen().ChoiceButton("Era", "Classical era")), ClickChoice("Era", "Classical era"),
             new Act("scroll to Domination", () => Reveal(Screen(), "Domination")),
             new Press("Domination"),
             new AssertQuery("King, Classical era, no Domination victory", () => Screen().Form.Difficulty == "King" && Screen().Form.Era == "Classical era" && !Screen().Form.Victories.Contains("Domination")),
             new Capture("game", "Game tab: King, Classical era, Domination switched off"),
 
             new Press("Map"),
-            ClickChoice("Type", "Pangaea"),
-            ClickChoice("Shape", "Hexagonal"),
-            ClickChoice("Size", "Tiny"),
-            ClickChoice("Resources", "Abundant"),
+            Show(() => Screen().ChoiceButton("Type", "Pangaea")), ClickChoice("Type", "Pangaea"),
+            Show(() => Screen().ChoiceButton("Shape", "Hexagonal")), ClickChoice("Shape", "Hexagonal"),
+            Show(() => Screen().ChoiceButton("Size", "Tiny")), ClickChoice("Size", "Tiny"),
+            Show(() => Screen().ChoiceButton("Resources", "Abundant")), ClickChoice("Resources", "Abundant"),
             new Act("scroll to World wrap", () => Reveal(Screen(), "World wrap")),
             new Press("World wrap"),
             new Act("type the seed 3", () => TypeSeed(Screen(), "3")),

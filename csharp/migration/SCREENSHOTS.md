@@ -260,17 +260,17 @@ Main menu and new-game screen: players and nations, rules, game, map and advance
 
 Scenario `setup`.
 
-![Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Host game, Options, Quit.](../Unciv.Godot.Harness/golden/setup/menu.png)
+![Main menu on the dark backdrop: the Unciv logo over a brass rule, New game as the gold primary button, Resume last disabled, Load game, Multiplayer, Host game, Options, and Quit as a quiet ghost button.](../Unciv.Godot.Harness/golden/setup/menu.png)
 
-*Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Host game, Options, Quit.* (`setup/menu.png`)
+*Main menu on the dark backdrop: the Unciv logo over a brass rule, New game as the gold primary button, Resume last disabled, Load game, Multiplayer, Host game, Options, and Quit as a quiet ghost button.* (`setup/menu.png`)
 
-![Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the nation grid, nations in their colours.](../Unciv.Godot.Harness/golden/setup/players.png)
+![Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, start preference), the emblem grid below, and the summary line in the footer above Back and the gold Start game.](../Unciv.Godot.Harness/golden/setup/players.png)
 
-*Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the nation grid, nations in their colours.* (`setup/players.png`)
+*Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, start preference), the emblem grid below, and the summary line in the footer above Back and the gold Start game.* (`setup/players.png`)
 
-![Map tab with a non-numeric seed: the reason is shown under the tabs and nothing starts.](../Unciv.Godot.Harness/golden/setup/bad-seed.png)
+![Map tab with a non-numeric seed: the reason is shown in red under the tabs, above the summary line, and nothing starts.](../Unciv.Godot.Harness/golden/setup/bad-seed.png)
 
-*Map tab with a non-numeric seed: the reason is shown under the tabs and nothing starts.* (`setup/bad-seed.png`)
+*Map tab with a non-numeric seed: the reason is shown in red under the tabs, above the summary line, and nothing starts.* (`setup/bad-seed.png`)
 
 ![The game started from the chosen options: Babylon, turn 0, tiny hexagonal map.](../Unciv.Godot.Harness/golden/setup/started.png)
 
@@ -1206,6 +1206,20 @@ Scenario `city-b`.
 
 *At 1280x720 the city screen keeps its structure: buildable list rows spread over the extra width, with cost and Buy chips at the right edge.* (`city-b/wide.png`)
 
+## C072 (ticket not Done or unknown)
+
+Setup and main menu redesign: dark backdrop with logo and a primary/ghost button column; new-game screen in a ScreenFrame with Steppers for the counts, emblem slots and grid, a nation detail card and a summary footer.
+
+Scenario `setup`.
+
+![New game screen at the defaults: Steppers for players and city-states, four Random slots with a Human/AI chip, the detail card of the selected nation, the emblem grid (Random selected) and the summary line above Back and the gold Start game.](../Unciv.Godot.Harness/golden/setup/defaults.png)
+
+*New game screen at the defaults: Steppers for players and city-states, four Random slots with a Human/AI chip, the detail card of the selected nation, the emblem grid (Random selected) and the summary line above Back and the gold Start game.* (`setup/defaults.png`)
+
+![Rules tab inside the frame: Vanilla chosen as the base ruleset with the section headers as overlines.](../Unciv.Godot.Harness/golden/setup/rules.png)
+
+*Rules tab inside the frame: Vanilla chosen as the base ruleset with the section headers as overlines.* (`setup/rules.png`)
+
 ## C080 Unit model loader and contract
 
 The Warrior is a CC0 animated model file: textured TeamColor material tinted per civ, held in its idle pose.
@@ -1256,4 +1270,4 @@ Done tickets with nothing meaningful to show.
 - **C060 Tutorial task completed-set: per-viewer and replay-safe (C054 review follow-up)**: Per-viewer, replay-safe tutorial-task state (no layout change); the card itself is shown under C054 (tutorial-tasks scenario) and the hotseat hand-over under C029.
 - **C064 Unique display text and hidden uniques in UI models**: Model-level text fix (unique display text, hidden uniques filtered); the decisions, tooltips and policy scenario goldens are pixel-unchanged.
 - **C070 Tech tree redesign**: Tech tree redesign: shown under C019 (tech/*), whose captions and goldens were re-recorded in C070.
-- **C074 (ticket not Done or unknown)**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.
+- **C074 Overview and espionage on DataTable**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.

@@ -181,15 +181,15 @@
     "shots": [
       {
         "golden": "setup/menu.png",
-        "caption": "Main menu: New game, Resume last (disabled), Load game, Multiplayer (disabled), Host game, Options, Quit."
+        "caption": "Main menu on the dark backdrop: the Unciv logo over a brass rule, New game as the gold primary button, Resume last disabled, Load game, Multiplayer, Host game, Options, and Quit as a quiet ghost button."
       },
       {
         "golden": "setup/players.png",
-        "caption": "Players tab: Babylon (human) and Rome (AI), no city-states, Babylon greyed out in the nation grid, nations in their colours."
+        "caption": "Players tab: Babylon (human) and Rome (AI) slots with their emblems, the detail card of the selected nation (Rome: leader, unique ability, start preference), the emblem grid below, and the summary line in the footer above Back and the gold Start game."
       },
       {
         "golden": "setup/bad-seed.png",
-        "caption": "Map tab with a non-numeric seed: the reason is shown under the tabs and nothing starts."
+        "caption": "Map tab with a non-numeric seed: the reason is shown in red under the tabs, above the summary line, and nothing starts."
       },
       {
         "golden": "setup/started.png",
@@ -1249,5 +1249,19 @@
   },
   "C070": {
     "none": "Tech tree redesign: shown under C019 (tech/*), whose captions and goldens were re-recorded in C070."
+  },
+  "C072": {
+    "scenario": "setup",
+    "about": "Setup and main menu redesign: dark backdrop with logo and a primary/ghost button column; new-game screen in a ScreenFrame with Steppers for the counts, emblem slots and grid, a nation detail card and a summary footer.",
+    "shots": [
+      {
+        "golden": "setup/defaults.png",
+        "caption": "New game screen at the defaults: Steppers for players and city-states, four Random slots with a Human/AI chip, the detail card of the selected nation, the emblem grid (Random selected) and the summary line above Back and the gold Start game."
+      },
+      {
+        "golden": "setup/rules.png",
+        "caption": "Rules tab inside the frame: Vanilla chosen as the base ruleset with the section headers as overlines."
+      }
+    ]
   }
 }

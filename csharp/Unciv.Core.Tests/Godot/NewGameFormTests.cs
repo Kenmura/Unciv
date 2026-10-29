@@ -579,6 +579,22 @@ public sealed class NewGameFormTests
         Assert.NotEqual(form.NationColours("Babylon"), rome);
     }
 
+    [Fact]
+    public void NationDetailAndSummaryDescribeTheChoices()
+    {
+        var form = VanillaForm();
+        var babylon = form.DescribeNation("Babylon");
+        Assert.NotNull(babylon);
+        Assert.Equal("Babylon", babylon.Name);
+        Assert.False(string.IsNullOrEmpty(babylon.Leader));
+        Assert.False(string.IsNullOrEmpty(babylon.UniqueName));
+        Assert.Null(form.DescribeNation("Random"));
+        Assert.Null(form.DescribeNation("Atlantis"));
+        Assert.Equal($"{form.Slots.Count} players, {form.CityStates} city-states, {form.Difficulty}, {form.Speed}, {form.MapType} {form.Size}", form.Summary);
+        Assert.Null(form.SetPlayerCount(2));
+        Assert.StartsWith("2 players", form.Summary, StringComparison.Ordinal);
+    }
+
     // Review additions (C015 r1): swapped fields, exact boundaries, argument passing and cache invalidation, each of which mutation survey found unpinned.
 
     private static readonly Action<NewGameForm>[] FlagToggles =
