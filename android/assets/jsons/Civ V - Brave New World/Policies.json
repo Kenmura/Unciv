@@ -749,7 +749,7 @@
 				"level": 1,
 				"row": 1,
 				"column": 2,
-				"uniques": []
+				"uniques": ["[+15]% Strength <for [Military] units> <when fighting in [Friendly Land] tiles>"]
 			},
 			{
 				"name": "Skyscrapers",
@@ -905,7 +905,7 @@
 				"level": 1,
 				"row": 1,
 				"column": 0,
-				"uniques": []
+				"uniques": ["No damage penalty for wounded units <for [Military] units>"]
 			},
 			{
 				"name": "Fortified Borders",
@@ -975,7 +975,10 @@
 				"level": 2,
 				"row": 2,
 				"column": 0,
-				"uniques": []
+				"uniques": [
+					"All newly-trained [Armored] units [in all cities] receive the [Lightning Warfare] promotion",
+					"[+3] Movement <for [Great General] units>"
+				]
 			},
 			{
 				"name": "Militarism",

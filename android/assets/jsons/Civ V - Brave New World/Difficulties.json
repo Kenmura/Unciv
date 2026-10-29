@@ -147,7 +147,8 @@
 		"aiUnhappinessModifier": 0.9,
 		"aisExchangeTechs": true,
 		"turnBarbariansCanEnterPlayerTiles": 0,
-		"clearBarbarianCampReward": 25
+		"clearBarbarianCampReward": 25,
+		"aiFreeXp": 10
 	},
 	{
 		"name": "Emperor",
@@ -177,7 +178,9 @@
 		"aiUnhappinessModifier": 0.85,
 		"aisExchangeTechs": true,
 		"turnBarbariansCanEnterPlayerTiles": 0,
-		"clearBarbarianCampReward": 25
+		"clearBarbarianCampReward": 25,
+		"aiFreeXp": 10,
+		"aiFreeXpPercent": 25
 	},
 	{
 		"name": "Immortal",
@@ -207,7 +210,9 @@
 		"aiUnhappinessModifier": 0.75,
 		"aisExchangeTechs": true,
 		"turnBarbariansCanEnterPlayerTiles": 0,
-		"clearBarbarianCampReward": 25
+		"clearBarbarianCampReward": 25,
+		"aiFreeXp": 30,
+		"aiFreeXpPercent": 50
 	},
 	{
 		"name": "Deity",
@@ -237,6 +242,8 @@
 		"aiUnhappinessModifier": 0.6,
 		"aisExchangeTechs": true,
 		"turnBarbariansCanEnterPlayerTiles": 0,
-		"clearBarbarianCampReward": 25
+		"clearBarbarianCampReward": 25,
+		"aiFreeXp": 30,
+		"aiFreeXpPercent": 100
 	}
 ]

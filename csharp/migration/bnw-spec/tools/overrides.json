@@ -4,6 +4,38 @@
   // from a copy of an analogous object (the generated numbers of the patched object win).
   // 'pending' lists SPEC 3.2 hooks the generator cannot emit yet; they go to the report.
  "files": {
+  "UnitPromotions.json": {
+   // B023 (SPEC 4.12): BNW promotions without a unitTypes list are never offered as a level-up choice (CannotBeChosen); units carry them.
+   // Sapper: Assyrian Siege Tower. Heavy Charge: Winged Hussar. Mystic Blade: Kris Swordsman, its eight outcomes follow. Lightning Warfare: the tenet.
+   "add": [
+    {"name": "Sapper", "uniques": ["[+50]% Strength to adjacent friendly [Military] units when attacking cities"]},
+    {"name": "Heavy Charge", "uniques": ["Performs Heavy Charge attacks"]},
+    {"name": "Mystic Blade", "uniques": ["Can randomly gain [Invulnerability] after combat", "Can randomly gain [Sneak Attack] after combat", "Can randomly gain [Heroism] after combat", "Can randomly gain [Ambition] after combat", "Can randomly gain [Restlessness] after combat", "Can randomly gain [Recruitment] after combat", "Can randomly gain [Enemy Blade] after combat", "Can randomly gain [Evil Spirits] after combat", "Post-combat promotions are mutually exclusive"]},
+    {"name": "Invulnerability", "uniques": ["[+20] HP when healing", "[+30]% Strength <when defending> <when fighting in [Open terrain] tiles>", "[+30]% Strength <when defending> <when fighting in [Rough terrain] tiles>"]},
+    {"name": "Sneak Attack", "uniques": ["[+50]% to Flank Attack bonuses"]},
+    {"name": "Heroism", "uniques": ["[+15]% Strength bonus for [Military] units within [2] tiles"]},
+    {"name": "Ambition", "uniques": ["[+50]% Strength <when attacking> <when fighting in [Open terrain] tiles>", "[+50]% Strength <when attacking> <when fighting in [Rough terrain] tiles>", "[-20]% Strength <when defending> <when fighting in [Open terrain] tiles>", "[-20]% Strength <when defending> <when fighting in [Rough terrain] tiles>"]},
+    {"name": "Restlessness", "uniques": ["Can move after attacking", "[1] additional attacks per turn", "[+1] Movement"]},
+    {"name": "Recruitment", "uniques": ["Heals [50] damage if it kills a unit"]},
+    {"name": "Enemy Blade", "uniques": ["[Target Unit] takes [20] damage <upon damaging a [Military] unit>"]},
+    {"name": "Evil Spirits", "uniques": ["[-10]% Strength <when attacking> <when fighting in [Open terrain] tiles>", "[-10]% Strength <when attacking> <when fighting in [Rough terrain] tiles>", "[-30]% Strength <when defending> <when fighting in [Open terrain] tiles>", "[-30]% Strength <when defending> <when fighting in [Rough terrain] tiles>"]},
+    {"name": "Lightning Warfare", "uniques": ["Ignores Zone of Control", "[+1] Movement", "[+15]% Strength <when attacking> <when fighting in [Open terrain] tiles>", "[+15]% Strength <when attacking> <when fighting in [Rough terrain] tiles>"]}
+   ]
+  },
+  "Eras.json": {
+   // B023 (SPEC 4.12, Eras.WarmongerPercent); the later eras keep the default 100
+   "patch": {
+    "Ancient era": {"warmongerPercent": 50}, "Classical era": {"warmongerPercent": 60}, "Medieval era": {"warmongerPercent": 70},
+    "Renaissance era": {"warmongerPercent": 80}, "Industrial era": {"warmongerPercent": 90}
+   }
+  },
+  "Difficulties.json": {
+   // B023 (SPEC 4.12, HandicapInfos.AIFreeXP / AIFreeXPPercent); the lower levels state 0
+   "patch": {
+    "King": {"aiFreeXp": 10}, "Emperor": {"aiFreeXp": 10, "aiFreeXpPercent": 25},
+    "Immortal": {"aiFreeXp": 30, "aiFreeXpPercent": 50}, "Deity": {"aiFreeXp": 30, "aiFreeXpPercent": 100}
+   }
+  },
   "Nations.json": {
    // B028: Enhanced Culture (Napoleon, CapitalThemingBonusModifier 100)
    "patch": {
@@ -1104,7 +1136,8 @@
     "Kris Swordsman": {
      "copyFrom": "Swordsman",
      "uniqueTo": "Indonesia",
-     "replaces": "Swordsman"
+     "replaces": "Swordsman",
+     "promotions+": ["Mystic Blade"]
     },
     "Berber Cavalry": {
      "copyFrom": "Cavalry",
@@ -1114,7 +1147,8 @@
     "Winged Hussar": {
      "copyFrom": "Lancer",
      "uniqueTo": "Poland",
-     "replaces": "Lancer"
+     "replaces": "Lancer",
+     "promotions+": ["Heavy Charge"]
     },
     "Nau": {
      "copyFrom": "Caravel",
@@ -1145,7 +1179,8 @@
     "Siege Tower": {
      "copyFrom": "Battering Ram",
      "uniqueTo": "Assyria",
-     "replaces": "Catapult"
+     "replaces": "Catapult",
+     "promotions+": ["Sapper"]
     },
     "Merchant of Venice": {
      "copyFrom": "Great Merchant",
@@ -1327,7 +1362,7 @@
   "Hero of the People": ["[+25]% Great Person generation [in all cities]"],
   "Socialist Realism": [],
   "Skyscrapers": ["[Gold] cost of purchasing [All] buildings [-33]%"],
-  "Patriotic War": [],
+  "Patriotic War": ["[+15]% Strength <for [Military] units> <when fighting in [Friendly Land] tiles>"],
   "Double Agents": ["[+100]% chance to catch enemy spies"],
   "Young Pioneers": [],
   "Academy of Sciences": [],
@@ -1340,14 +1375,14 @@
   "Iron Curtain": ["[+50]% [Food] from domestic trade routes", "[+50]% [Production] from domestic trade routes", "Gain a free [Courthouse] in each conquered city"],
   "Spaceflight Pioneers": ["Allows hurrying Spaceship parts", "Free [Great Engineer] appears", "Free [Great Scientist] appears"],
   "Universal Healthcare (Order)": [],
-  "Elite Forces": [],
+  "Elite Forces": ["No damage penalty for wounded units <for [Military] units>"],
   "Mobilization": ["[Gold] cost of purchasing [Military] units [-33]%"],
   "United Front": [],
   "Futurism": ["[250] Tourism when a [Great Writer] is born", "[250] Tourism when a [Great Artist] is born", "[250] Tourism when a [Great Musician] is born"],
   "Industrial Espionage": ["[+100]% faster technology stealing"],
   "Militarism": [],
   "Fortified Borders": [],
-  "Lightning Warfare": [],
+  "Lightning Warfare": ["All newly-trained [Armored] units [in all cities] receive the [Lightning Warfare] promotion", "[+3] Movement <for [Great General] units>"],
   "Police State": [],
   "Nationalism": ["[-33]% maintenance costs <for [Military] units>"],
   "Third Alternative": ["[+200]% [Strategic] resource production", "[+5 Food, +5 Science] [in capital]"],
@@ -1369,7 +1404,7 @@
   "Exploration Complete: reveals Hidden Antiquity Sites through the resource's revealedBy (B040); Aesthetics Complete has no leader title",
   "Exploration opener: the Naval Tradition free promotion is read as +1 Movement and +1 Sight for naval units [?]",
   "Cultural Exchange: ethics tourism modifiers are declared data only (B030)",
-  "B030 tenets without a unique: Resettlement (NewCityExtraPopulation 3), Patriotic War, Lightning Warfare (free promotions), Elite Forces (WoundedUnitDamageMod -25), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus) have no declared unique yet. Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Iron Curtain's free Courthouse and the city-state, espionage, spaceship and purchase-cost rows are declared data only",
+  "B030 tenets without a unique: Resettlement (NewCityExtraPopulation 3), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus, strength unknown [?]) have no declared unique yet. B023: Patriotic War (Nationalism +15% in friendly lands), Lightning Warfare (a free promotion on new Armored units, Fast General +3 Movement for Great Generals) and Elite Forces (WoundedUnitDamageMod -25 is approximated by removing the wounded-unit damage penalty) are declared. Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Iron Curtain's free Courthouse and the city-state, espionage, spaceship and purchase-cost rows are declared data only",
   "B030 scales [I]: Economic Union reads SharedIdeologyTradeGoldChange 3 as +3 whole Gold per route (the city-state row is whole Gold too), Treaty Organization reads ProtectedMinorPerTurnInfluence 400 as +4 and Gunboat Diplomacy AfraidMinorPerTurnInfluence 600 as +6 (hundredths); Iron Curtain's InternalTradeRouteYieldModifier 50 applies to Food and Production routes"
  ],
  "pending": {

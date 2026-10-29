@@ -1938,7 +1938,7 @@
 			"[-33]% Strength <vs cities> <when attacking>",
 			"Never appears as a Barbarian unit"
 		],
-		"promotions": ["Formation I"],
+		"promotions": ["Formation I", "Heavy Charge"],
 		"attackSound": "horse",
 		"obsoleteTech": "Combined Arms",
 		"upgradesTo": "Anti-Tank Gun",
@@ -2012,7 +2012,7 @@
 			"[-1] Sight",
 			"Can only attack [City] units"
 		],
-		"promotions": ["Cover I"],
+		"promotions": ["Cover I", "Sapper"],
 		"attackSound": "throw",
 		"obsoleteTech": "Physics",
 		"upgradesTo": "Trebuchet",
@@ -2129,7 +2129,8 @@
 		"obsoleteTech": "Steel",
 		"upgradesTo": "Longswordsman",
 		"uniqueTo": "Indonesia",
-		"replaces": "Swordsman"
+		"replaces": "Swordsman",
+		"promotions": ["Mystic Blade"]
 	},
 	{
 		"name": "Brute",

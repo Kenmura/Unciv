@@ -11,7 +11,8 @@
 		"embarkDefense": 3,
 		"startPercent": 0,
 		"citySound": "cityAncient",
-		"iconRGB": [255, 87, 35]
+		"iconRGB": [255, 87, 35],
+		"warmongerPercent": 50
 	},
 	{
 		"name": "Classical era",
@@ -27,7 +28,8 @@
 		"embarkDefense": 4,
 		"startPercent": 10,
 		"citySound": "cityClassical",
-		"iconRGB": [233, 31, 99]
+		"iconRGB": [233, 31, 99],
+		"warmongerPercent": 60
 	},
 	{
 		"name": "Medieval era",
@@ -52,7 +54,8 @@
 		"embarkDefense": 6,
 		"startPercent": 25,
 		"citySound": "cityMedieval",
-		"iconRGB": [157, 39, 176]
+		"iconRGB": [157, 39, 176],
+		"warmongerPercent": 70
 	},
 	{
 		"name": "Renaissance era",
@@ -85,7 +88,8 @@
 		"startPercent": 37,
 		"citySound": "cityRenaissance",
 		"uniques": ["Every major Civilization gains a spy once a civilization enters this era"],
-		"iconRGB": [104, 58, 183]
+		"iconRGB": [104, 58, 183],
+		"warmongerPercent": 80
 	},
 	{
 		"name": "Industrial era",
@@ -139,7 +143,8 @@
 			"May buy [Great Prophet] units for [200] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([100])",
 			"Starting in this era disables religion",
 			"Every major Civilization gains a spy once a civilization enters this era"
-		]
+		],
+		"warmongerPercent": 90
 	},
 	{
 		"name": "Modern era",

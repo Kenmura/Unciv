@@ -817,5 +817,82 @@
 	{
 		"name": "Unable to pillage tiles",
 		"uniques": ["Unable to pillage tiles"]
+	},
+	{
+		"name": "Sapper",
+		"uniques": ["[+50]% Strength to adjacent friendly [Military] units when attacking cities"]
+	},
+	{
+		"name": "Heavy Charge",
+		"uniques": ["Performs Heavy Charge attacks"]
+	},
+	{
+		"name": "Mystic Blade",
+		"uniques": [
+			"Can randomly gain [Invulnerability] after combat",
+			"Can randomly gain [Sneak Attack] after combat",
+			"Can randomly gain [Heroism] after combat",
+			"Can randomly gain [Ambition] after combat",
+			"Can randomly gain [Restlessness] after combat",
+			"Can randomly gain [Recruitment] after combat",
+			"Can randomly gain [Enemy Blade] after combat",
+			"Can randomly gain [Evil Spirits] after combat",
+			"Post-combat promotions are mutually exclusive"
+		]
+	},
+	{
+		"name": "Invulnerability",
+		"uniques": [
+			"[+20] HP when healing",
+			"[+30]% Strength <when defending> <when fighting in [Open terrain] tiles>",
+			"[+30]% Strength <when defending> <when fighting in [Rough terrain] tiles>"
+		]
+	},
+	{
+		"name": "Sneak Attack",
+		"uniques": ["[+50]% to Flank Attack bonuses"]
+	},
+	{
+		"name": "Heroism",
+		"uniques": ["[+15]% Strength bonus for [Military] units within [2] tiles"]
+	},
+	{
+		"name": "Ambition",
+		"uniques": [
+			"[+50]% Strength <when attacking> <when fighting in [Open terrain] tiles>",
+			"[+50]% Strength <when attacking> <when fighting in [Rough terrain] tiles>",
+			"[-20]% Strength <when defending> <when fighting in [Open terrain] tiles>",
+			"[-20]% Strength <when defending> <when fighting in [Rough terrain] tiles>"
+		]
+	},
+	{
+		"name": "Restlessness",
+		"uniques": ["Can move after attacking", "[1] additional attacks per turn", "[+1] Movement"]
+	},
+	{
+		"name": "Recruitment",
+		"uniques": ["Heals [50] damage if it kills a unit"]
+	},
+	{
+		"name": "Enemy Blade",
+		"uniques": ["[Target Unit] takes [20] damage <upon damaging a [Military] unit>"]
+	},
+	{
+		"name": "Evil Spirits",
+		"uniques": [
+			"[-10]% Strength <when attacking> <when fighting in [Open terrain] tiles>",
+			"[-10]% Strength <when attacking> <when fighting in [Rough terrain] tiles>",
+			"[-30]% Strength <when defending> <when fighting in [Open terrain] tiles>",
+			"[-30]% Strength <when defending> <when fighting in [Rough terrain] tiles>"
+		]
+	},
+	{
+		"name": "Lightning Warfare",
+		"uniques": [
+			"Ignores Zone of Control",
+			"[+1] Movement",
+			"[+15]% Strength <when attacking> <when fighting in [Open terrain] tiles>",
+			"[+15]% Strength <when attacking> <when fighting in [Rough terrain] tiles>"
+		]
 	}
 ]

@@ -60,6 +60,18 @@
   83 BNW tunables written to ModOptions.json constants (values from the ModConstants.cs comments, cross-checked with Defines.tsv)
 
 == overrides
+  UnitPromotions.json: added Sapper
+  UnitPromotions.json: added Heavy Charge
+  UnitPromotions.json: added Mystic Blade
+  UnitPromotions.json: added Invulnerability
+  UnitPromotions.json: added Sneak Attack
+  UnitPromotions.json: added Heroism
+  UnitPromotions.json: added Ambition
+  UnitPromotions.json: added Restlessness
+  UnitPromotions.json: added Recruitment
+  UnitPromotions.json: added Enemy Blade
+  UnitPromotions.json: added Evil Spirits
+  UnitPromotions.json: added Lightning Warfare
   Nations.json: added Assyria
   Nations.json: added Brazil
   Nations.json: added Indonesia
@@ -127,7 +139,7 @@
   Exploration Complete: reveals Hidden Antiquity Sites through the resource's revealedBy (B040); Aesthetics Complete has no leader title
   Exploration opener: the Naval Tradition free promotion is read as +1 Movement and +1 Sight for naval units [?]
   Cultural Exchange: ethics tourism modifiers are declared data only (B030)
-  B030 tenets without a unique: Resettlement (NewCityExtraPopulation 3), Patriotic War, Lightning Warfare (free promotions), Elite Forces (WoundedUnitDamageMod -25), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus) have no declared unique yet. Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Iron Curtain's free Courthouse and the city-state, espionage, spaceship and purchase-cost rows are declared data only
+  B030 tenets without a unique: Resettlement (NewCityExtraPopulation 3), United Front (CityStateUnitFrequencyModifier 100) and Clausewitz's Legacy (a one-shot 50-turn attack bonus, strength unknown [?]) have no declared unique yet. B023: Patriotic War (Nationalism +15% in friendly lands), Lightning Warfare (a free promotion on new Armored units, Fast General +3 Movement for Great Generals) and Elite Forces (WoundedUnitDamageMod -25 is approximated by removing the wounded-unit damage penalty) are declared. Volunteer Army's six free Foreign Legion units are six 'Free [unit] appears' uniques; Iron Curtain's free Courthouse and the city-state, espionage, spaceship and purchase-cost rows are declared data only
   B030 scales [I]: Economic Union reads SharedIdeologyTradeGoldChange 3 as +3 whole Gold per route (the city-state row is whole Gold too), Treaty Organization reads ProtectedMinorPerTurnInfluence 400 as +4 and Gunboat Diplomacy AfraidMinorPerTurnInfluence 600 as +6 (hundredths); Iron Curtain's InternalTradeRouteYieldModifier 50 applies to Food and Production routes
 
 == pending uniques (not emitted: need B003 UniqueTypes, wired by B010 or the feature ticket)
