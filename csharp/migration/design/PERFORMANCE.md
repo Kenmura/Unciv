@@ -96,7 +96,7 @@ human does (unit actions) is below 1 ms per call.
 ### Per civ (ms per turn, last quarter, start + automate + end)
 
 Majors cost 30-40 ms each (Russia 40, China 39, Greece 35, England 32, Rome 32, Egypt 30); city states 3-11 ms (Antwerp 11, France 10, Quebec City 8, ...);
-Barbarians 0.2; the dead human 0.7. A major's turn is roughly 55% AI (`AutomateTurn`), 35% start, 10% end. These sum to about 270 ms of the 650 ms of engine time:
+Barbarians 0.2; the dead human 0.7. Over all civs the split of those phases is about 69% AI (`AutomateTurn` 186 ms), 22% start (60 ms), 9% end (23 ms). These sum to about 270 ms of the 650 ms of engine time:
 **the other ~380 ms per turn is `RefreshTransientCaches`, which is charged to no civ** (it runs after every civ step).
 
 ### Checkpoint hash, small and medium
@@ -124,7 +124,7 @@ measured; the numbers are per recipient and linear in the recipients.
 
 ## Ranked hotspots
 
-Ranked by their share of a late medium turn (last quarter, engine time about 650 ms per turn plus GC):
+Ranked by their share of a late medium turn (last quarter, engine time about 650 ms per turn on average; GC pauses are inside that time, not on top). The shares are shares of mean times: the last-quarter mean (652 ms) is above its median (556 ms) because of the 1.2-2.7 s spike turns:
 
 1. **`RefreshTransientCaches` is called after every civ step (19 times per turn) and each call runs `UpdateCivilizationState` for every civ (17), so the per-civ work
    (city stats, tile stats, vision, our tiles, connection to capital) runs 322 times per turn instead of 17.** About 380 ms per turn, 58% of the engine time, and 55 to 60% in
@@ -133,7 +133,7 @@ Ranked by their share of a late medium turn (last quarter, engine time about 650
    unit vision 40 ms, our tiles 39 ms. Optimising must keep every per-turn hash equal.
 2. **AI unit automation, `AI.AutomateUnitMoves`: 142 ms per turn** (223 unit moves, 0.64 ms each, inclusive of pathfinding; 22% of the turn). Needs call-level data below the
    probe (pathfinding, `GetDistanceToTiles`, danger evaluation); candidate for a per-turn cache or a cheaper path query.
-3. **Garbage collection: 10.7 s of 72 s in run 3 (15%), 47 gen-2 collections, 0.2 s per gen-2.** The turn allocates heavily (the `.ToList()` copies, LINQ, per-call dictionaries in
+3. **Garbage collection: 10.7 s of pause in 72 s of run 3 (15%) over 47 gen-2 collections (the worst turns show 0.2 s of pause each; the total includes gen-0/1 pauses).** The turn allocates heavily (the `.ToList()` copies, LINQ, per-call dictionaries in
    the refresh); the biggest turns coincide with gen-2 collections. Not engine logic: allocation reduction in hotspot 1, or GC settings (concurrent/server GC, `TieredPGO`) in the host.
 4. **`Start.Cities` (`CityTurnManager.StartTurn`) 47 ms per turn** and `End.Cities` 10 ms: per-city stats recomputation, partly the same `CityStats.Update` as hotspot 1.
 5. **`UCS.CitiesConnectedToCapital` 21 ms** (part of hotspot 1): road/harbour connection BFS rerun for every civ at every step.
