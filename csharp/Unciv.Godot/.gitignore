@@ -6,3 +6,4 @@ build/
 *.sln
 *.slnx
 *.uid
+Content/

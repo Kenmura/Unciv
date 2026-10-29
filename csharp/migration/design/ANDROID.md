@@ -123,6 +123,8 @@ Facts that shape every item:
 | A-9 | Clipboard and sharing the invite code: `DisplayServer.ClipboardSet` works on Android; a "share" intent would need a Kotlin/Java plugin, out of scope | `App.cs` | S (copy only) |
 | A-10 | Permissions: `INTERNET` is mandatory for joining (not set by default), `CHANGE_WIFI_MULTICAST_STATE` for LAN beacon listening (`Net/Discovery/LanBeaconListener`, UDP) which also needs a `WifiManager.MulticastLock` that Godot does not take; **LAN discovery on Android is expected not to work** and the join-by-address path is the supported one | `Unciv.Core/Net/Discovery` | S (document) / M (plugin to take the lock) |
 
+**A-1 resolved by T276.** One bundle, not a read-through layer: `Unciv.Godot/tools/stage-content.py` zips the tree a desktop export keeps beside the executable (`data/jsons`, `Packs`, `Assets/fonts`) into `Content/unciv-content.zip` plus a `.version` file (git-ignored; the Android preset must `include_filter="Content/*"`, T260). `ContentRoot` (`Assets/ContentRoot.cs`, logic in `Unciv.Assets/Packaging/ContentBundle.cs`) uses the executable folder when it holds `data/jsons` (desktop unchanged), else extracts the bundle once to `user://content` (stamped; a new version replaces the folder atomically through a temp folder) and returns that folder. `RulesetLocator`, `TranslationLocator`, `GodotAssetFiles` and `FontChain` treat it as the executable folder. `smoke-export.sh --bundle` runs the packaged Linux build with its data folders deleted to exercise the path on desktop. Not verified on a device: reading the zip from the APK's pck, extraction time and free-space behaviour on a phone.
+
 ### B. Map and unit interaction (mouse/keyboard assumptions)
 
 | # | Gap | Evidence | Size |

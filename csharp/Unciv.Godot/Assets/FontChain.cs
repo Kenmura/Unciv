@@ -112,6 +112,7 @@ public static class FontChain
 
     private static string? FindFolder()
     {
+        if (ContentRoot.Directory is { } content && System.IO.File.Exists(System.IO.Path.Combine(content, "Assets", "fonts", "OFL.txt"))) return System.IO.Path.Combine(content, "Assets", "fonts"); // T276
         for (string d = ProjectSettings.GlobalizePath("res://"); !string.IsNullOrEmpty(d); d = System.IO.Path.GetDirectoryName(d.TrimEnd('/')) ?? "")
         {
             foreach (string candidate in new[] { System.IO.Path.Combine(d, "Assets", "fonts"), System.IO.Path.Combine(d, "Unciv.Godot", "Assets", "fonts") })

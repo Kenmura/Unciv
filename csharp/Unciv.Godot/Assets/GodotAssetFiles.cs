@@ -81,6 +81,7 @@ public sealed class GodotAssetFiles : IAssetFiles
         externalRoots = [];
         var exeDir = System.IO.Path.GetDirectoryName(OS.GetExecutablePath());
         if (!string.IsNullOrEmpty(exeDir)) externalRoots.Add(exeDir);
+        if (ContentRoot.Directory is { } content && content != exeDir) externalRoots.Add(content); // T276: the bundle extracted from the pck when no data sits beside the executable
         for (string d = ProjectSettings.GlobalizePath(Root); !string.IsNullOrEmpty(d); d = System.IO.Path.GetDirectoryName(d.TrimEnd('/')) ?? "")
         {
             var found = new[] { d, System.IO.Path.Combine(d, "Unciv.Godot") }.FirstOrDefault(c => System.IO.Directory.Exists(System.IO.Path.Combine(c, PackFolder)) && System.IO.File.Exists(System.IO.Path.Combine(c, "project.godot")));
