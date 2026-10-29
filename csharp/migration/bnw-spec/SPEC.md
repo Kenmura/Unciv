@@ -487,7 +487,8 @@ rejection reasons `NoTradeRouteSlot` and `NoTradeRouteTarget` in `BaseUnit.GetRe
   rejections, so spawning or gifting such a unit is not blocked. Water units keep the coastal-city rule.
 - **Rebasing** [X]: `ChangeTradeUnitHome` is the command `rebase-trade-unit {unitId, targetCityId}`: an idle trade unit standing in an own city moves to
   another own city that its domain can reach within the range of its current city (a ship needs a port) and whose centre tile can hold it; it has no
-  movement left afterwards. A unit that already runs a route is not on the map, so it cannot rebase.
+  movement left afterwards. A unit that already runs a route is not on the map, so it cannot rebase. The path ignores borders and terrain cost, like route paths.
+- **AI** [deferred]: the AI does not use trade units yet but may build them (they then idle and hold slots); the AI ticket must handle that.
 - **Exotic goods** [K, X scale]: `sell-exotic-goods {unitId, targetCityId}`. A unit with `Carries [n] exotic goods` that has movement, is adjacent to a
   city of another civ (a city-state counts) that its owner has met and is not at war with, and has a load left (`n` minus the saved `exoticGoodsSold`)
   sells one load: gold `min + (max - min) * min(d, 40) / 40` with `d` the air distance from the seller's capital to the city (`min` without a capital),

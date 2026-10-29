@@ -44,7 +44,7 @@ public static class ExoticGoods
         var capital = unit.Civ.GetCapital(firstCityIfNoCapital: false);
         if (capital == null || max <= min) return min;
         int distance = Math.Min(capital.GetCenterTile().AerialDistanceTo(target.GetCenterTile()), FullDistance);
-        return min + (max - min) * distance / FullDistance;
+        return min + (int)((long)(max - min) * distance / FullDistance);
     }
 
     /// <summary>Why <paramref name="unit"/> cannot sell a load to <paramref name="target"/> now, or null.</summary>
