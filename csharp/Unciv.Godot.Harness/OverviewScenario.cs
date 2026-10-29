@@ -3,6 +3,7 @@ using Unciv.Assets;
 using Unciv.Commands;
 using Unciv.GodotClient.Assets;
 using Unciv.GodotClient.Play;
+using Unciv.GodotClient.Ui;
 using Unciv.Harness;
 using Unciv.Queries.Empire;
 using Unciv.Queries.Victory;
@@ -30,6 +31,9 @@ public sealed class OverviewScenario : Scenario
         "Does 'Go to' take me where I expect (camera and selection)?",
         "Is a tab the game does not use (espionage) clearly explained rather than empty?",
     ];
+
+    private static bool TypedAndInside(DataTable data, Control screen) => data.Cell(0, 1).HorizontalAlignment == HorizontalAlignment.Right && data.Cell(0, 0).HorizontalAlignment == HorizontalAlignment.Left
+        && data.GetGlobalRect().Position.X >= 0 && data.GetGlobalRect().End.X <= screen.GetViewportRect().Size.X;
 
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
@@ -75,12 +79,7 @@ public sealed class OverviewScenario : Scenario
                 && screen.Overview.Tables(OverviewModel.Cities)[0].Rows.Count == 2
                 && screen.Overview.Tables(OverviewModel.Cities)[0].Rows.Single(it => it.Key == puppet).Cells[5] == "Puppet"),
             new AssertQuery("the table is typed: numbers are right-aligned, the table fits the screen and each row has its own Go to button", () =>
-            {
-                var data = screen.Overview.DataTables(OverviewModel.Cities)[0];
-                return data.Cell(0, 1).HorizontalAlignment == HorizontalAlignment.Right && data.Cell(0, 0).HorizontalAlignment == HorizontalAlignment.Left
-                    && data.GetGlobalRect().Position.X >= 0 && data.GetGlobalRect().End.X <= screen.GetViewportRect().Size.X
-                    && EngineCities().All(it => screen.Overview.JumpButton(OverviewModel.Cities, it) is { } jump && jump.IsVisibleInTree());
-            }),
+                TypedAndInside(screen.Overview.DataTables(OverviewModel.Cities)[0], screen) && EngineCities().All(it => screen.Overview.JumpButton(OverviewModel.Cities, it) is { } jump && jump.IsVisibleInTree())),
             new Capture("cities", "Cities: a sortable table of the capital and a puppet city with population, health, current build and notes, and a Go to button at the end of each row"),
             new Click(() => Centre(screen.Overview.DataTables(OverviewModel.Cities)[0].HeaderButton(0))),
             new WaitFrames(2),

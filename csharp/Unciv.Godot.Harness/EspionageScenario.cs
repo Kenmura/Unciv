@@ -33,6 +33,16 @@ public sealed class EspionageScenario : Scenario
         "Does the assignment picker sit clearly above the screen and is it clear which spies it moves?",
     ];
 
+    private static bool FrameAndTable(GameScreen screen, string spy)
+    {
+        var table = screen.Espionage.FindChild("SpyData", true, false) as DataTable;
+        var rect = screen.Espionage.CoupButton(spy).NotNull().GetGlobalRect();
+        float width = screen.GetViewportRect().Size.X;
+        return table != null && table.RowCount == 2 && table.Cell(0, 1).HorizontalAlignment == HorizontalAlignment.Right && table.GetGlobalRect().End.X <= width
+            && rect.Position.X >= 0 && rect.End.X <= width && rect.Size.X > 0 && screen.Espionage.Frame.TitleText == "Espionage"
+            && screen.Espionage.Frame.FooterActions.Contains(screen.Espionage.AssignButton) && screen.Espionage.AssignButton.ThemeTypeVariation == UiVariants.ButtonPrimary;
+    }
+
     public override IReadOnlyList<ScenarioStep> Build(Control host, GameSession session)
     {
         var game = session.Game;
@@ -76,15 +86,7 @@ public sealed class EspionageScenario : Scenario
                 var button = screen.Espionage.CoupButton(resident.Name);
                 return screen.Espionage.CoupButton(hidden.Name) == null && button?.Text == $"Coup {percent}%" && button.TooltipText == $"Stage a coup ({percent}% chance)";
             }),
-            new AssertQuery("the spy table sits in a frame, fits the 640px screen with every row action inside it and the footer holds the primary Assign spies button", () =>
-            {
-                var table = screen.Espionage.FindChild("SpyData", true, false) as DataTable;
-                var rect = screen.Espionage.CoupButton(resident.Name).NotNull().GetGlobalRect();
-                float width = screen.GetViewportRect().Size.X;
-                return table != null && table.RowCount == 2 && table.Cell(0, 1).HorizontalAlignment == HorizontalAlignment.Right && table.GetGlobalRect().End.X <= width
-                    && rect.Position.X >= 0 && rect.End.X <= width && rect.Size.X > 0 && screen.Espionage.Frame.TitleText == "Espionage"
-                    && screen.Espionage.Frame.FooterActions.Contains(screen.Espionage.AssignButton) && screen.Espionage.AssignButton.ThemeTypeVariation == UiVariants.ButtonPrimary;
-            }),
+            new AssertQuery("the spy table sits in a frame, fits the 640px screen with every row action inside it and the footer holds the primary Assign spies button", () => FrameAndTable(screen, resident.Name)),
             // C059 review, kept in C074: the coup text is short, but a long translation must still not widen the row past the screen (the button clips instead)
             new Act("give the coup button a long translated-length text", () => screen.Espionage.CoupButton(resident.Name).NotNull().Text =
                 "Stage a coup (35% chance) in this city-state, a long translated label that has to be clipped instead of widening the table past the screen"),
