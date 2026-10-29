@@ -1031,7 +1031,7 @@
   },
   "C062": {
     "scenario": "theme",
-    "about": "Theme builder v2: every type variation of the UI theme on one sheet. All other goldens were re-recorded with the new theme (no layout change).",
+    "about": "Theme builder v2: every type variation of the UI theme on one sheet. All other goldens were re-recorded with the new theme (colours, fonts, padding and radii changed; some headers clip slightly differently).",
     "shots": [
       {
         "golden": "theme/variations.png",

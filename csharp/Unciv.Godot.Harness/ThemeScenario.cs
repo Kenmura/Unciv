@@ -18,7 +18,7 @@ public sealed class ThemeScenario : Scenario
     [
         "Is each button variant (primary, secondary, ghost, danger, tab, chip, segment, icon) distinguishable, with legible text?",
         "Do the type scale steps read as a hierarchy (display and title in the serif face, then heading, body, small, overline)?",
-        "Do the card, inset, tooltip and modal panels differ in depth, and does the modal carry the brass top hairline?",
+        "Do the card, inset, tooltip and modal panels differ in depth, and does the modal carry a heavier top edge (the brass hairline itself comes with ScreenFrame/Modal in C066)?",
         "Are the toggle switch and the stat bars visible against the surface?",
     ];
 

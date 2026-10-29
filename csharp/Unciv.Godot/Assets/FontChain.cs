@@ -74,7 +74,7 @@ public static class FontChain
         {
             BaseFont = face ?? ThemeDB.FallbackFont,
             VariationOpentype = new Godot.Collections.Dictionary { [server.NameToTag("wght")] = style.Weight },
-            SpacingGlyph = style.Tracking,
+            SpacingGlyph = style.Tracking, // not UI-scaled: 1 px at every scale
             Fallbacks = StyleFallbacks(),
         };
         if (style.Tabular) variation.OpentypeFeatures = new Godot.Collections.Dictionary { [server.NameToTag("tnum")] = 1 };

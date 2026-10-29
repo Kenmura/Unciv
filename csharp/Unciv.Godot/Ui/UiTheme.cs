@@ -100,7 +100,7 @@ public sealed class UiTheme
 
     private void Rebuild()
     {
-        if (overridden) Theme.DefaultFontSize = Px(baseTheme.DefaultFontSize);
+        if (overridden) Theme.DefaultFontSize = baseTheme.DefaultFontSize > 0 ? Px(baseTheme.DefaultFontSize) : -1;
         else ThemeBuilder.Populate(Theme, Scale, Breakpoint == UiBreakpoint.Compact);
     }
 

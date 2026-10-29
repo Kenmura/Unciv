@@ -1030,7 +1030,7 @@ Scenario `viewport`.
 
 ## C062 (ticket not Done or unknown)
 
-Theme builder v2: every type variation of the UI theme on one sheet. All other goldens were re-recorded with the new theme (no layout change).
+Theme builder v2: every type variation of the UI theme on one sheet. All other goldens were re-recorded with the new theme (colours, fonts, padding and radii changed; some headers clip slightly differently).
 
 Scenario `theme`.
 

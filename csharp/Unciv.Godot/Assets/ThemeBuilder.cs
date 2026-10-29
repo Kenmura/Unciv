@@ -114,7 +114,7 @@ public static class ThemeBuilder
             Fill = C(UiTokens.Surface1), Border = C(UiTokens.BorderSubtle), Radius = 0, BorderWidth = 0, TopBorderWidth = UiTokens.HairlineWidth, BottomBorderWidth = UiTokens.BorderWidth,
             PadX = m.Px(UiTokens.S3), PadY = m.Px(UiTokens.S2),
         });
-        // the HUD bottom dock: rounded on top, shadowed, no border
+        // the HUD bottom dock: rounded on top, shadowed, 1 px border
         var dock = Make(m, new Box { Fill = C(UiTokens.Surface1), Border = C(UiTokens.BorderStrong), Radius = UiTokens.RadiusPanel, PadX = pad, PadY = pad, Shadow = true });
         dock.CornerRadiusBottomLeft = dock.CornerRadiusBottomRight = 0;
         theme.SetTypeVariation(UiVariants.PanelDock, "PanelContainer");
