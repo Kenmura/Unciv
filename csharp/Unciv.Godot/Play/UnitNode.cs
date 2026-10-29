@@ -118,7 +118,7 @@ public partial class UnitNode : Node3D
         FigureCount = baseUnit == null ? 1 : UnitVisuals.FigureCount(baseUnit, ruleset);
         var key = AssetKey.Of(RulesetAssetKeys.Unit, Unit.Name);
         var formation = UnitVisuals.Formation(FigureCount);
-        Rigid = RigidMotion.KindOf(baseUnit?.UnitType);
+        Rigid = RigidMotion.KindOf(baseUnit?.UnitType, baseUnit?.Name);
         for (var i = 0; i < formation.Count; i++)
         {
             var model = assets.Get<Node3D>(key);

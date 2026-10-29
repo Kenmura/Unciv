@@ -36,8 +36,11 @@ public static class RigidMotion
     public const float BankAngle = 0.35f;
     public const float DiveAngle = 0.45f;
 
-    /// <summary>The rigid family of a unit type name (as <c>Models.Ruleset.Unit.BaseUnit.unitType</c> and the placeholder accessories name them, or an aircraft's own type name).</summary>
-    public static RigidKind KindOf(string? unitType) => unitType switch
+    /// <summary>C095: the Battering Ram is a <c>Sword</c> unit type in the rulesets, yet a wheeled siege engine: it is siege by its own name.</summary>
+    public const string BatteringRam = "Battering Ram";
+
+    /// <summary>The rigid family of a unit type name (as <c>Models.Ruleset.Unit.BaseUnit.unitType</c> and the placeholder accessories name them, or an aircraft's own type name); the unit's <paramref name="unitName"/> overrides it for the Battering Ram.</summary>
+    public static RigidKind KindOf(string? unitType, string? unitName = null) => unitName == BatteringRam ? RigidKind.Siege : unitType switch
     {
         "WaterMelee" or "Melee Water" or "WaterRanged" or "Ranged Water" or "WaterCivilian" or "Civilian Water" or "WaterSubmarine" or "Submarine" or "WaterAircraftCarrier" or "Aircraft Carrier" => RigidKind.Ship,
         "Siege" => RigidKind.Siege,

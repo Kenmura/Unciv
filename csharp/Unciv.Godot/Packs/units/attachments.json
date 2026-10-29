@@ -84,16 +84,16 @@
       "Horseman": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet"] },
       "Knight": { "body": "Knight", "keep": ["1H_Sword", "Spike_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
       "Horse Archer": { "body": "Rogue_Hooded", "keep": ["1H_Crossbow", "Rogue_Cape"] },
-      "Chariot Archer": { "body": "Rogue", "keep": ["1H_Crossbow"] },
-      "War Chariot": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
-      "War Elephant": { "body": "Rogue", "keep": ["2H_Crossbow", "Rogue_Cape"], "mount": { "scale": 1.12, "colour": [0.5, 0.48, 0.45, 1.0] } },
+      "Chariot Archer": { "body": "Rogue", "keep": ["1H_Crossbow"], "mount": { "kind": "chariot" } },
+      "War Chariot": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat"], "clips": { "attack": "1H_Melee_Attack_Chop" }, "mount": { "kind": "chariot" } },
+      "War Elephant": { "body": "Rogue", "keep": ["2H_Crossbow", "Rogue_Cape"], "mount": { "kind": "elephant", "scale": 0.99 } },
       "Companion Cavalry": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
-      "African Forest Elephant": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield"], "clips": { "attack": "1H_Melee_Attack_Chop" }, "mount": { "scale": 1.12, "colour": [0.5, 0.48, 0.45, 1.0] } },
+      "African Forest Elephant": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield"], "clips": { "attack": "1H_Melee_Attack_Chop" }, "mount": { "kind": "elephant", "scale": 0.99 } },
       "Cataphract": { "body": "Knight", "keep": ["1H_Sword", "Rectangle_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
       "Camel Archer": { "body": "Rogue", "keep": ["2H_Crossbow"], "mount": { "scale": 1.0, "colour": [0.72, 0.6, 0.38, 1.0] } },
       "Keshik": { "body": "Rogue_Hooded", "keep": ["1H_Crossbow", "Knife"] },
       "Conquistador": { "body": "Knight", "keep": ["1H_Sword", "Badge_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
-      "Naresuan's Elephant": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Chop" }, "mount": { "scale": 1.12, "colour": [0.5, 0.48, 0.45, 1.0] } },
+      "Naresuan's Elephant": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Chop" }, "mount": { "kind": "elephant", "scale": 0.99 } },
       "Mandekalu Cavalry": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
       "Lancer": { "body": "Knight", "keep": ["1H_Sword", "Rectangle_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
       "Sipahi": { "body": "Knight", "keep": ["1H_Sword", "Badge_Shield", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
@@ -102,6 +102,12 @@
       "Cossack": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Hat", "Barbarian_Cape"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
       "Hussar": { "body": "Knight", "keep": ["1H_Sword", "1H_Sword_Offhand", "Knight_Helmet"], "clips": { "attack": "1H_Melee_Attack_Slice_Horizontal" } },
       "Khan": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat", "Barbarian_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } }
+    }
+  },
+  "rigid": {
+    "about": "C095: units whose model has no skeleton and no clips (build-unit-models.py builds them); they move through RigidMotion, so the Battering Ram (a Sword unit type) is siege by name.",
+    "units": {
+      "Battering Ram": {}
     }
   }
 }

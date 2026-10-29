@@ -1374,6 +1374,20 @@ Scenario `unit-visuals`.
 
 *Close view, side on: the Cavalry, Cossack and Hussar, riders on the generated mount.* (`unit-visuals/modern-mounts.png`)
 
+## C095 (ticket not Done or unknown)
+
+Battering Ram as a rigid siege model, a cart-and-wheels chariot and a trunked elephant (generated rigs of the units pack).
+
+Scenario `unit-visuals`.
+
+![Close view, side on: the Chariot Archer and War Chariot (a rider standing on a two-wheeled cart behind a horse), the Battering Ram top left (wooden frame, team-coloured roof, iron-headed log, posed mid-strike) and a War Elephant (placeholder shapes).](../Unciv.Godot.Harness/golden/unit-visuals/chariots.png)
+
+*Close view, side on: the Chariot Archer and War Chariot (a rider standing on a two-wheeled cart behind a horse), the Battering Ram top left (wooden frame, team-coloured roof, iron-headed log, posed mid-strike) and a War Elephant (placeholder shapes).* (`unit-visuals/chariots.png`)
+
+![Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract.](../Unciv.Godot.Harness/golden/unit-visuals/elephants.png)
+
+*Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract.* (`unit-visuals/elephants.png`)
+
 ## T252 (ticket not Done or unknown)
 
 Host screen dynamic turn timer: checkbox and shortest-turn choice under the turn timer; the host runs with the chosen policy.

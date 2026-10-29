@@ -17,6 +17,15 @@ public sealed class RigidMotionTests
     [InlineData(null, RigidKind.None)]
     public void UnitTypesMapToKinds(string? type, RigidKind kind) => Assert.Equal(kind, RigidMotion.KindOf(type));
 
+    [Theory]
+    [InlineData("Sword", "Battering Ram", RigidKind.Siege)]
+    [InlineData("Sword", "Swordsman", RigidKind.None)]
+    [InlineData("Siege", "Catapult", RigidKind.Siege)]
+    [InlineData(null, "Battering Ram", RigidKind.Siege)]
+    [InlineData("Armor", "Tank", RigidKind.Armor)]
+    [InlineData(null, null, RigidKind.None)]
+    public void TheBatteringRamIsSiegeByName(string? type, string? name, RigidKind kind) => Assert.Equal(kind, RigidMotion.KindOf(type, name));
+
     [Fact]
     public void ACueIsAtRestAtItsEndsAndMovesInTheMiddle()
     {

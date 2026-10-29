@@ -217,6 +217,83 @@ HORSE_PARTS = [
 ]
 HORSE_COLOUR = [0.45, 0.30, 0.18, 1.0]
 
+# C095: the elephant has its own rig (same joint names as the horse, plus a trunk and two ears): a broad body on pillar legs, a short neck, a head with tusks and a hanging trunk
+ELEPHANT_JOINTS = [
+    ("root", None, (0.0, 0.0, 0.0)),
+    ("body", "root", (0.0, 0.35, 0.0)),
+    ("saddle", "body", (0.0, 0.47, 0.0)),
+    ("neck", "body", (0.0, 0.40, 0.24)),
+    ("head", "neck", (0.0, 0.44, 0.34)),
+    ("trunk", "head", (0.0, 0.40, 0.44)),
+    ("ear_l", "head", (0.08, 0.48, 0.30)),
+    ("ear_r", "head", (-0.08, 0.48, 0.30)),
+    ("tail", "body", (0.0, 0.42, -0.26)),
+    ("leg_fl", "body", (0.09, 0.28, 0.17)),
+    ("leg_fr", "body", (-0.09, 0.28, 0.17)),
+    ("leg_bl", "body", (0.09, 0.28, -0.17)),
+    ("leg_br", "body", (-0.09, 0.28, -0.17)),
+]
+ELEPHANT_PARTS = [
+    ("body", (0.0, 0.35, 0.0), (0.27, 0.24, 0.50)),
+    ("neck", (0.0, 0.42, 0.28), (0.14, 0.18, 0.10)),
+    ("head", (0.0, 0.43, 0.38), (0.14, 0.16, 0.14)),
+    ("head", (0.05, 0.34, 0.48), (0.025, 0.025, 0.14)),
+    ("head", (-0.05, 0.34, 0.48), (0.025, 0.025, 0.14)),
+    ("trunk", (0.0, 0.29, 0.46), (0.055, 0.26, 0.055)),
+    ("ear_l", (0.12, 0.45, 0.33), (0.02, 0.16, 0.12)),
+    ("ear_r", (-0.12, 0.45, 0.33), (0.02, 0.16, 0.12)),
+    ("tail", (0.0, 0.36, -0.28), (0.03, 0.16, 0.03)),
+    ("leg_fl", (0.09, 0.14, 0.17), (0.09, 0.28, 0.09)),
+    ("leg_fr", (-0.09, 0.14, 0.17), (0.09, 0.28, 0.09)),
+    ("leg_bl", (0.09, 0.14, -0.17), (0.09, 0.28, 0.09)),
+    ("leg_br", (-0.09, 0.14, -0.17), (0.09, 0.28, 0.09)),
+]
+ELEPHANT_COLOUR = [0.5, 0.48, 0.45, 1.0]
+
+# C095: the chariot is the horse rig scaled to 0.8 and moved forward, drawing a two-wheeled cart (floor, rails, axle, yoke pole, spoked wheels on the joints wheel_l and wheel_r) that the rider stands on
+CHARIOT_SCALE, CHARIOT_SHIFT = 0.8, 0.1
+CART_Z, WHEEL_Y, WHEEL_R, WHEEL_X = -0.25, 0.11, 0.10, 0.17
+CHARIOT_JOINTS = [(n, p, (c[0] * CHARIOT_SCALE, c[1] * CHARIOT_SCALE, c[2] * CHARIOT_SCALE + (CHARIOT_SHIFT if p else 0.0))) for n, p, c in HORSE_JOINTS] + [
+    ("wheel_l", "root", (WHEEL_X, WHEEL_Y, CART_Z)),
+    ("wheel_r", "root", (-WHEEL_X, WHEEL_Y, CART_Z)),
+]
+CHARIOT_PARTS = [(j, (c[0] * CHARIOT_SCALE, c[1] * CHARIOT_SCALE, c[2] * CHARIOT_SCALE + CHARIOT_SHIFT), tuple(v * CHARIOT_SCALE for v in sz)) for j, c, sz in HORSE_PARTS] + [
+    ("root", (0.0, 0.13, CART_Z), (0.30, 0.03, 0.34)),  # floor
+    ("root", (0.15, 0.19, CART_Z), (0.02, 0.10, 0.34)),  # rails
+    ("root", (-0.15, 0.19, CART_Z), (0.02, 0.10, 0.34)),
+    ("root", (0.0, 0.19, CART_Z + 0.16), (0.30, 0.10, 0.02)),  # front board
+    ("root", (0.0, WHEEL_Y, CART_Z), (0.36, 0.02, 0.02)),  # axle
+    ("root", (0.0, 0.17, CART_Z + 0.25), (0.04, 0.04, 0.50)),  # yoke pole to the horses
+]
+CHARIOT_SADDLE = (0.15, CART_Z)  # the rider's feet (height, z): standing on the floor
+
+
+def rotated_box(pivot, offset, size, angle):
+    """A box of `size` at `offset` from `pivot`, turned `angle` about the X axis through `pivot` (a spoke or a piece of rim)."""
+    p, n, i = box(offset, size)
+    c, s = math.cos(angle), math.sin(angle)
+
+    def turn(v):
+        return [v[0], v[1] * c - v[2] * s, v[1] * s + v[2] * c]
+    return [[turn(v)[k] + pivot[k] for k in range(3)] for v in p], [turn(v) for v in n], i
+
+
+def wheel_parts(joint, hub):
+    """A spoked wheel in the YZ plane about the joint at `hub`: a hub, six spokes and an octagonal rim (rigid boxes)."""
+    parts = [rotated_box(hub, (0.0, 0.0, 0.0), (0.04, 0.04, 0.04), 0.0)]
+    parts += [rotated_box(hub, (0.0, 0.0, 0.0), (0.02, 2 * WHEEL_R - 0.02, 0.025), k * math.pi / 3) for k in range(3)]
+    parts += [rotated_box(hub, (0.0, WHEEL_R - 0.012, 0.0), (0.03, 0.025, 0.08), k * math.pi / 4) for k in range(8)]
+    return [(joint, *part) for part in parts]
+
+
+
+# C095: variant -> (joints, parts, colour, body joint height, rider's feet (height, z) or None for the saddle height of the pack, rider follows the body joint)
+MOUNTS = {
+    "horse": (HORSE_JOINTS, HORSE_PARTS, HORSE_COLOUR, 0.32, None, True),
+    "elephant": (ELEPHANT_JOINTS, ELEPHANT_PARTS, ELEPHANT_COLOUR, 0.35, (0.47, 0.0), True),
+    "chariot": (CHARIOT_JOINTS, CHARIOT_PARTS, HORSE_COLOUR, 0.32 * CHARIOT_SCALE, CHARIOT_SADDLE, False),
+}
+
 
 def box(centre, size):
     """24 vertices (flat normals) and 36 indices of an axis-aligned box."""
@@ -241,22 +318,31 @@ def box(centre, size):
     return positions, normals, indices
 
 
-def build_horse(scale=1.0, colour=None):
-    """The generated mount: the horse of the mounted units; `scale` and `colour` make the same rig an elephant (C084)."""
+CHARIOT_PARTS += wheel_parts("wheel_l", (WHEEL_X, WHEEL_Y, CART_Z)) + wheel_parts("wheel_r", (-WHEEL_X, WHEEL_Y, CART_Z))
+
+
+def build_horse(scale=1.0, colour=None, kind="horse"):
+    """The generated mount: the horse of the mounted units, or (`kind`) the elephant or the chariot with its horses (C095); `scale` and `colour` still scale and tint any of them."""
+    joints_def, parts_def = MOUNTS[kind][0], MOUNTS[kind][1]
     b = Builder()
     doc = b.doc
-    world = {name: tuple(c * scale for c in pos) for name, _, pos in HORSE_JOINTS}
-    index = {name: i for i, (name, _, _) in enumerate(HORSE_JOINTS)}
-    for name, parent, _ in HORSE_JOINTS:
+    world = {name: tuple(c * scale for c in pos) for name, _, pos in joints_def}
+    index = {name: i for i, (name, _, _) in enumerate(joints_def)}
+    for name, parent, _ in joints_def:
         node = {"name": name, "translation": [round(world[name][i] - (world[parent][i] if parent else 0.0), 5) for i in range(3)]}
         doc["nodes"].append(node)
-    for name, parent, _ in HORSE_JOINTS:
+    for name, parent, _ in joints_def:
         if parent:
             doc["nodes"][index[parent]].setdefault("children", []).append(index[name])
 
     positions, normals, joints, weights, indices = [], [], [], [], []
-    for joint, centre, size in HORSE_PARTS:
-        p, n, i = box(tuple(c * scale for c in centre), tuple(c * scale for c in size))
+    for part in parts_def:
+        joint = part[0]
+        if len(part) == 4:  # a ready-made part (a wheel piece): positions, normals and indices
+            p, n, i = part[1:]
+            p = [[c * scale for c in v] for v in p]
+        else:
+            p, n, i = box(tuple(c * scale for c in part[1]), tuple(c * scale for c in part[2]))
         indices += [len(positions) + k for k in i]
         positions += p
         normals += n
@@ -269,11 +355,11 @@ def build_horse(scale=1.0, colour=None):
         "WEIGHTS_0": b.accessor(weights, "VEC4", 5126, 34962),
     }
     idx = b.accessor(indices, "SCALAR", 5123, 34963)
-    inverse = [[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -world[name][0], -world[name][1], -world[name][2], 1] for name, _, _ in HORSE_JOINTS]
+    inverse = [[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -world[name][0], -world[name][1], -world[name][2], 1] for name, _, _ in joints_def]
     ibm = b.accessor(inverse, "MAT4", 5126)
-    doc["materials"] = [{"name": "Horse", "pbrMetallicRoughness": {"baseColorFactor": colour or HORSE_COLOUR, "metallicFactor": 0.0, "roughnessFactor": 1.0}}]
+    doc["materials"] = [{"name": "Horse", "pbrMetallicRoughness": {"baseColorFactor": colour or MOUNTS[kind][2], "metallicFactor": 0.0, "roughnessFactor": 1.0}}]
     doc["meshes"] = [{"name": "Horse", "primitives": [{"attributes": acc, "indices": idx, "material": 0}]}]
-    doc["skins"] = [{"name": "HorseRig", "joints": list(range(len(HORSE_JOINTS))), "inverseBindMatrices": ibm, "skeleton": 0}]
+    doc["skins"] = [{"name": "HorseRig", "joints": list(range(len(joints_def))), "inverseBindMatrices": ibm, "skeleton": 0}]
     doc["nodes"].append({"name": "HorseMesh", "mesh": 0, "skin": 0})
     doc["scenes"][0]["nodes"] = [0, len(doc["nodes"]) - 1]
 
@@ -299,27 +385,43 @@ def build_horse(scale=1.0, colour=None):
     def swing(joint, length, phase, amount):
         return (joint, "rotation", [(0.0, quat_x(phase * amount)), (length / 2, quat_x(-phase * amount)), (length, quat_x(phase * amount))])
 
+    def extras(clip_name, length):
+        """C095: the tracks only an elephant (trunk, ears) or a chariot (spinning wheels) has."""
+        tracks = []
+        if "trunk" in index:
+            trunk = {"idle": [(0.0, 0.0), (1.0, 0.12), (2.0, 0.0)], "walk": [(0.0, -0.1), (length / 2, 0.1), (length, -0.1)],
+                     "attack": [(0.0, 0.0), (0.3, -1.0), (0.6, -1.0), (0.9, 0.0)], "attack_ranged": [(0.0, 0.0), (0.4, -0.7), (1.0, 0.0)], "hit": [(0.0, 0.0), (0.15, 0.4), (0.5, 0.0)]}.get(clip_name)
+            if trunk:
+                tracks.append(("trunk", "rotation", [(t, quat_x(a)) for t, a in trunk]))
+            if clip_name == "idle":
+                tracks.append(("ear_l", "rotation", [(0.0, quat_z(0.0)), (0.5, quat_z(-0.25)), (1.0, quat_z(0.0)), (2.0, quat_z(0.0))]))
+                tracks.append(("ear_r", "rotation", [(0.0, quat_z(0.0)), (0.5, quat_z(0.25)), (1.0, quat_z(0.0)), (2.0, quat_z(0.0))]))
+        if "wheel_l" in index and clip_name == "walk":
+            spin = [(length * k / 4, quat_x(k * math.pi / 2)) for k in range(5)]
+            tracks += [("wheel_l", "rotation", spin), ("wheel_r", "rotation", spin)]
+        return tracks
+
     def bob(length, amount):
         y = rest("body")[1]
         return ("body", "translation", [(0.0, [0.0, y, 0.0]), (length / 4, [0.0, y + amount, 0.0]), (length / 2, [0.0, y, 0.0]), (3 * length / 4, [0.0, y + amount, 0.0]), (length, [0.0, y, 0.0])])
 
     # idle: breathing and a tail flick
-    clip("idle", [("neck", "rotation", [(0.0, quat_x(0.0)), (1.0, quat_x(0.05)), (2.0, quat_x(0.0))]), ("tail", "rotation", [(0.0, quat_x(0.0)), (1.0, quat_x(-0.25)), (2.0, quat_x(0.0))])], RIDER_IDLE)
+    clip("idle", [("neck", "rotation", [(0.0, quat_x(0.0)), (1.0, quat_x(0.05)), (2.0, quat_x(0.0))]), ("tail", "rotation", [(0.0, quat_x(0.0)), (1.0, quat_x(-0.25)), (2.0, quat_x(0.0))])] + extras("idle", 2.0), RIDER_IDLE)
     # walk: diagonal pairs swing together
     length = RIDER_WALK
     clip("walk", [swing("leg_fl", length, 1, 0.55), swing("leg_br", length, 1, 0.55), swing("leg_fr", length, -1, 0.55), swing("leg_bl", length, -1, 0.55), bob(length, 0.012),
-                  ("tail", "rotation", [(0.0, quat_x(-0.1)), (length / 2, quat_x(0.1)), (length, quat_x(-0.1))])])
+                  ("tail", "rotation", [(0.0, quat_x(-0.1)), (length / 2, quat_x(0.1)), (length, quat_x(-0.1))])] + extras("walk", length))
     # attack: rears up on its hind legs, front legs pawing, and comes down
     y = rest("body")[1]
     clip("attack", [("body", "rotation", [(0.0, quat_x(0.0)), (0.3, quat_x(-0.45)), (0.6, quat_x(-0.45)), (0.9, quat_x(0.0))]),
                     ("body", "translation", [(0.0, [0.0, y, 0.0]), (0.3, [0.0, y + 0.05, -0.04]), (0.6, [0.0, y + 0.05, -0.04]), (0.9, [0.0, y, 0.0])]),
                     ("leg_fl", "rotation", [(0.0, quat_x(0.0)), (0.3, quat_x(0.9)), (0.6, quat_x(0.9)), (0.9, quat_x(0.0))]),
-                    ("leg_fr", "rotation", [(0.0, quat_x(0.0)), (0.3, quat_x(0.9)), (0.6, quat_x(0.9)), (0.9, quat_x(0.0))])], RIDER_ATTACK)
+                    ("leg_fr", "rotation", [(0.0, quat_x(0.0)), (0.3, quat_x(0.9)), (0.6, quat_x(0.9)), (0.9, quat_x(0.0))])] + extras("attack", 0.9), RIDER_ATTACK)
     # attack_ranged: stands, tosses its head at the shot
-    clip("attack_ranged", [("neck", "rotation", [(0.0, quat_x(0.0)), (0.4, quat_x(-0.3)), (1.0, quat_x(0.0))]), ("head", "rotation", [(0.0, quat_x(0.0)), (0.4, quat_x(-0.3)), (1.0, quat_x(0.0))])], RIDER_RANGED)
+    clip("attack_ranged", [("neck", "rotation", [(0.0, quat_x(0.0)), (0.4, quat_x(-0.3)), (1.0, quat_x(0.0))]), ("head", "rotation", [(0.0, quat_x(0.0)), (0.4, quat_x(-0.3)), (1.0, quat_x(0.0))])] + extras("attack_ranged", 1.0), RIDER_RANGED)
     # hit: shoved back, head up
     clip("hit", [("body", "translation", [(0.0, [0.0, y, 0.0]), (0.15, [0.0, y, -0.06]), (0.5, [0.0, y, 0.0])]),
-                 ("neck", "rotation", [(0.0, quat_x(0.0)), (0.15, quat_x(-0.35)), (0.5, quat_x(0.0))])], RIDER_HIT)
+                 ("neck", "rotation", [(0.0, quat_x(0.0)), (0.15, quat_x(-0.35)), (0.5, quat_x(0.0))])] + extras("hit", 0.5), RIDER_HIT)
     # death: falls on its side and stays there (the tail of the clip is a hold)
     clip("death", [("root", "rotation", [(0.0, IDENTITY), (0.9, quat_z(math.pi / 2)), (1.2, quat_z(math.pi / 2))]),
                    ("root", "translation", [(0.0, [0.0, 0.0, 0.0]), (0.9, [0.3, 0.1, 0.0]), (1.2, [0.3, 0.1, 0.0])])])
@@ -353,7 +455,7 @@ def sample(keys, t, default):
     return list(keys[-1][1])
 
 
-def merge_rider(horse, horse_bin, rider, rider_bin, saddle_height, tracks, body_height=0.32):
+def merge_rider(horse, horse_bin, rider, rider_bin, saddle_height, tracks, body_height=0.32, saddle_z=0.0):
     """
     Appends the rider (its own skeleton, a second root of the scene) to the horse. The rider's 'Rig' node is not parented to a horse joint (glTF importers fuse joint trees into one skeleton,
     which would clash with the rider's own bone names and scale): instead each clip also animates the Rig node along with the horse's root and body joints, so he stays on the saddle.
@@ -391,7 +493,7 @@ def merge_rider(horse, horse_bin, rider, rider_bin, saddle_height, tracks, body_
             n["skin"] += skin_off
         horse["nodes"].append(n)
     rig = next(i for i, n in enumerate(horse["nodes"]) if i >= node_off and n.get("name") == "Rig")
-    rig_rest = [0.0, saddle_height, 0.0]
+    rig_rest = [0.0, saddle_height, saddle_z]
     horse["nodes"][rig]["translation"] = rig_rest
     horse["scenes"][0]["nodes"].append(rig)
 
@@ -431,13 +533,42 @@ def merge_rider(horse, horse_bin, rider, rider_bin, saddle_height, tracks, body_
     return doc, out
 
 
-# ----------------------------------------------------------------------------------------------------------------------------------------------- main
-
 def clips_for(data, unit):
     clips = dict(data["clips"])
     clips.update(unit.get("clips", {}))
     return clips
 
+
+def build_ram():
+    """C095: the Battering Ram, a rigid model without skeleton or clips (it moves through `RigidMotion` as siege): a wooden frame on four wheels, a roof tinted in the civ's colour and the iron-headed log hung under it."""
+    wood = [((0.14, 0.07, 0.0), (0.05, 0.05, 0.62)), ((-0.14, 0.07, 0.0), (0.05, 0.05, 0.62)),  # base beams
+            ((0.17, 0.06, 0.2), (0.03, 0.12, 0.12)), ((-0.17, 0.06, 0.2), (0.03, 0.12, 0.12)), ((0.17, 0.06, -0.2), (0.03, 0.12, 0.12)), ((-0.17, 0.06, -0.2), (0.03, 0.12, 0.12)),  # wheels
+            ((0.14, 0.25, 0.22), (0.04, 0.36, 0.04)), ((-0.14, 0.25, 0.22), (0.04, 0.36, 0.04)), ((0.14, 0.25, -0.22), (0.04, 0.36, 0.04)), ((-0.14, 0.25, -0.22), (0.04, 0.36, 0.04)),  # posts
+            ((0.0, 0.28, 0.05), (0.08, 0.08, 0.70))]  # the log
+    iron = [((0.0, 0.28, 0.43), (0.10, 0.10, 0.07))]
+    roof = [((0.0, 0.45, 0.0), (0.36, 0.04, 0.62))]
+    materials = [("Wood", [0.40, 0.27, 0.15, 1.0]), ("Iron", [0.30, 0.30, 0.32, 1.0]), ("TeamColor", [0.8, 0.8, 0.8, 1.0])]
+    b = Builder()
+    doc = b.doc
+    primitives = []
+    for material, boxes in enumerate([wood, iron, roof]):
+        positions, normals, indices = [], [], []
+        for centre, size in boxes:
+            p, n, i = box(centre, size)
+            indices += [len(positions) + k for k in i]
+            positions += p
+            normals += n
+        acc = {"POSITION": b.accessor(positions, "VEC3", 5126, 34962, bounds=True), "NORMAL": b.accessor(normals, "VEC3", 5126, 34962)}
+        primitives.append({"attributes": acc, "indices": b.accessor(indices, "SCALAR", 5123, 34963), "material": material})
+    doc["materials"] = [{"name": name, "pbrMetallicRoughness": {"baseColorFactor": colour, "metallicFactor": 0.0, "roughnessFactor": 1.0}} for name, colour in materials]
+    doc["meshes"] = [{"name": "Ram", "primitives": primitives}]
+    doc["nodes"].append({"name": "Ram", "mesh": 0})
+    doc["scenes"][0]["nodes"] = [0]
+    del doc["skins"], doc["animations"]
+    return b.finish()
+
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------- main
 
 def main(source, pack):
     data = json.load(open(os.path.join(pack, "attachments.json")))
@@ -457,10 +588,20 @@ def main(source, pack):
         rider, rider_bin = reduce_body(rider, rider_bin, set(unit["keep"]), clips, mounted["riderHeight"], seat=mounted["seat"])
         mount = unit.get("mount", {})
         scale = mount.get("scale", 1.0)
-        horse, horse_bin, tracks = build_horse(scale, mount.get("colour"))
-        horse, merged = merge_rider(horse, horse_bin, rider, rider_bin, mounted["saddleHeight"] * scale, tracks, 0.32 * scale)
+        kind = mount.get("kind", "horse")
+        _, _, _, body_y, feet, follows_body = MOUNTS[kind]
+        horse, horse_bin, tracks = build_horse(scale, mount.get("colour"), kind)
+        if not follows_body:  # a chariot's rider stands on the cart and ignores the horse's body motion
+            tracks = {clip_name: [t for t in clip_tracks if t[0] != "body"] for clip_name, clip_tracks in tracks.items()}
+        saddle, saddle_z = feet if feet else (mounted["saddleHeight"], 0.0)
+        horse, merged = merge_rider(horse, horse_bin, rider, rider_bin, saddle * scale, tracks, body_y * scale, saddle_z * scale)
         path = os.path.join(models, name + ".glb")
         print(f"unit/{name}: {write_glb(path, horse, merged)} bytes (mounted)")
+        keys[f"unit/{name}"] = f"models/unit/{name}.glb"
+    for name in data.get("rigid", {}).get("units", {}):  # C095: models without skeleton or clips
+        doc, binary = build_ram()
+        path = os.path.join(models, name + ".glb")
+        print(f"unit/{name}: {write_glb(path, doc, binary)} bytes (rigid)")
         keys[f"unit/{name}"] = f"models/unit/{name}.glb"
     manifest = {"keys": dict(sorted(keys.items())), "pack": "units"}
     with open(os.path.join(pack, "manifest.json"), "w") as f:

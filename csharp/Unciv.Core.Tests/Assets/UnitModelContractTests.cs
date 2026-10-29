@@ -39,6 +39,13 @@ public sealed class UnitModelContractTests
         return manifest.RootElement.GetProperty("keys").Clone();
     }
 
+    /// <summary>C095: the units of the pack whose model is rigid (no skeleton, no clips; they move through <c>RigidMotion</c>).</summary>
+    private static List<string> RigidUnits()
+    {
+        using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientFolder, "Packs", "units", "attachments.json")));
+        return data.RootElement.GetProperty("rigid").GetProperty("units").EnumerateObject().Select(it => it.Name).ToList();
+    }
+
     [Fact]
     public void EveryUnitOfTheUnitsPackIsInTheManifestAndKeepsTheSixClips()
     {
@@ -48,7 +55,13 @@ public sealed class UnitModelContractTests
         {
             var bytes = File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", key.Value.GetString()!));
             Assert.Empty(UnitModelContract.Check(bytes));
-            var animations = Glb(bytes).GetProperty("animations").EnumerateArray().Select(it => it.GetProperty("name").GetString()!).ToList();
+            var doc = Glb(bytes);
+            if (RigidUnits().Contains(key.Name["unit/".Length..]))
+            {
+                Assert.False(doc.TryGetProperty("animations", out _) || doc.TryGetProperty("skins", out _), key.Name + ": a rigid model has no clips and no skeleton (C095)");
+                continue;
+            }
+            var animations = doc.GetProperty("animations").EnumerateArray().Select(it => it.GetProperty("name").GetString()!).ToList();
             Assert.Equal(UnitModelContract.ClipNames, animations);
         }
     }
@@ -59,7 +72,7 @@ public sealed class UnitModelContractTests
         using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientFolder, "Packs", "units", "attachments.json")));
         var root = data.RootElement;
         var listed = root.GetProperty("units").EnumerateObject().Concat(root.GetProperty("mounted").GetProperty("units").EnumerateObject()).ToList();
-        Assert.Equal(listed.Select(it => "unit/" + it.Name).Order(StringComparer.Ordinal), UnitsManifestKeys().EnumerateObject().Select(it => it.Name).Order(StringComparer.Ordinal));
+        Assert.Equal(listed.Select(it => "unit/" + it.Name).Concat(RigidUnits().Select(it => "unit/" + it)).Order(StringComparer.Ordinal), UnitsManifestKeys().EnumerateObject().Select(it => it.Name).Order(StringComparer.Ordinal));
         foreach (var unit in listed)
         {
             var file = File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", "models", "unit", unit.Name + ".glb"));
@@ -93,7 +106,7 @@ public sealed class UnitModelContractTests
         }
     }
 
-    /// <summary>Every Gods &amp; Kings humanoid and mounted unit, the great people included (C084, C093, C094), has art; ships, siege, the ram, aircraft, missiles, helicopters, armour and spaceship parts stay generated blocks.</summary>
+    /// <summary>Every Gods &amp; Kings humanoid and mounted unit, the great people included (C084, C093, C094), has art; ships, siege, aircraft, missiles, helicopters, armour and spaceship parts stay generated blocks; the Battering Ram has a rigid model (C095).</summary>
     [Fact]
     public void EveryHumanoidAndMountedUnitHasAModel()
     {
@@ -106,7 +119,7 @@ public sealed class UnitModelContractTests
             var keys = UnitsManifestKeys().EnumerateObject().Select(it => it.Name).ToHashSet();
             string[] generated = ["Siege", "Melee Water", "Ranged Water", "Civilian Water", "Submarine", "Fighter", "Bomber", "Aircraft Carrier", "Atomic Bomber", "Missile", "Helicopter", "Armored"];
             var wanted = ruleset.Units.Values
-                .Where(it => !generated.Contains(it.UnitType) && it.Name != "Battering Ram" && !it.Name.StartsWith("SS ", StringComparison.Ordinal)).Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
+                .Where(it => !generated.Contains(it.UnitType) && !it.Name.StartsWith("SS ", StringComparison.Ordinal)).Select(it => it.Name).Order(StringComparer.Ordinal).ToList();
             Assert.Contains("Settler", wanted);
             Assert.Contains("War Elephant", wanted);
             Assert.Contains("Marauder", wanted);
@@ -122,6 +135,53 @@ public sealed class UnitModelContractTests
         {
             RulesetCache.Clear();
         }
+    }
+
+    private static (List<string?> Nodes, JsonElement Doc) UnitModel(string name)
+    {
+        var doc = Glb(File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", "models", "unit", name + ".glb")));
+        return (doc.GetProperty("nodes").EnumerateArray().Select(it => it.GetProperty("name").GetString()).ToList(), doc);
+    }
+
+    private static HashSet<string?> Animated(List<string?> nodes, JsonElement doc, string clip) =>
+        doc.GetProperty("animations").EnumerateArray().Single(it => it.GetProperty("name").GetString() == clip).GetProperty("channels").EnumerateArray()
+            .Select(it => nodes[it.GetProperty("target").GetProperty("node").GetInt32()]).ToHashSet();
+
+    /// <summary>C095: the elephants have a trunk and ears of their own (moving in the clips) and the chariots a cart with two wheels that turn in the walk; the horse units have neither.</summary>
+    [Theory]
+    [InlineData("War Elephant", "trunk", "idle")]
+    [InlineData("African Forest Elephant", "ear_l", "idle")]
+    [InlineData("African Forest Elephant", "trunk", "attack")]
+    [InlineData("War Chariot", "wheel_l", "walk")]
+    [InlineData("Chariot Archer", "wheel_r", "walk")]
+    public void ElephantsAndChariotsHaveTheirOwnAnimatedParts(string unit, string joint, string clip)
+    {
+        var (nodes, doc) = UnitModel(unit);
+        Assert.Contains(joint, nodes);
+        Assert.Contains(joint, Animated(nodes, doc, clip));
+    }
+
+    [Theory]
+    [InlineData("Horseman")]
+    [InlineData("Cataphract")]
+    public void HorseUnitsHaveNoElephantOrChariotParts(string unit)
+    {
+        var (nodes, _) = UnitModel(unit);
+        Assert.DoesNotContain("trunk", nodes);
+        Assert.DoesNotContain("wheel_l", nodes);
+    }
+
+    /// <summary>C095: the Battering Ram is a model file with no skeleton and no clips, tinted by a TeamColor roof, so the client moves it as siege.</summary>
+    [Fact]
+    public void TheBatteringRamIsARigidModel()
+    {
+        Assert.Contains("Battering Ram", RigidUnits());
+        Assert.Contains("unit/Battering Ram", UnitsManifestKeys().EnumerateObject().Select(it => it.Name));
+        var (nodes, doc) = UnitModel("Battering Ram");
+        Assert.Single(nodes);
+        Assert.False(doc.TryGetProperty("skins", out _));
+        Assert.False(doc.TryGetProperty("animations", out _));
+        Assert.Contains("TeamColor", doc.GetProperty("materials").EnumerateArray().Select(it => it.GetProperty("name").GetString()));
     }
 
     [Fact]

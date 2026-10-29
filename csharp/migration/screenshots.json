@@ -911,6 +911,20 @@
       }
     ]
   },
+  "C095": {
+    "scenario": "unit-visuals",
+    "about": "Battering Ram as a rigid siege model, a cart-and-wheels chariot and a trunked elephant (generated rigs of the units pack).",
+    "shots": [
+      {
+        "golden": "unit-visuals/chariots.png",
+        "caption": "Close view, side on: the Chariot Archer and War Chariot (a rider standing on a two-wheeled cart behind a horse), the Battering Ram top left (wooden frame, team-coloured roof, iron-headed log, posed mid-strike) and a War Elephant (placeholder shapes)."
+      },
+      {
+        "golden": "unit-visuals/elephants.png",
+        "caption": "Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract."
+      }
+    ]
+  },
   "C048": {
     "scenario": "city-rename",
     "about": "Rename a city from the city screen header: popup with live validation, Enter to confirm, Escape to cancel; the new name shows in the title, the map banner and the overview.",
