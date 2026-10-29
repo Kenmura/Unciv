@@ -123,7 +123,7 @@ Two routes, in order of preference:
 |-------|------------------|-------|
 | `GameInfo` | `TradeRoutes : List<TradeRoute>` | Every active route (global, as in Civ V `CvGameTrade`), in creation order. Ids are monotonic. |
 | `GameInfo` | `League : League?` | World Congress state (§4.7). `null` until founded. |
-| `GameInfo` | `GreatWorks : List<GreatWorkInstance>` | Every created work: index, type name, creator civ, era, turn. Plus `UsedGreatWorkNames` (each named work exists once per game). |
+| `GameInfo` | `GreatWorks : List<GreatWorkInstance>` | Every created work: index, type name, creator civ, era, turn. Used names are derived from the instances (each named work exists once per game); B007 stores instances in `GreatWorkInstances` and swap offers in `GreatWorkSwapOffers`, both null until used. |
 | `GameInfo` | `Archaeology` | Spawn done flag, list of placed site records (§4.4). |
 | `Tile` | `ArchaeologyRecord?` | `{ArtifactClass, Era, Player1, Player2, GreatWork?}`. Written by historical events, read by digs. |
 | `Civilization` | `Trade : CivTradeManager` (transient + persisted) | Trade units, recent routes, plundered-route memory (30 turns, @101f7e40). |
@@ -450,15 +450,22 @@ theming bonuses (§4.2.4).
   ties broken by city order [O names: `GetCityOfClosestGreatWorkSlot`/`GetBuildingOfClosestGreatWorkSlot` @1006dec0]
   [I tie-break]. No free slot means the action is unavailable [K].
 - **Which** work: a GP with `Unit_UniqueNames.GreatWorkType` creates that named work [D]. Otherwise: **[?]**.
-  Proposal [X]: the first unused work of the class in table order, preferring the current era or earlier.
-- The Parthenon gives its frieze when built [D].
+  Resolved [X] (B007): the first unused, non-`ArchaeologyOnly` work of the class in table order whose era is not later
+  than the creator's era (a work without era counts as eligible); when none qualifies, the first unused one. Each named
+  work exists once per game; a used work (`GameInfo.IsGreatWorkUsed`) is never created again, even if its building was sold.
+  A work created with no era takes the creator's era. The `greatWork` parameter type (ordinal 62) names a work of
+  `GreatWorks.json`.
+- The Parthenon gives its frieze when built [D]: `Contains the Great Work [greatWork] when built` puts the work into the
+  first free slot of that building fitting its class, created once, as if made by the builder (B007).
 - Works stay with their building: they are captured with the city and destroyed if the building is sold or destroyed
   [K]. `ClearGreatWorks` exists (@10071100) [O].
 - **Moving / swapping**: an owner may rearrange works among their own slots at any time (UI drag in
   `CultureOverview.lua` [U]). Swapping with other civs is via a designated swap offer per class (Art, Artifact, Writing).
   Another civ takes it by giving one of its works of that class. Notifications `GREAT_WORK_ART_SWAP`,
-  `GREAT_WORK_WRITING_SWAP`, `ARTIFACT_SWAP` (@10071c40) [O]. Swap rules beyond that are [K]: no swap while at war,
-  and the offered work must not be the giver's own creation? Verify before porting.
+  `GREAT_WORK_WRITING_SWAP`, `ARTIFACT_SWAP` (@10071c40) [O]. Implemented [X] (B007): `offer-great-work-swap` designates (or withdraws) one work per class
+  (Music cannot be offered); `take-great-work-swap` needs both civs to know each other and not be at war, the given work
+  must be of the offered work's class, and the offer is used up. The "own creation" restriction is not applied (deviation,
+  noted on B007).
 
 #### 4.2.4 Theming bonuses [D]+[K]
 A building with `themingBonuses` gets a bonus only when **all** its slots are filled. The first bonus row (in data order)
@@ -469,7 +476,11 @@ whose conditions all hold applies:
 civ). Bonus value `×(100 + policy.ThemingBonusMultiplier)/100`, and `×(100 + trait.CapitalThemingBonusModifier)/100`
 in the capital [K]. The theming bonus is added to city tourism (§4.3.1, @100720f0) [O] and to culture [K].
 The Museum has 12 rows (bonus 2 or 1), and each wonder has one row (Louvre 4, Uffizi 3, Hermitage 3, Broadway 3, and others).
-The engine function is `GetThemingBonus` (@10078c00); port it from the SDK source to get the exact precedence [K].
+The engine function is `GetThemingBonus` (@10078c00). Resolved [X] (B007): the rows are tried in data order and the first
+whose conditions all hold wins; a work with unknown era or creator never satisfies `sameEra`, `uniqueEras`, `requiresOwner`,
+`requiresSamePlayer` or `requiresUniquePlayers`, and a work with no creator counts as "not by the owner". The policy
+multiplier is applied first, then the capital one, each truncating. Theming bonus is added to the city's culture
+(source "Great Works"); tourism is B031.
 
 ### 4.3 Tourism, influence, culture victory
 
@@ -909,7 +920,7 @@ unless noted. Each ticket's RE step resolves the [K] and [?] items it touches an
 
 ## 8. Unknowns and risks (to be closed by the ticket noted)
 1. Trade route duration formula (B020). 2. Plunder gold (B020). 3. Trade-route religious pressure amount (B073).
-4. Great Work selection when a GP has no named work (B030). 5. Theming precedence details (B030). 6. Influence-level
+4. Great Work selection when a GP has no named work (resolved [X] in B007, §4.2.3). 5. Theming precedence details (resolved [X] in B007, §4.2.4). 6. Influence-level
 benefits and their values (B031). 7. Great Firewall math (B031). 8. Archaeology weight constants and random-record
 generation (B040). 9. Proposal and voting flow details (B060), and the unused `DIPLO_VICTORY_ALGORITHM*` defines (B063).
 10. City revolt target selection (B070). 11. Rebel unit-type choice and city weight (B070). 12. Speed-percent field

@@ -667,6 +667,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
         ApplyCreateOneImprovement(building);
 
         TriggerNewBuildingUniques(building);
+        City.PlaceFreeGreatWorks(building); // B007
 
         if (((IHasUniques)building).HasUnique(UniqueType.EnemyUnitsSpendExtraMovement))
             civ.Cache.UpdateHasActiveEnemyMovementPenalty();
@@ -747,6 +748,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
     {
         builtBuildingObjects = builtBuildingObjects.WithoutItem(building);
         BuiltBuildings.Remove(building.Name);
+        City.ClearGreatWorks(building.Name); // B007
 
         if (building.HasCreateOneImprovementUnique())
         {

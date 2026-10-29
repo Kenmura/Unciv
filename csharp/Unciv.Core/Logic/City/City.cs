@@ -286,6 +286,7 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
         toReturn.ConnectedToCapitalStatus = ConnectedToCapitalStatus;
         toReturn.UnitShouldUseSavedPromotion = UnitShouldUseSavedPromotion.Clone();
         toReturn.UnitToPromotions = UnitToPromotions.Clone(it => it.Clone());
+        toReturn.GreatWorkSlotData = GreatWorkSlotData?.Select(it => it.Clone()).ToList();
         return toReturn;
     }
 

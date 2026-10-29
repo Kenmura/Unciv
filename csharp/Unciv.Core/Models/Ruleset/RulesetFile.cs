@@ -74,6 +74,7 @@ public sealed class RulesetFile
     public static readonly RulesetFile Speeds = new("Speeds.json", r => r.Speeds.Values);
     public static readonly RulesetFile Difficulties = new("Difficulties.json", getINamed: r => r.Difficulties.Values);
     public static readonly RulesetFile Quests = new("Quests.json", getINamed: r => r.Quests.Values);
+    public static readonly RulesetFile GreatWorks = new("GreatWorks.json", getINamed: r => r.GreatWorks.Values);
     public static readonly RulesetFile Ruins = new("Ruins.json", r => r.RuinRewards.Values);
 
     /// <summary>Kotlin <c>RulesetFile.entries</c>.</summary>
@@ -81,6 +82,6 @@ public sealed class RulesetFile
     [
         Beliefs, Buildings, Eras, Religions, Nations, Policies, Techs, Terrains, Tutorials, TileImprovements, TileResources, Specialists,
         Units, UnitPromotions, UnitNameGroup, UnitTypes, VictoryTypes, CityStateTypes, Personalities, Events, GlobalUniques, ModOptions,
-        Speeds, Difficulties, Quests, Ruins,
+        Speeds, Difficulties, Quests, Ruins, GreatWorks,
     ];
 }

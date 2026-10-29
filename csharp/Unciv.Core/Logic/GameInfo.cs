@@ -304,6 +304,7 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
         toReturn.lastUnitId = lastUnitId;
         toReturn.UnitNamesTaken.AddRange(UnitNamesTaken);
         toReturn.EngineOptions = EngineOptions.Clone();
+        CloneGreatWorksTo(toReturn);
         if (PlayerSettingsByCiv != null) toReturn.PlayerSettingsByCiv = new Dictionary<string, PlayerSettings>(PlayerSettingsByCiv);
         toReturn.ClientState = ClientState;
 

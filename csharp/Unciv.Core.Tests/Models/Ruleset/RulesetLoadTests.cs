@@ -665,8 +665,8 @@ public sealed class RulesetLoadTests : IDisposable
     public void RulesetFilesCoverUniquesAndNamesInDeclarationOrder()
     {
         Assert.Equal("Beliefs.json", RulesetFile.Values[0].Filename);
-        Assert.Equal("Ruins.json", RulesetFile.Values[^1].Filename);
-        Assert.Equal(26, RulesetFile.Values.Count);
+        Assert.Equal("GreatWorks.json", RulesetFile.Values[^1].Filename);
+        Assert.Equal(27, RulesetFile.Values.Count);
 
         var ruleset = Load(new()
         {

@@ -497,6 +497,8 @@ public class CityStats(City city)
         newBaseStatList["Tile yields"] = StatsFromTiles;
         newBaseStatList["Specialists"] = statsFromSpecialists;
         newBaseStatList["Trade routes"] = GetStatsFromTradeRoute();
+        var statsFromGreatWorks = City.GetGreatWorkStats(); // B007
+        if (!statsFromGreatWorks.IsEmpty()) newBaseStatList["Great Works"] = statsFromGreatWorks;
         newBaseStatTree.Children.Put("Buildings", statsFromBuildings);
 
         foreach (var (source, stats) in newBaseStatList)

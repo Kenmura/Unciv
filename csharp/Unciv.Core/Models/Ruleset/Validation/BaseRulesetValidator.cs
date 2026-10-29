@@ -63,6 +63,19 @@ internal sealed class BaseRulesetValidator : RulesetValidator
             lines.Add($"{building.Name} requires {building.RequiredBuilding} which does not exist!", sourceObject: building);
 
         CheckUniqueToMisspelling(building, building.UniqueTo, lines);
+        CheckGreatWorkSlots(building, lines);
+    }
+
+    private static void CheckGreatWorkSlots(Building building, RulesetErrorList lines)
+    {
+        if (building.GreatWorkSlots < 0)
+            lines.Add($"{building.Name} has a negative number of greatWorkSlots!", sourceObject: building);
+        else if (building.GreatWorkSlots > 0 && building.GreatWorkSlotType == null)
+            lines.Add($"{building.Name} has greatWorkSlots but no greatWorkSlotType!", sourceObject: building);
+        else if (building.GreatWorkSlots == 0 && building.GreatWorkSlotType != null)
+            lines.Add($"{building.Name} has a greatWorkSlotType but no greatWorkSlots!", RulesetErrorSeverity.Warning, building);
+        if (building.ThemingBonuses.Count != 0 && building.GreatWorkSlots == 0)
+            lines.Add($"{building.Name} has themingBonuses but no greatWorkSlots, so they can never apply!", RulesetErrorSeverity.Warning, building);
     }
 
     protected override void AddDifficultyErrors(RulesetErrorList lines)
@@ -439,6 +452,15 @@ internal sealed class BaseRulesetValidator : RulesetValidator
                         $"Specialist {specialist.Name} has greatPersonPoints for {gppName}, which is not a unit in the ruleset!",
                         RulesetErrorSeverity.Warning, sourceObject: null);
         }
+        CheckGreatWorks(lines);
+    }
+
+    private void CheckGreatWorks(RulesetErrorList lines)
+    {
+        // GreatWork is not a IHasUniques and unsuitable as sourceObject
+        foreach (var work in ruleset.GreatWorks.Values)
+            if (work.Era.Length != 0 && !ruleset.Eras.ContainsKey(work.Era))
+                lines.Add($"Great Work {work.Name} is from era {work.Era}, which is not an era in the ruleset!", sourceObject: null);
     }
 
     protected override void AddTechErrors(RulesetErrorList lines)

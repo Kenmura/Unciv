@@ -67,6 +67,7 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
     public LinkedHashMap<string, RuinReward> RuinRewards { get; } = new();
     public LinkedHashMap<string, Quest> Quests { get; } = new();
     public LinkedHashMap<string, Specialist> Specialists { get; } = new();
+    public LinkedHashMap<string, GreatWork> GreatWorks { get; } = new();
     public LinkedHashMap<string, Technology> Technologies { get; } = new();
     public List<TechColumn> TechColumns { get; } = [];
     public LinkedHashMap<string, Terrain> Terrains { get; } = new();
@@ -163,6 +164,12 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
     public List<Victory> SelectableVictories() =>
         Victories.Values.Where(it => !((IHasUniques)it).HasUnique(UniqueType.WillNotBeChosenForNewGames)).ToList();
 
+    private void LoadNamed<T>(IRulesetFolder folderHandle, RulesetFile file, LinkedHashMap<string, T> target) where T : class, INamed
+    {
+        var jsonFile = folderHandle.Child(file.Filename);
+        if (jsonFile.Exists) target.PutAll(CreateHashmap(ReadArray<T>(jsonFile)));
+    }
+
     private LinkedHashMap<string, T> CreateHashmap<T>(IReadOnlyCollection<T> items) where T : INamed
     {
         var hashMap = new LinkedHashMap<string, T>();
@@ -202,6 +209,7 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
         RuinRewards.PutAll(ruleset.RuinRewards);
         SelectiveRemove(Specialists, ruleset.ModOptions.SpecialistsToRemove);
         Specialists.PutAll(ruleset.Specialists);
+        GreatWorks.PutAll(ruleset.GreatWorks);
         MergeTechnologies(ruleset);
         SelectiveRemove(Terrains, ruleset.ModOptions.TerrainsToRemove, (it, f) => it.MatchesFilter(f));
         Terrains.PutAll(ruleset.Terrains);
@@ -314,6 +322,7 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
         Religions.Clear();
         RuinRewards.Clear();
         Specialists.Clear();
+        GreatWorks.Clear();
         Technologies.Clear();
         TechColumns.Clear();
         Terrains.Clear();
@@ -424,11 +433,11 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
         var unitNameGroupsFile = FileOf(RulesetFile.UnitNameGroup);
         if (unitNameGroupsFile.Exists) UnitNameGroups.PutAll(CreateHashmap(ReadArray<UnitNameGroup>(unitNameGroupsFile)));
 
-        var questsFile = FileOf(RulesetFile.Quests);
-        if (questsFile.Exists) Quests.PutAll(CreateHashmap(ReadArray<Quest>(questsFile)));
+        LoadNamed(folderHandle, RulesetFile.Quests, Quests);
 
-        var specialistsFile = FileOf(RulesetFile.Specialists);
-        if (specialistsFile.Exists) Specialists.PutAll(CreateHashmap(ReadArray<Specialist>(specialistsFile)));
+        LoadNamed(folderHandle, RulesetFile.Specialists, Specialists);
+
+        LoadNamed(folderHandle, RulesetFile.GreatWorks, GreatWorks);
 
         var policiesFile = FileOf(RulesetFile.Policies);
         if (policiesFile.Exists) LoadPolicies(ReadArray<PolicyBranch>(policiesFile));
@@ -656,6 +665,7 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
     IRulesetMapView<IRulesetObjectParameterView> IRulesetParameterView.Policies => View<IRulesetObjectParameterView, Policy>(Policies);
     IRulesetMapView<IRulesetObjectParameterView> IRulesetParameterView.UnitNameGroups => View<IRulesetObjectParameterView, UnitNameGroup>(UnitNameGroups);
     IRulesetMapView<object> IRulesetParameterView.Specialists => View<object, Specialist>(Specialists);
+    IRulesetMapView<object> IRulesetParameterView.GreatWorks => View<object, GreatWork>(GreatWorks);
     IRulesetMapView<object> IRulesetParameterView.Eras => View<object, Era>(Eras);
     IRulesetMapView<object> IRulesetParameterView.Speeds => View<object, Speed>(Speeds);
     IRulesetMapView<object> IRulesetParameterView.Difficulties => View<object, Difficulty>(Difficulties);

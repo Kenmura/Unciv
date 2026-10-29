@@ -44,6 +44,7 @@ public class UniqueParameterTypeTests
         public Dictionary<string, IRulesetObjectParameterView> PoliciesDict { get; } = new(StringComparer.Ordinal);
         public Dictionary<string, IRulesetObjectParameterView> UnitNameGroupsDict { get; } = new(StringComparer.Ordinal);
         public Dictionary<string, object> SpecialistsDict { get; } = new(StringComparer.Ordinal);
+        public Dictionary<string, object> GreatWorksDict { get; } = new(StringComparer.Ordinal);
         public Dictionary<string, object> ErasDict { get; } = new(StringComparer.Ordinal);
         public Dictionary<string, object> SpeedsDict { get; } = new(StringComparer.Ordinal);
         public Dictionary<string, object> DifficultiesDict { get; } = new(StringComparer.Ordinal);
@@ -65,6 +66,7 @@ public class UniqueParameterTypeTests
         public IRulesetMapView<IRulesetObjectParameterView> Policies => new RulesetMapView<IRulesetObjectParameterView>(PoliciesDict);
         public IRulesetMapView<IRulesetObjectParameterView> UnitNameGroups => new RulesetMapView<IRulesetObjectParameterView>(UnitNameGroupsDict);
         public IRulesetMapView<object> Specialists => new RulesetMapView<object>(SpecialistsDict);
+        public IRulesetMapView<object> GreatWorks => new RulesetMapView<object>(GreatWorksDict);
         public IRulesetMapView<object> Eras => new RulesetMapView<object>(ErasDict);
         public IRulesetMapView<object> Speeds => new RulesetMapView<object>(SpeedsDict);
         public IRulesetMapView<object> Difficulties => new RulesetMapView<object>(DifficultiesDict);
@@ -265,6 +267,7 @@ public class UniqueParameterTypeTests
             (59, "Comment", "comment", "comment", "Unique Specials", UniqueParameterErrorSeverity.RulesetSpecific),
             (60, "LeaderTitle", "leaderTitle", "Sovereign [leaderName] the Great", "Leader Title", UniqueParameterErrorSeverity.RulesetSpecific),
             (61, "Unknown", "param", "Unknown", "param", UniqueParameterErrorSeverity.RulesetSpecific),
+            (62, "GreatWork", "greatWork", "Parthenon Frieze", "greatWork", UniqueParameterErrorSeverity.RulesetSpecific),
         };
 
         var actual = UniqueParameterTypeExtensions.Entries;

@@ -4,6 +4,7 @@ using Unciv.Commands.City;
 using Unciv.Commands.Units;
 using Unciv.Core.Tests.Commands.Diplomacy;
 using Unciv.Core.Tests.Commands.Empire;
+using Unciv.Core.Tests.Commands.GreatWorks;
 using Unciv.Core.Tests.Commands.Turn;
 using Unciv.Json;
 using Unciv.Logic;
@@ -232,6 +233,13 @@ public sealed class GameCommandTests : IDisposable
                 game = world.Game.GameInfo;
                 actor = world.A.CivId;
                 command = DiplomacySamples.Sample(name, world);
+            }
+            else if (GreatWorkSamples.Types.Contains(name))
+            {
+                var sample = new GreatWorkSamples.Sample();
+                game = sample.World.Game.GameInfo;
+                actor = sample.World.A.CivId;
+                command = GreatWorkSamples.Command(name, sample);
             }
             else if (EmpireSamples.Types.Contains(name))
             {

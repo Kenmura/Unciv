@@ -112,6 +112,7 @@ public interface IRulesetParameterView
     IRulesetMapView<IRulesetObjectParameterView> Policies { get; }
     IRulesetMapView<IRulesetObjectParameterView> UnitNameGroups { get; }
     IRulesetMapView<object> Specialists { get; }
+    IRulesetMapView<object> GreatWorks { get; }
     IRulesetMapView<object> Eras { get; }
     IRulesetMapView<object> Speeds { get; }
     IRulesetMapView<object> Difficulties { get; }
@@ -138,6 +139,7 @@ public sealed class EmptyRulesetParameterView : IRulesetParameterView
     public IRulesetMapView<IRulesetObjectParameterView> Policies => RulesetMapView<IRulesetObjectParameterView>.Empty;
     public IRulesetMapView<IRulesetObjectParameterView> UnitNameGroups => RulesetMapView<IRulesetObjectParameterView>.Empty;
     public IRulesetMapView<object> Specialists => RulesetMapView<object>.Empty;
+    public IRulesetMapView<object> GreatWorks => RulesetMapView<object>.Empty;
     public IRulesetMapView<object> Eras => RulesetMapView<object>.Empty;
     public IRulesetMapView<object> Speeds => RulesetMapView<object>.Empty;
     public IRulesetMapView<object> Difficulties => RulesetMapView<object>.Empty;
@@ -225,6 +227,7 @@ public enum UniqueParameterType
     Comment = 59,
     LeaderTitle = 60,
     Unknown = 61,
+    GreatWork = 62,
 }
 
 public static class UniqueParameterTypeExtensions
@@ -425,6 +428,7 @@ public static class UniqueParameterTypeExtensions
         UniqueParameterType.Comment => "comment",
         UniqueParameterType.LeaderTitle => "leaderTitle",
         UniqueParameterType.Unknown => "param",
+        UniqueParameterType.GreatWork => "greatWork",
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
@@ -492,6 +496,7 @@ public static class UniqueParameterTypeExtensions
         UniqueParameterType.Comment => "comment",
         UniqueParameterType.LeaderTitle => "Sovereign [leaderName] the Great",
         UniqueParameterType.Unknown => "Unknown",
+        UniqueParameterType.GreatWork => "Parthenon Frieze",
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
@@ -562,6 +567,8 @@ public static class UniqueParameterTypeExtensions
             "The name of any tech",
         UniqueParameterType.Specialist =>
             "The name of any specialist",
+        UniqueParameterType.GreatWork =>
+            "The name of any Great Work found in GreatWorks.json",
         UniqueParameterType.Policy =>
             "The name of any policy",
         UniqueParameterType.PolicyFilter =>
@@ -905,8 +912,8 @@ public static class UniqueParameterTypeExtensions
                     type.StaticKnownValues(),
                     ruleset.Technologies.Keys,
                     UniqueParameterType.EraFilter.GetKnownValuesForAutocomplete(ruleset)),
-            UniqueParameterType.Specialist =>
-                ToLinkedSet(ruleset.Specialists.Keys),
+            UniqueParameterType.Specialist => ToLinkedSet(ruleset.Specialists.Keys),
+            UniqueParameterType.GreatWork => ToLinkedSet(ruleset.GreatWorks.Keys),
             UniqueParameterType.Policy =>
                 ToLinkedSet(ruleset.Policies.Keys),
             UniqueParameterType.PolicyFilter =>

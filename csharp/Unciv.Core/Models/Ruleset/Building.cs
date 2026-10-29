@@ -64,6 +64,15 @@ public class Building : RulesetStatsObject, INonPerpetualConstruction, ICivilope
 
     public Counter<string> GreatPersonPoints { get; set; } = new();
 
+    /// <summary>Brave New World (B007): the kind of Great Work the <see cref="GreatWorkSlots"/> of this building take; null for none.</summary>
+    public GreatWorkSlotType? GreatWorkSlotType { get; set; }
+
+    /// <summary>Brave New World (B007): how many Great Works the building holds.</summary>
+    public int GreatWorkSlots { get; set; }
+
+    /// <summary>Brave New World (B007): theming bonus rows in data order, see <see cref="ThemingBonus"/>.</summary>
+    public List<ThemingBonus> ThemingBonuses { get; set; } = [];
+
     /// <summary>Extra cost percentage when purchasing</summary>
     public int HurryCostModifier { get; set; }
     public bool IsWonder { get; set; }

@@ -57,7 +57,7 @@ public class UniqueTypeBnwTests
         Assert.Equal(accepted, type.CanAcceptUniqueTarget(target));
 
     [Theory]
-    [InlineData(UniqueType.ContainsGreatWorkWhenBuilt, "Contains the Great Work [param] when built")]
+    [InlineData(UniqueType.ContainsGreatWorkWhenBuilt, "Contains the Great Work [greatWork] when built")]
     [InlineData(UniqueType.TradeRouteSlots, "[relativeAmount] trade route slots")]
     [InlineData(UniqueType.WorldCongressDelegates, "[relativeAmount] Delegates in the World Congress")]
     [InlineData(UniqueType.TourismOpenBorders, "[relativeAmount]% Tourism toward civs with open borders with you")]

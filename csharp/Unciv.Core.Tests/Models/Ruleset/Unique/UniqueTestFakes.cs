@@ -82,6 +82,7 @@ internal sealed class FakeRuleset : IGameContextRuleset
     public IRulesetMapView<IRulesetObjectParameterView> Policies => empty.Policies;
     public IRulesetMapView<IRulesetObjectParameterView> UnitNameGroups => empty.UnitNameGroups;
     public IRulesetMapView<object> Specialists => empty.Specialists;
+    public IRulesetMapView<object> GreatWorks => empty.GreatWorks;
     public IRulesetMapView<object> Eras => empty.Eras;
     public IRulesetMapView<object> Speeds => empty.Speeds;
     IRulesetMapView<object> IRulesetParameterView.Difficulties => empty.Difficulties;
