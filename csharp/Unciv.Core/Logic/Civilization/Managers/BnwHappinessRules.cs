@@ -1,6 +1,7 @@
 using Unciv.Logic.Tourism;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
@@ -35,7 +36,7 @@ public static class BnwHappinessRules
     {
         if (!IsEnabled(civ.GameInfo.Ruleset) || !civ.IsMajorCiv()) return 0;
         int excess = civ.GetHappiness();
-        
+        return excess >= 0 ? 0 : (int)Math.Max(MaxPenalty, (long)PenaltyPerPoint * -(long)excess);
     }
 
     private static int VeryUnhappyThreshold(Ruleset ruleset) =>
