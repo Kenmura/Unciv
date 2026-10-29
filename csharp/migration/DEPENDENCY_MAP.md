@@ -190,4 +190,4 @@ xychart-beta
 | C091 | Available (waiting on C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C092 | Available (waiting on ) | C074 | 0 | City management at scale: bulk actions and reusable build queues |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
-| T255 | Needs-Review [Claude] | none | 0 | CI client scenarios: menu scenario goldens fail on ubuntu llvmpipe |
+| T255 | In-Review [Claude] | none | 0 | CI client scenarios: menu scenario goldens fail on ubuntu llvmpipe |
