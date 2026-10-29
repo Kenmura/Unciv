@@ -380,6 +380,7 @@
      "adjective": [
       "Venetian"
      ],
+     "placeFirstAlongOcean": true,
      "startBias": [
       "Coast"
      ],
@@ -1095,7 +1096,9 @@
      ],
      "gold": 2,
      "improvement": "Plantation",
-     "uniques": []
+     "uniques": [
+      "Doesn't generate naturally"
+     ]
     },
     {
      "name": "Pepper",
@@ -1107,7 +1110,9 @@
      ],
      "gold": 2,
      "improvement": "Plantation",
-     "uniques": []
+     "uniques": [
+      "Doesn't generate naturally"
+     ]
     },
     {
      "name": "Nutmeg",
@@ -1119,7 +1124,9 @@
      ],
      "gold": 2,
      "improvement": "Plantation",
-     "uniques": []
+     "uniques": [
+      "Doesn't generate naturally"
+     ]
     }
    ]
   },

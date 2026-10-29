@@ -588,7 +588,7 @@
 		"terrainsCanBeFoundOn": ["Jungle", "Plains", "Grassland"],
 		"gold": 2,
 		"improvement": "Plantation",
-		"uniques": []
+		"uniques": ["Doesn't generate naturally"]
 	},
 	{
 		"name": "Pepper",
@@ -596,7 +596,7 @@
 		"terrainsCanBeFoundOn": ["Jungle", "Plains", "Grassland"],
 		"gold": 2,
 		"improvement": "Plantation",
-		"uniques": []
+		"uniques": ["Doesn't generate naturally"]
 	},
 	{
 		"name": "Nutmeg",
@@ -604,6 +604,6 @@
 		"terrainsCanBeFoundOn": ["Jungle", "Plains", "Grassland"],
 		"gold": 2,
 		"improvement": "Plantation",
-		"uniques": []
+		"uniques": ["Doesn't generate naturally"]
 	}
 ]

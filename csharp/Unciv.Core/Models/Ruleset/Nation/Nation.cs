@@ -83,6 +83,9 @@ public class Nation : RulesetObject, ICivilopediaText
     public string UniqueText { get; set; } = "";
     public List<int>? InnerColor { get; set; }
     public List<string> StartBias { get; set; } = [];
+
+    /// <summary>BNW <c>Civilization_Start_Place_First_Along_Ocean</c> (B024): in region assignment this civ picks its coastal start before the other coast-biased civs.</summary>
+    public bool PlaceFirstAlongOcean { get; set; }
     public string? Personality { get; set; }
 
     public string StartIntroPart1 { get; set; } = "";

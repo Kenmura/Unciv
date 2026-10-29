@@ -1116,6 +1116,15 @@ Uniques per civ (traits in §3.2). The unique units and buildings are in `Civili
   coastal start [K]. Add it as a `Nation` field.
 - New natural wonders are already in Unciv. Verify `Natural_Wonder_Placement` against Unciv's natural wonder uniques.
 
+#### 4.14a As built (B024)
+- Cloves, Pepper and Nutmeg carry `Doesn't generate naturally` (both the region path, which only places luxuries with weighting uniques, and the
+  fallback `SpreadResources` path now skip them). Bison and Cocoa are placed by the existing region code from their generator-written
+  `Generated ...` uniques; the BNW tables (`Resource_TerrainBooleans`, `Resource_FeatureBooleans`) were checked against `terrainsCanBeFoundOn`.
+- `Nation.PlaceFirstAlongOcean` (JSON `placeFirstAlongOcean`, only Venice): `MapRegions.AssignRegions` sorts the coast-biased civs with the flagged
+  ones first (stable, so rulesets without the flag assign exactly as before). All 12 `Civilization_Start_Along_Ocean` civs already have a `Coast`
+  start bias in the generated nations. Venice is the only civ the flag changes.
+- Not done: `GameStarter`'s non-region start fallback ordering ignores the flag (region assignment is the normal path).
+
 ### 4.15 Victory and score [D]
 - Victories: Time, Science (Space Race), Domination, **Cultural** (`Influential`), **Diplomatic** (`DiploVote`).
   Apollo and the spaceship are unchanged. Utopia is gone.

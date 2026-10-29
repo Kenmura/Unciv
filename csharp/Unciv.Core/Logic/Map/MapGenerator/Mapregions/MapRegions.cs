@@ -278,6 +278,10 @@ public class MapRegions(Ruleset ruleset)
     /// <summary>Buckets for startBias to region assignments, used only in <see cref="AssignRegions"/>. PositiveFallback is only for logging.</summary>
     private enum BiasTypes { Coastal, Positive, Negative, Random, PositiveFallback }
 
+    /// <summary>B024: nations flagged PlaceFirstAlongOcean go first among the coast civs (stable otherwise, so rulesets without the flag are unchanged).</summary>
+    private List<IMapRegionsCivilization> CoastCivsPlacedFirstAlongOceanFirst(List<IMapRegionsCivilization> coastCivs) =>
+        coastCivs.OrderBy(it => Ruleset.Nations.TryGetValue(it.CivName, out var nation) && nation.PlaceFirstAlongOcean ? 0 : 1).ToList();
+
     public void AssignRegions(TileMap tileMap, IReadOnlyList<IMapRegionsCivilization> civilizations, GameParameters gameParameters)
     {
         if (civilizations.Count == 0) return;
@@ -317,7 +321,7 @@ public class MapRegions(Ruleset ruleset)
             list.Add(civ);
         }
 
-        var coastBiasCivs = civsByBiasType.GetValueOrDefault(BiasTypes.Coastal) ?? [];
+        var coastBiasCivs = CoastCivsPlacedFirstAlongOceanFirst(civsByBiasType.GetValueOrDefault(BiasTypes.Coastal) ?? []);
         var positiveBiasCivs = civsByBiasType.GetValueOrDefault(BiasTypes.Positive)
             ?.OrderBy(it => civBiases[it].Count).ToList() // civs with only one desired region go first
             ?? [];

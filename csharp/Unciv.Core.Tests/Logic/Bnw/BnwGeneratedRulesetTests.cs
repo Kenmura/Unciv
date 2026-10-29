@@ -9,7 +9,9 @@ using Unciv.Logic.Tourism;
 using Unciv.Logic.Trade.Routes;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
+using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
+using Unciv.Utils;
 using CityObject = Unciv.Logic.City.City;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
 using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
@@ -692,6 +694,103 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         "TradeMissionInfluenceModifier",
         "UnresearchedTechFromKills",
     ];
+
+    // ---- B024: map generation
+
+    private static readonly string[] IndonesianLuxuries = ["Cloves", "Pepper", "Nutmeg"];
+
+    [Fact]
+    public void IndonesianLuxuriesAreNeverPlacedAtMapGeneration()
+    {
+        var r = Real();
+        Assert.All(IndonesianLuxuries, name =>
+        {
+            Assert.Contains("Doesn't generate naturally", r.TileResources[name].Uniques);
+            Assert.Equal(ResourceType.Luxury, r.TileResources[name].ResourceType);
+        });
+        var grass = new TileMap(2, r, false);
+        var tile = grass.Values.First();
+        tile.BaseTerrain = "Grassland";
+        tile.SetTerrainTransients();
+        Assert.All(IndonesianLuxuries, name => Assert.False(r.TileResources[name].GeneratesNaturallyOn(tile), name));
+        Assert.True(r.TileResources["Cocoa"].GeneratesNaturallyOn(tile));
+        Assert.True(r.TileResources["Bison"].GeneratesNaturallyOn(tile));
+    }
+
+    [Fact]
+    public void BisonAndCocoaAppearOnGeneratedMapsAndIndonesianLuxuriesNeverDo()
+    {
+        var placed = new HashSet<string>();
+        foreach (var seed in new[] { 3L, 11L, 21L })
+        {
+            var game = StartBnwGame(seed);
+            foreach (var tile in game.TileMap.Values)
+                if (tile.Resource != null) placed.Add(tile.Resource);
+        }
+        Assert.Contains("Cocoa", placed);
+        Assert.Contains("Bison", placed);
+        Assert.DoesNotContain("Cloves", placed);
+        Assert.DoesNotContain("Pepper", placed);
+        Assert.DoesNotContain("Nutmeg", placed);
+    }
+
+    private static GameInfo StartBnwGame(long seed)
+    {
+        Models.Ruleset.BnwRulesetTests.LoadBnw();
+        return GameStarter.StartNewGame(
+            new GameSetupInfo(
+                new GameParameters
+                {
+                    BaseRuleset = BaseRuleset.Civ_V_BNW.FullName(),
+                    NumberOfCityStates = 6,
+                    Players = [new Player("Brazil", PlayerType.Human), new Player("Poland"), new Player("Venice"), new Player("England"), new Player("Japan")],
+                },
+                new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = seed, MapSize = MapSize.Small }),
+            5, 1000L);
+    }
+
+    private sealed class FakeStartCiv(string name) : Unciv.Logic.Map.MapGenerator.Mapregions.IMapRegionsCivilization
+    {
+        public string CivName => name;
+        public string CivId => name;
+        public List<string> GetStartBias(Ruleset ruleset) => ruleset.Nations[name].GetStartBias(ruleset).ToList();
+        public GameRandom StateBasedRandom(string caller) => new(1);
+    }
+
+    // Region assignment on the REAL map of a started game: Venice (PlaceFirstAlongOcean, last in the player list) takes the most coastal start;
+    // without the flag the first coast civ does, which proves the flag (not the list order) decides it.
+    private static (string Venice, string England, string Best) AssignCoastStarts(bool placeFirst)
+    {
+        var game = StartBnwGame(3);
+        var ruleset = game.Ruleset;
+        var map = game.TileMap;
+        ruleset.Nations["Venice"].PlaceFirstAlongOcean = placeFirst;
+        map.StartingLocations.Clear();
+        map.StartingLocationsByNation.Clear();
+        var regions = new Unciv.Logic.Map.MapGenerator.Mapregions.MapRegions(ruleset);
+        regions.GenerateRegions(map, 4);
+        var civs = new[] { "England", "Japan", "Portugal", "Venice" }.Select(it => new FakeStartCiv(it)).ToList();
+        regions.AssignRegions(map, civs, new GameParameters());
+        var best = regions.Regions.Where(it => map[it.StartPosition!.Value].IsAdjacentToCoast())
+            .MaxBy(it => it.GetTerrainAmount("Coastal"))!;
+        string StartOf(string civ) => map.StartingLocationsByNation[civ].Single().Position.ToString();
+        return (StartOf("Venice"), StartOf("England"), map[best.StartPosition!.Value].Position.ToString());
+    }
+
+    [Fact]
+    public void VeniceIsPlacedFirstAlongTheOceanAndOnlyBecauseOfTheFlag()
+    {
+        Assert.True(Real().Nations["Venice"].PlaceFirstAlongOcean);
+        Assert.Equal(1, Real().Nations.Values.Count(it => it.PlaceFirstAlongOcean));
+        try
+        {
+            var flagged = AssignCoastStarts(true);
+            Assert.Equal(flagged.Best, flagged.Venice);
+            var unflagged = AssignCoastStarts(false);
+            Assert.Equal(unflagged.Best, unflagged.England);
+        }
+        finally { RulesetCache.Clear(); }
+    }
 
     // BuildingPurchaseCostModifier stays pending on purpose: Skyscrapers uses the generic '[stat] cost of purchasing [buildingFilter] buildings' unique.
     [Fact]

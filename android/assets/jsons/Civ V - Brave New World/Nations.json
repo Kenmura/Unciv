@@ -3207,6 +3207,7 @@
 		"name": "Venice",
 		"leaderName": "Enrico Dandolo",
 		"adjective": ["Venetian"],
+		"placeFirstAlongOcean": true,
 		"startBias": ["Coast"],
 		"preferredVictoryType": "Neutral",
 		"personality": "Enrico Dandolo",
