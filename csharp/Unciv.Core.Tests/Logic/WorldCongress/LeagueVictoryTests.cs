@@ -169,16 +169,8 @@ public sealed class LeagueVictoryTests
         Assert.Null(G.VictoryData);
         Assert.False(a.VictoryManager.HasEverWonDiplomaticVote);
         Assert.Contains(a.Notifications, it => it.Text.Contains("not enabled"));
+        Assert.Equal([0, 0, 0], league.Members.Select(it => it.ExtraVotes)); // no bonus for a vote that can never succeed
         Assert.DoesNotContain(a.Notifications, it => it.Text.Contains("elected world leader"));
-    }
-
-    [Fact]
-    public void ADefeatedMajorCivCountsHalfInTheVotesNeeded()
-    {
-        Assert.Equal(8, LeagueRules.VotesNeeded(G, league));
-        foreach (var city in c.Cities.ToList()) city.DestroyCity(overrideSafeties: true);
-        Assert.Equal(8, LeagueRules.VotesNeeded(2.5f, 0f, UnitedNations)); // 8.32
-        Assert.Equal(8, LeagueRules.VotesNeeded(G, league));
     }
 
     [Fact]

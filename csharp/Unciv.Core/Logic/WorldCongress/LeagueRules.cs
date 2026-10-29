@@ -251,7 +251,7 @@ public static class LeagueRules
             new TurnManager(winner).UpdateWinningCiv();
             return;
         }
-        if (best > 0)
+        if (best > 0 && (leader == null || enabled))
             foreach (var tied in leaders) AddExtraVotes(league, tied, resolution.LeadersVoteBonusOnFail);
         game.EventSink?.Emit(new ResolutionFailed(name, leaders.Count == 1 ? leaders[0] : ""));
         foreach (var civ in LivingMembers(game, league).Where(it => it.IsHuman()))

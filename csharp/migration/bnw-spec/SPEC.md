@@ -968,7 +968,7 @@ the civilizations list: a living major civ or city-state 1.0, a defeated one 0.5
 the votes needed and to be alive. A win (only when the Diplomatic victory is available to the winner; otherwise the vote fails with a notification) sets `VictoryManager.HasEverWonDiplomaticVote` and runs `UpdateWinningCiv`, so the game is won through the ruleset: the generated BNW
 `VictoryTypes.json` keeps the `Diplomatic` victory with the milestone `Win the World Leader vote` (B009; the generator no longer removes the victory, the United Nations building
 stays removed), and the victory counts only when it is among `GameParameters.VictoryTypes`. A failed vote gives every civ tied for the most votes `LeadersVoteBonusOnFail` (2)
-`ExtraVotes` (`AddExtraVotes`) [K reading of "top vote-getters"]; no vote at all gives nothing. Only the delegates of civs alive when the session is decided count
+`ExtraVotes` (`AddExtraVotes`; not when the victory is not enabled) [K reading of "top vote-getters"]; no vote at all gives nothing. Only the delegates of civs alive when the session is decided count
 (also for the other votes: a civ that died keeps no delegates in a vote), and a dead candidate gets none. G&K `VictoryManager.VotesNeededForDiplomaticVictory` and the
 G&K vote are unchanged; the AI victory scorer still reads the G&K figure (follow-up).
 
