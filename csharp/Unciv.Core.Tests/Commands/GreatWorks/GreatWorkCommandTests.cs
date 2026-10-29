@@ -215,6 +215,22 @@ public sealed class GreatWorkCommandTests
     }
 
     [Fact]
+    public void TakingRemovesTheTakersOwnOfferForTheWorkItGave()
+    {
+        W.Ok(GreatWorkSamples.Command("offer-great-work-swap", s)); // A offers ArtAncient
+        W.Ok(GreatWorkSamples.Command("take-great-work-swap", s));  // A gives ArtAncient for B's ArtClassical
+        Assert.Null(W.Game.GameInfo.GreatWorkSwapOffers);
+    }
+
+    [Fact]
+    public void TakingIsRefusedBetweenStrangers()
+    {
+        var take = GreatWorkSamples.Command("take-great-work-swap", s);
+        W.A.Diplomacy.Remove(W.B.CivId);
+        W.Rejected(take, CommandErrors.NotAllowed);
+    }
+
+    [Fact]
     public void AnOfferLapsesWhenTheOffererNoLongerHoldsTheWork()
     {
         W.CityB.SetGreatWorkIn(s.GalleryB.Name, 0, null);

@@ -56,6 +56,7 @@ public sealed class TakeGreatWorkSwap : GameCommand
         mine.City.SetGreatWorkIn(mine.Building.Name, mine.Slot, Work);
         theirs.City.SetGreatWorkIn(theirs.Building.Name, theirs.Slot, given);
         GreatWorkRules.RemoveOffer(context.Game, CivId, Work);
+        GreatWorkRules.RemoveOffer(context.Game, context.ActorId, given); // the work the taker gave away is no longer theirs to offer
         mine.City.CityStats.Update();
         theirs.City.CityStats.Update();
         context.Actor.UpdateStatsForNextTurn();
