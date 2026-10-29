@@ -164,7 +164,7 @@ xychart-beta
 | T271 | **On deck** (after C097) | T259, C097 | 0 | Real-GPU frame-time pass for graphics levels on Linux, Windows, macOS and a mid-range Android phone |
 | T269 | In-Progress [Claude-T269] | T268, T267, T179, T205 | 4 | Host migration 1/5: hostEpoch fencing and backup-host designation (StandbyOffer/Accept/Decline/Revoke, probe, HostSuccessor announcement) |
 | C096 | In-Progress [Claude-C096] | T259, C043 | 3 | Touch map input and density-derived UI scale: pinch/pan, tap and long-press, 48 dp targets, phone-world scenario |
-| C097 | Needs-Review [Claude-C097] | T264, C043, C002 | 2 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
+| C097 | In-Review [Claude-C097] | T264, C043, C002 | 2 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
 | T273 | Available (waiting on T272) | T272, T267 | 2 | Host migration 3/5: graceful hand-off and promotion (HostHandoff, promote from standby store, client redirect, rolledBack resync) |
 | T270 | Available (waiting on T265) | T265, T176, T254 | 1 | Dedicated server executable B: graceful shutdown, persistence and resume, exit codes, subprocess test |
 | T274 | Available (waiting on T273) | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
