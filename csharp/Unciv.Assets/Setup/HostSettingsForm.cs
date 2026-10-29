@@ -58,7 +58,18 @@ public sealed class HostSettingsForm
         if (string.IsNullOrWhiteSpace(GameName)) problems.Add("The game needs a name.");
         if (TurnTimerSeconds < 0) problems.Add("The turn timer cannot be negative.");
         if (Port is < 0 or > 65535) problems.Add("The port must be a number from 1 to 65535.");
+        if (!IsUsableInviteAddress(PublicAddress)) problems.Add("The public address must be a host name or IP address only (no port, slash or spaces).");
         return problems;
+    }
+
+    /// <summary>Whether a typed public address can be put in an invite and parsed back: empty (none typed), or a name/IPv4/IPv6 address without port, path or whitespace.</summary>
+    public static bool IsUsableInviteAddress(string? address)
+    {
+        var text = (address ?? "").Trim();
+        if (text.Length == 0) return true;
+        if (text.Any(c => char.IsWhiteSpace(c) || c is '/' or '\\' or '@' or '?' or '#')) return false;
+        if (text.StartsWith('[')) return text.EndsWith(']') && text.IndexOf(']') == text.Length - 1;
+        return text.Count(c => c == ':') is 0 or > 1;
     }
 
     /// <summary>Parses the text of the port field; false (with the message) for anything but a whole number from 1 to 65535.</summary>

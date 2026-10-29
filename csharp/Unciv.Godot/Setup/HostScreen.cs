@@ -302,6 +302,12 @@ public partial class HostScreen : Control
 
     private void ShowHosting(HostingSession started, HostedGameInfo? resumed)
     {
+        if (!IsInsideTree())
+        {
+            // The player left (Back) while the host was starting: nothing shows it, so do not leave the port open.
+            _ = started.DisposeAsync().AsTask();
+            return;
+        }
         Session = started;
         resumedInfo = resumed;
         slotSignature = "";

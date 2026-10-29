@@ -13,7 +13,10 @@ public sealed class FileIdentityKeyStore(string path) : IIdentityKeyStore
     {
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
-        File.WriteAllBytes(path, pkcs8PrivateKey);
+        var options = new FileStreamOptions { Mode = FileMode.Create, Access = FileAccess.Write };
+        if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite; // a private key: only this user
+        using var stream = new FileStream(path, options);
+        stream.Write(pkcs8PrivateKey);
     }
 }
 
@@ -24,5 +27,10 @@ public static class HostFiles
     public static ClientIdentity LoadIdentity(string identityPath) => ClientIdentity.LoadOrCreate(new FileIdentityKeyStore(identityPath));
 
     /// <summary>The host key certificate from <paramref name="pfxPath"/>, created on first use (so the invite fingerprint stays the same between sessions).</summary>
-    public static X509Certificate2 LoadCertificate(string pfxPath) => HostCertificate.LoadOrGenerate(pfxPath);
+    public static X509Certificate2 LoadCertificate(string pfxPath)
+    {
+        var certificate = HostCertificate.LoadOrGenerate(pfxPath);
+        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(pfxPath, UnixFileMode.UserRead | UnixFileMode.UserWrite); // holds the private key
+        return certificate;
+    }
 }

@@ -111,6 +111,41 @@ public sealed class HostScreenTests : IDisposable
         Assert.Equal(!ok, problem != null);
     }
 
+    [Theory]
+    [InlineData("", true)]
+    [InlineData("203.0.113.7", true)]
+    [InlineData("play.example.org", true)]
+    [InlineData("2001:db8::1", true)]
+    [InlineData("[2001:db8::1]", true)]
+    [InlineData("example.org:47821", false)]
+    [InlineData("example.org/x", false)]
+    [InlineData("my host", false)]
+    [InlineData("a@b", false)]
+    public void PublicAddress_OnlyAWorkingInviteHostIsAccepted(string address, bool ok)
+    {
+        var form = Form();
+        form.PublicAddress = address;
+        Assert.Equal(ok, form.Problems().Count == 0);
+        if (ok && address.Length > 0)
+        {
+            using var cert = HostCertificate.Generate();
+            Assert.True(InviteCode.TryParse(InviteCode.Format(address, 47821, HostCertificate.GetFingerprint(cert)), out var parsed));
+            Assert.Equal(47821, parsed!.Port);
+        }
+    }
+
+    [Fact]
+    public void HostFiles_PrivateKeysAreOwnerOnly()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        var identityPath = Path.Combine(root, "perm", "identity.key");
+        var pfxPath = Path.Combine(root, "perm", "host-key.pfx");
+        using var identity = HostFiles.LoadIdentity(identityPath);
+        using var cert = HostFiles.LoadCertificate(pfxPath);
+        Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(identityPath));
+        Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(pfxPath));
+    }
+
     [Fact]
     public void TimerLabels()
     {

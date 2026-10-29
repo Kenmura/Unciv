@@ -9,7 +9,6 @@ public static class UserPaths
 
     public static string Saves => ProjectSettings.GlobalizePath("user://saves");
 
-    /// <summary>C042: one folder per local mod (same layout as Unciv's <c>mods</c> folder); created on first start, scanned by <see cref="RulesetLocator"/>.</summary>
     /// <summary>C034: the player's identity key (who they are in hosted games; never leaves this machine).</summary>
     public static string Identity => ProjectSettings.GlobalizePath("user://identity.key");
 
@@ -19,5 +18,6 @@ public static class UserPaths
     /// <summary>C034: one folder per saved hosted game.</summary>
     public static string HostedGames => ProjectSettings.GlobalizePath("user://hosted");
 
+    /// <summary>C042: one folder per local mod (same layout as Unciv's <c>mods</c> folder); created on first start, scanned by <see cref="RulesetLocator"/>.</summary>
     public static string Mods => ProjectSettings.GlobalizePath("user://mods");
 }
