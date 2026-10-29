@@ -147,7 +147,7 @@ Small: the same order (refresh 52%, AI 20%, start 18%), turn 103 ms at turn 50.
 
 Method: golden per-turn `FullHash` list (`design/perf-golden.json`, small 50 and medium 200 turns) generated before any change; `bench --golden design/perf-golden.json` compares every turn and exits 1 on a difference (also when nothing was compared).
 The list is frozen at the pre-T262 engine: after a deliberate engine change regenerate it.
-`BenchTests.TheCommittedGoldenListStillMatchesTheEngine` checks the first 25 small turns against the real file on every gate run.
+`BenchTests.TheCommittedGoldenListStillMatchesTheEngine` checks the first 25 small turns against the real file on every gate run; the full small 50 and medium 200 lists are a manual check (`bench --scenario all --golden`, medium takes minutes), run after the final change: both identical.
 All 8 after-runs (medium, 200 turns, two sets of 3 and 5 interleaved base/new pairs) matched all 200 golden hashes, and so did the base runs.
 
 Numbers: medium, 200 turns, base and new alternated in one session on a loaded machine (wall times vary by 30% or more between runs; the spread is the main finding).
@@ -167,7 +167,7 @@ Allocation (-34%) and the GC pause that follows it are the robust gains; the CPU
 What changed (all identical-state):
 - `TileMap.GetViewableTiles`: neighbour lookup without per-call lists (oracle test against the old algorithm).
 - `UniqueMap`/`TemporaryUnique`/`City`/`MapUnit`/`MultiFilter`: iterators instead of `SelectMany`, static lambdas with state tuples, loops instead of `Any(lambda)`, empty fast paths.
-- `CityStats.TileStatsCurrent`: a city's tile stats are not recomputed in the second city loop of `GameInfo.UpdateCivilizationState` when the civ happiness, the city's `CurrentCityStats` object (replaced by every `Update`, read by countables) and the worked tiles are unchanged since the first loop.
+- `CityStats.TileStatsCurrent`: a city's tile stats are not recomputed in the second city loop of `GameInfo.UpdateCivilizationState` when the civ happiness, the city's `CurrentCityStats` object (replaced by every `Update`, read by countables) and the worked tiles are unchanged since the first loop, and only in rulesets without a countable conditional or for-every-countable modifier on a `[stat] Per Turn` countable (`Ruleset.HasCountableModifiers`: those read the stats of every city, which change between the loops). The bundled rulesets have none.
 
 Rejected as not provably identical: civ-level dirty tracking of the refresh, skipping the duplicate `UpdateViewableTiles`/`UpdateCivResources` passes.
 

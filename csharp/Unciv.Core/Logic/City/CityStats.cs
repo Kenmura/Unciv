@@ -438,10 +438,10 @@ public class CityStats(City city)
 
     /// <summary>
     /// Whether <see cref="StatsFromTiles"/> is what <see cref="UpdateTileStats"/> would compute right now, given that nothing but the civ's happiness and this city's
-    /// CurrentCityStats object can have changed its inputs since the last call (ChooseNextConstruction, DemandedResource and UpdateCityHappiness write none of them) (true in between the two city loops of UpdateCivilizationState, where only stats are written):
+    /// CurrentCityStats object can have changed its inputs since the last call, in a ruleset without countable modifiers (those can read civ-wide state such as the stats of every city) (ChooseNextConstruction, DemandedResource and UpdateCityHappiness write none of them) (true in between the two city loops of UpdateCivilizationState, where only stats are written):
     /// the last computation ran under the same happiness (the only civ stat unique conditionals read) and did not stop working a blockaded tile.
     /// </summary>
-    internal bool TileStatsCurrent => tileStatsHappiness == City.Civ.Stats.Happiness && ReferenceEquals(tileStatsBasis, CurrentCityStats);
+    internal bool TileStatsCurrent => !City.Civ.GameInfo.Ruleset.HasCountableModifiers && tileStatsHappiness == City.Civ.Stats.Happiness && ReferenceEquals(tileStatsBasis, CurrentCityStats);
 
     public void UpdateTileStats()
     {

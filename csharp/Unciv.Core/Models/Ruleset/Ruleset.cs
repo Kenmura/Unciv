@@ -90,6 +90,7 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
     private readonly KotlinLazy<IReadOnlyList<TileImprovement>> tileRemovals;
     private readonly KotlinLazy<IReadOnlyList<TileImprovement>> nonRoadTileRemovals;
     private readonly KotlinLazy<IReadOnlySet<int>> allHappinessLevelsThatAffectUniques;
+    private readonly KotlinLazy<bool> hasCountableModifiers;
     private readonly KotlinLazy<TileImprovement?> roadImprovement;
     private readonly KotlinLazy<TileImprovement?> railroadImprovement;
 
@@ -101,6 +102,12 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
 
     /// <summary>Contains all happiness levels that moving *from* them, to one *below* them, can change uniques that apply</summary>
     public IReadOnlySet<int> AllHappinessLevelsThatAffectUniques => allHappinessLevelsThatAffectUniques.Value;
+
+    /// <summary>
+    /// T262: whether any unique carries a countable conditional or a for-every-countable modifier that names a [stat/resource] Per Turn countable. Those read the
+    /// per-turn stats of the civ's cities, which change between the two city loops, so the tile stat skip in <c>GameInfo.UpdateCivilizationState</c> is only taken in rulesets without them.
+    /// </summary>
+    public bool HasCountableModifiers => hasCountableModifiers.Value;
 
     public TileImprovement? RoadImprovement => roadImprovement.Value;
 
@@ -116,6 +123,10 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
         nonRoadTileRemovals = new(() => TileRemovals
             .Where(rulesetImprovement => Enum.GetValues<RoadStatus>().All(it => it.GetRemoveAction() != rulesetImprovement.Name)).ToList());
         allHappinessLevelsThatAffectUniques = new(ComputeHappinessLevels);
+        hasCountableModifiers = new(() => AllUniques().Any(unique => unique.Modifiers.Any(it => (it.Type is UniqueType.ConditionalCountableEqualTo
+            or UniqueType.ConditionalCountableDifferentThan or UniqueType.ConditionalCountableMoreThan or UniqueType.ConditionalCountableLessThan
+            or UniqueType.ConditionalCountableBetween or UniqueType.ForEveryCountable or UniqueType.ForEveryAmountCountable)
+            && it.Params.Any(param => param.Contains("Per Turn", StringComparison.Ordinal)))));
         roadImprovement = new(() => RoadStatus.Road.Improvement(this));
         railroadImprovement = new(() => RoadStatus.Railroad.Improvement(this));
     }

@@ -538,11 +538,44 @@ public class CityStatsGameTests
         civ.Stats.Happiness -= 1;
         Assert.True(city.CityStats.TileStatsCurrent); // back under the happiness it was computed with
 
-        // the skipped computation equals a forced one
+        // when the skip applies, the forced computation yields the same stats
         city.CityStats.UpdateTileStats();
-        var forced = city.CityStats.StatsFromTiles.Clone();
-        city.CityStats.Update(null, updateTileStats: !city.CityStats.TileStatsCurrent, updateCivStats: false);
-        Assert.Equal(forced, city.CityStats.StatsFromTiles);
+        var skipped = city.CityStats.StatsFromTiles.Clone();
+        Assert.True(city.CityStats.TileStatsCurrent);
+        city.CityStats.UpdateTileStats();
+        Assert.Equal(skipped, city.CityStats.StatsFromTiles);
+    }
+
+    [Fact]
+    public void TileStatsCurrent_IsFalseInRulesetsWithPerTurnCountableModifiers()
+    {
+        var (plain, _, plainCity) = Setup();
+        plainCity.CityStats.UpdateTileStats();
+        Assert.False(plain.Ruleset.HasCountableModifiers);
+        Assert.True(plainCity.CityStats.TileStatsCurrent);
+
+        var (game, _, city) = Setup();
+        game.CreateBuilding("[+1 Gold] <when number of [[Gold] Per Turn] is more than [3]>");
+        game.CreateBuilding("[+1 Food] <for every [[Culture] Per Turn]>");
+        Assert.True(game.Ruleset.HasCountableModifiers);
+        city.CityStats.UpdateTileStats();
+        Assert.False(city.CityStats.TileStatsCurrent);
+    }
+
+    [Fact]
+    public void UpdateCivilizationState_SkippingTheSecondTileStatPassGivesTheStatsAForcedPassWould()
+    {
+        var (game, civ, city) = Setup();
+        game.AddTileToCity(city, game.GetTile(1, 0));
+        game.SetTileTerrain(game.GetTile(1, 0).Position, "Grassland");
+        city.WorkedTiles.Add(game.GetTile(1, 0).Position);
+        game.GameInfo.SetTransients();
+        var skipping = (city.CityStats.StatsFromTiles.Clone(), city.CityStats.CurrentCityStats.Clone());
+        city.CityStats.UpdateTileStats();
+        city.CityStats.Update(updateTileStats: true);
+        Assert.Equal(skipping.Item1, city.CityStats.StatsFromTiles);
+        Assert.Equal(skipping.Item2, city.CityStats.CurrentCityStats);
+        Assert.NotNull(civ);
     }
 
     [Fact]
