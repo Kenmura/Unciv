@@ -397,7 +397,7 @@ public partial class PediaScreen : PanelContainer
         for (int i = 0; i < page.Lines.Count; i++)
         {
             var line = page.Lines[i];
-            if (i == 0 && line.Header > 0 && line.Text == page.Entry.Name) continue;
+            if (i == 0 && line.Header > 0 && line.Link.Length == 0) continue; // the title line, which the card shows (its text may be the translated name)
             if (line.Header > 0 && line.Link.Length == 0 && line.Text.Length > 0 && i > 0)
             {
                 Flush();

@@ -225,6 +225,18 @@ public sealed class TooltipsScenario : Scenario
             new WaitFrames(3),
             new AssertQuery("choosing a result opens its page and clears the search", () =>
                 screen.Pedia.Current?.Link == "Unit/Archer" && screen.Pedia.SearchBox.Text.Length == 0 && screen.Pedia.SearchResults.Count == 0 && screen.Pedia.PageBbcode == ExpectedPage(CivilopediaCategories.Unit, "Archer")),
+            new Act("UI scale 150% with the Archer open and 'arch' typed", () =>
+            {
+                screen.Pedia.SearchFor("arch");
+                screen.SharedTheme.NotNull().SetScale(1.5f);
+            }),
+            new WaitFrames(3),
+            new AssertQuery("the rebuilt frame shows the same entry, category and search", () =>
+                screen.Pedia.Current?.Link == "Unit/Archer" && screen.Pedia.CategoryButton(CivilopediaCategories.Unit).NotNull().ButtonPressed && screen.Pedia.SearchBox.Text == "arch"
+                && screen.Pedia.SearchResultButton("Archer") != null && screen.Pedia.CardName == "Archer".Tr() && screen.Pedia.Frame.IsInsideTree() && screen.Pedia.SearchBox.GetParent() != null),
+            new Act("back to scale 100%", () => screen.SharedTheme.NotNull().SetScale(1f)),
+            new WaitFrames(3),
+            new AssertQuery("and back again", () => screen.Pedia.Current?.Link == "Unit/Archer" && screen.Pedia.SearchResultButton("Archer") != null),
             new Act("search for nothing", () => screen.Pedia.SearchFor("zzzqq")),
             new WaitFrames(2),
             new AssertQuery("no match lists nothing", () => screen.Pedia.SearchResults.Count == 0),

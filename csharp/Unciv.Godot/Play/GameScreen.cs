@@ -1557,6 +1557,9 @@ public partial class GameScreen : Control
     }
 
     private bool answeringProposal;
+    /// <summary>C076: the theme the screens share (the harness changes its scale to check that a screen rebuilds).</summary>
+    public UiTheme? SharedTheme => ui;
+
     private UiTheme? ui;
 
     private async Task AnswerProposal(TradeProposal popup, AlertButton answer)

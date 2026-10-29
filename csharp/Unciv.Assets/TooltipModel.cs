@@ -144,6 +144,7 @@ public static class TooltipModel
 
     private const string StatGap = "    ";
 
+    /// <summary>Absolute font size in points: BBCode has no relative size, so the footer does not follow the UI scale (it is smaller than the body at any scale).</summary>
     private const int FooterSize = 12;
 
     /// <summary>The lines as plain text for a tooltip that does not render BBCode (a control's own tooltip): engine text kept, other text translated.</summary>
