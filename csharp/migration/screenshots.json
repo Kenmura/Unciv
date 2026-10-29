@@ -1617,5 +1617,19 @@
         "caption": "After a failed Ultra attempt: Ultra stays chosen, the note says it needs a Vulkan or Direct3D 12 GPU and that High is shown."
       }
     ]
+  },
+  "C096": {
+    "scenario": "phone-world",
+    "about": "Touch on a 2400x1080 400 ppi phone profile: density-derived UI scale 2.5 with 48 dp (120 px) minimum control height, two-finger pinch zoom and pan, tap to select, finger drag threshold, long press as right click.",
+    "shots": [
+      {
+        "golden": "phone-world/phone-hud.png",
+        "caption": "The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall, the HUD still fits."
+      },
+      {
+        "golden": "phone-world/phone-zoomed.png",
+        "caption": "After pinch zoom, two-finger pan, taps and a long press: the map is zoomed, the tapped tile is selected and the long press acted as a right click (the worker's move order was refused: it is already there)."
+      }
+    ]
   }
 }

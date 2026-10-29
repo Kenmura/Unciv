@@ -111,6 +111,37 @@ public class UiTokensTests
     [InlineData(0, 0, 1f)]
     public void AutoScaleFloorsToAQuarterStepWithinOneAndTwo(int width, int height, float expected) => Assert.Equal(expected, UiTokens.AutoScale(width, height));
 
+    [Theory]
+    [InlineData(2400, 1080, 400f, 2.5f)] // a 400 ppi phone: density 2.5, logical 960x432
+    [InlineData(2400, 1080, 560f, 2.5f)] // very dense: capped at 2.6, floored to 2.5
+    [InlineData(2400, 1080, 320f, 2f)]
+    [InlineData(1920, 1080, 440f, 2f)] // limited by 1920/900 = 2.13
+    [InlineData(1280, 720, 320f, 1.25f)] // limited by 1280/900 = 1.42
+    [InlineData(1280, 720, 100f, 1f)] // never below 1
+    [InlineData(2560, 1600, 280f, 1.75f)] // a tablet
+    [InlineData(1920, 1080, 0f, 1.5f)] // unknown density: the pixel based AutoScale
+    [InlineData(0, 0, 400f, 1f)]
+    public void TouchAutoScaleFollowsTheDensityWithinTheLogicalViewportFloor(int width, int height, float dpi, float expected) =>
+        Assert.Equal(expected, UiTokens.TouchAutoScale(width, height, dpi));
+
+    [Fact]
+    public void TouchAutoScaleKeepsALogicalViewportOfAtLeastTheHudSize()
+    {
+        foreach (var (w, h, dpi) in new[] { (2400, 1080, 400f), (2340, 1080, 480f), (1920, 1080, 420f), (3200, 1440, 560f), (1280, 720, 320f) })
+        {
+            float scale = UiTokens.TouchAutoScale(w, h, dpi);
+            Assert.InRange(scale, 1f, UiTokens.MaxTouchScale);
+            Assert.True(w / scale >= UiTokens.TouchMinLogicalWidth && h / scale >= UiTokens.TouchMinLogicalHeight, $"{w}x{h}@{dpi}: scale {scale}");
+        }
+    }
+
+    [Theory]
+    [InlineData(48f, 400f, 120)]
+    [InlineData(48f, 160f, 48)]
+    [InlineData(8f, 400f, 20)]
+    [InlineData(48f, 0f, 0)]
+    public void DpToPxUsesAndroidsOneHundredSixtyDpPerInch(float dp, float dpi, int expected) => Assert.Equal(expected, UiTokens.DpToPx(dp, dpi));
+
     [Fact]
     public void LegacyPaletteNamesAreAliasesOfTheTokens()
     {

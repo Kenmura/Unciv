@@ -100,6 +100,7 @@ public partial class ScenarioRunner : Control
                 return 1;
             }
         }
+        if (scenario.TouchDpi > 0f) DisplayProfile.Current = new DisplayProfile(true, scenario.TouchDpi);
         GetViewport().TransparentBg = false;
         MouseFilter = MouseFilterEnum.Ignore; // keep mouse events flowing to scenarios that handle them in the 3D world
         if (!scenario.Uses3D) AddChild(new ColorRect { Color = new Color(0.12f, 0.14f, 0.2f), AnchorRight = 1, AnchorBottom = 1 });

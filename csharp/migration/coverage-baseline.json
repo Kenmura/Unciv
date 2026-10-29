@@ -40,6 +40,7 @@
     "Unciv.Assets/OverviewModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Packaging/ContentLocator.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PediaModel.cs": {"branch": 96.72, "line": 100.0},
+    "Unciv.Assets/PinchTracker.cs": {"branch": 100.0, "line": 96.88},
     "Unciv.Assets/PlaceholderPalette.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PolicyScreenModel.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/ProceduralImages.cs": {"branch": 100.0, "line": 100.0},

@@ -142,6 +142,8 @@ Facts that shape every item:
 | B-11 | Unit panel popover closes on any mouse click outside (`UnitPanelView._Input`) | `Play/UnitPanelView.cs:204` | S |
 | B-12 | Minimap: click-to-recenter works through emulation; drag on it conflicts with map pan if the minimap is under the finger (assigned to C100) | `Play/MinimapView.cs` | S |
 
+**B-1 (scale and shared widgets), B-3 and B-4 resolved by C096.** `DisplayProfile` (touch = `OS.HasFeature("mobile")`, density from `ScreenGetDpi`) switches `UiTheme` to `UiTokens.TouchAutoScale` (dpi/160, capped at 2.6, floored to a quarter step, never below a 900x415 logical viewport; a 400 ppi 2400x1080 phone gets 2.5) and gives the theme a 48 dp floor (`MinTargetPx`) for every control height (buttons, tabs, segments, steppers, line edits) and `ListRow`. `MapView` tracks fingers (`PinchTracker`): a second finger cancels the one-finger press and starts a pinch (zoom about the midpoint) with two-finger pan; the drag threshold of an emulated touch press is 8 dp; a finger held for 0.5 s raises `TileRightClicked` (long press = right click, the hook for C100). Taps keep using the emulated mouse. Desktop (not a touch build) is unchanged. Not verified on a device: real multitouch event order, `ScreenGetDpi` values on real phones, content-scale interaction with the user's UI scale.
+
 ### C. Screens (layout and scrolling on a small display)
 
 All full-screen views were designed for 1280x720 logical at least with a Compact breakpoint under 1000 logical px that only lowers control height from 32 to 28 and hides a few columns. None has a phone

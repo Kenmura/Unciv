@@ -18,11 +18,11 @@ public static class ThemeBuilder
         return theme;
     }
 
-    /// <summary>Replaces everything in <paramref name="theme"/> by the tokens at <paramref name="scale"/>; <paramref name="compact"/> picks the tighter padding and control heights of the Compact breakpoint.</summary>
-    public static void Populate(Theme theme, float scale, bool compact)
+    /// <summary>Replaces everything in <paramref name="theme"/> by the tokens at <paramref name="scale"/>; <paramref name="compact"/> picks the tighter padding and control heights of the Compact breakpoint; <paramref name="minTargetPx"/> (C096, touch builds: 48 dp in these pixels, 0 otherwise) is a floor for every control height.</summary>
+    public static void Populate(Theme theme, float scale, bool compact, int minTargetPx = 0)
     {
         theme.Clear();
-        var m = new Metrics(scale, compact);
+        var m = new Metrics(scale, compact, minTargetPx);
         theme.DefaultFont = FontChain.Default;
         theme.DefaultFontSize = m.Px(UiTokens.FontSize);
         AddPanels(theme, m);
@@ -31,12 +31,12 @@ public static class ThemeBuilder
         AddControls(theme, m);
     }
 
-    private readonly record struct Metrics(float Scale, bool Compact)
+    private readonly record struct Metrics(float Scale, bool Compact, int MinTarget = 0)
     {
         public int Px(int unscaled) => UiTokens.Scaled(unscaled, Scale);
         public int Border(int unscaled) => UiTokens.ScaledAtLeastOne(unscaled, Scale);
         public int PanelPad => Px(Compact ? UiTokens.S2 : UiTokens.S3);
-        public int ControlHeight => Px(Compact ? UiTokens.CompactControlMinHeight : UiTokens.ControlMinHeight);
+        public int ControlHeight => Math.Max(Px(Compact ? UiTokens.CompactControlMinHeight : UiTokens.ControlMinHeight), MinTarget);
 
         /// <summary>Vertical padding that brings a one-line control of the body font up to <see cref="ControlHeight"/>.</summary>
         public int ButtonPadY => Math.Max(Px(UiTokens.S1), (ControlHeight - (int)MathF.Ceiling(FontChain.Default.GetHeight(Px(UiTokens.FontSize))) + 1) / 2);

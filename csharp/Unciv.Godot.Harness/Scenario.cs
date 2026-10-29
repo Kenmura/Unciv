@@ -71,6 +71,9 @@ public abstract class Scenario
     /// <summary>C061: the window (and so viewport) size the runner sets before building the scenario; default 640x480, the size of every committed golden.</summary>
     public virtual Vector2I Viewport => DefaultViewport;
 
+    /// <summary>C096: a touch profile at this density (dpi) for the whole run, as an Android phone reports it; 0 keeps the desktop profile (no density scale, mouse thresholds).</summary>
+    public virtual float TouchDpi => 0f;
+
     public static readonly Vector2I DefaultViewport = new(640, 480);
 
     public abstract IReadOnlyList<ScenarioStep> Build(Control host, GameSession session);

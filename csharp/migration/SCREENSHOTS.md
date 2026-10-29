@@ -80,6 +80,7 @@
 - [C093 Unit art by era: medieval and renaissance](#c093-unit-art-by-era-medieval-and-renaissance)
 - [C094 Unit art by era: industrial, modern and naval/air](#c094-unit-art-by-era-industrial-modern-and-navalair)
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
+- [C096 (ticket not Done or unknown)](#c096-ticket-not-done-or-unknown)
 - [C097 Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike)](#c097-graphics-quality-setting-with-an-ultra-preset-effects-chosen-by-the-ultra-graphics-spike)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
@@ -1625,6 +1626,20 @@ Scenario `unit-visuals`.
 ![Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract.](../Unciv.Godot.Harness/golden/unit-visuals/elephants.png)
 
 *Close view, side on: the elephants are now their own grey rig with a head, tusks, ears and a hanging trunk (placeholder shape), beside the Cataphract.* (`unit-visuals/elephants.png`)
+
+## C096 (ticket not Done or unknown)
+
+Touch on a 2400x1080 400 ppi phone profile: density-derived UI scale 2.5 with 48 dp (120 px) minimum control height, two-finger pinch zoom and pan, tap to select, finger drag threshold, long press as right click.
+
+Scenario `phone-world`.
+
+![The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall, the HUD still fits.](../Unciv.Godot.Harness/golden/phone-world/phone-hud.png)
+
+*The world screen on a 2400x1080 400 ppi phone: UI scale 2.5 (a 960x432 logical window), every button at least 48 dp (120 px) tall, the HUD still fits.* (`phone-world/phone-hud.png`)
+
+![After pinch zoom, two-finger pan, taps and a long press: the map is zoomed, the tapped tile is selected and the long press acted as a right click (the worker's move order was refused: it is already there).](../Unciv.Godot.Harness/golden/phone-world/phone-zoomed.png)
+
+*After pinch zoom, two-finger pan, taps and a long press: the map is zoomed, the tapped tile is selected and the long press acted as a right click (the worker's move order was refused: it is already there).* (`phone-world/phone-zoomed.png`)
 
 ## C097 Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike)
 

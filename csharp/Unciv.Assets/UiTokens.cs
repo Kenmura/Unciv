@@ -133,6 +133,37 @@ public static class UiTokens
         return Math.Clamp(MathF.Floor(raw * 4f) / 4f, 1f, 2f);
     }
 
+    /// <summary>C096: Android's guideline for the smallest touch target, in density-independent pixels (160 dp per inch).</summary>
+    public const int TouchTargetDp = 48;
+
+    /// <summary>C096: the smallest finger movement that is a drag and not a tap, in dp (about 20 px on a 400 ppi phone).</summary>
+    public const int TouchDragThresholdDp = 8;
+
+    /// <summary>C096: how long a finger must rest on one spot for a long press, in seconds.</summary>
+    public const double LongPressSeconds = 0.5;
+
+    /// <summary>C096: the logical viewport a touch build keeps at least: the world HUD was designed for about 900x415 (design/ANDROID.md section 3).</summary>
+    public const int TouchMinLogicalWidth = 900;
+    public const int TouchMinLogicalHeight = 415;
+
+    /// <summary>Upper end of the density-derived scale (a total of about 2.0 to 2.6 once the user's scale is applied, never the 3.75 a 32 px control would need for 48 dp).</summary>
+    public const float MaxTouchScale = 2.6f;
+
+    /// <summary>
+    /// C096: the automatic UI scale of a touch build, from the screen density instead of the pixel count: dpi / 160 (the Android density), rounded down to a
+    /// quarter step, never above <see cref="MaxTouchScale"/>, never so large that the logical viewport falls below <see cref="TouchMinLogicalWidth"/> x
+    /// <see cref="TouchMinLogicalHeight"/>, never below 1. An unknown density (<paramref name="dpi"/> not positive) falls back to <see cref="AutoScale"/>.
+    /// </summary>
+    public static float TouchAutoScale(int width, int height, float dpi)
+    {
+        if (width <= 0 || height <= 0 || !(dpi > 0f)) return AutoScale(width, height);
+        float raw = Math.Min(Math.Min(dpi / 160f, MaxTouchScale), Math.Min(width / (float)TouchMinLogicalWidth, height / (float)TouchMinLogicalHeight));
+        return Math.Max(1f, MathF.Floor(raw * 4f) / 4f);
+    }
+
+    /// <summary>C096: <paramref name="dp"/> density-independent pixels in pixels of a screen of <paramref name="dpi"/> (rounded half away from zero); 0 when the density is unknown.</summary>
+    public static int DpToPx(float dp, float dpi) => dpi > 0f ? (int)MathF.Round(dp * dpi / 160f, MidpointRounding.AwayFromZero) : 0;
+
     /// <summary>A size in unscaled pixels at <paramref name="scale"/>, rounded half away from zero.</summary>
     public static int Scaled(int unscaled, float scale) => (int)MathF.Round(unscaled * scale, MidpointRounding.AwayFromZero);
 

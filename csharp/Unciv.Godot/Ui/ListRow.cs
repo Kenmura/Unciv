@@ -114,6 +114,6 @@ public partial class ListRow : Button
     {
         if (!IsInsideTree()) return;
         float height = content.GetCombinedMinimumSize().Y + 2 * theme.Px(UiTokens.S1);
-        CustomMinimumSize = new Vector2(0, Math.Max(theme.Px(UiTokens.RowHeight), height));
+        CustomMinimumSize = new Vector2(0, Math.Max(Math.Max(theme.Px(UiTokens.RowHeight), theme.MinTargetPx), height));
     }
 }

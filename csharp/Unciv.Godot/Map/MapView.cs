@@ -2,6 +2,7 @@ using Godot;
 using Unciv.GodotClient.Settings;
 using Unciv.Assets;
 using Unciv.GodotClient.Assets;
+using Unciv.GodotClient.Ui;
 using Unciv.Logic.Map;
 using Unciv.Net.Visibility;
 
@@ -60,6 +61,10 @@ public partial class MapView : Node3D
     private Vector2 lastViewportSize;
     private Vector2? pressAt;
     private bool dragging;
+    private readonly PinchTracker pinch = new();
+    private bool touchPress;
+    private bool longPressed;
+    private double pressHeld;
 
     public Camera3D Camera { get; private set; } = null!; // JUSTIFY: C009 assigned in _Ready before any use
 
@@ -471,6 +476,7 @@ public partial class MapView : Node3D
     public override void _Process(double delta)
     {
         if (Camera != null && Camera.IsInsideTree() && Camera.GetViewport().GetVisibleRect().Size != lastViewportSize) UpdateCulling();
+        TickLongPress(delta);
         if (!RealTimePanning) return;
         var direction = Vector3.Zero;
         // Typing into a text field must not pan the map behind it.
@@ -497,6 +503,17 @@ public partial class MapView : Node3D
     {
         switch (@event)
         {
+            case InputEventScreenTouch touch:
+                // C096: a second finger turns the press into a pinch: nothing is selected or dragged by the first one any more
+                if (touch.Pressed ? pinch.Down(touch.Index, new System.Numerics.Vector2(touch.Position.X, touch.Position.Y)) : Unpinch(touch.Index)) CancelPress();
+                break;
+            case InputEventScreenDrag drag:
+                if (pinch.Move(drag.Index, new System.Numerics.Vector2(drag.Position.X, drag.Position.Y)) is { } move)
+                    ApplyPinch(move.ZoomFactor, new Vector2(move.Midpoint.X, move.Midpoint.Y), new Vector2(move.MidpointDelta.X, move.MidpointDelta.Y));
+                break;
+            case InputEventMagnifyGesture magnify:
+                SetZoom(zoom / Math.Max(0.1f, magnify.Factor));
+                break;
             case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.WheelUp }:
                 SetZoom(zoom / WheelStep);
                 break;
@@ -521,6 +538,45 @@ public partial class MapView : Node3D
     {
         pressAt = null;
         dragging = false;
+        touchPress = false;
+        longPressed = false;
+        pressHeld = 0;
+    }
+
+    private bool Unpinch(int index)
+    {
+        pinch.Up(index);
+        return false;
+    }
+
+    /// <summary>C096: zooms by <paramref name="factor"/> about the midpoint of the fingers and pans with it: the ground point that was under the midpoint stays under it.</summary>
+    private void ApplyPinch(float factor, Vector2 midpoint, Vector2 midpointDelta)
+    {
+        var before = PickGround(midpoint - midpointDelta, 0f);
+        SetZoom(zoom / factor);
+        var after = PickGround(midpoint, 0f);
+        if (before != null && after != null) PanBy(before.Value - after.Value);
+    }
+
+    /// <summary>C096: the smallest finger movement that is a drag, in this viewport's pixels (8 dp; the plain mouse threshold when the density is unknown).</summary>
+    private float TouchDragThreshold()
+    {
+        float dpi = DisplayProfile.Current.Dpi;
+        if (!(dpi > 0f)) return DragThresholdPixels;
+        var window = GetWindow();
+        float content = window != null && window.ContentScaleMode != Window.ContentScaleModeEnum.Disabled && window.ContentScaleFactor > 0f ? window.ContentScaleFactor : 1f;
+        return Math.Max(DragThresholdPixels, UiTokens.DpToPx(UiTokens.TouchDragThresholdDp, dpi / content));
+    }
+
+    /// <summary>C096: a finger resting on the map for <see cref="UiTokens.LongPressSeconds"/> without dragging raises <see cref="TileRightClicked"/>, the same event as a right click (the move/attack order, the marker menu); the release then selects nothing.</summary>
+    private void TickLongPress(double delta)
+    {
+        if (!touchPress || pressAt == null || dragging || longPressed || pinch.Active) return;
+        pressHeld += delta;
+        if (pressHeld < UiTokens.LongPressSeconds) return;
+        longPressed = true;
+        RightClickAt = pressAt.Value;
+        TileRightClicked?.Invoke(PickTile(pressAt.Value));
     }
 
     private void OnMouseButton(InputEventMouseButton button)
@@ -529,11 +585,13 @@ public partial class MapView : Node3D
         {
             pressAt = button.Position;
             dragging = button.ButtonIndex == MouseButton.Middle;
+            touchPress = button.Device == InputEvent.DeviceIdEmulation && button.ButtonIndex == MouseButton.Left; // C096: a finger, as the emulated left button
+            longPressed = false;
+            pressHeld = 0;
             return;
         }
-        var wasClick = pressAt != null && !dragging && button.ButtonIndex == MouseButton.Left;
-        pressAt = null;
-        dragging = false;
+        var wasClick = pressAt != null && !dragging && !longPressed && button.ButtonIndex == MouseButton.Left;
+        CancelPress();
         if (!wasClick) return;
         var picked = PickTile(button.Position);
         LastClickShift = button.ShiftPressed;
@@ -543,7 +601,7 @@ public partial class MapView : Node3D
 
     private void OnDrag(InputEventMouseMotion motion)
     {
-        if (!dragging && pressAt is { } start && start.DistanceTo(motion.Position) > DragThresholdPixels) dragging = true;
+        if (!dragging && pressAt is { } start && start.DistanceTo(motion.Position) > (touchPress ? TouchDragThreshold() : DragThresholdPixels)) dragging = true;
         if (!dragging) return;
         // Keep the ground point that was under the cursor under it: move the camera by the difference of the two picks.
         var before = PickGround(motion.Position - motion.Relative, 0f);

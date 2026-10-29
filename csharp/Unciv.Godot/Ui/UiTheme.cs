@@ -19,6 +19,7 @@ public sealed class UiTheme
     private float userScale = 1f;
     private float autoScale = 1f;
     private Viewport? bound;
+    private int minTarget;
 
     public UiTheme(AssetRegistry registry, float scale = 1f)
     {
@@ -86,11 +87,16 @@ public sealed class UiTheme
     {
         if (bound == null) return false;
         var size = bound.GetVisibleRect().Size;
-        float auto = UiTokens.AutoScale((int)size.X, (int)size.Y);
+        var profile = DisplayProfile.Current;
+        // C096: touch builds derive the scale and the 48 dp floor from the density (in the pixels of this viewport, which a window content scale shrinks)
+        float dpi = profile.UsesDensity ? profile.Dpi / ContentFactor() : 0f;
+        float auto = dpi > 0f ? UiTokens.TouchAutoScale((int)size.X, (int)size.Y, dpi) : UiTokens.AutoScale((int)size.X, (int)size.Y);
+        int target = dpi > 0f ? UiTokens.DpToPx(UiTokens.TouchTargetDp, dpi) : 0;
         var breakpoint = UiTokens.BreakpointFor(size.X / (userScale * auto));
-        bool scaleChanged = auto != autoScale;
+        bool scaleChanged = auto != autoScale || target != minTarget;
         if (!scaleChanged && breakpoint == Breakpoint) return false;
         autoScale = auto;
+        minTarget = target;
         Breakpoint = breakpoint;
         Rebuild();
         if (scaleChanged) ScaleChanged?.Invoke();
@@ -101,8 +107,13 @@ public sealed class UiTheme
     private void Rebuild()
     {
         if (overridden) Theme.DefaultFontSize = baseTheme.DefaultFontSize > 0 ? Px(baseTheme.DefaultFontSize) : -1;
-        else ThemeBuilder.Populate(Theme, Scale, Breakpoint == UiBreakpoint.Compact);
+        else ThemeBuilder.Populate(Theme, Scale, Breakpoint == UiBreakpoint.Compact, minTarget);
     }
+
+    /// <summary>C096: the smallest height of a touch target in this theme's pixels (48 dp); 0 on a mouse build or before a viewport is bound.</summary>
+    public int MinTargetPx => minTarget;
+
+    private float ContentFactor() => bound?.GetWindow() is { ContentScaleMode: not Window.ContentScaleModeEnum.Disabled } window && window.ContentScaleFactor > 0f ? window.ContentScaleFactor : 1f;
 
     /// <summary>A size in unscaled pixels at the current UI scale, rounded half away from zero.</summary>
     public int Px(int unscaled) => UiTokens.Scaled(unscaled, Scale);
