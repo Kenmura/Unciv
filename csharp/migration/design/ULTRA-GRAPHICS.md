@@ -150,7 +150,7 @@ Forward+ (Vulkan), ms, mean [min-max] over runs. wall / GPU / CPU render. Draw c
 | mid (zoom 14) | 2.0k / 6.2k / 6.2k | 3.9 [3.4-4.6] / 0.64 / 1.3 | 5.2 [4.9-5.6] / 1.7 / 2.7 | 7.5 [5.3-11.2] / 2.5 / 3.8 |
 | close (zoom 6) | 0.4k / 2.0k / 2.0k | 2.1 / 0.39 / 0.3 | 3.1 / 0.99 / 0.8 | 5.8 [2.4-12.4] / 1.6 / 1.4 |
 | coast | 1.0k / 3.4k / 3.4k | 3.0 / 0.48 / 0.6 | 3.9 / 1.3 / 1.4 | 4.9 / 1.8 / 1.7 |
-| pan | 2.0k / 1.7k / 5.8k | 4.4 / 0.67 / 1.5 | 3.5 / 0.78 / 0.9 | 6.9 / 2.5 / 3.3 |
+| pan (see note) | 2.0k / 1.7k / 5.8k | 4.4 / 0.67 / 1.5 | 3.5 / 0.78 / 0.9 | 6.9 / 2.5 / 3.3 |
 
 | View | Intel iGPU Low | High | Ultra |
 |---|---|---|---|
@@ -159,6 +159,8 @@ Forward+ (Vulkan), ms, mean [min-max] over runs. wall / GPU / CPU render. Draw c
 | close | 6.7 / 6.1 / 0.9 | 14.0 / 13.2 / 2.8 | 21.7 / 21.2 / 4.1 |
 | coast | 7.0 / 6.6 / 1.8 | 18.3 / 17.5 / 4.6 | 26.4 / 25.7 / 6.7 |
 | pan | 10.0 / 9.4 / 2.9 | 11.3 / 10.8 / 2.8 | 33.2 / 32.7 / 10.3 |
+
+Note on `pan`: the camera moves every frame, so the visible set (and the shadow-caster count) varies with the path; High drawing fewer calls than Low there is a culling artefact of the path, not a speed-up, so do not compare that row across levels.
 
 Compatibility renderer (OpenGL 3), the path Low and High ship on, wall / GPU / CPU ms:
 
@@ -173,7 +175,7 @@ Compatibility renderer (OpenGL 3), the path Low and High ship on, wall / GPU / C
 Reading:
 - On the discrete GPU every level runs far above 30 fps in every view, including the Large map zoomed all the way out: the slowest cell is 28 ms (35 fps, Forward+ Ultra, overview) and the typical play view (mid) is 4-8 ms. Nothing needs its default adjusted; Low stays the default and nothing is too slow there.
 - The cost is **CPU/draw-call bound**, not GPU bound, on the discrete card. The overview view issues 13.3k draw calls at Low (yield chips and their labels, prop models, unit bars) and the sun shadow pass doubles that to 26.1k, so the CPU render time goes from 12.6 to 16.6-18 ms and Forward+ GPU time stays under 6 ms. The compatibility renderer is about 1.5-2x slower on CPU for the same scene and its GPU timer shows 23-38 ms at overview (driver cost per draw). Follow-up T287 (far-zoom draw-call reduction) is filed.
-- On the Intel iGPU (integrated, shared memory) the picture is GPU bound: at 1080p Low is 10 ms at the default zoom, High 21 ms, Ultra 32 ms (about 31 fps); at overview Ultra is 73 ms (14 fps). Ultra is a discrete-GPU level; the note the settings screen shows when Ultra cannot run does not cover "runs but slowly on an integrated GPU" (follow-up T288).
+- On the Intel iGPU (integrated, shared memory) the picture is GPU bound: at 1080p Low is 10 ms at the default zoom, High 21 ms, Ultra 32 ms (about 31 fps); at overview Ultra is 73 ms (14 fps). Ultra is a discrete-GPU level; the note the settings screen shows when Ultra cannot run does not cover "runs but slowly on an integrated GPU" (follow-up T288). The levels that ship on the compatibility renderer are slower still on the iGPU: High 33 ms at mid (under 30 fps, one noisy run set) and 117 ms at overview, Low 81 ms at overview; on both GPUs the compatibility renderer is slower than Forward+ for the same level, and the default stays Low.
 
 ### Cost per effect
 
