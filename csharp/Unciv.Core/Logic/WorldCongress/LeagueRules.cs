@@ -238,9 +238,11 @@ public static class LeagueRules
         int best = tally.Select(it => it.Value).DefaultIfEmpty(0).Max();
         var leaders = tally.Where(it => it.Value == best).Select(it => it.Key).ToList();
         string name = LeagueData.DiplomaticVictory;
-        if (best > 0 && leaders.Count == 1 && best >= needed)
+        var leader = leaders.Count == 1 && best > 0 ? game.GetCivilization(leaders[0]) : null;
+        bool enabled = leader != null && leader.VictoryManager.GetAvailableVictories().Any(it => it.MilestoneObjects.Any(m => m.Type is MilestoneType.WinWorldLeaderVote or MilestoneType.WinDiplomaticVote));
+        if (leader != null && best >= needed && enabled)
         {
-            var winner = game.GetCivilization(leaders[0]);
+            var winner = leader;
             winner.VictoryManager.HasEverWonDiplomaticVote = true;
             game.EventSink?.Emit(new ResolutionEnacted(name, winner.CivId));
             foreach (var civ in LivingMembers(game, league).Where(it => it.IsHuman()))
@@ -250,10 +252,13 @@ public static class LeagueRules
             return;
         }
         if (best > 0)
-            foreach (var leader in leaders) AddExtraVotes(league, leader, resolution.LeadersVoteBonusOnFail);
+            foreach (var tied in leaders) AddExtraVotes(league, tied, resolution.LeadersVoteBonusOnFail);
         game.EventSink?.Emit(new ResolutionFailed(name, leaders.Count == 1 ? leaders[0] : ""));
         foreach (var civ in LivingMembers(game, league).Where(it => it.IsHuman()))
-            civ.AddNotification($"No world leader was elected: {needed} delegates are needed", NotificationCategory.Diplomacy, NotificationIcon.Diplomacy);
+            civ.AddNotification(best == 0 ? "No world leader was elected: nobody voted"
+                : leaders.Count > 1 ? "No world leader was elected: the vote is tied for the most delegates"
+                : best < needed ? $"No world leader was elected: {needed} delegates are needed"
+                : "No world leader was elected: the Diplomatic Victory is not enabled", NotificationCategory.Diplomacy, NotificationIcon.Diplomacy);
     }
 
     // ---- votes needed for the diplomatic victory (4.7.6, @100d1830)

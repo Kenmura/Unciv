@@ -965,7 +965,7 @@ readings of the open [K] items (no decompile available, all deliberate):
 `LeagueRules.VotesNeeded` implements 4.7.6 in `float` (`MathF.Log`, `MathF.Floor`), golden-tested (8 civs and 16 city-states give 40). `VotesNeeded(game, league)` counts
 the civilizations list: a living major civ or city-state 1.0, a defeated one 0.5 (the `[?]` exclusion of `@1012a210` is not applied); the session is the current one
 (the vote only exists in the United Nations session). The Diplomatic Victory proposal is a vote on a living member: the winner needs the plurality (a tie fails), at least
-the votes needed and to be alive. A win sets `VictoryManager.HasEverWonDiplomaticVote` and runs `UpdateWinningCiv`, so the game is won through the ruleset: the generated BNW
+the votes needed and to be alive. A win (only when the Diplomatic victory is available to the winner; otherwise the vote fails with a notification) sets `VictoryManager.HasEverWonDiplomaticVote` and runs `UpdateWinningCiv`, so the game is won through the ruleset: the generated BNW
 `VictoryTypes.json` keeps the `Diplomatic` victory with the milestone `Win the World Leader vote` (B009; the generator no longer removes the victory, the United Nations building
 stays removed), and the victory counts only when it is among `GameParameters.VictoryTypes`. A failed vote gives every civ tied for the most votes `LeadersVoteBonusOnFail` (2)
 `ExtraVotes` (`AddExtraVotes`) [K reading of "top vote-getters"]; no vote at all gives nothing. Only the delegates of civs alive when the session is decided count

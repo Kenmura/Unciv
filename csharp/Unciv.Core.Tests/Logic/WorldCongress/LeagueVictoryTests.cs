@@ -124,6 +124,7 @@ public sealed class LeagueVictoryTests
 
         Assert.Null(G.VictoryData);
         Assert.Equal([2, 3, 0], league.Members.Select(it => it.ExtraVotes));
+        Assert.Contains(a.Notifications, it => it.Text.Contains("tied"));
     }
 
     [Fact]
@@ -132,6 +133,7 @@ public sealed class LeagueVictoryTests
         LeagueRules.ProcessTurn(G);
         Assert.Null(G.VictoryData);
         Assert.Equal([0, 0, 0], league.Members.Select(it => it.ExtraVotes));
+        Assert.Contains(a.Notifications, it => it.Text.Contains("nobody voted"));
     }
 
     [Fact]
@@ -165,10 +167,22 @@ public sealed class LeagueVictoryTests
         Commit(a, a, 8);
         LeagueRules.ProcessTurn(G);
         Assert.Null(G.VictoryData);
+        Assert.False(a.VictoryManager.HasEverWonDiplomaticVote);
+        Assert.Contains(a.Notifications, it => it.Text.Contains("not enabled"));
+        Assert.DoesNotContain(a.Notifications, it => it.Text.Contains("elected world leader"));
     }
 
     [Fact]
-    public void TheVictoryAndTheBonusSurviveSaveAndClone()
+    public void ADefeatedMajorCivCountsHalfInTheVotesNeeded()
+    {
+        Assert.Equal(8, LeagueRules.VotesNeeded(G, league));
+        foreach (var city in c.Cities.ToList()) city.DestroyCity(overrideSafeties: true);
+        Assert.Equal(8, LeagueRules.VotesNeeded(2.5f, 0f, UnitedNations)); // 8.32
+        Assert.Equal(8, LeagueRules.VotesNeeded(G, league));
+    }
+
+    [Fact]
+    public void TheVictoryFlagSurvivesClone()
     {
         Commit(a, a, 8);
         LeagueRules.ProcessTurn(G);
