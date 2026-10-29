@@ -182,9 +182,10 @@ public static class BattleDamage
     {
         int range = Math.Max(1, attacker.GetCivInfo().GameInfo.Ruleset.ModOptions.Constants.SapperBonusRange);
         int best = 0;
-        foreach (var sapper in attacker.GetCivInfo().Units.GetCivUnits())
+        foreach (var tile in tileToAttackFrom.GetTilesInDistance(range).Append(tileToAttackFrom))
         {
-            if (sapper.CurrentTile.AerialDistanceTo(tileToAttackFrom) > range) continue;
+            var sapper = tile.MilitaryUnit;
+            if (sapper == null || sapper.Civ != attacker.GetCivInfo()) continue;
             foreach (var unique in sapper.GetMatchingUniques(UniqueType.SapperBonus))
                 if (attacker.Unit.MatchesFilter(unique.Params[1], true)) best = Math.Max(best, unique.Params[0].ToInt());
         }

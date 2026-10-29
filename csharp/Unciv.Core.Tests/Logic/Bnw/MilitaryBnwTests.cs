@@ -103,12 +103,13 @@ public sealed class MilitaryBnwTests
 
     // ---- Heavy Charge
 
-    private (DamageDealt Dealt, MapUnitClass Hussar, MapUnitClass Defender) Charge(bool charge, bool blocked)
+    private (DamageDealt Dealt, MapUnitClass Hussar, MapUnitClass Defender) Charge(bool charge, bool blocked, bool guarding = false)
     {
         var hussar = Unit("Winged Hussar", a, 1, 0);
         if (!charge) hussar.Promotions.RemovePromotion("Heavy Charge");
         Assert.Equal(charge, hussar.HasUnique(UniqueType.HeavyCharge));
         var defender = Unit("Musketman", b, 0, 0);
+        if (guarding) defender.Action = UnitActionType.Guard.Value();
         if (blocked)
             foreach (var tile in game.GetTile(0, 0).Neighbors.Where(it => it != hussar.GetTile())) Unit("Warrior", b, tile.Position.X, tile.Position.Y);
         return (Attack(hussar, defender), hussar, defender);
@@ -133,6 +134,26 @@ public sealed class MilitaryBnwTests
         Assert.Equal(plain.AttackerDealt + plain.AttackerDealt / 2, charged.AttackerDealt);
         Assert.Equal(100 - charged.AttackerDealt, defender.Health);
         Assert.Equal(100 - plain.AttackerDealt, plainDefender.Health);
+    }
+
+    [Fact]
+    public void HeavyChargeDoesNotPushAGuardingDefenderButHurtsItInstead()
+    {
+        var (plain, _, _) = new MilitaryBnwTests().Charge(false, false, guarding: true);
+        var (charged, _, defender) = Charge(true, false, guarding: true);
+        Assert.Equal(game.GetTile(0, 0), defender.GetTile());
+        Assert.Equal(plain.AttackerDealt + plain.AttackerDealt / 2, charged.AttackerDealt);
+    }
+
+    [Fact]
+    public void HeavyChargeThatKillsTheDefenderDoesNothingMore()
+    {
+        var hussar = Unit("Winged Hussar", a, 1, 0);
+        var defender = Unit("Warrior", b, 0, 0);
+        defender.Health = 5;
+        var dealt = Attack(hussar, defender);
+        Assert.True(defender.IsDestroyed);
+        Assert.Equal(5, dealt.AttackerDealt);
     }
 
     // ---- post-combat promotions
@@ -169,7 +190,8 @@ public sealed class MilitaryBnwTests
         var kris = Unit("Kris Swordsman", a, 1, 0);
         kris.Health = 1;
         Attack(Unit("Musketman", b, 0, 0), kris);
-        Assert.True(kris.IsDestroyed || Outcomes(kris) <= 1);
+        Assert.True(kris.IsDestroyed);
+        Assert.Equal(0, Outcomes(kris));
 
         string First()
         {
@@ -194,6 +216,25 @@ public sealed class MilitaryBnwTests
         a.Tech.Era = game.Ruleset.Eras["Modern era"];
         Assert.Equal(-5f, WarmongerRules.Scale(-5f, a, b));
         Assert.Equal(0f, WarmongerRules.Scale(0f, a, cs));
+    }
+
+    [Theory]
+    [InlineData(false, -3f)] // aggro 10 + 50% of the population = 60, /10 = 6, Ancient 50%
+    [InlineData(true, -1.5f)] // and 50% again for a city-state victim
+    public void ConqueringACityGivesThirdCivsTheScaledPenalty(bool cityStateVictim, float expected)
+    {
+        var victim = cityStateVictim ? game.AddCiv(cityStateType: "Mercantile") : b;
+        var c = game.AddCiv();
+        game.AddCity(a, game.GetTile(-3, 0));
+        game.AddCity(c, game.GetTile(0, 3));
+        var target = game.AddCity(victim, game.GetTile(3, 0));
+        game.AddCity(victim, game.GetTile(3, -3));
+        foreach (var x in new[] { victim, c }) a.DiplomacyFunctions.MakeCivilizationsMeet(x);
+        c.DiplomacyFunctions.MakeCivilizationsMeet(victim);
+        foreach (var (p, q) in new[] { (a, c), (c, a), (victim, c), (c, victim) })
+            p.GetDiplomacyManager(q)!.DiplomaticStatus = DiplomaticStatus.Peace;
+        target.PuppetCity(a);
+        Assert.Equal(expected, c.GetDiplomacyManager(a)!.GetModifier(DiplomaticModifiers.WarMongerer));
     }
 
     [Fact]

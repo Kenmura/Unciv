@@ -884,7 +884,7 @@ public static class Battle
         if (!mapAttacker.Unit.HasUnique(UniqueType.HeavyCharge, GameContext.ForCombatants(attacker, defender, attackedTile, CombatAction.Attack))) return dealt;
 
         var rng = GameContext.ForCombatants(attacker, defender, attackedTile, CombatAction.Attack).StateBasedRandom("Battle.heavyCharge");
-        var toTile = mapDefender.Unit.IsEmbarked() || mapDefender.Unit.Cache.CannotMove ? null : SelectRetreatTile(mapAttacker, mapDefender, rng);
+        var toTile = mapDefender.Unit.IsEmbarked() || mapDefender.Unit.Cache.CannotMove || mapDefender.Unit.IsEscorting() || mapDefender.Unit.IsGuarding() ? null : SelectRetreatTile(mapAttacker, mapDefender, rng);
         if (toTile != null)
         {
             var origin = mapDefender.Unit.GetTile();
@@ -913,7 +913,7 @@ public static class Battle
     /// </summary>
     private static void GivePostCombatPromotion(ICombatant ourCombatant, ICombatant enemy, TileClass attackedTile, CombatAction action)
     {
-        if (ourCombatant is not MapUnitCombatant mapUnit || mapUnit.IsDefeated()) return;
+        if (ourCombatant is not MapUnitCombatant mapUnit || mapUnit.IsDefeated() || mapUnit.Unit.IsDestroyed) return;
         var unit = mapUnit.Unit;
         var context = GameContext.ForCombatants(ourCombatant, enemy, attackedTile, action);
         var candidates = unit.GetMatchingUniques(UniqueType.PostCombatPromotion, context).Select(it => it.Params[0]).Distinct().ToList();

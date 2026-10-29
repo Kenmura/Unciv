@@ -11,8 +11,10 @@ public static class WarmongerRules
 {
     public static float Scale(float amount, CivilizationObject aggressor, CivilizationObject victim)
     {
-        float scaled = amount * aggressor.GetEra().WarmongerPercent / 100f;
+        int percent = aggressor.GetEra().WarmongerPercent;
         int csMultiplier = aggressor.GameInfo.Ruleset.ModOptions.Constants.WarmongerOnCityStateMultiplier;
+        if (percent == 100 && csMultiplier <= 0) return amount;
+        float scaled = amount * percent / 100f;
         if (victim.IsCityState && csMultiplier > 0) scaled = scaled * csMultiplier / 100f;
         return scaled;
     }
