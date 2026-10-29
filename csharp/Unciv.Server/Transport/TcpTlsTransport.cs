@@ -20,6 +20,9 @@ public sealed class TcpTlsTransport : ITransport
         this.stream = stream;
     }
 
+    /// <summary>The TLS version negotiated for this connection (null when the stream is not TLS).</summary>
+    public System.Security.Authentication.SslProtocols? NegotiatedProtocol => (stream as System.Net.Security.SslStream)?.SslProtocol;
+
     public bool IsOpen => tcpClient.Connected && !disposed;
 
     public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default)

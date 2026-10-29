@@ -237,7 +237,7 @@ public sealed class NetTransportTests
         await using (server)
         {
             // Client attempts to send frame exceeding 64KB
-            var oversize = new string('a', ProtocolVersion.MaxFrameBytes + 10);
+            var oversize = new string('a', ProtocolVersion.MaxMessageBytes + 10);
             await Assert.ThrowsAsync<InvalidOperationException>(() => client.SendAsync(oversize).AsTask());
         }
     }

@@ -44,14 +44,14 @@ public static class ProtocolCodec
             frame[property.Key] = property.Value;
         }
         var text = frame.ToJsonString(Options);
-        if (Encoding.UTF8.GetByteCount(text) > ProtocolVersion.MaxFrameBytes)
-            throw new InvalidOperationException("Encoded frame exceeds ProtocolVersion.MaxFrameBytes");
+        if (Encoding.UTF8.GetByteCount(text) > ProtocolVersion.MaxMessageBytes)
+            throw new InvalidOperationException("Encoded message exceeds ProtocolVersion.MaxMessageBytes");
         return text;
     }
 
     public static Message Decode(string frame)
     {
-        if (Encoding.UTF8.GetByteCount(frame) > ProtocolVersion.MaxFrameBytes)
+        if (Encoding.UTF8.GetByteCount(frame) > ProtocolVersion.MaxMessageBytes)
             return Fail(ErrorCodes.FrameTooLarge);
 
         JsonObject? node;

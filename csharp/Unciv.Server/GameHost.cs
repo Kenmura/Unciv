@@ -8,6 +8,7 @@ using Unciv.Net.Remote;
 using Unciv.Net.Turns;
 using Unciv.Net.Visibility;
 using Unciv.Queries;
+using Unciv.Server.Transport;
 using EngineCommandResult = Unciv.Commands.CommandResult;
 using WireCommandResult = Unciv.Net.CommandResult;
 
@@ -22,6 +23,38 @@ public sealed class HostSession
     public required ITransport Transport { get; init; }
     public ClientSnapshot? PreviousSnapshot { get; set; }
     public bool IsOpen => Transport.IsOpen;
+
+    private long lastInboundMillis;
+    /// <summary>Clock time of the last frame received from this peer (any message counts as liveness); read by the idle-timeout check.</summary>
+    public long LastInboundMillis
+    {
+        get => Interlocked.Read(ref lastInboundMillis);
+        set => Interlocked.Exchange(ref lastInboundMillis, value);
+    }
+
+    /// <summary>Clock time of the last full snapshot sent in answer to a <c>ResyncRequest</c> (long.MinValue: none yet).</summary>
+    public long LastResyncMillis { get; set; } = long.MinValue;
+
+    /// <summary>A ResyncRequest arrived inside the rate-limit window: one snapshot is owed once the window ends (requests coalesce).</summary>
+    public bool ResyncPending { get; set; }
+}
+
+/// <summary>Per-session protection limits of the host. Times are in <see cref="IClock"/> milliseconds.</summary>
+public sealed record HostLimits
+{
+    public static HostLimits Default { get; } = new();
+
+    /// <summary>A session that sent nothing for this long is dropped (clients ping every 20 s, so a silent peer is dead or half-open).</summary>
+    public long IdleTimeoutMillis { get; init; } = 90_000;
+
+    /// <summary>At most one resync snapshot per session in this window; extra requests coalesce into one later snapshot.</summary>
+    public long ResyncMinIntervalMillis { get; init; } = 2_000;
+
+    /// <summary>Outbound frames queued per session before a slow reader is disconnected.</summary>
+    public int MaxQueuedFrames { get; init; } = 256;
+
+    /// <summary>Outbound bytes (approximate) queued per session before a slow reader is disconnected.</summary>
+    public long MaxQueuedBytes { get; init; } = 64L * 1024 * 1024;
 }
 
 /// <summary>
@@ -38,6 +71,7 @@ public sealed class GameHost : IAsyncDisposable
     private readonly RemoteQueryHost remoteQueries;
     private readonly CommandGate gate;
     private readonly IClock clock;
+    private readonly HostLimits limits;
     private readonly Dictionary<string, HostSession> sessions = new(StringComparer.Ordinal);
     private readonly Channel<Func<Task>> mailbox = Channel.CreateUnbounded<Func<Task>>();
     private readonly CancellationTokenSource cts = new();
@@ -51,8 +85,10 @@ public sealed class GameHost : IAsyncDisposable
         RemoteQueryHost? remoteQueries = null,
         CommandGate? gate = null,
         IClock? clock = null,
-        bool startActor = true)
+        bool startActor = true,
+        HostLimits? limits = null)
     {
+        this.limits = limits ?? HostLimits.Default;
         this.session = session;
         this.store = store;
         this.clock = clock ?? SystemClock.Instance;
@@ -115,8 +151,9 @@ public sealed class GameHost : IAsyncDisposable
                     SessionId = sessionId,
                     BoundCivId = boundCivId,
                     PlayerKeyId = playerKeyId,
-                    Transport = transport,
-                    PreviousSnapshot = initialSnapshot
+                    Transport = new BoundedSendTransport(transport, limits.MaxQueuedFrames, limits.MaxQueuedBytes),
+                    PreviousSnapshot = initialSnapshot,
+                    LastInboundMillis = clock.NowMillis
                 };
 
                 // A reconnect replaces the civ's older session (its late detach must not mark the new one disconnected).
@@ -131,7 +168,7 @@ public sealed class GameHost : IAsyncDisposable
                 if (initialSnapshot != null)
                 {
                     var snapshotMsg = SnapshotBuilder.ToMessage(initialSnapshot);
-                    await transport.SendAsync(ProtocolCodec.Encode(snapshotMsg));
+                    await hostSession.Transport.SendAsync(ProtocolCodec.Encode(snapshotMsg));
                 }
 
                 _ = RunSessionReaderAsync(hostSession, cts.Token);
@@ -188,7 +225,10 @@ public sealed class GameHost : IAsyncDisposable
                     await ProcessResumeAsync(hostSession, resume);
                     break;
                 case ResyncRequest:
-                    await SendFullSnapshotAsync(hostSession);
+                    if (ResyncAllowed(hostSession))
+                        await SendResyncSnapshotAsync(hostSession);
+                    else
+                        hostSession.ResyncPending = true;
                     break;
                 case Ping:
                     await SafeSendAsync(hostSession, new Pong());
@@ -231,6 +271,8 @@ public sealed class GameHost : IAsyncDisposable
     /// <summary>Advances turn timer and triggers turn resolution if deadlines or disconnects expired.</summary>
     public void Tick()
     {
+        DropIdleSessions();
+        SendDueResyncs();
         turnTimer.Tick();
         if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
         {
@@ -383,6 +425,35 @@ public sealed class GameHost : IAsyncDisposable
         return new RemoteQueryHost(registry, RemoteQueryPolicy.Default);
     }
 
+    private async Task SendResyncSnapshotAsync(HostSession hostSession)
+    {
+        hostSession.LastResyncMillis = clock.NowMillis;
+        hostSession.ResyncPending = false;
+        await SendFullSnapshotAsync(hostSession);
+    }
+
+    private bool ResyncAllowed(HostSession s) =>
+        s.LastResyncMillis == long.MinValue || clock.NowMillis - s.LastResyncMillis >= limits.ResyncMinIntervalMillis;
+
+    private void DropIdleSessions()
+    {
+        var now = clock.NowMillis;
+        foreach (var s in sessions.Values.ToList())
+        {
+            if (now - s.LastInboundMillis > limits.IdleTimeoutMillis || !s.IsOpen)
+                _ = DetachSessionAsync(s.SessionId);
+        }
+    }
+
+    private void SendDueResyncs()
+    {
+        foreach (var s in sessions.Values.ToList())
+        {
+            if (s.ResyncPending && ResyncAllowed(s))
+                _ = SendResyncSnapshotAsync(s);
+        }
+    }
+
     private async Task SendFullSnapshotAsync(HostSession hostSession)
     {
         var civ = session.Game.GetCivilizationOrNull(hostSession.BoundCivId);
@@ -499,7 +570,14 @@ public sealed class GameHost : IAsyncDisposable
                 string? frame = await hostSession.Transport.ReceiveAsync(cancellationToken);
                 if (frame == null) break;
 
+                hostSession.LastInboundMillis = clock.NowMillis;
                 var message = ProtocolCodec.Decode(frame);
+                if (message is Ping)
+                {
+                    // Answered here, not on the actor: a long actor job (an AI turn, a big resolve) must not make a live client look dead.
+                    await SafeSendAsync(hostSession, new Pong());
+                    continue;
+                }
                 await HandleInboundAsync(hostSession.SessionId, message);
             }
         }

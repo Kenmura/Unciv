@@ -5,8 +5,11 @@ public static class ProtocolVersion
 {
     public const int Current = 1;
 
-    /// <summary>Largest accepted frame in UTF-8 bytes; larger frames are rejected as an <see cref="ErrorCodes.FrameTooLarge"/> error.</summary>
+    /// <summary>Largest single wire frame (one length-prefixed chunk) in bytes. A larger message is split into continuation chunks by <see cref="Transport.LengthPrefixedFraming"/>.</summary>
     public const int MaxFrameBytes = 4 * 1024 * 1024;
+
+    /// <summary>Largest logical message (UTF-8 bytes, after reassembly); larger messages are rejected as an <see cref="ErrorCodes.FrameTooLarge"/> error. Bounds what a peer can make us buffer.</summary>
+    public const int MaxMessageBytes = 32 * 1024 * 1024;
 
     public static bool IsCompatible(int peerVersion) => peerVersion == Current;
 }

@@ -52,6 +52,12 @@ public sealed class ClientSessionOptions
     public Func<int, CancellationToken, Task> ReconnectDelay { get; init; } =
         (attempt, token) => Task.Delay(TimeSpan.FromSeconds(Math.Min(30, 1 << Math.Min(attempt - 1, 5))), token);
 
+    /// <summary>How often a settled connection pings the host so the host's idle timeout never drops a quiet but live player. <see cref="Timeout.InfiniteTimeSpan"/> disables it.</summary>
+    public TimeSpan KeepAliveInterval { get; init; } = TimeSpan.FromSeconds(20);
+
+    /// <summary>A settled connection that receives nothing for this long (not even a Pong) is a dead or half-open host: it is dropped and the reconnect logic takes over. <see cref="Timeout.InfiniteTimeSpan"/> disables it.</summary>
+    public TimeSpan HostSilenceTimeout { get; init; } = TimeSpan.FromSeconds(75);
+
     public QueryRegistry? Queries { get; init; }
     public ISecureRandom? Random { get; init; }
 }
@@ -342,6 +348,8 @@ public sealed class ClientSession : IAsyncDisposable
         connectionSettled = false;
         awaitingSnapshot = false;
         var token = timer.Token;
+        using var keepAlive = CancellationTokenSource.CreateLinkedTokenSource(token);
+        Task keepAliveTask = Task.CompletedTask;
         try
         {
             if (!everJoined) SetState(ClientSessionState.Joining);
@@ -353,9 +361,16 @@ public sealed class ClientSession : IAsyncDisposable
                 ModList = options.ModList
             }, token).ConfigureAwait(false);
 
+            keepAliveTask = RunKeepAliveAsync(keepAlive.Token);
             while (!stopped)
             {
-                var frame = await current.ReceiveAsync(token).ConfigureAwait(false);
+                string? frame;
+                using (var silence = CancellationTokenSource.CreateLinkedTokenSource(token))
+                {
+                    if (connectionSettled) silence.CancelAfter(options.HostSilenceTimeout);
+                    try { frame = await current.ReceiveAsync(silence.Token).ConfigureAwait(false); }
+                    catch (OperationCanceledException) when (silence.IsCancellationRequested && !token.IsCancellationRequested) { break; }
+                }
                 if (frame == null) break;
                 if (!await HandleAsync(ProtocolCodec.Decode(frame), token).ConfigureAwait(false)) break;
             }
@@ -371,9 +386,19 @@ public sealed class ClientSession : IAsyncDisposable
         finally
         {
             transport = null;
+            await keepAlive.CancelAsync().ConfigureAwait(false);
+            try { await keepAliveTask.ConfigureAwait(false); } catch (OperationCanceledException) { }
             try { await current.CloseAsync().ConfigureAwait(false); } catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException) { }
             queries.FailAll();
         }
+    }
+
+    private async Task RunKeepAliveAsync(CancellationToken token)
+    {
+        if (options.KeepAliveInterval == Timeout.InfiniteTimeSpan) return;
+        using var ticks = new PeriodicTimer(options.KeepAliveInterval);
+        try { while (await ticks.WaitForNextTickAsync(token).ConfigureAwait(false)) if (connectionSettled) await SendAsync(new Ping(), token).ConfigureAwait(false); }
+        catch (Exception e) when (e is OperationCanceledException or IOException or ObjectDisposedException or InvalidOperationException) { /* the connection ended; the receive loop reports it */ }
     }
 
     /// <summary>Handles one message; false ends this connection.</summary>

@@ -99,20 +99,20 @@ public class NetProtocolTests
     [Fact]
     public void OversizeFrameIsRejectedBeforeParsing()
     {
-        var frame = """{"type":"LobbyChat","text":"%"}""".Replace("%", new string('a', ProtocolVersion.MaxFrameBytes));
+        var frame = """{"type":"LobbyChat","text":"%"}""".Replace("%", new string('a', ProtocolVersion.MaxMessageBytes));
         AssertError(ErrorCodes.FrameTooLarge, frame);
     }
 
     [Fact]
     public void OversizeIsMeasuredInBytesNotChars()
     {
-        var frame = new string('é', ProtocolVersion.MaxFrameBytes / 2 + 1);
+        var frame = new string('é', ProtocolVersion.MaxMessageBytes / 2 + 1);
         AssertError(ErrorCodes.FrameTooLarge, frame);
     }
 
     [Fact]
     public void EncodeRefusesOversizeMessage() =>
-        Assert.Throws<InvalidOperationException>(() => ProtocolCodec.Encode(new LobbyChat { Text = new string('a', ProtocolVersion.MaxFrameBytes) }));
+        Assert.Throws<InvalidOperationException>(() => ProtocolCodec.Encode(new LobbyChat { Text = new string('a', ProtocolVersion.MaxMessageBytes) }));
 
     [Fact]
     public void ProtocolVersionCompatibility()
