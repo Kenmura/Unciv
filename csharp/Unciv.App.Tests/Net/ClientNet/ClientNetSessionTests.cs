@@ -84,7 +84,12 @@ public sealed class ClientNetSessionTests
 
         await using var rig = new ClientNetRig(id => new ClientSessionOptions
         {
-            Identity = id, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint, GameId = "g1", KnownEpoch = 2
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            GameId = "g1",
+            KnownEpoch = 2
         });
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
@@ -100,7 +105,12 @@ public sealed class ClientNetSessionTests
     {
         await using var rig = new ClientNetRig(id => new ClientSessionOptions
         {
-            Identity = id, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint, GameId = "g1", KnownEpoch = 2
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            GameId = "g1",
+            KnownEpoch = 2
         });
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
@@ -117,7 +127,12 @@ public sealed class ClientNetSessionTests
     {
         await using var rig = new ClientNetRig(id => new ClientSessionOptions
         {
-            Identity = id, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint, GameId = "g1", KnownEpoch = 1
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            GameId = "g1",
+            KnownEpoch = 1
         });
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
@@ -132,7 +147,13 @@ public sealed class ClientNetSessionTests
         var persisted = new List<int>();
         await using var rig = new ClientNetRig(id => new ClientSessionOptions
         {
-            Identity = id, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint, GameId = "g1", KnownEpoch = 1, PersistKnownEpoch = persisted.Add
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            GameId = "g1",
+            KnownEpoch = 1,
+            PersistKnownEpoch = persisted.Add
         });
         var host = rig.NewConnection();
         var join = rig.Session.JoinAsync();
