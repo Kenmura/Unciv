@@ -148,7 +148,7 @@ Small: the same order (refresh 52%, AI 20%, start 18%), turn 103 ms at turn 50.
 Method: golden per-turn `FullHash` list (`design/perf-golden.json`, small 50 and medium 200 turns) generated before any change; `bench --golden design/perf-golden.json` compares every turn and exits 1 on a difference (also when nothing was compared).
 The list is frozen at the pre-T262 engine: after a deliberate engine change regenerate it.
 `BenchTests.TheCommittedGoldenListStillMatchesTheEngine` checks the first 25 small turns against the real file on every gate run.
-All 18 after-runs (medium, 200 turns, in two sets of 3 and 5 interleaved base/new pairs, plus the 120-turn prefix checks) matched every golden hash.
+All 8 after-runs (medium, 200 turns, two sets of 3 and 5 interleaved base/new pairs) matched all 200 golden hashes, and so did the base runs.
 
 Numbers: medium, 200 turns, base and new alternated in one session on a loaded machine (wall times vary by 30% or more between runs; the spread is the main finding).
 
