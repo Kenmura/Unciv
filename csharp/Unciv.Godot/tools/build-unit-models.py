@@ -9,7 +9,7 @@ chunk are rewritten. The unit list is the data file `attachments.json` of the pa
 * All bodies share one humanoid skeleton ("Rig"), so one animation library fits them all. Every unit keeps its body, the attachments the data file lists (weapon, shield, helmet, hat, cape; the
   rest of the static meshes are dropped), and exactly the six contract clips (idle, walk, attack, attack_ranged, hit, death), each taken from a source animation (per-unit overrides allowed).
 * The one material is renamed `TeamColor` (tinted with the civ colour at load) and the rig is scaled so the figure stands `height` tile units tall with its feet at y = 0.
-* A mounted unit is a rider on a generated horse rig: a skeleton of rigid boxes (feet at y = 0, facing +Z) with hand-keyed clips, the rider parented to its `saddle` joint. In each clip the rider's
+* A mounted unit is a rider on a generated horse rig: a skeleton of rigid boxes (feet at y = 0, facing +Z) with hand-keyed clips, the rider on his own skeleton, his Rig node following the horse's root and body joints through generated tracks. In each clip the rider's
   upper body follows the clip's source animation while legs and hips hold the seated pose.
 * `manifest.json` (key -> file) is rewritten from the unit list.
 """
@@ -187,6 +187,9 @@ def quat_z(angle):
 
 
 IDENTITY = [0.0, 0.0, 0.0, 1.0]
+# lengths (s) of the KayKit source clips the rider plays (Idle, Walking_A, 1H_Melee_Attack_Slice_Diagonal, 1H_Ranged_Shoot, Hit_A): the horse's clips are stretched to match, or the merged clip would hold
+# the horse at its last key for the rest of the rider's loop
+RIDER_IDLE, RIDER_WALK, RIDER_ATTACK, RIDER_RANGED, RIDER_HIT = 1.0667, 1.0667, 1.0, 1.0667, 0.6667
 
 # joint name -> (parent, world position in the bind pose); the horse faces +Z and stands on y = 0
 HORSE_JOINTS = [
@@ -275,9 +278,12 @@ def build_horse():
 
     all_tracks = {}
 
-    def clip(name, tracks):
+    def clip(name, tracks, length=None):
         """tracks: (joint, 'rotation'|'translation', [(time, value)...]); linear interpolation, values in the joint's local frame."""
         samplers, channels = [], []
+        if length is not None:  # stretch to the rider's source clip so the loop lengths agree
+            scale = length / max(t for _, _, keys in tracks for t, _ in keys)
+            tracks = [(j, pth, [(t * scale, v) for t, v in keys]) for j, pth, keys in tracks]
         for joint, path, keys in tracks:
             times = [t for t, _ in keys]
             values = [v for _, v in keys]
@@ -297,9 +303,9 @@ def build_horse():
         return ("body", "translation", [(0.0, [0.0, y, 0.0]), (length / 4, [0.0, y + amount, 0.0]), (length / 2, [0.0, y, 0.0]), (3 * length / 4, [0.0, y + amount, 0.0]), (length, [0.0, y, 0.0])])
 
     # idle: breathing and a tail flick
-    clip("idle", [("neck", "rotation", [(0.0, quat_x(0.0)), (1.0, quat_x(0.05)), (2.0, quat_x(0.0))]), ("tail", "rotation", [(0.0, quat_x(0.0)), (1.0, quat_x(-0.25)), (2.0, quat_x(0.0))])])
+    clip("idle", [("neck", "rotation", [(0.0, quat_x(0.0)), (1.0, quat_x(0.05)), (2.0, quat_x(0.0))]), ("tail", "rotation", [(0.0, quat_x(0.0)), (1.0, quat_x(-0.25)), (2.0, quat_x(0.0))])], RIDER_IDLE)
     # walk: diagonal pairs swing together
-    length = 0.8
+    length = RIDER_WALK
     clip("walk", [swing("leg_fl", length, 1, 0.55), swing("leg_br", length, 1, 0.55), swing("leg_fr", length, -1, 0.55), swing("leg_bl", length, -1, 0.55), bob(length, 0.012),
                   ("tail", "rotation", [(0.0, quat_x(-0.1)), (length / 2, quat_x(0.1)), (length, quat_x(-0.1))])])
     # attack: rears up on its hind legs, front legs pawing, and comes down
@@ -307,12 +313,12 @@ def build_horse():
     clip("attack", [("body", "rotation", [(0.0, quat_x(0.0)), (0.3, quat_x(-0.45)), (0.6, quat_x(-0.45)), (0.9, quat_x(0.0))]),
                     ("body", "translation", [(0.0, [0.0, y, 0.0]), (0.3, [0.0, y + 0.05, -0.04]), (0.6, [0.0, y + 0.05, -0.04]), (0.9, [0.0, y, 0.0])]),
                     ("leg_fl", "rotation", [(0.0, quat_x(0.0)), (0.3, quat_x(0.9)), (0.6, quat_x(0.9)), (0.9, quat_x(0.0))]),
-                    ("leg_fr", "rotation", [(0.0, quat_x(0.0)), (0.3, quat_x(0.9)), (0.6, quat_x(0.9)), (0.9, quat_x(0.0))])])
+                    ("leg_fr", "rotation", [(0.0, quat_x(0.0)), (0.3, quat_x(0.9)), (0.6, quat_x(0.9)), (0.9, quat_x(0.0))])], RIDER_ATTACK)
     # attack_ranged: stands, tosses its head at the shot
-    clip("attack_ranged", [("neck", "rotation", [(0.0, quat_x(0.0)), (0.4, quat_x(-0.3)), (1.0, quat_x(0.0))]), ("head", "rotation", [(0.0, quat_x(0.0)), (0.4, quat_x(-0.3)), (1.0, quat_x(0.0))])])
+    clip("attack_ranged", [("neck", "rotation", [(0.0, quat_x(0.0)), (0.4, quat_x(-0.3)), (1.0, quat_x(0.0))]), ("head", "rotation", [(0.0, quat_x(0.0)), (0.4, quat_x(-0.3)), (1.0, quat_x(0.0))])], RIDER_RANGED)
     # hit: shoved back, head up
     clip("hit", [("body", "translation", [(0.0, [0.0, y, 0.0]), (0.15, [0.0, y, -0.06]), (0.5, [0.0, y, 0.0])]),
-                 ("neck", "rotation", [(0.0, quat_x(0.0)), (0.15, quat_x(-0.35)), (0.5, quat_x(0.0))])])
+                 ("neck", "rotation", [(0.0, quat_x(0.0)), (0.15, quat_x(-0.35)), (0.5, quat_x(0.0))])], RIDER_HIT)
     # death: falls on its side and stays there (the tail of the clip is a hold)
     clip("death", [("root", "rotation", [(0.0, IDENTITY), (0.9, quat_z(math.pi / 2)), (1.2, quat_z(math.pi / 2))]),
                    ("root", "translation", [(0.0, [0.0, 0.0, 0.0]), (0.9, [0.3, 0.1, 0.0]), (1.2, [0.3, 0.1, 0.0])])])

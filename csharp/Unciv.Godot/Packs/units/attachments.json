@@ -27,7 +27,7 @@
     "Great Scientist": { "body": "Mage", "keep": ["Spellbook", "Mage_Hat", "Mage_Cape"], "clips": { "attack": "Spellcast_Shoot", "attack_ranged": "Spellcast_Shoot" } }
   },
   "mounted": {
-    "about": "A mounted unit is a rider (body + attachments as above, scaled to 'riderHeight') parented to the 'saddle' joint of the generated horse rig (build-unit-models.py builds the horse: rigid boxes on a 9-joint skeleton with the six contract clips). Per clip the rider's upper body follows 'clips' and its legs and hips hold the Sit_Chair_Idle pose, so he sits the horse whatever he does with his arms.",
+    "about": "A mounted unit is a rider (body + attachments as above, scaled to 'riderHeight', own skeleton) following the root and body joints of the generated horse rig (build-unit-models.py builds the horse: rigid boxes on a 10-joint skeleton with the six contract clips, stretched to the rider's clip lengths); 'saddleHeight' is the rider's feet height above the ground. Per clip the rider's upper body follows 'clips' and its legs and hips hold the Sit_Chair_Idle pose, so he sits the horse whatever he does with his arms.",
     "riderHeight": 0.5,
     "saddleHeight": 0.38,
     "seat": "Sit_Chair_Idle",

@@ -1280,13 +1280,13 @@ Unit art pipeline: a units pack of CC0 humanoids on one shared skeleton, a rider
 
 Scenario `unit-visuals`.
 
-![Close view of the Horseman, side on: a CC0 rider seated on the generated horse rig, in its idle pose, the rider's tunic tinted in the red civ's colour.](../Unciv.Godot.Harness/golden/unit-visuals/mounted.png)
+![Close view of the Horseman, side on: a CC0 rider seated on the generated box horse (a placeholder shape), both in their idle pose.](../Unciv.Godot.Harness/golden/unit-visuals/mounted.png)
 
-*Close view of the Horseman, side on: a CC0 rider seated on the generated horse rig, in its idle pose, the rider's tunic tinted in the red civ's colour.* (`unit-visuals/mounted.png`)
+*Close view of the Horseman, side on: a CC0 rider seated on the generated box horse (a placeholder shape), both in their idle pose.* (`unit-visuals/mounted.png`)
 
-![Close view of the Tank mid-shot, posed by the code-driven rigid motion: the hull has kicked back and the turret has swung off the target line.](../Unciv.Godot.Harness/golden/unit-visuals/rigid.png)
+![Close view of the tank and its neighbours posed by the code-driven rigid motion mid-shot (hull kicked back, turret swung off the target line); the motion is small, the scenario asserts the exact poses.](../Unciv.Godot.Harness/golden/unit-visuals/rigid.png)
 
-*Close view of the Tank mid-shot, posed by the code-driven rigid motion: the hull has kicked back and the turret has swung off the target line.* (`unit-visuals/rigid.png`)
+*Close view of the tank and its neighbours posed by the code-driven rigid motion mid-shot (hull kicked back, turret swung off the target line); the motion is small, the scenario asserts the exact poses.* (`unit-visuals/rigid.png`)
 
 ![The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.](../Unciv.Godot.Harness/golden/unit-visuals/gallery.png)
 
