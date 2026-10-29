@@ -10,8 +10,8 @@ using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Models.Ruleset.Unique;
 using CityObject = Unciv.Logic.City.City;
-using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
+using UniqueObject = Unciv.Models.Ruleset.Unique.Unique;
 
 namespace Unciv.Core.Tests.Logic.Bnw;
 
