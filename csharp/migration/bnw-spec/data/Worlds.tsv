@@ -1,0 +1,7 @@
+Name	Type	Description	DefaultPlayers	DefaultMinorCivs	FogTilesPerBarbarianCamp	NumNaturalWonders	UnitNameModifier	TargetNumCities	NumFreeBuildingResources	BuildingClassPrereqModifier	MaxConscriptModifier	GridWidth	GridHeight	MaxActiveReligions	TerrainGrainChange	FeatureGrainChange	ResearchPercent	NumCitiesUnhappinessPercent	NumCitiesPolicyCostMod	NumCitiesTechCostMod	AdvancedStartPointsMod	EstimatedNumCities
+Duel	WORLDSIZE_DUEL	TXT_KEY_WORLD_DUEL	2	4	13	2	50	4	1	0	-50	40	24	2	-1	-1	100	100	10	5	80	13
+Tiny	WORLDSIZE_TINY	TXT_KEY_WORLD_TINY	4	8	18	3	40	4	1	0	-25	56	36	3	-1	-1	100	100	10	5	85	26
+Small	WORLDSIZE_SMALL	TXT_KEY_WORLD_SMALL	6	12	23	3	30	5	3	25	0	66	42	4	0	0	100	100	10	5	90	39
+Standard	WORLDSIZE_STANDARD	TXT_KEY_WORLD_STANDARD	8	16	27	4	20	5	5	50	25	80	52	5	0	0	110	100	10	5	100	52
+Large	WORLDSIZE_LARGE	TXT_KEY_WORLD_LARGE	10	20	30	6	10	6	6	75	50	104	64	6	1	1	120	80	7.5	3.75	110	80
+Huge	WORLDSIZE_HUGE	TXT_KEY_WORLD_HUGE	12	24	35	7	0	6	7	100	75	128	80	7	1	1	130	60	5	2.5	120	132

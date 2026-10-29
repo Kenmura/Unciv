@@ -1,0 +1,22 @@
+Name	BuildingType	Description	Bonus	SameEra	UniqueEras	MustBeArt	MustBeArtifact	MustBeEqualArtArtifact	RequiresOwner	RequiresAnyButOwner	RequiresSamePlayer	RequiresUniquePlayers	AIPriority
+Museum of {1_EraAdjective} {2_CivAdjective} Art	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_1	2	1		1			1				2
+Museum of {1_EraAdjective} {2_CivAdjective} Art	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_1	2	1		1				1			2
+	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_2	2	1			1		1				2
+	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_2	2	1			1			1			2
+Museum of {1_EraAdjective} Art	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_3	1	1		1							1
+Museum of {1_EraAdjective} Warfare	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_4	1	1			1						1
+	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_5	1	1					1				1
+World Museum of the {1_EraAdjective} Era	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_6	1	1						1			1
+Museum of {1_CivAdjective} Art	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_7	1			1			1				1
+Museum of {1_CivAdjective} Art	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_7	1			1				1			1
+Museum of {1_CivAdjective} Warfare	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_8	1				1		1				1
+Museum of {1_CivAdjective} Warfare	BUILDING_MUSEUM	TXT_KEY_THEMING_BONUS_MUSEUM_8	1				1			1			1
+Museum of World Art	BUILDING_HERMITAGE	TXT_KEY_THEMING_BONUS_HERMITAGE	3		1	1						1	4
+Library of World Literature	BUILDING_OXFORD_UNIVERSITY	TXT_KEY_THEMING_BONUS_OXFORD_UNIVERSITY	2		1					1			1
+Chapel of {1_Era} {2_CivAdjective} Art	BUILDING_SISTINE_CHAPEL	TXT_KEY_THEMING_BONUS_SISTINE_CHAPEL	2	1		1					1		3
+World's Most Visited Museum	BUILDING_LOUVRE	TXT_KEY_THEMING_BONUS_LOUVRE	4		1			1				1	5
+Library of Ancient Knowledge	BUILDING_GREAT_LIBRARY	TXT_KEY_THEMING_BONUS_GREAT_LIBRARY	2		1							1	2
+Center for the {2_CivAdjective} Musical Arts	BUILDING_SYDNEY_OPERA_HOUSE	TXT_KEY_THEMING_BONUS_SYDNEY_OPERA_HOUSE	2		1						1		1
+Museum of {1_Era} {2_CivAdjective} Art	BUILDING_UFFIZI	TXT_KEY_THEMING_BONUS_UFFIZI	3	1		1					1		6
+Theater of {1_Era} {2_CivAdjective} Literature	BUILDING_GLOBE_THEATER	TXT_KEY_THEMING_BONUS_GLOBE_THEATER	2	1							1		3
+Showplace for {1_Era} {2_CivAdjective} Music	BUILDING_BROADWAY	TXT_KEY_THEMING_BONUS_BROADWAY	3	1							1		2

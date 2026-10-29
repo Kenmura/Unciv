@@ -1,0 +1,5 @@
+Name	Type	Description	DealDuration	GrowthPercent	TrainPercent	ConstructPercent	CreatePercent	ResearchPercent	GoldPercent	GoldGiftMod	BuildPercent	ImprovementPercent	GreatPeoplePercent	CulturePercent	FaithPercent	BarbPercent	FeatureProductionPercent	UnitDiscoverPercent	UnitHurryPercent	UnitTradePercent	GoldenAgePercent	HurryPercent	InflationPercent	InflationOffset	ReligiousPressureAdjacentCity	VictoryDelayPercent	MinorCivElectionFreqMod	OpinionDurationPercent	SpyRatePercent	PeaceDealDuration	RelationshipDuration	LeaguePercent
+Marathon	GAMESPEED_MARATHON	TXT_KEY_GAMESPEED_MARATHON	90	300	300	300	300	300	300	67	300	300	300	300	300	400	300	300	300	300	200	100	10	-270	20	300	300	300	100	30	150	300
+Epic	GAMESPEED_EPIC	TXT_KEY_GAMESPEED_EPIC	45	150	150	150	150	150	150	75	150	150	150	150	150	150	150	150	150	150	125	100	20	-135	40	150	150	150	100	15	75	150
+Standard	GAMESPEED_STANDARD	TXT_KEY_GAMESPEED_STANDARD	30	100	100	100	100	100	100	100	100	100	100	100	100	100	100	100	100	100	100	100	30	-90	60	100	100	100	100	10	50	100
+Quick	GAMESPEED_QUICK	TXT_KEY_GAMESPEED_QUICK	25	67	67	67	67	67	67	125	67	67	67	67	67	67	67	67	67	67	80	100	45	-60	90	67	67	67	50	10	50	67
