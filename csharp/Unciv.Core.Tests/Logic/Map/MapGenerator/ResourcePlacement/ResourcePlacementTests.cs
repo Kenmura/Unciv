@@ -125,6 +125,9 @@ public class ResourcePlacementTests
         Assert.False(elsewhere.GeneratesNaturallyOn(tile));
         var banned = new TileResource { Name = "Banned", TerrainsCanBeFoundOn = ["Grassland"], Uniques = ["Doesn't generate naturally"] };
         Assert.False(banned.GeneratesNaturallyOn(tile));
+        var smaller = new TileResource { Name = "Small", TerrainsCanBeFoundOn = ["Grassland"], Uniques = ["Must not be on [1] largest landmasses"] };
+        var larger = new TileResource { Name = "Large", TerrainsCanBeFoundOn = ["Grassland"], Uniques = ["Must be on [1] largest landmasses"] };
+        Assert.NotEqual(smaller.GeneratesNaturallyOn(tile), larger.GeneratesNaturallyOn(tile)); // the tile is on the largest landmass or it is not, never both
         var cold = new TileResource { Name = "Cold", TerrainsCanBeFoundOn = ["Grassland"], Uniques = ["Occurs at temperature between [0.0] and [0.2] and humidity between [0.0] and [1.0]"] };
         tile.Temperature = 0.1;
         tile.Humidity = 0.5;
