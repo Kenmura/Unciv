@@ -6,7 +6,7 @@ Work is completed phase by phase (`phases.txt`; `ticket.py ready`/`next` list ea
 
 | Phase | Done | Remaining | Ready | In flight | Remaining tickets |
 |---|---|---|---|---|---|
-| Phase 1: CLI (headless engine) | 220/222 | 2 | 0 | 1 | [T239](backlog/T239.md) [T244](backlog/T244.md) |
+| Phase 1: CLI (headless engine) | 220/223 | 3 | 0 | 1 | [T239](backlog/T239.md) [T244](backlog/T244.md) [T246](backlog/T246.md) |
 | Phase 2: single player (Godot client) | 57/57 | 0 | 0 | 0 | complete |
 | Phase 3: multiplayer | 21/29 | 8 | 0 | 2 | [C006](backlog/C006.md) [C034](backlog/C034.md) [C035](backlog/C035.md) [C036](backlog/C036.md) [C045](backlog/C045.md) [T180](backlog/T180.md) [T182](backlog/T182.md) [T225](backlog/T225.md) |
 
@@ -29,6 +29,7 @@ flowchart TD
     T225["T225<br/>Network robustness: real TCP+TLS multi-client tests, backpre..."]
     T239["T239<br/>Observe first green CI run after the workflow scope is grant..."]
     T244["T244<br/>NetGameSession: IGameSession over Unciv.Client.Net ClientSes..."]
+    T246["T246<br/>CI client-scenarios: goldens recorded on Fedora llvmpipe mis..."]
   end
   subgraph CTRACK["Client track (Godot)"]
     C006["C006<br/>Networked play client: join screen (address:port / invite), ..."]
@@ -39,6 +40,7 @@ flowchart TD
   end
   T180 --> T182
   T180 --> T225
+  T246 --> T239
   T180 --> T244
   T180 --> C006
   C035 --> C006
@@ -59,11 +61,12 @@ flowchart TD
   class C035 ondeck
   class C036 ondeck
   class C045 waiting
-  class T180 review
+  class T180 prog
   class T182 ondeck
   class T225 ondeck
-  class T239 prog
+  class T239 blocked
   class T244 ondeck
+  class T246 prog
 ```
 
 ## Remaining tickets over time
@@ -83,7 +86,7 @@ xychart-beta
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00"]
     y-axis "Tickets" 0 --> 55
     line [5, 46, 2, 54, 39, 19, 11, 9, 9, 9, 9, 7]
-    line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 0]
+    line [0, 11, 11, 0, 0, 0, 1, 1, 1, 1, 1, 1]
     line [1, 0, 4, 2, 6, 6, 3, 2, 2, 2, 2, 3]
 ```
 
@@ -101,7 +104,7 @@ xychart-beta
     x-axis ["Oct 24 00:00", "Oct 24 12:00", "Oct 25 00:00", "Oct 25 12:00", "Oct 26 00:00", "Oct 26 12:00", "Oct 27 00:00", "Oct 27 12:00", "Oct 28 00:00", "Oct 28 12:00", "Oct 29 00:00", "Oct 29 12:00"]
     y-axis "Tickets" 0 --> 315
     line [0, 69, 153, 200, 246, 280, 294, 297, 297, 297, 297, 301]
-    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 311]
+    line [6, 126, 170, 256, 291, 305, 309, 309, 309, 309, 309, 312]
 ```
 
 ## Incomplete tickets
@@ -113,8 +116,9 @@ xychart-beta
 | T225 | **On deck** (after T180) | T179, T180 | 1 | Network robustness: real TCP+TLS multi-client tests, backpressure, ping timeout, large snapshots, resync rate limit, TLS platform matrix |
 | T182 | **On deck** (after T180) | T178, T180, T204, T203 | 0 | Multi-client end-to-end: scripted 3-human + AI game over in-memory transport, kill/restart server, reconnect, hash agreement |
 | T244 | **On deck** (after T180) | T180 | 0 | NetGameSession: IGameSession over Unciv.Client.Net ClientSession (replaces LocalHost per-command full snapshot; Desynchronized from session events) |
-| T180 | In-Review [DeepSeek] | T172, T173, T174, T175, T179, T204, T223, T224 | 7 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
+| T180 | In-Progress [Claude] | T172, T173, T174, T175, T179, T204, T223, T224 | 7 | Client network library Unciv.Client.Net: ClientSession state machine, mirror state, delta apply, command retry, reconnect/resume (no Godot types) |
+| T246 | In-Progress [Claude] | none | 1 | CI client-scenarios: goldens recorded on Fedora llvmpipe mismatch on ubuntu-24.04 (all rendered scenarios fail); make scenarios CI-stable |
 | C006 | Available (waiting on T180, C035, C036, T225) | T012, C001, T164, T172, T173, T180, T179, C010, C016, T194, C035, C036, T225, C037 | 0 | Networked play client: join screen (address:port / invite), TOFU prompt, reconnect overlay, key storage |
 | C034 | In-Progress [Claude] | C005, C010, C015, T204, T205 | 0 | Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game |
 | C045 | Available (waiting on C036) | C036, T178, T204 | 0 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
-| T239 | In-Progress [Claude] | T169 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
+| T239 | Blocked | T169, T246 | 0 | Observe first green CI run after the workflow scope is granted; remove continue-on-error from client-scenarios |
