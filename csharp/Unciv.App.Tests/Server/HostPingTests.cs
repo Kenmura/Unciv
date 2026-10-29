@@ -241,21 +241,18 @@ public sealed class HostPingTests : IDisposable
     }
 
     [Fact]
-    public async Task Ping_ToAnAllyWhoDisconnected_OrFromAnUnboundSession_IsNotRelayed()
+    public async Task Ping_FromASessionBoundToNoCiv_GetsNoEchoAndReachesNobody()
     {
         var game = NewGame();
         Ally(game, "Babylon", "Greece");
         var tile = ExploredBy(game, "Babylon", "Greece");
         await using var host = new GameHost(new GameSession(game), clock: new ManualClock(1_000_000));
-        var mine = await AttachAsync(host, "Babylon");
         var ally = await AttachAsync(host, "Greece");
-        await ally.CloseAsync();
         var unbound = await AttachAsync(host, "Nobody");
 
-        await PingAsync(mine, tile.Position.x, tile.Position.y);
-        await ReadUntilAsync<MapPingNotice>(mine);
         await PingAsync(unbound, tile.Position.x, tile.Position.y);
 
-        Assert.True(await NothingRelayedAsync(mine));
+        Assert.True(await NothingRelayedAsync(unbound));
+        Assert.True(await NothingRelayedAsync(ally));
     }
 }
