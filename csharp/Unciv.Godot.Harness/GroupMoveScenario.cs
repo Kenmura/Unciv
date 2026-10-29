@@ -123,6 +123,7 @@ public sealed class GroupMoveScenario : Scenario
             new WaitUntil("the pair took its next step by itself and is still on one tile", () =>
                 Where(warrior) == Where(settler) && HexMath.GetDistance(Where(warrior), groupTarget) < distanceBefore
                 && session.Log.Skip(logBefore).Count(it => it.Type == "move-unit") == 2, 600),
+            new WaitFrames(60), // the units finish walking and the turn banner has gone
             new Capture("escort-continued", "Next turn: the escort pair continued toward the target without a click"),
         ];
     }
