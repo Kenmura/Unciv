@@ -33,9 +33,9 @@ public static class BnwHappinessRules
     /// <summary>The percent added to production, gold and unit strength: 0 when content or without the BNW rules, else <c>max(-40, 2 x excess)</c> (@1003ea70, @1020fb90).</summary>
     public static int PenaltyPercent(CivilizationObject civ)
     {
-        if (!IsEnabled(civ.GameInfo.Ruleset)) return 0;
+        if (!IsEnabled(civ.GameInfo.Ruleset) || !civ.IsMajorCiv()) return 0;
         int excess = civ.GetHappiness();
-        return excess >= 0 ? 0 : excess <= MaxPenalty ? MaxPenalty : Math.Max(MaxPenalty, -excess * PenaltyPerPoint);
+        
     }
 
     private static int VeryUnhappyThreshold(Ruleset ruleset) =>
@@ -113,7 +113,8 @@ public static class BnwHappinessRules
         var constants = game.Ruleset.ModOptions.Constants;
         var random = civ.State.StateBasedRandom("BnwHappinessRules.rebels");
 
-        int count = unchecked(random.NextInt(unchecked(civ.Cities.Count * constants.UprisingNumCityCount + 100)) + constants.UprisingNumBase) / 100;
+        int count = unchecked(random.NextInt(Math.Max(1, unchecked(civ.Cities.Count * constants.UprisingNumCityCount + 100))) + constants.UprisingNumBase) / 100;
+        if (count <= 0) return;
 
         CityObject? city = null;
         int bestWeight = 0;
@@ -125,7 +126,7 @@ public static class BnwHappinessRules
 
         TileClass? plot = null;
         int bestRating = 0;
-        foreach (var tile in city!.GetTiles())
+        foreach (var tile in city.NotNull().GetTiles())
         {
             if (tile.IsWater || tile.IsCityCenter() || tile.MilitaryUnit != null || tile.CivilianUnit != null || tile.IsImpassible()) continue;
             int rating = random.NextInt(10);

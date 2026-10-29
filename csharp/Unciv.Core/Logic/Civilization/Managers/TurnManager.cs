@@ -194,7 +194,7 @@ public class TurnManager(Civilization civInfo)
                 if (BnwHappinessRules.IsEnabled(civInfo.GameInfo.Ruleset)) BnwHappinessRules.SpawnRebels(civInfo);
                 else DoRevoltSpawn();
             }
-            else if (flag == CivFlags.CityRevolt.ToString()) BnwHappinessRules.RevoltCity(civInfo);
+            else if (flag == CivFlags.CityRevolt.ToString() && BnwHappinessRules.IsEnabled(civInfo.GameInfo.Ruleset)) BnwHappinessRules.RevoltCity(civInfo);
             else if (flag == CivFlags.TurnsTillCityStateElection.ToString()) civInfo.CityStateFunctions.HoldElections();
         }
         HandleDiplomaticVictoryFlags();

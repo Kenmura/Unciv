@@ -188,6 +188,7 @@ public sealed class BnwHappinessTests
         civ.Tech.AddTechnology("Agriculture");
         civ.AddFlag(CivFlags.RevoltSpawning.ToString(), 1);
         new TurnManager(civ).StartTurn();
+        Assert.True(civ.Stats.Happiness <= -10);
         Assert.NotEmpty(barbarians.Units.GetCivUnits());
     }
 
