@@ -302,7 +302,7 @@
     "Unciv.Core/Logic/Battle/AttackRecorder.cs": {"branch": 93.33, "line": 100.0},
     "Unciv.Core/Logic/Battle/AttackableTile.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Core/Logic/Battle/Battle.cs": {"branch": 91.5, "line": 98.64},
-    "Unciv.Core/Logic/Battle/BattleDamage.cs": {"branch": 90.45, "line": 93.86},
+    "Unciv.Core/Logic/Battle/BattleDamage.cs": {"branch": 90.56, "line": 93.89},
     "Unciv.Core/Logic/Battle/BattleUnitCapture.cs": {"branch": 91.43, "line": 98.45},
     "Unciv.Core/Logic/Battle/CityCombatant.cs": {"branch": 94.44, "line": 90.74},
     "Unciv.Core/Logic/Battle/DamageDealt.cs": {"branch": 100.0, "line": 100.0},
