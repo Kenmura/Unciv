@@ -1062,7 +1062,9 @@ Station is also a building) and each turn put `round(production) + overflow` int
   City-State` in city-state territory gives its civ n copies of every luxury that city-state's cities produce, origin "Feitoria"; [?] tiles record no builder,
   so the civ is the one the improvement is unique to), Charitable Missions (`[+30]% Influence gained with City-States` scales positive influence from gold gifts,
   unit gifts and quest rewards, `CityStateFunctions.ScaleInfluenceGain`), and Scholasticism (the existing Kotlin `Allied City-States provide [stat] equal to [n]%`,
-  tested on the real ruleset; the old `TODO(B072)` seam note was stale).
+  tested on the real ruleset; the old `TODO(B072)` seam note was stale). Known limits: the Feitoria count is refreshed on improvement change, pillage and every
+  turn start, not on a city-state luxury change, border flip or conquest in between; Charitable Missions does not scale trade missions, Landmarks, League Games,
+  spy elections or per-turn bonuses ([?] no decompiler output).
   Not wired (follow-ups): `MinorBullyScoreModifier` / `% bullying strength`, `extra Influence from gifting military units`,
   `MINOR_UNIT_GIFT_TRAVEL_TURNS` and `FRIENDSHIP_PER_UNIT_GIFTED` (Unciv has no unit-gift-to-city-state action), `AllowsAnnexingCityStates`.
 

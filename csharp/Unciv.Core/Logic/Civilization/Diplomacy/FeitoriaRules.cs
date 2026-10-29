@@ -1,3 +1,4 @@
+using Unciv.Logic.Civilization.Transients;
 using Unciv.Logic.Map.Tiles;
 using Unciv.Models.Ruleset.Tile;
 using Unciv.Models.Ruleset.Unique;
@@ -39,7 +40,7 @@ public static class FeitoriaRules
                             && !((IHasUniques)it.Resource).HasUnique(UniqueType.CannotBeTraded, cityState.State))
                         .Select(it => it.Resource).Distinct().ToList();
                     var copies = ((IHasUniques)improvement).GetMatchingUniques(UniqueType.LuxuryCopiesFromCityState)
-                        .Sum(it => int.Parse(it.Params[0], System.Globalization.CultureInfo.InvariantCulture));
+                        .Sum(it => it.Params[0].ToInt());
                     foreach (var resource in luxuries) target.Add(resource, improvement.Name, copies);
                 }
         }

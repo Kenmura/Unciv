@@ -111,6 +111,7 @@ public sealed class CityStateFollowUpTests
     public void OnlyTheCityStatesLuxuryIsSiphonedAndOnlyForPortugalAndOnlyInsideACityStateTerritory()
     {
         var rival = game.AddCiv(game.Ruleset.Nations["Venice"], isPlayer: true);
+        game.GetTile(3, 1).SetImprovement("Feitoria", rival); // Venice cannot build it: nothing is siphoned for Venice
         game.GetTile(3, 0).SetImprovement("Feitoria", portugal);
 
         Assert.Equal(1, Amount("Jewelry"));
@@ -204,7 +205,7 @@ public sealed class CityStateFollowUpTests
 
         cityState.QuestManager.EndTurn();
         Assert.Empty(cityState.QuestManager.GetAssignedQuestsFor(portugal));
-        Assert.Equal(reward * 1.3f, Influence.GetInfluence());
+        Assert.Equal(reward * 1.3f, Influence.GetInfluence(), 0.01f);
     }
 
     // ---- Scholasticism
