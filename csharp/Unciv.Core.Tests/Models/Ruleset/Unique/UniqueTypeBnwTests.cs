@@ -12,10 +12,10 @@ public class UniqueTypeBnwTests
     [Fact]
     public void HooksFollowTheGatesAndKeepOrdinalsContiguous()
     {
-        Assert.Equal(107, Hooks.Length);
+        Assert.Equal(108, Hooks.Length);
         Assert.Equal(UniqueType.BnwHappinessRules + 1, Hooks[0]);
         for (int i = 1; i < Hooks.Length; i++) Assert.Equal((int)Hooks[i - 1] + 1, (int)Hooks[i]);
-        Assert.Equal(UniqueType.SeaTradeRouteRangeFlat, Hooks[^1]);
+        Assert.Equal(UniqueType.CatchEnemySpiesModifier, Hooks[^1]);
     }
 
     [Fact]

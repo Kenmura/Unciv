@@ -762,4 +762,5 @@ public enum UniqueType
     IsArchaeologicalDig = 748,
     LandTradeRouteRangeFlat = 749,
     SeaTradeRouteRangeFlat = 750,
+    CatchEnemySpiesModifier = 751,
 }

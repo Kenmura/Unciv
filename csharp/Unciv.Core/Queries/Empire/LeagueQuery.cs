@@ -13,7 +13,7 @@ public sealed record LeagueMemberRow(string CivId, int Delegates, int Left);
 public sealed record LeagueActiveRow(int Id, string Resolution, string Choice, string Proposer, int Turn);
 
 // RepealId: Non-zero for a proposal to repeal that active resolution
-// Tally: Delegates per choice ("yes", "no" or a civ id), all members once decided; only the viewer's own while the session is open
+// Tally: Delegates per choice ("yes", "no" or a civ id), all members once decided; only the viewer's own and those of civs whose capital holds one of the viewer's diplomats while the session is open
 // YourVotes: The viewer's own delegates per choice
 public sealed record LeagueProposalRow(int Id, string Resolution, string Choice, string Proposer, int RepealId, IReadOnlyList<KeyValuePair<string, int>> Tally,
     IReadOnlyList<KeyValuePair<string, int>> YourVotes);
@@ -48,7 +48,11 @@ public sealed record LeagueQuery : IQuery<LeagueResult>
             int delegates = !member.IsAlive() ? 0 : league.InSession ? it.Delegates : LeagueRules.StartingVotes(game, league, member);
             return new LeagueMemberRow(it.Civ, delegates, league.InSession && it.Civ == civ.CivId ? LeagueRules.RemainingVotes(league, it.Civ) : 0);
         }).ToList();
-        var proposals = league.Proposals.Select(p => new LeagueProposalRow(p.Id, p.Resolution, p.Choice, p.Proposer, p.RepealId, league.InSession ? LeagueRules.Tally(new LeagueProposal { Votes = p.Votes.Where(v => v.Civ == civ.CivId).ToList() }) : LeagueRules.Tally(p),
+        // Own votes, and (MEMBER_INTRIGUE, B020) the votes of every civ whose capital holds one of our diplomats
+        bool Visible(string voter) => voter == civ.CivId
+            || (game.Civilizations.FirstOrDefault(it => it.CivId == voter) is { } other && civ.EspionageManager.HasDiplomatIn(other));
+        var proposals = league.Proposals.Select(p => new LeagueProposalRow(p.Id, p.Resolution, p.Choice, p.Proposer, p.RepealId,
+            league.InSession ? LeagueRules.Tally(new LeagueProposal { Votes = p.Votes.Where(v => Visible(v.Civ)).ToList() }) : LeagueRules.Tally(p),
             LeagueRules.Tally(new LeagueProposal { Votes = p.Votes.Where(v => v.Civ == civ.CivId).ToList() }))).ToList();
         var proposable = LeagueData.Resolutions
             .Where(it => it.Proposer == ProposerDecision.None && LeagueRules.EnactProblem(game, civ, it.Name, "") == null).Select(it => it.Name).ToList();

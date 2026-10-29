@@ -20,7 +20,7 @@ namespace Unciv.Logic.Tourism;
 // - The league/holy-city tourism modifier of 4.3.1 is the World Religion resolution (B015): +50% in the holy city of the chosen religion, added to the modifier.
 // - Culture from "Wonders, Landmarks and Natural Wonders": the Culture of the built wonders of the city (their own stats), plus the Culture
 //   of the city's tiles that hold a Landmark improvement (unique "Landmark") or a natural wonder. Spec [I].
-// - Diplomats (step 3, B020) and ideologies (steps 3 and 6, B013) do not exist yet: no civ has a diplomat, and the ideology is a plain field on its PolicyManager.
+// - Diplomats (step 3) come from the civ's EspionageManager (B020).
 // - The modifier of a civ is never below the sum of its parts but the resulting influence per turn is clamped at 0 (a -34% modifier cannot
 //   make influence negative, and a modifier below -100% would).
 
@@ -104,7 +104,7 @@ public static class TourismRules
 
     /// <summary>The additive percent by which <paramref name="me"/>'s tourism counts toward <paramref name="target"/>.</summary>
     public static int ModifierWith(CivilizationObject me, CivilizationObject target) =>
-        ModifierWith(me, target, diplomatInTargetCapital: false); // Seam (B020): a diplomat of me in the capital of target
+        ModifierWith(me, target, me.EspionageManager.HasDiplomatIn(target));
 
     /// <summary><see cref="ModifierWith(CivilizationObject, CivilizationObject)"/> with the diplomat answer given.</summary>
     public static int ModifierWith(CivilizationObject me, CivilizationObject target, bool diplomatInTargetCapital)

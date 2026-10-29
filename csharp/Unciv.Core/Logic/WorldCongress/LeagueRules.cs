@@ -320,7 +320,10 @@ public static class LeagueRules
                 votes = unchecked(votes + resolution.VotesForFollowingIdeology);
         }
         votes = unchecked(votes + civ.GetMatchingUniques(UniqueType.WorldCongressDelegates).Sum(it => it.Params[0].ToInt()));
-        // Seam (B020): + votes per diplomat (WorldCongressVotesPerDiplomat) for each of the civ's diplomats in a major capital
+        // diplomats in a major capital: + votes per diplomat (Globalization +1) for each
+        int diplomats = civ.EspionageManager.CountDiplomats();
+        if (diplomats > 0)
+            votes = unchecked(votes + diplomats * civ.GetMatchingUniques(UniqueType.WorldCongressVotesPerDiplomat).Sum(it => it.Params[0].ToInt()));
         return votes;
     }
 

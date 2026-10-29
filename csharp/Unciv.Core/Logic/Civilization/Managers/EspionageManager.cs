@@ -93,6 +93,15 @@ public class EspionageManager : IsPartOfGameInfoSerialization
         return techsToSteal;
     }
 
+    /// <summary>BNW (B020): this civ's diplomats that have finished moving and are in the capital of another major civ.</summary>
+    public IEnumerable<Spy> GetDiplomats() =>
+        SpyList.Where(it => it.IsDiplomat && it.IsSetUp() && it.GetCityOrNull() is { } c && c.IsCapital() && c.Civ.IsMajorCiv());
+
+    public int CountDiplomats() => GetDiplomats().Count();
+
+    /// <summary>A diplomat of this civ sits in <paramref name="target"/>'s capital (tourism bonus, votes in the World Congress become visible).</summary>
+    public bool HasDiplomatIn(Civilization target) => GetDiplomats().Any(it => ReferenceEquals(it.GetCity().Civ, target));
+
     public List<Spy> GetSpiesInCity(CityObject city) => SpyList.Where(it => it.GetCityOrNull() == city).ToList();
 
     public int GetStartingSpyRank() =>

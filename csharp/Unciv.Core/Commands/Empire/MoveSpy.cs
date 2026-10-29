@@ -13,6 +13,9 @@ public sealed class MoveSpy : GameCommand
     /// <summary>The target city, or null for the hideout.</summary>
     public string? CityId { get; init; }
 
+    /// <summary>BNW (B020): station the spy as a diplomat (needs the capital of another major civ).</summary>
+    public bool Diplomat { get; init; }
+
     private Logic.City.City? FindCity(CommandContext context) =>
         context.Game.GetCities().FirstOrDefault(it => it.Id == CityId);
 
@@ -32,10 +35,12 @@ public sealed class MoveSpy : GameCommand
             if (city == null) return CommandValidation.Fail(CommandErrors.UnknownCity, $"There is no city \"{CityId}\"");
             if (!actor.HasExplored(city.GetCenterTile()))
                 return CommandValidation.Fail(CommandErrors.InvalidTarget, $"{city.Name} has not been explored");
-            if (city.Espionage.HasSpyOf(actor))
+            if (spy.GetCityOrNull() != city && city.Espionage.HasSpyOf(actor)) // the same spy may change between spy and diplomat
                 return CommandValidation.Fail(CommandErrors.NotAllowed, $"A spy is already in {city.Name}");
         }
-        return spy.GetCityOrNull() == city
+        if (Diplomat && (city == null || !spy.CanBeDiplomatIn(city)))
+            return CommandValidation.Fail(CommandErrors.NotAllowed, "A diplomat needs the capital of another major civilization in a game with the World Congress");
+        return spy.GetCityOrNull() == city && spy.IsDiplomat == Diplomat
             ? CommandValidation.Fail(CommandErrors.NotAllowed, $"{Spy} is already there")
             : CommandValidation.Ok;
     }
@@ -43,7 +48,7 @@ public sealed class MoveSpy : GameCommand
     protected override IReadOnlyList<GameEvent> ApplyCommand(CommandContext context)
     {
         var spy = context.Actor.EspionageManager.SpyList.First(it => it.Name == Spy);
-        spy.MoveTo(CityId == null ? null : FindCity(context));
+        spy.MoveTo(CityId == null ? null : FindCity(context), Diplomat);
         return [];
     }
 }

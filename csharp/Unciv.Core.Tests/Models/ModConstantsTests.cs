@@ -17,9 +17,9 @@ public class ModConstantsTests
     {
         // Golden from the real class on the JVM (670061036 / 1000388743) until the Brave New World tunables (B001) were added; the hash chain is the JVM's,
         // the values below are this port's own after that deliberate extension
-        Assert.Equal(1692645083, ModConstants.Defaults.GetHashCode());
+        Assert.Equal(-1388521677, ModConstants.Defaults.GetHashCode());
         var changed = new ModConstants { MaxXPfromBarbarians = 99, CityStrengthBase = 6.0 };
-        Assert.Equal(-1662561888, changed.GetHashCode());
+        Assert.Equal(414485070, changed.GetHashCode());
     }
 
     [Fact]
@@ -115,7 +115,10 @@ public class UncivSoundAndTutorialTests
         ("DiploVictoryDefaultVotePercent", "diploVictoryDefaultVotePercent", (object)0.0),
         ("DiploVictoryTeamMultiplier", "diploVictoryTeamMultiplier", (object)0.0),
         ("EspionageCoupOtherPlayersInfluenceDrop", "espionageCoupOtherPlayersInfluenceDrop", (object)0),
+        ("EspionageCoupSpyLevelDeltaOne", "espionageCoupSpyLevelDeltaOne", (object)0f),
+        ("EspionageCoupSpyLevelDeltaTwo", "espionageCoupSpyLevelDeltaTwo", (object)0f),
         ("EspionageCoupSpyLevelDeltaThree", "espionageCoupSpyLevelDeltaThree", (object)0f),
+        ("EspionageCoupSpyLevelDeltaFour", "espionageCoupSpyLevelDeltaFour", (object)0f),
         ("ExoticGoodsGoldMax", "exoticGoodsGoldMax", (object)0),
         ("ExoticGoodsGoldMin", "exoticGoodsGoldMin", (object)0),
         ("ExoticGoodsXpMax", "exoticGoodsXpMax", (object)0),
@@ -192,7 +195,7 @@ public class UncivSoundAndTutorialTests
             Assert.Equal(json, info.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute), false)
                 .Cast<System.Text.Json.Serialization.JsonPropertyNameAttribute>().Single().Name);
         }
-        Assert.Equal(81, BnwTunables.Length);
+        Assert.Equal(84, BnwTunables.Length);
     }
 
     [Fact]

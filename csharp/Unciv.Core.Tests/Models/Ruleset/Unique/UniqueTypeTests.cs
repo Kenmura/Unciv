@@ -87,7 +87,7 @@ public class UniqueTypeTests
     {
         Assert.Equal(638, Golden.Count);
         // Kotlin's entries come first and keep their ordinals; the Brave New World gates (B001) and hooks (B003) are appended after them
-        Assert.Equal(Golden.Count + (int)UniqueType.SeaTradeRouteRangeFlat - (int)UniqueType.EnablesInternationalTradeRoutes + 1, UniqueTypeExtensions.Entries.Count);
+        Assert.Equal(Golden.Count + (int)UniqueType.CatchEnemySpiesModifier - (int)UniqueType.EnablesInternationalTradeRoutes + 1, UniqueTypeExtensions.Entries.Count);
         AssertNoMismatches((type, row) =>
             (int)type == row.Ordinal && type.ToString() == row.Name ? null : $"got {(int)type} {type}, expected {row.Ordinal}");
     }

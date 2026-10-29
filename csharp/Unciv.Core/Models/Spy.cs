@@ -100,6 +100,14 @@ public class Spy : IsPartOfGameInfoSerialization
     [JsonInclude]
     private int progressTowardsStealingTech;
 
+    /// <summary>
+    /// BNW (bnw-spec 4.9, B020): a diplomat is a spy placed in the capital of another major civ. It never steals technology and is never
+    /// killed (it takes part in no theft and no coup), counts for delegates and tourism, and shows the target's votes. Absent from G&amp;K saves.
+    /// </summary>
+    [JsonPropertyName("isDiplomat")]
+    [JsonInclude]
+    public bool IsDiplomat { get; private set; }
+
     private Civilization? civInfo;
     /// <summary>Transient. Kotlin <c>lateinit var</c> with a private setter: reading before assignment throws.</summary>
     [JsonIgnore]
@@ -135,6 +143,7 @@ public class Spy : IsPartOfGameInfoSerialization
             Action = Action,
             TurnsRemainingForAction = TurnsRemainingForAction,
             progressTowardsStealingTech = progressTowardsStealingTech,
+            IsDiplomat = IsDiplomat,
         };
         return toReturn;
     }
@@ -174,12 +183,14 @@ public class Spy : IsPartOfGameInfoSerialization
                         SetAction(SpyAction.RiggingElections, (GetCity().Civ.FlagsCountdown.TryGetValue(CivFlags.TurnsTillCityStateElection.ToString(), out int turns) ? turns : 1) - 1);
                     else if (ReferenceEquals(currentCity.Civ, CivInfo))
                         SetAction(SpyAction.CounterIntelligence, 10);
+                    else if (IsDiplomat)
+                        SetAction(SpyAction.Surveillance); // a diplomat only observes
                     else
                         StartStealingTech();
                     break;
                 }
             case SpyAction.Surveillance:
-                if (!GetCity().Civ.IsMajorCiv()) return;
+                if (IsDiplomat || !GetCity().Civ.IsMajorCiv()) return;
                 if (CanStealTech() != CanStealTechResult.Yes) return; // nope
                 SetAction(SpyAction.StealingTech); // There are new techs to steal!
                 break;
@@ -264,6 +275,9 @@ public class Spy : IsPartOfGameInfoSerialization
         int rankTechStealModifier = Rank * CivInfo.GameInfo.Ruleset.ModOptions.Constants.SpyRankStealPercentBonus;
         progressThisTurn *= (rankTechStealModifier + 75f) / 100f;
         progressThisTurn *= (float)GetEfficiencyModifier();
+        // BNW policies (Industrial Espionage): +x% faster technology stealing
+        int stealSpeedPercent = KotlinMath.SumOf(CivInfo.GetMatchingUniques(UniqueType.TechStealingSpeed), it => KotlinMath.ParseInt(it.Params[0]));
+        if (stealSpeedPercent != 0) progressThisTurn *= (100 + stealSpeedPercent) / 100f;
         progressTowardsStealingTech += KotlinMath.FloatToInt(progressThisTurn);
 
         var stealableTechs = EspionageManager.GetTechsToSteal(GetCity().Civ);
@@ -302,7 +316,7 @@ public class Spy : IsPartOfGameInfoSerialization
         spyResult -= GetSkillModifierPercent();
         // Subtract the experience of the counter intelligence spies
         var defendingSpy = stealCity.Civ.EspionageManager.GetSpyAssignedToCity(stealCity);
-        spyResult += defendingSpy?.GetSkillModifierPercent() ?? 0;
+        spyResult += defendingSpy?.GetDefenceSkillPercent() ?? 0;
 
         string? detectionString;
         if (spyResult >= 200)
@@ -389,7 +403,9 @@ public class Spy : IsPartOfGameInfoSerialization
                 civ.AddNotification($"A spy from [{CivInfo.CivName}] successfully staged a coup in [{cityState.CivName}]!", GetCity().Location,
                     Notification.NotificationCategory.Espionage, CivInfo.CivName, NotificationIcon.Spy, cityState.CivName);
                 if (civ.IsSpectator()) continue;
-                cityState.GetDiplomacyManager(civ).NotNull().ReduceInfluence(10f); // Guess
+                // Guess in Kotlin (10); BNW states ESPIONAGE_COUP_OTHER_PLAYERS_INFLUENCE_DROP (20)
+                int otherDrop = CivInfo.GameInfo.Ruleset.ModOptions.Constants.EspionageCoupOtherPlayersInfluenceDrop;
+                cityState.GetDiplomacyManager(civ).NotNull().ReduceInfluence(otherDrop > 0 ? otherDrop : 10f);
             }
             SetAction(SpyAction.RiggingElections, 10);
             cityState.CityStateFunctions.UpdateAllyCivForCityState();
@@ -429,15 +445,44 @@ public class Spy : IsPartOfGameInfoSerialization
             ? cityState.AllyCiv?.EspionageManager.GetSpyAssignedToCity(GetCity())
             : null;
 
-        int spyRanks = GetSkillModifierPercent() - (defendingSpy?.GetSkillModifierPercent() ?? 0);
-        successPercentage += spyRanks / 2f; // Each rank counts for 15%
+        int spyRanks = GetSkillModifierPercent() - (defendingSpy?.GetDefenceSkillPercent() ?? 0);
+        successPercentage += CoupRankBonus(spyRanks); // Each rank counts for 15%
 
         successPercentage = Math.Clamp(successPercentage, 0f, 85f);
         return successPercentage / 100f;
     }
 
-    public void MoveTo(CityObject? newCity)
+    /// <summary>
+    /// The coup chance a skill difference (spy minus defender, in percent) adds. Kotlin: half of it (15% per rank). BNW (B020, deliberate): when the ruleset
+    /// states the ESPIONAGE_COUP_SPY_LEVEL_DELTA table (0, 1.5, 2.25, 2.6, 2.8, a rank difference of 1 is worth the Kotlin 15%), the rank difference
+    /// indexes it with diminishing returns, 10% per table unit [I]; a difference beyond 4 counts as 4.
+    /// </summary>
+    private float CoupRankBonus(int skillDifferencePercent)
     {
+        var constants = CivInfo.GameInfo.Ruleset.ModOptions.Constants;
+        if (constants.EspionageCoupSpyLevelDeltaOne <= 0f) return skillDifferencePercent / 2f;
+        int perRank = constants.SpyRankSkillPercentBonus;
+        int rankDifference = perRank == 0 ? 0 : skillDifferencePercent / perRank;
+        float[] table = [0f, constants.EspionageCoupSpyLevelDeltaOne, constants.EspionageCoupSpyLevelDeltaTwo, constants.EspionageCoupSpyLevelDeltaThree, constants.EspionageCoupSpyLevelDeltaFour];
+        float value = table[Math.Min(Math.Abs(rankDifference), table.Length - 1)] * 10f;
+        return rankDifference < 0 ? -value : value;
+    }
+
+    /// <summary>The skill a defending spy adds against our theft or coup: its skill, times Double Agents style <c>chance to catch enemy spies</c> uniques of its civ.</summary>
+    private int GetDefenceSkillPercent()
+    {
+        int catchPercent = KotlinMath.SumOf(CivInfo.GetMatchingUniques(UniqueType.CatchEnemySpiesModifier), it => KotlinMath.ParseInt(it.Params[0]));
+        return catchPercent == 0 ? GetSkillModifierPercent() : KotlinMath.FloatToInt(GetSkillModifierPercent() * (100 + catchPercent) / 100f);
+    }
+
+    /// <summary>Whether a spy of this civ may be a diplomat in <paramref name="targetCity"/>: the World Congress is enabled and it is the capital of another major civ.</summary>
+    public bool CanBeDiplomatIn(CityObject targetCity) =>
+        Logic.WorldCongress.LeagueRules.IsEnabled(CivInfo.GameInfo.Ruleset) && targetCity.IsCapital() && targetCity.Civ.IsMajorCiv()
+        && !ReferenceEquals(targetCity.Civ, CivInfo);
+
+    public void MoveTo(CityObject? newCity, bool asDiplomat = false)
+    {
+        IsDiplomat = false;
         if (newCity == null)
         {
             // Moving to spy hideout
@@ -448,6 +493,7 @@ public class Spy : IsPartOfGameInfoSerialization
         }
         location = newCity.Location;
         city = newCity;
+        IsDiplomat = asDiplomat && CanBeDiplomatIn(newCity);
         SetAction(SpyAction.Moving, 1);
     }
 
@@ -521,6 +567,8 @@ public class Spy : IsPartOfGameInfoSerialization
         int effective = Rank;
         var currentCity = GetCityOrNull();
         if (currentCity == null) return KotlinCoerceIn(effective, 1, maxRank);
+        // BNW (4.3.5, B020): cultural influence over a major civ (Exotic and above) adds a spy rank there
+        effective += Logic.Tourism.InfluenceRules.MajorCivSpyRankBonus(CivInfo, currentCity.Civ);
         currentCity.ForEachMatchingUnique(UniqueType.CounterIntelligenceSpyRankBonus, currentCity.State, true, unique =>
         {
             if (currentCity.MatchesFilter(unique.Params[0], CivInfo) &&

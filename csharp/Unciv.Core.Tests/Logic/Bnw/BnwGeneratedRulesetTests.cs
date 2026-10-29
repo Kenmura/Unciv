@@ -402,12 +402,12 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
     }
 
     [Fact]
-    public void EveryTenetStatesItsEffectsExceptTheSevenWithoutAUniqueYet()
+    public void EveryTenetStatesItsEffectsExceptTheSixWithoutAUniqueYet()
     {
         var r = Real();
         var tenets = r.PolicyBranches.Values.Where(it => it.PurchaseByLevel).SelectMany(it => it.Policies).ToList();
         Assert.Equal(48, tenets.Count);
-        string[] pending = ["Clausewitz's Legacy", "Double Agents", "Elite Forces", "Lightning Warfare", "Patriotic War", "Resettlement", "United Front"];
+        string[] pending = ["Clausewitz's Legacy", "Elite Forces", "Lightning Warfare", "Patriotic War", "Resettlement", "United Front"];
         Assert.Equal(pending, tenets.Where(it => it.Uniques.Count == 0).Select(it => it.Name).Order(StringComparer.Ordinal));
         // Universal Healthcare: one happiness unique per national wonder, in each of the three ideologies
         foreach (string ideology in new[] { "Freedom", "Order", "Autocracy" })

@@ -735,7 +735,7 @@
 				"level": 1,
 				"row": 1,
 				"column": 0,
-				"uniques": []
+				"uniques": ["[+100]% chance to catch enemy spies"]
 			},
 			{
 				"name": "Hero of the People",

@@ -281,9 +281,21 @@ public sealed class ModConstants
     [JsonPropertyName("espionageCoupOtherPlayersInfluenceDrop")]
     public int EspionageCoupOtherPlayersInfluenceDrop { get; set; } = 0;
 
+    // ESPIONAGE_COUP_SPY_LEVEL_DELTA_ONE: BNW 1.5
+    [JsonPropertyName("espionageCoupSpyLevelDeltaOne")]
+    public float EspionageCoupSpyLevelDeltaOne { get; set; } = 0f;
+
+    // ESPIONAGE_COUP_SPY_LEVEL_DELTA_TWO: BNW 2.25
+    [JsonPropertyName("espionageCoupSpyLevelDeltaTwo")]
+    public float EspionageCoupSpyLevelDeltaTwo { get; set; } = 0f;
+
     // ESPIONAGE_COUP_SPY_LEVEL_DELTA_THREE: BNW 2.6
     [JsonPropertyName("espionageCoupSpyLevelDeltaThree")]
     public float EspionageCoupSpyLevelDeltaThree { get; set; } = 0f;
+
+    // ESPIONAGE_COUP_SPY_LEVEL_DELTA_FOUR: BNW 2.8
+    [JsonPropertyName("espionageCoupSpyLevelDeltaFour")]
+    public float EspionageCoupSpyLevelDeltaFour { get; set; } = 0f;
 
     // EXOTIC_GOODS_GOLD_MAX: BNW 400
     [JsonPropertyName("exoticGoodsGoldMax")]

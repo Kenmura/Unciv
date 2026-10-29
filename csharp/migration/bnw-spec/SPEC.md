@@ -786,8 +786,8 @@ Proletariat (less happy), Cultural Revolution (shared ideology), Media Culture (
 Creative Expression (+1 culture per Great Work), Iron Curtain (+50% Food and Production of domestic routes; the free Courthouse on conquest is declared data only),
 Economic Union (`GoldFromIdeologyTradeRoutes`: +3 whole Gold per route to a civ with the same ideology, now read by `TradeRouteYields.PolicyGold`), plus stat
 tenets (Five-Year Plan, Party Leadership, ...). Declared but not wired yet: the city-state, espionage, spaceship, purchase-cost and free-building rows.
-No unique exists yet for seven tenets (`policyPending`): Resettlement, Patriotic War, Lightning Warfare, Elite Forces, Double Agents, United Front and
-Clausewitz's Legacy. [I] scales: Treaty Organization +4 and Gunboat Diplomacy +6 Influence are the hundredths columns /100.
+No unique exists yet for six tenets (`policyPending`): Resettlement, Patriotic War, Lightning Warfare, Elite Forces, United Front and
+Clausewitz's Legacy (Double Agents got `chance to catch enemy spies` in B020). [I] scales: Treaty Organization +4 and Gunboat Diplomacy +6 Influence are the hundredths columns /100.
 
 #### 4.6.4 Public opinion (`DoPublicOpinion` @1006f9d0) [O]
 Only for a civ with an ideology `I`:
@@ -1026,6 +1026,22 @@ Station is also a building) and each turn put `round(production) + overflow` int
 - Spy rank bonus from cultural influence over the target (§4.3.5) [O name].
 - Policies `RiggingElectionModifier`, `StealTechFasterModifier` and `Policy espionage modifiers` (Lua
   `GetPolicyEspionage*`) [D]. The engine already has `EspionageManager`; extend it, do not replace it.
+
+#### 4.9a As built (B020, spec id B071)
+- **Diplomat** (`Spy.IsDiplomat`, saved as `isDiplomat`, absent in G&K saves): `MoveSpy { Diplomat = true }` stations a spy as a diplomat when the World Congress is enabled in the
+  ruleset and the target is the capital of another major civ. [K]: the rule "when it may be a diplomat" is not decoded; this is the conservative reading. After the 3 turns of
+  establishing a network a diplomat stays in surveillance: it never steals and, since it takes part in neither theft nor coup, is never killed. `EspionageManager.GetDiplomats`
+  counts only diplomats that finished moving (set up) in a living major civ's capital.
+- Uses: the tourism step 3 bonus (`TourismRules.ModifierWith`, only against another ideology), delegates (`WorldCongressVotesPerDiplomat` times the diplomats, in `LeagueRules.StartingVotes`),
+  and MEMBER_INTRIGUE: `LeagueQuery` adds the votes of civs whose capital holds one of the viewer's diplomats to the tally while a session is open.
+- Spy rank bonus from influence: `Spy.GetEffectiveRank` adds `InfluenceRules.MajorCivSpyRankBonus` (+1 at Exotic, [K]) in a major civ's city; the stored rank is unchanged.
+- Coup: `ESPIONAGE_COUP_OTHER_PLAYERS_INFLUENCE_DROP` (20) replaces Kotlin's guessed 10. The per-level table `ESPIONAGE_COUP_SPY_LEVEL_DELTA_ONE..FOUR` (1.5, 2.25, 2.6, 2.8; zero is 0)
+  is the diminishing curve 3*(1-0.5^n) (`ESPIONAGE_COUP_MULTIPLY_CONSTANT` is its limit 3). How the engine applies it is [?]; deliberate deviation: the rank difference between the coup spy and the
+  defending spy indexes the table at 10% per unit (a difference of 1 is the Kotlin 15%, 2 gives 22.5, 3 gives 26, 4 and more 28), applied only when the table is in the ruleset.
+  `ESPIONAGE_COUP_NOBODY_BONUS` is not applied.
+- Policies: `TechStealingSpeed` (Industrial Espionage, +100%) multiplies the stealing progress; `ElectionRiggingModifier` (Covert Action, +100%) multiplies the votes of the rigging spy;
+  Double Agents (`CatchSpiesModifier` 100) is the new unique `[+100]% chance to catch enemy spies` ([I]: it scales the defending spy's skill in theft and coup).
+- Not done: AI use of diplomats, the building espionage columns (Constabulary, Police Station, Intelligence Agency, Great Firewall).
 
 ### 4.10 City-states [D]
 - New quest type: connect a trade route (+40). `QUEST_DISABLED_TRADE_ROUTE` = 0.

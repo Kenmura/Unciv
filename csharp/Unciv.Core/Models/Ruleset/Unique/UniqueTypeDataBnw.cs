@@ -465,5 +465,11 @@ internal static class UniqueTypeDataBnw
             [UniqueTarget.Global],
             [],
             "Flat addition to the path length of sea trade routes: Technology_TradeRouteDomainExtraRange (Compass 10, Refrigeration 10)."),
+
+        // Added by B020 (spec section 4.9): Policies.CatchSpiesModifier (Double Agents).
+        new("[relativeAmount]% chance to catch enemy spies",
+            [UniqueTarget.Global],
+            [],
+            "Scales the skill of this civ's spies when they defend a city against enemy theft or a coup (Double Agents, 100). Applies to the defending spy only."),
     ];
 }

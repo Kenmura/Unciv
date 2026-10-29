@@ -89,7 +89,9 @@ public class CityStateFunctions(Civilization civInfo) : ICityStateFunctions
             if (spy == null) return 20f;
             float votes = civInfo.GetDiplomacyManagerOrMeet(spy.CivInfo).Influence / 2;
             votes += (float)(spy.GetSkillModifierPercent() * spy.GetEfficiencyModifier()); // ranges from 30 to 90
-            return votes;
+            // BNW policies (Covert Action): +x% success chance for rigging elections, read as +x% of this spy's votes
+            int riggingPercent = spy.CivInfo.GetMatchingUniques(UniqueType.ElectionRiggingModifier).Sum(it => KotlinMath.ParseInt(it.Params[0]));
+            return riggingPercent == 0 ? votes : votes * (100 + riggingPercent) / 100f;
         }
 
         var parties = new List<Spy?>(spies);
