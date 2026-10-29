@@ -1,7 +1,9 @@
 using Unciv.Commands.Events;
+using Unciv.Logic.Civilization;
 using Unciv.Logic.GreatWorks;
 using Unciv.Utils;
 using CivilizationObject = Unciv.Logic.Civilization.Civilization;
+using NotificationCategory = Unciv.Logic.Civilization.Notification.NotificationCategory;
 
 namespace Unciv.Commands.GreatWorks;
 
@@ -61,6 +63,8 @@ public sealed class TakeGreatWorkSwap : GameCommand
         theirs.City.CityStats.Update();
         context.Actor.UpdateStatsForNextTurn();
         partner.UpdateStatsForNextTurn();
+        partner.AddNotification($"[{context.ActorId}] took your offered Great Work [{Work}] and gave you [{given}]",
+            theirs.City.Location, NotificationCategory.Diplomacy, NotificationIcon.Culture);
         return [new GreatWorkSwapped(context.ActorId, CivId, given, Work)];
     }
 }

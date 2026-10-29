@@ -648,6 +648,13 @@ public class BaseUnit : RulesetObject, ICivilopediaText, INonPerpetualConstructi
             if (unit.MatchesFilter(unique.Params[0]) && cityConstructions.City.MatchesFilter(unique.Params[2]))
                 xp += ParseInt(unique.Params[1]);
         });
+        // BNW (spec 4.2.2, Building_DomainFreeExperiencePerGreatWork): the amount for each Great Work held by the city
+        int works = cityConstructions.City.GetNumberOfGreatWorks();
+        if (works > 0)
+            cityConstructions.City.ForEachMatchingUnique(UniqueType.UnitXPPerGreatWork, unique =>
+            {
+                if (unit.MatchesFilter(unique.Params[1])) xp = unchecked(xp + ParseInt(unique.Params[0]) * works);
+            });
         unit.Promotions.XP = xp;
 
         cityConstructions.City.ForEachMatchingUnique(UniqueType.UnitStartingPromotions, unique =>

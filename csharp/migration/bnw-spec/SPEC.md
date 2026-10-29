@@ -516,6 +516,10 @@ Detail for the AI ticket (A-track).
 Each filled slot gives `BASE_CULTURE_PER_GREAT_WORK` (2) Culture and `BASE_TOURISM_PER_GREAT_WORK` (2) Tourism.
 `Policy_GreatWorkYieldChanges` adds per-work yields (Aesthetics/ideology tenets) [D]. City tourism and culture also add
 theming bonuses (§4.2.4).
+Resolved [X] (B028): `Policy_GreatWorkYieldChanges` is `YieldPerGreatWork` (Creative Expression +1 Culture), emitted by the generator and
+summed in `GetGreatWorkStats`. `Building_DomainFreeExperiencePerGreatWork` (Royal Library: 10 per work, Land/Water/Air) is `UnitXPPerGreatWork`: a unit
+built or bought in the city starts with `amount x works in the city` more XP (`BaseUnit.AddConstructionBonuses`). The Enhanced Culture trait
+(France) is `[+100]% theming bonuses in your capital`. Taking a swap offer notifies the offerer.
 
 #### 4.2.3 Creation and placement
 - A Great Writer, Artist or Musician in a city with a free slot of its type can *create* a work. The unit is consumed

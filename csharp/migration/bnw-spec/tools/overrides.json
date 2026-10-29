@@ -5,6 +5,10 @@
   // 'pending' lists SPEC 3.2 hooks the generator cannot emit yet; they go to the report.
  "files": {
   "Nations.json": {
+   // B028: Enhanced Culture (Napoleon, CapitalThemingBonusModifier 100)
+   "patch": {
+    "France": {"uniques+": ["[+100]% theming bonuses in your capital"]}
+   },
    "add": [
     {
      "name": "Assyria",

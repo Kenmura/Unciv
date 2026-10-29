@@ -2,6 +2,7 @@ using Unciv.Commands;
 using Unciv.Commands.Events;
 using Unciv.Commands.GreatWorks;
 using Unciv.Core.Tests.Logic.GreatWorks;
+using Unciv.Logic.Civilization;
 using Unciv.Logic.GreatWorks;
 using Unciv.Models.Ruleset;
 
@@ -193,6 +194,17 @@ public sealed class GreatWorkCommandTests
         Assert.Null(W.Game.GameInfo.GreatWorkSwapOffers);
         Assert.Equal([W.A.CivId, W.B.CivId], swapped.Participants());
         Assert.Equal(2f, W.CityB.GetGreatWorkStats().Culture);
+    }
+
+    [Fact]
+    public void TakingAnOfferTellsTheOfferer()
+    {
+        W.B.PlayerType = PlayerType.Human;
+        W.Ok(GreatWorkSamples.Command("take-great-work-swap", s));
+        var note = W.B.Notifications.Last();
+        Assert.Contains("ArtClassical", note.Text);
+        Assert.Contains("ArtAncient", note.Text);
+        Assert.Contains(W.A.CivId, note.Text);
     }
 
     [Fact]

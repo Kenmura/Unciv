@@ -400,7 +400,10 @@
 		"innerColor": [239, 236, 148],
 		"favoredReligion": "Christianity",
 		"uniqueName": "Ancien Régime",
-		"uniques": ["[+2 Culture] [in all cities] <before discovering [Steam Power]>"],
+		"uniques": [
+			"[+2 Culture] [in all cities] <before discovering [Steam Power]>",
+			"[+100]% theming bonuses in your capital"
+		],
 		"cities": [
 			"Paris",
 			"Orleans",

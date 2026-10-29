@@ -28,7 +28,7 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
 
     public void Dispose() => RulesetCache.Clear();
 
-    private static GameInfo NewBnwGame()
+    private static GameInfo NewBnwGame(string first = "Brazil")
     {
         Models.Ruleset.BnwRulesetTests.LoadBnw();
         return GameStarter.StartNewGame(
@@ -37,16 +37,16 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
                 {
                     BaseRuleset = BaseRuleset.Civ_V_BNW.FullName(),
                     NumberOfCityStates = 0,
-                    Players = [new Player("Brazil", PlayerType.Human), new Player("Poland")],
+                    Players = [new Player(first, PlayerType.Human), new Player("Poland")],
                 },
                 new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Tiny }),
             5, 1000L);
     }
 
     /// <summary>The first major civ with a capital founded where its starting Settler stands.</summary>
-    private static (GameInfo Game, CivilizationObject Civ, CityObject Capital) NewCapital()
+    private static (GameInfo Game, CivilizationObject Civ, CityObject Capital) NewCapital(string first = "Brazil")
     {
-        var game = NewBnwGame();
+        var game = NewBnwGame(first);
         var civ = game.Civilizations.First(it => it.IsMajorCiv());
         var settler = civ.Units.GetCivUnits().First(it => it.HasUnique(UniqueType.FoundCity));
         var capital = civ.AddCity(settler.GetTile().Position, settler);
@@ -210,6 +210,62 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         Assert.All(r.GreatWorks.Values, w => Assert.Contains(w.GreatWorkClass.SlotType(), slotted.Select(it => it.GreatWorkSlotType)));
         // Theming rows exist on the buildings that theme (the museum: twelve rows)
         Assert.Equal(12, r.Buildings["Museum"].ThemingBonuses.Count);
+    }
+
+    private static void PlaceWork(GameInfo game, CityObject city, string building, int slot, string work, string era, string creator = "")
+    {
+        (game.GreatWorkInstances ??= []).Add(new GreatWorkInstance { Name = work, Creator = creator, Era = era });
+        city.SetGreatWorkIn(building, slot, work);
+    }
+
+    // B028: Enhanced Culture (Napoleon) doubles the theming bonus of the capital only.
+    [Fact]
+    public void FrancesCapitalThemingBonusIsDoubledAndOtherCivsAreNot()
+    {
+        int Bonus(string civName)
+        {
+            var (game, _, capital) = NewCapital(civName);
+            capital.CityConstructions.AddBuilding("The Great Library");
+            PlaceWork(game, capital, "The Great Library", 0, "Odyssey", "Ancient era", "x");
+            PlaceWork(game, capital, "The Great Library", 1, "Fables", "Classical era", "y");
+            return capital.GetThemingBonuses();
+        }
+        Assert.Equal(2, Bonus("Brazil"));
+        Assert.Equal(4, Bonus("France"));
+    }
+
+    // B028: Aesthetics Complete adds +100% to the theming bonus of every city (non-capital France is 2, the capital 4 -> 8).
+    [Fact]
+    public void AestheticsCompleteAndEnhancedCultureStack()
+    {
+        var (game, civ, capital) = NewCapital("France");
+        capital.CityConstructions.AddBuilding("The Great Library");
+        PlaceWork(game, capital, "The Great Library", 0, "Odyssey", "Ancient era", "x");
+        PlaceWork(game, capital, "The Great Library", 1, "Fables", "Classical era", "y");
+        civ.Policies.Adopt(game.Ruleset.Policies["Aesthetics Complete"], true);
+        Assert.Equal(8, capital.GetThemingBonuses());
+    }
+
+    // B028: Building_DomainFreeExperiencePerGreatWork (Royal Library: 10 XP per work for land, water and air units built in the city).
+    [Fact]
+    public void UnitsBuiltInACityWithTheRoyalLibraryStartWithExperiencePerGreatWork()
+    {
+        var (game, civ, capital) = NewCapital();
+        capital.CityConstructions.AddBuilding("Royal Library");
+        Assert.Contains("[+10] XP for [Land] units per Great Work in this city", game.Ruleset.Buildings["Royal Library"].Uniques);
+        int Xp(string unitName)
+        {
+            var unit = civ.Units.AddUnit(unitName, capital)!;
+            game.Ruleset.Units[unitName].AddConstructionBonuses(unit, capital.CityConstructions);
+            return unit.Promotions.XP;
+        }
+        Assert.Equal(0, Xp("Warrior"));
+        PlaceWork(game, capital, "Royal Library", 0, "Odyssey", "Ancient era");
+        Assert.Equal(10, Xp("Warrior"));
+        PlaceWork(game, capital, "Parthenon", 0, "Fables", "Ancient era"); // a second work anywhere in the city counts too
+        capital.CityConstructions.AddBuilding("Amphitheater");
+        PlaceWork(game, capital, "Amphitheater", 0, "Oedipus the King", "Ancient era");
+        Assert.Equal(20, Xp("Warrior"));
     }
 
     // ---- tourism (B008)
@@ -552,7 +608,6 @@ public sealed class BnwGeneratedRulesetTests : IDisposable
         "AnnoyFreeCityStateIntrusion",
         "BuildingPurchaseCostModifier",
         "CanBuyCityState",
-        "CapitalThemingBonusMultiplier",
         "CreatesGreatWork",
         "FaithFromKills",
         "FreePoliciesWhenExpended",
