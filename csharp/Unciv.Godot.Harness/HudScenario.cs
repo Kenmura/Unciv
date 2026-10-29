@@ -59,6 +59,32 @@ public sealed class HudScenario : Scenario
                 && hud.StatText("Turn") == HudModel.TurnAndYear(game.Turns, game.GetYear(0));
         }
 
+        // C067: every HUD element that shows has its own rectangle: none overlaps another, all lie on screen, and the middle of the map is uncovered
+        string Layout()
+        {
+            var screenRect = new Rect2(Vector2.Zero, host.GetViewport().GetVisibleRect().Size);
+            var rects = screen.World.Rects().ToList();
+            if (screen.Panel.IsVisibleInTree()) rects.Add(("UnitPanel", screen.Panel.GetGlobalRect()));
+            foreach (var (name, rect) in rects)
+                if (!screenRect.Encloses(rect)) return $"{name} {rect} leaves the screen {screenRect}";
+            for (int i = 0; i < rects.Count; i++)
+                for (int j = i + 1; j < rects.Count; j++)
+                    if (rects[i].Rect.Intersects(rects[j].Rect)) return $"{rects[i].Name} {rects[i].Rect} overlaps {rects[j].Name} {rects[j].Rect}";
+            var middle = new Rect2(screenRect.Size * 0.4f, screenRect.Size * 0.2f);
+            foreach (var (name, rect) in rects)
+                if (rect.Intersects(middle)) return $"{name} {rect} covers the middle of the map {middle}";
+            if (MathF.Abs(hud.BarRect.Size.Y - hud.TopBarHeight) > 0.5f) return $"the bar is {hud.BarRect.Size.Y} high, not the {hud.TopBarHeight} the screens below it reckon with";
+            if (screen.Minimap.Size.X < 140f || screen.Minimap.Size.Y < 100f) return $"the minimap is only {screen.Minimap.Size}";
+            if (hud.Entries.Values.Any(it => !hud.BarRect.Encloses(it.GetGlobalRect()))) return "a top bar entry is clipped by the bar";
+            return "";
+        }
+
+        bool Report(string problem)
+        {
+            if (problem.Length != 0) GD.PrintErr("[hud] " + problem);
+            return problem.Length == 0;
+        }
+
         var steps = new List<ScenarioStep>
         {
             new WaitFrames(3),
@@ -68,6 +94,8 @@ public sealed class HudScenario : Scenario
             new AssertQuery("with units waiting the button says Next unit and a separate Next turn is offered", () => hud.ActionText == "Next unit" && hud.Action.Kind == HudActionKind.NextUnit && hud.EndTurnShown),
             new Capture("start", "Turn start: top bar with the empire's numbers, turn banner, Next unit button with a separate Next turn"),
             new Act("hide the banner", hud.HideBanner),
+            new WaitFrames(2),
+            new AssertQuery("at 640x480 (Compact) no HUD rectangle overlaps another, all are on screen, the map's middle is free and the minimap is at least 140x100", () => Report(Layout())),
             new Press("Next unit"),
             new AssertQuery("Next unit selected one of the viewer's units", () => screen.SelectedUnitId is { } id && human.Units.GetCivUnits().Any(it => it.Id == id)),
         };
@@ -98,6 +126,11 @@ public sealed class HudScenario : Scenario
             new AssertQuery("the top bar follows the engine on the new turn", BarEqualsEngine),
             new AssertQuery("the new turn's units are due again: Next unit", () => hud.ActionText == "Next unit"),
             new Capture("next-turn", "Next turn: banner for the new turn, top bar updated, units due again"),
+            new Act("widen the window to 1280x720", () => host.GetWindow().Size = new Vector2I(1280, 720)),
+            new WaitFrames(4),
+            new AssertQuery("the layout follows: at 1280x720 the breakpoint is Regular, still no overlap, minimap 200x140", () =>
+                Report(Layout()) && Report(screen.World.MinimapSize == new Vector2(200f, 140f) && screen.Minimap.Size == new Vector2(200f, 140f) ? "" : $"minimap {screen.World.MinimapSize} {screen.Minimap.Size} {screen.Theme?.DefaultFontSize}")),
+            new Capture("wide", "1280x720: top bar, research and policy pills, nav strip, minimap and next-action dock; same structure as at 640x480"),
         ]);
         return steps;
     }

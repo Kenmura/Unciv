@@ -11,6 +11,7 @@ using Unciv.GodotClient.Map;
 using Unciv.GodotClient.Settings;
 using Unciv.GodotClient.Ui;
 using Unciv.Logic;
+using Unciv.Logic.Civilization;
 using Unciv.Logic.Map;
 using Unciv.Models;
 using Unciv.Models.Translations;
@@ -51,6 +52,8 @@ public partial class GameScreen : Control
     private (string Kind, HexCoord Target)? pendingAttack;
 
     public MapView Map { get; private set; } = null!; // JUSTIFY: C010 assigned in _Ready before any use
+
+    public WorldHud World { get; private set; } = null!; // JUSTIFY: C067 assigned in _Ready before any use
 
     public HudView Hud { get; private set; } = null!; // JUSTIFY: C011 assigned in _Ready before any use
 
@@ -102,7 +105,7 @@ public partial class GameScreen : Control
     /// <summary>C046: the developer console (the console hotkey); it does not block the map, so tiles and units can be selected for the next line.</summary>
     public ConsoleView ConsolePopup { get; private set; } = null!; // JUSTIFY: C046 assigned in _Ready before any use
 
-    public Button MenuButton { get; } = new() { Name = "MenuButton", Text = "Menu".Tr() };
+    public Button MenuButton => World.Menu;
 
     /// <summary>
     /// C044: the menu asks the owner whether the game has progress no save holds (the save controller knows). Without an owner's answer the menu assumes it has, so a
@@ -147,7 +150,7 @@ public partial class GameScreen : Control
     /// <summary>C045: the players-and-chat panel of a hosted game (the Players button toggles it); the button is hidden unless the session is an <see cref="IGameSocial"/>.</summary>
     public SocialView Social { get; private set; } = null!; // JUSTIFY: C045 assigned in _Ready before any use
 
-    public Button PlayersButton { get; } = new() { Name = "PlayersButton", Text = "Players".Tr(), Visible = false };
+    public Button PlayersButton => World.Players;
 
     private IGameSocial? social;
 
@@ -160,7 +163,7 @@ public partial class GameScreen : Control
     private string? shownCountdown;
 
     /// <summary>The turn bar sits centred below the two rows of screen buttons, so it covers none of them.</summary>
-    private float TurnBarTop() => Hud.TopBarHeight + HudMargin + 2f * (DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
+    private float TurnBarTop() => World.NavBottom + HudMargin;
 
     private CancellationTokenSource? turnCancellation;
 
@@ -225,6 +228,7 @@ public partial class GameScreen : Control
     public Button PromoteButton { get; } = new() { Name = "PromoteButton", Text = "Promote".Tr(), Visible = false };
 
     private readonly HashSet<string> deferredAlerts = [];
+    private readonly HashSet<string> toastedAlerts = [];
     private readonly HashSet<string> deferredProposals = [];
     private readonly OfferTracker offerTracker = new();
     private bool reviewingAlerts;
@@ -242,14 +246,14 @@ public partial class GameScreen : Control
 
     public bool IsDiplomacyVisible => Diplomacy.Visible;
 
-    public Button DiplomacyButton { get; } = new() { Name = "DiplomacyButton", Text = "Diplomacy".Tr() };
+    public Button DiplomacyButton => World.Diplomacy;
 
     /// <summary>C020: the policy screen, opened by the Policies button or the "Pick a policy" decision.</summary>
     public PolicyScreen Policies { get; private set; } = null!; // JUSTIFY: C020 assigned in Start before any use
 
     public bool IsPolicyScreenVisible => Policies.Visible;
 
-    public Button PolicyButton { get; } = new() { Name = "PolicyButton", Text = "Policies".Tr() };
+    public Button PolicyButton => World.Policies;
 
     /// <summary>Opens the policy screen, closing the city and diplomacy screens.</summary>
     public void OpenPolicyScreen()
@@ -283,7 +287,7 @@ public partial class GameScreen : Control
 
     public bool IsOverviewVisible => Overview.Visible;
 
-    public Button OverviewButton { get; } = new() { Name = "OverviewButton", Text = "Overview".Tr() };
+    public Button OverviewButton => World.Overview;
 
     /// <summary>Opens the overview on a tab (the last shown when null), closing the other full screens.</summary>
     public void OpenOverviewScreen(string? tab = null)
@@ -322,7 +326,7 @@ public partial class GameScreen : Control
 
     public bool IsTradeVisible => Trade.Visible;
 
-    public Button TradeButton { get; } = new() { Name = "TradeButton", Text = "Trade".Tr() };
+    public Button TradeButton => World.Trade;
 
     /// <summary>Opens the trade screen on the civ with this id (the first met major civ when null), with the offer of <paramref name="stageFrom"/> staged as a counter proposal, closing the other screens.</summary>
     public void OpenTradeScreen(string? civId = null, PendingTradeDto? stageFrom = null)
@@ -342,7 +346,7 @@ public partial class GameScreen : Control
 
     public bool IsPediaVisible => Pedia.Visible;
 
-    public Button PediaButton { get; } = new() { Name = "PediaButton", Text = "Civilopedia".Tr() };
+    public Button PediaButton => World.Civilopedia;
 
     /// <summary>Opens the Civilopedia on a link (<c>Unit/Warrior</c>), or where it was last left; it covers whatever screen is open and Close returns to it.</summary>
     public void OpenPediaScreen(string? link = null)
@@ -356,7 +360,7 @@ public partial class GameScreen : Control
 
     public bool IsEspionageVisible => Espionage.Visible;
 
-    public Button EspionageButton { get; } = new() { Name = "EspionageButton", Text = "Espionage".Tr() };
+    public Button EspionageButton => World.Espionage;
 
     /// <summary>Opens the espionage screen, closing the other full screens.</summary>
     public void OpenEspionageScreen()
@@ -427,7 +431,7 @@ public partial class GameScreen : Control
 
     public bool IsTechVisible => Tech.Visible;
 
-    public Button TechButton { get; } = new() { Name = "TechButton", Text = "Technology".Tr() };
+    public Button TechButton => World.Technology;
 
     /// <summary>Opens the tech screen on a tech (the current research when null), closing the city and diplomacy screens.</summary>
     public void OpenTechScreen(string? tech = null)
@@ -694,21 +698,9 @@ public partial class GameScreen : Control
         statusLabel = new Label { Name = "StatusLabel" };
         AddChild(statusLabel);
         Hud = new HudView { Name = "Hud" };
-        AddChild(Hud);
-        AddChild(DiplomacyButton);
-        DiplomacyButton.Pressed += () => OpenDiplomacyScreen();
-        AddChild(TechButton);
-        AddChild(TradeButton);
-        TradeButton.Pressed += () => OpenTradeScreen();
-        TechButton.Pressed += () => OpenTechScreen();
-        AddChild(PolicyButton);
-        PolicyButton.Pressed += OpenPolicyScreen;
-        AddChild(OverviewButton);
-        OverviewButton.Pressed += () => OpenOverviewScreen();
-        AddChild(PediaButton);
-        PediaButton.Pressed += () => OpenPediaScreen();
-        AddChild(EspionageButton);
-        EspionageButton.Pressed += OpenEspionageScreen;
+        World = new WorldHud();
+        AddChild(World);
+        World.Requested += OnNav;
         Hud.ActionRequested += OnHudAction;
         Hud.EndTurnRequested += OnNextTurn;
         Hud.AutoPlayRequested += OnAutoPlayButton;
@@ -716,7 +708,6 @@ public partial class GameScreen : Control
         AddChild(AutoPlayMenu);
         AutoPlayMenu.Chosen += kind => Run(StartAutoPlayAsync(kind));
         Notifications = new NotificationListView();
-        AddChild(Notifications);
         Notifications.Chosen += OnNotificationChosen;
         Notifications.ReviewRequested += () => Run(ReviewAlerts());
         TaskCard = new TutorialTaskCard();
@@ -731,8 +722,8 @@ public partial class GameScreen : Control
         CombatPreview.ConfirmRequested += () => Run(ConfirmAttack());
         CombatPreview.CancelRequested += ClearAttackPreview;
         Minimap = new MinimapView { Name = "Minimap" };
-        AddChild(Minimap);
         Minimap.Attach(Map);
+        World.Mount(Hud, Notifications, Minimap);
         AddChild(PromoteButton);
         PromoteButton.Pressed += () => Run(OpenPromotionPicker());
         Picker = new DecisionPickerView();
@@ -761,12 +752,6 @@ public partial class GameScreen : Control
         AddChild(TurnBar);
         Social = new SocialView();
         AddChild(Social);
-        AddChild(PlayersButton);
-        PlayersButton.Pressed += () =>
-        {
-            Social.Toggle(!Social.Visible);
-            if (Social.Visible) LayoutSocial();
-        };
         Social.ChatSubmitted += text => Run(SendChat(text));
         Social.KickRequested += civ => Run(Admin(civ, null));
         Social.RebindRequested += (civ, key) => Run(Admin(civ, key));
@@ -781,8 +766,6 @@ public partial class GameScreen : Control
         AddChild(Tutorials);
         Tutorials.Dismissed += DismissTutorial;
         GameOver.Chosen += kind => Run(OnGameOverChosen(kind));
-        AddChild(MenuButton);
-        MenuButton.Pressed += OpenGameMenu;
         VictoryStatus = new VictoryStatusView();
         AddChild(VictoryStatus);
         GameMenu = new GameMenuView();
@@ -802,7 +785,6 @@ public partial class GameScreen : Control
     private void Layout()
     {
         Size = GetViewportRect().Size;
-        Hud.LayoutIn(Size);
         if (City != null)
         {
             City.Position = new Vector2(0f, Hud.TopBarHeight);
@@ -828,18 +810,11 @@ public partial class GameScreen : Control
             Overview.Position = new Vector2(0f, Hud.TopBarHeight);
             Overview.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
-        DiplomacyButton.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight);
-        TechButton.Position = new Vector2(HudMargin + DiplomacyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
-        PolicyButton.Position = new Vector2(TechButton.Position.X + TechButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         if (Policies != null)
         {
             Policies.Position = new Vector2(0f, Hud.TopBarHeight);
             Policies.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
-        OverviewButton.Position = new Vector2(PolicyButton.Position.X + PolicyButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
-        // C055: second row, right-aligned beside the minimap: the bottom left belongs to the unit panel, which used to cover the button
-        PediaButton.Position = new Vector2(Size.X - 2f * HudMargin - Minimap.Size.X - PediaButton.GetCombinedMinimumSize().X, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
-        EspionageButton.Position = new Vector2(PediaButton.Position.X - HudMargin - EspionageButton.GetCombinedMinimumSize().X, PediaButton.Position.Y);
         if (Pedia != null)
         {
             Pedia.Position = new Vector2(0f, Hud.TopBarHeight);
@@ -850,12 +825,7 @@ public partial class GameScreen : Control
             Espionage.Position = new Vector2(0f, Hud.TopBarHeight);
             Espionage.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
-        TradeButton.Position = new Vector2(OverviewButton.Position.X + OverviewButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
-        Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
-        Notifications.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
-        MenuButton.Position = new Vector2(TradeButton.Position.X + TradeButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
-        PlayersButton.Position = new Vector2(MenuButton.Position.X + MenuButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
         LayoutSocial();
         Alerts.LayoutIn(Size);
         Proposals.LayoutIn(Size);
@@ -864,11 +834,12 @@ public partial class GameScreen : Control
         VictoryStatus.LayoutIn(Size);
         GameMenu.LayoutIn(Size);
         AutoPlayMenu.Size = AutoPlayMenu.GetCombinedMinimumSize();
-        AutoPlayMenu.Position = new Vector2(Hud.AutoPlayButton.Position.X + Hud.AutoPlayButton.Size.X - AutoPlayMenu.Size.X, Hud.AutoPlayButton.Position.Y - AutoPlayMenu.Size.Y - HudMargin / 2f);
+        var autoPlayRect = Hud.AutoPlayButton?.GetGlobalRect() ?? default; // the dock's own layout places the button; the menu opens above it, right-aligned
+        AutoPlayMenu.Position = new Vector2(autoPlayRect.End.X - AutoPlayMenu.Size.X, autoPlayRect.Position.Y - AutoPlayMenu.Size.Y - HudMargin / 2f);
         ConsolePopup.LayoutIn(Size);
         Picker.LayoutIn(Size);
         Tutorials.LayoutIn(Size);
-        TaskCard.LayoutIn(Size, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
+        TaskCard.LayoutIn(Size, World.NavBottom + HudMargin);
         TurnBar.LayoutIn(Size.X, TurnBarTop());
         TurnOverlay.LayoutIn(Size);
         Panel.LayoutIn(Size);
@@ -907,12 +878,14 @@ public partial class GameScreen : Control
         session = gameSession;
         assets = registry;
         queries = new GameQueries(session);
+        ui?.Unbind();
         var theme = new UiTheme(registry);
-        Hud.Init(theme);
+        ui = theme;
+        World.Init(theme);
+        theme.LayoutChanged += World.OnLayoutChanged;
+        theme.Bind(GetViewport());
         TurnBar.Init(theme);
         Social.Init(theme);
-        PlayersButton.Theme = theme.Theme;
-        Notifications.Init(theme);
         Alerts.Init(theme);
         Proposals.Init(theme);
         Proposals.Close();
@@ -938,7 +911,6 @@ public partial class GameScreen : Control
         ConsolePopup.Close();
         ConsolePopup.Bind(session, queries, () => (Map.Selected, SelectedUnitId), Run);
         ConsolePopup.LayoutIn(Size);
-        MenuButton.Theme = theme.Theme;
         resigned = false;
         TurnOverlay.Init(theme);
         TurnOverlay.Close();
@@ -946,6 +918,7 @@ public partial class GameScreen : Control
         Picker.Init(theme);
         PromoteButton.Theme = theme.Theme;
         deferredAlerts.Clear();
+        toastedAlerts.Clear();
         deferredProposals.Clear();
         offerTracker.Reset();
         reviewingAlerts = false;
@@ -965,7 +938,6 @@ public partial class GameScreen : Control
         Diplomacy = new DiplomacyScreen(session, theme);
         AddChild(Diplomacy);
         Diplomacy.CommandAccepted += Refresh;
-        DiplomacyButton.Theme = theme.Theme;
         if (Tech != null)
         {
             RemoveChild(Tech);
@@ -981,11 +953,9 @@ public partial class GameScreen : Control
         Trade.CommandAccepted += Refresh;
         Trade.Closed += () => Run(RefreshHud());
         Trade.Retracting += offerTracker.NoteRetracted;
-        TradeButton.Theme = theme.Theme;
         Tech = new TechScreen(session, theme);
         AddChild(Tech);
         Tech.CommandAccepted += Refresh;
-        TechButton.Theme = theme.Theme;
         if (Policies != null)
         {
             RemoveChild(Policies);
@@ -994,7 +964,6 @@ public partial class GameScreen : Control
         Policies = new PolicyScreen(session, theme);
         AddChild(Policies);
         Policies.CommandAccepted += Refresh;
-        PolicyButton.Theme = theme.Theme;
         if (Overview != null)
         {
             RemoveChild(Overview);
@@ -1005,13 +974,12 @@ public partial class GameScreen : Control
         Overview.CommandAccepted += Refresh;
         Overview.CityChosen += JumpToCity;
         Overview.UnitChosen += JumpToUnit;
-        OverviewButton.Theme = theme.Theme;
         if (Tooltips != null)
         {
             RemoveChild(Tooltips);
             Tooltips.QueueFree();
         }
-        Tooltips = new TooltipHost(theme) { Name = "Tooltips", TopInset = () => Hud.BarRect.End.Y };
+        Tooltips = new TooltipHost(theme) { Name = "Tooltips", TopInset = () => World.BarBottom };
         HoveredTile = null;
         HoverTip = "";
         if (Pedia != null)
@@ -1021,7 +989,6 @@ public partial class GameScreen : Control
         }
         Pedia = new PediaScreen(session.Ruleset, theme, Tooltips);
         AddChild(Pedia);
-        PediaButton.Theme = theme.Theme;
         if (Espionage != null)
         {
             RemoveChild(Espionage);
@@ -1031,7 +998,6 @@ public partial class GameScreen : Control
         AddChild(Espionage);
         Espionage.CommandAccepted += Refresh;
         Espionage.AssignRequested += () => Run(OpenSpyAssignment());
-        EspionageButton.Theme = theme.Theme;
         Panel.Init(theme);
         CombatPreview.Init(theme);
         MoveChild(Picker, -1);
@@ -1414,6 +1380,7 @@ public partial class GameScreen : Control
         if (bar == null) return; // a refused query leaves the old bar
         var action = HudModel.NextAction(pending, snapshot.TurnStatus, session.ViewerCivId);
         Hud.Update(bar, action, HudModel.CanEndTurn(pending));
+        World.SetTechnologyAvailable(pending?.Decisions.Any(it => it.Kind == "Technology") == true);
         Layout();
         var rows = NotificationsModel.Rows(snapshot.Notifications);
         Notifications.Update(bar.Turn, rows);
@@ -1558,6 +1525,13 @@ public partial class GameScreen : Control
         }
         var next = AlertPopupModel.Next(pending, snapshot, deferredAlerts, reviewingAlerts);
         if (next == null) reviewingAlerts = false;
+        if (pending != null)
+        {
+            // C067 (S2): an alert that only informs is not a popup: it shows once as a toast in the notification column and waits under "Review alerts"
+            foreach (var entry in pending.Decisions)
+                if (AlertPopupModel.Describe(entry, snapshot) is { Kind: AlertKind.Ambient } ambient && ambient.Type != AlertType.StartIntro && toastedAlerts.Add(ambient.Key))
+                    Notifications.PushToast(ambient.Body.Length == 0 ? ambient.Title : ambient.Title + ": " + ambient.Body);
+        }
         Notifications.SetWaiting(AlertPopupModel.WaitingCount(pending, snapshot, deferredAlerts) + TradeProposalModel.WaitingCount(snapshot, deferredProposals));
         if (next == null) Alerts.Close();
         else if (Alerts.Current?.Key != next.Key || !Alerts.Visible) Alerts.Open(next);
@@ -1579,6 +1553,7 @@ public partial class GameScreen : Control
     }
 
     private bool answeringProposal;
+    private UiTheme? ui;
 
     private async Task AnswerProposal(TradeProposal popup, AlertButton answer)
     {
@@ -1655,7 +1630,27 @@ public partial class GameScreen : Control
             if (TurnBarModel.Toast(gameEvent, roster.Roster, session.ViewerCivId) is { } toast) TurnBar.Toast(toast);
     }
 
-    private void LayoutSocial() => Social.LayoutAt(new Vector2(Size.X - HudMargin, HudMargin + Hud.TopBarHeight + Minimap.Size.Y + HudMargin));
+    private void LayoutSocial() => Social.LayoutAtLeft(new Vector2(HudMargin, World.NavBottom + HudMargin));
+
+    /// <summary>C067: what a nav button of the <see cref="WorldHud"/> opens.</summary>
+    private void OnNav(NavTarget target)
+    {
+        switch (target)
+        {
+            case NavTarget.Diplomacy: OpenDiplomacyScreen(); break;
+            case NavTarget.Technology: OpenTechScreen(); break;
+            case NavTarget.Policies: OpenPolicyScreen(); break;
+            case NavTarget.Trade: OpenTradeScreen(); break;
+            case NavTarget.Espionage: OpenEspionageScreen(); break;
+            case NavTarget.Civilopedia: OpenPediaScreen(); break;
+            case NavTarget.Overview: OpenOverviewScreen(); break;
+            case NavTarget.Menu: OpenGameMenu(); break;
+            case NavTarget.Players:
+                Social.Toggle(!Social.Visible);
+                if (Social.Visible) LayoutSocial();
+                break;
+        }
+    }
 
     /// <summary>C045: connects the panel to a hosted game's chat and player list (null disconnects and hides it).</summary>
     private void BindSocial(IGameSocial? next)
@@ -1666,7 +1661,7 @@ public partial class GameScreen : Control
             social.PlayersChanged -= RefreshPlayers;
         }
         social = next;
-        PlayersButton.Visible = next != null;
+        World.ShowPlayers(next != null);
         if (next == null)
         {
             Social.Toggle(false);

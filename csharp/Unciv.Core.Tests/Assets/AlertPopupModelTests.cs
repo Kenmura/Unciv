@@ -234,6 +234,7 @@ public class AlertPopupModelTests
         var snapshot = Snapshot();
         foreach (var type in new[] { AlertType.WonderBuilt, AlertType.TechResearched, AlertType.FirstContact, AlertType.GoldenAge, AlertType.StartIntro })
             Assert.Equal(AlertKind.Ambient, AlertPopupModel.Describe(Entry(type, "rome-id"), snapshot)!.Kind);
+        Assert.Equal(AlertKind.Blocking, AlertPopupModel.Describe(Entry(AlertType.WarDeclaration, "rome-id"), snapshot)!.Kind);
         Assert.Equal(AlertKind.Blocking, AlertPopupModel.Describe(Entry(AlertType.DeclarationOfFriendship, "rome-id"), snapshot)!.Kind);
         Assert.Equal(AlertKind.Blocking, AlertPopupModel.Describe(Entry(AlertType.DemandToNotAttackUs, "rome-id"), snapshot)!.Kind);
         Assert.Equal(AlertKind.Blocking, AlertPopupModel.Describe(Entry(AlertType.CityConquered, "c1", choices: ("annex", "annex")), snapshot)!.Kind);

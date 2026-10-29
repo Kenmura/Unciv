@@ -7,40 +7,44 @@ using Unciv.GodotClient.Localization;
 namespace Unciv.GodotClient.Play;
 
 /// <summary>
-/// C011: the heads-up display of the game screen. A top bar (gold, science, culture, happiness, faith, golden age, resources, turn and year; the entries are
-/// <see cref="HudModel.TopBar"/>), a banner shown when a turn starts, and the next-action button at the bottom right. The button's text and meaning come from
-/// the engine's pending-decision list (<see cref="HudModel.NextAction"/>); while only non-blocking decisions are pending a second "Next turn" button
-/// next to it ends the turn anyway. The view shows what it is given and raises <see cref="ActionRequested"/> / <see cref="EndTurnRequested"/>; it computes nothing.
+/// C011 / C067: the content of the heads-up display: the top bar (stat chips, updated in place), the turn banner (a toast) and the next-action dock. The widgets are
+/// built here and <see cref="WorldHud"/> places them (it owns the layout; this class draws no absolute position). The next-action button's text and meaning come from
+/// the engine's pending-decision list (<see cref="HudModel.NextAction"/>); while only non-blocking decisions are pending a second "Next turn" button next to it ends
+/// the turn anyway. The view shows what it is given and raises <see cref="ActionRequested"/> / <see cref="EndTurnRequested"/>; it computes nothing.
 /// </summary>
 public partial class HudView : Control
 {
-    public const int BarHeight = 36;
-    private const float Margin = 12f;
+    public const int BarHeight = 40;
+    public const int CompactBarHeight = 36;
     private const int BannerFrames = 150; // counted in frames, not seconds, so a scenario's captures do not depend on how fast the machine renders
 
-    private readonly PanelContainer bar = new() { Name = "TopBar", MouseFilter = MouseFilterEnum.Stop };
-    private readonly HBoxContainer row = new() { Name = "Row" };
-    private readonly Label banner = new() { Name = "Banner", Visible = false, HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-    private readonly Button actionButton = new() { Name = "NextAction" };
-    private readonly Button endTurnButton = new() { Name = "EndTurn", Text = HudModel.EndTurnLabel.TrText(), Visible = false };
-    private readonly Button autoPlayButton = new() { Name = "AutoPlayButton", Text = AutoPlayModel.ButtonLabel.TrText(), Visible = false };
+    private readonly PanelContainer bar = new() { Name = "TopBar", MouseFilter = MouseFilterEnum.Stop, ThemeTypeVariation = UiVariants.PanelHeader };
+    private readonly HBoxContainer row = new() { Name = "Row", MouseFilter = MouseFilterEnum.Ignore };
+    private readonly HBoxContainer leading = new() { Name = "Leading", MouseFilter = MouseFilterEnum.Ignore };
+    private readonly PanelContainer bannerPanel = new() { Name = "BannerToast", Visible = false, MouseFilter = MouseFilterEnum.Ignore, ThemeTypeVariation = UiVariants.PanelCard };
+    private readonly Label banner = new() { Name = "Banner", HorizontalAlignment = HorizontalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore, ThemeTypeVariation = UiVariants.LabelDisplay };
+    private readonly VBoxContainer dock = new() { Name = "NextActionDock", MouseFilter = MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.End };
+    private readonly HBoxContainer dockRow = new() { Name = "NextActionRow", MouseFilter = MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.End };
+    private readonly Button actionButton = new() { Name = "NextAction", ThemeTypeVariation = UiVariants.ButtonPrimary };
     private readonly Dictionary<string, Control> entries = [];
+    private Button autoPlayButton = null!; // JUSTIFY: C067 assigned by Init before the HUD is used
+    private IconButton endTurnButton = null!; // JUSTIFY: C067 assigned by Init before the HUD is used
     private UiTheme theme = null!; // JUSTIFY: C011 assigned by Init before the HUD is updated
     private IReadOnlyList<HudStat> stats = [];
     private int bannerLeft;
+    private bool endTurnWanted;
+    private bool autoPlayWanted;
 
     public HudView()
     {
+        Name = "HudContent";
         MouseFilter = MouseFilterEnum.Ignore;
         bar.AddChild(row);
-        AddChild(bar);
-        AddChild(banner);
+        row.AddChild(leading);
+        bannerPanel.AddChild(banner);
         actionButton.Pressed += () => ActionRequested?.Invoke(Action);
-        endTurnButton.Pressed += () => EndTurnRequested?.Invoke();
-        AddChild(endTurnButton);
-        AddChild(actionButton);
-        autoPlayButton.Pressed += () => AutoPlayRequested?.Invoke();
-        AddChild(autoPlayButton);
+        dockRow.AddChild(actionButton);
+        dock.AddChild(dockRow);
     }
 
     /// <summary>C047: whether a run is going; the next-action button stays disabled meanwhile (Kotlin disables the next turn button during AutoPlay).</summary>
@@ -48,10 +52,30 @@ public partial class HudView : Control
 
     public Button AutoPlayButton => autoPlayButton;
 
+    /// <summary>The top bar panel (placed along the top edge by <see cref="WorldHud"/>).</summary>
+    public Control Bar => bar;
+
+    /// <summary>The slot at the left end of the top bar (the menu button).</summary>
+    public Container Leading => leading;
+
+    /// <summary>The turn banner toast.</summary>
+    public Control Toast => bannerPanel;
+
+    /// <summary>The next-action dock: AutoPlay above, End turn and the primary action below it.</summary>
+    public Control Dock => dock;
+
+    public Control ActionButton => actionButton;
+
+    public Control EndTurnButton => endTurnButton;
+
     public event Action? AutoPlayRequested;
 
     /// <summary>C047: shows or hides the AutoPlay button (the "Show AutoPlay button" option).</summary>
-    public void ShowAutoPlayButton(bool shown) => autoPlayButton.Visible = shown;
+    public void ShowAutoPlayButton(bool shown)
+    {
+        autoPlayWanted = shown;
+        autoPlayButton.Visible = shown;
+    }
 
     /// <summary>C047: words the AutoPlay button for the run (null = idle) and locks the next-action button while it runs.</summary>
     public void SetAutoPlay(AutoPlayRun? run)
@@ -59,8 +83,7 @@ public partial class HudView : Control
         AutoPlayRunning = run != null;
         autoPlayButton.Text = AutoPlayModel.ButtonText(run).TrText();
         actionButton.Disabled = AutoPlayRunning || !Action.Enabled;
-        if (AutoPlayRunning) endTurnButton.Visible = false;
-        LayoutIn(Size);
+        if (AutoPlayRunning) SetEndTurnShown(false);
     }
 
     /// <summary>What the next-action button currently means.</summary>
@@ -76,7 +99,7 @@ public partial class HudView : Control
 
     public string BannerText => banner.Text;
 
-    public bool BannerVisible => banner.Visible;
+    public bool BannerVisible => bannerPanel.Visible;
 
     /// <summary>Keeps the banner up until <see cref="HideBanner"/> (for scenarios, which must not depend on wall time).</summary>
     public bool HoldBanner { get; set; }
@@ -86,6 +109,9 @@ public partial class HudView : Control
     /// <summary>The text of one top bar entry by its <see cref="HudStat.Id"/>, null when the bar has no such entry.</summary>
     public string? StatText(string id) => stats.FirstOrDefault(it => it.Id == id)?.Text;
 
+    /// <summary>The top bar's controls by stat id (the harness checks them for overlap and clipping).</summary>
+    public IReadOnlyDictionary<string, Control> Entries => entries;
+
     public event Action<HudAction>? ActionRequested;
 
     public event Action? EndTurnRequested;
@@ -94,69 +120,83 @@ public partial class HudView : Control
     {
         theme = uiTheme;
         Theme = uiTheme.Theme;
-        banner.AddThemeFontSizeOverride("font_size", uiTheme.Px(36));
-        banner.AddThemeColorOverride("font_outline_color", ToColour(PlaceholderPalette.Unexplored));
-        banner.AddThemeConstantOverride("outline_size", uiTheme.Px(8));
-        actionButton.CustomMinimumSize = new Vector2(uiTheme.Px(180), uiTheme.Px(44));
-        endTurnButton.CustomMinimumSize = new Vector2(uiTheme.Px(110), uiTheme.Px(44));
-        autoPlayButton.CustomMinimumSize = new Vector2(uiTheme.Px(180), uiTheme.Px(36));
-        uiTheme.ScaleChanged += () => LayoutIn(Size);
+        foreach (var node in new Control[] { bar, bannerPanel, dock }) node.Theme = uiTheme.Theme;
+        if (endTurnButton != null) dockRow.RemoveChild(endTurnButton);
+        endTurnButton?.QueueFree();
+        endTurnButton = new IconButton(uiTheme, AssetKey.Of(RulesetAssetKeys.UiIcon, "ForwardArrow"), HudModel.EndTurnLabel, variation: UiVariants.ButtonGhost) { Name = "EndTurn", Visible = false };
+        endTurnButton.Pressed += () => EndTurnRequested?.Invoke();
+        dockRow.AddChild(endTurnButton);
+        dockRow.MoveChild(endTurnButton, 0);
+        if (autoPlayButton != null) dock.RemoveChild(autoPlayButton);
+        autoPlayButton?.QueueFree();
+        autoPlayButton = new Button { Name = "AutoPlayButton", Text = AutoPlayModel.ButtonLabel.TrText(), Visible = false, ThemeTypeVariation = UiVariants.ButtonGhost };
+        autoPlayButton.Pressed += () => AutoPlayRequested?.Invoke();
+        dock.AddChild(autoPlayButton);
+        dock.MoveChild(autoPlayButton, 0);
+        bool compact = uiTheme.Breakpoint == UiBreakpoint.Compact;
+        banner.ThemeTypeVariation = compact ? UiVariants.LabelTitle : UiVariants.LabelDisplay;
+        var barStyle = (StyleBox)uiTheme.Theme.GetStylebox("panel", UiVariants.PanelHeader).Duplicate();
+        barStyle.ContentMarginTop = barStyle.ContentMarginBottom = uiTheme.Px(UiTokens.S1);
+        bar.AddThemeStyleboxOverride("panel", barStyle);
+        bar.CustomMinimumSize = new Vector2(0f, uiTheme.Px(compact ? CompactBarHeight : BarHeight));
+        actionButton.CustomMinimumSize = new Vector2(uiTheme.Px(compact ? 150 : 200), uiTheme.Px(compact ? 40 : 48));
+        endTurnButton.CustomMinimumSize = new Vector2(uiTheme.Px(40), uiTheme.Px(compact ? 40 : 48));
+        dock.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S1));
+        dockRow.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
+        row.AddThemeConstantOverride("separation", uiTheme.Px(compact ? UiTokens.S2 : UiTokens.S4));
+        endTurnButton.Visible = endTurnWanted;
+        autoPlayButton.Visible = autoPlayWanted;
+        Rebuild(force: true);
     }
 
-    /// <summary>Positions the parts inside a screen of <paramref name="screen"/> pixels.</summary>
-    public void LayoutIn(Vector2 screen)
-    {
-        Size = screen;
-        float barHeight = theme?.Px(BarHeight) ?? BarHeight;
-        bar.Position = Vector2.Zero;
-        bar.Size = new Vector2(screen.X, barHeight);
-        actionButton.Position = screen - actionButton.CustomMinimumSize - new Vector2(Margin, Margin);
-        actionButton.Size = actionButton.CustomMinimumSize;
-        endTurnButton.Size = endTurnButton.CustomMinimumSize;
-        autoPlayButton.Size = new Vector2(Math.Max(autoPlayButton.CustomMinimumSize.X, autoPlayButton.GetCombinedMinimumSize().X), autoPlayButton.CustomMinimumSize.Y);
-        autoPlayButton.Position = new Vector2(screen.X - Margin - autoPlayButton.Size.X, actionButton.Position.Y - Margin / 2f - autoPlayButton.Size.Y);
-        endTurnButton.Position = actionButton.Position - new Vector2(endTurnButton.CustomMinimumSize.X + Margin, 0f);
-        banner.Size = new Vector2(screen.X, banner.GetCombinedMinimumSize().Y);
-        banner.Position = new Vector2(0f, screen.Y * 0.28f);
-    }
-
-    /// <summary>Height of the top bar in pixels (the minimap sits below it).</summary>
-    public float TopBarHeight => theme?.Px(BarHeight) ?? BarHeight;
+    /// <summary>Height of the top bar in pixels (what <see cref="WorldHud"/> reserves for it).</summary>
+    public float TopBarHeight => theme?.Px(theme.Breakpoint == UiBreakpoint.Compact ? CompactBarHeight : BarHeight) ?? BarHeight;
 
     public void Update(EmpireTopBarResult topBar, HudAction action, bool canEndTurn)
     {
         stats = HudModel.TopBar(topBar);
-        Rebuild();
+        Rebuild(force: false);
         Action = action;
         actionButton.Text = action.Label.TrText();
         actionButton.Disabled = !action.Enabled || AutoPlayRunning;
-        endTurnButton.Visible = action.Kind != HudActionKind.EndTurn && canEndTurn && action.Enabled && !AutoPlayRunning;
+        SetEndTurnShown(action.Kind != HudActionKind.EndTurn && canEndTurn && action.Enabled && !AutoPlayRunning);
+    }
+
+    private void SetEndTurnShown(bool shown)
+    {
+        endTurnWanted = shown;
+        endTurnButton.Visible = shown;
     }
 
     public void ShowBanner(string text)
     {
         banner.Text = text.TrText();
-        banner.Visible = true;
+        bannerPanel.Visible = true;
         bannerLeft = BannerFrames;
-        LayoutIn(Size);
     }
 
     public void HideBanner()
     {
         HoldBanner = false;
-        banner.Visible = false;
+        bannerPanel.Visible = false;
     }
 
     public override void _Process(double delta)
     {
-        if (!banner.Visible || HoldBanner) return;
+        if (!bannerPanel.Visible || HoldBanner) return;
         bannerLeft--;
-        if (bannerLeft <= 0) banner.Visible = false;
+        if (bannerLeft <= 0) bannerPanel.Visible = false;
     }
 
-    private void Rebuild()
+    /// <summary>Updates the existing chips in place; the row is rebuilt only when the set of entries changed (a resource appeared or went) or <paramref name="force"/>.</summary>
+    private void Rebuild(bool force)
     {
-        foreach (var child in row.GetChildren())
+        if (!force && entries.Keys.SequenceEqual(stats.Select(it => it.Id)))
+        {
+            foreach (var stat in stats) Apply(entries[stat.Id], stat);
+            return;
+        }
+        foreach (var child in row.GetChildren().Where(it => it != leading).ToList())
         {
             row.RemoveChild(child); // at once: a queued free would leave the old entries in the row (and its width) until the frame ends
             child.QueueFree();
@@ -165,14 +205,26 @@ public partial class HudView : Control
         foreach (var stat in stats)
         {
             if (stat.Id == "Turn") row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Ignore });
-            Control item = stat.Icon is { } icon ? new IconLabel(theme, icon, stat.Text) : new Label { Text = stat.Text };
+            Control item = stat.Id == "Turn" ? new Label { ThemeTypeVariation = UiVariants.LabelNumber, VerticalAlignment = VerticalAlignment.Center }
+                : stat.Icon is { Category: RulesetAssetKeys.StatIcon } icon ? new StatChip(theme, icon.Name, stat.Text)
+                : stat.Icon is { } other ? new IconLabel(theme, other, stat.Text)
+                : new Label { VerticalAlignment = VerticalAlignment.Center };
             item.Name = stat.Id.Replace(':', '_');
-            item.TooltipText = stat.Tooltip.TrText();
+            item.MouseFilter = MouseFilterEnum.Stop; // a tooltip needs the pointer
             row.AddChild(item);
             entries[stat.Id] = item;
+            Apply(item, stat);
         }
-        row.AddThemeConstantOverride("separation", theme.Px(20));
     }
 
-    private static Color ToColour(Rgb rgb) => new(rgb.R / 255f, rgb.G / 255f, rgb.B / 255f);
+    private static void Apply(Control item, HudStat stat)
+    {
+        switch (item)
+        {
+            case StatChip chip: chip.Value = stat.Text; break;
+            case IconLabel label: label.Text = stat.Text; break;
+            case Label label: label.Text = stat.Text; break;
+        }
+        item.TooltipText = stat.Tooltip.TrText();
+    }
 }

@@ -30,7 +30,9 @@ public partial class Modal : Control
     private readonly ColorRect scrim = new() { Name = "Scrim", MouseFilter = MouseFilterEnum.Ignore };
     private readonly AccentPanel panel = new() { Name = "ModalPanel", ThemeTypeVariation = UiVariants.PanelModal };
     private readonly VBoxContainer column = new() { Name = "ModalColumn" };
-    private readonly Label title = new() { Name = "ModalTitle", ThemeTypeVariation = UiVariants.LabelHeading, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    private readonly HBoxContainer headerRow = new() { Name = "ModalHeader" };
+    private readonly TextureRect headerIcon = new() { Name = "ModalIcon", Visible = false, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore };
+    private readonly Label title = new() { Name = "ModalTitle", ThemeTypeVariation = UiVariants.LabelHeading, AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center };
     private readonly Label subtitle = new() { Name = "ModalSubtitle", ThemeTypeVariation = UiVariants.LabelSecondary, AutowrapMode = TextServer.AutowrapMode.WordSmart, Visible = false };
     private readonly VBoxContainer body = new() { Name = "ModalBody" };
     private readonly VBoxContainer footer = new() { Name = "ModalFooter" };
@@ -49,7 +51,9 @@ public partial class Modal : Control
         AddChild(centre);
         centre.AddChild(panel);
         panel.AddChild(column);
-        column.AddChild(title);
+        headerRow.AddChild(headerIcon);
+        headerRow.AddChild(title);
+        column.AddChild(headerRow);
         column.AddChild(subtitle);
         column.AddChild(body);
         column.AddChild(footer);
@@ -86,6 +90,7 @@ public partial class Modal : Control
         Theme = uiTheme.Theme;
         panel.Bind(uiTheme, UiTokens.RadiusPanel);
         column.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S3));
+        headerRow.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S3));
         footer.AddThemeConstantOverride("separation", uiTheme.Px(UiTokens.S2));
         ApplyScrim();
     }
@@ -103,9 +108,15 @@ public partial class Modal : Control
 
     public void LayoutIn(Vector2 screen) => Size = screen;
 
-    /// <summary>Sets the header: the title and, when <paramref name="subtitleText"/> is given, a smaller line under it. Both are translated.</summary>
-    public void SetHeader(string titleText, string? subtitleText = null)
+    /// <summary>Sets the header: the title and, when <paramref name="subtitleText"/> is given, a smaller line under it. Both are translated. With <paramref name="icon"/> a 40 px icon sits left of the title (C067).</summary>
+    public void SetHeader(string titleText, string? subtitleText = null, AssetKey? icon = null)
     {
+        headerIcon.Visible = icon != null && theme != null;
+        if (icon is { } key && theme != null)
+        {
+            headerIcon.Texture = theme.Icon(key);
+            headerIcon.CustomMinimumSize = new Vector2(theme.Px(40), theme.Px(40));
+        }
         title.Text = titleText.TrText();
         subtitle.Text = (subtitleText ?? "").TrText();
         subtitle.Visible = !string.IsNullOrEmpty(subtitleText);

@@ -26,7 +26,7 @@ public enum AlertKind
 /// </summary>
 public sealed record AlertPopup(int Index, AlertType Type, string Value, string Title, string Body, IReadOnlyList<AlertButton> Buttons, bool Blocking, bool CanDefer)
 {
-    /// <summary>C066: whether the alert interrupts the player (a modal popup) or only tells something (<see cref="AlertKind.Ambient"/>, a toast once C067 lands).</summary>
+    /// <summary>C066: whether the alert interrupts the player (a modal popup) or only tells something (<see cref="AlertKind.Ambient"/>, a toast in the notification column).</summary>
     public AlertKind Kind => AlertPopupModel.KindOf(this);
 
     /// <summary>Identifies this alert instance for "decide later" bookkeeping.</summary>
@@ -109,8 +109,8 @@ public static class AlertPopupModel
         return null;
     }
 
-    /// <summary><see cref="AlertKind.Ambient"/> when the alert is only informational and the engine does not require an answer; every alert that asks for a choice, or that blocks the turn, is <see cref="AlertKind.Blocking"/>.</summary>
-    public static AlertKind KindOf(AlertPopup popup) => popup.Blocking || !IsInformational(popup) ? AlertKind.Blocking : AlertKind.Ambient;
+    /// <summary><see cref="AlertKind.Ambient"/> when the alert is only informational and the engine does not require an answer; every alert that asks for a choice, that blocks the turn or that is a declaration of war (C067: act on it) is <see cref="AlertKind.Blocking"/>.</summary>
+    public static AlertKind KindOf(AlertPopup popup) => popup.Blocking || !IsInformational(popup) || popup.Type == AlertType.WarDeclaration ? AlertKind.Blocking : AlertKind.Ambient;
 
     /// <summary>An alert that is only acknowledged: its single answer is OK.</summary>
     public static bool IsInformational(AlertPopup popup) => popup.Buttons is [{ Command: AckAlert }];

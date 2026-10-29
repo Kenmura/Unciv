@@ -12,23 +12,25 @@ namespace Unciv.GodotClient.Play;
 public partial class NextTurnProgressView : Control
 {
     private readonly ColorRect dim = new() { MouseFilter = MouseFilterEnum.Ignore };
-    private readonly Label heading = new() { Name = "ProgressHeading", HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly Label detail = new() { Name = "ProgressDetail", HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly ProgressBar bar = new() { Name = "ProgressBar", MinValue = 0, MaxValue = 1, Step = 0.001, ShowPercentage = false };
+    private readonly Label heading = new() { Name = "ProgressHeading", HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = UiVariants.LabelTitle };
+    private readonly Label detail = new() { Name = "ProgressDetail", HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = UiVariants.LabelSecondary };
+    private readonly ProgressBar bar = new() { Name = "ProgressBar", MinValue = 0, MaxValue = 1, Step = 0.001, ShowPercentage = false, ThemeTypeVariation = UiVariants.StatBarThin };
 
     public NextTurnProgressView()
     {
         Name = "NextTurnProgress";
         Visible = false;
         MouseFilter = MouseFilterEnum.Stop;
+        this.Fill();
         dim.Fill();
         AddChild(dim);
         var centre = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
         centre.Fill();
         AddChild(centre);
-        var panel = new PanelContainer { Name = "ProgressPanel" };
+        var panel = new PanelContainer { Name = "ProgressPanel", ThemeTypeVariation = UiVariants.PanelCard };
         centre.AddChild(panel);
         var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 8);
         panel.AddChild(column);
         column.AddChild(heading);
         column.AddChild(detail);
@@ -47,10 +49,10 @@ public partial class NextTurnProgressView : Control
         var shade = uiTheme.Panel.BgColor;
         shade.A = 0.5f;
         dim.Color = shade;
-        heading.AddThemeFontSizeOverride("font_size", uiTheme.Px(20));
         bar.CustomMinimumSize = new Vector2(uiTheme.Px(320), uiTheme.Px(14));
     }
 
+    /// <summary>C067: the overlay fills its parent by anchors; the screen no longer sizes it.</summary>
     public void LayoutIn(Vector2 screen) => Size = screen;
 
     /// <summary>Shows the overlay (if hidden) with this progress.</summary>

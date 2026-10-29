@@ -92,6 +92,13 @@ public partial class SocialView : Control
         panel.Position = new Vector2(topRight.X - panel.Size.X, topRight.Y);
     }
 
+    /// <summary>C067: lays the panel out with its top-left corner at <paramref name="topLeft"/> (the top right belongs to the notification column).</summary>
+    public void LayoutAtLeft(Vector2 topLeft)
+    {
+        panel.Size = panel.GetCombinedMinimumSize();
+        panel.Position = topLeft;
+    }
+
     /// <summary>Shows or hides the panel.</summary>
     public void Toggle(bool open) => Visible = open;
 

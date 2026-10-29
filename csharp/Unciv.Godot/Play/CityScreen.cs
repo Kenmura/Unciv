@@ -217,8 +217,7 @@ public partial class CityScreen : PanelContainer
     {
         if (Visible && @event is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
-            if (renameView.Visible) renameView.Cancel(); // Escape leaves the popup, not the city screen
-            else Close();
+            Close();
             GetViewport().SetInputAsHandled();
         }
     }

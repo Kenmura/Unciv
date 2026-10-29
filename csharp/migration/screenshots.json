@@ -1169,5 +1169,23 @@
         "caption": "The tile tooltip in the new tooltip style, wrapped to the 340 px maximum and placed below the HUD top bar instead of over it."
       }
     ]
+  },
+  "C067": {
+    "scenario": "hud",
+    "about": "World HUD layout (WorldHud): top bar with stat chips updated in place and the menu button, research and policy pills, nav icon strip, notification column on the right (drop-down list, toasts for ambient alerts), minimap dock above the next-action dock at the bottom right, the turn banner as a toast. Containers only, no absolute positions; no HUD rectangle overlaps another at 640x480 or 1280x720 (harness assert).",
+    "shots": [
+      {
+        "golden": "hud/start.png",
+        "caption": "640x480 (Compact): top bar, Technology pill and Policies icon, nav icons on the right, turn banner toast, minimap dock and the Next unit button at the bottom right."
+      },
+      {
+        "golden": "hud/wide.png",
+        "caption": "1280x720 (Regular) after resizing the window: the same structure with the Policies pill in full, the 200x140 minimap and the unit panel at the bottom left."
+      },
+      {
+        "golden": "alerts/list.png",
+        "caption": "The notification column with its drop-down list open under the toggle, floating over the map and the docks."
+      }
+    ]
   }
 }

@@ -1082,7 +1082,7 @@ Scenario `ui-kit`.
 
 *The same components at 1280x720: the control page on the left and the data page on the right.* (`ui-kit/wide.png`)
 
-## C066 (ticket not Done or unknown)
+## C066 ScreenFrame, Modal and Tooltip
 
 One frame for every popup and screen: Modal (scrim, centred panel with the brass hairline on its top edge, title, body and a right-aligned footer with the primary button right-most, stacked when there are more than three), ScreenFrame (header bar with hairline, title, close button, content, footer) and a styled tooltip that wraps at 340 px and never covers the HUD top bar. The alert, decision-picker, tutorial, trade-proposal, rename and hotseat popups now all use Modal.
 
@@ -1131,6 +1131,24 @@ Scenario `ui-kit`.
 ![The tile tooltip in the new tooltip style, wrapped to the 340 px maximum and placed below the HUD top bar instead of over it.](../Unciv.Godot.Harness/golden/tooltips/tile.png)
 
 *The tile tooltip in the new tooltip style, wrapped to the 340 px maximum and placed below the HUD top bar instead of over it.* (`tooltips/tile.png`)
+
+## C067 (ticket not Done or unknown)
+
+World HUD layout (WorldHud): top bar with stat chips updated in place and the menu button, research and policy pills, nav icon strip, notification column on the right (drop-down list, toasts for ambient alerts), minimap dock above the next-action dock at the bottom right, the turn banner as a toast. Containers only, no absolute positions; no HUD rectangle overlaps another at 640x480 or 1280x720 (harness assert).
+
+Scenario `hud`.
+
+![640x480 (Compact): top bar, Technology pill and Policies icon, nav icons on the right, turn banner toast, minimap dock and the Next unit button at the bottom right.](../Unciv.Godot.Harness/golden/hud/start.png)
+
+*640x480 (Compact): top bar, Technology pill and Policies icon, nav icons on the right, turn banner toast, minimap dock and the Next unit button at the bottom right.* (`hud/start.png`)
+
+![1280x720 (Regular) after resizing the window: the same structure with the Policies pill in full, the 200x140 minimap and the unit panel at the bottom left.](../Unciv.Godot.Harness/golden/hud/wide.png)
+
+*1280x720 (Regular) after resizing the window: the same structure with the Policies pill in full, the 200x140 minimap and the unit panel at the bottom left.* (`hud/wide.png`)
+
+![The notification column with its drop-down list open under the toggle, floating over the map and the docks.](../Unciv.Godot.Harness/golden/alerts/list.png)
+
+*The notification column with its drop-down list open under the toggle, floating over the map and the docks.* (`alerts/list.png`)
 
 ## C080 Unit model loader and contract
 

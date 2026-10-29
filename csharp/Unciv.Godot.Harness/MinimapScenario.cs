@@ -59,7 +59,7 @@ public sealed class MinimapScenario : Scenario
                 var far = tiles.OrderByDescending(it => MapLayout.TileTop(it.tile.NotNull().x, it.tile.NotNull().y).DistanceTo(focusBefore)).First();
                 target = far.tile.NotNull();
                 var (cx, cy) = raster.CentreOf(target);
-                clickAt = minimap.GlobalPosition + new Vector2(cx, cy);
+                clickAt = minimap.GlobalPosition + minimap.PictureOffset + new Vector2(cx, cy);
             }),
             new Click(() => clickAt),
             new WaitFrames(2),

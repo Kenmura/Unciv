@@ -14,10 +14,10 @@ namespace Unciv.GodotClient.Play;
 /// </summary>
 public partial class MinimapView : Control
 {
-    private static readonly Color FrameColour = ToColour(PlaceholderPalette.PanelBorder);
     private static readonly Color ViewColour = ToColour(PlaceholderPalette.Light);
     private static readonly Color BackColour = ToColour(PlaceholderPalette.Unexplored);
     private const float FrameWidth = 2f;
+    private const int MaxCell = 8;
 
     private MapView map = null!; // JUSTIFY: C014 assigned by Attach before the minimap is used
     private MinimapRaster? raster;
@@ -25,8 +25,24 @@ public partial class MinimapView : Control
     private Vector2 lastFocus = new(float.NaN, float.NaN);
     private float lastZoom = float.NaN;
     private bool jumping;
+    private Vector2 slot;
 
     public MinimapRaster? Raster => raster;
+
+    /// <summary>Where the picture's top left corner lies inside this control (the picture is centred in the slot; a click maps through it).</summary>
+    public Vector2 PictureOffset => raster == null ? Vector2.Zero : ((Size - new Vector2(raster.Image.Width, raster.Image.Height)) / 2f).Floor();
+
+    /// <summary>C067: the size of the dock this minimap fills (per breakpoint, never below 140x100). The picture is rebuilt to fit it on the next <see cref="Update"/>.</summary>
+    public void SetSlot(Vector2 size)
+    {
+        slot = size;
+        CustomMinimumSize = size;
+        Size = size;
+        if (lastTiles != null) Update(lastTiles, lastOwnerColour!);
+    }
+
+    private IReadOnlyList<TileDto>? lastTiles;
+    private Func<string, Rgb?>? lastOwnerColour;
 
     /// <summary>Raised after every jump with the tile jumped to.</summary>
     public event Action<HexCoord>? Jumped;
@@ -40,10 +56,29 @@ public partial class MinimapView : Control
     /// <summary>Redraws the picture from <paramref name="tiles"/>; <paramref name="ownerColour"/> gives each civ's border colour.</summary>
     public void Update(IReadOnlyList<TileDto> tiles, Func<string, Rgb?> ownerColour)
     {
+        lastTiles = tiles;
+        lastOwnerColour = ownerColour;
         raster = MinimapRaster.Build(tiles, ownerColour);
+        // a map bigger than the dock is drawn with smaller cells (down to one pixel) so the whole of it fits; a smaller one keeps the default cell and is centred
+        if (slot != default && (raster.Image.Width > slot.X || raster.Image.Height > slot.Y))
+        {
+            int cell = MinimapRaster.DefaultCell;
+            while (cell > 1 && (raster.Image.Width > slot.X || raster.Image.Height > slot.Y))
+                raster = MinimapRaster.Build(tiles, ownerColour, --cell);
+        }
+        else if (slot != default)
+        {
+            // a small map is drawn larger (up to 8 px a tile) so it fills the dock instead of floating in it
+            int cell = MinimapRaster.DefaultCell;
+            while (cell < MaxCell)
+            {
+                var bigger = MinimapRaster.Build(tiles, ownerColour, cell + 1);
+                if (bigger.Image.Width > slot.X || bigger.Image.Height > slot.Y) break;
+                raster = bigger;
+                cell++;
+            }
+        }
         texture = ProceduralAssets.ToTexture(raster.Image);
-        CustomMinimumSize = new Vector2(raster.Image.Width, raster.Image.Height);
-        Size = CustomMinimumSize;
         QueueRedraw();
     }
 
@@ -62,8 +97,9 @@ public partial class MinimapView : Control
             min = new Vector2(Math.Min(min.X, px), Math.Min(min.Y, py));
             max = new Vector2(Math.Max(max.X, px), Math.Max(max.Y, py));
         }
-        var picture = new Rect2(Vector2.Zero, Size);
-        return new Rect2(min, max - min).Intersection(picture);
+        var picture = new Rect2(Vector2.Zero, new Vector2(raster.Image.Width, raster.Image.Height));
+        var clipped = new Rect2(min, max - min).Intersection(picture);
+        return new Rect2(clipped.Position + PictureOffset, clipped.Size);
     }
 
     public override void _Process(double delta)
@@ -79,9 +115,8 @@ public partial class MinimapView : Control
     public override void _Draw()
     {
         DrawRect(new Rect2(Vector2.Zero, Size), BackColour);
-        if (texture != null) DrawTexture(texture, Vector2.Zero);
+        if (texture != null) DrawTexture(texture, PictureOffset);
         if (ViewportRect() is { } view) DrawRect(view, ViewColour, false, FrameWidth);
-        DrawRect(new Rect2(Vector2.Zero, Size), FrameColour, false, FrameWidth);
     }
 
     public override void _GuiInput(InputEvent @event)
@@ -103,6 +138,7 @@ public partial class MinimapView : Control
     /// <summary>Centres the main camera on the tile under a minimap-local position; does nothing over unexplored space.</summary>
     public bool JumpTo(Vector2 local)
     {
+        local -= PictureOffset;
         if (raster?.TileAt((int)local.X, (int)local.Y) is not { } tile) return false;
         var elevation = map.TileNodeAt(tile)?.Elevation ?? 1f;
         map.FocusOn(MapLayout.TileTop(tile.X, tile.Y, elevation));
