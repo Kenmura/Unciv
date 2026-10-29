@@ -171,9 +171,9 @@ public sealed partial class DedicatedServerTests
         using var stop = new CancellationTokenSource();
         var settingsFile = Path.Combine(root, "settings.json");
         await File.WriteAllTextAsync(settingsFile, UncivJson.Serialize(settings));
-        var (sink, server, invite) = await StartInProcessAsync(stop.Token, ["--settings", settingsFile, .. args]);
-        await using (var alice = NewClient(invite, aliceId, "Alice", settings))
-        await using (var bob = NewClient(invite, bobId, "Bob", settings))
+        var (sink, server, invite) = await StartInProcessAsync(stop.Token, ["--settings", settingsFile, "--password", "pw", .. args]);
+        await using (var alice = NewClient(invite, aliceId, "Alice", settings)) // joins with the invite token only
+        await using (var bob = NewClient(invite with { Token = null }, bobId, "Bob", settings, password: "pw"))
         {
             Assert.True((await alice.JoinAsync().WaitAsync(Bound)).Joined);
             Assert.True((await bob.JoinAsync().WaitAsync(Bound)).Joined);
@@ -192,7 +192,9 @@ public sealed partial class DedicatedServerTests
 
         var gameDirectory = Directory.GetDirectories(Path.Combine(data, "games")).Single();
         Assert.True(File.Exists(Path.Combine(gameDirectory, "clean")));
-        var meta = FileGameStore.Open(CopyOf(gameDirectory)).Store.ReadMeta();
+        GameMeta meta;
+        using (var peek = FileGameStore.Open(CopyOf(gameDirectory))) meta = peek.Store.ReadMeta();
+        Assert.DoesNotContain("\"pw\"", meta.LobbySettings!.Value.GetRawText(), StringComparison.Ordinal); // the join password is never saved
         Assert.Equal(2, meta.Slots.Count);
         Assert.Equal(["Rome", "Babylon"], meta.Slots.Keys.OrderByDescending(k => k).ToArray());
         Assert.Equal(aliceId.PlayerKey, meta.Slots["Rome"].PlayerKey);
@@ -201,15 +203,18 @@ public sealed partial class DedicatedServerTests
         var (hash, turn, report) = HashOfCopy(gameDirectory);
         Assert.Equal(1, turn);
         Assert.True(report.WasCleanShutdown);
+        Assert.Equal(SavedHash(sink), hash); // what the live server held at the stop is what the folder replays to
+
+        await AssertResumeEdgeCasesAsync(gameDirectory, bobId.PlayerKey);
 
         // Restart: the lobby is closed, the saved keys reconnect, the clock works (an EndTurn is accepted), a stranger is refused.
         using var stop2 = new CancellationTokenSource();
-        var (sink2, server2, invite2) = await StartInProcessAsync(stop2.Token, args);
+        var (sink2, server2, invite2) = await StartInProcessAsync(stop2.Token, ["--password", "other", .. args]); // another password: a saved seat's key needs none, a stranger needs the new one
         await sink2.WaitForLineAsync($"state hash {hash.ToString("x16", CultureInfo.InvariantCulture)}").WaitAsync(Bound);
         Assert.DoesNotContain(sink2.Lines, l => l.Contains("lobby '", StringComparison.Ordinal));
-        await using (var alice = NewClient(invite2, aliceId, "Alice", settings))
-        await using (var bob = NewClient(invite2, bobId, "Bob", settings))
-        await using (var stranger = NewClient(invite2, ClientIdentity.Generate(), "Mallory", settings))
+        await using (var alice = NewClient(invite2 with { Token = null }, aliceId, "Alice", settings))
+        await using (var bob = NewClient(invite2 with { Token = null }, bobId, "Bob", settings))
+        await using (var stranger = NewClient(invite2 with { Token = null }, ClientIdentity.Generate(), "Mallory", settings, password: "other"))
         {
             Assert.False((await stranger.JoinAsync().WaitAsync(Bound)).Joined);
             Assert.True((await alice.JoinAsync().WaitAsync(Bound)).Joined);
@@ -224,6 +229,42 @@ public sealed partial class DedicatedServerTests
             Assert.Equal(0, await server2.WaitAsync(Bound));
         }
         Assert.Equal(2, HashOfCopy(gameDirectory).Turn);
+    }
+
+    // ServerLobby.ResumeGameAsync on copies of the saved folder: a seat nobody has reconnected to counts as dropped (else its absent player would hold the round forever),
+    // and a seat whose key was cleared (a kicked player) does not stop the game from resuming.
+    private async Task AssertResumeEdgeCasesAsync(string gameDirectory, string bobKey)
+    {
+        var opened = FileGameStore.Open(CopyOf(gameDirectory));
+        await using (var lobby = new ServerLobby(TwoPlayerSettings()))
+        {
+            var host = await lobby.ResumeGameAsync(opened);
+            await host.EnqueueAsync(() =>
+            {
+                Assert.False(host.TurnTimer.IsConnected("Rome"));
+                Assert.False(host.TurnTimer.IsConnected("Babylon"));
+                return Task.CompletedTask;
+            });
+            Assert.Equal(2, lobby.Lobby.Slots.Count);
+            Assert.Equal(bobKey, lobby.Lobby.Slots.Single(x => x.Nation == "Babylon").PlayerKeyId);
+        }
+
+        var kicked = FileGameStore.Open(CopyOf(gameDirectory));
+        var meta = kicked.Store.ReadMeta();
+        meta.Slots["Babylon"] = new SlotBinding { PlayerKey = "", DisplayName = "gone" };
+        kicked.Store.WriteMeta(meta);
+        await using (var lobby = new ServerLobby(TwoPlayerSettings()))
+        {
+            await lobby.ResumeGameAsync(kicked);
+            Assert.Equal(["Rome"], lobby.Lobby.Slots.Select(x => x.Nation).ToArray());
+        }
+    }
+
+    /// <summary>The state hash the live server logged when it saved at the stop.</summary>
+    private static ulong SavedHash(Sink sink)
+    {
+        var line = sink.Lines.Single(l => l.Contains("game saved:", StringComparison.Ordinal));
+        return ulong.Parse(line[(line.IndexOf("state hash ", StringComparison.Ordinal) + "state hash ".Length)..], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
     }
 
     private string CopyOf(string directory)
@@ -251,8 +292,10 @@ public sealed partial class DedicatedServerTests
         using var aliceId = ClientIdentity.Generate();
         using var bobId = ClientIdentity.Generate();
 
+        Sink firstSink;
         await using (var first = Subprocess.Start(args))
         {
+            firstSink = first.Sink;
             var invite = await ReadInviteAsync(first.Sink);
             await using var alice = NewClient(invite with { Token = null }, aliceId, "Alice", settings, password: "table-talk");
             await using var bob = NewClient(invite with { Token = null }, bobId, "Bob", settings, password: "table-talk");
@@ -276,6 +319,7 @@ public sealed partial class DedicatedServerTests
         var (hash, turn, report) = HashOfCopy(gameDirectory);
         Assert.Equal(1, turn);
         Assert.True(report.WasCleanShutdown);
+        Assert.Equal(SavedHash(firstSink), hash);
         Assert.DoesNotContain("table-talk", await File.ReadAllTextAsync(Path.Combine(gameDirectory, "game.json")), StringComparison.Ordinal);
 
         await using var second = Subprocess.Start(args);

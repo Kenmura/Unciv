@@ -96,8 +96,16 @@ public static class ServerRunner
         {
             if (saved != null)
             {
-                resumed = await lobby.ResumeGameAsync(saved).ConfigureAwait(false);
-                saved = null; // the host owns the store now
+                var store = saved;
+                saved = null; // the host owns the store from here, even when the resume fails half-way
+                try
+                {
+                    resumed = await lobby.ResumeGameAsync(store, warn: log.Warn).ConfigureAwait(false);
+                }
+                catch (Exception e) when (e is not OutOfMemoryException)
+                {
+                    throw new SavedGameUnusableException($"the saved game in '{gameDirectory}' cannot be resumed: {e.Message}", e);
+                }
                 if (options.SettingsFile != null) log.Info("resumed game: the saved turn timer rules apply, the turn options of --settings are ignored");
             }
         }
@@ -105,7 +113,6 @@ public static class ServerRunner
         {
             saved?.Dispose();
         }
-        if (resumed != null) resumed.Warn = log.Warn;
 
         await using var tcp = new TcpTlsListener(certificate, options.Port);
         try
@@ -159,7 +166,14 @@ public static class ServerRunner
         await run.CancelAsync().ConfigureAwait(false);
         await accept.ConfigureAwait(false);
         await watch.ConfigureAwait(false);
-        log.Info(options.GameId != null && lobby.ActiveGameHost != null ? "stopping: finishing the round and saving the game" : "stopping");
+        var finished = lobby.ActiveGameHost;
+        log.Info(options.GameId != null && finished != null ? "stopping: finishing the round and saving the game" : "stopping");
+        if (finished != null)
+        {
+            await lobby.DisposeAsync().ConfigureAwait(false); // the save happens here; a failure surfaces as exit code 1
+            if (options.GameId != null)
+                log.Info($"game saved: turn {finished.Game.Turns.ToString(System.Globalization.CultureInfo.InvariantCulture)}, state hash {Unciv.Commands.Log.ReplayVerifier.FullHash(finished.Game).ToString("x16", System.Globalization.CultureInfo.InvariantCulture)}");
+        }
         if (failure != null) throw failure;
         return 0;
     }
@@ -219,7 +233,7 @@ public static class ServerRunner
         else Directory.CreateDirectory(games, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         try
         {
-            return new FileStream(Path.Combine(games, options.GameId + ".lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            return new FileStream(Path.Combine(games, "." + options.GameId + ".lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         }
         catch (IOException e)
         {

@@ -24,8 +24,8 @@ public sealed record LobbyStartResult(
     GameInfo Game,
     GameSetupInfo Setup,
     IReadOnlyList<Slot> Slots,
-    long Seed = 0,
-    long StartClockMillis = 0
+    long Seed,
+    long StartClockMillis
 );
 
 /// <summary>
@@ -131,6 +131,8 @@ public sealed class LobbyHost : IAsyncDisposable
 
     private TaskCompletionSource startSettled = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    private bool restored;
+
     /// <summary>
     /// T270: a restarted dedicated server reopens a saved game: the lobby is already <see cref="LobbyStatus.Started"/> and every <paramref name="seats"/> entry (civ id, bound player key, display name)
     /// is a human slot with its binding, so those keys reconnect through the late-seat path and nobody else gets in. Only valid before anyone joined.
@@ -141,6 +143,8 @@ public sealed class LobbyHost : IAsyncDisposable
         {
             if (Status != LobbyStatus.InLobby || sessions.Count != 0) throw new InvalidOperationException("A lobby can only be restored before anyone joined");
             slots.Clear();
+            foreach (var slot in Bindings.Bindings.Keys) Bindings.Clear(slot);
+            restored = true;
             foreach (var (nation, key, name) in seats)
             {
                 var index = slots.Count;
@@ -556,7 +560,11 @@ public sealed class LobbyHost : IAsyncDisposable
             return;
         }
 
-        var admissionResult = session.ModSync
+        // T270: after a restart the password and the one-use invite tokens are gone, but a saved seat's key still proves itself in the Auth step: it needs no credential again. Everyone else does.
+        var knownSavedKey = restored && !session.ModSync && Bindings.SlotOf(join.PlayerKey) != null;
+        var admissionResult = knownSavedKey
+            ? AdmissionResult.Admitted
+            : session.ModSync
             ? Admission.AdmitForModSync(join.PlayerKey, join.Password, join.InviteToken)
             : Admission.Admit(join.PlayerKey, join.Password, join.InviteToken);
         if (admissionResult == AdmissionResult.RateLimited)

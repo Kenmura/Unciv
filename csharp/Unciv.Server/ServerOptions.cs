@@ -29,7 +29,7 @@ public sealed record ServerOptions
           --password TEXT     Players must give this password to join (visible in the process list: prefer --password-file).
           --password-file F   Read the join password from the first line of file F (keep it readable by you only). Excludes --password.
           --game-id ID        Save this game under DATA-DIR/games/ID (letters, digits, '.', '_', '-'). If that folder holds a game, the server resumes it at once: the seated players
-                              reconnect with their keys, the lobby is closed, and the saved turn timer rules apply. Otherwise the game the lobby starts is saved there. Without --game-id
+                              reconnect with their keys, the lobby is closed, and the saved turn timer rules apply (the lobby options --max-players, --min-humans, --ai-fill and the turn options of --settings are ignored; the password is applied, but a saved seat's key needs no password to return). Otherwise the game the lobby starts is saved there. Without --game-id
                               nothing is saved: a stop ends the game.
           --max-players N     Number of major civs (seats) in the lobby, at least 2 (default: the settings file's, else 4).
           --ai-fill           Fill the seats nobody takes with AI when the game starts (default). --no-ai-fill leaves them out.
@@ -43,8 +43,8 @@ public sealed record ServerOptions
           --log-level LEVEL   debug, info (default), warn or error. Log lines go to stdout.
           --help, -h          Show this help and exit.
 
-        Stopping: SIGINT (Ctrl+C) or SIGTERM (not on Windows, where only Ctrl+C is caught) closes the port to new joins, finishes the running command and round, saves the game, tells the
-        players the host is closing and exits 0. A second signal while it saves ends the process at once without saving further.
+        Stopping: SIGINT (Ctrl+C) or SIGTERM (Windows: Ctrl+C is the supported way) closes the port to new joins, finishes the running command (and a round that is resolving), saves the game, tells the
+        players the host is closing and exits 0. A second signal while it saves ends the process at once without saving further (the exit code is then the runtime's, 130 or 143).
 
         Exit codes: 0 stopped normally (also after a signal), 1 failure while running (port in use, a lobby that cannot start, an internal error), 2 bad command line or settings,
         3 the saved game under --game-id cannot be loaded (corrupt or from missing rulesets): fix or remove it; a supervisor should not restart on 3.

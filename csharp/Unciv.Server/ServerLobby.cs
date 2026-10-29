@@ -27,6 +27,7 @@ public sealed class ServerLobby : IAsyncDisposable
     private readonly Lock attachedGate = new();
     private readonly SemaphoreSlim seatGate = new(1, 1);
     private GameHost? activeGameHost;
+    private int disposeStarted;
 
     public ServerLobby(
         LobbySettings? settings = null,
@@ -228,14 +229,16 @@ public sealed class ServerLobby : IAsyncDisposable
     /// T270: reopens a saved game instead of starting one. The game directory's seats become the lobby's bound human slots (those keys, and only those, reconnect), the host gets the stored
     /// turn policy (<paramref name="policyOverride"/> wins when the operator gave one) and the clock a live game needs, and a round the stop interrupted continues. Only valid on a fresh lobby.
     /// </summary>
-    public async Task<GameHost> ResumeGameAsync(OpenedGame opened, TurnPolicy? policyOverride = null)
+    public async Task<GameHost> ResumeGameAsync(OpenedGame opened, TurnPolicy? policyOverride = null, Action<string>? warn = null)
     {
         if (activeGameHost != null || store != null) throw new InvalidOperationException("A game is already running");
         var meta = opened.Store.ReadMeta();
-        lobbyHost.RestoreStarted(meta.Slots.Select(x => (x.Key, x.Value.PlayerKey, x.Value.DisplayName)));
+        var seated = meta.Slots.Where(x => x.Value.PlayerKey.Length > 0).ToList(); // a kicked seat has no key: its civ stays with the AI
+        lobbyHost.RestoreStarted(seated.Select(x => (x.Key, x.Value.PlayerKey, x.Value.DisplayName)));
         lobbyHost.Standby.Restore(meta.Standby); // before the host persists the coordinator: otherwise the stored designation would be overwritten with nothing
         var session = new GameSession(opened.Session.Game, lastSeq: opened.Session.LastSeq) { Clock = () => clock.NowMillis };
         var gameHost = new GameHost(session, opened.Store, clock: clock, turnPolicy: policyOverride ?? meta.TimerPolicy, standby: lobbyHost.Standby);
+        gameHost.Warn = warn; // before the pump below, so a round that cannot resume is logged
         store = opened.Store;
         if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
         {
@@ -245,6 +248,12 @@ public sealed class ServerLobby : IAsyncDisposable
                 return Task.CompletedTask;
             }).ConfigureAwait(false);
         }
+        // Nobody is connected yet: every saved seat starts as a dropped player (grace period, force-end, absent turns), and its key's reconnect undoes that. Without this a player who never returns would hold the round forever.
+        await gameHost.EnqueueAsync(() =>
+        {
+            foreach (var (civ, _) in seated) gameHost.TurnTimer.Disconnect(civ);
+            return Task.CompletedTask;
+        }).ConfigureAwait(false);
         activeGameHost = gameHost;
         gameHostReady.TrySetResult(gameHost);
         return gameHost;
@@ -252,6 +261,7 @@ public sealed class ServerLobby : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref disposeStarted, 1) != 0) return; // the runner disposes early to report the saved state, then the scope ends
         await disposed.CancelAsync().ConfigureAwait(false);
         try
         {
