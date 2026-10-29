@@ -351,6 +351,9 @@ public sealed class ServerEndToEndTests : IDisposable
 
         Assert.Equal(1, host.TurnTimer.GetAbsentTurns("Greece"));
         Assert.Equal(1, host.TurnTimer.GetAbsentTurns("Egypt"));
+        Assert.Equal(PlayerType.AI, game.GetCivilizationOrNull("Greece")!.PlayerType);
+        Assert.Equal(PlayerType.AI, game.GetCivilizationOrNull("Egypt")!.PlayerType);
+        Assert.Equal(PlayerType.Human, game.GetCivilizationOrNull("Babylon")!.PlayerType);
         using var limit = new CancellationTokenSource(Guard);
         for (long last = -1; ; await Task.Yield())
         {

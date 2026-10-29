@@ -429,9 +429,16 @@ public sealed class GameHost : IAsyncDisposable
     private void LogAccepted(long seq, string clientCmdId)
     {
         if (store == null) return;
-        foreach (var earlier in session.Log)
-            if (earlier.Seq > store.LastSeq && earlier.Seq < seq) store.Append(earlier);
-        store.Append(session.Log.First(it => it.Seq == seq), clientCmdId);
+        var log = session.Log;
+        var first = log.Count;
+        while (first > 0 && log[first - 1].Seq > store.LastSeq) first--; // only the unlogged tail: the log grows for the whole game
+        CommandEnvelope? accepted = null;
+        for (var i = first; i < log.Count; i++)
+        {
+            if (log[i].Seq < seq) store.Append(log[i]);
+            else if (log[i].Seq == seq) accepted = log[i];
+        }
+        store.Append(accepted ?? throw new InvalidOperationException($"Accepted command {seq} is not in the session log"), clientCmdId);
     }
 
     private async Task ProcessQueryAsync(HostSession hostSession, Query query)

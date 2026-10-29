@@ -852,4 +852,147 @@ public sealed class NetLobbyTests : IDisposable
         await attach.WaitAsync(Bound);
         Assert.NotNull(client);
     }
+
+    private static async Task<(ServerLobby Lobby, ClientIdentity Id, ITransport Client)> StartedLobbyWithOneHumanAsync()
+    {
+        var lobby = new ServerLobby();
+        var id = ClientIdentity.Generate();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        await RawJoinAsync(lobby, c1, id);
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await ReceiveMessageAsync<LobbyState>(c1);
+        await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+        await ReceiveMessageAsync<Snapshot>(c1, 10000);
+        return (lobby, id, c1);
+    }
+
+    // T253: a known key arriving while the game is being created is seated after the start instead of being refused.
+    [Fact]
+    public async Task ServerLobby_KnownKeyDuringStarting_WaitsForTheStart_ThenIsSeated()
+    {
+        await using var lobby = new ServerLobby();
+        using var id = ClientIdentity.Generate();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s1);
+        await RawJoinAsync(lobby, c1, id);
+        await c1.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await ReceiveMessageAsync<LobbyState>(c1);
+
+        var start = Task.Run(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
+        while (lobby.Lobby.Status == LobbyStatus.InLobby && !start.IsCompleted) await Task.Yield();
+
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s2);
+        await RawJoinAsync(lobby, c2, id); // JoinOk, not game-started
+        await start.WaitAsync(Bound);
+        var snapshot = await ReceiveMessageAsync<Snapshot>(c2, 10000);
+        Assert.Equal("Rome", snapshot.You);
+    }
+
+    // T253: the host's kick/rebind after the start moves the lobby's own binding too.
+    [Fact]
+    public async Task ServerLobby_ReleaseSeatAfterStart_RefusesTheOldKey_AndSeatsTheNewOne()
+    {
+        var (lobby, id, c1) = await StartedLobbyWithOneHumanAsync();
+        await using var lobbyScope = lobby;
+        using var idScope = id;
+        Assert.Equal("not-started", await new ServerLobby().KickCivAsync("Rome"));
+        Assert.Equal("no-store", await lobby.KickCivAsync("Rome")); // refused by the game: the lobby binding stays
+        Assert.Equal(0, lobby.Lobby.Bindings.SlotOf(id.PlayerKey));
+
+        using var newId = ClientIdentity.Generate();
+        Assert.True(await lobby.Lobby.ReleaseSeatAsync("Rome", newId.PlayerKey));
+        Assert.False(await lobby.Lobby.ReleaseSeatAsync("Nobody", null));
+        Assert.Null(lobby.Lobby.Bindings.SlotOf(id.PlayerKey));
+        Assert.Equal(0, lobby.Lobby.Bindings.SlotOf(newId.PlayerKey));
+        Assert.Null(await c1.ReceiveAsync()); // the old player's connection was closed
+
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s2);
+        await c2.SendAsync(ProtocolCodec.Encode(new Hello { Protocol = ProtocolVersion.Current, ClientVersion = "1", RulesetHash = lobby.Lobby.Settings.ComputeRulesetHash(), ModList = [] }));
+        var welcome = await ReceiveMessageAsync<Welcome>(c2);
+        await c2.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = id.PlayerKey, DisplayName = "Alice" }));
+        await c2.SendAsync(ProtocolCodec.Encode(new Auth { Proof = id.Sign(lobby.Lobby.HostFingerprint, welcome.SessionId, welcome.Challenge) }));
+        Assert.Equal(JoinRefusedCodes.GameAlreadyStarted, (await ReceiveMessageAsync<JoinRefused>(c2)).Code);
+
+        var (c3, s3) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s3);
+        await RawJoinAsync(lobby, c3, newId);
+        Assert.Equal("Rome", (await ReceiveMessageAsync<Snapshot>(c3, 10000)).You);
+    }
+
+    // T253: lobby administration after the start never writes lobby frames into a seat that belongs to the game.
+    [Fact]
+    public async Task ServerLobby_LobbyAdministrationAfterStart_IsIgnored_AndWritesNothingToSeatedPlayers()
+    {
+        var (lobby, id, c1) = await StartedLobbyWithOneHumanAsync();
+        await using var lobbyScope = lobby;
+        using var idScope = id;
+        var settings = lobby.Lobby.Settings;
+        await lobby.Lobby.UpdateSettingsAsync(new LobbySettings { MaxMajorCivs = settings.MaxMajorCivs + 1 });
+        await lobby.Lobby.SetSlotKindAsync(1, SlotKind.Closed);
+        await lobby.Lobby.CloseSlotAsync(1);
+        await lobby.Lobby.OpenSlotAsync(1);
+        await lobby.Lobby.KickAsync(0);
+        await lobby.Lobby.BroadcastLobbyStateAsync();
+        Assert.Same(settings, lobby.Lobby.Settings);
+        Assert.Equal(SlotKind.Human, lobby.Lobby.Slots[0].Kind);
+
+        await c1.SendAsync(ProtocolCodec.Encode(new Ping()));
+        using var cts = new CancellationTokenSource(Bound);
+        while (await c1.ReceiveAsync(cts.Token) is { } frame)
+        {
+            var message = ProtocolCodec.Decode(frame);
+            Assert.IsNotType<LobbyState>(message);
+            Assert.IsNotType<JoinRefused>(message);
+            if (message is Pong) return;
+        }
+        Assert.Fail("no Pong");
+    }
+
+    // T253: a late-seated player's ping is answered while the game actor is busy seating (the lobby reader is not blocked by the seat).
+    [Fact]
+    public async Task ServerLobby_LateSeatedPing_IsAnsweredWhileTheGameActorIsBusy()
+    {
+        var (lobby, id, c1) = await StartedLobbyWithOneHumanAsync();
+        await using var lobbyScope = lobby;
+        using var idScope = id;
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var busy = lobby.ActiveGameHost!.EnqueueAsync(() => release.Task);
+
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s2);
+        await RawJoinAsync(lobby, c2, id);
+        await c2.SendAsync(ProtocolCodec.Encode(new Ping()));
+        await ReceiveMessageAsync<Pong>(c2); // before the actor is free
+        Assert.False(busy.IsCompleted);
+        release.SetResult();
+        await busy.WaitAsync(Bound);
+        Assert.Equal("Rome", (await ReceiveMessageAsync<Snapshot>(c2, 10000)).You);
+        _ = c1;
+    }
+
+    // T253: a human who never made it into the game (no connection at the start) counts as disconnected, so the grace period can end their turn.
+    [Fact]
+    public async Task ServerLobby_HumanWithoutConnectionAtStart_IsMarkedDisconnected_AndAReconnectRestoresIt()
+    {
+        await using var lobby = new ServerLobby();
+        using var idA = ClientIdentity.Generate();
+        using var idB = ClientIdentity.Generate();
+        var (a, sa) = InMemoryTransport.CreatePair();
+        var (b, sb) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(sa);
+        _ = lobby.AttachConnectionAsync(sb);
+        await RawJoinAsync(lobby, a, idA);
+        await RawJoinAsync(lobby, b, idB);
+        await a.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 0, Nation = "Rome", Ready = true }));
+        await b.SendAsync(ProtocolCodec.Encode(new LobbySet { Slot = 1, Nation = "Greece", Ready = true }));
+        await b.CloseAsync();
+        while (lobby.Lobby.Slots[1].Connected) await Task.Yield();
+        var host = await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+        await host.EnqueueAsync(() => Task.CompletedTask);
+        Assert.False(host.TurnTimer.IsConnected("Greece"));
+        Assert.True(host.TurnTimer.IsConnected("Rome"));
+    }
 }

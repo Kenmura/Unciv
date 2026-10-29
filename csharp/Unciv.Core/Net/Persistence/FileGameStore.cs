@@ -136,8 +136,10 @@ public sealed class FileGameStore : IGameStore
     {
         lock (gate)
         {
-            foreach (var envelope in session.Log)
-                if (envelope.Seq > LastSeq) Append(envelope);
+            var log = session.Log;
+            var first = log.Count;
+            while (first > 0 && log[first - 1].Seq > LastSeq) first--; // only the unlogged tail
+            for (var i = first; i < log.Count; i++) Append(log[i]);
         }
     }
 

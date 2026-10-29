@@ -104,6 +104,47 @@ public sealed class LobbyHost : IAsyncDisposable
         /// <summary>Set once this seat's transport belongs to the running game: the lobby reader (the only reader of the socket) then forwards every frame here.</summary>
         public Channel<string>? Handoff { get; set; }
         public ITransport? GameTransport { get; set; }
+
+        /// <summary>True once the game host reads this seat's hand-over stream (it answers pings itself from then on).</summary>
+        public volatile bool GameReading;
+    }
+
+    private TaskCompletionSource startSettled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>The game host now reads the seat's hand-over stream; until then the lobby reader answers its pings (the game actor can be busy seating others).</summary>
+    public void MarkGameReading(string sessionId)
+    {
+        lock (gate)
+        {
+            if (sessions.TryGetValue(sessionId, out var s)) s.GameReading = true;
+        }
+    }
+
+    /// <summary>
+    /// After the start the host replaced the player of <paramref name="civId"/> (kick, or rebind to <paramref name="newPlayerKey"/>): the lobby's binding follows, so the old key is refused
+    /// from now on and the new key is seated on its next connection. Connections still held by the old player are closed. Returns false when no human slot has that nation.
+    /// </summary>
+    public async Task<bool> ReleaseSeatAsync(string civId, string? newPlayerKey)
+    {
+        List<ITransport> dropped = [];
+        lock (gate)
+        {
+            var slot = slots.FirstOrDefault(s => s.Kind == SlotKind.Human && string.Equals(s.Nation, civId, StringComparison.Ordinal));
+            if (slot == null) return false;
+            Bindings.Clear(slot.Index);
+            if (newPlayerKey != null) Bindings.TryBind(slot.Index, newPlayerKey);
+            slot.PlayerKeyId = newPlayerKey;
+            slot.Connected = false;
+            slot.SessionId = null;
+            slot.Transport = null;
+            foreach (var session in sessions.Values.Where(x => x.SlotIndex == slot.Index).ToList())
+            {
+                sessions.Remove(session.SessionId);
+                dropped.Add(session.Transport);
+            }
+        }
+        foreach (var transport in dropped) await CloseQuietlyAsync(transport).ConfigureAwait(false);
+        return true;
     }
 
     /// <summary>
@@ -208,6 +249,7 @@ public sealed class LobbyHost : IAsyncDisposable
                 }
                 if (handoff != null)
                 {
+                    if (!session.GameReading) await AnswerEarlyPingAsync(session, frame).ConfigureAwait(false);
                     await handoff.WriteAsync(frame, cancellationToken).ConfigureAwait(false);
                     continue;
                 }
@@ -242,6 +284,17 @@ public sealed class LobbyHost : IAsyncDisposable
                 await HandleDisconnectAsync(session).ConfigureAwait(false);
             }
         }
+    }
+
+    /// <summary>A seated player's ping while the game actor is still busy seating others: answered here (the game answers the forwarded copy too, a second Pong is harmless).</summary>
+    private static async Task AnswerEarlyPingAsync(LobbySession session, string frame)
+    {
+        if (frame.Length > 256) return;
+        try
+        {
+            if (ProtocolCodec.Decode(frame) is Ping) await SendAsync(session.Transport, new Pong()).ConfigureAwait(false);
+        }
+        catch (Exception) { /* not a ping, or a dead socket: the game side judges the frame */ }
     }
 
     /// <summary>Processes a decoded protocol message from a session.</summary>
@@ -364,6 +417,19 @@ public sealed class LobbyHost : IAsyncDisposable
             return;
         }
 
+        // A known key arriving while the game is being created waits for the start, then is seated like any late reconnect.
+        while (true)
+        {
+            Task? pendingStart = null;
+            lock (gate)
+            {
+                if (Status == LobbyStatus.Starting && Bindings.SlotOf(session.PendingPlayerKey) is int pendingSeat && pendingSeat < slots.Count)
+                    pendingStart = startSettled.Task;
+            }
+            if (pendingStart == null) break;
+            await pendingStart.ConfigureAwait(false);
+        }
+
         bool stateChanged = false;
         LateSeat? lateSeat = null;
         ITransport? replacedTransport = null;
@@ -435,22 +501,28 @@ public sealed class LobbyHost : IAsyncDisposable
 
         if (lateSeat != null)
         {
-            var seated = LateSeated;
             if (replacedTransport != null) await CloseQuietlyAsync(replacedTransport).ConfigureAwait(false);
-            try
-            {
-                if (seated != null) await seated(lateSeat).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                await CloseQuietlyAsync(session.Transport).ConfigureAwait(false); // never seated: the client must see the drop, not wait for a snapshot
-            }
+            // Seating waits for the game actor, which can be busy: it runs beside the reader, so the reader keeps forwarding frames and answering pings meanwhile.
+            _ = SeatLateInBackgroundAsync(lateSeat, session.Transport);
             return;
         }
 
         if (stateChanged)
         {
             await BroadcastLobbyStateAsync().ConfigureAwait(false);
+        }
+    }
+
+    private async Task SeatLateInBackgroundAsync(LateSeat lateSeat, ITransport socket)
+    {
+        try
+        {
+            var seated = LateSeated;
+            if (seated != null) await seated(lateSeat).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            await CloseQuietlyAsync(socket).ConfigureAwait(false); // never seated: the client must see the drop, not wait for a snapshot
         }
     }
 
@@ -555,6 +627,7 @@ public sealed class LobbyHost : IAsyncDisposable
         LobbySession? sessionToKick = null;
         lock (gate)
         {
+            if (Status != LobbyStatus.InLobby) return; // after the start the host kicks through GameHost/ServerLobby, never by writing to a seat's raw transport
             if (slotIndex < 0 || slotIndex >= slots.Count) return;
             var slot = slots[slotIndex];
 
@@ -593,6 +666,7 @@ public sealed class LobbyHost : IAsyncDisposable
     {
         lock (gate)
         {
+            if (Status != LobbyStatus.InLobby) return;
             if (slotIndex < 0 || slotIndex >= slots.Count) return;
             var slot = slots[slotIndex];
             if (slot.Kind == SlotKind.Human && slot.Connected) return; // Must kick first
@@ -606,6 +680,7 @@ public sealed class LobbyHost : IAsyncDisposable
     {
         lock (gate)
         {
+            if (Status != LobbyStatus.InLobby) return;
             if (slotIndex < 0 || slotIndex >= slots.Count) return;
             var slot = slots[slotIndex];
             if (slot.Kind == SlotKind.Closed)
@@ -621,6 +696,7 @@ public sealed class LobbyHost : IAsyncDisposable
     {
         lock (gate)
         {
+            if (Status != LobbyStatus.InLobby) return;
             if (slotIndex < 0 || slotIndex >= slots.Count) return;
             var slot = slots[slotIndex];
             if (slot.Kind == SlotKind.Human && slot.Connected) return; // Must kick first
@@ -648,6 +724,7 @@ public sealed class LobbyHost : IAsyncDisposable
     {
         lock (gate)
         {
+            if (Status != LobbyStatus.InLobby) return;
             Settings = newSettings;
             while (slots.Count < Settings.MaxMajorCivs)
             {
@@ -719,9 +796,23 @@ public sealed class LobbyHost : IAsyncDisposable
             }
 
             Status = LobbyStatus.Starting;
+            startSettled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
-        var game = NewGame.Start(setup, actualSeed, actualClock, isHostedGame: true);
+        GameInfo game;
+        try
+        {
+            game = NewGame.Start(setup, actualSeed, actualClock, isHostedGame: true);
+        }
+        catch (Exception)
+        {
+            lock (gate)
+            {
+                if (Status == LobbyStatus.Starting) Status = LobbyStatus.InLobby;
+            }
+            startSettled.TrySetResult(); // waiting reconnects re-evaluate: back in the lobby they simply join
+            throw;
+        }
 
         var takenNations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var slot in activeSlots)
@@ -767,9 +858,10 @@ public sealed class LobbyHost : IAsyncDisposable
             }
         }
 
+        startSettled.TrySetResult();
         foreach (var transport in superseded) await CloseQuietlyAsync(transport).ConfigureAwait(false);
 
-        await BroadcastAsync(new GameStarting()).ConfigureAwait(false);
+        await BroadcastAsync(new GameStarting(), includeHandedOver: true).ConfigureAwait(false);
 
         return new LobbyStartResult(game, setup, [.. activeSlots]);
     }
@@ -815,13 +907,16 @@ public sealed class LobbyHost : IAsyncDisposable
     }
 
     /// <summary>Broadcasts a message to all connected sessions.</summary>
-    public async Task BroadcastAsync(Message message)
+    public Task BroadcastAsync(Message message) => BroadcastAsync(message, includeHandedOver: false);
+
+    /// <summary>Seats handed over to the game are skipped unless asked for: the game host owns their writes.</summary>
+    private async Task BroadcastAsync(Message message, bool includeHandedOver)
     {
         List<ITransport> targets;
         lock (gate)
         {
             targets = sessions.Values
-                .Where(s => s.IsAuthenticated && s.Transport.IsOpen)
+                .Where(s => s.IsAuthenticated && s.Transport.IsOpen && (includeHandedOver || s.Handoff == null))
                 .Select(s => s.Transport)
                 .ToList();
         }

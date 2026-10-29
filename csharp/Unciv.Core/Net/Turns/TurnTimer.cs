@@ -104,7 +104,7 @@ public sealed class TurnTimer
         if (playerStates.TryGetValue(civId, out var state)) state.PlayerKeyId = null;
     }
 
-    /// <summary>Reclaims an AI-controlled civ back to human control.</summary>
+    /// <summary>Reclaims an AI-controlled civ back to human control. An immediate reclaim bypasses the submitter: its caller (a host attaching the player) sends the full snapshot that covers it.</summary>
     public bool Reclaim(string civId, string? playerKeyId = null)
     {
         var civ = session.Game.GetCivilizationOrNull(civId);
@@ -294,7 +294,7 @@ public sealed class TurnTimer
                 var civ = session.Game.GetCivilizationOrNull(civId);
                 if (civ != null && civ.PlayerType == PlayerType.AI)
                 {
-                    session.SubmitAsServer(new SetController
+                    SubmitServer(new SetController
                     {
                         CivId = civId,
                         Controller = PlayerType.Human,

@@ -68,8 +68,14 @@ public sealed class ServerLobby : IAsyncDisposable
         await seatGate.WaitAsync(disposed.Token).ConfigureAwait(false);
         try
         {
-            if (lobbyHost.GameTransportFor(sessionId) == null) return; // superseded or gone
+            if (lobbyHost.GameTransportFor(sessionId) == null)
+            {
+                // Superseded (a newer connection of the key seats itself) or gone (nobody does): the game must not keep counting the seat as connected.
+                await MarkAbsentIfUnseatedAsync(gameHost, nation).ConfigureAwait(false);
+                return;
+            }
             await gameHost.AttachSessionAsync(sessionId, nation, transport, playerKeyId).ConfigureAwait(false);
+            lobbyHost.MarkGameReading(sessionId);
         }
         finally
         {
@@ -81,7 +87,39 @@ public sealed class ServerLobby : IAsyncDisposable
         }
     }
 
+    /// <summary>Decided on the game actor, so it cannot interleave with a seating: a civ nobody is bound to is a disconnected player (its grace period runs), a later connection of the key reconnects it.</summary>
+    private static Task MarkAbsentIfUnseatedAsync(GameHost gameHost, string nation) =>
+        gameHost.EnqueueAsync(() =>
+        {
+            if (!gameHost.Sessions.Values.Any(s => string.Equals(s.BoundCivId, nation, StringComparison.Ordinal)))
+                gameHost.TurnTimer.Disconnect(nation);
+            return Task.CompletedTask;
+        });
+
     public LobbyHost Lobby => lobbyHost;
+
+    /// <summary>
+    /// Host administration after the start: <see cref="GameHost.KickCivAsync"/> plus the lobby's own binding, so the kicked key cannot reconnect through the lobby.
+    /// Null on success, else the refusal code (<c>not-started</c> before the game exists).
+    /// </summary>
+    public async Task<string?> KickCivAsync(string civId)
+    {
+        var gameHost = activeGameHost;
+        if (gameHost == null) return "not-started";
+        var refusal = await gameHost.KickCivAsync(civId).ConfigureAwait(false);
+        if (refusal == null) await lobbyHost.ReleaseSeatAsync(civId, null).ConfigureAwait(false);
+        return refusal;
+    }
+
+    /// <summary>Host administration after the start: <see cref="GameHost.RebindCivAsync"/> plus the lobby's binding (old key refused, new key seated on its next connection).</summary>
+    public async Task<string?> RebindCivAsync(string civId, string newPlayerKey)
+    {
+        var gameHost = activeGameHost;
+        if (gameHost == null) return "not-started";
+        var refusal = await gameHost.RebindCivAsync(civId, newPlayerKey).ConfigureAwait(false);
+        if (refusal == null) await lobbyHost.ReleaseSeatAsync(civId, newPlayerKey).ConfigureAwait(false);
+        return refusal;
+    }
 
     public GameHost? ActiveGameHost => activeGameHost;
 
@@ -106,16 +144,20 @@ public sealed class ServerLobby : IAsyncDisposable
             gameHost = new GameHost(new GameSession(startResult.Game), store, clock: clock, turnPolicy: lobbyHost.Settings.ToTurnPolicy());
             foreach (var slot in startResult.Slots)
             {
-                if (slot.Kind != SlotKind.Human || !slot.Connected || slot.SessionId == null) continue;
+                if (slot.Kind != SlotKind.Human) continue;
                 // The hand-over transport, never the raw one: the lobby reader keeps reading the socket and forwards to the game.
-                // No hand-over (superseded or gone) means nobody seats it; a raw attach would bring back the two-reader race.
-                var gameTransport = lobbyHost.GameTransportFor(slot.SessionId);
-                if (gameTransport == null) continue;
+                // No hand-over (never connected, superseded or gone) means nobody seats it; a raw attach would bring back the two-reader race.
+                var gameTransport = slot.Connected && slot.SessionId != null ? lobbyHost.GameTransportFor(slot.SessionId) : null;
+                if (gameTransport == null)
+                {
+                    await MarkAbsentIfUnseatedAsync(gameHost, slot.Nation).ConfigureAwait(false);
+                    continue;
+                }
                 lock (attachedGate)
                 {
-                    if (!attached.Add(slot.SessionId)) continue; // a late seat in the start window already claimed it
+                    if (!attached.Add(slot.SessionId!)) continue; // a late seat in the start window already claimed it
                 }
-                await AttachIfCurrentAsync(gameHost, slot.SessionId, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
+                await AttachIfCurrentAsync(gameHost, slot.SessionId!, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
             }
 
             if (disposed.IsCancellationRequested) throw new ObjectDisposedException(nameof(ServerLobby));

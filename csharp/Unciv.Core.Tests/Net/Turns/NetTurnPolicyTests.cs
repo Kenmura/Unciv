@@ -437,4 +437,48 @@ public sealed class NetTurnPolicyTests : IDisposable
         Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType);
         Assert.Equal("reconnected-key", game.GetCivilization("Greece").PlayerId);
     }
+
+    // T253: the deadline restarts only once the new turn is Playing.
+    [Fact]
+    public void RefreshDeadline_OnlyMovesTheDeadlineOnceTheNewTurnIsPlaying()
+    {
+        var clock = new ManualClock(10_000L);
+        var game = NewGame();
+        var session = Session(game, clock);
+        var timer = new TurnTimer(session, new TurnPolicy { TurnTimerSeconds = 100 }, clock, autoResolve: false);
+        var first = timer.TurnDeadline;
+        clock.AdvanceSeconds(10);
+        timer.RefreshDeadline();
+        Assert.Equal(first, timer.TurnDeadline);
+
+        Assert.True(session.Submit("Babylon", new EndTurn()).Accepted);
+        Assert.True(session.Submit("Greece", new EndTurn()).Accepted);
+        ResolvePump.Pump(session);
+        Assert.Equal(1, game.Turns);
+        timer.RefreshDeadline();
+        Assert.Equal(clock.NowMillis + 100_000L, timer.TurnDeadline);
+    }
+
+    // T253: a reclaim queued during resolving is applied at the turn change through the server command submitter (so a host broadcasts it in sequence).
+    [Fact]
+    public void PendingReclaim_AtTurnChange_SubmitsThroughTheServerCommandSubmitter()
+    {
+        var clock = new ManualClock(10_000L);
+        var game = NewGame();
+        var session = Session(game, clock);
+        var timer = new TurnTimer(session, TurnPolicy.Default, clock, autoResolve: false);
+        var submitted = new List<GameCommand>();
+        timer.ServerCommandSubmitter = command => { submitted.Add(command); return session.SubmitAsServer(command); };
+        Assert.True(session.SubmitAsServer(new SetController { CivId = "Greece", Controller = PlayerType.AI }).Accepted);
+        Assert.True(session.Submit("Babylon", new EndTurn()).Accepted);
+        Assert.Equal(SimultaneousPhase.Resolving, game.TurnState!.Phase);
+
+        timer.Connect("Greece"); // resolving: queued for the turn change
+        Assert.Empty(submitted);
+        ResolvePump.Pump(session);
+        timer.Tick();
+
+        Assert.Contains(submitted, c => c is SetController { Controller: PlayerType.Human });
+        Assert.Equal(PlayerType.Human, game.GetCivilization("Greece").PlayerType);
+    }
 }
