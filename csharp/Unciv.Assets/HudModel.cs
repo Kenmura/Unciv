@@ -35,6 +35,7 @@ public static class HudModel
         [DecisionKind.CityProduction] = "Pick construction",
         [DecisionKind.Technology] = "Pick a technology",
         [DecisionKind.Policy] = "Pick a policy",
+        [DecisionKind.Ideology] = "Choose an ideology",
         [DecisionKind.MoveSpies] = "Move spies",
         [DecisionKind.Pantheon] = "Choose a pantheon",
         [DecisionKind.FoundReligion] = "Found a religion",

@@ -13,6 +13,9 @@ namespace Unciv.Logic.Civilization.Managers;
 // Deviations:
 // - Kotlin HashSet/HashMap of PolicyBranch (identity hash, arbitrary order) are insertion ordered here (ruleset order); the AI-only
 //   priorityMap is a Dictionary because its order never reaches anything (getMaxPriority takes a max).
+// - B013 (bnw-spec 4.6.2 to 4.6.3, not in Kotlin): ideologies. A civ chooses one ideology branch (free, once; Era above the branch's era or the Factory count), the
+//   branch's tenets are bought by level (Level n+1 needs more Level n than Level n+1 tenets) with FreeTenets or culture. Free policies never buy tenets
+//   and free tenets never buy social policies, so a free policy (Poland) is a social-branch policy by construction.
 // - priorityMap uses IHasUniques.GetWeightForAiDecision (T087); a PolicyBranch is neither BaseUnit nor Building, so it is the AiChoiceWeight product.
 
 public class PolicyManager : IsPartOfGameInfoSerialization
@@ -37,6 +40,18 @@ public class PolicyManager : IsPartOfGameInfoSerialization
 
     [JsonPropertyName("freePolicies")]
     public int FreePolicies { get; set; }
+    /// <summary>B013: free tenet picks, granted by choosing an ideology (<see cref="PolicyBranch.FirstAdopterFreePolicies"/> / <see cref="PolicyBranch.SecondAdopterFreePolicies"/>).</summary>
+    [JsonPropertyName("freeTenets")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] // absent from Gods & Kings saves
+    public int FreeTenets { get; set; }
+    /// <summary>B013: the name of the chosen ideology branch, or <c>null</c> before the choice.</summary>
+    [JsonPropertyName("ideology")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] // absent from Gods & Kings saves
+    public string? Ideology { get; set; }
+    /// <summary>B013: the "you may choose an ideology" notification has been sent.</summary>
+    [JsonPropertyName("ideologyPrompted")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] // absent from Gods & Kings saves
+    public bool IdeologyPrompted { get; set; }
     [JsonPropertyName("storedCulture")]
     public int StoredCulture { get; set; }
     [JsonPropertyName("adoptedPolicies")]
@@ -62,7 +77,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     public bool ShouldOpenPolicyPicker { get; set; }
 
     /// <summary>Used by NextTurnAction.PickPolicy.isChoice</summary>
-    public bool ShouldShowPolicyPicker() => (ShouldOpenPolicyPicker || FreePolicies > 0) && CanAdoptPolicy();
+    public bool ShouldShowPolicyPicker() => (ShouldOpenPolicyPicker || FreePolicies > 0 || FreeTenets > 0) && CanAdoptPolicy();
 
     /// <summary>A map pairing each <see cref="PolicyBranch"/> to its priority.</summary>
     [JsonIgnore]
@@ -86,7 +101,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
 
     /// <summary>A set of newly adoptable <see cref="PolicyBranch"/>es.</summary>
     [JsonIgnore]
-    public LinkedHashSet<PolicyBranch> AdoptableBranches => new(Branches.Where(it => IsAdoptable(it)));
+    public LinkedHashSet<PolicyBranch> AdoptableBranches => new(SocialBranches.Where(it => IsAdoptable(it)));
 
     /// <summary>A set of incomplete <see cref="PolicyBranch"/>es including newly adoptable ones.</summary>
     [JsonIgnore]
@@ -95,7 +110,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         get
         {
             var value = new LinkedHashSet<PolicyBranch>();
-            foreach (var branch in Branches)
+            foreach (var branch in SocialBranches)
             {
                 if (branch.Policies.Any(it => IsAdoptable(it))) value.Add(branch);
             }
@@ -110,7 +125,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         get
         {
             var value = new LinkedHashSet<PolicyBranch>();
-            foreach (var branch in Branches)
+            foreach (var branch in SocialBranches)
             {
                 if (branch.Policies.All(it => IsAdopted(it.Name))) value.Add(branch);
             }
@@ -125,7 +140,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         get
         {
             var value = new Dictionary<PolicyBranch, int>();
-            foreach (var branch in Branches)
+            foreach (var branch in SocialBranches)
             {
                 value[branch] = AdoptedPolicies.Count(it => branch.Policies.Contains(GetPolicyByName(it)));
             }
@@ -137,12 +152,23 @@ public class PolicyManager : IsPartOfGameInfoSerialization
     [JsonIgnore]
     public LinkedHashSet<PolicyBranch> Branches => new(CivInfo.GameInfo.Ruleset.PolicyBranches.Values);
 
+    /// <summary>B013: the branches that are not ideologies; the AI's branch-by-branch adoption and the completed-branch count look at these only.</summary>
+    [JsonIgnore]
+    public LinkedHashSet<PolicyBranch> SocialBranches => new(CivInfo.GameInfo.Ruleset.PolicyBranches.Values.Where(it => !it.PurchaseByLevel));
+
+    /// <summary>B013: the ideology branches of the ruleset (empty in Civ V: Gods &amp; Kings).</summary>
+    [JsonIgnore]
+    public IEnumerable<PolicyBranch> IdeologyBranches => CivInfo.GameInfo.Ruleset.PolicyBranches.Values.Where(it => it.PurchaseByLevel);
+
     public PolicyManager Clone()
     {
         var toReturn = new PolicyManager
         {
             numberOfAdoptedPolicies = numberOfAdoptedPolicies,
             FreePolicies = FreePolicies,
+            FreeTenets = FreeTenets,
+            Ideology = Ideology,
+            IdeologyPrompted = IdeologyPrompted,
             ShouldOpenPolicyPicker = ShouldOpenPolicyPicker,
             StoredCulture = StoredCulture,
             Ideology = Ideology,
@@ -289,26 +315,131 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         if (IsAdopted(policy.Name)) return false;
         if (policy.PolicyBranchType == Policy.PolicyBranchTypes.BranchComplete) return false;
         if (!policy.Requires.NotNull().All(it => GetAdoptedPolicies().Contains(it))) return false;
-        if (checkEra && CivInfo.GameInfo.Ruleset.Eras[policy.Branch.Era].EraNumber > CivInfo.GetEraNumber()) return false;
+        if (policy.Branch.PurchaseByLevel)
+        {
+            if (!IdeologyAllows(policy, checkEra)) return false; // B013: an ideology is unlocked by era or Factories, not by the branch era alone
+        }
+        else if (checkEra && CivInfo.GameInfo.Ruleset.Eras[policy.Branch.Era].EraNumber > CivInfo.GetEraNumber()) return false;
         if (((IHasUniques)policy).GetMatchingUniques(UniqueType.OnlyAvailable, GameContext.IgnoreConditionalsState)
                 .Any(it => !it.ConditionalsApply(CivInfo.State))) return false;
         if (((IHasUniques)policy).HasUnique(UniqueType.Unavailable, CivInfo.State)) return false;
         return true;
     }
 
+    /// <summary>
+    /// Is any policy, tenet or ideology adoptable now with what the civ has? The pools are separate (B013): free policies buy social policies only, free tenets
+    /// tenets only, culture either; choosing an ideology is free. In Civ V this is the Kotlin test: a free policy or enough culture, and something adoptable.
+    /// </summary>
     public bool CanAdoptPolicy()
     {
         if (CivInfo.IsSpectator()) return false;
-        if (FreePolicies == 0 && StoredCulture < GetCultureNeededForNextPolicy()) return false;
-        if (AllPoliciesAdopted(true)) return false;
-        return true;
+        var cultureEnough = StoredCulture >= GetCultureNeededForNextPolicy();
+        var ideologyChoice = CanChooseIdeology();
+        if (FreePolicies == 0 && FreeTenets == 0 && !cultureEnough && !ideologyChoice) return false;
+        foreach (var policy in GetRulesetPolicies().Values)
+        {
+            if (IsAdoptable(policy) && (IsIdeologyChoice(policy) || FreeFor(policy) > 0 || cultureEnough)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>B013: can this very policy be adopted now, counting its own pool (free policy, free tenet or culture)?</summary>
+    public bool CanAdoptPolicy(Policy policy)
+    {
+        if (CivInfo.IsSpectator() || !IsAdoptable(policy)) return false;
+        return IsIdeologyChoice(policy) || FreeFor(policy) > 0 || StoredCulture >= GetCultureNeededForNextPolicy();
+    }
+
+    private static bool IsIdeologyChoice(Policy policy) => policy is PolicyBranch { PurchaseByLevel: true };
+
+    private int FreeFor(Policy policy) => policy.IsTenet ? FreeTenets : FreePolicies;
+
+    /// <summary>B013 (bnw-spec 4.6.2): are ideologies on in this ruleset (ModOptions <c>Enables ideologies</c>)?</summary>
+    [JsonIgnore]
+    public bool IdeologiesEnabled => ((IHasUniques)CivInfo.GameInfo.Ruleset.ModOptions).HasUnique(UniqueType.EnablesIdeologies);
+
+    /// <summary>
+    /// B013 (bnw-spec 4.6.2, <c>@101906a0</c> and the player <c>doTurn</c>): a major civ without an ideology may choose one once its era is past the ideology
+    /// branches' era (Industrial, so Modern or later) or it owns the number of buildings that unlock ideologies (3 Factories).
+    /// </summary>
+    public bool CanChooseIdeology()
+    {
+        if (Ideology != null || !IdeologiesEnabled || CivInfo.IsSpectator() || !CivInfo.IsMajorCiv()) return false;
+        return IdeologyBranches.Any(IdeologyUnlockedByEra) || IdeologyUnlockedByBuildings();
+    }
+
+    private bool IdeologyUnlockedByEra(PolicyBranch branch) =>
+        CivInfo.GameInfo.Ruleset.Eras[branch.Era].EraNumber < CivInfo.GetEraNumber();
+
+    /// <summary>The building count of <c>Building [n] of these unlocks Ideologies</c> reached (counted over all cities, puppets included).</summary>
+    private bool IdeologyUnlockedByBuildings()
+    {
+        foreach (var building in CivInfo.GameInfo.Ruleset.Buildings.Values)
+        {
+            var unique = ((IHasUniques)building).GetMatchingUniques(UniqueType.IdeologyUnlockCount, GameContext.IgnoreConditionalsState).FirstOrDefault();
+            if (unique == null) continue;
+            if (CivInfo.Cities.Count(it => it.CityConstructions.IsBuilt(building.Name)) >= int.Parse(unique.Params[0], System.Globalization.CultureInfo.InvariantCulture))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>The notification reason when <see cref="CanChooseIdeology"/> holds: the era or the Factories (<c>CHOOSE_IDEOLOGY_ERA</c> / <c>CHOOSE_IDEOLOGY_FACTORIES</c>).</summary>
+    public bool IdeologyUnlockedBecauseOfEra() => IdeologyBranches.Any(IdeologyUnlockedByEra);
+
+    /// <summary>
+    /// B013: may <paramref name="policy"/>, a member of an ideology branch, be adopted? The branch itself needs <see cref="CanChooseIdeology"/> (the era part is
+    /// skipped when <paramref name="checkEra"/> is false); a tenet needs its branch chosen and the level rule (bnw-spec 4.6.3): a Level n+1 tenet only while the
+    /// civ has more Level n tenets than Level n+1 ones.
+    /// </summary>
+    private bool IdeologyAllows(Policy policy, bool checkEra)
+    {
+        if (!IdeologiesEnabled) return false;
+        if (policy is PolicyBranch) return Ideology == null && (!checkEra || CanChooseIdeology());
+        if (Ideology != policy.Branch.Name) return false;
+        return policy.Level <= 1 || GetTenetCount(policy.Branch, policy.Level - 1) > GetTenetCount(policy.Branch, policy.Level);
+    }
+
+    /// <summary>B013: how many tenets of <paramref name="level"/> the civ has adopted in <paramref name="branch"/>.</summary>
+    public int GetTenetCount(PolicyBranch branch, int level) =>
+        branch.Policies.Count(it => it.Level == level && IsAdopted(it.Name));
+
+    /// <summary>
+    /// B013 (bnw-spec 4.6.2): choose <paramref name="branch"/> as the ideology. It is adopted at no cost; the first civ in the game to follow it gets
+    /// <see cref="PolicyBranch.FirstAdopterFreePolicies"/> free tenets, the second <see cref="PolicyBranch.SecondAdopterFreePolicies"/>, later ones none.
+    /// Deviation: "first" is counted among the civs that follow it now (dead civs included), because there is no adoption history yet (B052 switching).
+    /// </summary>
+    public void ChooseIdeology(PolicyBranch branch)
+    {
+        if (!branch.PurchaseByLevel || !IsAdoptable(branch))
+            throw new InvalidOperationException($"{branch.Name} cannot be chosen as ideology");
+        var earlierAdopters = CivInfo.GameInfo.Civilizations.Count(it => !ReferenceEquals(it, CivInfo) && it.Policies.Ideology == branch.Name);
+        Ideology = branch.Name;
+        FreeTenets += earlierAdopters switch { 0 => branch.FirstAdopterFreePolicies, 1 => branch.SecondAdopterFreePolicies, _ => 0 };
+        ShouldOpenPolicyPicker = FreeTenets > 0;
+        AdoptedPolicies.Add(branch.Name);
+        AddPolicyToTransients(branch);
+        GameEventHooks.PolicyAdopted(CivInfo, branch.Name);
+
+        CivInfo.Cache.UpdateCivResources();
+        foreach (var city in CivInfo.Cities)
+        {
+            city.CityStats.Update(updateCivStats: true);
+            city.ReassignPopulationDeferred();
+        }
     }
 
     public void Adopt(Policy policy, bool branchCompletion = false)
     {
+        if (IsIdeologyChoice(policy))
+        {
+            ChooseIdeology((PolicyBranch)policy);
+            return;
+        }
         if (!branchCompletion)
         {
-            if (FreePolicies > 0) FreePolicies--;
+            if (policy.IsTenet && FreeTenets > 0) FreeTenets--;
+            else if (!policy.IsTenet && FreePolicies > 0) FreePolicies--;
             else if (!CivInfo.GameInfo.GameParameters.GodMode)
             {
                 var cultureNeededForNextPolicy = GetCultureNeededForNextPolicy();
@@ -324,7 +455,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         AddPolicyToTransients(policy);
         GameEventHooks.PolicyAdopted(CivInfo, policy.Name);
 
-        if (!branchCompletion)
+        if (!branchCompletion && !policy.Branch.PurchaseByLevel)
         {
             var branch = policy.Branch;
             if (branch.Policies.Count(it => IsAdopted(it.Name)) == branch.Policies.Count - 1) // All done apart from branch completion
@@ -380,7 +511,7 @@ public class PolicyManager : IsPartOfGameInfoSerialization
         RemovePolicyFromTransients(policy);
 
         // if a branch is already marked as complete, revert it to incomplete
-        if (!branchCompletion)
+        if (!branchCompletion && !policy.Branch.PurchaseByLevel)
         {
             var branch = policy.Branch;
             if (branch.Policies.Count(it => IsAdopted(it.Name)) == branch.Policies.Count - 1)

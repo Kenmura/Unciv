@@ -148,7 +148,7 @@
   Nations.json/Assyria: TechFromCityConquer is approximated by 'Free Technology <upon conquering a city>' (BNW: a stolen/random tech per conquest)
   Nations.json/Indonesia: Spice Islanders uniques are declared data only: the luxury placement is B080
   Nations.json/Morocco: Gateway to Africa uniques are declared data only: trade partners and incoming routes are B020; the Kasbah is B004
-  Nations.json/Poland: Solidarity is wired by B004 (a free policy per era, for any policy branch: BNW limits it to the social branches, B051 refines it once the ideology branches are marked)
+  Nations.json/Poland: Solidarity is wired by B004 (a free policy per era). B013: free policies buy social-branch policies only (free tenets buy tenets), which is the BNW limit to the social branches
   Nations.json/Portugal: Mare Nostrum is declared data only (B020); the Feitoria rules are B004, its luxury siphon is B072
   Nations.json/The Shoshone: Great Expanse is wired by B004 (read as 8 extra tiles after the radius-1 ring, see UniqueTypeDataBnw)
   Nations.json/The Zulus: Iklwa XP modifier is wired (existing unique); the Ikanda promotion stays open for B074
@@ -159,7 +159,8 @@
   TileImprovements.json/Feitoria, Chateau, Kasbah, Brazilwood Camp: added by B004. Feitoria luxury siphon (B072) and the Landmark / Archaeological Dig improvements (B040) are not wired yet
   TileResources.json/Antiquity Site, Hidden Antiquity Site: artifact resources need the archaeology subsystem (B040)
   Units.json/upgrades: upgradesTo is derived from Unit_ClassUpgrades.tsv; Settler, Worker, Scout, Warrior keep their Unciv G&K requiredTech Agriculture
-  Policies.json/ideologies: Freedom, Order and Autocracy are kept as the G&K branches: the ideology tree (3 tenet levels, Level/adopter fields) is B051
+  Policies.json/ideologies: Freedom, Order and Autocracy are the BNW ideologies (B013): PurchaseByLevel, Level 1/2/3 tenets (7/6/3), first/second adopter free tenets (2/1). The tenets carry no effects yet: their stat columns are B010, the tourism/trade/espionage/league ones belong to those subsystems
+  Policies.json/ideologies: The three Universal Healthcare tenets share one BNW name; here they are named 'Universal Healthcare (Freedom)', '(Order)', '(Autocracy)' because policy names are unique
   Personalities.json/Maria I: copied from Maria Theresa: derive from Leaders.tsv / Leader_Flavors.tsv in B010
 
 == policies
@@ -172,6 +173,9 @@
   Commerce: Medieval era, 5 policies + finisher
   Exploration: Medieval era, 5 policies + finisher
   Rationalism: Renaissance era, 5 policies + finisher
+  Freedom: ideology, Industrial era, 16 tenets (7/6/3), free tenets 2 (first adopter) / 1 (second)
+  Order: ideology, Industrial era, 16 tenets (7/6/3), free tenets 2 (first adopter) / 1 (second)
+  Autocracy: ideology, Industrial era, 16 tenets (7/6/3), free tenets 2 (first adopter) / 1 (second)
   The Pyramids: needs the Liberty branch adopted
   Hanging Gardens: needs the Tradition branch adopted
   Porcelain Tower: needs the Rationalism branch adopted

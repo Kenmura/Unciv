@@ -498,113 +498,122 @@
 		"name": "Freedom",
 		"era": "Industrial era",
 		"priorities": {"Neutral": 5, "Domination": 5, "Scientific": 10},
-		"uniques": [
-			"[+25]% Great Person generation [in all cities]",
-			"Only available <before adopting [Autocracy]>",
-			"Only available <before adopting [Order]>"
-		],
+		"uniques": [],
+		"purchaseByLevel": true,
+		"firstAdopterFreePolicies": 2,
+		"secondAdopterFreePolicies": 1,
 		"policies": [
 			{
-				"name": "Constitution",
-				"uniques": ["[+2 Culture] from every [Wonder]", "[-100]% weight to this choice for AI decisions"],
+				"name": "Capitalism",
+				"level": 1,
 				"row": 1,
-				"column": 1
-			},
-			{
-				"name": "Universal Suffrage",
-				"uniques": ["[+33]% Strength for cities <when defending>", "[-100]% weight to this choice for AI decisions"],
-				"row": 1,
-				"column": 3
+				"column": 0,
+				"uniques": []
 			},
 			{
 				"name": "Civil Society",
-				"uniques": ["[-50]% Food consumption by [Specialists] [in all cities]"],
+				"level": 1,
 				"row": 1,
-				"column": 5
+				"column": 1,
+				"uniques": []
 			},
 			{
-				"name": "Free Speech",
-				"uniques": ["[8] units cost no maintenance"],
-				"requires": ["Constitution"],
-				"row": 2,
-				"column": 1
-			},
-			{
-				"name": "Democracy",
-				"uniques": ["[-50]% Unhappiness from [Specialists] [in all cities]"],
-				"requires": ["Civil Society"],
-				"row": 2,
-				"column": 5
-			},
-			{
-				"name": "Freedom Complete",
-				"uniques": [
-					"[+100]% Yield from every [Great Improvement]",
-					"[+50]% Golden Age length",
-					"May buy [Great Artist] units for [1000] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([500]) <starting from the [Industrial era]>",
-					"Get the leader title of [President [leaderName]]"
-				]
-			}
-		]
-	},
-	{
-		"name": "Autocracy",
-		"era": "Industrial era",
-		"priorities": {"Neutral": 5, "Domination": 10, "Scientific": 5},
-		"uniques": [
-			"[-33]% maintenance costs <for [All] units>",
-			"Upon capturing a city, receive [10] times its [Culture] production as [Culture] immediately",
-			"Only available <before adopting [Order]>",
-			"Only available <before adopting [Freedom]>"
-		],
-		"policies": [
-			{
-				"name": "Populism",
-				"uniques": ["[+25]% Strength <for [Wounded] units>", "[+100]% weight to this choice for AI decisions"],
+				"name": "Covert Action",
+				"level": 1,
 				"row": 1,
-				"column": 2
+				"column": 2,
+				"uniques": []
 			},
 			{
-				"name": "Militarism",
-				"uniques": ["[Gold] cost of purchasing [All] units [-33]%"],
+				"name": "Creative Expression",
+				"level": 1,
 				"row": 1,
-				"column": 4
+				"column": 3,
+				"uniques": []
 			},
 			{
-				"name": "Fascism",
-				"uniques": ["[+100]% [Strategic] resource production", "[+2] Movement <for [Great General] units>"],
-				"requires": ["Populism", "Militarism"],
+				"name": "Economic Union",
+				"level": 1,
+				"row": 1,
+				"column": 4,
+				"uniques": []
+			},
+			{
+				"name": "Avant Garde",
+				"level": 1,
+				"row": 1,
+				"column": 5,
+				"uniques": []
+			},
+			{
+				"name": "Universal Healthcare (Freedom)",
+				"level": 1,
+				"row": 1,
+				"column": 6,
+				"uniques": []
+			},
+			{
+				"name": "Arsenal of Democracy",
+				"level": 2,
 				"row": 2,
-				"column": 2
+				"column": 0,
+				"uniques": []
 			},
 			{
-				"name": "Police State",
-				"uniques": [
-					"[+3 Happiness] from every [Courthouse]",
-					"[+100]% Production when constructing [Courthouse] buildings [in all cities]",
-					"[-25]% enemy spy effectiveness [in all cities]"
-				],
-				"requires": ["Militarism"],
+				"name": "New Deal",
+				"level": 2,
 				"row": 2,
-				"column": 4
+				"column": 1,
+				"uniques": []
 			},
 			{
-				"name": "Total War",
-				"uniques": [
-					"[+25]% Production when constructing [Military] units [in all cities]",
-					"New [Military] units start with [15] XP [in all cities]"
-				],
-				"requires": ["Police State", "Fascism"],
+				"name": "Their Finest Hour",
+				"level": 2,
+				"row": 2,
+				"column": 2,
+				"uniques": []
+			},
+			{
+				"name": "Universal Suffrage",
+				"level": 2,
+				"row": 2,
+				"column": 3,
+				"uniques": []
+			},
+			{
+				"name": "Urbanization",
+				"level": 2,
+				"row": 2,
+				"column": 4,
+				"uniques": []
+			},
+			{
+				"name": "Volunteer Army",
+				"level": 2,
+				"row": 2,
+				"column": 5,
+				"uniques": []
+			},
+			{
+				"name": "Media Culture",
+				"level": 3,
 				"row": 3,
-				"column": 3
+				"column": 0,
+				"uniques": []
 			},
 			{
-				"name": "Autocracy Complete",
-				"uniques": [
-					"[+25]% Strength <when attacking> <for [Military] units> <for [50] turns>",
-					"May buy [Great General] units for [1000] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([500]) <starting from the [Industrial era]>",
-					"Get the leader title of [[leaderName] the Terrible]"
-				]
+				"name": "Space Procurements",
+				"level": 3,
+				"row": 3,
+				"column": 1,
+				"uniques": []
+			},
+			{
+				"name": "Treaty Organization",
+				"level": 3,
+				"row": 3,
+				"column": 2,
+				"uniques": []
 			}
 		]
 	},
@@ -612,61 +621,245 @@
 		"name": "Order",
 		"era": "Industrial era",
 		"priorities": {"Neutral": 10, "Domination": 5, "Scientific": 5},
-		"uniques": [
-			"[+1 Happiness] [in all cities]",
-			"Only available <before adopting [Autocracy]>",
-			"Only available <before adopting [Freedom]>"
-		],
+		"uniques": [],
+		"purchaseByLevel": true,
+		"firstAdopterFreePolicies": 2,
+		"secondAdopterFreePolicies": 1,
 		"policies": [
 			{
-				"name": "United Front",
-				"uniques": [
-					"Militaristic City-States grant units [2] times as fast when you are at war with a common nation",
-					"[-100]% weight to this choice for AI decisions"
-				],
+				"name": "Double Agents",
+				"level": 1,
 				"row": 1,
-				"column": 1
+				"column": 0,
+				"uniques": []
 			},
 			{
-				"name": "Planned Economy",
-				"uniques": [
-					"[+25]% [Science] from every [Factory]",
-					"[+100]% Production when constructing [Factory] buildings [in all cities]"
-				],
+				"name": "Hero of the People",
+				"level": 1,
 				"row": 1,
-				"column": 3
+				"column": 1,
+				"uniques": []
+			},
+			{
+				"name": "Patriotic War",
+				"level": 1,
+				"row": 1,
+				"column": 2,
+				"uniques": []
+			},
+			{
+				"name": "Skyscrapers",
+				"level": 1,
+				"row": 1,
+				"column": 3,
+				"uniques": []
+			},
+			{
+				"name": "Socialist Realism",
+				"level": 1,
+				"row": 1,
+				"column": 4,
+				"uniques": []
+			},
+			{
+				"name": "Universal Healthcare (Order)",
+				"level": 1,
+				"row": 1,
+				"column": 5,
+				"uniques": []
+			},
+			{
+				"name": "Young Pioneers",
+				"level": 1,
+				"row": 1,
+				"column": 6,
+				"uniques": []
+			},
+			{
+				"name": "Academy of Sciences",
+				"level": 2,
+				"row": 2,
+				"column": 0,
+				"uniques": []
+			},
+			{
+				"name": "Cultural Revolution",
+				"level": 2,
+				"row": 2,
+				"column": 1,
+				"uniques": []
+			},
+			{
+				"name": "Five-Year Plan",
+				"level": 2,
+				"row": 2,
+				"column": 2,
+				"uniques": []
+			},
+			{
+				"name": "Party Leadership",
+				"level": 2,
+				"row": 2,
+				"column": 3,
+				"uniques": []
+			},
+			{
+				"name": "Resettlement",
+				"level": 2,
+				"row": 2,
+				"column": 4,
+				"uniques": []
+			},
+			{
+				"name": "Workers' Faculties",
+				"level": 2,
+				"row": 2,
+				"column": 5,
+				"uniques": []
+			},
+			{
+				"name": "Dictatorship of the Proletariat",
+				"level": 3,
+				"row": 3,
+				"column": 0,
+				"uniques": []
+			},
+			{
+				"name": "Iron Curtain",
+				"level": 3,
+				"row": 3,
+				"column": 1,
+				"uniques": []
+			},
+			{
+				"name": "Spaceflight Pioneers",
+				"level": 3,
+				"row": 3,
+				"column": 2,
+				"uniques": []
+			}
+		]
+	},
+	{
+		"name": "Autocracy",
+		"era": "Industrial era",
+		"priorities": {"Neutral": 5, "Domination": 10, "Scientific": 5},
+		"uniques": [],
+		"purchaseByLevel": true,
+		"firstAdopterFreePolicies": 2,
+		"secondAdopterFreePolicies": 1,
+		"policies": [
+			{
+				"name": "Elite Forces",
+				"level": 1,
+				"row": 1,
+				"column": 0,
+				"uniques": []
+			},
+			{
+				"name": "Fortified Borders",
+				"level": 1,
+				"row": 1,
+				"column": 1,
+				"uniques": []
+			},
+			{
+				"name": "Futurism",
+				"level": 1,
+				"row": 1,
+				"column": 2,
+				"uniques": []
+			},
+			{
+				"name": "Industrial Espionage",
+				"level": 1,
+				"row": 1,
+				"column": 3,
+				"uniques": []
+			},
+			{
+				"name": "Mobilization",
+				"level": 1,
+				"row": 1,
+				"column": 4,
+				"uniques": []
+			},
+			{
+				"name": "United Front",
+				"level": 1,
+				"row": 1,
+				"column": 5,
+				"uniques": []
+			},
+			{
+				"name": "Universal Healthcare (Autocracy)",
+				"level": 1,
+				"row": 1,
+				"column": 6,
+				"uniques": []
+			},
+			{
+				"name": "Lightning Warfare",
+				"level": 2,
+				"row": 2,
+				"column": 0,
+				"uniques": []
+			},
+			{
+				"name": "Militarism",
+				"level": 2,
+				"row": 2,
+				"column": 1,
+				"uniques": []
 			},
 			{
 				"name": "Nationalism",
-				"uniques": ["[+15]% Strength <for [All] units> <when fighting in [Friendly Land] tiles>"],
-				"row": 1,
-				"column": 5
-			},
-			{
-				"name": "Socialism",
-				"requires": ["Planned Economy"],
-				"uniques": ["[-15]% maintenance cost for [all] buildings [in all cities]"],
+				"level": 2,
 				"row": 2,
-				"column": 3
+				"column": 2,
+				"uniques": []
 			},
 			{
-				"name": "Communism",
-				"requires": ["Socialism"],
-				"uniques": [
-					"[+2 Production] [in all cities]",
-					"[+1 Production] from every [Mine]",
-					"[+1 Production] from every [Quarry]"
-				],
+				"name": "Police State",
+				"level": 2,
+				"row": 2,
+				"column": 3,
+				"uniques": []
+			},
+			{
+				"name": "Third Alternative",
+				"level": 2,
+				"row": 2,
+				"column": 4,
+				"uniques": []
+			},
+			{
+				"name": "Total War",
+				"level": 2,
+				"row": 2,
+				"column": 5,
+				"uniques": []
+			},
+			{
+				"name": "Cult of Personality",
+				"level": 3,
 				"row": 3,
-				"column": 3
+				"column": 0,
+				"uniques": []
 			},
 			{
-				"name": "Order Complete",
-				"uniques": [
-					"[+2 Food, +2 Production, +2 Science, +2 Gold, +2 Culture] [in all cities]",
-					"May buy [Great Engineer] units for [1000] [Faith] [in all cities in which the majority religion is a major religion] at an increasing price ([500]) <starting from the [Industrial era]>",
-					"Get the leader title of [Chairman [leaderName]]"
-				]
+				"name": "Gunboat Diplomacy",
+				"level": 3,
+				"row": 3,
+				"column": 1,
+				"uniques": []
+			},
+			{
+				"name": "Clausewitz's Legacy",
+				"level": 3,
+				"row": 3,
+				"column": 2,
+				"uniques": []
 			}
 		]
 	}

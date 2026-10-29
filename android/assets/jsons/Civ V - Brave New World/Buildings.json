@@ -471,7 +471,8 @@
 		"requiredBuilding": "Workshop",
 		"maintenance": 3,
 		"requiredResource": "Coal",
-		"requiredTech": "Industrialization"
+		"requiredTech": "Industrialization",
+		"uniques": ["Building [3] of these unlocks Ideologies"]
 	},
 	{
 		"name": "Nuclear Plant",

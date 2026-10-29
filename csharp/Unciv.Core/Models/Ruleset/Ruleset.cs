@@ -563,7 +563,7 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
             {
                 policy.Branch = branch;
                 policy.OriginRuleset = Name;
-                policy.Requires ??= [branch.Name];
+                policy.Requires ??= branch.PurchaseByLevel ? [] : [branch.Name]; // B013: tenets have no prerequisite, the ideology is checked by the manager
 
                 if (!ReferenceEquals(policy, branch.Policies[^1]))
                 {
@@ -579,7 +579,8 @@ public class Ruleset : IRulesetParameterView, IRulesetConstructionView, IRuleset
                 Policies[policy.Name] = policy;
             }
 
-            // Add a finisher
+            // Add a finisher (B013: an ideology has none, its last tenet stays a tenet)
+            if (branch.PurchaseByLevel) continue;
             branch.Policies[^1].Name = branch.Name + Policy.BranchCompleteSuffix;
         }
     }

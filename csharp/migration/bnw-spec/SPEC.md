@@ -305,9 +305,7 @@ free Aqueducts), Liberty (Great Person), Honor (gold from kills), Piety (free Gr
 city-states gift Great People), Commerce (+1 gold on Trading Posts), Rationalism (1 free technology), Aesthetics (+100% theming bonuses, declared
 data), Exploration (Antiquity Site reveal: B040, no effect yet). The G&K Great-Person-for-Faith purchases on the finishers are dropped; they return as
 `Can purchase all Great People with Faith` (B073). Tests: `BnwPolicyTreeTests`.
-**Deliberate deviations / open items.** Freedom, Order and Autocracy stay the G&K branches (B051: tenet levels, adopters, switching); the Poland unique
-`[n] free Policies each time you enter a new era` is still not restricted to social branches, because "social" is only decidable once B051 marks
-the ideology branches. Many stat columns keep the G&K wording where it matches the BNW meaning; the rest are listed in `policyPending` (report section
+**Deliberate deviations / open items.** Many stat columns keep the G&K wording where it matches the BNW meaning; the rest are listed in `policyPending` (report section
 "pending policy effects"). The Exploration opener (`PROMOTION_NAVAL_TRADITION`) is read as +1 Movement and +1 Sight for naval units [?]. No decompiler
 output is in the repo, so the [K]/[?] items of §4.6.1 stand at their spec values.
 
@@ -700,6 +698,25 @@ Each ideology has 16 tenets: 7 Level 1, 6 Level 2, 3 Level 3 (`Policies.Level`).
 culture cost; free tenets cost nothing). You may adopt a Level n+1 tenet only if your Level n tenet count exceeds your
 Level n+1 count. (So L2 needs more L1 than L2 tenets, and L3 needs more L2 than L3.) [K]. Tenets have no prereq tree
 otherwise. The UI shows the counts per level [U].
+
+**B013 result (ideologies, §4.6.2 and §4.6.3; spec id B051).** `Policies.json` now builds Freedom, Order and Autocracy from `PolicyBranchTypes.tsv` /
+`Policies.tsv`: JSON fields `purchaseByLevel`, `firstAdopterFreePolicies` (2), `secondAdopterFreePolicies` (1) on the branch and `level` (1 to 3) on the
+16 tenets (7/6/3, checked by the generator). The ruleset loader gives an ideology no finisher and its tenets no prerequisite. The Factory carries
+`Building [3] of these unlocks Ideologies`. Engine (`PolicyManager`, saved only when set so G&K saves are byte-identical): `Ideology`, `FreeTenets`,
+`CanChooseIdeology` (ModOptions `Enables ideologies`; the civ's era above the ideology branches' era, i.e. Modern or later, or three Factories; major
+civs only; once), `ChooseIdeology` (free; the branch policy itself becomes adopted, which is what the Statue of Liberty / Kremlin / Prora gate reads;
+the civ gets 2 free tenets when no other civ follows it, 1 when exactly one does, else 0), the level rule (a Level n+1 tenet needs more Level n than
+Level n+1 tenets), and separate pools: free policies buy social policies only, free tenets tenets only, culture either (a culture-bought tenet counts
+as a policy pick, a free one does not). This is also the Poland narrowing: `[n] free Policies each time you enter a new era` can never buy a tenet or
+the ideology, so it is limited to social branches without a unique change. Commands: the existing `adopt-policy` names an ideology branch (choose,
+free) or a tenet, so no `ChooseIdeology`/`AdoptTenet` command exists (deviation from the §2.4 names). `PendingDecisions` gets the non-blocking
+`Ideology` decision; free tenets keep the blocking `Policy` decision. The AI picks the ideology branch of highest `PriorityMap` value, then spends
+free tenets, then culture on tenets before social branches. A one-time notification (`CHOOSE_IDEOLOGY_ERA` / `_FACTORIES`) is sent at turn start.
+**Deliberate deviations / open items.** The three "Universal Healthcare" tenets are named `Universal Healthcare (Freedom|Order|Autocracy)` (policy
+names are unique). Tenets carry no effects yet (stat columns: B010; tourism, trade, espionage and league columns: their subsystems); they are listed
+under `policyPending`. "First adopter" counts the civs that follow the ideology now (dead civs included): there is no adoption history until
+B052 (switching) adds one. Public opinion, unhappiness, switching and anarchy are B052. The policy screen (C track) shows the ideology branches through
+the generic tree with the new locked reasons `ideology-locked`, `ideology:<branch>` and `tenet-level:<n>`; a dedicated ideology UI is a client follow-up.
 
 #### 4.6.4 Public opinion (`DoPublicOpinion` @1006f9d0) [O]
 Only for a civ with an ideology `I`:

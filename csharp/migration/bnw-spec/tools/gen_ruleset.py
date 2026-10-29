@@ -578,7 +578,7 @@ def mod_constants(report):
 # ----------------------------------------------------------------------------------------------------------------------
 # Policy tree (B050, SPEC 4.6.1)
 # ----------------------------------------------------------------------------------------------------------------------
-IDEOLOGY_BRANCHES = ("Freedom", "Order", "Autocracy")  # kept as in G&K until B051
+IDEOLOGY_BRANCHES = ("Freedom", "Order", "Autocracy")  # the three ideologies (B051): tenets by level, no opener or finisher
 PRIORITY_ANALOG = {"Aesthetics": "Patronage", "Exploration": "Commerce"}  # AI weights of the two new branches
 
 
@@ -587,11 +587,11 @@ def era_name(code):
 
 
 def build_policies(gk, overrides, report):
-    """The nine social branches from the BNW tables; the three ideology branches stay as in G&K (B051)."""
+    """The nine social branches and the three ideologies (B051) from the BNW tables."""
     uniques = overrides["policyUniques"]
     gk_by_name = {b["name"]: b for b in gk}
     policies = tsv("Policies")
-    branch_rows = [r for r in tsv("PolicyBranchTypes") if r["Name"] not in IDEOLOGY_BRANCHES]
+    branch_rows = tsv("PolicyBranchTypes")
     type_name = {r["Type"]: r["Name"] for r in policies}
     prereqs = {}
     for r in tsv("Policy_PrereqPolicies"):
@@ -610,6 +610,9 @@ def build_policies(gk, overrides, report):
         members = sorted((r for r in policies if r["PolicyBranchType"] == br["Type"]),
                          key=lambda r: (int(r["GridY"]), int(r["GridX"])))
         gk_branch = gk_by_name.get(name) or gk_by_name[PRIORITY_ANALOG[name]]
+        if name in IDEOLOGY_BRANCHES:
+            out.append(build_ideology(br, members, gk_branch, uniques, report))
+            continue
         branch = {"name": name, "era": era_name(br["EraPrereq"]),
                   "priorities": dict(gk_branch["priorities"]), "uniques": take(name), "policies": []}
         for r in members:
@@ -623,10 +626,30 @@ def build_policies(gk, overrides, report):
     unused = sorted(set(uniques) - used)
     if unused:
         raise SystemExit(f"overrides.policyUniques has unused entries: {unused}")
-    for b in gk:
-        if b["name"] in IDEOLOGY_BRANCHES:
-            out.append(b)
     return out
+
+
+def build_ideology(br, members, gk_branch, uniques, report):
+    """An ideology (SPEC 4.6.3): the branch policy is the free choice, its tenets are bought by Level (7 / 6 / 3), no finisher.
+    PurchaseByLevel and the adopter counts come from PolicyBranchTypes.tsv; the Universal Healthcare tenet exists once per ideology, so the
+    name is suffixed to stay unique; tenet effects (B010 and the subsystem tickets) are pending, the tenets carry the structure only."""
+    name = br["Name"]
+    counts = {}
+    policies = []
+    for r in sorted(members, key=lambda r: (int(r["Level"]), r["Type"])):
+        level = int(r["Level"])
+        counts[level] = counts.get(level, 0) + 1
+        tenet = r["Name"] + f" ({name})" if r["Name"] == "Universal Healthcare" else r["Name"]
+        policies.append({"name": tenet, "level": level, "row": level, "column": counts[level] - 1, "uniques": []})
+    if counts != {1: 7, 2: 6, 3: 3}:
+        raise SystemExit(f"{name}: tenet levels {counts}, expected 7/6/3")
+    for r in [br]:
+        if r["PurchaseByLevel"] != "1":
+            raise SystemExit(f"{name}: PurchaseByLevel is not set in PolicyBranchTypes.tsv")
+    report.add("policies", f"{name}: ideology, {era_name(br['EraPrereq'])}, 16 tenets (7/6/3), free tenets {br['FirstAdopterFreePolicies']} (first adopter) / {br['SecondAdopterFreePolicies']} (second)")
+    return {"name": name, "era": era_name(br["EraPrereq"]), "priorities": dict(gk_branch["priorities"]), "uniques": [],
+            "purchaseByLevel": True, "firstAdopterFreePolicies": int(br["FirstAdopterFreePolicies"]),
+            "secondAdopterFreePolicies": int(br["SecondAdopterFreePolicies"]), "policies": policies}
 
 
 def gate_wonders_by_branch(buildings, report):

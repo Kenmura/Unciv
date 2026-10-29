@@ -44,6 +44,7 @@ public static class PolicyScreenModel
     {
         var lines = new List<string> { $"Culture: {Int(tree.StoredCulture)} / {Int(tree.CultureNeededForNextPolicy)}" };
         if (tree.FreePolicies > 0) lines.Add($"Free policies: {Int(tree.FreePolicies)}");
+        if (tree.FreeTenets > 0) lines.Add($"Free tenets: {Int(tree.FreeTenets)}");
         lines.Add(tree.CanAdopt ? "You can adopt a policy now" : $"Next policy in {Int(Math.Max(0, tree.CultureNeededForNextPolicy - tree.StoredCulture))} more culture");
         return lines;
     }
@@ -85,6 +86,9 @@ public static class PolicyScreenModel
             return tree.CanAdopt ? "Can be adopted now" : $"Needs {Int(tree.CultureNeededForNextPolicy)} culture ({Int(tree.StoredCulture)} stored)";
         string reason = entry.LockedReason ?? "";
         if (reason.StartsWith("requires:", StringComparison.Ordinal)) return "Needs " + reason["requires:".Length..] + " first";
+        if (reason == "ideology-locked") return "Needs the Modern era or three Factories";
+        if (reason.StartsWith("ideology:", StringComparison.Ordinal)) return "Needs the " + reason["ideology:".Length..] + " ideology";
+        if (reason.StartsWith("tenet-level:", StringComparison.Ordinal)) return "Needs more Level " + reason["tenet-level:".Length..] + " tenets than Level " + (int.Parse(reason["tenet-level:".Length..], CultureInfo.InvariantCulture) + 1).ToString(CultureInfo.InvariantCulture) + " tenets";
         if (reason.StartsWith("era:", StringComparison.Ordinal)) return "Opens in the " + (branch.Era.Length > 0 ? branch.Era : reason["era:".Length..]);
         return reason == "complete-automatically" ? "Adopted automatically with the last policy of the branch" : "Not available to you";
     }

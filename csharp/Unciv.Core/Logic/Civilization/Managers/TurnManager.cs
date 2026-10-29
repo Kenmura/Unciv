@@ -71,6 +71,8 @@ public class TurnManager(Civilization civInfo)
                 MayaCalendar.StartTurnForMaya(civInfo);
         }
 
+        NotifyIdeologyChoice();
+
         civInfo.Cache.UpdateViewableTiles(); // adds explored tiles so that the units will be able to perform automated actions better
         civInfo.Cache.UpdateCitiesConnectedToCapital();
         StartTurnFlags();
@@ -141,6 +143,17 @@ public class TurnManager(Civilization civInfo)
     private bool IsTradeValid(Trade.Trade trade, Civilization offeringCiv) =>
         (civInfo.GameInfo.ClientState.TradeEvaluation ?? Trade.TradeEvaluation.Default)
         .IsTradeValid(trade, civInfo, offeringCiv);
+
+    /// <summary>B013 (bnw-spec 4.6.2): tell the civ once that it may choose an ideology (<c>CHOOSE_IDEOLOGY_ERA</c> or <c>CHOOSE_IDEOLOGY_FACTORIES</c>).</summary>
+    private void NotifyIdeologyChoice()
+    {
+        var policies = civInfo.Policies;
+        if (policies.IdeologyPrompted || !policies.CanChooseIdeology()) return;
+        policies.IdeologyPrompted = true;
+        civInfo.AddNotification(
+            policies.IdeologyUnlockedBecauseOfEra() ? "Your era allows you to choose an ideology!" : "Your Factories allow you to choose an ideology!",
+            NotificationCategory.General, NotificationIcon.Culture);
+    }
 
     private void StartTurnFlags()
     {

@@ -41,6 +41,13 @@ public class Policy : RulesetObject, ICivilopediaText
     public int Column { get; set; }
     public List<string>? Requires { get; set; }
 
+    /// <summary>Not in Kotlin (B013, bnw-spec 4.6.3): the tenet level (1 to 3) of a policy in an ideology branch; 0 elsewhere.</summary>
+    public int Level { get; set; }
+
+    /// <summary>Not in Kotlin (B013): a member of an ideology branch (<see cref="PolicyBranch.PurchaseByLevel"/>), bought with a tenet pick instead of a policy pick.</summary>
+    [JsonIgnore]
+    public bool IsTenet => this is not PolicyBranch && Branch.PurchaseByLevel;
+
     /// <summary>Indicates whether this <see cref="Policy"/> is a <see cref="PolicyBranch"/> starting policy, a normal one, or the branch completion</summary>
     [JsonIgnore]
     public PolicyBranchTypes PolicyBranchType => policyBranchType.Value;

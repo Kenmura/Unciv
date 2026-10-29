@@ -84,8 +84,14 @@ public static partial class NextTurnAutomation
         - Choose a random candidate closest to completion.
         - Pick a random child policy of a chosen branch and adopt it.
         */
+        var policies = civInfo.Policies;
+        if (policies.CanChooseIdeology()) ChooseIdeology(civInfo, rng);
         while (civView.CanAdoptPolicy())
         {
+            // B013: tenets first (free ones, or paid with culture); social branches only when their own pool (a free policy, or culture) can pay
+            if (AdoptTenet(civInfo, rng)) continue;
+            if (policies.FreePolicies == 0 && policies.StoredCulture < policies.GetCultureNeededForNextPolicy()) return;
+
             var incompleteBranches = civInfo.Policies.IncompleteBranches;
             var adoptableBranches = civInfo.Policies.AdoptableBranches;
 
@@ -132,6 +138,30 @@ public static partial class NextTurnAutomation
 
             civInfo.Policies.Adopt(policyToAdopt);
         }
+    }
+
+    /// <summary>
+    /// B013 (not in Kotlin, bnw-spec 4.6.2): the AI picks the ideology branch with the highest <c>PolicyManager.PriorityMap</c> value (the same branch
+    /// priorities it uses for social branches), a random one among equals.
+    /// </summary>
+    private static void ChooseIdeology(CivilizationClass civInfo, GameRandom rng)
+    {
+        var priorityMap = civInfo.Policies.PriorityMap;
+        var options = civInfo.Policies.IdeologyBranches.Where(it => civInfo.Policies.IsAdoptable(it)).ToList();
+        if (options.Count == 0) return;
+        var best = options.Max(it => priorityMap[it]);
+        civInfo.Policies.Adopt(options.Where(it => priorityMap[it] == best).ToList().Random(rng));
+    }
+
+    /// <summary>B013: adopt one tenet of the civ's ideology (random, weighted like policies) when one is adoptable and affordable.</summary>
+    private static bool AdoptTenet(CivilizationClass civInfo, GameRandom rng)
+    {
+        var policies = civInfo.Policies;
+        if (policies.Ideology == null || !civInfo.GameInfo.Ruleset.PolicyBranches.TryGetValue(policies.Ideology, out var branch)) return false;
+        var candidates = branch.Policies.Where(it => policies.CanAdoptPolicy(it)).ToList();
+        if (candidates.Count == 0) return false;
+        policies.Adopt(candidates.RandomWeighted(rng, it => ((IHasUniques)it).GetWeightForAiDecision(civInfo.State)));
+        return true;
     }
 
     public static void ChooseGreatPerson(CivView civView)

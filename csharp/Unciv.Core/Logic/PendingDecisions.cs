@@ -25,6 +25,8 @@ public enum DecisionKind
     MoveAutomatedUnits,
     Alert,
     TradeRequest,
+    /// <summary>B013: an ideology may be chosen (never blocks the turn; the command is <c>adopt-policy</c> naming an ideology branch).</summary>
+    Ideology,
 }
 
 /// <summary>One pending decision. <see cref="ResolvedBy"/> is the type string of the command that resolves it.</summary>
@@ -73,6 +75,9 @@ public static class PendingDecisions
 
         if (civ.Policies.ShouldShowPolicyPicker())
             result.Add(new Decision(DecisionKind.Policy, "", "adopt-policy", true));
+
+        if (civ.Policies.CanChooseIdeology())
+            result.Add(new Decision(DecisionKind.Ideology, "", "adopt-policy", false));
 
         if (game.IsEspionageEnabled() && civ.EspionageManager.ShouldShowMoveSpies())
             result.Add(new Decision(DecisionKind.MoveSpies, "", "move-spy", true));

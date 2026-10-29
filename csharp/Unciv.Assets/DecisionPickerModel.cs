@@ -86,7 +86,7 @@ public static class DecisionPickerModel
             or DecisionKind.ReformReligion or DecisionKind.DiplomaticVote => DecisionRoute.Picker,
         DecisionKind.CityProduction => DecisionRoute.CityScreen,
         DecisionKind.Technology => DecisionRoute.TechScreen,
-        DecisionKind.Policy => DecisionRoute.PolicyScreen,
+        DecisionKind.Policy or DecisionKind.Ideology => DecisionRoute.PolicyScreen,
         DecisionKind.DueUnits => DecisionRoute.NextUnit,
         DecisionKind.MoveAutomatedUnits => DecisionRoute.AutoCommand,
         DecisionKind.Alert => DecisionRoute.AlertPopup,

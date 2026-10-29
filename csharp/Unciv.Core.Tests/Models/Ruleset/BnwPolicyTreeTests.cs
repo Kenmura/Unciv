@@ -28,7 +28,7 @@ public sealed class BnwPolicyTreeTests
     public void TheTreeHasNineSocialBranchesAndTheThreeIdeologies()
     {
         var branches = BnwRulesetTests.LoadBnw().PolicyBranches;
-        Assert.Equal(SocialBranches.Select(it => it.Branch).Concat(["Freedom", "Autocracy", "Order"]), branches.Keys);
+        Assert.Equal(SocialBranches.Select(it => it.Branch).Concat(["Freedom", "Order", "Autocracy"]), branches.Keys);
     }
 
     [Fact]

@@ -43,7 +43,12 @@ public sealed class TestGame
     /// <summary>[TileMap] has a default size of 1 tile, use <see cref="MakeHexagonalMap"/> or <see cref="MakeRectangularMap"/> to change that</summary>
     public TileMap TileMap => GameInfo.TileMap;
 
-    public TestGame(params string[] addGlobalUniques)
+    public TestGame(params string[] addGlobalUniques) : this(BaseRuleset.Civ_V_GnK, addGlobalUniques)
+    {
+    }
+
+    /// <summary>A game on another base ruleset, for example <see cref="BaseRuleset.Civ_V_BNW"/> (B013).</summary>
+    public TestGame(BaseRuleset baseRuleset, params string[] addGlobalUniques)
     {
         // Create a new ruleset we can easily edit, and set the important variables of gameInfo
         lock (RulesetLoadLock)
@@ -53,7 +58,7 @@ public sealed class TestGame
                 var jsons = JsonsPath();
                 RulesetCache.LoadRulesets(new DirectoryRulesetFileSource(jsons, Path.Combine(jsons, "no mods here")), noMods: true);
             }
-            Ruleset = RulesetCache.Get(BaseRuleset.Civ_V_GnK.FullName())!.Clone();
+            Ruleset = RulesetCache.Get(baseRuleset.FullName())!.Clone();
         }
         Ruleset.AddGlobalUniques(addGlobalUniques);
 

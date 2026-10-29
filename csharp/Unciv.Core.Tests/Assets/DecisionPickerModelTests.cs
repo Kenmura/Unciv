@@ -183,6 +183,7 @@ public class DecisionPickerModelTests
             [DecisionKind.MoveAutomatedUnits] = (DecisionRoute.AutoCommand, null),
             [DecisionKind.Alert] = (DecisionRoute.AlertPopup, null),
             [DecisionKind.TradeRequest] = (DecisionRoute.DiplomacyScreen, null),
+            [DecisionKind.Ideology] = (DecisionRoute.PolicyScreen, null),
         };
         Assert.Equal(Enum.GetValues<DecisionKind>().Order(), routes.Keys.Order());
         foreach (var (kind, expected) in routes)
