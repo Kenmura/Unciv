@@ -85,7 +85,7 @@ flowchart TD
   class T260 blocked
   class T262 review
   class T263 ready
-  class T265 prog
+  class T265 review
   class T266 waiting
   class T270 ondeck
   class T271 prog
@@ -153,10 +153,10 @@ xychart-beta
 | T284 | **On deck** (after C101) | C101 | 0 | Phone layout: Diplomacy, trade, espionage and overview tables (C101 follow-up) |
 | T285 | **On deck** (after C101) | C101 | 0 | Phone layout: Civilopedia (C101 follow-up) |
 | T286 | **On deck** (after C101) | C101 | 0 | Phone layout: City and production screens (C101 follow-up) |
-| C101 | Needs-Review [Claude-C101] | C096 | 4 | Phone layouts of the full screens (split by screen group when claimed): HUD and menus, city, tech and policy, tables, pedia |
+| C101 | In-Review [Claude-C101] | C096 | 4 | Phone layouts of the full screens (split by screen group when claimed): HUD and menus, city, tech and policy, tables, pedia |
 | T260 | Blocked | T259, C042 | 4 | Android APK build: unblock the .NET export (net9.0 target or Gradle), Android preset, debug-signed arm64 APK from tools/package.sh android |
 | T272 | In-Progress [Claude-T272] | T281, T267 | 3 | Host migration 2/5: standby replication (StandbySubscribe/Snapshot/Entry/Ack, standby store in the successor's data dir, lag handling) |
-| T265 | In-Progress [Claude-T265] | T178, T179, T204, T205 | 2 | Dedicated server executable A: Unciv.Server command line, lobby and game hosting over TCP+TLS |
+| T265 | Needs-Review [Claude-T265] | T178, T179, T204, T205 | 2 | Dedicated server executable A: Unciv.Server command line, lobby and game hosting over TCP+TLS |
 | T274 | Available (waiting on T273) | T273 | 1 | Host migration 4/5: crash election (loss detection, signed HostLossVote quorum, split-brain refusal, superseded-host mode, forced take-over, kill-the-host scenarios) |
 | T277 | Available (waiting on T260) | T260, T276 | 1 | Android CI: build the APK (arm64 plus x86_64) as an artifact and smoke it on an emulator |
 | C099 | Available (waiting on T260) | T260, C096 | 0 | Android shell behaviour: back button, safe area, orientation, lifecycle autosave, virtual keyboard, hide Host, permissions |
