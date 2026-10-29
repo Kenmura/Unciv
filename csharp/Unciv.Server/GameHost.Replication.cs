@@ -60,6 +60,7 @@ public sealed partial class GameHost
 
     private StandbyStream? standbyStream;
     private int standbyStepPosted;
+    private long lastStandbySubscribeMillis = long.MinValue;
 
     private void InitReplication()
     {
@@ -131,6 +132,13 @@ public sealed partial class GameHost
             await SafeSendAsync(from, new Error { Code = ErrorCodes.InvalidMessage });
             return;
         }
+        var now = clock.NowMillis;
+        if (lastStandbySubscribeMillis != long.MinValue && now - lastStandbySubscribeMillis < Standby.Limits.MinSubscribeMillis)
+        {
+            await SafeSendAsync(from, new Error { Code = ErrorCodes.StandbyViolation, Detail = "subscribe-rate" }); // a snapshot send is the costly part: the designated key may not trigger it in a loop
+            return;
+        }
+        lastStandbySubscribeMillis = now;
         StopStandbyStream();
         var stream = new StandbyStream(from, store.ReadMeta().HostEpoch) { LastProgressMillis = clock.NowMillis };
         Volatile.Write(ref standbyStream, stream);
@@ -169,14 +177,14 @@ public sealed partial class GameHost
         }
         if (stream.AwaitingResetAck)
         {
-            if (ack.Seq != stream.ResetSeq) return; // acks sent before the successor saw the snapshot: not counted, not a violation
+            if (stream.ResetSeq < 0 || ack.Seq != stream.ResetSeq) return; // acks sent before the successor saw the snapshot: not counted, not a violation
             stream.AwaitingResetAck = false;
             stream.AckedSeq = ack.Seq;
             stream.LastProgressMillis = clock.NowMillis;
         }
         else
         {
-            if (ack.Seq < stream.AckedSeq || ack.Seq > store!.LastSeq)
+            if (ack.Seq < stream.AckedSeq || ack.Seq > Math.Min(stream.SentSeq, store!.LastSeq))
             {
                 StopStandbyStream();
                 await SafeSendAsync(from, new Error { Code = ErrorCodes.StandbyViolation });

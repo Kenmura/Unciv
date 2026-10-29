@@ -138,4 +138,25 @@ public sealed class StandbyClientStoreTests : IDisposable
         await Task.Delay(100);
         Assert.Equal(-1, rig.Session.StandbyHaveSeq);
     }
+
+    [Fact]
+    public async Task AStatusForAnotherGame_IsIgnored_AndDecliningRemovesTheCopy()
+    {
+        var (rig, host) = await AcceptedAsync(root);
+        await using var _ = rig;
+        await host.SendAsync(new StandbyStatus { State = StandbyStates.Ready, LagEntries = 0, GameId = GameId });
+        await host.ReceiveAsync<StandbySubscribe>();
+        await host.SendAsync(new StandbyMeta { Epoch = 0, Header = "{\"formatVersion\":1}", Meta = MetaJson });
+        var dir = StandbyStore.DirectoryFor(root, GameId)!;
+        for (var attempt = 0; attempt < 250 && !File.Exists(Path.Combine(dir, "game.json")); attempt++) await Task.Delay(20);
+        Assert.True(File.Exists(Path.Combine(dir, "game.json")));
+
+        await rig.Session.DeclineStandbyAsync();
+        await host.ReceiveAsync<StandbyDecline>();
+        Assert.False(Directory.Exists(dir));
+        await host.SendAsync(new StandbyStatus { State = StandbyStates.Ready, LagEntries = 0, GameId = GameId });
+        await rig.NextAsync<StandbyStatusChanged>();
+        await Task.Delay(100);
+        Assert.False(Directory.Exists(dir));
+    }
 }

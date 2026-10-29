@@ -262,7 +262,7 @@ public sealed class StandbyReplicationTests : IDisposable
         var host = InProcessHost.Start(game, setup, Seed, StartClock, Path.Combine(root, name), "Babylon", humans,
             new InProcessHostOptions { TickInterval = null, Clock = clock, Store = store ?? new StoreOptions { SnapshotEveryTurns = 2 } });
         host.Host.Standby.Prober = new FakeProber { Answer = (_, _) => Fp };
-        if (limits != null) host.Host.Standby.Limits = limits;
+        host.Host.Standby.Limits = limits ?? new StandbyLimits { MinSubscribeMillis = 0 };
         return host;
     }
 
@@ -487,7 +487,7 @@ public sealed class StandbyReplicationTests : IDisposable
     public async Task SlowSuccessor_IsMarkedLagging_ThenResyncsFromASnapshotOnceItCatchesUp()
     {
         var clock = new ManualClock(StartClock);
-        await using var host = StartHost("g5", clock, limits: new StandbyLimits { MaxLagEntries = 12 });
+        await using var host = StartHost("g5", clock, limits: new StandbyLimits { MaxLagEntries = 12, MinSubscribeMillis = 0 });
         var dataRoot = Path.Combine(root, "successor5");
         await using var successor = await DesignateAndAcceptAsync(host, dataRoot);
         successor.HoldAcks = true;
@@ -523,6 +523,23 @@ public sealed class StandbyReplicationTests : IDisposable
         successor.Store!.Dispose();
         Assert.Equal(ReplayVerifier.FullHash(host.Host.Game), HashOfDirectory(StandbyStore.DirectoryFor(dataRoot, host.Host.Game.GameId)!, out var report));
         Assert.Equal(RecoveryOutcome.Recovered, report.Outcome);
+    }
+
+    [Fact]
+    public async Task ASubscribeLoop_IsRefusedWithoutRestartingTheStream()
+    {
+        var clock = new ManualClock(StartClock);
+        await using var host = StartHost("g8", clock, limits: new StandbyLimits { MinSubscribeMillis = 60_000 });
+        await using var successor = await DesignateAndAcceptAsync(host, Path.Combine(root, "successor8"));
+        await successor.SubscribeAsync();
+        await successor.WaitAsync<StandbySnapshot>();
+        var metas = successor.Of<StandbyMeta>().Count;
+        await successor.SendAsync(new StandbySubscribe { GameId = host.Host.Game.GameId, HaveSeq = -1 });
+        await successor.WaitAsync<Error>(it => it.Code == ErrorCodes.StandbyViolation && it.Detail == "subscribe-rate");
+        Assert.Equal(metas, successor.Of<StandbyMeta>().Count);
+        clock.AdvanceSeconds(61);
+        await successor.SendAsync(new StandbySubscribe { GameId = host.Host.Game.GameId, HaveSeq = -1 });
+        await successor.WaitAsync<StandbyMeta>(it => successor.Of<StandbyMeta>().Count > metas);
     }
 
     [Fact]

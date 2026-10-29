@@ -71,6 +71,9 @@ public sealed record StandbyLimits
     /// <summary>T272: no ack for this long while entries are outstanding marks the standby lagging (design: 30 s).</summary>
     public long MaxLagMillis { get; init; } = 30_000;
 
+    /// <summary>Least time between two subscribes of the designated key (a subscribe can cost a snapshot read and send).</summary>
+    public long MinSubscribeMillis { get; init; } = 1_000;
+
     /// <summary>T272: raw bytes of one <c>StandbySnapshot</c> chunk (well under the frame limit once base64 encoded).</summary>
     public int SnapshotChunkBytes { get; init; } = 256 * 1024;
 

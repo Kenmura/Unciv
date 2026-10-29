@@ -315,7 +315,13 @@ public sealed class ClientSession : IAsyncDisposable
     /// <summary>Declines the offer, or withdraws an accepted standby.</summary>
     public ValueTask DeclineStandbyAsync()
     {
-        standbyConsented = false;
+        var kept = standbyGameId;
+        EndStandbyReplication();
+        if (kept != null && options.StandbyRoot != null && StandbyStore.DirectoryFor(options.StandbyRoot, kept) is { } path)
+        {
+            // Withdrawing consent removes the copy: a later host status must not find the directory and treat it as an earlier accept.
+            try { Directory.Delete(path, recursive: true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { /* best effort */ }
+        }
         return SendAsync(new StandbyDecline());
     }
 
@@ -366,6 +372,7 @@ public sealed class ClientSession : IAsyncDisposable
     private async Task SubscribeStandbyAsync(string? statusGameId, CancellationToken token)
     {
         if (standbyStore != null || options.StandbyRoot == null) return;
+        if (statusGameId != null && gameId != null && !string.Equals(statusGameId, gameId, StringComparison.Ordinal)) return; // only the game this session joined
         var id = statusGameId ?? gameId;
         if (id == null) return;
         var path = StandbyStore.DirectoryFor(options.StandbyRoot, id);
@@ -432,6 +439,7 @@ public sealed class ClientSession : IAsyncDisposable
         Interlocked.Exchange(ref standbyHave, store.HaveSeq);
         // Acked: every stored log line, and a snapshot that restarted the store (the host ignores acks until the one for that snapshot's seq).
         var resetDone = frame is StandbySnapshot { Reset: true } && result == StandbyApply.Applied;
+        if (resetDone) standbyRestarts = 0; // a restart that worked
         if (resetDone || (frame is StandbyEntry && result == StandbyApply.Applied && store.HaveSeq != standbyLastAck))
         {
             standbyLastAck = store.HaveSeq;
