@@ -357,7 +357,12 @@ public partial class CombatPresenter : Node3D
         return fresh;
     }
 
-    private UnitNode? Find(int id) => dying.GetValueOrDefault(id) ?? unitOf(id);
+    private UnitNode? Find(int id)
+    {
+        var node = dying.GetValueOrDefault(id) ?? unitOf(id);
+        node?.Wake(); // C085: a unit that animates is drawn even if the camera had left it
+        return node;
+    }
 
     private static MeshInstance3D Ball(float radius, Rgb colour) => new()
     {

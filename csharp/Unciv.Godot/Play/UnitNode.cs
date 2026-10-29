@@ -38,8 +38,10 @@ public partial class UnitNode : Node3D
 
     private readonly List<AnimationPlayer> players = [];
     private readonly List<UnitAnimator> animators = [];
+    private readonly List<int> animatorFigures = [];
     private readonly List<Node3D> figures = [];
     private readonly List<Vector3> formationSlots = [];
+    private readonly List<(Vector3 Position, Vector3 Scale)> fullSlots = [];
 
     /// <summary>C080: the animation player of each figure whose model has one (none for generated blocks), held in its idle pose until the presenter drives them.</summary>
     public IReadOnlyList<AnimationPlayer> Players => players;
@@ -62,15 +64,60 @@ public partial class UnitNode : Node3D
     }
 
     /// <summary>C081: stands every figure that has <paramref name="clip"/> a fraction <paramref name="progress"/> through it; false when none has it (the presenter then poses procedurally).</summary>
-    public bool ShowClip(string clip, float progress) => animators.Count(it => it.Show(clip, progress)) > 0;
+    public bool ShowClip(string clip, float progress) => animators.Where((_, k) => figures[animatorFigures[k]].Visible).Count(it => it.Show(clip, progress)) > 0;
 
     /// <summary>C081: like <see cref="ShowClip"/> for a looping clip, <paramref name="seconds"/> into it.</summary>
-    public bool ShowClipLooped(string clip, float seconds) => animators.Count(it => it.ShowLooped(clip, seconds)) > 0;
+    public bool ShowClipLooped(string clip, float seconds) => animators.Where((_, k) => figures[animatorFigures[k]].Visible).Count(it => it.ShowLooped(clip, seconds)) > 0;
 
     /// <summary>C081: back to the idle pose after a cue.</summary>
     public void RestClips()
     {
         foreach (var animator in animators) animator.Rest();
+    }
+
+    /// <summary>C085: whether the formation is reduced to its lead figure (zoomed far out, see <see cref="UnitLod"/>).</summary>
+    public bool FarLod { get; private set; }
+
+    /// <summary>C085: how many figures are drawn right now (the formation's size, or one when <see cref="FarLod"/>; none while <see cref="Culled"/>).</summary>
+    public int FiguresDrawn => Visible ? figures.Count(it => it.Visible) : 0;
+
+    /// <summary>C085: whether the unit is hidden for standing outside the camera's footprint.</summary>
+    public bool Culled { get; private set; }
+
+    /// <summary>
+    /// C085: draws the whole formation (<paramref name="far"/> false) or just its lead figure, enlarged to a lone figure and standing in the tile's middle (true). Hidden figures are neither
+    /// posed nor sought. A rigid figure keeps its pose: only its slot changes.
+    /// </summary>
+    public void ApplyLod(bool far)
+    {
+        if (far == FarLod) return;
+        FarLod = far;
+        for (var i = 0; i < figures.Count; i++)
+        {
+            var (position, scale) = fullSlots[i];
+            if (far && i == 0) (position, scale) = (Vector3.Zero, Vector3.One * UnitVisuals.Formation(1)[0].Scale);
+            figures[i].Visible = !far || i == 0;
+            formationSlots[i] = position;
+            figures[i].Scale = scale;
+            if (Rigid == RigidKind.None) figures[i].Position = position;
+        }
+        if (Rigid != RigidKind.None) ShowRigid(RigidPose);
+    }
+
+    /// <summary>C085: hides the unit when it stands outside the camera's ground footprint <paramref name="view"/> (a unit being animated is kept: see <see cref="Wake"/>).</summary>
+    public void ApplyView(GroundRect? view)
+    {
+        var rest = IsInsideTree() && GetParentOrNull<Node3D>() is { } parent ? parent.ToGlobal(RestPosition) : RestPosition; // the footprint is in world space
+        var now = IsInsideTree() ? GlobalPosition : Position;
+        Culled = !UnitLod.IsDrawn(rest.X, rest.Z, view) && !UnitLod.IsDrawn(now.X, now.Z, view);
+        Visible = !Culled;
+    }
+
+    /// <summary>C085: draws a culled unit again because the presenter is about to animate it; the next camera change culls it again if it is still off screen.</summary>
+    public void Wake()
+    {
+        Culled = false;
+        Visible = true;
     }
 
     /// <summary>C083: how this unit moves when it has no clips (ships, siege, armour, aircraft); <see cref="RigidKind.None"/> for a unit whose figures animate with clips or that has no motion of its own.</summary>
@@ -92,6 +139,7 @@ public partial class UnitNode : Node3D
         var forward = new Basis(Vector3.Up, FacingYaw) * Vector3.Back; // the figures face +Z at yaw 0
         for (var i = 0; i < figures.Count; i++)
         {
+            if (!figures[i].Visible) continue; // a figure the level of detail dropped is not posed
             figures[i].Position = formationSlots[i] - forward * pose.Recoil + new Vector3(0f, pose.Bob, 0f);
             figures[i].Basis = new Basis(Vector3.Up, FacingYaw) * new Basis(Vector3.Right, -pose.Pitch) * new Basis(Vector3.Back, pose.Roll) * Basis.FromScale(figures[i].Scale);
         }
@@ -129,6 +177,7 @@ public partial class UnitNode : Node3D
                 UnitModels.HoldIdle(player, phase);
                 players.Add(player);
                 animators.Add(new UnitAnimator(player, phase));
+                animatorFigures.Add(i);
             }
             if (i > 0) model.GetNodeOrNull("Glyphs")?.Free(); // one initials billboard for the whole group
             var figure = new Node3D { Name = "Figure" + i, Position = new Vector3(formation[i].X, 0f, formation[i].Z), Scale = Vector3.One * formation[i].Scale };
@@ -136,6 +185,7 @@ public partial class UnitNode : Node3D
             AddChild(figure);
             figures.Add(figure);
             formationSlots.Add(figure.Position);
+            fullSlots.Add((figure.Position, figure.Scale));
             if (Rigid == RigidKind.Armor && model.GetNodeOrNull<Node3D>("Part1") is { } turret && model.GetNodeOrNull<Node3D>("Part2") is { } barrel) turretParts.AddRange([(turret, turret.Position), (barrel, barrel.Position)]);
         }
 

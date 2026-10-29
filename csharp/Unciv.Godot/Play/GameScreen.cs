@@ -910,6 +910,7 @@ public partial class GameScreen : Control
         Layout();
 
         Map.TileClicked += OnTileClicked;
+        Map.ViewChanged += ApplyUnitLod;
         Map.TileRightClicked += OnTileRightClicked;
     }
 
@@ -1218,7 +1219,19 @@ public partial class GameScreen : Control
             unitLayer.AddChild(node);
             unitNodes[unit.Id] = node;
         }
+        ApplyUnitLod();
         Presenter.Refresh();
+    }
+
+    /// <summary>C085: reduced formations when the camera is far out, no units outside its footprint (<see cref="UnitLod"/>).</summary>
+    private void ApplyUnitLod()
+    {
+        var far = UnitLod.IsFar(Map.Zoom);
+        foreach (var node in unitNodes.Values)
+        {
+            node.ApplyLod(far);
+            node.ApplyView(Map.VisibleGround);
+        }
     }
 
     private Vector3 UnitPosition(HexCoord coord, int stackIndex)

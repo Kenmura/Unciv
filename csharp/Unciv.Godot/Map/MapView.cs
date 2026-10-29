@@ -303,12 +303,20 @@ public partial class MapView : Node3D
     /// <summary>C031: hides the terrain chunks outside the camera's ground footprint (the four screen corners projected onto the ground).</summary>
     private void UpdateCulling()
     {
-        if (terrain == null || Camera == null || !Camera.IsInsideTree()) return;
+        if (Camera == null || !Camera.IsInsideTree()) return;
         var size = Camera.GetViewport().GetVisibleRect().Size;
         lastViewportSize = size;
         var corners = new[] { new Vector2(0f, 0f), new Vector2(size.X, 0f), new Vector2(size.X, size.Y), new Vector2(0f, size.Y) }.Select(it => PickGround(it, 0f)).ToList();
-        terrain.Cull(corners.Any(it => it == null) ? null : GroundRect.Around([.. corners.Select(it => (it!.Value.X, it.Value.Z))]));
+        VisibleGround = corners.Any(it => it == null) ? null : GroundRect.Around([.. corners.Select(it => (it!.Value.X, it.Value.Z))]);
+        terrain?.Cull(VisibleGround);
+        ViewChanged?.Invoke();
     }
+
+    /// <summary>C085: the camera's ground footprint as of the last camera or window change (null before the camera is up or when it sees the sky).</summary>
+    public GroundRect? VisibleGround { get; private set; }
+
+    /// <summary>C085: raised after every camera or window change, once <see cref="VisibleGround"/> is current; the units' level of detail follows it.</summary>
+    public event Action? ViewChanged;
 
     /// <summary>
     /// The drawn tile under a screen position, or null if the ray misses every drawn tile. The ray is marched through each nearby tile's real surface profile

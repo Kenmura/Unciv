@@ -171,3 +171,10 @@ Finds the clips and maps each presenter cue to one, falling back to today's proc
 - Aircraft and missiles hover on a pole above a shadow disc because the contract wants feet at y = 0 and a height of at least 0.4; the helicopter stands on skids.
 - `EveryHumanoidAndMountedUnitHasAModel` now covers every G&K unit but the spaceship parts. Follow-ups: art with more detail (a commissioned or CC0 pack replaces any file with no code change); spaceship parts (`SS *`) stay generated blocks; an idle bob and wake for ships need a presenter idle clock.
 
+
+## C085 status: level of detail and performance caps
+
+- `UnitLod` (pure, tested): `FarZoom` 22 (default view 14, farthest 40) reduces a formation to its lead figure, enlarged to a lone figure in the tile's middle; a unit more than 3 world units outside the camera's ground footprint is hidden. `UnitNode.ApplyLod`/`ApplyView` apply them, `GameScreen` follows `MapView.ViewChanged` (new, raised with `MapView.VisibleGround` after each camera or window change). Hidden figures are not posed or sought; `CombatPresenter.Find` wakes a hidden unit it animates until the next camera change.
+- Idle animation: a figure's idle pose is held (paused at a fixed phase), never advanced with the frame clock, so there is nothing to pause for off-screen or fogged units. Foreign units in fog are not in the snapshot.
+- Measured with `unit-visuals` (software GL, Xvfb, 125 units / 219 figures, zoom 30): full formations about 107-139 ms per frame, reduced level about 62-80 ms (roughly 40% less). Four figures per tile stay, since the near view is unchanged. The scenario's check is relative (reduced <= full * 1.2) because absolute software-GL times are noisy.
+- Follow-up: a presenter idle clock (ship bob, wake) would need the same pause rules.

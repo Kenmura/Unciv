@@ -69,8 +69,10 @@
 - [C081 UnitAnimator, facing and re-timed combat cues](#c081-unitanimator-facing-and-re-timed-combat-cues)
 - [C083 Unit art pipeline](#c083-unit-art-pipeline)
 - [C084 Unit art by era: ancient and classical](#c084-unit-art-by-era-ancient-and-classical)
+- [C085 (ticket not Done or unknown)](#c085-ticket-not-done-or-unknown)
 - [C087 Rival stats ribbon in the HUD](#c087-rival-stats-ribbon-in-the-hud)
 - [C088 City-site preview: yields at a candidate settle tile](#c088-city-site-preview-yields-at-a-candidate-settle-tile)
+- [C089 (ticket not Done or unknown)](#c089-ticket-not-done-or-unknown)
 - [C093 Unit art by era: medieval and renaissance](#c093-unit-art-by-era-medieval-and-renaissance)
 - [C094 Unit art by era: industrial, modern and naval/air](#c094-unit-art-by-era-industrial-modern-and-navalair)
 - [C095 Battering Ram rigid siege kind and chariot/elephant art](#c095-battering-ram-rigid-siege-kind-and-chariotelephant-art)
@@ -1396,6 +1398,16 @@ Scenario `unit-visuals`.
 ![Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger pale grey one (a placeholder shape).](../Unciv.Godot.Harness/golden/unit-visuals/elephants.png)
 
 *Close view, side on: the African Forest Elephant (left), War Elephant (back) and Cataphract (right), riders on the generated mount; the elephants have a larger pale grey one (a placeholder shape).* (`unit-visuals/elephants.png`)
+
+## C085 (ticket not Done or unknown)
+
+Unit level of detail: zoomed far out every formation draws its lead figure only; units outside the camera footprint are hidden.
+
+Scenario `unit-visuals`.
+
+![Zoomed far out over the whole gallery: every formation is one figure (no more 3 and 4 figure groups) standing in the middle of its tile, with civ colour, health bars and status marks.](../Unciv.Godot.Harness/golden/unit-visuals/far.png)
+
+*Zoomed far out over the whole gallery: every formation is one figure (no more 3 and 4 figure groups) standing in the middle of its tile, with civ colour, health bars and status marks.* (`unit-visuals/far.png`)
 
 ## C087 Rival stats ribbon in the HUD
 

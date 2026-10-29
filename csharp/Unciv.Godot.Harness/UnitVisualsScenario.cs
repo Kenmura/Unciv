@@ -158,7 +158,7 @@ public sealed class UnitVisualsScenario : Scenario
             };
             var node = new UnitNode { Name = "Unit_" + dto.Id, Unit = dto };
             var elevation = view.TileNodeAt(Coord(i))?.Elevation ?? 1f;
-            node.Position = MapLayout.TileTop(dto.X, dto.Y, elevation);
+            node.Place(MapLayout.TileTop(dto.X, dto.Y, elevation));
             var c = colours[slot.Owner];
             node.Build(registry, Of(slot.Unit), Of(slot.Unit).Units[slot.Unit], (c.R / 255f, c.G / 255f, c.B / 255f));
             view.AddChild(node);
@@ -225,7 +225,7 @@ public sealed class UnitVisualsScenario : Scenario
             new WaitFrames(2),
             new Capture("warrior", "Close view of the Warrior, now a CC0 animated model file in its idle pose with its TeamColor material tinted in the red civ's colour (C080)"),
             .. MountedSteps(view, Node, Coord),
-            .. ChariotSteps(view, Node, Coord),
+            .. ChariotSteps(view, Node, Coord), .. LodSteps(view, nodes, Node, Coord),
         ];
     }
 
@@ -422,4 +422,91 @@ public sealed class UnitVisualsScenario : Scenario
             new WaitFrames(2),
             new Capture("mounted", "Close view of the Horseman: a CC0 rider seated on the generated horse rig, in its idle pose, the rider's tunic tinted in the red civ's colour (C083)"),
     ];
+
+    private const int MeasuredFrames = 20;
+
+    /// <summary>C085: level of detail and culling of the whole gallery (130 units, about 230 figures), with a report-only frame time comparison of the reduced level against the full one.</summary>
+    private static IEnumerable<ScenarioStep> LodSteps(MapView view, List<UnitNode> nodes, Func<string, string?, UnitNode> node, Func<int, HexCoord> coord)
+    {
+        var lodOn = true;
+        var frameStart = 0UL;
+        var reduced = new List<double>();
+        var full = new List<double>();
+
+        void Apply()
+        {
+            foreach (var n in nodes)
+            {
+                n.ApplyLod(lodOn && UnitLod.IsFar(view.Zoom));
+                n.ApplyView(view.VisibleGround);
+            }
+        }
+
+        ScenarioStep[] MeasureBatch(List<double> into) =>
+        [
+            new Act("start measuring frames", () => frameStart = Time.GetTicksMsec()),
+            new WaitFrames(MeasuredFrames),
+            new Act("stop measuring frames", () => into.Add((Time.GetTicksMsec() - frameStart) / (double)MeasuredFrames)),
+        ];
+
+        var pickedFull = 0.0;
+        return
+        [
+            new Act("zoom out over the gallery with the level of detail following the camera", () =>
+            {
+                view.ViewChanged += Apply;
+                foreach (var n in nodes) n.Face(0f);
+                view.FocusOn(MapLayout.TileTop(coord(60).X, coord(60).Y, 0f));
+                view.SetView(MapView.TiltDegrees);
+                view.SetZoom(30f);
+            }),
+            new WaitFrames(2),
+            new AssertQuery("far out every unit that is drawn shows one figure, the lead enlarged to a lone figure in the tile's middle; most of the gallery is in view", () =>
+                nodes.Count(it => !it.Culled) > Slots.Length / 2
+                && nodes.Where(it => !it.Culled).All(it => it.FarLod && it.FiguresDrawn == 1 && (it.FigureCount == 1 || it.GetNode<Node3D>("Figure0").Scale.X == 1f && it.GetNode<Node3D>("Figure0").Position == Vector3.Zero))
+                && nodes.Where(it => !it.Culled).Any(it => it.FigureCount > 1)),
+            new AssertQuery("the hidden figures are hidden, not freed, and a clip or rigid pose still reaches the lead", () =>
+                node("Tank", null).GetChildren().OfType<Node3D>().Count(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)) == 4
+                && node("Infantry", null).ShowClip(UnitModelContract.AttackClip, 0.5f) && node("Infantry", null).ClipPosition > 0f),
+            new Act("back to rest", () => node("Infantry", null).RestClips()),
+            new Capture("far", "Zoomed far out over the gallery: every formation is one figure (the strongest units no longer draw 3 and 4), standing in the middle of its tile, with its civ colour, health bar and status marks (C085)"),
+            .. MeasureBatch(reduced),
+            .. MeasureBatch(reduced),
+            .. MeasureBatch(reduced),
+            new Act("level of detail off: every formation in full", () =>
+            {
+                lodOn = false;
+                Apply();
+            }),
+            new AssertQuery("with the reduction off the formations are whole again", () => nodes.Where(it => !it.Culled).All(it => !it.FarLod && it.FiguresDrawn == it.FigureCount)),
+            new WaitFrames(2),
+            .. MeasureBatch(full),
+            .. MeasureBatch(full),
+            .. MeasureBatch(full),
+            new Act("report the frame times", () =>
+            {
+                pickedFull = full.Min();
+                GD.Print($"unit-visuals: {nodes.Count} units, {nodes.Sum(it => it.FigureCount)} figures in the gallery; mean frame time at zoom 30, best of 3 batches of {MeasuredFrames}: full formations {full.Min():F1} ms, reduced level {reduced.Min():F1} ms");
+                lodOn = true;
+                Apply();
+            }),
+            // software GL on a shared machine is noisy: the check is relative (the reduced level must not cost more than the full one, with 20% slack), the absolute figures are only reported
+            new AssertQuery("the reduced level is no slower than full formations (within 20%)", () => reduced.Min() <= pickedFull * 1.2 + 1.0),
+            new Act("look at one corner of the gallery", () =>
+            {
+                view.FocusOn(MapLayout.TileTop(coord(0).X, coord(0).Y, 0f));
+                view.SetZoom(5f);
+            }),
+            new WaitFrames(2),
+            new AssertQuery("near: whole formations again; units well outside the camera's footprint are hidden and the ones in view are not", () =>
+                node("Warrior", Rome) is { Culled: false, Visible: true, FarLod: false }
+                && node("Tank", null) is { Culled: false, FarLod: false, FiguresDrawn: 4 }
+                && node("Giant Death Robot", null) is { Culled: true, Visible: false, FiguresDrawn: 0 }
+                && nodes.Count(it => it.Culled) > nodes.Count / 2),
+            new Act("the presenter wakes a hidden unit that it animates", () => node("Giant Death Robot", null).Wake()),
+            new AssertQuery("an awake unit is drawn until the camera next moves", () => node("Giant Death Robot", null) is { Culled: false, Visible: true }),
+            new Act("camera moves on", () => view.SetZoom(5.5f)),
+            new AssertQuery("a unit still off screen is hidden again", () => node("Giant Death Robot", null) is { Culled: true, Visible: false }),
+        ];
+    }
 }
