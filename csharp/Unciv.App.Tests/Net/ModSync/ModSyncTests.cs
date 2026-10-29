@@ -677,4 +677,69 @@ public sealed class ModSyncTests : IDisposable
         var manifest = ManifestOf("Broken", "Units.json", Encoding.UTF8.GetBytes("{ not json"));
         Assert.Equal(ModSyncCodes.BadFile, Service().HotLoad(new ModSyncOutcome(null, manifest, ["Broken"])));
     }
+
+    private async Task<(ClientSession Session, InMemoryTransport Host, Task<JoinResult> Join)> ScriptedUntilManifestAsync(IModSyncHandler? handler, ModManifest manifest)
+    {
+        var (client, host) = InMemoryTransport.CreatePair();
+        var session = new ClientSession(_ => Task.FromResult<ITransport>(client), Options(handler));
+        var join = session.JoinAsync();
+        await ReceiveAsync<Hello>(host);
+        await host.SendAsync(ProtocolCodec.Encode(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetFingerprint, RequiresPassword = false }));
+        await ReceiveAsync<Join>(host);
+        await ReceiveAsync<Auth>(host);
+        await host.SendAsync(ProtocolCodec.Encode(manifest));
+        return (session, host, join);
+    }
+
+    [Fact]
+    public async Task Client_ManifestWithoutAHandler_IsRefusedAsAMismatch()
+    {
+        var (session, _, join) = await ScriptedUntilManifestAsync(null, ManifestOf("M", "Units.json", Encoding.UTF8.GetBytes(UnitsJson)));
+        await using var _s = session;
+        Assert.Equal(new JoinResult(false, JoinRefusedCodes.RulesetMismatch), await join.WaitAsync(Guard));
+    }
+
+    [Fact]
+    public async Task Client_PongsDuringADownload_AreIgnored()
+    {
+        var good = Encoding.UTF8.GetBytes(UnitsJson);
+        var (session, host, join) = await ScriptedUntilManifestAsync(Service(), ManifestOf("Pongy", "Units.json", good));
+        await using var _s = session;
+        var request = await ReceiveAsync<ModFileRequest>(host);
+        await host.SendAsync(ProtocolCodec.Encode(new Pong()));
+        await host.SendAsync(ProtocolCodec.Encode(Data(request, good)));
+        Assert.Equal(ModSyncCodes.Synced, (await join.WaitAsync(Guard)).Code);
+        Assert.Equal(UnitsJson, File.ReadAllText(Path.Combine(clientMods, "Pongy", "jsons", "Units.json")));
+    }
+
+    [Fact]
+    public async Task Client_ConnectionThatBreaksOnSend_FailsTheSync()
+    {
+        var good = Encoding.UTF8.GetBytes(UnitsJson);
+        var (client, host) = InMemoryTransport.CreatePair();
+        var breaking = new RequestBreakingTransport(client);
+        await using var session = new ClientSession(_ => Task.FromResult<ITransport>(breaking), Options(Service()));
+        var join = session.JoinAsync();
+        await ReceiveAsync<Hello>(host);
+        await host.SendAsync(ProtocolCodec.Encode(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetFingerprint, RequiresPassword = false }));
+        await ReceiveAsync<Join>(host);
+        await ReceiveAsync<Auth>(host);
+        await host.SendAsync(ProtocolCodec.Encode(ManifestOf("Broken", "Units.json", good)));
+        Assert.Equal(ModSyncCodes.Failed, (await join.WaitAsync(Guard)).Code);
+        AssertNothingInstalled();
+    }
+
+    private sealed class RequestBreakingTransport(ITransport inner) : ITransport
+    {
+        public bool IsOpen => inner.IsOpen;
+
+        public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default) =>
+            ProtocolCodec.Decode(frame) is ModFileRequest ? throw new IOException("broken pipe") : inner.SendAsync(frame, cancellationToken);
+
+        public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => inner.ReceiveAsync(cancellationToken);
+
+        public ValueTask CloseAsync() => inner.CloseAsync();
+
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
 }
