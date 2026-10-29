@@ -633,9 +633,11 @@ public sealed class LeagueTests
         Assert.Equal((true, true, a.CivId, "World Congress Founded"), (mine.Founded, mine.InSession, mine.Host, mine.SessionName));
         Assert.False(mine.CanPropose);
         Assert.Equal([2, 1, 1], mine.Members.Select(it => it.Delegates));
-        Assert.Equal([1, 1, 0], mine.Members.Select(it => it.Left));
+        Assert.Equal([1, 0, 0], mine.Members.Select(it => it.Left)); // others' ballots are secret while open
         var row = Assert.Single(mine.Proposals);
-        Assert.Equal([new KeyValuePair<string, int>(c.CivId, 1), new KeyValuePair<string, int>(b.CivId, 1)], row.Tally);
+        Assert.Equal([new KeyValuePair<string, int>(b.CivId, 1)], row.Tally);
+        Assert.Equal(row.YourVotes, Ask(a).Proposals.Single().Tally);
+        Assert.Empty(Ask(b).Proposals.Single().Tally);
         Assert.Equal([new KeyValuePair<string, int>(b.CivId, 1)], row.YourVotes);
         Assert.Empty(Ask(b).Proposals.Single().YourVotes);
 
@@ -659,5 +661,28 @@ public sealed class LeagueTests
         Assert.Equal(0, advance.Invoke(G, [G.Civilizations.Count - 1]));
         Assert.NotNull(G.League);
         Assert.Equal(turns + 1, G.Turns);
+    }
+
+    [Fact]
+    public void TheLeagueTurnRunsWhenASimultaneousRoundResolves()
+    {
+        G.StartSimultaneousTurns();
+        foreach (var human in G.Civilizations.Where(it => it.IsHuman() && it.IsAlive()).ToList()) G.EndHumanTurn(human);
+        G.BeginResolving();
+        int turns = G.Turns;
+        Assert.Null(G.League);
+        while (G.NextResolveStep() is { } step)
+        {
+            switch (step)
+            {
+                case ResolveStep.ProcessEndTurn s: G.ProcessEndTurn(G.GetCivilization(s.CivId), 2000L); break;
+                case ResolveStep.RunAiTurn s: G.RunAiTurn(G.GetCivilization(s.CivId)); break;
+                case ResolveStep.StartNextTurn: G.StartNextTurn(); break;
+                case ResolveStep.BeginTurn s: G.BeginTurn(G.GetCivilization(s.CivId), 2000L); break;
+                default: throw new InvalidOperationException(step.ToString());
+            }
+        }
+        Assert.Equal(turns + 1, G.Turns);
+        Assert.NotNull(G.League);
     }
 }
