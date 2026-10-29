@@ -46,7 +46,7 @@ public sealed record LeagueEffects(
     private static readonly ImmutableArray<string> Sciencey = ["Great Scientist", "Great Engineer", "Great Merchant"];
 
     private static IEnumerable<(ActiveResolution Active, LeagueResolution Resolution)> ActiveResolutions(League league) =>
-        league.Active.Select(it => (it, LeagueData.Find(it.Resolution))).Where(it => it.Item2 != null).Select(it => (it.Item1, it.Item2!));
+        league.Active.SelectMany(it => LeagueData.Find(it.Resolution) is { } resolution ? [(it, resolution)] : Array.Empty<(ActiveResolution, LeagueResolution)>());
 
     /// <summary>The effects on <paramref name="civ"/>: <see cref="None"/> unless a league exists, the civ is one of its members and a resolution is in force.</summary>
     public static LeagueEffects For(CivilizationObject civ)
