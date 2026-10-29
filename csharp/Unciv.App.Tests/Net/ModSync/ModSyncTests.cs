@@ -641,4 +641,40 @@ public sealed class ModSyncTests : IDisposable
         Assert.Empty(plan.ToDownload);
         Assert.Equal(0, plan.TotalBytes);
     }
+
+    [Fact]
+    public async Task Hostile_SecondModCannotBeSwapped_RollsTheFirstBack()
+    {
+        var good = Encoding.UTF8.GetBytes(UnitsJson);
+        var a = ManifestOf("A", "Units.json", good);
+        var b = ManifestOf("B", "Units.json", good);
+        var manifest = a with { Mods = ["A", "B"], Entries = [a.Entries[0], b.Entries[0]] };
+        WriteMod(clientMods, "B", "[]");
+        File.WriteAllText(Path.Combine(clientMods, ".sync-backup-B"), "in the way"); // the backup of B cannot be made
+        var result = await AgainstScriptedHostAsync(manifest, request => Data(request, good), Service());
+        Assert.Equal(ModSyncCodes.Failed, result.Code);
+        Assert.False(Directory.Exists(Path.Combine(clientMods, "A")));
+        Assert.Equal("[]", File.ReadAllText(Path.Combine(clientMods, "B", "jsons", "Units.json")));
+    }
+
+    [Fact]
+    public async Task Client_HandlerThatThrows_FailsTheJoinWithoutCrashing()
+    {
+        await using var lobby = NewLobby();
+        await using var session = Connect(lobby, Options(new ThrowingHandler()));
+        Assert.Equal(new JoinResult(false, ModSyncCodes.Failed), await session.JoinAsync().WaitAsync(Guard));
+    }
+
+    private sealed class ThrowingHandler : IModSyncHandler
+    {
+        public Task<ModSyncOutcome> SyncAsync(ModManifest manifest, ModFileFetcher fetch, CancellationToken cancellationToken) => throw new InvalidOperationException("bug");
+    }
+
+    [Fact]
+    public void HotLoad_OfAModThatDoesNotLoad_ReportsBadFile()
+    {
+        WriteMod(clientMods, "Broken", "{ not json");
+        var manifest = ManifestOf("Broken", "Units.json", Encoding.UTF8.GetBytes("{ not json"));
+        Assert.Equal(ModSyncCodes.BadFile, Service().HotLoad(new ModSyncOutcome(null, manifest, ["Broken"])));
+    }
 }

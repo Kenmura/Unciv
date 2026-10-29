@@ -130,4 +130,26 @@ public sealed class JoinModelTests
         Assert.Equal("Disconnected", view.Title);
         Assert.False(string.IsNullOrWhiteSpace(view.Detail));
     }
+
+    [Theory]
+    [InlineData("mod-sync-declined")]
+    [InlineData("mod-sync-bad-manifest")]
+    [InlineData("mod-sync-bad-file")]
+    [InlineData("mod-sync-failed")]
+    public void RefusalText_ForModSyncCodes_IsASentenceNotTheCode(string code)
+    {
+        var text = JoinModel.RefusalText(code);
+        Assert.DoesNotContain(code, text, StringComparison.Ordinal);
+        Assert.EndsWith(".", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ModSyncText_ListsEachModWithItsStatusAndSize()
+    {
+        var text = JoinModel.ModSyncText([("Alpha", "Missing", 500), ("Beta", "Different", 3 * 1024), ("Gamma", "Missing", 5 * 1024 * 1024)]);
+        Assert.Contains("- Alpha: not installed, 500 B", text, StringComparison.Ordinal);
+        Assert.Contains("- Beta: installed, but different (your copy is kept as a backup), 3 KB", text, StringComparison.Ordinal);
+        Assert.Contains("- Gamma: not installed, 5 MB", text, StringComparison.Ordinal);
+        Assert.Contains("trust this host", text, StringComparison.Ordinal);
+    }
 }

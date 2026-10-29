@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Text;
 using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
@@ -26,10 +27,10 @@ public static class ModSyncRules
     /// <summary>The only file names that are transferred: the ruleset json files, by exact name.</summary>
     public static IReadOnlyList<string> AllowedFiles { get; } = RulesetFile.Values.Select(it => it.Filename).Order(StringComparer.Ordinal).ToList();
 
-    private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenSet<string> ReservedNames = new[]
     {
         "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>True for a file name that may be transferred: exactly one of <see cref="AllowedFiles"/> (so no separator, no <c>..</c>, no drive, no stream, no hidden file).</summary>
     public static bool IsAllowedFile(string? path) => path != null && AllowedFiles.Contains(path, StringComparer.Ordinal);
