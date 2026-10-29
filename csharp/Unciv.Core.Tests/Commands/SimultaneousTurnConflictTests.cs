@@ -301,7 +301,7 @@ public sealed class SimultaneousTurnConflictTests
         var (first, second) = (Order(arena, aFirst)[0], Order(arena, aFirst)[1]);
         arena.Ok(first, found[first]);
         Assert.Single(first.Cities);
-        arena.Rejected(second, found[second], CommandErrors.NotAllowed, CommandErrors.StaleReference);
+        arena.Rejected(second, found[second], CommandErrors.NotAllowed);
         Assert.Empty(second.Cities);
         Assert.False((second == arena.A ? a : b).IsDestroyed); // not consumed: the player is told by the rejection and can walk on
         AssertReplays(arena, Build);
@@ -996,7 +996,7 @@ public sealed class SimultaneousTurnConflictTests
         arena.Rejected(second, found, CommandErrors.InvalidTarget); // the only icon is gone
         arena.Rejected(second, new FoundReligion { ReligionName = "Judaism", DisplayName = "Judaism", Beliefs = good }, CommandErrors.InvalidTarget); // and there is no other
         // what the second human is left with: a prophet that was used and nothing to found. It is told by the rejection, and the server
-        // can still end its turn (T250 tracks giving the prophet back or ending this state in the engine).
+        // can still end its turn (T245 tracks giving the prophet back or ending this state in the engine).
         Assert.Equal(ReligionState.FoundingReligion, second.ReligionManager.ReligionState);
         arena.Rejected(second, new EndTurn(), CommandErrors.PendingDecisions);
         Assert.True(arena.Session.SubmitAsServer(new ForceEndTurn { CivId = second.CivId }).Accepted);
