@@ -31,15 +31,81 @@ public sealed class UnitModelContractTests
         foreach (var path in models) Assert.True(UnitModelContract.Check(File.ReadAllBytes(path)).Count == 0, path + ": " + string.Join("; ", UnitModelContract.Check(File.ReadAllBytes(path))));
     }
 
-    [Fact]
-    public void TheBundledWarriorIsInTheManifestAndKeepsItsClips()
+    private static JsonElement UnitsManifestKeys()
     {
-        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientFolder, "Packs", "unciv", "manifest.json")));
-        var relative = manifest.RootElement.GetProperty("keys").GetProperty("unit/Warrior").GetString()!;
-        var bytes = File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "unciv", relative));
-        Assert.Empty(UnitModelContract.Check(bytes));
-        var animations = Glb(bytes).GetProperty("animations").EnumerateArray().Select(it => it.GetProperty("name").GetString()!).ToList();
-        Assert.Equal(UnitModelContract.ClipNames, animations);
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientFolder, "Packs", "units", "manifest.json")));
+        return manifest.RootElement.GetProperty("keys").Clone();
+    }
+
+    [Fact]
+    public void EveryUnitOfTheUnitsPackIsInTheManifestAndKeepsTheSixClips()
+    {
+        var keys = UnitsManifestKeys().EnumerateObject().ToList();
+        Assert.Contains(keys, it => it.Name == "unit/Warrior");
+        foreach (var key in keys)
+        {
+            var bytes = File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", key.Value.GetString()!));
+            Assert.Empty(UnitModelContract.Check(bytes));
+            var animations = Glb(bytes).GetProperty("animations").EnumerateArray().Select(it => it.GetProperty("name").GetString()!).ToList();
+            Assert.Equal(UnitModelContract.ClipNames, animations);
+        }
+    }
+
+    [Fact]
+    public void TheAttachmentDataListsExactlyTheManifestUnitsAndTheirAttachmentsExist()
+    {
+        using var data = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientFolder, "Packs", "units", "attachments.json")));
+        var root = data.RootElement;
+        var listed = root.GetProperty("units").EnumerateObject().Concat(root.GetProperty("mounted").GetProperty("units").EnumerateObject()).ToList();
+        Assert.Equal(listed.Select(it => "unit/" + it.Name).Order(StringComparer.Ordinal), UnitsManifestKeys().EnumerateObject().Select(it => it.Name).Order(StringComparer.Ordinal));
+        foreach (var unit in listed)
+        {
+            var file = File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", "models", "unit", unit.Name + ".glb"));
+            var meshNodes = Glb(file).GetProperty("nodes").EnumerateArray().Where(it => it.TryGetProperty("mesh", out _)).Select(it => it.GetProperty("name").GetString()).ToList();
+            foreach (var keep in unit.Value.GetProperty("keep").EnumerateArray()) Assert.Contains(keep.GetString(), meshNodes);
+        }
+    }
+
+    [Fact]
+    public void AMountedUnitHasHorseAndRiderUnderOneSkeletonWithMergedClips()
+    {
+        foreach (var name in new[] { "Horseman", "Knight", "Horse Archer" })
+        {
+            var doc = Glb(File.ReadAllBytes(Path.Combine(ClientFolder, "Packs", "units", "models", "unit", name + ".glb")));
+            var nodes = doc.GetProperty("nodes").EnumerateArray().Select(it => it.GetProperty("name").GetString()).ToList();
+            Assert.Contains("saddle", nodes);
+            Assert.Contains("leg_fl", nodes);
+            Assert.Contains("hips", nodes); // the rider's own skeleton
+            Assert.Equal(2, doc.GetProperty("skins").GetArrayLength());
+            Assert.Equal(["Horse", "TeamColor"], doc.GetProperty("materials").EnumerateArray().Select(it => it.GetProperty("name").GetString()).Order(StringComparer.Ordinal));
+            // every clip animates both the horse and the rider
+            foreach (var clip in doc.GetProperty("animations").EnumerateArray())
+            {
+                var targets = clip.GetProperty("channels").EnumerateArray().Select(it => nodes[it.GetProperty("target").GetProperty("node").GetInt32()]).ToHashSet();
+                Assert.True(targets.Overlaps(["body", "neck", "root", "leg_fl"]), clip.GetProperty("name").GetString());
+                Assert.True(targets.Overlaps(["hips", "upperarm.l", "upperarm.r", "chest"]), clip.GetProperty("name").GetString());
+            }
+        }
+    }
+
+    [Fact]
+    public void TheUnitsPackResolvesUnderTheBundledRegistryOrder()
+    {
+        var files = new DiskPackFiles(ClientFolder);
+        var resolver = new AssetResolver(files, new AssetFallbacks(), null, AssetResolver.BundledPack, [AssetResolver.UnitsPack]);
+        var resolution = resolver.Resolve(new AssetKey("unit", "Horseman"));
+        Assert.Equal(AssetSourceKind.Pack, resolution.Source);
+        Assert.Equal("assets/packs/units/models/unit/Horseman.glb", resolution.Path);
+        Assert.Empty(resolver.Diagnostics);
+    }
+
+    private sealed class DiskPackFiles(string client) : IAssetFiles
+    {
+        private string Full(string relativePath) => Path.Combine(client, "Packs", relativePath["assets/packs/".Length..]);
+
+        public bool Exists(string relativePath) => relativePath.StartsWith("assets/packs/", StringComparison.Ordinal) && File.Exists(Full(relativePath));
+
+        public string? ReadText(string relativePath) => Exists(relativePath) ? File.ReadAllText(Full(relativePath)) : null;
     }
 
     private static JsonElement Glb(byte[] glb)

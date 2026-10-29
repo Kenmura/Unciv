@@ -40,6 +40,7 @@
     "Unciv.Assets/ProceduralSounds.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/PropSpecs.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Rgb.cs": {"branch": 100.0, "line": 100.0},
+    "Unciv.Assets/RigidMotion.cs": {"branch": 82.57, "line": 96.77},
     "Unciv.Assets/RulesetAssetKeys.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Saves/SaveProgress.cs": {"branch": 100.0, "line": 100.0},
     "Unciv.Assets/Saves/SaveStore.cs": {"branch": 92.11, "line": 90.62},

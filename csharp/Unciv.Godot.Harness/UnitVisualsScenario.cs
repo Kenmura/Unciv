@@ -39,10 +39,13 @@ public sealed class UnitVisualsScenario : Scenario
         new("Tank", Egypt, 20, Promotable: true), new("Cannon", Egypt, 100, Automated: true),
         new("Trireme", Rome, 100, Terrain: "Coast"), new("Fighter", Egypt, 100), new("Worker", Rome, 100, Automated: true, Promotable: true),
         new("Destroyer", Egypt, 100, Terrain: "Coast"), new("Warrior", Egypt, 50, Fortified: true, Own: false),
+        new("Swordsman", Rome, 100), new("Knight", Egypt, 100), new("Crossbowman", Rome, 100), new("Great Scientist", Rome, 100), new("Scout", Egypt, 100),
     ];
 
-    // C080: the Warrior is a model file (TeamColor material, animation player); every other unit is still a generated block with a Banner
-    private static bool IsModel(UnitNode n) => n.Unit.Name == "Warrior";
+    // C080/C083: the units of the bundled units pack are model files (TeamColor material, animation player, humanoid bodies and riders on a generated horse); every other unit is a generated block with a Banner
+    private static readonly string[] ModelUnits = ["Warrior", "Longswordsman", "Swordsman", "Archer", "Crossbowman", "Scout", "Worker", "Great Scientist", "Horseman", "Knight"];
+    private static readonly string[] MountedUnits = ["Horseman", "Knight"];
+    private static bool IsModel(UnitNode n) => ModelUnits.Contains(n.Unit.Name);
     private static IEnumerable<Node3D> FigureModels(UnitNode n) => n.GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => f.GetChild<Node3D>(0));
     private static bool HasClips(UnitNode n) => n.Players.Count == n.FigureCount && n.Players.All(p => UnitModels.Clips(p).SequenceEqual(UnitModelContract.ClipNames));
     private static bool HoldsIdle(AnimationPlayer p) => p.AssignedAnimation == UnitModelContract.IdleClip && !p.IsPlaying() && p.CurrentAnimationPosition > 0f;
@@ -124,11 +127,12 @@ public sealed class UnitVisualsScenario : Scenario
                 nodes.All(n => Figures(n) == n.FigureCount && n.FigureCount == UnitVisuals.FigureCount(ruleset.Units[n.Unit.Name], ruleset))),
             new AssertQuery("a generated group has one initials billboard whatever its size; a model file carries none (its art identifies it)", () => nodes.All(n => Glyphs(n) == (IsModel(n) ? 0 : 1))),
             new AssertQuery("every figure of a unit carries its civ's colour", () => nodes.All(CivColoured)),
-            new AssertQuery("the Warrior is the CC0 model file: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player", () =>
+            new AssertQuery("the units pack's units are CC0 model files: a textured TeamColor material and an animation player with the six contract clips; no other unit has a player", () =>
                 nodes.Where(IsModel).All(n => Textured(n) && HasClips(n)) && nodes.Where(n => !IsModel(n)).All(n => n.Players.Count == 0 && !Textured(n))),
             new AssertQuery("model figures hold their idle pose (paused, not at the first frame), at a different phase for each warrior", () =>
                 nodes.Where(IsModel).SelectMany(n => n.Players).All(HoldsIdle)
                 && nodes.Where(IsModel).Select(n => n.Players[0].CurrentAnimationPosition).Distinct().Count() == nodes.Count(IsModel)),
+            .. PipelineAsserts(nodes, Node),
             new AssertQuery("figures of a group stand at distinct spots, smaller than a lone figure", () =>
                 Node("Tank").GetChildren().OfType<Node3D>().Where(f => f.Name.ToString().StartsWith("Figure", StringComparison.Ordinal)).Select(f => (f.Position.X, f.Position.Z)).Distinct().Count() == 4
                 && Node("Tank").GetNode<Node3D>("Figure0").Scale.X < Node("Warrior").GetNode<Node3D>("Figure0").Scale.X),
@@ -146,27 +150,82 @@ public sealed class UnitVisualsScenario : Scenario
             new AssertQuery("a foreign unit shows only what everybody can see (fortified)", () => Marks(Node("Warrior", Egypt), UnitStatusIcon.Fortified)),
             new Act("frame the gallery", () =>
             {
-                view.FocusOn(MapLayout.TileTop(Coord(7).X, Coord(7).Y, 0f));
-                view.SetZoom(10f);
+                view.FocusOn(MapLayout.TileTop(Coord(10).X, Coord(10).Y, 0f));
+                view.SetZoom(13f);
             }),
             new WaitFrames(2),
             new Capture("gallery", "Unit gallery: civilian, land units by era (1 to 4 figures), ships and plane; red and blue civs; health bars and status marks"),
-            new Act("close view of the formations", () =>
-            {
-                view.FocusOn(MapLayout.TileTop(Coord(8).X, Coord(8).Y, 0f) + new Vector3(-1.5f, 0f, 0f));
-                view.SetView(40f);
-                view.SetZoom(5f);
-            }),
+            .. RigidSteps(view, nodes, Node, Coord),
+            CloseView("close view of the formations", view, Coord(8), new Vector3(-1.5f, 0f, 0f), 5f),
             new WaitFrames(2),
             new Capture("formations", "Close view: Infantry (3 figures), Tank (4, hurt, promotion mark) and Cannon (3, automated mark)"),
-            new Act("close view of the Warrior model", () =>
+            CloseView("close view of the Warrior model", view, Coord(1), Vector3.Zero, 3f),
+            new WaitFrames(2),
+            new Capture("warrior", "Close view of the Warrior, now a CC0 animated model file in its idle pose with its TeamColor material tinted in the red civ's colour (C080)"),
+            .. MountedSteps(view, Node, Coord),
+        ];
+    }
+
+    private static Act CloseView(string label, MapView view, HexCoord at, Vector3 offset, float zoom) => new(label, () =>
+    {
+        view.FocusOn(MapLayout.TileTop(at.X, at.Y, 0f) + offset);
+        view.SetView(40f);
+        view.SetZoom(zoom);
+    });
+
+    private static IEnumerable<ScenarioStep> PipelineAsserts(List<UnitNode> nodes, Func<string, string?, UnitNode> node) =>
+    [
+            new AssertQuery("mounted units are a horse and a rider on two skeletons under one animation player; humanoids have one skeleton", () =>
+                nodes.Where(n => MountedUnits.Contains(n.Unit.Name)).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 2))
+                && nodes.Where(n => IsModel(n) && !MountedUnits.Contains(n.Unit.Name)).All(n => FigureModels(n).All(m => m.FindChildren("*", nameof(Skeleton3D), true, false).Count == 1))),
+            new AssertQuery("rigid motion applies only to clipless ships, siege, armour and aircraft", () =>
+                node("Catapult", null).Rigid == RigidKind.Siege && node("Tank", null).Rigid == RigidKind.Armor && node("Destroyer", null).Rigid == RigidKind.Ship && node("Fighter", null).Rigid == RigidKind.Air
+                && nodes.Where(n => n.Rigid != RigidKind.None).Select(n => n.Unit.Name).Order().SequenceEqual(new[] { "Catapult", "Cannon", "Destroyer", "Fighter", "Tank", "Trireme" }.Order())
+                && nodes.Where(IsModel).All(n => n.Rigid == RigidKind.None)),
+    ];
+
+    private static IEnumerable<ScenarioStep> RigidSteps(MapView view, List<UnitNode> nodes, Func<string, string?, UnitNode> node, Func<int, HexCoord> coord) =>
+    [
+            new Act("pose the rigid units mid-cue", () =>
             {
-                view.FocusOn(MapLayout.TileTop(Coord(1).X, Coord(1).Y, 0f));
+                node("Catapult", null).ShowRigid(RigidMotion.Pose(RigidKind.Siege, CueKind.Shot, 0.5f, 0.5f));
+                node("Tank", null).ShowRigid(RigidMotion.Pose(RigidKind.Armor, CueKind.Shot, 0.1f, 0.1f));
+                node("Destroyer", null).ShowRigid(RigidMotion.Pose(RigidKind.Ship, CueKind.Shot, 0.5f, 0.5f));
+                node("Fighter", null).ShowRigid(RigidMotion.Pose(RigidKind.Air, CueKind.Strike, 0.5f, 0.5f));
+            }),
+            new AssertQuery("posed rigid figures moved off their slots (siege recoiled, armour turret turned, ship rolled, aircraft dived) and clip units did not", () =>
+                node("Catapult", null).RigidPose.Recoil > 0.1f
+                && node("Tank", null).GetNode<Node3D>("Figure0").GetNode<Node3D>("Tank/Part2").Rotation.Y > 0.3f
+                && node("Destroyer", null).GetNode<Node3D>("Figure0").Basis.GetEuler().Z != 0f
+                && node("Fighter", null).GetNode<Node3D>("Figure0").Basis.GetEuler().X != 0f
+                && node("Warrior", Rome).RigidPose == RigidPose.Rest),
+            new Act("close view of the posed tank", () =>
+            {
+                view.FocusOn(MapLayout.TileTop(coord(8).X, coord(8).Y, 0f));
+                view.SetView(40f);
+                view.SetZoom(4f);
+            }),
+            new WaitFrames(2),
+            new Capture("rigid", "Close view of the Tank mid-shot, posed by the code-driven rigid motion: the hull has kicked back and the turret has swung off the target line (catapult, destroyer and fighter pose the same way)"),
+            new Act("rigid units back to rest", () =>
+            {
+                foreach (var n in nodes) n.RestRigid();
+            }),
+            new AssertQuery("resting restores every rigid figure to its slot and turret", () =>
+                nodes.Where(n => n.Rigid != RigidKind.None).All(n => n.RigidPose == RigidPose.Rest)
+                && node("Tank", null).GetNode<Node3D>("Figure0").GetNode<Node3D>("Tank/Part2").Rotation.Y == 0f),
+    ];
+
+    private static IEnumerable<ScenarioStep> MountedSteps(MapView view, Func<string, string?, UnitNode> node, Func<int, HexCoord> coord) =>
+    [
+            new Act("close view of the Horseman", () =>
+            {
+                node("Horseman", null).Face(MathF.PI / 2f); // side on: the horse's length shows
+                view.FocusOn(MapLayout.TileTop(coord(2).X, coord(2).Y, 0f));
                 view.SetView(40f);
                 view.SetZoom(3f);
             }),
             new WaitFrames(2),
-            new Capture("warrior", "Close view of the Warrior, now a CC0 animated model file in its idle pose with its TeamColor material tinted in the red civ's colour (C080)"),
-        ];
-    }
+            new Capture("mounted", "Close view of the Horseman: a CC0 rider seated on the generated horse rig, in its idle pose, the rider's tunic tinted in the red civ's colour (C083)"),
+    ];
 }

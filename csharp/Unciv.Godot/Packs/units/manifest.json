@@ -1,0 +1,16 @@
+{
+  "keys": {
+    "unit/Archer": "models/unit/Archer.glb",
+    "unit/Crossbowman": "models/unit/Crossbowman.glb",
+    "unit/Great Scientist": "models/unit/Great Scientist.glb",
+    "unit/Horse Archer": "models/unit/Horse Archer.glb",
+    "unit/Horseman": "models/unit/Horseman.glb",
+    "unit/Knight": "models/unit/Knight.glb",
+    "unit/Longswordsman": "models/unit/Longswordsman.glb",
+    "unit/Scout": "models/unit/Scout.glb",
+    "unit/Swordsman": "models/unit/Swordsman.glb",
+    "unit/Warrior": "models/unit/Warrior.glb",
+    "unit/Worker": "models/unit/Worker.glb"
+  },
+  "pack": "units"
+}

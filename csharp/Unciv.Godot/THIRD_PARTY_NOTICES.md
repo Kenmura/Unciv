@@ -29,6 +29,11 @@ the SIL Open Font License 1.1. The licence text is `Assets/fonts/OFL.txt` in the
 `tools/import-unciv-icons.py`). They are mostly from The Noun Project under CC BY 3.0 (attribution required) or the public domain, and some are Unciv's own work
 under CC BY 4.0. The attribution text of the Unciv repository's `docs/Credits.md` for these icons is in `Packs/unciv/CREDITS.md`, which is copied with the pack.
 
+## Unit models
+
+`Packs/units` holds the unit models: characters, weapons and animations of the KayKit Adventurers Character Pack 1.0 by Kay Lousberg (CC0 1.0, https://kaylousberg.com), reduced and
+combined by `tools/build-unit-models.py`, plus a generated horse. Credits are in `Packs/units/CREDITS.md`.
+
 ## .NET runtime and NuGet packages
 
 Runs on the .NET runtime (MIT licence, Microsoft and contributors). The client assemblies use only the packages restored from

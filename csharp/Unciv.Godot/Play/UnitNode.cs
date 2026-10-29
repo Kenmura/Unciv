@@ -39,6 +39,7 @@ public partial class UnitNode : Node3D
     private readonly List<AnimationPlayer> players = [];
     private readonly List<UnitAnimator> animators = [];
     private readonly List<Node3D> figures = [];
+    private readonly List<Vector3> formationSlots = [];
 
     /// <summary>C080: the animation player of each figure whose model has one (none for generated blocks), held in its idle pose until the presenter drives them.</summary>
     public IReadOnlyList<AnimationPlayer> Players => players;
@@ -56,7 +57,8 @@ public partial class UnitNode : Node3D
     public void Face(float yaw)
     {
         FacingYaw = yaw;
-        foreach (var figure in figures) figure.Rotation = new Vector3(0f, yaw, 0f);
+        if (Rigid != RigidKind.None) ShowRigid(RigidPose);
+        else foreach (var figure in figures) figure.Rotation = new Vector3(0f, yaw, 0f);
     }
 
     /// <summary>C081: stands every figure that has <paramref name="clip"/> a fraction <paramref name="progress"/> through it; false when none has it (the presenter then poses procedurally).</summary>
@@ -71,6 +73,39 @@ public partial class UnitNode : Node3D
         foreach (var animator in animators) animator.Rest();
     }
 
+    /// <summary>C083: how this unit moves when it has no clips (ships, siege, armour, aircraft); <see cref="RigidKind.None"/> for a unit whose figures animate with clips or that has no motion of its own.</summary>
+    public RigidKind Rigid { get; private set; }
+
+    /// <summary>C083: the rigid pose last applied (<see cref="RigidPose.Rest"/> at rest).</summary>
+    public RigidPose RigidPose { get; private set; } = RigidPose.Rest;
+
+    private readonly List<(Node3D Part, Vector3 Position)> turretParts = [];
+
+    /// <summary>
+    /// C083: poses every figure of a rigid unit: pushed back along its facing, lifted, pitched and rolled, with the turret parts (<c>Part1</c>, <c>Part2</c> of an armour model) turned about the vertical.
+    /// Does nothing for a unit that is not rigid. Turning keeps the formation layout: the figure moves relative to its slot, never the slot.
+    /// </summary>
+    public void ShowRigid(RigidPose pose)
+    {
+        if (Rigid == RigidKind.None) return;
+        RigidPose = pose;
+        var forward = new Basis(Vector3.Up, FacingYaw) * Vector3.Back; // the figures face +Z at yaw 0
+        for (var i = 0; i < figures.Count; i++)
+        {
+            figures[i].Position = formationSlots[i] - forward * pose.Recoil + new Vector3(0f, pose.Bob, 0f);
+            figures[i].Basis = new Basis(Vector3.Up, FacingYaw) * new Basis(Vector3.Right, -pose.Pitch) * new Basis(Vector3.Back, pose.Roll) * Basis.FromScale(figures[i].Scale);
+        }
+        var turn = new Basis(Vector3.Up, pose.TurretYaw);
+        foreach (var (part, rest) in turretParts)
+        {
+            part.Position = turn * rest;
+            part.Rotation = new Vector3(0f, pose.TurretYaw, 0f);
+        }
+    }
+
+    /// <summary>C083: back to the resting pose.</summary>
+    public void RestRigid() => ShowRigid(RigidPose.Rest);
+
     /// <summary>The marks shown, in drawing order.</summary>
     public IReadOnlyList<UnitStatusIcon> StatusIcons { get; private set; } = [];
 
@@ -83,6 +118,7 @@ public partial class UnitNode : Node3D
         FigureCount = baseUnit == null ? 1 : UnitVisuals.FigureCount(baseUnit, ruleset);
         var key = AssetKey.Of(RulesetAssetKeys.Unit, Unit.Name);
         var formation = UnitVisuals.Formation(FigureCount);
+        Rigid = RigidMotion.KindOf(baseUnit?.UnitType);
         for (var i = 0; i < formation.Count; i++)
         {
             var model = assets.Get<Node3D>(key);
@@ -99,8 +135,11 @@ public partial class UnitNode : Node3D
             figure.AddChild(model);
             AddChild(figure);
             figures.Add(figure);
+            formationSlots.Add(figure.Position);
+            if (Rigid == RigidKind.Armor && model.GetNodeOrNull<Node3D>("Part1") is { } turret && model.GetNodeOrNull<Node3D>("Part2") is { } barrel) turretParts.AddRange([(turret, turret.Position), (barrel, barrel.Position)]);
         }
 
+        if (players.Count > 0) Rigid = RigidKind.None; // a model with clips animates itself
         var bar = UnitVisuals.HealthBar(Unit);
         if (bar.Visible)
         {

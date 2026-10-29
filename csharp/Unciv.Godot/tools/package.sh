@@ -35,6 +35,8 @@ rm -f "$out/Assets/fonts/subset-fonts.py" "$out"/Assets/fonts/*.import
 mkdir -p "$out/Packs"
 cp -r "$project/Packs/unciv" "$out/Packs/unciv"
 rm -f "$out/Packs/unciv/.gdignore"
+# C083: the bundled unit models pack (glb files and manifest), same way
+cp -r "$project/Packs/units" "$out/Packs/units"
 cp "$repo/LICENSE" "$out/LICENSE"
 cp "$project/THIRD_PARTY_NOTICES.md" "$out/THIRD_PARTY_NOTICES.md"
 echo "Packaged $platform build in $out"

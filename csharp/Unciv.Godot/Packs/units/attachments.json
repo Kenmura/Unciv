@@ -1,0 +1,40 @@
+{
+  "about": "C083 per-unit attachment data, read by tools/build-unit-models.py. Every body below is a character of the KayKit Adventurers pack (CC0 1.0); they share ONE humanoid skeleton ('Rig': hips, spine, chest, head, upperarm/lowerarm/hand/handslot.l|r, upperleg/lowerleg/foot/toes.l|r), so one animation library fits all of them and a unit is a body mesh plus the attachments listed under 'keep'. Static meshes of a body (weapons on the handslot bones, shields, helmet, hat, cape) that are not listed are dropped.",
+  "height": 0.7,
+  "clips": {
+    "idle": "Idle",
+    "walk": "Walking_A",
+    "attack": "1H_Melee_Attack_Slice_Diagonal",
+    "attack_ranged": "1H_Ranged_Shoot",
+    "hit": "Hit_A",
+    "death": "Death_A"
+  },
+  "bodies": {
+    "Barbarian": "Barbarian.glb",
+    "Knight": "Knight.glb",
+    "Mage": "Mage.glb",
+    "Rogue": "Rogue.glb",
+    "Rogue_Hooded": "Rogue_Hooded.glb"
+  },
+  "units": {
+    "Warrior": { "body": "Barbarian", "keep": ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat", "Barbarian_Cape"] },
+    "Swordsman": { "body": "Knight", "keep": ["1H_Sword", "Rectangle_Shield", "Knight_Helmet"] },
+    "Longswordsman": { "body": "Knight", "keep": ["2H_Sword", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "2H_Melee_Attack_Slice" } },
+    "Archer": { "body": "Rogue_Hooded", "keep": ["1H_Crossbow", "Rogue_Cape"] },
+    "Crossbowman": { "body": "Rogue", "keep": ["2H_Crossbow"], "clips": { "attack_ranged": "2H_Ranged_Shoot" } },
+    "Scout": { "body": "Rogue_Hooded", "keep": ["Knife", "Rogue_Cape"] },
+    "Worker": { "body": "Barbarian", "keep": ["Mug", "Barbarian_Hat"], "clips": { "attack": "Interact" } },
+    "Great Scientist": { "body": "Mage", "keep": ["Spellbook", "Mage_Hat", "Mage_Cape"], "clips": { "attack": "Spellcast_Shoot", "attack_ranged": "Spellcast_Shoot" } }
+  },
+  "mounted": {
+    "about": "A mounted unit is a rider (body + attachments as above, scaled to 'riderHeight') parented to the 'saddle' joint of the generated horse rig (build-unit-models.py builds the horse: rigid boxes on a 9-joint skeleton with the six contract clips). Per clip the rider's upper body follows 'clips' and its legs and hips hold the Sit_Chair_Idle pose, so he sits the horse whatever he does with his arms.",
+    "riderHeight": 0.5,
+    "saddleHeight": 0.38,
+    "seat": "Sit_Chair_Idle",
+    "units": {
+      "Horseman": { "body": "Knight", "keep": ["1H_Sword", "Round_Shield", "Knight_Helmet"] },
+      "Knight": { "body": "Knight", "keep": ["1H_Sword", "Spike_Shield", "Knight_Helmet", "Knight_Cape"], "clips": { "attack": "1H_Melee_Attack_Chop" } },
+      "Horse Archer": { "body": "Rogue_Hooded", "keep": ["1H_Crossbow", "Rogue_Cape"] }
+    }
+  }
+}

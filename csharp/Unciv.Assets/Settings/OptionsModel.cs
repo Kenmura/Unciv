@@ -25,9 +25,9 @@ public static class OptionsModel
     public static float StepUiScale(float current, int direction) =>
         Math.Clamp(current + direction * UiScaleStep, MinUiScale, MaxUiScale);
 
-    /// <summary>The pack names to offer: the default (no pack) first, then every directory name that is a plain name (the always-on bundled icon pack excepted), sorted ordinally.</summary>
+    /// <summary>The pack names to offer: the default (no pack) first, then every directory name that is a plain name (the always-on bundled icon and unit packs excepted), sorted ordinally.</summary>
     public static IReadOnlyList<string> PackNames(IEnumerable<string> directoryNames) =>
-        [DefaultPack, .. directoryNames.Where(IsPlainName).Where(n => n != DefaultPack && n != Unciv.Assets.AssetResolver.BundledPack).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        [DefaultPack, .. directoryNames.Where(IsPlainName).Where(n => n != DefaultPack && n != Unciv.Assets.AssetResolver.BundledPack && n != Unciv.Assets.AssetResolver.UnitsPack).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
 
     /// <summary>The pack handed to the asset registry: null for the default.</summary>
     public static string? RegistryPack(string setting) => setting == DefaultPack || string.IsNullOrWhiteSpace(setting) ? null : setting;

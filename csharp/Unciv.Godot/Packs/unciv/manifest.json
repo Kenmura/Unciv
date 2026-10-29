@@ -192,8 +192,7 @@
     "icon/ui/Stop": "icons/ui/Stop.png",
     "icon/ui/Terrains": "icons/ui/Terrains.png",
     "icon/ui/Undo": "icons/ui/Undo.png",
-    "icon/ui/Wonders": "icons/ui/Wonders.png",
-    "unit/Warrior": "models/unit/Warrior.glb"
+    "icon/ui/Wonders": "icons/ui/Wonders.png"
   },
   "pack": "unciv"
 }

@@ -181,8 +181,8 @@ public sealed class CombatPresentationScenario : Scenario
             new Capture("bombard", "A city bombards: a flash at the city and a shot toward our warrior; the 11 from the earlier shot floats away"),
             new Act("step to the middle of the death", () => Presenter.Step(CombatPresentation.BombardFlashSeconds + CombatPresentation.HitSeconds + 0.3f)),
             new WaitFrames(2),
-            new AssertQuery("the worker is shrinking and sinking", () => workerNode.NotNull().Scale.X is > 0.05f and < 0.95f && workerNode.NotNull().Position.Y < workerNode.NotNull().RestPosition.Y),
-            new Capture("death", "A dying worker shrinks and sinks into its tile"),
+            new AssertQuery("the worker is on its death clip (C083: the worker is a model with clips, so it falls instead of shrinking and sinking)", () => workerNode.NotNull().CurrentClip == UnitModelContract.DeathClip && workerNode.NotNull().ClipPosition > 0f && workerNode.NotNull().Scale == Vector3.One),
+            new Capture("death", "A dying worker plays its death clip on its tile"),
             new Act("play out the script", () => Presenter.Step(10f)),
             new WaitFrames(3),
             new AssertQuery("the script drained: both numbers shown in order, the worker node freed, nothing left", () =>

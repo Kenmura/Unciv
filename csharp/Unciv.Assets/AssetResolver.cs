@@ -49,6 +49,9 @@ public sealed class AssetResolver
 
     /// <summary>C063: the pack of Unciv's icons shipped with the client; every registry consults it after the selected pack.</summary>
     public const string BundledPack = "unciv";
+
+    /// <summary>C083: the pack of unit models shipped with the client (animated humanoids, mounted riders); consulted after <see cref="BundledPack"/> by every registry.</summary>
+    public const string UnitsPack = "units";
     public static readonly string[] OverrideExtensions = ["tres", "glb", "png", "ogg"];
     private static readonly HashSet<string> ManifestExtensions = new(OverrideExtensions, StringComparer.Ordinal) { "jpg", "webp", "wav", "ttf", "otf" };
 
@@ -56,6 +59,7 @@ public sealed class AssetResolver
     private readonly IAssetFallbacks fallbacks;
     private readonly string? pack;
     private readonly string? basePack;
+    private readonly IReadOnlyList<string> morePacks;
     private readonly List<string> diagnostics = [];
     private readonly Dictionary<string, Dictionary<string, string>> manifests = new(StringComparer.Ordinal);
 
@@ -63,8 +67,10 @@ public sealed class AssetResolver
     /// <param name="fallbacks">The fallback chain of every key.</param>
     /// <param name="pack">The selected pack, consulted first.</param>
     /// <param name="basePack">C063: a pack consulted after <paramref name="pack"/> for every key (the bundled default art); null for none. A missing base pack is silent (only a missing selected pack is a diagnostic).</param>
-    public AssetResolver(IAssetFiles files, IAssetFallbacks fallbacks, string? pack = null, string? basePack = null)
+    /// <param name="morePacks">C083: further quiet base packs, consulted in order after <paramref name="basePack"/> (the bundled unit models).</param>
+    public AssetResolver(IAssetFiles files, IAssetFallbacks fallbacks, string? pack = null, string? basePack = null, IReadOnlyList<string>? morePacks = null)
     {
+        this.morePacks = morePacks ?? [];
         this.files = files;
         this.fallbacks = fallbacks;
         this.pack = pack;
@@ -82,7 +88,7 @@ public sealed class AssetResolver
                 var path = OverrideDir + candidate.FileStem + "." + ext;
                 if (files.Exists(path)) return new AssetResolution(key, candidate, AssetSourceKind.Override, path);
             }
-            if ((PackEntry(pack, candidate) ?? PackEntry(basePack, candidate)) is { } packPath) return new AssetResolution(key, candidate, AssetSourceKind.Pack, packPath);
+            if ((PackEntry(pack, candidate) ?? PackEntry(basePack, candidate) ?? morePacks.Select(it => PackEntry(it, candidate)).FirstOrDefault(it => it != null)) is { } packPath) return new AssetResolution(key, candidate, AssetSourceKind.Pack, packPath);
         }
         return new AssetResolution(key, key, AssetSourceKind.Procedural, null);
     }
@@ -90,7 +96,7 @@ public sealed class AssetResolver
     private string? PackEntry(string? pack, AssetKey key)
     {
         if (string.IsNullOrEmpty(pack)) return null;
-        if (!manifests.TryGetValue(pack, out var manifest)) manifests[pack] = manifest = LoadManifest(pack, quiet: pack == basePack);
+        if (!manifests.TryGetValue(pack, out var manifest)) manifests[pack] = manifest = LoadManifest(pack, quiet: pack == basePack || morePacks.Contains(pack));
         if (!manifest.TryGetValue(key.ToString(), out var relative)) return null;
         var full = PackDir + pack + "/" + relative;
         return files.Exists(full) ? full : null;

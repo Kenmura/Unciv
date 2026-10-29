@@ -630,9 +630,9 @@ Scenario `combat-presentation`.
 
 *A city bombards: a flash at the city and a shot toward our warrior.* (`combat-presentation/bombard.png`)
 
-![A dying worker shrinks and sinks into its tile.](../Unciv.Godot.Harness/golden/combat-presentation/death.png)
+![A dying worker plays its death clip on its tile.](../Unciv.Godot.Harness/golden/combat-presentation/death.png)
 
-*A dying worker shrinks and sinks into its tile.* (`combat-presentation/death.png`)
+*A dying worker plays its death clip on its tile.* (`combat-presentation/death.png`)
 
 ## C034 Host game screen: lobby settings, address list and Copy invite, start hosting in-process, resume saved hosted game
 
@@ -1232,7 +1232,7 @@ Scenario `setup`.
 
 *Rules tab inside the frame: Vanilla chosen as the base ruleset with the section headers as overlines.* (`setup/rules.png`)
 
-## C076 (ticket not Done or unknown)
+## C076 Civilopedia and tooltip content
 
 Civilopedia on a ScreenFrame (category sidebar, list rows, header card with cost chips, section headers, info-coloured links) and structured tooltip content (heading, stat lines, muted footer).
 
@@ -1274,6 +1274,24 @@ Scenario `combat-presentation`.
 
 *The hit lands at the swing's marker: the defender plays its hit clip and the damage number floats up.* (`combat-presentation/impact.png`)
 
+## C083 (ticket not Done or unknown)
+
+Unit art pipeline: a units pack of CC0 humanoids on one shared skeleton, a rider seated on a generated horse rig, and code-driven rigid motion for siege, armour, ships and aircraft.
+
+Scenario `unit-visuals`.
+
+![Close view of the Horseman, side on: a CC0 rider seated on the generated horse rig, in its idle pose, the rider's tunic tinted in the red civ's colour.](../Unciv.Godot.Harness/golden/unit-visuals/mounted.png)
+
+*Close view of the Horseman, side on: a CC0 rider seated on the generated horse rig, in its idle pose, the rider's tunic tinted in the red civ's colour.* (`unit-visuals/mounted.png`)
+
+![Close view of the Tank mid-shot, posed by the code-driven rigid motion: the hull has kicked back and the turret has swung off the target line.](../Unciv.Godot.Harness/golden/unit-visuals/rigid.png)
+
+*Close view of the Tank mid-shot, posed by the code-driven rigid motion: the hull has kicked back and the turret has swung off the target line.* (`unit-visuals/rigid.png`)
+
+![The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.](../Unciv.Godot.Harness/golden/unit-visuals/gallery.png)
+
+*The 20-unit gallery: humanoid units from the units pack (swordsmen, archers, scientist, knights on horses) beside the generated blocks of ships, siege, armour and aircraft.* (`unit-visuals/gallery.png`)
+
 ## T252 (ticket not Done or unknown)
 
 Host screen dynamic turn timer: checkbox and shortest-turn choice under the turn timer; the host runs with the chosen policy.
@@ -1303,4 +1321,4 @@ Done tickets with nothing meaningful to show.
 - **C073 Diplomacy and trade redesign**: Diplomacy and trade redesign: the redesigned screens are shown under C021 (diplomacy/*), C022 (trade/*) and C039 (proposals/*), whose goldens were re-recorded.
 - **C074 Overview and espionage on DataTable**: Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded.
 - **C075 Game menu, save/load and options**: Game menu, save/load and options redesign: the redesigned screens are shown under C044 (menu/*), the save/load, options and settings entries, whose goldens were re-recorded.
-- **C077 (ticket not Done or unknown)**: Victory, defeat, resigned, victory status and World Congress result as Modals: shown under C024 (victory/*, defeat/*), C044 (menu/victory-status, menu/resigned) and C053 (vote-result/*), whose captions and goldens were re-recorded.
+- **C077 Victory, defeat and vote result screens**: Victory, defeat, resigned, victory status and World Congress result as Modals: shown under C024 (victory/*, defeat/*), C044 (menu/victory-status, menu/resigned) and C053 (vote-result/*), whose captions and goldens were re-recorded.

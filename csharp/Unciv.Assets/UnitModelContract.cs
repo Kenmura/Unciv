@@ -26,8 +26,8 @@ public static class UnitModelContract
 
     public const float MinHeight = 0.4f;
     public const float MaxHeight = 1.0f;
-    /// <summary>Wider than the 0.25 of the plan because a rig stands in its bind pose (arms out) here; the footprint of the playing animation is the art pipeline's concern.</summary>
-    public const float MaxRadius = 0.5f;
+    /// <summary>Wider than the 0.25 of the plan because a rig stands in its bind pose (arms out, a crossbow held out front) here (0.5 until C083 added the crossbow bodies); the footprint of the playing animation is the art pipeline's concern.</summary>
+    public const float MaxRadius = 0.65f;
     public const float FeetTolerance = 0.02f;
 
     /// <summary>Everything wrong with the file, empty when it satisfies the contract.</summary>

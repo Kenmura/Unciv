@@ -102,3 +102,13 @@ Finds the clips and maps each presenter cue to one, falling back to today's proc
 - **Art source:** CC0 kits (recommended to start: Quaternius/KayKit), commissioned art, or AI-generated models (licences need checking case by case).
 - **Figures per tile:** keep up to 4 (Civ 5 style), or show one bigger model per unit (much cheaper art and animation).
 - **Placeholder:** build the articulated placeholder (step 3), or go straight to real art.
+
+## C083 status: the art pipeline as built
+
+- **Pack:** `Unciv.Godot/Packs/units/` is a second always-on bundled pack (after `unciv`, `AssetResolver.UnitsPack`): `models/unit/*.glb`, `manifest.json`, `CREDITS.md` and `attachments.json`.
+- **Shared skeleton and library:** all KayKit Adventurers characters share one humanoid rig, so the six contract clips are cut from one animation library for every body (no per-body retargeting is needed; `SkeletonProfileHumanoid` retargeting stays the route for art with a different rig). `attachments.json` lists per unit the body, the attachments to keep on the hand, head and back (weapon, shield, helmet, hat, cape) and optional clip-source overrides.
+- **Build:** `tools/build-unit-models.py <KayKit Characters/gltf>` (stdlib) regenerates the pack. `tools/blender-export-unit.py` is the Blender route for new art; Blender is not in the toolchain, so it is unrun here and the contract tests plus `unit-visuals` are the gate.
+- **Mounted:** the rider (own skeleton, scaled to `riderHeight`) sits a generated horse (rigid boxes, 10 joints, six hand-keyed clips). The rider's Rig node follows the horse's root and body joints through generated tracks, his legs and hips hold the seated pose in every clip (a glTF importer would fuse a rider parented to a horse joint into one skeleton).
+- **Rigid units:** ships, siege, armour and aircraft keep their generated blocks and move as one piece through `RigidMotion` (pure, tested): ships bob and roll, siege and armour kick back and the turret turns, aircraft bank and dive. `UnitNode.ShowRigid` poses it, `CombatPresenter` drives it from the cue clock.
+- **Follow-ups:** real art for ships/siege/armour/aircraft files (the generated blocks stay the fallback); a separate idle bob needs a presenter idle clock; the tracks of a rigid unit that also has a clip model are ignored.
+

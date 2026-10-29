@@ -126,12 +126,14 @@ public partial class CombatPresenter : Node3D
                     if (preview) break;
                     Turn(id, walker, tileTop(path[leg + 1]) - tileTop(path[leg]));
                     walker.ShowClipLooped(UnitModelContract.WalkClip, p * cue.Duration); // no walk clip: it just slides
+                    walker.ShowRigid(RigidMotion.Pose(walker.Rigid, cue.Kind, p, p * cue.Duration)); // ships bob, aircraft bank
                     break;
                 }
             case CueKind.Strike when cue.UnitId is { } id && Find(id) is { } striker:
                 Turn(id, striker, Toward(cue));
                 striker.Position = striker.RestPosition + Toward(cue) * CuePoses.Lunge(p);
                 striker.ShowClip(UnitModelContract.AttackClip, p); // no attack clip: the lunge alone
+                striker.ShowRigid(RigidMotion.Pose(striker.Rigid, cue.Kind, p, p * cue.Duration));
                 break;
             case CueKind.Shot:
                 {
@@ -141,6 +143,7 @@ public partial class CombatPresenter : Node3D
                     {
                         Turn(archer, drawing, Toward(cue));
                         drawing.ShowClip(UnitModelContract.RangedAttackClip, p);
+                        drawing.ShowRigid(RigidMotion.Pose(drawing.Rigid, cue.Kind, p, p * cue.Duration)); // siege and armour kick back, ships roll
                     }
                     if (flight <= 0f && !visuals.ContainsKey(cue)) break;
                     var ball = Effect(cue, () => Ball(ProjectileRadius, PlaceholderPalette.Projectile));
@@ -203,6 +206,7 @@ public partial class CombatPresenter : Node3D
             case CueKind.Move or CueKind.Strike or CueKind.Hit or CueKind.Shot when cue.UnitId is { } id && Find(id) is { } node:
                 node.Position = node.RestPosition;
                 node.RestClips();
+                node.RestRigid();
                 break;
         }
         if (cue.Kind == CueKind.Death && cue.UnitId is { } dead)
