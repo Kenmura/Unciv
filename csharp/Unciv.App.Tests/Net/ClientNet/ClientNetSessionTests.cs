@@ -167,6 +167,29 @@ public sealed class ClientNetSessionTests
     }
 
     [Fact]
+    public async Task Join_EpochStoreThatCannotWrite_DoesNotAbortTheJoin()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id,
+            DisplayName = "A",
+            RulesetHash = "h",
+            ExpectedFingerprint = ClientNetRig.Fingerprint,
+            GameId = "g1",
+            KnownEpoch = 1,
+            PersistKnownEpoch = _ => throw new IOException("disk full")
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false, Epoch = 2 });
+        await host.ReceiveAsync<Join>();
+        await host.ReceiveAsync<Auth>();
+        await host.SendAsync(new JoinOk());
+        Assert.True((await join).Joined);
+    }
+
+    [Fact]
     public async Task Join_HostAboveTheStoredEpoch_IsRememberedAndPersisted()
     {
         var persisted = new List<int>();
