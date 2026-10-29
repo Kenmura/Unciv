@@ -76,7 +76,7 @@ flowchart TD
   class C084 ready
   class C085 waiting
   class C086 waiting
-  class C087 prog
+  class C087 review
   class C088 ready
   class C089 waiting
   class C090 waiting
@@ -145,6 +145,6 @@ xychart-beta
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
 | C085 | Available (waiting on C094) | C094 | 0 | Unit model LOD and performance caps |
 | C086 | Available (waiting on C094) | C094 | 0 | Unit combat polish: effects and sounds |
-| C087 | In-Progress [Claude] | C067, T181 | 0 | Rival stats ribbon in the HUD |
+| C087 | Needs-Review [Claude] | C067, T181 | 0 | Rival stats ribbon in the HUD |
 | C091 | Available (waiting on C078) | C068, C078 | 0 | Group move and escort macro (client-side) |
 | T247 | Available (waiting on C090) | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
