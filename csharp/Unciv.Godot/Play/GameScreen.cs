@@ -1282,7 +1282,11 @@ public partial class GameScreen : Control
         ReachableOverlay.Clear();
         AttackOverlay.Clear();
         SiteOverlay.Clear();
-        foundsCities = false;
+        if (foundsCities)
+        {
+            foundsCities = false;
+            if (HoveredTile is { } hovered) Run(LoadHoverTip(hovered)); // the tooltip goes back to the tile's own text
+        }
         ClearAttackPreview();
     }
 
@@ -1315,6 +1319,7 @@ public partial class GameScreen : Control
         Panel.Show(UnitOrdersModel.Panel(unit, baseUnit), menu);
         PromoteButton.Visible = promotions is { Promotions.Count: > 0 };
         foundsCities = actions?.Actions.Any(it => it.Descriptor.ActionType == UnitActionType.FoundCity) == true;
+        if (foundsCities && HoveredTile is { } under) Run(LoadHoverTip(under)); // the pointer already rests on a tile: show its site now
         attackTiles = targets == null ? [] : [.. UnitOrdersModel.AttackTiles(targets)];
         ReachableOverlay.Show(reach == null ? [] : [.. UnitOrdersModel.ReachableTiles(reach).Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
         AttackOverlay.Show([.. attackTiles.Select(it => new HexCoord(it.X, it.Y))], TileTopAt);

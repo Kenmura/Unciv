@@ -29,7 +29,8 @@ public sealed record CitySiteResult(
 // C088: what a city founded on the tile would have to work with, and whether it could be founded there. Read-only. Fog rules: the tile itself must be explored
 // (else the same refusal as an unknown tile); only explored tiles are counted, their resources only when the viewer's techs reveal them, their yields without
 // improvements (an improvement built out of sight would show through); a foreign owner and the problems that depend on cities only count what the viewer can see
-// (cities on explored tiles, owners of visible tiles), so an answer never changes with what lies in the unexplored dark.
+// (cities on explored tiles, as the snapshot shows them, and owners of visible tiles), so an answer never changes with what lies in the unexplored dark.
+// Accepted limits: terrain of a fogged explored tile is read live (as TileInfo's terrain is); the continent test and the tile count near the map edge reflect the real map.
 [QueryType("tiles.CitySite")]
 public sealed record CitySiteQuery(int X, int Y) : IQuery<CitySiteResult>
 {

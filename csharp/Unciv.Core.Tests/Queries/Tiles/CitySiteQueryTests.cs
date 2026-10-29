@@ -156,6 +156,27 @@ public class CitySiteQueryTests
     }
 
     [Fact]
+    public void ImpassableTerrainAndTechGatedResourcesAndWondersAndARichCentre()
+    {
+        Explore(player);
+        testGame.SetTileTerrain(new HexCoord(2, 2), "Mountain");
+        Assert.Contains(Site(2, 2).Problems, it => it.Code == CitySiteProblemCodes.Impassable);
+
+        testGame.GetTile(1, 1).SetTileResource(testGame.Ruleset.TileResources["Iron"], majorDeposit: true);
+        Assert.Empty(Site(0, 0).Resources); // Iron needs Iron Working
+        player.Tech.AddTechnology("Iron Working");
+        Assert.Equal(["Iron"], Site(0, 0).Resources.Select(it => it.Name));
+
+        testGame.SetTileTerrain(new HexCoord(-1, 0), "Mountain");
+        testGame.GetTile(-1, 0).NaturalWonder = "Krakatoa";
+        Assert.Contains("Krakatoa", Site(0, 0).NaturalWonders);
+
+        testGame.SetTileTerrain(new HexCoord(0, 0), "Grassland");
+        testGame.GetTile(0, 0).SetTileResource(testGame.Ruleset.TileResources["Wheat"]);
+        Assert.Equal(3f, Yield(Site(0, 0), "Food")); // grassland 2 + wheat 1 on the centre is above the minimum of 2, so it stays
+    }
+
+    [Fact]
     public void AnswersNeverChangeTheGame()
     {
         Explore(player);
