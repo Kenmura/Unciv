@@ -1047,6 +1047,7 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
             .Sum(city => city.CityConstructions.GetBuiltBuildings().Count(it => it.IsWonder));
         scoreBreakdown["Technologies"] = Tech.TechsResearched.Count * 4.0;
         scoreBreakdown["Future Tech"] = Tech.RepeatingTechsResearched * 10.0;
+        AddBnwScore(scoreBreakdown, modConstants);
 
         return scoreBreakdown;
     }

@@ -1135,6 +1135,15 @@ Uniques per civ (traits in §3.2). The unique units and buildings are in `Civili
   +`SCORE_BELIEF_MULTIPLIER` (20) per belief, +`SCORE_RELIGION_CITIES_MULTIPLIER` (1) per city following your
   religion [D]+[K: same formula shape as existing score].
 
+#### 4.15a As built (B025, spec id B090)
+`Civilization.CalculateScoreBreakdown` adds four lines when the ruleset constant is non-zero (BNW values 4, 4, 20, 1; G&K keeps 0, so its six
+lines, their map order and its total are untouched): `Policies` = adopted policies (branch openers and tenets count, the `BranchComplete`
+bonus does not); `Great Works` = works standing in the civ's own cities; `Beliefs` = beliefs of the civ's religion (a pantheon-only religion counts);
+`Religion` = cities of any civ whose majority religion is the civ's (`NumberOfCitiesFollowingThisReligion`). Values are integral doubles, so the
+JavaHashMap order cannot change the sum. [K]/[?]: whether Civ V counts openers/tenets in "policies" and works only in own cities is unverified
+(no decompiler output); the choice above is a deliberate deviation. The BNW population (4) and wonder (25) score constants noted in `ModConstants.cs`
+are not emitted by the generator (G&K 3/40 apply): follow-up.
+
 ### 4.16 AI
 The Civ V grand-strategy spec (`../ai-spec/SPEC.md`) already covers the BNW grand strategy columns: culture/tourism
 weights and the UN strategy. BNW feature AI needed on top (A-track tickets):
