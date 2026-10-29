@@ -88,7 +88,11 @@ public partial class GameOverScreen : Modal
         var mutedTone = ProceduralAssets.ToColor(UiTokens.TextMuted);
         ranking.RowTone = row => view.Ranking[row].IsViewer ? viewerTone : view.Ranking[row].IsDefeated ? mutedTone : null;
         ranking.SetRows(RankingRows(view));
-        foreach (var child in content.GetChildren()) content.RemoveChild(child);
+        foreach (var child in content.GetChildren())
+        {
+            content.RemoveChild(child);
+            if (child is SectionHeader) child.QueueFree(); // the section headers are made per Open; the other children are reused
+        }
         foreach (var child in legend.GetChildren())
         {
             legend.RemoveChild(child);

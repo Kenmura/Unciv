@@ -599,7 +599,7 @@
       },
       {
         "golden": "defeat/defeat.png",
-        "caption": "The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your defeated row muted; the game goes on without you, so Keep watching is the primary button next to Main menu."
+        "caption": "The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your own (defeated) row in the accent colour; the game goes on without you, so Keep watching is the primary button next to Main menu."
       }
     ]
   },

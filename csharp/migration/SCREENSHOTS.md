@@ -462,9 +462,9 @@ Scenario `victory`.
 
 *After One more turn the world is playable again on the next turn.* (`victory/continued.png`)
 
-![The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your defeated row muted; the game goes on without you, so Keep watching is the primary button next to Main menu.](../Unciv.Godot.Harness/golden/defeat/defeat.png)
+![The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your own (defeated) row in the accent colour; the game goes on without you, so Keep watching is the primary button next to Main menu.](../Unciv.Godot.Harness/golden/defeat/defeat.png)
 
-*The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your defeated row muted; the game goes on without you, so Keep watching is the primary button next to Main menu.* (`defeat/defeat.png`)
+*The defeat modal (scenario defeat): red title, the defeat paragraph and the ranking with your own (defeated) row in the accent colour; the game goes on without you, so Keep watching is the primary button next to Main menu.* (`defeat/defeat.png`)
 
 ## C025 Localization: translations in the client, language picker, non-Latin fonts
 
