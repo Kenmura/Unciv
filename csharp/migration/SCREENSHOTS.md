@@ -1360,7 +1360,7 @@ Scenario `unit-visuals`.
 
 *Close view, side on, left to right: the Camel Archer (sand-coloured mount), Naresuan's Elephant (larger, grey) and Hakkapeliitta, riders on the generated mount; front-on figures below are other roster units.* (`unit-visuals/medieval-mounts.png`)
 
-## C094 (ticket not Done or unknown)
+## C094 Unit art by era: industrial, modern and naval/air
 
 Industrial and modern unit art: 25 more units (26 with Infantry) (riflemen, marines, paratroopers, gun crews, cavalry, great people) from the units pack, built from data in attachments.json; ships, aircraft and armour stay generated blocks.
 
