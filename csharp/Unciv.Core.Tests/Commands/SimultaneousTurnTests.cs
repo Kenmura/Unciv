@@ -21,7 +21,7 @@ namespace Unciv.Core.Tests.Commands;
 // live at every checkpoint (also from a snapshot plus the log tail), the same inputs give the same bytes, and a different interleaving is a different
 // but equally valid game. The conflict table of section 5 and the visibility cases are in SimultaneousTurnConflictTests.
 [Collection("RulesetCache")]
-public sealed class SimultaneousTurnTests : IDisposable
+public sealed partial class SimultaneousTurnTests : IDisposable
 {
     private const string Babylon = "Babylon";
     private const string Greece = "Greece";
@@ -81,6 +81,9 @@ public sealed class SimultaneousTurnTests : IDisposable
         public int Commands { get; private set; }
         public int Rejected { get; private set; }
 
+        /// <summary>Told about every accepted command this script submits (T243: the visibility test watches each one).</summary>
+        public Action<CommandResult>? Observer { get; set; }
+
         private Unciv.Logic.Civilization.Civilization Civ => session.Game.GetCivilization(civId);
 
         /// <summary>Submits the next command of this human's turn, or returns false when it has nothing to do until the round is resolved.</summary>
@@ -108,8 +111,9 @@ public sealed class SimultaneousTurnTests : IDisposable
             if (blocking.Count > 0)
             {
                 if (Answer(blocking[0])) return true;
-                session.SubmitAsServer(new ForceEndTurn { CivId = civId });
                 Commands++;
+                var forced = session.SubmitAsServer(new ForceEndTurn { CivId = civId });
+                if (forced.Accepted) Observer?.Invoke(forced);
                 return true;
             }
             Submit(new EndTurn());
@@ -119,7 +123,9 @@ public sealed class SimultaneousTurnTests : IDisposable
         private void Submit(GameCommand command)
         {
             Commands++;
-            if (!session.Submit(civId, command).Accepted) Rejected++;
+            var result = session.Submit(civId, command);
+            if (result.Accepted) Observer?.Invoke(result);
+            else Rejected++;
         }
 
         private bool Answer(Decision decision)
@@ -147,7 +153,9 @@ public sealed class SimultaneousTurnTests : IDisposable
         private bool Try(GameCommand command)
         {
             Commands++;
-            return session.Submit(civId, command).Accepted;
+            var result = session.Submit(civId, command);
+            if (result.Accepted) Observer?.Invoke(result);
+            return result.Accepted;
         }
     }
 
@@ -182,7 +190,7 @@ public sealed class SimultaneousTurnTests : IDisposable
     };
 
     /// <summary>Plays rounds until <paramref name="untilTurn"/> is the game's turn, one command of a randomly chosen human at a time.</summary>
-    private static void Play(Live live, ulong interleaving, int untilTurn)
+    private static void Play(Live live, ulong interleaving, int untilTurn, Action<CommandResult>? observe = null)
     {
         var rng = new Lcg(interleaving);
         var session = live.Session;
@@ -196,6 +204,7 @@ public sealed class SimultaneousTurnTests : IDisposable
                 {
                     var result = session.SubmitAsServer(StepCommand(step));
                     Assert.True(result.Accepted, result.Validation.Code + ": " + result.Validation.Message);
+                    observe?.Invoke(result);
                 }
                 live.Writer.Sync(session);
                 Checkpoint(live);
