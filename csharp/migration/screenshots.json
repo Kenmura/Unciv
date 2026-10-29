@@ -1385,6 +1385,9 @@
   "C092": {
     "none": "Bulk city actions on the overview cities tab: shown under C023 (overview/cities, overview/cities-bulk)."
   },
+  "C078": {
+    "none": "Hotkeys v2 and key hints: the Keys tab is shown under C044 (options/listening, options/rebound), whose goldens were re-recorded; the key hints are tooltips with no golden of their own."
+  },
   "C074": {
     "none": "Overview and espionage on DataTable: the redesigned screens are shown under C023 (overview/*), C050 (overview-espionage/*) and C051 (espionage/*), whose goldens were re-recorded."
   },
