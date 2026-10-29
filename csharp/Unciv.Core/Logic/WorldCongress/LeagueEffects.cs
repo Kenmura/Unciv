@@ -159,6 +159,7 @@ public sealed record LeagueEffects(
     /// <summary>After a resolution was enacted or repealed: ends the trade routes it forbids and refreshes the stats of every member.</summary>
     public static void OnChanged(GameInfo game, League league)
     {
+        league.Projects.RemoveAll(it => !LeagueProjects.IsEnabled(game, it.Name)); // B017: a repealed project loses its progress
         TradeRouteTurns.BreakInvalid(game);
         foreach (var civ in LeagueRules.LivingMembers(game, league))
         {

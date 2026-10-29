@@ -539,6 +539,8 @@ public class CityStats(City city)
         var newStatsBonusTree = new StatTreeNode();
 
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromGoldenAge(City.Civ.GoldenAges.IsGoldenAge()), "Golden Age");
+        if ((City.Civ.Culture?.CultureBonusTurns ?? 0) > 0) // B017: World's Fair reward
+            newStatsBonusTree.AddStats(new Stats(culture: LeagueProjects.CultureBoostPercent), "World's Fair");
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromRailroad(), "Railroad");
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromPuppetCity(), "Puppet City");
         newStatsBonusTree.AddStats(GetStatPercentBonusesFromUnitSupply(), "Unit Supply");

@@ -131,7 +131,7 @@ public static class BackwardCompatibility
         bool IsInvalidConstruction(string construction) =>
             !ruleset.Buildings.ContainsKey(construction)
             && !ruleset.Units.ContainsKey(construction)
-            && !PerpetualConstruction.PerpetualConstructionsMap.ContainsKey(construction);
+            && !PerpetualConstruction.IsNamePerpetual(construction);
 
         foreach (var city in gameInfo.Civilizations.SelectMany(it => it.Cities))
         {

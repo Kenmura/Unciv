@@ -322,6 +322,9 @@ public class CivInfoStatsForNextTurn(Civilization civInfo)
         foreach (var (key, value) in GetGlobalStatsFromUniques())
             statMap[key] = value.Happiness + (statMap.TryGetValue(key, out var existing) ? existing : 0f);
 
+        int projectHappiness = LeagueProjects.Happiness(CivInfo); // B017: International Games reward
+        if (projectHappiness != 0) statMap["World Congress"] = projectHappiness;
+
         var opinionUnhappiness = PublicOpinionRules.Unhappiness(CivInfo); // B014: BNW public opinion; 0 without an ideology
         if (opinionUnhappiness != 0) statMap["Public opinion"] = -opinionUnhappiness;
 

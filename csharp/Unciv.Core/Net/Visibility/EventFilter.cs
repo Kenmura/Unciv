@@ -84,6 +84,7 @@ public static class EventFilter
         [typeof(ResolutionEnacted)] = Everyone,
         [typeof(ResolutionRepealed)] = Everyone,
         [typeof(ResolutionFailed)] = Everyone,
+        [typeof(ProjectCompleted)] = Everyone,
 
         // Wars and peace are public facts for civs that know both parties (design/SERVER.md section 3); trades are private to the two parties.
         [typeof(WarDeclared)] = KnownToBothParties,

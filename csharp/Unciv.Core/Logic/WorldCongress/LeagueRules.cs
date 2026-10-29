@@ -95,6 +95,7 @@ public static class LeagueRules
             return;
         }
         EnsureHost(game, league);
+        LeagueProjects.ProcessTurn(game, league);
         if (league.InSession)
         {
             EndSession(game, league);

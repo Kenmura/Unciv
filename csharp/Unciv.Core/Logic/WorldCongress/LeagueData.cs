@@ -51,8 +51,18 @@ public sealed record LeagueResolution(string Name, VoterDecision Voter = VoterDe
 public sealed record LeagueSession(string Name, string Era, string Immediate, string Recurring, int TurnsBetweenSessions, int CivDelegates, int HostDelegates,
     int CityStateDelegates);
 
+/// <summary>A league project (spec 4.7.7): <paramref name="CostPerPlayer"/> production for every living member, before the game speed.</summary>
+public sealed record LeagueProjectDef(string Name, int CostPerPlayer);
+
 public static class LeagueData
 {
+    public static IReadOnlyList<LeagueProjectDef> Projects { get; } =
+    [
+        new("World's Fair", 350),
+        new("International Games", 720),
+        new("International Space Station", 850),
+    ];
+
     public const string DiplomaticVictory = "Diplomatic Victory";
     public const string ChangeLeagueHost = "Change League Host";
     public const string WorldReligion = "World Religion";

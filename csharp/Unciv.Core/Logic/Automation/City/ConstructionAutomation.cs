@@ -174,7 +174,8 @@ public class ConstructionAutomation
             else if (PerpetualConstruction.Gold.IsBuildable(cityConstructions)) chosenConstruction = PerpetualConstruction.Gold;
             else if (PerpetualConstruction.Culture.IsBuildable(cityConstructions) && !civInfo.Policies.AllPoliciesAdopted(true)) chosenConstruction = PerpetualConstruction.Culture;
             else if (PerpetualConstruction.Faith.IsBuildable(cityConstructions)) chosenConstruction = PerpetualConstruction.Faith;
-            else chosenConstruction = PerpetualConstruction.Idle;
+            else chosenConstruction = PerpetualConstruction.LeagueProcesses.Values.FirstOrDefault(it => it.IsBuildable(cityConstructions)) // B017
+                ?? (IConstruction)PerpetualConstruction.Idle;
         }
         else
         {

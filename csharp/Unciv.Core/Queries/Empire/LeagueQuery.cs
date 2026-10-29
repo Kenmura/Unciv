@@ -18,12 +18,16 @@ public sealed record LeagueActiveRow(int Id, string Resolution, string Choice, s
 public sealed record LeagueProposalRow(int Id, string Resolution, string Choice, string Proposer, int RepealId, IReadOnlyList<KeyValuePair<string, int>> Tally,
     IReadOnlyList<KeyValuePair<string, int>> YourVotes);
 
+// Name: The project; Cost: The production it needs now; Total: What all members have put in; Yours: The viewer's own contribution
+public sealed record LeagueProjectRow(string Name, int Cost, int Total, int Yours);
+
 // SessionName: The special session level the league is at
 // TurnsUntilSession: Rounds until the next session opens (0 while one is open)
 // CanPropose: The viewer is a proposer with a proposal left and no session is open
 // Proposable: Resolutions without a choice that the viewer can propose now (the ones that need a choice are checked by the command)
 public sealed record LeagueResult(bool Founded, string Host, string SessionName, bool InSession, int TurnsUntilSession, bool CanPropose,
-    IReadOnlyList<LeagueMemberRow> Members, IReadOnlyList<LeagueActiveRow> Active, IReadOnlyList<LeagueProposalRow> Proposals, IReadOnlyList<string> Proposable);
+    IReadOnlyList<LeagueMemberRow> Members, IReadOnlyList<LeagueActiveRow> Active, IReadOnlyList<LeagueProposalRow> Proposals, IReadOnlyList<string> Proposable,
+    IReadOnlyList<LeagueProjectRow>? Projects = null);
 
 // B015 (bnw-spec 2.4): the World Congress as the viewer sees it. It is public, so nothing is redacted.
 [QueryType("empire.League")]
@@ -49,6 +53,8 @@ public sealed record LeagueQuery : IQuery<LeagueResult>
         var proposable = LeagueData.Resolutions
             .Where(it => it.Proposer == ProposerDecision.None && LeagueRules.EnactProblem(game, civ, it.Name, "") == null).Select(it => it.Name).ToList();
         return new LeagueResult(true, league.Host, LeagueData.Sessions[league.SessionIndex].Name, league.InSession, league.InSession ? 0 : league.TurnsUntilSession,
-            LeagueRules.CanPropose(game, civ), members, league.Active.Select(it => new LeagueActiveRow(it.Id, it.Resolution, it.Choice, it.Proposer, it.Turn)).ToList(), proposals, proposable);
+            LeagueRules.CanPropose(game, civ), members, league.Active.Select(it => new LeagueActiveRow(it.Id, it.Resolution, it.Choice, it.Proposer, it.Turn)).ToList(), proposals, proposable,
+            LeagueEffects.EnabledProjects(game).Distinct().Select(name =>
+                new LeagueProjectRow(name, LeagueProjects.Cost(game, league, name), LeagueProjects.Find(league, name)?.Total ?? 0, LeagueProjects.Find(league, name)?.ContributionOf(civ.CivId) ?? 0)).ToList());
     }
 }

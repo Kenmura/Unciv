@@ -42,6 +42,7 @@ public sealed record ConstructionListQuery(string CityId, bool OnlyDisplayed = t
         all.AddRange(ruleset.Units.Values);
         all.AddRange(ruleset.Buildings.Values);
         all.AddRange(PerpetualConstruction.PerpetualConstructionsMap.Values);
+        if (Logic.WorldCongress.LeagueRules.IsEnabled(ruleset)) all.AddRange(PerpetualConstruction.LeagueProcesses.Values); // B017
 
         var entries = new List<ConstructionEntry>();
         foreach (var construction in all)

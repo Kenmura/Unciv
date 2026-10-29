@@ -43,7 +43,7 @@ internal static class CityCommandChecks
         {
             if (ruleset.Buildings.TryGetValue(name, out var building)) construction = building;
             else if (ruleset.Units.TryGetValue(name, out var unit)) construction = unit;
-            else if (PerpetualConstruction.PerpetualConstructionsMap.TryGetValue(name, out var perpetual)) construction = perpetual;
+            else if (PerpetualConstruction.TryGetPerpetual(name, out var perpetual)) construction = perpetual;
         }
         failure = construction == null
             ? CommandValidation.Fail(CommandErrors.InvalidTarget, $"\"{name}\" is not a building, unit or perpetual construction")

@@ -45,6 +45,11 @@ public class League : IsPartOfGameInfoSerialization
     [JsonPropertyName("proposals")]
     public List<LeagueProposal> Proposals { get; set; } = [];
 
+    /// <summary>The league projects under way (B017), in the order they were started; a finished or disabled project is removed.</summary>
+    [JsonPropertyName("projects")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public List<LeagueProject> Projects { get; set; } = [];
+
     public LeagueMember? GetMember(string civId) => Members.FirstOrDefault(it => it.Civ == civId);
 
     public League Clone() => new()
@@ -57,6 +62,7 @@ public class League : IsPartOfGameInfoSerialization
         Members = Members.Select(it => it.Clone()).ToList(),
         Active = Active.Select(it => it.Clone()).ToList(),
         Proposals = Proposals.Select(it => it.Clone()).ToList(),
+        Projects = Projects.Select(it => it.Clone()).ToList(),
     };
 }
 
@@ -80,7 +86,12 @@ public class LeagueMember : IsPartOfGameInfoSerialization
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int ProposalsUsed { get; set; }
 
-    public LeagueMember Clone() => new() { Civ = Civ, ExtraVotes = ExtraVotes, Delegates = Delegates, ProposalsUsed = ProposalsUsed };
+    /// <summary>Happiness the member earned as a reward of a league project (B017); permanent.</summary>
+    [JsonPropertyName("projectHappiness")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int ProjectHappiness { get; set; }
+
+    public LeagueMember Clone() => new() { Civ = Civ, ExtraVotes = ExtraVotes, Delegates = Delegates, ProposalsUsed = ProposalsUsed, ProjectHappiness = ProjectHappiness };
 }
 
 /// <summary>An enacted resolution. <see cref="Choice"/> is the proposer's decision (a civ id, luxury, religion or ideology name), else empty.</summary>
@@ -158,4 +169,21 @@ public class LeagueVote : IsPartOfGameInfoSerialization
     public int Count { get; set; }
 
     public LeagueVote Clone() => new() { Civ = Civ, Choice = Choice, Count = Count };
+}
+
+/// <summary>A league project under way (B017): the production each member has put into it so far.</summary>
+public class LeagueProject : IsPartOfGameInfoSerialization
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    /// <summary>Production per civ id, in the order the civs first contributed.</summary>
+    [JsonPropertyName("contributions")]
+    public List<LeagueVote> Contributions { get; set; } = [];
+
+    public int Total => Contributions.Aggregate(0, (sum, it) => unchecked(sum + it.Count));
+
+    public int ContributionOf(string civ) => Contributions.FirstOrDefault(it => it.Civ == civ)?.Count ?? 0;
+
+    public LeagueProject Clone() => new() { Name = Name, Contributions = Contributions.Select(it => it.Clone()).ToList() };
 }

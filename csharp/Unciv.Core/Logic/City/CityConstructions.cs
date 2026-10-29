@@ -178,7 +178,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
         else
             category = "";
         var label = "{" + currentConstructionSnapshot + "}";
-        if (!PerpetualConstruction.PerpetualConstructionsMap.ContainsKey(currentConstructionSnapshot))
+        if (!PerpetualConstruction.IsNamePerpetual(currentConstructionSnapshot))
         {
             var turnsLeft = TurnsToConstruction(currentConstructionSnapshot);
             label += $" - {turnsLeft}{Fonts.Turn}";
@@ -240,7 +240,7 @@ public class CityConstructions : IsPartOfGameInfoSerialization
         if (constructionName == "") return PerpetualConstruction.Idle;
         if (gameBasics.Buildings.TryGetValue(constructionName, out var building)) return building;
         if (gameBasics.Units.TryGetValue(constructionName, out var unit)) return unit;
-        if (PerpetualConstruction.PerpetualConstructionsMap.TryGetValue(constructionName, out var special)) return special;
+        if (PerpetualConstruction.TryGetPerpetual(constructionName, out var special)) return special;
 
         throw new NotBuildingOrUnitException($"{constructionName} is not a building or a unit!");
     }
@@ -383,7 +383,13 @@ public class CityConstructions : IsPartOfGameInfoSerialization
         ValidateConstructionQueue();
         ValidateInProgressConstructions();
 
-        if (GetConstruction(CurrentConstructionName()) is not PerpetualConstruction)
+        if (GetConstruction(CurrentConstructionName()) is PerpetualConstruction.LeagueProcess process)
+        {
+            // B017: the production of the turn goes to the World Congress project, not to the city
+            process.Contribute(City, Math.Max(0, KotlinMath.RoundToInt(cityStats.Production) + ProductionOverflow));
+            ProductionOverflow = 0;
+        }
+        else if (GetConstruction(CurrentConstructionName()) is not PerpetualConstruction)
         {
             if (GetWorkDone(CurrentConstructionName()) == 0)
             {

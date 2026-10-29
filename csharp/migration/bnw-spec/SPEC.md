@@ -947,7 +947,7 @@ generated. Deliberate choices, none verified against the binary (no decompile av
 a non-member, a city-state or a game without a league); each system asks it, nothing else reads the table, so a repeal restores the state. After a decided
 proposal `LeagueEffects.OnChanged` ends forbidden trade routes and refreshes the city and civ stats of the members. Effects, one per row of 4.7.5, with the
 readings of the open [K] items (no decompile available, all deliberate):
-- Change League Host: done in B015. World's Fair / International Games / ISS: `EnabledProjects(game)` lists the enabled project names (B017 builds them).
+- Change League Host: done in B015. World's Fair / International Games / ISS: `EnabledProjects(game)` lists the enabled project names (B017, 4.7.11, builds them).
 - Embargoes: `IsEmbargoed(a, b)` is true when one side is the embargoed civ, or one side is a city-state under All City-States Embargo. It refuses a new route
   (`TradeRouteRules.Check`) and ends an existing one (`BreakInvalid`). Trade deals are not covered [K].
 - Ban Luxury: the luxury is removed from the own, city-state-ally and traded luxury happiness lines.
@@ -971,6 +971,21 @@ stays removed), and the victory counts only when it is among `GameParameters.Vic
 `ExtraVotes` (`AddExtraVotes`; not when the victory is not enabled) [K reading of "top vote-getters"]; no vote at all gives nothing. Only the delegates of civs alive when the session is decided count
 (also for the other votes: a civ that died keeps no delegates in a vote), and a dead candidate gets none. G&K `VictoryManager.VotesNeededForDiplomaticVictory` and the
 G&K vote are unchanged; the AI victory scorer still reads the G&K figure (follow-up).
+
+#### 4.7.11 League projects as built (B017)
+`LeagueProjects` (`Logic/WorldCongress/LeagueProjects.cs`). A project resolution enables its project (`LeagueEffects.EnabledProjects`); cities of the living members work on the
+process `"{project} Project"` (`PerpetualConstruction.LeagueProcess`, offered only while the project is enabled; the name differs from the project because the International Space
+Station is also a building) and each turn put `round(production) + overflow` into `League.Projects` (per-civ contributions). Once per game turn in `LeagueRules.ProcessTurn`
+(after all civs, so the civ order does not matter) a project whose total reaches its cost completes. Deliberate readings ([K]/[I], no decompile available):
+- Cost = `CostPerPlayer` (350 / 720 / 850) x living members x `Speed.ProductionCostModifier`, half-up; the era scaling (`Eras.LeaguePercent` [I]) is not applied.
+- Tier 1 from `LeagueProjectRewardTier1Threshold` (0.5) x (cost / living members), tier 2 from `...Tier2Threshold` (1) x that, tier 3 for the top contributor (all civs tied
+  for a top above zero); the tiers stack (tier 3 gets the rewards of 1 and 2). Only living members are rewarded.
+- Completion removes the project and the resolution(s) that enabled it (a new vote starts it again); repealing the resolution drops the progress. Event `project-completed`
+  (`Project`, `Tiers` per living member), a notification for the humans, the `empire.League` query lists the enabled projects (`Projects`: cost, total, own contribution).
+- Rewards: World's Fair 500 Golden Age points / 1 free policy / 20 turns of +100% culture in every city (`CivCultureManager.CultureBonusTurns`, "World's Fair" percent line);
+  Games +3 happiness (permanent, `LeagueMember.ProjectHappiness`, "World Congress" happiness line) / another +3 and +30 influence with every known city-state / 1 free policy and 20 turns
+  of `TourismBonusTurns`; Space Station 4 turns of the current science / a Great Scientist next to the capital / the International Space Station building in the capital.
+- The AI only works on a project with a city that would otherwise be idle (follow-up: a proper AI valuation).
 
 ### 4.8 Happiness (BNW) [O]
 - `IsEmpireUnhappy` = excess happiness < 0 (@10150dc0). **While unhappy**: production and gold get

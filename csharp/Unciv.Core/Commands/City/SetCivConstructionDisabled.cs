@@ -20,7 +20,7 @@ public sealed class SetCivConstructionDisabled : GameCommand
         if (!context.TryChangeableCity(CityId, allowPuppet: false, out var actor, out _, out var failure)) return failure;
         var ruleset = actor.GameInfo.Ruleset;
         bool known = ruleset.Buildings.ContainsKey(Name) || ruleset.Units.ContainsKey(Name)
-            || PerpetualConstruction.PerpetualConstructionsMap.ContainsKey(Name);
+            || PerpetualConstruction.IsNamePerpetual(Name);
         if (!known) return CommandValidation.Fail(CommandErrors.InvalidTarget, $"\"{Name}\" is not a building, unit or perpetual construction");
         if (Disabled && Name == PerpetualConstruction.Idle.Name)
             return CommandValidation.Fail(CommandErrors.NotAllowed, "Idle cannot be disabled");

@@ -42,6 +42,11 @@ public class CivCultureManager : IsPartOfGameInfoSerialization
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int TourismBonusTurns { get; set; }
 
+    /// <summary>Turns left of the +100% culture boost of the World's Fair league project (B017).</summary>
+    [JsonPropertyName("cultureBonusTurns")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int CultureBonusTurns { get; set; }
+
     public InfluenceEntry? Find(string civ) => Entries.FirstOrDefault(it => it.Civ == civ);
 
     public int InfluenceOn(string civ) => Find(civ)?.Influence ?? 0;
@@ -70,5 +75,7 @@ public class CivCultureManager : IsPartOfGameInfoSerialization
 
     public void AddTourismBonusTurns(int turns) => TourismBonusTurns = Math.Max(0, unchecked(TourismBonusTurns + turns));
 
-    public CivCultureManager Clone() => new() { Entries = Entries.Select(it => it.Clone()).ToList(), TourismBonusTurns = TourismBonusTurns };
+    public void AddCultureBonusTurns(int turns) => CultureBonusTurns = Math.Max(0, unchecked(CultureBonusTurns + turns));
+
+    public CivCultureManager Clone() => new() { Entries = Entries.Select(it => it.Clone()).ToList(), TourismBonusTurns = TourismBonusTurns, CultureBonusTurns = CultureBonusTurns };
 }

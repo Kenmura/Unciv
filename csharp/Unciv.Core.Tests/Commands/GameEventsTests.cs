@@ -46,6 +46,7 @@ public sealed class GameEventsTests
         "resolution-enacted" => new ResolutionEnacted("Standing Army Tax", ""),
         "resolution-repealed" => new ResolutionRepealed("Standing Army Tax", 2),
         "resolution-failed" => new ResolutionFailed("Standing Army Tax", ""),
+        "project-completed" => new ProjectCompleted("World's Fair", [KeyValuePair.Create("Rome", 2)]),
         "dig-resolved" => new DigResolved("Babylon", 3, 4, "FindAncient", true),
         "great-work-created" => new GreatWorkCreated("Babylon", "ArtAncient", "Art", "city-1", "Museum", 0),
         "great-work-moved" => new GreatWorkMoved("Babylon", "ArtAncient", "city-1", "Museum", 0, "city-2", "Museum", 1),

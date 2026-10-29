@@ -25,3 +25,7 @@ public sealed record ResolutionRepealed(string Resolution, int ActiveId) : Engin
 /// <summary>The vote on <paramref name="Resolution"/> failed.</summary>
 [EventType("resolution-failed", EventAudience.Everyone)]
 public sealed record ResolutionFailed(string Resolution, string Choice) : EngineEvent;
+
+/// <summary>The league project <paramref name="Project"/> was completed; <paramref name="Tiers"/> is the reward tier (0 to 3) of every living member.</summary>
+[EventType("project-completed", EventAudience.Everyone)]
+public sealed record ProjectCompleted(string Project, IReadOnlyList<KeyValuePair<string, int>> Tiers) : EngineEvent;
