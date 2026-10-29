@@ -1,5 +1,6 @@
 using Unciv.Assets;
 using Unciv.Queries.Empire;
+using Unciv.Queries.Victory;
 
 namespace Unciv.Core.Tests.Assets;
 
@@ -13,11 +14,16 @@ public class RivalRibbonModelTests
 
     private static readonly (string, int)[] Everything = [("Technologies", 7), ("Culture", 120), ("Gold", 345), ("Force", 88), ("Score", 5)];
 
+    private static IReadOnlyList<RankingColumn> Columns(string civ, params (string Key, int Value)[] values) =>
+        values.Select(it => new RankingColumn(it.Key, it.Key, [new RankingEntry(new VictoryCivRef(civ, false, false), it.Value)])).ToList();
+
+    private static readonly IReadOnlyDictionary<string, TradeOptionsResult?> NoTrade = new Dictionary<string, TradeOptionsResult?>();
+
     [Fact]
     public void OnlyKnownLivingMajorCivsGetARow()
     {
-        var overview = Overview(Civ("Rome", rankings: Everything), Civ("Geneva", cityState: true), Civ("Greece", defeated: true), Civ("Persia", war: true));
-        var rows = RivalRibbonModel.Rows(overview, new Dictionary<string, TradeOptionsResult?>());
+        var overview = Overview(Civ("Rome"), Civ("Geneva", cityState: true), Civ("Greece", defeated: true), Civ("Persia", war: true));
+        var rows = RivalRibbonModel.Rows(overview, Columns("Rome", Everything), NoTrade);
         Assert.Equal(["Rome", "Persia"], rows.Select(it => it.CivName));
         Assert.True(rows[1].AtWar);
     }
@@ -25,7 +31,7 @@ public class RivalRibbonModelTests
     [Fact]
     public void FiguresAreTheEnginesRankingsInOrder()
     {
-        var row = RivalRibbonModel.Rows(Overview(Civ("Rome", rankings: Everything)), new Dictionary<string, TradeOptionsResult?>()).Single();
+        var row = RivalRibbonModel.Rows(Overview(Civ("Rome")), Columns("Rome", Everything), NoTrade).Single();
         Assert.Equal(["Science", "Culture", "Gold", "Military"], row.Figures.Select(it => it.Id));
         Assert.Equal(["7", "120", "345", "88"], row.Figures.Select(it => it.Text));
         Assert.All(row.Figures, it => Assert.True(it.Known));
@@ -36,7 +42,7 @@ public class RivalRibbonModelTests
     [Fact]
     public void HiddenRankingsAreThePlaceholder()
     {
-        var row = RivalRibbonModel.Rows(Overview(Civ("Rome")), new Dictionary<string, TradeOptionsResult?>()).Single();
+        var row = RivalRibbonModel.Rows(Overview(Civ("Rome")), null, NoTrade).Single();
         Assert.All(row.Figures, it => Assert.Equal(("?", false), (it.Text, it.Known)));
         Assert.Null(row.Luxuries);
     }
@@ -44,7 +50,7 @@ public class RivalRibbonModelTests
     [Fact]
     public void OnlyOneRankingMissingKeepsTheOthers()
     {
-        var row = RivalRibbonModel.Rows(Overview(Civ("Rome", rankings: [("Gold", 3)])), new Dictionary<string, TradeOptionsResult?>()).Single();
+        var row = RivalRibbonModel.Rows(Overview(Civ("Rome")), Columns("Rome", ("Gold", 3)), NoTrade).Single();
         Assert.Equal(["?", "?", "3", "?"], row.Figures.Select(it => it.Text));
     }
 
@@ -61,12 +67,19 @@ public class RivalRibbonModelTests
                 new TradeOfferEntry("Pearls", "Luxury_Resource", 1, 30, true),
             ], false);
         Assert.Equal(["Wine", "Pearls"], RivalRibbonModel.Luxuries(options));
-        var row = RivalRibbonModel.Rows(Overview(Civ("Rome", rankings: Everything)), new Dictionary<string, TradeOptionsResult?> { ["Rome"] = options }).Single();
+        var row = RivalRibbonModel.Rows(Overview(Civ("Rome")), Columns("Rome", Everything), new Dictionary<string, TradeOptionsResult?> { ["Rome"] = options }).Single();
         Assert.Equal(["Wine", "Pearls"], row.Luxuries);
     }
 
     [Fact]
-    public void NoOverviewMeansNoRows() => Assert.Empty(RivalRibbonModel.Rows(null, new Dictionary<string, TradeOptionsResult?>()));
+    public void ARivalMissingFromTheRankingsIsThePlaceholder()
+    {
+        var row = RivalRibbonModel.Rows(Overview(Civ("Rome")), Columns("Persia", Everything), NoTrade).Single();
+        Assert.All(row.Figures, it => Assert.Equal("?", it.Text));
+    }
+
+    [Fact]
+    public void NoOverviewMeansNoRows() => Assert.Empty(RivalRibbonModel.Rows(null, null, NoTrade));
 
     [Theory]
     [InlineData(0, "0")]

@@ -5,13 +5,15 @@ using Unciv.GodotClient.Play;
 using Unciv.Harness;
 using Unciv.Queries.Empire;
 using Unciv.Assets;
+using Unciv.Queries.Victory;
 using Unciv.UI.Screens.VictoryScreen;
+using Unciv.Utils;
 
 namespace Unciv.GodotHarness;
 
 /// <summary>
 /// C087: the rival stats ribbon on the real game screen, in the diplomacy game (Rome and a city-state are met, Greece is not). The ribbon starts collapsed to its header and
-/// lists exactly one rival, Rome: never the city-state and never the unmet Greece. Opened, Rome's science, culture, gold and military figures equal the engine's own rankings,
+/// lists exactly one rival, Rome: never the city-state and never the unmet Greece. Opened, Rome's science, culture, gold and military figures equal the engine's Rankings page values,
 /// the luxury tooltip equals the engine's trade list, and no HUD rectangle overlaps another at 640x480 and at 1280x720 (the ribbon included, and clear of the map's middle).
 /// </summary>
 public sealed class RivalRibbonScenario : Scenario
@@ -38,7 +40,9 @@ public sealed class RivalRibbonScenario : Scenario
         screen.Start(localHost, AssetRegistry.ForRuleset(game.Ruleset));
         var ribbon = screen.World.Rivals;
 
-        string Figure(RankingType type) => RivalRibbonModel.Compact(rome.GetStatForRanking(type));
+        // the Rankings page's own answer (this turn's snapshot for another civ, never live)
+        string Figure(RankingType type) => RivalRibbonModel.Compact(localHost.QueryAsync(new RankingsQuery()).GetAwaiter().GetResult().NotNull()
+            .Single(it => it.Type == type.ToString()).Entries.Single(it => it.Civ.CivName == rome.CivName).Value);
         bool FiguresEqualEngine() =>
             ribbon.FigureText(rome.CivName, "Science") == Figure(RankingType.Technologies)
             && ribbon.FigureText(rome.CivName, "Culture") == Figure(RankingType.Culture)
@@ -90,7 +94,7 @@ public sealed class RivalRibbonScenario : Scenario
             new Click(() => ribbon.Toggle.GetGlobalRect().GetCenter()),
             new WaitUntil("the ribbon opens and shows Rome's figures", () => ribbon.Expanded && ribbon.FigureText(rome.CivName, "Gold") != null),
             new WaitFrames(2),
-            new AssertQuery("Rome's science, culture, gold and military equal the engine's own rankings", FiguresEqualEngine),
+            new AssertQuery("Rome's science, culture, gold and military equal the engine's Rankings page values", FiguresEqualEngine),
             new AssertQuery("the luxury tooltip equals the engine's trade list for Rome", LuxuriesEqualEngine),
             new AssertQuery("at 640x480 (Compact) the open ribbon overlaps no HUD rectangle, stays on screen and clear of the map's middle", () => Report(Layout())),
             new Capture("open", "Open ribbon at 640x480: Rome with science, culture, gold and military in a two-by-two grid"),

@@ -49,6 +49,7 @@ public partial class GameScreen : Control
     private const int StatusFrames = 240; // frames, not seconds: captures must not depend on machine speed
     private int bannerTurn = -1;
     private int rivalsTurn = -1;
+    private int rivalsRequest;
     private ClientSnapshot snapshot = null!; // JUSTIFY: C010 assigned by Refresh in Start
     private int previewRequest;
     private PathPreviewResult? preview;
@@ -1415,11 +1416,14 @@ public partial class GameScreen : Control
         var ribbon = World.Rivals;
         if (!force && !ribbon.Expanded && rivalsTurn == turn) return;
         rivalsTurn = turn;
+        int ticket = ++rivalsRequest;
         var overview = await queries.Overview();
+        var rankings = await queries.Rankings();
         var trade = new Dictionary<string, TradeOptionsResult?>();
         if (ribbon.Expanded)
             foreach (var rival in RivalRibbonModel.Rivals(overview)) trade[rival.CivName] = await queries.TradeOptions(rival.CivName);
-        ribbon.Show(RivalRibbonModel.Rows(overview, trade));
+        if (ticket != rivalsRequest) return; // a newer refresh is on its way; never let an older answer overwrite it
+        ribbon.Show(RivalRibbonModel.Rows(overview, rankings, trade));
     }
 
     private bool TaskCardActive => TaskCardEnabled && boundSettings != null && boundSettings.Current.ShowTutorials && !GameOver.Visible;

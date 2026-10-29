@@ -1,5 +1,6 @@
 using System.Globalization;
 using Unciv.Queries.Empire;
+using Unciv.Queries.Victory;
 using Unciv.UI.Screens.VictoryScreen;
 
 namespace Unciv.Assets;
@@ -12,8 +13,8 @@ public sealed record RivalRow(string CivName, bool AtWar, IReadOnlyList<RivalFig
 
 /// <summary>
 /// C087: the rival stats ribbon of the world HUD as plain data, Godot-free so it is unit-tested. It computes no game value and asks for nothing the visibility filter does
-/// not already allow: the figures are the engine's rankings of each known major civ (present only when the game shows rankings, the same rule as the overview's rankings
-/// page), the luxuries come from the trade screen's list of what a met civ could trade (<see cref="TradeOptionsResult.Theirs"/>), and everything else is the unknown
+/// not already allow: the figures are the engine's Rankings page values for each known major civ (<see cref="RankingsQuery"/>: refused, so "?", unless the game shows rankings and
+/// civ stats and does not hide other civs' stats; other civs' values are the turn snapshot, never live), the luxuries come from the trade screen's list of what a met civ could trade (<see cref="TradeOptionsResult.Theirs"/>), and everything else is the unknown
 /// placeholder. Science is the number of technologies researched: a rival's science per turn is private (design/SERVER.md section 3).
 /// </summary>
 public static class RivalRibbonModel
@@ -33,18 +34,21 @@ public static class RivalRibbonModel
     public static IReadOnlyList<OverviewCiv> Rivals(EmpireOverviewResult? overview) =>
         overview == null ? [] : overview.KnownCivs.Where(it => !it.IsCityState && !it.IsDefeated).ToList();
 
-    public static IReadOnlyList<RivalRow> Rows(EmpireOverviewResult? overview, IReadOnlyDictionary<string, TradeOptionsResult?> trade) =>
+    /// <param name="overview">The known civs (who gets a row, and whether at war).</param>
+    /// <param name="rankings">The Rankings page columns, null when the game refuses them to the viewer.</param>
+    /// <param name="trade">Each rival's trade options by civ name.</param>
+    public static IReadOnlyList<RivalRow> Rows(EmpireOverviewResult? overview, IReadOnlyList<RankingColumn>? rankings, IReadOnlyDictionary<string, TradeOptionsResult?> trade) =>
         Rivals(overview).Select(civ => new RivalRow(civ.CivName, civ.AtWar,
-            Figures.Select(it => Figure(it, civ)).ToList(),
+            Figures.Select(it => Figure(it, civ.CivName, rankings)).ToList(),
             trade.GetValueOrDefault(civ.CivName) is { } options ? Luxuries(options) : null)).ToList();
 
     /// <summary>The luxuries the rival could trade now, in the engine's order.</summary>
     public static IReadOnlyList<string> Luxuries(TradeOptionsResult options) =>
         options.Theirs.Where(it => it.Type == "Luxury_Resource" && it.Tradable).Select(it => it.Name).ToList();
 
-    private static RivalFigure Figure((RankingType Ranking, string Id, AssetKey Icon, string Label) figure, OverviewCiv civ) =>
-        civ.Rankings.TryGetValue(figure.Ranking.ToString(), out int value)
-            ? new RivalFigure(figure.Id, figure.Icon, Compact(value), figure.Label, true)
+    private static RivalFigure Figure((RankingType Ranking, string Id, AssetKey Icon, string Label) figure, string civ, IReadOnlyList<RankingColumn>? rankings) =>
+        rankings?.FirstOrDefault(it => it.Type == figure.Ranking.ToString())?.Entries.FirstOrDefault(it => it.Civ.CivName == civ) is { } entry
+            ? new RivalFigure(figure.Id, figure.Icon, Compact(entry.Value), figure.Label, true)
             : new RivalFigure(figure.Id, figure.Icon, Unknown, figure.Label, false);
 
     /// <summary>Whole numbers up to 9999, then thousands with one decimal ("12.3k") so a column stays narrow.</summary>
