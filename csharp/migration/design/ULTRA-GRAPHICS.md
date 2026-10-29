@@ -1,5 +1,20 @@
 # Ultra graphics: what "ray tracing / AAA shaders" can mean for this client (T264)
 
+<!-- toc -->
+## Contents
+
+- [0. How this was verified (and what was not)](#0-how-this-was-verified-and-what-was-not)
+- [1. Feasibility of hardware ray tracing (honest answer)](#1-feasibility-of-hardware-ray-tracing-honest-answer)
+- [2. Ranked effects: payoff versus cost](#2-ranked-effects-payoff-versus-cost)
+- [3. Coexistence](#3-coexistence)
+  - [Harness goldens (llvmpipe)](#harness-goldens-llvmpipe)
+  - [Android (T259)](#android-t259)
+  - [Quality setting model (C043)](#quality-setting-model-c043)
+- [4. Recommended minimum-scope Ultra preset and fallback](#4-recommended-minimum-scope-ultra-preset-and-fallback)
+- [5. Prototype evidence](#5-prototype-evidence)
+- [6. Go/no-go and provisional ticket scope](#6-gono-go-and-provisional-ticket-scope)
+<!-- /toc -->
+
 Source: GitHub issue #3 ("rtx on feature", owner unsure how feasible). This is a spike: it states what Godot 4.7.2 offers, what we could and could not verify, and recommends a minimum-scope preset. Ticket C097 implements it.
 
 Decision: go, for a cheap Ultra preset on the Forward+ renderer (shadows, tone mapping, glow, SSAO, optional MSAA/TAA and water/terrain shader polish); no-go on hardware ray tracing.
@@ -8,7 +23,7 @@ Decision: go, for a cheap Ultra preset on the Forward+ renderer (shadows, tone m
 
 - Pinned engine: Godot 4.7.2 .NET (`Unciv.Godot.Harness/tools/setup-godot.sh`). Project renderer: `gl_compatibility`, also for mobile (`project.godot`). Map scene: `Map/MapView.cs` (one `DirectionalLight3D`, flat ambient `Environment`, terrain chunk meshes with vertex colours, `Assets/MapMaterials.cs`).
 - Prototype (evidence only, never merged): throw-away branch `proto/T264-ultra` (local, commit 86b640000c) adds env-var driven `Environment` effects to `MapView._Ready`. It was run through the existing `terrain-3d` scenario with the real client code, `--rendering-method` and `--rendering-driver` overridden by hand.
-- **Every render below came from Mesa software rasterizers, never from a real GPU**: OpenGL 3 on llvmpipe for `gl_compatibility`, and Vulkan 1.4 on **lavapipe** (Mesa's CPU Vulkan driver, `lvp_icd`) for Forward+ and Mobile. Godot reported `Forward+ - Using Device #1: Unknown - llvmpipe`. lavapipe proves the effects compile and run, nothing about speed or about hardware ray tracing.
+- **Every render below came from Mesa software rasterizers, never from a real GPU**: OpenGL 3 on llvmpipe for `gl_compatibility`, and Vulkan 1.4 on **lavapipe** (Mesa's CPU Vulkan driver, `lvp_icd`) for Forward+ (a Mobile-renderer run was started but not inspected). Godot reported `Forward+ - Using Device #1: Unknown - llvmpipe`. lavapipe proves the effects compile and run, nothing about speed or about hardware ray tracing.
 - Not verified, because no GPU exists on this machine: frame cost of any effect (all numbers in the cost column are estimates from general experience and are labelled so), behaviour on real Vulkan/GL drivers, Android, macOS (MoltenVK), hardware ray tracing at all.
 - Ray tracing API presence was checked by listing the symbols in the pinned `GodotSharp.dll`, not by running anything (see section 1).
 
@@ -35,7 +50,7 @@ Cost classes are estimates for a mid-range GPU at 1080p, **not measured** (no GP
 | 2 | Tone mapping (ACES/AgX) plus mild glow | High, cheap "film look" | low | compat (glow in compat since 4.3; unverified for 4.7.2 mobile GPUs), Mobile, Forward+ | rendered in compat (tone diff 15.8, glow diff 2.2) |
 | 3 | Custom water shader (animated normal, fresnel, depth tint, shoreline foam) | High: most of the map is ocean/coast | low-medium | all renderers (spatial shader) | not prototyped; payoff by reasoning only |
 | 4 | Terrain shader polish (triplanar noise detail, slope blend, wind on vegetation) | Medium-high | low | all renderers | not prototyped |
-| 5 | SSAO (and SSIL) | Medium on figures/props, little on flat terrain | medium | Forward+ and Mobile only (not compat) | rendered under Forward+/lavapipe but the change on flat terrain was tiny (0.09 / 0.24 against the Forward+ baseline); needs a scene with props to judge. In compat the flag had no visible intent (a 1.8 difference appeared that we did not explain) |
+| 5 | SSAO (and SSIL) | Medium on figures/props, little on flat terrain | medium | Forward+ only (not Mobile, not compat) | rendered under Forward+/lavapipe but the change on flat terrain was tiny (0.09 / 0.24 against the Forward+ baseline); needs a scene with props to judge. In compat the flag had no visible intent (a 1.8 difference appeared that we did not explain) |
 | 6 | MSAA 2x/4x or TAA | Medium: hex edges, thin lines | low (MSAA) to medium | MSAA: compat/Mobile/Forward+; TAA/FSR2: Forward+ | not prototyped |
 | 7 | SSR on water | Medium-low at top-down angles | medium | Forward+ only | not prototyped |
 | 8 | Volumetric fog / god rays | Low for the game, risky | high | Forward+ only | washed the whole scene to grey with density 0.02 (render diff 217); needs real tuning, looks wrong on an orthogonal map camera |
@@ -86,7 +101,7 @@ Four renders of the existing `terrain-3d` `angle-high` step (640x480), from the 
 | `ultra-graphics/forwardplus-no-effects.png` | Forward+, Vulkan, lavapipe | none |
 | `ultra-graphics/forwardplus-ssao-glow-shadow-tonemap.png` | same | SSAO, glow, shadows, ACES |
 
-What the images show: effects run; Forward+ with no effects is noticeably brighter and more saturated than compat (the colour-shift finding); ACES plus glow brightens and softens the island. They do not show a convincing AAA gain on this tiny flat scene; SSAO is nearly invisible here. No GPU timing exists.
+What the images show: effects run; Forward+ with no effects is noticeably brighter and paler (lower contrast) than compat (the colour-shift finding); ACES plus glow brightens and softens the island. They do not show a convincing AAA gain on this tiny flat scene; SSAO is nearly invisible here. No GPU timing exists.
 
 ## 6. Go/no-go and provisional ticket scope
 
