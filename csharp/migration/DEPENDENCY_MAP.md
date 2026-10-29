@@ -136,7 +136,7 @@ flowchart TD
   class B029 ready
   class B030 ready
   class B031 ready
-  class B032 prog
+  class B032 review
   class C070 prog
   class C071 ondeck
   class C072 ready
@@ -241,7 +241,7 @@ xychart-beta
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | B026 | Available (waiting on B006, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
-| B032 | In-Progress [Claude] | B010 | 0 | BNW generator: write TriggersArchaeologicalSites on the Archaeology tech |
+| B032 | Needs-Review [Claude] | B010 | 0 | BNW generator: write TriggersArchaeologicalSites on the Archaeology tech |
 | C079 | Available (waiting on C078) | C078 | 0 | Responsive and localization pass |
 | C085 | Available (waiting on C094) | C094 | 0 | Unit model LOD and performance caps |
 | C086 | Available (waiting on C094) | C094 | 0 | Unit combat polish: effects and sounds |
