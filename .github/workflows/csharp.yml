@@ -1,6 +1,6 @@
 # CI for the C# migration (csharp/). Separate from the Kotlin/Gradle workflows, which it does not touch: it only runs when csharp/**, the rulesets
 # the engine reads (android/assets/jsons/**) or this file change. Mirrors the local "Green gate" of csharp/migration/PROTOCOL.md.
-# Read-only: no secrets, no artifact upload, nothing is published (release builds stay local, see csharp/Unciv.Godot/GODOT.md).
+# Read-only: no secrets, nothing is published (release builds stay local, see csharp/Unciv.Godot/GODOT.md).
 name: C# build and test
 
 on:
@@ -190,6 +190,14 @@ jobs:
           # A comparison that cannot fail would pass everything: a wrong golden must be rejected
           tools/run-scenario.sh menu --expect-golden-failure || failed+=("menu --expect-golden-failure")
           if (( ${#failed[@]} )); then echo "FAILED: ${failed[*]}" >&2; exit 1; fi
+      # T255: the rendered PNGs of a failed run, to compare with golden/ (the only way to see what the runner drew)
+      - name: Upload the rendered scenarios
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: scenario-renders
+          path: csharp/Unciv.Godot.Harness/out/
+          retention-days: 7
 
   # Long AI-only games (T167). Env-gated, skipped by every other run.
   soak:
