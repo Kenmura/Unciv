@@ -253,6 +253,17 @@ Chateau (`AdjacentLuxury`, `NoTwoAdjacent`), Kasbah, Brazilwood Camp, Terrace Fa
 **Eras / Speeds** [D]: `Eras.LeaguePercent`, `TradeRouteFoodBonusTimes100`, `TradeRouteProductionBonusTimes100`,
 `WarmongerPercent`, and `GameSpeeds.LeaguePercent` → JSON fields on `Era`/`Speed`.
 
+**B003 result (declared hooks).** 106 `UniqueType` rows (ordinals 644..749, `UniqueTypeDataBnw.cs`, enum members after `BnwHappinessRules`),
+declarations, parameter types and docs only; no effect is wired. Deliberate deviations from the proposed texts above: (1) the `[Land/Sea]`
+and `[+amount]` forms are split into `Land`/`Sea` rows (`LandTradeRouteRange`, `SeaTradeRouteRange`, `GoldFromLandTradeRoutes`,
+`GoldFromSeaTradeRoutes`) and use `[relativeAmount]`, because no new `UniqueParameterType` was added; (2) Great Work names use the
+untyped `[param]` until B030 adds a Great Work parameter type; (3) the unit-XP domain uses `[mapUnitFilter]`. JSON-field columns
+(theming bonuses, slots, `requiredPolicyBranch`, era/speed percents, branch adopter fields), `Level`, `NotWithUpgrade`,
+`PromotionPrereqOr7..9`, `PolicyType`, `FreeUnit`@tech, `DisplacePillager` and `PromptWhenComplete` get no unique (fields, existing
+conditionals or UI only). Reuse instead of new rows: Great Person rate per era (conditional), `Ignores Zone of Control`,
+`Cannot build [baseUnitFilter] units`, `[relativeAmount]% construction time for [improvementFilter] improvements` (Worker speed),
+`[relativeAmount]% maintenance costs`. Open [K]/[?] items are not resolved (no decompiler output in the repo); the spec values stand.
+
 ### 3.3 Object diff vs Unciv G&K (`data/derived/objects_unciv_gk_vs_bnw.txt`)
 - **Renames only** (same object, keep the Unciv name): The Pyramids, The Oracle, The Great Library, The Great
   Lighthouse, The Louvre (Unciv prefixes "The"); Railroads→Railroad and Pharmaceuticals→Penicillin (BNW tech names; take

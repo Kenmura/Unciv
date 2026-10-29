@@ -96,6 +96,17 @@ public sealed class VanillaRulesetTests : IDisposable
     }
 
     [Fact]
+    public void BnwHookUniqueTypesAreUnusedInTheShippedRulesets()
+    {
+        // B003: the hooks are declarations only; nothing in the shipped rulesets reaches them (G&K behaviour is unchanged).
+        foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
+        {
+            var used = LoadBase(baseRuleset).AllUniques().Where(it => it.Type > UniqueType.BnwHappinessRules).ToList();
+            Assert.Empty(used);
+        }
+    }
+
+    [Fact]
     public void ObjectNamesAreUniqueKeysAndOriginIsSet()
     {
         foreach (var baseRuleset in Enum.GetValues<BaseRuleset>().Where(it => it != BaseRuleset.Civ_V_BNW))
