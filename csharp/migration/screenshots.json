@@ -1682,5 +1682,27 @@
         "caption": "A confirmation modal on a phone: centred, readable, both choices touch targets."
       }
     ]
+  },
+  "T284": {
+    "scenario": "phone-tables",
+    "about": "The overview (all tabs), diplomacy, trade and espionage screens on a 2400x1080 400 ppi phone profile: touch-sized buttons, no clipped or overlapping text, no content behind a container that cannot scroll.",
+    "shots": [
+      {
+        "golden": "phone-tables/overview-cities.png",
+        "caption": "Overview cities table on a phone: the row's Go-to arrow is a 48 dp target (it was 110 px), bulk actions below."
+      },
+      {
+        "golden": "phone-tables/diplomacy.png",
+        "caption": "Diplomacy on a phone: civ list and Rome's panel, Declare war and Denounce are touch targets."
+      },
+      {
+        "golden": "phone-tables/trade.png",
+        "caption": "Trade on a phone: both offer columns, the summary and Propose trade fit."
+      },
+      {
+        "golden": "phone-tables/espionage.png",
+        "caption": "Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer."
+      }
+    ]
   }
 }

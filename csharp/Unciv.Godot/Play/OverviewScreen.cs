@@ -490,7 +490,7 @@ public partial class OverviewScreen : PanelContainer
         data.SetRows(table.Rows.Select(it => (IReadOnlyList<string>)it.Cells).ToList(), jump == null ? null : index =>
         {
             string key = table.Rows[index].Key;
-            var button = new IconButton(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "ArrowRight"), "Go to") { Name = $"Jump_{tab}_{key}" };
+            var button = new IconButton(theme, AssetKey.Of(RulesetAssetKeys.UiIcon, "ArrowRight"), "Go to") { Name = $"Jump_{tab}_{key}", CustomMinimumSize = new Vector2(theme.MinTargetPx, theme.MinTargetPx) };
             button.Pressed += () => jump(key);
             jumpButtons[tab + "/" + key] = button;
             return button;

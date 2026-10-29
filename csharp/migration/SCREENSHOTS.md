@@ -86,6 +86,7 @@
 - [C101 Phone layouts of the full screens (split by screen group when claimed): HUD and menus, city, tech and policy, tables, pedia](#c101-phone-layouts-of-the-full-screens-split-by-screen-group-when-claimed-hud-and-menus-city-tech-and-policy-tables-pedia)
 - [T252 (ticket not Done or unknown)](#t252-ticket-not-done-or-unknown)
 - [T256 (ticket not Done or unknown)](#t256-ticket-not-done-or-unknown)
+- [T284 (ticket not Done or unknown)](#t284-ticket-not-done-or-unknown)
 - [Missing screenshots](#missing-screenshots)
 <!-- /toc -->
 
@@ -1740,6 +1741,28 @@ Scenario `unit-visuals`.
 ![Aircraft, missiles and the helicopter: aircraft hover on a pole above their shadow, the helicopter stands on its skids.](../Unciv.Godot.Harness/golden/unit-visuals/air.png)
 
 *Aircraft, missiles and the helicopter: aircraft hover on a pole above their shadow, the helicopter stands on its skids.* (`unit-visuals/air.png`)
+
+## T284 (ticket not Done or unknown)
+
+The overview (all tabs), diplomacy, trade and espionage screens on a 2400x1080 400 ppi phone profile: touch-sized buttons, no clipped or overlapping text, no content behind a container that cannot scroll.
+
+Scenario `phone-tables`.
+
+![Overview cities table on a phone: the row's Go-to arrow is a 48 dp target (it was 110 px), bulk actions below.](../Unciv.Godot.Harness/golden/phone-tables/overview-cities.png)
+
+*Overview cities table on a phone: the row's Go-to arrow is a 48 dp target (it was 110 px), bulk actions below.* (`phone-tables/overview-cities.png`)
+
+![Diplomacy on a phone: civ list and Rome's panel, Declare war and Denounce are touch targets.](../Unciv.Godot.Harness/golden/phone-tables/diplomacy.png)
+
+*Diplomacy on a phone: civ list and Rome's panel, Declare war and Denounce are touch targets.* (`phone-tables/diplomacy.png`)
+
+![Trade on a phone: both offer columns, the summary and Propose trade fit.](../Unciv.Godot.Harness/golden/phone-tables/trade.png)
+
+*Trade on a phone: both offer columns, the summary and Propose trade fit.* (`phone-tables/trade.png`)
+
+![Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer.](../Unciv.Godot.Harness/golden/phone-tables/espionage.png)
+
+*Espionage on a phone: the spy table with Move and Coup buttons, Assign spies in the footer.* (`phone-tables/espionage.png`)
 
 ## Missing screenshots
 
