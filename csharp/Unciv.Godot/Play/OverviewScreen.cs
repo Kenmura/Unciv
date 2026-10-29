@@ -28,6 +28,7 @@ public partial class OverviewScreen : PanelContainer
     private Label message = null!; // JUSTIFY: C074 assigned by BuildFrame in the constructor
     private TabBar tabs = null!; // JUSTIFY: C074 assigned by BuildFrame in the constructor
     private string selectedTab = OverviewModel.Stats;
+    private string messageText = "";
     private int generation;
 
     public OverviewScreen(IGameSession gameSession, UiTheme uiTheme)
@@ -61,12 +62,17 @@ public partial class OverviewScreen : PanelContainer
             frame.QueueFree();
         }
         pages.Clear();
+        jumpButtons.Clear(); // the controls of the old frame are gone; the next refresh fills them again
+        spyButtons.Clear();
+        tables.Clear();
+        dataTables.Clear();
+        notices.Clear();
         frame = new ScreenFrame(theme, "Overview", closeLabel: "Close overview");
         frame.CloseRequested += Close;
         AddChild(frame);
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", theme.Px(UiTokens.S2));
-        message = new Label { Name = "Message", ThemeTypeVariation = UiVariants.LabelSecondary, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, Visible = false };
+        message = new Label { Name = "Message", ThemeTypeVariation = UiVariants.LabelSecondary, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, Text = messageText, Visible = messageText.Length > 0 };
         column.AddChild(message);
         tabs = new TabBar { Name = "OverviewTabs", SizeFlagsVertical = SizeFlags.ExpandFill };
         column.AddChild(tabs);
@@ -87,7 +93,7 @@ public partial class OverviewScreen : PanelContainer
     /// <summary>The name of the tab now shown.</summary>
     public string SelectedTab => OverviewModel.Tabs[Math.Max(0, tabs.SelectedIndex)];
 
-    public string MessageText => message.Text;
+    public string MessageText => messageText;
 
     /// <summary>The tables of a page as drawn (the ranking tab has one per column); empty when the page shows a notice instead.</summary>
     public IReadOnlyList<OverviewTable> Tables(string tab) => tables.TryGetValue(tab, out var list) ? list : [];
@@ -318,7 +324,7 @@ public partial class OverviewScreen : PanelContainer
     public static Button CoupButton(UiTheme theme, string spy, string text, string tooltip, bool danger) => new()
     {
         Name = $"Spy_{spy}_Coup", Text = text.TrText(), TooltipText = tooltip.TrText(), ClipText = true, ThemeTypeVariation = danger ? UiVariants.ButtonDanger : UiVariants.ButtonSecondary,
-        CustomMinimumSize = new Vector2(theme.Px(80), 0f),
+        CustomMinimumSize = new Vector2(theme.Px(112), 0f),
     };
 
     private async Task Send(GameCommand command)
@@ -358,6 +364,7 @@ public partial class OverviewScreen : PanelContainer
 
     private void SetMessage(string text)
     {
+        messageText = text;
         message.Text = text;
         message.Visible = text.Length > 0;
     }

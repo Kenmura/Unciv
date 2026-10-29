@@ -376,7 +376,7 @@
     "shots": [
       {
         "golden": "espionage/screen.png",
-        "caption": "The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red coup button; the places table below and the primary Assign spies button in the footer."
+        "caption": "The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red Coup 35% button; the places table below and the primary Assign spies button in the footer."
       },
       {
         "golden": "espionage/selecting.png",
@@ -432,7 +432,7 @@
     "shots": [
       {
         "golden": "overview-espionage/espionage.png",
-        "caption": "Espionage tab: a table of the spies (rank, location, action) with a red Coup 3 button on the spy in the city-state, then a chip per destination the engine offers each spy."
+        "caption": "Espionage tab: a table of the spies (rank, location, action) with a red Coup 35% button on the spy in the city-state, then a chip per destination the engine offers each spy."
       },
       {
         "golden": "overview-espionage/moved.png",

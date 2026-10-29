@@ -914,9 +914,9 @@ Overview espionage and global politics tabs in a game with espionage on: spy mov
 
 Scenario `overview-espionage`.
 
-![Espionage tab: a table of the spies (rank, location, action) with a red Coup 3 button on the spy in the city-state, then a chip per destination the engine offers each spy.](../Unciv.Godot.Harness/golden/overview-espionage/espionage.png)
+![Espionage tab: a table of the spies (rank, location, action) with a red Coup 35% button on the spy in the city-state, then a chip per destination the engine offers each spy.](../Unciv.Godot.Harness/golden/overview-espionage/espionage.png)
 
-*Espionage tab: a table of the spies (rank, location, action) with a red Coup 3 button on the spy in the city-state, then a chip per destination the engine offers each spy.* (`overview-espionage/espionage.png`)
+*Espionage tab: a table of the spies (rank, location, action) with a red Coup 35% button on the spy in the city-state, then a chip per destination the engine offers each spy.* (`overview-espionage/espionage.png`)
 
 ![The first spy was sent to Rome's capital; the page shows its new location.](../Unciv.Godot.Harness/golden/overview-espionage/moved.png)
 
@@ -936,9 +936,9 @@ Espionage screen: the spies and the places they can go, Move/Cancel/Move here, t
 
 Scenario `espionage`.
 
-![The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red coup button; the places table below and the primary Assign spies button in the footer.](../Unciv.Godot.Harness/golden/espionage/screen.png)
+![The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red Coup 35% button; the places table below and the primary Assign spies button in the footer.](../Unciv.Godot.Harness/golden/espionage/screen.png)
 
-*The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red coup button; the places table below and the primary Assign spies button in the footer.* (`espionage/screen.png`)
+*The espionage screen in its frame: a table of the spies with rank, location, action, a Move button and, for the spy in the city-state, a red Coup 35% button; the places table below and the primary Assign spies button in the footer.* (`espionage/screen.png`)
 
 ![Move was pressed on the first spy: Move became Cancel and the places the engine offers it show a Move here button at the end of their rows.](../Unciv.Godot.Harness/golden/espionage/selecting.png)
 
