@@ -118,7 +118,7 @@ flowchart TD
   classDef review fill:#cfe4ff,stroke:#1f6feb,color:#000
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
-  class B006 ready
+  class B006 prog
   class B014 prog
   class B015 review
   class B016 ondeck
@@ -212,7 +212,6 @@ xychart-beta
 | C076 | **Ready to start** | C066 | 6 | Civilopedia and tooltip content |
 | C077 | **Ready to start** | C066, C067 | 6 | Victory, defeat and vote result screens |
 | C083 | **Ready to start** | C081 | 5 | Unit art pipeline |
-| B006 | **Ready to start** | B005 | 1 | BNW: Trade units: Caravan, Cargo Ship, rebasing, build restrictions, exotic goods |
 | B021 | **Ready to start** | B005, B004 | 1 | BNW: City-state BNW changes, Merchant of Venice purchase, Venice restrictions |
 | B022 | **Ready to start** | B005, B004 | 1 | BNW: Religion BNW constants, belief effects, trade-route pressure |
 | B023 | **Ready to start** | B004 | 1 | BNW: Warmonger, Sapper and other military data effects |
@@ -239,6 +238,7 @@ xychart-beta
 | B014 | In-Progress [Claude] | B013, B008 | 2 | BNW: Public opinion, opinion unhappiness, switching, anarchy |
 | C089 | Available (waiting on C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
+| B006 | In-Progress [Claude] | B005 | 1 | BNW: Trade units: Caravan, Cargo Ship, rebasing, build restrictions, exotic goods |
 | C090 | Available (waiting on C089) | C089, T181, T244, C045 | 1 | Shared map pings and team markers (multiplayer) |
 | B026 | Available (waiting on B006, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025) | B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B011, B012, B013, B014, B015, B016, B017, B018, B019, B020, B021, B022, B023, B024, B025 | 0 | BNW: Headless 300-turn BNW soak with replay/save equality |
 | B033 | In-Progress [Claude] | B032 | 0 | BNW generator sweep: unread Technologies.tsv columns and per-feature 'fires in real ruleset' tests |
