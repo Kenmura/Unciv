@@ -76,7 +76,7 @@ flowchart TD
   class C091 review
   class C096 waiting
   class C097 waiting
-  class T247 prog
+  class T247 review
   class T258 waiting
   class T259 waiting
   class T260 waiting
@@ -145,7 +145,7 @@ xychart-beta
 | C091 | Needs-Review [Claude-C091] | C068, C078 | 0 | Group move and escort macro (client-side) |
 | C096 | Available (waiting on T259) | T259, C043 | 0 | Touch and small-screen client UI: gestures, hit targets, layout for phone and tablet |
 | C097 | Available (waiting on T264) | T264, C043, C002 | 0 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
-| T247 | In-Progress [Claude-T247] | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
+| T247 | Needs-Review [Claude-T247] | T170, T181, C035, T244, C090 | 0 | Mod sync in the lobby: checksum diff, transfer and hot-load |
 | T258 | Available (waiting on ) | C042, T169 | 0 | Windows and macOS client release builds (packaged, smoke-tested, released) |
 | T260 | Available (waiting on T259) | T259 | 0 | Android APK build: export preset, debug-signed APK in CI, smoke on an emulator or device |
 | T262 | Available (waiting on T261) | T261 | 0 | Optimise the top turn-time hotspots with proof of identical game state |
