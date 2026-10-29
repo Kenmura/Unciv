@@ -53,7 +53,7 @@ public sealed class SoakTests : IDisposable
 
     public void Dispose() => RulesetCache.Clear();
 
-    private static string JsonsPath()
+    internal static string JsonsPath()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
         {
@@ -84,7 +84,7 @@ public sealed class SoakTests : IDisposable
 
     private sealed record SoakResult(int Turns, string? Winner, double MaxTurnSeconds, double TotalSeconds, long PeakManagedBytes, List<ulong> SampledHashes, GameInfo Game);
 
-    private static ulong Hash(GameInfo game) => StateHasher.ComputeHash(h => h.Add(UncivFiles.GameInfoToString(game, forceZip: false)));
+    internal static ulong Hash(GameInfo game) => StateHasher.ComputeHash(h => h.Add(UncivFiles.GameInfoToString(game, forceZip: false)));
 
     // Plays up to TurnLimit turns, stops at the first victory. Runs on its own thread so a hang fails the test instead of the run.
     private SoakResult Play(GameInfo game, string label, bool sampleHashes, int stopAt = TurnLimit)
@@ -138,7 +138,7 @@ public sealed class SoakTests : IDisposable
         return new SoakResult(game.Turns, winner, maxTurn, total.Elapsed.TotalSeconds, System.Math.Max(peak, final), hashes, game);
     }
 
-    private static string Excerpt(string text, int at)
+    internal static string Excerpt(string text, int at)
     {
         var start = System.Math.Max(0, at - 200);
         return text.Substring(start, System.Math.Min(400, text.Length - start));
@@ -190,11 +190,11 @@ public sealed class SoakTests : IDisposable
     }
 
     // A compact, order-independent digest of what a player sees: if a reloaded game and the original ever disagree on this, they have diverged.
-    private static string Digest(GameInfo game) => string.Join(";", game.Civilizations.Select(it => string.Create(CultureInfo.InvariantCulture,
+    internal static string Digest(GameInfo game) => string.Join(";", game.Civilizations.Select(it => string.Create(CultureInfo.InvariantCulture,
         $"{it.CivName}:{it.Gold}:{it.Cities.Count}:{it.Cities.Sum(c => c.Population.Population)}:{it.Units.GetCivUnits().Count()}:{it.Tech.TechsResearched.Count}:{it.Policies.FreePolicies}:{it.IsDefeated()}")));
 
     // Religion followers/cities are JVM-style hash sets whose order depends on how the set was built: sorted before comparing text (builtBuildings are compared in order).
-    private static string Normalise(string saved) => System.Text.RegularExpressions.Regex.Replace(
+    internal static string Normalise(string saved) => System.Text.RegularExpressions.Regex.Replace(
         System.Text.RegularExpressions.Regex.Replace(saved, "\"pointsForNextGreatGeneral\":\\d+", "\"pointsForNextGreatGeneral\":0"),
         "\"(followers|cities)\":\\[([^\\]\\[]*)\\]",
         m => $"\"{m.Groups[1].Value}\":[{string.Join(",", m.Groups[2].Value.Split(',').OrderBy(x => x, StringComparer.Ordinal))}]");
@@ -207,7 +207,7 @@ public sealed class SoakTests : IDisposable
     [SoakFact]
     public void SaveLoadOfAnotherLongRunningGameReplaysIdentically() => SaveLoadReplaysIdentically(29L, 8);
 
-    private static string Saved(GameInfo game) => Normalise(UncivFiles.GameInfoToString(game, forceZip: false));
+    internal static string Saved(GameInfo game) => Normalise(UncivFiles.GameInfoToString(game, forceZip: false));
 
     private void SaveLoadReplaysIdentically(long gameSeed, int mapSeed)
     {
@@ -247,7 +247,7 @@ public sealed class SoakTests : IDisposable
         Assert.Equal(Hash(loaded), Hash(loaded2));
     }
 
-    private static void AssertSameText(string expected, string actual, string when)
+    internal static void AssertSameText(string expected, string actual, string when)
     {
         if (expected == actual) return;
         var at = 0;
