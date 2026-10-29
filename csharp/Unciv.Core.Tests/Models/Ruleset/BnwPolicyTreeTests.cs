@@ -151,4 +151,20 @@ public sealed class BnwPolicyTreeTests
         foreach (var name in new[] { "Piety", "Rationalism" })
             Assert.DoesNotContain(branches[name].Uniques, it => it.Contains("before adopting", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void AdoptingTheLastMemberAdoptsTheFinisher()
+    {
+        var branch = BnwRulesetTests.LoadBnw().PolicyBranches["Aesthetics"];
+        var civ = new TestGame().AddCiv();
+        civ.Policies.FreePolicies = 10;
+        foreach (var policy in branch.Policies.SkipLast(1))
+        {
+            Assert.False(civ.Policies.IsAdopted(branch.Policies[^1].Name));
+            civ.Policies.Adopt(policy);
+        }
+        Assert.True(civ.Policies.IsAdopted("Aesthetics Complete"));
+        Assert.False(civ.Policies.IsAdoptable(branch.Policies[^1]));
+        Assert.Equal(5, civ.Policies.FreePolicies); // the opener and four members were free picks, the finisher costs none
+    }
 }

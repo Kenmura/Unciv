@@ -168,7 +168,7 @@
 			{
 				"name": "Honor Complete",
 				"uniques": [
-					"Earn [10]% of killed [Military] unit's [Cost] as [Gold]",
+					"Earn [100]% of killed [Military] unit's [Strength] as [Gold]",
 					"Get the leader title of [[leaderName] the Great]"
 				]
 			}
@@ -453,7 +453,7 @@
 		"name": "Rationalism",
 		"era": "Renaissance era",
 		"priorities": {"Neutral": 10, "Domination": 10, "Scientific": 10},
-		"uniques": ["[+15]% [Science] <while the empire is happy>"],
+		"uniques": ["[10]% of excess happiness converted to [Science]"],
 		"policies": [
 			{
 				"name": "Secularism",
