@@ -114,8 +114,17 @@ public sealed class LobbyHost : IAsyncDisposable
     {
         public bool IsOpen => inner.IsOpen;
         public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default) => inner.SendAsync(frame, cancellationToken);
-        public ValueTask CloseAsync() => inner.CloseAsync();
-        public ValueTask DisposeAsync() => inner.DisposeAsync();
+        public ValueTask CloseAsync()
+        {
+            frames.Writer.TryComplete(); // the game side let go: a lobby reader blocked on a full channel must not wait forever
+            return inner.CloseAsync();
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            frames.Writer.TryComplete();
+            return inner.DisposeAsync();
+        }
 
         public async ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default)
         {
@@ -136,7 +145,10 @@ public sealed class LobbyHost : IAsyncDisposable
     /// Brand-new keys are refused after the start (<see cref="JoinRefusedCodes.GameAlreadyStarted"/>): join-in-progress for new
     /// players is not supported even when <see cref="LobbySettings.AllowJoinInProgress"/> is set (T250).
     /// </summary>
-    public Func<Slot, ITransport, Task>? LateSeated { get; set; }
+    public Func<LateSeat, Task>? LateSeated { get; set; }
+
+    /// <summary>A late seat captured under the lobby lock: the connection's own session id and hand-over transport travel together, so a newer connection of the same key can never be mixed with an older one.</summary>
+    public sealed record LateSeat(string SessionId, string Nation, string? PlayerKeyId, ITransport Transport);
 
     /// <summary>The transport the game host must read for a seat that was connected when the game started (null if it was not handed over).</summary>
     public ITransport? GameTransportFor(string? sessionId)
@@ -157,10 +169,12 @@ public sealed class LobbyHost : IAsyncDisposable
     /// <summary>Bounded so a client flooding frames while the game actor is busy is held back by the socket (TCP backpressure), not buffered without limit.</summary>
     private const int HandoffCapacity = 256;
 
-    private static void HandOff(LobbySession session)
+    private static ITransport HandOff(LobbySession session)
     {
         session.Handoff = Channel.CreateBounded<string>(new BoundedChannelOptions(HandoffCapacity) { SingleReader = true, SingleWriter = true, FullMode = BoundedChannelFullMode.Wait });
-        session.GameTransport = new HandoffTransport(session.Transport, session.Handoff);
+        var gameTransport = new HandoffTransport(session.Transport, session.Handoff);
+        session.GameTransport = gameTransport;
+        return gameTransport;
     }
 
     /// <summary>
@@ -351,26 +365,18 @@ public sealed class LobbyHost : IAsyncDisposable
         }
 
         bool stateChanged = false;
-        Slot? lateSlot = null;
+        LateSeat? lateSeat = null;
         ITransport? replacedTransport = null;
-        var refuseStarted = false;
         lock (gate)
         {
+            // Decided in the same lock that seats the player: a start flipping the status in between can no longer let a new key take a free slot.
             if (Status is LobbyStatus.Starting or LobbyStatus.Started
                 && (Status != LobbyStatus.Started || Bindings.SlotOf(session.PendingPlayerKey) is not int knownSeat || knownSeat >= slots.Count))
             {
-                refuseStarted = true;
+                _ = SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.GameAlreadyStarted });
+                return;
             }
-        }
 
-        if (refuseStarted)
-        {
-            await SendAsync(session.Transport, new JoinRefused { Code = JoinRefusedCodes.GameAlreadyStarted }).ConfigureAwait(false);
-            return;
-        }
-
-        lock (gate)
-        {
             session.IsAuthenticated = true;
             session.PlayerKey = session.PendingPlayerKey;
             session.DisplayName = session.PendingDisplayName;
@@ -394,8 +400,8 @@ public sealed class LobbyHost : IAsyncDisposable
                 stateChanged = true;
                 if (Status == LobbyStatus.Started)
                 {
-                    HandOff(session);
-                    lateSlot = slot;
+                    var gameTransport = HandOff(session);
+                    lateSeat = new LateSeat(session.SessionId, slot.Nation, slot.PlayerKeyId, gameTransport);
                 }
             }
             else
@@ -427,14 +433,13 @@ public sealed class LobbyHost : IAsyncDisposable
 
         await SendAsync(session.Transport, new JoinOk()).ConfigureAwait(false);
 
-        if (lateSlot != null)
+        if (lateSeat != null)
         {
             var seated = LateSeated;
-            var gameTransport = session.GameTransport;
             if (replacedTransport != null) await CloseQuietlyAsync(replacedTransport).ConfigureAwait(false);
             try
             {
-                if (seated != null && gameTransport != null) await seated(lateSlot, gameTransport).ConfigureAwait(false);
+                if (seated != null) await seated(lateSeat).ConfigureAwait(false);
             }
             catch (Exception)
             {

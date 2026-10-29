@@ -649,6 +649,125 @@ public sealed class NetLobbyTests : IDisposable
         while (await c1.ReceiveAsync(cts.Token) != null) { }
     }
 
+    [Fact]
+    public async Task ServerLobby_TwoRapidSameKeyReconnectsAfterStart_TheLatestIsSeated_NotLeftWithoutSnapshot()
+    {
+        for (var round = 0; round < 6; round++)
+        {
+            await using var lobby = new ServerLobby();
+            using var id = ClientIdentity.Generate();
+            var (c1, s1) = InMemoryTransport.CreatePair();
+            _ = lobby.AttachConnectionAsync(s1);
+            await using var first = NewClient(lobby, id, "Alice", c1);
+            Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
+            await first.SetLobbySlotAsync(0, "Rome", null, true);
+            await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+
+            var (c2, s2) = InMemoryTransport.CreatePair();
+            var (c3, s3) = InMemoryTransport.CreatePair();
+            _ = lobby.AttachConnectionAsync(s2);
+            _ = lobby.AttachConnectionAsync(s3);
+            await using var second = NewClient(lobby, id, "Alice", c2);
+            await using var third = NewClient(lobby, id, "Alice", c3);
+            var joins = await Task.WhenAll(second.JoinAsync(), third.JoinAsync()).WaitAsync(Bound);
+            Assert.All(joins, j => Assert.True(j.Joined));
+
+            // Exactly one of the two is the current connection of the key: it must be seated and playable (never JoinOk without a snapshot).
+            using var cts = new CancellationTokenSource(Bound);
+            var seatedSecond = WaitForSnapshotAsync(second, cts.Token);
+            var seatedThird = WaitForSnapshotAsync(third, cts.Token);
+            Assert.True(await await Task.WhenAny(seatedSecond, seatedThird));
+            var outcomes = await Task.WhenAll(TrySubmitAsync(second), TrySubmitAsync(third));
+            Assert.Contains(true, outcomes);
+            Assert.Single(lobby.ActiveGameHost!.Sessions.Values, x => x.BoundCivId == "Rome");
+        }
+    }
+
+    /// <summary>True when the host answered the command (accepted or not): the connection is seated and its reader works.</summary>
+    private static async Task<bool> TrySubmitAsync(ClientSession session)
+    {
+        for (var i = 0; i < 40 && session.State != ClientSessionState.InGame; i++) await Task.Delay(50);
+        try
+        {
+            return !string.IsNullOrEmpty((await session.SubmitAsync(new EndTurn()).WaitAsync(TimeSpan.FromSeconds(2))).ClientCmdId);
+        }
+        catch (TimeoutException)
+        {
+            return false; // the superseded connection is closed by the host
+        }
+    }
+
+    private static async Task<bool> WaitForSnapshotAsync(ClientSession session, CancellationToken ct)
+    {
+        try
+        {
+            await foreach (var ev in session.Events.ReadAllAsync(ct))
+                if (ev is SnapshotReplaced) return true;
+        }
+        catch (OperationCanceledException) { }
+        return false;
+    }
+
+    private sealed class FailingSendTransport(ITransport inner) : ITransport
+    {
+        private volatile bool dead;
+        public bool IsOpen => !dead && inner.IsOpen; // a socket that dies right after GameStarting: the game host's bounded sender refuses to seat it
+        public ValueTask SendAsync(string frame, CancellationToken cancellationToken = default)
+        {
+            var result = inner.SendAsync(frame, cancellationToken);
+            if (ProtocolCodec.Decode(frame) is GameStarting) dead = true;
+            return result;
+        }
+        public ValueTask<string?> ReceiveAsync(CancellationToken cancellationToken = default) => inner.ReceiveAsync(cancellationToken);
+        public ValueTask CloseAsync() => inner.CloseAsync();
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task ServerLobby_SeatingFailureDuringStart_FailsTheStart_AndLateSeatsAreDroppedInsteadOfHanging()
+    {
+        await using var lobby = new ServerLobby();
+        using var id = ClientIdentity.Generate();
+        var (c1, s1) = InMemoryTransport.CreatePair();
+        var flaky = new FailingSendTransport(s1);
+        _ = lobby.AttachConnectionAsync(flaky);
+        await using var first = NewClient(lobby, id, "Alice", c1);
+        Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
+        await first.SetLobbySlotAsync(0, "Rome", null, true);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L));
+
+        // A known key arriving now would wait for a game that never comes: its connection must be closed, not left without a snapshot.
+        var (c2, s2) = InMemoryTransport.CreatePair();
+        _ = lobby.AttachConnectionAsync(s2);
+        await using var second = NewClient(lobby, id, "Alice", c2);
+        _ = second.JoinAsync();
+        using var cts = new CancellationTokenSource(Bound);
+        while (await c2.ReceiveAsync(cts.Token) != null) { }
+    }
+
+    [Fact]
+    public async Task ServerLobby_ClosingOrDisposingTheHandOverTransport_EndsItsStream_AndFreesTheLobbyReader()
+    {
+        foreach (var dispose in new[] { false, true })
+        {
+            await using var lobby = new ServerLobby();
+            using var id = ClientIdentity.Generate();
+            var (c1, s1) = InMemoryTransport.CreatePair();
+            _ = lobby.AttachConnectionAsync(s1);
+            await using var first = NewClient(lobby, id, "Alice", c1);
+            Assert.True((await first.JoinAsync().WaitAsync(Bound)).Joined);
+            await first.SetLobbySlotAsync(0, "Rome", null, true);
+            var host = await lobby.StartGameAsync(force: true, seed: 42L, clockMillis: 5000L);
+            var sessionId = host.Sessions.Keys.Single();
+            var gameSide = lobby.Lobby.GameTransportFor(sessionId);
+            Assert.NotNull(gameSide);
+            if (dispose) await gameSide.DisposeAsync(); else await gameSide.CloseAsync();
+            Assert.Null(await gameSide.ReceiveAsync().AsTask().WaitAsync(Bound));
+            using var cts = new CancellationTokenSource(Bound);
+            while (await c1.ReceiveAsync(cts.Token) != null) { } // the socket was closed too
+        }
+    }
+
     private sealed class ThrowingTransport : ITransport
     {
         public bool IsOpen => true;

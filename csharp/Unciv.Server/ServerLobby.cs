@@ -21,6 +21,7 @@ public sealed class ServerLobby : IAsyncDisposable
     private readonly CancellationTokenSource disposed = new();
     private readonly HashSet<string> attached = new(StringComparer.Ordinal);
     private readonly Lock attachedGate = new();
+    private readonly SemaphoreSlim seatGate = new(1, 1);
     private GameHost? activeGameHost;
 
     public ServerLobby(
@@ -48,15 +49,36 @@ public sealed class ServerLobby : IAsyncDisposable
     }
 
     /// <summary>A known player reconnects after the start: their connection joins the running game (the lobby reader stays its only reader).</summary>
-    private async Task SeatLateAsync(Slot slot, ITransport gameTransport)
+    private async Task SeatLateAsync(LobbyHost.LateSeat seat)
     {
-        if (slot.SessionId == null) return;
         lock (attachedGate)
         {
-            if (!attached.Add(slot.SessionId)) return; // the start loop already seated this connection
+            if (!attached.Add(seat.SessionId)) return; // the start loop already seated this connection
         }
         var gameHost = await gameHostReady.Task.WaitAsync(disposed.Token).ConfigureAwait(false);
-        await gameHost.AttachSessionAsync(slot.SessionId, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
+        await AttachIfCurrentAsync(gameHost, seat.SessionId, seat.Nation, seat.Transport, seat.PlayerKeyId).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Seats a connection unless a newer connection of the same key already replaced it. Seating is serialised, so an older
+    /// connection whose seating ran late can never detach the newer one that was seated first.
+    /// </summary>
+    private async Task AttachIfCurrentAsync(GameHost gameHost, string sessionId, string nation, ITransport transport, string? playerKeyId)
+    {
+        await seatGate.WaitAsync(disposed.Token).ConfigureAwait(false);
+        try
+        {
+            if (lobbyHost.GameTransportFor(sessionId) == null) return; // superseded or gone
+            await gameHost.AttachSessionAsync(sessionId, nation, transport, playerKeyId).ConfigureAwait(false);
+        }
+        finally
+        {
+            seatGate.Release();
+            lock (attachedGate)
+            {
+                attached.RemoveWhere(id => id != sessionId && lobbyHost.GameTransportFor(id) == null); // keep the set to live connections
+            }
+        }
     }
 
     public LobbyHost Lobby => lobbyHost;
@@ -81,18 +103,27 @@ public sealed class ServerLobby : IAsyncDisposable
         var gameSession = new GameSession(startResult.Game);
         var gameHost = new GameHost(gameSession, store, clock: clock);
 
-        foreach (var slot in startResult.Slots)
+        try
         {
-            if (slot.Kind != SlotKind.Human || !slot.Connected || slot.SessionId == null) continue;
-            // The hand-over transport, never the raw one: the lobby reader keeps reading the socket and forwards to the game.
-            // No hand-over (superseded or gone) means nobody seats it; a raw attach would bring back the two-reader race.
-            var gameTransport = lobbyHost.GameTransportFor(slot.SessionId);
-            if (gameTransport == null) continue;
-            lock (attachedGate)
+            foreach (var slot in startResult.Slots)
             {
-                if (!attached.Add(slot.SessionId)) continue; // a late seat in the start window already claimed it
+                if (slot.Kind != SlotKind.Human || !slot.Connected || slot.SessionId == null) continue;
+                // The hand-over transport, never the raw one: the lobby reader keeps reading the socket and forwards to the game.
+                // No hand-over (superseded or gone) means nobody seats it; a raw attach would bring back the two-reader race.
+                var gameTransport = lobbyHost.GameTransportFor(slot.SessionId);
+                if (gameTransport == null) continue;
+                lock (attachedGate)
+                {
+                    if (!attached.Add(slot.SessionId)) continue; // a late seat in the start window already claimed it
+                }
+                await AttachIfCurrentAsync(gameHost, slot.SessionId, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
             }
-            await gameHost.AttachSessionAsync(slot.SessionId, slot.Nation, gameTransport, slot.PlayerKeyId).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            gameHostReady.TrySetException(ex); // late seats waiting for the game must fail (and drop their connection), not hang
+            await gameHost.DisposeAsync().ConfigureAwait(false);
+            throw;
         }
 
         activeGameHost = gameHost;
@@ -103,10 +134,11 @@ public sealed class ServerLobby : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await disposed.CancelAsync().ConfigureAwait(false);
-        await lobbyHost.DisposeAsync().ConfigureAwait(false);
         if (activeGameHost != null)
         {
+            // The game first: it can still tell its players the host is closing before the lobby closes the sockets.
             await activeGameHost.DisposeAsync().ConfigureAwait(false);
         }
+        await lobbyHost.DisposeAsync().ConfigureAwait(false);
     }
 }
