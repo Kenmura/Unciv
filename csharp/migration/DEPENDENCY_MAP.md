@@ -70,17 +70,17 @@ flowchart TD
   classDef blocked fill:#ffd6d6,stroke:#c62828,color:#000
   classDef done fill:#eeeeee,stroke:#999999,color:#666,stroke-dasharray:4 3
   class C096 ondeck
-  class C097 waiting
+  class C097 ondeck
   class T258 ready
   class T259 prog
   class T260 ondeck
   class T261 ready
   class T262 waiting
   class T263 waiting
-  class T264 ready
+  class T264 prog
   class T265 ready
   class T266 waiting
-  class T267 prog
+  class T267 ready
   class T268 ready
   class T269 waiting
   class T270 waiting
@@ -130,15 +130,15 @@ xychart-beta
 |---|---|---|---|---|
 | T261 | **Ready to start** | T227, T178, T208, B026 | 2 | Turn-time profiling harness and baseline: where end-turn time goes (AI per civ, per phase, host delta build) |
 | T265 | **Ready to start** | T178, T179, T204, T205 | 2 | Dedicated server executable A: Unciv.Server command line, lobby and game hosting over TCP+TLS |
-| T264 | **Ready to start** | C002, C043 | 1 | Ultra graphics spike: what 'ray tracing / AAA shaders' can mean in Godot for this client, cost and fallbacks |
+| T267 | **Ready to start** | T177, T202, T178, T180, T226 | 1 | AI takeover of a departed player only at the end of the turn (never mid-turn) |
 | T268 | **Ready to start** | T178, T180, T176, T230, T173, T182, T179, T205 | 1 | Host migration spike: automatic successor host when the host leaves (design with acceptance criteria) |
 | T258 | **Ready to start** | C042, T169 | 0 | Windows and macOS client release builds (packaged, smoke-tested, released) |
 | C096 | **On deck** (after T259) | T259, C043 | 0 | Touch and small-screen client UI: gestures, hit targets, layout for phone and tablet |
+| C097 | **On deck** (after T264) | T264, C043, C002 | 0 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
 | T260 | **On deck** (after T259) | T259 | 0 | Android APK build: export preset, debug-signed APK in CI, smoke on an emulator or device |
 | T259 | In-Progress [Claude-T259] | C042, T169, T249 | 2 | Android client spike: Godot .NET Android export feasibility, device requirements and the touch-UI gap list |
-| T267 | In-Progress [Claude-T267] | T177, T202, T178, T180, T226 | 1 | AI takeover of a departed player only at the end of the turn (never mid-turn) |
+| T264 | In-Progress [Claude-T264] | C002, C043 | 1 | Ultra graphics spike: what 'ray tracing / AAA shaders' can mean in Godot for this client, cost and fallbacks |
 | T270 | Available (waiting on T265) | T265, T176, T254 | 1 | Dedicated server executable B: graceful shutdown, persistence and resume, exit codes, subprocess test |
-| C097 | Available (waiting on T264) | T264, C043, C002 | 0 | Graphics quality setting with an Ultra preset (effects chosen by the ultra graphics spike) |
 | T262 | Available (waiting on T261) | T261 | 0 | Optimise the top turn-time hotspots with proof of identical game state |
 | T263 | Available (waiting on T261) | T261 | 0 | Parallelism spike: which turn work can run in parallel without breaking determinism (go/no-go) |
 | T266 | Available (waiting on T270) | T270 | 0 | Dedicated server distribution: self-contained Linux and Windows builds in releases and CI, run guide |
