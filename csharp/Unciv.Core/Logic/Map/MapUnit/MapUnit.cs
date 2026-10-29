@@ -429,7 +429,9 @@ public partial class MapUnit : IsPartOfGameInfoSerialization, IMapUnitState
     }
 
     public bool HasUnique(UniqueType uniqueType, GameContext? gameContext = null, bool checkCivInfoUniques = false) =>
-        GetMatchingUniques(uniqueType, gameContext, checkCivInfoUniques).Any();
+        checkCivInfoUniques
+            ? GetMatchingUniques(uniqueType, gameContext, true).Any()
+            : tempUniquesMap.GetMatchingUniques(uniqueType, gameContext ?? Cache.State).Any(); // T262: no wrapper iterator for the (usual) unit-only query
 
     public IEnumerable<UniqueObject> GetTriggeredUniques(UniqueType trigger, GameContext? gameContext = null, Func<UniqueObject, bool>? triggerFilter = null) =>
         tempUniquesMap.GetTriggeredUniques(trigger, gameContext ?? Cache.State, triggerFilter ?? (_ => true));

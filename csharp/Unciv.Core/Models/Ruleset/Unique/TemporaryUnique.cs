@@ -62,11 +62,21 @@ public static class TemporaryUniqueExtensions
         uniques.RemoveAll(it => it.TurnsLeft == 0);
     }
 
-    public static IEnumerable<Unique> GetMatchingTagUniques(this List<TemporaryUnique> uniques, UniqueType uniqueType, GameContext gameContext) =>
-        uniques
-            .Select(it => it.UniqueObject)
-            .Where(it => it.Type == uniqueType && it.ConditionalsApply(gameContext))
-            .SelectMany(it => it.GetMultiplied(gameContext));
+    public static IEnumerable<Unique> GetMatchingTagUniques(this List<TemporaryUnique> uniques, UniqueType uniqueType, GameContext gameContext)
+    {
+        if (uniques.Count == 0) return Enumerable.Empty<Unique>(); // T262: nearly always, and no iterator then
+        return MatchingTagUniques(uniques, uniqueType, gameContext);
+    }
+
+    private static IEnumerable<Unique> MatchingTagUniques(List<TemporaryUnique> uniques, UniqueType uniqueType, GameContext gameContext)
+    {
+        foreach (var temporary in uniques)
+        {
+            var unique = temporary.UniqueObject;
+            if (unique.Type != uniqueType || !unique.ConditionalsApply(gameContext)) continue;
+            foreach (var multiplied in unique.GetMultiplied(gameContext)) yield return multiplied;
+        }
+    }
 
     public static void ForEachMatchingUnique(this List<TemporaryUnique> uniques, UniqueType uniqueType, GameContext gameContext, Action<Unique> op)
     {

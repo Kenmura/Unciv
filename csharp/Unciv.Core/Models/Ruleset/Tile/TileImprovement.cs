@@ -175,10 +175,10 @@ public class TileImprovement : RulesetStatsObject, ICivilopediaText
         var self = (IHasUniques)this;
         if (multiFilter)
         {
-            return MultiFilter.Filter(filter, it =>
-                MatchesSingleFilter(it)
-                || (tileState != null && self.HasTagUnique(it, tileState))
-                || (tileState == null && self.HasTagUnique(it)));
+            return MultiFilter.Filter(filter, (improvement: this, tileState), static (it, s) =>
+                s.improvement.MatchesSingleFilter(it)
+                || (s.tileState != null && ((IHasUniques)s.improvement).HasTagUnique(it, s.tileState))
+                || (s.tileState == null && ((IHasUniques)s.improvement).HasTagUnique(it)));
         }
         return MatchesSingleFilter(filter)
             || (tileState != null && self.HasTagUnique(filter, tileState))

@@ -808,7 +808,8 @@ public partial class GameInfo : IsPartOfGameInfoSerialization, IHasGameInfoSeria
                         city.DemandedResource = "";
 
                     // No uniques have changed since the cache was created, so we can still use it
-                    city.CityStats.Update();
+                    // T262: the tile stats of the loop above are still what Update would compute again unless the civ's happiness moved since.
+                    city.CityStats.Update(updateTileStats: !city.CityStats.TileStatsCurrent);
                 }
         }
     }

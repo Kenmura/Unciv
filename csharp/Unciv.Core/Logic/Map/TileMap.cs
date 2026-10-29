@@ -540,12 +540,16 @@ public class TileMap : IsPartOfGameInfoSerialization
         {
             new(this[position], aUnitHeight, IsVisible: true, IsAttackable: false),
         };
+        // T262: the lowest MaxHeightSeenToTile per tile of the layers done so far. The "tiles of viewableTiles one step from cTile" of the
+        // original are exactly the neighbours of cTile that are in there, so a lookup per neighbour replaces a scan of every tile seen so far.
+        var seenHeight = new Dictionary<Tile, int> { [viewableTiles[0].Tile] = aUnitHeight };
+        var tilesToAddInDistanceI = new List<ViewableTile>();
 
         for (var i = 1; i <= sightDistance + 1; i++) // in each layer,
         {
             // This is so we don't use tiles in the same distance to "see over",
             // that is to say, the "viewableTiles.contains(it) check will return false for neighbors from the same distance
-            var tilesToAddInDistanceI = new List<ViewableTile>();
+            tilesToAddInDistanceI.Clear();
             var layer = i;
 
             ForEachTileAtDistance(position, i, cTile => // for each tile in that layer,
@@ -566,9 +570,11 @@ public class TileMap : IsPartOfGameInfoSerialization
 
             This can all be summed up as "I can see c if a=>b || c>b"
             */
-                var bMinimumHighestSeenTerrainSoFar = viewableTiles
-                    .Where(it => it.Tile.AerialDistanceTo(cTile) == 1)
-                    .Min(it => it.MaxHeightSeenToTile);
+                var bMinimumHighestSeenTerrainSoFar = int.MaxValue;
+                foreach (var neighbor in cTile.Neighbors)
+                    if (seenHeight.TryGetValue(neighbor, out var height) && height < bMinimumHighestSeenTerrainSoFar)
+                        bMinimumHighestSeenTerrainSoFar = height;
+                if (bMinimumHighestSeenTerrainSoFar == int.MaxValue) throw new InvalidOperationException("Sequence contains no elements");
 
                 tilesToAddInDistanceI.Add(new ViewableTile(
                     cTile,
@@ -577,6 +583,8 @@ public class TileMap : IsPartOfGameInfoSerialization
                     aUnitHeight >= bMinimumHighestSeenTerrainSoFar || cTile.UnitHeight > bMinimumHighestSeenTerrainSoFar));
             });
             viewableTiles.AddRange(tilesToAddInDistanceI);
+            foreach (var added in tilesToAddInDistanceI)
+                seenHeight[added.Tile] = seenHeight.TryGetValue(added.Tile, out var known) ? Math.Min(known, added.MaxHeightSeenToTile) : added.MaxHeightSeenToTile;
         }
 
         if (forAttack) return viewableTiles.Where(it => it.IsAttackable).Select(it => it.Tile).ToList();

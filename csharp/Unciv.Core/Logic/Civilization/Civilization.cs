@@ -837,7 +837,7 @@ public partial class Civilization : IsPartOfGameInfoSerialization, IConstruction
     public bool MatchesFilter(string filter, GameContext? state) => MatchesFilter(filter, state, true);
 
     public bool MatchesFilter(string filter, GameContext? state, bool multiFilter) =>
-        multiFilter ? MultiFilter.Filter(filter, it => MatchesSingleFilter(it, state)) : MatchesSingleFilter(filter, state);
+        multiFilter ? MultiFilter.Filter(filter, (civ: this, state), static (it, s) => s.civ.MatchesSingleFilter(it, s.state)) : MatchesSingleFilter(filter, state);
 
     public bool MatchesSingleFilter(string filter, GameContext? state)
     {

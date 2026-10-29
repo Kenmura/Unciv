@@ -124,11 +124,10 @@ public class TileResource : RulesetStatsObject, IGameResource, IRulesetResourceP
 
     public bool MatchesFilter(string filter, GameContext? state = null)
     {
-        var self = (IHasUniques)this;
-        return MultiFilter.Filter(filter, it =>
-            MatchesSingleFilter(it)
-            || (state != null && self.HasTagUnique(it, state))
-            || (state == null && self.HasTagUnique(it)));
+        return MultiFilter.Filter(filter, (resource: this, state), static (it, s) =>
+            s.resource.MatchesSingleFilter(it)
+            || (s.state != null && ((IHasUniques)s.resource).HasTagUnique(it, s.state))
+            || (s.state == null && ((IHasUniques)s.resource).HasTagUnique(it)));
     }
 
     public bool MatchesSingleFilter(string filter)

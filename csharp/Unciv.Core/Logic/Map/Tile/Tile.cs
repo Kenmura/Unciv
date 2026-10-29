@@ -544,7 +544,7 @@ public partial class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITi
 
     /// <summary>Implements <c>UniqueParameterType.TileFilter</c></summary>
     public bool MatchesFilter(string filter, IGameContextCivilization? civInfo = null) =>
-        MultiFilter.Filter(filter, it => MatchesSingleFilter(it, civInfo));
+        MultiFilter.Filter(filter, (tile: this, civInfo), static (it, s) => s.tile.MatchesSingleFilter(it, s.civInfo));
 
     private bool MatchesSingleFilter(string filter, IGameContextCivilization? civInfo = null)
     {
@@ -559,7 +559,7 @@ public partial class Tile : IsPartOfGameInfoSerialization, IGameContextTile, ITi
 
     /// <summary>Implements <c>UniqueParameterType.TerrainFilter</c></summary>
     public bool MatchesTerrainFilter(string filter, IGameContextCivilization? observingCiv, bool multiFilter = true) =>
-        multiFilter ? MultiFilter.Filter(filter, it => MatchesSingleTerrainFilter(it, observingCiv))
+        multiFilter ? MultiFilter.Filter(filter, (tile: this, observingCiv), static (it, s) => s.tile.MatchesSingleTerrainFilter(it, s.observingCiv))
         : MatchesSingleTerrainFilter(filter, observingCiv);
 
     private bool MatchesSingleTerrainFilter(string filter, IGameContextCivilization? observingCiv)

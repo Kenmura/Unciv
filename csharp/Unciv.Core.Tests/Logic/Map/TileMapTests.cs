@@ -546,4 +546,50 @@ public class TileMapTests
         Assert.Empty(preview.GetDeclaredNations());
         Assert.Empty(preview.GetNationsForHumanPlayer());
     }
+
+    // T262: the original line-of-sight scan (every tile seen so far, filtered by aerial distance 1), kept as the oracle of the neighbour lookup.
+    private static List<TileClass> ReferenceViewableTiles(TileMap map, HexCoord position, int sightDistance, bool forAttack)
+    {
+        var aUnitHeight = map[position].UnitHeight;
+        var viewableTiles = new List<TileMap.ViewableTile> { new(map[position], aUnitHeight, true, false) };
+        for (var i = 1; i <= sightDistance + 1; i++)
+        {
+            var tilesToAddInDistanceI = new List<TileMap.ViewableTile>();
+            var layer = i;
+            map.ForEachTileAtDistance(position, i, cTile =>
+            {
+                var cTileHeight = cTile.TileHeight;
+                if (layer == sightDistance + 1 && (cTileHeight <= aUnitHeight || forAttack)) return;
+                var b = viewableTiles.Where(it => it.Tile.AerialDistanceTo(cTile) == 1).Min(it => it.MaxHeightSeenToTile);
+                tilesToAddInDistanceI.Add(new TileMap.ViewableTile(cTile, System.Math.Max(cTileHeight, b),
+                    aUnitHeight >= b || cTileHeight > b, aUnitHeight >= b || cTile.UnitHeight > b));
+            });
+            viewableTiles.AddRange(tilesToAddInDistanceI);
+        }
+        return forAttack ? viewableTiles.Where(it => it.IsAttackable).Select(it => it.Tile).ToList()
+            : viewableTiles.Where(it => it.IsVisible).Select(it => it.Tile).ToList();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GetViewableTiles_EqualsTheFullScan_ListAndOrder(bool wrapped)
+    {
+        var map = wrapped
+            ? new TileMap(8, 6, MapRuleset(), true) { MapParameters = { WorldWrap = true, Shape = MapShape.Rectangular, MapSize = new MapSize(8, 6) } }
+            : HexMap(7);
+        string[] bases = ["Grassland", "Plains", "Desert", "Mountain", "Ocean"];
+        string[][] features = [[], [], ["Hill"], ["Forest"], ["Hill", "Forest"]];
+        var n = 0;
+        foreach (var tile in map.Values.ToList())
+        {
+            n++;
+            var baseTerrain = bases[System.Math.Abs(tile.Position.x * 7 + tile.Position.y * 13 + n) % bases.Length];
+            SetTile(map, tile.Position, baseTerrain, baseTerrain is "Grassland" or "Plains" ? features[System.Math.Abs(n * 3 + tile.Position.x) % features.Length] : []);
+        }
+        foreach (var tile in map.Values)
+            foreach (var sight in new[] { 0, 1, 2, 3, 4 })
+                foreach (var forAttack in new[] { false, true })
+                    Assert.Equal(ReferenceViewableTiles(map, tile.Position, sight, forAttack), map.GetViewableTiles(tile.Position, sight, forAttack));
+    }
 }

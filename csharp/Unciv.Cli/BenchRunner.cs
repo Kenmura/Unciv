@@ -143,6 +143,7 @@ public static class BenchRunner
         public int Units { get; init; }
         public double GcPauseMs { get; init; }
         public int Gen2Collections { get; init; }
+        public double AllocMb { get; init; }
         public Dictionary<string, double> InclusiveMs { get; init; } = [];
     }
 
@@ -179,19 +180,21 @@ public static class BenchRunner
         public long Count;
         public long Inclusive;
         public long Exclusive;
+        public long AllocBytes;
 
-        public void Add(long inclusive, long exclusive)
+        public void Add(long inclusive, long exclusive, long allocBytes = 0)
         {
             Count++;
             Inclusive += inclusive;
             Exclusive += exclusive;
+            AllocBytes += allocBytes;
         }
     }
 
     /// <summary>Nested phase timing: one stack, totals per phase and per (phase, subject), and the same for the turn being played.</summary>
     public sealed class Recorder
     {
-        private readonly record struct Frame(string Name, string? Subject, long Start);
+        private readonly record struct Frame(string Name, string? Subject, long Start, long Alloc);
 
         private readonly List<Frame> stack = [];
         private readonly List<long> children = [];
@@ -214,7 +217,7 @@ public static class BenchRunner
 
         public void Enter(string name, string? subject)
         {
-            stack.Add(new Frame(name, subject, Now()));
+            stack.Add(new Frame(name, subject, Now(), GC.GetAllocatedBytesForCurrentThread()));
             children.Add(0);
         }
 
@@ -224,21 +227,22 @@ public static class BenchRunner
             if (top.Name != name) throw new InvalidOperationException($"phase '{name}' ended while '{top.Name}' is open");
             var inclusive = Now() - top.Start;
             var exclusive = inclusive - children[^1];
+            var alloc = GC.GetAllocatedBytesForCurrentThread() - top.Alloc;
             stack.RemoveAt(stack.Count - 1);
             children.RemoveAt(children.Count - 1);
             if (children.Count > 0) children[^1] += inclusive;
-            Bump(Total, name, inclusive, exclusive);
-            Bump(Turn, name, inclusive, exclusive);
+            Bump(Total, name, inclusive, exclusive, alloc);
+            Bump(Turn, name, inclusive, exclusive, alloc);
             if (subject == null) return;
             var key = name + "|" + subject;
-            Bump(BySubject, key, inclusive, exclusive);
-            Bump(TurnSubject, key, inclusive, exclusive);
+            Bump(BySubject, key, inclusive, exclusive, alloc);
+            Bump(TurnSubject, key, inclusive, exclusive, alloc);
         }
 
-        private static void Bump(Dictionary<string, Agg> map, string key, long inclusive, long exclusive)
+        private static void Bump(Dictionary<string, Agg> map, string key, long inclusive, long exclusive, long alloc)
         {
             if (!map.TryGetValue(key, out var agg)) map[key] = agg = new Agg();
-            agg.Add(inclusive, exclusive);
+            agg.Add(inclusive, exclusive, alloc);
         }
 
         /// <summary>Closes the books of one turn: its per-phase totals go to the history.</summary>
@@ -351,6 +355,7 @@ public static class BenchRunner
             {
                 if (host != null && played == hostFrom) host.Start();
                 var gcPause = GC.GetTotalPauseDuration();
+                var allocated = GC.GetTotalAllocatedBytes(false);
                 var gen2 = GC.CollectionCount(2);
                 var start = engine.Now();
                 var done = PlayRound(session, human, writer);
@@ -368,6 +373,7 @@ public static class BenchRunner
                     Hash = hash,
                     GcPauseMs = (GC.GetTotalPauseDuration() - gcPause).TotalMilliseconds,
                     Gen2Collections = GC.CollectionCount(2) - gen2,
+                    AllocMb = (GC.GetTotalAllocatedBytes(false) - allocated) / (1024.0 * 1024.0),
                     Cities = game.Civilizations.Sum(it => it.Cities.Count),
                     Units = game.Civilizations.Sum(it => it.Units.GetCivUnits().Count()),
                 };
@@ -522,6 +528,7 @@ public static class BenchRunner
                 total.Count += agg.Count;
                 total.Inclusive += agg.Inclusive;
                 total.Exclusive += agg.Exclusive;
+                total.AllocBytes += agg.AllocBytes;
             }
         return sum;
     }
@@ -535,6 +542,7 @@ public static class BenchRunner
         ["inclusiveMsPerTurn"] = turns == 0 ? 0 : R(TicksToMs(agg.Inclusive) / turns, 3),
         ["exclusiveMsPerTurn"] = turns == 0 ? 0 : R(TicksToMs(agg.Exclusive) / turns, 3),
         ["meanMsPerCall"] = agg.Count == 0 ? 0 : R(TicksToMs(agg.Inclusive) / agg.Count, 4),
+        ["allocMbPerTurn"] = turns == 0 ? 0 : R(agg.AllocBytes / (1024.0 * 1024.0) / turns, 2),
     };
 
     private static JsonArray TopPhases(Dictionary<string, Agg> sum, int turns, int top) =>
@@ -608,6 +616,7 @@ public static class BenchRunner
                 ["units"] = it.Units,
                 ["gcPauseMs"] = R(it.GcPauseMs, 2),
                 ["gen2"] = it.Gen2Collections,
+                ["allocMb"] = R(it.AllocMb, 1),
                 ["inclusiveMs"] = new JsonObject(it.InclusiveMs.Select(p => KeyValuePair.Create(p.Key, (JsonNode?)R(p.Value, 2)))),
             }).ToArray()),
         };
@@ -652,7 +661,7 @@ public static class BenchRunner
         var turns = Math.Max(1, count / 4);
         output.WriteLine("  last quarter, inclusive ms per turn (top 12):");
         foreach (var (name, agg) in last.OrderByDescending(it => it.Value.Inclusive).ThenBy(it => it.Key, StringComparer.Ordinal).Take(12))
-            output.WriteLine(string.Create(CultureInfo.InvariantCulture, $"    {name,-36} {TicksToMs(agg.Inclusive) / turns,9:F2} (self {TicksToMs(agg.Exclusive) / turns:F2})"));
+            output.WriteLine(string.Create(CultureInfo.InvariantCulture, $"    {name,-36} {TicksToMs(agg.Inclusive) / turns,9:F2} (self {TicksToMs(agg.Exclusive) / turns:F2}, alloc {agg.AllocBytes / (1024.0 * 1024.0) / turns:F1} MB)"));
     }
 
     private static ScenarioResult RunAndPrint(Scenario scenario, Options options, TextWriter output)

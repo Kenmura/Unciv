@@ -56,11 +56,24 @@ public class UniqueMap
 
     public bool IsEmpty() => tagUniqueMap.IsEmpty;
 
-    public bool HasUnique(UniqueType uniqueType, GameContext? state = null) =>
-        GetUniques(uniqueType).Any(it => it.ConditionalsApply(state ?? GameContext.EmptyState) && !it.IsTimedTriggerable);
+    // T262: the queries below are the hottest calls of the engine; plain loops instead of LINQ with a capturing lambda (same order, same short-circuit).
+    public bool HasUnique(UniqueType uniqueType, GameContext? state = null)
+    {
+        if (!typedUniqueMap.TryGetValue(uniqueType, out var uniques)) return false;
+        var context = state ?? GameContext.EmptyState;
+        for (int i = 0; i < uniques.Count; i++)
+            if (uniques[i].ConditionalsApply(context) && !uniques[i].IsTimedTriggerable) return true;
+        return false;
+    }
 
-    public bool HasUnique(string uniqueTag, GameContext? state = null) =>
-        GetTagUniques(uniqueTag).Any(it => it.ConditionalsApply(state ?? GameContext.EmptyState) && !it.IsTimedTriggerable);
+    public bool HasUnique(string uniqueTag, GameContext? state = null)
+    {
+        if (!tagUniqueMap.TryGetValue(uniqueTag, out var uniques)) return false;
+        var context = state ?? GameContext.EmptyState;
+        for (int i = 0; i < uniques.Count; i++)
+            if (uniques[i].ConditionalsApply(context) && !uniques[i].IsTimedTriggerable) return true;
+        return false;
+    }
 
     public bool HasTagUnique(string tagUnique) => tagUniqueMap.ContainsKey(tagUnique);
 
@@ -81,7 +94,9 @@ public class UniqueMap
 
     /// <summary><see cref="ForEachMatchingUnique(UniqueType, GameContext, Action{Unique})"/> faster, for cases that require high perf</summary>
     public IEnumerable<Unique> GetMatchingUniques(UniqueType uniqueType, GameContext? state = null) =>
-        MatchingMultiplied(GetUniques(uniqueType), state ?? GameContext.EmptyState);
+        typedUniqueMap.TryGetValue(uniqueType, out var uniques)
+            ? MatchingMultiplied(uniques, state ?? GameContext.EmptyState)
+            : Enumerable.Empty<Unique>();
 
     public void ForEachMatchingUnique(UniqueType uniqueType, GameContext gameContext, Action<Unique> op) =>
         ForEachMatchingUnique(uniqueType, gameContext, NoUniqueFilter, op);
@@ -94,14 +109,23 @@ public class UniqueMap
 
     /// <summary><c>ForEachMatchingTagUnique</c> faster, for cases that require high perf</summary>
     public IEnumerable<Unique> GetMatchingTagUniques(string uniqueTag, GameContext? state = null) =>
-        MatchingMultiplied(GetTagUniques(uniqueTag), state ?? GameContext.EmptyState);
+        tagUniqueMap.TryGetValue(uniqueTag, out var uniques)
+            ? MatchingMultiplied(uniques, state ?? GameContext.EmptyState)
+            : Enumerable.Empty<Unique>();
 
     // Same as .filter | .flatMap, but more cpu/mem performant (7.7 GB vs ?? for test)
-    private static IEnumerable<Unique> MatchingMultiplied(IEnumerable<Unique> uniques, GameContext state) =>
-        uniques.SelectMany(it =>
-            it.IsTimedTriggerable ? Enumerable.Empty<Unique>()
-            : !it.ConditionalsApply(state) ? Enumerable.Empty<Unique>()
-            : it.GetMultiplied(state));
+    // T262: an iterator instead of SelectMany with a capturing lambda; the same lazy order, and a multiplier of 1 (nearly always) yields without a Repeat.
+    private static IEnumerable<Unique> MatchingMultiplied(List<Unique> uniques, GameContext state)
+    {
+        foreach (var it in uniques)
+        {
+            if (it.IsTimedTriggerable) continue;
+            if (!it.ConditionalsApply(state)) continue;
+            var multiplier = it.GetUniqueMultiplier(state);
+            if (multiplier == 1) yield return it;
+            else foreach (var multiplied in Enumerable.Repeat(it, multiplier)) yield return multiplied;
+        }
+    }
 
     public void ForEachMatchingTagUnique(string uniqueTag, GameContext gameContext, Func<Unique, bool> filter, Action<Unique> op)
     {
@@ -124,7 +148,10 @@ public class UniqueMap
     public bool HasMatchingUnique(UniqueType uniqueType, GameContext? state = null)
     {
         if (!typedUniqueMap.TryGetValue(uniqueType, out var uniques)) return false;
-        return uniques.Any(it => it.ConditionalsApply(state ?? GameContext.EmptyState));
+        var context = state ?? GameContext.EmptyState;
+        for (int i = 0; i < uniques.Count; i++)
+            if (uniques[i].ConditionalsApply(context)) return true;
+        return false;
     }
 
     public bool HasMatchingTagUnique(string uniqueTag, GameContext? state = null)

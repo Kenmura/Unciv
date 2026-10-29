@@ -232,16 +232,16 @@ public class Terrain : RulesetStatsObject, IRulesetTerrainParameterView, ICivilo
         var self = (IHasUniques)this;
         if (multiFilter)
         {
-            return MultiFilter.Filter(filter, it =>
+            return MultiFilter.Filter(filter, (terrain: this, state), static (it, s) =>
             {
-                if (!cachedMatchesFilterResult.TryGetValue(it, out var cached))
+                if (!s.terrain.cachedMatchesFilterResult.TryGetValue(it, out var cached))
                 {
-                    cached = MatchesSingleFilter(it);
-                    cachedMatchesFilterResult[it] = cached;
+                    cached = s.terrain.MatchesSingleFilter(it);
+                    s.terrain.cachedMatchesFilterResult[it] = cached;
                 }
                 return cached
-                    || (state != null && self.HasTagUnique(it, state))
-                    || (state == null && self.HasTagUnique(it));
+                    || (s.state != null && ((IHasUniques)s.terrain).HasTagUnique(it, s.state))
+                    || (s.state == null && ((IHasUniques)s.terrain).HasTagUnique(it));
             });
         }
         if (!cachedMatchesFilterResult.TryGetValue(filter, out var single))

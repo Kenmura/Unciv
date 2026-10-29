@@ -658,7 +658,7 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
     /// <summary>Implements UniqueParameterType.CityFilter; Kotlin's default of <paramref name="viewingCiv"/> is <c>civ</c>, see the overload above.</summary>
     public bool MatchesFilter(string filter, CivilizationObject? viewingCiv, bool multiFilter = true) =>
         multiFilter
-            ? MultiFilter.Filter(filter, it => MatchesSingleFilter(it, viewingCiv))
+            ? MultiFilter.Filter(filter, (city: this, viewingCiv), static (it, s) => s.city.MatchesSingleFilter(it, s.viewingCiv))
             : MatchesSingleFilter(filter, viewingCiv);
 
     private bool MatchesSingleFilter(string filter, CivilizationObject? viewingCiv)
@@ -779,12 +779,18 @@ public partial class City : IsPartOfGameInfoSerialization, INamed, IConstruction
     public IEnumerable<UniqueObject> GetMatchingUniquesWithNonLocalEffects(UniqueType uniqueType, GameContext? gameContext = null)
     {
         gameContext ??= State;
-        var uniques = CityConstructions.BuiltBuildingUniqueMap.GetUniques(uniqueType).ToList();
-        // Memory performance showed that this function was very memory intensive, thus we only create the filter if needed
-        return uniques.Count != 0
-            ? uniques.Where(it => !it.IsLocalEffect && !it.IsTimedTriggerable && it.ConditionalsApply(gameContext))
-                .SelectMany(it => it.GetMultiplied(gameContext))
-            : uniques;
+        // T262: this runs once per city for every civ-wide unique query; no snapshot list and no iterator for the (usual) type without uniques.
+        var all = CityConstructions.BuiltBuildingUniqueMap.GetUniques(uniqueType);
+        return all.Any() ? NonLocalMatching(all.ToList(), gameContext) : Enumerable.Empty<UniqueObject>();
+    }
+
+    private static IEnumerable<UniqueObject> NonLocalMatching(List<UniqueObject> uniques, GameContext gameContext)
+    {
+        foreach (var it in uniques)
+        {
+            if (it.IsLocalEffect || it.IsTimedTriggerable || !it.ConditionalsApply(gameContext)) continue;
+            foreach (var multiplied in it.GetMultiplied(gameContext)) yield return multiplied;
+        }
     }
 
     /// <summary>Uniques coming from this city, but that should be provided globally</summary>
