@@ -73,6 +73,9 @@ public sealed record HostLimits
     /// <summary>C090: map pings one session may send per <see cref="PingWindowMillis"/>; the rest are dropped silently.</summary>
     public int MaxPingPerWindow { get; init; } = 4;
 
+    /// <summary>C090: longest sender name on a relayed ping.</summary>
+    public int MaxPingNameChars { get; init; } = 24;
+
     public long PingWindowMillis { get; init; } = 5_000;
 
     /// <summary>Outbound bytes (approximate) queued per session before a slow reader is disconnected.</summary>
@@ -592,12 +595,20 @@ public sealed class GameHost : IAsyncDisposable
         while (from.PingTimes.Count > 0 && now - from.PingTimes.Peek() >= limits.PingWindowMillis) from.PingTimes.Dequeue();
         if (from.PingTimes.Count >= limits.MaxPingPerWindow) return;
         from.PingTimes.Enqueue(now);
-        var notice = new MapPingNotice { X = ping.X, Y = ping.Y, Kind = ping.Kind, Sender = DisplayNameOf(from.BoundCivId) };
+        var notice = new MapPingNotice { X = ping.X, Y = ping.Y, Kind = ping.Kind, Sender = PingSenderName(from.BoundCivId) };
         foreach (var target in sessions.Values.ToList())
         {
             if (target != from && !CanReceivePing(sender, tile, target)) continue;
             await SafeSendAsync(target, notice);
         }
+    }
+
+    /// <summary>The bound display name as a ping label: control characters removed, at most <see cref="HostLimits.MaxPingNameChars"/> characters (a joiner chooses their own name, and a ping draws it over the map).</summary>
+    private string PingSenderName(string civId)
+    {
+        var clean = new string(DisplayNameOf(civId).Where(it => !char.IsControl(it)).ToArray()).Trim();
+        if (clean.Length > limits.MaxPingNameChars) clean = clean[..limits.MaxPingNameChars].TrimEnd();
+        return clean.Length == 0 ? civId : clean;
     }
 
     private bool CanReceivePing(Unciv.Logic.Civilization.Civilization sender, Unciv.Logic.Map.Tiles.Tile tile, HostSession target)

@@ -7,6 +7,7 @@ using Unciv.Models.Metadata;
 using Unciv.Models.Ruleset;
 using Unciv.Net;
 using Unciv.Net.Identity;
+using Unciv.Net.Persistence;
 using Unciv.Net.Turns;
 using Unciv.Server;
 
@@ -197,5 +198,64 @@ public sealed class HostPingTests : IDisposable
 
         Assert.Equal(seq, gameSession.LastSeq);
         Assert.Equal(logged, gameSession.Log.Count);
+    }
+
+    [Fact]
+    public async Task Ping_SenderNameIsCleanedAndCut()
+    {
+        var setup = new GameSetupInfo(
+            new GameParameters
+            {
+                BaseRuleset = ruleset.Name,
+                NumberOfCityStates = 0,
+                VictoryTypes = ruleset.Victories.Keys.ToList(),
+                Players = [new("Babylon", PlayerType.Human), new("Greece", PlayerType.Human), new("Rome", PlayerType.AI)],
+            },
+            new MapParameters { Type = MapType.Pangaea, Shape = MapShape.Rectangular, Seed = 3, MapSize = MapSize.Tiny });
+        var game = GameStarter.StartNewGame(setup, Seed, 1000L);
+        game.StartSimultaneousTurns();
+        var tile = ExploredBy(game, "Babylon");
+        using var babylon = ClientIdentity.Generate();
+        using var greece = ClientIdentity.Generate();
+        var root = Directory.CreateTempSubdirectory("unciv-ping-").FullName;
+        try
+        {
+            var bindings = new Dictionary<string, SlotBinding>
+            {
+                ["Babylon"] = new SlotBinding { PlayerKey = babylon.PlayerKey, DisplayName = "  Evil\nName\t" + new string('x', 80) },
+                ["Greece"] = new SlotBinding { PlayerKey = greece.PlayerKey, DisplayName = "Friend" },
+            };
+            await using var host = InProcessHost.Start(game, setup, Seed, 1000L, Path.Combine(root, "g"), "Babylon", bindings, new InProcessHostOptions { TickInterval = null });
+            var mine = await host.ConnectHostPlayerAsync();
+
+            await PingAsync(mine, tile.Position.x, tile.Position.y);
+
+            var notice = await ReadUntilAsync<MapPingNotice>(mine);
+            Assert.Equal(new HostLimits().MaxPingNameChars, notice.Sender.Length);
+            Assert.StartsWith("EvilName", notice.Sender);
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    [Fact]
+    public async Task Ping_ToAnAllyWhoDisconnected_OrFromAnUnboundSession_IsNotRelayed()
+    {
+        var game = NewGame();
+        Ally(game, "Babylon", "Greece");
+        var tile = ExploredBy(game, "Babylon", "Greece");
+        await using var host = new GameHost(new GameSession(game), clock: new ManualClock(1_000_000));
+        var mine = await AttachAsync(host, "Babylon");
+        var ally = await AttachAsync(host, "Greece");
+        await ally.CloseAsync();
+        var unbound = await AttachAsync(host, "Nobody");
+
+        await PingAsync(mine, tile.Position.x, tile.Position.y);
+        await ReadUntilAsync<MapPingNotice>(mine);
+        await PingAsync(unbound, tile.Position.x, tile.Position.y);
+
+        Assert.True(await NothingRelayedAsync(mine));
     }
 }
