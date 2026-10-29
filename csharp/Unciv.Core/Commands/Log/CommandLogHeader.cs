@@ -45,6 +45,11 @@ public sealed record CommandLogHeader
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long HostSecret { get; init; }
 
+    /// <summary>T269: the host epoch the log was started at (0 = original host, +1 per promotion). Not written while 0.</summary>
+    [JsonPropertyName("hostEpoch")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int HostEpoch { get; init; }
+
     /// <summary>The same header with the host secret removed (it can no longer replay a salted game).</summary>
     public CommandLogHeader WithoutSecret() => this with { HostSecret = 0 };
 

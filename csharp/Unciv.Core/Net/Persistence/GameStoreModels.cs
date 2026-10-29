@@ -43,6 +43,16 @@ public sealed record GameMeta
     [JsonPropertyName("hostSecret")]
     public long HostSecret { get; init; }
 
+    /// <summary>T269: how many host changes this game has seen (0 at creation, +1 per promotion, design/HOST-MIGRATION.md section 2). Sent as <c>Welcome.Epoch</c>. Not written while 0, so a game that never migrated keeps its old file.</summary>
+    [JsonPropertyName("hostEpoch")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int HostEpoch { get; init; }
+
+    /// <summary>T269: the highest epoch this host process has seen from a peer (a client's <c>Hello.KnownEpoch</c>) for this game. Above <see cref="HostEpoch"/> it means another host took over: this host is superseded and refuses everyone (<c>stale-epoch</c>), also after a restart.</summary>
+    [JsonPropertyName("seenEpoch")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int SeenEpoch { get; init; }
+
     [JsonPropertyName("turnPolicy")]
     public string TurnPolicy { get; init; } = "Simultaneous";
 

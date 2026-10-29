@@ -21,6 +21,9 @@ public enum ClientSessionState
 public static class ClientCodes
 {
     public const string HostKeyChanged = "host-key-changed";
+
+    /// <summary>T269: the host's epoch is below the one this client has seen (or the host reported <c>stale-epoch</c>): another host took over.</summary>
+    public const string StaleEpoch = ErrorCodes.StaleEpoch;
     public const string HostKeyMismatch = "host-key-mismatch";
     public const string HostUntrusted = "host-untrusted";
     public const string ConnectFailed = "connect-failed";

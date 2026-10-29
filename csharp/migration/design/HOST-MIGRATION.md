@@ -14,6 +14,8 @@
 
 Status: design with acceptance criteria. Linked from `design/SERVER.md` section 5.3. Source: GitHub issue #5 ("if a host leaves, switch to a new host automatically"). Respects the owner's decisions: host-run lobby, simultaneous turns, flat MVP, a dedicated host is nice-to-have only. Verified against the code as of T205/T267: `InProcessHost.ResumeFromDirectory`, `GameHost` sessions and `HostClosing`, `TcpTlsListener`, `KnownHosts`, T267 `TurnTimer.Depart`.
 
+**Implementation status (T269, slice 1: epoch fencing).** Landed: `hostEpoch` in `game.json` and the log header (omitted while 0, so a game that never migrated keeps byte-identical files), `Welcome.Epoch`, `Hello.KnownEpoch`/`Hello.GameId`/`Hello.HostMigration` (all additive, no protocol bump yet), `stale-epoch` refusal by the in-process host and by the client (`ClientSessionOptions.KnownEpoch` plus `PersistKnownEpoch`; the UI layer stores the epoch next to `lastSeq`, wired in T275). One hardening over the text of section 2: a `Hello` is unauthenticated, so a host persists "superseded" (`GameMeta.SeenEpoch` above `HostEpoch`) only after the claimant proved a bound seat key, otherwise anyone who can reach the port could shut a host down with a forged `knownEpoch`; the client-side check needs no such caution. Designation (`BackupHost`, `Standby*`, probe, `HostSuccessor`, vouch entry) is the follow-up ticket named in T269's Notes.
+
 Decision: go, as an opt-in, trust-changing feature (one designated backup host chosen at lobby time, default off), delivered in five sized tickets (T269, T272-T275). The cheaper option (manual directory hand-off, section 5.3 of SERVER.md) stays as the fallback and is improved by the same work.
 
 ## 0. The problem in one paragraph

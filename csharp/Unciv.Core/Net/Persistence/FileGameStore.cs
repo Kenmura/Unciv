@@ -90,8 +90,25 @@ public sealed class FileGameStore : IGameStore
 
     public void WriteMeta(GameMeta meta)
     {
-        // The secret is not the lobby layer's to set or erase: it stays what the store holds (set it through HostSecret).
-        lock (gate) WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = GameId, HostSecret = ReadMeta().HostSecret })));
+        // The secret and the epochs are not the lobby layer's to set or erase: they stay what the store holds (HostSecret, RaiseEpochs).
+        lock (gate)
+        {
+            var held = ReadMeta();
+            WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(meta with { GameId = GameId, HostSecret = held.HostSecret, HostEpoch = held.HostEpoch, SeenEpoch = held.SeenEpoch })));
+        }
+    }
+
+    /// <summary>T269: records this host's epoch and the highest epoch seen from a peer. Neither ever goes down.</summary>
+    public void RaiseEpochs(int hostEpoch, int seenEpoch)
+    {
+        lock (gate)
+        {
+            var held = ReadMeta();
+            var host = Math.Max(held.HostEpoch, hostEpoch);
+            var seen = Math.Max(held.SeenEpoch, seenEpoch);
+            if (host == held.HostEpoch && seen == held.SeenEpoch) return;
+            WriteAtomic(PathOf(MetaName), Encoding.UTF8.GetBytes(UncivJson.Serialize(held with { HostEpoch = host, SeenEpoch = seen })));
+        }
     }
 
     // ------------------------------------------------------------------ creating

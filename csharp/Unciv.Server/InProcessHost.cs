@@ -241,6 +241,15 @@ public sealed class InProcessHost : IAsyncDisposable
                 return;
             }
 
+            // T269: a superseded host (another host took over) answers nobody. A Hello is unauthenticated, so what a client claims to know is only acted on after its key proof.
+            var epochs = store.ReadMeta();
+            if (epochs.SeenEpoch > epochs.HostEpoch)
+            {
+                await RefuseAsync(transport, JoinRefusedCodes.StaleEpoch);
+                return;
+            }
+            var claimedEpoch = string.Equals(hello.GameId, store.GameId, StringComparison.Ordinal) ? hello.KnownEpoch ?? 0 : 0;
+
             var challenge = new HostChallenge(fingerprint, random);
             await transport.SendAsync(ProtocolCodec.Encode(new Welcome
             {
@@ -249,6 +258,7 @@ public sealed class InProcessHost : IAsyncDisposable
                 Challenge = challenge.Challenge,
                 HostKeyFingerprint = fingerprint,
                 RequiresPassword = false,
+                Epoch = epochs.HostEpoch,
             }), timeout.Token);
 
             if (await ReceiveAsync(transport, timeout.Token) is not Join join || !PlayerKeys.IsValid(join.PlayerKey))
@@ -266,6 +276,14 @@ public sealed class InProcessHost : IAsyncDisposable
             if (civ == null)
             {
                 await RefuseAsync(transport, JoinRefusedCodes.GameAlreadyStarted);
+                return;
+            }
+
+            if (claimedEpoch > epochs.HostEpoch)
+            {
+                // A seat holder has seen a newer host: this one is superseded, for good (it is remembered across a restart).
+                store.RaiseEpochs(epochs.HostEpoch, claimedEpoch);
+                await RefuseAsync(transport, JoinRefusedCodes.StaleEpoch);
                 return;
             }
 

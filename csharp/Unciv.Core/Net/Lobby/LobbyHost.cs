@@ -396,7 +396,8 @@ public sealed class LobbyHost : IAsyncDisposable
             SessionId = challenge.SessionId,
             Challenge = challenge.Challenge,
             HostKeyFingerprint = HostFingerprint,
-            RequiresPassword = Admission.RequiresPassword
+            RequiresPassword = Admission.RequiresPassword,
+            Epoch = 0
         }).ConfigureAwait(false);
     }
 

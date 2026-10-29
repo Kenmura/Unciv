@@ -12,6 +12,9 @@ public static class ErrorCodes
 
     /// <summary>T247: a mod file request the host will not serve (not listed, over a cap, changed on disk, or no manifest was sent). Carries no detail.</summary>
     public const string ModFileRefused = "mod-file-refused";
+
+    /// <summary>T269: the peer has seen a newer host epoch than this host's (or the host is older than the client's stored epoch): another host took over, never silently accepted.</summary>
+    public const string StaleEpoch = "stale-epoch";
 }
 
 /// <summary>Base of every wire message. The JSON frame is the record's fields plus a <c>type</c> discriminator (see <see cref="ProtocolCodec"/>).</summary>
@@ -31,6 +34,15 @@ public sealed record Hello : Message
 
     /// <summary>T247: with <see cref="ModSync"/>, the checksums (<c>ModEntry.Checksum</c>) of the mods installed on the client by name. A mod of the host that is missing or different here triggers the mod sync even when the ruleset hash is equal (the hash only covers rule names, not their values).</summary>
     public Dictionary<string, string>? ModChecksums { get; init; }
+
+    /// <summary>T269: the game the client last played here (reconnect only). The host compares <see cref="KnownEpoch"/> only when this is its own game id; absent for a first join.</summary>
+    public string? GameId { get; init; }
+
+    /// <summary>T269: the highest host epoch the client has seen for <see cref="GameId"/>. A host with a lower epoch is superseded and answers <c>stale-epoch</c>.</summary>
+    public int? KnownEpoch { get; init; }
+
+    /// <summary>T269: true when this client understands host migration (<c>HostSuccessor</c>, <c>HostHandoff</c>). A host sends the plain <see cref="HostClosing"/> to a client without it.</summary>
+    public bool? HostMigration { get; init; }
 }
 
 public sealed record Join : Message
@@ -120,6 +132,9 @@ public sealed record Welcome : Message
     public required string Challenge { get; init; }
     public required string HostKeyFingerprint { get; init; }
     public required bool RequiresPassword { get; init; }
+
+    /// <summary>T269: the host epoch of this game (0 = original host). Absent from a host that predates host migration, which a client reads as 0.</summary>
+    public int? Epoch { get; init; }
 }
 
 public sealed record JoinOk : Message;

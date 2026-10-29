@@ -95,6 +95,101 @@ public sealed class InProcessHostTests : IDisposable
         return (transport, await ReadAsync(transport));
     }
 
+    private async Task<(ITransport Transport, Welcome Welcome, Message Last)> HandshakeAsync(InProcessHost host, ClientIdentity identity, Hello hello)
+    {
+        var transport = await TcpTlsClientTransport.ConnectAsync("127.0.0.1", host.Port!.Value, expectedFingerprint: host.Fingerprint);
+        await transport.SendAsync(ProtocolCodec.Encode(hello));
+        var first = await ReadAsync(transport);
+        if (first is not Welcome welcome) return (transport, null!, first);
+        await transport.SendAsync(ProtocolCodec.Encode(new Join { PlayerKey = identity.PlayerKey, DisplayName = "x" }));
+        await transport.SendAsync(ProtocolCodec.Encode(new Auth { Proof = identity.Sign(welcome.HostKeyFingerprint, welcome.SessionId, welcome.Challenge) }));
+        return (transport, welcome, await ReadAsync(transport));
+    }
+
+    private static Hello HelloWith(string? gameId, int? knownEpoch) =>
+        new() { Protocol = ProtocolVersion.Current, ClientVersion = "test", RulesetHash = "", ModList = [], GameId = gameId, KnownEpoch = knownEpoch, HostMigration = true };
+
+    [Fact]
+    public async Task HostEpoch_NewGame_IsZeroAndLeavesTheFilesUnchanged()
+    {
+        await using var host = StartHost("epoch0");
+        using var cert = HostCertificate.Generate();
+        host.Listen(cert, 0);
+        var (transport, welcome, last) = await HandshakeAsync(host, greece, HelloWith(null, null));
+        await using (transport)
+        {
+            Assert.Equal(0, welcome.Epoch);
+            Assert.IsType<JoinOk>(last);
+        }
+        Assert.DoesNotContain("hostEpoch", File.ReadAllText(Path.Combine(host.Directory, "game.json")), StringComparison.Ordinal);
+        Assert.DoesNotContain("seenEpoch", File.ReadAllText(Path.Combine(host.Directory, "game.json")), StringComparison.Ordinal);
+        Assert.DoesNotContain("hostEpoch", File.ReadLines(Path.Combine(host.Directory, "commands.log")).First(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task HostEpoch_PromotedHost_AnnouncesItsEpochAndKeepsItAcrossMetaWrites()
+    {
+        await using var host = StartHost("epoch2");
+        var store = (FileGameStore)host.Host.Store!;
+        store.RaiseEpochs(2, 0);
+        store.WriteMeta(store.ReadMeta() with { HostFingerprint = "x" }); // the lobby layer writes meta from its own copy
+        Assert.Equal(2, store.ReadMeta().HostEpoch);
+        using var cert = HostCertificate.Generate();
+        host.Listen(cert, 0);
+        var (transport, welcome, last) = await HandshakeAsync(host, greece, HelloWith(host.GameId, 1));
+        await using (transport)
+        {
+            Assert.Equal(2, welcome.Epoch);
+            Assert.IsType<JoinOk>(last);
+        }
+        Assert.Equal(0, store.ReadMeta().SeenEpoch);
+    }
+
+    [Fact]
+    public async Task HostEpoch_ClientThatSawANewerHost_FencesThisHostForGood()
+    {
+        var dir = Path.Combine(root, "fenced");
+        await using (var host = StartHost("fenced"))
+        {
+            using var cert = HostCertificate.Generate();
+            host.Listen(cert, 0);
+            var (transport, welcome, last) = await HandshakeAsync(host, greece, HelloWith(host.GameId, 1));
+            await using (transport)
+            {
+                Assert.Equal(0, welcome.Epoch);
+                Assert.Equal(JoinRefusedCodes.StaleEpoch, Assert.IsType<JoinRefused>(last).Code);
+            }
+
+            // Superseded: even a client that knows nothing is turned away before the handshake goes on.
+            var (again, none, refusal) = await HandshakeAsync(host, babylon, HelloWith(null, null));
+            await using (again)
+            {
+                Assert.Null(none);
+                Assert.Equal(JoinRefusedCodes.StaleEpoch, Assert.IsType<JoinRefused>(refusal).Code);
+            }
+            await host.StopAsync();
+        }
+
+        using var opened = FileGameStore.Open(dir);
+        Assert.Equal(1, opened.Store.ReadMeta().SeenEpoch);
+        Assert.Equal(0, opened.Store.ReadMeta().HostEpoch);
+    }
+
+    [Fact]
+    public async Task HostEpoch_UnauthenticatedOrForeignClaims_DoNotFenceTheHost()
+    {
+        await using var host = StartHost("claims");
+        using var cert = HostCertificate.Generate();
+        host.Listen(cert, 0);
+        using var stranger = ClientIdentity.Generate();
+        var (t1, _, forged) = await HandshakeAsync(host, stranger, HelloWith(host.GameId, 9)); // no seat: refused for that, not fenced
+        await using (t1) Assert.Equal(JoinRefusedCodes.GameAlreadyStarted, Assert.IsType<JoinRefused>(forged).Code);
+        Assert.Equal(0, host.Host.Store is FileGameStore f ? f.ReadMeta().SeenEpoch : -1);
+
+        var (t2, _, other) = await HandshakeAsync(host, greece, HelloWith("some-other-game", 9)); // another game's epoch means nothing here
+        await using (t2) Assert.IsType<JoinOk>(other);
+    }
+
     [Fact]
     public async Task InProcessHost_TurnPolicyOption_ReachesTheTurnTimer()
     {

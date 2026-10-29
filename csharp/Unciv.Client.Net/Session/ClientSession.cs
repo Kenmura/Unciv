@@ -45,6 +45,15 @@ public sealed class ClientSessionOptions
     /// <summary>The game id kept from the last session; with it a reconnect sends <c>Resume</c>, without it a <c>ResyncRequest</c> (the host answers both with a snapshot or the missed deltas).</summary>
     public string? GameId { get; init; }
 
+    /// <summary>T269: the highest host epoch seen for <see cref="GameId"/>, loaded by the UI layer from its per-game store (null or 0: none). A host that announces a lower epoch is refused with <c>stale-epoch</c>.</summary>
+    public int? KnownEpoch { get; init; }
+
+    /// <summary>T269: called when a pinned host announced a higher epoch than the stored one, so the UI layer persists it next to the game's <c>lastSeq</c>.</summary>
+    public Action<int>? PersistKnownEpoch { get; init; }
+
+    /// <summary>T269: tell the host this client understands host migration (a host that cannot hand off sends the plain <c>HostClosing</c> to a client that did not).</summary>
+    public bool AdvertiseHostMigration { get; init; } = true;
+
     public int MaxReconnectAttempts { get; init; } = 5;
 
     /// <summary>How long connecting plus the join handshake may take (the TOFU prompt does not count) before the attempt is abandoned.</summary>
@@ -117,6 +126,7 @@ public sealed class ClientSession : IAsyncDisposable
     private CancellationTokenSource? handshakeTimer;
     private bool handshakeTimedOut;
     private string? gameId;
+    private int knownEpoch;
     private TaskCompletionSource? resyncWaiter;
 
     private sealed class PendingCommand(Command message, long ordinal)
@@ -131,6 +141,7 @@ public sealed class ClientSession : IAsyncDisposable
         this.connect = connect;
         this.options = options;
         gameId = options.GameId;
+        knownEpoch = Math.Max(0, options.KnownEpoch ?? 0);
         var random = options.Random ?? SystemSecureRandom.Instance;
         Span<byte> bytes = stackalloc byte[6];
         random.Fill(bytes);
@@ -374,7 +385,10 @@ public sealed class ClientSession : IAsyncDisposable
                 RulesetHash = options.RulesetHash,
                 ModList = options.ModList,
                 ModSync = options.ModSync != null ? true : null,
-                ModChecksums = options.ModSync != null && options.ModChecksums != null ? new Dictionary<string, string>(options.ModChecksums) : null
+                ModChecksums = options.ModSync != null && options.ModChecksums != null ? new Dictionary<string, string>(options.ModChecksums) : null,
+                GameId = gameId != null && knownEpoch > 0 ? gameId : null,
+                KnownEpoch = gameId != null && knownEpoch > 0 ? knownEpoch : null,
+                HostMigration = options.AdvertiseHostMigration ? true : null
             }, token).ConfigureAwait(false);
 
             keepAliveTask = RunKeepAliveAsync(keepAlive.Token);
@@ -568,6 +582,19 @@ public sealed class ClientSession : IAsyncDisposable
         {
             await EndAsync(refusal, refused: true).ConfigureAwait(false);
             return false;
+        }
+
+        // T269: the host key is trusted by now. A host below the epoch this client has seen is a superseded one: a hard stop, like a changed host key.
+        var epoch = welcome.Epoch ?? 0;
+        if (epoch < knownEpoch)
+        {
+            await EndAsync(ClientCodes.StaleEpoch, refused: true).ConfigureAwait(false);
+            return false;
+        }
+        if (epoch > knownEpoch)
+        {
+            knownEpoch = epoch;
+            options.PersistKnownEpoch?.Invoke(epoch);
         }
 
         await SendAsync(new Join

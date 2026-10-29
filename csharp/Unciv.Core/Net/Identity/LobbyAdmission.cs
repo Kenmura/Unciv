@@ -14,6 +14,9 @@ public static class JoinRefusedCodes
     public const string GameAlreadyStarted = "game-started";
     public const string Kicked = "kicked";
 
+    /// <summary>T269: the host is superseded (the client has seen a newer host epoch). One code for every case, so it is not an oracle for who holds the game.</summary>
+    public const string StaleEpoch = "stale-epoch";
+
     /// <summary>T247: the rules differ and the host cannot offer its mods (it has no downloadable mod, or one is over the size caps).</summary>
     public const string ModSyncUnavailable = "mod-sync-unavailable";
 }

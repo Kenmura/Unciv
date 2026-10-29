@@ -70,6 +70,82 @@ public sealed class ClientNetSessionTests
     }
 
     [Fact]
+    public async Task Join_HelloAdvertisesHostMigrationAndKnownEpoch_OnlyWithAGame()
+    {
+        await using var fresh = new ClientNetRig();
+        var first = fresh.NewConnection();
+        var joinFresh = fresh.Session.JoinAsync();
+        var hello = await first.ReceiveAsync<Hello>();
+        Assert.True(hello.HostMigration);
+        Assert.Null(hello.KnownEpoch);
+        Assert.Null(hello.GameId);
+        await first.Transport.CloseAsync();
+        await joinFresh;
+
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint, GameId = "g1", KnownEpoch = 2
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        var known = await host.ReceiveAsync<Hello>();
+        Assert.Equal("g1", known.GameId);
+        Assert.Equal(2, known.KnownEpoch);
+        await host.Transport.CloseAsync();
+        await join;
+    }
+
+    [Fact]
+    public async Task Join_HostBelowTheStoredEpoch_IsAHardStop()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint, GameId = "g1", KnownEpoch = 2
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false, Epoch = 1 });
+        var result = await join;
+        Assert.False(result.Joined);
+        Assert.Equal(ClientCodes.StaleEpoch, result.Code);
+        Assert.Null(await host.Transport.ReceiveAsync()); // no Join was sent
+    }
+
+    [Fact]
+    public async Task Join_HostWithoutAnEpochField_IsEpochZero()
+    {
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint, GameId = "g1", KnownEpoch = 1
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false });
+        Assert.Equal(ClientCodes.StaleEpoch, (await join).Code);
+    }
+
+    [Fact]
+    public async Task Join_HostAboveTheStoredEpoch_IsRememberedAndPersisted()
+    {
+        var persisted = new List<int>();
+        await using var rig = new ClientNetRig(id => new ClientSessionOptions
+        {
+            Identity = id, DisplayName = "A", RulesetHash = "h", ExpectedFingerprint = ClientNetRig.Fingerprint, GameId = "g1", KnownEpoch = 1, PersistKnownEpoch = persisted.Add
+        });
+        var host = rig.NewConnection();
+        var join = rig.Session.JoinAsync();
+        await host.ReceiveAsync<Hello>();
+        await host.SendAsync(new Welcome { Protocol = ProtocolVersion.Current, SessionId = "s", Challenge = "c", HostKeyFingerprint = ClientNetRig.Fingerprint, RequiresPassword = false, Epoch = 3 });
+        await host.ReceiveAsync<Join>();
+        await host.ReceiveAsync<Auth>();
+        await host.SendAsync(new JoinOk());
+        Assert.True((await join).Joined);
+        Assert.Equal([3], persisted);
+    }
+
+    [Fact]
     public async Task Join_UnknownHost_TofuAccepted_PinsAndPersists()
     {
         var known = new KnownHosts();
