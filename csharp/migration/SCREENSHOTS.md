@@ -1142,7 +1142,7 @@ Scenario `unit-visuals`.
 
 *Close view of the Warrior model in its idle pose with its TeamColor material tinted in the red civ's colour.* (`unit-visuals/warrior.png`)
 
-## C081 (ticket not Done or unknown)
+## C081 UnitAnimator, facing and re-timed combat cues
 
 Clip-driven combat: attackers turn to their target, step in and play attack or attack_ranged, the struck unit plays hit; the clip time follows the presenter's clock.
 
