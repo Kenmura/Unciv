@@ -244,7 +244,7 @@ flowchart TD
   class B025 waiting
   class B026 waiting
   class C006 ready
-  class C045 prog
+  class C045 review
   class C061 waiting
   class C062 waiting
   class C063 waiting
@@ -364,7 +364,7 @@ xychart-beta
 | C084 | Available (waiting on C083) | C083 | 4 | Unit art by era: ancient and classical |
 | C093 | Available (waiting on C084) | C084 | 3 | Unit art by era: medieval and renaissance |
 | B014 | Available (waiting on B013, B008) | B013, B008 | 2 | BNW: Public opinion, opinion unhappiness, switching, anarchy |
-| C045 | In-Progress [Claude] | C036, T178, T204 | 2 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
+| C045 | Needs-Review [Claude] | C036, T178, T204 | 2 | In-game multiplayer social and admin: chat, player list, kick, rebind a slot to a new device key |
 | C089 | Available (waiting on C067, C078) | C067, C078 | 2 | Map markers: private client-side tacks |
 | C094 | Available (waiting on C093) | C093 | 2 | Unit art by era: industrial, modern and naval/air |
 | B006 | Available (waiting on B005) | B005 | 1 | BNW: Trade units: Caravan, Cargo Ship, rebasing, build restrictions, exotic goods |

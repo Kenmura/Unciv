@@ -974,5 +974,23 @@
         "caption": "Both ended and the host is resolving: dimmed 'Resolving the turn / Waiting for the host' overlay, disabled 'Resolving turn...' button, and the refusal in the status line."
       }
     ]
+  },
+  "C045": {
+    "scenario": "mp-social",
+    "about": "In-game players and chat panel of a hosted game, host view: chat, host-only Kick and Rebind.",
+    "shots": [
+      {
+        "golden": "mp-social/players.png",
+        "caption": "The Players panel, top right: Alice (you) and Bob with green dots and 'Online'; only Bob's row has Kick and Rebind; the chat below is empty."
+      },
+      {
+        "golden": "mp-social/chat.png",
+        "caption": "Two chat lines, 'Bob: Hello Alice!' and 'Alice: Hi Bob, ready when you are'; the sender is the name the host stamped."
+      },
+      {
+        "golden": "mp-social/refused.png",
+        "caption": "A rebind with a malformed key was refused: the notice under the chat reads 'Not done: that is not a player key' and Bob is still Online."
+      }
+    ]
   }
 }

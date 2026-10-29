@@ -648,7 +648,7 @@ Scenario `lobby`.
 
 *After the host kicked Friend B and closed the slot: slot 3 is Closed (Open undoes it), slot 4 is still Open and becomes AI at Start.* (`lobby/kicked.png`)
 
-## C036 (ticket not Done or unknown)
+## C036 Multiplayer turn bar: who has ended, deadline, End turn / Undo end turn, turn-resolving overlay, connection markers
 
 Multiplayer turn bar: who has ended, deadline countdown, connection marks, Next turn / Undo end turn, resolving overlay and toasts for other humans' actions.
 
@@ -781,6 +781,24 @@ Scenario `menu`.
 ![After resigning: the screen says so and offers only the main menu](../Unciv.Godot.Harness/golden/menu/resigned.png)
 
 *After resigning: the screen says so and offers only the main menu* (`menu/resigned.png`)
+
+## C045 (ticket not Done or unknown)
+
+In-game players and chat panel of a hosted game, host view: chat, host-only Kick and Rebind.
+
+Scenario `mp-social`.
+
+![The Players panel, top right: Alice (you) and Bob with green dots and 'Online'; only Bob's row has Kick and Rebind; the chat below is empty.](../Unciv.Godot.Harness/golden/mp-social/players.png)
+
+*The Players panel, top right: Alice (you) and Bob with green dots and 'Online'; only Bob's row has Kick and Rebind; the chat below is empty.* (`mp-social/players.png`)
+
+![Two chat lines, 'Bob: Hello Alice!' and 'Alice: Hi Bob, ready when you are'; the sender is the name the host stamped.](../Unciv.Godot.Harness/golden/mp-social/chat.png)
+
+*Two chat lines, 'Bob: Hello Alice!' and 'Alice: Hi Bob, ready when you are'; the sender is the name the host stamped.* (`mp-social/chat.png`)
+
+![A rebind with a malformed key was refused: the notice under the chat reads 'Not done: that is not a player key' and Bob is still Online.](../Unciv.Godot.Harness/golden/mp-social/refused.png)
+
+*A rebind with a malformed key was refused: the notice under the chat reads 'Not done: that is not a player key' and Bob is still Online.* (`mp-social/refused.png`)
 
 ## C046 Dev console UI: console popup with history and autocomplete
 

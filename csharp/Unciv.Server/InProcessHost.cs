@@ -20,6 +20,9 @@ public sealed record InProcessHostOptions
 
     public StoreOptions? Store { get; init; }
 
+    /// <summary>C045: send every session the roster (who holds which seat, who is connected) whenever it changes, so the turn bar and the player list have it. Off by default: the frames are extra.</summary>
+    public bool AnnounceRoster { get; init; }
+
     /// <summary>How often the host ticks the turn timer. Null or non-positive: no background ticking (tests drive <see cref="GameHost.Tick"/>).</summary>
     public TimeSpan? TickInterval { get; init; } = TimeSpan.FromSeconds(1);
 
@@ -97,7 +100,7 @@ public sealed class InProcessHost : IAsyncDisposable
         var meta = new GameMeta { Slots = new SortedDictionary<string, SlotBinding>(humanKeys.ToDictionary(x => x.Key, x => x.Value), StringComparer.Ordinal) };
         var store = FileGameStore.Create(directory, game.GameId, header, meta, game, options.Store);
         var session = new GameSession(game) { Clock = () => clock.NowMillis };
-        return new InProcessHost(new GameHost(session, store, clock: clock), store, hostCivId, options, null);
+        return new InProcessHost(new GameHost(session, store, clock: clock, announceRoster: options.AnnounceRoster), store, hostCivId, options, null);
     }
 
     /// <summary>
@@ -115,7 +118,7 @@ public sealed class InProcessHost : IAsyncDisposable
             var hostCiv = meta.Slots.FirstOrDefault(x => string.Equals(x.Value.PlayerKey, hostPlayerKey, StringComparison.Ordinal)).Key
                 ?? throw new GameStoreException("The host player key is not bound to a civ in this game");
             var session = new GameSession(opened.Session.Game, lastSeq: opened.Session.LastSeq) { Clock = () => clock.NowMillis };
-            var host = new GameHost(session, opened.Store, clock: clock);
+            var host = new GameHost(session, opened.Store, clock: clock, announceRoster: options.AnnounceRoster);
             var result = new InProcessHost(host, opened.Store, hostCiv, options, opened.Report);
             // Crash mid-resolve: the log holds the steps already applied, the rest is derived from the state.
             if (session.Game.TurnState is { Phase: SimultaneousPhase.Resolving })
@@ -143,6 +146,20 @@ public sealed class InProcessHost : IAsyncDisposable
         await host.AttachSessionAsync("local-" + hostCivId, hostCivId, hostEnd, binding.PlayerKey).ConfigureAwait(false);
         return client;
     }
+
+    /// <summary>
+    /// C045, host only: disconnects the player of <paramref name="civId"/>, clears the seat's key binding and hands the civ to the AI (<see cref="GameHost.KickCivAsync"/>).
+    /// The host's own seat cannot be kicked. Null on success, else a refusal code (<c>own-seat</c> or the host's).
+    /// </summary>
+    public Task<string?> KickAsync(string civId) =>
+        civId == hostCivId ? Task.FromResult<string?>("own-seat") : host.KickCivAsync(civId);
+
+    /// <summary>
+    /// C045, host only: moves the seat of <paramref name="civId"/> to <paramref name="newPlayerKey"/>, for a friend who lost their key or plays from another device (SERVER.md 6.2).
+    /// The new key's next connection takes the civ back from the AI. The host's own seat cannot be rebound. Null on success, else a refusal code (<see cref="GameHost.RebindCivAsync"/>).
+    /// </summary>
+    public Task<string?> RebindAsync(string civId, string newPlayerKey) =>
+        civId == hostCivId ? Task.FromResult<string?>("own-seat") : host.RebindCivAsync(civId, newPlayerKey);
 
     /// <summary>Starts accepting friends over TLS/TCP (port 0 picks a free one). Remote players must present a key bound in <c>game.json</c>.</summary>
     public void Listen(X509Certificate2 certificate, int port = 47821)

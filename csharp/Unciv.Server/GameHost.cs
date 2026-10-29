@@ -1,8 +1,10 @@
 using System.Threading.Channels;
 using Unciv.Commands;
 using Unciv.Commands.Events;
+using Unciv.Commands.Turn;
 using Unciv.Logic;
 using Unciv.Net;
+using Unciv.Net.Identity;
 using Unciv.Net.Persistence;
 using Unciv.Net.Remote;
 using Unciv.Net.Turns;
@@ -37,6 +39,9 @@ public sealed class HostSession
 
     /// <summary>A ResyncRequest arrived inside the rate-limit window: one snapshot is owed once the window ends (requests coalesce).</summary>
     public bool ResyncPending { get; set; }
+
+    /// <summary>C045: when this session's recent chat lines were accepted (host clock), for the rate limit.</summary>
+    public Queue<long> ChatTimes { get; } = new();
 }
 
 /// <summary>Per-session protection limits of the host. Times are in <see cref="IClock"/> milliseconds.</summary>
@@ -52,6 +57,14 @@ public sealed record HostLimits
 
     /// <summary>Outbound frames queued per session before a slow reader is disconnected.</summary>
     public int MaxQueuedFrames { get; init; } = 256;
+
+    /// <summary>C045: longest chat line broadcast (UTF-16 units); longer text is cut.</summary>
+    public int MaxChatChars { get; init; } = 500;
+
+    /// <summary>C045: chat lines one session may send per <see cref="ChatWindowMillis"/>; the rest are dropped silently.</summary>
+    public int MaxChatPerWindow { get; init; } = 5;
+
+    public long ChatWindowMillis { get; init; } = 10_000;
 
     /// <summary>Outbound bytes (approximate) queued per session before a slow reader is disconnected.</summary>
     public long MaxQueuedBytes { get; init; } = 64L * 1024 * 1024;
@@ -76,6 +89,7 @@ public sealed class GameHost : IAsyncDisposable
     private readonly Channel<Func<Task>> mailbox = Channel.CreateUnbounded<Func<Task>>();
     private readonly CancellationTokenSource cts = new();
     private Task? actorTask;
+    private readonly bool announceRoster;
     private bool closed;
 
     public GameHost(
@@ -86,8 +100,10 @@ public sealed class GameHost : IAsyncDisposable
         CommandGate? gate = null,
         IClock? clock = null,
         bool startActor = true,
-        HostLimits? limits = null)
+        HostLimits? limits = null,
+        bool announceRoster = false)
     {
+        this.announceRoster = announceRoster;
         this.limits = limits ?? HostLimits.Default;
         this.session = session;
         this.store = store;
@@ -172,6 +188,7 @@ public sealed class GameHost : IAsyncDisposable
                 }
 
                 _ = RunSessionReaderAsync(hostSession, cts.Token);
+                await AnnounceRosterAsync();
                 completion.SetResult(true);
             }
             catch (Exception ex)
@@ -232,6 +249,9 @@ public sealed class GameHost : IAsyncDisposable
                     break;
                 case Ping:
                     await SafeSendAsync(hostSession, new Pong());
+                    break;
+                case LobbyChat chat:
+                    await ProcessChatAsync(hostSession, chat);
                     break;
                 case Leave:
                     await DetachSessionAsync(sessionId);
@@ -469,17 +489,137 @@ public sealed class GameHost : IAsyncDisposable
 
     private async Task DetachSessionAsync(string sessionId)
     {
-        if (sessions.Remove(sessionId, out var hostSession))
+        if (!sessions.Remove(sessionId, out var hostSession)) return;
+        turnTimer.Disconnect(hostSession.BoundCivId);
+        remoteQueries.EndSession(sessionId);
+        gate.EndSession(sessionId);
+        try
         {
-            turnTimer.Disconnect(hostSession.BoundCivId);
-            remoteQueries.EndSession(sessionId);
-            gate.EndSession(sessionId);
-            try
-            {
-                await hostSession.Transport.CloseAsync();
-            }
-            catch { }
+            await hostSession.Transport.CloseAsync();
         }
+        catch { }
+        await AnnounceRosterAsync();
+    }
+
+    // ------------------------------------------------------------ C045: chat, roster and host administration
+
+    private string DisplayNameOf(string civId)
+    {
+        var name = store?.ReadMeta().Slots.GetValueOrDefault(civId)?.DisplayName;
+        return string.IsNullOrWhiteSpace(name) ? civId : name;
+    }
+
+    /// <summary>
+    /// A chat line from a bound player, sent to every open session (the sender included) with the sender's bound display name: the name on the wire is never taken from the frame.
+    /// Blank lines are dropped, long ones cut to <see cref="HostLimits.MaxChatChars"/>, and a session over <see cref="HostLimits.MaxChatPerWindow"/> lines per window is ignored.
+    /// </summary>
+    private async Task ProcessChatAsync(HostSession from, LobbyChat chat)
+    {
+        var text = chat.Text.Trim();
+        if (text.Length == 0) return;
+        long now = clock.NowMillis;
+        while (from.ChatTimes.Count > 0 && now - from.ChatTimes.Peek() >= limits.ChatWindowMillis) from.ChatTimes.Dequeue();
+        if (from.ChatTimes.Count >= limits.MaxChatPerWindow) return;
+        from.ChatTimes.Enqueue(now);
+        if (text.Length > limits.MaxChatChars) text = text[..limits.MaxChatChars];
+        var line = new LobbyChat { Text = text, Sender = DisplayNameOf(from.BoundCivId) };
+        foreach (var target in sessions.Values.ToList()) await SafeSendAsync(target, line);
+    }
+
+    /// <summary>The humans of the game and the players whose seat is bound, as a <see cref="LobbyState"/> (what the turn bar and the player list read).</summary>
+    private LobbyState BuildRoster()
+    {
+        var meta = store?.ReadMeta();
+        var slots = new List<Unciv.Net.LobbySlot>();
+        foreach (var civ in session.Game.Civilizations.Where(it => it.IsMajorCiv() && !it.IsSpectator()))
+        {
+            var binding = meta?.Slots.GetValueOrDefault(civ.CivId);
+            if (!civ.IsHuman() && binding == null) continue;
+            slots.Add(new Unciv.Net.LobbySlot
+            {
+                Slot = slots.Count,
+                PlayerName = binding == null || binding.DisplayName.Length == 0 ? null : binding.DisplayName,
+                Nation = civ.CivId,
+                Ready = false,
+                Kind = civ.IsHuman() ? "Human" : "AI",
+                PlayerKeyId = binding is { PlayerKey.Length: > 0 } ? binding.PlayerKey : null,
+                Connected = sessions.Values.Any(it => it.IsOpen && string.Equals(it.BoundCivId, civ.CivId, StringComparison.Ordinal)),
+            });
+        }
+        return new LobbyState
+        {
+            Settings = meta?.LobbySettings ?? System.Text.Json.JsonDocument.Parse("{}").RootElement.Clone(),
+            Slots = slots,
+            HostName = "",
+        };
+    }
+
+    /// <summary>Sends the current roster to every open session when the host was created with <c>announceRoster</c>; otherwise nothing is sent.</summary>
+    public async Task AnnounceRosterAsync()
+    {
+        if (!announceRoster || sessions.Count == 0) return;
+        var roster = BuildRoster();
+        foreach (var target in sessions.Values.ToList()) await SafeSendAsync(target, roster);
+    }
+
+    /// <summary>
+    /// Host administration (called by the host player's process, never reachable from a client frame): the player of <paramref name="civId"/> is disconnected with <c>kicked</c>, the seat
+    /// binding is cleared so nobody can come back with the old key, and the civ is handed to the AI (<see cref="SetController"/>). Null on success, otherwise a refusal code:
+    /// <c>unknown-civ</c>, <c>not-bound</c>, <c>no-store</c> or the command's own (<c>turn-resolving</c> while the round resolves).
+    /// </summary>
+    public Task<string?> KickCivAsync(string civId) => AdminAsync(civId, null);
+
+    /// <summary>
+    /// Host administration: the seat of <paramref name="civId"/> now belongs to <paramref name="newPlayerKey"/> (a player who lost their key or changed device). The old player is
+    /// disconnected, the civ plays as AI until the new key connects, and that connection takes it back (the same path as a reconnect after an AI takeover). Refusals: those of
+    /// <see cref="KickCivAsync"/> plus <c>bad-key</c>, <c>key-in-use</c> and <c>unchanged</c>.
+    /// </summary>
+    public Task<string?> RebindCivAsync(string civId, string newPlayerKey) => AdminAsync(civId, newPlayerKey);
+
+    private Task<string?> AdminAsync(string civId, string? newKey)
+    {
+        var result = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        EnqueueAsync(async () => result.SetResult(await AdminCoreAsync(civId, newKey))).ContinueWith(t =>
+        {
+            if (t.IsFaulted) result.TrySetException(t.Exception!.InnerExceptions);
+        }, TaskScheduler.Default);
+        return result.Task;
+    }
+
+    private async Task<string?> AdminCoreAsync(string civId, string? newKey)
+    {
+        var civ = session.Game.GetCivilizationOrNull(civId);
+        if (civ == null || !civ.IsMajorCiv() || civ.IsSpectator()) return "unknown-civ";
+        if (store == null) return "no-store";
+        var meta = store.ReadMeta();
+        if (!meta.Slots.TryGetValue(civId, out var binding)) return "not-bound";
+        if (newKey != null)
+        {
+            if (!PlayerKeys.IsValid(newKey)) return "bad-key";
+            if (string.Equals(binding.PlayerKey, newKey, StringComparison.Ordinal)) return "unchanged";
+            if (meta.Slots.Any(it => string.Equals(it.Value.PlayerKey, newKey, StringComparison.Ordinal))) return "key-in-use";
+        }
+
+        // First the engine: refused (resolving, last human) means nothing else changes.
+        if (civ.IsHuman())
+        {
+            var handed = ApplyServerCommand(new SetController { CivId = civId, Controller = Unciv.Logic.Civilization.PlayerType.AI });
+            if (!handed.Accepted) return handed.Validation.Code;
+        }
+
+        var slots = new SortedDictionary<string, SlotBinding>(meta.Slots, StringComparer.Ordinal)
+        {
+            [civId] = new SlotBinding { PlayerKey = newKey ?? "", DisplayName = newKey == null ? binding.DisplayName : "" },
+        };
+        store.WriteMeta(meta with { Slots = slots });
+
+        foreach (var old in sessions.Values.Where(it => string.Equals(it.BoundCivId, civId, StringComparison.Ordinal)).ToList())
+        {
+            await SafeSendAsync(old, new JoinRefused { Code = JoinRefusedCodes.Kicked });
+            await DetachSessionAsync(old.SessionId);
+        }
+        await AnnounceRosterAsync();
+        return null;
     }
 
     private Dictionary<string, ViewDeltaBuilder.ViewMark> CaptureViewMarks()

@@ -144,6 +144,13 @@ public partial class GameScreen : Control
     /// <summary>C036: the multiplayer turn bar (who ended, deadline, connection marks, toasts); hidden unless the session is a simultaneous game (<see cref="ITurnRoster"/>).</summary>
     public TurnBarView TurnBar { get; private set; } = null!; // JUSTIFY: C036 assigned in _Ready before any use
 
+    /// <summary>C045: the players-and-chat panel of a hosted game (the Players button toggles it); the button is hidden unless the session is an <see cref="IGameSocial"/>.</summary>
+    public SocialView Social { get; private set; } = null!; // JUSTIFY: C045 assigned in _Ready before any use
+
+    public Button PlayersButton { get; } = new() { Name = "PlayersButton", Text = "Players".Tr(), Visible = false };
+
+    private IGameSocial? social;
+
     /// <summary>C036: the clock the countdown reads (Unix ms); wall time in the game, fixed in scenarios.</summary>
     public Func<long> NowMs { get; set; } = static () => (long)(Time.GetUnixTimeFromSystem() * 1000.0);
 
@@ -752,6 +759,17 @@ public partial class GameScreen : Control
         };
         TurnBar = new TurnBarView();
         AddChild(TurnBar);
+        Social = new SocialView();
+        AddChild(Social);
+        AddChild(PlayersButton);
+        PlayersButton.Pressed += () =>
+        {
+            Social.Toggle(!Social.Visible);
+            if (Social.Visible) LayoutSocial();
+        };
+        Social.ChatSubmitted += text => Run(SendChat(text));
+        Social.KickRequested += civ => Run(Admin(civ, null));
+        Social.RebindRequested += (civ, key) => Run(Admin(civ, key));
         TurnOverlay = new NextTurnProgressView();
         AddChild(TurnOverlay);
         VoteResult = new VoteResultScreen();
@@ -837,6 +855,8 @@ public partial class GameScreen : Control
         Minimap.Position = new Vector2(Size.X - HudMargin - Minimap.Size.X, HudMargin + Hud.TopBarHeight);
         Notifications.Position = new Vector2(HudMargin, HudMargin + Hud.TopBarHeight + DiplomacyButton.GetCombinedMinimumSize().Y + HudMargin);
         MenuButton.Position = new Vector2(TradeButton.Position.X + TradeButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
+        PlayersButton.Position = new Vector2(MenuButton.Position.X + MenuButton.GetCombinedMinimumSize().X + HudMargin, HudMargin + Hud.TopBarHeight);
+        LayoutSocial();
         Alerts.LayoutIn(Size);
         Proposals.LayoutIn(Size);
         VoteResult.LayoutIn(Size);
@@ -865,6 +885,7 @@ public partial class GameScreen : Control
             session.SnapshotChanged -= OnSnapshotChanged;
             session.EventsReceived -= OnEventsReceived;
             if (session is ITurnRoster roster) roster.RosterChanged -= RefreshTurnBar;
+            BindSocial(null);
         }
     }
 
@@ -876,6 +897,7 @@ public partial class GameScreen : Control
             session.SnapshotChanged -= OnSnapshotChanged;
             session.EventsReceived -= OnEventsReceived;
             if (session is ITurnRoster previous) previous.RosterChanged -= RefreshTurnBar;
+            BindSocial(null);
             Presenter.Reset();
             turnCancellation?.Cancel();
             SelectedUnitId = null;
@@ -888,6 +910,8 @@ public partial class GameScreen : Control
         var theme = new UiTheme(registry);
         Hud.Init(theme);
         TurnBar.Init(theme);
+        Social.Init(theme);
+        PlayersButton.Theme = theme.Theme;
         Notifications.Init(theme);
         Alerts.Init(theme);
         Proposals.Init(theme);
@@ -1028,6 +1052,7 @@ public partial class GameScreen : Control
         Presenter.Bind(id => unitNodes.GetValueOrDefault(id), coord => UnitPosition(coord, 0));
         session.SnapshotChanged += OnSnapshotChanged; // commands made elsewhere (another screen, a scenario) change what the HUD shows
         if (session is ITurnRoster roster) roster.RosterChanged += RefreshTurnBar;
+        BindSocial(session as IGameSocial);
         Refresh();
         RefreshTurnBar();
         var first = snapshot.Units.FirstOrDefault(it => it.Own != null);
@@ -1628,6 +1653,58 @@ public partial class GameScreen : Control
         if (session is not ITurnRoster roster) return;
         foreach (var gameEvent in batch.Events)
             if (TurnBarModel.Toast(gameEvent, roster.Roster, session.ViewerCivId) is { } toast) TurnBar.Toast(toast);
+    }
+
+    private void LayoutSocial() => Social.LayoutAt(new Vector2(Size.X - HudMargin, HudMargin + Hud.TopBarHeight + Minimap.Size.Y + HudMargin));
+
+    /// <summary>C045: connects the panel to a hosted game's chat and player list (null disconnects and hides it).</summary>
+    private void BindSocial(IGameSocial? next)
+    {
+        if (social != null)
+        {
+            social.ChatReceived -= Social.AddChat;
+            social.PlayersChanged -= RefreshPlayers;
+        }
+        social = next;
+        PlayersButton.Visible = next != null;
+        if (next == null)
+        {
+            Social.Toggle(false);
+            return;
+        }
+        next.ChatReceived += Social.AddChat;
+        next.PlayersChanged += RefreshPlayers;
+        foreach (var line in next.Chat) Social.AddChat(line);
+        RefreshPlayers();
+    }
+
+    private void RefreshPlayers()
+    {
+        if (social == null) return;
+        Social.ShowPlayers(social.Players);
+        LayoutSocial();
+    }
+
+    private async Task SendChat(string text)
+    {
+        if (social == null) return;
+        try
+        {
+            await social.SendChatAsync(text);
+        }
+        catch (InvalidOperationException)
+        {
+            if (IsInstanceValid(this) && IsInsideTree()) Social.SetNotice("The host cannot be reached.".Tr());
+        }
+    }
+
+    /// <summary>C045: Kick (<paramref name="newKey"/> null) or Rebind on the host's session; the refusal, if any, is shown in the panel's notice line.</summary>
+    private async Task Admin(string civId, string? newKey)
+    {
+        if (social == null) return;
+        var refused = newKey == null ? await social.KickAsync(civId) : await social.RebindAsync(civId, newKey);
+        if (!IsInstanceValid(this) || !IsInsideTree()) return;
+        Social.SetNotice(refused == null ? (newKey == null ? "Seat released." : "Seat rebound: the new device can join now.").Tr() : "Not done: ".Tr() + SocialModel.Describe(refused));
     }
 
     /// <summary>

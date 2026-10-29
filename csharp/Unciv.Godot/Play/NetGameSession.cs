@@ -8,6 +8,7 @@ using Unciv.Net;
 using Unciv.Net.Remote;
 using Unciv.Net.Visibility;
 using Unciv.Queries;
+using Unciv.Server;
 
 namespace Unciv.GodotClient.Play;
 
@@ -26,7 +27,7 @@ namespace Unciv.GodotClient.Play;
 /// (a refusal "cancelled", also while the submit itself is waiting); `progress` is unused; the host keeps the turn ended, and calling again waits for the next turn without submitting End turn a second time.
 /// <see cref="ExportSaveAsync"/> is null: the host saves.</para>
 /// </summary>
-public sealed class NetGameSession : IGameSession, ITurnRoster, IAsyncDisposable
+public sealed class NetGameSession : IGameSession, ITurnRoster, IGameSocial, IAsyncDisposable
 {
     /// <summary>How long a submit waits for the delta that carries its events after the host accepted it; past it the events are reported empty (the snapshot still catches up).</summary>
     private static readonly TimeSpan EventWait = TimeSpan.FromSeconds(30);
@@ -46,8 +47,15 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IAsyncDisposable
     private int endingTurn;
     private int replacedCount; // full snapshots applied so far; a resync waits for it to advance
 
-    public NetGameSession(ClientSession session, Ruleset ruleset)
+    private readonly InProcessHost? hostedBy;
+    private IReadOnlyList<ChatLine> chat = [];
+
+    /// <param name="session">the joined session; the caller owns it.</param>
+    /// <param name="ruleset">the ruleset of the game.</param>
+    /// <param name="hostedBy">C045: the host this process runs when the viewer is the host player (it enables kick and rebind); null for a joined friend.</param>
+    public NetGameSession(ClientSession session, Ruleset ruleset, InProcessHost? hostedBy = null)
     {
+        this.hostedBy = hostedBy;
         this.session = session;
         Ruleset = ruleset;
         snapshot = session.Game.Snapshot ?? throw new InvalidOperationException("The game has not started: there is no snapshot yet");
@@ -72,6 +80,30 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IAsyncDisposable
     public IReadOnlyList<TurnRosterEntry> Roster => RosterOf(session.Lobby);
 
     public event Action? RosterChanged;
+
+    public IReadOnlyList<ChatLine> Chat
+    {
+        get { lock (gate) return chat; }
+    }
+
+    public event Action<ChatLine>? ChatReceived;
+
+    public event Action? PlayersChanged;
+
+    public IReadOnlyList<PlayerRow> Players => SocialModel.Players(session.Lobby, ViewerCivId, IsHost);
+
+    public bool IsHost => hostedBy != null;
+
+    public async Task SendChatAsync(string text)
+    {
+        if (SocialModel.Clean(text) is { } clean) await session.SendChatAsync(clean).ConfigureAwait(false);
+    }
+
+    public Task<string?> KickAsync(string civId) =>
+        hostedBy?.KickAsync(civId) ?? Task.FromResult<string?>("not-allowed");
+
+    public Task<string?> RebindAsync(string civId, string newPlayerKey) =>
+        hostedBy?.RebindAsync(civId, newPlayerKey) ?? Task.FromResult<string?>("not-allowed");
 
     private static List<TurnRosterEntry> RosterOf(LobbyState? lobby) => lobby == null ? [] :
     [
@@ -99,7 +131,16 @@ public sealed class NetGameSession : IGameSession, ITurnRoster, IAsyncDisposable
                         Apply(delta.Snapshot, new EventBatch(delta.Seq, DecodeEvents(delta)));
                         break;
                     case LobbyUpdated:
-                        Raise(() => RosterChanged?.Invoke());
+                        Raise(() =>
+                        {
+                            RosterChanged?.Invoke();
+                            PlayersChanged?.Invoke();
+                        });
+                        break;
+                    case LobbyChatReceived said:
+                        var line = new ChatLine(string.IsNullOrEmpty(said.Sender) ? "?" : said.Sender, said.Text);
+                        lock (gate) chat = SocialModel.Append(chat, line);
+                        Raise(() => ChatReceived?.Invoke(line));
                         break;
                     case Unciv.Client.Net.Session.Desynchronized lost:
                         Raise(() => Desynchronized?.Invoke(lost.Reason));

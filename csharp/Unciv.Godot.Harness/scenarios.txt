@@ -47,3 +47,4 @@ tutorial-tasks
 host-screen
 lobby
 mp-turn
+mp-social
