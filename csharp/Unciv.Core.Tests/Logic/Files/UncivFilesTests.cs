@@ -391,6 +391,19 @@ public sealed class UncivFilesTests : IDisposable
     }
 
     [Fact]
+    public void OlderVersionStillLoads()
+    {
+        var files = NewFiles();
+        UncivFiles.SaveZipped = false;
+        var game = NewGame();
+        game.Version = CompatibilityVersion.CurrentCompatibilityVersion;
+        var json = UncivJson.Serialize(game).Replace($"\"number\":{CompatibilityVersion.CurrentCompatibilityNumber}", $"\"number\":{CompatibilityVersion.CurrentCompatibilityNumber - 1}", StringComparison.Ordinal);
+        Assert.Contains($"\"number\":{CompatibilityVersion.CurrentCompatibilityNumber - 1}", json, StringComparison.Ordinal);
+        WriteText(files.GetSave("older"), json);
+        Assert.NotNull(files.LoadGameByName("older"));
+    }
+
+    [Fact]
     public void UnparseableGameReportsItsVersion()
     {
         var files = NewFiles();
