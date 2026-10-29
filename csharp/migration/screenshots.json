@@ -1475,5 +1475,19 @@
         "caption": "Zoomed far out over the whole gallery: every formation is one figure (no more 3 and 4 figure groups) standing in the middle of its tile, with civ colour, health bars and status marks."
       }
     ]
+  },
+  "C086": {
+    "scenario": "combat-presentation",
+    "about": "Combat polish (effects, dust, flashes, timed sounds); entry added by C085 for the re-recorded combat-presentation goldens.",
+    "shots": [
+      {
+        "golden": "combat-presentation/impact.png",
+        "caption": "A melee strike at impact: the struck unit shows its damage number (-31)."
+      },
+      {
+        "golden": "combat-presentation/shot.png",
+        "caption": "A ranged shot in flight between the two units."
+      }
+    ]
   }
 }

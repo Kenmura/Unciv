@@ -70,6 +70,7 @@
 - [C083 Unit art pipeline](#c083-unit-art-pipeline)
 - [C084 Unit art by era: ancient and classical](#c084-unit-art-by-era-ancient-and-classical)
 - [C085 (ticket not Done or unknown)](#c085-ticket-not-done-or-unknown)
+- [C086 Unit combat polish: effects and sounds](#c086-unit-combat-polish-effects-and-sounds)
 - [C087 Rival stats ribbon in the HUD](#c087-rival-stats-ribbon-in-the-hud)
 - [C088 City-site preview: yields at a candidate settle tile](#c088-city-site-preview-yields-at-a-candidate-settle-tile)
 - [C089 (ticket not Done or unknown)](#c089-ticket-not-done-or-unknown)
@@ -1408,6 +1409,20 @@ Scenario `unit-visuals`.
 ![Zoomed far out over the whole gallery: every formation is one figure (no more 3 and 4 figure groups) standing in the middle of its tile, with civ colour, health bars and status marks.](../Unciv.Godot.Harness/golden/unit-visuals/far.png)
 
 *Zoomed far out over the whole gallery: every formation is one figure (no more 3 and 4 figure groups) standing in the middle of its tile, with civ colour, health bars and status marks.* (`unit-visuals/far.png`)
+
+## C086 Unit combat polish: effects and sounds
+
+Combat polish (effects, dust, flashes, timed sounds); entry added by C085 for the re-recorded combat-presentation goldens.
+
+Scenario `combat-presentation`.
+
+![A melee strike at impact: the struck unit shows its damage number (-31).](../Unciv.Godot.Harness/golden/combat-presentation/impact.png)
+
+*A melee strike at impact: the struck unit shows its damage number (-31).* (`combat-presentation/impact.png`)
+
+![A ranged shot in flight between the two units.](../Unciv.Godot.Harness/golden/combat-presentation/shot.png)
+
+*A ranged shot in flight between the two units.* (`combat-presentation/shot.png`)
 
 ## C087 Rival stats ribbon in the HUD
 
