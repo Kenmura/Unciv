@@ -159,6 +159,22 @@ public sealed class CultureVictoryTests
         Assert.Equal("Win the World Leader vote", milestone.GetVictoryScreenButtonHeaderText(false, w.A));
     }
 
+    [Fact]
+    public void ARulesetWithoutLevelThresholdsNeverCompletesIt()
+    {
+        var w = World();
+        w.Game.Ruleset.ModOptions.Constants.CultureLevelExotic = 0;
+        Set(w.A, w.B, 100000);
+        Assert.False(Culture(w).HasBeenCompletedBy(w.A));
+    }
+
+    [Fact]
+    public void ANegativeSpreadSubtractsFromTheModifier()
+    {
+        var w = World(Spread100, "[-30]% influence spread from Tourism");
+        Assert.Equal(70, TourismRules.ModifierWith(w.A, w.B));
+    }
+
     // --- the Internet and the Great Firewall
 
     private static void GiveFirewall(GreatWorkWorld w, CivilizationObject owner)

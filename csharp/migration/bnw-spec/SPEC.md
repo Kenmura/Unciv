@@ -615,7 +615,7 @@ dead civs do not count). It is the ordinary end-of-turn victory check (`TurnMana
 milestone and header, `overrides.json`) and still drops Diplomatic until B063. Internet/Great Firewall (the [?] is closed by a deliberate choice, no
 decompile available): the generator writes `[+100]% influence spread from Tourism` on The Internet (from `Technologies.tsv`) and
 `Other civs' cultural influence is nullified here` on the Great Firewall; step 9 of 4.3.2 adds the sum of the influence-spread uniques of M's techs to the
-modifier toward T, but 0 when T owns a nullifying building. The Great Firewall changes nothing else (the data value 1 is read as "all of it").
+modifier toward T, but 0 when T owns a nullifying building. The unique's "here" is read as civ-wide (the Great Firewall is a wonder). With tourism off the Cultural victory can be selected but never completes. The Great Firewall changes nothing else (the data value 1 is read as "all of it").
 
 #### 4.3.5 Benefits of influence levels [O names, K values]
 Lua-exposed: `GetInfluenceTradeRouteScienceBonus(T)` (@1006e720, adds science to routes to T), `GetInfluenceCityStateSpyRankBonus`
