@@ -1426,5 +1426,23 @@
         "caption": "Settler selected, pointer on a nearby tile: the tooltip lists the site's total yields and the resources in range with a count of unexplored tiles; the gold hexes mark the work radius."
       }
     ]
+  },
+  "T256": {
+    "scenario": "unit-visuals",
+    "about": "Rigid unit art: 44 generated models for ships, submarines, siege, armour, aircraft, missiles and the helicopter in the units pack (code-generated, no clips; RigidMotion moves them).",
+    "shots": [
+      {
+        "golden": "unit-visuals/ships.png",
+        "caption": "The ships of the gallery's lower rows: oared galleys with rams and sails, sailing ships with gun ports, the ironclad, submarines, battleship, missile cruiser and carrier, in red and blue civ colours."
+      },
+      {
+        "golden": "unit-visuals/siege-armour.png",
+        "caption": "The lower gallery: siege engines (ballista, trebuchet, hwach'a, artillery, rocket artillery) and armour (landship, panzer, modern armor, giant death robot) with civ-coloured pennants, between the ships and the aircraft."
+      },
+      {
+        "golden": "unit-visuals/air.png",
+        "caption": "Aircraft, missiles and the helicopter: aircraft hover on a pole above their shadow, the helicopter stands on its skids."
+      }
+    ]
   }
 }

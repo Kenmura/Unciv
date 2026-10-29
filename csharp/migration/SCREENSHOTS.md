@@ -1374,7 +1374,7 @@ Scenario `unit-visuals`.
 
 *Close view, side on: the Cavalry, Cossack and Hussar, riders on the generated mount.* (`unit-visuals/modern-mounts.png`)
 
-## C095 (ticket not Done or unknown)
+## C095 Battering Ram rigid siege kind and chariot/elephant art
 
 Battering Ram as a rigid siege model, a cart-and-wheels chariot and a trunked elephant (generated rigs of the units pack).
 
@@ -1401,6 +1401,24 @@ Scenario `host-screen`.
 ![Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min.](../Unciv.Godot.Harness/golden/host-screen/network.png)
 
 *Turn timer 5 min with 'Scale each turn's time with the game' checked and the shortest turn set to 1 min.* (`host-screen/network.png`)
+
+## T256 (ticket not Done or unknown)
+
+Rigid unit art: 44 generated models for ships, submarines, siege, armour, aircraft, missiles and the helicopter in the units pack (code-generated, no clips; RigidMotion moves them).
+
+Scenario `unit-visuals`.
+
+![The ships of the gallery's lower rows: oared galleys with rams and sails, sailing ships with gun ports, the ironclad, submarines, battleship, missile cruiser and carrier, in red and blue civ colours.](../Unciv.Godot.Harness/golden/unit-visuals/ships.png)
+
+*The ships of the gallery's lower rows: oared galleys with rams and sails, sailing ships with gun ports, the ironclad, submarines, battleship, missile cruiser and carrier, in red and blue civ colours.* (`unit-visuals/ships.png`)
+
+![The lower gallery: siege engines (ballista, trebuchet, hwach'a, artillery, rocket artillery) and armour (landship, panzer, modern armor, giant death robot) with civ-coloured pennants, between the ships and the aircraft.](../Unciv.Godot.Harness/golden/unit-visuals/siege-armour.png)
+
+*The lower gallery: siege engines (ballista, trebuchet, hwach'a, artillery, rocket artillery) and armour (landship, panzer, modern armor, giant death robot) with civ-coloured pennants, between the ships and the aircraft.* (`unit-visuals/siege-armour.png`)
+
+![Aircraft, missiles and the helicopter: aircraft hover on a pole above their shadow, the helicopter stands on its skids.](../Unciv.Godot.Harness/golden/unit-visuals/air.png)
+
+*Aircraft, missiles and the helicopter: aircraft hover on a pole above their shadow, the helicopter stands on its skids.* (`unit-visuals/air.png`)
 
 ## Missing screenshots
 
