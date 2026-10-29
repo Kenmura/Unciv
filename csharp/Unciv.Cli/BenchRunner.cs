@@ -24,12 +24,13 @@ namespace Unciv.Cli;
 public static class BenchRunner
 {
     public const string Usage = """
-        bench [--scenario small|medium|all] [--turns N] [--json FILE|-] [--ruleset NAME] [--host-turns K] [--recipients R] [--no-probe]
+        bench [--scenario small|medium|all] [--turns N] [--json FILE|-] [--ruleset NAME] [--host-turns K] [--recipients R] [--no-probe] [--golden FILE]
               Profile end-turn time. small: 4 civs + 2 city states, Small map, 50 turns. medium: 8 civs + 8 city states, Medium map, 200 turns.
               Per turn: wall time of the whole turn (the human's turn, every AI civ, the checkpoint hash), split by phase; at the end the top 20 phases by
               inclusive time, the time per civ and per command type, and (medium, the last K turns, default 3) the host-side ViewDelta cost per recipient
               (R recipients, default 3) measured around every command. --json writes the report ('-' = standard output). --turns replaces the turn count.
               --no-probe runs without the phase probe (wall time and hashes only; the per-turn state hashes must be equal to a probed run).
+              --golden FILE compares every turn's state hash with migration/design/perf-golden.json (exit 1 on a difference).
               Use a Release build for numbers: dotnet run -c Release --project Unciv.Cli -- bench --scenario small --turns 10
         """;
 
@@ -65,6 +66,7 @@ public static class BenchRunner
         var recipients = cli.GetInt("recipients", 3, 1, 8);
         var jsonPath = cli.Get("json");
         var noProbe = cli.Flag("no-probe");
+        var goldenPath = cli.Get("golden");
         var ruleset = cli.Get("ruleset");
         loadRulesets(cli);
         cli.RejectUnknown();
@@ -87,7 +89,33 @@ public static class BenchRunner
         var text = report.ToJsonString(JsonOptions);
         if (jsonPath == "-") output.WriteLine(text);
         else if (jsonPath != null) File.WriteAllText(jsonPath, text + "\n");
-        return CliRunner.ExitOk;
+        return goldenPath == null ? CliRunner.ExitOk : CheckGolden(goldenPath, results, output);
+    }
+
+    /// <summary>
+    /// T262: compares the per-turn state hashes of every scenario with a golden file ({"scenario": ["hash", ...]}, one hash per turn from turn 1);
+    /// a scenario the file does not list is skipped, a shorter run (--turns) is compared as far as it goes.
+    /// </summary>
+    private static int CheckGolden(string path, IReadOnlyList<ScenarioResult> results, TextWriter output)
+    {
+        var golden = JsonNode.Parse(File.ReadAllText(path))?.AsObject() ?? throw new UsageException($"--golden {path}: not a JSON object");
+        var failed = false;
+        foreach (var result in results)
+        {
+            if (golden[result.Scenario.Name]?.AsArray() is not { } expected) continue;
+            var actual = result.Hashes;
+            var mismatches = Enumerable.Range(0, Math.Min(actual.Count, expected.Count))
+                .Where(i => actual[i] != expected[i]?.GetValue<string>()).ToList();
+            if (actual.Count > expected.Count) mismatches.Add(expected.Count);
+            if (mismatches.Count == 0)
+            {
+                output.WriteLine($"golden {result.Scenario.Name}: {actual.Count} turn hashes identical");
+                continue;
+            }
+            failed = true;
+            output.WriteLine($"golden {result.Scenario.Name}: {mismatches.Count} turn hashes differ, first at turn {mismatches[0] + 1}");
+        }
+        return failed ? CliRunner.ExitFailure : CliRunner.ExitOk;
     }
 
     private static JsonObject Machine() => new()
