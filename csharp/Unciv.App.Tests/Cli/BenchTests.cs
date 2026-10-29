@@ -54,6 +54,40 @@ public sealed class BenchTests : IDisposable
     }
 
     [Fact]
+    public void GoldenFileMatchesMismatchesAndSkipsUnlistedScenarios()
+    {
+        var hashes = Hashes(Bench("--turns", "4", "--no-probe"));
+        var golden = Path.Combine(dir, "golden.json");
+        string Run(out int code)
+        {
+            var output = new StringWriter();
+            code = CliRunner.Run(["bench", "--scenario", "small", "--turns", "4", "--no-probe", "--golden", golden], output, new StringWriter());
+            return output.ToString();
+        }
+
+        File.WriteAllText(golden, new JsonObject { ["small"] = new JsonArray(hashes.Select(it => (JsonNode?)it).ToArray()) }.ToJsonString());
+        Assert.Contains("4 turn hashes identical", Run(out var code));
+        Assert.Equal(0, code);
+
+        var bad = hashes.ToList();
+        bad[2] = "deadbeef";
+        File.WriteAllText(golden, new JsonObject { ["small"] = new JsonArray(bad.Select(it => (JsonNode?)it).ToArray()) }.ToJsonString());
+        Assert.Contains("1 turn hashes differ, first at turn 3", Run(out code));
+        Assert.Equal(1, code);
+
+        File.WriteAllText(golden, new JsonObject { ["small"] = new JsonArray(hashes.Take(2).Select(it => (JsonNode?)it).ToArray()) }.ToJsonString());
+        Assert.Contains("differ, first at turn 3", Run(out code));
+        Assert.Equal(1, code);
+
+        File.WriteAllText(golden, "{}");
+        Assert.Equal("", Run(out code).Trim().Split('\n').FirstOrDefault(it => it.StartsWith("golden")) ?? "");
+        Assert.Equal(0, code);
+
+        File.WriteAllText(golden, "[]");
+        Assert.Equal(2, CliRunner.Run(["bench", "--scenario", "small", "--turns", "2", "--no-probe", "--golden", golden], new StringWriter(), new StringWriter()));
+    }
+
+    [Fact]
     public void HelpAndBadOptionsAreHandled()
     {
         var output = new StringWriter();

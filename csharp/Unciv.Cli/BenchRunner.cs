@@ -98,7 +98,7 @@ public static class BenchRunner
     /// </summary>
     private static int CheckGolden(string path, IReadOnlyList<ScenarioResult> results, TextWriter output)
     {
-        var golden = JsonNode.Parse(File.ReadAllText(path))?.AsObject() ?? throw new UsageException($"--golden {path}: not a JSON object");
+        var golden = JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? throw new UsageException($"--golden {path}: not a JSON object");
         var failed = false;
         foreach (var result in results)
         {

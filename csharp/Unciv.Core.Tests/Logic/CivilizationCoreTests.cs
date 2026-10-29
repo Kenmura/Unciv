@@ -441,6 +441,19 @@ public class CivilizationCoreTests
     }
 
     [Fact]
+    public void TileResourceMatchesFilter_ByNameTagAndContext()
+    {
+        var (civ, _) = NewCiv();
+        var oil = new TileResourceObject { Name = "Oil", Uniques = [UniqueType.Stockpiled.Text()] };
+        Assert.True(oil.MatchesFilter("Oil"));
+        Assert.False(oil.MatchesFilter("Iron"));
+        Assert.False(oil.MatchesFilter("Iron", new GameContext(civ)));
+        Assert.True(oil.MatchesFilter("Oil", new GameContext(civ)));
+        Assert.True(oil.MatchesFilter("{Oil} {Oil}"));
+        Assert.False(oil.MatchesFilter("{Iron} {Oil}", new GameContext(civ)));
+    }
+
+    [Fact]
     public void GetResourceAmount_FallsBackToTheSupplyList()
     {
         var (civ, _) = NewCiv();
