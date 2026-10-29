@@ -244,6 +244,8 @@ public sealed class UnitOrdersScenario : Scenario
                     return screen.SelectedUnitId == worker.Id && MenuEqualsQuery(worker.Id) && improve.Count == options.Count && improve.Count > 0
                         && improve.Zip(options).All(pair => pair.First.Argument == pair.Second.Name && pair.First.Enabled == (pair.Second.Problems.Count == 0));
                 }),
+                new AssertQuery("C068: every worker action is reachable and the grid has at most two rows", () =>
+                    screen.Panel.Entries.All(it => screen.Panel.ButtonFor(it.Label) != null) && screen.Panel.GridRows <= 2 && screen.Panel.GridRect.End.Y <= screen.GetViewportRect().Size.Y),
                 new Capture("worker-selected", "Worker selected: improvements in the menu"),
                 new Act("choose the first improvement the worker can build", () =>
                 {
@@ -258,6 +260,17 @@ public sealed class UnitOrdersScenario : Scenario
                 new Capture("disband-confirm", "Disband asks for confirmation"),
                 new Press("Cancel"),
                 new AssertQuery("Cancel keeps the worker and shows the menu again", () => !screen.Panel.IsAsking && human.Units.GetCivUnits().Any(it => it.Id == worker.Id) && MenuEqualsQuery(worker.Id)),
+                new Act("C068: a long menu (shown directly, not from the engine) keeps two rows and puts the rest behind More", () =>
+                {
+                    var menu = Enumerable.Range(1, 16).Select(i => new MenuEntry(MenuEntryKind.Improve, UnitOrdersModel.ImproveLabelPrefix + "Test " + i, i != 3, null, "Test " + i, i != 3 ? null : "Needs a road", "Improve:Test " + i,
+                        AssetKey.Of(RulesetAssetKeys.ImprovementIcon, "Farm"))).ToList();
+                    screen.Panel.Show(UnitOrdersModel.Panel(screen.Units[worker.Id].Unit, null), menu);
+                }),
+                new Press("More"),
+                new AssertQuery("the popover lists the overflow and every entry keeps a button", () =>
+                    screen.Panel.PopoverOpen && screen.Panel.GridRows == 2 && screen.Panel.MoreButton != null && screen.Panel.Entries.Count == 16 && screen.Panel.GridEntries.Count == 9
+                    && screen.Panel.PopoverRect.End.Y <= screen.Panel.MoreButton.GetGlobalRect().Position.Y + 1f),
+                new Capture("more-popover", "A long action list: two rows of icons and the rest in the More popover"),
             ]);
             return steps;
         }

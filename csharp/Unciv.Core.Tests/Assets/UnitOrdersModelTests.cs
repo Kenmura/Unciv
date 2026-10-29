@@ -363,4 +363,56 @@ public class UnitOrdersModelTests
         var sweep = new AttackPreviewResult("airsweep", true, null, new TilePos(1, 1), null, fighter, null, 0, 0, 0, 0, false, false, 0);
         Assert.Equal(["Bomber (Rome): strength 17, health 55/120"], UnitOrdersModel.Combat(sweep).Lines);
     }
+
+    [Fact]
+    public void PanelCarriesTheStructuredNumbers()
+    {
+        var info = UnitOrdersModel.Panel(Unit(Own()), new BaseUnit { Name = "Archer", Strength = 5, RangedStrength = 6, Range = 2, Movement = 2 });
+        Assert.Equal((5, 6, 2, 1.5f, 2, 0.8, 12, true), (info.Combat, info.Ranged, info.Range, info.MovesLeft, info.MovesMax, info.Fraction, info.XpValue, info.IsOwn));
+        var foreign = UnitOrdersModel.Panel(Unit(null), null);
+        Assert.Equal((0.75, -1, false), (foreign.Fraction, foreign.XpValue, foreign.IsOwn));
+    }
+
+    [Fact]
+    public void MenuEntriesHaveUniqueKeysIconsAndPrimaryActionsFirstFlag()
+    {
+        var actions = new UnitActionsResult(1, [Action("Fortify"), Action("Found city", type: UnitActionType.FoundCity), Action("Upgrade to [Swordsman] ([50] gold)", type: UnitActionType.Upgrade)]);
+        var promotions = new PromotionChoicesResult(1, 12, 10, true, true, [new PromotionChoice("Accuracy II", true, [], [])]);
+        var menu = UnitOrdersModel.Menu(actions, Tile(new ImprovementOption("Farm", [], [])), promotions, hasMovement: true);
+        Assert.Equal(menu.Count, menu.Select(it => it.Key).Distinct().Count());
+        Assert.All(menu, it => Assert.NotNull(it.IconKey));
+        Assert.Equal([false, true, true, false, false, false], menu.Select(it => it.Primary));
+        Assert.Equal("Improve:Farm", menu[3].Key);
+        Assert.Equal("Disband", menu[^1].Key);
+    }
+
+    [Fact]
+    public void EveryActionTypeHasAnIconThatExistsInThePack()
+    {
+        foreach (var type in Enum.GetValues<UnitActionType>())
+            Assert.Contains(UnitOrdersModel.ActionIconName(type), RulesetAssetKeys.ActionIconNames);
+    }
+
+    [Fact]
+    public void CombatCardHasBothFightersWithPredictedHealthAndTheOutcome()
+    {
+        var card = UnitOrdersModel.Combat(Battle(20, 30, 10, 14)).Card;
+        Assert.NotNull(card);
+        Assert.Equal(("Warrior", 8, 86, 90), (card.Attacker!.Name, card.Attacker.Strength, card.Attacker.HealthMin, card.Attacker.HealthMax));
+        Assert.Equal(("Archer", 5, 70, 80), (card.Defender!.Name, card.Defender.Strength, card.Defender.HealthMin, card.Defender.HealthMax));
+        Assert.Equal(["+25% Fortified"], card.Attacker.Modifiers);
+        Assert.Equal(["Damage to Archer (Civ): 20-30", "Damage to Warrior (Civ): 10-14"], card.Outcome);
+    }
+
+    [Fact]
+    public void CombatCardForCaptureKeepsHealthAndAirSweepHasOneFighter()
+    {
+        var capture = UnitOrdersModel.Combat(Battle(0, 0, 0, 0, outcome: "capture")).Card!;
+        Assert.Equal((100, 100), (capture.Defender!.HealthMin, capture.Defender.HealthMax));
+        Assert.Equal(["Captures Archer (Civ)"], capture.Outcome);
+        var sweep = new AttackPreviewResult("airsweep", false, null, new TilePos(1, 1), null, Fighter("Fighter", 100, 9), null, 0, 0, 0, 0, false, false, 0);
+        var card = UnitOrdersModel.Combat(sweep).Card!;
+        Assert.Null(card.Defender);
+        Assert.Equal(["Cannot attack right now"], card.Outcome);
+    }
 }

@@ -1132,7 +1132,7 @@ Scenario `ui-kit`.
 
 *The tile tooltip in the new tooltip style, wrapped to the 340 px maximum and placed below the HUD top bar instead of over it.* (`tooltips/tile.png`)
 
-## C067 (ticket not Done or unknown)
+## C067 World HUD layout
 
 World HUD layout (WorldHud): top bar with stat chips updated in place and the menu button, research and policy pills, nav icon strip, notification column on the right (drop-down list, toasts for ambient alerts), minimap dock above the next-action dock at the bottom right, the turn banner as a toast. Containers only, no absolute positions; no HUD rectangle overlaps another at 640x480 or 1280x720 (harness assert).
 
@@ -1149,6 +1149,36 @@ Scenario `hud`.
 ![The notification column with its drop-down list open under the toggle, floating over the map and the docks.](../Unciv.Godot.Harness/golden/alerts/list.png)
 
 *The notification column with its drop-down list open under the toggle, floating over the map and the docks.* (`alerts/list.png`)
+
+## C068 (ticket not Done or unknown)
+
+Unit panel and action bar: header with unit icon, name and standing order, stat chips (strength, moves, experience), health bar, an icon grid of at most two rows with a More popover for the rest, the inline danger confirm for Disband and the battle card (VS layout) for attacks. The duplicate permanent status line is gone: messages show briefly in a toast panel at the bottom.
+
+Scenario `unit-orders`.
+
+![Warrior selected: header with icon, name and order, chips for strength, moves and experience, health bar and the order icons (tooltips carry the names).](../Unciv.Godot.Harness/golden/unit-orders/warrior-selected.png)
+
+*Warrior selected: header with icon, name and order, chips for strength, moves and experience, health bar and the order icons (tooltips carry the names).* (`unit-orders/warrior-selected.png`)
+
+![Settler selected: Found city leads the grid as the gold primary action; Disband is the red danger cell at the end.](../Unciv.Godot.Harness/golden/unit-orders/settler-selected.png)
+
+*Settler selected: Found city leads the grid as the gold primary action; Disband is the red danger cell at the end.* (`unit-orders/settler-selected.png`)
+
+![Worker selected: every worker action fits the two-row icon grid.](../Unciv.Godot.Harness/golden/unit-orders/worker-selected.png)
+
+*Worker selected: every worker action fits the two-row icon grid.* (`unit-orders/worker-selected.png`)
+
+![A long action list: two rows of icons, the last cell is More and opens the rest as a popover above it.](../Unciv.Godot.Harness/golden/unit-orders/more-popover.png)
+
+*A long action list: two rows of icons, the last cell is More and opens the rest as a popover above it.* (`unit-orders/more-popover.png`)
+
+![Battle card: both fighters as columns around VS with strength numbers, predicted health bars (before > after range) and the damage lines; Attack is primary, Cancel ghost.](../Unciv.Godot.Harness/golden/unit-orders/attack-preview.png)
+
+*Battle card: both fighters as columns around VS with strength numbers, predicted health bars (before > after range) and the damage lines; Attack is primary, Cancel ghost.* (`unit-orders/attack-preview.png`)
+
+![Disband asks inline in the panel: a question with a red Disband button and Cancel.](../Unciv.Godot.Harness/golden/unit-orders/disband-confirm.png)
+
+*Disband asks inline in the panel: a question with a red Disband button and Cancel.* (`unit-orders/disband-confirm.png`)
 
 ## C080 Unit model loader and contract
 

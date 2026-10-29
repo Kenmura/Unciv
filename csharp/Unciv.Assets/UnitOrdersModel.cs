@@ -1,5 +1,6 @@
 using System.Globalization;
 using Unciv.Commands.Units;
+using Unciv.Models;
 using Unciv.Models.Ruleset.Unit;
 using Unciv.Net.Visibility;
 using Unciv.Queries.Tiles;
@@ -7,8 +8,13 @@ using Unciv.Queries.Units;
 
 namespace Unciv.Assets;
 
-/// <summary>The unit panel's text lines (C012). <see cref="Order"/> is the standing order, empty when the unit has none.</summary>
-public sealed record UnitPanelInfo(string Title, string Strength, string Moves, string Health, string Xp, IReadOnlyList<string> Promotions, string Order);
+/// <summary>
+/// The unit panel's text lines (C012). <see cref="Order"/> is the standing order, empty when the unit has none. C068 adds the structured numbers the panel's stat chips and
+/// health bar draw (the strings stay: harness scripts and tooltips read them): <see cref="Combat"/> and <see cref="Ranged"/> are 0 when the unit has none, <see cref="MovesMax"/> is
+/// 0 when the ruleset does not know the unit, <see cref="Fraction"/> is the health as 0..1 (a foreign unit's is its quarter bucket) and <see cref="Xp"/>'s number is <see cref="XpValue"/> (-1 for a foreign unit).
+/// </summary>
+public sealed record UnitPanelInfo(string Title, string Strength, string Moves, string Health, string Xp, IReadOnlyList<string> Promotions, string Order,
+    int Combat = 0, int Ranged = 0, int Range = 0, float MovesLeft = 0f, int MovesMax = 0, double Fraction = 1.0, int XpValue = -1, bool IsOwn = true);
 
 /// <summary>Where an entry of the action menu comes from; the client sends a different command for each.</summary>
 public enum MenuEntryKind
@@ -26,11 +32,21 @@ public enum MenuEntryKind
     Disband,
 }
 
-/// <summary>One button of the action menu. <see cref="Action"/> is set for <see cref="MenuEntryKind.Engine"/>; <see cref="Reason"/> says why a disabled entry is.</summary>
-public sealed record MenuEntry(MenuEntryKind Kind, string Label, bool Enabled, UnitActionInfo? Action = null, string? Argument = null, string? Reason = null);
+/// <summary>
+/// One button of the action menu. <see cref="Action"/> is set for <see cref="MenuEntryKind.Engine"/>; <see cref="Reason"/> says why a disabled entry is. C068: <see cref="Key"/> is a
+/// stable id of the entry within its menu, <see cref="IconKey"/> the icon of its grid cell and <see cref="Primary"/> marks the one-off actions that lead the grid (found a city, upgrade).
+/// </summary>
+public sealed record MenuEntry(MenuEntryKind Kind, string Label, bool Enabled, UnitActionInfo? Action = null, string? Argument = null, string? Reason = null,
+    string Key = "", AssetKey? IconKey = null, bool Primary = false);
 
-/// <summary>The battle table as text lines. <see cref="ConfirmLabel"/> names the confirm button; <see cref="CanConfirm"/> false leaves only Cancel.</summary>
-public sealed record CombatPreviewText(string Title, IReadOnlyList<string> Lines, bool CanConfirm, string ConfirmLabel);
+/// <summary>One side of the battle card (C068). <see cref="HealthMin"/>..<see cref="HealthMax"/> is the health left after the fight (equal to <see cref="Health"/> when it takes no damage).</summary>
+public sealed record FighterCard(string Name, string Civ, int Strength, int Health, int MaxHealth, int HealthMin, int HealthMax, IReadOnlyList<string> Modifiers);
+
+/// <summary>The structured battle card: the two fighters (either may be absent: an air sweep has one, a nuke none) and the outcome lines under them.</summary>
+public sealed record CombatCard(FighterCard? Attacker, FighterCard? Defender, IReadOnlyList<string> Outcome);
+
+/// <summary>The battle table as text lines. <see cref="ConfirmLabel"/> names the confirm button; <see cref="CanConfirm"/> false leaves only Cancel. <see cref="Card"/> is the same table, structured (C068).</summary>
+public sealed record CombatPreviewText(string Title, IReadOnlyList<string> Lines, bool CanConfirm, string ConfirmLabel, CombatCard? Card = null);
 
 /// <summary>What a click on a tile means to the selected unit.</summary>
 public enum TileClickIntent
@@ -67,7 +83,9 @@ public static class UnitOrdersModel
         string health = own == null ? $"Health {Int(unit.HealthBucket * 25)}%" : $"Health {Int(own.Health)}/100";
         string xp = own == null ? "" : $"XP {Int(own.Xp)}";
         string order = own?.Action is { Length: > 0 } action ? action : unit.IsFortified ? "Fortified" : "";
-        return new UnitPanelInfo(unit.Name, strength, moves, health, xp, own?.Promotions ?? [], order);
+        return new UnitPanelInfo(unit.Name, strength, moves, health, xp, own?.Promotions ?? [], order,
+            baseUnit?.Strength ?? 0, baseUnit?.RangedStrength ?? 0, baseUnit?.Range ?? 0, own?.CurrentMovement ?? 0f, baseUnit?.Movement ?? 0,
+            own == null ? unit.HealthBucket * 0.25 : Math.Clamp(own.Health / 100.0, 0.0, 1.0), own?.Xp ?? -1, own != null);
     }
 
     /// <summary>
@@ -78,19 +96,62 @@ public static class UnitOrdersModel
     {
         var entries = new List<MenuEntry>();
         foreach (var action in actions.Actions)
-            entries.Add(new MenuEntry(MenuEntryKind.Engine, Clean(action.Title), action.IsEnabled, action));
+        {
+            string title = Clean(action.Title);
+            var type = action.Descriptor.ActionType;
+            entries.Add(new MenuEntry(MenuEntryKind.Engine, title, action.IsEnabled, action, Key: $"{type}:{title}",
+                IconKey: AssetKey.Of(RulesetAssetKeys.ActionIcon, ActionIconName(type)), Primary: IsPrimary(type)));
+        }
         foreach (var option in tile?.ImprovementOptions ?? [])
         {
             bool possible = option.Problems.Count == 0;
             entries.Add(new MenuEntry(MenuEntryKind.Improve, ImproveLabelPrefix + option.Name, possible, null, option.Name,
-                possible ? null : string.Join(", ", option.Problems)));
+                possible ? null : string.Join(", ", option.Problems), "Improve:" + option.Name, AssetKey.Of(RulesetAssetKeys.ImprovementIcon, option.Name)));
         }
         foreach (var promotion in promotions?.Promotions ?? [])
             entries.Add(new MenuEntry(MenuEntryKind.Promote, PromoteLabelPrefix + promotion.Name, promotion.Selectable, null, promotion.Name,
-                promotion.Selectable ? null : "Not enough experience"));
-        if (hasMovement) entries.Add(new MenuEntry(MenuEntryKind.Disband, DisbandLabel, true));
+                promotion.Selectable ? null : "Not enough experience", "Promote:" + promotion.Name, AssetKey.Of(RulesetAssetKeys.PromotionIcon, promotion.Name)));
+        if (hasMovement) entries.Add(new MenuEntry(MenuEntryKind.Disband, DisbandLabel, true, Key: "Disband", IconKey: AssetKey.Of(RulesetAssetKeys.ActionIcon, "DisbandUnit")));
         return entries;
     }
+
+    /// <summary>The <c>icon/action</c> file name of an action type (the names of <see cref="RulesetAssetKeys.ActionIconNames"/>).</summary>
+    public static string ActionIconName(UnitActionType type) => type switch
+    {
+        UnitActionType.StopEscortFormation => "StopEscort",
+        UnitActionType.EscortFormation => "Escort",
+        UnitActionType.Automate => "Automate",
+        UnitActionType.StopAutomation or UnitActionType.StopExploration or UnitActionType.Skip => "Stop",
+        UnitActionType.StopMovement => "StopMove",
+        UnitActionType.Sleep or UnitActionType.SleepUntilHealed => "Sleep",
+        UnitActionType.Fortify => "Fortify",
+        UnitActionType.FortifyUntilHealed => "FortifyUntilHealed",
+        UnitActionType.Guard => "Guard",
+        UnitActionType.Explore => "Explore",
+        UnitActionType.Upgrade => "Upgrade",
+        UnitActionType.Transform => "Transform",
+        UnitActionType.Pillage => "Pillage",
+        UnitActionType.Paradrop => "Paradrop",
+        UnitActionType.AirSweep => "AirSweep",
+        UnitActionType.SetUp => "SetUp",
+        UnitActionType.FoundCity => "FoundCity",
+        UnitActionType.Repair => "Repair",
+        UnitActionType.CreateImprovement => "ConstructImprovement",
+        UnitActionType.HurryResearch => "HurryResearch",
+        UnitActionType.HurryPolicy => "HurryPolicy",
+        UnitActionType.HurryWonder or UnitActionType.HurryBuilding => "HurryConstruction",
+        UnitActionType.ConductTradeMission or UnitActionType.GiftUnit => "Present",
+        UnitActionType.FoundReligion => "FoundReligion",
+        UnitActionType.SpreadReligion or UnitActionType.EnhanceReligion => "EnhanceReligion",
+        UnitActionType.RemoveHeresy => "RemoveHeresy",
+        UnitActionType.AddInCapital => "AddInCapital",
+        _ => "Star",
+    };
+
+    /// <summary>The one-off actions that lead the grid and wear the primary style.</summary>
+    public static bool IsPrimary(UnitActionType type) => type is UnitActionType.FoundCity or UnitActionType.Upgrade or UnitActionType.AddInCapital or UnitActionType.HurryResearch
+        or UnitActionType.HurryPolicy or UnitActionType.HurryWonder or UnitActionType.HurryBuilding or UnitActionType.ConductTradeMission or UnitActionType.FoundReligion
+        or UnitActionType.SpreadReligion or UnitActionType.EnhanceReligion or UnitActionType.RemoveHeresy;
 
     /// <summary>A translation template as plain text: the placeholder brackets and braces are dropped ("Upgrade to [Swordsman] ([50] gold)" reads "Upgrade to Swordsman (50 gold)").</summary>
     public static string Clean(string title) =>
@@ -131,8 +192,26 @@ public static class UnitOrdersModel
         if (preview.Kind == "battle" && preview.Attacker != null && preview.Defender != null) AddBattleOutcome(lines, preview, preview.Attacker, preview.Defender);
         if (!preview.CanAttack) lines.Add("Cannot attack right now");
         string confirm = preview.Kind switch { "nuke" => "Launch", "airsweep" => "Sweep", _ => "Attack" };
-        return new CombatPreviewText(title, lines, preview.CanAttack, confirm);
+        return new CombatPreviewText(title, lines, preview.CanAttack, confirm, Card(preview));
     }
+
+    private static CombatCard Card(AttackPreviewResult preview)
+    {
+        bool battle = preview.Kind == "battle" && preview.Attacker != null && preview.Defender != null;
+        bool damage = battle && preview.Outcome == "damage";
+        var attacker = preview.Attacker == null ? null : Fighter(preview.Attacker, damage ? preview.DamageToAttackerMin : 0, damage ? preview.DamageToAttackerMax : 0);
+        var defender = preview.Defender == null ? null : Fighter(preview.Defender, damage ? preview.DamageToDefenderMin : 0, damage ? preview.DamageToDefenderMax : 0);
+        var outcome = new List<string>();
+        if (battle) AddBattleOutcome(outcome, preview, preview.Attacker!, preview.Defender!);
+        outcome.RemoveAll(it => it.Contains(" health afterwards: ", StringComparison.Ordinal)); // the card's predicted-health bars show it
+        if (!preview.CanAttack) outcome.Add("Cannot attack right now");
+        return new CombatCard(attacker, defender, outcome);
+    }
+
+    private static FighterCard Fighter(CombatantPreview fighter, int minDamage, int maxDamage) =>
+        new(fighter.Name, fighter.Civ, fighter.FinalStrength, fighter.Health, fighter.MaxHealth,
+            Math.Max(0, fighter.Health - maxDamage), Math.Max(0, fighter.Health - minDamage),
+            fighter.Modifiers.Select(it => $"{(it.Percent >= 0 ? "+" : "-")}{Int(Math.Abs(it.Percent))}% {it.Key}").ToList());
 
     private static void AddFighter(List<string> lines, CombatantPreview fighter)
     {

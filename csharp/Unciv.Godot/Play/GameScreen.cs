@@ -42,6 +42,10 @@ public partial class GameScreen : Control
     private Node3D unitLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Node3D dotLayer = null!; // JUSTIFY: C010 assigned in _Ready before any use
     private Label statusLabel = null!; // JUSTIFY: C010 assigned in _Ready before any use
+    private PanelContainer statusPanel = null!; // JUSTIFY: C068 assigned in _Ready before any use
+    private string statusText = "";
+    private int statusFrames;
+    private const int StatusFrames = 240; // frames, not seconds: captures must not depend on machine speed
     private int bannerTurn = -1;
     private ClientSnapshot snapshot = null!; // JUSTIFY: C010 assigned by Refresh in Start
     private int previewRequest;
@@ -199,7 +203,7 @@ public partial class GameScreen : Control
         ClearPreview();
         SelectedUnitId = null;
         ClearSelectionUi();
-        SetStatus("");
+        SetStatus("", quiet: true);
         Visible = false;
         ProcessMode = ProcessModeEnum.Disabled;
         foreach (var layer in WorldLayers()) layer.Visible = false;
@@ -263,7 +267,7 @@ public partial class GameScreen : Control
         if (Diplomacy.Visible) Diplomacy.Close();
         if (Tech.Visible) Tech.Close();
         Deselect();
-        SetStatus("Policies");
+        SetStatus("Policies", quiet: true);
         Run(Policies.OpenAsync());
         ShowTutorial(TutorialTrigger.CultureAndPolicies);
     }
@@ -274,7 +278,7 @@ public partial class GameScreen : Control
         ShowCity(null);
         if (Policies.Visible) Policies.Close();
         Deselect();
-        SetStatus("Diplomacy");
+        SetStatus("Diplomacy", quiet: true);
         if (Tech.Visible) Tech.Close();
         if (Overview.Visible) Overview.Close();
         if (Espionage.Visible) Espionage.Close();
@@ -298,7 +302,7 @@ public partial class GameScreen : Control
         Deselect();
         if (Trade.Visible) Trade.Close();
         if (Espionage.Visible) Espionage.Close();
-        SetStatus("Overview");
+        SetStatus("Overview", quiet: true);
         Run(Overview.OpenAsync(tab));
     }
 
@@ -337,7 +341,7 @@ public partial class GameScreen : Control
         if (Overview.Visible) Overview.Close();
         if (Espionage.Visible) Espionage.Close();
         Deselect();
-        SetStatus("Trade");
+        SetStatus("Trade", quiet: true);
         Run(Trade.OpenAsync(civId, stageFrom));
     }
 
@@ -372,7 +376,7 @@ public partial class GameScreen : Control
         if (Overview.Visible) Overview.Close();
         if (Trade.Visible) Trade.Close();
         Deselect();
-        SetStatus("Espionage");
+        SetStatus("Espionage", quiet: true);
         Run(Espionage.OpenAsync());
     }
 
@@ -443,7 +447,7 @@ public partial class GameScreen : Control
         if (Espionage.Visible) Espionage.Close();
         if (Trade.Visible) Trade.Close();
         Deselect();
-        SetStatus("Technology");
+        SetStatus("Technology", quiet: true);
         Run(Tech.OpenAsync(tech));
     }
 
@@ -671,7 +675,10 @@ public partial class GameScreen : Control
 
     public int Turn => snapshot.Turn;
 
-    public string StatusText => statusLabel.Text;
+    public string StatusText => statusText;
+
+    /// <summary>C068: whether the transient message line is on screen.</summary>
+    public bool StatusShown => statusPanel.Visible;
 
     public int PathDotCount => dotLayer.GetChildCount();
 
@@ -696,7 +703,10 @@ public partial class GameScreen : Control
         AddChild(AttackOverlay);
 
         statusLabel = new Label { Name = "StatusLabel" };
-        AddChild(statusLabel);
+        statusPanel = new PanelContainer { Name = "StatusPanel", Visible = false, MouseFilter = MouseFilterEnum.Ignore, ThemeTypeVariation = UiVariants.PanelTooltip };
+        statusLabel.MouseFilter = MouseFilterEnum.Ignore;
+        statusPanel.AddChild(statusLabel);
+        AddChild(statusPanel);
         Hud = new HudView { Name = "Hud" };
         World = new WorldHud();
         AddChild(World);
@@ -724,7 +734,7 @@ public partial class GameScreen : Control
         Minimap = new MinimapView { Name = "Minimap" };
         Minimap.Attach(Map);
         World.Mount(Hud, Notifications, Minimap);
-        AddChild(PromoteButton);
+        Panel.SetPromoteChip(PromoteButton);
         PromoteButton.Pressed += () => Run(OpenPromotionPicker());
         Picker = new DecisionPickerView();
         AddChild(Picker);
@@ -825,7 +835,7 @@ public partial class GameScreen : Control
             Espionage.Position = new Vector2(0f, Hud.TopBarHeight);
             Espionage.Size = new Vector2(Size.X, Size.Y - Hud.TopBarHeight);
         }
-        statusLabel.Position = new Vector2(HudMargin, Size.Y - HudMargin - 24f);
+        if (statusPanel.Visible) LayoutStatus();
         LayoutSocial();
         Alerts.LayoutIn(Size);
         Proposals.LayoutIn(Size);
@@ -843,7 +853,6 @@ public partial class GameScreen : Control
         TurnBar.LayoutIn(Size.X, TurnBarTop());
         TurnOverlay.LayoutIn(Size);
         Panel.LayoutIn(Size);
-        PlacePromoteButton();
         CombatPreview.LayoutIn(Size);
     }
 
@@ -916,7 +925,7 @@ public partial class GameScreen : Control
         TurnOverlay.Close();
         watchingAfterDefeat = false;
         Picker.Init(theme);
-        PromoteButton.Theme = theme.Theme;
+        statusPanel.Theme = theme.Theme;
         deferredAlerts.Clear();
         toastedAlerts.Clear();
         deferredProposals.Clear();
@@ -1023,7 +1032,7 @@ public partial class GameScreen : Control
         RefreshTurnBar();
         var first = snapshot.Units.FirstOrDefault(it => it.Own != null);
         if (first != null) Map.FocusOn(MapLayout.TileTop(first.X, first.Y));
-        SetStatus("Click one of your units.");
+        SetStatus("Click one of your units.", quiet: true);
     }
 
     /// <summary>Redraws everything from the session's current snapshot (the screen does this itself after its own commands; a caller that changed the game another way calls it).</summary>
@@ -1131,10 +1140,6 @@ public partial class GameScreen : Control
     private List<UnitNode> OwnUnitsAt(HexCoord tile) =>
         unitNodes.Values.Where(it => it.IsOwn && it.Unit.X == tile.X && it.Unit.Y == tile.Y).OrderBy(it => it.Unit.Id).ToList();
 
-    /// <summary>The Promote button sits at the bottom, to the right of the unit panel.</summary>
-    private void PlacePromoteButton() =>
-        PromoteButton.Position = new Vector2(HudMargin + Panel.GetCombinedMinimumSize().X + HudMargin, Size.Y - 48f - PromoteButton.GetCombinedMinimumSize().Y);
-
     /// <summary>Selects one of the viewer's units by id (what clicking it does); an unknown or foreign id selects nothing.</summary>
     public void SelectUnitById(int id)
     {
@@ -1147,7 +1152,7 @@ public partial class GameScreen : Control
         ClearPreview();
         Map.Select(new HexCoord(node.Unit.X, node.Unit.Y));
         ApplySelectionScale();
-        SetStatus(DescribeSelected());
+        SetStatus(DescribeSelected(), quiet: true);
         Run(RefreshSelection());
     }
 
@@ -1167,7 +1172,7 @@ public partial class GameScreen : Control
             if (City.Visible) City.Close();
             return;
         }
-        SetStatus("City: " + city.Name);
+        SetStatus("City: " + city.Name, quiet: true);
         ReportTaskDone(TutorialTaskModel.EnterCityScreen);
         Run(City.OpenAsync(city));
     }
@@ -1178,7 +1183,7 @@ public partial class GameScreen : Control
         ClearPreview();
         ApplySelectionScale();
         ClearSelectionUi();
-        SetStatus("Click one of your units.");
+        SetStatus("Click one of your units.", quiet: true);
     }
 
     private string DescribeSelected()
@@ -1195,20 +1200,20 @@ public partial class GameScreen : Control
         var unitNode = unitNodes[SelectedUnitId!.Value];
         if (unitNode.Unit.Own?.CurrentMovement is not > 0f)
         {
-            SetStatus($"{DescribeSelected()}   (no movement left)");
+            SetHint("(no movement left)");
             return;
         }
         var result = await queries.Path(unitNode.Unit.Id, tile.X, tile.Y);
         if (request != previewRequest) return; // a newer click or a deselect superseded this answer
         if (result is not { Reachable: true, FirstStep: not null })
         {
-            SetStatus($"{DescribeSelected()}   (cannot reach that tile)");
+            SetHint("(cannot reach that tile)");
             return;
         }
         preview = result;
         PreviewTarget = tile;
         DrawDots(new HexCoord(unitNode.Unit.X, unitNode.Unit.Y), result);
-        SetStatus($"{DescribeSelected()}   path {result.Turns.ToString(CultureInfo.InvariantCulture)} turn(s): click again to move");
+        SetHint($"path {result.Turns.ToString(CultureInfo.InvariantCulture)} turn(s): click again to move");
     }
 
     private void DrawDots(HexCoord from, PathPreviewResult path)
@@ -1285,7 +1290,6 @@ public partial class GameScreen : Control
         var menu = UnitOrdersModel.Menu(actions ?? new UnitActionsResult(id, []), tile, promotions, unit.Own?.CurrentMovement > 0f);
         Panel.Show(UnitOrdersModel.Panel(unit, baseUnit), menu);
         PromoteButton.Visible = promotions is { Promotions.Count: > 0 };
-        PlacePromoteButton();
         attackTiles = targets == null ? [] : [.. UnitOrdersModel.AttackTiles(targets)];
         ReachableOverlay.Show(reach == null ? [] : [.. UnitOrdersModel.ReachableTiles(reach).Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
         AttackOverlay.Show([.. attackTiles.Select(it => new HexCoord(it.X, it.Y))], TileTopAt);
@@ -1300,12 +1304,12 @@ public partial class GameScreen : Control
         if (request != previewRequest) return;
         if (result == null)
         {
-            SetStatus($"{DescribeSelected()}   (no battle preview for that tile)");
+            SetHint("(no battle preview for that tile)");
             return;
         }
         pendingAttack = (result.Kind, tile);
         CombatPreview.Show(UnitOrdersModel.Combat(result));
-        SetStatus($"{DescribeSelected()}   confirm the attack or cancel");
+        SetHint("confirm the attack or cancel", quiet: true); // the battle card says it
     }
 
     private async Task ConfirmAttack()
@@ -1369,7 +1373,7 @@ public partial class GameScreen : Control
         }
         ReportTaskDone(TutorialTaskModel.MoveUnitTask);
         Refresh();
-        SetStatus(DescribeSelected());
+        SetStatus(DescribeSelected(), quiet: true);
     }
 
     /// <summary>Asks the engine for the bar's numbers and for what is still pending, and shows them; announces a turn the first time it is seen.</summary>
@@ -1731,6 +1735,7 @@ public partial class GameScreen : Control
 
     public override void _Process(double delta)
     {
+        if (statusFrames > 0 && --statusFrames == 0) statusPanel.Visible = false;
         // the countdown moves with the clock, not with snapshots
         if (session is not ITurnRoster || TurnBar.Data == null || snapshot?.TurnStatus.Deadline == null) return;
         if (TurnBarModel.Countdown(snapshot.TurnStatus.Deadline, NowMs()) != shownCountdown) RefreshTurnBar();
@@ -2103,5 +2108,26 @@ public partial class GameScreen : Control
         }
     }
 
-    private void SetStatus(string text) => statusLabel.Text = text.TrText();
+    /// <summary>
+    /// C068: the world screen's one-line message. <see cref="StatusText"/> always holds the latest text (scripts read it), but the line is shown only for a message the player did not
+    /// cause by looking (a refusal, a result, a path hint) and fades after <see cref="StatusFrames"/>; <paramref name="quiet"/> texts (selection, opened screens) duplicate what is on
+    /// screen already and are never shown. <paramref name="shown"/> is the part to display when the text starts with context the unit panel shows.
+    /// </summary>
+    private void SetStatus(string text, bool quiet = false, string? shown = null)
+    {
+        statusText = text.TrText();
+        statusLabel.Text = (shown ?? text).TrText();
+        statusFrames = quiet || statusText.Length == 0 ? 0 : StatusFrames;
+        statusPanel.Visible = statusFrames > 0;
+        if (statusFrames > 0) LayoutStatus();
+    }
+
+    private void SetHint(string hint, bool quiet = false) => SetStatus($"{DescribeSelected()}   {hint}", quiet, hint);
+
+    private void LayoutStatus()
+    {
+        statusPanel.Size = Vector2.Zero;
+        var size = statusPanel.GetCombinedMinimumSize();
+        statusPanel.Position = new Vector2(Math.Max(HudMargin, (Size.X - size.X) / 2f), Size.Y - HudMargin - size.Y);
+    }
 }
