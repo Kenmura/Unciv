@@ -154,4 +154,4 @@ xychart-beta
 | T275 | Available (waiting on T274) | T274, C034, C035 | 0 | Host migration 5/5: client UI and docs (backup-host picker, trust notice, standby status, rollback and host-changed notices, superseded-host screen) |
 | T278 | Available (waiting on T260) | T260, T276 | 0 | Android on-device verification: TLS join, lifecycle reconnect, frame time and APK size on a mid-range phone |
 | T280 | Available (waiting on T260, T277) | T279, T260, T277 | 0 | Add the Android APK to the tagged GitHub release workflow |
-| T284 | Needs-Review [Claude-T284] | C101 | 0 | Phone layout: Diplomacy, trade, espionage and overview tables (C101 follow-up) |
+| T284 | In-Review [Claude-T284] | C101 | 0 | Phone layout: Diplomacy, trade, espionage and overview tables (C101 follow-up) |
