@@ -65,7 +65,7 @@
 - [C069 City screen redesign](#c069-city-screen-redesign)
 - [C072 Setup, nation picker and main menu redesign](#c072-setup-nation-picker-and-main-menu-redesign)
 - [C076 Civilopedia and tooltip content](#c076-civilopedia-and-tooltip-content)
-- [C079 (ticket not Done or unknown)](#c079-ticket-not-done-or-unknown)
+- [C079 Responsive and localization pass](#c079-responsive-and-localization-pass)
 - [C080 Unit model loader and contract](#c080-unit-model-loader-and-contract)
 - [C081 UnitAnimator, facing and re-timed combat cues](#c081-unitanimator-facing-and-re-timed-combat-cues)
 - [C083 Unit art pipeline](#c083-unit-art-pipeline)
@@ -1346,7 +1346,7 @@ Scenario `tooltips`.
 
 *The Bowman's tooltip: heading, production-coloured cost, description and a muted Requires footer.* (`tooltips/entry-tip.png`)
 
-## C079 (ticket not Done or unknown)
+## C079 Responsive and localization pass
 
 Responsive and localization pass: the HUD, city, tech, setup and options screens at 1280x720 and 1920x1080 and in German and Russian, each asserted for text that is cut off, leaves the window or overlaps (harness rect checks); right-to-left mirroring from the ScreenManager root.
 
